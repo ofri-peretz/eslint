@@ -91,6 +91,9 @@ beforeEach(() => {
   // In sync with the registry, so version drift never confounds a changeset
   // assertion. `npm view <pkg>@latest version` -> 1.0.0.
   write('packages/x/package.json', '{"name":"eslint-plugin-x","version":"1.0.0"}');
+  // A second healthy package, so a test about ONE unreachable package is not
+  // silently also a test about the "this run compared nothing" guard.
+  write('packages/y/package.json', '{"name":"eslint-plugin-y","version":"1.0.0"}');
   stub('npm', 'echo 1.0.0');
   stub('gh', 'echo 0'); // no open Version PR
 
@@ -160,5 +163,73 @@ describe('an unpublished bump is reported', () => {
     expect(status).toBe(1);
     expect(out).toContain('unpublished-bump');
     expect(out).toContain('1.1.0');
+  });
+});
+
+/**
+ * A question this check could not ask must never read as a clean answer.
+ *
+ * The original version caught any `npm view` failure and `continue`d. With one
+ * package unreachable and thirty fine, `compared` stayed above zero, no finding
+ * was recorded, and the run exited 0 having never looked at the one that
+ * mattered — the same shape as the stalled pipeline it was written to detect,
+ * reproduced inside the detector. Found in review, not by these tests, so they
+ * are here now.
+ */
+describe('npm query failures fail closed', () => {
+  it('treats a 404 as a pending first release, not a stall', () => {
+    // release.yml prints "🆕 first release" for this and publishes.
+    // 404 for x only; y still answers, so `compared` stays above zero and this
+    // asserts the 404 path rather than the nothing-checked guard.
+    stub(
+      'npm',
+      'case "$*" in *eslint-plugin-x*) echo "npm error code E404" >&2; exit 1 ;; esac; echo 1.0.0',
+    );
+
+    const { out, status } = run();
+    expect(status).toBe(0);
+    expect(out).toContain('never published');
+    expect(out).not.toContain('query-failed');
+  });
+
+  it('reports a non-404 failure instead of skipping the package', () => {
+    stub(
+      'npm',
+      'case "$*" in *eslint-plugin-x*) echo "npm error network ETIMEDOUT" >&2; exit 1 ;; esac; echo 1.0.0',
+    );
+
+    const { out, status } = run();
+    expect(status).toBe(1);
+    expect(out).toContain('query-failed');
+    expect(out).toContain('eslint-plugin-x');
+  });
+
+  it('reports an empty version rather than accepting it', () => {
+    stub('npm', 'echo ""');
+
+    expect(run().status).toBe(1);
+  });
+});
+
+describe('only a version ahead of the registry is a stall', () => {
+  it('does not flag a registry that is ahead of main', () => {
+    // A hotfix published out-of-band, or a revert on main. Worth knowing —
+    // but calling it an unpublished bump would be false.
+    stub('npm', 'echo 2.0.0');
+
+    const { out, status } = run();
+    expect(out).not.toContain('unpublished-bump');
+    expect(out).toContain('registry-ahead');
+    expect(status).toBe(1);
+  });
+
+  it('treats a stable release as newer than its own prerelease', () => {
+    // main 1.0.0 vs npm 1.0.0-rc.1: main is ahead, so this IS an unpublished
+    // bump. A naive string compare would call 1.0.0 < 1.0.0-rc.1.
+    stub('npm', 'echo 1.0.0-rc.1');
+
+    const { out, status } = run();
+    expect(status).toBe(1);
+    expect(out).toContain('unpublished-bump');
   });
 });

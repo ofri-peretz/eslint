@@ -81,8 +81,14 @@ concurrent slots are the binding constraint.
 
 **The cost is real and is not a rounding error.** Scorecard's SAST check
 measures the proportion of commits analysed and had reported 25 of 30. With one
-scan a day that ratio collapses, and the README badge with it. A vulnerability
-introduced by a merge is now found within 24 hours instead of ~208 seconds.
+scan a day that ratio falls, and the OpenSSF Scorecard score falls with it. A
+vulnerability introduced by a merge is now found within 24 hours instead of
+~208 seconds.
+
+The README's CodeQL badge is a *different* signal and is not what drops: it
+reports the latest run's pass/fail, so it stays green on a passing daily scan
+and simply reflects an older commit. Conflating the two would send the next
+reader looking for a red badge that never appears.
 
 That trade was the maintainer's call, made explicitly. It is one line to
 revert — restore `push: branches: [main]` in `codeql.yml` — and this amendment

@@ -179,6 +179,19 @@ const CONSUMER_FIELDS = [
   'peerDependenciesMeta',
   'optionalDependencies',
   'publishConfig',
+  // Install-time gates: npm refuses to install on a non-matching platform, so
+  // narrowing any of these can break a consumer without touching a line of src.
+  'os',
+  'cpu',
+  'libc',
+  // Changes what the published tarball actually contains.
+  'bundleDependencies',
+  'bundledDependencies',
+  // Flipping `private` decides whether the package publishes at all -- the most
+  // consumer-visible field there is, since it governs whether they get anything.
+  'private',
+  // Internal `#subpath` mappings resolve at runtime inside the shipped package.
+  'imports',
 ];
 
 /**

@@ -181,6 +181,36 @@ const manifests = fs
   .map((d) => path.join(REPO_ROOT, 'packages', d, 'package.json'))
   .filter((p) => fs.existsSync(p));
 
+/**
+ * Compare two semver strings: >0 when `a` is newer, <0 when `b` is, 0 when
+ * equal. Release numbers first, then the prerelease rule that actually bites
+ * here -- 1.2.0 is newer than 1.2.0-rc.1, so a stable release never reads as
+ * "behind" its own release candidate.
+ *
+ * Hand-rolled rather than adding `semver`: this needs an ordering, not range
+ * satisfaction, and the dependency would be new to the root manifest.
+ */
+function compareVersions(a: string, b: string): number {
+  const split = (v: string) => {
+    const [core = '', pre = ''] = v.replace(/^v/, '').split('-', 2);
+    return {
+      nums: core.split('.').map((n) => Number.parseInt(n, 10) || 0),
+      pre,
+    };
+  };
+  const x = split(a);
+  const y = split(b);
+  for (let i = 0; i < 3; i++) {
+    const d = (x.nums[i] ?? 0) - (y.nums[i] ?? 0);
+    if (d !== 0) return d > 0 ? 1 : -1;
+  }
+  if (x.pre === y.pre) return 0;
+  if (!x.pre) return 1; // a release outranks any prerelease of the same core
+  if (!y.pre) return -1;
+  return x.pre > y.pre ? 1 : -1;
+}
+
+let neverPublished = 0;
 let compared = 0;
 for (const m of manifests) {
   const pkg = JSON.parse(fs.readFileSync(m, 'utf8')) as {
@@ -194,22 +224,65 @@ for (const m of manifests) {
     latest = execFileSync('npm', ['view', `${pkg.name}@latest`, 'version'], {
       encoding: 'utf8',
       timeout: 30_000,
-      stdio: ['ignore', 'pipe', 'ignore'],
+      stdio: ['ignore', 'pipe', 'pipe'],
     }).trim();
-  } catch {
-    continue; // never published, or the registry is unreachable
+  } catch (err) {
+    // A 404 is the documented first-release path -- release.yml prints
+    // "🆕 first release" and publishes. Anything else (registry down, network,
+    // auth, timeout) is a question this check could not ask, and skipping it
+    // silently is the exact failure this file exists to detect: with one
+    // package unreachable and the rest fine, `compared` stays above zero and
+    // the run exits 0 having never looked at the one that mattered.
+    const stderr = String(
+      (err as { stderr?: unknown }).stderr ?? (err as Error).message ?? '',
+    );
+    if (/E404|is not in this registry|404 Not Found/i.test(stderr)) {
+      neverPublished++;
+      continue;
+    }
+    findings.push({
+      kind: 'query-failed',
+      detail:
+        `Could not read ${pkg.name}@latest from npm: ${stderr.split('\n')[0]}. ` +
+        'Its publish state is unknown, so this run cannot vouch for it.',
+    });
+    continue;
   }
-  if (!latest) continue;
+  if (!latest) {
+    findings.push({
+      kind: 'query-failed',
+      detail: `npm returned an empty version for ${pkg.name}@latest.`,
+    });
+    continue;
+  }
   compared++;
-  if (latest !== pkg.version)
+  // Only AHEAD is a stall. Equal is healthy, and BEHIND means the registry has
+  // something main does not -- a hotfix published out-of-band, or a revert on
+  // main -- which is worth knowing but is not an unpublished bump, and calling
+  // it one would be the cry-wolf failure again.
+  const ordering = compareVersions(pkg.version, latest);
+  if (ordering > 0)
     findings.push({
       kind: 'unpublished-bump',
       detail:
         `${pkg.name} is ${pkg.version} on main but ${latest} on npm. ` +
         'A version bump landed and the publish did not follow.',
     });
+  else if (ordering < 0)
+    findings.push({
+      kind: 'registry-ahead',
+      detail:
+        `${pkg.name} is ${pkg.version} on main but ${latest} on npm -- the ` +
+        'registry is AHEAD. Something published outside this pipeline, or main ' +
+        'was reverted without unpublishing.',
+    });
 }
-checked.push(`${compared} published package version(s) compared against npm`);
+checked.push(
+  `${compared} published package version(s) compared against npm` +
+    (neverPublished > 0
+      ? `; ${neverPublished} never published (first release pending)`
+      : ''),
+);
 
 // A run that compared nothing proves nothing — the same silent-green failure
 // this script exists to detect, reproduced inside the detector.

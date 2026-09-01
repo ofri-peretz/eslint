@@ -79,11 +79,35 @@ Two mechanisms, and the second undid the first: `ci-test-shard.mts` correctly
 computes the dependent closure and *selects* those plugins, and turbo then
 skipped them.
 
-**Fixed** by `test.dependsOn: ["^build"]` (and `test:coverage`). Locked
-behaviourally, not structurally, by
+**Fixed — but not by `dependsOn`, which is still `[]`.** Read `turbo.json`
+before trusting this paragraph: `test.dependsOn` and `test:coverage.dependsOn`
+are both `[]` on purpose. Vitest aliases workspace dependencies to their
+*source*, not their build output, so `^build` would serialise every shard
+behind a build that the tests never read — cost without a correctness gain, and
+`turbo-cache-inputs-lock.test.ts` rejects it for exactly that reason.
+
+The coupling is declared instead as `globalDependencies`, which folds those
+sources into *every* task hash:
+
+```jsonc
+"globalDependencies": [
+  "packages/eslint-devkit/src/**",
+  "packages/ui/src/**",
+  "tools/cwe-analytics-engine/src/**",
+  // ... plus the shared build/lint config
+]
+```
+
+Coarser than `dependsOn` — a devkit edit now invalidates every package's test
+hash, not just its dependents' — and that is the accepted trade: over-running
+tests is a cost, skipping them is a lie.
+
+Locked behaviourally, not structurally, by
 `scripts/__tests__/test-cache-sees-upstream-lock.test.ts`: it reads the task
 hash via `--dry=json`, perturbs an upstream source file, and requires the hash
-to move. Sabotage-proven — reverting the config fails it with the stale hash.
+to move. Because it asserts the *behaviour*, it holds whichever mechanism
+provides it. Sabotage-proven — removing the coupling fails it with the stale
+hash.
 
 ### Still-trusted cache behaviour
 
@@ -125,7 +149,7 @@ an issue**, or it is not covered — a red cron notifies nobody by default.
 
 | Not on the PR path | Covered by | Cadence | Files an issue |
 |---|---|---|---|
-| CodeQL analysis | `codeql.yml` | post-merge + schedule | — |
+| CodeQL analysis | `codeql.yml` | **schedule only** (daily `17 3 * * *`) + `workflow_dispatch` | No merge is scanned at merge time; a vulnerability introduced by a merge is found within 24h. See `docs/adr/0001-codeql-runs-post-merge-not-per-pr.md`. A failed scan files an issue. |
 | Coverage thresholds (`CI_TEST_SHARD_COVERAGE=1`) | `codecov.yml` | daily 08:45 | ✅ |
 | Full drift re-run of the heavy gate | `quality-full.yml` | Sun 04:00 | ✅ |
 | Link integrity | `check-links.yml` | Fri 04:25 | ✅ |
@@ -166,7 +190,8 @@ so a persistent failure cannot turn the channel into noise and get muted.
    upstream/dependent pairs and declared `globalDependencies`, and exits
    non-zero when a hash fails to move — so the `test.dependsOn` hole in §2
    would no longer depend on someone asking the right question at the right
-   moment.
+   moment. (§2 now records that the coupling comes from
+   `globalDependencies`, not `dependsOn`.)
 
    What remains: it is a *sample*, not the full cross-product, and it rotates
    per run rather than covering everything each time. A pair outside the
