@@ -27,6 +27,18 @@ describe('no-format-string-injection', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - safe format string usage', noFormatStringInjection, {
       valid: [
+    // Each reaches a `propertyName(...)` sentinel with an unresolvable key.
+    // An unnameable property is not a request surface, not a console method,
+    // not `util.format`, and contributes no name to a member path.
+    'function f(req, k) { console.log(req[k]); }',
+    'function f(k, x) { console[k]("%s", x); }',
+    'function f(util, k, x) { util[k]("%s", x); }',
+    'function f(a, k, x) { console.log(a.b[k], x); }',
+    // `req[k].name` reaches the request-surface sentinel: the OUTER member's
+    // object is `req[k]`, whose key resolves to nothing.
+    'function f(req, k) { util.format(req[k].name); }',
+    // A dynamic console method reaches the console-sink sentinel.
+    'function f(k, userInput) { console[k](userInput); }',
         // Safe hardcoded format strings
         {
           name: 'a literal format string with the values as arguments',
