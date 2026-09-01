@@ -20,6 +20,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'workerInnerhtml';
@@ -98,14 +99,15 @@ export const noWorkerMessageInnerhtml = createRule<RuleOptions, MessageIds>({
 
         if (
           node.left.type === AST_NODE_TYPES.MemberExpression &&
-          node.left.property.type === AST_NODE_TYPES.Identifier &&
-          DANGEROUS_PROPERTIES.has(node.left.property.name)
+          // `el['innerHTML'] = …` and `el['insertAdjacentHTML'](…)` write
+          // the same markup the dotted spellings do.
+          DANGEROUS_PROPERTIES.has(propertyName(node.left) ?? '')
         ) {
           if (payloadSource(node.right) === 'worker') {
             context.report({
               node,
               messageId: 'workerInnerhtml',
-              data: { method: node.left.property.name },
+              data: { method: propertyName(node.left) as string },
             });
           }
         }
@@ -121,15 +123,16 @@ export const noWorkerMessageInnerhtml = createRule<RuleOptions, MessageIds>({
 
         if (
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          DANGEROUS_METHODS.has(node.callee.property.name)
+          // `el['innerHTML'] = …` and `el['insertAdjacentHTML'](…)` write
+          // the same markup the dotted spellings do.
+          DANGEROUS_METHODS.has(propertyName(node.callee) ?? '')
         ) {
           for (const arg of node.arguments) {
             if (payloadSource(arg) === 'worker') {
               context.report({
                 node,
                 messageId: 'workerInnerhtml',
-                data: { method: node.callee.property.name },
+                data: { method: propertyName(node.callee) as string },
               });
               break;
             }

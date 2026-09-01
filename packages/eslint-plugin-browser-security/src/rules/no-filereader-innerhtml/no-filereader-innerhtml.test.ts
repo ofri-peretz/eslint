@@ -19,6 +19,18 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-filereader-innerhtml', noFilereaderInnerhtml, {
   valid: [
+    // A sink chosen at RUNTIME names neither a property nor a method we
+    // can recognise — unlike `el['innerHTML']`, there is nothing to read.
+    {
+      name: 'a runtime-keyed sink names nothing',
+      code: `
+        const reader = new FileReader();
+        reader.addEventListener('loadend', (e) => {
+          element[sink] = e.target.result;
+          element[write](e.target.result);
+        });
+      `,
+    },
     {
       name: 'a different property of the event, not the file bytes',
       // `result` on some other object is not FileReader content.

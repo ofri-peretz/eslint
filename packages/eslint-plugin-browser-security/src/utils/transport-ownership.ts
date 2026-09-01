@@ -130,9 +130,9 @@ export function isRequestCall(
   }
   if (
     callee.type !== AST_NODE_TYPES.MemberExpression ||
-    callee.computed ||
-    callee.property.type !== AST_NODE_TYPES.Identifier ||
-    !AXIOS_HTTP_METHODS.has(callee.property.name)
+    // `axios['get'](u)` issues the same request. `propertyNameOf` is right
+    // there in this file; these two gates never reached for it.
+    !AXIOS_HTTP_METHODS.has(propertyNameOf(callee) ?? '')
   ) {
     return false;
   }
@@ -294,13 +294,10 @@ export function isSubresourcePosition(node: TSESTree.Node): boolean {
     ) {
       return true;
     }
-    if (
-      callee.type === AST_NODE_TYPES.MemberExpression &&
-      !callee.computed &&
-      callee.property.type === AST_NODE_TYPES.Identifier
-    ) {
+    if (callee.type === AST_NODE_TYPES.MemberExpression) {
+      const method = propertyNameOf(callee);
       if (
-        SUBRESOURCE_LOADERS.has(callee.property.name) &&
+        SUBRESOURCE_LOADERS.has(method ?? '') &&
         parent.arguments.includes(value as TSESTree.CallExpressionArgument)
       ) {
         return true;
@@ -309,7 +306,7 @@ export function isSubresourcePosition(node: TSESTree.Node): boolean {
       // element stays unknown — but `setAttribute('src', …)` names the
       // subresource property outright, which is the same evidence as `.src =`.
       if (
-        callee.property.name === 'setAttribute' &&
+        method === 'setAttribute' &&
         parent.arguments[1] === value &&
         parent.arguments[0]?.type === AST_NODE_TYPES.Literal &&
         typeof parent.arguments[0].value === 'string' &&

@@ -20,6 +20,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unsafeInnerhtml';
@@ -104,8 +105,9 @@ export const noPostmessageInnerhtml = createRule<RuleOptions, MessageIds>({
 
         if (
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          DANGEROUS_METHODS.has(node.callee.property.name)
+          // `el['innerHTML'] = …` and `el['insertAdjacentHTML'](…)` write
+          // the same markup the dotted spellings do.
+          DANGEROUS_METHODS.has(propertyName(node.callee) ?? '')
         ) {
           // Check if any argument references event.data
           for (const arg of node.arguments) {
@@ -114,7 +116,7 @@ export const noPostmessageInnerhtml = createRule<RuleOptions, MessageIds>({
                 node,
                 messageId: 'unsafeInnerhtml',
                 data: {
-                  method: node.callee.property.name,
+                  method: propertyName(node.callee) as string,
                 },
               });
               break;
@@ -132,8 +134,9 @@ export const noPostmessageInnerhtml = createRule<RuleOptions, MessageIds>({
         // Check for innerHTML/outerHTML assignment
         if (
           node.left.type === AST_NODE_TYPES.MemberExpression &&
-          node.left.property.type === AST_NODE_TYPES.Identifier &&
-          DANGEROUS_PROPERTIES.has(node.left.property.name)
+          // `el['innerHTML'] = …` and `el['insertAdjacentHTML'](…)` write
+          // the same markup the dotted spellings do.
+          DANGEROUS_PROPERTIES.has(propertyName(node.left) ?? '')
         ) {
           // Check if right side references event.data
           if (payloadSource(node.right) === 'postmessage') {
@@ -141,7 +144,7 @@ export const noPostmessageInnerhtml = createRule<RuleOptions, MessageIds>({
               node,
               messageId: 'unsafeInnerhtml',
               data: {
-                method: node.left.property.name,
+                method: propertyName(node.left) as string,
               },
             });
           }
