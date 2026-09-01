@@ -15,6 +15,7 @@
 <p align="center">
   <a href="https://www.npmjs.com/package/eslint-plugin-gemini-security" target="_blank"><img src="https://img.shields.io/npm/v/eslint-plugin-gemini-security.svg" alt="NPM Version" /></a>
   <a href="https://www.npmjs.com/package/eslint-plugin-gemini-security" target="_blank"><img src="https://img.shields.io/npm/dm/eslint-plugin-gemini-security.svg" alt="NPM Downloads" /></a>
+  <a href="https://packagephobia.com/result?p=eslint-plugin-gemini-security" target="_blank"><img src="https://badgen.net/packagephobia/install/eslint-plugin-gemini-security" alt="Install Size" /></a>
   <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="Package License" /></a>
   <a href="https://scorecard.dev/viewer/?uri=github.com/ofri-peretz/eslint" target="_blank"><img src="https://api.securityscorecards.dev/projects/github.com/ofri-peretz/eslint/badge" alt="OpenSSF Scorecard" /></a>
 </p>

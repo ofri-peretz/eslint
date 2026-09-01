@@ -56,7 +56,7 @@ withCanonicalDocsUrls('plugin-conventions', rules);
 export const plugin = {
   meta: {
     name: 'eslint-plugin-conventions',
-    version: '5.1.0',
+    version: '5.2.1',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;

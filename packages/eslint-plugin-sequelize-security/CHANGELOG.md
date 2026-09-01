@@ -5,6 +5,31 @@ All notable changes to `eslint-plugin-sequelize-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 0.3.7
+
+### Patch Changes
+
+- **🐛 Fix** — Add an install-size badge to the README prelude, linking to each package's packagephobia page. npm renders the README from the last publish, so a badge only appears on npmjs.com after a release.
+
+  Install size rather than bundle size: bundlephobia measures a browser bundle,
+  and nobody bundles an ESLint plugin into one, so the number would describe no
+  real cost. It was also returning `429` for every package, `react` included.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.18.2`
+
+## 0.3.6
+
+### Patch Changes
+
+- **🐛 Fix** — Stop pointing readers at retired package names. `secure-coding`'s "extend your coverage" block linked `eslint-plugin-jwt` and `sequelize-security`'s prose named `eslint-plugin-pg` — both deprecated on npm since #414, and following either installs the frozen pre-rename build rather than the maintained one.
+
+## 0.3.5
+
+### Patch Changes
+
+- **🐛 Fix** — Refresh the README npm serves for these plugins. npm renders the README from the last publish, so all seven still advertise `eslint-plugin-pg` and `eslint-plugin-jwt` — names retired in #414 and since deprecated on npm. A reader who followed one installed the frozen pre-rename package instead of the maintained one. The repo has been correct since the rename; only a publish moves what npmjs.com shows.
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.18.1`
+
 ## 0.3.4
 
 ### Patch Changes

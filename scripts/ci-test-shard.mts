@@ -330,6 +330,10 @@ if (!Number.isInteger(shardTotal) || shardTotal < 1) {
 
 
 const { testable, untested } = discoverPackages(LANE);
+// Every testable package across BOTH lanes. `decideAffected` judges its `bug`
+// state against this, so a change owned by the other lane reports `none` here
+// instead of failing as an empty affected set.
+const UNIVERSE = [...discoverPackages('node').testable, ...discoverPackages('web').testable];
 const REVERSE_DEPS = reverseDeps(testable);
 
 // Zero-selection guard. `turbo run test --filter=...[origin/main]` used to
@@ -389,7 +393,7 @@ let affected: Set<string> | null = null;
 
 if (!runAll) {
   const changed = changedFiles();
-  const decision = decideAffected(changed, testable, REVERSE_DEPS);
+  const decision = decideAffected(changed, testable, REVERSE_DEPS, UNIVERSE);
   if (decision.mode === 'bug') {
     console.error(`::error::Files changed under ${decision.dirs.join(', ')} but the affected set is empty.`);
     console.error('That is a bug in the affected computation, not a fast path. Refusing to report success.');

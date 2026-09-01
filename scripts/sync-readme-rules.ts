@@ -668,6 +668,36 @@ export function processPlugin(entry: PluginEntry, opts: ProcessOptions): Process
 // CLI
 // ---------------------------------------------------------------------------
 
+/**
+ * Published packages that are not plugins, and so are not in the registry, but still
+ * need the ecosystem table. `@interlace/eslint-devkit` is on npm: a reader who lands
+ * there should be able to reach the thirty plugins it exists to build. Passing a
+ * `selfPackage` that matches no registry entry is deliberate — nothing is excluded,
+ * because devkit is not one of the thirty.
+ */
+const NON_PLUGIN_README_TARGETS = ['eslint-devkit'];
+
+function syncNonPluginReadmes(registry: PluginEntry[], dryRun: boolean): number {
+  let modified = 0;
+  for (const dir of NON_PLUGIN_README_TARGETS) {
+    const readmePath = path.join(PACKAGES_DIR, dir, 'README.md');
+    let readme: string;
+    try {
+      readme = fs.readFileSync(readmePath, 'utf-8');
+    } catch {
+      console.warn(`⏭️  ${dir}: README.md missing`);
+      continue;
+    }
+    const table = renderEcosystemTable(registry, `@interlace/${dir}`);
+    const result = spliceEcosystem(readme, table);
+    if (!result.modified) continue;
+    if (!dryRun) fs.writeFileSync(readmePath, result.content);
+    console.log(`✓ ${dir}: ecosystem table`);
+    modified++;
+  }
+  return modified;
+}
+
 function main(): void {
   const args = process.argv.slice(2);
   const dryRun = args.includes('--dry-run');
@@ -708,6 +738,7 @@ function main(): void {
   }
 
   console.log('='.repeat(60));
+  if (!singlePlugin) modified += syncNonPluginReadmes(registry, dryRun);
   console.log(`Processed ${targets.length} — modified ${modified}, skipped ${skipped}, errored ${errored}`);
 
   if (errored > 0) process.exit(1);
