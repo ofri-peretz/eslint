@@ -22,7 +22,21 @@ import {
   matchesAnyUserPattern,
   nameHasAnyWord,
 } from '@interlace/eslint-devkit';
-import { createRule, isTestFilePath } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  isTestFilePath,
+  // Aliased: this file already has a local `propertyName` holding a
+  // lower-cased route method, and shadowing the import there would be a quiet
+  // way to reintroduce exactly the bug being fixed.
+  propertyName as resolvedPropertyName,
+} from '@interlace/eslint-devkit';
+
+/*
+ * `router['get']('/admin', h)` registers the same route `router.get` does, and
+ * an unauthenticated admin endpoint is unauthenticated either way. Each gate
+ * below asked `property.type === Identifier`, so 32 of this rule's own true
+ * positives went silent when rewritten with a string subscript.
+ */
 
 type MessageIds = 'missingAuthentication';
 
@@ -220,11 +234,9 @@ function routeChainBase(node: TSESTree.Node): TSESTree.CallExpression | null {
     current.type === AST_NODE_TYPES.CallExpression &&
     current.callee.type === AST_NODE_TYPES.MemberExpression
   ) {
-    const property = current.callee.property;
-    if (
-      property.type === AST_NODE_TYPES.Identifier &&
-      property.name === 'route'
-    ) {
+    // `app['route']('/admin').get(h)` is Express's own chaining API in the
+    // notation a bundler emits. Reading `property.name` missed it.
+    if (resolvedPropertyName(current.callee) === 'route') {
       return current;
     }
     current = current.callee.object;
@@ -265,9 +277,9 @@ function isRouterFactory(node: TSESTree.Node): boolean {
   }
   if (
     callee.type === AST_NODE_TYPES.MemberExpression &&
-    callee.property.type === AST_NODE_TYPES.Identifier
+    resolvedPropertyName(callee) !== null
   ) {
-    return ROUTER_FACTORY_MEMBERS.has(callee.property.name);
+    return ROUTER_FACTORY_MEMBERS.has(resolvedPropertyName(callee) as string);
   }
   return false;
 }
@@ -348,9 +360,9 @@ function isInsideAuthMiddleware(
       // Check if it's a member expression like app.use(auth())
       if (
         callee.type === 'MemberExpression' &&
-        callee.property.type === 'Identifier'
+        resolvedPropertyName(callee) !== null
       ) {
-        const propertyName = callee.property.name.toLowerCase();
+        const propertyName = (resolvedPropertyName(callee) as string).toLowerCase();
         if (propertyName === 'use' || propertyName === 'all') {
           // Check if any argument is an auth middleware
           for (const arg of callExpr.arguments) {
@@ -650,7 +662,6 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
 
       // Check if it's a route handler call (app.get, router.post, etc.)
       if (node.callee.type === 'MemberExpression') {
-        const property = node.callee.property;
         const object = node.callee.object;
 
         // Only check if the object looks like an Express app/router: either an
@@ -678,8 +689,14 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
           chainedPath = base.arguments[0];
         }
 
-        if (property.type === 'Identifier') {
-          const methodName = property.name.toLowerCase();
+        // The gate that actually decided this rule's blindness:
+        // `router['get']('/admin', h)` registers the same route `router.get`
+        // does, and an unauthenticated admin endpoint is unauthenticated in
+        // either notation. Reading `property.name` meant every one of this
+        // rule's 32 true positives went silent when written with a subscript.
+        const resolvedMethod = resolvedPropertyName(node.callee);
+        if (resolvedMethod !== null) {
+          const methodName = resolvedMethod.toLowerCase();
 
           if (routeHandlerPatterns.includes(methodName)) {
             // `app.use(middleware)` with no path mounts GLOBAL middleware — it is not a

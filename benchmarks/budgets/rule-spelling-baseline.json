@@ -716,8 +716,6 @@
     "packages/eslint-plugin-secure-coding/src/rules/no-ldap-injection/index.ts::dotted-property-only::const propertyName = callee.property.name;",
     "packages/eslint-plugin-secure-coding/src/rules/no-log-injection/index.ts::dotted-property-only::if (!LOG_LEVEL_METHODS.has(callee.property.name)) return false;",
     "packages/eslint-plugin-secure-coding/src/rules/no-log-injection/index.ts::dotted-property-only::return receivers.has(object.property.name) ? object.property.name : null;",
-    "packages/eslint-plugin-secure-coding/src/rules/no-missing-authentication/index.ts::dotted-property-only::const propertyName = callee.property.name.toLowerCase();",
-    "packages/eslint-plugin-secure-coding/src/rules/no-missing-authentication/index.ts::dotted-property-only::return ROUTER_FACTORY_MEMBERS.has(callee.property.name);",
     "packages/eslint-plugin-secure-coding/src/rules/no-missing-authentication/index.ts::dotted-property-only::return `${objectPart}${node.property.name}`;",
     "packages/eslint-plugin-secure-coding/src/rules/no-pii-in-logs/index.ts::bare-object-key-only::return nameHasAnyWord(parent.key.name, terms);",
     "packages/eslint-plugin-secure-coding/src/rules/no-pii-in-logs/index.ts::dotted-property-only::!logMethods.has(node.callee.property.name)",
