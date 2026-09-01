@@ -15,6 +15,7 @@ import {
   MessageIcons,
   resolveModuleBinding,
   staticString,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
@@ -109,11 +110,9 @@ function isTmpdirCall(node: TSESTree.Node): boolean {
   return (
     node.type === 'CallExpression' &&
     node.callee.type === 'MemberExpression' &&
-    !node.callee.computed &&
     node.callee.object.type === 'Identifier' &&
     node.callee.object.name === 'os' &&
-    node.callee.property.type === 'Identifier' &&
-    node.callee.property.name === 'tmpdir'
+    propertyName(node.callee) === 'tmpdir'
   );
 }
 
@@ -417,9 +416,7 @@ export const noDataInTempStorage = createRule<RuleOptions, MessageIds>({
       if (
         node.type === AST_NODE_TYPES.CallExpression &&
         node.callee.type === AST_NODE_TYPES.MemberExpression &&
-        !node.callee.computed &&
-        node.callee.property.type === AST_NODE_TYPES.Identifier &&
-        (node.callee.property.name === 'join' || node.callee.property.name === 'resolve')
+        (propertyName(node.callee) === 'join' || propertyName(node.callee) === 'resolve')
       ) {
         // Filter-then-map cannot narrow through the call, so resolve first and
         // drop the unresolvable in one pass.

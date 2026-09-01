@@ -23,6 +23,7 @@ import {
   createRule,
   AST_NODE_TYPES,
   isTestFilePath,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'mathRandomCrypto' | 'pseudoRandomBytes';
@@ -960,9 +961,7 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
          */
         if (
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          !node.callee.computed &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          node.callee.property.name === 'pseudoRandomBytes'
+          propertyName(node.callee) === 'pseudoRandomBytes'
         ) {
           context.report({ node, messageId: 'pseudoRandomBytes' });
           return;

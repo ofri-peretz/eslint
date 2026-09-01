@@ -13,7 +13,7 @@
  * @see https://cwe.mitre.org/data/definitions/78.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, formatLLMMessage, MessageIcons} from '@interlace/eslint-devkit';
 import { createRule, isStaticExpression, propertyName } from '@interlace/eslint-devkit';
 
 /*
@@ -834,8 +834,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
         // Pattern 1: if (ALLOWED.includes(arg)) { ... our call is inside ... }
         if (test.type === 'CallExpression' &&
             test.callee.type === 'MemberExpression' &&
-            test.callee.property.type === 'Identifier' &&
-            test.callee.property.name === 'includes') {
+            propertyName(test.callee) === 'includes') {
           const validatedVarNames = new Set<string>();
           for (const testArg of test.arguments) {
             if (testArg.type === 'Identifier') validatedVarNames.add(testArg.name);
@@ -850,8 +849,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
         if (test.type === AST_NODE_TYPES.UnaryExpression && test.operator === '!' &&
             test.argument.type === AST_NODE_TYPES.CallExpression &&
             test.argument.callee.type === AST_NODE_TYPES.MemberExpression &&
-            test.argument.callee.property.type === AST_NODE_TYPES.Identifier &&
-            test.argument.callee.property.name === 'includes') {
+            propertyName(test.argument.callee) === 'includes') {
           const consequent = ifNode.consequent;
           const isGuardBody = (
             consequent.type === AST_NODE_TYPES.ReturnStatement ||

@@ -411,9 +411,7 @@ function isBufferObject(node: TSESTree.Node): boolean {
   if (node.type === AST_NODE_TYPES.Identifier) return node.name === 'Buffer';
   return (
     node.type === AST_NODE_TYPES.MemberExpression &&
-    !node.computed &&
-    node.property.type === AST_NODE_TYPES.Identifier &&
-    node.property.name === 'Buffer' &&
+    propertyName(node) === 'Buffer' &&
     isBufferModuleRequire(node.object)
   );
 }
@@ -848,8 +846,7 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
         size.callee.type === AST_NODE_TYPES.MemberExpression &&
         size.callee.object.type === AST_NODE_TYPES.Identifier &&
         size.callee.object.name === 'Math' &&
-        size.callee.property.type === AST_NODE_TYPES.Identifier &&
-        size.callee.property.name === 'min'
+        propertyName(size.callee) === 'min'
       ) {
         return size.arguments.some(
           (argument) =>
@@ -922,11 +919,9 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
       }
       if (
         callee.type === AST_NODE_TYPES.MemberExpression &&
-        !callee.computed &&
         callee.object.type === AST_NODE_TYPES.Identifier &&
         callee.object.name === 'Buffer' &&
-        callee.property.type === AST_NODE_TYPES.Identifier &&
-        BUFFER_ALLOCATORS.has(callee.property.name)
+        BUFFER_ALLOCATORS.has(propertyName(callee) ?? '')
       ) {
         return size;
       }
@@ -1041,11 +1036,9 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
     function destinationArgumentCallee(callee: TSESTree.Node): string | null {
       if (
         callee.type === AST_NODE_TYPES.MemberExpression &&
-        !callee.computed &&
-        callee.property.type === AST_NODE_TYPES.Identifier &&
-        DESTINATION_ARGUMENT_CALLS.has(callee.property.name)
+        DESTINATION_ARGUMENT_CALLS.has(propertyName(callee) ?? '')
       ) {
-        return callee.property.name;
+        return propertyName(callee);
       }
       if (
         callee.type !== AST_NODE_TYPES.Identifier ||

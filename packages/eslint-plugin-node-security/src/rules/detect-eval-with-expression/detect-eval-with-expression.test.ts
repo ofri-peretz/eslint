@@ -26,6 +26,8 @@ describe('detect-eval-with-expression', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - no eval calls', detectEvalWithExpression, {
       valid: [
+        // A name chosen at RUNTIME resolves to nothing to match.
+        `const r = globalThis[fn](userInput);`,
         'const x = Math.eval();',
         'const obj = { eval: () => {} }; obj.eval("code");',
         'function myFunction(data) { return data; }',

@@ -100,6 +100,16 @@ describe('no-weak-hash-algorithm', () => {
           const tag = md5(payload);
         `,
       },
+      // The subscripted spelling. Was pinned as INVALID under "a computed
+      // member says nothing about which function is called" — it names
+      // `createHmac` outright, so denying it the exemption above reported a
+      // false positive on the notation a minifier emits.
+      {
+        code: `
+          function sha1(data, secret) { return crypto['createHmac']('sha1', secret).update(data).digest(); }
+          const sessionToken = sha1(body, secret);
+        `,
+      },
       // The destructured spelling — the callee is a bare Identifier rather
       // than a member of `crypto`, and it is the same HMAC.
       {
@@ -196,11 +206,11 @@ describe('no-weak-hash-algorithm', () => {
           },
         ],
       },
-      // A computed member says nothing about which function is called, so it
-      // is not HMAC evidence and the helper keeps reporting.
+      // A callee chosen at RUNTIME says nothing about which function is
+      // called, so it is not HMAC evidence and the helper keeps reporting.
       {
         code: `
-          function sha1(data, secret) { return crypto['createHmac']('sha1', secret).update(data).digest(); }
+          function sha1(data, secret) { return crypto[make]('sha1', secret).update(data).digest(); }
           const sessionToken = sha1(body, secret);
         `,
         errors: 1,

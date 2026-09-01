@@ -36,7 +36,7 @@
  */
 
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { createRule, formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
 
 type MessageIds = 'envKeyInjection' | 'envBulkInjection';
 
@@ -79,11 +79,9 @@ const MAX_TRACE_DEPTH = 3;
 function isProcessEnv(node: TSESTree.Node): boolean {
   return (
     node.type === 'MemberExpression' &&
-    !node.computed &&
     node.object.type === 'Identifier' &&
     node.object.name === 'process' &&
-    node.property.type === 'Identifier' &&
-    node.property.name === 'env'
+    propertyName(node) === 'env'
   );
 }
 

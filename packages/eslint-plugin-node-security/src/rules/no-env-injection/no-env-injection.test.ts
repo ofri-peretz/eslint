@@ -44,7 +44,7 @@ describe('no-env-injection', () => {
       `function h(req) { config[req.body.key] = req.body.value; }`,
       `function h(req) { process.argv[req.body.key] = 1; }`,
       `function h(req) { other.env[req.body.key] = 1; }`,
-      `function h(req) { process['env'][req.body.key] = 1; }`,
+      `function h(req) { process[bag][req.body.key] = 1; }`,
       // Assignment target is not a member expression at all.
       `function h(req) { let x; x = req.body.key; }`,
       // A key traced to something that is not request-derived.
@@ -99,6 +99,12 @@ describe('no-env-injection', () => {
       },
     ],
     invalid: [
+      // Was listed above under "Not process.env." — but `process['env']` is
+      // exactly process.env, and this writes an attacker-chosen key into it.
+      {
+        code: `function h(req) { process['env'][req.body.key] = 1; }`,
+        errors: 1,
+      },
       // The two options COMPOSE: `extraRequestRoots` is appended to whatever
       // `requestRootNames` is, so this pair means exactly `inbound`.
       {

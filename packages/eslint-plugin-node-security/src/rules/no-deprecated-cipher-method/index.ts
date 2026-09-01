@@ -12,7 +12,7 @@
  * @see https://nodejs.org/api/crypto.html#cryptocreatecipheralgorithm-password-options
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES, isTestFilePath } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES, isTestFilePath, propertyName } from '@interlace/eslint-devkit';
 
 type MessageIds =
   | 'deprecatedCipherMethod'
@@ -91,8 +91,7 @@ export const noDeprecatedCipherMethod = createRule<RuleOptions, MessageIds>({
       // Check for crypto.createCipher() or crypto.createDecipher()
       if (
         node.callee.type === AST_NODE_TYPES.MemberExpression &&
-        node.callee.property.type === AST_NODE_TYPES.Identifier &&
-        DEPRECATED_METHODS.has(node.callee.property.name)
+        DEPRECATED_METHODS.has(propertyName(node.callee) ?? '')
       ) {
         // Capture narrowed type before callback (TypeScript loses narrowing in closures)
         const callee = node.callee;

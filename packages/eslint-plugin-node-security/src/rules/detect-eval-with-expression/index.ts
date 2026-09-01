@@ -13,7 +13,7 @@
  * @see https://cwe.mitre.org/data/definitions/95.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, staticString } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, staticString, propertyName } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import {
   constInitializerOf,
@@ -564,13 +564,11 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
       }
       if (
         callee.type === 'MemberExpression' &&
-        !callee.computed &&
         callee.object.type === 'Identifier' &&
         GLOBAL_OBJECTS.has(callee.object.name) &&
-        callee.property.type === 'Identifier' &&
-        evalFunctions.has(callee.property.name)
+        evalFunctions.has(propertyName(callee) ?? '')
       ) {
-        return callee.property.name;
+        return propertyName(callee) as string;
       }
       return null;
     };

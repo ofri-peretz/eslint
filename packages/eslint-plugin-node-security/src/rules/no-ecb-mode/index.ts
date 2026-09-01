@@ -12,7 +12,7 @@
  * @see https://blog.cloudflare.com/why-are-some-images-more-secure-than-others/
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES, isTestFilePath } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES, isTestFilePath, propertyName } from '@interlace/eslint-devkit';
 import { resolveConstantString } from '../../utils/const-value';
 
 type MessageIds =
@@ -101,8 +101,7 @@ export const noEcbMode = createRule<RuleOptions, MessageIds>({
       // Check for crypto.createCipher*() pattern
       const isCipherCall =
         (node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          cipherMethods.has(node.callee.property.name)) ||
+          cipherMethods.has(propertyName(node.callee) ?? '')) ||
         (node.callee.type === AST_NODE_TYPES.Identifier &&
           cipherMethods.has(node.callee.name));
 

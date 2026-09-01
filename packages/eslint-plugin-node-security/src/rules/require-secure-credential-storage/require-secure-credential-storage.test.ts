@@ -279,8 +279,8 @@ ruleTester.run(
       // Not `process.env` — a lookalike object.
       'config.env.SESSION_TOKEN = t;',
       'process.argv.SECRET = s;',
-      // `env` reached through a computed property is not provably process.env.
-      'process["env"].SESSION_TOKEN = t;',
+      // An `env` chosen at RUNTIME is not provably process.env.
+      'process[bag].SESSION_TOKEN = t;',
 
       // ── The alias arm, and where it stops ──────────────────────────────────
       // A `let` can hold something else by the time the write happens, so its
@@ -315,6 +315,13 @@ ruleTester.run(
       // Evidence in the TARGET name.
       {
         code: 'process.env.SESSION_TOKEN = sessionToken;',
+        errors: [{ messageId: 'credentialInEnvironment' }],
+      },
+      // Was pinned as valid — "`env` reached through a computed property is
+      // not provably process.env". `process['env']` IS process.env; it is
+      // what a minifier writes, and it holds the same token.
+      {
+        code: 'process["env"].SESSION_TOKEN = sessionToken;',
         errors: [{ messageId: 'credentialInEnvironment' }],
       },
       // Bracket notation names the same slot as dot notation.

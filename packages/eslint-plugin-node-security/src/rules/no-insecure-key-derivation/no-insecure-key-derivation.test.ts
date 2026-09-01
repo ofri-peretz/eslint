@@ -23,6 +23,10 @@ const ruleTester = new RuleTester({
 describe('no-insecure-key-derivation', () => {
   ruleTester.run('no-insecure-key-derivation', noInsecureKeyDerivation, {
     valid: [
+      // A name chosen at RUNTIME resolves to nothing to match.
+      `crypto[derive](password, salt, 1000, 32, 'sha256', cb);`,
+      // A name chosen at RUNTIME resolves to nothing to match.
+      `crypto.subtle[derive]({ name: 'PBKDF2' }, k, 256);`,
       { name: '100,000', code: 'crypto.pbkdf2(password, salt, 100000, 32, "sha256", callback);' },
       { code: 'crypto.pbkdf2Sync(password, salt, 600000, 32, "sha256");' },
       { code: 'crypto.pbkdf2(password, salt, iterations, 32, "sha256", callback);' },

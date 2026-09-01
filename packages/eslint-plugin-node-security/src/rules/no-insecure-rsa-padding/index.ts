@@ -13,7 +13,7 @@
  * @see https://people.redhat.com/~hkario/marvin/
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES, isTestFilePath } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES, isTestFilePath, propertyName } from '@interlace/eslint-devkit';
 
 type MessageIds =
   | 'insecureRsaPadding'
@@ -101,8 +101,7 @@ export const noInsecureRsaPadding = createRule<RuleOptions, MessageIds>({
 
       const isRsaCall =
         (node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          rsaMethods.has(node.callee.property.name)) ||
+          rsaMethods.has(propertyName(node.callee) ?? '')) ||
         (node.callee.type === AST_NODE_TYPES.Identifier &&
           rsaMethods.has(node.callee.name));
 

@@ -20,6 +20,7 @@ import {
   AST_NODE_TYPES,
   resolveModuleBinding,
   unwrapTypeSyntax,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { constInitializerOf, resolveConstantString } from '../../utils/const-value';
 
@@ -168,8 +169,7 @@ function isPbkdf2Callee(sourceCode: SourceCode, callee: TSESTree.Node, depth = 0
 
   if (
     callee.type === AST_NODE_TYPES.MemberExpression &&
-    callee.property.type === AST_NODE_TYPES.Identifier &&
-    PBKDF2_EXPORTS.has(callee.property.name)
+    PBKDF2_EXPORTS.has(propertyName(callee) ?? '')
   ) {
     return true;
   }
@@ -317,8 +317,7 @@ export const noInsecureKeyDerivation = createRule<RuleOptions, MessageIds>({
       // meant, so only an explicit count is judged here.
       if (
         (node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          node.callee.property.name === 'PBKDF2') ||
+          propertyName(node.callee) === 'PBKDF2') ||
         (node.callee.type === AST_NODE_TYPES.Identifier && node.callee.name === 'PBKDF2')
       ) {
         const options = node.arguments[2];
@@ -334,8 +333,7 @@ export const noInsecureKeyDerivation = createRule<RuleOptions, MessageIds>({
       // so the callee alone never identifies the sink.
       if (
         node.callee.type === AST_NODE_TYPES.MemberExpression &&
-        node.callee.property.type === AST_NODE_TYPES.Identifier &&
-        SUBTLE_DERIVE_METHODS.has(node.callee.property.name)
+        SUBTLE_DERIVE_METHODS.has(propertyName(node.callee) ?? '')
       ) {
         const params = node.arguments[0];
         if (params === undefined) return;

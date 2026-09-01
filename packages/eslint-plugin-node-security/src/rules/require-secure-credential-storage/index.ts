@@ -88,11 +88,9 @@ export const requireSecureCredentialStorage = createRule<
       if (depth > 2) return false;
       if (
         node.type === AST_NODE_TYPES.MemberExpression &&
-        !node.computed &&
         node.object.type === AST_NODE_TYPES.Identifier &&
         node.object.name === 'process' &&
-        node.property.type === AST_NODE_TYPES.Identifier &&
-        node.property.name === 'env'
+        propertyName(node) === 'env'
       ) {
         return true;
       }

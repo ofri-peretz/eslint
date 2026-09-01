@@ -695,11 +695,12 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
         .getScope(id)
         .references.find((ref) => ref.identifier === id)?.resolved != null;
 
+    // `has(null)` is false, which is the answer a runtime-keyed member should
+    // get — so the cast, not a `?? ''` sentinel whose empty-string arm no
+    // input can distinguish from the null one.
     const readsRequestSurface = (node: TSESTree.Node | undefined): boolean =>
       node?.type === AST_NODE_TYPES.MemberExpression &&
-      !node.computed &&
-      node.property.type === AST_NODE_TYPES.Identifier &&
-      REQUEST_SURFACE.has(node.property.name);
+      REQUEST_SURFACE.has(propertyName(node) as string);
 
     const hasRequestEvidence = (id: TSESTree.Identifier): boolean => {
       // The access in hand: `ctx.query.file` reaches here as the `ctx` of
@@ -930,11 +931,9 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
           // A closed set of member names off `process`, not a spelling heuristic:
           // these are the documented Node properties an invoker controls.
           if (
-            !node.computed &&
             node.object.type === AST_NODE_TYPES.Identifier &&
             node.object.name === 'process' &&
-            node.property.type === AST_NODE_TYPES.Identifier &&
-            !PROCESS_INPUT_MEMBERS.has(node.property.name)
+            !PROCESS_INPUT_MEMBERS.has(propertyName(node) ?? '')
           ) {
             return false;
           }
@@ -958,7 +957,6 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
           const callee = node.callee;
           if (
             callee.type === AST_NODE_TYPES.MemberExpression &&
-            !callee.computed &&
             callee.object.type === AST_NODE_TYPES.Identifier &&
             callee.object.name === 'path' &&
             callee.property.type === AST_NODE_TYPES.Identifier &&
@@ -1382,7 +1380,6 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
         // `path.sep`
         if (
           n.type === AST_NODE_TYPES.MemberExpression &&
-          !n.computed &&
           n.object.type === AST_NODE_TYPES.Identifier &&
           n.object.name === 'path' &&
           n.property.type === AST_NODE_TYPES.Identifier &&
