@@ -352,9 +352,16 @@ jobs:
 
       # Pinned by digest, not tag: this job enforces Pinned-Dependencies, so it
       # has no business pulling a mutable image itself.
+      #
+      # ghcr.io, not gcr.io. The Google-hosted copy started refusing anonymous
+      # pulls outright —
+      #   denied: Consumer 'projects/367732848534' is invalid
+      # — which fails this job on infrastructure that has nothing to do with
+      # the repository being scanned. OpenSSF publishes the same image to
+      # ghcr.io/ossf/scorecard, so the digest below is v5.4.0 from there.
       - name: Scorecard — offline checks
         env:
-          SCORECARD_IMAGE: gcr.io/openssf/scorecard@sha256:b9a535801cb5fc8e7b2bea4cf45dd2db9a342cab8cc32bb5be2ac1355a95356f
+          SCORECARD_IMAGE: ghcr.io/ossf/scorecard@sha256:546c3f019eb24974abda92004a9003e4059a10e9ee13b1c3ab40d29f4f32f764
         run: |
           set -euo pipefail
           docker run --rm -v "$GITHUB_WORKSPACE":/repo "$SCORECARD_IMAGE" \
