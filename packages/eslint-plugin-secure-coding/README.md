@@ -73,7 +73,7 @@ export default [
 
 > **Using `recommended` already?** Extend your coverage with domain-specific plugins:
 > [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security) (crypto, eval, buffer) ·
-> [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) (JWT auth) ·
+> [`eslint-plugin-jwt-security`](https://www.npmjs.com/package/eslint-plugin-jwt-security) (JWT auth) ·
 > [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) (Express middleware)
 
 ---
