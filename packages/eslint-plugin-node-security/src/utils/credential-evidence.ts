@@ -56,9 +56,51 @@ const CREDENTIAL_WORDS = [
   'auth_token',
 ];
 
+/**
+ * Tails that make a name describe configuration ABOUT a credential rather than
+ * the credential itself.
+ *
+ * `TOKEN_SIGNING_ALG = 'RS256'` names an algorithm. Substring matching read the
+ * `token` in it and reported storing a credential in the environment — 110
+ * findings from this one shape across the scanned corpus, the single largest
+ * false positive this rule produces.
+ *
+ * Only the LAST segment is tested, so `API_TOKEN` and `CLIENT_SECRET` still
+ * match on their own tails and nothing is narrowed for a real credential.
+ *
+ * @protocol-constant
+ */
+const CONFIG_ABOUT_A_CREDENTIAL: ReadonlySet<string> = new Set([
+  'alg', 'algo', 'algorithm', 'cipher', 'digest',
+  'expiry', 'expiration', 'ttl', 'lifetime', 'maxage', 'rotation',
+  'type', 'kind', 'format', 'encoding', 'scheme',
+  'length', 'len', 'size', 'count', 'limit',
+  'name', 'label', 'id', 'prefix', 'suffix',
+  'path', 'file', 'url', 'uri', 'endpoint', 'host', 'header',
+  'issuer', 'audience', 'realm',
+  'enabled', 'disabled', 'required', 'strategy', 'provider',
+]);
+
+/** Lowercase word segments of an identifier-ish name. */
+function segmentsOf(text: string): string[] {
+  return text
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .split(/[^A-Za-z0-9]+/)
+    .filter(Boolean)
+    .map((part) => part.toLowerCase());
+}
+
 function namesACredential(text: string): boolean {
   const normalized = text.toLowerCase();
-  return CREDENTIAL_WORDS.some((word) => normalized.includes(word));
+  if (!CREDENTIAL_WORDS.some((word) => normalized.includes(word))) return false;
+
+  const segments = segmentsOf(text);
+  const tail = segments[segments.length - 1];
+  // A name whose last word is configuration describes the credential, and a
+  // description of a secret is not a secret.
+  if (tail !== undefined && CONFIG_ABOUT_A_CREDENTIAL.has(tail)) return false;
+
+  return true;
 }
 
 /** The identifier-ish name of an expression, for name evidence. Empty when there is none. */

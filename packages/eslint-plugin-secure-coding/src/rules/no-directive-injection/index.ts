@@ -20,7 +20,7 @@
  * - Framework-specific safe patterns
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, unwrapTypeSyntax } from '@interlace/eslint-devkit';
+import { createRule, unwrapTypeSyntax, staticString } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   createSafetyChecker,
@@ -125,8 +125,8 @@ function findUnsafeSanitizerConfig(
     const option =
       property.key.type === 'Identifier'
         ? property.key.name
-        : property.key.type === 'Literal' && typeof property.key.value === 'string'
-          ? property.key.value
+        : staticString(property.key) !== null
+          ? staticString(property.key)
           : null;
     if (option === null) continue;
 

@@ -25,7 +25,7 @@ describe('filename-case', () => {
     ruleTester.run('enforce kebab-case', filenameCase, {
       valid: [
         // Valid kebab-case filenames
-        { code: 'const x = 1;', filename: '/src/my-component.ts' },
+        { name: 'a filename in the configured case', code: 'const x = 1;', filename: '/src/my-component.ts' },
         { code: 'const x = 1;', filename: '/src/user-service.ts' },
         { code: 'const x = 1;', filename: '/src/index.ts' },
         // Allowed uppercase files
@@ -39,6 +39,7 @@ describe('filename-case', () => {
       invalid: [
         // camelCase should be flagged
         {
+          name: 'a filename that is not in the configured case',
           code: 'const x = 1;',
           filename: '/src/myComponent.ts',
           errors: [{ messageId: 'filenameCase' }],

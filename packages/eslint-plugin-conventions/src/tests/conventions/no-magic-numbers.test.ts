@@ -15,7 +15,7 @@ describe('no-magic-numbers', () => {
   ruleTester.run('no-magic-numbers', noMagicNumbers, {
     valid: [
       // Default allowed values: -1, 0, 1, 2
-      { code: 'const x = 0;' },
+      { name: 'zero needs no name', code: 'const x = 0;' },
       { code: 'const x = 1;' },
       { code: 'const x = -1;' },
       { code: 'const x = 2;' },
@@ -37,6 +37,7 @@ describe('no-magic-numbers', () => {
     ],
     invalid: [
       {
+        name: '5000 with nothing saying what it measures',
         code: 'setTimeout(cb, 5000);',
         errors: [{ messageId: 'noMagicNumber', suggestions: [{ messageId: 'extractConst', output: 'const MAGIC_5000 = 5000;\nsetTimeout(cb, MAGIC_5000);' }] }],
       },

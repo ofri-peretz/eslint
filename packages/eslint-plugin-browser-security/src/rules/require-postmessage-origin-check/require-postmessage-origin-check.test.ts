@@ -24,6 +24,7 @@ ruleTester.run(
     valid: [
       // Has origin check with strict equality
       {
+        name: 'the origin is checked first',
         code: `
         window.addEventListener('message', (event) => {
           if (event.origin !== 'https://trusted.com') return;
@@ -86,6 +87,7 @@ ruleTester.run(
     invalid: [
       // No origin check
       {
+        name: 'a message listener that trusts every sender',
         code: `
         window.addEventListener('message', (event) => {
           handleMessage(event.data);

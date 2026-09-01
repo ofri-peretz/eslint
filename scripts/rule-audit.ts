@@ -219,7 +219,12 @@ export function stripComments(src: string): string {
 }
 
 /** Extract a balanced `{...}` block that follows `label` (e.g. `meta:`). */
-export function balancedBlock(src: string, label: RegExp, open = '{', close = '}'): string {
+export function balancedBlock(
+  src: string,
+  label: RegExp,
+  open = '{',
+  close = '}',
+): string {
   const m = label.exec(src);
   if (!m) return '';
   let i = src.indexOf(open, m.index + m[0].length - 1);
@@ -297,15 +302,27 @@ const PROTOCOL_CONSTANT_MIN_REASON = 24;
 function importedUtilSources(
   ruleDir: string,
 ): { file: string; raw: string; code: string; reachable: Set<string> }[] {
-  const out: { file: string; raw: string; code: string; reachable: Set<string> }[] = [];
+  const out: {
+    file: string;
+    raw: string;
+    code: string;
+    reachable: Set<string>;
+  }[] = [];
   const index = path.join(ruleDir, 'index.ts');
   if (!fs.existsSync(index)) return out;
   const src = fs.readFileSync(index, 'utf8');
   const seen = new Set<string>();
-  for (const m of src.matchAll(/import\s*(?:type\s*)?\{([^}]*)\}\s*from\s*'((?:\.\.?\/)+utils\/[\w./-]+)'/g)) {
+  for (const m of src.matchAll(
+    /import\s*(?:type\s*)?\{([^}]*)\}\s*from\s*'((?:\.\.?\/)+utils\/[\w./-]+)'/g,
+  )) {
     const specifiers = m[1]
       .split(',')
-      .map((s) => s.trim().split(/\s+as\s+/)[0].trim())
+      .map((s) =>
+        s
+          .trim()
+          .split(/\s+as\s+/)[0]
+          .trim(),
+      )
       .filter(Boolean);
     for (const candidate of [`${m[2]}.ts`, path.join(m[2], 'index.ts')]) {
       const resolved = path.resolve(ruleDir, candidate);
@@ -313,7 +330,12 @@ function importedUtilSources(
       seen.add(resolved);
       const raw = fs.readFileSync(resolved, 'utf8');
       const code = stripComments(raw);
-      out.push({ file: path.basename(resolved), raw, code, reachable: reachableConstants(code, specifiers) });
+      out.push({
+        file: path.basename(resolved),
+        raw,
+        code,
+        reachable: reachableConstants(code, specifiers),
+      });
       break;
     }
   }
@@ -336,13 +358,21 @@ function importedUtilSources(
  * constants that closure mentions are reachable; the rest belong to somebody else.
  * `seen` bounds it — these utils call each other in cycles.
  */
-export function reachableConstants(utilCode: string, specifiers: string[]): Set<string> {
+export function reachableConstants(
+  utilCode: string,
+  specifiers: string[],
+): Set<string> {
   const bodies = new Map<string, string>();
-  for (const m of utilCode.matchAll(/(?:export\s+)?(?:async\s+)?function\s+(\w+)\s*[(<]/g)) {
+  for (const m of utilCode.matchAll(
+    /(?:export\s+)?(?:async\s+)?function\s+(\w+)\s*[(<]/g,
+  )) {
     bodies.set(m[1], balancedBlock(utilCode.slice(m.index ?? 0), /\{/));
   }
-  for (const m of utilCode.matchAll(/(?:export\s+)?const\s+(\w+)\s*(?::[^=]+)?=\s*(?:async\s*)?\(/g)) {
-    if (!bodies.has(m[1])) bodies.set(m[1], utilCode.slice(m.index ?? 0, (m.index ?? 0) + 4000));
+  for (const m of utilCode.matchAll(
+    /(?:export\s+)?const\s+(\w+)\s*(?::[^=]+)?=\s*(?:async\s*)?\(/g,
+  )) {
+    if (!bodies.has(m[1]))
+      bodies.set(m[1], utilCode.slice(m.index ?? 0, (m.index ?? 0) + 4000));
   }
 
   const constants = new Set<string>();
@@ -389,7 +419,10 @@ export function protocolConstantNames(rawSource: string): Set<string> {
   )) {
     const tag = /@protocol-constant\b([\s\S]*?)(?=\n\s*\*\s*@\w|$)/.exec(m[1]);
     if (!tag) continue;
-    const reason = tag[1].replace(/^\s*\*+/gm, ' ').replace(/\s+/g, ' ').trim();
+    const reason = tag[1]
+      .replace(/^\s*\*+/gm, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
     if (reason.length >= PROTOCOL_CONSTANT_MIN_REASON) out.add(m[2]);
   }
   return out;
@@ -442,7 +475,16 @@ export function topLevelKeys(block: string): string[] {
 function visitorSelectors(createBody: string): string[] {
   const out = new Set<string>();
   // `Identifier(node) {`, `'CallExpression, NewExpression'(node) {`, `Program: () =>`
-  const re = /(?:^|[{,\s])(?:(['"])([^'"]+)\1|([A-Z][A-Za-z]*(?::\w+)?))\s*(?:\(|:\s*(?:\(|function))/gm;
+  //
+  // The `new ` guard is not cosmetic. Without it `new Set(...)` inside
+  // `create()` matched — `Set` starts with a capital and is followed by `(` —
+  // so a rule gained a phantom `Set` selector and then "overlapped" every
+  // sibling with the same CWE that also built a Set. That is how adding an
+  // option to `no-unsafe-regex-construction` produced a `duplicate-coverage`
+  // smell about a rule it has nothing to do with. `new Map`, `new RegExp` and
+  // `new WeakSet` all did the same.
+  const re =
+    /(?:^|[{,\s])(?<!new\s)(?:(['"])([^'"]+)\1|([A-Z][A-Za-z]*(?::\w+)?))\s*(?:\(|:\s*(?:\(|function))/gm;
   let m: RegExpExecArray | null;
   while ((m = re.exec(createBody)) !== null) {
     const raw = m[2] ?? m[3];
@@ -489,7 +531,8 @@ function detectionSoundness(f: RuleFacts): Finding[] {
       detail:
         'a name-substring test can silence a finding. Costs recall rather than trust — ' +
         'a false negative is invisible to the user, which is why it is triaged after reports.',
-      probe: 'lint a genuine vulnerability whose identifier hits the allowlist vocabulary.',
+      probe:
+        'lint a genuine vulnerability whose identifier hits the allowlist vocabulary.',
     });
   }
 
@@ -534,7 +577,8 @@ function testAdequacy(f: RuleFacts): Finding[] {
       id: 'no-positive-cases',
       tier: 'defect',
       category: 'test-adequacy',
-      detail: 'no invalid cases — nothing asserts that this rule catches anything at all.',
+      detail:
+        'no invalid cases — nothing asserts that this rule catches anything at all.',
     });
   }
   if (f.validCases === 0) {
@@ -557,7 +601,9 @@ function testAdequacy(f: RuleFacts): Finding[] {
 
   // An option the user can set that no test ever sets. Its branch has never run.
   const schema = balancedBlock(f.metaBlock, /schema\s*:/, '[', ']');
-  const declared = new Set(topLevelKeys(balancedBlock(schema, /properties\s*:/)));
+  const declared = new Set(
+    topLevelKeys(balancedBlock(schema, /properties\s*:/)),
+  );
   const unexercised = [...declared].filter((o) => !f.testCode.includes(o));
   if (unexercised.length) {
     out.push({
@@ -570,12 +616,18 @@ function testAdequacy(f: RuleFacts): Finding[] {
 
   // A messageId the rule can emit that no test asserts. The user sees a string
   // nobody has read back.
-  const messages = new Set(topLevelKeys(balancedBlock(f.metaBlock, /messages\s*:/)));
+  const messages = new Set(
+    topLevelKeys(balancedBlock(f.metaBlock, /messages\s*:/)),
+  );
   const reported = new Set<string>();
-  for (const m of f.createBody.matchAll(/messageId\s*:\s*['"](\w+)['"]/g)) reported.add(m[1]);
-  for (const m of f.createBody.matchAll(/messageId\s*:\s*(\w+)\s*[,}]/g)) reported.add(m[1]);
+  for (const m of f.createBody.matchAll(/messageId\s*:\s*['"](\w+)['"]/g))
+    reported.add(m[1]);
+  for (const m of f.createBody.matchAll(/messageId\s*:\s*(\w+)\s*[,}]/g))
+    reported.add(m[1]);
 
-  const dead = [...messages].filter((id) => !reported.has(id) && !f.createBody.includes(id));
+  const dead = [...messages].filter(
+    (id) => !reported.has(id) && !f.createBody.includes(id),
+  );
   if (dead.length && messages.size) {
     out.push({
       id: 'orphan-message',
@@ -613,14 +665,18 @@ function testAdequacy(f: RuleFacts): Finding[] {
   // So: a call (`fixTo(`) and a bare-parameter arrow (`fixer =>`) both count. A
   // prose value still does not — `fix: 'Atomic group…'` opens with a quote, and
   // `fix: null` is followed by neither `(` nor `=>`.
-  const hasFixer = /\bfix\s*(?:\(\s*\w|:\s*(?:\(|function|async|\w+\s*\(|\w+\s*=>))/.test(f.createBody);
+  const hasFixer =
+    /\bfix\s*(?:\(\s*\w|:\s*(?:\(|function|async|\w+\s*\(|\w+\s*=>))/.test(
+      f.createBody,
+    );
   const declaresFixable = /\bfixable\s*:/.test(f.metaBlock);
   if (declaresFixable && !hasFixer) {
     out.push({
       id: 'fixable-without-fixer',
       tier: 'defect',
       category: 'metadata-contract',
-      detail: 'meta.fixable is declared but create() never returns a fix — editors offer a fix that does nothing.',
+      detail:
+        'meta.fixable is declared but create() never returns a fix — editors offer a fix that does nothing.',
     });
   }
   if (hasFixer && !declaresFixable && !/hasSuggestions/.test(f.metaBlock)) {
@@ -628,7 +684,8 @@ function testAdequacy(f: RuleFacts): Finding[] {
       id: 'fixer-without-fixable',
       tier: 'defect',
       category: 'metadata-contract',
-      detail: 'create() produces a fix but meta declares neither fixable nor hasSuggestions — ESLint will throw at runtime.',
+      detail:
+        'create() produces a fix but meta declares neither fixable nor hasSuggestions — ESLint will throw at runtime.',
     });
   }
   // `suggest: [{ messageId, fix: () => null }]`.
@@ -647,7 +704,11 @@ function testAdequacy(f: RuleFacts): Finding[] {
   // Kept as a DEFECT because it is a fact about the artifact — `() => null`
   // returns no edit on every path — but stated as what the probe showed, not as
   // what the pattern suggested.
-  const inert = (f.createBody.match(/\bfix\s*:\s*(?:\([^)]*\)|\w+)\s*=>\s*(?:null|\[\s*\]|undefined)/g) ?? []).length;
+  const inert = (
+    f.createBody.match(
+      /\bfix\s*:\s*(?:\([^)]*\)|\w+)\s*=>\s*(?:null|\[\s*\]|undefined)/g,
+    ) ?? []
+  ).length;
   if (inert) {
     out.push({
       id: 'inert-suggestion',
@@ -659,12 +720,18 @@ function testAdequacy(f: RuleFacts): Finding[] {
         'and hasSuggestions overstates what the rule offers.',
     });
   }
-  if (hasFixer && !inert && !/\boutput\s*:/.test(f.testCode) && !/suggestions\s*:/.test(f.testCode)) {
+  if (
+    hasFixer &&
+    !inert &&
+    !/\boutput\s*:/.test(f.testCode) &&
+    !/suggestions\s*:/.test(f.testCode)
+  ) {
     out.push({
       id: 'untested-fixer',
       tier: 'defect',
       category: 'test-adequacy',
-      detail: 'a fixer/suggestion exists but no test asserts its output — the rewrite it applies to user code is unverified.',
+      detail:
+        'a fixer/suggestion exists but no test asserts its output — the rewrite it applies to user code is unverified.',
     });
   }
 
@@ -701,7 +768,8 @@ function metadataContract(f: RuleFacts): Finding[] {
       id: 'missing-cwe',
       tier: 'defect',
       category: 'metadata-contract',
-      detail: 'no CWE in meta.docs — the rule cannot appear in any CWE coverage claim, and its corpus fixture cannot be located.',
+      detail:
+        'no CWE in meta.docs — the rule cannot appear in any CWE coverage claim, and its corpus fixture cannot be located.',
     });
   }
   if (!/\burl\s*:/.test(f.metaBlock)) {
@@ -739,7 +807,10 @@ function metadataContract(f: RuleFacts): Finding[] {
   const optSchema = balancedBlock(f.metaBlock, /schema\s*:/, '[', ']');
   const schemaProps = balancedBlock(optSchema, /properties\s*:/);
   const noDefault = topLevelKeys(schemaProps).filter((opt) => {
-    const block = balancedBlock(schemaProps.slice(schemaProps.indexOf(`${opt}:`)), new RegExp(`^${opt}\\s*:`));
+    const block = balancedBlock(
+      schemaProps.slice(schemaProps.indexOf(`${opt}:`)),
+      new RegExp(`^${opt}\\s*:`),
+    );
     return block && !/\bdefault\s*:/.test(block);
   });
   if (noDefault.length) {
@@ -772,8 +843,13 @@ function metadataContract(f: RuleFacts): Finding[] {
   // justification next to the list. The reason is required and must be
   // substantive — a bare tag is a silencer, and silencers are what this check is
   // for.
-  const VOCAB = /const\s+([A-Z][A-Z0-9_]*)\s*(?::[^=]+)?=\s*(?:new Set\()?\[([^\]]{20,})\]/g;
-  const named = (where: string) => (m: RegExpMatchArray) => ({ name: m[1], body: m[2], where });
+  const VOCAB =
+    /const\s+([A-Z][A-Z0-9_]*)\s*(?::[^=]+)?=\s*(?:new Set\()?\[([^\]]{20,})\]/g;
+  const named = (where: string) => (m: RegExpMatchArray) => ({
+    name: m[1],
+    body: m[2],
+    where,
+  });
   // Over blanked strings — see blankStringContents. A declaration quoted inside a
   // doc example is not a declaration, and charging a rule with one is unfixable:
   // there is nothing there to tag or to make configurable.
@@ -791,9 +867,13 @@ function metadataContract(f: RuleFacts): Finding[] {
   ]
     .filter((v) => (v.body.match(/'/g) ?? []).length >= 6)
     .filter((v) => !f.protocolConstants.has(v.name))
-    .filter((v) => !optSchema.includes(v.name) && !f.createBody.includes(`${v.name} =`))
+    .filter(
+      (v) =>
+        !optSchema.includes(v.name) && !f.createBody.includes(`${v.name} =`),
+    )
     .map((v) => `${v.name}${v.where}`);
-  const usesMembership = /includes\(|\.has\(|some\(/.test(f.createBody) || f.utils.length > 0;
+  const usesMembership =
+    /includes\(|\.has\(|some\(/.test(f.createBody) || f.utils.length > 0;
   if (vocabularies.length && usesMembership) {
     out.push({
       id: 'unconfigurable-vocabulary',
@@ -812,10 +892,16 @@ function metadataContract(f: RuleFacts): Finding[] {
   // invalid while the code that reads it sits right there.
   const destructured = balancedBlock(f.createBody, /const\s*\{/);
   const read = new Set<string>();
-  for (const m of destructured.matchAll(/(\w+)\s*(?:=[^,}]+)?[,}]/g)) read.add(m[1]);
+  for (const m of destructured.matchAll(/(\w+)\s*(?:=[^,}]+)?[,}]/g))
+    read.add(m[1]);
   const schema = balancedBlock(f.metaBlock, /schema\s*:/, '[', ']');
   const undeclared = [...read].filter(
-    (o) => o.length > 2 && !schema.includes(o) && /^(allow|report|trusted|ignore|max|min|enforce|require|check|detect|treat)/i.test(o),
+    (o) =>
+      o.length > 2 &&
+      !schema.includes(o) &&
+      /^(allow|report|trusted|ignore|max|min|enforce|require|check|detect|treat)/i.test(
+        o,
+      ),
   );
   if (undeclared.length && schema) {
     out.push({
@@ -834,8 +920,10 @@ function metadataContract(f: RuleFacts): Finding[] {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Globals and modules that only exist on one side of the runtime split. */
-const NODE_ONLY = /\b(child_process|require\(['"]fs|process\.env|__dirname|readFileSync|createServer)\b/;
-const BROWSER_ONLY = /\b(document\.|window\.|localStorage|sessionStorage|navigator\.|innerHTML)\b/;
+const NODE_ONLY =
+  /\b(child_process|require\(['"]fs|process\.env|__dirname|readFileSync|createServer)\b/;
+const BROWSER_ONLY =
+  /\b(document\.|window\.|localStorage|sessionStorage|navigator\.|innerHTML)\b/;
 
 function placement(f: RuleFacts): Finding[] {
   const out: Finding[] = [];
@@ -843,14 +931,20 @@ function placement(f: RuleFacts): Finding[] {
   // Only meaningful for the two runtime-scoped plugins. `secure-coding` is
   // deliberately runtime-agnostic, so this check does not apply to it.
   const domain =
-    f.plugin === 'browser-security' ? 'browser' : f.plugin === 'node-security' ? 'node' : null;
+    f.plugin === 'browser-security'
+      ? 'browser'
+      : f.plugin === 'node-security'
+        ? 'node'
+        : null;
   if (domain === 'browser' && NODE_ONLY.test(f.createBody)) {
     out.push({
       id: 'cross-domain-api',
       tier: 'smell',
       category: 'placement',
-      detail: 'a browser-security rule keys on Node-only APIs — either it is in the wrong plugin, or it fires on files that never reach a browser.',
-      probe: 'check whether the sink can occur in code shipped to a browser at all.',
+      detail:
+        'a browser-security rule keys on Node-only APIs — either it is in the wrong plugin, or it fires on files that never reach a browser.',
+      probe:
+        'check whether the sink can occur in code shipped to a browser at all.',
     });
   }
   if (domain === 'node' && BROWSER_ONLY.test(f.createBody)) {
@@ -858,8 +952,10 @@ function placement(f: RuleFacts): Finding[] {
       id: 'cross-domain-api',
       tier: 'smell',
       category: 'placement',
-      detail: 'a node-security rule keys on DOM-only APIs — either it is in the wrong plugin, or the sink cannot occur on a server.',
-      probe: 'check whether the sink can occur in code that runs under Node at all.',
+      detail:
+        'a node-security rule keys on DOM-only APIs — either it is in the wrong plugin, or the sink cannot occur on a server.',
+      probe:
+        'check whether the sink can occur in code that runs under Node at all.',
     });
   }
 
@@ -916,8 +1012,10 @@ function performance(f: RuleFacts): Finding[] {
       id: 'whole-program-text',
       tier: 'smell',
       category: 'performance',
-      detail: 'sourceCode.getText() with no node prints the whole file. Inside a visitor this is O(file) per node.',
-      probe: 'time the rule against a 5k-line file versus a 500-line one; cost should be linear, not quadratic.',
+      detail:
+        'sourceCode.getText() with no node prints the whole file. Inside a visitor this is O(file) per node.',
+      probe:
+        'time the rule against a 5k-line file versus a 500-line one; cost should be linear, not quadratic.',
     });
   }
 
@@ -928,8 +1026,10 @@ function performance(f: RuleFacts): Finding[] {
       id: 'dynamic-regexp',
       tier: 'smell',
       category: 'performance',
-      detail: 'a RegExp is constructed from a non-literal — if the source is a user option, a pathological pattern hangs the lint run.',
-      probe: 'set the option to a nested-quantifier pattern and lint a long identifier.',
+      detail:
+        'a RegExp is constructed from a non-literal — if the source is a user option, a pathological pattern hangs the lint run.',
+      probe:
+        'set the option to a nested-quantifier pattern and lint a long identifier.',
     });
   }
 
@@ -937,19 +1037,28 @@ function performance(f: RuleFacts): Finding[] {
   // already shipped one stack overflow from a cyclic binding chain.
   for (const m of f.createBody.matchAll(/function\s+(\w+)\s*\(([^)]*)\)/g)) {
     const [, name, params] = m;
-    const body = balancedBlock(f.createBody.slice(m.index), new RegExp(`function\\s+${name}`));
+    const body = balancedBlock(
+      f.createBody.slice(m.index),
+      new RegExp(`function\\s+${name}`),
+    );
     // A BARE call to itself. `body.includes(name + '(')` also matches a MEMBER
     // call that merely ends in the same word: every rule defines a local
     // `function report(node)` that calls `context.report({...})`, and the naive
     // test read that as infinite recursion in 25 rules.
-    if (!new RegExp(`(?<![.\\w])${name}\\s*\\(`).test(body.slice(body.indexOf('{')))) continue;
+    if (
+      !new RegExp(`(?<![.\\w])${name}\\s*\\(`).test(
+        body.slice(body.indexOf('{')),
+      )
+    )
+      continue;
     if (/\b(seen|visited|depth|budget)\b/.test(params)) continue;
     out.push({
       id: 'unguarded-recursion',
       tier: 'smell',
       category: 'performance',
       detail: `${name}() recurses with no visited-set or depth bound — a cyclic binding chain overflows the stack.`,
-      probe: 'lint `let a = b; let b = a;` or a self-referential type and watch for RangeError.',
+      probe:
+        'lint `let a = b; let b = a;` or a self-referential type and watch for RangeError.',
     });
     break;
   }
@@ -966,34 +1075,58 @@ function performance(f: RuleFacts): Finding[] {
  * describe `no-corpus-fixture` as "no benchmarks/corpus/CWE-400/ fixture".
  */
 export const CHECK_SUMMARY: Record<string, string> = {
-  'no-corpus-fixture': 'Rule is absent from the benchmark corpus, so no published figure measures it.',
-  'inert-suggestion': 'Suggestion fix returns null; ESLint discards it and its remediation text never renders.',
+  'no-corpus-fixture':
+    'Rule is absent from the benchmark corpus, so no published figure measures it.',
+  'inert-suggestion':
+    'Suggestion fix returns null; ESLint discards it and its remediation text never renders.',
   'unasserted-message': 'Rule emits a messageId that no test asserts.',
-  'unexercised-option': 'A configurable option no test ever sets — the branch ships unexecuted.',
+  'unexercised-option':
+    'A configurable option no test ever sets — the branch ships unexecuted.',
   'orphan-message': 'A messageId declared in meta that no code path reports.',
   'thin-suite': `Fewer than ${THIN_SUITE} total cases — the sink and option space is unexplored.`,
-  'no-positive-cases': 'No invalid cases: nothing asserts the rule catches anything.',
-  'no-negative-cases': 'No valid cases: every false positive it can produce is un-regressed.',
-  'untested-fixer': 'A real fixer exists but no test asserts the code it writes.',
+  'no-positive-cases':
+    'No invalid cases: nothing asserts the rule catches anything.',
+  'no-negative-cases':
+    'No valid cases: every false positive it can produce is un-regressed.',
+  'untested-fixer':
+    'A real fixer exists but no test asserts the code it writes.',
   'fixable-without-fixer': 'meta.fixable declared with no fix produced.',
-  'fixer-without-fixable': 'A fix is produced without meta declaring fixable or hasSuggestions.',
+  'fixer-without-fixable':
+    'A fix is produced without meta declaring fixable or hasSuggestions.',
   'missing-cwe': 'No CWE in meta.docs — excluded from CWE coverage claims.',
-  'missing-docs-url': 'No meta.docs.url — the finding gives the reader nowhere to go.',
+  'missing-docs-url':
+    'No meta.docs.url — the finding gives the reader nowhere to go.',
   'no-doc-page': 'No docs/rules/<rule>.md behind the documented URL.',
   'schema-drift': 'An option create() honours that meta.schema rejects.',
-  'option-without-default': 'A schema option with no explicit default — docs and real behaviour drift.',
-  'unconfigurable-vocabulary': 'A baked-in word list no option can override or extend.',
-  'nominal-inference-report': 'A name-substring test on a reporting path. Sound if it narrows proven evidence; a false-positive source if it decides alone.',
-  'nominal-inference-suppress': 'A name-substring test that can silence a finding. Costs recall.',
+  'option-without-default':
+    'A schema option with no explicit default — docs and real behaviour drift.',
+  'unconfigurable-vocabulary':
+    'A baked-in word list no option can override or extend.',
+  'nominal-inference-report':
+    'A name-substring test on a reporting path. Sound if it narrows proven evidence; a false-positive source if it decides alone.',
+  'nominal-inference-suppress':
+    'A name-substring test that can silence a finding. Costs recall.',
   'textual-matching': 'A decision taken on printed source rather than the AST.',
-  'duplicate-coverage': 'Shares a CWE and visitor keys with a sibling — one line may yield two findings.',
-  'cross-domain-api': 'Keys on APIs from the other runtime — possibly the wrong plugin.',
-  'unguarded-recursion': 'Self-recursive walker with no visited-set or depth bound.',
-  'dynamic-regexp': 'A RegExp built from a non-literal; a pathological option pattern stalls the run.',
-  'whole-program-text': 'sourceCode.getText() with no node — prints the whole file per visit.',
+  'duplicate-coverage':
+    'Shares a CWE and visitor keys with a sibling — one line may yield two findings.',
+  'cross-domain-api':
+    'Keys on APIs from the other runtime — possibly the wrong plugin.',
+  'unguarded-recursion':
+    'Self-recursive walker with no visited-set or depth bound.',
+  'dynamic-regexp':
+    'A RegExp built from a non-literal; a pathological option pattern stalls the run.',
+  'whole-program-text':
+    'sourceCode.getText() with no node — prints the whole file per visit.',
 };
 
-const CHECKS = [detectionSoundness, testAdequacy, measurement, metadataContract, placement, performance];
+const CHECKS = [
+  detectionSoundness,
+  testAdequacy,
+  measurement,
+  metadataContract,
+  placement,
+  performance,
+];
 
 export function auditRule(f: RuleFacts): Finding[] {
   return CHECKS.flatMap((c) => c(f));
@@ -1003,7 +1136,15 @@ export function auditRule(f: RuleFacts): Finding[] {
 export function collectFacts(
   packagesDir: string,
   plugin: string,
-  extras: (rule: string, cwe: string) => { validCases: number; invalidCases: number; corpusVulnerable: number; nameDebt: 'report' | 'suppress' | null },
+  extras: (
+    rule: string,
+    cwe: string,
+  ) => {
+    validCases: number;
+    invalidCases: number;
+    corpusVulnerable: number;
+    nameDebt: 'report' | 'suppress' | null;
+  },
 ): RuleFacts[] {
   const pkg = path.join(packagesDir, `eslint-plugin-${plugin}`);
   const rulesDir = path.join(pkg, 'src', 'rules');
@@ -1042,22 +1183,31 @@ export function collectFacts(
         ]),
         cwe,
         selectors: visitorSelectors(body),
-        hasDocPage: fs.existsSync(path.join(pkg, 'docs', 'rules', `${rule}.md`)),
+        hasDocPage: fs.existsSync(
+          path.join(pkg, 'docs', 'rules', `${rule}.md`),
+        ),
       };
     });
 
-  const siblings = raw.map((r) => ({ rule: r.rule, cwe: r.cwe, selectors: r.selectors }));
+  const siblings = raw.map((r) => ({
+    rule: r.rule,
+    cwe: r.cwe,
+    selectors: r.selectors,
+  }));
   // Read once per plugin, not once per rule: a matrix lives in whichever rule's
   // directory its author picked, and it names every rule in the family.
-  const partitionMatrices = fs
-    .readdirSync(rulesDir)
-    .flatMap((rule) => {
-      const dir = path.join(rulesDir, rule);
-      if (!fs.statSync(dir).isDirectory()) return [];
-      return fs
-        .readdirSync(dir)
-        .filter((f) => /partition.*\.test\.ts$/.test(f))
-        .map((f) => fs.readFileSync(path.join(dir, f), 'utf8'));
-    });
-  return raw.map((r) => ({ ...r, siblings, partitionMatrices, ...extras(r.rule, r.cwe) }));
+  const partitionMatrices = fs.readdirSync(rulesDir).flatMap((rule) => {
+    const dir = path.join(rulesDir, rule);
+    if (!fs.statSync(dir).isDirectory()) return [];
+    return fs
+      .readdirSync(dir)
+      .filter((f) => /partition.*\.test\.ts$/.test(f))
+      .map((f) => fs.readFileSync(path.join(dir, f), 'utf8'));
+  });
+  return raw.map((r) => ({
+    ...r,
+    siblings,
+    partitionMatrices,
+    ...extras(r.rule, r.cwe),
+  }));
 }

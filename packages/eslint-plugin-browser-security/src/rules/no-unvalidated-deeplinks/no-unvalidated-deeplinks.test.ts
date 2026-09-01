@@ -18,7 +18,7 @@ ruleTester.run('no-unvalidated-deeplinks', noUnvalidatedDeeplinks, {
         'const flag = true;',
         'function noop() {}',
     // Static URLs are safe
-    { code: "Linking.openURL('https://example.com')" },
+    { name: 'a literal URL', code: "Linking.openURL('https://example.com')" },
     { code: "navigation.navigate('Home')" },
     { code: "const url = 'myapp://page'" },
 
@@ -69,6 +69,7 @@ ruleTester.run('no-unvalidated-deeplinks', noUnvalidatedDeeplinks, {
     // ---- openURL FN lock ---------------------------------------------------
     // The three ways React Native hands an app a URL somebody else chose.
     {
+      name: 'a deep link opened straight from the incoming URL event',
       code: "Linking.addEventListener('url', (event) => { Linking.openURL(event.url); });",
       errors: [{ messageId: 'violationDetected' }],
     },

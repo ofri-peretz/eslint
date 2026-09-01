@@ -24,7 +24,7 @@ describe('no-inline-style', () => {
   ruleTester.run('no-inline-style', noInlineStyle, {
     valid: [
       // CSS variable override — allowed
-      { code: `<div style={{ "--snp-x": x }} />` },
+      { name: 'a custom property, which classes cannot express', code: `<div style={{ "--snp-x": x }} />` },
       // Computed dynamic values — allowed
       { code: `<div style={{ left: x, top: y }} />` },
       // No style prop
@@ -37,6 +37,7 @@ describe('no-inline-style', () => {
     invalid: [
       // Static literal value
       {
+        name: 'a style value that belongs in a class',
         code: `<div style={{ padding: "10px" }} />`,
         errors: [{ messageId: 'inlineStyle' }],
       },

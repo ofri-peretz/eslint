@@ -19,8 +19,26 @@ import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-empty-interface -- Rule has no configurable options
-export interface Options {}
+export interface Options {
+  /**
+   * The property names that turn minification off. Default:
+   * `['minimize', 'minify']`.
+   *
+   * Two spellings because two ecosystems: webpack writes `optimization.minimize`,
+   * while Vite, Rollup, esbuild and Terser all write `minify`. The rule knew
+   * only the first, so a Vite config shipping unminified passed — it is the
+   * commoner spelling now, and the miss was total.
+   *
+   * These are build-tool API names rather than a guess at somebody's variable
+   * naming, so a default list is the right shape. It is an option anyway
+   * because build tools keep inventing spellings, and a project should not have
+   * to wait for a release to name one.
+   */
+  minificationKeys?: readonly string[];
+}
+
+/** webpack, then everyone else. */
+const DEFAULT_MINIFICATION_KEYS: readonly string[] = ['minimize', 'minify'];
 
 type RuleOptions = [Options?];
 
@@ -46,15 +64,31 @@ export const requireCodeMinification = createRule<RuleOptions, MessageIds>({
         documentationLink: 'https://cwe.mitre.org/data/definitions/656.html',
       }),
     },
-    schema: [],
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          minificationKeys: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [...DEFAULT_MINIFICATION_KEYS],
+            description:
+              'Property names that turn minification off. webpack writes `minimize`; Vite, Rollup, esbuild and Terser write `minify`.',
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
   },
-  defaultOptions: [],
-  create(context) {
+  defaultOptions: [{ minificationKeys: [...DEFAULT_MINIFICATION_KEYS] }],
+  create(context, [options = {}]) {
+    const { minificationKeys = DEFAULT_MINIFICATION_KEYS } = options as Options;
+    const keys = new Set(minificationKeys);
     return {
       Property(node: TSESTree.Property) {
         if (
           node.key.type === 'Identifier' &&
-          node.key.name === 'minimize' &&
+          keys.has(node.key.name) &&
           node.value.type === 'Literal' &&
           node.value.value === false
         ) {

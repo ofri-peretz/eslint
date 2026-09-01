@@ -9,7 +9,7 @@
  * Prevent string literals in JSX
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, staticString } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'jsxNoLiterals';
@@ -85,8 +85,9 @@ export const jsxNoLiterals = createRule<RuleOptions, MessageIds>({
       JSXAttribute(node: TSESTree.JSXAttribute) {
         if (ignoreProps) return;
 
-        if (node.value && node.value.type === 'Literal' && typeof node.value.value === 'string') {
-          const text = node.value.value.trim();
+        const attributeText = node.value === null ? null : staticString(node.value);
+        if (node.value && attributeText !== null) {
+          const text = attributeText.trim();
           if (text && !allowedStrings.includes(text)) {
             context.report({
               node: node.value,

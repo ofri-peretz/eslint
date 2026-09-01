@@ -7,7 +7,7 @@
 /**
  * ESLint Rule: no-access-key
  * Enforce that accessKey attribute is not used
- * 
+ *
  * @see https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/no-access-key.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
@@ -34,7 +34,8 @@ export const noAccessKey = createRule<RuleOptions, MessageIds>({
         description: 'accessKey attribute is problematic for accessibility',
         severity: 'MEDIUM',
         fix: 'Remove accessKey attribute',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/no-access-key.md',
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/no-access-key.md',
       }),
     },
     schema: [],
@@ -43,7 +44,10 @@ export const noAccessKey = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       JSXAttribute(node: TSESTree.JSXAttribute) {
-        if (node.name.type === 'JSXIdentifier' && node.name.name === 'accessKey') {
+        if (
+          node.name.type === 'JSXIdentifier' &&
+          node.name.name === 'accessKey'
+        ) {
           context.report({
             node,
             messageId: 'noAccessKey',
@@ -53,4 +57,3 @@ export const noAccessKey = createRule<RuleOptions, MessageIds>({
     };
   },
 });
-

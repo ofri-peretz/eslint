@@ -1,11 +1,16 @@
 {
-  "generatedAt": "2026-05-09T23:58:46.946Z",
+  "generatedAt": "2026-08-30T20:43:06.389Z",
   "summary": {
-    "qualityRules": 47,
-    "mapped": 2,
-    "coveragePct": 4
+    "qualityRules": 60,
+    "mapped": 3,
+    "coveragePct": 5
   },
   "rules": [
+    {
+      "ruleId": "conventions/conventions/analytics-event-naming",
+      "plugin": "conventions",
+      "mappings": []
+    },
     {
       "ruleId": "conventions/conventions/consistent-existence-index-check",
       "plugin": "conventions",
@@ -42,6 +47,16 @@
       "mappings": []
     },
     {
+      "ruleId": "conventions/conventions/no-magic-numbers",
+      "plugin": "conventions",
+      "mappings": []
+    },
+    {
+      "ruleId": "conventions/conventions/no-raw-cross-property-href",
+      "plugin": "conventions",
+      "mappings": []
+    },
+    {
       "ruleId": "conventions/conventions/prefer-code-point",
       "plugin": "conventions",
       "mappings": []
@@ -52,7 +67,22 @@
       "mappings": []
     },
     {
+      "ruleId": "conventions/conventions/prefer-dom-node-text-content.binding.test",
+      "plugin": "conventions",
+      "mappings": []
+    },
+    {
       "ruleId": "conventions/conventions/prefer-dom-node-text-content",
+      "plugin": "conventions",
+      "mappings": []
+    },
+    {
+      "ruleId": "conventions/conventions/require-data-testid",
+      "plugin": "conventions",
+      "mappings": []
+    },
+    {
+      "ruleId": "conventions/conventions/utm-taxonomy",
       "plugin": "conventions",
       "mappings": []
     },
@@ -97,6 +127,11 @@
       "mappings": []
     },
     {
+      "ruleId": "maintainability/maintainability/max-parameters.this-param.test",
+      "plugin": "maintainability",
+      "mappings": []
+    },
+    {
       "ruleId": "maintainability/maintainability/max-parameters",
       "plugin": "maintainability",
       "mappings": []
@@ -132,12 +167,42 @@
       "mappings": []
     },
     {
+      "ruleId": "modernization/prefer-at.write-positions.test",
+      "plugin": "modernization",
+      "mappings": []
+    },
+    {
+      "ruleId": "modernization/prefer-event-target.no-autofix.test",
+      "plugin": "modernization",
+      "mappings": []
+    },
+    {
       "ruleId": "modernization/prefer-event-target",
       "plugin": "modernization",
       "mappings": []
     },
     {
+      "ruleId": "modernization/prefer-template-literal",
+      "plugin": "modernization",
+      "mappings": [
+        {
+          "characteristic": "Maintainability",
+          "subCharacteristic": "Modifiability"
+        }
+      ]
+    },
+    {
+      "ruleId": "modularity/ddd-anemic-domain-model.dto-suffix.test",
+      "plugin": "modularity",
+      "mappings": []
+    },
+    {
       "ruleId": "modularity/ddd-anemic-domain-model",
+      "plugin": "modularity",
+      "mappings": []
+    },
+    {
+      "ruleId": "modularity/ddd-value-object-immutability.census.test",
       "plugin": "modularity",
       "mappings": []
     },
@@ -158,6 +223,11 @@
     },
     {
       "ruleId": "modularity/no-external-api-calls-in-utils",
+      "plugin": "modularity",
+      "mappings": []
+    },
+    {
+      "ruleId": "modularity/no-mutable-exports",
       "plugin": "modularity",
       "mappings": []
     },

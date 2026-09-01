@@ -124,7 +124,6 @@ export const noSensitiveDataInQuery = createRule<RuleOptions, MessageIds>({
         fix: 'Move the value to the POST request body (req.body) or an Authorization header; never accept secrets via the query string.',
         documentationLink: 'https://cwe.mitre.org/data/definitions/598.html',
       }),
-
     },
     schema: [
       {

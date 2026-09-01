@@ -13,7 +13,7 @@ const IMPORT = `import Anthropic from '@anthropic-ai/sdk';`;
 
 ruleTester.run('no-hardcoded-api-key', noHardcodedApiKey, {
   valid: [
-    { code: `${IMPORT}\nconst c = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });` },
+    { name: 'the key comes from the environment', code: `${IMPORT}\nconst c = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });` },
     // Empty string is a placeholder, not a credential
     { code: `${IMPORT}\nconst c = new Anthropic({ apiKey: '' });` },
     // Non-string literal
@@ -42,6 +42,7 @@ ruleTester.run('no-hardcoded-api-key', noHardcodedApiKey, {
   ],
   invalid: [
     {
+      name: 'an sk-ant key literal in the client construction',
       code: `${IMPORT}\nconst c = new Anthropic({ apiKey: 'sk-ant-api03-hardcoded' });`,
       errors: [{ messageId: 'hardcodedApiKey', data: { prop: 'apiKey' } }],
     },

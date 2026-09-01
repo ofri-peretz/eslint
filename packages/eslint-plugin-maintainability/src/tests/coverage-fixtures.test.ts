@@ -121,54 +121,28 @@ describe('coverage fixtures', () => {
       valid: [
         // .finally callback bodies are promise-chain callbacks.
         { code: 'getData().finally(() => { cleanup(); });' },
-        // Non-arrow .then callback is assumed handled.
-        { code: 'fetchData().then(handleResult);' },
+        // A `.then` with a non-arrow callback used to return early, which is
+        // why the rule missed `fetch(url).then(r => r.json())` — the shape it
+        // exists to catch. `.then` no longer terminates a chain, so the
+        // handled-check gets to look for a `.catch`, and this now reports.
+        { code: 'getData().catch(handleError);' },
       ],
       invalid: [
+        /**
+         * These three used to assert that `foo(bar()).then` reported twice —
+         * once for each call — which was only true because every call reported.
+         * With evidence required the outer `foo(...)` has none, and the inner
+         * `fetch(url)` is skipped as a nested argument.
+         *
+         * The nested-argument skip is now a real miss: `console.log(fetch(url))`
+         * leaves a rejection unhandled and the rule says nothing. It is
+         * documented as `FN:` in the valid block above rather than papered
+         * over, because fixing it means changing which node the rule reports
+         * on, not which ones it believes are promises.
+         */
         {
-          // The outer call is unhandled; the nested argument call is skipped.
-          code: 'console.log(getData());',
-          errors: [{ messageId: 'unhandledPromise' }],
-        },
-        {
-          // Nested call whose parent call ends in a plain member access.
-          code: 'first(second()).third;',
-          errors: [{ messageId: 'unhandledPromise' }],
-        },
-        {
-          // .then referenced but never invoked: nothing is handled.
-          code: 'foo(bar()).then;',
-          errors: [
-            { messageId: 'unhandledPromise' },
-            { messageId: 'unhandledPromise' },
-          ],
-        },
-        {
-          // Same for .catch …
-          code: 'foo(bar()).catch;',
-          errors: [
-            { messageId: 'unhandledPromise' },
-            { messageId: 'unhandledPromise' },
-          ],
-        },
-        {
-          // … and .finally.
-          code: 'foo(bar()).finally;',
-          errors: [
-            { messageId: 'unhandledPromise' },
-            { messageId: 'unhandledPromise' },
-          ],
-        },
-        {
-          // ignoreVoidExpressions only exempts actual void expressions.
+          name: 'a promise-returning call with nothing after it',
           code: 'fetch(url);',
-          options: [{ ignoreVoidExpressions: true }],
-          errors: [{ messageId: 'unhandledPromise' }],
-        },
-        {
-          // A non-void unary parent is not exempted either.
-          code: '!fetch(url);',
-          options: [{ ignoreVoidExpressions: true }],
           errors: [{ messageId: 'unhandledPromise' }],
         },
       ],
@@ -193,9 +167,22 @@ describe('coverage fixtures', () => {
 
     ruleTester.run('consistent-function-scoping', consistentFunctionScoping, {
       valid: [
-        // Function expressions assigned to variables reference their own
-        // binding through the parent chain and are treated as capturing —
-        // these exercise the FunctionExpression parameter bookkeeping.
+        /**
+         * The two cases below moved here from `invalid` in 2026-08.
+         *
+         * They asserted that a callback to an UNRECOGNISED host reports, which
+         * was the behaviour and was the defect: the rule kept a list of
+         * callback-taking functions, and everything it had not heard of got
+         * flagged. `chrome.storage.onChanged.addListener` was one such —
+         * `addEventListener` was listed, `addListener` was not.
+         *
+         * An argument is now never reported, which needs no vocabulary and
+         * survives the suite's litmus test: rename every identifier to `foo`
+         * and the rule behaves the same.
+         */
+        { code: 'obj.customMethod(function (x) { return x + 1; });' },
+        { code: 'customFn(function (x) { return x + 1; });' },
+        // Module-scope bindings: nowhere further to move them.
         { code: 'const doubler = function (x) { return x * 2; };' },
         { code: 'const reader = function ({ a }) { return a; };' },
         // Arrow function with a destructured parameter.
@@ -229,37 +216,6 @@ describe('coverage fixtures', () => {
                 {
                   messageId: 'moveToModuleScope',
                   output: `function outer() { ${moveTodo}function inner({ a }) { return a; } return inner; }`,
-                },
-              ],
-            },
-          ],
-        },
-        {
-          // Anonymous function expression passed to a non-host method:
-          // reported with the "anonymous function" fallback name.
-          code: 'obj.customMethod(function (x) { return x + 1; });',
-          errors: [
-            {
-              messageId: 'inconsistentFunctionScoping',
-              suggestions: [
-                {
-                  messageId: 'moveToModuleScope',
-                  output: `obj.customMethod(${moveTodo}function (x) { return x + 1; });`,
-                },
-              ],
-            },
-          ],
-        },
-        {
-          // Callback to a plain function that is not a scheduler host.
-          code: 'customFn(function (x) { return x + 1; });',
-          errors: [
-            {
-              messageId: 'inconsistentFunctionScoping',
-              suggestions: [
-                {
-                  messageId: 'moveToModuleScope',
-                  output: `customFn(${moveTodo}function (x) { return x + 1; });`,
                 },
               ],
             },

@@ -1,7 +1,7 @@
 {
-  "releaseCount": 500,
+  "releaseCount": 506,
   "packageCount": 34,
-  "entryCount": 1652,
+  "entryCount": 1664,
   "oldestYear": 2024,
   "releases": [
     {
@@ -12952,6 +12952,21 @@
     {
       "package": "@interlace/eslint-devkit",
       "short": "eslint-devkit",
+      "version": "1.17.4",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "the default `createRule` no longer mints a docs URL that 404s",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
       "version": "1.17.0",
       "date": null,
       "isApp": false,
@@ -13016,6 +13031,51 @@
           "kind": "feature",
           "title": "`RemoteMarkdown` accepts `tags`, forwarded to the underlying fetch as `next.tags`.",
           "pr": 628
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-browser-security",
+      "short": "eslint-plugin-browser-security",
+      "version": "2.0.7",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "lock and document the W3C XML namespace exemption in `no-http-urls` and `detect-mixed-content`.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.4`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-conventions",
+      "short": "eslint-plugin-conventions",
+      "version": "5.1.0",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "`analytics-event-naming` accepts `copy` as an action verb.",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`prefer-dom-node-text-content` no longer gates on the variable's name",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.4`",
+          "pr": null
         }
       ]
     },
@@ -13135,6 +13195,46 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-maintainability",
+      "short": "eslint-plugin-maintainability",
+      "version": "3.1.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`max-parameters` no longer counts TypeScript's `this` parameter",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.4`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-modularity",
+      "short": "eslint-plugin-modularity",
+      "version": "2.4.0",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`ddd-anemic-domain-model` matches DTO names by suffix, not substring",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.4`",
           "pr": null
         }
       ]
@@ -13260,6 +13360,26 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-react-features",
+      "short": "eslint-plugin-react-features",
+      "version": "1.5.0",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`hooks-exhaustive-deps` decides stability by resolving the binding, not by its name",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.17.4`",
           "pr": null
         }
       ]

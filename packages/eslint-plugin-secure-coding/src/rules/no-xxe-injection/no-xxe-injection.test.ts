@@ -44,6 +44,7 @@ describe('no-xxe-injection', () => {
         // message this way to strip markup out of it — a sanitisation idiom that
         // was reported as CWE-611.
         {
+          name: 'HTML parsing, which has no external entities',
           code: [
             "const doc = new DOMParser().parseFromString(text, 'text/html');",
             'export const plain = doc.documentElement.textContent;',
@@ -228,6 +229,7 @@ describe('no-xxe-injection', () => {
         // `noent`, `resolveExternals` and `expandEntityReferences` exist on
         // nothing but an XML parser, so naming one is itself the evidence.
         {
+          name: 'resolveExternals lets the document fetch files and URLs of its choosing',
           code: 'parser.parse(xmlString, { resolveExternals: true });',
           errors: [{ messageId: 'externalEntityEnabled' }],
         },

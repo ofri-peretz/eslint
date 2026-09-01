@@ -61,6 +61,7 @@ ruleTester.run('require-rag-content-validation', requireRagContentValidation, {
   valid: xai([
     // Validated RAG content
     {
+      name: 'the retrieved content is validated first',
       code: `
         const docs = await vectorStore.search(query);
         await generateText({
@@ -109,6 +110,7 @@ ruleTester.run('require-rag-content-validation', requireRagContentValidation, {
   invalid: xai([
     // Direct vector store results in prompt
     {
+      name: 'retrieved documents interpolated straight into the prompt',
       code: `
         const docs = await vectorStore.search(query);
         await generateText({

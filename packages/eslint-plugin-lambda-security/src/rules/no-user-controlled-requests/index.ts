@@ -53,7 +53,13 @@ const HTTP_CLIENT_METHODS = new Set([
 ]);
 
 // HTTP client objects with methods
-const HTTP_CLIENT_OBJECTS = new Set(['http', 'https', 'axios', 'got', 'request']);
+const HTTP_CLIENT_OBJECTS = new Set([
+  'http',
+  'https',
+  'axios',
+  'got',
+  'request',
+]);
 
 // Event properties containing user input
 const USER_INPUT_PROPERTIES = new Set([
@@ -93,7 +99,6 @@ export const noUserControlledRequests = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://owasp.org/www-community/attacks/Server_Side_Request_Forgery',
       }),
-
     },
     schema: [
       {
@@ -268,6 +273,7 @@ export const noUserControlledRequests = createRule<RuleOptions, MessageIds>({
           if (
             prop.type === AST_NODE_TYPES.Property &&
             prop.key.type === AST_NODE_TYPES.Identifier &&
+            // @vocabulary HTTP client request-config keys — axios baseURL/url, request uri, WHATWG URL href
             ['url', 'uri', 'href', 'baseURL'].includes(prop.key.name)
           ) {
             const propSource = getTaintSource(prop.value);

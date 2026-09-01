@@ -12,7 +12,8 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
-type MessageIds = 'noDirectMutationState' | 'suggestSetState' | 'suggestFunctionalUpdate';
+type MessageIds =
+  'noDirectMutationState' | 'suggestSetState' | 'suggestFunctionalUpdate';
 
 export interface Options {
   /** Allow mutations in lifecycle methods */
@@ -38,7 +39,8 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
         description: 'Never mutate this.state directly',
         severity: 'HIGH',
         fix: 'Use setState() or functional updates for immutable state changes',
-        documentationLink: 'https://react.dev/learn/state-and-lifecycle#state-updates-may-be-asynchronous',
+        documentationLink:
+          'https://react.dev/learn/state-and-lifecycle#state-updates-may-be-asynchronous',
       }),
       suggestSetState: formatLLMMessage({
         icon: MessageIcons.WARNING,
@@ -46,7 +48,8 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
         description: 'Use setState with object for state updates',
         severity: 'MEDIUM',
         fix: 'Use this.setState({ count: this.state.count + 1 })',
-        documentationLink: 'https://react.dev/reference/react/Component#setstate',
+        documentationLink:
+          'https://react.dev/reference/react/Component#setstate',
       }),
       suggestFunctionalUpdate: formatLLMMessage({
         icon: MessageIcons.WARNING,
@@ -54,7 +57,8 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
         description: 'Use functional setState for immutable updates',
         severity: 'MEDIUM',
         fix: 'Use this.setState(prevState => ({ count: prevState.count + 1 }))',
-        documentationLink: 'https://react.dev/reference/react/Component#setstate',
+        documentationLink:
+          'https://react.dev/reference/react/Component#setstate',
       }),
     },
     schema: [
@@ -130,13 +134,19 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
               const start = node.range[0];
               const lineStart = sourceCode.getIndexFromLoc({
                 line: sourceCode.getLocFromIndex(start).line,
-                column: 0
+                column: 0,
               });
               const lineText = sourceCode.getText().slice(lineStart, start);
               // Leading-whitespace run — computed without a regex null-check
               // branch (`/^\s*/` can never fail to match).
-              const indent = lineText.slice(0, lineText.length - lineText.trimStart().length);
-              return fixer.insertTextBefore(node, `// TODO: Use setState instead of direct mutation\n${indent}`);
+              const indent = lineText.slice(
+                0,
+                lineText.length - lineText.trimStart().length,
+              );
+              return fixer.insertTextBefore(
+                node,
+                `// TODO: Use setState instead of direct mutation\n${indent}`,
+              );
             },
           },
           {
@@ -147,13 +157,19 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
               const start = node.range[0];
               const lineStart = sourceCode.getIndexFromLoc({
                 line: sourceCode.getLocFromIndex(start).line,
-                column: 0
+                column: 0,
               });
               const lineText = sourceCode.getText().slice(lineStart, start);
               // Leading-whitespace run — computed without a regex null-check
               // branch (`/^\s*/` can never fail to match).
-              const indent = lineText.slice(0, lineText.length - lineText.trimStart().length);
-              return fixer.insertTextBefore(node, `// TODO: Use functional setState for immutable updates\n${indent}`);
+              const indent = lineText.slice(
+                0,
+                lineText.length - lineText.trimStart().length,
+              );
+              return fixer.insertTextBefore(
+                node,
+                `// TODO: Use functional setState for immutable updates\n${indent}`,
+              );
             },
           },
         ],
@@ -163,11 +179,13 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
     // Shared helper — uses `target` to avoid shadowing visitor `node` params
     // oxlint-disable-next-line consistent-function-scoping
     function isStatePropertyAccess(target: TSESTree.Node): boolean {
-      if (target.type === 'MemberExpression' &&
-          target.object.type === 'MemberExpression' &&
-          target.object.object.type === 'ThisExpression' &&
-          target.object.property.type === 'Identifier' &&
-          target.object.property.name === 'state') {
+      if (
+        target.type === 'MemberExpression' &&
+        target.object.type === 'MemberExpression' &&
+        target.object.object.type === 'ThisExpression' &&
+        target.object.property.type === 'Identifier' &&
+        target.object.property.name === 'state'
+      ) {
         return true; // this.state.xxx
       }
       // Handle deeper nesting
@@ -187,6 +205,7 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
         if (node.superClass) {
           if (
             node.superClass.type === 'Identifier' &&
+            // @vocabulary React API
             ['Component', 'PureComponent'].includes(node.superClass.name)
           ) {
             inClassComponent = true;
@@ -196,7 +215,10 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
             node.superClass.object.type === 'Identifier' &&
             node.superClass.object.name === 'React' &&
             node.superClass.property.type === 'Identifier' &&
-            ['Component', 'PureComponent'].includes(node.superClass.property.name)
+            // @vocabulary React API
+            ['Component', 'PureComponent'].includes(
+              node.superClass.property.name,
+            )
           ) {
             inClassComponent = true;
             classStack.push(true);
@@ -206,7 +228,8 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
 
       'ClassDeclaration:exit'() {
         classStack.pop();
-        inClassComponent = classStack.length > 0 && classStack[classStack.length - 1];
+        inClassComponent =
+          classStack.length > 0 && classStack[classStack.length - 1];
       },
 
       MethodDefinition(node: TSESTree.MethodDefinition) {
@@ -239,7 +262,10 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
 
       // Delete operator on this.state properties
       UnaryExpression(node: TSESTree.UnaryExpression) {
-        if (node.operator === 'delete' && node.argument.type === 'MemberExpression') {
+        if (
+          node.operator === 'delete' &&
+          node.argument.type === 'MemberExpression'
+        ) {
           if (isStatePropertyAccess(node.argument)) {
             reportStateMutation(node, 'delete operator');
           }
@@ -257,10 +283,19 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
           if (isStatePropertyAccess(node.callee.object)) {
             // Methods that mutate arrays/objects
             const mutatingMethods = [
-              'push', 'pop', 'shift', 'unshift', 'splice', 'sort', 'reverse',
-              'copyWithin', 'fill',
+              'push',
+              'pop',
+              'shift',
+              'unshift',
+              'splice',
+              'sort',
+              'reverse',
+              'copyWithin',
+              'fill',
               // Object methods
-              'defineProperty', 'deleteProperty', 'setPrototypeOf',
+              'defineProperty',
+              'deleteProperty',
+              'setPrototypeOf',
             ];
 
             if (mutatingMethods.includes(methodName)) {

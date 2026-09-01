@@ -114,6 +114,7 @@ Object.assign(process.env, { NODE_ENV: 'production' });
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
+| `requestRootNames` | `string[]` | `["req","request","ctx","event"]` | Identifiers that name the request at the top of a handler. Replaces the default. |
 | `extraRequestRoots` | `string[]` | `[]` | Extra identifiers to treat as roots of request-controlled data. Added to the built-in roots, not a replacement for them. |
 
 The default roots are `req`, `request`, `ctx` and `event`.

@@ -1,0 +1,30 @@
+# Packages removed from `node_modules` before the LEAN cache archive is saved.
+#
+# Read by two places, so the list lives here rather than in either of them:
+#   - the trim step in quality-full.yml's node-lane job (what actually deletes)
+#   - scripts/__tests__/lane-deps-lock.test.ts (what proves it is safe)
+#
+# Why a trim step and not `!node_modules/<pkg>/**` on actions/cache: when a
+# positive path pattern matches a DIRECTORY, actions/cache tars that directory
+# whole and the negations never get a say. Measured three times on the same
+# tree — 451,051,181 B full, then 451,028,482, then 450,980,039 — the twelve
+# exclusions were subtracting nothing. Deleting the directories before the
+# post-job save is exact, and keeps the restore a plain directory untar rather
+# than a 200k-file glob that would drop npm's `.bin` symlinks.
+#
+# Membership rule: large, and resolved only by the WEB lane (`docs`,
+# `@interlace/ui`). `date-fns` is the standing counter-example — root-declared
+# and web-looking, but imported by eslint-plugin-import-next, -modularity,
+# -secure-coding and cwe-analytics-engine, so it must never appear here.
+next
+@next
+mermaid
+posthog-js
+@posthog
+fumadocs-ui
+fumadocs-core
+@base-ui
+lucide-react
+recharts
+storybook
+@storybook

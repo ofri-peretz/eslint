@@ -33,6 +33,7 @@ describe('jsx-handler-names', () => {
       valid: [
         // handleX pattern
         {
+          name: 'handleClick',
           code: `<button onClick={handleClick}>Click</button>`,
         },
         // onX pattern
@@ -98,6 +99,7 @@ describe('jsx-handler-names', () => {
       invalid: [
         // Random name
         {
+          name: 'a handler named outside the handle* convention',
           code: `<button onClick={doClick}>Click</button>`,
           errors: [{ messageId: 'jsxHandlerNames' }],
         },

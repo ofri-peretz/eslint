@@ -34,6 +34,21 @@ export interface Options {
    * two. Default: []
    */
   additionalSensitiveProperties?: string[];
+
+  /**
+   * REPLACE the built-in list rather than adding to it. Default: unset.
+   *
+   * `additionalSensitiveProperties` can only grow the vocabulary, which leaves
+   * a project no way to remove a word we guessed wrong about — a codebase whose
+   * `keyMap` is a keyboard map, or whose `token` is a lexer token, could add
+   * forever and never stop the report.
+   *
+   * The rule matches on a NAME by necessity: the value at a `delete` site is
+   * not available to a syntactic rule. That makes the vocabulary a claim about
+   * somebody else's naming, and a claim about somebody else's naming has to be
+   * theirs to withdraw.
+   */
+  sensitiveProperties?: readonly string[];
 }
 
 type RuleOptions = [Options?];
@@ -123,6 +138,13 @@ export const requireSecureDeletion = createRule<RuleOptions, MessageIds>({
       {
         type: 'object',
         properties: {
+          sensitiveProperties: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [...SENSITIVE_PROPERTY_NAMES],
+            description:
+              'Replace the built-in sensitive-property vocabulary. Takes precedence over additionalSensitiveProperties.',
+          },
           additionalSensitiveProperties: {
             type: 'array',
             items: { type: 'string' },
@@ -135,10 +157,23 @@ export const requireSecureDeletion = createRule<RuleOptions, MessageIds>({
       },
     ],
   },
-  defaultOptions: [{ additionalSensitiveProperties: [] }],
+  defaultOptions: [
+    {
+      additionalSensitiveProperties: [],
+      // The built-in vocabulary, stated rather than implied by a `??` fallback.
+      sensitiveProperties: [...SENSITIVE_PROPERTY_NAMES],
+    },
+  ],
   create(context, [options = {}]) {
-    const { additionalSensitiveProperties = [] } = options as Options;
-    const phrases = [...SENSITIVE_PROPERTY_NAMES, ...additionalSensitiveProperties];
+    // The default lives in `defaultOptions`, so there is no `??` fallback to
+    // take here — a second copy of the default is a second thing to keep in
+    // step, and coverage proved this one was never reached.
+    const {
+      additionalSensitiveProperties = [],
+      sensitiveProperties = SENSITIVE_PROPERTY_NAMES,
+    } = options as Options;
+
+    const phrases = [...sensitiveProperties, ...additionalSensitiveProperties];
 
     /** The property name being deleted, or undefined if it isn't statically known. */
     function deletedPropertyName(node: TSESTree.Node): string | undefined {

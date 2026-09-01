@@ -66,6 +66,14 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('require-rate-limiting', requireRateLimiting, {
   valid: xp([
+    {
+      name: 'the default receiver list replaced away',
+      code: `
+        const app = express();
+        app.post('/auth/token', issueToken);
+      `,
+      options: [{ appReceiverNames: ['gateway'] }],
+    },
     // -----------------------------------------------------------------
     // LOCK: "an Express app exists" is not a throttling finding.
     //
@@ -76,6 +84,7 @@ ruleTester.run('require-rate-limiting', requireRateLimiting, {
     // 2026-08-12.
     // -----------------------------------------------------------------
     {
+      name: 'an app with no authentication route to limit',
       code: `
         import express from 'express';
         const app = express();
@@ -274,11 +283,21 @@ ruleTester.run('require-rate-limiting', requireRateLimiting, {
     },
   ]),
   invalid: xp([
+    {
+      name: 'a receiver the consumer named',
+      code: `
+        const gateway = express();
+        gateway.post('/auth/token', issueToken);
+      `,
+      options: [{ appReceiverNames: ['gateway'] }],
+      errors: [{ messageId: 'missingRateLimiting' }],
+    },
     // -----------------------------------------------------------------
     // The two findings that survived adjudication: okta-auth-js's sample
     // servers accept a username/password pair on an unthrottled POST.
     // -----------------------------------------------------------------
     {
+      name: 'a login route with no rate limiter',
       code: `
         const express = require('express');
         const app = express();

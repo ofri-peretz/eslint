@@ -29,6 +29,7 @@ describe('no-electron-security-issues', () => {
       valid: [
         // Secure BrowserWindow configuration
         {
+          name: 'context isolation on, node integration off',
           code: 'new BrowserWindow({ contextIsolation: true, nodeIntegration: false });',
         },
         {
@@ -52,6 +53,7 @@ describe('no-electron-security-issues', () => {
       valid: [],
       invalid: [
         {
+          name: 'nodeIntegration on gives renderer content Node access',
           code: 'new BrowserWindow({ nodeIntegration: true });',
           errors: [
             {

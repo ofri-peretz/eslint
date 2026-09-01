@@ -24,8 +24,19 @@
  * @see https://trojansource.codes/
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 
+/**
+ * @vocabulary The confusable and invisible code points are Unicode's, from the
+ * UTS #39 security mechanisms data. They are a property of the character set,
+ * not of anybody's codebase.
+ *
+ * @see https://www.unicode.org/reports/tr39/
+ */
 type MessageIds = 'homoglyphIdentifier' | 'invisibleCharacter';
 
 export interface Options {
@@ -51,28 +62,83 @@ type RuleOptions = [Options?];
  */
 const CONFUSABLE_WITH_ASCII: ReadonlyMap<number, string> = new Map([
   // Cyrillic lowercase
-  [0x0430, 'a'], [0x0432, 'b'], [0x0433, 'r'], [0x0435, 'e'], [0x043a, 'k'],
-  [0x043c, 'm'], [0x043d, 'h'], [0x043e, 'o'], [0x0440, 'p'], [0x0441, 'c'],
-  [0x0443, 'y'], [0x0445, 'x'], [0x0455, 's'], [0x0456, 'i'], [0x0458, 'j'],
+  [0x0430, 'a'],
+  [0x0432, 'b'],
+  [0x0433, 'r'],
+  [0x0435, 'e'],
+  [0x043a, 'k'],
+  [0x043c, 'm'],
+  [0x043d, 'h'],
+  [0x043e, 'o'],
+  [0x0440, 'p'],
+  [0x0441, 'c'],
+  [0x0443, 'y'],
+  [0x0445, 'x'],
+  [0x0455, 's'],
+  [0x0456, 'i'],
+  [0x0458, 'j'],
   // Cyrillic uppercase
-  [0x0405, 'S'], [0x0406, 'I'], [0x0408, 'J'], [0x0410, 'A'], [0x0412, 'B'],
-  [0x0415, 'E'], [0x041a, 'K'], [0x041c, 'M'], [0x041d, 'H'], [0x041e, 'O'],
-  [0x0420, 'P'], [0x0421, 'C'], [0x0422, 'T'], [0x0423, 'Y'], [0x0425, 'X'],
+  [0x0405, 'S'],
+  [0x0406, 'I'],
+  [0x0408, 'J'],
+  [0x0410, 'A'],
+  [0x0412, 'B'],
+  [0x0415, 'E'],
+  [0x041a, 'K'],
+  [0x041c, 'M'],
+  [0x041d, 'H'],
+  [0x041e, 'O'],
+  [0x0420, 'P'],
+  [0x0421, 'C'],
+  [0x0422, 'T'],
+  [0x0423, 'Y'],
+  [0x0425, 'X'],
   // Greek lowercase
-  [0x03b1, 'a'], [0x03b5, 'e'], [0x03b9, 'i'], [0x03ba, 'k'], [0x03bd, 'v'],
-  [0x03bf, 'o'], [0x03c1, 'p'], [0x03c3, 'o'], [0x03c4, 't'], [0x03c5, 'u'],
+  [0x03b1, 'a'],
+  [0x03b5, 'e'],
+  [0x03b9, 'i'],
+  [0x03ba, 'k'],
+  [0x03bd, 'v'],
+  [0x03bf, 'o'],
+  [0x03c1, 'p'],
+  [0x03c3, 'o'],
+  [0x03c4, 't'],
+  [0x03c5, 'u'],
   [0x03c7, 'x'],
   // Greek uppercase
-  [0x0391, 'A'], [0x0392, 'B'], [0x0395, 'E'], [0x0396, 'Z'], [0x0397, 'H'],
-  [0x0399, 'I'], [0x039a, 'K'], [0x039c, 'M'], [0x039d, 'N'], [0x039f, 'O'],
-  [0x03a1, 'P'], [0x03a4, 'T'], [0x03a5, 'Y'], [0x03a7, 'X'],
+  [0x0391, 'A'],
+  [0x0392, 'B'],
+  [0x0395, 'E'],
+  [0x0396, 'Z'],
+  [0x0397, 'H'],
+  [0x0399, 'I'],
+  [0x039a, 'K'],
+  [0x039c, 'M'],
+  [0x039d, 'N'],
+  [0x039f, 'O'],
+  [0x03a1, 'P'],
+  [0x03a4, 'T'],
+  [0x03a5, 'Y'],
+  [0x03a7, 'X'],
   // Armenian
-  [0x0578, 'n'], [0x057d, 'u'], [0x0585, 'o'],
+  [0x0578, 'n'],
+  [0x057d, 'u'],
+  [0x0585, 'o'],
   // Cherokee — the block ESLint's own docs cite for identifier confusables
-  [0x13a0, 'D'], [0x13a9, 'E'], [0x13aa, 'A'], [0x13b3, 'W'], [0x13bb, 'P'],
-  [0x13c0, 'G'], [0x13cf, 'C'], [0x13d9, 'V'], [0x13de, 'S'], [0x13e2, 'B'],
+  [0x13a0, 'D'],
+  [0x13a9, 'E'],
+  [0x13aa, 'A'],
+  [0x13b3, 'W'],
+  [0x13bb, 'P'],
+  [0x13c0, 'G'],
+  [0x13cf, 'C'],
+  [0x13d9, 'V'],
+  [0x13de, 'S'],
+  [0x13e2, 'B'],
   // Latin-script lookalikes outside ASCII
-  [0x01c0, 'l'], [0x0131, 'i'], [0x0261, 'g'],
+  [0x01c0, 'l'],
+  [0x0131, 'i'],
+  [0x0261, 'g'],
 ]);
 
 /**
@@ -156,7 +222,9 @@ function isVisibleAscii(codepoint: number): boolean {
  * form the corpus fixture takes, and the form that breaks an equality check
  * nobody can see failing.
  */
-function invisibleIn(text: string): { index: number; codepoint: number } | null {
+function invisibleIn(
+  text: string,
+): { index: number; codepoint: number } | null {
   for (let index = 0; index < text.length; index++) {
     if (!INVISIBLE.test(text[index])) continue;
 

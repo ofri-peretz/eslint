@@ -28,6 +28,7 @@ describe('no-direct-mutation-state', () => {
       valid: [
         // Not in class component
         {
+          name: 'the same assignment outside any component',
           code: 'this.state.count = 5;',
         },
         // Functional component (no this.state)
@@ -58,6 +59,7 @@ describe('no-direct-mutation-state', () => {
       invalid: [
         // Direct assignment to state property
         {
+          name: 'assigning to this.state inside a component',
           code: `
             class Component extends React.Component {
               increment() {

@@ -14,21 +14,32 @@ import { noUserControlledRenderLocals } from './index';
 // A SIDE-EFFECT import: it satisfies the gate without reserving the `express`
 // binding. Several fixtures already declare `const express = require('express')`
 // at module level, and a default import would redeclare it.
-const asExpress = (code: string): string => `import 'express';\n${code}`;
+// The handler wrapper makes every receiver a PARAMETER, which is what the rule
+// now requires. The long parameter list is deliberate: fixtures below use
+// `response`/`reply`/`ctx`/`RES` to show the rule no longer cares what you call
+// things, and each has to arrive as an argument for that to be true. It used to match the NAMES `req`/`request`/`ctx` and
+// `res`/`response`/`reply`, so a free-floating identifier worked — but real
+// Express code has no such thing, and a handler written `(inbound, outbound)`
+// matched nothing at all. Wrapping here rather than editing each fixture keeps
+// one from being left behind.
+const asExpress = (code: string): string =>
+  `import 'express';\napp.get('/r', (req, res, next, request, response, reply, ctx, RES) => {\n${code}\n});`;
 type Suggestion = { output?: string | null };
 type Case = {
   code: string;
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
 };
-const xp = <T,>(cases: T[]): T[] =>
+const xp = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asExpress(c) as T;
     const test = c as Case;
     return {
       ...c,
       code: asExpress(test.code),
-      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asExpress(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -48,7 +59,6 @@ const xp = <T,>(cases: T[]): T[] =>
     } as T;
   });
 
-
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
 RuleTester.itOnly = it.only;
@@ -65,7 +75,7 @@ describe('no-user-controlled-render-locals', () => {
     {
       valid: xp([
         // Static locals — always safe
-        { code: `res.render('home');` },
+        { name: 'render with no locals', code: `res.render('home');` },
         { code: `res.render('home', { title: 'Welcome' });` },
         // Field-picking is THE safe pattern (corpus FP-lock: render-explicit-locals.js)
         {
@@ -136,8 +146,19 @@ describe('no-user-controlled-render-locals', () => {
         { code: 'res.render(`pages/${page}`);' },
       ]),
       invalid: xp([
+        {
+          // FN: the shape the NAME LIST could never catch. A handler written
+          // `(inbound, outbound)` is ordinary code and matched none of
+          // ['req','request','ctx'] / ['res','response','reply'], so this rule
+          // was silent on it entirely until the check became structural.
+          // @found rename litmus
+          name: 'FN: a handler whose parameters are named nothing in particular',
+          code: `app.post('/x', (inbound, outbound) => { outbound.render('v', inbound.body); });`,
+          errors: [{ messageId: 'unsafeRenderLocals' }],
+        },
         // Corpus fixture (verbatim): CWE-073/vulnerable/render-body-spread.js
         {
+          name: 'request data passed as template locals',
           code: `
           const express = require('express');
 

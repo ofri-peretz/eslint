@@ -40,11 +40,15 @@
  * @see https://modelcontextprotocol.io/docs/concepts/tools
  */
 
-import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  TSESTree,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 import { fileUsesMcpSdk } from '../../utils/mcp-evidence';
 
 type MessageIds = 'toolArgToShell';
-
 
 const REGISTER_TOOL = 'registerTool';
 const LEGACY_TOOL = 'tool';
@@ -143,7 +147,8 @@ function collectPatternNames(
     let value: TSESTree.Node = prop.value;
     if (value.type === 'AssignmentPattern') value = value.left;
     if (value.type === 'Identifier') into.add(value.name);
-    else if (value.type === 'ObjectPattern') collectPatternNames(value, into, objects);
+    else if (value.type === 'ObjectPattern')
+      collectPatternNames(value, into, objects);
   }
 }
 
@@ -170,7 +175,8 @@ export const noCommandInjectionInTool = createRule<[], MessageIds>({
         severity: 'CRITICAL',
         compliance: ['SOC2', 'NIST-CSF'],
         fix: 'Do not let the argument name the command. Map it through a fixed allowlist of permitted operations, and pass user data as an argv array element — `execFile(ALLOWED[op], [value])` — never as the executable.',
-        documentationLink: 'https://modelcontextprotocol.io/docs/concepts/tools',
+        documentationLink:
+          'https://modelcontextprotocol.io/docs/concepts/tools',
       }),
     },
     schema: [],
@@ -187,7 +193,11 @@ export const noCommandInjectionInTool = createRule<[], MessageIds>({
       direct: Set<string>;
       objects: Set<string>;
     }> = [];
-    const candidates: Array<{ node: TSESTree.Node; arg: string; sink: string }> = [];
+    const candidates: Array<{
+      node: TSESTree.Node;
+      arg: string;
+      sink: string;
+    }> = [];
 
     /**
      * The *innermost* handler enclosing this node, if any.
@@ -205,7 +215,8 @@ export const noCommandInjectionInTool = createRule<[], MessageIds>({
       // an arm no traversal order can reach.
       let innermost: (typeof handlers)[number] | undefined;
       for (const h of handlers) {
-        if (node.range[0] >= h.range[0] && node.range[1] <= h.range[1]) innermost = h;
+        if (node.range[0] >= h.range[0] && node.range[1] <= h.range[1])
+          innermost = h;
       }
       return innermost;
     }
@@ -259,7 +270,10 @@ export const noCommandInjectionInTool = createRule<[], MessageIds>({
           let argName: string | undefined;
 
           // `execSync(cmd)` where `cmd` was destructured from the tool args.
-          if (command.type === 'Identifier' && handler.direct.has(command.name)) {
+          if (
+            command.type === 'Identifier' &&
+            handler.direct.has(command.name)
+          ) {
             argName = command.name;
           }
           // `execSync(args.cmd)` where `args` is the whole tool-args object.

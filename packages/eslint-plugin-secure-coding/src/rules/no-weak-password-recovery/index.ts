@@ -99,7 +99,8 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
         description: 'Password recovery attempts not rate limited',
         severity: 'HIGH',
         fix: 'Implement rate limiting on recovery requests',
-        documentationLink: 'https://owasp.org/www-community/attacks/Brute_force_attack',
+        documentationLink:
+          'https://owasp.org/www-community/attacks/Brute_force_attack',
       }),
       predictableRecoveryToken: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -145,7 +146,14 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
           secureTokenFunctions: {
             type: 'array',
             items: { type: 'string' },
-            default: ['crypto.randomBytes', 'crypto.randomUUID', 'randomBytes', 'generateSecureToken'], description: 'Functions that generate cryptographically secure tokens'
+            default: [
+              'crypto.randomBytes',
+              'crypto.randomUUID',
+              'randomBytes',
+              'generateSecureToken',
+            ],
+            description:
+              'Functions that generate cryptographically secure tokens',
           },
           trustedSanitizers: {
             type: 'array',
@@ -164,7 +172,8 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
             // absent), but changing the destructuring WOULD — it would
             // withdraw two annotations this rule has always honoured.
             default: ['secure-recovery', 'rate-limited'],
-            description: 'Additional JSDoc annotations to consider as safe markers',
+            description:
+              'Additional JSDoc annotations to consider as safe markers',
           },
           strictMode: {
             type: 'boolean',
@@ -178,7 +187,12 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [
     {
-      secureTokenFunctions: ['crypto.randomBytes', 'crypto.randomUUID', 'randomBytes', 'generateSecureToken'],
+      secureTokenFunctions: [
+        'crypto.randomBytes',
+        'crypto.randomUUID',
+        'randomBytes',
+        'generateSecureToken',
+      ],
       trustedSanitizers: [],
       trustedAnnotations: ['secure-recovery', 'rate-limited'],
       strictMode: false,
@@ -187,7 +201,12 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const {
-      secureTokenFunctions = ['crypto.randomBytes', 'crypto.randomUUID', 'randomBytes', 'generateSecureToken'],
+      secureTokenFunctions = [
+        'crypto.randomBytes',
+        'crypto.randomUUID',
+        'randomBytes',
+        'generateSecureToken',
+      ],
       trustedSanitizers = [],
       trustedAnnotations = ['secure-recovery', 'rate-limited'],
       strictMode = false,
@@ -214,7 +233,7 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
     // oxlint-disable-next-line consistent-function-scoping
     const isRecoveryRelated = (text: string): boolean => {
       const lowerText = text.toLowerCase();
-      
+
       // Require BOTH a password keyword AND a recovery action keyword
       const passwordKeywords = ['password', 'pwd'];
       // Hard-coded, and deliberately narrower than the vocabulary the removed
@@ -222,30 +241,45 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
       // recovery ACTION word must be present, which is what keeps this off
       // every function that merely mentions a password.
       const recoveryKeywords = ['reset', 'recover', 'forgot', 'restore'];
-      
-      const hasPasswordKeyword = passwordKeywords.some(keyword => lowerText.includes(keyword));
-      const hasRecoveryKeyword = recoveryKeywords.some(keyword => lowerText.includes(keyword));
-      
+
+      const hasPasswordKeyword = passwordKeywords.some((keyword) =>
+        lowerText.includes(keyword),
+      );
+      const hasRecoveryKeyword = recoveryKeywords.some((keyword) =>
+        lowerText.includes(keyword),
+      );
+
       // Both must be present to be considered recovery-related
       if (hasPasswordKeyword && hasRecoveryKeyword) {
         return true;
       }
-      
+
       // Also check for compound patterns that strongly indicate password recovery
       const strongRecoveryPatterns = [
-        'resetpassword', 'passwordreset', 'forgotpassword', 'passwordrecovery',
-        'recoverytoken', 'password_reset', 'forgot_password', 'reset_password',
-        'passwordforgot', 'recoverpassword'
+        'resetpassword',
+        'passwordreset',
+        'forgotpassword',
+        'passwordrecovery',
+        'recoverytoken',
+        'password_reset',
+        'forgot_password',
+        'reset_password',
+        'passwordforgot',
+        'recoverpassword',
       ];
-      return strongRecoveryPatterns.some(pattern => lowerText.includes(pattern));
+      return strongRecoveryPatterns.some((pattern) =>
+        lowerText.includes(pattern),
+      );
     };
 
     /**
      * Check if token generation is cryptographically secure
      */
-    const isSecureTokenGeneration = (callExpression: TSESTree.CallExpression): boolean => {
+    const isSecureTokenGeneration = (
+      callExpression: TSESTree.CallExpression,
+    ): boolean => {
       const callText = sourceCode.getText(callExpression);
-      return secureTokenFunctions.some(func => callText.includes(func));
+      return secureTokenFunctions.some((func) => callText.includes(func));
     };
 
     /**
@@ -257,10 +291,13 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
      * is a function is a wrapper (catchAsync, asyncHandler, middleware), and
      * nothing that returns one is a credential.
      */
-    const looksLikeTokenValue = (callExpression: TSESTree.CallExpression): boolean =>
+    const looksLikeTokenValue = (
+      callExpression: TSESTree.CallExpression,
+    ): boolean =>
       !callExpression.arguments.some(
         (arg) =>
-          arg.type === 'ArrowFunctionExpression' || arg.type === 'FunctionExpression',
+          arg.type === 'ArrowFunctionExpression' ||
+          arg.type === 'FunctionExpression',
       );
 
     /**
@@ -276,7 +313,9 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
      * may well wrap crypto.randomBytes, and this check cannot see inside it.
      * Report evidence of weakness instead of absence of a known-good name.
      */
-    const usesPredictableSource = (callExpression: TSESTree.CallExpression): boolean => {
+    const usesPredictableSource = (
+      callExpression: TSESTree.CallExpression,
+    ): boolean => {
       const text = sourceCode.getText(callExpression);
       return (
         /\bMath\s*\.\s*random\s*\(/.test(text) ||
@@ -329,15 +368,22 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
             // `const t = crypto.randomBytes(32)` mints a token under a name
             // that says nothing. The callee does. (A member property is not a
             // scope reference, so the loop above cannot see it.)
-            if (definition.type === 'Variable' && definition.node.init?.type === 'CallExpression') {
+            if (
+              definition.type === 'Variable' &&
+              definition.node.init?.type === 'CallExpression'
+            ) {
               const { callee } = definition.node.init;
               const calleeName =
                 callee.type === 'Identifier'
                   ? callee.name
-                  : callee.type === 'MemberExpression' && callee.property.type === 'Identifier'
+                  : callee.type === 'MemberExpression' &&
+                      callee.property.type === 'Identifier'
                     ? callee.property.name
                     : null;
-              if (calleeName !== null && CREDENTIAL_GENERATORS.has(calleeName)) {
+              if (
+                calleeName !== null &&
+                CREDENTIAL_GENERATORS.has(calleeName)
+              ) {
                 return true;
               }
             }
@@ -351,7 +397,8 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
             variable.defs.some(
               (definition) =>
                 definition.type === 'Parameter' ||
-                (definition.type === 'Variable' && definition.node.init !== null),
+                (definition.type === 'Variable' &&
+                  definition.node.init !== null),
             )
           ) {
             return true;
@@ -375,12 +422,19 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
     /**
      * Check if token has expiration
      */
-    const hasTokenExpiration = (functionNode: TSESTree.FunctionDeclaration | TSESTree.FunctionExpression | TSESTree.ArrowFunctionExpression): boolean => {
+    const hasTokenExpiration = (
+      functionNode:
+        | TSESTree.FunctionDeclaration
+        | TSESTree.FunctionExpression
+        | TSESTree.ArrowFunctionExpression,
+    ): boolean => {
       const functionText = sourceCode.getText(functionNode).toLowerCase();
-      return functionText.includes('expire') ||
-             functionText.includes('ttl') ||
-             functionText.includes('timeout') ||
-             functionText.includes('lifetime');
+      return (
+        functionText.includes('expire') ||
+        functionText.includes('ttl') ||
+        functionText.includes('timeout') ||
+        functionText.includes('lifetime')
+      );
     };
 
     return {
@@ -407,7 +461,10 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
               usesPredictableSource(node.init)
             ) {
               // FALSE POSITIVE REDUCTION
-              if (safetyChecker.isSafe(node, context) || (node.parent && safetyChecker.isSafe(node.parent, context))) {
+              if (
+                safetyChecker.isSafe(node, context) ||
+                (node.parent && safetyChecker.isSafe(node.parent, context))
+              ) {
                 return;
               }
 
@@ -422,10 +479,18 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
             }
           } else if (node.init.type === 'BinaryExpression') {
             // Check for predictable patterns
-            const weakPatterns = ['Date.now()', 'Math.random()', 'timestamp', 'new Date()'];
-            if (weakPatterns.some(pattern => initText.includes(pattern))) {
+            const weakPatterns = [
+              'Date.now()',
+              'Math.random()',
+              'timestamp',
+              'new Date()',
+            ];
+            if (weakPatterns.some((pattern) => initText.includes(pattern))) {
               // FALSE POSITIVE REDUCTION
-              if (safetyChecker.isSafe(node, context) || (node.parent && safetyChecker.isSafe(node.parent, context))) {
+              if (
+                safetyChecker.isSafe(node, context) ||
+                (node.parent && safetyChecker.isSafe(node.parent, context))
+              ) {
                 return;
               }
 
@@ -483,7 +548,10 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
           }
 
           // Check for rate limiting (very basic check)
-          if (!functionText.includes('limit') && !functionText.includes('rate')) {
+          if (
+            !functionText.includes('limit') &&
+            !functionText.includes('rate')
+          ) {
             if (safetyChecker.isSafe(node, context)) {
               return;
             }
@@ -505,24 +573,32 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
         const callee = node.callee;
 
         // Check for console.log, logger calls
-        if ((callee.type === 'MemberExpression' &&
-             callee.object.type === 'Identifier' &&
-             (callee.object.name === 'console' || callee.object.name === 'logger') &&
-             callee.property.type === 'Identifier' &&
-             ['log', 'info', 'warn', 'error'].includes(callee.property.name)) ||
-            (callee.type === 'Identifier' && callee.name === 'logger')) {
+        if (
+          (callee.type === 'MemberExpression' &&
+            callee.object.type === 'Identifier' &&
+            (callee.object.name === 'console' ||
+              callee.object.name === 'logger') &&
+            callee.property.type === 'Identifier' &&
+            // @vocabulary console API
+            ['log', 'info', 'warn', 'error'].includes(callee.property.name)) ||
+          (callee.type === 'Identifier' && callee.name === 'logger')
+        ) {
           const args = node.arguments;
           for (const arg of args) {
-             // Ignore literal strings (labels, messages) - focusing on sensitive variables
-             if (arg.type === 'Literal') {
-               continue;
-             }
+            // Ignore literal strings (labels, messages) - focusing on sensitive variables
+            if (arg.type === 'Literal') {
+              continue;
+            }
             const argText = sourceCode.getText(arg).toLowerCase();
 
             // Check if logging recovery-related sensitive data
-            if (isRecoveryRelated(argText) &&
-                (argText.includes('token') || argText.includes('password') ||
-                 argText.includes('reset') || argText.includes('code'))) {
+            if (
+              isRecoveryRelated(argText) &&
+              (argText.includes('token') ||
+                argText.includes('password') ||
+                argText.includes('reset') ||
+                argText.includes('code'))
+            ) {
               // FALSE POSITIVE REDUCTION
               if (safetyChecker.isSafe(node, context)) {
                 continue;

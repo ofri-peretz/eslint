@@ -91,7 +91,6 @@ export const noHostHeaderInLinks = createRule<RuleOptions, MessageIds>({
         fix: 'Build absolute links from a server-side constant (e.g. process.env.PUBLIC_ORIGIN), never from request headers.',
         documentationLink: 'https://cwe.mitre.org/data/definitions/640.html',
       }),
-
     },
     schema: [
       {

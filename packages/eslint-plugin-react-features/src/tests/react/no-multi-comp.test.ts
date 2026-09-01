@@ -33,6 +33,7 @@ describe('no-multi-comp', () => {
       valid: [
         // Single function component
         {
+          name: 'one component',
           code: `
             function MyComponent() {
               return <div>Hello</div>;
@@ -154,6 +155,7 @@ describe('no-multi-comp', () => {
       invalid: [
         // Two function components
         {
+          name: 'two components in one file',
           code: `
             function ComponentA() {
               return <div>A</div>;

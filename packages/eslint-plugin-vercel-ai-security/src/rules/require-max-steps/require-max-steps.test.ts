@@ -61,6 +61,7 @@ ruleTester.run('require-max-steps', requireMaxSteps, {
   valid: xai([
     // Has maxSteps
     {
+      name: 'maxSteps is set',
       code: `
         await generateText({
           model: openai('gpt-4'),
@@ -179,6 +180,7 @@ ruleTester.run('require-max-steps', requireMaxSteps, {
   invalid: xai([
     // generateText with tools but no maxSteps
     {
+      name: 'tools with no step ceiling can loop until the budget is gone',
       code: `
         await generateText({
           model: openai('gpt-4'),

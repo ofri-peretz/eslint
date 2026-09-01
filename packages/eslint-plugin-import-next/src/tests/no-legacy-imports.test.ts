@@ -49,6 +49,7 @@ ruleTester.run('no-legacy-imports', noLegacyImports, {
   valid: [
     // ✅ Modern replacement
     {
+      name: 'date-fns',
       code: `import { format } from 'date-fns';`,
       options: [defaultOptions],
     },
@@ -87,6 +88,7 @@ ruleTester.run('no-legacy-imports', noLegacyImports, {
   invalid: [
     // ❌ moment.js (deprecated)
     {
+      name: 'moment, where date-fns is the modern replacement',
       code: `import moment from 'moment';`,
       output: `import moment from 'date-fns';`,
       options: [defaultOptions],

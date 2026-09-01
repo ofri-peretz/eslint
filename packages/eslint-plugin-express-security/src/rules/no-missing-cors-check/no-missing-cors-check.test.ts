@@ -78,6 +78,7 @@ vitest.describe('no-missing-cors-check', () => {
       valid: xp([
         // CORS with origin validation
         {
+          name: 'the origin is checked against an allowlist',
           code: `
             app.use(cors({
               origin: (origin, callback) => {
@@ -119,6 +120,7 @@ vitest.describe('no-missing-cors-check', () => {
       valid: [],
       invalid: xp([
         {
+          name: "origin '*'",
           code: 'app.use(cors({ origin: "*" }));',
           errors: [
             {

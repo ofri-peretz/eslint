@@ -58,6 +58,7 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
     "const s = fs.createReadStream(p); s.addListener('error', log); s.pipe(res);",
     // Test files are exempt by default.
     {
+      name: 'a stream whose path is not request-derived',
       code: 'fs.createReadStream(p).pipe(res);',
       filename: '/proj/stream.test.ts',
     },
@@ -111,6 +112,7 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
     // The source is constructed inline, so no 'error' listener can ever have
     // been attached to it. A missing file emits 'error' and exits the process.
     {
+      name: 'a stream from a request-derived path piped with no error handler',
       code: `
         function download(req, res) {
           const filePath = './uploads/' + req.params.id;

@@ -23,24 +23,24 @@ const ruleTester = new RuleTester({
 describe('no-sql-injection', () => {
   ruleTester.run('no-sql-injection', noSqlInjection, {
     valid: [
-    // --- an allowlist plus a leaving guard is the correct fix ---------------
-    // No driver binds an identifier, so a table or column name cannot be
-    // parameterised and an allowlist is what the standard advice prescribes.
-    // bcgov/sso-requests wrote exactly this, comment and all, and the rule
-    // reported the defence as the vulnerability.
-    `const ALLOWED = new Set(['Requests', 'Users']);
+      // --- an allowlist plus a leaving guard is the correct fix ---------------
+      // No driver binds an identifier, so a table or column name cannot be
+      // parameterised and an allowlist is what the standard advice prescribes.
+      // bcgov/sso-requests wrote exactly this, comment and all, and the rule
+      // reported the defence as the vulnerability.
+      `const ALLOWED = new Set(['Requests', 'Users']);
      export const q = async (table) => {
        if (!ALLOWED.has(table)) throw new Error('Invalid table');
        return sequelize.query(\`SELECT * FROM \${table};\`);
      };`,
-    // The block spelling of the guard body.
-    `const ALLOWED = new Set(['t']);
+      // The block spelling of the guard body.
+      `const ALLOWED = new Set(['t']);
      export const q = async (table) => {
        if (!ALLOWED.has(table)) { throw new Error('Invalid table'); }
        return sequelize.query(\`SELECT * FROM \${table};\`);
      };`,
-    // The array spelling, and a guard that returns rather than throws.
-    `const COLS = ['id', 'name'];
+      // The array spelling, and a guard that returns rather than throws.
+      `const COLS = ['id', 'name'];
      export const q = async (col) => {
        if (!COLS.includes(col)) return null;
        return sequelize.query(\`SELECT \${col} FROM t;\`);
@@ -210,140 +210,141 @@ db.query('SELECT * FROM users WHERE id = ' + f);`,
     ],
 
     invalid: [
-    // FN GUARD — a membership test whose failure branch falls through
-    // constrains nothing. The guard has to LEAVE for the values after it to be
-    // a subset of the allowlist.
-    {
-      code: `const ALLOWED = new Set(['a']);
+      // FN GUARD — a membership test whose failure branch falls through
+      // constrains nothing. The guard has to LEAVE for the values after it to be
+      // a subset of the allowlist.
+      {
+        name: 'an allowlist that logs on a miss instead of stopping, then interpolates anyway',
+        code: `const ALLOWED = new Set(['a']);
      export const q = async (table) => {
        if (!ALLOWED.has(table)) { log('bad'); }
        return sequelize.query(\`SELECT * FROM \${table};\`);
      };`,
-      errors: [{ messageId: 'sqlInjection' }],
-    },
-    // FN GUARD — a single non-leaving statement, without a block.
-    {
-      code: `const A = new Set(['a']);
+        errors: [{ messageId: 'sqlInjection' }],
+      },
+      // FN GUARD — a single non-leaving statement, without a block.
+      {
+        code: `const A = new Set(['a']);
      export const q = async (t) => {
        if (!A.has(t)) log('bad');
        return sequelize.query(\`SELECT * FROM \${t};\`);
      };`,
-      errors: [{ messageId: 'sqlInjection' }],
-    },
-    // FN GUARD — an "allowlist" that is itself caller-supplied constrains
-    // nothing either.
-    {
-      code: `export const q = async (table, allowed) => {
+        errors: [{ messageId: 'sqlInjection' }],
+      },
+      // FN GUARD — an "allowlist" that is itself caller-supplied constrains
+      // nothing either.
+      {
+        code: `export const q = async (table, allowed) => {
        if (!allowed.has(table)) throw new Error('bad');
        return sequelize.query(\`SELECT * FROM \${table};\`);
      };`,
-      errors: [{ messageId: 'sqlInjection' }],
-    },
-    // --- each way a guard fails to constrain, one case per branch ---------
-    // Expression-bodied arrow: no block, so no statement can guard anything.
-    {
-      code: `const A = new Set(['a']);
+        errors: [{ messageId: 'sqlInjection' }],
+      },
+      // --- each way a guard fails to constrain, one case per branch ---------
+      // Expression-bodied arrow: no block, so no statement can guard anything.
+      {
+        code: `const A = new Set(['a']);
      export const q = async (t) => sequelize.query(\`SELECT * FROM \${t};\`);`,
-      errors: [{ messageId: 'sqlInjection' }],
-    },
-    // A guard that appears AFTER the interpolation constrains nothing before it.
-    {
-      code: `const A = new Set(['a']);
+        errors: [{ messageId: 'sqlInjection' }],
+      },
+      // A guard that appears AFTER the interpolation constrains nothing before it.
+      {
+        code: `const A = new Set(['a']);
      export const q = async (t) => {
        const r = sequelize.query(\`SELECT * FROM \${t};\`);
        if (!A.has(t)) throw new Error('late');
        return r;
      };`,
-      errors: [{ messageId: 'sqlInjection' }],
-    },
-    // A non-if statement in the way.
-    {
-      code: `const A = new Set(['a']);
+        errors: [{ messageId: 'sqlInjection' }],
+      },
+      // A non-if statement in the way.
+      {
+        code: `const A = new Set(['a']);
      export const q = async (t) => {
        const label = String(t);
        return sequelize.query(\`SELECT \${label} FROM \${t};\`);
      };`,
-      errors: [{ messageId: 'sqlInjection' }],
-    },
-    // A positive test rather than a negated one: the leaving branch is the
-    // ALLOWED case, so nothing is excluded.
-    {
-      code: `const A = new Set(['a']);
+        errors: [{ messageId: 'sqlInjection' }],
+      },
+      // A positive test rather than a negated one: the leaving branch is the
+      // ALLOWED case, so nothing is excluded.
+      {
+        code: `const A = new Set(['a']);
      export const q = async (t) => {
        if (A.has(t)) return null;
        return sequelize.query(\`SELECT * FROM \${t};\`);
      };`,
-      errors: [{ messageId: 'sqlInjection' }],
-    },
-    // Negated, but not a call.
-    {
-      code: `export const q = async (t, ok) => {
+        errors: [{ messageId: 'sqlInjection' }],
+      },
+      // Negated, but not a call.
+      {
+        code: `export const q = async (t, ok) => {
        if (!ok) throw new Error('bad');
        return sequelize.query(\`SELECT * FROM \${t};\`);
      };`,
-      errors: [{ messageId: 'sqlInjection' }],
-    },
-    // Negated call, but a bare function rather than a member.
-    {
-      code: `export const q = async (t) => {
+        errors: [{ messageId: 'sqlInjection' }],
+      },
+      // Negated call, but a bare function rather than a member.
+      {
+        code: `export const q = async (t) => {
        if (!isAllowed(t)) throw new Error('bad');
        return sequelize.query(\`SELECT * FROM \${t};\`);
      };`,
-      errors: [{ messageId: 'sqlInjection' }],
-    },
-    // A member call, but not a membership test.
-    {
-      code: `const A = new Set(['a']);
+        errors: [{ messageId: 'sqlInjection' }],
+      },
+      // A member call, but not a membership test.
+      {
+        code: `const A = new Set(['a']);
      export const q = async (t) => {
        if (!A.check(t)) throw new Error('bad');
        return sequelize.query(\`SELECT * FROM \${t};\`);
      };`,
-      errors: [{ messageId: 'sqlInjection' }],
-    },
-    // Membership test on a DIFFERENT identifier than the one interpolated.
-    {
-      code: `const A = new Set(['a']);
+        errors: [{ messageId: 'sqlInjection' }],
+      },
+      // Membership test on a DIFFERENT identifier than the one interpolated.
+      {
+        code: `const A = new Set(['a']);
      export const q = async (t, other) => {
        if (!A.has(other)) throw new Error('bad');
        return sequelize.query(\`SELECT * FROM \${t};\`);
      };`,
-      errors: [{ messageId: 'sqlInjection' }],
-    },
-    // Receiver is a member expression, so the list cannot be resolved here.
-    {
-      code: `export const q = async (t) => {
+        errors: [{ messageId: 'sqlInjection' }],
+      },
+      // Receiver is a member expression, so the list cannot be resolved here.
+      {
+        code: `export const q = async (t) => {
        if (!config.allowed.has(t)) throw new Error('bad');
        return sequelize.query(\`SELECT * FROM \${t};\`);
      };`,
-      errors: [{ messageId: 'sqlInjection' }],
-    },
-    // A Set built from something other than an array literal.
-    {
-      code: `const A = new Set(loadTables());
+        errors: [{ messageId: 'sqlInjection' }],
+      },
+      // A Set built from something other than an array literal.
+      {
+        code: `const A = new Set(loadTables());
      export const q = async (t) => {
        if (!A.has(t)) throw new Error('bad');
        return sequelize.query(\`SELECT * FROM \${t};\`);
      };`,
-      errors: [{ messageId: 'sqlInjection' }],
-    },
-    // An empty allowlist admits nothing, so it is not evidence of narrowing.
-    {
-      code: `const A = new Set([]);
+        errors: [{ messageId: 'sqlInjection' }],
+      },
+      // An empty allowlist admits nothing, so it is not evidence of narrowing.
+      {
+        code: `const A = new Set([]);
      export const q = async (t) => {
        if (!A.has(t)) throw new Error('bad');
        return sequelize.query(\`SELECT * FROM \${t};\`);
      };`,
-      errors: [{ messageId: 'sqlInjection' }],
-    },
-    // A list whose members are not literals is not a fixed set.
-    {
-      code: `const A = [tableA, tableB];
+        errors: [{ messageId: 'sqlInjection' }],
+      },
+      // A list whose members are not literals is not a fixed set.
+      {
+        code: `const A = [tableA, tableB];
      export const q = async (t) => {
        if (!A.includes(t)) throw new Error('bad');
        return sequelize.query(\`SELECT * FROM \${t};\`);
      };`,
-      errors: [{ messageId: 'sqlInjection' }],
-    },
+        errors: [{ messageId: 'sqlInjection' }],
+      },
 
       // ── Corpus: CWE-089/vulnerable ───────────────────────────────────────
       {
@@ -549,6 +550,7 @@ ruleTester.run('no-sql-injection-corpus-locks', noSqlInjection, {
     // strict mode excludes call results: an escaper and a builder look the same
     // from the call site.
     {
+      name: 'the identifier is escaped',
       code: "db.query('SELECT * FROM users ORDER BY ' + escapeIdentifier(req.query.sort));",
       options: [{ reportUnattributedInterpolation: true }],
     },

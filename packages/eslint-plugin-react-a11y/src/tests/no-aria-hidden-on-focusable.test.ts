@@ -25,7 +25,7 @@ describe('no-aria-hidden-on-focusable', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - no aria-hidden on focusable', noAriaHiddenOnFocusable, {
       valid: [
-        { code: '<div aria-hidden="true"></div>' },
+        { name: 'aria-hidden on a plain div', code: '<div aria-hidden="true"></div>' },
         { code: '<span aria-hidden="true"></span>' },
         { code: '<button>Click</button>' },
         { code: '<a href="#">Link</a>' },
@@ -40,7 +40,7 @@ describe('no-aria-hidden-on-focusable', () => {
     ruleTester.run('invalid - aria-hidden on focusable', noAriaHiddenOnFocusable, {
       valid: [],
       invalid: [
-        { code: '<button aria-hidden="true">Click</button>', errors: [{ messageId: 'ariaHiddenFocusable' }] },
+        { name: 'aria-hidden on a focusable element — reachable by tab, invisible to the reader', code: '<button aria-hidden="true">Click</button>', errors: [{ messageId: 'ariaHiddenFocusable' }] },
         { code: '<a href="#" aria-hidden="true">Link</a>', errors: [{ messageId: 'ariaHiddenFocusable' }] },
         { code: '<input aria-hidden="true" />', errors: [{ messageId: 'ariaHiddenFocusable' }] },
       ],

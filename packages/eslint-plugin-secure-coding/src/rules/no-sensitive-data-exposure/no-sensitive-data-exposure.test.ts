@@ -27,6 +27,7 @@ describe('no-sensitive-data-exposure', () => {
       valid: [
         // Regular log messages
         {
+          name: 'a message with no secret in it',
           code: `console.log('User logged in');`,
         },
         {
@@ -128,6 +129,7 @@ describe('no-sensitive-data-exposure', () => {
       invalid: [
         // String literal with password
         {
+          name: 'a password in a log line',
           code: `console.log('password: 123456');`,
           errors: [{ messageId: 'sensitiveDataExposure' }],
         },

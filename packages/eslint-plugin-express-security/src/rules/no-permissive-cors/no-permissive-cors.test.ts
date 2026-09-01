@@ -70,6 +70,7 @@ describe('no-permissive-cors', () => {
       valid: xp([
         // CORS with specific origin whitelist
         {
+          name: 'an explicit origin list',
           code: `
             import cors from 'cors';
             app.use(cors({
@@ -136,6 +137,7 @@ describe('no-permissive-cors', () => {
       invalid: xp([
         // Wildcard origin
         {
+          name: "origin '*'",
           code: `
             import cors from 'cors';
             app.use(cors({ origin: '*' }));

@@ -11,6 +11,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isStaticExpression,
+  staticString,
 } from '@interlace/eslint-devkit';
 import { NoUnsafeQueryOptions } from '../../types';
 import { fileUsesPostgres } from '../../utils';
@@ -66,10 +67,7 @@ function staticText(node: TSESTree.Node): string {
   if (node.type === AST_NODE_TYPES.BinaryExpression && node.operator === '+') {
     return `${staticText(node.left as TSESTree.Node)}${staticText(node.right)}`;
   }
-  if (node.type === AST_NODE_TYPES.Literal && typeof node.value === 'string') {
-    return node.value;
-  }
-  return '';
+  return staticString(node) ?? '';
 }
 
 /** Whether the static half of an expression reads as a SQL statement. */
@@ -329,7 +327,7 @@ export const noUnsafeQuery: TSESLint.RuleModule<
     const isStringish = (node: TSESTree.Node): boolean =>
       isBuilt(node) ||
       node.type === AST_NODE_TYPES.TemplateLiteral ||
-      (node.type === AST_NODE_TYPES.Literal && typeof node.value === 'string');
+      (staticString(node) !== null);
 
     /**
      * Report when the fragments together form a SQL statement built out of at

@@ -33,6 +33,7 @@ describe('no-set-state', () => {
       valid: [
         // Not setState calls
         {
+          name: 'a different this method',
           code: 'this.setTimeout()',
         },
         {
@@ -55,6 +56,7 @@ describe('no-set-state', () => {
       invalid: [
         // Direct setState calls
         {
+          name: 'setState where the configuration wants hooks',
           code: 'this.setState({ count: 1 })',
           errors: [
             {

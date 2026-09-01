@@ -44,7 +44,23 @@ describe('no-timing-unsafe-compare', () => {
         // An AST discriminant is not a credential. flint-fyi/flint compares
         // `operatorToken.kind` against a SyntaxKind inside its own lint rule; the
         // identifier carries `token`, the value is an enum member.
-        'if (statement.expression.operatorToken.kind === SyntaxKind.EqualsToken) { return; }',
+        {
+          // @source flint-fyi/flint packages/ts/src/rules/errorSubclassProperties.ts:56
+          // @found real-source scan
+          name: 'FP: an AST discriminant is not a credential — 11 findings in the wild',
+          code: 'if (statement.expression.operatorToken.kind === SyntaxKind.EqualsToken) { return; }',
+        },
+        {
+          // This is a real timing leak and the rule stays quiet. The detection
+          // is a NAME heuristic, so a secret held in an unnamed variable is
+          // invisible to it — the litmus test is renaming every identifier to
+          // `a`/`b` and asking whether the rule still fires. It does not, and
+          // widening the word list does not fix the general case. A `valid`
+          // case is the honest place to say so: this is what ships today.
+          // @found no word list fixes the general case; the consumer vocabulary option is the escape hatch
+          name: 'GAP: a secret compared through an anonymous name is not detected',
+          code: 'if (a === b) { grant(); }',
+        },
         'if (node.type === expectedType) { return; }',
         'if (symbol.flags === SymbolFlags.Property) { return; }',
         // The plural tail is a separate entry: only the LAST word is tested, so
@@ -71,7 +87,7 @@ describe('no-timing-unsafe-compare', () => {
         `if (prop.key === 'text') return;`,
         `const first = keys.find((key) => key === wanted);`,
         // Regular non-secret comparisons
-        { code: 'if (name === otherName) {}' },
+        { name: 'two names compared, which is not a secret', code: 'if (name === otherName) {}' },
         { code: 'if (count === 5) {}' },
         { code: 'if (userId === targetId) {}' },
         { code: 'if (status === "active") {}' },
@@ -148,6 +164,7 @@ describe('no-timing-unsafe-compare', () => {
           //
           // A camelCase object is an ordinary runtime value, not a namespace.
           {
+            name: 'an API token compared with ===',
             code: 'if (userToken === credentials.API_TOKEN) grant();',
             errors: [{ messageId: 'timingUnsafeCompare' }],
           },

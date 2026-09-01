@@ -93,6 +93,7 @@ ruleTester.run('no-missing-validation-pipe', noMissingValidationPipe, {
     `,
     // ========== VALID: Controller with class-level ValidationPipe ==========
     {
+      name: 'the controller carries @UsePipes(ValidationPipe)',
       code: `
         @Controller('users')
         @UsePipes(ValidationPipe)
@@ -189,6 +190,7 @@ ruleTester.run('no-missing-validation-pipe', noMissingValidationPipe, {
     // The early return that used to skip the whole file on a global
     // registration hid exactly these.
     {
+      name: 'a @Body() typed `any` with no pipe to check it',
       code: `
         @Controller('users')
         class UsersController {

@@ -75,6 +75,7 @@ describe('no-hardcoded-connection-string', () => {
       valid: xmo([
         // Unrelated code should not trigger
         {
+          name: 'the driver is imported but nothing queries',
           code: `const x = 1;`,
         },
         // Array operations are safe
@@ -106,6 +107,7 @@ describe('no-hardcoded-connection-string', () => {
       invalid: xmo([
         // Triggers hardcodedConnectionString: hardcoded connection string
         {
+          name: 'credentials inside the connection URI in source',
           code: `mongoose.connect('mongodb://user:pass@host:27017/db');`,
           errors: [{ messageId: 'hardcodedConnectionString' }],
         },

@@ -12,6 +12,13 @@ import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
+/**
+ * @vocabulary `deprecated` is the JSDoc block tag. It is defined by JSDoc and
+ * understood by TypeScript and every editor, so it is not a name this project
+ * or its consumers get to pick.
+ *
+ * @see https://jsdoc.app/tags-deprecated
+ */
 type MessageIds = 'deprecatedImport' | 'deprecatedExport' | 'deprecatedUsage';
 
 export interface Options {

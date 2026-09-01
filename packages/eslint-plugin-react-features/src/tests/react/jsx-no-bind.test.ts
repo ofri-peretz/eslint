@@ -33,6 +33,7 @@ describe('jsx-no-bind', () => {
       valid: [
         // Arrow function (also not ideal but not what this rule checks)
         {
+          name: 'an arrow, which the configuration allows',
           code: `<button onClick={() => handleClick()}>Click</button>`,
         },
         // Pre-bound method reference
@@ -99,6 +100,7 @@ describe('jsx-no-bind', () => {
       invalid: [
         // Basic bind call
         {
+          name: '.bind in the render path allocates a new function every render',
           code: `<button onClick={this.handleClick.bind(this)}>Click</button>`,
           errors: [{ messageId: 'jsxNoBind' }],
         },

@@ -61,6 +61,7 @@ ruleTester.run('require-tool-schema', requireToolSchema, {
   valid: xai([
     // Tool with inputSchema
     {
+      name: 'the tool declares a zod input schema',
       code: `
         await generateText({
           model: openai('gpt-4'),
@@ -175,6 +176,7 @@ ruleTester.run('require-tool-schema', requireToolSchema, {
   invalid: xai([
     // Tool missing inputSchema
     {
+      name: 'a tool with no input schema takes whatever the model invents',
       code: `
         await generateText({
           model: openai('gpt-4'),

@@ -15,7 +15,7 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-named-export', noNamedExport, {
   valid: [
-    { code: `export default 42;` },
+    { name: 'a default export', code: `export default 42;` },
     { code: `const x = 1;` },
     { code: `export type Foo = string;` },
     { code: `export interface Bar {}` },
@@ -66,6 +66,7 @@ ruleTester.run('no-named-export', noNamedExport, {
   invalid: [
     // Variable Declaration
     {
+      name: 'a named export',
       code: `export const foo = 1;`,
       errors: [{ messageId: 'namedExport' }]
     },

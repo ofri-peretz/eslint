@@ -20,7 +20,11 @@
  * - Resource cleanup patterns
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, isStaticExpression } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  isStaticExpression,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   createSafetyChecker,
@@ -34,7 +38,45 @@ type MessageIds =
   | 'userControlledResourceSize'
   | 'resourceAllocationInLoop';
 
+/**
+ * The property a value exposes its magnitude on.
+ *
+ * `length`, `size` and `byteLength` are the language's and Node's. `count` is
+ * not — it is a convention, here because a bounded read often checks one. Kept
+ * as a default and made replaceable rather than quietly asserted.
+ */
+const DEFAULT_SIZE_PROPERTIES = [
+  'length',
+  'size',
+  'byteLength',
+  'count',
+] as const;
+
+/**
+ * The option key a library accepts to cap an operation.
+ *
+ * `maxOutputLength` is zlib's. `maxSize` and `limit` are conventions shared by
+ * body-parser, multer and a dozen others — exactly the kind of guess that
+ * belongs behind an option rather than in the rule.
+ */
+const DEFAULT_LIMIT_OPTION_NAMES = [
+  'maxOutputLength',
+  'maxSize',
+  'limit',
+] as const;
+
 export interface Options extends SecurityRuleOptions {
+  /**
+   * Property names that carry a magnitude, used to recognise a bounded read.
+   * REPLACES the default. Default: `DEFAULT_SIZE_PROPERTIES`.
+   */
+  sizeProperties?: readonly string[];
+  /**
+   * Option keys a library accepts to cap an operation, used to recognise an
+   * already-bounded call. REPLACES the default.
+   * Default: `DEFAULT_LIMIT_OPTION_NAMES`.
+   */
+  limitOptionNames?: readonly string[];
   /** Maximum allowed resource size for static analysis */
   maxResourceSize?: number;
 
@@ -50,7 +92,10 @@ export interface Options extends SecurityRuleOptions {
 
 type RuleOptions = [Options?];
 
-export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>({
+export const noUnlimitedResourceAllocation = createRule<
+  RuleOptions,
+  MessageIds
+>({
   name: 'no-unlimited-resource-allocation',
   meta: {
     type: 'problem',
@@ -110,37 +155,70 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
       {
         type: 'object',
         properties: {
+          sizeProperties: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [...DEFAULT_SIZE_PROPERTIES],
+            description:
+              'Property names that carry a magnitude. Replaces the default.',
+          },
+          limitOptionNames: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [...DEFAULT_LIMIT_OPTION_NAMES],
+            description:
+              'Option keys a library accepts to cap an operation. Replaces the default.',
+          },
           maxResourceSize: {
             type: 'number',
             minimum: 1024,
             default: 1048576, // 1MB
-            description: 'Allocation size in bytes above which a call is reported',
+            description:
+              'Allocation size in bytes above which a call is reported',
           },
           userInputVariables: {
             type: 'array',
             items: { type: 'string' },
-            default: ['req', 'request', 'body', 'query', 'params', 'input', 'data'], description: 'Variable names treated as user-controlled input'
+            default: [
+              'req',
+              'request',
+              'body',
+              'query',
+              'params',
+              'input',
+              'data',
+            ],
+            description: 'Variable names treated as user-controlled input',
           },
           safeResourceFunctions: {
             type: 'array',
             items: { type: 'string' },
-            default: ['validateSize', 'checkLimits', 'limitResource', 'safeAlloc'], description: 'Function names that bound an allocation'
+            default: [
+              'validateSize',
+              'checkLimits',
+              'limitResource',
+              'safeAlloc',
+            ],
+            description: 'Function names that bound an allocation',
           },
           requireResourceValidation: {
             type: 'boolean',
-            default: true, description: 'Require an explicit size check before allocating'
+            default: true,
+            description: 'Require an explicit size check before allocating',
           },
           trustedSanitizers: {
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Additional function names to consider as resource validators',
+            description:
+              'Additional function names to consider as resource validators',
           },
           trustedAnnotations: {
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Additional JSDoc annotations to consider as safe markers',
+            description:
+              'Additional JSDoc annotations to consider as safe markers',
           },
           strictMode: {
             type: 'boolean',
@@ -159,8 +237,21 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
   defaultOptions: [
     {
       maxResourceSize: 1048576, // 1MB
-      userInputVariables: ['req', 'request', 'body', 'query', 'params', 'input', 'data'],
-      safeResourceFunctions: ['validateSize', 'checkLimits', 'limitResource', 'safeAlloc'],
+      userInputVariables: [
+        'req',
+        'request',
+        'body',
+        'query',
+        'params',
+        'input',
+        'data',
+      ],
+      safeResourceFunctions: [
+        'validateSize',
+        'checkLimits',
+        'limitResource',
+        'safeAlloc',
+      ],
       requireResourceValidation: true,
       trustedSanitizers: [],
       trustedAnnotations: [],
@@ -169,10 +260,29 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
+    const sizeProperties = new Set<string>(
+      options.sizeProperties ?? DEFAULT_SIZE_PROPERTIES,
+    );
+    const limitOptionNames = new Set<string>(
+      options.limitOptionNames ?? DEFAULT_LIMIT_OPTION_NAMES,
+    );
     const {
       maxResourceSize = 1048576,
-      userInputVariables = ['req', 'request', 'body', 'query', 'params', 'input', 'data'],
-      safeResourceFunctions = ['validateSize', 'checkLimits', 'limitResource', 'safeAlloc'],
+      userInputVariables = [
+        'req',
+        'request',
+        'body',
+        'query',
+        'params',
+        'input',
+        'data',
+      ],
+      safeResourceFunctions = [
+        'validateSize',
+        'checkLimits',
+        'limitResource',
+        'safeAlloc',
+      ],
       requireResourceValidation = true,
       trustedSanitizers = [],
       trustedAnnotations = [],
@@ -251,15 +361,26 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
      * what a request looks like.
      */
     const REQUEST_SURFACE: ReadonlySet<string> = new Set([
-      'body', 'query', 'params', 'headers', 'cookies',
-      'url', 'originalUrl', 'rawBody', 'files', 'payload', 'searchParams',
+      'body',
+      'query',
+      'params',
+      'headers',
+      'cookies',
+      'url',
+      'originalUrl',
+      'rawBody',
+      'files',
+      'payload',
+      'searchParams',
     ]);
 
     /**
      * `userInputVariables` names the ROOTS, matched whole and case-insensitively.
      * `dataDir` is not `data`, and `queryParams` is not `query`.
      */
-    const requestRoots = new Set(userInputVariables.map((name) => name.toLowerCase()));
+    const requestRoots = new Set(
+      userInputVariables.map((name) => name.toLowerCase()),
+    );
 
     const readsRequestSurface = (node: TSESTree.Node | undefined): boolean =>
       node?.type === AST_NODE_TYPES.MemberExpression &&
@@ -276,7 +397,9 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
      * base64 encoder. Propagation starts at a binding this file can actually
      * see the value of.
      */
-    const initializerOf = (id: TSESTree.Identifier): TSESTree.Expression | undefined => {
+    const initializerOf = (
+      id: TSESTree.Identifier,
+    ): TSESTree.Expression | undefined => {
       const resolved = context.sourceCode
         .getScope(id)
         .references.find((ref) => ref.identifier === id)?.resolved;
@@ -307,7 +430,9 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
         case AST_NODE_TYPES.Identifier: {
           if (
             requestRoots.has(node.name.toLowerCase()) &&
-            readsRequestSurface((node as TSESTree.Node & { parent?: TSESTree.Node }).parent)
+            readsRequestSurface(
+              (node as TSESTree.Node & { parent?: TSESTree.Node }).parent,
+            )
           ) {
             return true;
           }
@@ -359,7 +484,9 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
             isInvokerControlled(node.alternate, depth + 1)
           );
         case AST_NODE_TYPES.TemplateLiteral:
-          return node.expressions.some((e) => isInvokerControlled(e, depth + 1));
+          return node.expressions.some((e) =>
+            isInvokerControlled(e, depth + 1),
+          );
         case AST_NODE_TYPES.AwaitExpression:
         case AST_NODE_TYPES.UnaryExpression:
           return isInvokerControlled(node.argument, depth + 1);
@@ -397,13 +524,21 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
         case AST_NODE_TYPES.Literal:
           return typeof node.value === 'number';
         case AST_NODE_TYPES.BinaryExpression:
-          return ['+', '-', '*', '/', '%', '**', '<<', '>>'].includes(node.operator);
+          return ['+', '-', '*', '/', '%', '**', '<<', '>>'].includes(
+            node.operator,
+          );
         case AST_NODE_TYPES.UnaryExpression:
-          return node.operator === '+' || node.operator === '-' || node.operator === '~';
+          return (
+            node.operator === '+' ||
+            node.operator === '-' ||
+            node.operator === '~'
+          );
         case AST_NODE_TYPES.CallExpression: {
           const callee = node.callee;
           if (callee.type === AST_NODE_TYPES.Identifier) {
-            return ['Number', 'parseInt', 'parseFloat', 'BigInt'].includes(callee.name);
+            return ['Number', 'parseInt', 'parseFloat', 'BigInt'].includes(
+              callee.name,
+            );
           }
           return (
             callee.type === AST_NODE_TYPES.MemberExpression &&
@@ -415,7 +550,7 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
           return (
             !node.computed &&
             node.property.type === AST_NODE_TYPES.Identifier &&
-            ['length', 'size', 'byteLength', 'count'].includes(node.property.name)
+            sizeProperties.has(node.property.name)
           );
         case AST_NODE_TYPES.Identifier: {
           const init = initializerOf(node);
@@ -425,7 +560,9 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
           return init !== undefined && couldBeASize(init);
         }
         case AST_NODE_TYPES.LogicalExpression:
-          return couldBeASize(node.left as TSESTree.Node) || couldBeASize(node.right);
+          return (
+            couldBeASize(node.left as TSESTree.Node) || couldBeASize(node.right)
+          );
         case AST_NODE_TYPES.ConditionalExpression:
           return couldBeASize(node.consequent) || couldBeASize(node.alternate);
         case AST_NODE_TYPES.TSAsExpression:
@@ -436,13 +573,14 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
       }
     };
 
-
     /**
      * Check if resource allocation has size validation
      */
     // All call sites invoke this only after already confirming `args.length > 0`,
     // so the "no arguments" case is unreachable and intentionally not handled here.
-    const hasSizeValidation = (node: TSESTree.CallExpression | TSESTree.NewExpression): boolean => {
+    const hasSizeValidation = (
+      node: TSESTree.CallExpression | TSESTree.NewExpression,
+    ): boolean => {
       const args = node.arguments;
 
       // Check if size argument is a validated expression
@@ -473,24 +611,35 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
           : sourceCode.getText(sizeArg);
 
       // Look for validation patterns
-      return sizeText.includes('Math.min(') ||
-             sizeText.includes('Math.max(') ||
-             sizeText.includes('Math.clamp(') ||
-             safeResourceFunctions.some(func => sizeText.includes(func));
+      return (
+        sizeText.includes('Math.min(') ||
+        sizeText.includes('Math.max(') ||
+        sizeText.includes('Math.clamp(') ||
+        safeResourceFunctions.some((func) => sizeText.includes(func))
+      );
     };
 
     /**
      * Estimate resource size from static analysis
      */
-    const estimateResourceSize = (sizeExpression: TSESTree.Expression): number | null => {
-      if (sizeExpression.type === 'Literal' && typeof sizeExpression.value === 'number') {
+    const estimateResourceSize = (
+      sizeExpression: TSESTree.Expression,
+    ): number | null => {
+      if (
+        sizeExpression.type === 'Literal' &&
+        typeof sizeExpression.value === 'number'
+      ) {
         return sizeExpression.value;
       }
 
       // Handle binary expressions like 1024 * 1024 * 100
       if (sizeExpression.type === 'BinaryExpression') {
-        const left = estimateResourceSize(sizeExpression.left as TSESTree.Expression);
-        const right = estimateResourceSize(sizeExpression.right as TSESTree.Expression);
+        const left = estimateResourceSize(
+          sizeExpression.left as TSESTree.Expression,
+        );
+        const right = estimateResourceSize(
+          sizeExpression.right as TSESTree.Expression,
+        );
 
         if (left !== null && right !== null) {
           switch (sizeExpression.operator) {
@@ -517,14 +666,13 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
      * resolves, while an unrelated identifier that merely reads like one does
      * not.
      */
-    const ARCHIVE_MODULES = /^(unzipper|tar|tar-stream|yauzl|adm-zip|node:zlib|zlib)$/;
+    const ARCHIVE_MODULES =
+      /^(unzipper|tar|tar-stream|yauzl|adm-zip|node:zlib|zlib)$/;
     const archiveBindings = new Set<string>(['zlib']);
 
     const noteArchiveBinding = (local: string, source: string): void => {
       if (ARCHIVE_MODULES.test(source)) archiveBindings.add(local);
     };
-
-
 
     /**
      * A call that actually allocates, sized by something non-constant, inside a
@@ -553,8 +701,15 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
      * ordinary factory and report every `new Thing(n)` inside a loop.
      */
     const ALLOCATORS: ReadonlySet<string> = new Set([
-      'Buffer.alloc', 'Buffer.allocUnsafe', 'Buffer.allocUnsafeSlow',
-      'Buffer', 'Array', 'Map', 'Set', 'WeakMap', 'WeakSet',
+      'Buffer.alloc',
+      'Buffer.allocUnsafe',
+      'Buffer.allocUnsafeSlow',
+      'Buffer',
+      'Array',
+      'Map',
+      'Set',
+      'WeakMap',
+      'WeakSet',
     ]);
 
     /**
@@ -564,8 +719,13 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
      */
     const enclosingLoop = (
       node: TSESTree.Node,
-    ): TSESTree.ForStatement | TSESTree.ForOfStatement | TSESTree.ForInStatement
-      | TSESTree.WhileStatement | TSESTree.DoWhileStatement | undefined => {
+    ):
+      | TSESTree.ForStatement
+      | TSESTree.ForOfStatement
+      | TSESTree.ForInStatement
+      | TSESTree.WhileStatement
+      | TSESTree.DoWhileStatement
+      | undefined => {
       let child: TSESTree.Node = node;
       let current: TSESTree.Node | undefined = node.parent;
       // `!= null`, not `!== undefined`: at Program the parent is `null`, and a
@@ -649,16 +809,20 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
       // against. `for (const x of req.body.items)` and
       // `for (let i = 0; i < count; i++)` are the same finding.
       const bound =
-        loop.type === AST_NODE_TYPES.ForOfStatement || loop.type === AST_NODE_TYPES.ForInStatement
+        loop.type === AST_NODE_TYPES.ForOfStatement ||
+        loop.type === AST_NODE_TYPES.ForInStatement
           ? loop.right
-          : loop.test ?? undefined;
+          : (loop.test ?? undefined);
       return bound !== undefined && isInvokerControlled(bound);
     };
 
     return {
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         for (const spec of node.specifiers) {
-          if (spec.type === 'ImportDefaultSpecifier' || spec.type === 'ImportNamespaceSpecifier') {
+          if (
+            spec.type === 'ImportDefaultSpecifier' ||
+            spec.type === 'ImportNamespaceSpecifier'
+          ) {
             noteArchiveBinding(spec.local.name, String(node.source.value));
           }
         }
@@ -672,9 +836,11 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
           node.init.callee.name === 'require' &&
           node.init.arguments[0]?.type === 'Literal'
         ) {
-          noteArchiveBinding(node.id.name, String(node.init.arguments[0].value));
+          noteArchiveBinding(
+            node.id.name,
+            String(node.init.arguments[0].value),
+          );
         }
-
       },
 
       // Check Buffer allocation
@@ -690,7 +856,8 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
           callee.object.type === 'Identifier' &&
           callee.object.name === 'Buffer' &&
           callee.property.type === 'Identifier' &&
-          (callee.property.name === 'alloc' || callee.property.name === 'allocUnsafe');
+          (callee.property.name === 'alloc' ||
+            callee.property.name === 'allocUnsafe');
 
         const isNewBuffer =
           callee.type === 'NewExpression' &&
@@ -698,7 +865,6 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
           callee.callee.name === 'Buffer';
 
         if (isBufferAlloc || isNewBuffer) {
-
           const args = node.arguments;
           if (args.length > 0) {
             const sizeArg = args[0];
@@ -729,7 +895,10 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
             }
 
             // Check if size exceeds limits
-            const estimatedSize = sizeArg.type === 'SpreadElement' ? null : estimateResourceSize(sizeArg);
+            const estimatedSize =
+              sizeArg.type === 'SpreadElement'
+                ? null
+                : estimateResourceSize(sizeArg);
             if (estimatedSize && estimatedSize > maxResourceSize) {
               if (safetyChecker.isSafe(node, context)) {
                 return;
@@ -761,28 +930,38 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
           const args = node.arguments;
           if (args.length > 0 && args[0].type === 'ObjectExpression') {
             const props = args[0].properties as TSESTree.ObjectLiteralElement[];
-            
+
             // Check for valid limits definition
-            const hasValidLimits = props.some((prop: TSESTree.ObjectLiteralElement): boolean => {
-              if (prop.type !== 'Property' || prop.key.type !== 'Identifier') {
+            const hasValidLimits = props.some(
+              (prop: TSESTree.ObjectLiteralElement): boolean => {
+                if (
+                  prop.type !== 'Property' ||
+                  prop.key.type !== 'Identifier'
+                ) {
+                  return false;
+                }
+
+                // Direct fileSize (not standard but maybe used?)
+                if (prop.key.name === 'fileSize') return true;
+
+                // Limits object
+                if (
+                  prop.key.name === 'limits' &&
+                  prop.value.type === 'ObjectExpression'
+                ) {
+                  return prop.value.properties.some(
+                    (
+                      limitProp: TSESTree.ObjectLiteralElement,
+                    ): limitProp is TSESTree.Property =>
+                      limitProp.type === 'Property' &&
+                      limitProp.key.type === 'Identifier' &&
+                      limitProp.key.name === 'fileSize',
+                  );
+                }
+
                 return false;
-              }
-
-              // Direct fileSize (not standard but maybe used?)
-              if (prop.key.name === 'fileSize') return true;
-
-              // Limits object
-              if (prop.key.name === 'limits' && prop.value.type === 'ObjectExpression') {
-                return prop.value.properties.some(
-                  (limitProp: TSESTree.ObjectLiteralElement): limitProp is TSESTree.Property =>
-                    limitProp.type === 'Property' &&
-                    limitProp.key.type === 'Identifier' &&
-                    limitProp.key.name === 'fileSize'
-                );
-              }
-
-              return false;
-            });
+              },
+            );
 
             if (!hasValidLimits) {
               if (safetyChecker.isSafe(node, context)) {
@@ -803,17 +982,21 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
         }
 
         // Check for fs operations
-        if (callee.type === 'MemberExpression' &&
-            callee.object.type === 'Identifier' &&
-            callee.object.name === 'fs' &&
-            callee.property.type === 'Identifier' &&
-            ['readFile', 'writeFile', 'readFileSync', 'writeFileSync'].includes(callee.property.name)) {
-
+        if (
+          callee.type === 'MemberExpression' &&
+          callee.object.type === 'Identifier' &&
+          callee.object.name === 'fs' &&
+          callee.property.type === 'Identifier' &&
+          // @vocabulary Node fs API
+          ['readFile', 'writeFile', 'readFileSync', 'writeFileSync'].includes(
+            callee.property.name,
+          )
+        ) {
           const args = node.arguments;
           if (args.length > 0) {
             // Check if file path comes from user input (potential for large files)
             const pathArg = args[0];
-            
+
             // A path nothing can steer cannot open a file of attacker-chosen size.
             // This was a bespoke `path.join(__dirname, ...literals)` special case, so
             // `path.resolve`, a `const` holding the path, and
@@ -822,7 +1005,10 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
             // and every rule in the ecosystem shares the same answer.
             if (
               pathArg.type !== 'SpreadElement' &&
-              isStaticExpression({ node: pathArg, scope: context.sourceCode.getScope(pathArg) })
+              isStaticExpression({
+                node: pathArg,
+                scope: context.sourceCode.getScope(pathArg),
+              })
             ) {
               return;
             }
@@ -911,7 +1097,7 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
                 (property) =>
                   property.type === 'Property' &&
                   property.key.type === 'Identifier' &&
-                  ['maxOutputLength', 'maxSize', 'limit'].includes(property.key.name),
+                  limitOptionNames.has(property.key.name),
               ),
           );
 
@@ -975,7 +1161,8 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
               ['>', '>=', '<', '<='].includes(candidate.operator)
             ) {
               for (const side of [candidate.left, candidate.right]) {
-                if (side.type === AST_NODE_TYPES.Identifier) compared.add(side.name);
+                if (side.type === AST_NODE_TYPES.Identifier)
+                  compared.add(side.name);
               }
             }
             for (const [key, value] of Object.entries(candidate)) {
@@ -987,7 +1174,11 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
           return [...accumulators].some((name) => compared.has(name));
         };
 
-        if (isDecompression() && !hasDecompressionLimit() && !countsOutputBytes()) {
+        if (
+          isDecompression() &&
+          !hasDecompressionLimit() &&
+          !countsOutputBytes()
+        ) {
           context.report({
             node,
             messageId: 'unlimitedFileOperations',
@@ -1099,7 +1290,10 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
             }
 
             // Check if size exceeds limits
-            const estimatedSize = sizeArg.type === 'SpreadElement' ? null : estimateResourceSize(sizeArg);
+            const estimatedSize =
+              sizeArg.type === 'SpreadElement'
+                ? null
+                : estimateResourceSize(sizeArg);
             if (estimatedSize && estimatedSize > maxResourceSize) {
               if (safetyChecker.isSafe(node, context)) {
                 return;
@@ -1145,7 +1339,6 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
           }
         }
 
-
         // Same allocation-in-loop check as the CallExpression path — `new
         // Array(n)` and `new Set(x)` are the constructor spellings of it.
         if (isAllocationInLoopBody(node)) {
@@ -1161,7 +1354,7 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
             },
           });
         }
-      }
+      },
     };
   },
 });

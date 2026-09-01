@@ -33,6 +33,7 @@ describe('prefer-stateless-function', () => {
       valid: [
         // Class with state property
         {
+          name: 'a class that holds state',
           code: `
             class MyComponent extends Component {
               state = { count: 0 };
@@ -213,6 +214,7 @@ describe('prefer-stateless-function', () => {
       invalid: [
         // Simple class without state or lifecycle
         {
+          name: 'a class with only render and no state',
           code: `
             class MyComponent extends Component {
               render() {

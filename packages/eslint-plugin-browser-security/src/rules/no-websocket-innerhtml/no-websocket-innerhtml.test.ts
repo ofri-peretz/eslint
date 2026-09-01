@@ -21,6 +21,7 @@ ruleTester.run('no-websocket-innerhtml', noWebsocketInnerhtml, {
   valid: [
     // Safe: using textContent
     {
+      name: 'the same data as textContent',
       code: `
         const ws = new WebSocket('wss://example.test');
         ws.onmessage = (event) => {
@@ -83,6 +84,7 @@ ruleTester.run('no-websocket-innerhtml', noWebsocketInnerhtml, {
   ],
   invalid: [
     {
+      name: 'WebSocket data reaching innerHTML through a worker hop',
       // A NESTED handler used to clear the outer handler's mutable flag, so
       // the WebSocket sink after it went unreported here while no-innerhtml
       // skipped it as ours — the finding belonged to nobody. Only the

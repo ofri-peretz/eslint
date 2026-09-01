@@ -19,7 +19,7 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-sensitive-cookie-js', noSensitiveCookieJs, {
   valid: [
-    { code: `document.cookie = 'theme=dark';` },
+    { name: 'a theme preference', code: `document.cookie = 'theme=dark';` },
     { code: `document.cookie = 'locale=en-US';` },
     { code: `const all = document.cookie;` },
     { code: `myObj.cookie = 'password=abc';` },
@@ -45,6 +45,7 @@ ruleTester.run('no-sensitive-cookie-js', noSensitiveCookieJs, {
   ],
   invalid: [
     {
+      name: 'an API key written to document.cookie',
       code: `document.cookie = 'api_key=sk-live-abc123';`,
       errors: [{ messageId: 'sensitiveCookieJs', data: { key: 'api_key' } }],
     },

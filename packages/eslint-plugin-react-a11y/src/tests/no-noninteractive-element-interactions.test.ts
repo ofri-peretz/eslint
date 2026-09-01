@@ -25,7 +25,7 @@ describe('no-noninteractive-element-interactions', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid interactions', noNoninteractiveElementInteractions, {
       valid: [
-        { code: '<button onClick={handler}>Click</button>' },
+        { name: 'the same handler on a button', code: '<button onClick={handler}>Click</button>' },
         { code: '<a href="#" onClick={handler}>Link</a>' },
         { code: '<input onClick={handler} />' },
         { code: '<div role="button" onClick={handler}></div>' },
@@ -40,7 +40,7 @@ describe('no-noninteractive-element-interactions', () => {
     ruleTester.run('invalid - interactions on non-interactive', noNoninteractiveElementInteractions, {
       valid: [],
       invalid: [
-        { code: '<p onClick={handler}>Click me</p>', errors: [{ messageId: 'noInteraction' }] },
+        { name: 'a click handler on a paragraph', code: '<p onClick={handler}>Click me</p>', errors: [{ messageId: 'noInteraction' }] },
         { code: '<article onClick={handler}>Content</article>', errors: [{ messageId: 'noInteraction' }] },
         { code: '<section onClick={handler}>Section</section>', errors: [{ messageId: 'noInteraction' }] },
       ],

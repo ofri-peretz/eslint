@@ -745,6 +745,7 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
           ) {
             return true;
           }
+          // @vocabulary Node fs API
           if (['readFile', 'readFileSync'].includes(callee.property.name)) {
             return true;
           }
@@ -1062,6 +1063,7 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
                 callee.object.type === 'Identifier' &&
                 callee.object.name === 'fs' &&
                 callee.property.type === 'Identifier' &&
+                // @vocabulary Node fs API
                 ['readFile', 'readFileSync'].includes(callee.property.name)
               ) {
                 untrustedVariables.add(declarator.id.name);

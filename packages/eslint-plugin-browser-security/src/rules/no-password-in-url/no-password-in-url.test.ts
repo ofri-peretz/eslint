@@ -21,7 +21,7 @@ ruleTester.run('no-password-in-url', noPasswordInUrl, {
     'function noop() {}',
     'const items = [];',
     'const obj = {};',
-    { code: "const url = 'https://example.com/api'" },
+    { name: 'a URL with no userinfo', code: "const url = 'https://example.com/api'" },
     { code: "fetch('https://api.example.com')" },
 
     // ---- FP lock: the authority ends at the first `/` ---------------------
@@ -45,6 +45,7 @@ ruleTester.run('no-password-in-url', noPasswordInUrl, {
 
   invalid: [
     {
+      name: 'credentials in the URL userinfo',
       code: "const url = 'https://user:password@example.com'",
       errors: [{ messageId: 'violationDetected' }],
     },

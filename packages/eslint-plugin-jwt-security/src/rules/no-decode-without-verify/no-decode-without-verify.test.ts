@@ -26,6 +26,7 @@ describe('no-decode-without-verify', () => {
       valid: [
         // jwt.verify is safe
         {
+          name: 'verify',
           code: `import jwt from 'jsonwebtoken';
 const payload = jwt.verify(token, secret);`,
         },
@@ -83,6 +84,7 @@ const accessJwt = sdk.token.decode(accessToken);`,
       invalid: [
         // Basic jwt.decode()
         {
+          name: 'decode reads the claims without checking who signed them',
           code: `import jwt from 'jsonwebtoken';
 const payload = jwt.decode(token);`,
           errors: [{ messageId: 'decodeWithoutVerify' }],

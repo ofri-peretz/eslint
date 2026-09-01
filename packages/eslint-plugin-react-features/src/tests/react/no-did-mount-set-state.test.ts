@@ -33,6 +33,7 @@ describe('no-did-mount-set-state', () => {
       valid: [
         // setState in other methods
         {
+          name: 'setState in an event handler',
           code: `
             class MyComponent extends Component {
               componentDidMount() {
@@ -101,6 +102,7 @@ describe('no-did-mount-set-state', () => {
       invalid: [
         // Direct setState
         {
+          name: 'setState in componentDidMount forces a second render before paint',
           code: `
             class MyComponent extends Component {
               componentDidMount() {

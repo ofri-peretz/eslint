@@ -101,7 +101,25 @@ jobs:
 
             Post specific issues as inline comments; use one top-level comment
             for the summary.
+
+            HOW TO READ THE DIFF. Do NOT run a bare `gh pr diff` — on a large
+            PR that returns the whole diff as a single tool result and the run
+            dies on input size before reviewing anything. This one reached
+            1,727 files and 61,289 added lines, and the review errored six
+            times in a row in 15-29s each.
+
+            Instead:
+              1. `gh pr diff --name-only` to list the changed files.
+              2. Rank them by the priorities above — rule sources, schemas and
+                 scripts first; generated output, lockfiles, baselines,
+                 `benchmarks/results/**` and `docs/**` last, and skip them
+                 entirely if the budget is thin.
+              3. Read the ranked files with Read/Grep, or diff them one at a
+                 time with `gh pr diff -- <path>`.
+              4. Say in the summary how many files you actually read. A review
+                 that silently covered a fraction of a large PR is worse than
+                 one that says which fraction.
           claude_args: |
             --model claude-sonnet-4-6
             --max-turns 50
-            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Read,Grep,Glob"

@@ -24,7 +24,7 @@ const EXAMPLE_JWT =
 ruleTester.run('no-jwt-in-storage', noJwtInStorage, {
   valid: [
     // Non-sensitive storage
-    { code: `localStorage.setItem('theme', 'dark');` },
+    { name: 'a theme preference', code: `localStorage.setItem('theme', 'dark');` },
     { code: `sessionStorage.setItem('locale', 'en-US');` },
     { code: `localStorage.setItem('preference', 'compact');` },
     // Reading storage is fine
@@ -67,6 +67,7 @@ ruleTester.run('no-jwt-in-storage', noJwtInStorage, {
   invalid: [
     // Bearer-credential keys — localStorage
     {
+      name: 'a JWT in localStorage, readable by any script on the page',
       code: `localStorage.setItem('jwt', token);`,
       errors: [
         {

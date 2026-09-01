@@ -14,7 +14,7 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-dynamic-require', noDynamicRequire, {
   valid: [
     // Static require is allowed
-    { code: `require('./module');` },
+    { name: 'require of a literal', code: `require('./module');` },
     { code: `require('lodash');` },
     { code: `require(\`template-literal-no-expressions\`);` },
 
@@ -34,6 +34,7 @@ ruleTester.run('no-dynamic-require', noDynamicRequire, {
   invalid: [
     // Dynamic require with variable
     {
+      name: 'require of a computed path',
       code: `require(variable);`,
       errors: [{ messageId: 'dynamicRequire' }],
     },

@@ -232,6 +232,7 @@ contains, so those still report.
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
+| `credentialWords` | `string[]` | `["apikey","api_key","apiKey","secret","secretkey","secret_key","secretKey","clientsecret","client_secret","clientSecret","token","authtoken","auth_token","authToken","accesstoken","access_token","accessToken","refreshtoken","refresh_token","refreshToken","idtoken","id_token","idToken","password","passwd","pass","pwd","privatekey","private_key","privateKey","credentials","creds","authorization","auth","connectionstring","connection_string","connectionString","connectionuri","connectionURI","dburl","db_url","dbUrl","databaseurl","database_url","databaseUrl"]` | Variable and property names this project uses for a credential. REPLACES the default list. |
 | `ignorePatterns` | `string[]` | `[]` | Regex patterns to ignore |
 | `allowInTests` | `boolean` | `true` | Allow credentials in test files |
 | `minLength` | `number` | `8` | Minimum length for credential detection |

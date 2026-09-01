@@ -63,6 +63,7 @@ describe('no-unsafe-csp-directives', () => {
     valid: xp([
       // THE safe pattern — self-only sources, explicit frame-ancestors
       {
+        name: 'self-only sources with explicit frame-ancestors',
         code: `
           app.use(
             helmet({
@@ -161,6 +162,7 @@ describe('no-unsafe-csp-directives', () => {
     invalid: xp([
       // 'unsafe-inline' in script-src — the SonarJS S5728 case
       {
+        name: "'unsafe-inline' in scriptSrc",
         code: `app.use(helmet({ contentSecurityPolicy: { directives: { scriptSrc: ["'self'", "'unsafe-inline'"] } } }));`,
         errors: [
           {

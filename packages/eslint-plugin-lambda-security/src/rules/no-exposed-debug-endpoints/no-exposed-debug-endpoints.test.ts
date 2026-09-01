@@ -64,6 +64,7 @@ ruleTester.run('no-exposed-debug-endpoints', noExposedDebugEndpoints, {
         'const flag = true;',
         'function noop() {}',
     {
+      name: 'an ordinary application route',
       code: "if (event.path === '/api/user') {}"
     },
     {
@@ -73,6 +74,7 @@ ruleTester.run('no-exposed-debug-endpoints', noExposedDebugEndpoints, {
 
   invalid: lambda([
     {
+      name: 'a /debug route reachable in the deployed function',
       code: "if (event.path === '/debug') {}",
       errors: [{ messageId: 'violationDetected' }]
     },

@@ -19,7 +19,7 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('require-cookie-secure-attrs', requireCookieSecureAttrs, {
   valid: [
-    { code: `document.cookie = 'theme=dark; Secure; SameSite=Strict';` },
+    { name: 'both attributes set', code: `document.cookie = 'theme=dark; Secure; SameSite=Strict';` },
     { code: `document.cookie = 'sid=abc; Path=/; Secure; SameSite=Lax';` },
     { code: `const c = document.cookie;` },
     { code: `myObj.cookie = 'theme=dark';` },
@@ -42,6 +42,7 @@ ruleTester.run('require-cookie-secure-attrs', requireCookieSecureAttrs, {
   ],
   invalid: [
     {
+      name: 'a cookie with neither Secure nor SameSite',
       code: `document.cookie = 'theme=dark';`,
       errors: [
         { messageId: 'missingSecure' },

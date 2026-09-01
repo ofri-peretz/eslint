@@ -21,6 +21,7 @@ ruleTester.run('no-worker-message-innerhtml', noWorkerMessageInnerhtml, {
   valid: [
     // Safe: textContent
     {
+      name: 'the same data as textContent',
       code: `
         const worker = new Worker('worker.js');
         worker.onmessage = (event) => {
@@ -52,6 +53,7 @@ ruleTester.run('no-worker-message-innerhtml', noWorkerMessageInnerhtml, {
   ],
   invalid: [
     {
+      name: 'worker message data written to innerHTML',
       // Was `valid` — but `button` is constructed as a Worker, so this IS a
       // worker message handler. It only passed because the receiver's NAME
       // failed a heuristic, and with no-innerhtml now skipping the line as

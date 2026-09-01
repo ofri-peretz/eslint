@@ -84,15 +84,27 @@ export const noNamedAsDefaultMember = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        // Skip computed properties like obj[prop]
-        if (node.computed) return;
-
         const defaultImportInfo = defaultImports.get(node.object.name);
         if (!defaultImportInfo) return;
 
-        // Get the property name being accessed
-        if (node.property.type !== AST_NODE_TYPES.Identifier) return;
-        const propertyName = node.property.name;
+        /**
+         * `foo['bar']` reaches the same property as `foo.bar`, and minifiers,
+         * codegen and any key that is not a valid identifier all write it that
+         * way. Skipping every computed access — which this rule did — meant
+         * one spelling of the mistake reported and the other did not.
+         *
+         * A computed key that is NOT a literal (`foo[k]`) still returns: the
+         * key is decided at runtime, and guessing which property it names is
+         * the data-flow question this rule deliberately does not ask.
+         */
+        const propertyName =
+          node.property.type === AST_NODE_TYPES.Identifier && !node.computed
+            ? node.property.name
+            : node.property.type === AST_NODE_TYPES.Literal &&
+                typeof node.property.value === 'string'
+              ? node.property.value
+              : null;
+        if (propertyName === null) return;
 
         // Check if this property is a known named export from the same source
         const namedExports = namedImportsBySource.get(defaultImportInfo.source);

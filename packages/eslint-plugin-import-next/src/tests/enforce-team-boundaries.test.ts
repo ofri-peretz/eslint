@@ -47,6 +47,7 @@ ruleTester.run('enforce-team-boundaries', enforceTeamBoundaries, {
   valid: [
     // ✅ Same team import
     {
+      name: 'an import within the same boundary',
       code: `import { Button } from '../components/Button';`,
       filename: 'src/platform/features/Dashboard.tsx',
       options: [defaultOptions],
@@ -105,6 +106,7 @@ ruleTester.run('enforce-team-boundaries', enforceTeamBoundaries, {
   invalid: [
     // ❌ Platform cannot import from auth (not in allowedDependencies)
     {
+      name: "an import into another team's internals",
       code: `import { validateToken } from 'src/auth/utils/token';`,
       filename: 'src/platform/middleware/auth.ts',
       options: [defaultOptions],

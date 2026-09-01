@@ -22,6 +22,7 @@ ruleTester.run('require-tool-input-schema', requireToolInputSchema, {
   valid: [
     // inputSchema declared as a shorthand identifier key
     {
+      name: 'a zod input schema is declared',
       code: `
         ${IMPORT}
         server.registerTool('read_file', { inputSchema: { path: z.string() } }, handler);
@@ -141,6 +142,7 @@ ruleTester.run('require-tool-input-schema', requireToolInputSchema, {
   invalid: [
     // The core case: registered with a config that carries no inputSchema
     {
+      name: 'a tool registered with no input schema takes whatever the model sends',
       code: `
         ${IMPORT}
         server.registerTool('read_file', { description: 'Read a file' }, handler);

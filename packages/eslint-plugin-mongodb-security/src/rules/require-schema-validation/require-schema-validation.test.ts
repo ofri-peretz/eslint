@@ -75,6 +75,7 @@ describe('require-schema-validation', () => {
       valid: xmo([
         // Unrelated code should not trigger
         {
+          name: 'the driver is imported but nothing queries',
           code: `const x = 1;`,
         },
         // Array operations are safe
@@ -106,6 +107,7 @@ describe('require-schema-validation', () => {
       invalid: xmo([
         // Triggers requireSchemaValidation: schema field without validation
         {
+          name: 'a schema field with a type and no constraint on the value',
           code: `const schema = new Schema({ name: { type: String } });`,
           errors: [{ messageId: 'requireSchemaValidation' }],
         },

@@ -1,0 +1,128 @@
+{
+  "rule": "node-security/no-timing-unsafe-compare",
+  "title": "A secret compared with an operator that short-circuits",
+  "control": "import crypto from 'node:crypto';\nfunction f(req, apiKey) { if (req.headers.authorization === apiKey) { grant(); } }",
+  "peers": [
+    {
+      "plugin": "eslint-plugin-security",
+      "rule": "detect-possible-timing-attacks",
+      "control": "if (password === input) { grant(); }",
+      "contract": "detects possible timing attacks on comparisons of secret values",
+      "contractUrl": "https://github.com/eslint-community/eslint-plugin-security/blob/main/docs/rules/detect-possible-timing-attacks.md",
+      "contractForms": [
+        {
+          "label": "password compared",
+          "code": "if (password === input) { grant(); }"
+        },
+        {
+          "label": "secret compared",
+          "code": "if (secret === given) { grant(); }"
+        },
+        {
+          "label": "apiKey compared",
+          "code": "if (apiKey === given) { grant(); }"
+        },
+        {
+          "label": "token compared",
+          "code": "if (token === given) { grant(); }"
+        },
+        {
+          "label": "hash compared",
+          "code": "if (hash === given) { grant(); }"
+        },
+        {
+          "label": "a request header compared to a secret",
+          "code": "if (req.headers.authorization === apiKey) { grant(); }"
+        },
+        {
+          "label": "the same through a computed key",
+          "code": "if (req.headers['authorization'] === apiKey) { grant(); }"
+        }
+      ]
+    }
+  ],
+  "knownLimits": [
+    "A BARE name comparison \u2014 `if (password === input)` \u2014 is silent here and reported by eslint-plugin-security. That is a deliberate inversion, not an oversight: this rule requires one operand to be attacker-reachable. Before the inversion it produced 27 findings on the scanned corpus with zero real oracles among them, so the recall it gives up was recall over noise. The divergence is recorded as decoy cases below rather than left implicit.",
+    "A secret held in a variable with no meaningful name is invisible. This rule reads structure and naming, not taint, by policy \u2014 no word list closes the general case.",
+    "The vocabulary is configurable (`secretWords`), which is the escape hatch for a project whose naming we cannot guess."
+  ],
+  "cases": [
+    {
+      "id": "D01",
+      "kind": "defect",
+      "label": "a bearer token compared with ===",
+      "code": "import crypto from 'node:crypto';\nfunction f(req, apiKey) { if (req.headers.authorization === apiKey) { grant(); } }",
+      "why": "=== short-circuits at the first differing byte, so response time leaks the shared prefix."
+    },
+    {
+      "id": "D02",
+      "kind": "defect",
+      "label": "the same through a computed key",
+      "code": "import crypto from 'node:crypto';\nfunction f(req, apiKey) { if (req.headers['authorization'] === apiKey) { grant(); } }",
+      "why": "The same comparison, spelled with brackets."
+    },
+    {
+      "id": "D03",
+      "kind": "defect",
+      "label": "a password compared with ==",
+      "code": "import crypto from 'node:crypto';\nfunction f(req, password) { if (req.body.password == password) { grant(); } }",
+      "why": "Loose equality short-circuits identically."
+    },
+    {
+      "id": "D04",
+      "kind": "defect",
+      "label": "a comparison written the other way round",
+      "code": "import crypto from 'node:crypto';\nfunction f(req, secret) { if (secret !== req.headers['x-secret']) { deny(); } }",
+      "why": "Operand order does not change the timing."
+    },
+    {
+      "id": "N01",
+      "kind": "decoy",
+      "label": "an AST discriminant",
+      "code": "import ts from 'typescript';\nfunction f(node) { return node.kind === ts.SyntaxKind.ClassDeclaration; }",
+      "why": "A tag comparison, not a credential. Eleven findings in the wild were this shape."
+    },
+    {
+      "id": "N02",
+      "kind": "decoy",
+      "label": "an error code",
+      "code": "function f(e) { if (e.code === 'MODULE_NOT_FOUND') { retry(); } }",
+      "why": "An error code is public."
+    },
+    {
+      "id": "N03",
+      "kind": "defect",
+      "label": "a bearer comparison in a file that imports no crypto",
+      "code": "function f(req, apiKey) { if (req.headers.authorization === apiKey) { grant(); } }",
+      "why": "Written as a decoy on the assumption a module-evidence gate applied. It does not, and should not: a `===` on a secret leaks its prefix whether or not the file imports crypto. The rule was right and the case was wrong."
+    },
+    {
+      "id": "R01",
+      "kind": "remedy",
+      "label": "the documented fix",
+      "code": "import crypto from 'node:crypto';\nfunction f(a, b) { return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b)); }",
+      "why": "Reporting the fix leaves the user nothing to do."
+    },
+    {
+      "id": "N04",
+      "kind": "decoy",
+      "label": "a bare password comparison",
+      "code": "function f(password, input) { if (password === input) { grant(); } }",
+      "why": "Silent BY DESIGN, and reported by the peer. Neither operand is reachable from outside this function, so nothing here shows an attacker can drive the comparison. Reporting it produced 27 findings on the scanned corpus with zero real oracles."
+    },
+    {
+      "id": "N05",
+      "kind": "decoy",
+      "label": "a bare secret comparison",
+      "code": "function f(secret, given) { if (secret === given) { grant(); } }",
+      "why": "Silent BY DESIGN, and reported by the peer. Neither operand is reachable from outside this function, so nothing here shows an attacker can drive the comparison. Reporting it produced 27 findings on the scanned corpus with zero real oracles."
+    },
+    {
+      "id": "N06",
+      "kind": "decoy",
+      "label": "a bare apiKey comparison",
+      "code": "function f(apiKey, given) { if (apiKey === given) { grant(); } }",
+      "why": "Silent BY DESIGN, and reported by the peer. Neither operand is reachable from outside this function, so nothing here shows an attacker can drive the comparison. Reporting it produced 27 findings on the scanned corpus with zero real oracles."
+    }
+  ]
+}

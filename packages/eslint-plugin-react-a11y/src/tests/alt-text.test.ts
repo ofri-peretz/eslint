@@ -34,6 +34,7 @@ describe('alt-text', () => {
       valid: [
         // Image with alt attribute
         {
+          name: 'an image with descriptive alt text',
           code: '<img src="photo.jpg" alt="A beautiful sunset" />',
         },
         {
@@ -66,6 +67,7 @@ describe('alt-text', () => {
         // Some patterns may not be detected due to JSX parsing limitations
         // These tests represent expected behavior, but rule may need enhancement
         {
+          name: 'an image with no alt attribute',
           code: '<img src="photo.jpg" />',
           errors: [
             {

@@ -95,6 +95,7 @@ app.get('/health', healthCheck);
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
+| `appReceiverNames` | `string[]` | `["app","server","router","express","api","apiRouter","routes"]` | Identifiers that hold the Express app or a router. Replaces the default. |
 | `criticalPaths` | `string[]` | — | Path fragments that mark a route as critical |
 | `publicPaths` | `string[]` | — | Path fragments that are public by design |
 | `authMiddleware` | `string[]` | — | Extra middleware names accepted as authentication |

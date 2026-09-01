@@ -32,6 +32,7 @@ describe('control-has-associated-label', () => {
       valid: [
         // Controls with text content
         {
+          name: 'a button with text',
           code: '<button type="button">Save</button>',
         },
         // aria-label
@@ -73,6 +74,7 @@ describe('control-has-associated-label', () => {
       valid: [],
       invalid: [
         {
+          name: 'a control with no accessible name',
           code: '<button type="button"></button>',
           errors: [
             {

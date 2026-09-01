@@ -26,7 +26,7 @@ describe('require-data-testid', () => {
   ruleTester.run('require-data-testid', requireDataTestId, {
     valid: [
       // Native interactives with data-testid present
-      { code: '<button data-testid="submit">Submit</button>;' },
+      { name: 'a data-testid is present', code: '<button data-testid="submit">Submit</button>;' },
       { code: '<input data-testid="email" type="email" />;' },
       { code: '<select data-testid="country" />;' },
       { code: '<textarea data-testid="bio" />;' },
@@ -59,6 +59,7 @@ describe('require-data-testid', () => {
     invalid: [
       // Native interactive missing data-testid
       {
+        name: 'an interactive element with no test handle',
         code: '<button>Submit</button>;',
         errors: [{ messageId: 'missingDataTestId' }],
       },

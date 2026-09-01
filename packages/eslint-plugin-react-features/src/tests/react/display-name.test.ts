@@ -45,7 +45,7 @@ describe('display-name', () => {
   describe('named components are not reported', () => {
     ruleTester.run('named components', displayName, {
       valid: [
-        { code: `function Profile() { return <div>Hello</div>; }` },
+        { name: 'a named function', code: `function Profile() { return <div>Hello</div>; }` },
         { code: `const Profile = () => { return <div>Hello</div>; };` },
         { code: `const Profile = () => <div>Hello</div>;` },
         { code: `const Profile = function() { return <div>Hello</div>; };` },
@@ -77,6 +77,7 @@ describe('display-name', () => {
       valid: [],
       invalid: [
         {
+          name: 'an anonymous arrow as the default export — the devtools show nothing',
           code: `export default () => <div>Hello</div>;`,
           errors: [{ messageId: 'displayName' }],
         },

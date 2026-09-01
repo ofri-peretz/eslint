@@ -25,7 +25,7 @@ describe('enforce-naming', () => {
     ruleTester.run('no errors when no terms', enforceNaming, {
       valid: [
         // Without terms configured, everything passes
-        { code: 'const user = {};' },
+        { name: 'with no terms configured the rule has nothing to enforce', code: 'const user = {};' },
         { code: 'const customer = {};' },
         { code: 'function processOrder() {}' },
       ],
@@ -66,6 +66,7 @@ describe('enforce-naming', () => {
       invalid: [
         // Wrong terminology - user instead of customer (lowercase preserved)
         {
+          name: '`user` where the configured domain vocabulary says `customer`',
           code: 'const user = {};',
           options: [{ domain: 'ecommerce', terms: ecommerceTerms }],
           errors: [{ 

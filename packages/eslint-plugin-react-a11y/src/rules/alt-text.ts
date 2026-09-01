@@ -10,7 +10,11 @@
  * Matches jsx-a11y naming convention
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  staticString,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -55,8 +59,11 @@ type RuleOptions = [Options?];
  * the last attribute when one exists, else the element name itself.
  */
 export const getAltInsertionAnchor = (
-  node: TSESTree.JSXOpeningElement
-): TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute | TSESTree.JSXTagNameExpression =>
+  node: TSESTree.JSXOpeningElement,
+):
+  | TSESTree.JSXAttribute
+  | TSESTree.JSXSpreadAttribute
+  | TSESTree.JSXTagNameExpression =>
   node.attributes[node.attributes.length - 1] || node.name;
 
 export const altText = createRule<RuleOptions, MessageIds>({
@@ -65,7 +72,8 @@ export const altText = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/alt-text.md',
-      description: 'Enforce alt text on images with accessibility impact context',
+      description:
+        'Enforce alt text on images with accessibility impact context',
       wcag: 'WCAG 1.1.1',
       confidence: 'high',
     },
@@ -88,7 +96,8 @@ export const altText = createRule<RuleOptions, MessageIds>({
         description: 'Empty alt text detected',
         severity: 'LOW',
         fix: 'Consider: {{consideration}}',
-        documentationLink: 'https://www.w3.org/WAI/tutorials/images/decorative/',
+        documentationLink:
+          'https://www.w3.org/WAI/tutorials/images/decorative/',
       }),
       addDescriptiveAlt: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -96,7 +105,8 @@ export const altText = createRule<RuleOptions, MessageIds>({
         description: 'Add descriptive alt text',
         severity: 'LOW',
         fix: 'alt="Descriptive text about image content"',
-        documentationLink: 'https://www.w3.org/WAI/tutorials/images/informative/',
+        documentationLink:
+          'https://www.w3.org/WAI/tutorials/images/informative/',
       }),
       useEmptyAlt: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -104,30 +114,36 @@ export const altText = createRule<RuleOptions, MessageIds>({
         description: 'Use empty alt for decorative images',
         severity: 'LOW',
         fix: 'alt="" (for decorative images only)',
-        documentationLink: 'https://www.w3.org/WAI/tutorials/images/decorative/',
+        documentationLink:
+          'https://www.w3.org/WAI/tutorials/images/decorative/',
       }),
       preferEmptyAltOverPresentation: formatLLMMessage({
         icon: MessageIcons.ACCESSIBILITY,
         issueName: 'Prefer alt="" over role="presentation"',
-        description: 'Image with role="presentation" should use alt="" instead. First rule of ARIA: do not use ARIA when native HTML can express the same intent.',
+        description:
+          'Image with role="presentation" should use alt="" instead. First rule of ARIA: do not use ARIA when native HTML can express the same intent.',
         severity: 'MEDIUM',
         fix: 'Replace role="presentation" with alt="" — the empty alt already marks the image as decorative.',
-        documentationLink: 'https://www.w3.org/WAI/ARIA/apg/practices/read-me-first/#1stnotuseit',
+        documentationLink:
+          'https://www.w3.org/WAI/ARIA/apg/practices/read-me-first/#1stnotuseit',
       }),
       objectMissingAlternative: formatLLMMessage({
         icon: MessageIcons.ACCESSIBILITY,
         issueName: 'Embedded object missing text alternative',
         wcag: 'WCAG 1.1.1',
-        description: 'Embedded <object> elements must have alternative text via inner text, aria-label, aria-labelledby, or title.',
+        description:
+          'Embedded <object> elements must have alternative text via inner text, aria-label, aria-labelledby, or title.',
         severity: 'HIGH',
         fix: 'Add aria-label="..." or inner text describing the object content.',
-        documentationLink: 'https://www.w3.org/WAI/WCAG21/Techniques/general/G94',
+        documentationLink:
+          'https://www.w3.org/WAI/WCAG21/Techniques/general/G94',
       }),
       areaMissingAlternative: formatLLMMessage({
         icon: MessageIcons.ACCESSIBILITY,
         issueName: 'Image-map <area> missing text alternative',
         wcag: 'WCAG 1.1.1',
-        description: 'Each <area> in an image map must have a text alternative via alt, aria-label, or aria-labelledby.',
+        description:
+          'Each <area> in an image map must have a text alternative via alt, aria-label, or aria-labelledby.',
         severity: 'HIGH',
         fix: 'Add alt="region description" so screen-reader users can navigate the map.',
         documentationLink: 'https://www.w3.org/WAI/WCAG21/Techniques/html/H24',
@@ -136,7 +152,8 @@ export const altText = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.ACCESSIBILITY,
         issueName: '<input type="image"> missing text alternative',
         wcag: 'WCAG 1.1.1',
-        description: '<input type="image"> elements must have a text alternative via alt, aria-label, or aria-labelledby — they act as buttons but render an image.',
+        description:
+          '<input type="image"> elements must have a text alternative via alt, aria-label, or aria-labelledby — they act as buttons but render an image.',
         severity: 'HIGH',
         fix: 'Add alt="action description" (what does clicking this submit?).',
         documentationLink: 'https://www.w3.org/WAI/WCAG21/Techniques/html/H36',
@@ -197,7 +214,8 @@ export const altText = createRule<RuleOptions, MessageIds>({
      */
     const importedImageComponents = new Set<string>();
 
-    const IMAGE_MODULE = /^(next\/image|next\/legacy\/image|next\/future\/image)$/;
+    const IMAGE_MODULE =
+      /^(next\/image|next\/legacy\/image|next\/future\/image)$/;
 
     const collectImageImports = (program: TSESTree.Program): void => {
       for (const statement of program.body) {
@@ -244,20 +262,26 @@ export const altText = createRule<RuleOptions, MessageIds>({
     const getAttr = (node: TSESTree.JSXOpeningElement, name: string) =>
       node.attributes.find(
         (a): a is TSESTree.JSXAttribute =>
-          a.type === 'JSXAttribute' && a.name.type === 'JSXIdentifier' && a.name.name === name
+          a.type === 'JSXAttribute' &&
+          a.name.type === 'JSXIdentifier' &&
+          a.name.name === name,
       );
 
     /** Returns the literal string value of an attribute, or null if dynamic / not a string. */
     // oxlint-disable-next-line consistent-function-scoping
     const getStringValue = (attr: TSESTree.JSXAttribute): string | null => {
       if (!attr.value) return ''; // <img alt /> — boolean-shorthand attribute
-      if (attr.value.type === 'Literal' && typeof attr.value.value === 'string') {
-        return attr.value.value;
+      const staticText = staticString(attr.value);
+      if (staticText !== null) {
+        return staticText;
       }
       return null;
     };
 
-    const hasNonEmptyAttr = (node: TSESTree.JSXOpeningElement, name: string): boolean => {
+    const hasNonEmptyAttr = (
+      node: TSESTree.JSXOpeningElement,
+      name: string,
+    ): boolean => {
       const attr = getAttr(node, name);
       if (!attr) return false;
       const v = getStringValue(attr);
@@ -281,14 +305,17 @@ export const altText = createRule<RuleOptions, MessageIds>({
      * non-empty JSX children.
      */
     // oxlint-disable-next-line consistent-function-scoping
-    const hasAccessibleChild = (
-      node: TSESTree.JSXOpeningElement
-    ): boolean => {
+    const hasAccessibleChild = (node: TSESTree.JSXOpeningElement): boolean => {
       const parent = node.parent;
       if (!parent || parent.type !== 'JSXElement') return false;
       return (parent.children || []).some((child) => {
-        if (child.type === 'JSXText' && child.value.trim().length > 0) return true;
-        if (child.type === 'JSXExpressionContainer' && child.expression?.type !== 'JSXEmptyExpression') return true;
+        if (child.type === 'JSXText' && child.value.trim().length > 0)
+          return true;
+        if (
+          child.type === 'JSXExpressionContainer' &&
+          child.expression?.type !== 'JSXEmptyExpression'
+        )
+          return true;
         if (child.type === 'JSXElement') return true; // nested element is some content
         return false;
       });
@@ -296,12 +323,17 @@ export const altText = createRule<RuleOptions, MessageIds>({
 
     /** Aria-label/-labelledby gate (used as fallback for img when allowed,
      * and for object/area/input-image which always accept aria as alternatives). */
-    const hasAria = (node: TSESTree.JSXOpeningElement, requireOptIn: boolean): boolean => {
+    const hasAria = (
+      node: TSESTree.JSXOpeningElement,
+      requireOptIn: boolean,
+    ): boolean => {
       if (requireOptIn && !allowAriaLabel && !allowAriaLabelledby) return false;
       const labelledOK = !requireOptIn || allowAriaLabel;
       const byOK = !requireOptIn || allowAriaLabelledby;
-      return (labelledOK && hasNonEmptyAttr(node, 'aria-label')) ||
-             (byOK && hasNonEmptyAttr(node, 'aria-labelledby'));
+      return (
+        (labelledOK && hasNonEmptyAttr(node, 'aria-label')) ||
+        (byOK && hasNonEmptyAttr(node, 'aria-labelledby'))
+      );
     };
 
     const checkImg = (node: TSESTree.JSXOpeningElement) => {
@@ -318,7 +350,8 @@ export const altText = createRule<RuleOptions, MessageIds>({
         context.report({
           node,
           messageId: 'preferEmptyAltOverPresentation',
-          fix: (fixer) => fixer.insertTextAfter(getAltInsertionAnchor(node), ' alt=""'),
+          fix: (fixer) =>
+            fixer.insertTextAfter(getAltInsertionAnchor(node), ' alt=""'),
         });
         return;
       }
@@ -334,11 +367,15 @@ export const altText = createRule<RuleOptions, MessageIds>({
           {
             messageId: 'addDescriptiveAlt',
             fix: (fixer) =>
-              fixer.insertTextAfter(getAltInsertionAnchor(node), ' alt="TODO: Add descriptive text"'),
+              fixer.insertTextAfter(
+                getAltInsertionAnchor(node),
+                ' alt="TODO: Add descriptive text"',
+              ),
           },
           {
             messageId: 'useEmptyAlt',
-            fix: (fixer) => fixer.insertTextAfter(getAltInsertionAnchor(node), ' alt=""'),
+            fix: (fixer) =>
+              fixer.insertTextAfter(getAltInsertionAnchor(node), ' alt=""'),
           },
         ],
       });
@@ -375,13 +412,16 @@ export const altText = createRule<RuleOptions, MessageIds>({
         const kind = classify(node);
         if (!kind) return;
         switch (kind) {
-          case 'img':        return checkImg(node);
-          case 'object':     return checkObject(node);
-          case 'area':       return checkArea(node);
-          case 'inputImage': return checkInputImage(node);
+          case 'img':
+            return checkImg(node);
+          case 'object':
+            return checkObject(node);
+          case 'area':
+            return checkArea(node);
+          case 'inputImage':
+            return checkInputImage(node);
         }
       },
     };
   },
 });
-

@@ -7,7 +7,7 @@
 /**
  * ESLint Rule: anchor-has-content
  * Enforce that anchors have content to be accessible to screen readers
- * 
+ *
  * @see https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/anchor-has-content.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
@@ -25,27 +25,32 @@ type RuleOptions = [Options?];
 /**
  * Check if node has accessible content
  */
-function hasContent(node: TSESTree.JSXOpeningElement, children: TSESTree.JSXChild[]): boolean {
+function hasContent(
+  node: TSESTree.JSXOpeningElement,
+  children: TSESTree.JSXChild[],
+): boolean {
   // Check children
   if (children.length > 0) {
     return true;
   }
 
   // Check props (dangerouslySetInnerHTML, children prop, aria-label, title)
-  return node.attributes.some((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute) => {
-    if (attr.type !== 'JSXAttribute' || attr.name.type !== 'JSXIdentifier') {
-      return false;
-    }
-    
-    const name = attr.name.name;
-    return (
-      name === 'dangerouslySetInnerHTML' ||
-      name === 'children' ||
-      name === 'aria-label' ||
-      name === 'aria-labelledby' ||
-      name === 'title'
-    );
-  });
+  return node.attributes.some(
+    (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute) => {
+      if (attr.type !== 'JSXAttribute' || attr.name.type !== 'JSXIdentifier') {
+        return false;
+      }
+
+      const name = attr.name.name;
+      return (
+        name === 'dangerouslySetInnerHTML' ||
+        name === 'children' ||
+        name === 'aria-label' ||
+        name === 'aria-labelledby' ||
+        name === 'title'
+      );
+    },
+  );
 }
 
 export const anchorHasContent = createRule<RuleOptions, MessageIds>({
@@ -64,8 +69,9 @@ export const anchorHasContent = createRule<RuleOptions, MessageIds>({
         description: 'Anchor must have content',
         severity: 'HIGH',
         fix: 'Provide text content or aria-label',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/anchor-has-content.md',
-        wcag: 'WCAG 2.4.4'
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/anchor-has-content.md',
+        wcag: 'WCAG 2.4.4',
       }),
     },
     schema: [
@@ -82,14 +88,17 @@ export const anchorHasContent = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
+  create(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    [options = {} as Options],
+  ) {
     const { components = [] } = options ?? {};
     const anchors = new Set(['a', ...components]);
 
     return {
       JSXElement(node: TSESTree.JSXElement) {
         const openingElement = node.openingElement;
-        
+
         if (openingElement.name.type !== 'JSXIdentifier') {
           return;
         }
@@ -108,4 +117,3 @@ export const anchorHasContent = createRule<RuleOptions, MessageIds>({
     };
   },
 });
-

@@ -20,6 +20,7 @@ describe('extensions', () => {
   ruleTester.run('extensions', extensions, {
     valid: [
       {
+        name: 'no extension',
         code: "import foo from './foo';",
         options: [{ pattern: { js: 'never' } }],
       },
@@ -30,6 +31,7 @@ describe('extensions', () => {
     ],
     invalid: [
       {
+        name: 'an explicit .js extension where the configured style omits it',
         code: "import foo from './foo.js';",
         output: "import foo from './foo';",
         options: [{ pattern: { js: 'never' } }],

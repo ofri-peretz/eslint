@@ -7,7 +7,7 @@
 /**
  * ESLint Rule: anchor-is-valid
  * Enforce that anchors are valid, navigable elements
- * 
+ *
  * @see https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/anchor-is-valid.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
@@ -40,7 +40,8 @@ export const anchorIsValid = createRule<RuleOptions, MessageIds>({
         description: 'Anchor missing href attribute',
         severity: 'HIGH',
         fix: 'Add href attribute or use <button>',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/anchor-is-valid.md',
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/anchor-is-valid.md',
       }),
       invalidHref: formatLLMMessage({
         icon: MessageIcons.ACCESSIBILITY,
@@ -48,7 +49,8 @@ export const anchorIsValid = createRule<RuleOptions, MessageIds>({
         description: 'Href value is not a valid URL',
         severity: 'HIGH',
         fix: 'Provide a valid URL or use <button>',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/anchor-is-valid.md',
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/anchor-is-valid.md',
       }),
       preferButton: formatLLMMessage({
         icon: MessageIcons.ACCESSIBILITY,
@@ -56,7 +58,8 @@ export const anchorIsValid = createRule<RuleOptions, MessageIds>({
         description: 'Anchor used as a button',
         severity: 'HIGH',
         fix: 'Use <button> element for actions',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/anchor-is-valid.md',
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/anchor-is-valid.md',
       }),
     },
     schema: [
@@ -72,25 +75,35 @@ export const anchorIsValid = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
+  create(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    [options = {} as Options],
+  ) {
     const { components = [], specialLink = [] } = options || {};
     const anchors = new Set(['a', ...components]);
 
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
-        if (node.name.type !== 'JSXIdentifier' || !anchors.has(node.name.name)) {
+        if (
+          node.name.type !== 'JSXIdentifier' ||
+          !anchors.has(node.name.name)
+        ) {
           return;
         }
 
         const href = node.attributes.find(
-          (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
+          (
+            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+          ): attr is TSESTree.JSXAttribute =>
             attr.type === 'JSXAttribute' &&
             attr.name.type === 'JSXIdentifier' &&
             attr.name.name === 'href',
         );
 
         const onClick = node.attributes.find(
-          (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
+          (
+            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+          ): attr is TSESTree.JSXAttribute =>
             attr.type === 'JSXAttribute' &&
             attr.name.type === 'JSXIdentifier' &&
             attr.name.name === 'onClick',
@@ -100,7 +113,9 @@ export const anchorIsValid = createRule<RuleOptions, MessageIds>({
           // Check for special link props (like 'to' in React Router)
           const hasSpecialLink = specialLink.some((prop: string) =>
             node.attributes.some(
-              (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
+              (
+                attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+              ): attr is TSESTree.JSXAttribute =>
                 attr.type === 'JSXAttribute' &&
                 attr.name.type === 'JSXIdentifier' &&
                 attr.name.name === prop,
@@ -108,11 +123,11 @@ export const anchorIsValid = createRule<RuleOptions, MessageIds>({
           );
 
           if (!hasSpecialLink) {
-             if (onClick) {
-                context.report({ node, messageId: 'preferButton' });
-             } else {
-                context.report({ node, messageId: 'noHref' });
-             }
+            if (onClick) {
+              context.report({ node, messageId: 'preferButton' });
+            } else {
+              context.report({ node, messageId: 'noHref' });
+            }
           }
           return;
         }
@@ -120,15 +135,14 @@ export const anchorIsValid = createRule<RuleOptions, MessageIds>({
         if (href.value?.type === 'Literal') {
           const value = href.value.value;
           if (value === '#' || value === 'javascript:void(0)') {
-             if (onClick) {
-                context.report({ node, messageId: 'preferButton' });
-             } else {
-                context.report({ node, messageId: 'invalidHref' });
-             }
+            if (onClick) {
+              context.report({ node, messageId: 'preferButton' });
+            } else {
+              context.report({ node, messageId: 'invalidHref' });
+            }
           }
         }
       },
     };
   },
 });
-

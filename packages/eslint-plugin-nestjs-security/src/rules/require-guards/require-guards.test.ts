@@ -139,6 +139,7 @@ ruleTester.run('require-guards', requireGuards, {
     // teable/apps/nestjs-backend/test/utils/init-app.ts — a test helper, which
     // is not named .spec.ts and was being linted as production code.
     {
+      name: 'a controller with no privileged route to guard',
       code: `
         @Controller('users')
         class UsersController {
@@ -491,6 +492,7 @@ ruleTester.run('require-guards', requireGuards, {
     // already-trusted data is authorization, not authentication — it says
     // nothing about whether the caller proved who they are.
     {
+      name: 'a role checked by hand inside the handler instead of by a guard',
       code: `
         @Controller('admin')
         class AdminController {

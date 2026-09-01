@@ -38,6 +38,61 @@ type Pkg = {
 };
 
 /**
+ * The two dependency worlds this monorepo actually has.
+ *
+ * `web` packages pull in the Next.js/React tree — `next` (200 MB unpacked),
+ * `@next` (86), `mermaid` (84), posthog (86), fumadocs, `@base-ui`, `recharts`.
+ * `node` packages — every ESLint plugin, the devkit, the formatters, the tools
+ * — pull in none of it.
+ *
+ * Before this split the two shared one shard matrix, so ANY shard might be
+ * handed a `web` package and every shard therefore had to restore the whole
+ * 451 MB `node_modules` archive. Measured on run 33337052316: 13.3s of restore
+ * per job, ten jobs, to execute 43s of tests. Eight of those ten held nothing
+ * but ESLint plugins and never opened a byte of it.
+ *
+ * Membership is DERIVED, not listed. A workspace is `web` because its manifest
+ * declares something the lean archive trims, or because it depends on a
+ * workspace that does — never because someone wrote its name down. A hardcoded
+ * set was the first implementation and it was wrong in the one direction that
+ * matters silently: a new or renamed workspace with the web dependency closure
+ * would keep getting lean dependencies until a human remembered to add it, and
+ * the failure is a MODULE_NOT_FOUND in whichever shard happened to hold it.
+ */
+const LEAN_TRIMMED = new Set(
+  fs
+    .readFileSync(path.join(REPO_ROOT, '.github', 'lean-node-modules.txt'), 'utf8')
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l && !l.startsWith('#')),
+);
+
+type Lane = 'node' | 'web';
+
+/**
+ * Does this manifest declare anything the lean archive removes?
+ *
+ * Scope-aware: the list carries `@base-ui`, the manifest carries
+ * `@base-ui/react`. Matching the bare name only would have classed
+ * `@interlace/ui` as node-lane and handed it a tree without its own UI
+ * primitives.
+ */
+function declaresTrimmed(manifest: {
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+  peerDependencies?: Record<string, string>;
+}): boolean {
+  const deps = [
+    ...Object.keys(manifest.dependencies ?? {}),
+    ...Object.keys(manifest.devDependencies ?? {}),
+    ...Object.keys(manifest.peerDependencies ?? {}),
+  ];
+  return deps.some(
+    (d) => LEAN_TRIMMED.has(d) || LEAN_TRIMMED.has(d.split('/')[0]),
+  );
+}
+
+/**
  * Packages split across several CI shards with `vitest --shard`.
  *
  * LPT bucketing cannot produce a shard faster than the single largest item, so
@@ -59,7 +114,7 @@ type Pkg = {
  *
  * NOT applied when collecting coverage — see `wantCoverage` below.
  */
-const SPLIT_ACROSS_SHARDS: Record<string, number> = { docs: 6 };
+const SPLIT_ACROSS_SHARDS: Record<string, number> = { docs: 3 };
 
 /**
  * Cost proxy for balancing: number of test files in the package.
@@ -93,17 +148,71 @@ const NO_TEST_ALLOWLIST = new Set<string>(['registry']);
 
 const wantCoverage = process.env.CI_TEST_SHARD_COVERAGE === '1';
 
-function discoverPackages(): { testable: Pkg[]; untested: string[] } {
-  const testable: Pkg[] = [];
-  const untested: string[] = [];
+/** Every workspace manifest, with the directory it came from. */
+function readWorkspaces(): { dir: string; entry: string; abs: string; pkg: any }[] {
+  const out: { dir: string; entry: string; abs: string; pkg: any }[] = [];
   for (const wsDir of WORKSPACE_DIRS) {
     const abs = path.join(REPO_ROOT, wsDir);
     if (!fs.existsSync(abs)) continue;
     for (const entry of fs.readdirSync(abs)) {
       const manifest = path.join(abs, entry, 'package.json');
       if (!fs.existsSync(manifest)) continue;
-      const pkg = JSON.parse(fs.readFileSync(manifest, 'utf8'));
-      const dir = `${wsDir}/${entry}`;
+      out.push({
+        dir: `${wsDir}/${entry}`,
+        entry,
+        abs,
+        pkg: JSON.parse(fs.readFileSync(manifest, 'utf8')),
+      });
+    }
+  }
+  return out;
+}
+
+/**
+ * Lane per workspace, derived from manifests.
+ *
+ * Two rules, both evidence:
+ *   1. declares something the lean archive trims -> web;
+ *   2. depends on a workspace that is web -> web, transitively. `packages/ui`
+ *      is web because it declares `mermaid`; anything importing `@interlace/ui`
+ *      inherits that closure and needs the same tree.
+ *
+ * Iterated to a fixed point rather than done in one pass, because workspace
+ * dependencies are not sorted and a single pass would miss a package whose web
+ * dependency is discovered after it.
+ */
+function laneMap(): Map<string, Lane> {
+  const all = readWorkspaces();
+  const lanes = new Map<string, Lane>(
+    all.map((w) => [w.pkg.name, declaresTrimmed(w.pkg) ? 'web' : 'node']),
+  );
+  const byName = new Map(all.map((w) => [w.pkg.name, w]));
+  for (let changed = true; changed; ) {
+    changed = false;
+    for (const w of all) {
+      if (lanes.get(w.pkg.name) === 'web') continue;
+      const deps = manifestDeps(w.pkg);
+      if (deps.some((d) => byName.has(d) && lanes.get(d) === 'web')) {
+        lanes.set(w.pkg.name, 'web');
+        changed = true;
+      }
+    }
+  }
+  return lanes;
+}
+
+const LANE_OF = laneMap();
+
+function discoverPackages(lane: Lane): { testable: Pkg[]; untested: string[] } {
+  const testable: Pkg[] = [];
+  const untested: string[] = [];
+  {
+    for (const { dir, entry, abs, pkg } of readWorkspaces()) {
+      // Before the task lookup, not after. A package in the other lane is not
+      // "untested" — it is another job's work, and the `untested` guard below
+      // would otherwise fail the node lane for every web package. The web
+      // lane's own discovery still holds that package to the same rule.
+      if (LANE_OF.get(pkg.name) !== lane) continue;
       // Prefer test:coverage so the 100% thresholds declared in each
       // vitest.config.mts are actually enforced. Fall back to plain `test` for
       // workspaces that have tests but no coverage task (docs,
@@ -165,7 +274,7 @@ function discoverPackages(): { testable: Pkg[]; untested: string[] } {
 // a one-package PR would acquire ten runners so nine could print "nothing to
 // do" — actively worse than not sharding. Emitting only the non-empty shards
 // keeps job count proportional to the size of the change.
-const MATRIX_MODE = process.argv[2] === '--matrix';
+const MATRIX_MODE = process.argv.includes('--matrix');
 
 /**
  * Write the shard list to GITHUB_OUTPUT (and stdout when run locally).
@@ -190,12 +299,28 @@ function emitMatrix(shardNumbers: number[], heavy = true): void {
   }
 }
 
-const shardIndex = MATRIX_MODE ? 0 : Number(process.argv[2]);
-const shardTotal = Number(process.argv[3]);
+// `--lane <node|web>` selects the dependency world; it is stripped before the
+// positional arguments are read so both call shapes keep working unchanged.
+// Defaulting to `node` is deliberate: a caller that forgets the flag gets the
+// lane with the lean dependency archive, so the failure is a loud
+// MODULE_NOT_FOUND in a web test rather than a web package silently never
+// running.
+const laneFlagAt = process.argv.indexOf('--lane');
+const LANE: Lane = laneFlagAt === -1 ? 'node' : (process.argv[laneFlagAt + 1] as Lane);
+if (LANE !== 'node' && LANE !== 'web') {
+  console.error(`--lane must be "node" or "web" (got ${JSON.stringify(process.argv[laneFlagAt + 1])})`);
+  process.exit(2);
+}
+const positional = process.argv
+  .slice(2)
+  .filter((a, i, all) => a !== '--lane' && all[i - 1] !== '--lane');
+
+const shardIndex = MATRIX_MODE ? 0 : Number(positional[0]);
+const shardTotal = Number(positional[1]);
 
 if (!MATRIX_MODE && (!Number.isInteger(shardIndex) || shardIndex < 1 || shardIndex > shardTotal)) {
-  console.error(`Usage: node scripts/ci-test-shard.mts <shardIndex 1..N> <shardTotal N>`);
-  console.error(`   or: node scripts/ci-test-shard.mts --matrix <shardTotal N>`);
+  console.error(`Usage: node scripts/ci-test-shard.mts <shardIndex 1..N> <shardTotal N> [--lane node|web]`);
+  console.error(`   or: node scripts/ci-test-shard.mts --matrix <shardTotal N> [--lane node|web]`);
   process.exit(2);
 }
 if (!Number.isInteger(shardTotal) || shardTotal < 1) {
@@ -204,7 +329,7 @@ if (!Number.isInteger(shardTotal) || shardTotal < 1) {
 }
 
 
-const { testable, untested } = discoverPackages();
+const { testable, untested } = discoverPackages(LANE);
 const REVERSE_DEPS = reverseDeps(testable);
 
 // Zero-selection guard. `turbo run test --filter=...[origin/main]` used to

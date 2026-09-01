@@ -152,3 +152,4 @@ console.log('Received event', event.body);
 | ------ | ---- | ------- | ----------- |
 | `allowInTests` | `boolean` | `true` | Allow unvalidated input in test files |
 | `additionalProperties` | `string[]` | `[]` | Additional event properties to check |
+| `validationMethodNames` | `string[]` | `["validator","httpJsonBodyParser","@middy/validator","parse","validate","parseAsync","safeParse","safeParseAsync","assert","is"]` | Method names that count as validating a value. Replaces the default. |

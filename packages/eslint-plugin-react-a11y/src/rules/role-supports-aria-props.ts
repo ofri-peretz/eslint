@@ -11,7 +11,13 @@
  * @see https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/role-supports-aria-props.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, ROLE_SUPPORTED_ARIA_PROPS, GLOBAL_ARIA_PROPS } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  ROLE_SUPPORTED_ARIA_PROPS,
+  GLOBAL_ARIA_PROPS,
+  staticString,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unsupportedAriaProp';
@@ -66,7 +72,8 @@ export const roleSupportsAriaProps = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/role-supports-aria-props.md',
-      description: 'Enforce that elements with roles contain only supported ARIA properties',
+      description:
+        'Enforce that elements with roles contain only supported ARIA properties',
       wcag: 'WCAG 4.1.2',
     },
     messages: {
@@ -76,8 +83,9 @@ export const roleSupportsAriaProps = createRule<RuleOptions, MessageIds>({
         description: 'Role "{{role}}" does not support property "{{prop}}"',
         severity: 'HIGH',
         fix: 'Remove unsupported ARIA property or change role',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/role-supports-aria-props.md',
-        wcag: 'WCAG 4.1.2'
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/role-supports-aria-props.md',
+        wcag: 'WCAG 4.1.2',
       }),
     },
     schema: [],
@@ -93,14 +101,20 @@ export const roleSupportsAriaProps = createRule<RuleOptions, MessageIds>({
 
         // Check explicit role
         const roleAttr = node.attributes.find(
-          (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
+          (
+            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+          ): attr is TSESTree.JSXAttribute =>
             attr.type === 'JSXAttribute' &&
             attr.name.type === 'JSXIdentifier' &&
             attr.name.name === 'role',
         );
 
-        if (roleAttr && roleAttr.type === 'JSXAttribute' && roleAttr.value && roleAttr.value.type === 'Literal' && typeof roleAttr.value.value === 'string') {
-          role = roleAttr.value.value;
+        const explicitRole =
+          roleAttr?.type === 'JSXAttribute' && roleAttr.value
+            ? staticString(roleAttr.value)
+            : null;
+        if (explicitRole !== null) {
+          role = explicitRole;
         } else {
           // Use implicit role
           role = IMPLICIT_ROLES[elementName] || '';
@@ -110,11 +124,18 @@ export const roleSupportsAriaProps = createRule<RuleOptions, MessageIds>({
 
         const roleSupportedProps = ROLE_SUPPORTED_ARIA_PROPS[role];
         // Global ARIA props are valid on every element regardless of role
-        const supportedProps = new Set([...roleSupportedProps, ...GLOBAL_ARIA_PROPS]);
+        const supportedProps = new Set([
+          ...roleSupportedProps,
+          ...GLOBAL_ARIA_PROPS,
+        ]);
 
         // Check all aria-* attributes
         for (const attr of node.attributes) {
-          if (attr.type !== 'JSXAttribute' || attr.name.type !== 'JSXIdentifier') continue;
+          if (
+            attr.type !== 'JSXAttribute' ||
+            attr.name.type !== 'JSXIdentifier'
+          )
+            continue;
 
           const attrName = attr.name.name;
           if (!attrName.startsWith('aria-')) continue;
@@ -134,4 +155,3 @@ export const roleSupportsAriaProps = createRule<RuleOptions, MessageIds>({
     };
   },
 });
-

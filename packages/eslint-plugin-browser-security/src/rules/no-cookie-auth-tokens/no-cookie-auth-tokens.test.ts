@@ -19,7 +19,7 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-cookie-auth-tokens', noCookieAuthTokens, {
   valid: [
-    { code: `document.cookie = 'theme=dark';` },
+    { name: 'a preference cookie', code: `document.cookie = 'theme=dark';` },
     { code: `document.cookie = 'locale=en-US';` },
     { code: `document.cookie = 'preference=compact';` },
     { code: `const cookie = document.cookie;` },
@@ -54,6 +54,7 @@ ruleTester.run('no-cookie-auth-tokens', noCookieAuthTokens, {
   ],
   invalid: [
     {
+      name: 'a session token written to document.cookie from script',
       code: `document.cookie = 'token=abc123';`,
       errors: [{ messageId: 'authTokenInCookie', data: { key: 'token' } }],
     },

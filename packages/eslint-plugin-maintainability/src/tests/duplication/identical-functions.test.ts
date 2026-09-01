@@ -28,6 +28,7 @@ describe('identical-functions', () => {
       valid: [
         // Unique functions
         {
+          name: 'two functions that do different things',
           code: `
             function add(a, b) { return a + b; }
             function subtract(a, b) { return a - b; }
@@ -54,6 +55,7 @@ describe('identical-functions', () => {
         valid: [],
         invalid: [
           {
+            name: 'two functions with the same body under different names',
             code: `
             function processUser(user) {
               if (!user) return null;
