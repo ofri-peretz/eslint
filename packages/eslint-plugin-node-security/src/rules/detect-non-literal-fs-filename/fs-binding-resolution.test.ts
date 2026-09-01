@@ -232,8 +232,20 @@ describe('fsMethodName', () => {
     expect(fsMethodName(calleeOf('getFs()(p)'), new Set(['fs']), new Map())).toBeUndefined();
   });
 
-  it('returns undefined for a member whose property is not an identifier', () => {
-    expect(fsMethodName(calleeOf('fs["readFile"](p)'), new Set(['fs']), new Map())).toBeUndefined();
+  it('resolves a member reached by a string subscript', () => {
+    // This asserted `toBeUndefined()`, which pinned the blind spot as if it
+    // were the specification. `fs["readFile"]` reaches the same function as
+    // `fs.readFile`; there was never a reason to treat it differently, and
+    // saying so in a test made the miss look deliberate.
+    expect(fsMethodName(calleeOf('fs["readFile"](p)'), new Set(['fs']), new Map())).toBe(
+      'readFile',
+    );
+  });
+
+  it('returns undefined for a genuinely dynamic property', () => {
+    // The line the previous test should have been drawing: a name that cannot
+    // be resolved statically is still not resolved.
+    expect(fsMethodName(calleeOf('fs[m](p)'), new Set(['fs']), new Map())).toBeUndefined();
   });
 
   it('resolves a namespace member', () => {
