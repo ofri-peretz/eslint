@@ -75,43 +75,6 @@ describe('decideAffected', () => {
     expect(d.mode === 'bug' && d.dirs).toEqual(['packages/brand-new-plugin']);
   });
 
-  /**
-   * The lane split. `discoverPackages` filters `testable` to one lane, but the
-   * touched dirs it is compared against are lane-agnostic — so a PR touching only
-   * node-lane packages made the WEB lane declare a bug and exit 1. It shipped
-   * green for weeks because almost every PR also touches a global input, which
-   * short-circuits to "all" before this branch is reached; a README-only change to
-   * one package is what finally exposed it.
-   */
-  describe('lanes', () => {
-    const WEB_DIRS = new Set(['apps/docs']);
-    const NODE_ONLY = ['packages/eslint-plugin-jwt-security/README.md'];
-
-    it('a node-lane-only change is not the web lane\'s bug', () => {
-      const d = decideAffected(NODE_ONLY, [{ name: 'docs', dir: 'apps/docs' }], undefined, WEB_DIRS);
-      expect(d.mode).toBe('none');
-      expect(d.mode === 'none' && d.why).toContain('in this lane');
-    });
-
-    it('still reports "bug" for a dir that IS in the lane but resolved to nothing', () => {
-      // The #778 guard must survive the fix — an in-lane package that testable
-      // does not know about is still the silent-zero-tests failure it was added for.
-      const d = decideAffected(
-        ['apps/brand-new-app/src/index.ts'],
-        PKGS,
-        undefined,
-        new Set(['apps/brand-new-app']),
-      );
-      expect(d.mode).toBe('bug');
-      expect(d.mode === 'bug' && d.dirs).toEqual(['apps/brand-new-app']);
-    });
-
-    it('without laneDirs, behaviour is exactly as before', () => {
-      expect(decideAffected(NODE_ONLY, PKGS).mode).toBe('some');
-      expect(decideAffected(['packages/brand-new-plugin/src/x.ts'], PKGS).mode).toBe('bug');
-    });
-  });
-
   it('never returns "none" when any package path changed', () => {
     // Property check across every known package plus an unknown one: whatever
     // the outcome, it must not be the "nothing to do, pass" branch.

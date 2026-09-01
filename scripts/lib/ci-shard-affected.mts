@@ -97,21 +97,15 @@ export function expandDependents(seed: Iterable<string>, rev: Map<string, string
  * @param testable the candidate universe (testable packages, or all workspaces)
  * @param rev      reverse-dep graph; when given, `some` returns the dependent
  *                 closure so callers can use a plain `--filter=<pkg>`
+ * @param universe every testable package across ALL lanes. `bug` is judged
+ *                 against this, so a lane that legitimately owns none of the
+ *                 changed packages reports `none` rather than a defect.
  */
 export function decideAffected(
   changed: string[] | null,
   testable: AffectedPkg[],
   rev?: Map<string, string[]>,
-  /**
-   * Dirs owned by the lane being computed, tested or not. A package in the OTHER
-   * lane is another job's work, not evidence of a bug here — the same reasoning
-   * `discoverPackages` already applies to its `untested` guard. Without this, a PR
-   * touching only node-lane packages made the web lane declare a bug and exit 1,
-   * because it compared lane-agnostic touched dirs against a lane-filtered
-   * `testable`. Omit to consider every touched dir, which is what non-lane callers
-   * want.
-   */
-  laneDirs?: Set<string>,
+  universe?: AffectedPkg[],
 ): Decision {
   if (changed === null) return { mode: 'all', why: 'no merge-base with the base ref' };
   if (changed.some((f) => GLOBAL_INPUTS.has(f))) return { mode: 'all', why: 'a global input changed' };
@@ -120,15 +114,25 @@ export function decideAffected(
     changed.map((f) => f.split('/').slice(0, 2).join('/')).filter((d) => /^(packages|apps|tools)\//.test(d)),
   );
   const directly = testable.filter((p) => touchedDirs.has(p.dir));
-  const inLane = laneDirs ? [...touchedDirs].filter((d) => laneDirs.has(d)) : [...touchedDirs];
 
-  if (inLane.length > 0 && directly.length === 0) return { mode: 'bug', dirs: inLane };
-  if (inLane.length === 0) {
-    return {
-      mode: 'none',
-      why: touchedDirs.size === 0 ? 'no package sources changed' : 'no package sources changed in this lane',
-    };
-  }
+  if (touchedDirs.size === 0) return { mode: 'none', why: 'no package sources changed' };
+
+  // `bug` means the change is testable NOWHERE, not merely "not in this lane".
+  //
+  // Since the node/web lane split, `testable` is lane-scoped, so a
+  // packages/eslint-devkit change legitimately resolves to nothing in the web
+  // lane. Judging the defect against the lane made that normal case fail:
+  // `Files changed under packages/eslint-devkit but the affected set is empty`
+  // blocked three PRs on 2026-09-01.
+  //
+  // `universe` is every testable package across all lanes; the anti-#355
+  // protection is unchanged when measured against it. Defaults to `testable`,
+  // so single-lane callers behave exactly as before.
+  const anywhere = (universe ?? testable).filter((p) => touchedDirs.has(p.dir));
+  if (anywhere.length === 0) return { mode: 'bug', dirs: [...touchedDirs] };
+
+  if (directly.length === 0)
+    return { mode: 'none', why: 'the changed packages belong to another lane' };
 
   const seed = directly.map((p) => p.name);
   if (!rev) return { mode: 'some', names: new Set(seed) };

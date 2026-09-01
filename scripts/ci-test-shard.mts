@@ -203,10 +203,9 @@ function laneMap(): Map<string, Lane> {
 
 const LANE_OF = laneMap();
 
-function discoverPackages(lane: Lane): { testable: Pkg[]; untested: string[]; laneDirs: Set<string> } {
+function discoverPackages(lane: Lane): { testable: Pkg[]; untested: string[] } {
   const testable: Pkg[] = [];
   const untested: string[] = [];
-  const laneDirs = new Set<string>();
   {
     for (const { dir, entry, abs, pkg } of readWorkspaces()) {
       // Before the task lookup, not after. A package in the other lane is not
@@ -214,7 +213,6 @@ function discoverPackages(lane: Lane): { testable: Pkg[]; untested: string[]; la
       // would otherwise fail the node lane for every web package. The web
       // lane's own discovery still holds that package to the same rule.
       if (LANE_OF.get(pkg.name) !== lane) continue;
-      laneDirs.add(dir);
       // Prefer test:coverage so the 100% thresholds declared in each
       // vitest.config.mts are actually enforced. Fall back to plain `test` for
       // workspaces that have tests but no coverage task (docs,
@@ -263,7 +261,7 @@ function discoverPackages(lane: Lane): { testable: Pkg[]; untested: string[]; la
       a.name.localeCompare(b.name) ||
       (a.split?.i ?? 0) - (b.split?.i ?? 0),
   );
-  return { testable, untested, laneDirs };
+  return { testable, untested };
 }
 
 // `--matrix <total>` prints the GitHub matrix of shards that actually have
@@ -331,7 +329,11 @@ if (!Number.isInteger(shardTotal) || shardTotal < 1) {
 }
 
 
-const { testable, untested, laneDirs } = discoverPackages(LANE);
+const { testable, untested } = discoverPackages(LANE);
+// Every testable package across BOTH lanes. `decideAffected` judges its `bug`
+// state against this, so a change owned by the other lane reports `none` here
+// instead of failing as an empty affected set.
+const UNIVERSE = [...discoverPackages('node').testable, ...discoverPackages('web').testable];
 const REVERSE_DEPS = reverseDeps(testable);
 
 // Zero-selection guard. `turbo run test --filter=...[origin/main]` used to
@@ -391,7 +393,7 @@ let affected: Set<string> | null = null;
 
 if (!runAll) {
   const changed = changedFiles();
-  const decision = decideAffected(changed, testable, REVERSE_DEPS, laneDirs);
+  const decision = decideAffected(changed, testable, REVERSE_DEPS, UNIVERSE);
   if (decision.mode === 'bug') {
     console.error(`::error::Files changed under ${decision.dirs.join(', ')} but the affected set is empty.`);
     console.error('That is a bug in the affected computation, not a fast path. Refusing to report success.');
