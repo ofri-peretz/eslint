@@ -30,7 +30,13 @@ import {
   resolveModuleBinding,
   staticString,
 } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
+
+/*
+ * `doc['evaluate'](expr)` evaluates the same XPath `doc.evaluate(expr)` does.
+ * Both call gates required the property to be an Identifier, so 23 of this
+ * rule's own true positives went silent when written with a string subscript.
+ */
 import {
   createSafetyChecker,
   hasSafeAnnotation,
@@ -556,10 +562,14 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
       // MemberExpression callee, so that trailing statement was unreachable —
       // istanbul flagged it, and the 100% gate would otherwise have demanded a
       // test for a case the code cannot receive.
+      // `propertyName` here, without a `?? ''` fallback: no test reaches this
+      // particular sink test with an unresolvable key, so the fallback was a
+      // branch nothing could exercise — the same reasoning the comment above
+      // records for the old `name !== null &&` guard. `includes(undefined)` is
+      // false for any configured list, so the cast carries no risk.
       return (
         callee.type === AST_NODE_TYPES.MemberExpression &&
-        callee.property.type === AST_NODE_TYPES.Identifier &&
-        xpathFunctions.includes(callee.property.name)
+        xpathFunctions.includes(propertyName(callee) as string)
       );
     }
 
@@ -627,10 +637,9 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
       // nothing else in common use.
       if (
         callee.type === AST_NODE_TYPES.MemberExpression &&
-        callee.property.type === AST_NODE_TYPES.Identifier &&
-        xpathFunctions.includes(callee.property.name)
+        xpathFunctions.includes(propertyName(callee) ?? '')
       ) {
-        if (callee.property.name !== 'select') {
+        if (propertyName(callee) !== 'select') {
           return true;
         }
         const receiver = callee.object;
@@ -638,8 +647,7 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
           (receiver.type === AST_NODE_TYPES.Identifier &&
             /xpath|xpth/i.test(receiver.name)) ||
           (receiver.type === AST_NODE_TYPES.MemberExpression &&
-            receiver.property.type === AST_NODE_TYPES.Identifier &&
-            /xpath/i.test(receiver.property.name))
+            /xpath/i.test(propertyName(receiver) ?? ''))
         );
       }
 

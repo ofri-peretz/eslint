@@ -134,6 +134,17 @@ describe('no-xpath-injection', () => {
         },
       ],
       invalid: [
+    {
+      // FN: was `valid` because the callee's property "is not an Identifier".
+      // Under the same option the DOTTED spelling — `api.evaluate("//users/..")`
+      // — reports, so this excluded one notation of a shape the rule already
+      // flags in the other.
+      // @found computed-key blind-spot probe
+      name: 'FN: a dangerous XPath construct through a string subscript',
+      code: 'api["evaluate"]("//users/..");',
+      options: [{ reportDangerousConstructs: true }],
+      errors: 1,
+    },
 
         {
           name: 'a request value concatenated into an XPath expression',
@@ -1141,10 +1152,14 @@ ruleTester.run('no-xpath-injection-sink-walk-terminates', noXpathInjection, {
       options: [{ reportDangerousConstructs: true }],
     },
     {
-      // Computed callee taking the constant DIRECTLY, so isXpathSinkCall is
-      // reached with a MemberExpression whose property is not an Identifier.
-      code: 'api["evaluate"]("//users/..");',
+      // A DYNAMIC callee names no sink, so there is nothing to evaluate.
+      // Reaches both sink tests with an unresolvable property, which is the
+      // only way the `?? ''` sentinels are exercised.
+      code: 'api[m]("//users/..");',
       options: [{ reportDangerousConstructs: true }],
+    },
+    {
+      code: 'const q = req.query.q; api[m](q);',
     },
     {
       // Callee that is neither Identifier nor MemberExpression at all.
