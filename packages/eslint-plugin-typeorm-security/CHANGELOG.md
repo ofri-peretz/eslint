@@ -5,6 +5,13 @@ All notable changes to `eslint-plugin-typeorm-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 0.3.5
+
+### Patch Changes
+
+- **🐛 Fix** — Refresh the README npm serves for these plugins. npm renders the README from the last publish, so all seven still advertise `eslint-plugin-pg` and `eslint-plugin-jwt` — names retired in #414 and since deprecated on npm. A reader who followed one installed the frozen pre-rename package instead of the maintained one. The repo has been correct since the rename; only a publish moves what npmjs.com shows.
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.18.1`
+
 ## 0.3.4
 
 ### Patch Changes

@@ -5,6 +5,12 @@ All notable changes to `@interlace/eslint-devkit` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 1.18.1
+
+### Patch Changes
+
+- **🐛 Fix** — Cross-link the full plugin ecosystem from the devkit README. It is published to npm and was the one released package whose README pointed at none of the thirty plugins it exists to build — it linked the root README instead of listing them.
+
 ## 1.18.0
 
 ### Minor Changes
