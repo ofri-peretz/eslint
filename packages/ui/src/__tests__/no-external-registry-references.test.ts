@@ -20,7 +20,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 const REPO_ROOT = path.resolve(__dirname, '../../../..');
 
@@ -97,6 +97,16 @@ function sources(): [string, string][] {
 }
 
 describe('no external-registry references in first-party source', () => {
+  /**
+   * Warm the cache OUTSIDE any `it`. Reading once fixed the redundant passes, but
+   * the read is lazy, so whichever test ran first still paid all 200+ files inside
+   * its own 5s budget — and under the full `turbo run test` fan-out that single
+   * read took 16.6s against 312ms idle. The cost is inherent to the scan; what was
+   * wrong is charging it to a test's timeout. `beforeAll` takes its own, stated
+   * explicitly here rather than inherited.
+   */
+  beforeAll(() => void sources(), 120_000);
+
   // Guards the guard. A scan-and-assert-empty test passes identically when it
   // is pointed at a directory that does not exist, so pin the floor: if a
   // rename or a moved app drops the file count off a cliff, fail loudly rather
