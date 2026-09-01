@@ -10,7 +10,18 @@
  * Library detection, pattern matching, and common helpers.
  */
 import type { TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createModuleEvidence } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createModuleEvidence,
+  propertyName,
+} from '@interlace/eslint-devkit';
+
+/*
+ * SHARED by seven rules, so this one gate was a blind spot in all of them.
+ * `jwt['sign']({ password }, secret)` signs exactly what `jwt.sign(...)` does,
+ * and 31 of `no-sensitive-payload`'s own true positives went silent when
+ * written that way.
+ */
 
 /**
  * Supported JWT libraries
@@ -482,9 +493,10 @@ export function isJwtLibraryCall(
     if (receiverIsForeignConstruction(node.callee.object)) {
       return false;
     }
-    const property = node.callee.property;
-    if (property.type === 'Identifier') {
-      return targetMethods.has(property.name);
+    // A dynamic `jwt[m](...)` names no method and matches nothing.
+    const method = propertyName(node.callee);
+    if (method !== null) {
+      return targetMethods.has(method);
     }
   }
 

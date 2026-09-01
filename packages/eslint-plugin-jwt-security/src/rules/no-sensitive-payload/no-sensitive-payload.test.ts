@@ -23,6 +23,13 @@ describe('no-sensitive-payload', () => {
   describe('Valid Code - Safe Payloads', () => {
     ruleTester.run('valid - standard claims', noSensitivePayload, {
       valid: [
+    {
+      // A dynamic method on a JWT client names nothing, so `isJwtLibraryCall`
+      // cannot say this is a sign operation. The negative half of resolving
+      // string subscripts: `jwt['sign']` is a sign, `jwt[m]` is not knowable.
+      name: 'a dynamic method on a jwt client is not a sign operation',
+      code: `import jwt from 'jsonwebtoken';\nfunction f(m) { jwt[m]({ password: 'x' }, secret); }`,
+    },
         // Standard JWT claims
         {
           name: 'a subject and a role',
