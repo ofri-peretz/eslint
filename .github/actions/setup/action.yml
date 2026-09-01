@@ -68,12 +68,6 @@ inputs:
     description: Restore + save the Next.js incremental build cache (apps/docs/.next/cache). Set to "true" for jobs that build apps/docs.
     required: false
     default: "false"
-  tsbuildinfo-cache:
-    description: >-
-      Restore + save the TypeScript project-references incremental state
-      (packages/*/.tsbuildinfo). Set to "true" for the whole-graph typecheck job.
-    required: false
-    default: "false"
   turbo-remote-cache:
     description: >-
       Back Turborepo's REMOTE cache API with GitHub Actions' cache instead of
@@ -349,16 +343,34 @@ runs:
     #
     # Keyed on the sources tsgo actually reads, so a source change invalidates
     # it; the restore-key fallback still gives a partial graph to build on.
-    - name: Restore TypeScript incremental state
-      if: inputs.tsbuildinfo-cache == 'true'
-      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
-      with:
-        path: |
-          packages/*/.tsbuildinfo
-          packages/*/dist
-        key: tsbuildinfo-${{ runner.os }}-${{ hashFiles('packages/*/src/**/*.ts', 'packages/*/tsconfig*.json', 'tsconfig.solution.json', 'tsconfig.base.json') }}
-        restore-keys: |
-          tsbuildinfo-${{ runner.os }}-
+    # There is deliberately NO TypeScript incremental cache here.
+    #
+    # There was one, and it cached `packages/*/.tsbuildinfo` WITHOUT
+    # `packages/*/dist` -- the dist half having been dropped because it is
+    # hundreds of MB and once pushed this repo's cache store to 36.89 GB against
+    # a 10 GB budget, where GitHub LRU-evicts entries and a perfectly good
+    # `restore-keys` prefix ends up with nothing to fall back to.
+    #
+    # Splitting them is incoherent. `tsgo --build` reads the buildinfo, concludes
+    # every project is up to date, and skips emitting -- so the `.d.ts` files
+    # downstream projects reference are never written. Reproduced exactly on
+    # 2026-09-01 by keeping the 31 buildinfo files and deleting dist:
+    #
+    #   TS2307: Cannot find module '@interlace/eslint-devkit' or its
+    #           corresponding type declarations
+    #   TS7006: Parameter 'context' implicitly has an 'any' type
+    #
+    # That surfaced as a type error in code nobody had touched, which is the
+    # expensive kind of wrong: it reads as a real defect in a real file.
+    # The step's own comment claimed "a stale buildinfo is safe by construction
+    # -- tsgo re-checks every project whose inputs no longer match". That is
+    # true of stale *inputs* and false of absent *outputs*.
+    #
+    # So: buildinfo and its outputs are one unit, and the unit is too big to
+    # cache. Cold `tsgo --build` over the whole graph is a measured 25s, paid in
+    # a job that runs in parallel with the rest of the gate. Correctness is not
+    # worth 25s. `scripts/__tests__/tsbuildinfo-cache-pairing-lock.test.ts`
+    # fails if either half is ever cached without the other.
 
     - name: Restore Next.js build cache
       if: inputs.next-cache == 'true'
