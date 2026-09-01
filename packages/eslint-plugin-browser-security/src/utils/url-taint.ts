@@ -416,9 +416,10 @@ export function isAttackerSteerableUrl(
       const callee = node.callee;
       if (
         callee.type === 'MemberExpression' &&
-        !callee.computed &&
-        callee.property.type === 'Identifier' &&
-        STEERABILITY_PRESERVING_METHODS.has(callee.property.name)
+        // `location.hash['slice'](1)` strips the same leading `#` that
+        // `location.hash.slice(1)` does. `staticProperty` above exists for
+        // this; the passthrough gate never adopted it.
+        STEERABILITY_PRESERVING_METHODS.has(staticProperty(callee) ?? '')
       ) {
         return isAttackerSteerableUrl(callee.object, sourceCode, seen);
       }

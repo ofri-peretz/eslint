@@ -95,6 +95,23 @@ describe('no-insecure-redirects', () => {
         // Using location.replace
         { code: 'location.replace(req.query.url);', errors: [{ messageId: 'insecureRedirect' }] },
         { code: 'location.assign(req.body.next);', errors: [{ messageId: 'insecureRedirect' }] },
+        // The same four redirects, spelled with a string subscript — what a
+        // minifier emits, and what anyone indexing by a constant writes.
+        // Two of these DID report before: the `href` write and the `Location`
+        // method already went through `staticKey`. The other two did not — the
+        // `res.redirect` sink and the `.slice` that strips the leading `#`
+        // each compared `property.name` before asking what the property WAS.
+        // All four are pinned so the next refactor cannot re-open either half.
+        { code: 'res["redirect"](req.query.url);', errors: [{ messageId: 'insecureRedirect' }] },
+        {
+          code: 'window["location"]["href"] = req.params.url;',
+          errors: [{ messageId: 'insecureRedirect' }],
+        },
+        { code: 'location["replace"](req.query.url);', errors: [{ messageId: 'insecureRedirect' }] },
+        {
+          code: 'window.location["assign"](window.location.hash["slice"](1));',
+          errors: [{ messageId: 'insecureRedirect' }],
+        },
       ],
     });
   });

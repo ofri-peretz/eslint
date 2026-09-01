@@ -170,6 +170,11 @@ describe('isSteerableUrlValue — the query-string surface', () => {
     // which is the only path to that return.
     ["location.hash.get('n')", false],
     ["new URL(location.href).hash.get('n')", false],
+    // Same fall-through reached with a SUBSCRIPTED param reader, now that
+    // PARAM_READERS resolves those too: `location['hash']` is not
+    // `X.searchParams` over a URL, so `urlContainerKind` returns null.
+    ["location['hash']['get']('n')", false],
+    ["new URL(location.href)['hash']['get']('n')", false],
     // Refusals.
     ["new URLSearchParams('a=1').get('n')", false],
     ["new URL('https://acme.io').hash", false],
@@ -183,6 +188,23 @@ describe('isSteerableUrlValue — the query-string surface', () => {
     ["fetchIt(location.search)", false],
   ])('%s → %s', (code, expected) => {
     expect(steerable(code)).toBe(expected);
+  });
+
+  // The reader's receiver is a BINDING here, so `urlContainerKind` has to
+  // resolve the initialiser before it can see a `URLSearchParams`. This is the
+  // form real code uses; the inline spelling is answered further up.
+  it('a URLSearchParams reached through a const binding is steerable', () => {
+    expect(
+      first(
+        'const p = new URL(location.href).searchParams; window.open(p.get("n"));',
+        'CallExpression',
+        (node, sourceCode) =>
+          isSteerableUrlValue(
+            (node as TSESTree.CallExpression).arguments[0] as TSESTree.Node,
+            sourceCode,
+          ),
+      ),
+    ).toBe(true);
   });
 
   it('a template that does not open with the interpolation is not steerable', () => {
