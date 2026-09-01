@@ -12,6 +12,7 @@ import {
   MessageIcons,
   resolveModuleBinding,
   staticString,
+  objectKeyName,
 } from '@interlace/eslint-devkit';
 import { NoTransactionOnPoolOptions } from '../../types';
 import { fileUsesPostgres, PG_MODULES } from '../../utils';
@@ -73,14 +74,12 @@ function statementText(node: TSESTree.Node): string | null {
   // Found by the adversarial wave — it is the same call written the other
   // documented way, and it went straight past a rule that only read a string.
   if (node.type === AST_NODE_TYPES.ObjectExpression) {
+    // `objectKeyName` rather than an Identifier/Literal pair: `{ text }`,
+    // `{ 'text': … }`, `{ ['text']: … }` and `` { [`text`]: … } `` all declare
+    // the same property, and hand-rolling the check caught two of the four.
     const text = node.properties.find(
       (prop): prop is TSESTree.Property =>
-        prop.type === AST_NODE_TYPES.Property &&
-        ((prop.key.type === AST_NODE_TYPES.Identifier &&
-          !prop.computed &&
-          prop.key.name === 'text') ||
-          (prop.key.type === AST_NODE_TYPES.Literal &&
-            prop.key.value === 'text')),
+        prop.type === AST_NODE_TYPES.Property && objectKeyName(prop) === 'text',
     );
     return text === undefined ? null : statementText(text.value);
   }
