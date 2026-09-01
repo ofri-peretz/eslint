@@ -39,7 +39,7 @@
  * helper exists to remove.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { isModuleBinding } from '@interlace/eslint-devkit';
+import { isModuleBinding, propertyName } from '@interlace/eslint-devkit';
 
 /** Methods on an Express app/router that return a chainable router-like value. */
 const ROUTER_RETURNING_METHODS: ReadonlySet<string> = new Set(['route', 'use']);
@@ -68,9 +68,8 @@ export function isExpressAppOrRouter(
     // can keep registering routes on.
     if (
       callee.type === 'MemberExpression' &&
-      !callee.computed &&
-      callee.property.type === 'Identifier' &&
-      ROUTER_RETURNING_METHODS.has(callee.property.name)
+      // `app['use'](…)` hands back the same router `app.use(…)` does.
+      ROUTER_RETURNING_METHODS.has(propertyName(callee) ?? '')
     ) {
       return isExpressAppOrRouter(callee.object, scope, seen);
     }
@@ -119,14 +118,10 @@ export function asExpressRouteRegistration(
   methods: ReadonlySet<string>,
 ): ExpressRouteRegistration | null {
   const { callee } = node;
-  if (
-    callee.type !== 'MemberExpression' ||
-    callee.computed ||
-    callee.property.type !== 'Identifier'
-  ) {
-    return null;
-  }
-  const method = callee.property.name;
+  if (callee.type !== 'MemberExpression') return null;
+  // `app['post']('/a', h)` registers exactly the route `app.post` does.
+  const method = propertyName(callee);
+  if (method === null) return null;
   if (!methods.has(method.toLowerCase())) return null;
   if (!isExpressAppOrRouter(callee.object, scope)) return null;
 
@@ -147,9 +142,7 @@ function isRouteCall(node: TSESTree.Node): boolean {
   return (
     node.type === 'CallExpression' &&
     node.callee.type === 'MemberExpression' &&
-    !node.callee.computed &&
-    node.callee.property.type === 'Identifier' &&
-    node.callee.property.name === 'route'
+    propertyName(node.callee) === 'route'
   );
 }
 

@@ -438,8 +438,10 @@ ruleTester.run('lock: chained route registrations', noMissingCsrfProtection, {
 /** Edge shapes the chain walk and the module resolution must survive. */
 ruleTester.run('edge shapes', noMissingCsrfProtection, {
   valid: [
-    // A computed method is not a route registration.
-    { code: `const express = require('express'); const app = express(); app['post']('/x', h);` },
+    // A method chosen at RUNTIME names no verb to check.
+    { code: `const express = require('express'); const app = express(); app[verb]('/x', h);` },
+    // Nor does a runtime key in the RECEIVER chain prove a router came back.
+    { code: `const express = require('express'); const app = express(); app[k]().post('/x', h);` },
     // A chain whose root is not a `.route(…)` call.
     { code: `const express = require('express'); const app = express(); app.listen(3000).post(h);` },
     // A `.route(…)` on something that is not a proven Express receiver.
@@ -485,6 +487,13 @@ ruleTester.run('edge shapes', noMissingCsrfProtection, {
     },
   ],
   invalid: [
+    // Was pinned above as "a computed method is not a route registration".
+    // Express disagrees: `app['post']` registers the same unprotected POST
+    // route `app.post` does, and a minifier writes it this way.
+    {
+      code: `const express = require('express'); const app = express(); app['post']('/x', h);`,
+      errors: 1,
+    },
     // A custom protected-method list, on the method it names.
     {
       code: `const express = require('express'); const app = express(); app.put('/x', '/x', h);`,
