@@ -9,9 +9,9 @@
  * Disallows console.log with configurable strategies and LLM-optimized output
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
-import { normalizePath, getRelativePath, propertyName } from '@interlace/eslint-devkit';
+import { normalizePath, getRelativePath } from '@interlace/eslint-devkit';
 
 /*
  * `console['log']('x')` writes to the same stream `console.log` does. The

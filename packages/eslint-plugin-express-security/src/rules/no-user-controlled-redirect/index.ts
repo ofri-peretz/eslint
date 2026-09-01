@@ -289,7 +289,7 @@ export const noUserControlledRedirect = createRule<RuleOptions, MessageIds>({
         node,
         (n) =>
           n.type === AST_NODE_TYPES.MemberExpression &&
-          ORIGIN_PROPS.has(propertyName(n) ?? '') &&
+          ORIGIN_PROPS.has(propertyName(n) as string) &&
           isUrlParseOf(n.object, source),
         false,
       );

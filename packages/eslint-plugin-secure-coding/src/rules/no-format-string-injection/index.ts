@@ -27,8 +27,9 @@ import {
   isStaticExpression,
   unwrapTypeSyntax,
   staticString,
+  propertyName,
 } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 /*
  * `console['log'](fmt, x)` and `req['query'].name` are the same sink and the

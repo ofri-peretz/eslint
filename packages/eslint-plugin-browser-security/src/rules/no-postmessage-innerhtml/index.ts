@@ -107,7 +107,7 @@ export const noPostmessageInnerhtml = createRule<RuleOptions, MessageIds>({
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
           // `el['innerHTML'] = …` and `el['insertAdjacentHTML'](…)` write
           // the same markup the dotted spellings do.
-          DANGEROUS_METHODS.has(propertyName(node.callee) ?? '')
+          DANGEROUS_METHODS.has(propertyName(node.callee) as string)
         ) {
           // Check if any argument references event.data
           for (const arg of node.arguments) {
@@ -136,7 +136,7 @@ export const noPostmessageInnerhtml = createRule<RuleOptions, MessageIds>({
           node.left.type === AST_NODE_TYPES.MemberExpression &&
           // `el['innerHTML'] = …` and `el['insertAdjacentHTML'](…)` write
           // the same markup the dotted spellings do.
-          DANGEROUS_PROPERTIES.has(propertyName(node.left) ?? '')
+          DANGEROUS_PROPERTIES.has(propertyName(node.left) as string)
         ) {
           // Check if right side references event.data
           if (payloadSource(node.right) === 'postmessage') {

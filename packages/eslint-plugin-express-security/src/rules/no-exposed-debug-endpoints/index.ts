@@ -117,7 +117,7 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
         node.callee.type === 'MemberExpression' &&
         node.callee.object.type === 'Identifier' &&
         ['app', 'router', 'express'].includes(node.callee.object.name) &&
-        HTTP_METHODS.has(propertyName(node.callee) ?? '')
+        HTTP_METHODS.has(propertyName(node.callee) as string)
       );
     };
 

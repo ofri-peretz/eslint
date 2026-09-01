@@ -2314,6 +2314,11 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
           // matching it by name is the whole point. `propertyName` resolves a
           // string subscript and returns null for a dynamic key — exactly
           // backwards for this test.
+          //
+          // A sweep has now rewritten this line TWICE, stranding the comment
+          // above the wrong code both times; the mass-assignment tests caught
+          // it both times. If you are here from a third sweep, they are the
+          // lock — read them before "fixing" this.
           n.left.property.type === AST_NODE_TYPES.Identifier &&
           n.left.property.name === keyName
         ) {

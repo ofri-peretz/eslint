@@ -107,7 +107,7 @@ export const noWebsocketInnerhtml = createRule<RuleOptions, MessageIds>({
           node.left.type === AST_NODE_TYPES.MemberExpression &&
           // `el['innerHTML'] = …` and `el['insertAdjacentHTML'](…)` write
           // the same markup the dotted spellings do.
-          DANGEROUS_PROPERTIES.has(propertyName(node.left) ?? '')
+          DANGEROUS_PROPERTIES.has(propertyName(node.left) as string)
         ) {
           if (payloadSource(node.right) === 'websocket') {
             context.report({
@@ -133,7 +133,7 @@ export const noWebsocketInnerhtml = createRule<RuleOptions, MessageIds>({
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
           // `el['innerHTML'] = …` and `el['insertAdjacentHTML'](…)` write
           // the same markup the dotted spellings do.
-          DANGEROUS_METHODS.has(propertyName(node.callee) ?? '')
+          DANGEROUS_METHODS.has(propertyName(node.callee) as string)
         ) {
           for (const arg of node.arguments) {
             if (payloadSource(arg) === 'websocket') {

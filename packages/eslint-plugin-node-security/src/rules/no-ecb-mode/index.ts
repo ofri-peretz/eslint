@@ -101,7 +101,7 @@ export const noEcbMode = createRule<RuleOptions, MessageIds>({
       // Check for crypto.createCipher*() pattern
       const isCipherCall =
         (node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          cipherMethods.has(propertyName(node.callee) ?? '')) ||
+          cipherMethods.has(propertyName(node.callee) as string)) ||
         (node.callee.type === AST_NODE_TYPES.Identifier &&
           cipherMethods.has(node.callee.name));
 

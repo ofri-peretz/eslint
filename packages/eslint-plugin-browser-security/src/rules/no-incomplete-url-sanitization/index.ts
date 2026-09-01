@@ -201,7 +201,7 @@ function receiverName(node: TSESTree.Node): string | null {
   if (
     callee.type === 'MemberExpression' &&
     // `raw['toLowerCase']()` answers whatever `raw.toLowerCase()` answers.
-    PASSTHROUGH_METHODS.has(propertyName(callee) ?? '')
+    PASSTHROUGH_METHODS.has(propertyName(callee) as string)
   ) {
     return receiverName(callee.object);
   }

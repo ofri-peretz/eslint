@@ -139,7 +139,7 @@ function isReactWrapperCall(node: TSESTree.Node): node is TSESTree.CallExpressio
   }
   return (
     callee.type === AST_NODE_TYPES.MemberExpression &&
-    REACT_WRAPPERS.has(propertyName(callee) ?? '')
+    REACT_WRAPPERS.has(propertyName(callee) as string)
   );
 }
 

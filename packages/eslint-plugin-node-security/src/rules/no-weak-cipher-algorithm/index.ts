@@ -199,7 +199,7 @@ export const noWeakCipherAlgorithm = createRule<RuleOptions, MessageIds>({
       // Check for crypto.createCipher*() pattern
       if (
         node.callee.type === AST_NODE_TYPES.MemberExpression &&
-        cipherMethods.has(propertyName(node.callee) ?? '')
+        cipherMethods.has(propertyName(node.callee) as string)
       ) {
         checkCipherArgument(node);
       }

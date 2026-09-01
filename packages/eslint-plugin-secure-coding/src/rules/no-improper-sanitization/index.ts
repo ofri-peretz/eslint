@@ -547,7 +547,7 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
             if (
               callee.type === 'MemberExpression' &&
               // @vocabulary Express response API
-              ['write', 'send', 'json'].includes(propertyName(callee) ?? '')
+              ['write', 'send', 'json'].includes(propertyName(callee) as string)
             ) {
               // Could be response output
               isInDangerousContext = true;

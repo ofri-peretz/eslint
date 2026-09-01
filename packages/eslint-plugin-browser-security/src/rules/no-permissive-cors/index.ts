@@ -220,7 +220,7 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
         if (
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
           // `res['setHeader'](…)` sets the same header.
-          HEADER_METHODS.has(propertyName(node.callee) ?? '') &&
+          HEADER_METHODS.has(propertyName(node.callee) as string) &&
           node.arguments[0] !== undefined &&
           foldToString(node.arguments[0], sourceCode)?.toLowerCase() ===
             ALLOW_ORIGIN &&

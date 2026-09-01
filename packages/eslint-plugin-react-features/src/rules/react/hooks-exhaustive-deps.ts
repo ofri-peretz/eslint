@@ -201,7 +201,7 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
         callee.type === 'MemberExpression' &&
         callee.object.type === 'Identifier' &&
         callee.object.name === 'React' &&
-        HOOKS_WITH_DEPS.has(propertyName(callee) ?? '')
+        HOOKS_WITH_DEPS.has(propertyName(callee) as string)
       ) {
         return true;
       }

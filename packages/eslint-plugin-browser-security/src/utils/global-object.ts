@@ -29,6 +29,7 @@
  * test: `myLocalStorageWrapper` is not `localStorage`.
  */
 import type { TSESTree } from '@interlace/eslint-devkit';
+import { propertyName } from '@interlace/eslint-devkit';
 
 const GLOBAL_ALIASES: ReadonlySet<string> = new Set([
   'window',
@@ -55,13 +56,11 @@ export function resolveGlobalObject(
   }
   if (
     node.type === 'MemberExpression' &&
-    !node.computed &&
-    node.property.type === 'Identifier' &&
-    names.has(node.property.name) &&
+    names.has(propertyName(node) as string) &&
     node.object.type === 'Identifier' &&
     GLOBAL_ALIASES.has(node.object.name)
   ) {
-    return node.property.name;
+    return propertyName(node) as string;
   }
   return null;
 }

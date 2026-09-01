@@ -637,7 +637,7 @@ function isResponseInit(init: TSESTree.ObjectExpression): boolean {
   if (callee.type === 'MemberExpression' && callee.object.type === 'Identifier') {
     // `NextResponse['json'](…)` builds the same response.
     return (
-      RESPONSE_FACTORIES.has(propertyName(callee) ?? '') &&
+      RESPONSE_FACTORIES.has(propertyName(callee) as string) &&
       (callee.object.name === 'Response' || callee.object.name === 'NextResponse')
     );
   }

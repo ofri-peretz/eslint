@@ -91,7 +91,7 @@ export const noDeprecatedCipherMethod = createRule<RuleOptions, MessageIds>({
       // Check for crypto.createCipher() or crypto.createDecipher()
       if (
         node.callee.type === AST_NODE_TYPES.MemberExpression &&
-        DEPRECATED_METHODS.has(propertyName(node.callee) ?? '')
+        DEPRECATED_METHODS.has(propertyName(node.callee) as string)
       ) {
         // Capture narrowed type before callback (TypeScript loses narrowing in closures)
         const callee = node.callee;

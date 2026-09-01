@@ -701,7 +701,7 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
           for (const arg of args) {
             if (
               arg.type === 'MemberExpression' &&
-              archiveEntryFields.has(propertyName(arg) ?? '')
+              archiveEntryFields.has(propertyName(arg) as string)
             ) {
               // This looks like path.join(dest, entry.name) — but only if an
               // archive is involved. `entry` is just as often an

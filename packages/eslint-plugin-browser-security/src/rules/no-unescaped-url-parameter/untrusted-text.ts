@@ -41,7 +41,7 @@
  * makes `encodeURIComponent(q)` untainted without a special case for it.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, resolveModuleBinding, staticString } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, resolveModuleBinding, staticString, propertyName } from '@interlace/eslint-devkit';
 import {
   isAttackerSteerableUrl,
   resolveBoundInitializer,
@@ -289,9 +289,7 @@ function isFormDataRead(
   const callee = node.callee;
   return (
     callee.type === AST_NODE_TYPES.MemberExpression &&
-    !callee.computed &&
-    callee.property.type === AST_NODE_TYPES.Identifier &&
-    FORM_DATA_READERS.has(callee.property.name) &&
+    FORM_DATA_READERS.has(propertyName(callee) as string) &&
     isFormData(callee.object, sourceCode, new Set(seen))
   );
 }
@@ -437,9 +435,7 @@ export function carriesUntrustedText(
       const callee = node.callee;
       if (
         callee.type === AST_NODE_TYPES.MemberExpression &&
-        !callee.computed &&
-        callee.property.type === AST_NODE_TYPES.Identifier &&
-        TEXT_PRESERVING_METHODS.has(callee.property.name)
+        TEXT_PRESERVING_METHODS.has(propertyName(callee) as string)
       ) {
         return carriesUntrustedText(callee.object, sourceCode, seen);
       }

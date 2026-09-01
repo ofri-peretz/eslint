@@ -13,7 +13,7 @@
  * @see https://owasp.org/www-community/attacks/csrf
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, isTestFilePath, propertyName } from '@interlace/eslint-devkit';
 import { createRule, isModuleBinding } from '@interlace/eslint-devkit';
 import { resolveInitializer } from '../../utils/resolve-binding';
 import {
@@ -72,9 +72,7 @@ function asChainedRouteRegistration(
   while (
     receiver.type === 'CallExpression' &&
     receiver.callee.type === 'MemberExpression' &&
-    !receiver.callee.computed &&
-    receiver.callee.property.type === 'Identifier' &&
-    ROUTE_VERBS.has(receiver.callee.property.name)
+    ROUTE_VERBS.has(propertyName(receiver.callee) as string)
   ) {
     receiver = receiver.callee.object;
   }

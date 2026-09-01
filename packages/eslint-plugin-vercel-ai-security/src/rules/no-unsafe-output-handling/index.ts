@@ -12,7 +12,7 @@
  */
 
 import type { TSESLint } from '@interlace/eslint-devkit';
-import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { TSESTree, createRule, formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
 
 type MessageIds = 'unsafeOutputExecution' | 'unsafeOutputInSQL' | 'unsafeOutputInHTML';
@@ -165,8 +165,13 @@ export const noUnsafeOutputHandling = createRule<RuleOptions, MessageIds>({
       if (target.type !== 'CallExpression') return false;
       const callee = target.callee;
       if (callee.type === 'Identifier' && AI_SDK_CALLS.has(callee.name)) return true;
-      if (callee.type === 'MemberExpression' && callee.property.type === 'Identifier' &&
-          AI_SDK_CALLS.has(callee.property.name)) return true;
+      // `has(null)` is already false for a runtime-keyed member, so no `?? ''`
+      // sentinel — its empty-string arm is a branch no input can reach.
+      if (
+        callee.type === 'MemberExpression' &&
+        AI_SDK_CALLS.has(propertyName(callee) as string)
+      )
+        return true;
       return false;
     }
 

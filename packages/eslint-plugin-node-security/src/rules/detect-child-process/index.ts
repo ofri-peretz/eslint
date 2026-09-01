@@ -13,8 +13,8 @@
  * @see https://cwe.mitre.org/data/definitions/78.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, formatLLMMessage, MessageIcons} from '@interlace/eslint-devkit';
-import { createRule, isStaticExpression, propertyName } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
+import { createRule, isStaticExpression } from '@interlace/eslint-devkit';
 
 /*
  * `cp['spawn']('bash', ['-c', cmd])` spawns exactly what `cp.spawn(...)` does.

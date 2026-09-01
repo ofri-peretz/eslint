@@ -389,7 +389,7 @@ export const noUnlimitedResourceAllocation = createRule<
       // not a safeguard. A dynamic `req[k]` still resolves to nothing and is
       // still not a request surface.
       node?.type === AST_NODE_TYPES.MemberExpression &&
-      REQUEST_SURFACE.has(propertyName(node) ?? '');
+      REQUEST_SURFACE.has(propertyName(node) as string);
 
     /**
      * The initializer of a local binding, or `undefined`.
@@ -551,7 +551,7 @@ export const noUnlimitedResourceAllocation = createRule<
         }
         case AST_NODE_TYPES.MemberExpression:
           // Same: `body['size']` is the same size property as `body.size`.
-          return sizeProperties.has(propertyName(node) ?? '');
+          return sizeProperties.has(propertyName(node) as string);
         case AST_NODE_TYPES.Identifier: {
           const init = initializerOf(node);
           // A binding this file cannot see the value of is left ALONE rather

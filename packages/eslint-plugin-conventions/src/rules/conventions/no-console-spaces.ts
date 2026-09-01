@@ -74,7 +74,7 @@ export const noConsoleSpaces = createRule<RuleOptions, MessageIds>({
         node.callee.type === 'MemberExpression' &&
         node.callee.object.type === 'Identifier' &&
         node.callee.object.name === 'console' &&
-        consoleMethods.has(propertyName(node.callee) ?? '')
+        consoleMethods.has(propertyName(node.callee) as string)
       ) {
         return true;
       }

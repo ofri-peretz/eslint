@@ -29,8 +29,9 @@ import {
   isStaticExpression,
   resolveModuleBinding,
   staticString,
+  propertyName,
 } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 /*
  * `doc['evaluate'](expr)` evaluates the same XPath `doc.evaluate(expr)` does.
@@ -637,7 +638,7 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
       // nothing else in common use.
       if (
         callee.type === AST_NODE_TYPES.MemberExpression &&
-        xpathFunctions.includes(propertyName(callee) ?? '')
+        xpathFunctions.includes(propertyName(callee) as string)
       ) {
         if (propertyName(callee) !== 'select') {
           return true;

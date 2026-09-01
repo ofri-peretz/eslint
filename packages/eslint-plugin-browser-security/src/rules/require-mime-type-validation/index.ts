@@ -358,16 +358,14 @@ export const requireMimeTypeValidation = createRule<RuleOptions, MessageIds>({
         // ---- Detector 1: a media type tested by substring rather than equality.
         if (
           callee.type === AST_NODE_TYPES.MemberExpression &&
-          !callee.computed &&
-          callee.property.type === AST_NODE_TYPES.Identifier &&
-          SUBSTRING_TESTS.has(callee.property.name) &&
+          SUBSTRING_TESTS.has(propertyName(callee) as string) &&
           isTypeRead(callee.object) &&
           node.arguments.some(isMediaTypeLiteral)
         ) {
           context.report({
             node,
             messageId: 'prefixMimeCheck',
-            data: { method: callee.property.name },
+            data: { method: propertyName(callee) as string },
           });
           return;
         }
@@ -375,9 +373,7 @@ export const requireMimeTypeValidation = createRule<RuleOptions, MessageIds>({
         // ---- Detector 2: multer without a fileFilter.
         if (
           callee.type === AST_NODE_TYPES.MemberExpression &&
-          !callee.computed &&
-          callee.property.type === AST_NODE_TYPES.Identifier &&
-          MULTER_FIELD_METHODS.has(callee.property.name)
+          MULTER_FIELD_METHODS.has(propertyName(callee) as string)
         ) {
           const factory = multerCall(
             callee.object,

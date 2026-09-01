@@ -16,6 +16,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'importModuleExports';
@@ -81,8 +82,7 @@ export const noImportModuleExports = createRule<RuleOptions, MessageIds>({
         if (
           node.object.type === AST_NODE_TYPES.Identifier &&
           node.object.name === 'module' &&
-          node.property.type === AST_NODE_TYPES.Identifier &&
-          node.property.name === 'exports'
+          propertyName(node) === 'exports'
         ) {
           moduleExportsNodes.push(node);
         }

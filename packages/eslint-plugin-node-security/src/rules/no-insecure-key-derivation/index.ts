@@ -169,7 +169,7 @@ function isPbkdf2Callee(sourceCode: SourceCode, callee: TSESTree.Node, depth = 0
 
   if (
     callee.type === AST_NODE_TYPES.MemberExpression &&
-    PBKDF2_EXPORTS.has(propertyName(callee) ?? '')
+    PBKDF2_EXPORTS.has(propertyName(callee) as string)
   ) {
     return true;
   }
@@ -333,7 +333,7 @@ export const noInsecureKeyDerivation = createRule<RuleOptions, MessageIds>({
       // so the callee alone never identifies the sink.
       if (
         node.callee.type === AST_NODE_TYPES.MemberExpression &&
-        SUBTLE_DERIVE_METHODS.has(propertyName(node.callee) ?? '')
+        SUBTLE_DERIVE_METHODS.has(propertyName(node.callee) as string)
       ) {
         const params = node.arguments[0];
         if (params === undefined) return;

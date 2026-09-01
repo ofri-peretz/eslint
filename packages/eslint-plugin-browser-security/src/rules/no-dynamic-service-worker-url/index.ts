@@ -39,11 +39,9 @@ function isNavigator(node: TSESTree.Node): boolean {
   if (node.type === AST_NODE_TYPES.Identifier) return node.name === 'navigator';
   return (
     node.type === AST_NODE_TYPES.MemberExpression &&
-    !node.computed &&
     node.object.type === AST_NODE_TYPES.Identifier &&
     GLOBAL_RECEIVERS.has(node.object.name) &&
-    node.property.type === AST_NODE_TYPES.Identifier &&
-    node.property.name === 'navigator'
+    propertyName(node) === 'navigator'
   );
 }
 
@@ -61,9 +59,7 @@ function isServiceWorkerContainer(
 ): boolean {
   if (
     node.type === AST_NODE_TYPES.MemberExpression &&
-    !node.computed &&
-    node.property.type === AST_NODE_TYPES.Identifier &&
-    node.property.name === 'serviceWorker'
+    propertyName(node) === 'serviceWorker'
   ) {
     return isNavigator(node.object);
   }
@@ -152,9 +148,7 @@ function isStaticUrlConstruction(
   // `import.meta.url` is the module's own location — the bundler's anchor.
   if (
     baseArg.type === AST_NODE_TYPES.MemberExpression &&
-    !baseArg.computed &&
-    baseArg.property.type === AST_NODE_TYPES.Identifier &&
-    baseArg.property.name === 'url' &&
+    propertyName(baseArg) === 'url' &&
     baseArg.object.type === AST_NODE_TYPES.MetaProperty
   ) {
     return true;

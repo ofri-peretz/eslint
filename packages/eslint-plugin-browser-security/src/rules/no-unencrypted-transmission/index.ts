@@ -19,6 +19,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
@@ -222,8 +223,7 @@ function isProtocolInspection(
   if (
     parent.type === AST_NODE_TYPES.CallExpression &&
     parent.callee.type === AST_NODE_TYPES.MemberExpression &&
-    parent.callee.property.type === AST_NODE_TYPES.Identifier &&
-    INSPECTION_METHODS.has(parent.callee.property.name)
+    INSPECTION_METHODS.has(propertyName(parent.callee) as string)
   ) {
     // `replace`/`replaceAll` take a *replacement* as their second argument, and
     // that one is content being written — `url.replace(p, 'http://evil.test')`
@@ -232,7 +232,7 @@ function isProtocolInspection(
     // Compared by identity against argument 0 rather than scanned for with
     // indexOf: the only question is whether this literal is the first argument,
     // and scanning made a call with many literal arguments O(n²) over the pass.
-    if (WRITES_SECOND_ARGUMENT.has(parent.callee.property.name)) {
+    if (WRITES_SECOND_ARGUMENT.has(propertyName(parent.callee) as string)) {
       return parent.arguments[0] === node;
     }
     return true;

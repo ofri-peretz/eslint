@@ -101,7 +101,7 @@ export const noInsecureRsaPadding = createRule<RuleOptions, MessageIds>({
 
       const isRsaCall =
         (node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          rsaMethods.has(propertyName(node.callee) ?? '')) ||
+          rsaMethods.has(propertyName(node.callee) as string)) ||
         (node.callee.type === AST_NODE_TYPES.Identifier &&
           rsaMethods.has(node.callee.name));
 

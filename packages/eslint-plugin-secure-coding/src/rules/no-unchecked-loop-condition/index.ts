@@ -508,9 +508,7 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
       }
       if (a.type === 'MemberExpression' && b.type === 'MemberExpression') {
         return (
-          !a.computed &&
-          a.property.type === 'Identifier' &&
-          a.property.name === propertyName(b) &&
+          propertyName(a) === propertyName(b) &&
           samePath(a.object, b.object)
         );
       }

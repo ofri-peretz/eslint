@@ -615,8 +615,7 @@ export function isEnvVariable(node: TSESTree.Node): boolean {
     node.object.type === 'MemberExpression' &&
     node.object.object.type === 'Identifier' &&
     node.object.object.name === 'process' &&
-    node.object.property.type === 'Identifier' &&
-    node.object.property.name === 'env'
+    propertyName(node.object) === 'env'
   ) {
     return true;
   }

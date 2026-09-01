@@ -41,7 +41,7 @@
  * under another name. No substring test appears anywhere in this file.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, propertyName } from '@interlace/eslint-devkit';
 
 import { resolveInitializer } from './resolve-binding';
 
@@ -211,9 +211,7 @@ function literalString(node: TSESTree.Node): string | null {
 function constructorChain(node: TSESTree.Node): DynamicCodeName | null {
   const isConstructorAccess = (n: TSESTree.Node): n is TSESTree.MemberExpression =>
     n.type === AST_NODE_TYPES.MemberExpression &&
-    !n.computed &&
-    n.property.type === AST_NODE_TYPES.Identifier &&
-    n.property.name === 'constructor';
+    propertyName(n) === 'constructor';
   if (!isConstructorAccess(node)) return null;
   return isConstructorAccess(node.object) ? 'Function' : null;
 }
@@ -290,14 +288,12 @@ function timerName(
   }
   if (
     callee.type === AST_NODE_TYPES.MemberExpression &&
-    !callee.computed &&
     callee.object.type === AST_NODE_TYPES.Identifier &&
     GLOBAL_RECEIVERS.has(callee.object.name) &&
     isUnshadowedGlobal(callee.object, sourceCode) &&
-    callee.property.type === AST_NODE_TYPES.Identifier &&
-    TIMER_NAMES.has(callee.property.name)
+    TIMER_NAMES.has(propertyName(callee) as string)
   ) {
-    return callee.property.name;
+    return propertyName(callee) as string;
   }
   return null;
 }

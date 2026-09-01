@@ -371,8 +371,7 @@ function provablyEncrypts(
 
       if (
         callee.type === AST_NODE_TYPES.MemberExpression &&
-        !callee.computed &&
-        CIPHER_OUTPUT_METHODS.has(propertyName(callee) ?? '') &&
+        CIPHER_OUTPUT_METHODS.has(propertyName(callee) as string) &&
         recurse(callee.object)
       ) {
         return true;
@@ -465,7 +464,7 @@ export function isWebStorageWrite(node: TSESTree.CallExpression): boolean {
   // `window.localStorage.setItem(...)` / `globalThis.sessionStorage.setItem(...)`
   return (
     object.type === AST_NODE_TYPES.MemberExpression &&
-    CLIENT_STORES.has(propertyName(object) ?? '')
+    CLIENT_STORES.has(propertyName(object) as string)
   );
 }
 
@@ -497,7 +496,6 @@ export function isEnvironmentWrite(
   const object = target.object;
   return (
     object.type === AST_NODE_TYPES.MemberExpression &&
-    !object.computed &&
     object.object.type === AST_NODE_TYPES.Identifier &&
     object.object.name === 'process' &&
     propertyName(object) === 'env'

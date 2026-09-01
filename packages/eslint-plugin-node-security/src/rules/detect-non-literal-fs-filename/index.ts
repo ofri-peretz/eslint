@@ -933,7 +933,7 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
           if (
             node.object.type === AST_NODE_TYPES.Identifier &&
             node.object.name === 'process' &&
-            !PROCESS_INPUT_MEMBERS.has(propertyName(node) ?? '')
+            !PROCESS_INPUT_MEMBERS.has(propertyName(node) as string)
           ) {
             return false;
           }

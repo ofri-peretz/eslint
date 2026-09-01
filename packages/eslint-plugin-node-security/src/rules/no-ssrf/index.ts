@@ -506,7 +506,7 @@ export const noSsrf = createRule<RuleOptions, MessageIds>({
         if (
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
           node.callee.object.type === AST_NODE_TYPES.Identifier &&
-          HTTP_CLIENT_METHODS.has(propertyName(node.callee) ?? '') &&
+          HTTP_CLIENT_METHODS.has(propertyName(node.callee) as string) &&
           HTTP_CLIENT_MODULES.some((mod) =>
             isModuleBinding(
               (node.callee as TSESTree.MemberExpression).object,

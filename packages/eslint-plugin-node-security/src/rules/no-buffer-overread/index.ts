@@ -478,7 +478,7 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
       }
       return (
         calleeNode.type === AST_NODE_TYPES.MemberExpression &&
-        trustedSanitizers.includes(propertyName(calleeNode) ?? '')
+        trustedSanitizers.includes(propertyName(calleeNode) as string)
       );
     };
 
@@ -939,7 +939,7 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
             const callee = node.init.callee;
             if (
               callee.type === AST_NODE_TYPES.MemberExpression &&
-              bufferMethods.includes(propertyName(callee) ?? '') &&
+              bufferMethods.includes(propertyName(callee) as string) &&
               callee.object.type === AST_NODE_TYPES.Identifier &&
               isBufferType(callee.object)
             ) {
@@ -1046,7 +1046,7 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
 
         // Check for buffer method calls that need bounds checking
         if (
-          bufferMethods.includes(propertyName(node) ?? '') &&
+          bufferMethods.includes(propertyName(node) as string) &&
           node.object.type === 'Identifier' &&
           isBufferType(node.object)
         ) {
@@ -1067,7 +1067,7 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
         // off `slice` silently lost the check.
         if (
           callee.type === 'MemberExpression' &&
-          VIEW_METHODS.has(propertyName(callee) ?? '') &&
+          VIEW_METHODS.has(propertyName(callee) as string) &&
           callee.object.type === 'Identifier' &&
           isBufferType(callee.object)
         ) {
@@ -1109,8 +1109,8 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
         // findings — one line, two message ids, one underlying fact.
         if (
           callee.type === AST_NODE_TYPES.MemberExpression &&
-          bufferMethods.includes(propertyName(callee) ?? '') &&
-          !VIEW_METHODS.has(propertyName(callee) ?? '') &&
+          bufferMethods.includes(propertyName(callee) as string) &&
+          !VIEW_METHODS.has(propertyName(callee) as string) &&
           callee.object.type === AST_NODE_TYPES.Identifier &&
           isBufferType(callee.object)
         ) {

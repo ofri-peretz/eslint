@@ -52,15 +52,13 @@ function readsFileReaderResult(node: TSESTree.Node): boolean {
   let current: TSESTree.Node = node;
   while (current.type === AST_NODE_TYPES.MemberExpression) {
     if (
-      current.property.type === AST_NODE_TYPES.Identifier &&
-      current.property.name === 'result'
+      propertyName(current) === 'result'
     ) {
       const owner = current.object;
       if (owner.type === AST_NODE_TYPES.Identifier) return true;
       return (
         owner.type === AST_NODE_TYPES.MemberExpression &&
-        owner.property.type === AST_NODE_TYPES.Identifier &&
-        owner.property.name === 'target' &&
+        propertyName(owner) === 'target' &&
         owner.object.type === AST_NODE_TYPES.Identifier
       );
     }
@@ -139,7 +137,7 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
           node.left.type === AST_NODE_TYPES.MemberExpression &&
           // `el['innerHTML'] = …` and `el['insertAdjacentHTML'](…)` write
           // the same markup the dotted spellings do.
-          DANGEROUS_PROPERTIES.has(propertyName(node.left) ?? '')
+          DANGEROUS_PROPERTIES.has(propertyName(node.left) as string)
         ) {
           if (
             payloadSource(node.right) === 'filereader' &&
@@ -164,7 +162,7 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
           // `el['innerHTML'] = …` and `el['insertAdjacentHTML'](…)` write
           // the same markup the dotted spellings do.
-          DANGEROUS_METHODS.has(propertyName(node.callee) ?? '')
+          DANGEROUS_METHODS.has(propertyName(node.callee) as string)
         ) {
           for (const arg of node.arguments) {
             if (

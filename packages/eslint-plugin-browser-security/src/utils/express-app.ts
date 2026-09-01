@@ -69,7 +69,7 @@ export function isExpressAppOrRouter(
     if (
       callee.type === 'MemberExpression' &&
       // `app['use'](…)` hands back the same router `app.use(…)` does.
-      ROUTER_RETURNING_METHODS.has(propertyName(callee) ?? '')
+      ROUTER_RETURNING_METHODS.has(propertyName(callee) as string)
     ) {
       return isExpressAppOrRouter(callee.object, scope, seen);
     }

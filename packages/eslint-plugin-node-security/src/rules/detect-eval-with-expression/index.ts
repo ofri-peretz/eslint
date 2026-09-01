@@ -566,7 +566,7 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
         callee.type === 'MemberExpression' &&
         callee.object.type === 'Identifier' &&
         GLOBAL_OBJECTS.has(callee.object.name) &&
-        evalFunctions.has(propertyName(callee) ?? '')
+        evalFunctions.has(propertyName(callee) as string)
       ) {
         return propertyName(callee) as string;
       }

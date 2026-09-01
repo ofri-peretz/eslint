@@ -232,8 +232,7 @@ export const noClientSideAuthLogic = createRule<RuleOptions, MessageIds>({
       if (test.type !== 'BinaryExpression') return false;
       const isCredentialRead = (expr: TSESTree.Node): boolean =>
         expr.type === 'MemberExpression' &&
-        expr.property.type === 'Identifier' &&
-        credentialProperties.includes(expr.property.name);
+        credentialProperties.includes(propertyName(expr) as string);
 
       const left = test.left as TSESTree.Node;
       const right = test.right as TSESTree.Node;

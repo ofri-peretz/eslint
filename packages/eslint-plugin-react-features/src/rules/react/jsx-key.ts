@@ -146,7 +146,7 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
       // Pattern 1: array.map(), array.forEach(), array.flatMap()
       if (
         callee.type === 'MemberExpression' &&
-        ITERATOR_METHODS.has(propertyName(callee) ?? '')
+        ITERATOR_METHODS.has(propertyName(callee) as string)
       ) {
         return true;
       }

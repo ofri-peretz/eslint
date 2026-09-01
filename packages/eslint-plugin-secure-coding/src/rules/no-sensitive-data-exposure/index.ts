@@ -300,7 +300,7 @@ function isDiagnosticAccessor(node: TSESTree.Node): boolean {
     unwrapped.type === AST_NODE_TYPES.ChainExpression ? unwrapped.expression : unwrapped;
   return (
     value.type === AST_NODE_TYPES.MemberExpression &&
-    DIAGNOSTIC_ACCESSORS.has(propertyName(value) ?? '')
+    DIAGNOSTIC_ACCESSORS.has(propertyName(value) as string)
   );
 }
 

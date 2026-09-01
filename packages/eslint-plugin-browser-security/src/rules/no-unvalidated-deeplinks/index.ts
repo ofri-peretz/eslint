@@ -283,8 +283,7 @@ export const noUnvalidatedDeeplinks = createRule<RuleOptions, MessageIds>({
         // hands the string to the OS URL-scheme handler, which is the sink
         // CWE-939 is about.
         if (node.callee.type === 'MemberExpression' &&
-            node.callee.property.type === 'Identifier' &&
-            node.callee.property.name === 'navigate') {
+            propertyName(node.callee) === 'navigate') {
 
           const urlArg = node.arguments[0];
           if (urlArg && isSteerableUrlValue(urlArg, context.sourceCode)) {

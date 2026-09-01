@@ -256,7 +256,7 @@ function isBuildTimeConstant(
     case 'CallExpression':
       return (
         node.callee.type === 'MemberExpression' &&
-        CONSTANT_PRESERVING_METHODS.has(propertyName(node.callee) ?? '') &&
+        CONSTANT_PRESERVING_METHODS.has(propertyName(node.callee) as string) &&
         isBuildTimeConstant(node.callee.object, sourceCode, depth + 1) &&
         node.arguments.every(
           (argument) =>
