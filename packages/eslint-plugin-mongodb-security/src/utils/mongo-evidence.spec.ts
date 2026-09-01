@@ -97,6 +97,15 @@ describe('fileUsesMongo — native driver collection handle', () => {
       'a handle stored on a member, then queried',
       `state.mongo.collection('users').findOneAndUpdate(f, u);`,
     ],
+    // `db['collection']('users')` names the same collection the dotted form
+    // does. This sat in the REJECTS table as "a computed `collection` access",
+    // which read as a deliberate limit; it was a blind spot. The genuinely
+    // unresolvable spellings — `db.collection(name)`, `db.collection(0)` —
+    // stay rejected, and that is where the line belongs.
+    [
+      'a collection reached by a string subscript',
+      `db['collection']('users').findOne({});`,
+    ],
   ])('accepts %s', (_label, code) => {
     expect(usesMongo(code)).toBe(true);
   });
@@ -125,10 +134,6 @@ describe('fileUsesMongo — native driver collection handle', () => {
     ['a query on a plain identifier', `users.findOne({ _id: id });`],
     ['a bare call with no receiver', `findOne({ _id: id });`],
     ['a computed method name', `db.collection('users')['findOne']({});`],
-    [
-      'a computed `collection` access',
-      `db['collection']('users').findOne({});`,
-    ],
     ['a free `collection()` function', `collection('users').findOne({});`],
     ['a different method on the object', `db.table('users').findOne({});`],
     ['a collection named by a variable', `db.collection(name).findOne({});`],

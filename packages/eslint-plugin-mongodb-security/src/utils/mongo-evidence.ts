@@ -5,7 +5,14 @@
  */
 
 import type { TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, propertyName } from '@interlace/eslint-devkit';
+
+/*
+ * SHARED evidence, read by 16 rules, so a gate here is a blind spot in all of
+ * them. `db['collection']('users').find(...)` names the same collection the
+ * dotted form does, and `q['lean']()` is the same lean query. Reading
+ * `property.name` directly missed every one.
+ */
 
 /**
  * Packages that put a MongoDB or Mongoose handle in a file.
@@ -116,8 +123,7 @@ function isSchemaConstruction(node: TSESTree.Node): boolean {
   if (callee.type === AST_NODE_TYPES.Identifier) return callee.name === 'Schema';
   return (
     callee.type === AST_NODE_TYPES.MemberExpression &&
-    callee.property.type === AST_NODE_TYPES.Identifier &&
-    callee.property.name === 'Schema'
+    propertyName(callee) === 'Schema'
   );
 }
 
@@ -133,8 +139,7 @@ function isObjectIdEvidence(node: TSESTree.Node): boolean {
     node.type === AST_NODE_TYPES.MemberExpression &&
     node.object.type === AST_NODE_TYPES.Identifier &&
     node.object.name === 'Types' &&
-    node.property.type === AST_NODE_TYPES.Identifier &&
-    node.property.name === 'ObjectId'
+    propertyName(node) === 'ObjectId'
   ) {
     return true;
   }
@@ -186,8 +191,7 @@ function isLeanCall(node: TSESTree.Node): boolean {
   return (
     node.type === AST_NODE_TYPES.CallExpression &&
     node.callee.type === AST_NODE_TYPES.MemberExpression &&
-    node.callee.property.type === AST_NODE_TYPES.Identifier &&
-    node.callee.property.name === 'lean' &&
+    propertyName(node.callee) === 'lean' &&
     node.arguments.length === 0
   );
 }
@@ -286,8 +290,7 @@ const NATIVE_COLLECTION_METHODS: ReadonlySet<string> = new Set([
 function isCollectionHandleCall(node: TSESTree.Node): boolean {
   if (node.type !== AST_NODE_TYPES.CallExpression) return false;
   if (node.callee.type !== AST_NODE_TYPES.MemberExpression) return false;
-  if (node.callee.property.type !== AST_NODE_TYPES.Identifier) return false;
-  if (node.callee.property.name !== 'collection') return false;
+  if (propertyName(node.callee) !== 'collection') return false;
   const [name] = node.arguments;
   return (
     name?.type === AST_NODE_TYPES.Literal && typeof name.value === 'string'
