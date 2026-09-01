@@ -65,9 +65,9 @@ export const noVerboseErrorMessages = createRule<RuleOptions, MessageIds>({
         if (
           node.type === AST_NODE_TYPES.CallExpression &&
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
           // @vocabulary Express response API
-          ['send', 'json'].includes(node.callee.property.name)
+          // `res['send'](err.stack)` leaks the same stack `res.send` does.
+          ['send', 'json'].includes(propertyName(node.callee) as string)
         ) {
           const arg = node.arguments[0];
 

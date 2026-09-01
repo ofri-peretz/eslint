@@ -16,7 +16,6 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   formatLLMMessage,
   MessageIcons,
-  staticString,
   propertyName,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
@@ -136,12 +135,12 @@ export function hasPromiseEvidence(
   if (isAsyncFunctionNode(node.callee)) return true;
 
   if (node.callee.type === 'MemberExpression') {
-    const { object, property } = node.callee;
+    const { object } = node.callee;
     if (
       object.type === 'Identifier' &&
       object.name === 'Promise' &&
-      property.type === 'Identifier' &&
-      PROMISE_STATICS.has(property.name)
+      // `Promise['all']([…])` is the same static `Promise.all` is.
+      PROMISE_STATICS.has(propertyName(node.callee) as string)
     ) {
       return true;
     }
@@ -153,13 +152,7 @@ export function hasPromiseEvidence(
     // `x.then(…)` and `x["then"](…)` are the same protocol; the second form
     // appears in minified and generated code, and reading only the Identifier
     // spelling meant the rule saw a promise in one and not the other.
-    const propertyName =
-      property.type === 'Identifier'
-        ? property.name
-        : staticString(property) !== null
-          ? staticString(property)
-          : null;
-    if (propertyName === 'then') return true;
+    if (propertyName(node.callee) === 'then') return true;
     // `axios.get(url)` — the RECEIVER is the configured name, not the method.
     return object.type === 'Identifier' && promiseReturning.has(object.name);
   }
@@ -203,8 +196,10 @@ export function isInsidePromiseCallback(
         funcParent.callee.type === 'MemberExpression'
       ) {
         const memberExpr = funcParent.callee;
-        if (memberExpr.property.type === 'Identifier') {
-          const methodName = memberExpr.property.name;
+        // `p['then'](…)` settles the promise exactly as `p.then(…)` does.
+        const settled = propertyName(memberExpr);
+        if (settled !== null) {
+          const methodName = settled;
           if (
             methodName === 'then' ||
             methodName === 'catch' ||

@@ -12,7 +12,7 @@
  * @see https://restfulapi.net/
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, staticString } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, staticString, propertyName } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -122,10 +122,11 @@ export const enforceRestConventions = createRule<RuleOptions, MessageIds>({
     function checkCallExpression(node: TSESTree.CallExpression) {
       // Check for Express/Fastify route handlers: app.get(), router.post(), etc.
       if (node.callee.type === 'MemberExpression') {
-        const property = node.callee.property;
-        
-        if (property.type === 'Identifier') {
-          const methodName = property.name.toLowerCase();
+        // `app['get']('/user', h)` registers the same route `app.get` does.
+        const method = propertyName(node.callee);
+
+        if (method !== null) {
+          const methodName = method.toLowerCase();
           const httpMethods = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options'];
           
           if (httpMethods.includes(methodName)) {
@@ -165,8 +166,7 @@ export const enforceRestConventions = createRule<RuleOptions, MessageIds>({
       
       // Check for status code usage: res.status(200)
       if (checkStatusCodes && node.callee.type === 'MemberExpression') {
-        const property = node.callee.property;
-        if (property.type === 'Identifier' && property.name === 'status') {
+        if (propertyName(node.callee) === 'status') {
           // Check if status code is appropriate (would need to track HTTP method)
           // This is simplified - full implementation would track the HTTP method from parent
         }
