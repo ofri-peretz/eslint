@@ -121,7 +121,7 @@
     "build": "tsx ../../scripts/build-package.ts",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "typecheck": "tsc -p tsconfig.lib.json --noEmit"
+    "typecheck": "tsgo -p tsconfig.lib.json --noEmit"
   },
   "funding": {
     "type": "github",
