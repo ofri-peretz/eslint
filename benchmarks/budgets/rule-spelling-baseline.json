@@ -745,7 +745,6 @@
     "packages/eslint-plugin-secure-coding/src/rules/no-sensitive-data-exposure/index.ts::bare-object-key-only::((property.key.type === AST_NODE_TYPES.Identifier && property.key.name === key) ||",
     "packages/eslint-plugin-secure-coding/src/rules/no-sensitive-data-exposure/index.ts::bare-object-key-only::? property.key.name",
     "packages/eslint-plugin-secure-coding/src/rules/no-sensitive-data-exposure/index.ts::dotted-property-only::DIAGNOSTIC_ACCESSORS.has(value.property.name)",
-    "packages/eslint-plugin-secure-coding/src/rules/no-sensitive-data-exposure/index.ts::dotted-property-only::LOGGER_RECEIVERS.has(node.property.name.toLowerCase())",
     "packages/eslint-plugin-secure-coding/src/rules/no-sql-injection/index.ts::bare-object-key-only::? property.key.name",
     "packages/eslint-plugin-secure-coding/src/rules/no-sql-injection/index.ts::dotted-property-only::? callee.property.name",
     "packages/eslint-plugin-secure-coding/src/rules/no-sql-injection/index.ts::dotted-property-only::callee.property.name !== 'join'",

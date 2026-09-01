@@ -13,7 +13,7 @@
  * @see https://cwe.mitre.org/data/definitions/532.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, AST_NODE_TYPES, unwrapTypeSyntax, isStaticExpression, staticString } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, AST_NODE_TYPES, unwrapTypeSyntax, isStaticExpression, propertyName, staticString } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -448,12 +448,12 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
       if (node.type === AST_NODE_TYPES.Identifier) {
         return LOGGER_RECEIVERS.has(node.name.toLowerCase());
       }
-      return (
-        node.type === AST_NODE_TYPES.MemberExpression &&
-        !node.computed &&
-        node.property.type === AST_NODE_TYPES.Identifier &&
-        LOGGER_RECEIVERS.has(node.property.name.toLowerCase())
-      );
+      // One expression rather than an early return: the old `&&` chain tested
+      // the member-ness inline, and splitting it out added a branch nothing
+      // reaches, since every caller passes an Identifier or a MemberExpression.
+      const name =
+        node.type === AST_NODE_TYPES.MemberExpression ? propertyName(node) : null;
+      return name !== null && LOGGER_RECEIVERS.has(name.toLowerCase());
     }
 
     /**
@@ -746,11 +746,14 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
     function checkCallExpression(node: TSESTree.CallExpression) {
       const isLoggingCall = (() => {
         if (node.callee.type === AST_NODE_TYPES.MemberExpression) {
-          const property = node.callee.property;
+          // `console['log'](secret)` reaches the same sink as
+          // `console.log(secret)`. `propertyName` resolves the dotted form and
+          // a static subscript alike, and still returns null for a genuinely
+          // dynamic `console[m]`, which is not a log call we can name.
+          const method = propertyName(node.callee);
           return (
-            !node.callee.computed &&
-            property.type === AST_NODE_TYPES.Identifier &&
-            LOG_METHODS.has(property.name.toLowerCase()) &&
+            method !== null &&
+            LOG_METHODS.has(method.toLowerCase()) &&
             isLoggerReceiver(node.callee.object)
           );
         }

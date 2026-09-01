@@ -328,16 +328,33 @@ describe('no-sensitive-data-exposure', () => {
   });
 
   describe('isLoggingCall - MemberExpression branch permutations', () => {
-    ruleTester.run('valid - computed member call (property is not an Identifier) is not a logging call', noSensitiveDataExposure, {
+    ruleTester.run('a computed member call is still a logging call', noSensitiveDataExposure, {
       valid: [
-        // Exercises the false branch of `property.type === 'Identifier'`:
-        // a computed member call like console['log'](...) has a Literal
-        // property, not an Identifier.
+        // A genuinely dynamic method cannot be named, so it is not a log call
+        // this rule can identify. That is the real line, and it is where the
+        // case below used to sit by mistake.
         {
-          code: `console['log']('password: 123456');`,
+          code: `console[m]('password: 123456');`,
+        },
+        {
+          // The receiver is a CALL, so it is neither an identifier this rule
+          // knows nor a member it can name — there is nothing to match against
+          // LOGGER_RECEIVERS. Covers the last arm of `isLoggerReceiver`.
+          code: `getLogger()['log']('password: 123456');`,
         },
       ],
-      invalid: [],
+      invalid: [
+        {
+          // FN: this was `valid`, described as "a computed member call is not a
+          // logging call". It reaches `console.log` exactly as the dotted form
+          // does — a minifier writes it, and so does anyone indexing by a
+          // constant. Asserting it was fine made the blind spot look chosen.
+          // @found computed-key blind-spot probe
+          name: 'FN: a secret logged through a string subscript',
+          code: `console['log']('password: 123456');`,
+          errors: 1,
+        },
+      ],
     });
 
     // THIS CASE USED TO BE ASSERTED AS VALID. It is not: `app.logger.info(...)`
