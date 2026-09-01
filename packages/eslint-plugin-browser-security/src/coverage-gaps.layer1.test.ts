@@ -819,12 +819,20 @@ ruleTester.run('no-missing-security-headers (coverage)', noMissingSecurityHeader
      }`,
     // non-member call expression
     `setHeader('X-Frame-Options');`,
-    // computed member property
-    `res['setHeader']('X-Frame-Options', 'DENY');`,
+    // A method chosen at RUNTIME names nothing to match against the header API.
+    `res[method]('X-Frame-Options', 'DENY');`,
     // non-header method
     `res.json({});`,
   ],
   invalid: [
+    // Was pinned above as valid under the comment "computed member property".
+    // That described the guard, not the code: this sets ONE of the required
+    // headers and leaves the rest missing, exactly as the dotted spelling
+    // three entries down does.
+    {
+      code: `function handler(req, res) { res['setHeader']('X-Frame-Options', 'DENY'); }`,
+      errors: [{ messageId: 'missingSecurityHeader' }],
+    },
     // setHeader without arguments: header name cannot be extracted
     {
       code: `res.setHeader();`,

@@ -30,7 +30,7 @@
  * @see https://owasp.org/www-project-secure-headers/
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, isTestFilePath, staticString } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, isTestFilePath, staticString, propertyName } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { resolveInitializer } from '../../utils/resolve-binding';
 
@@ -308,14 +308,10 @@ function isHeaderSet(
   requiredHeaders: readonly string[],
   sourceCode: TSESLint.SourceCode,
 ): boolean {
-  if (
-    node.callee.type !== 'MemberExpression' ||
-    node.callee.computed ||
-    node.callee.property.type !== 'Identifier'
-  ) {
-    return false;
-  }
-  const method = node.callee.property.name;
+  if (node.callee.type !== 'MemberExpression') return false;
+  // `res['setHeader'](…)` sets the same header `res.setHeader(…)` does.
+  const method = propertyName(node.callee);
+  if (method === null) return false;
   if (UNAMBIGUOUS_HEADER_METHODS.has(method)) return true;
   if (method !== 'set') return false;
 
@@ -594,9 +590,8 @@ function writeHeadHeaders(
 ): TSESTree.ObjectExpression | null {
   if (
     node.callee.type !== 'MemberExpression' ||
-    node.callee.computed ||
-    node.callee.property.type !== 'Identifier' ||
-    node.callee.property.name !== 'writeHead'
+    // `res['writeHead'](200, headers)` writes the same head.
+    propertyName(node.callee) !== 'writeHead'
   ) {
     return null;
   }
@@ -639,14 +634,10 @@ function isResponseInit(init: TSESTree.ObjectExpression): boolean {
   }
   const callee = call.callee;
   if (callee.type === 'Identifier') return callee.name === 'Response';
-  if (
-    callee.type === 'MemberExpression' &&
-    !callee.computed &&
-    callee.property.type === 'Identifier' &&
-    callee.object.type === 'Identifier'
-  ) {
+  if (callee.type === 'MemberExpression' && callee.object.type === 'Identifier') {
+    // `NextResponse['json'](…)` builds the same response.
     return (
-      RESPONSE_FACTORIES.has(callee.property.name) &&
+      RESPONSE_FACTORIES.has(propertyName(callee) ?? '') &&
       (callee.object.name === 'Response' || callee.object.name === 'NextResponse')
     );
   }

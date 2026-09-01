@@ -35,6 +35,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { isAttackerSteerableUrl } from '../../utils/url-taint';
 
@@ -190,9 +191,8 @@ function receiverName(node: TSESTree.Node): string | null {
     return node.name;
   }
   if (node.type === 'MemberExpression') {
-    return !node.computed && node.property.type === 'Identifier'
-      ? node.property.name
-      : null;
+    // `url['hostname']` names the same field `url.hostname` does.
+    return propertyName(node);
   }
   if (node.type !== 'CallExpression') {
     return null;
@@ -200,9 +200,8 @@ function receiverName(node: TSESTree.Node): string | null {
   const callee = node.callee;
   if (
     callee.type === 'MemberExpression' &&
-    !callee.computed &&
-    callee.property.type === 'Identifier' &&
-    PASSTHROUGH_METHODS.has(callee.property.name)
+    // `raw['toLowerCase']()` answers whatever `raw.toLowerCase()` answers.
+    PASSTHROUGH_METHODS.has(propertyName(callee) ?? '')
   ) {
     return receiverName(callee.object);
   }
@@ -488,14 +487,10 @@ export const noIncompleteUrlSanitization = createRule<RuleOptions, MessageIds>({
     return {
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
-        if (
-          callee.type !== 'MemberExpression' ||
-          callee.computed ||
-          callee.property.type !== 'Identifier'
-        ) {
-          return;
-        }
-        const method = callee.property.name;
+        if (callee.type !== 'MemberExpression') return;
+        // `url['includes']('trusted.com')` is the same substring check.
+        const method = propertyName(callee);
+        if (method === null) return;
 
         if (node.arguments.length > 0) {
           checkSubstringHostCheck(node, method, callee.object);
