@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-modernization",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "ESLint plugin for modernizing JavaScript — auto-fixes legacy patterns to ES2022+ (Array.at, template literals, EventTarget, Array.isArray).",
   "type": "commonjs",
   "main": "./dist/src/index.js",
@@ -59,7 +59,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@interlace/eslint-devkit": "^1.17.3"
+    "@interlace/eslint-devkit": "^1.18.0"
   },
   "scripts": {
     "build": "tsx ../../scripts/build-package.ts",

@@ -5,6 +5,72 @@ All notable changes to `eslint-plugin-lambda-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.1.0
+
+### Minor Changes
+
+- **✨ Feature** — **🐛 Fix** — a template literal is a string, in 82 rules that disagreed
+
+  A rule that matched `require('child_process')` did not match
+  ``require(`child_process`)``. A rule that matched `res.headers['x-api-key']`
+  did not match ``res.headers[`x-api-key`]``. Nothing about the two spellings
+  differs at runtime, and no consumer chose one on purpose — which is exactly
+  why the miss was invisible: the rule looked correct in its own tests, because
+  its tests were written in the same spelling as its implementation.
+
+  Rules across these plugins now read a static string wherever the value is
+  statically known: a plain literal, a template literal with no substitutions,
+  and a concatenation of either. The same pass fixed computed member access, so
+  `o['foo']` is read wherever `o.foo` was.
+
+  **These rules now report on code they previously stayed quiet on.** That is
+  the point — the missed spelling was a false negative, not an exemption — but
+  a codebase written with backticks may see new findings on upgrade.
+
+- **✨ Feature** — **✨ Feature** — `eventParamNames` / `contextParamNames`, because a handler's parameters are positional
+
+  `require-timeout-handling` and `no-unbounded-batch-processing` decided whether
+  a function was a Lambda handler by matching its parameter NAMES against a
+  private list — `event`, `evt`, `e`, `request`, `req`.
+
+  AWS documents the signature as `(event, context, callback)` and those three are
+  its words, but the parameters are **positional**: a handler written
+  `(payload, runtime)` is perfectly ordinary and matched none of the list. The
+  abbreviations were our invention, not AWS's.
+
+  Position alone cannot replace the test — `params.length >= 1` would make every
+  one-argument function a handler — so the name is doing real work, and that is
+  exactly why you have to be able to state it:
+
+  ```json
+  "lambda-security/require-timeout-handling": [
+    "error",
+    { "eventParamNames": ["payload"], "contextParamNames": ["runtime"] }
+  ]
+  ```
+
+  Defaults are unchanged, so nothing moves unless you set them.
+
+  The list now lives in one place (`utils/handler-params.ts`) rather than three.
+  The three copies had already drifted: `require-timeout-handling` knew
+  `lambdaContext` and the others did not.
+
+- **✨ Feature** — `no-unvalidated-event-body` takes `validationMethodNames`
+
+  The rule treated `parse`, `validate`, `assert` and `is` as proof that a value
+  had been checked. Those are generic English, not a schema library's API —
+  `parse` alone is `JSON.parse`, `Date.parse` and a CSV reader. A project on
+  `ajv.compile(schema)(x)` or a hand-written `check()` matched none of them, so
+  every handler it validated was still reported. `validationMethodNames` replaces
+  the list.
+
+  The event properties it reads are cited rather than made configurable: they are
+  the API Gateway proxy integration's payload fields, and those names are AWS's.
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.18.0`
+
 ## 2.0.1
 
 ### Patch Changes
