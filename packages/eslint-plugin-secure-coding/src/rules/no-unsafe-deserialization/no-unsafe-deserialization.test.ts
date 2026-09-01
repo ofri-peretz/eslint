@@ -573,17 +573,25 @@ describe('no-unsafe-deserialization', () => {
       },
     );
 
-    // id 85 FALSE: computed method access on required library → propertyName = ''
+    // Named after the branch it existed to execute, and it asserted the wrong
+    // answer to do it: `s['unserialize'](userInput)` deserialises exactly what
+    // `s.unserialize(userInput)` deserialises. A method chosen at RUNTIME is
+    // the shape that genuinely names nothing.
     ruleTester.run(
-      'coverage - computed require method access (id 85 FALSE)',
+      'a subscripted method on a required library',
       noUnsafeDeserialization,
       {
         valid: [
           {
-            code: 'const s = require("node-serialize"); s["unserialize"](userInput);',
+            code: 'const s = require("node-serialize"); s[verb](userInput);',
           },
         ],
-        invalid: [],
+        invalid: [
+          {
+            code: 'const s = require("node-serialize"); s["unserialize"](userInput);',
+            errors: 1,
+          },
+        ],
       },
     );
 
