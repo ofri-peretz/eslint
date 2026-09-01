@@ -15,6 +15,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import {
   expressionNamesACredential,
@@ -141,11 +142,12 @@ export const requireSecureCredentialStorage = createRule<
         const callee = node.callee;
         if (
           callee.type !== AST_NODE_TYPES.MemberExpression ||
-          callee.computed ||
           callee.object.type !== AST_NODE_TYPES.Identifier ||
           callee.object.name !== 'Object' ||
-          callee.property.type !== AST_NODE_TYPES.Identifier ||
-          callee.property.name !== 'assign'
+          // `Object['assign'](process.env, ...)` publishes the same map the
+          // dotted form does. `propertyName` still returns null for a dynamic
+          // `Object[m]`, which names no batch write.
+          propertyName(callee) !== 'assign'
         ) {
           return;
         }

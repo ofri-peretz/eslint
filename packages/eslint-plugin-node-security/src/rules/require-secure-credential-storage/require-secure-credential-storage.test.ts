@@ -31,6 +31,16 @@ ruleTester.run(
 
     invalid: [
     {
+      // FN: was `valid` alongside genuinely different receivers and methods,
+      // as though the notation belonged in that list. It does not —
+      // `Object['assign'](process.env, ...)` publishes the same map of secrets
+      // into the environment that the dotted form does.
+      // @found computed-key blind-spot probe
+      name: 'FN: a batch env write through a string subscript',
+      code: 'Object["assign"](process.env, { API_TOKEN: token });',
+      errors: 1,
+    },
+    {
       // FN: this was `valid`, on the stated ground that "a computed METHOD name
       // is not provably `setItem`". A string subscript is provably exactly
       // that — it is the same slot the dotted form reaches, and it is what a
@@ -294,10 +304,11 @@ ruleTester.run(
       'Object.assign(process.env, { ...resolvedSecrets });',
       // No target at all.
       'Object.assign();',
-      // Neither the receiver, the method, nor the notation is Object.assign.
+      // Neither the receiver nor the method is Object.assign. The NOTATION
+      // used to be listed here too, which was the error: a string subscript is
+      // still Object.assign.
       'Object.keys(process.env);',
       'lodash.assign(process.env, { API_TOKEN: token });',
-      'Object["assign"](process.env, { API_TOKEN: token });',
       'assign(process.env, { API_TOKEN: token });',
     ],
     invalid: [

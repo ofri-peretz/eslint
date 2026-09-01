@@ -499,7 +499,6 @@
     "packages/eslint-plugin-node-security/src/rules/no-zip-slip/index.ts::dotted-property-only::test.callee.property.name === 'startsWith'",
     "packages/eslint-plugin-node-security/src/rules/require-aead-tag-verification/index.ts::dotted-property-only::methods.add(parent.property.name);",
     "packages/eslint-plugin-node-security/src/rules/require-aead-tag-verification/index.ts::dotted-property-only::return callee.property.name === 'createDecipheriv';",
-    "packages/eslint-plugin-node-security/src/rules/require-secure-credential-storage/index.ts::dotted-property-only::callee.property.name !== 'assign'",
     "packages/eslint-plugin-node-security/src/rules/require-secure-credential-storage/index.ts::dotted-property-only::node.property.name === 'env'",
     "packages/eslint-plugin-node-security/src/rules/require-secure-deletion/index.ts::dotted-property-only::callee.property.name !== 'deleteProperty'",
     "packages/eslint-plugin-node-security/src/rules/require-stream-error-handler/index.ts::dotted-property-only::const method = callee.property.name;",
