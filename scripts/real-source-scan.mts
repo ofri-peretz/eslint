@@ -91,7 +91,52 @@ function looksGenerated(file: string): boolean {
 }
 const STAMP = new Date().toISOString().slice(0, 10);
 
-const { repos } = JSON.parse(fs.readFileSync(REPOS, 'utf8')) as { repos: string[] };
+const { repos: allRepos } = JSON.parse(fs.readFileSync(REPOS, 'utf8')) as { repos: string[] };
+
+/**
+ * `--repo-shard i/n` slices the REPOSITORY list, before anything is cloned.
+ *
+ * Distinct from `--shard`, which slices the FILE list among forked workers on
+ * one machine. That distinction is what makes this runnable in CI at all: a
+ * file-sharded run still needs every repository present, which is 9.7GB and
+ * more disk than a hosted runner has to spare, while a repo-sharded run clones
+ * only its own slice.
+ *
+ * The arithmetic that forces it: ~346,000 files against 566 rules and a
+ * TypeScript parser runs near one file per second per worker, and a
+ * GitHub-hosted runner has four cores, so two workers. One runner is roughly
+ * two days of work — well past the six-hour job ceiling. Twenty repo-shards of
+ * two workers each is forty-way parallelism, which brings a full pass inside a
+ * couple of hours per shard.
+ *
+ * Deterministic and index-based, so shard k holds the same repositories on
+ * every run and a failed shard can be re-run alone.
+ */
+const repoShardArg = process.argv
+  .find((a) => a.startsWith('--repo-shard='))
+  ?.slice('--repo-shard='.length);
+const REPO_SHARD = repoShardArg
+  ? {
+      index: Number(repoShardArg.split('/')[0]),
+      of: Number(repoShardArg.split('/')[1]),
+    }
+  : null;
+if (
+  REPO_SHARD !== null &&
+  (!Number.isInteger(REPO_SHARD.index) ||
+    !Number.isInteger(REPO_SHARD.of) ||
+    REPO_SHARD.of < 1 ||
+    REPO_SHARD.index < 0 ||
+    REPO_SHARD.index >= REPO_SHARD.of)
+) {
+  throw new Error(
+    `--repo-shard=${repoShardArg} is not a valid i/n with 0 <= i < n`,
+  );
+}
+const repos =
+  REPO_SHARD === null
+    ? allRepos
+    : allRepos.filter((_, i) => i % REPO_SHARD.of === REPO_SHARD.index);
 
 /**
  * Every rule the suite ships, by the SAME rule as `rule-case-ledger.ts`: the
@@ -242,7 +287,16 @@ if (SHARD === null) {
   await Promise.all(
     Array.from({ length: workers }, (_, index) => {
       return new Promise<void>((resolve, reject) => {
-        const child = fork(new URL(import.meta.url).pathname, ['--no-clone', `--shard=${index}/${workers}`], {
+        const child = fork(
+          new URL(import.meta.url).pathname,
+          [
+            '--no-clone',
+            `--shard=${index}/${workers}`,
+            // The worker rebuilds the file list from the repo list, so it needs
+            // the same slice or it walks repositories this shard never cloned.
+            ...(REPO_SHARD ? [`--repo-shard=${REPO_SHARD.index}/${REPO_SHARD.of}`] : []),
+          ],
+          {
           execPath: process.execPath,
           execArgv: process.execArgv,
           stdio: ['ignore', 'pipe', 'inherit', 'ipc'],
