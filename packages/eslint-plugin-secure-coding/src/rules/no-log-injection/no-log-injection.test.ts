@@ -120,8 +120,8 @@ describe('no-log-injection', () => {
         code: "this.mailer.warn('user: ' + req.body.username);",
       },
       {
-        name: 'a computed receiver property is not resolved',
-        code: "container['logger'].warn('user: ' + req.body.username);",
+        name: 'a receiver property chosen at runtime is not resolved',
+        code: "container[which].warn('user: ' + req.body.username);",
       },
       {
         name: 'a call-expression receiver is not resolved',
@@ -252,6 +252,14 @@ describe('no-log-injection', () => {
     ],
 
     invalid: [
+      // Was pinned as valid — "a computed receiver property is not resolved".
+      // `container['logger']` holds the same logger `container.logger` holds,
+      // and the same unescaped username reaches the same log line.
+      {
+        name: 'a logger held under a quoted key',
+        code: "container['logger'].warn('user: ' + req.body.username);",
+        errors: 1,
+      },
       // ---------------------------------------------------------------
       // Corpus fixtures that must report
       // ---------------------------------------------------------------

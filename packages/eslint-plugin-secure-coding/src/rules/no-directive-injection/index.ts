@@ -109,7 +109,8 @@ function findUnsafeSanitizerConfig(
 ): { node: TSESTree.Node; option: string; allowed: string } | null {
   const callee = node.callee;
   if (callee.type !== 'MemberExpression') return null;
-  if (callee.property.type !== 'Identifier' || callee.property.name !== 'sanitize') return null;
+  // `DOMPurify['sanitize'](html)` sanitises the same markup.
+  if (propertyName(callee) !== 'sanitize') return null;
   if (callee.object.type !== 'Identifier') return null;
   if (!callee.object.name.toLowerCase().includes('purify')) return null;
 
@@ -326,8 +327,10 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
       const names: string[] = [];
       let current: TSESTree.Node = node;
       while (current.type === 'MemberExpression') {
-        if (!current.computed && current.property.type === 'Identifier') {
-          names.push(current.property.name);
+        // A quoted link in the chain names the same member a dotted one does.
+        const link = propertyName(current);
+        if (link !== null) {
+          names.push(link);
         }
         current = current.object;
       }

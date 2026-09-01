@@ -158,9 +158,8 @@ export const noSelectSensitiveFields = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        const methodName = node.callee.property.type === AST_NODE_TYPES.Identifier
-          ? node.callee.property.name
-          : null;
+        // `User['find']({…})` runs the same query `User.find({…})` runs.
+        const methodName = propertyName(node.callee);
 
         if (!methodName || !QUERY_METHODS.has(methodName)) {
           return;

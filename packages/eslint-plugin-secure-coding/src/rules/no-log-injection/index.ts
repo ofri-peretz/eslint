@@ -23,7 +23,7 @@
  * @see https://owasp.org/www-community/attacks/Log_Injection
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons, staticString } from '@interlace/eslint-devkit';
+import { createRule, formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
 
 type MessageIds = 'logInjection';
 
@@ -185,13 +185,10 @@ function requestFieldOf(
   const properties: string[] = [];
   let root: TSESTree.Node = node;
   while (root.type === 'MemberExpression') {
-    const property = root.property;
-    if (!root.computed && property.type === 'Identifier') {
-      properties.unshift(property.name);
-    } else {
-      const name = staticString(property);
-      if (name !== null) properties.unshift(name);
-    }
+    // `propertyName` resolves the dotted form and a string subscript alike;
+    // the two arms this replaces were the same question asked twice.
+    const name = propertyName(root);
+    if (name !== null) properties.unshift(name);
     // `req.headers[name]` contributes no name: the Identifier there is a
     // *variable*, not a property. Reading it as one would attribute
     // `req.headers[name]` to a field called `name`, which does not exist.
@@ -299,12 +296,11 @@ function receiverName(
   if (object.type === 'Identifier') {
     return receivers.has(object.name) ? object.name : null;
   }
-  if (
-    object.type === 'MemberExpression' &&
-    object.property.type === 'Identifier'
-  ) {
-    // `this.logger`, `fastify.log`, `req.log` — the logger is a property.
-    return receivers.has(object.property.name) ? object.property.name : null;
+  if (object.type === 'MemberExpression') {
+    // `this.logger`, `fastify.log`, `req['log']` — the logger is a property,
+    // however it is spelled.
+    const held = propertyName(object);
+    return held !== null && receivers.has(held) ? held : null;
   }
   return null;
 }
