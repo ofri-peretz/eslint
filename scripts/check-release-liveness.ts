@@ -29,10 +29,34 @@ import fs from 'node:fs';
 import path from 'node:path';
 import url from 'node:url';
 
-const REPO_ROOT = path.resolve(
-  path.dirname(url.fileURLToPath(import.meta.url)),
-  '..',
-);
+import parseChangesetModule from '@changesets/parse';
+
+const parseChangeset = ((
+  parseChangesetModule as unknown as { default?: typeof parseChangesetModule }
+).default ?? parseChangesetModule) as (raw: string) => {
+  releases: Array<{ name: string; type: string }>;
+};
+
+/**
+ * The repository being checked is the one you are standing in, not the one
+ * this file happens to live in. Resolving it from the script's own path meant
+ * running it anywhere else silently reported on this repo instead — an answer
+ * about the wrong subject is worse than no answer. Falls back to the
+ * script-relative root when cwd is not a work tree.
+ */
+function repoRoot(): string {
+  try {
+    return execFileSync('git', ['rev-parse', '--show-toplevel'], {
+      encoding: 'utf8',
+      timeout: 15_000,
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+  } catch {
+    return path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '..');
+  }
+}
+
+const REPO_ROOT = repoRoot();
 const JSON_OUT = process.argv.includes('--json');
 const REPO = process.env.GITHUB_REPOSITORY ?? 'ofri-peretz/eslint';
 
@@ -40,13 +64,75 @@ type Finding = { kind: string; detail: string };
 const findings: Finding[] = [];
 const checked: string[] = [];
 
-/** Pending changesets — the `.md` files, not config or the readme. */
-function pendingChangesets(): string[] {
+/**
+ * Does this changeset actually queue a release?
+ *
+ * An empty changeset (`---\n---\n`) is this repo's deliberate "this diff needs
+ * no release" marker -- see the same rule in check-changeset-coverage.ts. It is
+ * not a queued release, and counting it as one makes every internal-only PR
+ * look like a stalled pipeline, which is precisely the cry-wolf failure this
+ * check exists to avoid becoming.
+ *
+ * Unreadable or unparseable counts as queued: an unanswerable question must
+ * surface, not vanish.
+ */
+function declaresRelease(ref: string) {
+  return (file: string): boolean => {
+    try {
+      const raw = execFileSync('git', ['show', `${ref}:${file}`], {
+        cwd: REPO_ROOT,
+        encoding: 'utf8',
+        timeout: 15_000,
+        stdio: ['ignore', 'pipe', 'ignore'],
+      });
+      return parseChangeset(raw).releases.length > 0;
+    } catch {
+      return true;
+    }
+  };
+}
+
+/**
+ * Pending changesets — the `.md` files, not config or the readme.
+ *
+ * Read from `main`, not the working tree. A changeset on a feature branch is
+ * not queued, it is unmerged: reading the checkout reports every in-flight
+ * branch as a stalled pipeline. Falls back to the working tree only when main
+ * is unresolvable (a shallow CI checkout), and says which source it used, so a
+ * fallback answer is never mistaken for the authoritative one.
+ */
+function pendingChangesets(): { files: string[]; source: string } {
+  for (const ref of ['origin/main', 'main']) {
+    try {
+      const listing = execFileSync('git', ['ls-tree', '--name-only', ref, '.changeset/'], {
+        cwd: REPO_ROOT,
+        encoding: 'utf8',
+        timeout: 15_000,
+        stdio: ['ignore', 'pipe', 'ignore'],
+      });
+      const candidates = listing
+        .split('\n')
+        .map((f) => f.trim())
+        .filter(
+          (f) =>
+            f.endsWith('.md') &&
+            path.basename(f).toLowerCase() !== 'readme.md',
+        );
+
+      return { files: candidates.filter(declaresRelease(ref)).map((f) => path.basename(f)), source: ref };
+    } catch {
+      continue; // ref not present in this checkout — try the next
+    }
+  }
+
   const dir = path.join(REPO_ROOT, '.changeset');
-  if (!fs.existsSync(dir)) return [];
-  return fs
-    .readdirSync(dir)
-    .filter((f) => f.endsWith('.md') && f.toLowerCase() !== 'readme.md');
+  if (!fs.existsSync(dir)) return { files: [], source: 'working tree (absent)' };
+  return {
+    files: fs
+      .readdirSync(dir)
+      .filter((f) => f.endsWith('.md') && f.toLowerCase() !== 'readme.md'),
+    source: 'working tree (main unresolvable)',
+  };
 }
 
 function gh(args: string[]): string {
@@ -59,13 +145,15 @@ function gh(args: string[]): string {
 }
 
 // ── 1. changesets queued, but no Version PR ──────────────────────────────
-const pending = pendingChangesets();
+const { files: pending, source: pendingSource } = pendingChangesets();
 try {
   const open = gh([
     'pr', 'list', '--repo', REPO, '--state', 'open',
     '--head', 'changeset-release/main', '--json', 'number', '--jq', 'length',
   ]);
-  checked.push(`${pending.length} pending changeset(s), Version PR open: ${open !== '0'}`);
+  checked.push(
+    `${pending.length} pending changeset(s) on ${pendingSource}, Version PR open: ${open !== '0'}`,
+  );
   if (pending.length > 0 && open === '0')
     findings.push({
       kind: 'no-version-pr',
