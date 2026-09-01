@@ -176,7 +176,7 @@ withCanonicalDocsUrls('plugin-vercel-ai-security', rules);
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-vercel-ai-security',
-    version: '2.1.0',
+    version: '2.1.1',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;

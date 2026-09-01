@@ -47,7 +47,7 @@ withCanonicalDocsUrls('plugin-anthropic-security', rules);
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-anthropic-security',
-    version: '0.3.2',
+    version: '0.3.3',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
