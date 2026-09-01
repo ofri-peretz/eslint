@@ -177,8 +177,8 @@ ruleTester.run('no-client-side-auth-logic — refusals', noClientSideAuthLogic, 
     'if (localStorage.getItem(42)) { go(); }',
     'if (localStorage.getItem()) { go(); }',
     'if (localStorage.getItem(...args)) { go(); }',
-    // A computed `getItem`.
-    "if (localStorage['getItem']('isAdmin')) { go(); }",
+    // A method chosen at RUNTIME names no storage read to recognise.
+    'if (localStorage[m](\'isAdmin\')) { go(); }',
     // A different method on the right global.
     "if (localStorage.key('isAdmin')) { go(); }",
     // A test that is neither a call, a unary, a binary nor an identifier.
@@ -190,6 +190,13 @@ ruleTester.run('no-client-side-auth-logic — refusals', noClientSideAuthLogic, 
     // The negated read is still the same decision.
     {
       code: "if (!localStorage.getItem('isAdmin')) { showReadOnly(); }",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    // Was pinned above as valid, described only as "a computed `getItem`".
+    // It reads the same admin flag out of the same storage and branches the
+    // UI on it — the bypass this rule exists to name.
+    {
+      code: "if (localStorage['getItem']('isAdmin')) { showAdmin(); }",
       errors: [{ messageId: 'violationDetected' }],
     },
   ],

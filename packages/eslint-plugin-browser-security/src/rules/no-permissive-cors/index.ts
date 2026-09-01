@@ -10,7 +10,7 @@
  * @see https://cwe.mitre.org/data/definitions/942.html
  */
 
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { resolveInitializer } from '../../utils/resolve-binding';
 
@@ -121,9 +121,8 @@ function readsRequestOrigin(node: TSESTree.Node): boolean {
   const receiver = node.object;
   return (
     receiver.type === AST_NODE_TYPES.MemberExpression &&
-    !receiver.computed &&
-    receiver.property.type === AST_NODE_TYPES.Identifier &&
-    receiver.property.name === 'headers'
+    // `req['headers'].origin` is the same bag as `req.headers.origin`.
+    propertyName(receiver) === 'headers'
   );
 }
 
@@ -220,9 +219,8 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
         // res.setHeader / res.header / res.set — all three are the same header.
         if (
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          !node.callee.computed &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          HEADER_METHODS.has(node.callee.property.name) &&
+          // `res['setHeader'](…)` sets the same header.
+          HEADER_METHODS.has(propertyName(node.callee) ?? '') &&
           node.arguments[0] !== undefined &&
           foldToString(node.arguments[0], sourceCode)?.toLowerCase() ===
             ALLOW_ORIGIN &&

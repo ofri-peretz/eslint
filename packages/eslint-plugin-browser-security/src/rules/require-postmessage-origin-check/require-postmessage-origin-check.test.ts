@@ -138,6 +138,19 @@ ruleTester.run(
   requirePostmessageOriginCheck,
   {
     valid: [
+      // Was pinned as INVALID under "a computed read is not provably
+      // `.origin`" — a false positive, not a miss. `event['origin']` is the
+      // same anchored check the dotted twin below performs, so warning here
+      // told a developer their working guard did not exist.
+      {
+        code: `
+          const ALLOWED = /^https:\\/\\/app\\.example\\.com$/;
+          window.addEventListener('message', (event) => {
+            if (!ALLOWED.test(event['origin'])) { return; }
+            applySettings(event.data);
+          });
+        `,
+      },
       // benchmarks/corpus/CWE-020/safe/anchored-origin-regexp.js
       {
         code: `
@@ -171,17 +184,6 @@ ruleTester.run(
           const ALLOWED = /^https:\\/\\/app\\.example\\.com$/;
           window.addEventListener('message', (event) => {
             if (!ALLOWED.test(event.data)) { return; }
-            applySettings(event.data);
-          });
-        `,
-        errors: [{ messageId: 'missingOriginCheck' }],
-      },
-      // A computed read is not provably `.origin`.
-      {
-        code: `
-          const ALLOWED = /^https:\\/\\/app\\.example\\.com$/;
-          window.addEventListener('message', (event) => {
-            if (!ALLOWED.test(event['origin'])) { return; }
             applySettings(event.data);
           });
         `,

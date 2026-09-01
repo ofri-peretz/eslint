@@ -10,6 +10,7 @@
 
 import { createRule, formatLLMMessage, MessageIcons,
   nameHasAnyWord,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 import { isGlobalObject } from '../../utils/global-object';
@@ -165,9 +166,8 @@ export const noClientSideAuthLogic = createRule<RuleOptions, MessageIds>({
       const callee = node.callee;
       if (
         callee.type !== 'MemberExpression' ||
-        callee.computed ||
-        callee.property.type !== 'Identifier' ||
-        callee.property.name !== 'getItem' ||
+        // `localStorage['getItem']('isAdmin')` reads the same flag.
+        propertyName(callee) !== 'getItem' ||
         !isGlobalObject(callee.object, STORAGES)
       ) {
         return false;

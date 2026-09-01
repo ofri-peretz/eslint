@@ -19,6 +19,7 @@ import {
   isStaticExpression,
   MessageIcons,
   isTestFilePath,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'dynamicSwUrl';
@@ -219,8 +220,8 @@ export const noDynamicServiceWorkerUrl = createRule<RuleOptions, MessageIds>({
       CallExpression(node: TSESTree.CallExpression) {
         if (
           node.callee.type !== AST_NODE_TYPES.MemberExpression ||
-          node.callee.property.type !== AST_NODE_TYPES.Identifier ||
-          node.callee.property.name !== 'register'
+          // `navigator.serviceWorker['register'](u)` registers the same worker.
+          propertyName(node.callee) !== 'register'
         ) {
           return;
         }
