@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-mcp-sdk-security",
-  "version": "0.3.1",
+  "version": "0.4.1",
   "description": "ESLint plugin for Model Context Protocol (MCP) SDK security — catches tools registered without an input schema, handlers reading arguments the schema never declared, model-visible descriptions built from dynamic text, and tool arguments reaching a shell.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
@@ -76,7 +76,7 @@
     }
   },
   "dependencies": {
-    "@interlace/eslint-devkit": "^1.17.3"
+    "@interlace/eslint-devkit": "^1.18.2"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.46.2",
@@ -86,7 +86,7 @@
     "build": "tsx ../../scripts/build-package.ts",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "typecheck": "tsc -p tsconfig.lib.json --noEmit"
+    "typecheck": "tsgo -p tsconfig.lib.json --noEmit"
   },
   "funding": {
     "type": "github",

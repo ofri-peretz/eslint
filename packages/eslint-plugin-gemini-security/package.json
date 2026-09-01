@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-gemini-security",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "ESLint plugin for Google Gemini SDK security — catches safety thresholds set to BLOCK_NONE, hardcoded API keys, and system instructions assembled from untrusted input.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
@@ -73,7 +73,7 @@
     }
   },
   "dependencies": {
-    "@interlace/eslint-devkit": "^1.17.3"
+    "@interlace/eslint-devkit": "^1.18.2"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.46.2",
@@ -83,7 +83,7 @@
     "build": "tsx ../../scripts/build-package.ts",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "typecheck": "tsc -p tsconfig.lib.json --noEmit"
+    "typecheck": "tsgo -p tsconfig.lib.json --noEmit"
   },
   "funding": {
     "type": "github",

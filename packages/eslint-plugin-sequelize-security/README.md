@@ -15,6 +15,7 @@
 <p align="center">
   <a href="https://www.npmjs.com/package/eslint-plugin-sequelize-security" target="_blank"><img src="https://img.shields.io/npm/v/eslint-plugin-sequelize-security.svg" alt="NPM Version" /></a>
   <a href="https://www.npmjs.com/package/eslint-plugin-sequelize-security" target="_blank"><img src="https://img.shields.io/npm/dm/eslint-plugin-sequelize-security.svg" alt="NPM Downloads" /></a>
+  <a href="https://packagephobia.com/result?p=eslint-plugin-sequelize-security" target="_blank"><img src="https://badgen.net/packagephobia/install/eslint-plugin-sequelize-security" alt="Install Size" /></a>
   <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="Package License" /></a>
   <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=eslint-plugin-sequelize-security" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=eslint-plugin-sequelize-security" alt="Codecov" /></a>
   <a href="https://github.com/ofri-peretz/eslint" target="_blank"><img src="https://img.shields.io/badge/Since-Dec_2025-blue?logo=rocket&logoColor=white" alt="Since Dec 2025" /></a>
@@ -29,7 +30,7 @@ This plugin provides Security rules for the Sequelize ORM (SQL injection prevent
 
 ## Why Sequelize-specific?
 
-An ORM is not a defence against SQL injection — it narrows the surface to the raw escapes, and those are still string-built. Sequelize has two: `sequelize.query()` and `Sequelize.literal()`. OWASP Juice Shop's two flagship injections are both the former, and neither was reported by any recommended preset in this ecosystem until this plugin existed — the only implementation of the detection shipped inside `eslint-plugin-pg`, which no Sequelize user installs.
+An ORM is not a defence against SQL injection — it narrows the surface to the raw escapes, and those are still string-built. Sequelize has two: `sequelize.query()` and `Sequelize.literal()`. OWASP Juice Shop's two flagship injections are both the former, and neither was reported by any recommended preset in this ecosystem until this plugin existed — the only implementation of the detection shipped inside `eslint-plugin-postgresql-security`, which no Sequelize user installs.
 
 Being Sequelize-specific is what makes the rule precise. It knows the safe conventions to stay quiet on (`replacements`, `bind`), and it knows `literal()` is a SQL sink rather than an ordinary helper — so it catches `ORDER BY` injection that a generic string-concatenation linter has no reason to flag. It also tracks variable taint across statements, so `const sql = "SELECT..." + id; sequelize.query(sql)` reports even with the concatenation on a separate line.
 

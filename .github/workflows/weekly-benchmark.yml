@@ -80,6 +80,7 @@ jobs:
       # the normal path (caught in review)
       pages: write # deploy-pages
       id-token: write # OIDC for deploy-pages
+      issues: write # opens the failure issue (see the last step)
     # Cold multi-repo lint runs are slow by nature; the whole point is that
     # nothing here is rushed into a misleading fast number.
     timeout-minutes: 90
@@ -414,3 +415,26 @@ jobs:
           fi
         env:
           GH_TOKEN: ${{ github.token }}
+
+      # The workflow's own header says it exists because "a number nobody
+      # re-measures is a number that quietly rots" — and until now a FAILED
+      # refresh rotted just as quietly, because a red cron notifies nobody.
+      # Every guard above (preflight, pinned-checkout, verify-publishable)
+      # correctly refuses to publish bad numbers; none of them told anyone.
+      #
+      # `always()` rather than `failure()`: the flagship steps are
+      # `continue-on-error`, so the job can finish green having published only
+      # half of what it measures. The step re-reads their outcomes and reports
+      # a partial refresh too.
+      - name: 🚨 Report a failed or partial refresh
+        if: always() && (failure() || steps.flagship.outcome == 'failure' || steps.flagship_scorecard.outcome == 'failure')
+        uses: ./.github/actions/report-failure
+        with:
+          title: 'Weekly benchmark refresh is failing'
+          body: >-
+            The weekly benchmark did not publish a complete refresh, so every
+            surface quoting these numbers (README, eslint.interlace.tools) is
+            now serving figures older than they appear.
+            Flagship run: ${{ steps.flagship.outcome }}.
+            Flagship scorecard: ${{ steps.flagship_scorecard.outcome }}.
+          token: ${{ github.token }}

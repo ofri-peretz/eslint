@@ -5,6 +5,86 @@ All notable changes to `eslint-plugin-mongodb-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 9.1.1
+
+### Patch Changes
+
+- **🐛 Fix** — Add an install-size badge to the README prelude, linking to each package's packagephobia page. npm renders the README from the last publish, so a badge only appears on npmjs.com after a release.
+
+  Install size rather than bundle size: bundlephobia measures a browser bundle,
+  and nobody bundles an ESLint plugin into one, so the number would describe no
+  real cost. It was also returning `429` for every package, `react` included.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.18.2`
+
+## 9.1.0
+
+### Minor Changes
+
+- **✨ Feature** — **🐛 Fix** — a template literal is a string, in 82 rules that disagreed
+
+  A rule that matched `require('child_process')` did not match
+  ``require(`child_process`)``. A rule that matched `res.headers['x-api-key']`
+  did not match ``res.headers[`x-api-key`]``. Nothing about the two spellings
+  differs at runtime, and no consumer chose one on purpose — which is exactly
+  why the miss was invisible: the rule looked correct in its own tests, because
+  its tests were written in the same spelling as its implementation.
+
+  Rules across these plugins now read a static string wherever the value is
+  statically known: a plain literal, a template literal with no substitutions,
+  and a concatenation of either. The same pass fixed computed member access, so
+  `o['foo']` is read wherever `o.foo` was.
+
+  **These rules now report on code they previously stayed quiet on.** That is
+  the point — the missed spelling was a false negative, not an exemption — but
+  a codebase written with backticks may see new findings on upgrade.
+
+- **✨ Feature** — **🐛 Fix** — `no-unsafe-query` was wrong in both directions
+
+  Its model was "any identifier inside a filter object is user input, and nothing
+  else is user input at all". One heuristic produced a miss and a false positive
+  together. Executed:
+
+  ```
+  0  find(req.body)                          ← MISSED
+  1  find({ name: req.body.name })           ← reported
+  0  findOne(req.query)                      ← MISSED
+  1  find({ name: NAME })  const NAME='root' ← REPORTED as "user input"
+  0  find({ name: 'root' })                  ← silent
+  ```
+
+  **The miss.** `find(req.body)` hands the caller the query document. `{"$ne":
+null}` as a password turns the lookup into "any user" — the canonical NoSQL
+  authentication bypass, and the most direct form the bug takes. The rule
+  early-returned on any first argument that was not an object literal, so it saw
+  nothing.
+
+  **The false positive.** A `const NAME = 'root'` two lines above your query was
+  reported as `User input "NAME" is used directly`. Every constant in a filter
+  was a finding.
+
+  Both are gone. The taint decision is now structural — `readsRequestShape` asks
+  whether the value is a read of `.query` / `.params` / `.headers` / `.body` off
+  something that ARRIVED as a function parameter — so it no longer depends on
+  what anything is spelled. A handler written `(request, reply)`, Fastify's own
+  convention, now works; it matched nothing before.
+
+  **You may see new findings** where a request object is passed whole to a query
+  method, and **fewer** on filters built from local constants.
+
+  Two behaviours worth knowing:
+
+  - A bare identifier is no longer treated as tainted. Resolving one needs real
+    dataflow, and guessing costs a false positive on every `const`. If you want
+    `const q = req.body; find(q)` caught, that is a separate change.
+  - A string literal whose text happens to read `'req.body'` is no longer a
+    finding. The old model compared printed source against that text, so quoting
+    it was enough to trip the rule.
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.18.0`
+
 ## 9.0.2
 
 ### Patch Changes

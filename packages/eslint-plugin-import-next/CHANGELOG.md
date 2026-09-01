@@ -5,6 +5,57 @@ All notable changes to `eslint-plugin-import-next` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.7.1
+
+### Patch Changes
+
+- **🐛 Fix** — Add an install-size badge to the README prelude, linking to each package's packagephobia page. npm renders the README from the last publish, so a badge only appears on npmjs.com after a release.
+
+  Install size rather than bundle size: bundlephobia measures a browser bundle,
+  and nobody bundles an ESLint plugin into one, so the number would describe no
+  real cost. It was also returning `429` for every package, `react` included.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.18.2`
+
+## 2.7.0
+
+### Minor Changes
+
+- **✨ Feature** — **🐛 Fix** — a template literal is a string, in 82 rules that disagreed
+
+  A rule that matched `require('child_process')` did not match
+  ``require(`child_process`)``. A rule that matched `res.headers['x-api-key']`
+  did not match ``res.headers[`x-api-key`]``. Nothing about the two spellings
+  differs at runtime, and no consumer chose one on purpose — which is exactly
+  why the miss was invisible: the rule looked correct in its own tests, because
+  its tests were written in the same spelling as its implementation.
+
+  Rules across these plugins now read a static string wherever the value is
+  statically known: a plain literal, a template literal with no substitutions,
+  and a concatenation of either. The same pass fixed computed member access, so
+  `o['foo']` is read wherever `o.foo` was.
+
+  **These rules now report on code they previously stayed quiet on.** That is
+  the point — the missed spelling was a false negative, not an exemption — but
+  a codebase written with backticks may see new findings on upgrade.
+
+### Patch Changes
+
+- **🐛 Fix** — `no-mutable-exports` resolves bindings instead of grepping the file text
+
+  The `export { x }` path built a regex from the declarator's name and tested it
+  against the whole source. That reported on the characters appearing in a
+  comment or a string, reported a local `let x` when the file re-exported some
+  other module's `x`, reported a function-scoped `let` colliding with an
+  exported name, and missed every export it could not spell: a multi-specifier
+  list, a rename, and a destructured declarator. It now resolves the specifier
+  through the scope chain to the declaration it actually names.
+
+  `no-env-injection` gains `requestRootNames`, which REPLACES the request-root
+  list that `extraRequestRoots` could only grow.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.18.0`
+
 ## 2.6.0
 
 ### Minor Changes
