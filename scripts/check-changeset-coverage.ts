@@ -149,7 +149,69 @@ const addedChangesets = addedRaw
     }
   });
 
-const releaseRelevant = changed.filter((f) => RELEASE_RELEVANT.test(f));
+/**
+ * Fields in a package.json a consumer can actually observe after `npm i`.
+ *
+ * `RELEASE_RELEVANT` matches the whole file, which treats every byte of
+ * package.json as shippable. It is not: `scripts` and `devDependencies` are
+ * build-time only, and a repo-wide script edit (tsc -> tsgo across 33
+ * manifests, say) would demand a changeset per package while changing nothing
+ * a consumer can see. A gate that fires on work like that trains people to
+ * bypass it, which is how the rule ends up enforced nowhere.
+ */
+const CONSUMER_FIELDS = [
+  'name',
+  'version',
+  'type',
+  'main',
+  'module',
+  'types',
+  'typings',
+  'exports',
+  'bin',
+  'files',
+  'browser',
+  'engines',
+  'sideEffects',
+  'license',
+  'dependencies',
+  'peerDependencies',
+  'peerDependenciesMeta',
+  'optionalDependencies',
+  'publishConfig',
+];
+
+/**
+ * Did this package.json change anything shippable?
+ *
+ * Both sides are read from git at the same two commits the diff used, so this
+ * answers the same question the diff asked. Anything unreadable or unparseable
+ * returns true: an unanswerable question must not be reported as "no release
+ * needed" -- that is the vacuous pass this whole script exists to avoid.
+ */
+function packageJsonAffectsConsumers(file: string): boolean {
+  let before: Record<string, unknown>;
+  let after: Record<string, unknown>;
+  try {
+    before = JSON.parse(git(['show', `${mergeBase}:${file}`]));
+  } catch {
+    return true; // new package, or absent at the base — shippable by definition
+  }
+  try {
+    after = JSON.parse(git(['show', `HEAD:${file}`]));
+  } catch {
+    return true; // deleted or malformed — do not quietly excuse it
+  }
+  return CONSUMER_FIELDS.some(
+    (k) => JSON.stringify(before[k]) !== JSON.stringify(after[k]),
+  );
+}
+
+const releaseRelevant = changed
+  .filter((f) => RELEASE_RELEVANT.test(f))
+  .filter(
+    (f) => !f.endsWith('/package.json') || packageJsonAffectsConsumers(f),
+  );
 
 const status =
   addedChangesets.length > 0
@@ -180,7 +242,8 @@ switch (status) {
     );
     if (changed.length > 0) {
       console.log(
-        `   (${changed.length} file(s) changed, none under packages|apps/*/src or package.json)`,
+        `   (${changed.length} file(s) changed; any package.json among them ` +
+          'touched only build-time fields such as scripts or devDependencies)',
       );
     }
     break;

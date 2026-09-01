@@ -197,3 +197,87 @@ describe('--strict', () => {
     expect(run('--since=base-ref', '--strict').status).toBe(1);
   });
 });
+
+/**
+ * A package.json is not one atom.
+ *
+ * The rule used to treat every byte of a manifest as shippable, so a
+ * repo-wide script edit (`tsc` -> `tsgo` across 33 manifests) demanded a
+ * changeset per package while changing nothing a consumer could observe. A
+ * gate that fires on work like that is one people learn to bypass — and a
+ * bypassed gate is why a package can merge with no changeset, never get a
+ * version bump, and never publish.
+ *
+ * Both directions are pinned here: the false positive must stay dead, and the
+ * real signal must stay alive.
+ */
+describe('package.json changes are judged per field', () => {
+  it('ignores a build-time-only edit (scripts)', () => {
+    write(
+      'packages/x/package.json',
+      '{"name":"eslint-plugin-x","version":"1.0.0","scripts":{"typecheck":"tsgo -p ."}}',
+    );
+    git('add', '-A');
+    git('commit', '-q', '-m', 'chore: tsc -> tsgo');
+
+    const { out, status } = run('--since=base-ref', '--strict');
+    expect(status).toBe(0);
+    expect(out).toContain('No changeset needed');
+  });
+
+  it('ignores a devDependencies bump', () => {
+    write(
+      'packages/x/package.json',
+      '{"name":"eslint-plugin-x","version":"1.0.0","devDependencies":{"vitest":"^3.0.0"}}',
+    );
+    git('add', '-A');
+    git('commit', '-q', '-m', 'chore(deps): bump vitest');
+
+    expect(run('--since=base-ref', '--strict').status).toBe(0);
+  });
+
+  it.each([
+    ['version', '{"name":"eslint-plugin-x","version":"1.1.0"}'],
+    [
+      'exports',
+      '{"name":"eslint-plugin-x","version":"1.0.0","exports":{".":"./dist/index.js"}}',
+    ],
+    [
+      'peerDependencies',
+      '{"name":"eslint-plugin-x","version":"1.0.0","peerDependencies":{"eslint":"^9.0.0"}}',
+    ],
+    [
+      'engines',
+      '{"name":"eslint-plugin-x","version":"1.0.0","engines":{"node":">=20"}}',
+    ],
+  ])('still demands a changeset when %s changes', (_field, manifest) => {
+    write('packages/x/package.json', manifest);
+    git('add', '-A');
+    git('commit', '-q', '-m', 'change');
+
+    const { out, status } = run('--since=base-ref', '--strict');
+    expect(status).toBe(1);
+    expect(out).toContain('packages/x');
+  });
+
+  it('treats an unparseable manifest as shippable rather than passing it', () => {
+    // The question became unanswerable. An unanswerable question must not be
+    // reported as "no release needed" — that is the vacuous pass the rest of
+    // this file exists to prevent.
+    write('packages/x/package.json', '{ this is not json');
+    git('add', '-A');
+    git('commit', '-q', '-m', 'break the manifest');
+
+    expect(run('--since=base-ref', '--strict').status).toBe(1);
+  });
+
+  it('treats a brand-new package as shippable', () => {
+    write('packages/y/package.json', '{"name":"eslint-plugin-y","version":"1.0.0"}');
+    git('add', '-A');
+    git('commit', '-q', '-m', 'feat: new package');
+
+    const { out, status } = run('--since=base-ref', '--strict');
+    expect(status).toBe(1);
+    expect(out).toContain('packages/y');
+  });
+});
