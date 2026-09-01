@@ -611,9 +611,9 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
         }
 
         // Check for template compilation functions
-        if (callee.type === 'MemberExpression' &&
-            callee.property.type === 'Identifier') {
-          const methodName = callee.property.name;
+        // `ng['$compile'](tpl)` compiles the same directive template.
+        if (callee.type === 'MemberExpression' && propertyName(callee) !== null) {
+          const methodName = propertyName(callee) as string;
           const objectName = callee.object.type === 'Identifier' ? callee.object.name : '';
 
           // Template compilation functions

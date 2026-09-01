@@ -331,12 +331,12 @@ export const noDataInTempStorage = createRule<RuleOptions, MessageIds>({
 
       if (
         callee.type === AST_NODE_TYPES.MemberExpression &&
-        !callee.computed &&
         callee.object.type === AST_NODE_TYPES.Identifier &&
         callee.object.name === 'fs' &&
-        callee.property.type === AST_NODE_TYPES.Identifier
+        // `fs['writeFileSync'](p, data)` writes the same file.
+        propertyName(callee) !== null
       ) {
-        return callee.property.name;
+        return propertyName(callee) as string;
       }
       return undefined;
     }

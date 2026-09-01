@@ -169,9 +169,8 @@ function isHandlerFunction(fn: TSESTree.Node): boolean {
   if (
     parent?.type === AST_NODE_TYPES.CallExpression &&
     parent.callee.type === AST_NODE_TYPES.MemberExpression &&
-    !parent.callee.computed &&
-    parent.callee.property.type === AST_NODE_TYPES.Identifier &&
-    parent.callee.property.name === 'addEventListener'
+    // `el['addEventListener'](…)` registers the same listener.
+    staticProperty(parent.callee) === 'addEventListener'
   ) {
     return true;
   }
