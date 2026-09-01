@@ -153,6 +153,20 @@ function reports(rule: unknown, code: string): number | null {
 /**
  * Source in a table cell. Newlines end a markdown row, so a multi-line case
  * silently truncates the table — the `import` + call shape is the common one.
+ *
+ * CodeQL flags this as `js/incomplete-sanitization` ("does not escape
+ * backslash characters"). It is reading a JS-string-escaping heuristic onto
+ * HTML escaping, where backslash is an ordinary character and needs none.
+ *
+ * What DOES matter here is covered:
+ *   `&` first, before `<` and `>`, or the `&lt;` this produces would itself be
+ *        re-escaped into `&amp;lt;`;
+ *   `|`  as `&#124;`, because a literal pipe ends a markdown table cell;
+ *   `\n` to a space, because a literal newline ends the row.
+ *
+ * The output is markdown, and a backslash inside `<code>` is literal. Adding a
+ * backslash rule would corrupt every Windows path and regex in the corpus to
+ * satisfy a check that does not apply.
  */
 const cell = (code: string): string =>
   `<code>${code
