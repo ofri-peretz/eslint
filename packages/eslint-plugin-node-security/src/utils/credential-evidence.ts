@@ -24,7 +24,16 @@
  * but it is a name match on the thing being stored rather than on the method doing the
  * storing — the difference between "this holds a token" and "this is a function call".
  */
-import { AST_NODE_TYPES, resolveModuleBinding } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, propertyName, resolveModuleBinding } from '@interlace/eslint-devkit';
+
+/*
+ * SHARED evidence, so a gate here is a blind spot in every rule that reads it —
+ * `require-secure-credential-storage` and `require-storage-encryption` both do.
+ * `AsyncStorage['setItem']('apiKey', key)` stores a credential exactly as the
+ * dotted form does, and 33 of one rule's own true positives went silent when
+ * rewritten that way. `propertyName` reads both spellings and still returns
+ * null for a dynamic `store[m]`, which names no sink.
+ */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 
 /**
@@ -363,8 +372,7 @@ function provablyEncrypts(
       if (
         callee.type === AST_NODE_TYPES.MemberExpression &&
         !callee.computed &&
-        callee.property.type === AST_NODE_TYPES.Identifier &&
-        CIPHER_OUTPUT_METHODS.has(callee.property.name) &&
+        CIPHER_OUTPUT_METHODS.has(propertyName(callee) ?? '') &&
         recurse(callee.object)
       ) {
         return true;
@@ -448,8 +456,7 @@ const CLIENT_STORES = new Set([
 export function isWebStorageWrite(node: TSESTree.CallExpression): boolean {
   const callee = node.callee;
   if (callee.type !== AST_NODE_TYPES.MemberExpression) return false;
-  if (callee.property.type !== AST_NODE_TYPES.Identifier) return false;
-  if (callee.property.name !== 'setItem') return false;
+  if (propertyName(callee) !== 'setItem') return false;
 
   const object = callee.object;
   if (object.type === AST_NODE_TYPES.Identifier) {
@@ -458,8 +465,7 @@ export function isWebStorageWrite(node: TSESTree.CallExpression): boolean {
   // `window.localStorage.setItem(...)` / `globalThis.sessionStorage.setItem(...)`
   return (
     object.type === AST_NODE_TYPES.MemberExpression &&
-    object.property.type === AST_NODE_TYPES.Identifier &&
-    CLIENT_STORES.has(object.property.name)
+    CLIENT_STORES.has(propertyName(object) ?? '')
   );
 }
 
@@ -494,8 +500,7 @@ export function isEnvironmentWrite(
     !object.computed &&
     object.object.type === AST_NODE_TYPES.Identifier &&
     object.object.name === 'process' &&
-    object.property.type === AST_NODE_TYPES.Identifier &&
-    object.property.name === 'env'
+    propertyName(object) === 'env'
   );
 }
 
@@ -503,11 +508,12 @@ export function isEnvironmentWrite(
 export function isFileWrite(node: TSESTree.CallExpression): boolean {
   const callee = node.callee;
   if (callee.type !== AST_NODE_TYPES.MemberExpression) return false;
-  if (callee.property.type !== AST_NODE_TYPES.Identifier) return false;
+  const method = propertyName(callee);
+  if (method === null) return false;
   return [
     'writeFile',
     'writeFileSync',
     'appendFile',
     'appendFileSync',
-  ].includes(callee.property.name);
+  ].includes(method);
 }

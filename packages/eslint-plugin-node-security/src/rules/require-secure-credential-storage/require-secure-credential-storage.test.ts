@@ -30,6 +30,17 @@ ruleTester.run(
     ],
 
     invalid: [
+    {
+      // FN: this was `valid`, on the stated ground that "a computed METHOD name
+      // is not provably `setItem`". A string subscript is provably exactly
+      // that — it is the same slot the dotted form reaches, and it is what a
+      // bundler emits. `stores[name].setItem(...)` above remains valid because
+      // THAT key really is unresolvable.
+      // @found computed-key blind-spot probe
+      name: 'FN: a credential stored through a string subscript',
+      code: "localStorage['setItem']('password', p)",
+      errors: 1,
+    },
       {
         name: 'an API key in AsyncStorage, which is plain text on disk',
         code: "AsyncStorage.setItem('apiKey', key)",
@@ -102,8 +113,7 @@ ruleTester.run(
       { code: 'localStorage.setItem(...args)' },
       // A computed member with a non-identifier key carries no name to read.
       { code: 'localStorage.setItem(k, creds[0])' },
-      // A computed METHOD name is not provably `setItem`.
-      { code: "localStorage['setItem']('password', p)" },
+
     ],
     invalid: [
       {
