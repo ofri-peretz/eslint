@@ -375,7 +375,7 @@ ruleTester.run('edge shapes', noMissingSecurityHeaders, {
     { code: `a.b.json(x, { headers: { 'X-Frame-Options': 'DENY' } });` },
     // A factory chosen at RUNTIME names nothing to match — unlike
     // `NextResponse['next']`, there is no key here to read.
-    { code: `NextResponse[make](b, { headers: { 'X-Frame-Options': 'DENY' } });` },
+    { name: 'a factory chosen at RUNTIME names nothing to match — unlike', code: `NextResponse[make](b, { headers: { 'X-Frame-Options': 'DENY' } });` },
     // writeHead with no header object, and a computed / wrong method name.
     { code: `res.writeHead(204);` },
     { code: `res[m](200, { 'X-Frame-Options': 'DENY' });` },
@@ -401,7 +401,7 @@ ruleTester.run('edge shapes', noMissingSecurityHeaders, {
     // Every response factory we recognise, in either notation.
     { code: `Response.json(b, { headers: { 'X-Frame-Options': 'DENY' } });`, errors: 1 },
     { code: `NextResponse.next({ headers: { 'X-Frame-Options': 'DENY' } });`, errors: 1 },
-    { code: `NextResponse['next']({ headers: { 'X-Frame-Options': 'DENY' } });`, errors: 1 },
+    { name: 'every response factory we recognise, in either notation', code: `NextResponse['next']({ headers: { 'X-Frame-Options': 'DENY' } });`, errors: 1 },
     // A nested table folded twice.
     {
       code: `const H = [['X-Frame-Options', 'DENY']]; res.setHeader(H[0][0], H[0][1]);`,

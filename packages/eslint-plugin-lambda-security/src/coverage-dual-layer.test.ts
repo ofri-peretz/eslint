@@ -314,6 +314,7 @@ invalid: lambda([
     // Was pinned as valid because the callee property was computed.
     // `registry['create'](payload)` is the same create, unauthorised.
     {
+      name: 'a subscripted sensitive create with no authorization check',
       code: `
         export const handler = async (event) => {
           await registry['create'](payload);
@@ -453,6 +454,7 @@ ruleTester.run('no-unvalidated-event-body (coverage)', noUnvalidatedEventBody, {
     // Was pinned as valid because the key was computed. `exports['handler']`
     // IS the exports.handler convention, and this reads `e.body` unvalidated.
     {
+      name: 'a handler exported under a quoted key reading event.body',
       code: `exports['handler'] = function (e) { const x = e.body; };`,
       errors: [{ messageId: 'unvalidatedInput' }],
     },

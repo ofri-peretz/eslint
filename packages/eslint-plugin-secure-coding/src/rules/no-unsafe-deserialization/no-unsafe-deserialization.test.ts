@@ -588,6 +588,7 @@ describe('no-unsafe-deserialization', () => {
         ],
         invalid: [
           {
+            name: 'a subscripted unserialize of user input',
             code: 'const s = require("node-serialize"); s["unserialize"](userInput);',
             errors: 1,
           },

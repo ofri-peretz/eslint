@@ -82,7 +82,7 @@ describe('enforce-rest-conventions', () => {
         // Plain identifier call: callee is not a MemberExpression at all
         { code: 'doWork();' },
         // A method chosen at RUNTIME names no HTTP verb.
-        { code: 'app[verb](\'/user\', handler);' },
+        { name: 'a method chosen at RUNTIME names no HTTP verb', code: 'app[verb](\'/user\', handler);' },
         // First argument is not a string literal
         { code: 'app.get(handler);' },
         // Path does not start with a slash

@@ -1342,11 +1342,11 @@ describe('detect-object-injection', () => {
           // A method chosen at runtime is not provably `Object.assign` — but
           // it is still a dynamic property read, which is this rule's own
           // subject, so it reports for that reason instead.
-          { code: 'Object[merge](target, source);', errors: 1 },
+          { name: 'a method chosen at runtime is not provably Object.assign — but it is still', code: 'Object[merge](target, source);', errors: 1 },
           // Was pinned above as valid, under a heading about the callee NOT
           // being `Object.assign`. It IS `Object.assign` — same function, same
           // uncontrolled merge onto `target`, one bracket apart.
-          { code: "Object['assign'](target, source);", errors: 1 },
+          { name: 'was pinned above as valid, under a heading about the callee NOT being', code: "Object['assign'](target, source);", errors: 1 },
         ],
       },
     );

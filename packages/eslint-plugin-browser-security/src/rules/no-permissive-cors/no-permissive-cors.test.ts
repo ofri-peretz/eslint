@@ -191,6 +191,7 @@ ruleTester.run('edge shapes', noPermissiveCors, {
     // headers bag". It is exactly as much proof as `req.headers` is, and this
     // reflects the caller's own Origin — the reflection the rule exists for.
     {
+      name: 'was pinned as valid under "headers reached computed is not proof of a',
       code: `res.setHeader('Access-Control-Allow-Origin', req['headers'].origin);`,
       errors: 1,
     },

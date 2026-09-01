@@ -103,11 +103,11 @@ describe('detect-non-literal-fs-filename', () => {
           // A request surface named at RUNTIME is no weaker than an unknown
           // variable: the path is still non-literal, so this still reports —
           // just without the request-evidence upgrade.
-          { code: 'fs.readFileSync(req[surface].p);', errors: 1 },
-      { code: 'fs.readFileSync(req[surface]);', errors: 1 },
+          { name: 'a request surface named at RUNTIME is no weaker than an unknown variable:', code: 'fs.readFileSync(req[surface].p);', errors: 1 },
+      { name: 'a request surface named at RUNTIME is no weaker than an unknown variable:', code: 'fs.readFileSync(req[surface]);', errors: 1 },
       // The binding resolves, but the only surface read on it is keyed at
       // runtime — so there is no request EVIDENCE, only a non-literal path.
-      { code: 'function h(req) { fs.readFileSync(req[surface]); }', errors: 1 },
+      { name: 'the binding resolves, but the only surface read on it is keyed at runtime', code: 'function h(req) { fs.readFileSync(req[surface]); }', errors: 1 },
           // Constant does NOT mean harmless: this one is fixed at build time and
           // is still a traversal. "Not attacker-steerable" and "safe" are
           // different claims.

@@ -601,6 +601,7 @@ ruleTester.run('require-tls-connection (coverage gaps)', requireTlsConnection, {
     // Was pinned as valid — "computed member access, methodName is null".
     // `mongoose['connect'](uri)` opens the same untls'd connection.
     {
+      name: 'a subscripted connect with no TLS option',
       code: `mongoose['connect'](uri);`,
       errors: [
         {

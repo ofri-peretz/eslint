@@ -80,7 +80,10 @@ ruleTester.run('no-arbitrary-file-access', noArbitraryFileAccess, {
     // A name that matches no function in the file is not a call site for it.
     "function read(p) { fs.readFileSync(p); } other(req.query.f);",
     // A DYNAMIC callee names no function statically, so it attributes nothing.
-    "function read(p) { fs.readFileSync(p); } registry[name](req.query.f);",
+    {
+      name: 'a DYNAMIC callee names no function statically, so it attributes nothing',
+      code: "function read(p) { fs.readFileSync(p); } registry[name](req.query.f);",
+    },
     // Neither does a callee that is not a name at all.
     "function read(p) { fs.readFileSync(p); } (function () { return req; })(req.query.f);",
     // Static file paths

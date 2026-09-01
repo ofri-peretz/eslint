@@ -726,6 +726,7 @@ ruleTester.run('no-missing-cors-check (coverage)', noMissingCorsCheck, {
     // Was pinned as valid — "computed setHeader member: property is not an
     // Identifier". It writes the same wildcard CORS header.
     {
+      name: 'a wildcard CORS header written through a subscript',
       code: `res['setHeader']('Access-Control-Allow-Origin', '*');`,
       errors: [{ messageId: 'missingCorsCheck' }],
     },
@@ -836,6 +837,7 @@ ruleTester.run('no-missing-security-headers (coverage)', noMissingSecurityHeader
     // headers and leaves the rest missing, exactly as the dotted spelling
     // three entries down does.
     {
+      name: 'one required header set through a subscript, the rest still missing',
       code: `function handler(req, res) { res['setHeader']('X-Frame-Options', 'DENY'); }`,
       errors: [{ messageId: 'missingSecurityHeader' }],
     },

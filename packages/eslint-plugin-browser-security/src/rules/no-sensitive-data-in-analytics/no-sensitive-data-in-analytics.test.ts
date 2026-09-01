@@ -120,16 +120,23 @@ ruleTester.run('no-sensitive-data-in-analytics — refusals', noSensitiveDataInA
     "analytics.track(...args);",
     // A client returned from a call names nothing we can check against the
     // vendor list.
-    "getClient().track('e', { email: user.email });",
+    {
+      name: 'a client returned from a call names nothing we can check against the',
+      code: "getClient().track('e', { email: user.email });",
+    },
     // A method chosen at RUNTIME is not provably a transmission — unlike
     // `analytics['track']`, there is no name here to compare.
-    "analytics[verb]('e', { email: user.email });",
+    {
+      name: 'a method chosen at RUNTIME is not provably a transmission — unlike',
+      code: "analytics[verb]('e', { email: user.email });",
+    },
   ],
   invalid: [
     // Was pinned here as a refusal, described only as "a computed method on a
     // real client". The bracket changes the notation, not the destination:
     // this ships the same email address to the same vendor.
     {
+      name: 'was pinned here as a refusal, described only as "a computed method on a',
       code: "analytics['track']('e', { email: user.email });",
       errors: [{ messageId: 'violationDetected' }],
     },

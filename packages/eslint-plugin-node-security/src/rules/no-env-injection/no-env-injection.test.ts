@@ -102,6 +102,7 @@ describe('no-env-injection', () => {
       // Was listed above under "Not process.env." — but `process['env']` is
       // exactly process.env, and this writes an attacker-chosen key into it.
       {
+        name: 'was listed above under "Not process.env." — but process[\'env\'] is exactly',
         code: `function h(req) { process['env'][req.body.key] = 1; }`,
         errors: 1,
       },

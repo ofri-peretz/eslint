@@ -143,6 +143,7 @@ ruleTester.run(
       // same anchored check the dotted twin below performs, so warning here
       // told a developer their working guard did not exist.
       {
+        name: 'was pinned as INVALID under "a computed read is not provably .origin" — a',
         code: `
           const ALLOWED = /^https:\\/\\/app\\.example\\.com$/;
           window.addEventListener('message', (event) => {

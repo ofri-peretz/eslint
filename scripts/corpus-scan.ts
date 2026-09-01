@@ -446,12 +446,24 @@ function sh(cmd: string, args: string[], cwd?: string): string {
       .map((stream) => (stream ?? '').trim())
       .filter(Boolean)
       .join('\n');
-    throw new Error(
+    const enriched = new Error(
       `${child.message ?? String(error)}` +
         (detail === ''
           ? '\n  (the command produced no output — check for a --silent flag)'
           : `\n\n${detail}`),
     );
+    /*
+     * Carry the child's streams THROUGH.
+     *
+     * `scanTarget` tells "ESLint found findings" from "ESLint could not run"
+     * by looking for `error.stdout` — ESLint exits non-zero whenever it
+     * reports anything. Rethrowing a bare `new Error` dropped that property,
+     * so the moment any target held an error-severity finding the scan
+     * reported "every target failed — no findings were measured". The
+     * enrichment that was added to explain failures was manufacturing them.
+     */
+    Object.assign(enriched, { stdout: child.stdout, stderr: child.stderr });
+    throw enriched;
   }
 }
 

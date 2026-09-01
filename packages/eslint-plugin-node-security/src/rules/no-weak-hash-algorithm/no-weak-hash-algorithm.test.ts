@@ -105,6 +105,7 @@ describe('no-weak-hash-algorithm', () => {
       // `createHmac` outright, so denying it the exemption above reported a
       // false positive on the notation a minifier emits.
       {
+        name: 'the subscripted spelling',
         code: `
           function sha1(data, secret) { return crypto['createHmac']('sha1', secret).update(data).digest(); }
           const sessionToken = sha1(body, secret);

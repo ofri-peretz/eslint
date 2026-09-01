@@ -280,7 +280,10 @@ ruleTester.run(
       'config.env.SESSION_TOKEN = t;',
       'process.argv.SECRET = s;',
       // An `env` chosen at RUNTIME is not provably process.env.
-      'process[bag].SESSION_TOKEN = t;',
+      {
+        name: 'an env chosen at RUNTIME is not provably process.env',
+        code: 'process[bag].SESSION_TOKEN = t;',
+      },
 
       // ── The alias arm, and where it stops ──────────────────────────────────
       // A `let` can hold something else by the time the write happens, so its
@@ -321,6 +324,7 @@ ruleTester.run(
       // not provably process.env". `process['env']` IS process.env; it is
       // what a minifier writes, and it holds the same token.
       {
+        name: 'was pinned as valid — "env reached through a computed property is not',
         code: 'process["env"].SESSION_TOKEN = sessionToken;',
         errors: [{ messageId: 'credentialInEnvironment' }],
       },

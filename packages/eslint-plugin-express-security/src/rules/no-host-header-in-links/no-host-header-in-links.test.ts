@@ -132,7 +132,7 @@ module.exports = app;
     invalid: xp([
       // Was pinned as valid because the callee property was computed.
       // `obj['send']` is the same mail-ish sink as `obj.send`.
-      { code: `obj['send']('host: ' + req.headers.host);`, errors: [{ messageId: 'hostHeaderInLink' }] },
+      { name: 'was pinned as valid because the callee property was computed', code: `obj['send']('host: ' + req.headers.host);`, errors: [{ messageId: 'hostHeaderInLink' }] },
       // Benchmark corpus: CWE-640/vulnerable/reset-link-host-header.js
       {
         name: 'a password-reset link built from req.headers.host',
@@ -339,12 +339,12 @@ ruleTester.run('no-host-header-in-links (coverage wave)', noHostHeaderInLinks, {
   invalid: xp([
     // Was pinned as valid because the callee property was computed.
     // `req['get']('host')` reads the same header as `req.get('host')`.
-    { code: `const u = 'https://' + req['get']('host');`, errors: [{ messageId: 'hostHeaderInLink' }] },
+    { name: 'was pinned as valid because the callee property was computed', code: `const u = 'https://' + req['get']('host');`, errors: [{ messageId: 'hostHeaderInLink' }] },
     // Was pinned as valid — a bracket on the request bag read as
     // unresolvable, in places labelled a "documented false negative".
     // `req['headers']` is the same bag as `req.headers`; the runtime-keyed
     // form left above is the genuine refusal.
-    { code: `const u = 'https://' + req['headers'].host;`, errors: [{ messageId: 'hostHeaderInLink' }] },
+    { name: 'was pinned as valid — a bracket on the request bag read as unresolvable,', code: `const u = 'https://' + req['headers'].host;`, errors: [{ messageId: 'hostHeaderInLink' }] },
     // Direct host read as a mail-call argument via member callee
     {
       code: 'mailer.send(`link: ${req.headers.host}/go`);',

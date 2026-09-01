@@ -103,6 +103,7 @@ describe('require-case-insensitive-path-guard (branch coverage)', () => {
         // `req['path']` is the same bag as `req.path`; the runtime-keyed
         // form left above is the genuine refusal.
         {
+          name: 'was pinned as valid — a bracket on the request bag read as unresolvable,',
           code: `req['path'].startsWith('/admin');`,
           errors: [
             {

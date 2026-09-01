@@ -102,13 +102,15 @@ describe('no-insecure-redirects', () => {
         // `res.redirect` sink and the `.slice` that strips the leading `#`
         // each compared `property.name` before asking what the property WAS.
         // All four are pinned so the next refactor cannot re-open either half.
-        { code: 'res["redirect"](req.query.url);', errors: [{ messageId: 'insecureRedirect' }] },
+        { name: 'the same four redirects, spelled with a string subscript — what a minifier', code: 'res["redirect"](req.query.url);', errors: [{ messageId: 'insecureRedirect' }] },
         {
+          name: 'a subscripted location.href write from a request parameter',
           code: 'window["location"]["href"] = req.params.url;',
           errors: [{ messageId: 'insecureRedirect' }],
         },
-        { code: 'location["replace"](req.query.url);', errors: [{ messageId: 'insecureRedirect' }] },
+        { name: 'the same four redirects, spelled with a string subscript — what a minifier', code: 'location["replace"](req.query.url);', errors: [{ messageId: 'insecureRedirect' }] },
         {
+          name: 'a subscripted assign fed by a subscripted hash slice',
           code: 'window.location["assign"](window.location.hash["slice"](1));',
           errors: [{ messageId: 'insecureRedirect' }],
         },

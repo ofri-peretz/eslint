@@ -973,7 +973,10 @@ describe('structural predicates', () => {
       // `.length`, so the exemption above was being denied to a minifier's
       // spelling of the same comparison.
       'if (list.length == 3) { go(); }',
-      'if (list["length"] == 3) { go(); }',
+      {
+        name: 'a subscripted .length compared with == is the same numeric check',
+        code: 'if (list["length"] == 3) { go(); }',
+      },
       // Explicit coercions.
       'if (String(a) == "x") { go(); }',
       'if (Number(a) == 1) { go(); }',

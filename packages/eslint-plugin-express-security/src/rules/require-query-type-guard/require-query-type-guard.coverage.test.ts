@@ -137,6 +137,7 @@ describe('require-query-type-guard (branch coverage)', () => {
         // `req['query']` is the same bag as `req.query`; the runtime-keyed
         // form left above is the genuine refusal.
         {
+          name: 'was pinned as valid — a bracket on the request bag read as unresolvable,',
           code: `req['query'].name.trim();`,
           errors: [
             {
