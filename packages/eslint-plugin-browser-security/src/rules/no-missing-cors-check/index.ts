@@ -267,8 +267,8 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
 
       // Check for app.use(cors({ origin: "*" })) or similar
       if (node.callee.type === 'MemberExpression') {
-        const property = node.callee.property;
-        if (property.type === 'Identifier' && property.name === 'use') {
+        // `app['use'](cors({ origin: '*' }))` installs the same middleware.
+        if (propertyName(node.callee) === 'use') {
           // Check if CORS is being used
           const text = sourceCode.getText(node);
           

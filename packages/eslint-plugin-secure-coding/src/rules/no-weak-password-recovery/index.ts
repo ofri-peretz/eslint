@@ -579,9 +579,11 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
             callee.object.type === 'Identifier' &&
             (callee.object.name === 'console' ||
               callee.object.name === 'logger') &&
-            callee.property.type === 'Identifier' &&
             // @vocabulary console API
-            ['log', 'info', 'warn', 'error'].includes(callee.property.name)) ||
+            // `console['log'](resetToken)` logs the same token.
+            ['log', 'info', 'warn', 'error'].includes(
+              propertyName(callee) as string,
+            )) ||
           (callee.type === 'Identifier' && callee.name === 'logger')
         ) {
           const args = node.arguments;

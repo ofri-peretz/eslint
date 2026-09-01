@@ -412,11 +412,26 @@ describe('no-unsafe-deserialization', () => {
   describe('Coverage - branch gaps', () => {
     // ids 9+10 FALSE: computed property access → property/object type is Literal/MemberExpression not Identifier
     ruleTester.run(
-      'coverage - computed callee property (id 9 FALSE)',
+      'a subscripted deserialiser on a required library',
       noUnsafeDeserialization,
       {
-        valid: [{ code: "yaml['load'](req.body.data);" }],
-        invalid: [],
+        valid: [
+          {
+            // A method chosen at RUNTIME names no deserialiser.
+            name: 'a runtime-keyed callee names no deserialiser',
+            code: 'yaml[parse](req.body.data);',
+          },
+        ],
+        invalid: [
+          {
+            // Named after the branch it existed to execute, and it asserted the
+            // wrong answer to do it: `yaml['load']` deserialises exactly what
+            // `yaml.load` deserialises, from the same request body.
+            name: 'a subscripted yaml.load of a request body',
+            code: "yaml['load'](req.body.data);",
+            errors: 1,
+          },
+        ],
       },
     );
 

@@ -413,8 +413,8 @@ export const noLogInjection = createRule<RuleOptions, MessageIds>({
     function isLoggingCall(node: TSESTree.CallExpression): boolean {
       const callee = node.callee;
       if (callee.type !== 'MemberExpression') return false;
-      if (callee.property.type !== 'Identifier') return false;
-      if (!LOG_LEVEL_METHODS.has(callee.property.name)) return false;
+      // `logger['warn'](…)` writes the same line at the same level.
+      if (!LOG_LEVEL_METHODS.has(propertyName(callee) as string)) return false;
       return receiverName(callee.object, receivers) !== null;
     }
 
