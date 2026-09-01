@@ -143,8 +143,6 @@
     "packages/eslint-plugin-conventions/src/rules/conventions/consistent-existence-index-check.ts::dotted-property-only::node.callee.property.name === 'call' &&",
     "packages/eslint-plugin-conventions/src/rules/conventions/consistent-existence-index-check.ts::dotted-property-only::node.callee.property.name === 'hasOwn' &&",
     "packages/eslint-plugin-conventions/src/rules/conventions/consistent-existence-index-check.ts::dotted-property-only::node.callee.property.name === 'hasOwnProperty' &&",
-    "packages/eslint-plugin-conventions/src/rules/conventions/no-console-spaces.ts::dotted-property-only::consoleMethods.has(node.callee.property.name)",
-    "packages/eslint-plugin-conventions/src/rules/conventions/no-console-spaces.ts::dotted-property-only::return node.callee.property.name;",
     "packages/eslint-plugin-conventions/src/rules/conventions/no-magic-numbers.ts::dotted-property-only::other.property.name === 'length'",
     "packages/eslint-plugin-conventions/src/rules/conventions/prefer-code-point.ts::dotted-property-only::node.callee.property.name === 'charCodeAt'",
     "packages/eslint-plugin-conventions/src/rules/conventions/prefer-dependency-version-strategy.ts::bare-object-key-only::? prop.key.name",

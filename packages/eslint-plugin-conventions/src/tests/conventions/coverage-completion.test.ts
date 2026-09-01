@@ -634,28 +634,6 @@ describe('no-console-spaces — template quasis and method-name fallback', () =>
     ],
   });
 
-  it('falls back to "console" when the callee shape changes between reads', () => {
-    const { listeners, reports } = createWithMockContext(noConsoleSpaces);
-    let typeReads = 0;
-    const node = {
-      callee: {
-        get type(): string {
-          typeReads++;
-          // Read 1 (isConsoleMethodCall): a console member call.
-          // Read 2 (getConsoleMethodName): no longer a MemberExpression.
-          return typeReads === 1 ? 'MemberExpression' : 'CallExpression';
-        },
-        object: { type: 'Identifier', name: 'console' },
-        property: { type: 'Identifier', name: 'log' },
-      },
-      arguments: [{ type: 'Literal', value: ' padded ' }],
-    };
-    (listeners['CallExpression'] as Listener)(node);
-    const typed = reports as unknown as AnyReport[];
-    expect(typed).toHaveLength(1);
-    expect(typed[0].messageId).toBe('noConsoleSpaces');
-    expect(typed[0].data?.['method']).toBe('console');
-  });
 });
 
 /* ------------------------------------------------------------------ */

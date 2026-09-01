@@ -26,6 +26,11 @@ describe('no-console-spaces', () => {
   describe('console method detection', () => {
     ruleTester.run('detect console method spacing issues', noConsoleSpaces, {
       valid: [
+    // A dynamic method names nothing, so it is neither a console method to
+    // check nor a name to report. Both `propertyName(...) ?? ''` sentinels are
+    // reached only this way.
+    'console[m](" x ");',
+    'foo[m](" x ");',
         // Normal console calls without spaces
         {
           name: 'separate arguments, which console spaces for you',

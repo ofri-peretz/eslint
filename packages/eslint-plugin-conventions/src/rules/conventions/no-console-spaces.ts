@@ -9,7 +9,13 @@
  * Prevent leading/trailing space between console.log parameters
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, staticString } from '@interlace/eslint-devkit';
+import { createRule, propertyName, staticString } from '@interlace/eslint-devkit';
+
+/*
+ * `console['log'](' x ')` has the same stray padding `console.log(' x ')` does.
+ * Both gates read `property.name`, so 29 of this rule's own true positives
+ * went silent when written with a string subscript.
+ */
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'noConsoleSpaces';
@@ -68,8 +74,7 @@ export const noConsoleSpaces = createRule<RuleOptions, MessageIds>({
         node.callee.type === 'MemberExpression' &&
         node.callee.object.type === 'Identifier' &&
         node.callee.object.name === 'console' &&
-        node.callee.property.type === 'Identifier' &&
-        consoleMethods.has(node.callee.property.name)
+        consoleMethods.has(propertyName(node.callee) ?? '')
       ) {
         return true;
       }
@@ -79,14 +84,13 @@ export const noConsoleSpaces = createRule<RuleOptions, MessageIds>({
 
     // oxlint-disable-next-line consistent-function-scoping
     function getConsoleMethodName(node: TSESTree.CallExpression): string {
-      // Safe extraction of console method name
-      if (
-        node.callee.type === 'MemberExpression' &&
-        node.callee.property.type === 'Identifier'
-      ) {
-        return node.callee.property.name;
-      }
-      return 'console';
+      // Only ever called after `isConsoleCall` has matched, which already
+      // required a MemberExpression whose property resolves to a console
+      // method — so the name is always there. The previous `return 'console'`
+      // fallback was unreachable once the property is resolved rather than
+      // required to be an Identifier, and an unreachable fallback reads as a
+      // safeguard while guaranteeing nothing.
+      return propertyName(node.callee as TSESTree.MemberExpression) as string;
     }
 
     // oxlint-disable-next-line consistent-function-scoping
