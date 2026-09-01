@@ -18,7 +18,7 @@ ruleTester.run('require-secure-deletion', requireSecureDeletion, {
         'const flag = true;',
         'function noop() {}',
     // Secure deletion patterns
-    { code: "secureDelete(file)" },
+    { name: 'an explicit secure delete', code: "secureDelete(file)" },
     { code: "data = null; gc()" },
     { code: "const x = 1" },
 
@@ -39,7 +39,7 @@ ruleTester.run('require-secure-deletion', requireSecureDeletion, {
 
   invalid: [
     // Using delete operator (doesn't securely wipe)
-    { code: "delete user.password", errors: [{ messageId: 'violationDetected' }] },
+    { name: 'delete on a property holding a secret leaves the value in memory', code: "delete user.password", errors: [{ messageId: 'violationDetected' }] },
     { code: "delete sensitiveData.token", errors: [{ messageId: 'violationDetected' }] },
     { code: "delete obj.secret", errors: [{ messageId: 'violationDetected' }] },
     // True positives kept across naming conventions and computed access.

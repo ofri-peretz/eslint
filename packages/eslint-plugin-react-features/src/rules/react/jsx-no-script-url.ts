@@ -12,7 +12,7 @@
  * @see https://github.com/jsx-eslint/eslint-plugin-react/blob/master/docs/rules/jsx-no-script-url.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, staticString } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'noScriptUrl';
@@ -107,8 +107,9 @@ export const jsxNoScriptUrl = createRule<RuleOptions, MessageIds>({
       if (!node.value) return;
 
       // Check literal string values
-      if (node.value.type === 'Literal' && typeof node.value.value === 'string') {
-        if (isJavaScriptUrl(node.value.value)) {
+      const staticText1 = staticString(node.value);
+      if (staticText1 !== null) {
+        if (isJavaScriptUrl(staticText1)) {
           context.report({
             node,
             messageId: 'noScriptUrl',
@@ -120,8 +121,9 @@ export const jsxNoScriptUrl = createRule<RuleOptions, MessageIds>({
       if (node.value.type === 'JSXExpressionContainer') {
         const expr = node.value.expression;
         
-        if (expr.type === 'Literal' && typeof expr.value === 'string') {
-          if (isJavaScriptUrl(expr.value)) {
+        const staticText2 = staticString(expr);
+        if (staticText2 !== null) {
+          if (isJavaScriptUrl(staticText2)) {
             context.report({
               node,
               messageId: 'noScriptUrl',

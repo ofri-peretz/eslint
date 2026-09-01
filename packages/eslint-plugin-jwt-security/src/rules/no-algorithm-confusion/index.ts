@@ -186,6 +186,7 @@ export const noAlgorithmConfusion = createRule<RuleOptions, MessageIds>({
               if (
                 prop.type === 'Property' &&
                 prop.key.type === 'Identifier' &&
+                // @vocabulary JOSE / RFC 7519 header and jsonwebtoken option names
                 ['algorithms', 'algorithm', 'alg'].includes(prop.key.name)
               ) {
                 context.report({

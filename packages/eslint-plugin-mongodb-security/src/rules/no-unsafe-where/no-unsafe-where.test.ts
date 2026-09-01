@@ -75,6 +75,7 @@ describe('no-unsafe-where', () => {
       valid: xmo([
         // Unrelated code should not trigger
         {
+          name: 'the driver is imported but nothing queries',
           code: `const x = 1;`,
         },
         // Array operations are safe
@@ -110,6 +111,7 @@ describe('no-unsafe-where', () => {
       invalid: xmo([
         // Triggers unsafeWhere: $where enables RCE
         {
+          name: '$where runs JavaScript on the server',
           code: `db.users.find({ $where: 'this.age > 18' });`,
           errors: [{ messageId: 'unsafeWhere' }],
         },

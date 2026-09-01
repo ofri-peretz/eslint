@@ -75,6 +75,7 @@ describe('no-unsafe-regex-query', () => {
       valid: xmo([
         // Unrelated code should not trigger
         {
+          name: 'the driver is imported but nothing queries',
           code: `const x = 1;`,
         },
         // Array operations are safe
@@ -106,6 +107,7 @@ describe('no-unsafe-regex-query', () => {
       invalid: xmo([
         // Triggers unsafeRegex: user input in $regex operator
         {
+          name: '$regex built from request input',
           code: `db.users.find({ name: { $regex: req.body.pattern } });`,
           errors: [{ messageId: 'unsafeRegex' }],
         },

@@ -13,7 +13,7 @@
  * @see https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/loading-browser-credentials-browser.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath, staticString } from '@interlace/eslint-devkit';
 import { fileIsLambda } from '../../utils/lambda-evidence';
 
 type MessageIds = 'hardcodedCredentials';
@@ -180,7 +180,8 @@ export const noHardcodedCredentialsSdk = createRule<RuleOptions, MessageIds>({
           prop.key.type === AST_NODE_TYPES.Identifier &&
           isCredentialProperty(prop.key.name)
         ) {
-          if (prop.value.type === AST_NODE_TYPES.Literal && typeof prop.value.value === 'string') {
+          const staticText1 = staticString(prop.value);
+          if (staticText1 !== null) {
             reportHardcodedCredential(prop, clientName, prop.key.name);
           }
         }
@@ -199,8 +200,9 @@ export const noHardcodedCredentialsSdk = createRule<RuleOptions, MessageIds>({
 
         if (prop.key.type === AST_NODE_TYPES.Identifier && isCredentialProperty(prop.key.name)) {
           // Check for literal string values
-          if (prop.value.type === AST_NODE_TYPES.Literal && typeof prop.value.value === 'string') {
-            const value = prop.value.value;
+          const staticText2 = staticString(prop.value);
+          if (staticText2 !== null) {
+            const value = staticText2;
             const keyName = prop.key.name.toLowerCase();
             
             // For accessKeyId, check if it looks like an actual AWS key (AKIA/ASIA pattern)

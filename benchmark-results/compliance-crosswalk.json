@@ -1,12 +1,54 @@
 {
-  "generatedAt": "2026-05-09T23:57:08.054Z",
+  "generatedAt": "2026-08-30T20:43:07.012Z",
   "summary": {
-    "totalRules": 207,
+    "totalRules": 272,
     "ssdfPracticesHit": 2,
-    "asvsSectionsHit": 9,
+    "asvsSectionsHit": 6,
     "capecPatternsHit": 17
   },
   "rules": [
+    {
+      "ruleId": "anthropic-security/no-browser-api-key-exposure",
+      "plugin": "anthropic-security",
+      "cwes": [],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "anthropic-security/no-hardcoded-api-key",
+      "plugin": "anthropic-security",
+      "cwes": [],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "anthropic-security/no-untrusted-content-in-prompt",
+      "plugin": "anthropic-security",
+      "cwes": [],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
     {
       "ruleId": "browser-security/detect-mixed-content",
       "plugin": "browser-security",
@@ -45,9 +87,6 @@
       "ruleId": "browser-security/no-clickjacking",
       "plugin": "browser-security",
       "cwes": [
-        "CWE-1021",
-        "CWE-1021",
-        "CWE-1021",
         "CWE-1021",
         "CWE-1021",
         "CWE-1021",
@@ -123,6 +162,7 @@
       "plugin": "browser-security",
       "cwes": [
         "CWE-295",
+        "CWE-295",
         "CWE-295"
       ],
       "ssdf": [],
@@ -197,6 +237,24 @@
         "CWE-319",
         "CWE-319",
         "CWE-319"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "browser-security/no-incomplete-url-sanitization",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-020",
+        "CWE-020",
+        "CWE-020"
       ],
       "ssdf": [],
       "asvs": [],
@@ -444,8 +502,8 @@
       "ruleId": "browser-security/no-sensitive-data-in-cache",
       "plugin": "browser-security",
       "cwes": [
-        "CWE-200",
-        "CWE-200"
+        "CWE-524",
+        "CWE-524"
       ],
       "ssdf": [],
       "asvs": [],
@@ -455,10 +513,7 @@
         "PW.6"
       ],
       "derivedAsvs": [],
-      "derivedCapec": [
-        "CAPEC-310",
-        "CAPEC-118"
-      ]
+      "derivedCapec": []
     },
     {
       "ruleId": "browser-security/no-sensitive-indexeddb",
@@ -752,6 +807,8 @@
       "plugin": "browser-security",
       "cwes": [
         "CWE-434",
+        "CWE-434",
+        "CWE-434",
         "CWE-434"
       ],
       "ssdf": [],
@@ -816,11 +873,64 @@
       "derivedCapec": []
     },
     {
-      "ruleId": "crypto/no-hardcoded-crypto-key",
-      "plugin": "crypto",
+      "ruleId": "drizzle-security/no-mass-assignment",
+      "plugin": "drizzle-security",
       "cwes": [
-        "CWE-321",
-        "CWE-321"
+        "CWE-915"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-586"
+      ]
+    },
+    {
+      "ruleId": "drizzle-security/no-raw-identifier-interpolation",
+      "plugin": "drizzle-security",
+      "cwes": [
+        "CWE-89"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-66"
+      ]
+    },
+    {
+      "ruleId": "drizzle-security/no-unsafe-query",
+      "plugin": "drizzle-security",
+      "cwes": [
+        "CWE-89"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-66"
+      ]
+    },
+    {
+      "ruleId": "drizzle-security/no-unscoped-mutation",
+      "plugin": "drizzle-security",
+      "cwes": [
+        "CWE-284"
       ],
       "ssdf": [],
       "asvs": [],
@@ -833,11 +943,11 @@
       "derivedCapec": []
     },
     {
-      "ruleId": "crypto/no-key-reuse",
-      "plugin": "crypto",
+      "ruleId": "express-security/no-client-controlled-authorization",
+      "plugin": "express-security",
       "cwes": [
-        "CWE-323",
-        "CWE-323"
+        "CWE-863",
+        "CWE-863"
       ],
       "ssdf": [],
       "asvs": [],
@@ -847,160 +957,9 @@
         "PW.6"
       ],
       "derivedAsvs": [],
-      "derivedCapec": []
-    },
-    {
-      "ruleId": "crypto/no-math-random-crypto",
-      "plugin": "crypto",
-      "cwes": [
-        "CWE-338",
-        "CWE-338"
-      ],
-      "ssdf": [],
-      "asvs": [],
-      "capec": [],
-      "derivedSsdf": [
-        "PW.4",
-        "PW.6"
-      ],
-      "derivedAsvs": [],
-      "derivedCapec": []
-    },
-    {
-      "ruleId": "crypto/no-numeric-only-tokens",
-      "plugin": "crypto",
-      "cwes": [
-        "CWE-330",
-        "CWE-330"
-      ],
-      "ssdf": [],
-      "asvs": [],
-      "capec": [],
-      "derivedSsdf": [
-        "PW.4",
-        "PW.6"
-      ],
-      "derivedAsvs": [],
-      "derivedCapec": []
-    },
-    {
-      "ruleId": "crypto/no-predictable-salt",
-      "plugin": "crypto",
-      "cwes": [
-        "CWE-331",
-        "CWE-331"
-      ],
-      "ssdf": [],
-      "asvs": [],
-      "capec": [],
-      "derivedSsdf": [
-        "PW.4",
-        "PW.6"
-      ],
-      "derivedAsvs": [],
-      "derivedCapec": []
-    },
-    {
-      "ruleId": "crypto/no-web-crypto-export",
-      "plugin": "crypto",
-      "cwes": [
-        "CWE-321",
-        "CWE-321"
-      ],
-      "ssdf": [],
-      "asvs": [],
-      "capec": [],
-      "derivedSsdf": [
-        "PW.4",
-        "PW.6"
-      ],
-      "derivedAsvs": [],
-      "derivedCapec": []
-    },
-    {
-      "ruleId": "crypto/require-authenticated-encryption",
-      "plugin": "crypto",
-      "cwes": [
-        "CWE-327",
-        "CWE-327"
-      ],
-      "ssdf": [],
-      "asvs": [],
-      "capec": [],
-      "derivedSsdf": [
-        "PW.4",
-        "PW.6"
-      ],
-      "derivedAsvs": [],
-      "derivedCapec": []
-    },
-    {
-      "ruleId": "crypto/require-key-length",
-      "plugin": "crypto",
-      "cwes": [
-        "CWE-326",
-        "CWE-326"
-      ],
-      "ssdf": [],
-      "asvs": [],
-      "capec": [],
-      "derivedSsdf": [
-        "PW.4",
-        "PW.6"
-      ],
-      "derivedAsvs": [],
-      "derivedCapec": []
-    },
-    {
-      "ruleId": "crypto/require-random-iv",
-      "plugin": "crypto",
-      "cwes": [
-        "CWE-329",
-        "CWE-329"
-      ],
-      "ssdf": [],
-      "asvs": [],
-      "capec": [],
-      "derivedSsdf": [
-        "PW.4",
-        "PW.6"
-      ],
-      "derivedAsvs": [],
-      "derivedCapec": []
-    },
-    {
-      "ruleId": "crypto/require-secure-pbkdf2-digest",
-      "plugin": "crypto",
-      "cwes": [
-        "CWE-328",
-        "CWE-328"
-      ],
-      "ssdf": [],
-      "asvs": [],
-      "capec": [],
-      "derivedSsdf": [
-        "PW.4",
-        "PW.6"
-      ],
-      "derivedAsvs": [],
-      "derivedCapec": []
-    },
-    {
-      "ruleId": "crypto/require-sufficient-length",
-      "plugin": "crypto",
-      "cwes": [
-        "CWE-330",
-        "CWE-330"
-      ],
-      "ssdf": [],
-      "asvs": [],
-      "capec": [],
-      "derivedSsdf": [
-        "PW.4",
-        "PW.6"
-      ],
-      "derivedAsvs": [],
-      "derivedCapec": []
+      "derivedCapec": [
+        "CAPEC-115"
+      ]
     },
     {
       "ruleId": "express-security/no-cors-credentials-wildcard",
@@ -1008,6 +967,40 @@
       "cwes": [
         "CWE-942",
         "CWE-942"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "express-security/no-disabled-helmet-protections",
+      "plugin": "express-security",
+      "cwes": [
+        "CWE-693",
+        "CWE-693"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "express-security/no-error-details-in-response",
+      "plugin": "express-security",
+      "cwes": [
+        "CWE-209",
+        "CWE-209"
       ],
       "ssdf": [],
       "asvs": [],
@@ -1075,11 +1068,98 @@
       ]
     },
     {
+      "ruleId": "express-security/no-host-header-in-links",
+      "plugin": "express-security",
+      "cwes": [
+        "CWE-640",
+        "CWE-640"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "express-security/no-idor-resource-access",
+      "plugin": "express-security",
+      "cwes": [
+        "CWE-639",
+        "CWE-639"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
       "ruleId": "express-security/no-insecure-cookie-options",
       "plugin": "express-security",
       "cwes": [
         "CWE-614",
         "CWE-614"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "express-security/no-missing-cors-check",
+      "plugin": "express-security",
+      "cwes": [
+        "CWE-346",
+        "CWE-346"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "express-security/no-missing-csrf-protection",
+      "plugin": "express-security",
+      "cwes": [
+        "CWE-352",
+        "CWE-352"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-242b"
+      ]
+    },
+    {
+      "ruleId": "express-security/no-missing-security-headers",
+      "plugin": "express-security",
+      "cwes": [
+        "CWE-693",
+        "CWE-693"
       ],
       "ssdf": [],
       "asvs": [],
@@ -1112,6 +1192,136 @@
       "derivedCapec": []
     },
     {
+      "ruleId": "express-security/no-permissive-trust-proxy",
+      "plugin": "express-security",
+      "cwes": [
+        "CWE-348",
+        "CWE-348"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "express-security/no-sensitive-data-in-query",
+      "plugin": "express-security",
+      "cwes": [
+        "CWE-598",
+        "CWE-598"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "express-security/no-static-root-exposure",
+      "plugin": "express-security",
+      "cwes": [
+        "CWE-548",
+        "CWE-548",
+        "CWE-548",
+        "CWE-548",
+        "CWE-548",
+        "CWE-548"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "express-security/no-unsafe-csp-directives",
+      "plugin": "express-security",
+      "cwes": [
+        "CWE-79",
+        "CWE-79",
+        "CWE-79",
+        "CWE-1021",
+        "CWE-1021",
+        "CWE-311"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-63"
+      ]
+    },
+    {
+      "ruleId": "express-security/no-user-controlled-redirect",
+      "plugin": "express-security",
+      "cwes": [
+        "CWE-601",
+        "CWE-601"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "express-security/no-user-controlled-render-locals",
+      "plugin": "express-security",
+      "cwes": [
+        "CWE-73",
+        "CWE-73",
+        "CWE-73"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "express-security/require-case-insensitive-path-guard",
+      "plugin": "express-security",
+      "cwes": [
+        "CWE-178",
+        "CWE-178"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
       "ruleId": "express-security/require-csrf-protection",
       "plugin": "express-security",
       "cwes": [
@@ -1134,7 +1344,6 @@
       "ruleId": "express-security/require-express-body-parser-limits",
       "plugin": "express-security",
       "cwes": [
-        "CWE-400",
         "CWE-400",
         "CWE-400"
       ],
@@ -1169,6 +1378,23 @@
       "derivedCapec": []
     },
     {
+      "ruleId": "express-security/require-query-type-guard",
+      "plugin": "express-security",
+      "cwes": [
+        "CWE-843",
+        "CWE-843"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
       "ruleId": "express-security/require-rate-limiting",
       "plugin": "express-security",
       "cwes": [
@@ -1186,8 +1412,89 @@
       "derivedCapec": []
     },
     {
-      "ruleId": "jwt/no-algorithm-confusion",
-      "plugin": "jwt",
+      "ruleId": "express-security/require-route-authentication",
+      "plugin": "express-security",
+      "cwes": [
+        "CWE-306",
+        "CWE-306"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "express-security/require-strict-transport-security",
+      "plugin": "express-security",
+      "cwes": [
+        "CWE-319",
+        "CWE-319",
+        "CWE-319",
+        "CWE-319"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "gemini-security/no-disabled-safety-settings",
+      "plugin": "gemini-security",
+      "cwes": [
+        "CWE-693",
+        "CWE-693"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "gemini-security/no-hardcoded-api-key",
+      "plugin": "gemini-security",
+      "cwes": [],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "gemini-security/no-untrusted-content-in-prompt",
+      "plugin": "gemini-security",
+      "cwes": [],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "jwt-security/no-algorithm-confusion",
+      "plugin": "jwt-security",
       "cwes": [
         "CWE-347",
         "CWE-347",
@@ -1204,8 +1511,8 @@
       "derivedCapec": []
     },
     {
-      "ruleId": "jwt/no-algorithm-none",
-      "plugin": "jwt",
+      "ruleId": "jwt-security/no-algorithm-none",
+      "plugin": "jwt-security",
       "cwes": [
         "CWE-347",
         "CWE-347",
@@ -1219,15 +1526,12 @@
         "PW.4",
         "PW.6"
       ],
-      "derivedAsvs": [
-        "V3.5.3",
-        "V6.2.1"
-      ],
+      "derivedAsvs": [],
       "derivedCapec": []
     },
     {
-      "ruleId": "jwt/no-decode-without-verify",
-      "plugin": "jwt",
+      "ruleId": "jwt-security/no-decode-without-verify",
+      "plugin": "jwt-security",
       "cwes": [
         "CWE-345",
         "CWE-345",
@@ -1244,8 +1548,8 @@
       "derivedCapec": []
     },
     {
-      "ruleId": "jwt/no-hardcoded-secret",
-      "plugin": "jwt",
+      "ruleId": "jwt-security/no-hardcoded-secret",
+      "plugin": "jwt-security",
       "cwes": [
         "CWE-798",
         "CWE-798"
@@ -1264,8 +1568,8 @@
       ]
     },
     {
-      "ruleId": "jwt/no-sensitive-payload",
-      "plugin": "jwt",
+      "ruleId": "jwt-security/no-sensitive-payload",
+      "plugin": "jwt-security",
       "cwes": [
         "CWE-359",
         "CWE-359"
@@ -1281,8 +1585,8 @@
       "derivedCapec": []
     },
     {
-      "ruleId": "jwt/no-timestamp-manipulation",
-      "plugin": "jwt",
+      "ruleId": "jwt-security/no-timestamp-manipulation",
+      "plugin": "jwt-security",
       "cwes": [
         "CWE-294",
         "CWE-294",
@@ -1299,8 +1603,8 @@
       "derivedCapec": []
     },
     {
-      "ruleId": "jwt/no-weak-secret",
-      "plugin": "jwt",
+      "ruleId": "jwt-security/no-weak-secret",
+      "plugin": "jwt-security",
       "cwes": [
         "CWE-326",
         "CWE-326",
@@ -1313,15 +1617,12 @@
         "PW.4",
         "PW.6"
       ],
-      "derivedAsvs": [
-        "V3.5.3",
-        "V6.4.1"
-      ],
+      "derivedAsvs": [],
       "derivedCapec": []
     },
     {
-      "ruleId": "jwt/require-algorithm-whitelist",
-      "plugin": "jwt",
+      "ruleId": "jwt-security/require-algorithm-whitelist",
+      "plugin": "jwt-security",
       "cwes": [
         "CWE-757",
         "CWE-757"
@@ -1337,8 +1638,8 @@
       "derivedCapec": []
     },
     {
-      "ruleId": "jwt/require-audience-validation",
-      "plugin": "jwt",
+      "ruleId": "jwt-security/require-audience-validation",
+      "plugin": "jwt-security",
       "cwes": [
         "CWE-287",
         "CWE-287"
@@ -1357,8 +1658,8 @@
       ]
     },
     {
-      "ruleId": "jwt/require-expiration",
-      "plugin": "jwt",
+      "ruleId": "jwt-security/require-expiration",
+      "plugin": "jwt-security",
       "cwes": [
         "CWE-613",
         "CWE-613"
@@ -1374,8 +1675,8 @@
       "derivedCapec": []
     },
     {
-      "ruleId": "jwt/require-issued-at",
-      "plugin": "jwt",
+      "ruleId": "jwt-security/require-issued-at",
+      "plugin": "jwt-security",
       "cwes": [
         "CWE-294",
         "CWE-294"
@@ -1391,8 +1692,8 @@
       "derivedCapec": []
     },
     {
-      "ruleId": "jwt/require-issuer-validation",
-      "plugin": "jwt",
+      "ruleId": "jwt-security/require-issuer-validation",
+      "plugin": "jwt-security",
       "cwes": [
         "CWE-287",
         "CWE-287"
@@ -1411,11 +1712,98 @@
       ]
     },
     {
-      "ruleId": "jwt/require-max-age",
-      "plugin": "jwt",
+      "ruleId": "jwt-security/require-max-age",
+      "plugin": "jwt-security",
       "cwes": [
         "CWE-294",
         "CWE-294"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "knex-security/no-hardcoded-credentials",
+      "plugin": "knex-security",
+      "cwes": [
+        "CWE-798"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-560",
+        "CAPEC-CWE-798"
+      ]
+    },
+    {
+      "ruleId": "knex-security/no-mass-assignment",
+      "plugin": "knex-security",
+      "cwes": [
+        "CWE-915"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-586"
+      ]
+    },
+    {
+      "ruleId": "knex-security/no-unsafe-query",
+      "plugin": "knex-security",
+      "cwes": [
+        "CWE-89"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-66"
+      ]
+    },
+    {
+      "ruleId": "knex-security/no-unscoped-mutation",
+      "plugin": "knex-security",
+      "cwes": [
+        "CWE-284"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "knex-security/require-tls",
+      "plugin": "knex-security",
+      "cwes": [
+        "CWE-319"
       ],
       "ssdf": [],
       "asvs": [],
@@ -1664,6 +2052,77 @@
       "cwes": [
         "CWE-400",
         "CWE-400"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "mcp-sdk-security/no-command-injection-in-tool",
+      "plugin": "mcp-sdk-security",
+      "cwes": [
+        "CWE-78",
+        "CWE-78"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-88",
+        "CAPEC-248"
+      ]
+    },
+    {
+      "ruleId": "mcp-sdk-security/no-tool-description-injection",
+      "plugin": "mcp-sdk-security",
+      "cwes": [
+        "CWE-1427",
+        "CWE-1427"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "mcp-sdk-security/no-unvalidated-tool-args",
+      "plugin": "mcp-sdk-security",
+      "cwes": [
+        "CWE-20",
+        "CWE-20"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "mcp-sdk-security/require-tool-input-schema",
+      "plugin": "mcp-sdk-security",
+      "cwes": [
+        "CWE-20",
+        "CWE-20"
       ],
       "ssdf": [],
       "asvs": [],
@@ -1973,11 +2432,47 @@
       "derivedCapec": []
     },
     {
-      "ruleId": "nestjs-security/no-exposed-debug-endpoints",
-      "plugin": "nestjs-security",
+      "ruleId": "mysql-security/no-hardcoded-credentials",
+      "plugin": "mysql-security",
       "cwes": [
-        "CWE-489",
-        "CWE-489"
+        "CWE-798"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-560",
+        "CAPEC-CWE-798"
+      ]
+    },
+    {
+      "ruleId": "mysql-security/no-unsafe-query",
+      "plugin": "mysql-security",
+      "cwes": [
+        "CWE-89"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-66"
+      ]
+    },
+    {
+      "ruleId": "mysql-security/require-tls",
+      "plugin": "mysql-security",
+      "cwes": [
+        "CWE-319"
       ],
       "ssdf": [],
       "asvs": [],
@@ -2010,7 +2505,7 @@
       ]
     },
     {
-      "ruleId": "nestjs-security/no-missing-validation-pipe",
+      "ruleId": "nestjs-security/no-hybrid-app-config-loss",
       "plugin": "nestjs-security",
       "cwes": [
         "CWE-20",
@@ -2027,9 +2522,10 @@
       "derivedCapec": []
     },
     {
-      "ruleId": "nestjs-security/require-class-validator",
+      "ruleId": "nestjs-security/no-missing-validation-pipe",
       "plugin": "nestjs-security",
       "cwes": [
+        "CWE-20",
         "CWE-20",
         "CWE-20"
       ],
@@ -2042,13 +2538,94 @@
       ],
       "derivedAsvs": [],
       "derivedCapec": []
+    },
+    {
+      "ruleId": "nestjs-security/no-permissive-cors",
+      "plugin": "nestjs-security",
+      "cwes": [
+        "CWE-942",
+        "CWE-942",
+        "CWE-942",
+        "CWE-942"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "nestjs-security/no-res-bypass-serialization",
+      "plugin": "nestjs-security",
+      "cwes": [
+        "CWE-200",
+        "CWE-200"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-310",
+        "CAPEC-118"
+      ]
+    },
+    {
+      "ruleId": "nestjs-security/no-unguarded-swagger",
+      "plugin": "nestjs-security",
+      "cwes": [
+        "CWE-200",
+        "CWE-200"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-310",
+        "CAPEC-118"
+      ]
+    },
+    {
+      "ruleId": "nestjs-security/no-unsafe-multer-filename",
+      "plugin": "nestjs-security",
+      "cwes": [
+        "CWE-22",
+        "CWE-22"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-126",
+        "CAPEC-79"
+      ]
     },
     {
       "ruleId": "nestjs-security/require-guards",
       "plugin": "nestjs-security",
       "cwes": [
-        "CWE-284",
-        "CWE-284"
+        "CWE-306",
+        "CWE-306",
+        "CWE-306",
+        "CWE-862"
       ],
       "ssdf": [],
       "asvs": [],
@@ -2058,7 +2635,9 @@
         "PW.6"
       ],
       "derivedAsvs": [],
-      "derivedCapec": []
+      "derivedCapec": [
+        "CAPEC-114"
+      ]
     },
     {
       "ruleId": "nestjs-security/require-throttler",
@@ -2078,11 +2657,32 @@
       "derivedCapec": []
     },
     {
+      "ruleId": "nestjs-security/require-validation-pipe-whitelist",
+      "plugin": "nestjs-security",
+      "cwes": [
+        "CWE-915",
+        "CWE-915"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-586"
+      ]
+    },
+    {
       "ruleId": "node-security/detect-child-process",
       "plugin": "node-security",
       "cwes": [
         "CWE-78",
-        "CWE-78"
+        "CWE-78",
+        "CWE-114",
+        "CWE-88"
       ],
       "ssdf": [],
       "asvs": [],
@@ -2102,9 +2702,8 @@
       "plugin": "node-security",
       "cwes": [
         "CWE-95",
-        "CWE-95",
-        "CWE-95",
-        "CWE-95",
+        "CWE-94",
+        "CWE-94",
         "CWE-95",
         "CWE-95",
         "CWE-95",
@@ -2203,8 +2802,7 @@
       "plugin": "node-security",
       "cwes": [
         "CWE-126",
-        "CWE-126",
-        "CWE-126",
+        "CWE-125",
         "CWE-126",
         "CWE-126",
         "CWE-126",
@@ -2260,7 +2858,8 @@
       "plugin": "node-security",
       "cwes": [
         "CWE-312",
-        "CWE-312"
+        "CWE-312",
+        "CWE-377"
       ],
       "ssdf": [],
       "asvs": [],
@@ -2308,6 +2907,41 @@
       "derivedCapec": []
     },
     {
+      "ruleId": "node-security/no-dynamic-algorithm-selection",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-327",
+        "CWE-327"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "node-security/no-dynamic-command-string",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-77",
+        "CWE-77",
+        "CWE-77"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
       "ruleId": "node-security/no-dynamic-dependency-loading",
       "plugin": "node-security",
       "cwes": [
@@ -2328,6 +2962,7 @@
       "ruleId": "node-security/no-dynamic-require",
       "plugin": "node-security",
       "cwes": [
+        "CWE-94",
         "CWE-94"
       ],
       "ssdf": [],
@@ -2351,6 +2986,41 @@
       "cwes": [
         "CWE-327",
         "CWE-327"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "node-security/no-env-injection",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-99",
+        "CWE-99",
+        "CWE-99"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "node-security/no-insecure-http-parser",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-444",
+        "CWE-444"
       ],
       "ssdf": [],
       "asvs": [],
@@ -2397,11 +3067,12 @@
       "derivedCapec": []
     },
     {
-      "ruleId": "node-security/no-pii-in-logs",
+      "ruleId": "node-security/no-math-random-crypto",
       "plugin": "node-security",
       "cwes": [
-        "CWE-359",
-        "CWE-359"
+        "CWE-338",
+        "CWE-338",
+        "CWE-338"
       ],
       "ssdf": [],
       "asvs": [],
@@ -2446,6 +3117,26 @@
       ],
       "derivedAsvs": [],
       "derivedCapec": []
+    },
+    {
+      "ruleId": "node-security/no-shell-injection",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-78",
+        "CWE-78"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-88",
+        "CAPEC-248"
+      ]
     },
     {
       "ruleId": "node-security/no-ssrf",
@@ -2521,9 +3212,46 @@
       "derivedCapec": []
     },
     {
+      "ruleId": "node-security/no-unbounded-decompression",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-409",
+        "CWE-409"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "node-security/no-unsafe-buffer-alloc",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-908",
+        "CWE-908",
+        "CWE-908",
+        "CWE-789"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
       "ruleId": "node-security/no-unsafe-dynamic-require",
       "plugin": "node-security",
       "cwes": [
+        "CWE-95",
         "CWE-95",
         "CWE-95"
       ],
@@ -2581,7 +3309,6 @@
         "CWE-22",
         "CWE-22",
         "CWE-22",
-        "CWE-22",
         "CWE-22"
       ],
       "ssdf": [],
@@ -2602,7 +3329,26 @@
       "plugin": "node-security",
       "cwes": [
         "CWE-1104",
+        "CWE-1104",
         "CWE-1104"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "node-security/require-aead-tag-verification",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-327",
+        "CWE-327",
+        "CWE-327"
       ],
       "ssdf": [],
       "asvs": [],
@@ -2636,7 +3382,8 @@
       "plugin": "node-security",
       "cwes": [
         "CWE-312",
-        "CWE-312"
+        "CWE-312",
+        "CWE-526"
       ],
       "ssdf": [],
       "asvs": [],
@@ -2683,8 +3430,67 @@
       "derivedCapec": []
     },
     {
-      "ruleId": "pg/check-query-params",
-      "plugin": "pg",
+      "ruleId": "node-security/require-stream-error-handler",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-248",
+        "CWE-248"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "openai-security/no-browser-api-key-exposure",
+      "plugin": "openai-security",
+      "cwes": [],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "openai-security/no-hardcoded-api-key",
+      "plugin": "openai-security",
+      "cwes": [],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "openai-security/no-untrusted-content-in-prompt",
+      "plugin": "openai-security",
+      "cwes": [],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "postgresql-security/check-query-params",
+      "plugin": "postgresql-security",
       "cwes": [
         "CWE-20",
         "CWE-20"
@@ -2700,8 +3506,8 @@
       "derivedCapec": []
     },
     {
-      "ruleId": "pg/no-batch-insert-loop",
-      "plugin": "pg",
+      "ruleId": "postgresql-security/no-batch-insert-loop",
+      "plugin": "postgresql-security",
       "cwes": [
         "CWE-1049",
         "CWE-1049"
@@ -2717,8 +3523,8 @@
       "derivedCapec": []
     },
     {
-      "ruleId": "pg/no-floating-query",
-      "plugin": "pg",
+      "ruleId": "postgresql-security/no-floating-query",
+      "plugin": "postgresql-security",
       "cwes": [
         "CWE-391",
         "CWE-391"
@@ -2734,8 +3540,8 @@
       "derivedCapec": []
     },
     {
-      "ruleId": "pg/no-hardcoded-credentials",
-      "plugin": "pg",
+      "ruleId": "postgresql-security/no-hardcoded-credentials",
+      "plugin": "postgresql-security",
       "cwes": [
         "CWE-798",
         "CWE-798"
@@ -2747,18 +3553,15 @@
         "PW.4",
         "PW.6"
       ],
-      "derivedAsvs": [
-        "V6.4.1",
-        "V14.3.1"
-      ],
+      "derivedAsvs": [],
       "derivedCapec": [
         "CAPEC-560",
         "CAPEC-CWE-798"
       ]
     },
     {
-      "ruleId": "pg/no-insecure-ssl",
-      "plugin": "pg",
+      "ruleId": "postgresql-security/no-insecure-ssl",
+      "plugin": "postgresql-security",
       "cwes": [
         "CWE-319",
         "CWE-319"
@@ -2770,15 +3573,14 @@
         "PW.4",
         "PW.6"
       ],
-      "derivedAsvs": [
-        "V9.1.1"
-      ],
+      "derivedAsvs": [],
       "derivedCapec": []
     },
     {
-      "ruleId": "pg/no-missing-client-release",
-      "plugin": "pg",
+      "ruleId": "postgresql-security/no-missing-client-release",
+      "plugin": "postgresql-security",
       "cwes": [
+        "CWE-404",
         "CWE-404"
       ],
       "ssdf": [],
@@ -2792,8 +3594,8 @@
       "derivedCapec": []
     },
     {
-      "ruleId": "pg/no-select-all",
-      "plugin": "pg",
+      "ruleId": "postgresql-security/no-select-all",
+      "plugin": "postgresql-security",
       "cwes": [
         "CWE-1049",
         "CWE-1049"
@@ -2809,8 +3611,8 @@
       "derivedCapec": []
     },
     {
-      "ruleId": "pg/no-transaction-on-pool",
-      "plugin": "pg",
+      "ruleId": "postgresql-security/no-transaction-on-pool",
+      "plugin": "postgresql-security",
       "cwes": [
         "CWE-662"
       ],
@@ -2821,14 +3623,12 @@
         "PW.4",
         "PW.6"
       ],
-      "derivedAsvs": [
-        "V11.1.1"
-      ],
+      "derivedAsvs": [],
       "derivedCapec": []
     },
     {
-      "ruleId": "pg/no-unsafe-copy-from",
-      "plugin": "pg",
+      "ruleId": "postgresql-security/no-unsafe-copy-from",
+      "plugin": "postgresql-security",
       "cwes": [
         "CWE-73",
         "CWE-73",
@@ -2846,8 +3646,8 @@
       "derivedCapec": []
     },
     {
-      "ruleId": "pg/no-unsafe-query",
-      "plugin": "pg",
+      "ruleId": "postgresql-security/no-unsafe-query",
+      "plugin": "postgresql-security",
       "cwes": [
         "CWE-89",
         "CWE-89"
@@ -2859,16 +3659,14 @@
         "PW.4",
         "PW.6"
       ],
-      "derivedAsvs": [
-        "V5.3.4"
-      ],
+      "derivedAsvs": [],
       "derivedCapec": [
         "CAPEC-66"
       ]
     },
     {
-      "ruleId": "pg/no-unsafe-search-path",
-      "plugin": "pg",
+      "ruleId": "postgresql-security/no-unsafe-search-path",
+      "plugin": "postgresql-security",
       "cwes": [
         "CWE-426",
         "CWE-426"
@@ -2884,8 +3682,8 @@
       "derivedCapec": []
     },
     {
-      "ruleId": "pg/prefer-pool-query",
-      "plugin": "pg",
+      "ruleId": "postgresql-security/prefer-pool-query",
+      "plugin": "postgresql-security",
       "cwes": [
         "CWE-400"
       ],
@@ -2900,8 +3698,8 @@
       "derivedCapec": []
     },
     {
-      "ruleId": "pg/prevent-double-release",
-      "plugin": "pg",
+      "ruleId": "postgresql-security/prevent-double-release",
+      "plugin": "postgresql-security",
       "cwes": [
         "CWE-415"
       ],
@@ -2912,9 +3710,77 @@
         "PW.4",
         "PW.6"
       ],
-      "derivedAsvs": [
-        "V11.1.1"
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "prisma-security/no-mass-assignment",
+      "plugin": "prisma-security",
+      "cwes": [
+        "CWE-915"
       ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-586"
+      ]
+    },
+    {
+      "ruleId": "prisma-security/no-raw-identifier-interpolation",
+      "plugin": "prisma-security",
+      "cwes": [
+        "CWE-89"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-66"
+      ]
+    },
+    {
+      "ruleId": "prisma-security/no-unsafe-query",
+      "plugin": "prisma-security",
+      "cwes": [
+        "CWE-89"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-66"
+      ]
+    },
+    {
+      "ruleId": "prisma-security/no-unscoped-mutation",
+      "plugin": "prisma-security",
+      "cwes": [
+        "CWE-284"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
       "derivedCapec": []
     },
     {
@@ -2939,7 +3805,9 @@
       "plugin": "secure-coding",
       "cwes": [
         "CWE-915",
-        "CWE-915"
+        "CWE-915",
+        "CWE-915",
+        "CWE-1321"
       ],
       "ssdf": [],
       "asvs": [],
@@ -2959,6 +3827,23 @@
       "cwes": [
         "CWE-521",
         "CWE-521"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "secure-coding/no-bidi-characters",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-1007",
+        "CWE-1007"
       ],
       "ssdf": [],
       "asvs": [],
@@ -3020,10 +3905,27 @@
       "derivedCapec": []
     },
     {
+      "ruleId": "secure-coding/no-fail-open-auth",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-636",
+        "CWE-636",
+        "CWE-636"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
       "ruleId": "secure-coding/no-format-string-injection",
       "plugin": "secure-coding",
       "cwes": [
-        "CWE-134",
         "CWE-134",
         "CWE-134",
         "CWE-134",
@@ -3070,7 +3972,6 @@
       "cwes": [
         "CWE-798",
         "CWE-798",
-        "CWE-798",
         "CWE-798"
       ],
       "ssdf": [],
@@ -3110,18 +4011,31 @@
       ]
     },
     {
+      "ruleId": "secure-coding/no-homoglyph-identifiers",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-1007",
+        "CWE-1007",
+        "CWE-1007"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
       "ruleId": "secure-coding/no-improper-sanitization",
       "plugin": "secure-coding",
       "cwes": [
         "CWE-116",
-        "CWE-116",
         "CWE-79",
         "CWE-116",
-        "CWE-116",
-        "CWE-116",
-        "CWE-94",
-        "CWE-89",
-        "CWE-78"
+        "CWE-116"
       ],
       "ssdf": [],
       "asvs": [],
@@ -3132,20 +4046,13 @@
       ],
       "derivedAsvs": [],
       "derivedCapec": [
-        "CAPEC-63",
-        "CAPEC-242",
-        "CAPEC-66",
-        "CAPEC-88",
-        "CAPEC-248"
+        "CAPEC-63"
       ]
     },
     {
       "ruleId": "secure-coding/no-improper-type-validation",
       "plugin": "secure-coding",
       "cwes": [
-        "CWE-1287",
-        "CWE-1287",
-        "CWE-1287",
         "CWE-1287",
         "CWE-1287",
         "CWE-1287",
@@ -3191,6 +4098,23 @@
         "CWE-90",
         "CWE-90",
         "CWE-90"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "secure-coding/no-log-injection",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-117",
+        "CWE-117"
       ],
       "ssdf": [],
       "asvs": [],
@@ -3291,6 +4215,46 @@
       "derivedCapec": []
     },
     {
+      "ruleId": "secure-coding/no-sql-injection",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-89",
+        "CWE-89"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [
+        "V5.3.4"
+      ],
+      "derivedCapec": [
+        "CAPEC-66"
+      ]
+    },
+    {
+      "ruleId": "secure-coding/no-template-injection",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-94",
+        "CWE-94"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-242"
+      ]
+    },
+    {
       "ruleId": "secure-coding/no-unchecked-loop-condition",
       "plugin": "secure-coding",
       "cwes": [
@@ -3321,9 +4285,6 @@
         "CWE-770",
         "CWE-770",
         "CWE-770",
-        "CWE-770",
-        "CWE-770",
-        "CWE-770",
         "CWE-770"
       ],
       "ssdf": [],
@@ -3340,7 +4301,6 @@
       "ruleId": "secure-coding/no-unsafe-deserialization",
       "plugin": "secure-coding",
       "cwes": [
-        "CWE-502",
         "CWE-502",
         "CWE-502",
         "CWE-502",
@@ -3383,10 +4343,6 @@
       "ruleId": "secure-coding/no-weak-password-recovery",
       "plugin": "secure-coding",
       "cwes": [
-        "CWE-640",
-        "CWE-640",
-        "CWE-640",
-        "CWE-640",
         "CWE-640",
         "CWE-640",
         "CWE-640",
@@ -3467,6 +4423,166 @@
       "cwes": [
         "CWE-1188",
         "CWE-1188"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "sequelize-security/no-hardcoded-credentials",
+      "plugin": "sequelize-security",
+      "cwes": [
+        "CWE-798"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-560",
+        "CAPEC-CWE-798"
+      ]
+    },
+    {
+      "ruleId": "sequelize-security/no-mass-assignment",
+      "plugin": "sequelize-security",
+      "cwes": [
+        "CWE-915"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-586"
+      ]
+    },
+    {
+      "ruleId": "sequelize-security/no-unsafe-query",
+      "plugin": "sequelize-security",
+      "cwes": [
+        "CWE-89"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-66"
+      ]
+    },
+    {
+      "ruleId": "sequelize-security/require-tls",
+      "plugin": "sequelize-security",
+      "cwes": [
+        "CWE-319"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "sqlite-security/no-unsafe-query",
+      "plugin": "sqlite-security",
+      "cwes": [
+        "CWE-89"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-66"
+      ]
+    },
+    {
+      "ruleId": "typeorm-security/no-hardcoded-credentials",
+      "plugin": "typeorm-security",
+      "cwes": [
+        "CWE-798"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-560",
+        "CAPEC-CWE-798"
+      ]
+    },
+    {
+      "ruleId": "typeorm-security/no-mass-assignment",
+      "plugin": "typeorm-security",
+      "cwes": [
+        "CWE-915"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-586"
+      ]
+    },
+    {
+      "ruleId": "typeorm-security/no-unsafe-query",
+      "plugin": "typeorm-security",
+      "cwes": [
+        "CWE-89"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-66"
+      ]
+    },
+    {
+      "ruleId": "typeorm-security/require-tls",
+      "plugin": "typeorm-security",
+      "cwes": [
+        "CWE-319"
       ],
       "ssdf": [],
       "asvs": [],

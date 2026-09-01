@@ -134,8 +134,17 @@
  * @see https://cwe.mitre.org/data/definitions/1321.html
  * @see https://cwe.mitre.org/data/definitions/915.html
  */
-import { AST_NODE_TYPES, TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, isStaticExpression, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  TSESLint,
+  TSESTree,
+  staticString,
+} from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  isStaticExpression,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 import { createRule, createModuleEvidence } from '@interlace/eslint-devkit';
 import { resolvedReference } from '../../utils/resolve-reference';
 
@@ -164,10 +173,7 @@ const fileUsesAstTooling = createModuleEvidence({
   scopes: ['@typescript-eslint'],
 });
 
-type MessageIds =
-  | 'objectInjection'
-  | 'globalPrototypeWrite'
-  | 'massAssignment';
+type MessageIds = 'objectInjection' | 'globalPrototypeWrite' | 'massAssignment';
 
 /**
  * `additionalMethods` and `strategy` used to be declared here and in
@@ -212,11 +218,17 @@ type RuleOptions = [Options?];
  * silence the rule on every index into it.
  */
 const TYPED_ARRAY_CTORS = new Set([
-  'Int8Array', 'Uint8Array', 'Uint8ClampedArray',
-  'Int16Array', 'Uint16Array',
-  'Int32Array', 'Uint32Array',
-  'Float32Array', 'Float64Array',
-  'BigInt64Array', 'BigUint64Array',
+  'Int8Array',
+  'Uint8Array',
+  'Uint8ClampedArray',
+  'Int16Array',
+  'Uint16Array',
+  'Int32Array',
+  'Uint32Array',
+  'Float32Array',
+  'Float64Array',
+  'BigInt64Array',
+  'BigUint64Array',
 ]);
 
 /**
@@ -225,7 +237,8 @@ const TYPED_ARRAY_CTORS = new Set([
 interface ObjectInjectionPattern {
   pattern: string;
   dangerous: boolean;
-  vulnerability: 'prototype-pollution' | 'property-injection' | 'method-injection';
+  vulnerability:
+    'prototype-pollution' | 'property-injection' | 'method-injection';
   safeAlternative: string;
   riskLevel: 'low' | 'medium' | 'high' | 'critical';
 }
@@ -257,22 +270,22 @@ const OBJECT_INJECTION_PATTERNS: ObjectInjectionPattern[] = [
     dangerous: true,
     vulnerability: 'prototype-pollution',
     safeAlternative: 'Object.create(null) or Map',
-    riskLevel: 'critical'
+    riskLevel: 'critical',
   },
   {
     pattern: 'prototype',
     dangerous: true,
     vulnerability: 'prototype-pollution',
     safeAlternative: 'Avoid prototype manipulation',
-    riskLevel: 'high'
+    riskLevel: 'high',
   },
   {
     pattern: 'constructor',
     dangerous: true,
     vulnerability: 'method-injection',
     safeAlternative: 'Validate property names against whitelist',
-    riskLevel: 'medium'
-  }
+    riskLevel: 'medium',
+  },
 ];
 
 export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
@@ -281,7 +294,8 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/detect-object-injection.md',
-      description: 'Detects variable[key] as a left- or right-hand assignment operand',
+      description:
+        'Detects variable[key] as a left- or right-hand assignment operand',
       cwe: 'CWE-915',
       confidence: 'low',
     },
@@ -291,14 +305,16 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.WARNING,
         issueName: 'Object injection',
         cwe: 'CWE-915',
-        description: 'Object injection/Prototype pollution (incl. model/tool outputs)',
+        description:
+          'Object injection/Prototype pollution (incl. model/tool outputs)',
         severity: '{{riskLevel}}',
         // §C2.4 — the sentence that lets a reader CLOSE a finding instead of
         // "fixing" correct code. This rule reports what it could not prove safe;
         // only the reader knows whether the key's provenance is a route table or
         // a request body.
         fix: '{{safeAlternative}} — Not a finding when the key is a numeric index, a module constant, or guarded by Object.hasOwn / an allowlist',
-        documentationLink: 'https://portswigger.net/web-security/prototype-pollution',
+        documentationLink:
+          'https://portswigger.net/web-security/prototype-pollution',
       }),
       /**
        * Its own message, and its own CWE.
@@ -328,7 +344,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         description:
           'Every key of an untrusted object is copied onto this target, so the caller chooses which field is written — including one they should not control, such as isAdmin',
         severity: 'HIGH',
-        fix: 'Copy an explicit allowlist of assignable fields instead of the caller\'s keys — Not a finding when the iterated object is module-built, or the body checks each key against an allowlist',
+        fix: "Copy an explicit allowlist of assignable fields instead of the caller's keys — Not a finding when the iterated object is module-built, or the body checks each key against an allowlist",
         documentationLink: 'https://cwe.mitre.org/data/definitions/915.html',
       }),
       globalPrototypeWrite: formatLLMMessage({
@@ -339,7 +355,8 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
           'Assignment writes THROUGH {{step}}, so the property lands on Object.prototype and every object in the process inherits it',
         severity: 'CRITICAL',
         fix: 'Guard with Object.hasOwn, or build the target with Object.create(null) / a Map — Not a finding when the path is fixed at build time, or __proto__ / constructor / prototype are rejected first',
-        documentationLink: 'https://portswigger.net/web-security/prototype-pollution',
+        documentationLink:
+          'https://portswigger.net/web-security/prototype-pollution',
       }),
     },
     schema: [
@@ -349,7 +366,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
           allowLiterals: {
             type: 'boolean',
             default: false,
-            description: 'Allow bracket notation with literal strings'
+            description: 'Allow bracket notation with literal strings',
           },
           dangerousProperties: {
             type: 'array',
@@ -360,7 +377,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
               "`obj['__proto__'] = v`. It cannot apply to a dynamic key (`obj[k] = v`), because " +
               'there is no name to compare, and it does not gate the CWE-1321 traversal check, ' +
               'which is a fact about the language rather than a vocabulary. Set it to [] to stop ' +
-              'reporting literal dangerous-property writes.'
+              'reporting literal dangerous-property writes.',
           },
         },
         additionalProperties: false,
@@ -431,22 +448,25 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * Check if a node is a literal string (potentially safe)
      */
     const isLiteralString = (node: TSESTree.Node): boolean => {
-      return node.type === AST_NODE_TYPES.Literal && typeof node.value === 'string';
+      return staticString(node) !== null;
     };
 
     /**
      * Check if the property key has been validated before use.
-     * 
+     *
      * Detects patterns like:
      * - if (ARRAY.includes(key)) { obj[key] = value; }
      * - if (Object.prototype.hasOwnProperty.call(obj, key)) { return obj[key]; }
      * - if (Object.hasOwn(obj, key)) { return obj[key]; }
-     * 
+     *
      * @param propertyNode - The property node (key in obj[key])
      * @param node - The current node being checked
      * @returns true if the key has been validated, false otherwise
      */
-    const hasPrecedingValidation = (propertyNode: TSESTree.Node, node: TSESTree.Node): boolean => {
+    const hasPrecedingValidation = (
+      propertyNode: TSESTree.Node,
+      node: TSESTree.Node,
+    ): boolean => {
       // Only check for identifier keys (obj[key] where key is a variable)
       if (propertyNode.type !== AST_NODE_TYPES.Identifier) {
         return false;
@@ -456,13 +476,15 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // AST-based validation detection (faster than getText + regex)
       const isIncludesCall = (testNode: TSESTree.Node): boolean => {
         // Pattern: ARRAY.includes(keyName)
-        return testNode.type === AST_NODE_TYPES.CallExpression &&
-            testNode.callee.type === AST_NODE_TYPES.MemberExpression &&
-            testNode.callee.property.type === AST_NODE_TYPES.Identifier &&
-            testNode.callee.property.name === 'includes' &&
-            testNode.arguments.length > 0 &&
-            testNode.arguments[0].type === AST_NODE_TYPES.Identifier &&
-            testNode.arguments[0].name === keyName;
+        return (
+          testNode.type === AST_NODE_TYPES.CallExpression &&
+          testNode.callee.type === AST_NODE_TYPES.MemberExpression &&
+          testNode.callee.property.type === AST_NODE_TYPES.Identifier &&
+          testNode.callee.property.name === 'includes' &&
+          testNode.arguments.length > 0 &&
+          testNode.arguments[0].type === AST_NODE_TYPES.Identifier &&
+          testNode.arguments[0].name === keyName
+        );
         // Negation is unwrapped once, for every validation form, in
         // `hasValidation` below — see the comment there.
       };
@@ -472,23 +494,31 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         if (testNode.type !== AST_NODE_TYPES.CallExpression) return false;
         const callee = testNode.callee;
         const args = testNode.arguments;
-        
+
         // Object.prototype.hasOwnProperty.call(obj, key)
-        if (callee.type === AST_NODE_TYPES.MemberExpression &&
-            callee.property.type === AST_NODE_TYPES.Identifier &&
-            callee.property.name === 'call' &&
-            args.length >= 2 &&
-            args[1].type === AST_NODE_TYPES.Identifier &&
-            args[1].name === keyName) {
+        if (
+          callee.type === AST_NODE_TYPES.MemberExpression &&
+          callee.property.type === AST_NODE_TYPES.Identifier &&
+          callee.property.name === 'call' &&
+          args.length >= 2 &&
+          args[1].type === AST_NODE_TYPES.Identifier &&
+          args[1].name === keyName
+        ) {
           return true;
         }
-        
+
         // obj.hasOwnProperty(key) OR Object.hasOwn(obj, key)
-        if (callee.type === AST_NODE_TYPES.MemberExpression &&
-            callee.property.type === AST_NODE_TYPES.Identifier &&
-            (callee.property.name === 'hasOwnProperty' || callee.property.name === 'hasOwn')) {
+        if (
+          callee.type === AST_NODE_TYPES.MemberExpression &&
+          callee.property.type === AST_NODE_TYPES.Identifier &&
+          (callee.property.name === 'hasOwnProperty' ||
+            callee.property.name === 'hasOwn')
+        ) {
           const keyArg = callee.property.name === 'hasOwn' ? args[1] : args[0];
-          if (keyArg?.type === AST_NODE_TYPES.Identifier && keyArg.name === keyName) {
+          if (
+            keyArg?.type === AST_NODE_TYPES.Identifier &&
+            keyArg.name === keyName
+          ) {
             return true;
           }
         }
@@ -497,10 +527,12 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
 
       const isInOperator = (testNode: TSESTree.Node): boolean => {
         // Pattern: key in obj
-        return testNode.type === AST_NODE_TYPES.BinaryExpression &&
-               testNode.operator === 'in' &&
-               testNode.left.type === AST_NODE_TYPES.Identifier &&
-               testNode.left.name === keyName;
+        return (
+          testNode.type === AST_NODE_TYPES.BinaryExpression &&
+          testNode.operator === 'in' &&
+          testNode.left.type === AST_NODE_TYPES.Identifier &&
+          testNode.left.name === keyName
+        );
       };
 
       /**
@@ -516,28 +548,38 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
        * excludes exactly the keys `guard() → proceed` admits.
        */
       const hasValidation = (testNode: TSESTree.Node): boolean => {
-        if (testNode.type === AST_NODE_TYPES.UnaryExpression && testNode.operator === '!') {
+        if (
+          testNode.type === AST_NODE_TYPES.UnaryExpression &&
+          testNode.operator === '!'
+        ) {
           return hasValidation(testNode.argument);
         }
-        return isIncludesCall(testNode) || isHasOwnPropertyCall(testNode) || isInOperator(testNode);
+        return (
+          isIncludesCall(testNode) ||
+          isHasOwnPropertyCall(testNode) ||
+          isInOperator(testNode)
+        );
       };
 
       const hasEarlyExit = (consequent: TSESTree.Statement): boolean => {
         // Check if block contains throw or return
         if (consequent.type === AST_NODE_TYPES.BlockStatement) {
-          return consequent.body.some(stmt => 
-            stmt.type === AST_NODE_TYPES.ThrowStatement ||
-            stmt.type === AST_NODE_TYPES.ReturnStatement
+          return consequent.body.some(
+            (stmt) =>
+              stmt.type === AST_NODE_TYPES.ThrowStatement ||
+              stmt.type === AST_NODE_TYPES.ReturnStatement,
           );
         }
-        return consequent.type === AST_NODE_TYPES.ThrowStatement ||
-               consequent.type === AST_NODE_TYPES.ReturnStatement;
+        return (
+          consequent.type === AST_NODE_TYPES.ThrowStatement ||
+          consequent.type === AST_NODE_TYPES.ReturnStatement
+        );
       };
 
       // Walk up to find enclosing IfStatement with validation
       let current: TSESTree.Node | undefined = node.parent;
       let foundFunctionBody = false;
-      
+
       while (current && !foundFunctionBody) {
         // Check if we're inside an if-block with validation in the condition
         if (current.type === AST_NODE_TYPES.IfStatement) {
@@ -545,13 +587,15 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
             return true;
           }
         }
-        
+
         // Check for function body - look for preceding sibling if-statements with early exit
-        if (current.type === AST_NODE_TYPES.BlockStatement && current.parent && (
-            current.parent.type === AST_NODE_TYPES.FunctionDeclaration ||
+        if (
+          current.type === AST_NODE_TYPES.BlockStatement &&
+          current.parent &&
+          (current.parent.type === AST_NODE_TYPES.FunctionDeclaration ||
             current.parent.type === AST_NODE_TYPES.FunctionExpression ||
-            current.parent.type === AST_NODE_TYPES.ArrowFunctionExpression)) {
-          
+            current.parent.type === AST_NODE_TYPES.ArrowFunctionExpression)
+        ) {
           foundFunctionBody = true;
           const blockBody = current.body;
           const nodeIndex = blockBody.findIndex((stmt: TSESTree.Statement) => {
@@ -562,21 +606,23 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
             }
             return false;
           });
-          
+
           // Look at preceding statements for validation patterns with early exit
           for (let i = 0; i < nodeIndex; i++) {
             const stmt = blockBody[i];
-            if (stmt.type === AST_NODE_TYPES.IfStatement &&
-                hasValidation(stmt.test) &&
-                hasEarlyExit(stmt.consequent)) {
+            if (
+              stmt.type === AST_NODE_TYPES.IfStatement &&
+              hasValidation(stmt.test) &&
+              hasEarlyExit(stmt.consequent)
+            ) {
               return true;
             }
           }
         }
-        
+
         current = current.parent;
       }
-      
+
       return false;
     };
     /**
@@ -610,11 +656,17 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       };
 
       const prefix = literalText(bin.left as TSESTree.Node);
-      if (prefix !== null && !dangerousProperties.some((d) => d.startsWith(prefix))) {
+      if (
+        prefix !== null &&
+        !dangerousProperties.some((d) => d.startsWith(prefix))
+      ) {
         return true;
       }
       const suffix = literalText(bin.right as TSESTree.Node);
-      if (suffix !== null && !dangerousProperties.some((d) => d.endsWith(suffix))) {
+      if (
+        suffix !== null &&
+        !dangerousProperties.some((d) => d.endsWith(suffix))
+      ) {
         return true;
       }
       return false;
@@ -650,12 +702,18 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
           (operand as TSESTree.BinaryExpression).operator === '+'
         ) {
           const chain = operand as TSESTree.BinaryExpression;
-          return anyNumericOperand(chain.left as TSESTree.Node) || anyNumericOperand(chain.right);
+          return (
+            anyNumericOperand(chain.left as TSESTree.Node) ||
+            anyNumericOperand(chain.right)
+          );
         }
         return isNumericKey(operand);
       };
       const bin = node as TSESTree.BinaryExpression;
-      return anyNumericOperand(bin.left as TSESTree.Node) || anyNumericOperand(bin.right);
+      return (
+        anyNumericOperand(bin.left as TSESTree.Node) ||
+        anyNumericOperand(bin.right)
+      );
     };
 
     /**
@@ -674,7 +732,9 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * false positives they were added for (NestJS decorator metadata,
      * `errorHttpStatusCode`) stay closed.
      */
-    const hasVisibleNonConstantInitialiser = (node: TSESTree.Identifier): boolean => {
+    const hasVisibleNonConstantInitialiser = (
+      node: TSESTree.Identifier,
+    ): boolean => {
       const scope = sourceCode.getScope(node);
       const variable = resolvedReference(scope, node);
       if (!variable || variable.defs.length !== 1) {
@@ -688,7 +748,10 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       if (!init) {
         return false;
       }
-      return !isStaticExpression({ node: init, scope: sourceCode.getScope(init) });
+      return !isStaticExpression({
+        node: init,
+        scope: sourceCode.getScope(init),
+      });
     };
 
     /**
@@ -726,7 +789,8 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // this suppression returned true for it and silenced a real finding until
       // the fixture written for exactly that trap caught it.
       // The initialiser is itself one write, so more than one means reassignment.
-      if (variable.references.filter((ref) => ref.isWrite()).length > 1) return false;
+      if (variable.references.filter((ref) => ref.isWrite()).length > 1)
+        return false;
       const init = (def.node as TSESTree.VariableDeclarator).init;
       if (!init) return false;
       return (
@@ -743,7 +807,13 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * and `prerequisites` are not requests. Then disqualified by
      * `isLocallyConstructed`, so the SPELLING alone never decides.
      */
-    const REQUEST_ROOTS = new Set(['req', 'request', 'ctx', 'context', 'event']);
+    const REQUEST_ROOTS = new Set([
+      'req',
+      'request',
+      'ctx',
+      'context',
+      'event',
+    ]);
     const isUntrustedExpression = (node: TSESTree.Node): boolean => {
       const root = chainRoot(node);
       if (root === null) return false;
@@ -785,12 +855,14 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       if (def.type !== 'Variable') return false;
       // Reassignment disqualifies, same as isLocallyConstructed — a binding that
       // held a Symbol at declaration may hold a string by the time it is used.
-      if (variable.references.filter((ref) => ref.isWrite()).length > 1) return false;
+      if (variable.references.filter((ref) => ref.isWrite()).length > 1)
+        return false;
       const init = (def.node as TSESTree.VariableDeclarator).init;
       if (init?.type !== AST_NODE_TYPES.CallExpression) return false;
       const callee = init.callee;
       return (
-        (callee.type === AST_NODE_TYPES.Identifier && callee.name === 'Symbol') ||
+        (callee.type === AST_NODE_TYPES.Identifier &&
+          callee.name === 'Symbol') ||
         (callee.type === AST_NODE_TYPES.MemberExpression &&
           callee.object.type === AST_NODE_TYPES.Identifier &&
           callee.object.name === 'Symbol')
@@ -842,7 +914,8 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       if (def.type !== 'Variable') return false;
       // A reassigned binding no longer holds the module it was declared with.
       // The initialiser is one write, so more than one means reassignment.
-      if (variable.references.filter((ref) => ref.isWrite()).length > 1) return false;
+      if (variable.references.filter((ref) => ref.isWrite()).length > 1)
+        return false;
       const init = (def.node as TSESTree.VariableDeclarator).init;
       return (
         init?.type === AST_NODE_TYPES.CallExpression &&
@@ -851,7 +924,9 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       );
     };
 
-    const isDangerousPropertyAccess = (propertyNode: TSESTree.Node): boolean => {
+    const isDangerousPropertyAccess = (
+      propertyNode: TSESTree.Node,
+    ): boolean => {
       // SAFE: a Symbol can never be the string '__proto__', nor a field name a
       // caller can aim at. Not a heuristic — a fact about the type.
       if (isSymbolKey(propertyNode)) return false;
@@ -914,7 +989,9 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         // are never raw user input. Examples: errorHttpStatusCode, uuidVersion, reqType.
         if (
           /^[a-z]/.test(name) &&
-          /(?:Code|Status|Version|Kind|Mode|Type|Stage|Level|Phase|Step|Flag|Num|Count)$/.test(name)
+          /(?:Code|Status|Version|Kind|Mode|Type|Stage|Level|Phase|Step|Flag|Num|Count)$/.test(
+            name,
+          )
         ) {
           return false;
         }
@@ -923,14 +1000,14 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // Check if it's a literal string first
       if (isLiteralString(propertyNode)) {
         const propName = String((propertyNode as TSESTree.Literal).value);
-        
+
         // DANGEROUS: Literal strings that match dangerous properties (always flag these)
         // Check this BEFORE checking typed union access
         if (dangerousProperties.includes(propName)) {
           return true;
         }
-        
-      return false; // safe non-dangerous literal
+
+        return false; // safe non-dangerous literal
       }
 
       // DANGEROUS: Any untyped/dynamic property access (e.g., obj[userInput])
@@ -945,41 +1022,52 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       if (objectNode.type !== AST_NODE_TYPES.Identifier) {
         return false;
       }
-      
+
       const varName = objectNode.name;
-      
+
       // Walk up to find the variable declaration
       let current: TSESTree.Node | undefined = objectNode;
       while (current) {
-        if (current.type === AST_NODE_TYPES.BlockStatement || 
-            current.type === AST_NODE_TYPES.Program) {
-          const statements = current.type === AST_NODE_TYPES.BlockStatement 
-            ? current.body 
-            : current.body;
-          
+        if (
+          current.type === AST_NODE_TYPES.BlockStatement ||
+          current.type === AST_NODE_TYPES.Program
+        ) {
+          const statements =
+            current.type === AST_NODE_TYPES.BlockStatement
+              ? current.body
+              : current.body;
+
           for (const stmt of statements) {
             if (stmt.type === AST_NODE_TYPES.VariableDeclaration) {
               for (const decl of stmt.declarations) {
-                if (decl.id.type === AST_NODE_TYPES.Identifier && 
-                    decl.id.name === varName && 
-                    decl.init) {
+                if (
+                  decl.id.type === AST_NODE_TYPES.Identifier &&
+                  decl.id.name === varName &&
+                  decl.init
+                ) {
                   // Check for Object.create(null)
-                  if (decl.init.type === AST_NODE_TYPES.CallExpression &&
-                      decl.init.callee.type === AST_NODE_TYPES.MemberExpression &&
-                      decl.init.callee.object.type === AST_NODE_TYPES.Identifier &&
-                      decl.init.callee.object.name === 'Object' &&
-                      decl.init.callee.property.type === AST_NODE_TYPES.Identifier &&
-                      decl.init.callee.property.name === 'create' &&
-                      decl.init.arguments.length > 0 &&
-                      decl.init.arguments[0].type === AST_NODE_TYPES.Literal &&
-                      decl.init.arguments[0].value === null) {
+                  if (
+                    decl.init.type === AST_NODE_TYPES.CallExpression &&
+                    decl.init.callee.type === AST_NODE_TYPES.MemberExpression &&
+                    decl.init.callee.object.type ===
+                      AST_NODE_TYPES.Identifier &&
+                    decl.init.callee.object.name === 'Object' &&
+                    decl.init.callee.property.type ===
+                      AST_NODE_TYPES.Identifier &&
+                    decl.init.callee.property.name === 'create' &&
+                    decl.init.arguments.length > 0 &&
+                    decl.init.arguments[0].type === AST_NODE_TYPES.Literal &&
+                    decl.init.arguments[0].value === null
+                  ) {
                     return true;
                   }
-                  
+
                   // Check for array spread: [...array]
-                  if (decl.init.type === AST_NODE_TYPES.ArrayExpression &&
-                      decl.init.elements.length > 0 &&
-                      decl.init.elements[0]?.type === AST_NODE_TYPES.SpreadElement) {
+                  if (
+                    decl.init.type === AST_NODE_TYPES.ArrayExpression &&
+                    decl.init.elements.length > 0 &&
+                    decl.init.elements[0]?.type === AST_NODE_TYPES.SpreadElement
+                  ) {
                     return true;
                   }
                 }
@@ -989,14 +1077,16 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         }
         current = current.parent;
       }
-      
+
       return false;
     };
 
     /**
      * Extract property access information
      */
-    const extractPropertyAccess = (node: TSESTree.AssignmentExpression | TSESTree.MemberExpression): {
+    const extractPropertyAccess = (
+      node: TSESTree.AssignmentExpression | TSESTree.MemberExpression,
+    ): {
       object: string;
       property: string;
       propertyNode: TSESTree.Node;
@@ -1017,7 +1107,10 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // code. The `if`/`else if` below is kept (rather than a non-null
       // assertion) purely for TypeScript exhaustiveness over the declared
       // union parameter type.
-      if (node.type === AST_NODE_TYPES.AssignmentExpression && node.left.type === AST_NODE_TYPES.MemberExpression) {
+      if (
+        node.type === AST_NODE_TYPES.AssignmentExpression &&
+        node.left.type === AST_NODE_TYPES.MemberExpression
+      ) {
         // Assignment: obj[key] = value
         object = sourceCode.getText(node.left.object);
         property = sourceCode.getText(node.left.property);
@@ -1034,10 +1127,12 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       }
 
       // Check if property matches dangerous patterns
-      const pattern = OBJECT_INJECTION_PATTERNS.find(p =>
-        new RegExp(p.pattern, 'i').test(property) ||
-        dangerousProperties.includes(property.replace(/['"]/g, ''))
-      ) || null;
+      const pattern =
+        OBJECT_INJECTION_PATTERNS.find(
+          (p) =>
+            new RegExp(p.pattern, 'i').test(property) ||
+            dangerousProperties.includes(property.replace(/['"]/g, '')),
+        ) || null;
 
       return { object, property, propertyNode, isAssignment, pattern };
     };
@@ -1049,7 +1144,8 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * pollute; keying on `computed` would see only one of them.
      */
     const stepName = (m: TSESTree.MemberExpression): string | null => {
-      if (!m.computed && m.property.type === AST_NODE_TYPES.Identifier) return m.property.name;
+      if (!m.computed && m.property.type === AST_NODE_TYPES.Identifier)
+        return m.property.name;
       if (
         m.computed &&
         m.property.type === AST_NODE_TYPES.Literal &&
@@ -1089,7 +1185,9 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * when it is reached THROUGH `constructor`, which is what escapes the
      * object's own function into the shared one.
      */
-    const globalPrototypeWrite = (node: TSESTree.AssignmentExpression): string | null => {
+    const globalPrototypeWrite = (
+      node: TSESTree.AssignmentExpression,
+    ): string | null => {
       if (node.left.type !== AST_NODE_TYPES.MemberExpression) return null;
 
       // Every step EXCEPT the final one — the final property is what is written
@@ -1105,7 +1203,8 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
 
       if (steps.includes('__proto__')) return '__proto__';
       for (let i = 0; i < steps.length - 1; i++) {
-        if (steps[i] === 'constructor' && steps[i + 1] === 'prototype') return 'constructor.prototype';
+        if (steps[i] === 'constructor' && steps[i + 1] === 'prototype')
+          return 'constructor.prototype';
       }
       return null;
     };
@@ -1113,7 +1212,9 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     /**
      * Determine if this is a high-risk assignment
      */
-    const isHighRiskAssignment = (node: TSESTree.AssignmentExpression): boolean => {
+    const isHighRiskAssignment = (
+      node: TSESTree.AssignmentExpression,
+    ): boolean => {
       if (node.left.type !== 'MemberExpression') {
         return false;
       }
@@ -1134,11 +1235,24 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         return false;
       }
 
+      // SAFE: `arr[arr.length] = x` appends to an array. Verified against the
+      // language: the key is a number, so it cannot name a prototype slot.
+      if (isArrayAppend(node.left)) {
+        return false;
+      }
+
       const { propertyNode } = extractPropertyAccess(node);
 
       // SAFE: numeric keys can't pollute Object prototypes (typed-array
       // / numeric-array assignment is structurally safe).
       if (isNumericKey(propertyNode)) {
+        return false;
+      }
+
+      // SAFE: the key is bound by `for (const k of KEYS)` over a const array of
+      // string literals, so every value it can hold is written out in the file
+      // and none of them is a dangerous property.
+      if (isKeyFromLiteralAllowlist(propertyNode)) {
         return false;
       }
 
@@ -1188,7 +1302,9 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     /**
      * Determine if this is a high-risk member access
      */
-    const isHighRiskMemberAccess = (node: TSESTree.MemberExpression): boolean => {
+    const isHighRiskMemberAccess = (
+      node: TSESTree.MemberExpression,
+    ): boolean => {
       // Only check computed member access (bracket notation)
       if (!node.computed) {
         return false;
@@ -1243,8 +1359,108 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      *   - Identifier whose declaration is the init of a `for` statement
      *     (the standard `for (let i = 0; i < n; i++)` counter pattern)
      */
+    /**
+     * `arr[arr.length] = x` — the array-append idiom.
+     *
+     * Deliberately narrow: the SAME identifier must be both the object and the
+     * receiver of `.length`. A general "`.length` is numeric" arm would be
+     * wrong, because `o[x.length] = v` is only safe if `x.length` is a number,
+     * and an attacker-supplied `{ length: '__proto__' }` makes it a string.
+     * Requiring self-reference keeps the universal idiom quiet without
+     * clearing any access whose key comes from somewhere else — which is this
+     * rule's standing trade: never clear an access it has not proved safe.
+     *
+     * Found by running this rule beside `eslint-plugin-security`'s
+     * `detect-object-injection` on the same corpus: theirs stays silent here
+     * and ours did not.
+     */
+    const isArrayAppend = (member: TSESTree.MemberExpression): boolean => {
+      if (member.object.type !== AST_NODE_TYPES.Identifier) return false;
+      const key = member.property;
+      return (
+        key.type === AST_NODE_TYPES.MemberExpression &&
+        !key.computed &&
+        key.object.type === AST_NODE_TYPES.Identifier &&
+        key.object.name === member.object.name &&
+        key.property.type === AST_NODE_TYPES.Identifier &&
+        key.property.name === 'length'
+      );
+    };
+
+    /**
+     * A key bound by `for (const k of KEYS)` where `KEYS` is a `const` array of
+     * string literals declared in this file.
+     *
+     * The set of values `k` can take is written out in the source, so whether
+     * any of them is dangerous is decidable rather than assumed — and if the
+     * author does list `__proto__`, this returns false and the access still
+     * reports. `Object.freeze(...)` around the literal is read through, since
+     * it is the same declaration with a runtime guarantee attached.
+     */
+    const isKeyFromLiteralAllowlist = (node: TSESTree.Node): boolean => {
+      if (node.type !== AST_NODE_TYPES.Identifier) return false;
+      const variable = resolvedReference(sourceCode.getScope(node), node);
+      if (!variable || variable.defs.length !== 1) return false;
+      const def = variable.defs[0];
+      if (def.type !== 'Variable') return false;
+      // The binding must come from `for (… of SOURCE)`, not an assignment.
+      const declaration = def.node.parent;
+      const loop = declaration?.parent;
+      if (
+        loop?.type !== AST_NODE_TYPES.ForOfStatement ||
+        loop.left !== declaration
+      )
+        return false;
+
+      let source: TSESTree.Node = loop.right;
+      // `Object.freeze([...])` is the same literal with a guarantee attached.
+      if (
+        source.type === AST_NODE_TYPES.CallExpression &&
+        source.callee.type === AST_NODE_TYPES.MemberExpression &&
+        source.callee.object.type === AST_NODE_TYPES.Identifier &&
+        source.callee.object.name === 'Object' &&
+        source.callee.property.type === AST_NODE_TYPES.Identifier &&
+        source.callee.property.name === 'freeze' &&
+        source.arguments[0] !== undefined
+      ) {
+        source = source.arguments[0];
+      }
+      if (source.type === AST_NODE_TYPES.Identifier) {
+        const listVar = resolvedReference(sourceCode.getScope(source), source);
+        if (!listVar || listVar.defs.length !== 1) return false;
+        const listDef = listVar.defs[0];
+        if (listDef.type !== 'Variable') return false;
+        if (listDef.parent?.kind !== 'const') return false;
+        // No null check on `init`: `const` without an initialiser is a syntax
+        // error, so the parser never produces one. No re-assignment check
+        // either, for the same reason — a `const` has exactly one write, its
+        // own declaration. Both would be branches no test could reach.
+        source = listDef.node.init as TSESTree.Expression;
+      }
+      if (
+        source.type === AST_NODE_TYPES.CallExpression &&
+        source.callee.type === AST_NODE_TYPES.MemberExpression &&
+        source.callee.object.type === AST_NODE_TYPES.Identifier &&
+        source.callee.object.name === 'Object' &&
+        source.callee.property.type === AST_NODE_TYPES.Identifier &&
+        source.callee.property.name === 'freeze' &&
+        source.arguments[0] !== undefined
+      ) {
+        source = source.arguments[0];
+      }
+      if (source.type !== AST_NODE_TYPES.ArrayExpression) return false;
+      if (source.elements.length === 0) return false;
+      return source.elements.every((element) => {
+        const text = element === null ? null : staticString(element);
+        return text !== null && !dangerousProperties.includes(text);
+      });
+    };
+
     const isNumericKey = (node: TSESTree.Node): boolean => {
-      if (node.type === AST_NODE_TYPES.Literal && typeof (node as TSESTree.Literal).value === 'number') {
+      if (
+        node.type === AST_NODE_TYPES.Literal &&
+        typeof (node as TSESTree.Literal).value === 'number'
+      ) {
         return true;
       }
       if (node.type === AST_NODE_TYPES.UnaryExpression) {
@@ -1260,14 +1476,29 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       }
       if (node.type === AST_NODE_TYPES.BinaryExpression) {
         const op = (node as TSESTree.BinaryExpression).operator;
-        if (op === '|' || op === '&' || op === '^' || op === '<<' || op === '>>' || op === '>>>' || op === '*' || op === '/' || op === '%' || op === '-' || op === '**') {
+        if (
+          op === '|' ||
+          op === '&' ||
+          op === '^' ||
+          op === '<<' ||
+          op === '>>' ||
+          op === '>>>' ||
+          op === '*' ||
+          op === '/' ||
+          op === '%' ||
+          op === '-' ||
+          op === '**'
+        ) {
           return true;
         }
         // `+` only when *both* sides are themselves provably numeric —
         // otherwise it is string concatenation.
         if (op === '+') {
           const bin = node as TSESTree.BinaryExpression;
-          return isNumericKey(bin.left as TSESTree.Node) && isNumericKey(bin.right as TSESTree.Node);
+          return (
+            isNumericKey(bin.left as TSESTree.Node) &&
+            isNumericKey(bin.right as TSESTree.Node)
+          );
         }
       }
       // `cond ? 0 : 1` is numeric when both arms are.
@@ -1279,7 +1510,8 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         const callee = (node as TSESTree.CallExpression).callee;
         if (callee.type === AST_NODE_TYPES.Identifier) {
           const name = (callee as TSESTree.Identifier).name;
-          if (name === 'Number' || name === 'parseInt' || name === 'parseFloat') return true;
+          if (name === 'Number' || name === 'parseInt' || name === 'parseFloat')
+            return true;
         }
         // `Math.floor(...)` and friends always return a number — the standard
         // way an index is computed (`const j = Math.floor(Math.random() * n)`).
@@ -1383,7 +1615,10 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         const init = (def.node as TSESTree.VariableDeclarator).init;
         if (!init) return false;
         // Initializer must itself be numeric.
-        if (init.type === AST_NODE_TYPES.Literal && typeof (init as TSESTree.Literal).value === 'number') {
+        if (
+          init.type === AST_NODE_TYPES.Literal &&
+          typeof (init as TSESTree.Literal).value === 'number'
+        ) {
           return true;
         }
       }
@@ -1427,7 +1662,10 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * judgement, and on its own enough to make the rule unusable on ordinary
      * application code.
      */
-    const isObjectKeysCallbackKey = (fn: TSESTree.Node, name: string): boolean => {
+    const isObjectKeysCallbackKey = (
+      fn: TSESTree.Node,
+      name: string,
+    ): boolean => {
       if (
         fn.type !== AST_NODE_TYPES.ArrowFunctionExpression &&
         fn.type !== AST_NODE_TYPES.FunctionExpression
@@ -1463,7 +1701,8 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         source.callee.object.type === AST_NODE_TYPES.Identifier &&
         source.callee.object.name === 'Object' &&
         source.callee.property.type === AST_NODE_TYPES.Identifier &&
-        (source.callee.property.name === 'keys' || source.callee.property.name === 'entries')
+        (source.callee.property.name === 'keys' ||
+          source.callee.property.name === 'entries')
       );
     };
 
@@ -1486,15 +1725,22 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       }
       const varDecl = def.node?.parent as TSESTree.Node | undefined;
       const loopStmt = varDecl?.parent as TSESTree.Node | undefined;
-      if (!varDecl || varDecl.type !== AST_NODE_TYPES.VariableDeclaration) return false;
+      if (!varDecl || varDecl.type !== AST_NODE_TYPES.VariableDeclaration)
+        return false;
 
       // for (const key in obj) { ... obj[key] ... }
-      if (loopStmt?.type === AST_NODE_TYPES.ForInStatement && loopStmt.left === varDecl) {
+      if (
+        loopStmt?.type === AST_NODE_TYPES.ForInStatement &&
+        loopStmt.left === varDecl
+      ) {
         return true;
       }
 
       // for (const key of Object.keys(obj)) / Object.entries(obj)
-      if (loopStmt?.type === AST_NODE_TYPES.ForOfStatement && loopStmt.left === varDecl) {
+      if (
+        loopStmt?.type === AST_NODE_TYPES.ForOfStatement &&
+        loopStmt.left === varDecl
+      ) {
         const right = loopStmt.right;
         return (
           right.type === AST_NODE_TYPES.CallExpression &&
@@ -1503,7 +1749,8 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
           right.callee.object.type === AST_NODE_TYPES.Identifier &&
           right.callee.object.name === 'Object' &&
           right.callee.property.type === AST_NODE_TYPES.Identifier &&
-          (right.callee.property.name === 'keys' || right.callee.property.name === 'entries')
+          (right.callee.property.name === 'keys' ||
+            right.callee.property.name === 'entries')
         );
       }
 
@@ -1522,14 +1769,14 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       const varName = (objectNode as TSESTree.Identifier).name;
       let scope = context.sourceCode.getScope(objectNode);
       while (scope) {
-      // `Scope#set` (a Map), not `Scope#variables.find` (a linear scan).
-      //
-      // Resolving a name by scanning the scope's variable array is O(V) per
-      // lookup, and V grows with the module. Across N candidate nodes that is
-      // O(N·V) — quadratic in file length. Measured on this rule's own corpus
-      // before the change: 2.6 ms at 500 lines, 2.8 ms at 2000, and 95 ms at
-      // 8000 — roughly 33x the time for 4x the lines. ESLint maintains `set`
-      // for exactly this lookup.
+        // `Scope#set` (a Map), not `Scope#variables.find` (a linear scan).
+        //
+        // Resolving a name by scanning the scope's variable array is O(V) per
+        // lookup, and V grows with the module. Across N candidate nodes that is
+        // O(N·V) — quadratic in file length. Measured on this rule's own corpus
+        // before the change: 2.6 ms at 500 lines, 2.8 ms at 2000, and 95 ms at
+        // 8000 — roughly 33x the time for 4x the lines. ESLint maintains `set`
+        // for exactly this lookup.
         const variable = scope.set.get(varName);
         if (variable) {
           for (const def of variable.defs) {
@@ -1554,7 +1801,10 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * Determine risk level based on the pattern and context
      */
     // oxlint-disable-next-line consistent-function-scoping
-    const determineRiskLevel = (pattern: ObjectInjectionPattern | null, isAssignment: boolean): string => {
+    const determineRiskLevel = (
+      pattern: ObjectInjectionPattern | null,
+      isAssignment: boolean,
+    ): string => {
       if (pattern?.riskLevel === 'critical' || (pattern && isAssignment)) {
         return 'CRITICAL';
       }
@@ -1588,7 +1838,11 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         ) {
           handledMemberExpressions.add(m);
         }
-        context.report({ node, messageId: 'globalPrototypeWrite', data: { step } });
+        context.report({
+          node,
+          messageId: 'globalPrototypeWrite',
+          data: { step },
+        });
         return;
       }
 
@@ -1616,12 +1870,16 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       let me = node.left as TSESTree.MemberExpression;
       handledMemberExpressions.add(me);
       // Walk into chained computed accesses: a[b][c] → also mark a[b]
-      while (me.object.type === AST_NODE_TYPES.MemberExpression && me.object.computed) {
+      while (
+        me.object.type === AST_NODE_TYPES.MemberExpression &&
+        me.object.computed
+      ) {
         me = me.object as TSESTree.MemberExpression;
         handledMemberExpressions.add(me);
       }
 
-      const { object, property, isAssignment, pattern } = extractPropertyAccess(node);
+      const { object, property, isAssignment, pattern } =
+        extractPropertyAccess(node);
 
       const riskLevel = determineRiskLevel(pattern, isAssignment);
 
@@ -1632,8 +1890,10 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
           pattern: `${object}[${property}]`,
           riskLevel,
           vulnerability: pattern?.vulnerability || 'object injection',
-          safeAlternative: pattern?.safeAlternative || 'Use Map or property whitelisting',
-        },});
+          safeAlternative:
+            pattern?.safeAlternative || 'Use Map or property whitelisting',
+        },
+      });
     };
 
     /**
@@ -1648,7 +1908,8 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       from: TSESTree.Node,
     ): TSESTree.ObjectExpression | null => {
       for (
-        let scope: ReturnType<typeof sourceCode.getScope> | null = sourceCode.getScope(from);
+        let scope: ReturnType<typeof sourceCode.getScope> | null =
+          sourceCode.getScope(from);
         scope;
         scope = scope.upper
       ) {
@@ -1656,9 +1917,14 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         if (!variable) continue;
         if (variable.defs.length !== 1) return null;
         const def = variable.defs[0];
-        if (def.type !== 'Variable' || def.parent?.kind !== 'const') return null;
+        if (def.type !== 'Variable' || def.parent?.kind !== 'const')
+          return null;
         // A later write (`ALLOWED = something`) would break the closed-set guarantee.
-        if (variable.references.some((ref) => ref.isWrite() && ref.identifier !== def.name)) {
+        if (
+          variable.references.some(
+            (ref) => ref.isWrite() && ref.identifier !== def.name,
+          )
+        ) {
           return null;
         }
         const init = def.node.init;
@@ -1674,7 +1940,9 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * this CWE — flagging it is precisely the defect we measure in competitors, where 27%
      * of eslint-plugin-security's findings are constant-key accesses that cannot pollute.
      */
-    const isReadFromConstObjectLiteral = (node: TSESTree.MemberExpression): boolean =>
+    const isReadFromConstObjectLiteral = (
+      node: TSESTree.MemberExpression,
+    ): boolean =>
       node.object.type === AST_NODE_TYPES.Identifier &&
       constObjectLiteralOf(node.object.name, node) !== null;
 
@@ -1683,10 +1951,14 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * `const` object literal whose values are all literals — so the key provably belongs to
      * a closed set, e.g. `const t = ALLOWED[x]; process.env[t] = v`.
      */
-    const keyComesFromConstAllowlist = (property: TSESTree.Node, from: TSESTree.Node): boolean => {
+    const keyComesFromConstAllowlist = (
+      property: TSESTree.Node,
+      from: TSESTree.Node,
+    ): boolean => {
       if (property.type !== AST_NODE_TYPES.Identifier) return false;
       for (
-        let scope: ReturnType<typeof sourceCode.getScope> | null = sourceCode.getScope(from);
+        let scope: ReturnType<typeof sourceCode.getScope> | null =
+          sourceCode.getScope(from);
         scope;
         scope = scope.upper
       ) {
@@ -1694,8 +1966,13 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         if (!variable) continue;
         if (variable.defs.length !== 1) return false;
         const def = variable.defs[0];
-        if (def.type !== 'Variable' || def.parent?.kind !== 'const') return false;
-        if (variable.references.some((ref) => ref.isWrite() && ref.identifier !== def.name)) {
+        if (def.type !== 'Variable' || def.parent?.kind !== 'const')
+          return false;
+        if (
+          variable.references.some(
+            (ref) => ref.isWrite() && ref.identifier !== def.name,
+          )
+        ) {
           return false;
         }
         const init = def.node.init;
@@ -1741,7 +2018,10 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       if (parent === undefined) return false;
 
       // `handlers[k](...)`
-      if (parent.type === AST_NODE_TYPES.CallExpression && parent.callee === node) {
+      if (
+        parent.type === AST_NODE_TYPES.CallExpression &&
+        parent.callee === node
+      ) {
         return true;
       }
 
@@ -1755,10 +2035,14 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       }
       const variable = context.sourceCode
         .getDeclaredVariables(parent as never)
-        .find((candidate) => candidate.name === (parent.id as TSESTree.Identifier).name);
+        .find(
+          (candidate) =>
+            candidate.name === (parent.id as TSESTree.Identifier).name,
+        );
       return (
         variable?.references.some((reference) => {
-          const referenceParent = reference.identifier.parent as TSESTree.Node | undefined;
+          const referenceParent = reference.identifier.parent as
+            TSESTree.Node | undefined;
           return (
             referenceParent?.type === AST_NODE_TYPES.CallExpression &&
             referenceParent.callee === reference.identifier
@@ -1786,16 +2070,25 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         ) {
           return true;
         }
-        if (parent.type === AST_NODE_TYPES.UpdateExpression && parent.argument === current) {
+        if (
+          parent.type === AST_NODE_TYPES.UpdateExpression &&
+          parent.argument === current
+        ) {
           return true;
         }
-        if (parent.type === AST_NODE_TYPES.UnaryExpression && parent.operator === 'delete') {
+        if (
+          parent.type === AST_NODE_TYPES.UnaryExpression &&
+          parent.operator === 'delete'
+        ) {
           return true;
         }
         // Keep climbing only while we are still the OBJECT of an enclosing
         // member expression; that is the `o[a]` in `o[a][b] = v`. Being the
         // computed PROPERTY (`x` in `o[x]`) is a read of `x`, not a write path.
-        if (parent.type === AST_NODE_TYPES.MemberExpression && parent.object === current) {
+        if (
+          parent.type === AST_NODE_TYPES.MemberExpression &&
+          parent.object === current
+        ) {
           current = parent;
           parent = current.parent as TSESTree.Node | undefined;
           continue;
@@ -1866,11 +2159,16 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
 
       // The assignment's left side is the AssignmentExpression visitor's to
       // report; this catches the case where visitor order beat the WeakSet.
-      if (parent && parent.type === AST_NODE_TYPES.AssignmentExpression && parent.left === node) {
+      if (
+        parent &&
+        parent.type === AST_NODE_TYPES.AssignmentExpression &&
+        parent.left === node
+      ) {
         return;
       }
 
-      const { object, property, isAssignment, pattern } = extractPropertyAccess(node);
+      const { object, property, isAssignment, pattern } =
+        extractPropertyAccess(node);
 
       const riskLevel = determineRiskLevel(pattern, isAssignment);
 
@@ -1881,8 +2179,9 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
           pattern: `${object}[${property}]`,
           riskLevel,
           vulnerability: pattern?.vulnerability || 'object injection',
-          safeAlternative: pattern?.safeAlternative || 'Use Map or property whitelisting',
-        }
+          safeAlternative:
+            pattern?.safeAlternative || 'Use Map or property whitelisting',
+        },
       });
     };
 
@@ -1985,6 +2284,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         callee.object.type !== AST_NODE_TYPES.Identifier ||
         callee.object.name !== 'Object' ||
         callee.property.type !== AST_NODE_TYPES.Identifier ||
+        // @vocabulary Object statics
         !['keys', 'entries'].includes(callee.property.name)
       ) {
         return;
@@ -2011,7 +2311,8 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // An allowlist inside the body is the remediation — naming the edit that
       // clears this finding is what keeps the rule satisfiable.
       const body = sourceCode.getText(node.body);
-      if (/\b(includes|has|hasOwn|hasOwnProperty|indexOf)\s*\(/.test(body)) return;
+      if (/\b(includes|has|hasOwn|hasOwnProperty|indexOf)\s*\(/.test(body))
+        return;
 
       // A computed write keyed by the loop variable, anywhere in the body.
       let reported = false;
@@ -2034,9 +2335,11 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         }
         for (const key of Object.keys(n)) {
           const child = (n as unknown as Record<string, unknown>)[key];
-          if (key === 'parent' || child === null || typeof child !== 'object') continue;
+          if (key === 'parent' || child === null || typeof child !== 'object')
+            continue;
           for (const c of Array.isArray(child) ? child : [child]) {
-            if (c && typeof (c as TSESTree.Node).type === 'string') walk(c as TSESTree.Node);
+            if (c && typeof (c as TSESTree.Node).type === 'string')
+              walk(c as TSESTree.Node);
           }
         }
       };
@@ -2074,7 +2377,8 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // The binding hop. More than one write means the declaration no longer
       // tells you what the loop iterates — the same trap that silenced a real
       // finding in `isLocallyConstructed` and in two other rules since.
-      if (variable.references.filter((ref) => ref.isWrite()).length > 1) return false;
+      if (variable.references.filter((ref) => ref.isWrite()).length > 1)
+        return false;
       const def = variable.defs[0];
       if (!def || def.type !== 'Variable') return false;
       const init = (def.node as TSESTree.VariableDeclarator).init;
@@ -2140,7 +2444,11 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         .map((token) => token.value)
         .join('');
       // A guarded loop is the documented fix; do not report the fix.
-      if (/hasOwnProperty|hasOwn|__proto__|constructor|prototype|includes\(|allowlist|whitelist|Object\.keys/.test(bodyText)) {
+      if (
+        /hasOwnProperty|hasOwn|__proto__|constructor|prototype|includes\(|allowlist|whitelist|Object\.keys/.test(
+          bodyText,
+        )
+      ) {
         return;
       }
 
@@ -2161,7 +2469,9 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * is what the old whole-subtree walk saw from the outer loop, and what a
      * top-of-stack-only check would miss.
      */
-    const reportCopyLoopWrite = (node: TSESTree.AssignmentExpression): boolean => {
+    const reportCopyLoopWrite = (
+      node: TSESTree.AssignmentExpression,
+    ): boolean => {
       if (
         node.left.type !== AST_NODE_TYPES.MemberExpression ||
         !node.left.computed ||
@@ -2170,7 +2480,9 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         return false;
       }
       const propertyName = node.left.property.name;
-      const loop = openCopyLoops.find((open) => open.keyName === propertyName && !open.reported);
+      const loop = openCopyLoops.find(
+        (open) => open.keyName === propertyName && !open.reported,
+      );
       if (!loop) return false;
       loop.reported = true;
       context.report({

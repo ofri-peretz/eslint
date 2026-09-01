@@ -54,6 +54,7 @@ describe('no-clickjacking', () => {
         `if (top != self) { function bust() { top.location = self.location; } bust(); }`,
         // Trusted iframe sources (starts with /)
         {
+          name: 'a same-origin iframe',
           code: '<iframe src="/local-content.html"></iframe>',
         },
         // Proper CSP (would be set server-side) - no UI elements
@@ -71,6 +72,7 @@ describe('no-clickjacking', () => {
       ],
       invalid: [
         {
+          name: 'a frame-buster that navigates the top frame',
           // A call result is not a frame reference — this is not frame-busting.
           code: `if (getTop() != self) { top.location = 'https://evil.test'; }`,
           errors: 1,

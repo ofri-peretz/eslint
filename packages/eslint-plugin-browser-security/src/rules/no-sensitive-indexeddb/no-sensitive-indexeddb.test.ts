@@ -19,7 +19,7 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-sensitive-indexeddb', noSensitiveIndexeddb, {
   valid: [
-    { code: `db.createObjectStore('users');` },
+    { name: 'an ordinary store', code: `db.createObjectStore('users');` },
     { code: `db.createObjectStore('settings');` },
     { code: `db.createObjectStore('passwords');`, filename: 'db.test.ts' },
     { code: `db.createObjectStore();` },
@@ -58,6 +58,7 @@ ruleTester.run('no-sensitive-indexeddb', noSensitiveIndexeddb, {
   ],
   invalid: [
     {
+      name: 'an object store named for the secrets it holds',
       code: `db.createObjectStore('passwords');`,
       errors: [
         { messageId: 'sensitiveInIndexedDB', data: { name: 'passwords' } },
@@ -65,11 +66,15 @@ ruleTester.run('no-sensitive-indexeddb', noSensitiveIndexeddb, {
     },
     {
       code: `db.createObjectStore('secrets');`,
-      errors: [{ messageId: 'sensitiveInIndexedDB', data: { name: 'secrets' } }],
+      errors: [
+        { messageId: 'sensitiveInIndexedDB', data: { name: 'secrets' } },
+      ],
     },
     {
       code: `db.createObjectStore('apiKeys');`,
-      errors: [{ messageId: 'sensitiveInIndexedDB', data: { name: 'apiKeys' } }],
+      errors: [
+        { messageId: 'sensitiveInIndexedDB', data: { name: 'apiKeys' } },
+      ],
     },
     {
       code: `db.createObjectStore('credentials');`,
@@ -170,7 +175,9 @@ ruleTester.run('no-sensitive-indexeddb', noSensitiveIndexeddb, {
 ruleTester.run('lock: adversarial wave', noSensitiveIndexeddb, {
   valid: [
     // A `put` on something that is not a database, however it is spelled.
-    { code: `const db = await openSomethingElse('app'); await db.put('vault', { password: p });` },
+    {
+      code: `const db = await openSomethingElse('app'); await db.put('vault', { password: p });`,
+    },
     {
       code: `
         import { openDB } from 'idb';
@@ -203,7 +210,9 @@ ruleTester.run('lock: adversarial wave', noSensitiveIndexeddb, {
         const db = await openDB('app', 1);
         await db.put('vault', { id: 1, password: user.password });
       `,
-      errors: [{ messageId: 'sensitiveInIndexedDB', data: { name: 'password' } }],
+      errors: [
+        { messageId: 'sensitiveInIndexedDB', data: { name: 'password' } },
+      ],
     },
     {
       code: `
@@ -223,12 +232,16 @@ ruleTester.run('lock: adversarial wave', noSensitiveIndexeddb, {
         const target = store;
         target.put({ id: 1, api_key: integration.key });
       `,
-      errors: [{ messageId: 'sensitiveInIndexedDB', data: { name: 'api_key' } }],
+      errors: [
+        { messageId: 'sensitiveInIndexedDB', data: { name: 'api_key' } },
+      ],
     },
     // Shorthand property — the field is still named.
     {
       code: `const store = tx.objectStore('vault'); const password = form.password; store.put({ id: 1, password });`,
-      errors: [{ messageId: 'sensitiveInIndexedDB', data: { name: 'password' } }],
+      errors: [
+        { messageId: 'sensitiveInIndexedDB', data: { name: 'password' } },
+      ],
     },
   ],
 });

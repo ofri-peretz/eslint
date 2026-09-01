@@ -7,7 +7,7 @@
 /**
  * ESLint Rule: interactive-supports-focus
  * Enforce that interactive elements are focusable
- * 
+ *
  * @see https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/interactive-supports-focus.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
@@ -23,11 +23,23 @@ type Options = {
 type RuleOptions = [Options?];
 
 const INTERACTIVE_HANDLERS = new Set([
-    'onClick', 'onKeyPress', 'onKeyDown', 'onKeyUp', 'onMouseDown', 'onMouseUp'
+  'onClick',
+  'onKeyPress',
+  'onKeyDown',
+  'onKeyUp',
+  'onMouseDown',
+  'onMouseUp',
 ]);
 
 const NATIVE_INTERACTIVE_ELEMENTS = new Set([
-    'a', 'button', 'input', 'select', 'textarea', 'area', 'option', 'summary'
+  'a',
+  'button',
+  'input',
+  'select',
+  'textarea',
+  'area',
+  'option',
+  'summary',
 ]);
 
 export const interactiveSupportsFocus = createRule<RuleOptions, MessageIds>({
@@ -36,7 +48,8 @@ export const interactiveSupportsFocus = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/interactive-supports-focus.md',
-      description: 'Enforce that elements with interactive handlers are focusable',
+      description:
+        'Enforce that elements with interactive handlers are focusable',
       wcag: 'WCAG 2.1.1',
     },
     messages: {
@@ -46,8 +59,9 @@ export const interactiveSupportsFocus = createRule<RuleOptions, MessageIds>({
         description: 'Interactive element must be focusable',
         severity: 'HIGH',
         fix: 'Add tabIndex="0"',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/interactive-supports-focus.md',
-        wcag: 'WCAG 2.1.1'
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/interactive-supports-focus.md',
+        wcag: 'WCAG 2.1.1',
       }),
     },
     schema: [
@@ -61,8 +75,11 @@ export const interactiveSupportsFocus = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
-    const { tabbable = [] } = options ?? {} as Options;
+  create(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    [options = {} as Options],
+  ) {
+    const { tabbable = [] } = options ?? ({} as Options);
 
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
@@ -70,13 +87,20 @@ export const interactiveSupportsFocus = createRule<RuleOptions, MessageIds>({
         const element = node.name.name;
 
         // Skip native interactive elements and configured tabbable elements
-        if (NATIVE_INTERACTIVE_ELEMENTS.has(element) || tabbable.includes(element)) return;
+        if (
+          NATIVE_INTERACTIVE_ELEMENTS.has(element) ||
+          tabbable.includes(element)
+        )
+          return;
 
-        const hasInteractiveHandler = node.attributes.some((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute => 
-            attr.type === 'JSXAttribute' && 
-            attr.name.type === 'JSXIdentifier' && 
+        const hasInteractiveHandler = node.attributes.some(
+          (
+            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+          ): attr is TSESTree.JSXAttribute =>
+            attr.type === 'JSXAttribute' &&
+            attr.name.type === 'JSXIdentifier' &&
             // `attr.name` is always present on a JSXAttribute — no fallback needed.
-            INTERACTIVE_HANDLERS.has(attr.name.name)
+            INTERACTIVE_HANDLERS.has(attr.name.name),
         );
 
         if (!hasInteractiveHandler) return;
@@ -84,35 +108,57 @@ export const interactiveSupportsFocus = createRule<RuleOptions, MessageIds>({
         // Elements with interactive ARIA roles inherit focus management from the AT/framework
         // (e.g. role="button" gets Tab focus from the browser's keyboard model)
         const INTERACTIVE_ARIA_ROLES = new Set([
-          'button', 'link', 'checkbox', 'menuitem', 'menuitemcheckbox', 'menuitemradio',
-          'option', 'radio', 'searchbox', 'switch', 'tab', 'textbox', 'treeitem',
-          'combobox', 'gridcell', 'listbox', 'slider', 'spinbutton',
+          'button',
+          'link',
+          'checkbox',
+          'menuitem',
+          'menuitemcheckbox',
+          'menuitemradio',
+          'option',
+          'radio',
+          'searchbox',
+          'switch',
+          'tab',
+          'textbox',
+          'treeitem',
+          'combobox',
+          'gridcell',
+          'listbox',
+          'slider',
+          'spinbutton',
         ]);
 
         const roleAttr = node.attributes.find(
-          (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
+          (
+            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+          ): attr is TSESTree.JSXAttribute =>
             attr.type === 'JSXAttribute' &&
             attr.name.type === 'JSXIdentifier' &&
-            attr.name.name === 'role'
+            attr.name.name === 'role',
         );
         if (roleAttr) {
           const roleValue =
-            roleAttr.value?.type === 'Literal' ? String(roleAttr.value.value) : null;
+            roleAttr.value?.type === 'Literal'
+              ? String(roleAttr.value.value)
+              : null;
           if (roleValue && INTERACTIVE_ARIA_ROLES.has(roleValue)) return;
         }
 
         // Check tabIndex
-        const tabIndex = node.attributes.find((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute => 
-            attr.type === 'JSXAttribute' && 
-            attr.name.type === 'JSXIdentifier' && 
-            attr.name.name === 'tabIndex'
+        const tabIndex = node.attributes.find(
+          (
+            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+          ): attr is TSESTree.JSXAttribute =>
+            attr.type === 'JSXAttribute' &&
+            attr.name.type === 'JSXIdentifier' &&
+            attr.name.name === 'tabIndex',
         );
 
         if (!tabIndex) {
-             context.report({
-                 node,
-                 messageId: 'missingTabIndex',
-             });
+          context.report({
+            node,
+            messageId: 'missingTabIndex',
+          });
         }
       },
     };

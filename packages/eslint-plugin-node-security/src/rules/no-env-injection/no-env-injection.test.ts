@@ -63,6 +63,7 @@ describe('no-env-injection', () => {
       // A declared global written exactly once resolves to a variable with no
       // definition at all — nothing to trace, so nothing is proven either way.
       {
+        name: 'a constant key',
         code: `KEY = 'A'; process.env[KEY] = '1';`,
         languageOptions: { globals: { KEY: 'writable' } },
       },
@@ -86,12 +87,41 @@ describe('no-env-injection', () => {
       // A private method — a non-computed member whose property is not an
       // Identifier.
       `class C { #assign(a, b) { return a + b; } m(req) { return this.#assign(process.env, req.body); } }`,
-    ],
 
+      // `requestRootNames` REPLACES the default list; `extraRequestRoots`
+      // could only grow it, and growth cannot undo a word we guessed wrong.
+      {
+        name: 'a local named `event` that is not the request, default replaced',
+        code: `function setConfig(event) {
+                 process.env[event.body.key] = event.body.value;
+               }`,
+        options: [{ requestRootNames: [] }],
+      },
+    ],
     invalid: [
+      // The two options COMPOSE: `extraRequestRoots` is appended to whatever
+      // `requestRootNames` is, so this pair means exactly `inbound`.
+      {
+        name: 'a replaced root list plus one extra root',
+        code: `function setConfig(inbound) {
+                 process.env[inbound.body.key] = inbound.body.value;
+               }`,
+        options: [{ requestRootNames: [], extraRequestRoots: ['inbound'] }],
+        errors: [{ messageId: 'envKeyInjection' }],
+      },
+      // A word the default never contained, reached only by replacing it.
+      {
+        name: 'a custom request root name',
+        code: `function setConfig(payload) {
+                 process.env[payload.body.key] = payload.body.value;
+               }`,
+        options: [{ requestRootNames: ['payload'] }],
+        errors: [{ messageId: 'envKeyInjection' }],
+      },
       // corpus/CWE-099/vulnerable/env-key-from-user.js — both key and value
       // come from req.body; the key is what makes it a finding.
       {
+        name: 'a request key and value written into process.env',
         code: `function setConfig(req, res) {
                  const { key, value } = req.body;
                  process.env[key] = value;

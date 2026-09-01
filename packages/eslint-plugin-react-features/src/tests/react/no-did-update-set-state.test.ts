@@ -33,6 +33,7 @@ describe('no-did-update-set-state', () => {
       valid: [
         // setState with if condition
         {
+          name: 'the same call behind a prop comparison',
           code: `
             class MyComponent extends Component {
               componentDidUpdate(prevProps) {
@@ -108,6 +109,7 @@ describe('no-did-update-set-state', () => {
       invalid: [
         // Direct setState without condition
         {
+          name: 'setState in componentDidUpdate with no guard — it loops',
           code: `
             class MyComponent extends Component {
               componentDidUpdate() {

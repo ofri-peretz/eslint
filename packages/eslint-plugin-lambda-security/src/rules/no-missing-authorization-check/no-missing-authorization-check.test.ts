@@ -59,6 +59,7 @@ ruleTester.run('no-missing-authorization-check', noMissingAuthorizationCheck, {
   valid: lambda([
     // Test file (allowed by default)
     {
+      name: 'a test file is exempt',
       code: `
         export const handler = async (event) => {
           await db.query('DELETE FROM users');
@@ -174,6 +175,7 @@ ruleTester.run('no-missing-authorization-check', noMissingAuthorizationCheck, {
   invalid: lambda([
     // Lambda handler with DB query but no auth check (classic FN)
     {
+      name: 'a handler that deletes rows without checking who asked',
       code: `
         export const handler = async (event) => {
           await db.query('DELETE FROM users');

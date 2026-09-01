@@ -25,7 +25,7 @@ describe('no-insecure-http-parser', () => {
     valid: [
       // benchmarks/corpus/CWE-444/safe/server-default-parser.js and
       // .../request-default-parser.js — the option is simply absent.
-      { code: `http.createServer((req, res) => res.end('ok'));` },
+      { name: 'the default parser', code: `http.createServer((req, res) => res.end('ok'));` },
       { code: `https.request({ host, path, method: 'GET' }, onResponse);` },
       // Explicitly strict.
       { code: `http.createServer({ insecureHTTPParser: false }, handler);` },
@@ -57,6 +57,7 @@ describe('no-insecure-http-parser', () => {
     invalid: [
       // LOCK: benchmarks/corpus/CWE-444/vulnerable/server-insecure-parser.js
       {
+        name: 'insecureHTTPParser accepts malformed requests, which is how smuggling starts',
         code: `http.createServer({ insecureHTTPParser: true }, (req, res) => res.end('ok'));`,
         errors: [
           {

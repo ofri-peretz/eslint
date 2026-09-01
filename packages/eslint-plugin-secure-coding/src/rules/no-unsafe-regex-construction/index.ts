@@ -20,12 +20,11 @@ import {
   MessageIcons,
   resolveModuleBinding,
   unwrapTypeSyntax,
+  staticString,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
-type MessageIds =
-  | 'unsafeRegexConstruction'
-  | 'escapeUserInput';
+type MessageIds = 'unsafeRegexConstruction' | 'escapeUserInput';
 
 /**
  * Functions the ecosystem actually uses to escape a regex metacharacter set.
@@ -36,6 +35,15 @@ type MessageIds =
  * `escapeStringRegexp`. A pre-escaped value is inert — reporting it tells the
  * user to fix code that is already correct, and the only remedy on offer is
  * the escape they already applied.
+ */
+/**
+ * @vocabulary `RegExp`, `RegExp.escape` and `source` are ECMAScript, and
+ * `process.argv` is Node's. Those are hardcoded deliberately: a project cannot
+ * rename them, and an option for them would never be set. The request root
+ * names below are the opposite case and are behind `requestRootNames`.
+ *
+ * @see https://tc39.es/ecma262/#sec-regexp-regular-expression-objects
+ * @see https://nodejs.org/api/process.html#processargv
  */
 const DEFAULT_TRUSTED_ESCAPING_FUNCTIONS = [
   'escapeRegex',
@@ -77,6 +85,19 @@ export interface Options {
 
   /** Maximum pattern length for dynamic regex. Default: 100 */
   maxPatternLength?: number;
+
+  /**
+   * Identifier names that SELECT a candidate inbound request. REPLACES the
+   * default.
+   *
+   * The name does not decide anything on its own — `isInboundRequestBinding`
+   * still requires the binding to be a handler parameter or a free variable,
+   * so a module-local `const request = Object.freeze({...})` is not a request
+   * whatever it is called. But the name is what puts a candidate forward, and
+   * a handler written `(inbound, outbound)` or `(payload)` never gets that
+   * far. Those words are the consumer's.
+   */
+  requestRootNames?: string[];
 }
 
 type RuleOptions = [Options?];
@@ -105,6 +126,7 @@ type RuleOptions = [Options?];
 function taintSource(
   node: TSESTree.Node,
   scope: TSESLint.Scope.Scope,
+  requestRoots: ReadonlySet<string>,
   depth = 0,
 ): string | null {
   if (depth > 6) return null;
@@ -117,11 +139,12 @@ function taintSource(
   // all on TypeScript Express code — the majority of its audience — while
   // passing every test, because no test in this suite was written with a cast.
   const unwrapped = unwrapTypeSyntax(node);
-  if (unwrapped !== node) return taintSource(unwrapped, scope, depth + 1);
+  if (unwrapped !== node)
+    return taintSource(unwrapped, scope, requestRoots, depth + 1);
 
   if (node.type === 'TemplateLiteral') {
     for (const expression of node.expressions) {
-      const found = taintSource(expression, scope, depth + 1);
+      const found = taintSource(expression, scope, requestRoots, depth + 1);
       if (found !== null) return found;
     }
     return null;
@@ -129,13 +152,13 @@ function taintSource(
 
   if (node.type === 'BinaryExpression' && node.operator === '+') {
     return (
-      taintSource(node.left as TSESTree.Node, scope, depth + 1) ??
-      taintSource(node.right, scope, depth + 1)
+      taintSource(node.left as TSESTree.Node, scope, requestRoots, depth + 1) ??
+      taintSource(node.right, scope, requestRoots, depth + 1)
     );
   }
 
   if (node.type === 'AwaitExpression') {
-    return taintSource(node.argument, scope, depth + 1);
+    return taintSource(node.argument, scope, requestRoots, depth + 1);
   }
 
   if (node.type === 'MemberExpression') {
@@ -143,12 +166,13 @@ function taintSource(
     let root: TSESTree.Node = node;
     const properties: string[] = [];
     while (root.type === 'MemberExpression') {
-      if (root.property.type === 'Identifier') properties.unshift(root.property.name);
+      if (root.property.type === 'Identifier')
+        properties.unshift(root.property.name);
       root = root.object;
     }
     if (root.type === 'Identifier') {
       if (
-        REQUEST_ROOTS.has(root.name) &&
+        requestRoots.has(root.name) &&
         properties.some((p) => REQUEST_PROPERTIES.has(p)) &&
         isInboundRequestBinding(root, scope)
       ) {
@@ -163,7 +187,10 @@ function taintSource(
 
   if (node.type === 'CallExpression') {
     const callee = node.callee;
-    if (callee.type === 'MemberExpression' && callee.property.type === 'Identifier') {
+    if (
+      callee.type === 'MemberExpression' &&
+      callee.property.type === 'Identifier'
+    ) {
       // Reading a file or a response body yields bytes from outside the program.
       if (READER_METHODS.has(callee.property.name)) {
         return callee.property.name;
@@ -174,7 +201,7 @@ function taintSource(
     }
     for (const arg of node.arguments) {
       if (arg.type === 'SpreadElement') continue;
-      const found = taintSource(arg, scope, depth + 1);
+      const found = taintSource(arg, scope, requestRoots, depth + 1);
       if (found !== null) return found;
     }
     return null;
@@ -200,7 +227,12 @@ function taintSource(
     if (!variable) return null;
     for (const reference of variable.references) {
       if (!reference.isWrite() || !reference.writeExpr) continue;
-      const found = taintSource(reference.writeExpr, scope, depth + 1);
+      const found = taintSource(
+        reference.writeExpr,
+        scope,
+        requestRoots,
+        depth + 1,
+      );
       if (found !== null) return found;
     }
     return null;
@@ -253,19 +285,43 @@ function lookupVariable(
   return undefined;
 }
 
-/** Identifier roots that denote an inbound request. */
-const REQUEST_ROOTS: ReadonlySet<string> = new Set([
-  'req', 'request', 'ctx', 'event', 'message',
-]);
+/**
+ * Identifier roots that denote an inbound request.
+ *
+ * A guess at the consumer's parameter names, and replaceable for that reason —
+ * see `requestRootNames`. Nothing publishes these: Express, Koa and Lambda all
+ * take their request POSITIONALLY, so `(inbound, outbound)` is as valid as
+ * `(req, res)` and matched none of this.
+ */
+const DEFAULT_REQUEST_ROOT_NAMES = [
+  'req',
+  'request',
+  'ctx',
+  'event',
+  'message',
+];
 
 /** Properties of a request that carry caller-supplied data. */
 const REQUEST_PROPERTIES: ReadonlySet<string> = new Set([
-  'query', 'params', 'body', 'headers', 'url', 'path', 'cookies', 'data',
+  'query',
+  'params',
+  'body',
+  'headers',
+  'url',
+  'path',
+  'cookies',
+  'data',
 ]);
 
 /** Calls whose result is bytes from outside the program. */
 const READER_METHODS: ReadonlySet<string> = new Set([
-  'readFile', 'readFileSync', 'text', 'json', 'arrayBuffer', 'formData', 'blob',
+  'readFile',
+  'readFileSync',
+  'text',
+  'json',
+  'arrayBuffer',
+  'formData',
+  'blob',
 ]);
 
 /**
@@ -301,9 +357,7 @@ function isEscaperPackageBinding(
   const binding = resolveModuleBinding(callee, scope);
   if (binding && ESCAPER_PACKAGES.has(binding.module)) return true;
   // `lodash`'s own `escapeRegExp`, however the lodash import was spelled.
-  return (
-    binding?.module === 'lodash' && binding.path.at(-1) === 'escapeRegExp'
-  );
+  return binding?.module === 'lodash' && binding.path.at(-1) === 'escapeRegExp';
 }
 
 /**
@@ -458,6 +512,38 @@ function isRegexClone(node: TSESTree.Node): boolean {
   return false;
 }
 
+/**
+ * Are the pattern and the flags read off the SAME object?
+ *
+ * `new RegExp(node.pattern, node.flags)` is the copy idiom that
+ * `isRegexClone` already exempts for `re.source` / `re.flags` — the same
+ * thought, spelled with a different property name because the object is a
+ * parser node rather than a RegExp. Whoever controlled the original controls
+ * the copy, and nothing else changed.
+ *
+ * Deliberately requires both sides to be non-computed reads off one
+ * IDENTIFIER. `new RegExp(req.query.p, req.query.f)` shares an object too, but
+ * its pattern is untrusted and the pattern check reports it on its own — this
+ * predicate only ever silences the FLAGS finding, never the pattern one.
+ */
+function isSameObjectPair(
+  pattern: TSESTree.Node,
+  flags: TSESTree.Node,
+): boolean {
+  // No `undefined` guard: the only caller runs behind `hasDynamicFlags`, which
+  // already required a second argument. A check no test could reach is worse
+  // than no check — it reads as defensive and is dead.
+  const root = (node: TSESTree.Node): string | null =>
+    node.type === 'MemberExpression' &&
+    !node.computed &&
+    node.object.type === 'Identifier' &&
+    node.property.type === 'Identifier'
+      ? node.object.name
+      : null;
+  const a = root(pattern);
+  return a !== null && a === root(flags);
+}
+
 function hasDynamicFlags(
   node: TSESTree.CallExpression | TSESTree.NewExpression,
 ): boolean {
@@ -467,7 +553,7 @@ function hasDynamicFlags(
     // Flags built at runtime are the concern here regardless of provenance —
     // `new RegExp(p, item.flags)` can silently add `g`/`y` and change matching
     // semantics. A string literal is fine.
-    return !(flagsNode.type === 'Literal' && typeof flagsNode.value === 'string');
+    return !(staticString(flagsNode) !== null);
   }
 
   return false;
@@ -481,6 +567,7 @@ function extractPattern(
   sourceCode: TSESLint.SourceCode,
   trustedFunctions: string[],
   scope: TSESLint.Scope.Scope,
+  requestRoots: ReadonlySet<string>,
 ): {
   patternNode: TSESTree.Node | null;
   isUserInput: boolean;
@@ -490,10 +577,15 @@ function extractPattern(
   const patternNode = node.arguments.length > 0 ? node.arguments[0] : null;
 
   if (!patternNode) {
-    return { patternNode: null, isUserInput: false, taintedBy: null, isEscaped: false };
+    return {
+      patternNode: null,
+      isUserInput: false,
+      taintedBy: null,
+      isEscaped: false,
+    };
   }
 
-  const taintedBy = taintSource(patternNode, scope);
+  const taintedBy = taintSource(patternNode, scope, requestRoots);
   const isUserInputValue = taintedBy !== null;
   // Default trusted functions + user configured ones.
   //
@@ -553,12 +645,18 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#escaping',
       }),
-
     },
     schema: [
       {
         type: 'object',
         properties: {
+          requestRootNames: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [...DEFAULT_REQUEST_ROOT_NAMES],
+            description:
+              'Identifier names that select a candidate inbound request. Replaces the default.',
+          },
           allowLiterals: {
             type: 'boolean',
             default: true,
@@ -602,6 +700,9 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
     }: Options = options;
 
     const sourceCode = context.sourceCode;
+    const requestRoots = new Set(
+      options.requestRootNames ?? DEFAULT_REQUEST_ROOT_NAMES,
+    );
 
     /**
      * Check RegExp constructor calls
@@ -629,6 +730,7 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
         sourceCode,
         trustedEscapingFunctions,
         sourceCode.getScope(node),
+        requestRoots,
       );
 
       if (!patternNode) {
@@ -708,8 +810,23 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
         });
       }
 
-      // Check for dynamic flags
-      if (hasDynamicFlags(node) && !isRegexClone(patternNode)) {
+      // Check for dynamic flags.
+      //
+      // NOT reported on their own. This rule's CWE is CWE-400 — catastrophic
+      // backtracking — and a dynamic FLAG cannot cause it. `g` and `y` change
+      // where matching starts; they do not change what the pattern costs.
+      // Reported alone, this fired on 11 findings in the wild that were all
+      // one shape: re-compiling a pattern read off an object beside its own
+      // flags, which is a copy, not a new attacker surface.
+      //
+      // So a dynamic flag is only interesting when the PATTERN beside it is
+      // also unreadable — that is the case where nothing about the resulting
+      // regex is known, and it is the one worth a word.
+      if (
+        hasDynamicFlags(node) &&
+        !isRegexClone(patternNode) &&
+        !isSameObjectPair(patternNode, node.arguments[1] as TSESTree.Node)
+      ) {
         context.report({
           node,
           messageId: 'unsafeRegexConstruction',

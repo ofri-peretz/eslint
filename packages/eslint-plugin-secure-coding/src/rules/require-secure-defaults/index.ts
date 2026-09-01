@@ -10,7 +10,7 @@
  * @see https://cwe.mitre.org/data/definitions/453.html
  */
 
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, staticString } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
@@ -160,8 +160,9 @@ const isNoopCallback = (node: TSESTree.Node): boolean => {
 const propertyKey = (node: TSESTree.Property): string | undefined => {
   if (node.computed) return undefined;
   if (node.key.type === AST_NODE_TYPES.Identifier) return node.key.name;
-  if (node.key.type === AST_NODE_TYPES.Literal && typeof node.key.value === 'string') {
-    return node.key.value;
+  const staticText = staticString(node.key);
+  if (staticText !== null) {
+    return staticText;
   }
   return undefined;
 };

@@ -28,6 +28,7 @@ import {
   createRule,
   isStaticExpression,
   resolveModuleBinding,
+  staticString,
 } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
@@ -111,6 +112,16 @@ function literalTextOf(node: TSESTree.Node): string {
  * `` `${topic}::${uri}::${filter}` `` and `::` alone called it XPath. An axis
  * is `axisname::nodetest`; two colons on their own are a separator in a dozen
  * unrelated conventions.
+ */
+/**
+ * @vocabulary The axis names and the operator grammar are W3C XPath, and the
+ * DOM members are the `XPathEvaluator` interface. Both are specifications: a
+ * document that spells `ancestor-or-self` differently is not XPath. The
+ * PACKAGES a project uses are the consumer's and are already behind
+ * `xpathPackages`.
+ *
+ * @see https://www.w3.org/TR/xpath-31/#axes
+ * @see https://dom.spec.whatwg.org/#interface-xpathevaluator
  */
 const XPATH_AXIS =
   'ancestor-or-self|ancestor|attribute|child|descendant-or-self|descendant|following-sibling|following|namespace|parent|preceding-sibling|preceding|self';
@@ -835,8 +846,14 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         // Check first argument (usually the XPath expression)
         const xpathArg = args[0];
 
-        if (xpathArg.type === 'Literal' && typeof xpathArg.value === 'string') {
-          const xpathText = xpathArg.value;
+        // Templates are NOT read here. A dedicated `TemplateLiteral` listener
+        // below owns them, with the URL and file-path exclusions this path does
+        // not have, and it fires wherever the template sits — argument or not.
+        // Reading them in both places reported the same expression twice.
+        const staticText =
+          xpathArg.type === AST_NODE_TYPES.TemplateLiteral ? null : staticString(xpathArg);
+        if (staticText !== null) {
+          const xpathText = staticText;
 
           // Check for dangerous XPath patterns
           if (containsDangerousXpath(xpathText)) {

@@ -37,6 +37,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { fileUsesExpress } from '../../utils/express-evidence';
 import {
+  readsRequestShape,
   AST_NODE_TYPES,
   createRule,
   formatLLMMessage,
@@ -57,14 +58,25 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
-/** Request properties that carry whole user-controlled objects. */
+/**
+ * Request properties that carry whole user-controlled objects.
+ *
+ * @vocabulary `body`, `query` and `params` are properties Express defines on
+ * the request object, and `render` is the method it defines on the response.
+ * Those are the framework's names, not a consumer's, so they stay hardcoded.
+ *
+ * What is NOT hardcoded any more is what the consumer calls the objects
+ * themselves. `REQUEST_NAMES = ['req','request','ctx']` and
+ * `RESPONSE_NAMES = ['res','response','reply']` were guesses: a handler
+ * written `(inbound, outbound)` matched neither, and any local variable named
+ * `req` matched the first. Both are structural questions now — the receiver
+ * has to be a FUNCTION PARAMETER, because a request and a response arrive as
+ * arguments.
+ *
+ * @see https://expressjs.com/en/api.html#req.body
+ * @see https://expressjs.com/en/api.html#res.render
+ */
 const USER_SOURCE_PROPS = new Set(['body', 'query', 'params']);
-
-/** Response object names (matched case-insensitively). */
-const RESPONSE_NAMES = new Set(['res', 'response', 'reply']);
-
-/** Request object names (matched case-insensitively). */
-const REQUEST_NAMES = new Set(['req', 'request', 'ctx']);
 
 interface TrackedSource {
   /** Human-readable origin, e.g. "req.body". */
@@ -165,8 +177,16 @@ export const noUserControlledRenderLocals = createRule<RuleOptions, MessageIds>(
         return variable ? trackedVars.get(variable) : undefined;
       }
 
-      function isRequestName(name: string): boolean {
-        return REQUEST_NAMES.has(name.toLowerCase());
+      /**
+       * Whether `node` is a function PARAMETER in the enclosing scopes.
+       *
+       * A response arrives as an argument. A module-local object with a
+       * `.render` is somebody's own renderer, and reporting it was the false
+       * positive the name list produced.
+       */
+      function isParameter(node: TSESTree.Identifier): boolean {
+        const variable = resolveVariable(node);
+        return variable?.defs.some((d) => d.type === 'Parameter') ?? false;
       }
 
       /**
@@ -182,7 +202,17 @@ export const noUserControlledRenderLocals = createRule<RuleOptions, MessageIds>(
         // req[body] reads whatever `body` holds — not the request body.
         if (node.computed) return null;
         if (!USER_SOURCE_PROPS.has(property.name)) return null;
-        if (!isRequestName(object.name)) return null;
+        // `bodyNeedsDepth: false`: this asks about the WHOLE `req.body`, which
+        // is depth 1 and is exactly the object being splatted into template
+        // locals. The depth rule exists for ambiguous reads of `.body`; here
+        // the position removes the ambiguity.
+        if (
+          !readsRequestShape(node, context.sourceCode, {
+            bodyNeedsDepth: false,
+          })
+        ) {
+          return null;
+        }
         return `req.${property.name}`;
       }
 
@@ -265,7 +295,7 @@ export const noUserControlledRenderLocals = createRule<RuleOptions, MessageIds>(
         if (callee.property.name !== 'render') return false;
         const obj = callee.object;
         if (obj.type !== AST_NODE_TYPES.Identifier) return false;
-        return RESPONSE_NAMES.has(obj.name.toLowerCase());
+        return isParameter(obj);
       }
 
       /**

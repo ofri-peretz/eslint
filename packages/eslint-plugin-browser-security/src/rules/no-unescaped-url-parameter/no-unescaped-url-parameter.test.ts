@@ -99,6 +99,7 @@ describe('no-unescaped-url-parameter', () => {
       valid: [],
       invalid: [
         {
+          name: 'a query parameter interpolated into a URL unescaped',
           code: 'const q = new URLSearchParams(location.search).get("q"); const u = `https://a.example.com/v1/s?q=${q}`;',
           errors: ERROR,
         },
@@ -261,6 +262,7 @@ describe('no-unescaped-url-parameter', () => {
     ruleTester.run('allowInTests', noUnescapedUrlParameter, {
       valid: [
         {
+          name: 'an exported helper whose argument has no known source',
           code: 'export function s(q) { return `https://a.example.com/v1/s?q=${q}`; }',
           filename: 'search.spec.ts',
           options: [{ allowInTests: true }],

@@ -25,7 +25,7 @@ describe('role-has-required-aria-props', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - roles with required props', roleHasRequiredAriaProps, {
       valid: [
-        { code: '<div role="checkbox" aria-checked="true"></div>' },
+        { name: 'aria-checked supplied', code: '<div role="checkbox" aria-checked="true"></div>' },
         { code: '<div role="slider" aria-valuenow={50} aria-valuemin={0} aria-valuemax={100}></div>' },
         { code: '<div role="spinbutton" aria-valuenow={5} aria-valuemin={0} aria-valuemax={10}></div>' },
         { code: '<div role="combobox" aria-expanded="true" aria-controls="list"></div>' },
@@ -40,7 +40,23 @@ describe('role-has-required-aria-props', () => {
     ruleTester.run('invalid - missing required props', roleHasRequiredAriaProps, {
       valid: [],
       invalid: [
-        { code: '<div role="checkbox"></div>', errors: [{ messageId: 'missingRequiredProp' }] },
+        { name: "role='checkbox' with no aria-checked — state is unannounced", code: '<div role="checkbox"></div>', errors: [{ messageId: 'missingRequiredProp' }] },
+        {
+          // One report per missing prop, so the count is the shape of the
+          // role's contract rather than a single "incomplete" verdict.
+          name: 'combobox requires more than one prop, and reports for each',
+          code: '<div role="combobox"></div>',
+          errors: [{ messageId: 'missingRequiredProp' }, { messageId: 'missingRequiredProp' }],
+        },
+        {
+          name: 'slider requires its value props, and reports for each',
+          code: '<div role="slider"></div>',
+          errors: [
+            { messageId: 'missingRequiredProp' },
+            { messageId: 'missingRequiredProp' },
+            { messageId: 'missingRequiredProp' },
+          ],
+        },
       ],
     });
   });

@@ -65,7 +65,7 @@ describe('no-client-controlled-authorization', () => {
     {
       valid: xp([
         // THE safe pattern — the attribute comes from the verified principal
-        { code: `if (req.user.role === 'admin') { grant(); }` },
+        { name: 'the role comes from the authenticated session', code: `if (req.user.role === 'admin') { grant(); }` },
         {
           code: `if (req.auth.permissions.includes('billing:write')) { grant(); }`,
         },
@@ -102,6 +102,7 @@ describe('no-client-controlled-authorization', () => {
       invalid: xp([
         // Role straight off the request body
         {
+          name: 'a role read from the request body decides access',
           code: `if (req.body.role === 'admin') { deleteEverything(); }`,
           errors: [{ messageId: 'clientControlledAuthorization' as const }],
         },

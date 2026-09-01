@@ -25,7 +25,7 @@ describe('no-insecure-redirects', () => {
     ruleTester.run('valid - validated redirects', noInsecureRedirects, {
       valid: [
         // Relative redirects
-        { code: 'res.redirect("/dashboard");' },
+        { name: 'a literal in-app path', code: 'res.redirect("/dashboard");' },
         { code: 'res.redirect("../home");' },
         // Test files (if ignoreInTests is true)
         {
@@ -62,6 +62,7 @@ describe('no-insecure-redirects', () => {
         // suppression did not depend on the function existing, only on it
         // being spelled from a four-name allowlist.
         {
+          name: 'a redirect to a request-supplied URL',
           code: `
             const url = req.query.url;
             validateUrl(url);

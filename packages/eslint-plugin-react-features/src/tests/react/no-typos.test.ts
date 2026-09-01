@@ -33,6 +33,7 @@ describe('no-typos', () => {
       valid: [
         // Correct defaultProps
         {
+          name: 'defaultProps',
           code: `
             class MyComponent extends Component {
               static defaultProps = {};
@@ -113,6 +114,7 @@ describe('no-typos', () => {
       invalid: [
         // defaulProps typo
         {
+          name: 'defaulProps — a static React never reads',
           code: `
             class MyComponent extends Component {
               static defaulProps = {};

@@ -25,6 +25,7 @@ describe('require-expiration', () => {
       valid: [
         // expiresIn option
         {
+          name: 'expiresIn is set',
           code: `import jwt from 'jsonwebtoken';
 jwt.sign(payload, secret, { expiresIn: '1h' });`,
         },
@@ -66,6 +67,7 @@ jwt.sign();`,
       valid: [],
       invalid: [
         {
+          name: 'a token signed with no expiry is valid forever',
           code: `import jwt from 'jsonwebtoken';
 jwt.sign(payload, secret);`,
           errors: [

@@ -68,7 +68,6 @@ export const noExposedErrorDetails = createRule<RuleOptions, MessageIds>({
         fix: 'Return generic error message. Log detailed errors server-side: console.error(error)',
         documentationLink: 'https://cwe.mitre.org/data/definitions/209.html',
       }),
-
     },
     schema: [
       {
@@ -112,6 +111,7 @@ export const noExposedErrorDetails = createRule<RuleOptions, MessageIds>({
         (prop) =>
           prop.type === AST_NODE_TYPES.Property &&
           prop.key.type === AST_NODE_TYPES.Identifier &&
+          // @vocabulary AWS Lambda proxy-integration response shape
           ['statusCode', 'body', 'headers'].includes(prop.key.name),
       );
     }

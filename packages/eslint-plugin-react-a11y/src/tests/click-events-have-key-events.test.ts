@@ -25,7 +25,7 @@ describe('click-events-have-key-events', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - has key handlers', clickEventsHaveKeyEvents, {
       valid: [
-        { code: '<div onClick={handler} onKeyDown={handler}></div>' },
+        { name: 'both handlers present', code: '<div onClick={handler} onKeyDown={handler}></div>' },
         { code: '<div onClick={handler} onKeyUp={handler}></div>' },
         { code: '<div onClick={handler} onKeyPress={handler}></div>' },
         { code: '<button onClick={handler}></button>' },
@@ -44,7 +44,7 @@ describe('click-events-have-key-events', () => {
     ruleTester.run('invalid - missing key handlers', clickEventsHaveKeyEvents, {
       valid: [],
       invalid: [
-        { code: '<div onClick={handler}></div>', errors: [{ messageId: 'missingKeyboardEvent' }] },
+        { name: 'a click handler with no keyboard equivalent', code: '<div onClick={handler}></div>', errors: [{ messageId: 'missingKeyboardEvent' }] },
         { code: '<span onClick={handler}></span>', errors: [{ messageId: 'missingKeyboardEvent' }] },
       ],
     });

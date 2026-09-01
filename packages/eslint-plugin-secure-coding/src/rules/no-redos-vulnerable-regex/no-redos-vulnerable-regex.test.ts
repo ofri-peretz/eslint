@@ -39,6 +39,7 @@ describe('no-redos-vulnerable-regex', () => {
       valid: [],
       invalid: [
         {
+          name: 'a nested quantifier — catastrophic backtracking',
           code: 'const regex = /(a+)+b/;',
           errors: [{ messageId: 'redosVulnerable' }],
         },
@@ -125,6 +126,7 @@ describe('no-redos-vulnerable-regex', () => {
         // heuristic layer. Kept as a fixture so a config still setting it does
         // not start erroring on an unknown option.
         {
+          name: 'a constructed regex, where the pattern is not the literal here',
           code: 'const re = new RegExp("(a|b)+c");',
           options: [{ allowCommonPatterns: true }],
         },

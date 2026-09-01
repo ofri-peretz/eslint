@@ -28,6 +28,7 @@ describe('no-self-import', () => {
       valid: [
         // Normal imports
         {
+          name: 'an import of a different module',
           code: 'import lodash from "lodash";',
           filename: '/src/utils/helpers.js',
         },
@@ -53,6 +54,7 @@ describe('no-self-import', () => {
       invalid: [
         // Self-import with same name
         {
+          name: 'a module importing itself',
           code: 'import helpers from "./helpers";',
           filename: '/src/utils/helpers.js',
           errors: [

@@ -28,6 +28,7 @@ describe('no-deprecated-api', () => {
       valid: [
         // Non-deprecated APIs
         {
+          name: 'a current API',
           code: 'const result = fetch(url);',
         },
         {
@@ -48,6 +49,7 @@ describe('no-deprecated-api', () => {
       valid: [],
       invalid: [
         {
+          name: 'a call to an API on the deprecation list',
           code: 'const result = oldFunction();',
           options: [
             {

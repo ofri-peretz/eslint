@@ -31,6 +31,7 @@ describe('no-missing-aria-labels', () => {
       valid: [
         // Button with aria-label
         {
+          name: 'an aria-label is present',
           code: '<button aria-label="Close dialog">X</button>',
         },
         // Input with aria-labelledby
@@ -72,6 +73,7 @@ describe('no-missing-aria-labels', () => {
         // so it has no accessible name. (Buttons WITH text children, e.g.
         // `<button>Click</button>`, are exempted — see hasTextContent() below.)
         {
+          name: 'an icon-only button with no accessible name',
           code: '<button><Icon /></button>',
           errors: [{ messageId: 'missingAriaLabel' }],
         },

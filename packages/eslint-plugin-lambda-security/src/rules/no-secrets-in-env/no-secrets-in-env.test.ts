@@ -53,6 +53,7 @@ ruleTester.run('no-secrets-in-env', noSecretsInEnv, {
   valid: lambda([
     // ========== VALID: Reading from process.env ==========
     {
+      name: 'reading a secret out of the environment',
       code: `const password = process.env.DB_PASSWORD;`,
     },
     {
@@ -115,6 +116,7 @@ ruleTester.run('no-secrets-in-env', noSecretsInEnv, {
   invalid: lambda([
     // ========== INVALID: Direct process.env assignment ==========
     {
+      name: 'a secret assigned into process.env, where the console shows it',
       code: `process.env.DB_PASSWORD = 'my-secret-password-12345678901234';`,
       errors: [{ messageId: 'secretsInEnv' }],
     },

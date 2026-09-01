@@ -26,6 +26,7 @@ describe('no-external-api-calls-in-utils', () => {
       valid: [
         // Network calls in non-utility files are fine
         {
+          name: 'the same call in a service file, which is where it belongs',
           code: 'fetch("/api/users");',
           filename: '/src/services/userService.ts',
         },
@@ -59,6 +60,7 @@ describe('no-external-api-calls-in-utils', () => {
       invalid: [
         // fetch in utils
         {
+          name: 'a network call reached from a utils module',
           code: 'fetch("/api/users");',
           filename: '/src/utils/api.ts',
           errors: [{ messageId: 'externalApiCallInUtils' }],

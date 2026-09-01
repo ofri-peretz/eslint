@@ -856,6 +856,10 @@ ruleTester.run(
   {
     valid: [
       {
+        name: 'a property that is not a named export of the module',
+        code: `import foo, { bar } from './foo'; const baz = foo.other;`,
+      },
+      {
         name: 'namespace specifiers are not tracked',
         code: `import * as ns from 'm'; ns.x;`,
       },

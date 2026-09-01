@@ -7,7 +7,7 @@
 /**
  * ESLint Rule: no-missing-aria-labels
  * Detects elements missing ARIA labels
- * 
+ *
  * @see https://www.w3.org/WAI/ARIA/apg/
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
@@ -19,7 +19,7 @@ type MessageIds = 'missingAriaLabel';
 export interface Options {
   /** Ignore in test files. Default: true */
   ignoreInTests?: boolean;
-  
+
   /** Elements that require ARIA labels. Default: ['button', 'input', 'select', 'textarea'] */
   requireLabels?: string[];
 }
@@ -36,7 +36,7 @@ function hasAriaLabel(node: TSESTree.JSXOpeningElement): boolean {
       attr.name.type === 'JSXIdentifier' &&
       (attr.name.name === 'aria-label' ||
         attr.name.name === 'aria-labelledby' ||
-        attr.name.name === 'title'),   // title also provides an accessible name
+        attr.name.name === 'title'), // title also provides an accessible name
   );
 }
 
@@ -55,7 +55,8 @@ function hasTextContent(jsxElement: TSESTree.JSXElement): boolean {
       (child.expression.type === 'TemplateLiteral' ||
         child.expression.type === 'Identifier' ||
         (child.expression.type === 'Literal' &&
-          (typeof child.expression.value === 'string' || typeof child.expression.value === 'number')))
+          (typeof child.expression.value === 'string' ||
+            typeof child.expression.value === 'number')))
     )
       return true;
     return false;
@@ -105,15 +106,18 @@ export const noMissingAriaLabels = createRule<RuleOptions, MessageIds>({
       requireLabels: ['button', 'input', 'select', 'textarea'],
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
+  create(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    [options = {}],
+  ) {
     const {
-ignoreInTests = true,
+      ignoreInTests = true,
       requireLabels = ['button', 'input', 'select', 'textarea'],
-    
-}: Options = options || {};
+    }: Options = options || {};
 
     const filename = context.filename;
-    const isTestFile = ignoreInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile =
+      ignoreInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (isTestFile) {
       return {};
@@ -137,8 +141,13 @@ ignoreInTests = true,
       if (hasAriaLabel(node)) return;
 
       // Text children (e.g. <button>Submit</button>) provide an accessible name
-      const parent = (node as TSESTree.Node & { parent?: TSESTree.Node }).parent;
-      if (parent?.type === 'JSXElement' && hasTextContent(parent as TSESTree.JSXElement)) return;
+      const parent = (node as TSESTree.Node & { parent?: TSESTree.Node })
+        .parent;
+      if (
+        parent?.type === 'JSXElement' &&
+        hasTextContent(parent as TSESTree.JSXElement)
+      )
+        return;
 
       {
         context.report({
@@ -153,8 +162,6 @@ ignoreInTests = true,
 
     return {
       JSXOpeningElement: checkJSXElement,
-
     };
   },
 });
-

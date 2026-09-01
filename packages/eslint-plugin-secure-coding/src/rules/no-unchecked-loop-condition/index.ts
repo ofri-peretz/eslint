@@ -66,7 +66,8 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Unchecked Loop Condition',
         cwe: 'CWE-400',
-        description: 'Loop condition may cause DoS through excessive iterations',
+        description:
+          'Loop condition may cause DoS through excessive iterations',
         severity: '{{severity}}',
         fix: '{{safeAlternative}}',
         documentationLink: 'https://cwe.mitre.org/data/definitions/400.html',
@@ -116,7 +117,7 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
         fix: 'Add recursion depth limit or use iterative approach',
         documentationLink: 'https://cwe.mitre.org/data/definitions/674.html',
       }),
-},
+    },
     schema: [
       {
         type: 'object',
@@ -124,33 +125,49 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
           maxStaticIterations: {
             type: 'number',
             minimum: 100,
-            default: 10000, description: 'Literal iteration count above which a loop is reported'
+            default: 10000,
+            description:
+              'Literal iteration count above which a loop is reported',
           },
           userInputVariables: {
             type: 'array',
             items: { type: 'string' },
-            default: ['req', 'request', 'body', 'query', 'params', 'input', 'data'], description: 'Variable names treated as user-controlled input'
+            default: [
+              'req',
+              'request',
+              'body',
+              'query',
+              'params',
+              'input',
+              'data',
+            ],
+            description: 'Variable names treated as user-controlled input',
           },
           allowWhileTrueWithBreak: {
             type: 'boolean',
-            default: true, description: 'Allow `while (true)` when the body contains a `break`'
+            default: true,
+            description:
+              'Allow `while (true)` when the body contains a `break`',
           },
           maxRecursionDepth: {
             type: 'number',
             minimum: 1,
-            default: 10, description: 'Recursion depth above which a call is reported'
+            default: 10,
+            description: 'Recursion depth above which a call is reported',
           },
           trustedSanitizers: {
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Additional function names to consider as loop protectors',
+            description:
+              'Additional function names to consider as loop protectors',
           },
           trustedAnnotations: {
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Additional JSDoc annotations to consider as safe markers',
+            description:
+              'Additional JSDoc annotations to consider as safe markers',
           },
           strictMode: {
             type: 'boolean',
@@ -165,7 +182,15 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
   defaultOptions: [
     {
       maxStaticIterations: 10000,
-      userInputVariables: ['req', 'request', 'body', 'query', 'params', 'input', 'data'],
+      userInputVariables: [
+        'req',
+        'request',
+        'body',
+        'query',
+        'params',
+        'input',
+        'data',
+      ],
       allowWhileTrueWithBreak: true,
       maxRecursionDepth: 10,
       trustedSanitizers: [],
@@ -177,7 +202,15 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
     const options = context.options[0] || {};
     const {
       maxStaticIterations = 10000,
-      userInputVariables = ['req', 'request', 'body', 'query', 'params', 'input', 'data'],
+      userInputVariables = [
+        'req',
+        'request',
+        'body',
+        'query',
+        'params',
+        'input',
+        'data',
+      ],
       allowWhileTrueWithBreak = true,
       maxRecursionDepth = 10,
       trustedSanitizers = [],
@@ -233,12 +266,16 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
       const lowerVarName = varName.toLowerCase();
 
       // If custom userInputVariables are specified (not the defaults), only use those
-      const isUsingDefaults = userInputVariables.length === 7 && // default length
-        userInputVariables.includes('req') && userInputVariables.includes('input');
+      const isUsingDefaults =
+        userInputVariables.length === 7 && // default length
+        userInputVariables.includes('req') &&
+        userInputVariables.includes('input');
 
       if (!isUsingDefaults) {
         // Custom userInputVariables specified, only check those
-        return userInputVariables.some(input => lowerVarName === input.toLowerCase());
+        return userInputVariables.some(
+          (input) => lowerVarName === input.toLowerCase(),
+        );
       }
 
       // Using defaults: a *request object* name is evidence; a bare noun is
@@ -261,7 +298,6 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
       // `req.query` is evidence. `query` is a name.
       return REQUEST_OBJECTS.has(lowerVarName);
     };
-
 
     /**
      * REMOVED: two printed-source DoS heuristics.
@@ -340,13 +376,17 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
             node.callee.object.name === 'Array' &&
             node.callee.property.type === 'Identifier' &&
             node.callee.property.name === 'isArray' &&
-            node.arguments.some((a) => a.type !== 'SpreadElement' && samePath(a, guarded))
+            node.arguments.some(
+              (a) => a.type !== 'SpreadElement' && samePath(a, guarded),
+            )
           ) {
             sawArrayCheck = true;
           }
           if (
             node.type === 'BinaryExpression' &&
-            ['<', '<=', '>', '>=', '===', '==', '!==', '!='].includes(node.operator)
+            ['<', '<=', '>', '>=', '===', '==', '!==', '!='].includes(
+              node.operator,
+            )
           ) {
             for (const side of [node.left, node.right]) {
               if (
@@ -366,9 +406,18 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
           // duplicating the guard inline created a second copy whose negative
           // arm no parser could reach.
           const walkIfNode = (value: unknown): void => {
-            if (value && typeof value === 'object' && 'type' in value) walk(value as TSESTree.Node);
+            if (value && typeof value === 'object' && 'type' in value)
+              walk(value as TSESTree.Node);
           };
-          for (const key of ['left', 'right', 'argument', 'expression', 'test', 'object', 'callee'] as const) {
+          for (const key of [
+            'left',
+            'right',
+            'argument',
+            'expression',
+            'test',
+            'object',
+            'callee',
+          ] as const) {
             walkIfNode((node as unknown as Record<string, unknown>)[key]);
           }
           const args = (node as unknown as { arguments?: unknown[] }).arguments;
@@ -386,7 +435,8 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
         current;
         current = current.parent as TSESTree.Node | undefined
       ) {
-        if (current.type === 'IfStatement' && validates(current.test)) return true;
+        if (current.type === 'IfStatement' && validates(current.test))
+          return true;
         if (
           current.type === 'FunctionDeclaration' ||
           current.type === 'FunctionExpression' ||
@@ -410,7 +460,8 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
           // `index >= 0 ? … : []` fallback was therefore permanently uncovered.
           const index = body.indexOf(current as TSESTree.Statement);
           for (const statement of body.slice(0, index)) {
-            if (statement.type === 'IfStatement' && validates(statement.test)) return true;
+            if (statement.type === 'IfStatement' && validates(statement.test))
+              return true;
           }
         }
         if (
@@ -426,9 +477,15 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
     };
 
     /** The variable this identifier resolves to, or null for an undeclared global. */
-    const resolveVariable = (node: TSESTree.Identifier): TSESLint.Scope.Variable | null => {
+    const resolveVariable = (
+      node: TSESTree.Identifier,
+    ): TSESLint.Scope.Variable | null => {
       const scope = sourceCode.getScope(node);
-      for (let current: typeof scope | null = scope; current; current = current.upper) {
+      for (
+        let current: typeof scope | null = scope;
+        current;
+        current = current.upper
+      ) {
         const variable = current.variables.find((v) => v.name === node.name);
         if (variable) return variable;
       }
@@ -482,21 +539,24 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
         expression.callee.object.type === 'Identifier' &&
         expression.callee.object.name === 'Math' &&
         expression.callee.property.type === 'Identifier' &&
+        // @vocabulary Math API
         ['min', 'max'].includes(expression.callee.property.name)
       ) {
         return true;
       }
-      if (expression.type === 'BinaryExpression' || expression.type === 'LogicalExpression') {
+      if (
+        expression.type === 'BinaryExpression' ||
+        expression.type === 'LogicalExpression'
+      ) {
         return isClamped(expression.left) || isClamped(expression.right);
       }
       if (expression.type === 'ConditionalExpression') {
-        return isClamped(expression.consequent) && isClamped(expression.alternate);
+        return (
+          isClamped(expression.consequent) && isClamped(expression.alternate)
+        );
       }
       return false;
     };
-
-
-
 
     /**
      * Check if an expression involves user input
@@ -555,8 +615,9 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
             checkExpression(node.callee) ||
             node.arguments
               .filter(
-                (arg: TSESTree.CallExpressionArgument): arg is TSESTree.Expression =>
-                  arg.type !== 'SpreadElement',
+                (
+                  arg: TSESTree.CallExpressionArgument,
+                ): arg is TSESTree.Expression => arg.type !== 'SpreadElement',
               )
               .some((arg: TSESTree.Expression) => checkExpression(arg))
           );
@@ -578,11 +639,14 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
           return node.operator === '&&'
             ? checkExpression(node.right as TSESTree.Expression)
             : checkExpression(node.left as TSESTree.Expression) ||
-              checkExpression(node.right as TSESTree.Expression);
+                checkExpression(node.right as TSESTree.Expression);
         }
         if (node.type === 'BinaryExpression') {
           // Check both sides of binary expressions
-          return checkExpression(node.left as TSESTree.Expression) || checkExpression(node.right as TSESTree.Expression)
+          return (
+            checkExpression(node.left as TSESTree.Expression) ||
+            checkExpression(node.right as TSESTree.Expression)
+          );
         }
         if (node.type === 'UpdateExpression') {
           // Check update expressions like i++, ++i
@@ -624,7 +688,7 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
             if ('type' in child) {
               checkNode(child as TSESTree.Node, depth + 1);
             } else if (Array.isArray(child)) {
-              child.forEach(item => {
+              child.forEach((item) => {
                 if (item && typeof item === 'object' && 'type' in item) {
                   checkNode(item, depth + 1);
                 }
@@ -663,7 +727,8 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
       ]);
       let child: TSESTree.Node = call;
       for (
-        let current: TSESTree.Node | undefined = call.parent as TSESTree.Node | undefined;
+        let current: TSESTree.Node | undefined = call.parent as
+          TSESTree.Node | undefined;
         current;
         child = current, current = current.parent as TSESTree.Node | undefined
       ) {
@@ -684,7 +749,12 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
           // permanently uncovered for the same reason as the one above.
           const index = current.body.indexOf(child as TSESTree.Statement);
           const preceding = current.body.slice(0, index);
-          if (preceding.some((statement) => statement.type === 'IfStatement' && exits(statement))) {
+          if (
+            preceding.some(
+              (statement) =>
+                statement.type === 'IfStatement' && exits(statement),
+            )
+          ) {
             return false;
           }
         }
@@ -701,7 +771,8 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
 
     /** Does this subtree contain a `return` or a `throw`? */
     const exits = (node: TSESTree.Node): boolean => {
-      if (node.type === 'ReturnStatement' || node.type === 'ThrowStatement') return true;
+      if (node.type === 'ReturnStatement' || node.type === 'ThrowStatement')
+        return true;
       for (const key in node) {
         const child = (node as unknown as Record<string, unknown>)[key];
         if (key === 'parent' || !child || typeof child !== 'object') continue;
@@ -709,7 +780,13 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
           if (exits(child as TSESTree.Node)) return true;
         } else if (Array.isArray(child)) {
           for (const item of child) {
-            if (item && typeof item === 'object' && 'type' in item && exits(item)) return true;
+            if (
+              item &&
+              typeof item === 'object' &&
+              'type' in item &&
+              exits(item)
+            )
+              return true;
           }
         }
       }
@@ -732,7 +809,12 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
       const test = loop.test;
       if (test && test.type === 'BinaryExpression') {
         // Look for patterns like i < limit or i <= limit
-        if ((test.operator === '<' || test.operator === '<=' || test.operator === '>' || test.operator === '>=')) {
+        if (
+          test.operator === '<' ||
+          test.operator === '<=' ||
+          test.operator === '>' ||
+          test.operator === '>='
+        ) {
           const right = test.right;
           if (right.type === 'Literal' && typeof right.value === 'number') {
             return Math.abs(right.value);
@@ -794,7 +876,10 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
       },
 
       'FunctionDeclaration:exit'(node: TSESTree.FunctionDeclaration) {
-        if (node.id && currentFunctionStack[currentFunctionStack.length - 1] === node.id.name) {
+        if (
+          node.id &&
+          currentFunctionStack[currentFunctionStack.length - 1] === node.id.name
+        ) {
           currentFunctionStack.pop();
         }
       },
@@ -805,7 +890,8 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
 
         if (callee.type === 'Identifier') {
           const functionName = callee.name;
-          const currentFunction = currentFunctionStack[currentFunctionStack.length - 1];
+          const currentFunction =
+            currentFunctionStack[currentFunctionStack.length - 1];
 
           // Check for recursion
           if (currentFunction && functionName === currentFunction) {
@@ -839,7 +925,10 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
               // decidable here - it needs a bound on the input's depth. That is
               // recorded as a known miss in the rule corpus rather than guessed
               // at from a name.
-              if (callCount > maxRecursionDepth || isUnconditionalSelfCall(node)) {
+              if (
+                callCount > maxRecursionDepth ||
+                isUnconditionalSelfCall(node)
+              ) {
                 if (safetyChecker.isSafe(node, context)) {
                   return;
                 }
@@ -1061,7 +1150,7 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
             },
           });
         }
-      }
+      },
     };
   },
 });

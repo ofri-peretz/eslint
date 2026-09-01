@@ -24,7 +24,7 @@ ruleTester.run('no-insecure-websocket', noInsecureWebsocket, {
         'const x = 42;',
         'const flag = true;',
     // Secure WebSocket connections
-    { code: "new WebSocket('wss://acmecorp.io')" },
+    { name: 'wss://', code: "new WebSocket('wss://acmecorp.io')" },
     { code: "const ws = new WebSocket('wss://secure.acmecorp.io/socket')" },
     { code: "new WebSocket(`wss://acmecorp.io/${path}`)" },
     // Non-WebSocket code
@@ -47,6 +47,7 @@ ruleTester.run('no-insecure-websocket', noInsecureWebsocket, {
   invalid: [
     // ws:// in a standalone string literal — this rule's remaining territory.
     {
+      name: 'a ws:// endpoint',
       code: "const url = 'ws://acmecorp.io'",
       errors: [{ messageId: 'violationDetected' }],
     },

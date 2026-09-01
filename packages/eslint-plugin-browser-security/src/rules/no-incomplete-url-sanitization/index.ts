@@ -41,7 +41,28 @@ import { isAttackerSteerableUrl } from '../../utils/url-taint';
 type MessageIds = 'substringHostCheck' | 'incompleteSchemeDenylist';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-empty-interface -- Rule has no configurable options
-export interface Options {}
+export interface Options {
+  /**
+   * Substrings that say the value under test is a URL, host or origin, matched
+   * case-insensitively. REPLACES the default.
+   *
+   * This is one of TWO independent kinds of evidence — the other is taint
+   * analysis — so the list widens recall rather than deciding alone. That is
+   * exactly why it has to be replaceable: a project whose URL variable is
+   * `endereco` or `adresse` gets nothing from the English default and has no
+   * way to ask for it, while a `linkedList` gets flagged for containing
+   * `link`.
+   *
+   * @example
+   * ```json
+   * "browser-security/no-incomplete-url-sanitization": [
+   *   "error",
+   *   { "urlNameWords": ["url", "endereco", "enlace"] }
+   * ]
+   * ```
+   */
+  urlNameWords?: string[];
+}
 
 type RuleOptions = [Options?];
 
@@ -113,6 +134,15 @@ function isHostLikeLiteral(raw: string): boolean {
  * Method calls that reshape a string without changing what it names, so the
  * receiver's identity survives them: `String(host).trim().toLowerCase()`.
  */
+/**
+ * @vocabulary These are `String.prototype` methods, defined by ECMAScript, and
+ * the TLDs above are IANA's. Neither is a name a consumer picked, so neither
+ * is behind an option — unlike `urlNamePatterns`, which is our guess at what
+ * they call their own variables.
+ *
+ * @see https://tc39.es/ecma262/#sec-properties-of-the-string-prototype-object
+ * @see https://data.iana.org/TLD/tlds-alpha-by-domain.txt
+ */
 const PASSTHROUGH_METHODS: ReadonlySet<string> = new Set([
   'trim',
   'trimStart',
@@ -124,8 +154,31 @@ const PASSTHROUGH_METHODS: ReadonlySet<string> = new Set([
   'valueOf',
 ]);
 
-/** Names that say the value under test is a URL, host or origin. */
-const URL_ISH_NAME = /url|uri|href|host|origin|domain|referr?er|endpoint|link/i;
+/**
+ * Names that say the value under test is a URL, host or origin.
+ *
+ * A guess at somebody else's vocabulary, and replaceable for that reason —
+ * see the `urlNamePatterns` option. Not a `@vocabulary` case: nothing
+ * publishes these, we picked them.
+ */
+const DEFAULT_URL_NAME_WORDS = [
+  'url',
+  'uri',
+  'href',
+  'host',
+  'origin',
+  'domain',
+  // Both spellings, because these are SUBSTRINGS now and not a regex. The
+  // option used to compile consumer-supplied sources with `new RegExp(...)`,
+  // which the rule-audit ratchet flagged as `dynamic-regexp` — a security
+  // plugin building a regex out of config is the shape these very plugins
+  // report in other people's code. Substring matching removes it, and
+  // "the name contains one of these words" is a clearer contract anyway.
+  'referer',
+  'referrer',
+  'endpoint',
+  'link',
+];
 
 /**
  * The name the receiver is known by, read off the AST — never off printed
@@ -174,9 +227,10 @@ function receiverName(node: TSESTree.Node): string | null {
 function isUrlBearingReceiver(
   node: TSESTree.Node,
   sourceCode: TSESLint.SourceCode,
+  urlNameTest: (name: string) => boolean,
 ): boolean {
   const name = receiverName(node);
-  if (name !== null && URL_ISH_NAME.test(name)) return true;
+  if (name !== null && urlNameTest(name)) return true;
   return isAttackerSteerableUrl(node, sourceCode);
 }
 
@@ -331,11 +385,32 @@ export const noIncompleteUrlSanitization = createRule<RuleOptions, MessageIds>({
         documentationLink: 'https://cwe.mitre.org/data/definitions/20.html',
       }),
     },
-    schema: [],
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          urlNameWords: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [...DEFAULT_URL_NAME_WORDS],
+            description:
+              'Substrings that say a value is a URL, host or origin, matched case-insensitively. Replaces the default.',
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
   },
   defaultOptions: [],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const sourceCode = context.sourceCode;
+    const urlNameWords = (
+      context.options[0]?.urlNameWords ?? DEFAULT_URL_NAME_WORDS
+    ).map((word) => word.toLowerCase());
+    const urlNameTest = (name: string): boolean => {
+      const lower = name.toLowerCase();
+      return urlNameWords.some((word) => lower.includes(word));
+    };
 
     /** Per enclosing function: which scriptable schemes it tests, and where. */
     const schemeTests = new Map<
@@ -398,7 +473,7 @@ export const noIncompleteUrlSanitization = createRule<RuleOptions, MessageIds>({
       // Left uncompared, or compared for position, it is not this bug.
       if (method === 'includes') {
         if (!isGuardPosition(node)) return;
-        if (!isUrlBearingReceiver(receiver, sourceCode)) return;
+        if (!isUrlBearingReceiver(receiver, sourceCode, urlNameTest)) return;
         context.report({ node, messageId: 'substringHostCheck' });
         return;
       }
@@ -406,7 +481,7 @@ export const noIncompleteUrlSanitization = createRule<RuleOptions, MessageIds>({
       if (!isContainmentComparison(node)) return;
       const decision = node.parent;
       if (!isGuardPosition(decision)) return;
-      if (!isUrlBearingReceiver(receiver, sourceCode)) return;
+      if (!isUrlBearingReceiver(receiver, sourceCode, urlNameTest)) return;
       context.report({ node: decision, messageId: 'substringHostCheck' });
     }
 

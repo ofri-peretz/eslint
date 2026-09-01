@@ -4,15 +4,18 @@
  * MIT license that can be found in the LICENSE file.
  */
 
-
 /**
  * ESLint Rule: aria-unsupported-elements
  * Enforce that elements that don't support ARIA roles, states, and properties do not contain them
- * 
+ *
  * @see https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/aria-unsupported-elements.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, ARIA_UNSUPPORTED_ELEMENTS } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  ARIA_UNSUPPORTED_ELEMENTS,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unsupportedAria';
@@ -25,7 +28,8 @@ export const ariaUnsupportedElements = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/aria-unsupported-elements.md',
-      description: 'Enforce that elements that don\'t support ARIA roles, states, and properties do not contain them',
+      description:
+        "Enforce that elements that don't support ARIA roles, states, and properties do not contain them",
       wcag: 'WCAG 4.1.1',
     },
     messages: {
@@ -35,7 +39,8 @@ export const ariaUnsupportedElements = createRule<RuleOptions, MessageIds>({
         description: '<{{element}}> should not have ARIA attributes',
         severity: 'MEDIUM',
         fix: 'Remove ARIA attributes from this element',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/aria-unsupported-elements.md',
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/aria-unsupported-elements.md',
       }),
     },
     schema: [],
@@ -45,28 +50,29 @@ export const ariaUnsupportedElements = createRule<RuleOptions, MessageIds>({
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         if (node.name.type !== 'JSXIdentifier') return;
-        
+
         const element = node.name.name;
         if (!ARIA_UNSUPPORTED_ELEMENTS.has(element)) return;
 
         const hasAria = node.attributes.some(
-            (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute => 
-            attr.type === 'JSXAttribute' && 
-            attr.name.type === 'JSXIdentifier' && 
-            (attr.name.name.startsWith('aria-') || attr.name.name === 'role')
+          (
+            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+          ): attr is TSESTree.JSXAttribute =>
+            attr.type === 'JSXAttribute' &&
+            attr.name.type === 'JSXIdentifier' &&
+            (attr.name.name.startsWith('aria-') || attr.name.name === 'role'),
         );
 
         if (hasAria) {
-            context.report({
-                node,
-                messageId: 'unsupportedAria',
-                data: {
-                    element
-                }
-            });
+          context.report({
+            node,
+            messageId: 'unsupportedAria',
+            data: {
+              element,
+            },
+          });
         }
       },
     };
   },
 });
-

@@ -44,6 +44,10 @@ import {
 } from '@interlace/eslint-devkit';
 import { walk } from '../../utils';
 import {
+  APP_RECEIVER_SCHEMA,
+  isAppReceiver,
+} from '../../utils/app-receiver';
+import {
   isAuthMiddlewareArg,
   routeIsAuthenticated,
 } from '../../utils/auth-evidence';
@@ -52,6 +56,13 @@ import { fileUsesExpress } from '../../utils/express-evidence';
 type MessageIds = 'missingAuthentication';
 
 export interface Options {
+  /**
+   * Identifiers that hold the Express app or a router. REPLACES the default
+   * — see `DEFAULT_APP_RECEIVER_NAMES` for why the name has to be the
+   * consumer's.
+   */
+  appReceiverNames?: string[];
+
   /** Path fragments that mark a route as a critical function. */
   criticalPaths?: string[];
 
@@ -156,7 +167,7 @@ const DEFAULT_PUBLIC_PATHS = [
 const ROUTE_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete', 'all']);
 
 /** Receivers that are an Express application/router in practice. */
-const APP_RECEIVER = /^(app|router|express|api)$/i;
+
 
 /**
  * Does a path fragment occur as a whole word in the route path?
@@ -255,6 +266,7 @@ export const requireRouteAuthentication = createRule<RuleOptions, MessageIds>({
       {
         type: 'object',
         properties: {
+          ...APP_RECEIVER_SCHEMA,
           criticalPaths: {
             type: 'array',
             items: { type: 'string' },
@@ -283,7 +295,8 @@ export const requireRouteAuthentication = createRule<RuleOptions, MessageIds>({
     // path — a file with no Express in it does no work.
     if (!fileUsesExpress(context.sourceCode.ast)) return {};
 
-    const { criticalPaths, publicPaths, authMiddleware } = options as Options;
+    const { criticalPaths, publicPaths, authMiddleware, appReceiverNames } =
+      options as Options;
     const critical = (criticalPaths ?? DEFAULT_CRITICAL_PATHS).map((p) =>
       p.toLowerCase(),
     );
@@ -321,7 +334,7 @@ export const requireRouteAuthentication = createRule<RuleOptions, MessageIds>({
       if (callee.property.type !== AST_NODE_TYPES.Identifier) return null;
       if (callee.computed) return null;
       if (callee.object.type !== AST_NODE_TYPES.Identifier) return null;
-      if (!APP_RECEIVER.test(callee.object.name)) return null;
+      if (!isAppReceiver(callee.object.name, appReceiverNames)) return null;
       return callee.property.name;
     }
 

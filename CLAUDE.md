@@ -132,7 +132,7 @@ What this means in practice:
   break. 1σ logs, 2σ diagnoses read-only, 3σ may act. **Never widen a band to clear a
   breach** — a band widened to fit an excursion measures nothing afterwards.
 - **A breach becomes an intent, not a ticket.** That is the loop. A GitHub issue is
-  the separate queue the loop exists to avoid; issues are for a *watcher* breaking,
+  the separate queue the loop exists to avoid; issues are for a _watcher_ breaking,
   which is an outage rather than a finding.
 - **Editing `CLAUDE.md`, `AGENTS.md`, `.agent/**` or `lefthook.yml` is a configuration
   change** and runs [`evals/`](./evals/). Treat a pass-rate drop as a review blocker.
@@ -396,16 +396,43 @@ EOF
 
 ### 4. Wait for the CI gate to go green
 
-Required checks on this repo (the workflow names visible on a PR):
+**Branch protection requires exactly two contexts.** Not six, and not the
+ones this file listed until 2026-08-30 — five of those six names had never
+existed as job names at all, so an agent polling for `Playwright (e2e + a11y)`
+waited for something that could not arrive:
 
 ```text
-✅ oxlint (fast pass)
-✅ Prettier (format check)
-✅ TypeScript (typecheck)
-✅ Vitest (unit + lock tests)
-✅ Playwright (e2e + a11y)
-✅ Build (apps/docs)
+oxlint (fast pass)     — the cheap loop, every push
+Quality (Full) Gate    — the heavy gate, and the one that actually blocks
 ```
+
+`Quality (Full) Gate` is the important one, because of **when it runs**:
+`pull_request: types: [ready_for_review, labeled, synchronize]`. A DRAFT PR
+without the `run-full-ci` label never receives it, so the PR sits `BLOCKED`
+forever on a check nobody is running. Mark the PR ready for review, or add the
+label. This is also why `main` can be red without any PR having gone red —
+see the note in `quality-full.yml`.
+
+### After the merge
+
+`Quality (Full)` also runs on **push to `main`**, and a failure there opens a
+tracking issue titled `main is red — the full quality gate failed after a
+merge`. That trigger is the difference between "broken for one merge" and
+"broken until Sunday": the heavy gate is PR-scoped for cost, so before it
+existed a merge could land broken and sit red until the weekly cron.
+
+It is not theoretical. PR #745 landed having edited two rule `.md` sources
+without re-running the generator, failed `rule-docs-sync-drift` on main's tip,
+and was found four days later by accident — after every branch cut in between
+had inherited it.
+
+If you see that issue, the merge that caused it is the head of `main`.
+
+Everything else on the PR — `Plugin Taxonomy`, `Unit Tests + Coverage (N/10)`,
+`Build (N/4)`, `Typecheck (whole-graph tsgo)`, `Script & Repo-Config Locks`,
+`CodeQL`, `CodeRabbit` and the rest — is informative, not required. They still
+have to be green before merging: step 2 below refuses on _any_ non-success
+check, which is stricter than branch protection and deliberately so.
 
 Poll until every check finishes, **then verify every one reports
 `SUCCESS`** — the poll only ensures nothing is still pending; a `FAILURE`
@@ -415,9 +442,16 @@ or `CANCELLED` would otherwise slip past it.
 PR=<#>
 
 # 1. Wait until every required check has a terminal state.
+#
+# `.state` is not optional here. A CHECK RUN carries `.conclusion`; a STATUS
+# CONTEXT — CodeRabbit is one — carries only `.state`. Without `.state` in the
+# fallback a finished CodeRabbit resolves to "", which this select counts as
+# pending, and the loop never terminates. It reads as a slow CI run, so the
+# usual response is to wait longer. Both jq expressions below read the same
+# three fields in the same order for exactly this reason.
 until [ "$(gh -R ofri-peretz/eslint pr view "$PR" \
   --json statusCheckRollup \
-  --jq '[.statusCheckRollup[]? | select((.conclusion // .status // "") as $s | $s == "IN_PROGRESS" or $s == "PENDING" or $s == "QUEUED" or $s == "")] | length')" = "0" ]; do
+  --jq '[.statusCheckRollup[]? | select((.conclusion // .state // .status // "") as $s | $s == "IN_PROGRESS" or $s == "PENDING" or $s == "QUEUED" or $s == "")] | length')" = "0" ]; do
   sleep 20
 done
 
@@ -436,10 +470,24 @@ gh -R ofri-peretz/eslint pr view "$PR" --json mergeable,mergeStateStatus,statusC
 
 If `mergeStateStatus == "DIRTY"` there's a conflict with `main`. Resolve
 via `git fetch origin main && git merge origin/main`; do not rebase
-blindly across unrelated changes. If `mergeStateStatus == "BLOCKED"`
-after all checks pass, branch protection is waiting on a required review
-(see CODEOWNERS / repository ruleset) — don't `--admin` past it without
-asking the user.
+blindly across unrelated changes.
+
+If `mergeStateStatus == "BLOCKED"` **after step 2 has confirmed every check
+is `SUCCESS`**, branch protection is waiting on a required review or an
+unresolved thread (see CODEOWNERS / repository ruleset). **`--admin` is
+authorised there — always, without asking.** A green branch held up by a
+review requirement is the case the flag exists for.
+
+What `--admin` is never for:
+
+- a check reporting `FAILURE`, `CANCELLED` or `TIMED_OUT`;
+- a check still pending — which is why the `.state` fix above matters: a poll
+  that never terminates is the thing that tempts someone to skip step 2;
+- `mergeStateStatus == "BEHIND"` — merge `origin/main` first and let CI re-run
+  against what will actually land.
+
+Step 2 is the authorisation. It is not a formality before it: it is the
+entire basis on which the bypass is allowed.
 
 ### 5. Merge
 

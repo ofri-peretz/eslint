@@ -17,7 +17,7 @@ type Case = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
 };
-const lambda = <T,>(cases: T[]): T[] =>
+const lambda = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asLambda(c) as T;
     const test = c as Case;
@@ -27,7 +27,9 @@ const lambda = <T,>(cases: T[]): T[] =>
       // Autofix and suggestion fixtures assert the WHOLE file back, so every
       // `output` needs the same prefix or each fixable rule fails on the header
       // alone — including the ones nested under errors[].suggestions[].
-      ...(typeof test.output === 'string' ? { output: asLambda(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asLambda(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -47,7 +49,6 @@ const lambda = <T,>(cases: T[]): T[] =>
     } as T;
   });
 
-
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
 RuleTester.itOnly = it.only;
@@ -59,6 +60,7 @@ ruleTester.run('require-timeout-handling', requireTimeoutHandling, {
   valid: lambda([
     // Test file (allowed by default)
     {
+      name: 'a test file is exempt',
       code: `
         export const handler = async (event, context) => {
           await fetch('https://api.example.com');
@@ -134,6 +136,7 @@ ruleTester.run('require-timeout-handling', requireTimeoutHandling, {
   invalid: lambda([
     // Lambda handler with fetch but no timeout handling (classic FN)
     {
+      name: 'an outbound call with no timeout can burn the whole invocation',
       code: `
         export const handler = async (event, context) => {
           const data = await fetch('https://api.example.com/data');

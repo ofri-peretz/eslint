@@ -72,6 +72,7 @@ describe('no-missing-security-headers', () => {
       valid: xp([
         // All required headers
         {
+          name: 'the security headers are set',
           code: `
             res.setHeader('Content-Security-Policy', 'default-src self');
             res.setHeader('X-Frame-Options', 'DENY');
@@ -94,6 +95,7 @@ describe('no-missing-security-headers', () => {
       valid: [],
       invalid: xp([
         {
+          name: 'a response that sets headers but none of the security ones',
           code: 'res.setHeader("X-Custom", "value");',
           errors: [{ messageId: 'missingSecurityHeader' }],
         },

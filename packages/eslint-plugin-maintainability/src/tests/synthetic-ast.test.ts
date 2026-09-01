@@ -321,6 +321,46 @@ describe('no-unhandled-promise — helper functions with synthetic AST', () => {
       expect(reports).toEqual([]);
     });
 
+    /**
+     * A parentless node reaches the `parent &&` short-circuits in the
+     * void-expression and nested-argument checks, which no parsed file can
+     * produce — every real node has a parent.
+     */
+    it('handles a parentless call under ignoreVoidExpressions', () => {
+      const { listeners, reports } = createWithMockContext(noUnhandledPromise, {
+        options: [{ ignoreVoidExpressions: true }],
+        filename: 'src/app.ts',
+      });
+      invoke(listeners, 'CallExpression', {
+        type: 'CallExpression',
+        callee: { type: 'Identifier', name: 'fetch' },
+        arguments: [],
+      });
+      expect(reports).toHaveLength(1);
+    });
+
+    it('handles a call whose parent call has no parent of its own', () => {
+      const { listeners, reports } = createWithMockContext(noUnhandledPromise, {
+        filename: 'src/app.ts',
+      });
+      const inner = {
+        type: 'CallExpression',
+        callee: { type: 'Identifier', name: 'fetch' },
+        arguments: [],
+      } as Record<string, unknown>;
+      // The parent is a CallExpression with no parent — the `grandParent`
+      // arm of the nested-argument skip.
+      //
+      // This asserted `[]` until 2026-08-26, when the skip stopped being
+      // unconditional. `wrap(fetch(url))` where `wrap` is not a promise now
+      // reports the INNER call, because otherwise nothing reports it at all
+      // and the rejection is unhandled. The synthetic node exercises the arm
+      // where there is no grandparent to inspect.
+      inner['parent'] = { type: 'CallExpression', callee: { type: 'Identifier', name: 'wrap' }, arguments: [inner] };
+      invoke(listeners, 'CallExpression', inner);
+      expect(reports).toHaveLength(1);
+    });
+
     it('null options entry falls back to defaults and reports an unhandled call', () => {
       const { listeners, reports } = createWithMockContext(noUnhandledPromise, {
         options: [null],
@@ -328,7 +368,10 @@ describe('no-unhandled-promise — helper functions with synthetic AST', () => {
       });
       invoke(listeners, 'CallExpression', {
         type: 'CallExpression',
-        callee: { type: 'Identifier', name: 'fire' },
+        // `fetch`, not an arbitrary name: the rule now requires the file to
+        // show that a call returns a promise, and this test is about the
+        // options fallback, not about the evidence gate.
+        callee: { type: 'Identifier', name: 'fetch' },
         arguments: [],
       });
       expect(reports).toHaveLength(1);

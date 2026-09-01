@@ -31,6 +31,7 @@ describe('no-keyboard-inaccessible-elements', () => {
       valid: [
         // Div with tabIndex and role
         {
+          name: 'tabIndex and role supplied',
           code: '<div onClick={handler} tabIndex={0} role="button">Click</div>',
         },
         // Div with role
@@ -62,6 +63,7 @@ describe('no-keyboard-inaccessible-elements', () => {
       invalid: [
         // Div with onClick but no tabIndex or role
         {
+          name: 'a click handler on a div with no tabIndex or role',
           code: '<div onClick={handler}>Click</div>',
           errors: [{ messageId: 'keyboardInaccessible' }],
         },

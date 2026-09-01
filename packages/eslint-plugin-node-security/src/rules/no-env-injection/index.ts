@@ -43,6 +43,21 @@ type MessageIds = 'envKeyInjection' | 'envBulkInjection';
 export interface Options {
   /** Extra identifiers to treat as roots of request-controlled data. */
   extraRequestRoots?: string[];
+
+  /**
+   * Identifiers that name the request at the top of a handler. REPLACES the
+   * default.
+   *
+   * `extraRequestRoots` can only GROW the list, and growth cannot undo a word
+   * we guessed wrong: a local `const event = loadFixture()` is matched by the
+   * default and no amount of adding fixes it. Express, Koa and Lambda all take
+   * the request POSITIONALLY, so these words are the consumer's.
+   *
+   * The two compose — `extraRequestRoots` is appended to whatever this is — so
+   * `{ requestRootNames: [], extraRequestRoots: ['inbound'] }` means exactly
+   * `inbound`.
+   */
+  requestRootNames?: string[];
 }
 
 type RuleOptions = [Options?];
@@ -121,6 +136,13 @@ export const noEnvInjection = createRule<RuleOptions, MessageIds>({
       {
         type: 'object',
         properties: {
+          requestRootNames: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [...DEFAULT_REQUEST_ROOTS],
+            description:
+              'Identifiers that name the request at the top of a handler. Replaces the default.',
+          },
           extraRequestRoots: {
             type: 'array',
             items: { type: 'string' },
@@ -139,9 +161,13 @@ export const noEnvInjection = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{}],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]) {
-    const { extraRequestRoots } = options as Options;
+    const { extraRequestRoots, requestRootNames } = options as Options;
+    // The two COMPOSE: `requestRootNames` replaces the default list and
+    // `extraRequestRoots` is appended to whatever that ends up being, so
+    // `{ requestRootNames: [], extraRequestRoots: ['inbound'] }` means
+    // exactly `inbound`.
     const requestRoots = new Set([
-      ...DEFAULT_REQUEST_ROOTS,
+      ...(requestRootNames ?? DEFAULT_REQUEST_ROOTS),
       ...(extraRequestRoots ?? []),
     ]);
 

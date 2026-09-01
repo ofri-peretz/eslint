@@ -24,6 +24,7 @@ describe('require-issuer-validation', () => {
     ruleTester.run('valid - with issuer', requireIssuerValidation, {
       valid: [
         {
+          name: 'an explicit issuer',
           code: `import jwt from 'jsonwebtoken';
 jwt.verify(token, secret, { issuer: 'https://auth.example.com' });`,
         },
@@ -59,6 +60,7 @@ jwtVerify(token, key, { issuer: 'https://auth.example.com' });`,
       valid: [],
       invalid: [
         {
+          name: 'verify with no issuer accepts a token from any signer holding the key',
           code: `import jwt from 'jsonwebtoken';
 jwt.verify(token, secret);`,
           errors: [{ messageId: 'missingIssuerValidation' }],

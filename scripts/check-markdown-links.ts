@@ -23,21 +23,47 @@ interface LinkIssue {
 const issues: LinkIssue[] = [];
 const checkedFiles = new Set<string>();
 
-// Get all markdown files (excluding cache and node_modules)
+/**
+ * Every markdown file in the repository.
+ *
+ * The `catch` here used to `return []`, and the caller reported "✅ All links
+ * are valid!" over a list of nothing. That is the worst available outcome: the
+ * gate is green precisely when it has failed to look.
+ *
+ * It fired for real. `find` writes every path to stdout, `execSync` buffers
+ * that in memory with a 1MB default, and a working tree holding
+ * `benchmarks/.real-source-cache` — 73 cloned repositories — blows past it.
+ * Locally the gate passed while scanning zero files; CI, with no cache, found
+ * two broken links on the same commit.
+ *
+ * So: the cache is excluded, the buffer is raised, and a failure is a failure.
+ */
 function getMarkdownFiles(rootDir = '.'): string[] {
+  let result: string;
   try {
-    const result = execSync(
-      `find ${rootDir} -name "*.md" -type f ! -path "*/node_modules/*" ! -path "*/.turbo/*" ! -path "*/dist/*" ! -path "*/.git/*" ! -path "*/coverage/*" ! -path "*/.next/*" ! -path "*/.source/*" ! -path "*/test-results/*" ! -path "*/playwright-report/*" ! -path "*/build/*" ! -path "*/.gemini/*" ! -path "*/.cursor/*"`,
-      { encoding: 'utf-8' }
+    result = execSync(
+      `find ${rootDir} -name "*.md" -type f ! -path "*/node_modules/*" ! -path "*/.turbo/*" ! -path "*/dist/*" ! -path "*/.git/*" ! -path "*/coverage/*" ! -path "*/.next/*" ! -path "*/.source/*" ! -path "*/test-results/*" ! -path "*/playwright-report/*" ! -path "*/build/*" ! -path "*/.gemini/*" ! -path "*/.cursor/*" ! -path "*/.real-source-cache/*"`,
+      { encoding: 'utf-8', maxBuffer: 64 * 1024 * 1024 }
     );
-    return result
-      .trim()
-      .split('\n')
-      .filter(Boolean)
-      .map(f => f.startsWith('./') ? f.slice(2) : f);
-  } catch {
-    return [];
+  } catch (error) {
+    console.error(
+      `\n⛔ could not list markdown files: ${(error as Error).message.split('\n')[0]}\n` +
+        '   Refusing to report on a list this script failed to build.\n'
+    );
+    process.exit(1);
   }
+
+  const files = result
+    .trim()
+    .split('\n')
+    .filter(Boolean)
+    .map(f => (f.startsWith('./') ? f.slice(2) : f));
+
+  if (files.length === 0) {
+    console.error('\n⛔ found no markdown files at all — that is not a passing state.\n');
+    process.exit(1);
+  }
+  return files;
 }
 
 // Extract all links from markdown content

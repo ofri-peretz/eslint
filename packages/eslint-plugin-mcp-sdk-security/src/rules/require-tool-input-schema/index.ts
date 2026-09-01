@@ -13,11 +13,15 @@
  * @see https://modelcontextprotocol.io/docs/concepts/tools
  */
 
-import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  TSESTree,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 import { fileUsesMcpSdk } from '../../utils/mcp-evidence';
 
 type MessageIds = 'missingInputSchema';
-
 
 const REGISTER_TOOL = 'registerTool';
 const LEGACY_TOOL = 'tool';
@@ -42,8 +46,10 @@ function readInputSchema(config: TSESTree.ObjectExpression): SchemaVerdict {
   for (const prop of config.properties) {
     if (prop.type === 'SpreadElement') return 'unreadable';
     if (prop.computed) continue;
-    if (prop.key.type === 'Identifier' && prop.key.name === 'inputSchema') return 'declared';
-    if (prop.key.type === 'Literal' && prop.key.value === 'inputSchema') return 'declared';
+    if (prop.key.type === 'Identifier' && prop.key.name === 'inputSchema')
+      return 'declared';
+    if (prop.key.type === 'Literal' && prop.key.value === 'inputSchema')
+      return 'declared';
   }
   return 'missing';
 }
@@ -70,7 +76,8 @@ export const requireToolInputSchema = createRule<[], MessageIds>({
         severity: 'HIGH',
         compliance: ['SOC2'],
         fix: 'Declare the accepted shape: registerTool("{{tool}}", { inputSchema: { path: z.string() } }, handler)',
-        documentationLink: 'https://modelcontextprotocol.io/docs/concepts/tools',
+        documentationLink:
+          'https://modelcontextprotocol.io/docs/concepts/tools',
       }),
     },
     schema: [],
@@ -83,17 +90,20 @@ export const requireToolInputSchema = createRule<[], MessageIds>({
     if (!fileUsesMcpSdk(context.sourceCode.ast)) return {};
     // Registrations are collected and judged at Program:exit so the rule does
     // not depend on the import appearing above them.
-    const candidates: Array<{ node: TSESTree.CallExpression; tool: string }> = [];
+    const candidates: Array<{ node: TSESTree.CallExpression; tool: string }> =
+      [];
 
     function toolNameOf(node: TSESTree.CallExpression): string {
       const first = node.arguments[0];
-      if (first?.type === 'Literal' && typeof first.value === 'string') return first.value;
+      if (first?.type === 'Literal' && typeof first.value === 'string')
+        return first.value;
       return 'unknown';
     }
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
-        if (node.callee.type !== 'MemberExpression' || node.callee.computed) return;
+        if (node.callee.type !== 'MemberExpression' || node.callee.computed)
+          return;
         if (node.callee.property.type !== 'Identifier') return;
 
         const method = node.callee.property.name;
@@ -122,7 +132,11 @@ export const requireToolInputSchema = createRule<[], MessageIds>({
 
       'Program:exit'() {
         for (const { node, tool } of candidates) {
-          context.report({ node, messageId: 'missingInputSchema', data: { tool } });
+          context.report({
+            node,
+            messageId: 'missingInputSchema',
+            data: { tool },
+          });
         }
       },
     };

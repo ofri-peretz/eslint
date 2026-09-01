@@ -729,6 +729,7 @@ const inputType = \`(\${intentKey})\`;`,
       // …and the identical value IS reported once it is built into filter grammar,
       // so the gate removed a false positive rather than the detection.
       {
+        name: 'a request value interpolated into an LDAP filter',
         code: "import ldapjs from 'ldapjs';\nconst filter = `(uid=${req.query.uid})`;",
         errors: [{ messageId: 'unsafeLdapFilter' }],
       },
@@ -777,7 +778,7 @@ describe('option branches', () => {
     "import ldapjs from 'ldapjs';\n// @safe\nconst filter = `(uid=${req.query.uid})`;";
 
   ruleTester.run('trustedSanitizers silences a custom escaper', noLdapInjection, {
-    valid: [{ code: SANITIZED, options: [{ trustedSanitizers: ['ldapClean'] }] }],
+    valid: [{ name: 'the value is escaped first', code: SANITIZED, options: [{ trustedSanitizers: ['ldapClean'] }] }],
     // …and without it, the very same source is reported. `ldapClean` is not in
     // the devkit's built-in SANITIZATION_FUNCTIONS, and membership there is
     // exact, so nothing but the option can account for the difference.

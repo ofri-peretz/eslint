@@ -15,6 +15,7 @@ ruleTester.run('no-disabled-safety-settings', noDisabledSafetySettings, {
   valid: [
     // A real threshold
     {
+      name: 'a threshold that still blocks',
       code: `${IMPORT}
         const cfg = { safetySettings: [{ category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' }] };`,
     },
@@ -48,6 +49,7 @@ ruleTester.run('no-disabled-safety-settings', noDisabledSafetySettings, {
   ],
   invalid: [
     {
+      name: 'BLOCK_NONE turns the safety filter off entirely',
       code: `${IMPORT}
         const cfg = { safetySettings: [{ category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' }] };`,
       errors: [{ messageId: 'safetyDisabled' }],

@@ -16,12 +16,12 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('require-network-timeout', requireNetworkTimeout, {
   valid: [
-    { code: 'fetch(url, { timeout: 5000 })' },
+    { name: 'a timeout is set', code: 'fetch(url, { timeout: 5000 })' },
     { code: 'axios.get(url, { timeout: 10000 })' },
   ],
 
   invalid: [
-    { code: 'fetch(url)', errors: [{ messageId: 'violationDetected' }] },
+    { name: 'a fetch with no timeout can hang forever', code: 'fetch(url)', errors: [{ messageId: 'violationDetected' }] },
   ],
 });
 

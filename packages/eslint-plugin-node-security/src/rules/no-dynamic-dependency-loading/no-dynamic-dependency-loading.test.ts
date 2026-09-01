@@ -21,12 +21,12 @@ ruleTester.run('no-dynamic-dependency-loading', noDynamicDependencyLoading, {
         'function noop() {}',
         'const items = [];',
         'const obj = {};',
-    { code: "import module from './module'" },
+    { name: 'a static import', code: "import module from './module'" },
     { code: "const lib = require('known-lib')" }
   ],
 
   invalid: [
-    { code: "require(moduleName)", errors: [{ messageId: 'violationDetected' }] },
+    { name: 'require of a computed module name', code: "require(moduleName)", errors: [{ messageId: 'violationDetected' }] },
     { code: "import(userInput)", errors: [{ messageId: 'violationDetected' }] }
   ],
 });

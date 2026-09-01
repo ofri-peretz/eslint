@@ -19,6 +19,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  readsRequestShape,
 } from '@interlace/eslint-devkit';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
 
@@ -52,48 +53,58 @@ const QUERY_METHODS = [
   'aggregate',
 ];
 
-// Patterns that indicate user input
-const USER_INPUT_PATTERNS = [
-  'req.body',
-  'req.query',
-  'req.params',
-  'request.body',
-  'request.query',
-  'request.params',
-  'ctx.request.body',
-  'ctx.query',
-  'ctx.params',
-];
+/**
+ * The shape a scope reader needs. `readsRequestShape` walks to the root of a
+ * member chain and asks whether that binding ARRIVED as a parameter.
+ */
+type ScopeReader = Parameters<typeof readsRequestShape>[1];
 
 /**
- * Check if an expression contains potential user input.
+ * Whether an expression reads an HTTP request.
  *
  * Recurses into composite expressions (TemplateLiteral, BinaryExpression,
  * CallExpression) — without this, `$where: \`this.name == '${req.query.x}'\``
  * was being missed because TemplateLiteral was stringified to '[expression]'
  * before pattern matching (real FN found by the CWE-943 corpus).
+ *
+ * The member-expression case used to compare printed source against a list of
+ * ten strings — `'req.body'`, `'request.query'`, `'ctx.params'`. That list was
+ * simultaneously too narrow and too wide: a handler written `(request, reply)`
+ * is Fastify's own convention and matched nothing, while any local variable a
+ * developer happened to call `req` matched everything. `readsRequestShape`
+ * asks the structural question instead — is this a read of `.query` /
+ * `.params` / `.headers` / `.cookies` off something that ARRIVED as a
+ * parameter — so the answer no longer depends on spelling.
  */
-function containsUserInput(node: TSESTree.Node): boolean {
+function containsUserInput(
+  node: TSESTree.Node,
+  sourceCode: ScopeReader,
+): boolean {
   if (node.type === AST_NODE_TYPES.TemplateLiteral) {
-    return node.expressions.some((e) => containsUserInput(e));
+    return node.expressions.some((e) => containsUserInput(e, sourceCode));
   }
   if (node.type === AST_NODE_TYPES.BinaryExpression) {
-    return containsUserInput(node.left) || containsUserInput(node.right);
+    return (
+      containsUserInput(node.left, sourceCode) ||
+      containsUserInput(node.right, sourceCode)
+    );
   }
   if (node.type === AST_NODE_TYPES.CallExpression) {
-    return containsUserInput(node.callee) ||
-           node.arguments.some((a) => a.type !== 'SpreadElement' && containsUserInput(a as TSESTree.Node));
+    return (
+      containsUserInput(node.callee, sourceCode) ||
+      node.arguments.some(
+        (a) =>
+          a.type !== 'SpreadElement' &&
+          containsUserInput(a as TSESTree.Node, sourceCode),
+      )
+    );
   }
   if (node.type === AST_NODE_TYPES.MemberExpression) {
-    const code = getNodeSource(node);
-    return USER_INPUT_PATTERNS.some((pattern) => code.includes(pattern));
+    return readsRequestShape(node, sourceCode);
   }
-  if (node.type === AST_NODE_TYPES.Identifier) {
-    // Identifiers are unknown without scope analysis; treat as untainted
-    // here — the caller already treats bare Identifiers as unsafe at a
-    // higher gate. Don't double-count.
-    return false;
-  }
+  // A bare identifier says nothing on its own. Resolving it would need real
+  // dataflow, and guessing costs a false positive on every `const` in a
+  // filter — see ILB-0123.
   return false;
 }
 
@@ -112,24 +123,30 @@ function getNodeSource(node: TSESTree.Node): string {
         : '[computed]';
     return `${obj}.${prop}`;
   }
-  if (node.type === AST_NODE_TYPES.Literal) {
-    return String(node.value);
-  }
+  // The Literal branch is gone. It existed so `'req.body'.x` — a STRING whose
+  // contents happened to read like a request path — stringified to the tainted
+  // pattern and reported. That was the string-matching model's purest false
+  // positive: quoting the text was enough to trip the rule. With the taint
+  // decision structural, a literal can no longer reach here at all.
   return '[expression]';
 }
 
 /**
  * Check if a property value is potentially unsafe
  */
-function isUnsafePropertyValue(node: TSESTree.Node): boolean {
-  // Direct identifier (variable) - potentially unsafe if from user input
-  if (node.type === AST_NODE_TYPES.Identifier) {
-    return true;
-  }
-
+function isUnsafePropertyValue(
+  node: TSESTree.Node,
+  sourceCode: ScopeReader,
+): boolean {
+  // A bare identifier used to return `true` here, which meant every `const`
+  // in a filter was reported as user input — `find({ name: NAME })` with
+  // `const NAME = 'root'` two lines up produced `User input "NAME" is used
+  // directly`. That is ILB-0123, and a false positive is spent on every build
+  // a consumer runs.
+  //
   // Member expression like req.body.username
   if (node.type === AST_NODE_TYPES.MemberExpression) {
-    return containsUserInput(node);
+    return containsUserInput(node, sourceCode);
   }
 
   // Template literal - always unsafe for queries
@@ -175,7 +192,8 @@ export const noUnsafeQuery = createRule<RuleOptions, MessageIds>({
       suggestionUseEq: formatLLMMessage({
         icon: MessageIcons.INFO,
         issueName: 'Use $eq Operator',
-        description: 'Wrap the value with { $eq: value } to prevent operator injection',
+        description:
+          'Wrap the value with { $eq: value } to prevent operator injection',
         severity: 'LOW',
         fix: 'Replace direct value with { $eq: sanitizedValue }',
         documentationLink:
@@ -200,7 +218,7 @@ export const noUnsafeQuery = createRule<RuleOptions, MessageIds>({
   defaultOptions: [{ allowInTests: true, additionalMethods: [] }],
   create(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}]
+    [options = {}],
   ) {
     // Every rule here is MongoDB-specific, and none of them could ask the
     // file-level question: over the corpus, 47% of this plugin's findings were
@@ -238,7 +256,43 @@ export const noUnsafeQuery = createRule<RuleOptions, MessageIds>({
 
         // Check first argument (the query object)
         const queryArg = node.arguments[0];
-        if (!queryArg || queryArg.type !== AST_NODE_TYPES.ObjectExpression) {
+        if (!queryArg) return;
+
+        // `find(req.body)` — the caller hands you the whole query document.
+        // `{"$ne": null}` as a password turns the lookup into "any user",
+        // which is the canonical NoSQL authentication bypass and the most
+        // direct form the bug takes. This early-returned on anything that was
+        // not an object literal, so it was missed entirely (ILB-0121).
+        if (
+          queryArg.type !== AST_NODE_TYPES.ObjectExpression &&
+          queryArg.type !== AST_NODE_TYPES.SpreadElement &&
+          // `bodyNeedsDepth: false` — the argument POSITION supplies the
+          // meaning the depth rule normally waits for. A bare `.body` is
+          // ambiguous in general; a bare `.body` used as the filter document
+          // of a Mongo query is the bug itself.
+          (readsRequestShape(queryArg, context.sourceCode, {
+            bodyNeedsDepth: false,
+          }) ||
+            containsUserInput(queryArg, context.sourceCode))
+        ) {
+          context.report({
+            node: queryArg,
+            messageId: 'unsafeQuery',
+            data: { input: getNodeSource(queryArg) },
+            suggest: [
+              {
+                messageId: 'suggestionUseEq',
+                fix(fixer: TSESLint.RuleFixer) {
+                  const valueText = context.sourceCode.getText(queryArg);
+                  return fixer.replaceText(queryArg, `{ $eq: ${valueText} }`);
+                },
+              },
+            ],
+          });
+          return;
+        }
+
+        if (queryArg.type !== AST_NODE_TYPES.ObjectExpression) {
           return;
         }
 
@@ -251,11 +305,10 @@ export const noUnsafeQuery = createRule<RuleOptions, MessageIds>({
           const value = prop.value;
 
           // Check if the value is potentially unsafe
-          if (isUnsafePropertyValue(value)) {
+          if (isUnsafePropertyValue(value, context.sourceCode)) {
             const inputSource = getNodeSource(value);
 
-            // Only report if it looks like user input or is a potentially tainted variable
-            if (containsUserInput(value) || value.type === AST_NODE_TYPES.Identifier) {
+            if (containsUserInput(value, context.sourceCode)) {
               context.report({
                 node: prop,
                 messageId: 'unsafeQuery',

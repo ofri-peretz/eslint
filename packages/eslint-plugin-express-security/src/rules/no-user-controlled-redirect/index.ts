@@ -194,7 +194,6 @@ export const noUserControlledRedirect = createRule<RuleOptions, MessageIds>({
       return null;
     }
 
-
     /**
      * Structural equality for the member path behind a user source, so
      * `req.query.url` in the guard is recognised as the same expression as
@@ -204,10 +203,16 @@ export const noUserControlledRedirect = createRule<RuleOptions, MessageIds>({
      */
     function sameMemberPath(a: TSESTree.Node, b: TSESTree.Node): boolean {
       if (a.type !== b.type) return false;
-      if (a.type === AST_NODE_TYPES.Identifier && b.type === AST_NODE_TYPES.Identifier) {
+      if (
+        a.type === AST_NODE_TYPES.Identifier &&
+        b.type === AST_NODE_TYPES.Identifier
+      ) {
         return a.name === b.name;
       }
-      if (a.type === AST_NODE_TYPES.Literal && b.type === AST_NODE_TYPES.Literal) {
+      if (
+        a.type === AST_NODE_TYPES.Literal &&
+        b.type === AST_NODE_TYPES.Literal
+      ) {
         return a.value === b.value;
       }
       if (
@@ -235,7 +240,11 @@ export const noUserControlledRedirect = createRule<RuleOptions, MessageIds>({
     }
 
     /** Walk a subtree, skipping `parent` back-edges. */
-    function search(root: unknown, hit: (n: TSESTree.Node) => boolean, stopAtFn: boolean): boolean {
+    function search(
+      root: unknown,
+      hit: (n: TSESTree.Node) => boolean,
+      stopAtFn: boolean,
+    ): boolean {
       let found = false;
       const visit = (n: unknown): void => {
         if (found || n === null || typeof n !== 'object') return;
@@ -271,7 +280,10 @@ export const noUserControlledRedirect = createRule<RuleOptions, MessageIds>({
      * True if the subtree reads `.host` / `.hostname` / `.origin` off
      * `new URL(<source>)` — the redirect target's origin is being checked.
      */
-    function containsOriginCheck(node: TSESTree.Node, source: TSESTree.Node): boolean {
+    function containsOriginCheck(
+      node: TSESTree.Node,
+      source: TSESTree.Node,
+    ): boolean {
       return search(
         node,
         (n) =>
@@ -311,7 +323,10 @@ export const noUserControlledRedirect = createRule<RuleOptions, MessageIds>({
      * direction for a rule whose alternative is flagging every correct
      * implementation.
      */
-    function hasOriginGuard(source: TSESTree.Node, from: TSESTree.Node): boolean {
+    function hasOriginGuard(
+      source: TSESTree.Node,
+      from: TSESTree.Node,
+    ): boolean {
       // Every node in an ESLint AST has a Program root, and Program terminates this
       // walk — so `scope` is always defined on exit. Seeding from the source file's
       // Program says that in code rather than with an unreachable null check.

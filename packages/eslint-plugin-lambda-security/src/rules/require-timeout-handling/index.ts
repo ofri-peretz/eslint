@@ -15,6 +15,11 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { fileIsLambda } from '../../utils/lambda-evidence';
 import {
+  DEFAULT_CONTEXT_PARAM_NAMES,
+  DEFAULT_EVENT_PARAM_NAMES,
+  HANDLER_PARAM_SCHEMA,
+} from '../../utils/handler-params';
+import {
   AST_NODE_TYPES,
   createRule,
   formatLLMMessage,
@@ -25,6 +30,20 @@ import {
 type MessageIds = 'missingTimeoutHandling';
 
 export interface Options {
+  /**
+   * Parameter names that identify the Lambda EVENT argument. REPLACES the
+   * default.
+   *
+   * AWS documents the signature as `(event, context, callback)` but the
+   * parameters are POSITIONAL — a handler written `(payload, runtime)` is
+   * ordinary and matched none of the hardcoded list. Position alone cannot
+   * decide it either: `params.length >= 1` would make every one-argument
+   * function a handler. The name is doing real work, which is why the consumer
+   * has to be able to state it.
+   */
+  eventParamNames?: string[];
+  /** Parameter names that identify the Lambda CONTEXT argument. REPLACES the default. */
+  contextParamNames?: string[];
   /** Allow in test files. Default: true */
   allowInTests?: boolean;
 }
@@ -32,10 +51,8 @@ export interface Options {
 type RuleOptions = [Options?];
 
 // Lambda context parameter names
-const CONTEXT_PARAM_NAMES = new Set(['context', 'ctx', 'lambdaContext']);
 
 // Event parameter names (to identify Lambda handlers)
-const EVENT_PARAM_NAMES = new Set(['event', 'evt', 'e', 'request', 'req']);
 
 // External call patterns that could timeout
 const EXTERNAL_CALL_PATTERNS = new Set([
@@ -80,12 +97,19 @@ export const requireTimeoutHandling = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://docs.aws.amazon.com/lambda/latest/dg/nodejs-context.html',
       }),
-
     },
     schema: [
       {
         type: 'object',
         properties: {
+          ...HANDLER_PARAM_SCHEMA,
+          contextParamNames: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [...DEFAULT_CONTEXT_PARAM_NAMES],
+            description:
+              'Parameter names that identify the Lambda context argument. Replaces the default.',
+          },
           allowInTests: {
             type: 'boolean',
             default: true,
@@ -104,6 +128,13 @@ export const requireTimeoutHandling = createRule<RuleOptions, MessageIds>({
     // files, 98% of this plugin's findings were in files with no AWS anything.
     // Registering no visitors is both the gate and the cheap path.
     if (!fileIsLambda(context.sourceCode.ast)) return {};
+
+    const eventParamNames = new Set(
+      options.eventParamNames ?? DEFAULT_EVENT_PARAM_NAMES,
+    );
+    const contextParamNames = new Set(
+      options.contextParamNames ?? DEFAULT_CONTEXT_PARAM_NAMES,
+    );
 
     const { allowInTests = true } = options as Options;
     const filename = context.filename;
@@ -133,13 +164,11 @@ export const requireTimeoutHandling = createRule<RuleOptions, MessageIds>({
       const params = node.params;
       const hasEvent = params.some(
         (p) =>
-          p.type === AST_NODE_TYPES.Identifier &&
-          EVENT_PARAM_NAMES.has(p.name),
+          p.type === AST_NODE_TYPES.Identifier && eventParamNames.has(p.name),
       );
       const hasContext = params.some(
         (p) =>
-          p.type === AST_NODE_TYPES.Identifier &&
-          CONTEXT_PARAM_NAMES.has(p.name),
+          p.type === AST_NODE_TYPES.Identifier && contextParamNames.has(p.name),
       );
 
       if (hasEvent) {

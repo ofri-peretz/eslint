@@ -7,7 +7,7 @@
 /**
  * ESLint Rule: no-distracting-elements
  * Enforce that distracting elements are not used
- * 
+ *
  * @see https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/no-distracting-elements.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
@@ -35,11 +35,13 @@ export const noDistractingElements = createRule<RuleOptions, MessageIds>({
       noDistractingElements: formatLLMMessage({
         icon: MessageIcons.ACCESSIBILITY,
         issueName: 'Distracting Element',
-        description: '<{{element}}> elements are distracting and cause accessibility issues',
+        description:
+          '<{{element}}> elements are distracting and cause accessibility issues',
         severity: 'HIGH',
         fix: 'Remove the <{{element}}> element',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/no-distracting-elements.md',
-        wcag: 'WCAG 2.3.1'
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/no-distracting-elements.md',
+        wcag: 'WCAG 2.3.1',
       }),
     },
     schema: [
@@ -61,12 +63,18 @@ export const noDistractingElements = createRule<RuleOptions, MessageIds>({
       elements: ['marquee', 'blink'],
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
-    const { elements = ['marquee', 'blink'] } = options ?? {} as Options;
+  create(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    [options = {} as Options],
+  ) {
+    const { elements = ['marquee', 'blink'] } = options ?? ({} as Options);
 
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
-        if (node.name.type === 'JSXIdentifier' && elements.includes(node.name.name)) {
+        if (
+          node.name.type === 'JSXIdentifier' &&
+          elements.includes(node.name.name)
+        ) {
           context.report({
             node,
             messageId: 'noDistractingElements',
@@ -79,4 +87,3 @@ export const noDistractingElements = createRule<RuleOptions, MessageIds>({
     };
   },
 });
-

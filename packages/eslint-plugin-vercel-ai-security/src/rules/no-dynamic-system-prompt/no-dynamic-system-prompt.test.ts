@@ -61,6 +61,7 @@ ruleTester.run('no-dynamic-system-prompt', noDynamicSystemPrompt, {
   valid: xai([
     // Static string literal
     {
+      name: 'a fixed system prompt with the user text in `prompt`',
       code: `
         await generateText({
           model: openai('gpt-4'),
@@ -111,6 +112,7 @@ ruleTester.run('no-dynamic-system-prompt', noDynamicSystemPrompt, {
   invalid: xai([
     // Template literal with expression
     {
+      name: 'a value interpolated into the system prompt can rewrite the instructions',
       code: `
         await generateText({
           system: \`You are a \${role} assistant.\`,

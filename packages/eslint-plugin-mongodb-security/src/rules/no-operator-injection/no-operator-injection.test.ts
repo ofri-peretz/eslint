@@ -75,6 +75,7 @@ describe('no-operator-injection', () => {
       valid: xmo([
         // Unrelated code should not trigger
         {
+          name: 'the driver is imported but nothing queries',
           code: `const x = 1;`,
         },
         // Array operations are safe
@@ -106,6 +107,7 @@ describe('no-operator-injection', () => {
       invalid: xmo([
         // Triggers operatorInjection: operator from user input
         {
+          name: 'a request value used where an operator is expected',
           code: `const filter = { $ne: req.body.value };`,
           errors: [{ messageId: 'operatorInjection' }],
         },

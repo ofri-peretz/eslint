@@ -31,6 +31,7 @@ describe('no-missing-null-checks', () => {
       valid: [
         // Direct optional chaining
         {
+          name: 'optional chaining guards the read',
           code: 'obj?.property;',
         },
         {
@@ -196,6 +197,7 @@ describe('no-missing-null-checks', () => {
       invalid: [
         // Simple property access
         {
+          name: 'a property read off a binding that is still undefined',
           code: 'let obj; const x = obj.property;',
           filename: 'src/utils.ts',
           errors: [{ messageId: 'missingNullCheck' }],

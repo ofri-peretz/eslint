@@ -30,6 +30,7 @@ describe('no-unlimited-resource-allocation', () => {
       valid: [
         // Safe buffer allocation with limits
         {
+          name: 'a fixed size',
           code: 'const buf = Buffer.alloc(1024);',
         },
         {
@@ -168,6 +169,7 @@ describe('no-unlimited-resource-allocation', () => {
       valid: [],
       invalid: [
         {
+          name: 'an allocation sized by the request',
           code: 'const buf = Buffer.alloc(req.query.size);',
           errors: [
             {

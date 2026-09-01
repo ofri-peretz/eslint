@@ -61,6 +61,7 @@ ruleTester.run('require-output-filtering', requireOutputFiltering, {
   valid: xai([
     // Filtered database query
     {
+      name: 'the result is filtered first',
       code: `
         const tools = {
           search: {
@@ -112,6 +113,7 @@ ruleTester.run('require-output-filtering', requireOutputFiltering, {
   invalid: xai([
     // Direct database query return
     {
+      name: 'a tool returns the raw query result to the model',
       code: `
         const tools = {
           search: {

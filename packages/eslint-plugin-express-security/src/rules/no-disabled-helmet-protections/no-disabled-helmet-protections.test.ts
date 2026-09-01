@@ -65,7 +65,7 @@ describe('no-disabled-helmet-protections', () => {
     {
       valid: xp([
         // THE safe pattern — helmet with its defaults
-        { code: `app.use(helmet());` },
+        { name: 'helmet with its defaults', code: `app.use(helmet());` },
         // Customising a protection (object, not false) keeps the header
         {
           code: `app.use(helmet({ contentSecurityPolicy: { directives: { defaultSrc: ["'self'"] } } }));`,
@@ -105,6 +105,7 @@ describe('no-disabled-helmet-protections', () => {
       invalid: xp([
         // CSP off — the SonarJS S5728 case
         {
+          name: 'a helmet protection switched off',
           code: `app.use(helmet({ contentSecurityPolicy: false }));`,
           errors: [
             {

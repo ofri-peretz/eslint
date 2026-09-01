@@ -33,6 +33,7 @@ describe('no-access-state-in-setstate', () => {
       valid: [
         // setState without accessing this.state
         {
+          name: 'a plain value',
           code: 'this.setState({ count: 1 })',
         },
         {
@@ -66,6 +67,7 @@ describe('no-access-state-in-setstate', () => {
       invalid: [
         // Accessing this.state directly in setState
         {
+          name: 'reading this.state inside setState races with batching',
           code: 'this.setState({ count: this.state.count + 1 })',
           errors: [
             {

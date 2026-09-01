@@ -35,7 +35,7 @@ describe('no-shell-injection', () => {
     ruleTester.run('valid - literal strings are safe', noShellInjection, {
       valid: [
         // Literal string — no injection surface
-        { code: "import { exec, execSync, spawn, spawnSync, execFile, execFileSync } from 'node:child_process';\nexec('ls -la /tmp');" },
+        { name: 'a literal command', code: "import { exec, execSync, spawn, spawnSync, execFile, execFileSync } from 'node:child_process';\nexec('ls -la /tmp');" },
         // execSync with literal — safe
         { code: "import { exec, execSync, spawn, spawnSync, execFile, execFileSync } from 'node:child_process';\nexecSync('git status');" },
         // spawn with args array — structurally safe parameterization form
@@ -63,6 +63,7 @@ describe('no-shell-injection', () => {
       invalid: [
         // Template literal with expression — injection surface in command
         {
+          name: 'a shell command built from a user value',
           code: 'import { exec, execSync, spawn, spawnSync, execFile, execFileSync } from "node:child_process";\nexec(`git clone ${userRepo}`);',
           errors: [{ messageId: 'shellInjection' }],
         },

@@ -27,6 +27,7 @@ describe('no-json-schema-tags', () => {
       valid: [
         // Standard JSDoc tags
         {
+          name: 'ordinary JSDoc tags',
           code: `
             /**
              * A user's age.
@@ -92,6 +93,7 @@ describe('no-json-schema-tags', () => {
       valid: [],
       invalid: [
         {
+          name: '@minimum is a JSON Schema tag, not a JSDoc one',
           code: `
             /**
              * The page size.

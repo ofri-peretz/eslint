@@ -7,7 +7,7 @@
 /**
  * ESLint Rule: mouse-events-have-key-events
  * Enforce that onMouseOver/onMouseOut are accompanied by onFocus/onBlur for keyboard accessibility
- * 
+ *
  * @see https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/mouse-events-have-key-events.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
@@ -24,25 +24,30 @@ export const mouseEventsHaveKeyEvents = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/mouse-events-have-key-events.md',
-      description: 'Enforce that onMouseOver/onMouseOut are accompanied by onFocus/onBlur',
+      description:
+        'Enforce that onMouseOver/onMouseOut are accompanied by onFocus/onBlur',
       wcag: 'WCAG 2.1.1',
     },
     messages: {
       missingOnFocus: formatLLMMessage({
         icon: MessageIcons.ACCESSIBILITY,
         issueName: 'Missing Keyboard Handler',
-        description: 'onMouseOver must be accompanied by onFocus for keyboard accessibility',
+        description:
+          'onMouseOver must be accompanied by onFocus for keyboard accessibility',
         severity: 'MEDIUM',
         fix: 'Add onFocus handler',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/mouse-events-have-key-events.md',
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/mouse-events-have-key-events.md',
       }),
       missingOnBlur: formatLLMMessage({
         icon: MessageIcons.ACCESSIBILITY,
         issueName: 'Missing Keyboard Handler',
-        description: 'onMouseOut must be accompanied by onBlur for keyboard accessibility',
+        description:
+          'onMouseOut must be accompanied by onBlur for keyboard accessibility',
         severity: 'MEDIUM',
         fix: 'Add onBlur handler',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/mouse-events-have-key-events.md',
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/mouse-events-have-key-events.md',
       }),
     },
     schema: [],
@@ -51,14 +56,32 @@ export const mouseEventsHaveKeyEvents = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
-        const attributes = node.attributes.filter((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute => 
-          attr.type === 'JSXAttribute' && attr.name.type === 'JSXIdentifier'
+        const attributes = node.attributes.filter(
+          (
+            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+          ): attr is TSESTree.JSXAttribute =>
+            attr.type === 'JSXAttribute' && attr.name.type === 'JSXIdentifier',
         );
 
-        const hasMouseOver = attributes.some((attr: TSESTree.JSXAttribute): attr is TSESTree.JSXAttribute => attr.name?.name === 'onMouseOver' && attr.name?.type === 'JSXIdentifier');
-        const hasMouseOut = attributes.some((attr: TSESTree.JSXAttribute): attr is TSESTree.JSXAttribute => attr.name?.name === 'onMouseOut' && attr.name?.type === 'JSXIdentifier');
-        const hasFocus = attributes.some((attr: TSESTree.JSXAttribute): attr is TSESTree.JSXAttribute => attr.name?.name === 'onFocus' && attr.name?.type === 'JSXIdentifier');
-        const hasBlur = attributes.some((attr: TSESTree.JSXAttribute): attr is TSESTree.JSXAttribute => attr.name?.name === 'onBlur' && attr.name?.type === 'JSXIdentifier');
+        const hasMouseOver = attributes.some(
+          (attr: TSESTree.JSXAttribute): attr is TSESTree.JSXAttribute =>
+            attr.name?.name === 'onMouseOver' &&
+            attr.name?.type === 'JSXIdentifier',
+        );
+        const hasMouseOut = attributes.some(
+          (attr: TSESTree.JSXAttribute): attr is TSESTree.JSXAttribute =>
+            attr.name?.name === 'onMouseOut' &&
+            attr.name?.type === 'JSXIdentifier',
+        );
+        const hasFocus = attributes.some(
+          (attr: TSESTree.JSXAttribute): attr is TSESTree.JSXAttribute =>
+            attr.name?.name === 'onFocus' &&
+            attr.name?.type === 'JSXIdentifier',
+        );
+        const hasBlur = attributes.some(
+          (attr: TSESTree.JSXAttribute): attr is TSESTree.JSXAttribute =>
+            attr.name?.name === 'onBlur' && attr.name?.type === 'JSXIdentifier',
+        );
 
         if (hasMouseOver && !hasFocus) {
           context.report({
@@ -77,4 +100,3 @@ export const mouseEventsHaveKeyEvents = createRule<RuleOptions, MessageIds>({
     };
   },
 });
-

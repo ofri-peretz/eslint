@@ -62,6 +62,14 @@ import { resolveInitializer } from '../../utils/resolve-binding';
  * exists to cover, and adding names to it would make any `x.foo(html)` a
  * finding on a receiver that emits nothing.
  */
+/**
+ * @vocabulary `http-equiv` is the HTML attribute, `httpEquiv` its React DOM
+ * spelling, and `require` is CommonJS. Response and filesystem method names
+ * are Express's and Node's. None is a name a consumer picked.
+ *
+ * @see https://html.spec.whatwg.org/multipage/semantics.html#attr-meta-http-equiv
+ * @see https://react.dev/reference/react-dom/components/common
+ */
 const EMIT_METHODS: ReadonlySet<string> = new Set([
   'send',
   'end',

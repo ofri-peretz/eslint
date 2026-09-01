@@ -25,7 +25,7 @@ describe('anchor-is-valid', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid anchors', anchorIsValid, {
       valid: [
-        { code: '<a href="https://example.com">Link</a>' },
+        { name: 'an anchor with a real destination', code: '<a href="https://example.com">Link</a>' },
         { code: '<a href="/page">Link</a>' },
         { code: '<a href="#section">Link</a>' },
         { code: '<a href="mailto:test@example.com">Email</a>' },
@@ -50,7 +50,7 @@ describe('anchor-is-valid', () => {
     ruleTester.run('invalid anchors', anchorIsValid, {
       valid: [],
       invalid: [
-        { code: '<a href="#">Link</a>', errors: [{ messageId: 'invalidHref' }] },
+        { name: 'an anchor whose href is a bare fragment', code: '<a href="#">Link</a>', errors: [{ messageId: 'invalidHref' }] },
         { code: '<a href="javascript:void(0)">Link</a>', errors: [{ messageId: 'invalidHref' }] },
         { code: '<a onClick={handleClick}>Link</a>', errors: [{ messageId: 'preferButton' }] },
         { code: '<a href="#" onClick={handleClick}>Link</a>', errors: [{ messageId: 'preferButton' }] },

@@ -16,7 +16,9 @@
  *     nothing about, so a release ships with no version bump and no entry;
  *   - git being unable to compute the diff at all and the gate reporting a
  *     clean pass, which is indistinguishable from a real one and so gets
- *     nobody's attention.
+ *     nobody's attention;
+ *   - one changeset naming one package vouching for a diff that changed
+ *     twenty, which is how eighteen plugins nearly shipped unversioned.
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
@@ -96,6 +98,102 @@ afterEach(() => {
   rmSync(repo, { recursive: true, force: true });
 });
 
+describe('a changeset covers the packages it NAMES, not the whole diff', () => {
+  /** A second workspace, so a diff can span two packages. */
+  function addSecondPackage() {
+    write(
+      'packages/y/package.json',
+      '{"name":"eslint-plugin-y","version":"1.0.0"}',
+    );
+    write('packages/y/src/index.ts', 'export const b = 1;\n');
+  }
+
+  it('reports partial when a changed package is named by nothing', () => {
+    // The exact shape that reached CI on feat/fp-precision-ratchet: real
+    // source changes in two packages, a changeset for one of them, and the
+    // old gate reporting a clean pass.
+    addSecondPackage();
+    git('add', '-A');
+    git('commit', '-q', '-m', 'add y');
+    git('branch', '-f', 'base-ref');
+
+    write('packages/x/src/index.ts', 'export const a = 2;\n');
+    write('packages/y/src/index.ts', 'export const b = 2;\n');
+    write(
+      '.changeset/only-x.md',
+      "---\n'eslint-plugin-x': patch\n---\n\nfix: only x is declared\n",
+    );
+    git('add', '-A');
+    git('commit', '-q', '-m', 'change both');
+
+    const { out, status } = run('--since=base-ref', '--strict');
+    expect(out).toContain('eslint-plugin-y');
+    expect(out).not.toContain('- packages/x');
+    expect(status).toBe(1);
+  });
+
+  it('matches on the PUBLISHED name, not the directory', () => {
+    // `packages/eslint-devkit` publishes as `@interlace/eslint-devkit`.
+    // Comparing directories would mark every scoped package uncovered forever.
+    write(
+      'packages/devkit/package.json',
+      '{"name":"@interlace/devkit","version":"1.0.0"}',
+    );
+    write('packages/devkit/src/index.ts', 'export const c = 1;\n');
+    git('add', '-A');
+    git('commit', '-q', '-m', 'add devkit');
+    git('branch', '-f', 'base-ref');
+
+    write('packages/devkit/src/index.ts', 'export const c = 2;\n');
+    write(
+      '.changeset/scoped.md',
+      "---\n'@interlace/devkit': minor\n---\n\nfeat: a scoped package\n",
+    );
+    git('add', '-A');
+    git('commit', '-q', '-m', 'change devkit');
+
+    const { out, status } = run('--since=base-ref', '--strict');
+    expect(out).toContain('Every changed workspace is named');
+    expect(status).toBe(0);
+  });
+
+  it('a private workspace needs no changeset — nobody installs it', () => {
+    // `apps/docs` is deployed, not published. There is no version to bump and
+    // no npm changelog to write into, so demanding a changeset for it is a
+    // demand nobody can satisfy meaningfully. Caught in the wild by a refresh
+    // of a cached JSON file under `apps/docs/src/data/`.
+    write(
+      'apps/site/package.json',
+      '{"name":"site","version":"1.0.0","private":true}',
+    );
+    write('apps/site/src/index.ts', 'export const s = 1;\n');
+    git('add', '-A');
+    git('commit', '-q', '-m', 'add private app');
+    git('branch', '-f', 'base-ref');
+
+    write('apps/site/src/index.ts', 'export const s = 2;\n');
+    git('add', '-A');
+    git('commit', '-q', '-m', 'change private app');
+
+    const { out, status } = run('--since=base-ref', '--strict');
+    expect(out).toContain('No changeset needed');
+    expect(status).toBe(0);
+  });
+
+  it('a test-only change under src/ needs no changeset', () => {
+    // `files` publishes dist/ only, so a test cannot reach a consumer. The
+    // pattern used to match `src/**` wholesale and demanded a changeset for
+    // ten plugins whose only change was a new case.
+    write('packages/x/src/index.test.ts', "it('works', () => {});\n");
+    git('add', '-A');
+    git('commit', '-q', '-m', 'test only');
+
+    const { out, status } = run('--since=base-ref', '--strict');
+    expect(out).toContain('No changeset needed');
+    expect(status).toBe(0);
+  });
+});
+
 describe('empty changesets do not count as coverage', () => {
   it('reports missing when a source change is paired with an empty changeset', () => {
     write('packages/x/src/index.ts', 'export const a = 2;\n');
@@ -121,7 +219,7 @@ describe('empty changesets do not count as coverage', () => {
 
     const { out, status } = run('--since=base-ref');
     expect(status).toBe(0);
-    expect(out).toContain('Changeset present');
+    expect(out).toContain('Every changed workspace is named');
   });
 
   it('reports present when the changeset declares a release', () => {
@@ -135,7 +233,7 @@ describe('empty changesets do not count as coverage', () => {
 
     const { out, status } = run('--since=base-ref');
     expect(status).toBe(0);
-    expect(out).toContain('Changeset present');
+    expect(out).toContain('Every changed workspace is named');
   });
 });
 

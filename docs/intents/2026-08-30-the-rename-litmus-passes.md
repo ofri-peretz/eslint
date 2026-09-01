@@ -1,0 +1,248 @@
+---
+slug: the-rename-litmus-passes
+opened: 2026-08-30
+packages: []
+cases: []
+---
+
+## What
+
+Take the rules that still decide from an identifier's spelling and either give
+the consumer an option to replace the vocabulary, or record the external
+contract the name comes from.
+
+The probe renames every local binding to `foo1, foo2, …` and re-runs the suite.
+Last run: **2,046 of 2,380 renamed bindings left behaviour unchanged (85%);
+334 did not, across 57 rules.**
+
+## Why
+
+"AST-structural only" is the repo's loudest claim about how its rules work, and
+it is the thing that separates a rule from a dictionary. `CASE_PHILOSOPHY.md`
+states the litmus in one line: rename every variable to `foo` — does the rule
+still fire?
+
+For 57 rules the answer is no, and each is a false positive waiting for a
+consumer who names things differently. `require-data-minimization` treated
+`name` and `address` as personal data — `name` is the commonest property name
+in JavaScript — and reported on every one of them until it was made
+configurable.
+
+The distinction that decides each case is already settled and written down:
+
+- A name **somebody else publishes** may be hardcoded, and must cite them.
+  `req.query`, `dangerouslySetInnerHTML`, `sk_live_`, `AKIA` are contracts.
+- A guess at what the **consumer** calls their own binding is an **option**,
+  and replacing the default has to be possible.
+
+`check:key-vocabulary` and `check:name-vocabulary` both sit at 0, so the
+inline-list form of this debt is paid. The 334 are the remaining form: names
+read structurally rather than from a list.
+
+## Constraints
+
+- **An option REPLACES the default, never extends it.** A default that cannot
+  be removed is still an assertion about somebody else's codebase.
+- Every retained hardcoded name carries a `@vocabulary` comment naming the
+  authority. A name we cannot attribute is a guess, and a guess in a default is
+  a claim we are not entitled to make.
+- Adding an option is a **minor**; making a rule inert without one is a
+  **major** and needs the exact restoring config in its changeset, as
+  `require-data-minimization` did.
+- Precision may not fall. Each change is measured against the corpus before and
+  after — a rule made configurable but noisier is a worse rule.
+- The probe is the arbiter, not intuition. A rule is done when renaming its
+  bindings stops changing its output.
+
+## Done when
+
+- Rules failing the rename litmus: **57 → under 25**.
+- Every remaining one either exposes a replaceable vocabulary option or carries
+  a `@vocabulary` citation.
+- `npm run check:name-vocabulary` stays at 0 and the probe's structural share
+  rises from 85%.
+- The new figure replaces 85% in `AI_SDLC.md`.
+
+## Outcome — 2026-08-30, and a corrected target
+
+**The target in this intent was wrong.** "Rules failing the rename litmus:
+57 → under 25" counted sanctioned name-dependence as debt.
+`no-hardcoded-credentials` reads names and exposes `credentialWords`, which is
+the approved form — it is in the probe's list and always will be. Driving that
+number down would mean deleting legitimate behaviour.
+
+What measuring found instead was an instrument defect. `check:name-vocabulary`
+chose which rules to inspect with:
+
+```ts
+if (!NAME_HELPERS.some((helper) => text.includes(helper))) continue;
+```
+
+`NAME_HELPERS` is `['makeNameTest', 'identifierWords']`. Of the 25 most
+name-dependent rules in the suite, **three import those helpers and 22 do
+not** — so the gate skipped nearly everything it existed to check. Its reported
+**0** meant "no rule _using the helpers_ lacks a replaceable vocabulary", which
+reads like a far stronger claim than it is.
+
+A second static pattern would not have fixed it: `check:key-vocabulary` already
+covers inline property-name lists, and an open-coded `n === 'secret'` can be
+written a dozen ways. So the gate now reads the PROBE, which settles the
+question by experiment rather than by pattern — the litmus this intent is named
+after.
+
+The probe commits `benchmarks/budgets/name-dependence.json` with the hash of
+the script that produced it, and the gate refuses to report when that hash does
+not match. That lesson came from `real-world-rule-inventory.json`, which sat
+with the right date and the wrong instrument for four days while "270 rules
+never fire" was quoted as fact.
+
+**Corrected numbers.** Rules the probe finds name-dependent: **56**. Of those,
+**24** expose a replaceable vocabulary or cite an authority; **32** do neither.
+The gate went **0 → 32 offenders**, baselined shrink-only. That is not a
+regression — it is the first honest reading.
+
+**Corrected target: 32 → 0.** Each rule gets a replaceable option or a
+`@vocabulary` citation. Draining it is the remaining work; the ratchet now makes
+a 33rd impossible.
+
+Two limitations are stated in the script header rather than hidden. The gate
+asks "does this rule expose SOME replaceable vocabulary", not "one for the
+vocabulary it actually decided from" — found by sabotage, where renaming
+`credentialWords` out of `no-hardcoded-credentials` left it compliant because
+`placeholderWords` still matched. And one `@vocabulary` comment exempts a whole
+file. Closing either needs a map from option to governed names, which is a
+dataflow question. The gate is a floor, not a certificate.
+
+One more vacuous pass fell out of this. `freshness-has-a-refresher.test.ts`
+reduced an `npx tsx scripts/x.mts` refresh command to the literal string
+`"npx"`, which every workflow file contains — so every npx-shaped refresher
+passed without anything running it. Fixing the extraction immediately exposed
+two: the new probe artifact, and `real-source-scan.mts`, which I had added to
+the freshness gate earlier the same day. The probe now runs in the monthly
+refresh workflow; the corpus scan is baselined with its reason, because cloning
+112 repositories is not a cron job.
+
+## Progress — 2026-08-30, first tranche drained
+
+**32 → 26.** Six rules resolved, all of them the same way: the names they read
+turned out to be somebody else's published contract, so they earned a
+`@vocabulary` citation naming the authority rather than an option nobody would
+ever set.
+
+| Rule                                            | Names                     | Authority                                                          |
+| ----------------------------------------------- | ------------------------- | ------------------------------------------------------------------ |
+| `browser-security/no-insecure-redirects`        | `redirect`, `href`        | Express `res.redirect`, WHATWG `Response.redirect`, DOM `Location` |
+| `express-security/no-error-details-in-response` | `stack`, `message`        | ECMAScript `Error`                                                 |
+| `express-security/no-static-root-exposure`      | `__dirname`, `cwd`        | Node modules / process                                             |
+| `express-security/require-helmet`               | `helmet`, `express`       | npm package names                                                  |
+| `express-security/require-rate-limiting`        | `express`, router methods | Express `app.METHOD`                                               |
+| `import-next/no-deprecated`                     | `deprecated`              | JSDoc block tag                                                    |
+
+That is the distinction the gate exists to enforce, and it cuts both ways: an
+option for `__dirname` would be absurd, and a citation for "what this project
+calls its user object" would be a lie. Six of the 32 were the first kind.
+
+The remaining 26 look like the second. `no-user-controlled-render-locals` keys
+on `USER_SOURCE_PROPS` / `RESPONSE_NAMES` / `REQUEST_NAMES`;
+`no-incomplete-url-sanitization` on `URL_ISH_NAME`. Those are guesses at a
+consumer's own vocabulary and need replaceable options — and several would be
+better served by `readsRequestShape`, which answers the same question
+structurally, as `no-sql-injection`, `no-ssrf` and now `no-unsafe-query` do.
+
+Verified by sabotage: breaking one citation fails the gate by name.
+
+## Progress — 2026-08-30, second tranche
+
+**9 offenders left (10 → 9).** One rule drained, and it needed both halves of
+the distinction this intent draws, which is the useful part: the same rule was
+guessing in one place and citing a real contract in another.
+
+`node-security/no-unsafe-buffer-alloc` was the largest offender by blast radius
+— 18 renamed true positives went silent. It carried three hardcoded lists:
+
+| List                                                  | What it really was                                       | Resolution             |
+| ----------------------------------------------------- | -------------------------------------------------------- | ---------------------- |
+| `REQUEST_ROOTS` = `req, request, ctx, event`          | the exact list `readsRequestShape` was written to retire | **structural**         |
+| `WIRE_NAMES` = `chunk, payload, raw, message, msg, …` | a guess at the consumer's decoder vocabulary             | **replaceable option** |
+| `COUNT_NAMES` = `length, len, size, n, capacity, …`   | same                                                     | **replaceable option** |
+
+The first was not a vocabulary problem at all. `readsWire` walked a member
+chain to its root and compared the root's spelling, so
+`Number(foo2.query.capacity)` came back false while `.query.capacity` sat in
+plain sight one link up. Asking `readsRequestShape` before the walk answers it
+structurally — the same move `no-sql-injection`, `no-ssrf` and `no-unsafe-query`
+already make. That took the rule from 18 silences to 15 and the suite from 56
+rules to 55.
+
+The remaining 15 are the decoder vocabulary, and they are the second kind: for
+a socket decoder the binding's name genuinely is the only signal, because a
+frame looks like any other Buffer. So `wireNames`, `requestRootNames` and
+`countNames` now **replace** their defaults, and `wireNames: []` turns the name
+arm off outright — the only honest way to let a project whose `message` is a
+log line disagree with a vocabulary we invented.
+
+Sealed as ILB-0138 (the renamed handler, was a miss) and ILB-0139 (a `message`
+that is a log line, was a false positive). Sabotage-verified in both
+directions: removing the structural arm fails 3 assertions, and emptying
+`REQUEST_ROOTS` still fails 1 — which is why the list stayed rather than being
+deleted as redundant.
+
+Precision did not fall: node-security 2,881 tests pass at 100% coverage, the
+registry is clean at 137 verified / 0 regressed, and the probe's structural
+share rose from 2,063/2,393 (86.2%) to 2,073/2,400 (86.4%).
+
+### A blind spot the gate caught on the way past
+
+Making `countNames` replaceable meant touching the line that reads a property
+name, and `check:spellings` immediately flagged it: `.property.name` sees
+`o.length` and not `o['length']`, though both reach the same property. Switched
+to the devkit's `propertyName`, which resolves all three spellings. Baseline
+841, **fixed 1, new 0** — the gate's whole point is that a rule may not acquire
+a blind spot it did not already have, and here it also removed one.
+
+### One thing the clean worktree found
+
+ILB-0136 — the `import-next/no-cycle` case — **regressed on every fresh
+checkout and nobody could see it.** A cycle is a property of the module graph,
+so the case lints its source under a `filename` inside
+`benchmarks/cases/fixtures/cycle/`, where a sibling `b.ts` imports back. That
+directory was matched by `fixtures/` in `benchmarks/.gitignore`, so the case
+verified only on machines that happened to have built it once and failed
+anywhere else.
+
+`benchmarks/.gitignore` already carried the precedent, for the ILB-Arena
+corpora: _"they must travel with the repo (CI cannot regenerate them)"_. The
+case fixtures are the same kind and for a sharper reason — a claim that cannot
+be checked from a fresh clone is not a claim. Allow-listed and committed.
+
+## Closed — 2026-08-30
+
+**Offenders 32 → 0.** Every one of the 53 rules the probe finds name-dependent
+now either exposes a vocabulary the consumer can replace, or cites the
+authority the name comes from. `check:name-vocabulary` reports
+`hardcoded, no way to replace  0`, baselined shrink-only, so a 54th cannot
+enter without the ratchet failing.
+
+The number this intent opened with — "57 → under 25" — was never reached and
+should not have been. It counted `no-math-random-crypto` and
+`no-hardcoded-credentials` as debt for reading names they are entitled to read,
+and driving it down would have meant deleting working detection.
+`Math.random()` assigned to `foo1` is not a detectable defect; the name is the
+only signal there is.
+
+What replaced it is the distinction the gate now enforces: **a name somebody
+else publishes may be hardcoded and must cite them; a guess at what the
+consumer calls their own binding must be replaceable.** 53 rules still decide
+by name, and that is fine — every one of them can now be told it is wrong.
+
+Two instrument defects were found on the way and both are fixed: the gate
+inspected only rules importing two named helpers, so it skipped 22 of the 25
+most name-dependent rules while reporting `0`; and the probe printed its top 25
+and cut the rest with no mention, so a third of its own work list was
+invisible.
+
+**Remaining, and deliberately not folded in here:** 323 of 2,393 renamed
+bindings still change a verdict. That is the softer number — those rules are
+name-dependent _by declared position_ now, not by accident. Driving it further
+is `the-spelling-debt-shrinks` and `precision-is-measured-not-asserted`, which
+attack the two halves of it separately.

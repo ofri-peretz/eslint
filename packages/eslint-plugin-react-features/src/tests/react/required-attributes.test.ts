@@ -33,6 +33,7 @@ describe('required-attributes', () => {
       valid: [
         // Component with required attribute
         {
+          name: 'the attribute present',
           code: '<Button type="submit" />',
           options: [{ attributes: [{ attribute: 'type' }] }],
         },
@@ -58,6 +59,7 @@ describe('required-attributes', () => {
       valid: [],
       invalid: [
         {
+          name: 'a component missing an attribute the configuration requires',
           code: '<Button />',
           options: [{ attributes: [{ attribute: 'type' }] }],
           errors: [

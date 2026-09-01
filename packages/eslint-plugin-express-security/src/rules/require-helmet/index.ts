@@ -27,6 +27,13 @@ import {
   isTestFilePath,
 } from '@interlace/eslint-devkit';
 
+/**
+ * @vocabulary `helmet` and `express` are PACKAGE names on npm, and `require`
+ * is CommonJS. Matching them is matching a published module identifier, not
+ * guessing at a consumer's variable names.
+ *
+ * @see https://www.npmjs.com/package/helmet
+ */
 type MessageIds = 'missingHelmet';
 
 export interface Options {
@@ -129,7 +136,6 @@ export const requireHelmet = createRule<RuleOptions, MessageIds>({
         fix: "Add helmet middleware: app.use(helmet()). Install with 'npm install helmet'.",
         documentationLink: 'https://helmetjs.github.io/',
       }),
-
     },
     schema: [
       {

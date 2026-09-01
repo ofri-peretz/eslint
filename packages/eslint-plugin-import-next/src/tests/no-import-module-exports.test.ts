@@ -15,6 +15,7 @@ ruleTester.run('no-import-module-exports', noImportModuleExports, {
   valid: [
     // Pure ESM
     {
+      name: 'an ES export',
       code: `
         import foo from 'foo';
         export default foo;
@@ -58,6 +59,7 @@ ruleTester.run('no-import-module-exports', noImportModuleExports, {
   invalid: [
     // Import with module.exports
     {
+      name: 'module.exports in a file that also uses import',
       code: `
         import foo from 'foo';
         module.exports = foo;

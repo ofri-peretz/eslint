@@ -32,6 +32,7 @@ describe('no-insecure-comparison', () => {
     ruleTester.run('valid - strict equality operators', noInsecureComparison, {
       valid: [
         {
+          name: 'strict equality between two non-secrets',
           code: 'if (x === y) {}',
         },
         {
@@ -82,6 +83,7 @@ describe('no-insecure-comparison', () => {
       valid: [],
       invalid: [
         {
+          name: 'loose equality between a number and a string',
           // Still reported, but with NO auto-applied `output`: swapping == for
           // === can change behaviour when operand types differ, so it may only
           // be offered as a suggestion the author opts into.

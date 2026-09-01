@@ -33,6 +33,7 @@ describe('no-children-prop', () => {
       valid: [
         // Normal JSX children usage
         {
+          name: 'nested children',
           code: '<div>Hello World</div>',
         },
         {
@@ -56,6 +57,7 @@ describe('no-children-prop', () => {
       invalid: [
         // children as a prop
         {
+          name: 'children passed as a prop rather than nested',
           code: '<div children="Hello World" />',
           errors: [
             {

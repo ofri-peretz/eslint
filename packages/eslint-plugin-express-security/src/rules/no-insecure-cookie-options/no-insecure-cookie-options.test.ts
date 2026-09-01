@@ -66,6 +66,7 @@ ruleTester.run('no-insecure-cookie-options', noInsecureCookieOptions, {
   valid: xp([
     // Fully secure cookie
     {
+      name: 'all three set',
       code: `
         res.cookie('session', token, {
           httpOnly: true,
@@ -139,6 +140,7 @@ ruleTester.run('no-insecure-cookie-options', noInsecureCookieOptions, {
   invalid: xp([
     // No options at all
     {
+      name: 'a session cookie with no httpOnly, secure or sameSite',
       code: `
         res.cookie('session', token);
       `,

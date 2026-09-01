@@ -28,6 +28,7 @@ describe('cognitive-complexity', () => {
       valid: [
         // Simple function
         {
+          name: 'a function with one exit and no branches',
           code: 'function simple() { return true; }',
         },
         {
@@ -55,6 +56,7 @@ describe('cognitive-complexity', () => {
       valid: [],
       invalid: [
         {
+          name: 'five levels of nesting past the threshold',
           code: `
             function complex(data) {
               if (data) {

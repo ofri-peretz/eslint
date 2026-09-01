@@ -38,6 +38,7 @@ describe('require-optimization', () => {
       valid: [
         // Already memoized
         {
+          name: 'React.memo',
           code: 'const Component = React.memo((props) => <div>{props.name}</div>);',
         },
         // Few props (under threshold)
@@ -57,6 +58,7 @@ describe('require-optimization', () => {
       invalid: [
         // Many props - should suggest memo
         {
+          name: 'a component with many props and no memo',
           code: `
             const UserCard = ({ name, age, email, avatar, onClick, onEdit }) => (
               <div onClick={onClick}>

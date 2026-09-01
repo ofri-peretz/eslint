@@ -63,6 +63,7 @@ describe('no-static-root-exposure', () => {
     valid: xp([
       // THE safe pattern (corpus FP-lock: CWE-548/safe/static-public-dir.js)
       {
+        name: 'a scoped public directory behind helmet',
         code: `
           const express = require('express');
           const helmet = require('helmet');
@@ -112,6 +113,7 @@ describe('no-static-root-exposure', () => {
     invalid: xp([
       // Corpus fixture (verbatim): CWE-548/vulnerable/static-root-dirname.js
       {
+        name: 'express.static(__dirname) serves the source tree',
         code: `
           const express = require('express');
 

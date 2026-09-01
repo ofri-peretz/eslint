@@ -75,6 +75,7 @@ describe('require-auth-mechanism', () => {
       valid: xmo([
         // Unrelated code should not trigger
         {
+          name: 'the driver is imported but nothing queries',
           code: `const x = 1;`,
         },
         // Array operations are safe
@@ -110,6 +111,7 @@ describe('require-auth-mechanism', () => {
       invalid: xmo([
         // Triggers requireAuthMechanism: no auth mechanism
         {
+          name: 'connect with empty options names no auth mechanism',
           code: `mongoose.connect(uri, { });`,
           errors: [{ messageId: 'requireAuthMechanism' }],
         },

@@ -61,6 +61,7 @@ ruleTester.run('no-training-data-exposure', noTrainingDataExposure, {
   valid: xai([
     // Training disabled
     {
+      name: 'training explicitly off',
       code: `
         const config = {
           training: false,
@@ -93,6 +94,7 @@ ruleTester.run('no-training-data-exposure', noTrainingDataExposure, {
   invalid: xai([
     // Training enabled
     {
+      name: "training left on sends the conversation to the provider's corpus",
       code: `
         const config = {
           training: true,

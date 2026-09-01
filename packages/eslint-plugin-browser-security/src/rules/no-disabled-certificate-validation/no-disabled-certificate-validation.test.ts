@@ -15,7 +15,7 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-disabled-certificate-validation', noDisabledCertificateValidation, {
   valid: [
     // Proper SSL configuration
-    { code: "const options = { rejectUnauthorized: true }" },
+    { name: 'certificate validation left on', code: "const options = { rejectUnauthorized: true }" },
     { code: "const config = { strictSSL: true }" },
     { code: "const settings = { verify: true }" },
     // Non-SSL code
@@ -64,7 +64,7 @@ ruleTester.run('no-disabled-certificate-validation', noDisabledCertificateValida
 
   invalid: [
     // Disabled certificate validation
-    { code: "const options = { rejectUnauthorized: false }", errors: [{ messageId: 'violationDetected' }] },
+    { name: 'rejectUnauthorized false accepts any certificate', code: "const options = { rejectUnauthorized: false }", errors: [{ messageId: 'violationDetected' }] },
     { code: "https.request({ strictSSL: false })", errors: [{ messageId: 'violationDetected' }] },
     { code: "const config = { verify: false }", errors: [{ messageId: 'violationDetected' }] },
     // Environment variable disable

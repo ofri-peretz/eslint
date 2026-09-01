@@ -25,6 +25,7 @@ describe('no-wrapper-sub-component', () => {
     valid: [
       // Adds className — structural behavior
       {
+        name: 'a wrapper that adds a class',
         code: `function MyButton(props) { return <Button className="x" {...props} />; }`,
       },
       // Adds data-slot — structural behavior
@@ -51,6 +52,7 @@ describe('no-wrapper-sub-component', () => {
     invalid: [
       // Pure passthrough wrapper — function declaration
       {
+        name: 'a wrapper that adds nothing but a spread',
         code: `function MyButton(props) { return <Button {...props} />; }`,
         errors: [{ messageId: 'wrapperSubComponent' }],
       },

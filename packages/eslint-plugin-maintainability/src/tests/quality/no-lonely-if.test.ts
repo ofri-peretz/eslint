@@ -28,6 +28,7 @@ describe('no-lonely-if', () => {
       valid: [
         // Normal if statements
         {
+          name: 'an if with no else',
           code: 'if (condition) { doSomething(); }',
         },
         // if-else statements
@@ -42,6 +43,7 @@ describe('no-lonely-if', () => {
       invalid: [
         // Lonely if in else block
         {
+          name: 'an else whose only content is an if',
           code: 'if (condition1) { doSomething(); } else { if (condition2) { doSomethingElse(); } }',
           errors: [
             {

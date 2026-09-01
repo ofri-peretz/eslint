@@ -12,7 +12,7 @@
  * @see https://restfulapi.net/
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, staticString } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -136,8 +136,9 @@ export const enforceRestConventions = createRule<RuleOptions, MessageIds>({
             // Check resource naming (first argument should be a path)
             if (checkResourceNaming && node.arguments.length > 0) {
               const pathArg = node.arguments[0];
-              if (pathArg.type === 'Literal' && typeof pathArg.value === 'string') {
-                const path = pathArg.value as string;
+              const staticText = staticString(pathArg);
+              if (staticText !== null) {
+                const path = staticText as string;
                 // Check if path uses plural nouns (basic check)
                 if (path.startsWith('/') && path.length > 1) {
                   const resource = path.split('/')[1];

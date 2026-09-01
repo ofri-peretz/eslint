@@ -60,6 +60,7 @@ store.add({ theme: 'dark', language: 'en' });
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
 | `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `sensitiveTerms` | `string[]` | `["password","passwd","pwd","passphrase","secret","api key","apikey","private key","secret key","encryption key","signing key","client secret","credit card","card number","cvv","cvc","ssn","social security","seed phrase","mnemonic","recovery code"]` | Whole-word terms that mark a stored field as sensitive. Replaces the default vocabulary. |
 | `additionalPatterns` | `string[]` | `[]` | Extra terms that name a secret, added to the built-in vocabulary rather than replacing it. Matched as whole words against the store or key name, never as a substring — so `token` does not match `tokenizer`. Use this for domain secrets the built-in list cannot know about, e.g. `entitlementGrant`. |
 
 

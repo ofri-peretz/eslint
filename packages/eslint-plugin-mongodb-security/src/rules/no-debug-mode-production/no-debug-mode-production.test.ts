@@ -75,6 +75,7 @@ describe('no-debug-mode-production', () => {
       valid: xmo([
         // Unrelated code should not trigger
         {
+          name: 'the driver is imported but nothing queries',
           code: `const x = 1;`,
         },
         // Array operations are safe
@@ -106,6 +107,7 @@ describe('no-debug-mode-production', () => {
       invalid: xmo([
         // Triggers debugModeProduction: debug mode in production
         {
+          name: 'debug mode prints every query, arguments included',
           code: `mongoose.set('debug', true);`,
           errors: [{
         messageId: 'debugModeProduction',

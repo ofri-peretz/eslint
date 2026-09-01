@@ -11,7 +11,7 @@
  * @see https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/dynamic-import-chunkname.md
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { createRule, formatLLMMessage, MessageIcons, staticString } from '@interlace/eslint-devkit';
 
 type MessageIds = 'missingChunkName' | 'invalidChunkName' | 'suggestChunkName';
 
@@ -120,8 +120,9 @@ export const dynamicImportChunkname = createRule<RuleOptions, MessageIds>({
                 fix(fixer: TSESLint.RuleFixer) {
                   // Generate a chunk name from the import path
                   const source = node.source;
-                  if (source.type === 'Literal' && typeof source.value === 'string') {
-                    const chunkName = source.value
+                  const staticText = staticString(source);
+                  if (staticText !== null) {
+                    const chunkName = staticText
                       .split('/')
                       .pop()
                       ?.replace(/[^a-zA-Z0-9-_]/g, '-') || 'chunk';

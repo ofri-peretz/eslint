@@ -26,6 +26,7 @@ describe('ddd-value-object-immutability', () => {
       valid: [
         // Value object with readonly properties
         {
+          name: 'every field readonly',
           code: `
             class MoneyValue {
               readonly amount: number;
@@ -66,6 +67,7 @@ describe('ddd-value-object-immutability', () => {
       invalid: [
         // Mutable value object without readonly
         {
+          name: 'a value object with a reassignable field',
           code: `
             class EmailValue {
               address: string;

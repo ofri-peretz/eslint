@@ -23,7 +23,7 @@
  * @see https://owasp.org/www-community/attacks/Log_Injection
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { createRule, formatLLMMessage, MessageIcons, staticString } from '@interlace/eslint-devkit';
 
 type MessageIds = 'logInjection';
 
@@ -188,8 +188,9 @@ function requestFieldOf(
     const property = root.property;
     if (!root.computed && property.type === 'Identifier') {
       properties.unshift(property.name);
-    } else if (property.type === 'Literal' && typeof property.value === 'string') {
-      properties.unshift(property.value);
+    } else {
+      const name = staticString(property);
+      if (name !== null) properties.unshift(name);
     }
     // `req.headers[name]` contributes no name: the Identifier there is a
     // *variable*, not a property. Reading it as one would attribute

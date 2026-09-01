@@ -25,7 +25,7 @@ describe('no-instanceof-array', () => {
     ruleTester.run('allow Array.isArray', noInstanceofArray, {
       valid: [
         // Using Array.isArray (correct)
-        { code: 'if (Array.isArray(value)) {}' },
+        { name: 'Array.isArray works across realms', code: 'if (Array.isArray(value)) {}' },
         { code: 'const isArr = Array.isArray(arr);' },
         { code: 'Array.isArray(items) && items.length > 0' },
         // Other instanceof checks are fine
@@ -36,6 +36,7 @@ describe('no-instanceof-array', () => {
       invalid: [
         // instanceof Array should be flagged
         {
+          name: 'instanceof Array is false for an array from another realm',
           code: 'if (value instanceof Array) {}',
           errors: [{ messageId: 'noInstanceofArray' }],
         },

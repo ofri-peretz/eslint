@@ -30,7 +30,8 @@ const ruleTester = new RuleTester({
   },
 });
 
-const SDK = "import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';\n";
+const SDK =
+  "import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';\n";
 
 describe('no-unvalidated-tool-args', () => {
   describe('Valid', () => {
@@ -66,7 +67,9 @@ describe('no-unvalidated-tool-args', () => {
         {
           // Not this rule's question — require-tool-input-schema owns it.
           name: 'no inputSchema declared',
-          code: SDK + 'server.registerTool("read", { title: "Read" }, async ({ path }) => read(path));',
+          code:
+            SDK +
+            'server.registerTool("read", { title: "Read" }, async ({ path }) => read(path));',
         },
         {
           // Every shape the rule cannot read must be silent, or it judges a
@@ -122,12 +125,13 @@ describe('no-unvalidated-tool-args', () => {
         },
         {
           name: 'a config passed by reference',
-          code: SDK + 'server.registerTool("read", cfg, async ({ path }) => read(path));',
+          code:
+            SDK +
+            'server.registerTool("read", cfg, async ({ path }) => read(path));',
         },
         {
           name: 'a file that never imports the MCP SDK',
-          code:
-            'server.registerTool("read", { inputSchema: { path: z.string() } }, async ({ extra }) => read(extra));',
+          code: 'server.registerTool("read", { inputSchema: { path: z.string() } }, async ({ extra }) => read(extra));',
         },
         {
           name: 'an unrelated import does not open the gate',
@@ -164,7 +168,10 @@ describe('no-unvalidated-tool-args', () => {
             SDK +
             'server.registerTool("read", { inputSchema: { path: z.string() } }, async ({ path, encoding }) => read(path, encoding));',
           errors: [
-            { messageId: 'undeclaredArg', data: { tool: 'read', arg: 'encoding' } },
+            {
+              messageId: 'undeclaredArg',
+              data: { tool: 'read', arg: 'encoding' },
+            },
           ],
         },
         {
@@ -172,28 +179,43 @@ describe('no-unvalidated-tool-args', () => {
           code:
             SDK +
             'server.registerTool("read", { inputSchema: { path: z.string() } }, async ({ path, encoding, flags }) => read(path));',
-          errors: [{ messageId: 'undeclaredArg' }, { messageId: 'undeclaredArg' }],
+          errors: [
+            { messageId: 'undeclaredArg' },
+            { messageId: 'undeclaredArg' },
+          ],
         },
         {
           name: 'an empty schema declares nothing',
           code:
             SDK +
             'server.registerTool("read", { inputSchema: {} }, async ({ path }) => read(path));',
-          errors: [{ messageId: 'undeclaredArg', data: { tool: 'read', arg: 'path' } }],
+          errors: [
+            { messageId: 'undeclaredArg', data: { tool: 'read', arg: 'path' } },
+          ],
         },
         {
           name: 'a renamed destructure is judged on the key, not the local name',
           code:
             SDK +
             'server.registerTool("read", { inputSchema: { path: z.string() } }, async ({ encoding: enc }) => read(enc));',
-          errors: [{ messageId: 'undeclaredArg', data: { tool: 'read', arg: 'encoding' } }],
+          errors: [
+            {
+              messageId: 'undeclaredArg',
+              data: { tool: 'read', arg: 'encoding' },
+            },
+          ],
         },
         {
           name: 'a defaulted destructure is still a read',
           code:
             SDK +
             'server.registerTool("read", { inputSchema: { path: z.string() } }, async ({ encoding = "utf8" }) => encoding);',
-          errors: [{ messageId: 'undeclaredArg', data: { tool: 'read', arg: 'encoding' } }],
+          errors: [
+            {
+              messageId: 'undeclaredArg',
+              data: { tool: 'read', arg: 'encoding' },
+            },
+          ],
         },
         {
           name: 'the legacy tool() arity',
@@ -214,7 +236,12 @@ describe('no-unvalidated-tool-args', () => {
           code:
             SDK +
             'server.registerTool(toolName, { inputSchema: { path: z.string() } }, async ({ extra }) => read(extra));',
-          errors: [{ messageId: 'undeclaredArg', data: { tool: 'unknown', arg: 'extra' } }],
+          errors: [
+            {
+              messageId: 'undeclaredArg',
+              data: { tool: 'unknown', arg: 'extra' },
+            },
+          ],
         },
         {
           name: 'require() opens the same gate',
@@ -261,16 +288,26 @@ describe('declaredSchemaKeys', () => {
   });
 
   it('reads an empty schema as declaring nothing', () => {
-    expect([...declaredSchemaKeys(objOf('({ inputSchema: {} })'))!]).toEqual([]);
+    expect([...declaredSchemaKeys(objOf('({ inputSchema: {} })'))!]).toEqual(
+      [],
+    );
   });
 
   it('gives up rather than half-read a schema it cannot see', () => {
     // Each of these could declare anything; a partial read would report
     // correct handlers.
-    expect(declaredSchemaKeys(objOf('({ inputSchema: z.object({}) })'))).toBeUndefined();
-    expect(declaredSchemaKeys(objOf('({ inputSchema: Schema })'))).toBeUndefined();
-    expect(declaredSchemaKeys(objOf('({ inputSchema: { ...base } })'))).toBeUndefined();
-    expect(declaredSchemaKeys(objOf('({ inputSchema: { [k]: 1 } })'))).toBeUndefined();
+    expect(
+      declaredSchemaKeys(objOf('({ inputSchema: z.object({}) })')),
+    ).toBeUndefined();
+    expect(
+      declaredSchemaKeys(objOf('({ inputSchema: Schema })')),
+    ).toBeUndefined();
+    expect(
+      declaredSchemaKeys(objOf('({ inputSchema: { ...base } })')),
+    ).toBeUndefined();
+    expect(
+      declaredSchemaKeys(objOf('({ inputSchema: { [k]: 1 } })')),
+    ).toBeUndefined();
   });
 
   it('returns undefined when there is no inputSchema at all', () => {
@@ -280,39 +317,56 @@ describe('declaredSchemaKeys', () => {
   it('gives up when a spread follows inputSchema and can replace it', () => {
     // `options.inputSchema` wins at runtime, so the visible keys are not the
     // declared ones — judging a handler against them would report correct code.
-    expect(declaredSchemaKeys(objOf('({ inputSchema: { a: 1 }, ...options })'))).toBeUndefined();
+    expect(
+      declaredSchemaKeys(objOf('({ inputSchema: { a: 1 }, ...options })')),
+    ).toBeUndefined();
   });
 
   it('reads past an ordinary property that follows inputSchema', () => {
-    const keys = declaredSchemaKeys(objOf('({ inputSchema: { a: 1 }, title: "t" })'));
+    const keys = declaredSchemaKeys(
+      objOf('({ inputSchema: { a: 1 }, title: "t" })'),
+    );
     expect([...keys!]).toEqual(['a']);
   });
 
   it('still reads a schema when the spread comes first', () => {
     // The explicit key wins over an earlier spread, so this one is readable.
-    const keys = declaredSchemaKeys(objOf('({ ...options, inputSchema: { a: 1 } })'));
+    const keys = declaredSchemaKeys(
+      objOf('({ ...options, inputSchema: { a: 1 } })'),
+    );
     expect([...keys!]).toEqual(['a']);
   });
 });
 
 describe('destructuredArgNames', () => {
   const fnOf = (code: string): TSESTree.Node =>
-    (parser.parse(code, { range: true }).body[0] as TSESTree.ExpressionStatement).expression;
+    (
+      parser.parse(code, { range: true })
+        .body[0] as TSESTree.ExpressionStatement
+    ).expression;
 
   it('reads the destructured keys', () => {
-    expect(destructuredArgNames(fnOf('({ a, b }) => {}')).map((r) => r.name)).toEqual(['a', 'b']);
+    expect(
+      destructuredArgNames(fnOf('({ a, b }) => {}')).map((r) => r.name),
+    ).toEqual(['a', 'b']);
   });
 
   it('reads the key, not the renamed local', () => {
-    expect(destructuredArgNames(fnOf('({ a: x }) => {}')).map((r) => r.name)).toEqual(['a']);
+    expect(
+      destructuredArgNames(fnOf('({ a: x }) => {}')).map((r) => r.name),
+    ).toEqual(['a']);
   });
 
   it('reads a defaulted key', () => {
-    expect(destructuredArgNames(fnOf('({ a = 1 }) => {}')).map((r) => r.name)).toEqual(['a']);
+    expect(
+      destructuredArgNames(fnOf('({ a = 1 }) => {}')).map((r) => r.name),
+    ).toEqual(['a']);
   });
 
   it('skips a rest element, which names no specific key', () => {
-    expect(destructuredArgNames(fnOf('({ a, ...rest }) => {}')).map((r) => r.name)).toEqual(['a']);
+    expect(
+      destructuredArgNames(fnOf('({ a, ...rest }) => {}')).map((r) => r.name),
+    ).toEqual(['a']);
   });
 
   it('skips a computed key', () => {

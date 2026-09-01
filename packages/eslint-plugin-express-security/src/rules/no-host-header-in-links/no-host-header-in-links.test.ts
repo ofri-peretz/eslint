@@ -63,6 +63,7 @@ describe('no-host-header-in-links', () => {
     valid: xp([
       // Benchmark corpus: CWE-640/safe/reset-link-config-origin.js (FP-lock)
       {
+        name: 'the origin comes from server-side config',
         code: `
 // CWE-640: safe — reset link origin comes from server-side config
 // This must NOT be flagged
@@ -133,6 +134,7 @@ module.exports = app;
     invalid: xp([
       // Benchmark corpus: CWE-640/vulnerable/reset-link-host-header.js
       {
+        name: 'a password-reset link built from req.headers.host',
         code: `
 // CWE-640: host-header poisoning — password-reset link built from req.headers.host
 // This MUST be detected

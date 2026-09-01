@@ -24,6 +24,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readRealSourceInventory } from './lib/real-source-inventory.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '..');
@@ -39,6 +40,15 @@ interface Artifact {
   ttlDays: number;
   /** Refresh command for the operator-facing error message. */
   refreshCmd: string;
+  /**
+   * An extra guard for artifacts whose date is not the whole story.
+   *
+   * The real-source inventory is the case this exists for: it went four days
+   * stale while reporting FRESH, because it carried the right date and the
+   * wrong instrument. A TTL cannot see that. Returns a reason when the
+   * artifact may not be quoted, or null when it may.
+   */
+  instrumentCheck?: (repoRoot: string) => string | null;
 }
 
 const ARTIFACTS: Artifact[] = [
@@ -64,6 +74,56 @@ const ARTIFACTS: Artifact[] = [
     refreshCmd: 'Update lastValidated after the next ilb:flagship run',
   },
   {
+    /*
+     * The artifact that produced a false product-quality conclusion.
+     *
+     * It records which rules fire on 345,841 files of third-party code, and
+     * "scanned and never fired" is the strongest negative claim the ledger
+     * makes about a rule. It was absent from this list, went stale, and read
+     * as "270 of 470 rules never catch anything" — seven whole plugins that
+     * had simply never been run.
+     *
+     * Date staleness is only half the guard. The scan also records the hash of
+     * the ESLint config it ran with, and `rule-case-ledger.ts` refuses to
+     * print the silence count when that hash does not match the config on
+     * disk — because the file that misled everyone was NOT out of date. It
+     * carried the right date and the wrong instrument.
+     */
+    label: 'Real-source rule inventory',
+    path: 'benchmarks/budgets/real-world-rule-inventory.json',
+    anchorKey: 'generated',
+    ttlDays: 45,
+    refreshCmd: 'npx tsx scripts/real-source-scan.mts',
+    // Date staleness was only half the guard, and this gate said so in the
+    // comment above while checking only the date. `rule-case-ledger.ts`
+    // refusing to print is not enough on its own: one consumer checking is a
+    // habit that one file happens to have, and the freshness receipt is where
+    // a reader looks to decide whether a number is safe to quote.
+    instrumentCheck: (root) => {
+      const { isCurrent, reason } = readRealSourceInventory(root);
+      return isCurrent ? null : reason;
+    },
+  },
+  {
+    /*
+     * The rename litmus, mechanised. `check:name-vocabulary` reads this rather
+     * than running the probe, because renaming every binding in the suite and
+     * re-running it takes minutes — not a per-PR cost. That makes the artifact
+     * load-bearing, and a load-bearing artifact with no clock is how the
+     * real-source inventory went four days stale while being quoted as fact.
+     *
+     * The gate also refuses to report when the recorded probe hash does not
+     * match the script on disk, so a stale-by-CONTENT artifact is caught
+     * immediately. This TTL catches the other kind: an artifact that is still
+     * from the current probe but no longer from the current rule set.
+     */
+    label: 'Name-dependence probe',
+    path: 'benchmarks/budgets/name-dependence.json',
+    anchorKey: 'generated',
+    ttlDays: 45,
+    refreshCmd: 'npx tsx scripts/name-dependence-probe.mts',
+  },
+  {
     label: 'Peer-plugin health snapshot',
     path: 'benchmark-results/peer-health.json',
     anchorKey: 'generatedAt',
@@ -76,6 +136,58 @@ const ARTIFACTS: Artifact[] = [
     anchorKey: 'generatedAt',
     ttlDays: 180,
     refreshCmd: 'npm run ilb:resource-profile',
+  },
+  /*
+   * The published comparison and coverage reports. These were outside the
+   * check until 2026-08-26 and every one of them was ~3.5 months old, which is
+   * the failure this file exists to prevent: a number does not stop being
+   * quoted just because nothing regenerated it.
+   *
+   * TTLs are set by how fast the underlying truth moves. The peer leaderboard
+   * and stock-corpus overlap track other people's releases, so they rot fastest;
+   * the compliance and ISO crosswalks track standards text, which barely moves.
+   */
+  {
+    label: 'Peer leaderboard',
+    path: 'benchmark-results/leaderboard.json',
+    anchorKey: 'generatedAt',
+    ttlDays: 30,
+    refreshCmd: 'npm run ilb:leaderboard-publish',
+  },
+  {
+    label: 'CWE coverage report',
+    path: 'benchmark-results/cwe-coverage.json',
+    anchorKey: 'generatedAt',
+    ttlDays: 60,
+    refreshCmd: 'npm run docs:cwe-coverage',
+  },
+  {
+    label: 'Federated wild-corpus aggregate',
+    path: 'benchmark-results/federated-wild.json',
+    anchorKey: 'generatedAt',
+    ttlDays: 60,
+    refreshCmd: 'npm run ilb:federated-aggregate',
+  },
+  {
+    label: 'Stock-corpus overlap',
+    path: 'benchmark-results/stock-corpus-overlap.json',
+    anchorKey: 'generatedAt',
+    ttlDays: 30,
+    refreshCmd: 'npm run audit:stock-overlap',
+  },
+  {
+    label: 'Compliance crosswalk',
+    path: 'benchmark-results/compliance-crosswalk.json',
+    anchorKey: 'generatedAt',
+    ttlDays: 180,
+    refreshCmd: 'npm run ilb:mappings-report',
+  },
+  {
+    label: 'ISO 25010 crosswalk',
+    path: 'benchmark-results/iso25010-crosswalk.json',
+    anchorKey: 'generatedAt',
+    ttlDays: 180,
+    refreshCmd: 'npm run ilb:iso25010-report',
   },
 ];
 
@@ -98,7 +210,12 @@ function readJsonKey(obj: unknown, dotKey: string): unknown {
   return cur;
 }
 
-export function checkArtifact(a: Artifact, repoRoot = REPO_ROOT, now = Date.now()): FreshnessRow {
+export function checkArtifact(
+  a: Artifact,
+  repoRoot = REPO_ROOT,
+  now = Date.now(),
+): FreshnessRow {
+  const instrument = a.instrumentCheck?.(repoRoot) ?? null;
   const full = path.join(repoRoot, a.path);
   if (!fs.existsSync(full)) {
     return {
@@ -141,10 +258,28 @@ export function checkArtifact(a: Artifact, repoRoot = REPO_ROOT, now = Date.now(
     anchorMs = fs.statSync(full).mtimeMs;
   }
   const ageDays = Math.floor((now - anchorMs) / (1000 * 60 * 60 * 24));
+  // An artifact within its TTL can still be unquotable. The real-source
+  // inventory spent four days reporting FRESH on the strength of its date
+  // while the config that produced it had been replaced — which is the whole
+  // reason this hook exists. A failing instrument check is stale regardless of
+  // age, and the reason travels in `refreshCmd` so the operator sees WHY on the
+  // same line as the fix.
+  if (instrument !== null) {
+    return {
+      label: a.label,
+      path: a.path,
+      anchor: anchorStr,
+      ageDays,
+      ttlDays: a.ttlDays,
+      status: 'stale',
+      refreshCmd: `${a.refreshCmd}  — ${instrument}`,
+    };
+  }
   return {
     label: a.label,
     path: a.path,
-    anchor: anchorStr ?? `(mtime: ${new Date(anchorMs).toISOString().slice(0, 10)})`,
+    anchor:
+      anchorStr ?? `(mtime: ${new Date(anchorMs).toISOString().slice(0, 10)})`,
     ageDays,
     ttlDays: a.ttlDays,
     status: ageDays > a.ttlDays ? 'stale' : 'fresh',
@@ -168,7 +303,9 @@ function main() {
     );
   }
 
-  const stale = rows.filter((r) => r.status === 'stale' || r.status === 'no-anchor');
+  const stale = rows.filter(
+    (r) => r.status === 'stale' || r.status === 'no-anchor',
+  );
   if (stale.length > 0) {
     // eslint-disable-next-line no-console
     console.error('\nStale or invalid artifacts:');

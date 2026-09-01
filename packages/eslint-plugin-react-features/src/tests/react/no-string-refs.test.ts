@@ -33,6 +33,7 @@ describe('no-string-refs', () => {
       valid: [
         // No ref prop
         {
+          name: 'no ref',
           code: '<div>Hello World</div>',
         },
         {
@@ -75,6 +76,7 @@ describe('no-string-refs', () => {
       invalid: [
         // String ref usage
         {
+          name: 'a string ref, removed in React 19',
           code: '<input ref="myInput" />',
           errors: [
             {

@@ -14,12 +14,13 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-debug-code-in-production', noDebugCodeInProduction, {
   valid: [
-    { code: "const mode = 'production'" },
+    { name: "a string whose value is 'production' is not a debug branch", code: "const mode = 'production'" },
     { code: "logger.info('message')" },
   ],
 
   invalid: [
     {
+      name: 'a DEBUG-gated branch ships debug code',
       code: 'if (DEBUG) { showDebug() }',
       errors: [{ messageId: 'violationDetected' }],
     },

@@ -30,6 +30,7 @@ describe('error-message', () => {
       valid: [
         // Error with string message
         {
+          name: 'an Error carrying a message',
           code: 'throw new Error("Something went wrong");',
         },
         // Error with variable message
@@ -83,6 +84,7 @@ describe('error-message', () => {
       invalid: [
         // Error without message
         {
+          name: 'an Error thrown with nothing to say',
           code: 'throw new Error();',
           errors: [
             {

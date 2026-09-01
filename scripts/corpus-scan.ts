@@ -406,13 +406,53 @@ function shWithRegistryRetry(
   }
 }
 
+/**
+ * `--json` mode puts a machine-readable document on stdout, so progress lines
+ * must not join it.
+ *
+ * MODULE scope, deliberately. `log` used to be a `const` inside `main`, and
+ * two module-level functions called it anyway — `shWithRegistryRetry` and the
+ * per-repo installer. Neither could ever have run: the retry path threw
+ * `ReferenceError: log is not defined` the moment an install failed, which
+ * REPLACED the npm error it was trying to report. That is how a peer-dependency
+ * conflict reached CI as `status: 1, stdout: '', stderr: ''` and cost two wrong
+ * diagnoses — the error reporter destroyed the error.
+ */
+const AS_JSON = process.argv.includes('--json');
+function log(line: string): void {
+  if (!AS_JSON) console.log(line);
+}
+
 function sh(cmd: string, args: string[], cwd?: string): string {
-  return execFileSync(cmd, args, {
-    cwd,
-    encoding: 'utf-8',
-    maxBuffer: 512 * 1024 * 1024,
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
+  try {
+    return execFileSync(cmd, args, {
+      cwd,
+      encoding: 'utf-8',
+      maxBuffer: 512 * 1024 * 1024,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+  } catch (error) {
+    /*
+     * Put the child's own output INTO the thrown error.
+     *
+     * `execFileSync` throws "Command failed: <the command line>" and leaves
+     * stdout and stderr on the error object, which no handler here read. A
+     * failing install therefore reported the command it ran and nothing about
+     * why it failed, and the CI log showed `stdout: '', stderr: ''` under
+     * `--silent` — a stack trace pointing at the line that broke and no cause.
+     */
+    const child = error as { stdout?: string; stderr?: string; message?: string };
+    const detail = [child.stdout, child.stderr]
+      .map((stream) => (stream ?? '').trim())
+      .filter(Boolean)
+      .join('\n');
+    throw new Error(
+      `${child.message ?? String(error)}` +
+        (detail === ''
+          ? '\n  (the command produced no output — check for a --silent flag)'
+          : `\n\n${detail}`),
+    );
+  }
 }
 
 /**
@@ -564,11 +604,6 @@ function main(): number {
     );
     return 2;
   }
-  const asJson = process.argv.includes('--json');
-  const log = (line: string) => {
-    if (!asJson) console.log(line);
-  };
-
   ensurePrivateDir(WORK, CACHE_HOME);
 
   // One shared install reused for every target; an install per repo dominates
@@ -649,7 +684,28 @@ function main(): number {
       // Scoped to the rig, so wiping it above cannot touch anything else.
       '--cache',
       NPM_CACHE,
-      '--silent',
+      // The rig pins FROM this repo's package-lock.json, so it must resolve
+      // the way this repo resolves — and the root `.npmrc` sets
+      // `legacy-peer-deps=true`. The rig installs into `_rig`, outside the
+      // repo, where that .npmrc does not apply, so npm enforced peer ranges
+      // the workspace itself does not and the install died on ERESOLVE:
+      //
+      //   eslint@10.9.1 (locked) vs @typescript-eslint/parser@8.54.0, whose
+      //   peer range is ^8.57.0 || ^9.0.0 — ESLint 10 is not in it.
+      //
+      // Nothing about the rig changed; ESLint went to 10 in the workspace and
+      // the rig was the only place the pre-existing peer violation was
+      // visible. Parser 8.68.0 widens the range to include ^10.0.0, so the
+      // durable fix is bumping the workspace's parser — filed separately
+      // rather than folded into a scan fix, since it moves a dependency every
+      // rule test parses with.
+      '--legacy-peer-deps',
+      // `--silent` here, not `--loglevel=error`: npm printed NOTHING on
+      // failure, so the CI log carried `status: 1, stdout: '', stderr: ''` and
+      // the only way to learn the cause was to reproduce the install by hand.
+      // It cost two wrong diagnoses — "transient registry flake" — before the
+      // real one (an ERESOLVE peer conflict) turned up locally.
+      '--loglevel=error',
       '--no-audit',
       '--no-fund',
       `eslint@${lockedVersion('eslint')}`,
@@ -899,7 +955,7 @@ function main(): number {
     if (found < allowed) under.push({ rule, found, allowed });
   }
 
-  if (asJson) {
+  if (AS_JSON) {
     console.log(
       JSON.stringify(
         {

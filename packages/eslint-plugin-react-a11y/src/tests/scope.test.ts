@@ -25,7 +25,7 @@ describe('scope', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - scope on th', scope, {
       valid: [
-        { code: '<th scope="col">Header</th>' },
+        { name: 'scope on a th', code: '<th scope="col">Header</th>' },
         { code: '<th scope="row">Row Header</th>' },
         { code: '<th scope="colgroup">Group</th>' },
         { code: '<th scope="rowgroup">Group</th>' },
@@ -40,7 +40,12 @@ describe('scope', () => {
     ruleTester.run('invalid - scope on non-th', scope, {
       valid: [],
       invalid: [
-        { code: '<td scope="col">Data</td>', errors: [{ messageId: 'invalidScope' }] },
+      {
+        name: 'scope means nothing outside a table header',
+        code: '<span scope="col">Header</span>',
+        errors: [{ messageId: 'invalidScope' }],
+      },
+        { name: 'scope on a td, where it means nothing', code: '<td scope="col">Data</td>', errors: [{ messageId: 'invalidScope' }] },
         { code: '<div scope="row">Content</div>', errors: [{ messageId: 'invalidScope' }] },
       ],
     });

@@ -279,6 +279,7 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
     `,
     // Test files are exempt by default.
     {
+      name: 'the same controller where the interceptor still runs',
       code: `
         @Controller('users')
         @UseInterceptors(ClassSerializerInterceptor)
@@ -356,6 +357,7 @@ ruleTester.run('no-res-bypass-serialization', noResBypassSerialization, {
     // A non-JSON content type on some *other* object says nothing about what
     // this handler writes. Scanning the whole body let it silence the rule.
     {
+      name: 'writing through @Res() skips the ClassSerializerInterceptor above it',
       code: `
         @Controller('users')
         @UseInterceptors(ClassSerializerInterceptor)

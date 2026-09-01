@@ -15,7 +15,7 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-data-in-temp-storage', noDataInTempStorage, {
   valid: [
     // Secure storage locations
-    { code: "fs.writeFileSync('/app/data/file.txt', data)" },
+    { name: "a path inside the application's own data directory", code: "fs.writeFileSync('/app/data/file.txt', data)" },
     { code: "fs.writeFile('/secure/path/file.json', data, callback)" },
     // Non-path literals
     { code: "console.log('temp data')" },
@@ -164,7 +164,7 @@ ruleTester.run('no-data-in-temp-storage', noDataInTempStorage, {
 
   invalid: [
     // Temp path writes
-    { code: "fs.writeFileSync('/tmp/secrets.json', data)", errors: [{ messageId: 'violationDetected' }] },
+    { name: 'secrets written under /tmp, which is world-readable on most hosts', code: "fs.writeFileSync('/tmp/secrets.json', data)", errors: [{ messageId: 'violationDetected' }] },
     { code: "fs.writeFile('/var/tmp/auth.txt', data, cb)", errors: [{ messageId: 'violationDetected' }] },
     // Temp path bound to a name and then written through — this is
     // corpus/CWE-377/vulnerable/static-tmp-write.js, and it is what the write

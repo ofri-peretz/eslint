@@ -46,6 +46,7 @@ describe('no-missing-client-release', () => {
       valid: pg([
         // Unrelated code should not trigger
         {
+          name: 'pg is imported but nothing queries',
           code: `const x = 1;`,
         },
         // Array operations are safe
@@ -78,6 +79,7 @@ describe('no-missing-client-release', () => {
         // `pool` used to be undeclared here and this still passed, because the
         // rule matched the METHOD NAME `connect` on any receiver at all.
         {
+          name: 'a pooled client checked out and never released',
           code: `const pool = new Pool();\nasync function test() { const client = await pool.connect(); const res = await client.query('SELECT 1'); return res; }`,
           errors: [{ messageId: 'missingClientRelease' }],
         },

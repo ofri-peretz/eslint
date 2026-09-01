@@ -26,6 +26,7 @@ import {
   isModuleBinding,
   isStaticExpression,
   unwrapTypeSyntax,
+  staticString,
 } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 // Temporarily remove complex imports to fix type issues
@@ -170,7 +171,8 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
         description: 'Escape format specifiers in user input',
         severity: 'LOW',
         fix: 'Replace % with %% in user input',
-        documentationLink: 'https://nodejs.org/api/util.html#utilformatformat-args',
+        documentationLink:
+          'https://nodejs.org/api/util.html#utilformatformat-args',
       }),
     },
     schema: [
@@ -180,17 +182,37 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
           formatFunctions: {
             type: 'array',
             items: { type: 'string' },
-            default: ['util.format', 'console.log', 'console.error', 'console.warn', 'sprintf', 'printf', 'vsprintf'], description: 'Functions whose first argument is a format string'
+            default: [
+              'util.format',
+              'console.log',
+              'console.error',
+              'console.warn',
+              'sprintf',
+              'printf',
+              'vsprintf',
+            ],
+            description: 'Functions whose first argument is a format string',
           },
           formatSpecifiers: {
             type: 'array',
             items: { type: 'string' },
-            default: ['%s', '%d', '%i', '%f', '%j', '%o', '%O', '%c', '%%'], description: 'Format specifiers recognised in a format string'
+            default: ['%s', '%d', '%i', '%f', '%j', '%o', '%O', '%c', '%%'],
+            description: 'Format specifiers recognised in a format string',
           },
           userInputVariables: {
             type: 'array',
             items: { type: 'string' },
-            default: ['req', 'request', 'body', 'query', 'params', 'input', 'data', 'userInput'], description: 'Variable names treated as user-controlled input'
+            default: [
+              'req',
+              'request',
+              'body',
+              'query',
+              'params',
+              'input',
+              'data',
+              'userInput',
+            ],
+            description: 'Variable names treated as user-controlled input',
           },
           userInputAliases: {
             type: 'array',
@@ -203,13 +225,15 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Extra user-input aliases, on top of `userInputAliases`.',
+            description:
+              'Extra user-input aliases, on top of `userInputAliases`.',
           },
           trustedSanitizers: {
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Additional function names to consider as format string sanitizers',
+            description:
+              'Additional function names to consider as format string sanitizers',
           },
         },
         additionalProperties: false,
@@ -218,25 +242,82 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [
     {
-      formatFunctions: ['util.format', 'console.log', 'console.error', 'console.warn', 'sprintf', 'printf', 'vsprintf'],
+      formatFunctions: [
+        'util.format',
+        'console.log',
+        'console.error',
+        'console.warn',
+        'sprintf',
+        'printf',
+        'vsprintf',
+      ],
       formatSpecifiers: ['%s', '%d', '%i', '%f', '%j', '%o', '%O', '%c', '%%'],
-      userInputVariables: ['req', 'request', 'body', 'query', 'params', 'input', 'data', 'userInput'],
+      userInputVariables: [
+        'req',
+        'request',
+        'body',
+        'query',
+        'params',
+        'input',
+        'data',
+        'userInput',
+      ],
       userInputAliases: DEFAULT_USER_INPUT_ALIASES,
       additionalUserInputAliases: [],
-      trustedSanitizers: ['validateFormat', 'sanitizeFormat', 'escapeFormat', 'cleanFormat', 'sanitizeFormatString', 'validate', 'sanitize', 'escape', 'clean'],
+      trustedSanitizers: [
+        'validateFormat',
+        'sanitizeFormat',
+        'escapeFormat',
+        'cleanFormat',
+        'sanitizeFormatString',
+        'validate',
+        'sanitize',
+        'escape',
+        'clean',
+      ],
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const defaultOptions: Options = {
-      formatFunctions: ['util.format', 'console.log', 'console.error', 'console.warn', 'sprintf', 'printf', 'vsprintf'],
+      formatFunctions: [
+        'util.format',
+        'console.log',
+        'console.error',
+        'console.warn',
+        'sprintf',
+        'printf',
+        'vsprintf',
+      ],
       formatSpecifiers: ['%s', '%d', '%i', '%f', '%j', '%o', '%O', '%c', '%%'],
-      userInputVariables: ['req', 'request', 'body', 'query', 'params', 'input', 'data', 'userInput'],
+      userInputVariables: [
+        'req',
+        'request',
+        'body',
+        'query',
+        'params',
+        'input',
+        'data',
+        'userInput',
+      ],
       userInputAliases: DEFAULT_USER_INPUT_ALIASES,
       additionalUserInputAliases: [],
-      trustedSanitizers: ['validateFormat', 'sanitizeFormat', 'escapeFormat', 'cleanFormat', 'sanitizeFormatString', 'validate', 'sanitize', 'escape', 'clean'],
+      trustedSanitizers: [
+        'validateFormat',
+        'sanitizeFormat',
+        'escapeFormat',
+        'cleanFormat',
+        'sanitizeFormatString',
+        'validate',
+        'sanitize',
+        'escape',
+        'clean',
+      ],
     };
 
-    const options: Required<Options> = { ...defaultOptions, ...context.options[0] } as Required<Options>;
+    const options: Required<Options> = {
+      ...defaultOptions,
+      ...context.options[0],
+    } as Required<Options>;
     const {
       formatSpecifiers,
       userInputVariables,
@@ -254,25 +335,37 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
     const reportedTemplates = new WeakSet<TSESTree.Node>();
 
     const safetyChecker = {
-      isSafe: (safeNode: TSESTree.Node, ruleCtx: TSESLint.RuleContext<MessageIds, RuleOptions>) => {
+      isSafe: (
+        safeNode: TSESTree.Node,
+        ruleCtx: TSESLint.RuleContext<MessageIds, RuleOptions>,
+      ) => {
         // Check for JSDoc @safe-format annotation
         const comments = ruleCtx.sourceCode.getCommentsBefore(safeNode);
         for (const comment of comments) {
-          if (comment.type === 'Block' && comment.value.includes('@safe-format')) {
+          if (
+            comment.type === 'Block' &&
+            comment.value.includes('@safe-format')
+          ) {
             return true;
           }
         }
 
         // For CallExpression nodes, check if first argument is safe
-        if (safeNode.type === 'CallExpression' && safeNode.arguments.length > 0) {
+        if (
+          safeNode.type === 'CallExpression' &&
+          safeNode.arguments.length > 0
+        ) {
           const firstArg = safeNode.arguments[0];
-          if (firstArg.type === 'Identifier' && validatedVariables.has(firstArg.name)) {
+          if (
+            firstArg.type === 'Identifier' &&
+            validatedVariables.has(firstArg.name)
+          ) {
             return true;
           }
         }
 
         return false;
-      }
+      },
     };
 
     /**
@@ -284,9 +377,11 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
      * documented on `DEFAULT_USER_INPUT_ALIASES` above).
      */
     const declaredUserInput: ReadonlySet<string> = new Set(
-      [...userInputVariables, ...userInputAliases, ...additionalUserInputAliases].map((name) =>
-        name.toLowerCase(),
-      ),
+      [
+        ...userInputVariables,
+        ...userInputAliases,
+        ...additionalUserInputAliases,
+      ].map((name) => name.toLowerCase()),
     );
 
     const isUserInput = (varName: string): boolean =>
@@ -320,7 +415,9 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
       // finding, and both spellings are what a "make it configurable" commit
       // produces.
       if (node.type === 'ConditionalExpression') {
-        return isUserInputNode(node.consequent) || isUserInputNode(node.alternate);
+        return (
+          isUserInputNode(node.consequent) || isUserInputNode(node.alternate)
+        );
       }
       if (node.type === 'LogicalExpression') {
         return isUserInputNode(node.left) || isUserInputNode(node.right);
@@ -332,11 +429,16 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
 
       if (node.type === 'MemberExpression') {
         // Check patterns like req.query.*, req.body.*, req.params.*, etc.
-        if (node.object.type === 'MemberExpression' &&
-            node.object.object.type === 'Identifier' &&
-            node.object.object.name === 'req' &&
-            node.object.property.type === 'Identifier' &&
-            ['query', 'body', 'params', 'param'].includes(node.object.property.name)) {
+        if (
+          node.object.type === 'MemberExpression' &&
+          node.object.object.type === 'Identifier' &&
+          node.object.object.name === 'req' &&
+          node.object.property.type === 'Identifier' &&
+          // @vocabulary Express request API
+          ['query', 'body', 'params', 'param'].includes(
+            node.object.property.name,
+          )
+        ) {
           return true;
         }
 
@@ -357,7 +459,9 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
      * Get the full name of a member expression (e.g., req.query.format)
      */
     // oxlint-disable-next-line consistent-function-scoping
-    const getMemberExpressionName = (node: TSESTree.MemberExpression): string => {
+    const getMemberExpressionName = (
+      node: TSESTree.MemberExpression,
+    ): string => {
       if (node.object.type === 'Identifier') {
         if (node.property.type === 'Identifier') {
           return `${node.object.name}.${node.property.name}`;
@@ -375,7 +479,7 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
      * Check if a string contains format specifiers
      */
     const containsFormatSpecifiers = (text: string): boolean => {
-      return formatSpecifiers.some(specifier => text.includes(specifier));
+      return formatSpecifiers.some((specifier) => text.includes(specifier));
     };
 
     /**
@@ -384,22 +488,27 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
     // oxlint-disable-next-line consistent-function-scoping
     const isConsoleMethod = (node: TSESTree.CallExpression): boolean => {
       const callee = node.callee;
-      return callee.type === 'MemberExpression' &&
-             callee.object.type === 'Identifier' &&
-             callee.object.name === 'console' &&
-             callee.property.type === 'Identifier' &&
-             ['log', 'error', 'warn', 'info', 'debug'].includes(callee.property.name);
+      return (
+        callee.type === 'MemberExpression' &&
+        callee.object.type === 'Identifier' &&
+        callee.object.name === 'console' &&
+        callee.property.type === 'Identifier' &&
+        // @vocabulary console API
+        ['log', 'error', 'warn', 'info', 'debug'].includes(callee.property.name)
+      );
     };
 
     const isFormatFunctionCall = (node: TSESTree.CallExpression): boolean => {
       const callee = node.callee;
 
       // Check for util.format
-      if (callee.type === 'MemberExpression' &&
-          callee.object.type === 'Identifier' &&
-          callee.object.name === 'util' &&
-          callee.property.type === 'Identifier' &&
-          callee.property.name === 'format') {
+      if (
+        callee.type === 'MemberExpression' &&
+        callee.object.type === 'Identifier' &&
+        callee.object.name === 'util' &&
+        callee.property.type === 'Identifier' &&
+        callee.property.name === 'format'
+      ) {
         return true;
       }
 
@@ -411,23 +520,30 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
       // and `node:util` both count and a local helper called `format` does not.
       if (
         callee.type === 'Identifier' &&
-        isModuleBinding(callee, context.sourceCode.getScope(callee), 'util', ['format'])
+        isModuleBinding(callee, context.sourceCode.getScope(callee), 'util', [
+          'format',
+        ])
       ) {
         return true;
       }
 
       // Check for console methods
-      if (callee.type === 'MemberExpression' &&
-          callee.object.type === 'Identifier' &&
-          callee.object.name === 'console' &&
-          callee.property.type === 'Identifier' &&
-          ['log', 'error', 'warn', 'info', 'debug'].includes(callee.property.name)) {
+      if (
+        callee.type === 'MemberExpression' &&
+        callee.object.type === 'Identifier' &&
+        callee.object.name === 'console' &&
+        callee.property.type === 'Identifier' &&
+        // @vocabulary console API
+        ['log', 'error', 'warn', 'info', 'debug'].includes(callee.property.name)
+      ) {
         return true;
       }
 
       // Check for sprintf/printf functions
-      if (callee.type === 'Identifier' &&
-          ['sprintf', 'printf', 'vsprintf'].includes(callee.name)) {
+      if (
+        callee.type === 'Identifier' &&
+        ['sprintf', 'printf', 'vsprintf'].includes(callee.name)
+      ) {
         return true;
       }
 
@@ -464,16 +580,21 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
      */
     const isInputValidated = (inputNode: TSESTree.Node): boolean => {
       // Check if this is a validated variable
-      if (inputNode.type === 'Identifier' && validatedVariables.has(inputNode.name)) {
+      if (
+        inputNode.type === 'Identifier' &&
+        validatedVariables.has(inputNode.name)
+      ) {
         return true;
       }
 
       let current: TSESTree.Node | undefined = inputNode;
 
       while (current) {
-        if (current.type === 'CallExpression' &&
-            current.callee.type === 'Identifier' &&
-            trustedSanitizers.includes(current.callee.name)) {
+        if (
+          current.type === 'CallExpression' &&
+          current.callee.type === 'Identifier' &&
+          trustedSanitizers.includes(current.callee.name)
+        ) {
           return true;
         }
         current = current.parent as TSESTree.Node;
@@ -494,33 +615,51 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
     };
 
     // Helper functions for expression analysis
-    function containsFormatSpecifiersInExpression(expr: TSESTree.BinaryExpression): boolean {
-      if (expr.left.type === 'Literal' && typeof expr.left.value === 'string' && containsFormatSpecifiers(expr.left.value)) {
+    function containsFormatSpecifiersInExpression(
+      expr: TSESTree.BinaryExpression,
+    ): boolean {
+      const left = staticString(expr.left);
+      if (left !== null && containsFormatSpecifiers(left)) {
         return true;
       }
-      if (expr.right.type === 'Literal' && typeof expr.right.value === 'string' && containsFormatSpecifiers(expr.right.value)) {
+      const right = staticString(expr.right);
+      if (right !== null && containsFormatSpecifiers(right)) {
         return true;
       }
-      if (expr.left.type === 'BinaryExpression' && containsFormatSpecifiersInExpression(expr.left)) {
+      if (
+        expr.left.type === 'BinaryExpression' &&
+        containsFormatSpecifiersInExpression(expr.left)
+      ) {
         return true;
       }
-      if (expr.right.type === 'BinaryExpression' && containsFormatSpecifiersInExpression(expr.right)) {
+      if (
+        expr.right.type === 'BinaryExpression' &&
+        containsFormatSpecifiersInExpression(expr.right)
+      ) {
         return true;
       }
       return false;
     }
 
-    function hasUserInputInExpression(expr: TSESTree.BinaryExpression): boolean {
+    function hasUserInputInExpression(
+      expr: TSESTree.BinaryExpression,
+    ): boolean {
       if (isUserInputNode(expr.left)) {
         return true;
       }
       if (isUserInputNode(expr.right)) {
         return true;
       }
-      if (expr.left.type === 'BinaryExpression' && hasUserInputInExpression(expr.left)) {
+      if (
+        expr.left.type === 'BinaryExpression' &&
+        hasUserInputInExpression(expr.left)
+      ) {
         return true;
       }
-      if (expr.right.type === 'BinaryExpression' && hasUserInputInExpression(expr.right)) {
+      if (
+        expr.right.type === 'BinaryExpression' &&
+        hasUserInputInExpression(expr.right)
+      ) {
         return true;
       }
       return false;
@@ -528,7 +667,7 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
 
     return {
       // Check call expressions for format function usage
-      CallExpression: function(node: TSESTree.CallExpression) {
+      CallExpression: function (node: TSESTree.CallExpression) {
         if (!isFormatFunctionCall(node)) {
           return;
         }
@@ -543,9 +682,12 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
 
         // Check if format string comes from user input
         // But skip console methods since they don't use the first arg as a format template
-        const isFormatFromUserInput = isUserInputNode(formatArg) ||
-                                     (formatArg.type === 'Identifier' && dangerousVariables.has(formatArg.name)) ||
-                                     (formatArg.type === 'BinaryExpression' && hasUserInputInExpression(formatArg));
+        const isFormatFromUserInput =
+          isUserInputNode(formatArg) ||
+          (formatArg.type === 'Identifier' &&
+            dangerousVariables.has(formatArg.name)) ||
+          (formatArg.type === 'BinaryExpression' &&
+            hasUserInputInExpression(formatArg));
 
         // `console.*` was excluded outright, on the stated grounds that console methods
         // "don't use the first arg as a format template". They do: Node's console runs its
@@ -555,7 +697,10 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
         // the distinction the blanket exclusion was missing in both directions.
         const consoleSubstitutes = isConsoleMethod(node) && args.length > 1;
 
-        if (isFormatFromUserInput && (!isConsoleMethod(node) || consoleSubstitutes)) {
+        if (
+          isFormatFromUserInput &&
+          (!isConsoleMethod(node) || consoleSubstitutes)
+        ) {
           if (safetyChecker.isSafe(node, context)) {
             return;
           }
@@ -573,8 +718,8 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
 
         // Check if format string is a template literal or binary expression with user input
         if (formatArg.type === 'TemplateLiteral') {
-          const hasUserInput = formatArg.expressions.some((expr: TSESTree.Expression) =>
-            isUserInputNode(expr)
+          const hasUserInput = formatArg.expressions.some(
+            (expr: TSESTree.Expression) => isUserInputNode(expr),
           );
 
           if (hasUserInput) {
@@ -589,12 +734,16 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
                 filePath: filename,
                 line: String(node.loc?.start.line ?? 0),
                 severity: 'HIGH',
-                safeAlternative: 'Use hardcoded format strings or validate template input',
+                safeAlternative:
+                  'Use hardcoded format strings or validate template input',
               },
             });
             return;
           }
-        } else if (formatArg.type === 'BinaryExpression' && formatArg.operator === '+') {
+        } else if (
+          formatArg.type === 'BinaryExpression' &&
+          formatArg.operator === '+'
+        ) {
           const hasUserInput = hasUserInputInExpression(formatArg);
           if (hasUserInput) {
             if (safetyChecker.isSafe(node, context)) {
@@ -617,8 +766,9 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
         // Check for format specifiers in subsequent arguments (could indicate user input in format position)
         // Only check if the format string itself is not validated/safe
         const fmtArg = args[0];
-        const isFormatSafe = isInputValidated(fmtArg) ||
-                            (fmtArg.type === 'Identifier' && validatedVariables.has(fmtArg.name));
+        const isFormatSafe =
+          isInputValidated(fmtArg) ||
+          (fmtArg.type === 'Identifier' && validatedVariables.has(fmtArg.name));
 
         if (!isFormatSafe) {
           let hasUserInputInArgs = false;
@@ -635,21 +785,30 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
 
           // Check if any argument (potential format string) contains specifiers
           const firstArg = args[0];
-          if (firstArg.type === 'Literal' && typeof firstArg.value === 'string') {
-            if (containsFormatSpecifiers(firstArg.value)) {
+          const staticText = staticString(firstArg);
+          if (staticText !== null) {
+            if (containsFormatSpecifiers(staticText)) {
               hasSpecifiersInFormat = true;
             }
           } else if (firstArg.type === 'Identifier') {
             // Check if the identifier name suggests it contains format specifiers
             const varName = firstArg.name.toLowerCase();
-            if (varName.includes('format') || varName.includes('template') || varName.includes('pattern')) {
+            if (
+              varName.includes('format') ||
+              varName.includes('template') ||
+              varName.includes('pattern')
+            ) {
               hasSpecifiersInFormat = true;
             }
           }
 
           // Special case: For console.log/console.error with single argument, don't flag
           // console.log(userMessage) is equivalent to console.log("%s", userMessage) but is generally safe
-          if (!hasSpecifiersInFormat && args.length === 2 && isConsoleMethod(node)) {
+          if (
+            !hasSpecifiersInFormat &&
+            args.length === 2 &&
+            isConsoleMethod(node)
+          ) {
             // Don't report
           } else if (
             hasSpecifiersInFormat &&
@@ -693,7 +852,9 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
                 {
                   messageId: 'escapeFormatString',
                   fix: (fixer: TSESLint.RuleFixer) => {
-                    const arg = node.arguments.slice(1).find(a => isUserInputNode(a))!;
+                    const arg = node.arguments
+                      .slice(1)
+                      .find((a) => isUserInputNode(a))!;
                     return fixer.insertTextAfter(arg, '.replace(/%/g, "%%")');
                   },
                 },
@@ -704,7 +865,7 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
       },
 
       // Check string literals for format specifiers with user input context
-      Literal: function(node: TSESTree.Literal) {
+      Literal: function (node: TSESTree.Literal) {
         if (!hasFormatSpecifiers(node)) {
           return;
         }
@@ -721,22 +882,29 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
         // Every path that sets `isFromUserInput = true` is immediately followed by `break`,
         // so the negation in the loop condition is dead (CodeQL: `js/useless-conditional`).
         while (current) {
-          if (current.type === 'BinaryExpression' &&
-              current.operator === '+' &&
-              (current.left === node || current.right === node)) {
+          if (
+            current.type === 'BinaryExpression' &&
+            current.operator === '+' &&
+            (current.left === node || current.right === node)
+          ) {
             // Check if the other side contains user input
-            const otherSide = current.left === node ? current.right : current.left;
-            if (otherSide.type === 'Identifier' && isUserInput(otherSide.name)) {
+            const otherSide =
+              current.left === node ? current.right : current.left;
+            if (
+              otherSide.type === 'Identifier' &&
+              isUserInput(otherSide.name)
+            ) {
               isFromUserInput = true;
               break;
             }
           }
-          if (current.type === 'VariableDeclarator' &&
-              current.init === node.parent &&
-              current.id.type === 'Identifier') {
-            
+          if (
+            current.type === 'VariableDeclarator' &&
+            current.init === node.parent &&
+            current.id.type === 'Identifier'
+          ) {
             // console.log('DEBUG: Checking variable declarator', current.id.name);
-            
+
             // Check if variable name suggests user input
             if (isUserInput(current.id.name)) {
               isFromUserInput = true;
@@ -759,7 +927,10 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
         // `isInDangerousContext = true` is followed by `break`, so the negation in the
         // condition is dead (CodeQL: `js/useless-conditional`).
         while (current) {
-          if (current.type === 'CallExpression' && isFormatFunctionCall(current)) {
+          if (
+            current.type === 'CallExpression' &&
+            isFormatFunctionCall(current)
+          ) {
             // Check if this is the first argument (format string position)
             const args = current.arguments;
             if (args.length > 0 && args[0] === node) {
@@ -787,13 +958,16 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
       },
 
       // Check template literals for format string injection
-      TemplateLiteral: function(node: TSESTree.TemplateLiteral) {
+      TemplateLiteral: function (node: TSESTree.TemplateLiteral) {
         // Check if template literal is used as format string
         let templateCurrent: TSESTree.Node | undefined = node;
         let isFormatString = false;
 
         while (templateCurrent) {
-          if (templateCurrent.type === 'CallExpression' && isFormatFunctionCall(templateCurrent)) {
+          if (
+            templateCurrent.type === 'CallExpression' &&
+            isFormatFunctionCall(templateCurrent)
+          ) {
             const args = templateCurrent.arguments;
             if (args.length > 0 && args[0] === node) {
               isFormatString = true;
@@ -810,8 +984,8 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
         }
 
         // Check if template literal contains user input and is used dangerously
-        const hasUserInput = node.expressions.some((expr: TSESTree.Expression) =>
-          isUserInputNode(expr)
+        const hasUserInput = node.expressions.some(
+          (expr: TSESTree.Expression) => isUserInputNode(expr),
         );
 
         if (hasUserInput) {
@@ -842,7 +1016,10 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
           });
 
           if (isAssignedToVariable && carriesFormatSpecifier) {
-            if (safetyChecker.isSafe(node, context) || reportedTemplates.has(node)) {
+            if (
+              safetyChecker.isSafe(node, context) ||
+              reportedTemplates.has(node)
+            ) {
               return;
             }
 
@@ -853,7 +1030,8 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
                 filePath: filename,
                 line: String(node.loc?.start.line ?? 0),
                 severity: 'HIGH',
-                safeAlternative: 'Extract user input from template and validate separately',
+                safeAlternative:
+                  'Extract user input from template and validate separately',
               },
             });
           }
@@ -895,7 +1073,7 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
       },
 
       // Check variable assignments that might create format strings
-      VariableDeclarator: function(node: TSESTree.VariableDeclarator) {
+      VariableDeclarator: function (node: TSESTree.VariableDeclarator) {
         if (!node.init || node.id.type !== 'Identifier') {
           return;
         }
@@ -903,36 +1081,47 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
         const varName = node.id.name;
 
         // Track variables that are assigned the result of sanitization functions
-        if (node.init.type === 'CallExpression' &&
-            node.init.callee.type === 'Identifier' &&
-            trustedSanitizers.includes(node.init.callee.name)) {
+        if (
+          node.init.type === 'CallExpression' &&
+          node.init.callee.type === 'Identifier' &&
+          trustedSanitizers.includes(node.init.callee.name)
+        ) {
           validatedVariables.add(varName);
         }
 
         // Track variables that are assigned user input (dangerous)
         if (
           isUserInputNode(node.init) ||
-          (node.init.type === 'BinaryExpression' && hasUserInputInExpression(node.init)) ||
+          (node.init.type === 'BinaryExpression' &&
+            hasUserInputInExpression(node.init)) ||
           // A template literal interpolating user input carries that input forward.
           (node.init.type === 'TemplateLiteral' &&
-            node.init.expressions.some((expr: TSESTree.Expression) => isUserInputNode(expr)))
+            node.init.expressions.some((expr: TSESTree.Expression) =>
+              isUserInputNode(expr),
+            ))
         ) {
           dangerousVariables.add(varName);
         }
 
         const varNameLower = varName.toLowerCase();
 
-        if (!varNameLower.includes('format') && !varNameLower.includes('template') && !varNameLower.includes('fmt') && !varNameLower.includes('str')) {
+        if (
+          !varNameLower.includes('format') &&
+          !varNameLower.includes('template') &&
+          !varNameLower.includes('fmt') &&
+          !varNameLower.includes('str')
+        ) {
           return;
         }
 
         // Check if assigned value contains format specifiers and user input
         if (node.init.type === 'TemplateLiteral') {
-          const hasSpecifiers = node.init.quasis.some((quasi: TSESTree.TemplateElement) =>
-            containsFormatSpecifiers(quasi.value.raw)
+          const hasSpecifiers = node.init.quasis.some(
+            (quasi: TSESTree.TemplateElement) =>
+              containsFormatSpecifiers(quasi.value.raw),
           );
-          const hasUserInput = node.init.expressions.some((expr: TSESTree.Expression) =>
-            isUserInputNode(expr)
+          const hasUserInput = node.init.expressions.some(
+            (expr: TSESTree.Expression) => isUserInputNode(expr),
           );
 
           if (hasSpecifiers && hasUserInput) {
@@ -955,7 +1144,10 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
         }
 
         // Check if assigned value is a string concatenation with user input
-        if (node.init.type === 'BinaryExpression' && node.init.operator === '+') {
+        if (
+          node.init.type === 'BinaryExpression' &&
+          node.init.operator === '+'
+        ) {
           const hasSpecifiers = containsFormatSpecifiersInExpression(node.init);
           const hasUserInput = hasUserInputInExpression(node.init);
 
@@ -976,8 +1168,7 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
             });
           }
         }
-      }
+      },
     };
   },
 });
-

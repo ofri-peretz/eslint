@@ -793,3 +793,26 @@ jobs:
           title: 'Scheduled full quality gate is failing'
           body: 'The scheduled run of the full quality gate failed. main may be broken in a way the per-PR gates do not cover.'
           token: ${{ github.token }}
+
+      # The push trigger is what turns "broken until Sunday" into "broken for
+      # one merge" — but only if somebody is told. Without this the immediate
+      # detection produces a red square in a tab nobody has open, which is the
+      # same outcome as the weekly cron with extra Actions minutes spent.
+      #
+      # A SEPARATE title, because the title is the deduplication key and these
+      # are different situations: a push failure names the merge that caused it
+      # and is actionable now; a schedule failure means main has been broken for
+      # up to a week and nobody noticed. Sharing one issue would let the second
+      # hide inside the first.
+      - name: 🚨 Report a broken main
+        if: failure() && github.event_name == 'push'
+        uses: ./.github/actions/report-failure
+        with:
+          title: 'main is red — the full quality gate failed after a merge'
+          body: >-
+            The heavy gate failed on a push to main, so main is broken now and
+            every branch cut from it inherits the failure. The merge that did it
+            is the head of main. PR #745 is the worked example: it landed with
+            unsynced MDX, failed rule-docs-sync-drift on main's tip, and was
+            found four days later by accident.
+          token: ${{ github.token }}

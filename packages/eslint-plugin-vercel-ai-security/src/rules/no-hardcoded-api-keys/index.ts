@@ -10,7 +10,7 @@
  * @see OWASP ASI03: Identity & Privilege Abuse
  */
 
-import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { TSESTree, createRule, formatLLMMessage, MessageIcons, staticString } from '@interlace/eslint-devkit';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
 
 type MessageIds = 'hardcodedApiKey';
@@ -119,8 +119,9 @@ export const noHardcodedApiKeys = createRule<RuleOptions, MessageIds>({
         if (!isApiKeyProp) return;
 
         // Check if value is a hardcoded string
-        if (node.value.type === 'Literal' && typeof node.value.value === 'string') {
-          const value = node.value.value;
+        const staticText1 = staticString(node.value);
+        if (staticText1 !== null) {
+          const value = staticText1;
           
           // Skip placeholder values
           if (value === '' || value === 'YOUR_API_KEY' || value.startsWith('$')) {
@@ -154,8 +155,9 @@ export const noHardcodedApiKeys = createRule<RuleOptions, MessageIds>({
             
             const keyName = prop.key.type === 'Identifier' ? prop.key.name : null;
             if (keyName === 'apiKey' || keyName === 'api_key') {
-              if (prop.value.type === 'Literal' && typeof prop.value.value === 'string') {
-                const value = prop.value.value;
+              const staticText2 = staticString(prop.value);
+              if (staticText2 !== null) {
+                const value = staticText2;
                 if (looksLikeApiKey(value) || value.length > 20) {
                   context.report({
                     node: prop.value,

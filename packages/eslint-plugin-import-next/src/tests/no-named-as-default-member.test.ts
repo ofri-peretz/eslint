@@ -24,12 +24,13 @@ ruleTester.run('no-named-as-default-member', noNamedAsDefaultMember, {
   valid: [
     // Standard default usage
     {
+      name: 'an ordinary property of the default',
       code: `
         import foo from './foo';
         const bar = foo.bar;
       `,
     },
-    
+
     // Destructuring default
     {
       code: `
@@ -37,34 +38,43 @@ ruleTester.run('no-named-as-default-member', noNamedAsDefaultMember, {
         const { bar } = foo;
       `,
     },
-    
+
     // Named import usage
     {
       code: `import { bar } from './foo';`,
     },
   ],
-  
+
   invalid: [
-    // This rule typically reports when you access a property on a default import
-    // that has the same name as a named export from that module.
-    // Testing this usually requires the resolver to see the exports of './foo'.
-    // Without full resolver mock, we test that the structure reports IF it detects it.
-    // Since we can't easily mock the external file's exports in this unit test without
-    // the resolver context, we may need to skip actual detection logic or mock the context.
-    
-    // HOWEVER, for the purpose of coverage, we can simulate the rule's logic if it relies on
-    // simplified checks or if we can mock the "ExportMap" or similar utils.
-    
-    // If we assume the rule uses a simplified heuristic (e.g. checking existing named imports),
-    // we can try:
+    // No resolver is involved, and the comment block that used to sit here
+    // guessed that one was — it hedged about mocking an ExportMap the rule
+    // never reads. What the rule actually does is narrower and needs nothing:
+    // within one file it sees `import foo, { bar } from './foo'`, so it knows
+    // `bar` IS a named export of that module, and a later `foo.bar` is
+    // therefore reaching a named export through the default binding.
     {
-      code: `
-        import foo, { bar } from './foo';
-        const baz = foo.bar; // Accessing 'bar' on default 'foo' when 'bar' is a named export
-      `,
+      name: 'a property read off the default that is also a named export of the same module',
+      code: `import foo, { bar } from './foo'; const baz = foo.bar;`,
       errors: [{ messageId: 'namedAsDefaultMember' }],
-      // If the rule relies on filesystem/resolver, this might fail or pass depending on mocking.
-      // We'll try to run it. If it fails due to missing resolver data, we might need to skip.
+    },
+    {
+      // The rule skipped every computed member, so this spelling — what a
+      // minifier emits, and the only spelling available for a key that is not
+      // a valid identifier — passed while `foo.bar` reported.
+      // @found grammar review
+      name: 'FN: the same access written through a computed literal key',
+      code: `import foo, { bar } from './foo'; const baz = foo['bar'];`,
+      errors: [{ messageId: 'namedAsDefaultMember' }],
+    },
+    {
+      name: 'a named export whose name is not a valid identifier, so only the computed form exists',
+      code: `import foo, { "kebab-name" as k } from './foo'; const baz = foo['kebab-name'];`,
+      errors: [{ messageId: 'namedAsDefaultMember' }],
+    },
+    {
+      name: 'the same access as a call',
+      code: `import foo, { run } from './foo'; foo.run();`,
+      errors: [{ messageId: 'namedAsDefaultMember' }],
     },
   ],
 });
