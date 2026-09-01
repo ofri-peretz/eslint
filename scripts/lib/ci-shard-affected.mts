@@ -97,11 +97,15 @@ export function expandDependents(seed: Iterable<string>, rev: Map<string, string
  * @param testable the candidate universe (testable packages, or all workspaces)
  * @param rev      reverse-dep graph; when given, `some` returns the dependent
  *                 closure so callers can use a plain `--filter=<pkg>`
+ * @param universe every testable package across ALL lanes. `bug` is judged
+ *                 against this, so a lane that legitimately owns none of the
+ *                 changed packages reports `none` rather than a defect.
  */
 export function decideAffected(
   changed: string[] | null,
   testable: AffectedPkg[],
   rev?: Map<string, string[]>,
+  universe?: AffectedPkg[],
 ): Decision {
   if (changed === null) return { mode: 'all', why: 'no merge-base with the base ref' };
   if (changed.some((f) => GLOBAL_INPUTS.has(f))) return { mode: 'all', why: 'a global input changed' };
@@ -111,8 +115,24 @@ export function decideAffected(
   );
   const directly = testable.filter((p) => touchedDirs.has(p.dir));
 
-  if (touchedDirs.size > 0 && directly.length === 0) return { mode: 'bug', dirs: [...touchedDirs] };
   if (touchedDirs.size === 0) return { mode: 'none', why: 'no package sources changed' };
+
+  // `bug` means the change is testable NOWHERE, not merely "not in this lane".
+  //
+  // Since the node/web lane split, `testable` is lane-scoped, so a
+  // packages/eslint-devkit change legitimately resolves to nothing in the web
+  // lane. Judging the defect against the lane made that normal case fail:
+  // `Files changed under packages/eslint-devkit but the affected set is empty`
+  // blocked three PRs on 2026-09-01.
+  //
+  // `universe` is every testable package across all lanes; the anti-#355
+  // protection is unchanged when measured against it. Defaults to `testable`,
+  // so single-lane callers behave exactly as before.
+  const anywhere = (universe ?? testable).filter((p) => touchedDirs.has(p.dir));
+  if (anywhere.length === 0) return { mode: 'bug', dirs: [...touchedDirs] };
+
+  if (directly.length === 0)
+    return { mode: 'none', why: 'the changed packages belong to another lane' };
 
   const seed = directly.map((p) => p.name);
   if (!rev) return { mode: 'some', names: new Set(seed) };
