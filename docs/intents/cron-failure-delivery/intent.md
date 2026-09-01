@@ -29,10 +29,17 @@ schedule --limit 1` per workflow, cross-referenced against
 | `oxlint-parity` | 2026-08-30 | none |
 | `peer-health` | 2026-08-31 | #784 |
 | `weekly-corpus-scan` | 2026-08-31 | #782 |
-| `evals` | no conclusion recorded | none |
+| `evals` | *not failing* — see below | n/a |
 
-**Eight failing, two reported.** Not one issue was ever filed — open or closed
-— for five of them.
+**Seven failing, two reported.** Not one issue was ever filed — open or closed
+— for four of them.
+
+`evals` was miscounted in the first pass of this table: it has no conclusion
+because it has **never fired**. Its schedule landed 2026-08-30 in #754 and its
+cron is `20 5 * * 4` (Thursday); the first Thursday after that is 2026-09-03.
+The workflow is `active`. Nothing is wrong with it, and a survey that reads
+"no conclusion" as "broken" would have sent someone to debug a workflow that
+has not had its turn.
 
 The reason it is worth an intent rather than five fixes is that the five
 silences have **five different causes**:
@@ -48,8 +55,9 @@ silences have **five different causes**:
    matrix job. One leg failed, seven were **cancelled**, and `failure()` is
    false in a cancelled leg.
 4. `resource-profile` — monthly cron (`0 6 1 * *`); the report step was added
-   after its last run. Not a defect, but it explains one of the eight and would
-   otherwise be miscounted as one.
+   after its last run. Not a defect, but it explains one of the seven and would
+   otherwise be miscounted as one. Its next firing is 2026-09-01, which is the
+   first chance to observe whether it now reports.
 5. `benchmark` — no reporting declared at all.
 
 Only (5) is what a structural "does this file mention report-failure" lock
@@ -110,10 +118,20 @@ the wrong worklist.
 - Is the canary one dedicated workflow, or a `workflow_dispatch` mode on each
   cron? One canary is cheap and proves the channel; per-workflow proves each
   caller. The cost difference is 1 run vs 22 per cycle.
-- `evals` records no conclusion at all. Is it failing, or never completing?
-  That is a different defect and may not belong to this intent.
 - Should `benchmark.yml`'s missing reporting be fixed here or be declared an
   intentional no-alert workflow? Nobody has stated which it is.
-- Does `report-failure`'s title-dedupe reopen a *closed* issue when the failure
-  recurs, or does it stay silent because a matching title exists? Untested, and
-  it decides whether criterion 5 holds a month from now.
+- Should `report-failure` reopen rather than duplicate? **Answered, and it is
+  not the risk this question assumed.** The action searches `--state open`
+  only and has no reopen path — just `gh issue comment` on a match and
+  `gh issue create` otherwise. So a recurrence after close files a *new* issue:
+  visible, not silent, and criterion 5 holds. But the action's own header
+  comment claims "One issue per title, reopened and commented", and nothing
+  reopens anything. Either the comment is wrong or the behaviour is; that is a
+  decision, and it is the same class of defect as a doc asserting a config that
+  does not exist.
+
+- Is one issue per recurrence-after-close the behaviour we want on a weekly
+  cron that stays broken? It is not spam, but over a quarter it is a dozen
+  same-titled issues with no thread. Reopening would keep one thread; the cost
+  is that a closed issue is a human's statement that the matter is settled, and
+  reopening overrides it.
