@@ -1,7 +1,7 @@
 {
-  "releaseCount": 527,
+  "releaseCount": 535,
   "packageCount": 34,
-  "entryCount": 1731,
+  "entryCount": 1746,
   "oldestYear": 2024,
   "releases": [
     {
@@ -13617,6 +13617,21 @@
     {
       "package": "@interlace/eslint-devkit",
       "short": "eslint-devkit",
+      "version": "1.18.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Cross-link the full plugin ecosystem from the devkit README. It is published to npm and was the one released package whose README pointed at none of the thirty plugins it exists to build — it linked the root README instead of listing them.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
       "version": "1.17.0",
       "date": null,
       "isApp": false,
@@ -13681,6 +13696,26 @@
           "kind": "feature",
           "title": "`RemoteMarkdown` accepts `tags`, forwarded to the underlying fetch as `next.tags`.",
           "pr": 628
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-drizzle-security",
+      "short": "eslint-plugin-drizzle-security",
+      "version": "0.3.5",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Refresh the README npm serves for these plugins. npm renders the README from the last publish, so all seven still advertise `eslint-plugin-pg` and `eslint-plugin-jwt` — names retired in #414 and since deprecated on npm. A reader who followed one installed the frozen pre-rename package instead of the maintained one. The repo has been correct since the rename; only a publish moves what npmjs.com shows.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.18.1`",
+          "pr": null
         }
       ]
     },
@@ -13800,6 +13835,46 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-knex-security",
+      "short": "eslint-plugin-knex-security",
+      "version": "0.4.5",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Refresh the README npm serves for these plugins. npm renders the README from the last publish, so all seven still advertise `eslint-plugin-pg` and `eslint-plugin-jwt` — names retired in #414 and since deprecated on npm. A reader who followed one installed the frozen pre-rename package instead of the maintained one. The repo has been correct since the rename; only a publish moves what npmjs.com shows.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.18.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-mysql-security",
+      "short": "eslint-plugin-mysql-security",
+      "version": "0.3.5",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Refresh the README npm serves for these plugins. npm renders the README from the last publish, so all seven still advertise `eslint-plugin-pg` and `eslint-plugin-jwt` — names retired in #414 and since deprecated on npm. A reader who followed one installed the frozen pre-rename package instead of the maintained one. The repo has been correct since the rename; only a publish moves what npmjs.com shows.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.18.1`",
           "pr": null
         }
       ]
@@ -13925,6 +14000,86 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-prisma-security",
+      "short": "eslint-plugin-prisma-security",
+      "version": "0.3.5",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Refresh the README npm serves for these plugins. npm renders the README from the last publish, so all seven still advertise `eslint-plugin-pg` and `eslint-plugin-jwt` — names retired in #414 and since deprecated on npm. A reader who followed one installed the frozen pre-rename package instead of the maintained one. The repo has been correct since the rename; only a publish moves what npmjs.com shows.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.18.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-sequelize-security",
+      "short": "eslint-plugin-sequelize-security",
+      "version": "0.3.5",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Refresh the README npm serves for these plugins. npm renders the README from the last publish, so all seven still advertise `eslint-plugin-pg` and `eslint-plugin-jwt` — names retired in #414 and since deprecated on npm. A reader who followed one installed the frozen pre-rename package instead of the maintained one. The repo has been correct since the rename; only a publish moves what npmjs.com shows.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.18.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-sqlite-security",
+      "short": "eslint-plugin-sqlite-security",
+      "version": "0.1.8",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Refresh the README npm serves for these plugins. npm renders the README from the last publish, so all seven still advertise `eslint-plugin-pg` and `eslint-plugin-jwt` — names retired in #414 and since deprecated on npm. A reader who followed one installed the frozen pre-rename package instead of the maintained one. The repo has been correct since the rename; only a publish moves what npmjs.com shows.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.18.1`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-typeorm-security",
+      "short": "eslint-plugin-typeorm-security",
+      "version": "0.3.5",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "Refresh the README npm serves for these plugins. npm renders the README from the last publish, so all seven still advertise `eslint-plugin-pg` and `eslint-plugin-jwt` — names retired in #414 and since deprecated on npm. A reader who followed one installed the frozen pre-rename package instead of the maintained one. The repo has been correct since the rename; only a publish moves what npmjs.com shows.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.18.1`",
           "pr": null
         }
       ]
