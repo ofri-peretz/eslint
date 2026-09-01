@@ -68,12 +68,6 @@ inputs:
     description: Restore + save the Next.js incremental build cache (apps/docs/.next/cache). Set to "true" for jobs that build apps/docs.
     required: false
     default: "false"
-  tsbuildinfo-cache:
-    description: >-
-      Restore + save the TypeScript project-references incremental state
-      (packages/*/.tsbuildinfo). Set to "true" for the whole-graph typecheck job.
-    required: false
-    default: "false"
   turbo-remote-cache:
     description: >-
       Back Turborepo's REMOTE cache API with GitHub Actions' cache instead of
@@ -349,36 +343,34 @@ runs:
     #
     # Keyed on the sources tsgo actually reads, so a source change invalidates
     # it; the restore-key fallback still gives a partial graph to build on.
-    - name: Restore TypeScript incremental state
-      if: inputs.tsbuildinfo-cache == 'true'
-      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
-      with:
-        # The incremental state ONLY. `packages/*/dist` used to share this
-        # entry and no longer does: it is hundreds of MB, it is already
-        # content-addressed by the turbo remote cache, and keeping it here made
-        # every entry fat. This repo has history with exactly that — the store
-        # reached 36.89 GB against a 10 GB budget and GitHub LRU-evicted
-        # entries, which is how a cache with a perfectly good `restore-keys`
-        # prefix ends up with nothing to fall back to. A small entry survives;
-        # a fat one is an evicted one.
-        #
-        # Measured 2026-08-31: cold whole-graph `tsgo --build` is 25s, warm is
-        # 0s. Whether this entry restores IS the difference between a 45s
-        # Typecheck job and a few seconds.
-        #
-        # The 31 files land at exactly this glob (each tsconfig.lib.json sets
-        # `"tsBuildInfoFile": "./.tsbuildinfo"`), and packages/ui joins them now
-        # that its typecheck is tsgo with incremental state instead of
-        # `tsc --noEmit`, which wrote none.
-        path: |
-          packages/*/.tsbuildinfo
-        # Exact key for an unchanged tree; the prefix fallback is what carries a
-        # normal PR, since any source edit changes the hash. A stale buildinfo
-        # is safe by construction — tsgo re-checks every project whose inputs no
-        # longer match, so the worst case is the 25s it would have paid anyway.
-        key: tsbuildinfo-${{ runner.os }}-${{ hashFiles('packages/*/src/**/*.ts', 'packages/*/tsconfig*.json', 'tsconfig.solution.json', 'tsconfig.base.json') }}
-        restore-keys: |
-          tsbuildinfo-${{ runner.os }}-
+    # There is deliberately NO TypeScript incremental cache here.
+    #
+    # There was one, and it cached `packages/*/.tsbuildinfo` WITHOUT
+    # `packages/*/dist` -- the dist half having been dropped because it is
+    # hundreds of MB and once pushed this repo's cache store to 36.89 GB against
+    # a 10 GB budget, where GitHub LRU-evicts entries and a perfectly good
+    # `restore-keys` prefix ends up with nothing to fall back to.
+    #
+    # Splitting them is incoherent. `tsgo --build` reads the buildinfo, concludes
+    # every project is up to date, and skips emitting -- so the `.d.ts` files
+    # downstream projects reference are never written. Reproduced exactly on
+    # 2026-09-01 by keeping the 31 buildinfo files and deleting dist:
+    #
+    #   TS2307: Cannot find module '@interlace/eslint-devkit' or its
+    #           corresponding type declarations
+    #   TS7006: Parameter 'context' implicitly has an 'any' type
+    #
+    # That surfaced as a type error in code nobody had touched, which is the
+    # expensive kind of wrong: it reads as a real defect in a real file.
+    # The step's own comment claimed "a stale buildinfo is safe by construction
+    # -- tsgo re-checks every project whose inputs no longer match". That is
+    # true of stale *inputs* and false of absent *outputs*.
+    #
+    # So: buildinfo and its outputs are one unit, and the unit is too big to
+    # cache. Cold `tsgo --build` over the whole graph is a measured 25s, paid in
+    # a job that runs in parallel with the rest of the gate. Correctness is not
+    # worth 25s. `scripts/__tests__/tsbuildinfo-cache-pairing-lock.test.ts`
+    # fails if either half is ever cached without the other.
 
     - name: Restore Next.js build cache
       if: inputs.next-cache == 'true'
