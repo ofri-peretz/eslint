@@ -585,8 +585,8 @@ ruleTester.run(
 
 ruleTester.run('require-tls-connection (coverage gaps)', requireTlsConnection, {
   valid: xmo([
-    // Computed member access — methodName is null.
-    `mongoose['connect'](uri);`,
+    // A method chosen at RUNTIME names no connect call.
+    `mongoose[open](uri);`,
     // Zero arguments — nothing to report on.
     `mongoose.connect();`,
     // A quoted key is the same option. This sat in `invalid` below, asserting
@@ -598,6 +598,22 @@ ruleTester.run('require-tls-connection (coverage gaps)', requireTlsConnection, {
     `mongoose.connect(uri, { "ssl": true });`,
   ]),
   invalid: xmo([
+    // Was pinned as valid — "computed member access, methodName is null".
+    // `mongoose['connect'](uri)` opens the same untls'd connection.
+    {
+      code: `mongoose['connect'](uri);`,
+      errors: [
+        {
+          messageId: 'requireTls',
+          suggestions: [
+            {
+              messageId: 'suggestionAddTls',
+              output: `mongoose['connect'](uri, { tls: true });`,
+            },
+          ],
+        },
+      ],
+    },
     // Spread-only options — tls cannot be proven present.
     {
       code: `mongoose.connect(uri, { ...opts });`,

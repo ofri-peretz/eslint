@@ -23,6 +23,9 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
   valid: [
+    // A callee that is neither an identifier nor a member names no stream
+    // factory — there is nothing to recognise.
+    "const s = (mk())('p'); s.pipe(res);",
     // benchmarks/corpus/CWE-248/safe/pipe-with-error-listener.js — named, and
     // the name carries an 'error' listener.
     `

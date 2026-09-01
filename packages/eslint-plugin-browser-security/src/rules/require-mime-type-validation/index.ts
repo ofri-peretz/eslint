@@ -64,6 +64,7 @@ import {
   formatLLMMessage,
   isModuleBinding,
   MessageIcons,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 
@@ -171,9 +172,8 @@ function isMediaTypeLiteral(node: TSESTree.Node): boolean {
 function isTypeRead(node: TSESTree.Node): boolean {
   return (
     node.type === AST_NODE_TYPES.MemberExpression &&
-    !node.computed &&
-    node.property.type === AST_NODE_TYPES.Identifier &&
-    node.property.name === 'type'
+    // `file['type']` reads the same MIME type `file.type` reads.
+    propertyName(node) === 'type'
   );
 }
 
@@ -181,9 +181,8 @@ function isTypeRead(node: TSESTree.Node): boolean {
 function isFilesRead(node: TSESTree.Node): boolean {
   return (
     node.type === AST_NODE_TYPES.MemberExpression &&
-    !node.computed &&
-    node.property.type === AST_NODE_TYPES.Identifier &&
-    node.property.name === 'files'
+    // `input['files']` is the same FileList.
+    propertyName(node) === 'files'
   );
 }
 
@@ -245,13 +244,11 @@ function isUploadSink(node: TSESTree.CallExpression): boolean {
         property.key.name === 'body',
     );
   }
-  if (
-    callee.type === AST_NODE_TYPES.MemberExpression &&
-    !callee.computed &&
-    callee.property.type === AST_NODE_TYPES.Identifier
-  ) {
-    if (callee.property.name === 'send') return node.arguments.length > 0;
-    if (callee.property.name === 'append') return node.arguments.length >= 2;
+  if (callee.type === AST_NODE_TYPES.MemberExpression) {
+    // `form['append'](k, file)` uploads the same unchecked file.
+    const method = propertyName(callee);
+    if (method === 'send') return node.arguments.length > 0;
+    if (method === 'append') return node.arguments.length >= 2;
   }
   return false;
 }
