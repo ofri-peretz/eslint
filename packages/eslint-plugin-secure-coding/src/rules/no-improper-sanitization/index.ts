@@ -21,7 +21,15 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES, createRule } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
+
+/*
+ * `input['replace'](...)` sanitizes exactly as `input.replace(...)` does, and
+ * just as improperly. Each gate below asked `property.type === 'Identifier'`,
+ * so a string subscript slipped past — 34 of this rule's own true-positive
+ * cases went silent when rewritten that way. `propertyName` reads the dotted
+ * and subscript forms alike and still returns null for a dynamic `input[m]`.
+ */
 import {
   createSafetyChecker,
   type SecurityRuleOptions,
@@ -213,8 +221,7 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
     ): node is TSESTree.CallExpression =>
       node?.type === 'CallExpression' &&
       node.callee.type === 'MemberExpression' &&
-      node.callee.property.type === 'Identifier' &&
-      node.callee.property.name === 'replace';
+      propertyName(node.callee) === 'replace';
 
     /**
      * True when another `.replace()` consumes this call's result, i.e. this is
@@ -374,8 +381,7 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
         // Check for replace() sanitization
         if (
           callee.type === 'MemberExpression' &&
-          callee.property.type === 'Identifier' &&
-          callee.property.name === 'replace'
+          propertyName(callee) === 'replace'
         ) {
           // One decision per chain — see isMidChain.
           if (isMidChain(node)) {
@@ -540,9 +546,8 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
             const callee = current.callee;
             if (
               callee.type === 'MemberExpression' &&
-              callee.property.type === 'Identifier' &&
               // @vocabulary Express response API
-              ['write', 'send', 'json'].includes(callee.property.name)
+              ['write', 'send', 'json'].includes(propertyName(callee) ?? '')
             ) {
               // Could be response output
               isInDangerousContext = true;
