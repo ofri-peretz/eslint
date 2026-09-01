@@ -375,7 +375,6 @@
     "packages/eslint-plugin-node-security/src/rules/detect-child-process/index.ts::bare-object-key-only::prop.key.name === 'shell') {",
     "packages/eslint-plugin-node-security/src/rules/detect-child-process/index.ts::bare-object-key-only::property.key.name !== 'shell'",
     "packages/eslint-plugin-node-security/src/rules/detect-child-process/index.ts::bare-object-key-only::return property.key.name;",
-    "packages/eslint-plugin-node-security/src/rules/detect-child-process/index.ts::dotted-property-only::const methodName = node.callee.property.name;",
     "packages/eslint-plugin-node-security/src/rules/detect-child-process/index.ts::dotted-property-only::test.argument.callee.property.name === 'includes') {",
     "packages/eslint-plugin-node-security/src/rules/detect-child-process/index.ts::dotted-property-only::test.callee.property.name === 'includes') {",
     "packages/eslint-plugin-node-security/src/rules/detect-eval-with-expression/index.ts::bare-object-key-only::bindModuleName(moduleName, property.value.name, property.key.name);",

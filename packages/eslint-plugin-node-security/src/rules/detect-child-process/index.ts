@@ -14,7 +14,14 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
-import { createRule, isStaticExpression } from '@interlace/eslint-devkit';
+import { createRule, isStaticExpression, propertyName } from '@interlace/eslint-devkit';
+
+/*
+ * `cp['spawn']('bash', ['-c', cmd])` spawns exactly what `cp.spawn(...)` does.
+ * The sink test read `property.name`, so 20 of this rule's own true positives
+ * went silent when written with a string subscript — the notation a bundler
+ * emits, and command injection is not less injectable for being minified.
+ */
 import { makeReadsTaintSource } from '../../utils/provenance';
 
 /**
@@ -1096,12 +1103,11 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       node: TSESTree.CallExpression
     ): { method: string; calleeNode: TSESTree.Node } | null => {
       // child_process.exec(...)
-      if (
-        node.callee.type === 'MemberExpression' &&
-        node.callee.property.type === 'Identifier'
-      ) {
-        const methodName = node.callee.property.name;
-        if (!dangerousMethodsSet.has(methodName)) {
+      if (node.callee.type === 'MemberExpression') {
+        // A dynamic `cp[m](...)` names no method, so there is nothing to look
+        // up in the dangerous set.
+        const methodName = propertyName(node.callee);
+        if (methodName === null || !dangerousMethodsSet.has(methodName)) {
           return null;
         }
 
