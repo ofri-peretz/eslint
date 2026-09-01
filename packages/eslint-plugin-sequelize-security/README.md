@@ -29,7 +29,7 @@ This plugin provides Security rules for the Sequelize ORM (SQL injection prevent
 
 ## Why Sequelize-specific?
 
-An ORM is not a defence against SQL injection — it narrows the surface to the raw escapes, and those are still string-built. Sequelize has two: `sequelize.query()` and `Sequelize.literal()`. OWASP Juice Shop's two flagship injections are both the former, and neither was reported by any recommended preset in this ecosystem until this plugin existed — the only implementation of the detection shipped inside `eslint-plugin-pg`, which no Sequelize user installs.
+An ORM is not a defence against SQL injection — it narrows the surface to the raw escapes, and those are still string-built. Sequelize has two: `sequelize.query()` and `Sequelize.literal()`. OWASP Juice Shop's two flagship injections are both the former, and neither was reported by any recommended preset in this ecosystem until this plugin existed — the only implementation of the detection shipped inside `eslint-plugin-postgresql-security`, which no Sequelize user installs.
 
 Being Sequelize-specific is what makes the rule precise. It knows the safe conventions to stay quiet on (`replacements`, `bind`), and it knows `literal()` is a SQL sink rather than an ordinary helper — so it catches `ORDER BY` injection that a generic string-concatenation linter has no reason to flag. It also tracks variable taint across statements, so `const sql = "SELECT..." + id; sequelize.query(sql)` reports even with the concatenation on a separate line.
 
