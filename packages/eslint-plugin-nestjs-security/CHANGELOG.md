@@ -5,6 +5,27 @@ All notable changes to `eslint-plugin-nestjs-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.1.0
+
+### Minor Changes
+
+- **✨ Feature** — `no-permissive-cors` takes `environmentHintNames`
+
+  A wildcard CORS origin behind a development-only guard is noise, and the rule
+  decided whether a condition was about the environment by matching
+  `NODE_ENV|APP_ENV|isDev|devMode|…`. `NODE_ENV` is a Node convention, but the
+  rest were ours: a project guarding on `STAGE` had its development-only opening
+  reported as if it shipped to production. `environmentHintNames` replaces the
+  list.
+
+  The words are matched whole against the identifiers in the condition rather
+  than compiled into a pattern, so a configured `isDev` still cannot match inside
+  `isDevelopmentModeEnabled`.
+
+### Patch Changes
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.18.0`
+
 ## 3.0.1
 
 ### Patch Changes

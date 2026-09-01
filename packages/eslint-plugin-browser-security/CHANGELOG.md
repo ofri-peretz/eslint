@@ -5,6 +5,93 @@ All notable changes to `eslint-plugin-browser-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.1.0
+
+### Minor Changes
+
+- **✨ Feature** — **🐛 Fix** — a template literal is a string, in 82 rules that disagreed
+
+  A rule that matched `require('child_process')` did not match
+  ``require(`child_process`)``. A rule that matched `res.headers['x-api-key']`
+  did not match ``res.headers[`x-api-key`]``. Nothing about the two spellings
+  differs at runtime, and no consumer chose one on purpose — which is exactly
+  why the miss was invisible: the rule looked correct in its own tests, because
+  its tests were written in the same spelling as its implementation.
+
+  Rules across these plugins now read a static string wherever the value is
+  statically known: a plain literal, a template literal with no substitutions,
+  and a concatenation of either. The same pass fixed computed member access, so
+  `o['foo']` is read wherever `o.foo` was.
+
+  **These rules now report on code they previously stayed quiet on.** That is
+  the point — the missed spelling was a false negative, not an exemption — but
+  a codebase written with backticks may see new findings on upgrade.
+
+- **✨ Feature** — **✨ Feature** — `no-sensitive-indexeddb` gains `sensitiveTerms`
+
+  `additionalPatterns` could only GROW the sensitive-term list. That is the wrong
+  shape for a guess: you could add forever and never stop the report on a word we
+  picked wrongly. If your `token` is a lexer token, or your `secret` is a game
+  mechanic, adding terms does not help — you need to remove ours.
+
+  `sensitiveTerms` REPLACES the default vocabulary:
+
+  ```json
+  "browser-security/no-sensitive-indexeddb": [
+    "error",
+    { "sensitiveTerms": ["contrasena", "clave", "sesion"] }
+  ]
+  ```
+
+  `additionalPatterns` still works and is unchanged; the two answer different
+  questions — "we also call it X" and "we do not call it Y".
+
+  Not replaceable, deliberately: the bearer-credential half matches the HTTP
+  Authorization scheme and the JWT shape (RFC 6750, RFC 7519). Those are
+  published formats, so `accessTokens` is still reported with the vocabulary
+  emptied.
+
+- **✨ Feature** — **✨ Feature** — `no-incomplete-url-sanitization` gains `urlNameWords`
+
+  The rule decided a value was a URL partly from its NAME, against a fixed
+  English regex: `url|uri|href|host|origin|domain|referrer|endpoint|link`. That
+  list is one of two independent kinds of evidence — the other is taint — so it
+  widens recall rather than deciding alone, which is exactly why it needed to be
+  replaceable. A codebase whose URL variable is `endereco` got nothing from it
+  and had no way to ask; a `linkedList` was caught by `link`.
+
+  `urlNameWords` REPLACES the default:
+
+  ```json
+  "browser-security/no-incomplete-url-sanitization": [
+    "error",
+    { "urlNameWords": ["url", "endereco", "enlace"] }
+  ]
+  ```
+
+  Default is unchanged, so nothing moves unless you set it.
+
+  What stays hardcoded, and now says why: the passthrough methods are
+  `String.prototype` (ECMAScript) and the host labels are IANA TLDs. Those are
+  published names, not our guess at yours.
+
+### Patch Changes
+
+- **🐛 Fix** — **🐛 Fix** — `no-innerhtml` missed three receiver shapes
+
+  Found by running the rule against code written specifically to break it, and
+  pinned by a case that fails on the unfixed rule.
+
+  `ChainExpression`, `LogicalExpression` and `ConditionalExpression` receivers
+  went unreported, so `el?.innerHTML = x` and `(a || b).innerHTML = x` were
+  silently allowed.
+
+  One finding from the same pass turned out to be the rule being RIGHT:
+  `DOMPurify?.sanitize(h) ?? h` really does hand the raw payload to `innerHTML`
+  when the module is absent. That is recorded as a decoy, not fixed.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.18.0`
+
 ## 2.0.7
 
 ### Patch Changes

@@ -5,6 +5,131 @@ All notable changes to `eslint-plugin-node-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.3.0
+
+### Minor Changes
+
+- **✨ Feature** — **🐛 Fix** — a template literal is a string, in 82 rules that disagreed
+
+  A rule that matched `require('child_process')` did not match
+  ``require(`child_process`)``. A rule that matched `res.headers['x-api-key']`
+  did not match ``res.headers[`x-api-key`]``. Nothing about the two spellings
+  differs at runtime, and no consumer chose one on purpose — which is exactly
+  why the miss was invisible: the rule looked correct in its own tests, because
+  its tests were written in the same spelling as its implementation.
+
+  Rules across these plugins now read a static string wherever the value is
+  statically known: a plain literal, a template literal with no substitutions,
+  and a concatenation of either. The same pass fixed computed member access, so
+  `o['foo']` is read wherever `o.foo` was.
+
+  **These rules now report on code they previously stayed quiet on.** That is
+  the point — the missed spelling was a false negative, not an exemption — but
+  a codebase written with backticks may see new findings on upgrade.
+
+- **✨ Feature** — **🐛 Fix** — `no-ssrf` reads a request by SHAPE, not by the name `req`
+
+  The rule decided whether a value came from an HTTP request by looking at the
+  spelling of the binding it came from. A handler written `(request, reply)` —
+  Fastify's own convention — or `(event)` on Lambda was invisible to it, and a
+  local array called `req` was treated as untrusted input.
+
+  It now asks a structural question: is this a read of `.query` / `.params` /
+  `.headers` / `.cookies` (or API Gateway's `queryStringParameters` /
+  `pathParameters` / `multiValueHeaders`) off something that ARRIVED as a
+  parameter? A request is handed to you; it is not constructed locally, whatever
+  it is called.
+
+  `body` needs one more level of depth before it counts, because `body` is also
+  the commonest property name in this ecosystem.
+
+  If you have narrowed `requestRoots` yourself, your list still wins — the
+  shape-based path applies only while that option is at its default.
+
+- **✨ Feature** — **🐛 Fix** — `no-ssrf` identifies an HTTP client by its module, not its variable name
+
+  The rule matched the local binding against a set of names — `axios`, `got`,
+  `http`, `request`, `superagent`, `undici`, `needle`. Those are package names,
+  which makes them look like a published contract. They are not: the thing being
+  matched was the name **you** chose for the import.
+
+  Wrong in both directions:
+
+  - `import axiosClient from 'axios'` matched nothing, so the rule was **silent**
+    on an ordinary aliased import.
+  - A local `const request = { … }` matched, and any call on it was reported as
+    an outbound HTTP request.
+
+  It now resolves the import — `axios.get()` and `axiosClient.get()` are both
+  recognised, and a local variable borrowing the name is not. Both directions are
+  pinned by sealed cases.
+
+  **You may see new findings** where a client is imported under an alias, and
+  **fewer** where a local binding shares a package's name.
+
+  What stays hardcoded, and now says why: `fetch` is WHATWG's, the method names
+  are HTTP's (RFC 9110), and `URL` / `hostname` / `host` are the WHATWG URL
+  interface — all under a `@vocabulary` citation.
+
+- **✨ Feature** — **✨ Feature** — `no-zip-slip` gains `archiveEntryFields`
+
+  The rule carried seven guesses at what an archive library calls the property
+  holding an entry's path. The set of libraries a project uses was ALREADY
+  configurable via `archiveModules`, so the set of field names had to be too:
+  hard-coding seven names and calling it complete was an assertion about somebody
+  else's dependency list.
+
+  `archiveEntryFields` REPLACES the default:
+
+  ```json
+  "node-security/no-zip-slip": ["error", { "archiveEntryFields": ["archivedAs"] }]
+  ```
+
+  The default also loses two entries. `relativePath` and `pathname` were in it
+  with no library behind either — `pathname` is a URL property — and no test
+  exercised them. The remaining five each cite the library they come from:
+  `name` (node-stream-zip), `path` (unzipper, tar, decompress), `fileName`
+  (yauzl), `entryName` (adm-zip), `filename` (unzip-stream).
+
+### Patch Changes
+
+- **🐛 Fix** — `no-unsafe-buffer-alloc` has fixtures for the `countNames` option
+
+  `countNames` is what separates `new Uint8Array(bytes)` — a copy — from
+  `new Uint8Array(n)` — an allocation, so a codebase spelling its size `nbytes`
+  had its allocations read as copies. The option now has the pair that proves it:
+  one fixture where the default vocabulary misses the allocation, and one where
+  naming the spelling reaches it.
+
+- **🐛 Fix** — **🐛 Fix** — `require-secure-credential-storage` no longer reads configuration as a credential
+
+  `namesACredential` matched by substring, so `process.env.TOKEN_SIGNING_ALG = 'RS256'`
+  reported storing a token in the environment. It names an algorithm.
+
+  Clustering 26,434 findings from 158 repositories made this the largest single
+  false-positive shape the rule produces: **110 instances of that one line**.
+
+  A name whose last word is configuration — `alg`, `expiry`, `ttl`, `type`, `name`,
+  `header`, `issuer`, `url` and similar — describes a credential rather than holding
+  one. Only the final segment is tested, so `API_TOKEN`, `CLIENT_SECRET` and
+  `DB_PASSWORD` still match on their own tails and nothing is narrowed for a real
+  secret.
+
+- **🐛 Fix** — `no-mutable-exports` resolves bindings instead of grepping the file text
+
+  The `export { x }` path built a regex from the declarator's name and tested it
+  against the whole source. That reported on the characters appearing in a
+  comment or a string, reported a local `let x` when the file re-exported some
+  other module's `x`, reported a function-scoped `let` colliding with an
+  exported name, and missed every export it could not spell: a multi-specifier
+  list, a rename, and a destructured declarator. It now resolves the specifier
+  through the scope chain to the declaration it actually names.
+
+  `no-env-injection` gains `requestRootNames`, which REPLACES the request-root
+  list that `extraRequestRoots` could only grow.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.18.0`
+
 ## 5.2.3
 
 ### Patch Changes
