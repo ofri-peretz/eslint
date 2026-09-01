@@ -25,7 +25,7 @@ describe('label-has-associated-control', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - labels with controls', labelHasAssociatedControl, {
       valid: [
-        { code: '<label htmlFor="id"><input id="id" /></label>' },
+        { name: 'a label wrapping its input', code: '<label htmlFor="id"><input id="id" /></label>' },
         { code: '<label><input />Label</label>' },
         { code: '<label><span>Label</span><input /></label>' },
         { code: '<div></div>' },
@@ -38,7 +38,7 @@ describe('label-has-associated-control', () => {
     ruleTester.run('invalid - labels without controls', labelHasAssociatedControl, {
       valid: [],
       invalid: [
-        { code: '<label>Orphan Label</label>', errors: [{ messageId: 'missingControl' }] },
+        { name: 'a label with nothing to label', code: '<label>Orphan Label</label>', errors: [{ messageId: 'missingControl' }] },
       ],
     });
   });

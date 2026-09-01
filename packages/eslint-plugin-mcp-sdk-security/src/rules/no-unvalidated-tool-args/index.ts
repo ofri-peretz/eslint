@@ -36,21 +36,27 @@
  * @see https://modelcontextprotocol.io/docs/concepts/tools
  */
 
-import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  TSESTree,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  staticString,
+} from '@interlace/eslint-devkit';
 import { fileUsesMcpSdk } from '../../utils/mcp-evidence';
 
 type MessageIds = 'undeclaredArg';
-
 
 const REGISTER_TOOL = 'registerTool';
 const LEGACY_TOOL = 'tool';
 
 /** The statically-readable key name of a property, or `undefined`. */
-export function propertyKey(prop: TSESTree.ObjectLiteralElement): string | undefined {
+export function propertyKey(
+  prop: TSESTree.ObjectLiteralElement,
+): string | undefined {
   if (prop.type !== 'Property' || prop.computed) return undefined;
   if (prop.key.type === 'Identifier') return prop.key.name;
-  if (prop.key.type === 'Literal' && typeof prop.key.value === 'string') return prop.key.value;
-  return undefined;
+  return staticString(prop.key) ?? undefined;
 }
 
 /**
@@ -64,7 +70,9 @@ export function propertyKey(prop: TSESTree.ObjectLiteralElement): string | undef
 export function declaredSchemaKeys(
   config: TSESTree.ObjectExpression,
 ): Set<string> | undefined {
-  const index = config.properties.findIndex((prop) => propertyKey(prop) === 'inputSchema');
+  const index = config.properties.findIndex(
+    (prop) => propertyKey(prop) === 'inputSchema',
+  );
   if (index === -1) return undefined;
 
   // A spread *after* `inputSchema` replaces it wholesale at runtime —
@@ -146,7 +154,8 @@ export const noUnvalidatedToolArgs = createRule<[], MessageIds>({
         severity: 'HIGH',
         compliance: ['SOC2'],
         fix: 'Declare `{{arg}}` in the inputSchema with the type and constraints it needs, or stop reading it. A key the schema does not mention is one nothing validated.',
-        documentationLink: 'https://modelcontextprotocol.io/docs/concepts/tools',
+        documentationLink:
+          'https://modelcontextprotocol.io/docs/concepts/tools',
       }),
     },
     schema: [],
@@ -157,17 +166,23 @@ export const noUnvalidatedToolArgs = createRule<[], MessageIds>({
     // replaces saw ESM and `require()` only, so import-equals and dynamic
     // `import()` files ran no rule at all.
     if (!fileUsesMcpSdk(context.sourceCode.ast)) return {};
-    const candidates: Array<{ node: TSESTree.Node; tool: string; arg: string }> = [];
+    const candidates: Array<{
+      node: TSESTree.Node;
+      tool: string;
+      arg: string;
+    }> = [];
 
     function toolNameOf(node: TSESTree.CallExpression): string {
       const first = node.arguments[0];
-      if (first?.type === 'Literal' && typeof first.value === 'string') return first.value;
+      if (first?.type === 'Literal' && typeof first.value === 'string')
+        return first.value;
       return 'unknown';
     }
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
-        if (node.callee.type !== 'MemberExpression' || node.callee.computed) return;
+        if (node.callee.type !== 'MemberExpression' || node.callee.computed)
+          return;
         if (node.callee.property.type !== 'Identifier') return;
         const method = node.callee.property.name;
         if (method !== REGISTER_TOOL && method !== LEGACY_TOOL) return;
@@ -187,13 +202,21 @@ export const noUnvalidatedToolArgs = createRule<[], MessageIds>({
 
         for (const read of destructuredArgNames(handler)) {
           if (declared.has(read.name)) continue;
-          candidates.push({ node: read.node, tool: toolNameOf(node), arg: read.name });
+          candidates.push({
+            node: read.node,
+            tool: toolNameOf(node),
+            arg: read.name,
+          });
         }
       },
 
       'Program:exit'() {
         for (const { node, tool, arg } of candidates) {
-          context.report({ node, messageId: 'undeclaredArg', data: { tool, arg } });
+          context.report({
+            node,
+            messageId: 'undeclaredArg',
+            data: { tool, arg },
+          });
         }
       },
     };

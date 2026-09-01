@@ -215,4 +215,6 @@ export const handler = async (event, lambdaCtx) => {
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
+| `eventParamNames` | `string[]` | `["event","evt","e","request","req"]` | Parameter names that identify the Lambda event argument. Replaces the default. |
+| `contextParamNames` | `string[]` | `["context","ctx","lambdaContext"]` | Parameter names that identify the Lambda context argument. Replaces the default. |
 | `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |

@@ -54,6 +54,7 @@ describe('expiring-todo-comments', () => {
       valid: [
         // Future date - not expired
         {
+          name: 'a TODO still inside its window',
           code: `// TODO [${futureDate}]: This is not expired`,
         },
         // No condition - ignored
@@ -71,6 +72,7 @@ describe('expiring-todo-comments', () => {
       invalid: [
         // Past date - expired
         {
+          name: 'a TODO whose date has passed',
           code: `// TODO [${pastDate}]: This has expired`,
           errors: [
             {

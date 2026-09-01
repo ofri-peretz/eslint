@@ -15,6 +15,10 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { fileIsLambda } from '../../utils/lambda-evidence';
 import {
+  DEFAULT_EVENT_PARAM_NAMES,
+  HANDLER_PARAM_SCHEMA,
+} from '../../utils/handler-params';
+import {
   AST_NODE_TYPES,
   createRule,
   formatLLMMessage,
@@ -25,6 +29,18 @@ import {
 type MessageIds = 'unboundedBatch';
 
 export interface Options {
+  /**
+   * Parameter names that identify the Lambda EVENT argument. REPLACES the
+   * default.
+   *
+   * AWS documents the signature as `(event, context, callback)` but the
+   * parameters are POSITIONAL — a handler written `(payload, runtime)` is
+   * ordinary and matched none of the hardcoded list. Position alone cannot
+   * decide it either: `params.length >= 1` would make every one-argument
+   * function a handler. The name is doing real work, which is why the consumer
+   * has to be able to state it.
+   */
+  eventParamNames?: string[];
   /** Allow in test files. Default: true */
   allowInTests?: boolean;
   /** Maximum allowed batch size before warning. Default: 100 */
@@ -42,7 +58,6 @@ const BATCH_SOURCE_PROPERTIES = new Set([
 ]);
 
 // Event parameter names
-const EVENT_PARAM_NAMES = new Set(['event', 'evt', 'e', 'request', 'req']);
 
 export const noUnboundedBatchProcessing = createRule<RuleOptions, MessageIds>({
   name: 'no-unbounded-batch-processing',
@@ -50,8 +65,7 @@ export const noUnboundedBatchProcessing = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/docs/rules/no-unbounded-batch-processing.md',
-      description:
-        'Detects processing batch records without size validation',
+      description: 'Detects processing batch records without size validation',
       cwe: 'CWE-770',
       cvss: 5.5,
     },
@@ -68,19 +82,21 @@ export const noUnboundedBatchProcessing = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html',
       }),
-
     },
     schema: [
       {
         type: 'object',
         properties: {
+          ...HANDLER_PARAM_SCHEMA,
           allowInTests: {
             type: 'boolean',
             default: true,
           },
           maxBatchSize: {
             type: 'number',
-            default: 100, description: 'Batch size above which processing must be explicitly bounded'
+            default: 100,
+            description:
+              'Batch size above which processing must be explicitly bounded',
           },
         },
         additionalProperties: false,
@@ -96,6 +112,10 @@ export const noUnboundedBatchProcessing = createRule<RuleOptions, MessageIds>({
     // files, 98% of this plugin's findings were in files with no AWS anything.
     // Registering no visitors is both the gate and the cheap path.
     if (!fileIsLambda(context.sourceCode.ast)) return {};
+
+    const eventParamNames = new Set(
+      options.eventParamNames ?? DEFAULT_EVENT_PARAM_NAMES,
+    );
 
     const { allowInTests = true } = options as Options;
     const filename = context.filename;
@@ -124,7 +144,7 @@ export const noUnboundedBatchProcessing = createRule<RuleOptions, MessageIds>({
       const hasEvent = node.params.some((p) => {
         if (
           p.type === AST_NODE_TYPES.Identifier &&
-          EVENT_PARAM_NAMES.has(p.name)
+          eventParamNames.has(p.name)
         ) {
           eventParamName.push(p.name);
           return true;

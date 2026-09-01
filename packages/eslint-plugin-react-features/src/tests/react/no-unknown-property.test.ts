@@ -33,6 +33,7 @@ describe('no-unknown-property', () => {
       valid: [
         // Standard HTML attributes
         {
+          name: 'known attributes',
           code: '<input type="text" value="test" />',
         },
         {
@@ -90,6 +91,7 @@ describe('no-unknown-property', () => {
         // the React prop — the rule must still fire on it, proving the
         // valid cases above are quiet for the right reason.
         {
+          name: 'a DOM attribute React does not recognise in this position',
           code: '<img src="a.jpg" alt="" fetchpriority="high" />',
           errors: [{ messageId: 'noUnknownProperty' }],
         },

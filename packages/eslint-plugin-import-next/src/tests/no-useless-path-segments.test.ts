@@ -23,7 +23,7 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-useless-path-segments', noUselessPathSegments, {
   valid: [
     // Clean relative paths
-    { code: `import foo from './foo';` },
+    { name: 'the direct path', code: `import foo from './foo';` },
     { code: `import bar from '../bar';` },
     { code: `import baz from '../../baz';` },
     { code: `import qux from './dir/qux';` },
@@ -47,6 +47,7 @@ ruleTester.run('no-useless-path-segments', noUselessPathSegments, {
   invalid: [
     // Redundant current directory
     {
+      name: 'a path that walks out and back into the same directory',
       code: `import foo from './a/../a/foo';`,
       output: `import foo from './a/foo';`,
       errors: [{ messageId: 'uselessPathSegments' }],

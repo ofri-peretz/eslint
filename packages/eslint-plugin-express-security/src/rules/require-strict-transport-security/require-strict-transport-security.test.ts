@@ -65,7 +65,7 @@ describe('require-strict-transport-security', () => {
     {
       valid: xp([
         // Helmet defaults (365 days, includeSubDomains) — nothing to report
-        { code: `app.use(helmet());` },
+        { name: 'helmet with its defaults', code: `app.use(helmet());` },
         { code: `app.use(helmet({ noSniff: true }));` },
         // Explicit, strong configuration
         {
@@ -121,6 +121,7 @@ describe('require-strict-transport-security', () => {
       invalid: xp([
         // HSTS switched off entirely (helmet ≤6 spelling)
         {
+          name: 'hsts switched off',
           code: `app.use(helmet({ hsts: false }));`,
           errors: [{ messageId: 'hstsDisabled' as const }],
         },

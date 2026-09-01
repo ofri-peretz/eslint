@@ -1,0 +1,4160 @@
+{
+  "note": "Append-only. Ids are permanent: a case that no longer applies gets `retired` with a reason and keeps its number. Coverage is a CLAIM; scripts/case-registry.ts turns it into evidence by executing it.",
+  "cases": [
+    {
+      "id": "ILB-0001",
+      "added": "2026-08-26",
+      "title": "Prototype pollution through a request-supplied key",
+      "rationale": "A value the caller controls is used directly as a computed key on a write. Setting `__proto__` re-parents the object, which is the whole of CWE-1321. This is the shortest form the bug takes in real code.",
+      "cwe": "CWE-1321",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "CVE-2019-10744",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2019-10744",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "function f(o, req) { o[req.query.p] = 1; }",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        }
+      ],
+      "kind": "defect",
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0002",
+      "added": "2026-08-26",
+      "title": "Prototype pollution through an unguarded merge helper",
+      "rationale": "`for (const k in src) dst[k] = src[k]` over a caller-supplied source is the shape behind the published prototype-pollution advisories in the deep-merge family. The key is never named in the source, so no allowlist can be read off the file.",
+      "cwe": "CWE-1321",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "CVE-2018-16487",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2018-16487",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "function merge(dst, src) { for (const k in src) { dst[k] = src[k]; } return dst; }",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        }
+      ],
+      "kind": "defect",
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0003",
+      "added": "2026-08-26",
+      "title": "A computed write onto `this` inside a class method",
+      "rationale": "Reads like noise and is not. Verified by execution: calling the method with `__proto__` re-parents the instance. Registered so the finding cannot be dismissed as an FP a second time.",
+      "cwe": "CWE-1321",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "class Bag { set(k, v) { this[k] = v; } }",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        }
+      ],
+      "kind": "defect",
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0004",
+      "added": "2026-08-26",
+      "title": "Array append written as a self-indexed length",
+      "rationale": "NOT a defect. `arr.length` is a number, so the key cannot name a prototype slot. Written with `arr` as a PARAMETER on purpose: a locally-constructed array was already cleared by an older path, so `const arr = []` would pass whether or not the fix exists — a case that cannot fail is not evidence.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function push(arr, x) { arr[arr.length] = x; }",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        }
+      ],
+      "kind": "decoy",
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0005",
+      "added": "2026-08-26",
+      "title": "A key iterated from a const array of string literals",
+      "rationale": "NOT a defect. Every value the key can take is written out in the same file and none is a dangerous property, so the question is decidable rather than assumed. An author who lists `__proto__` themselves still gets the report.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const KEYS = [\"alpha\", \"beta\"]; const o = {}; for (const k of KEYS) { o[k] = 1; }",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        }
+      ],
+      "kind": "decoy",
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0006",
+      "added": "2026-08-26",
+      "title": "A copy loop over an object the module itself owns",
+      "rationale": "NOT a defect. Nothing an attacker supplies reaches the loop. eslint-plugin-security reports this twice, once per side of the assignment; the noise is by their design, not a disagreement about the facts.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const cfg = { a: 1 }; const out = {}; for (const k in cfg) { out[k] = cfg[k]; }",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        }
+      ],
+      "kind": "decoy",
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0007",
+      "added": "2026-08-26",
+      "title": "A merge helper guarded by Object.hasOwn",
+      "rationale": "NOT a defect — it is the documented remediation for ILB-0002. Reporting the fix leaves the user with nothing to do, which is how a rule teaches people to disable it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function merge(dst, src) { for (const k in src) { if (Object.hasOwn(src, k)) dst[k] = src[k]; } }",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        }
+      ],
+      "kind": "decoy",
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0008",
+      "added": "2026-08-26",
+      "title": "A timing-unsafe comparison of a bearer token",
+      "rationale": "`===` on a secret short-circuits at the first differing byte, so response time leaks the shared prefix. Observed guarding five HTTP endpoints in a real deployment.",
+      "cwe": "CWE-208",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [
+        {
+          "repo": "eclipse-theia/theia-cloud"
+        }
+      ],
+      "code": "import crypto from 'node:crypto';\nfunction check(req, secret) { if (req.headers.authorization === secret) { return true; } return false; }",
+      "coverage": [
+        {
+          "rule": "node-security/no-timing-unsafe-compare",
+          "expect": "report"
+        }
+      ],
+      "kind": "defect"
+    },
+    {
+      "id": "ILB-0009",
+      "added": "2026-08-26",
+      "title": "An AST discriminant compared with ===",
+      "rationale": "NOT a defect. `node.kind === SyntaxKind.X` is a tag comparison, not a secret. Eleven findings in the wild came from this one shape before it was sealed.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [
+        {
+          "repo": "flint-fyi/flint",
+          "path": "packages/ts/src/rules/errorSubclassProperties.ts",
+          "line": 56
+        }
+      ],
+      "code": "import ts from 'typescript';\nfunction f(node) { return node.kind === ts.SyntaxKind.ClassDeclaration; }",
+      "coverage": [
+        {
+          "rule": "node-security/no-timing-unsafe-compare",
+          "expect": "silent"
+        }
+      ],
+      "kind": "decoy"
+    },
+    {
+      "id": "ILB-0010",
+      "added": "2026-08-26",
+      "title": "Prototype pollution through a key reached by a call",
+      "rationale": "The key is computed at runtime by a function this file cannot summarise. Registered as an OPEN question rather than a claim: whether an unresolvable key should report is the same judgement as FP-010, and no rule currently answers it deliberately.",
+      "cwe": "CWE-1321",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(o) { o[getKey()] = 1; }",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "report"
+        }
+      ],
+      "kind": "decoy"
+    },
+    {
+      "id": "ILB-0011",
+      "added": "2026-08-26",
+      "title": "the same code with template literals instead of quoted strings",
+      "rationale": "A defect this rule missed and now catches. Imported from the sealed case that proved it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "el[`innerHTML`] = userInput;",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "browser-security/no-innerhtml",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-browser-security/src/spelling-seals.test.ts"
+        }
+      ],
+      "importedFrom": "browser-security/no-innerhtml#FN-7ec882",
+      "foundBy": "spelling probe",
+      "peers": [
+        {
+          "plugin": "eslint-plugin-no-unsanitized",
+          "rule": "property",
+          "control": "el.innerHTML = x;"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0012",
+      "added": "2026-08-26",
+      "title": "the same code with template literals instead of quoted strings",
+      "rationale": "A defect this rule missed and now catches. Imported from the sealed case that proved it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "module.exports = { async headers() { return [{ source: `/(.*)`, headers: [{ key: `X-Frame-Options`, value: `DENY` }] }]; } };",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "browser-security/no-missing-security-headers",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-browser-security/src/spelling-seals.test.ts"
+        }
+      ],
+      "importedFrom": "browser-security/no-missing-security-headers#FN-cec03b",
+      "foundBy": "spelling probe"
+    },
+    {
+      "id": "ILB-0013",
+      "added": "2026-08-26",
+      "title": "a named const through a type assertion — 33% of findings, with the arithmetic case",
+      "rationale": "Looks like a conventions/no-magic-numbers finding and is not. We reported it in real code (excalidraw/excalidraw packages/excalidraw/colors.ts:17) and have since sealed it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [
+        {
+          "repo": "excalidraw/excalidraw",
+          "path": "packages/excalidraw/colors.ts:17"
+        }
+      ],
+      "code": "const DARK_MODE_FILTER_HUE_ROTATE_DEGREES = 180 as Degrees;",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "conventions/no-magic-numbers",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-conventions/src/tests/conventions/no-magic-numbers-wild.test.ts"
+        }
+      ],
+      "importedFrom": "conventions/no-magic-numbers#FP-c6b112",
+      "foundBy": "real-source scan"
+    },
+    {
+      "id": "ILB-0014",
+      "added": "2026-08-26",
+      "title": "a named const computed from two literals",
+      "rationale": "Looks like a conventions/no-magic-numbers finding and is not. We reported it in real code (excalidraw/excalidraw packages/element/binding.ts:119) and have since sealed it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [
+        {
+          "repo": "excalidraw/excalidraw",
+          "path": "packages/element/binding.ts:119"
+        }
+      ],
+      "code": "export const FOCUS_POINT_SIZE = 10 / 1.5;",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "conventions/no-magic-numbers",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-conventions/src/tests/conventions/no-magic-numbers-wild.test.ts"
+        }
+      ],
+      "importedFrom": "conventions/no-magic-numbers#FP-9dcea3",
+      "foundBy": "real-source scan"
+    },
+    {
+      "id": "ILB-0015",
+      "added": "2026-08-26",
+      "title": "a coordinate pair — 39% of findings, the largest class",
+      "rationale": "Looks like a conventions/no-magic-numbers finding and is not. We reported it in real code (excalidraw/excalidraw examples/.../initialData.tsx:64) and have since sealed it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [
+        {
+          "repo": "excalidraw/excalidraw",
+          "path": "examples/.../initialData.tsx:64"
+        }
+      ],
+      "code": "const points = [[-92.28090097254909, 7.105427357601002e-15], [-154.72, 19.19]];",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "conventions/no-magic-numbers",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-conventions/src/tests/conventions/no-magic-numbers-wild.test.ts"
+        }
+      ],
+      "importedFrom": "conventions/no-magic-numbers#FP-64057e",
+      "foundBy": "real-source scan"
+    },
+    {
+      "id": "ILB-0016",
+      "added": "2026-08-26",
+      "title": "the same code with template literals instead of quoted strings",
+      "rationale": "A defect this rule missed and now catches. Imported from the sealed case that proved it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const x = require(`lodash/fp/get/extra`);",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "import-next/no-internal-modules",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-import-next/src/tests/spelling-seals.test.ts"
+        }
+      ],
+      "importedFrom": "import-next/no-internal-modules#FN-24772c",
+      "foundBy": "spelling probe",
+      "peers": [
+        {
+          "plugin": "eslint-plugin-import",
+          "rule": "no-internal-modules",
+          "control": "import a from 'lodash/fp/get';"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0017",
+      "added": "2026-08-26",
+      "title": "the same collision written through an aliased default specifier",
+      "rationale": "A defect this rule missed and now catches. Imported from the sealed case that proved it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import { default as foo, foo } from './module';",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "import-next/no-named-as-default",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-import-next/src/tests/no-named-as-default.test.ts"
+        }
+      ],
+      "importedFrom": "import-next/no-named-as-default#FN-105b0c",
+      "foundBy": "grammar review",
+      "peers": [
+        {
+          "plugin": "eslint-plugin-import",
+          "rule": "no-named-as-default",
+          "control": "import bar, { bar } from './bar';"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0018",
+      "added": "2026-08-26",
+      "title": "the same access written through a computed literal key",
+      "rationale": "A defect this rule missed and now catches. Imported from the sealed case that proved it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import foo, { bar } from './foo'; const baz = foo['bar'];",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "import-next/no-named-as-default-member",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-import-next/src/tests/no-named-as-default-member.test.ts"
+        }
+      ],
+      "importedFrom": "import-next/no-named-as-default-member#FN-e08f8b",
+      "foundBy": "grammar review",
+      "peers": [
+        {
+          "plugin": "eslint-plugin-import",
+          "rule": "no-named-as-default-member",
+          "control": "import bar from './bar'; const x = bar.foo;"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0019",
+      "added": "2026-08-26",
+      "title": "the same code with template literals instead of quoted strings",
+      "rationale": "A defect this rule missed and now catches. Imported from the sealed case that proved it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const p = import(`fs`);",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "import-next/no-nodejs-modules",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-import-next/src/tests/spelling-seals.test.ts"
+        }
+      ],
+      "importedFrom": "import-next/no-nodejs-modules#FN-d63dd2",
+      "foundBy": "spelling probe",
+      "peers": [
+        {
+          "plugin": "eslint-plugin-import",
+          "rule": "no-nodejs-modules",
+          "control": "import fs from 'fs';"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0020",
+      "added": "2026-08-26",
+      "title": "the same code with template literals instead of quoted strings",
+      "rationale": "A defect this rule missed and now catches. Imported from the sealed case that proved it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const y = (require(`side-effect`), compute());",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "import-next/no-unassigned-import",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-import-next/src/tests/spelling-seals.test.ts"
+        }
+      ],
+      "importedFrom": "import-next/no-unassigned-import#FN-cac86b",
+      "foundBy": "spelling probe",
+      "peers": [
+        {
+          "plugin": "eslint-plugin-import",
+          "rule": "no-unassigned-import",
+          "control": "import 'side-effect';"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0021",
+      "added": "2026-08-26",
+      "title": "the same code with template literals instead of quoted strings",
+      "rationale": "A defect this rule missed and now catches. Imported from the sealed case that proved it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "require(`missing-module`);",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "import-next/no-unresolved",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-import-next/src/tests/spelling-seals.test.ts"
+        }
+      ],
+      "importedFrom": "import-next/no-unresolved#FN-038315",
+      "foundBy": "spelling probe",
+      "peers": [
+        {
+          "plugin": "eslint-plugin-import",
+          "rule": "no-unresolved",
+          "control": "import 'this-does-not-exist-anywhere';"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0022",
+      "added": "2026-08-26",
+      "title": "the same code with template literals instead of quoted strings",
+      "rationale": "A defect this rule missed and now catches. Imported from the sealed case that proved it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const fs = require(`fs`);",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "import-next/prefer-node-protocol",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-import-next/src/tests/spelling-seals.test.ts"
+        }
+      ],
+      "importedFrom": "import-next/prefer-node-protocol#FN-c70c38",
+      "foundBy": "spelling probe",
+      "peers": [
+        {
+          "plugin": "eslint-plugin-n",
+          "rule": "prefer-node-protocol",
+          "control": "import fs from 'fs';"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0023",
+      "added": "2026-08-26",
+      "title": "the same code with template literals instead of quoted strings",
+      "rationale": "A defect this rule missed and now catches. Imported from the sealed case that proved it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "export const handler = async (event) => { return { principalId: `user`, policyDocument: { Statement: [{ Effect: `Allow`, Action: `execute-api:Invoke`, Resource: `*` }] } }; };",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "lambda-security/no-overly-permissive-iam-policy",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-lambda-security/src/spelling-seals.test.ts"
+        }
+      ],
+      "importedFrom": "lambda-security/no-overly-permissive-iam-policy#FN-27b6ea",
+      "foundBy": "spelling probe"
+    },
+    {
+      "id": "ILB-0024",
+      "added": "2026-08-26",
+      "title": "a describe block — 1,415 findings in the wild",
+      "rationale": "Looks like a maintainability/consistent-function-scoping finding and is not. We reported it in real code (nwutils/getter tests/specs/request.test.js:10) and have since sealed it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [
+        {
+          "repo": "nwutils/getter",
+          "path": "tests/specs/request.test.js:10"
+        }
+      ],
+      "code": "describe(\"request test suite\", function () { const x = 1; });",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "maintainability/consistent-function-scoping",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts"
+        }
+      ],
+      "importedFrom": "maintainability/consistent-function-scoping#FP-4c2df9",
+      "foundBy": "real-source scan"
+    },
+    {
+      "id": "ILB-0025",
+      "added": "2026-08-26",
+      "title": "a test block",
+      "rationale": "Looks like a maintainability/consistent-function-scoping finding and is not. We reported it in real code (telepat-io/otto extension/test/network-intercept-emission.test.ts:5) and have since sealed it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [
+        {
+          "repo": "telepat-io/otto",
+          "path": "extension/test/network-intercept-emission.test.ts:5"
+        }
+      ],
+      "code": "test(\"createEmitUpdate sends messages\", async () => { const y = 2; });",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "maintainability/consistent-function-scoping",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts"
+        }
+      ],
+      "importedFrom": "maintainability/consistent-function-scoping#FP-751d42",
+      "foundBy": "real-source scan"
+    },
+    {
+      "id": "ILB-0026",
+      "added": "2026-08-26",
+      "title": "addListener — `addEventListener` was on the old host list and this was not",
+      "rationale": "Looks like a maintainability/consistent-function-scoping finding and is not. We reported it in real code (telepat-io/otto extension/src/background.ts:217) and have since sealed it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [
+        {
+          "repo": "telepat-io/otto",
+          "path": "extension/src/background.ts:217"
+        }
+      ],
+      "code": "chrome.storage.onChanged.addListener((changes, area) => { sync(changes); });",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "maintainability/consistent-function-scoping",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts"
+        }
+      ],
+      "importedFrom": "maintainability/consistent-function-scoping#FP-cac9cb",
+      "foundBy": "real-source scan"
+    },
+    {
+      "id": "ILB-0027",
+      "added": "2026-08-26",
+      "title": "a framework entry point no allowlist would contain",
+      "rationale": "Looks like a maintainability/consistent-function-scoping finding and is not. We reported it in real code (telepat-io/otto extension/src/background.ts:101) and have since sealed it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [
+        {
+          "repo": "telepat-io/otto",
+          "path": "extension/src/background.ts:101"
+        }
+      ],
+      "code": "export default defineBackground(() => { start(); });",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "maintainability/consistent-function-scoping",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts"
+        }
+      ],
+      "importedFrom": "maintainability/consistent-function-scoping#FP-d2d009",
+      "foundBy": "real-source scan"
+    },
+    {
+      "id": "ILB-0028",
+      "added": "2026-08-26",
+      "title": "an object-literal method is the object, not a nested helper",
+      "rationale": "Looks like a maintainability/consistent-function-scoping finding and is not. We reported it in real code (telepat-io/otto extension/src/commands/check-login.ts:13) and have since sealed it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [
+        {
+          "repo": "telepat-io/otto",
+          "path": "extension/src/commands/check-login.ts:13"
+        }
+      ],
+      "code": "const cmd = { name: \"check\", async execute(ctx) { return ctx.ok(); } };",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "maintainability/consistent-function-scoping",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts"
+        }
+      ],
+      "importedFrom": "maintainability/consistent-function-scoping#FP-1bb3a3",
+      "foundBy": "real-source scan"
+    },
+    {
+      "id": "ILB-0029",
+      "added": "2026-08-26",
+      "title": "the same helper as an arrow",
+      "rationale": "A defect this rule missed and now catches. Imported from the sealed case that proved it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function outer() { const helper = () => 42; return helper(); }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "maintainability/consistent-function-scoping",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts"
+        }
+      ],
+      "importedFrom": "maintainability/consistent-function-scoping#FN-ce9cdf",
+      "foundBy": "real-source scan"
+    },
+    {
+      "id": "ILB-0030",
+      "added": "2026-08-26",
+      "title": "the same helper as a function expression",
+      "rationale": "A defect this rule missed and now catches. Imported from the sealed case that proved it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function outer() { const helper = function () { return 42; }; return helper(); }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "maintainability/consistent-function-scoping",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-maintainability/src/tests/maintainability/consistent-function-scoping-wild.test.ts"
+        }
+      ],
+      "importedFrom": "maintainability/consistent-function-scoping#FN-edcc33",
+      "foundBy": "real-source scan"
+    },
+    {
+      "id": "ILB-0031",
+      "added": "2026-08-26",
+      "title": "a promise passed as an argument — the nested call is skipped",
+      "rationale": "A defect this rule still misses. Registered with no coverage so the hole is visible rather than implied.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "console.log(fetch(url));",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "maintainability/no-unhandled-promise",
+          "expect": "report"
+        }
+      ],
+      "importedFrom": "maintainability/no-unhandled-promise#GAP-175b7b",
+      "foundBy": "nested arguments are skipped so console.log(fetch(url)) does not report twice"
+    },
+    {
+      "id": "ILB-0032",
+      "added": "2026-08-26",
+      "title": "the same, one member access further along",
+      "rationale": "A defect this rule still misses. Registered with no coverage so the hole is visible rather than implied.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "first(fetch(url)).third;",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "maintainability/no-unhandled-promise",
+          "expect": "report"
+        }
+      ],
+      "importedFrom": "maintainability/no-unhandled-promise#GAP-b749bb",
+      "foundBy": "same skip, one member access further along"
+    },
+    {
+      "id": "ILB-0033",
+      "added": "2026-08-26",
+      "title": "a promise passed as an argument to another call",
+      "rationale": "A defect this rule still misses. Registered with no coverage so the hole is visible rather than implied.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "console.log(fetch(url));",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "maintainability/no-unhandled-promise",
+          "expect": "report"
+        }
+      ],
+      "importedFrom": "maintainability/no-unhandled-promise#GAP-0f9ad0",
+      "foundBy": "nested arguments are skipped so console.log(fetch(url)) does not report twice"
+    },
+    {
+      "id": "ILB-0034",
+      "added": "2026-08-26",
+      "title": "a promise wrapped twice",
+      "rationale": "A defect this rule still misses. Registered with no coverage so the hole is visible rather than implied.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "outer(wrap(fetch(url)));",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "maintainability/no-unhandled-promise",
+          "expect": "report"
+        }
+      ],
+      "importedFrom": "maintainability/no-unhandled-promise#GAP-441394",
+      "foundBy": "same skip, through two layers"
+    },
+    {
+      "id": "ILB-0035",
+      "added": "2026-08-26",
+      "title": "a wrapped promise used as a computed key",
+      "rationale": "A defect this rule still misses. Registered with no coverage so the hole is visible rather than implied.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const v = a[wrap(fetch(url))].then;",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "maintainability/no-unhandled-promise",
+          "expect": "report"
+        }
+      ],
+      "importedFrom": "maintainability/no-unhandled-promise#GAP-fc1f8e",
+      "foundBy": "same skip, in computed-key position"
+    },
+    {
+      "id": "ILB-0036",
+      "added": "2026-08-26",
+      "title": "a dynamic import nobody awaits",
+      "rationale": "A defect this rule missed and now catches. Imported from the sealed case that proved it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import(\"./heavy-module\");",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "maintainability/no-unhandled-promise",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        }
+      ],
+      "importedFrom": "maintainability/no-unhandled-promise#FN-491640",
+      "foundBy": "grammar review",
+      "peers": [
+        {
+          "plugin": "eslint-plugin-promise",
+          "rule": "catch-or-return",
+          "control": "fetch(url).then(r => r.json());"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0037",
+      "added": "2026-08-26",
+      "title": "new Promise as a whole statement",
+      "rationale": "A defect this rule missed and now catches. Imported from the sealed case that proved it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "new Promise((resolve) => resolve(1));",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "maintainability/no-unhandled-promise",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-maintainability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        }
+      ],
+      "importedFrom": "maintainability/no-unhandled-promise#FN-3acabc",
+      "foundBy": "grammar review",
+      "peers": [
+        {
+          "plugin": "eslint-plugin-promise",
+          "rule": "catch-or-return",
+          "control": "fetch(url).then(r => r.json());"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0038",
+      "added": "2026-08-26",
+      "title": "the same code with template literals instead of quoted strings",
+      "rationale": "A defect this rule missed and now catches. Imported from the sealed case that proved it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "fs.readFile(`../../etc/passwd`);",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "node-security/detect-non-literal-fs-filename",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-node-security/src/spelling-seals.test.ts"
+        }
+      ],
+      "importedFrom": "node-security/detect-non-literal-fs-filename#FN-b40b0e",
+      "foundBy": "spelling probe",
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-non-literal-fs-filename",
+          "control": "const fs = require('fs'); fs.readFile(p);"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0039",
+      "added": "2026-08-26",
+      "title": "the same code with template literals instead of quoted strings",
+      "rationale": "A defect this rule missed and now catches. Imported from the sealed case that proved it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const file = path.join(os.tmpdir(), `report-cache.tmp`);",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "node-security/no-data-in-temp-storage",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-node-security/src/spelling-seals.test.ts"
+        }
+      ],
+      "importedFrom": "node-security/no-data-in-temp-storage#FN-d4d30a",
+      "foundBy": "spelling probe"
+    },
+    {
+      "id": "ILB-0040",
+      "added": "2026-08-26",
+      "title": "a secret arriving as a parameter has no visible taint source",
+      "rationale": "A defect this rule still misses. Registered with no coverage so the hole is visible rather than implied.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "export function isAuthorized(bearerToken: string, sessionSecret: string): boolean { return bearerToken === sessionSecret; }",
+      "kind": "defect",
+      "coverage": [],
+      "importedFrom": "node-security/no-timing-unsafe-compare#GAP-61fee2",
+      "foundBy": "no name to read, and the rule is deliberately name-based not taint-based"
+    },
+    {
+      "id": "ILB-0041",
+      "added": "2026-08-26",
+      "title": "an AST discriminant is not a credential — 11 findings in the wild",
+      "rationale": "Looks like a node-security/no-timing-unsafe-compare finding and is not. We reported it in real code (flint-fyi/flint packages/ts/src/rules/errorSubclassProperties.ts:56) and have since sealed it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [
+        {
+          "repo": "flint-fyi/flint",
+          "path": "packages/ts/src/rules/errorSubclassProperties.ts:56"
+        }
+      ],
+      "code": "if (statement.expression.operatorToken.kind === SyntaxKind.EqualsToken) { return; }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "node-security/no-timing-unsafe-compare",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-node-security/src/rules/no-timing-unsafe-compare/no-timing-unsafe-compare.test.ts"
+        }
+      ],
+      "importedFrom": "node-security/no-timing-unsafe-compare#FP-3cb6e3",
+      "foundBy": "real-source scan"
+    },
+    {
+      "id": "ILB-0042",
+      "added": "2026-08-26",
+      "title": "a secret compared through an anonymous name is not detected",
+      "rationale": "A defect this rule still misses. Registered with no coverage so the hole is visible rather than implied.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "if (a === b) { grant(); }",
+      "kind": "defect",
+      "coverage": [],
+      "importedFrom": "node-security/no-timing-unsafe-compare#GAP-f9dc8d",
+      "foundBy": "no word list fixes the general case; the consumer vocabulary option is the escape hatch"
+    },
+    {
+      "id": "ILB-0043",
+      "added": "2026-08-26",
+      "title": "the same code with template literals instead of quoted strings",
+      "rationale": "A defect this rule missed and now catches. Imported from the sealed case that proved it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const creds = await vault.fetch(req.params.id); if (creds[`apiKey`] === req.headers[`x-integration-key`]) { ok(); }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "node-security/no-timing-unsafe-compare",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-node-security/src/spelling-seals.test.ts"
+        }
+      ],
+      "importedFrom": "node-security/no-timing-unsafe-compare#FN-7f908b",
+      "foundBy": "spelling probe"
+    },
+    {
+      "id": "ILB-0044",
+      "added": "2026-08-26",
+      "title": "OpenTelemetry context propagation is not an archive — 6 findings in the wild",
+      "rationale": "Looks like a node-security/no-zip-slip finding and is not. We reported it in real code (diia-open-source/be-diia-app src/grpc/grpcService.ts:280) and have since sealed it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [
+        {
+          "repo": "diia-open-source/be-diia-app",
+          "path": "src/grpc/grpcService.ts:280"
+        }
+      ],
+      "code": "const ctx = propagation.extract(context.active(), metadata, getter);",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "node-security/no-zip-slip",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-node-security/src/rules/no-zip-slip/no-zip-slip.test.ts"
+        }
+      ],
+      "importedFrom": "node-security/no-zip-slip#FP-e1cc5d",
+      "foundBy": "real-source scan"
+    },
+    {
+      "id": "ILB-0045",
+      "added": "2026-08-26",
+      "title": "an OAuth claims extractor is not an archive",
+      "rationale": "Looks like a node-security/no-zip-slip finding and is not. We reported it and have since sealed it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const claims = extractClaims(token);",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "node-security/no-zip-slip",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-node-security/src/rules/no-zip-slip/no-zip-slip.test.ts"
+        }
+      ],
+      "importedFrom": "node-security/no-zip-slip#FP-ae4bc4",
+      "foundBy": "real-source scan"
+    },
+    {
+      "id": "ILB-0046",
+      "added": "2026-08-26",
+      "title": "an algorithm name — 110 findings in the wild came from this shape",
+      "rationale": "Looks like a node-security/require-secure-credential-storage finding and is not. We reported it in real code (auth0/express-openid-connect api.js:2) and have since sealed it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [
+        {
+          "repo": "auth0/express-openid-connect",
+          "path": "api.js:2"
+        }
+      ],
+      "code": "process.env.TOKEN_SIGNING_ALG = 'RS256';",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "node-security/require-secure-credential-storage",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-node-security/src/rules/require-secure-credential-storage/config-is-not-a-credential.test.ts"
+        }
+      ],
+      "importedFrom": "node-security/require-secure-credential-storage#FP-09c58b",
+      "foundBy": "real-source scan"
+    },
+    {
+      "id": "ILB-0047",
+      "added": "2026-08-26",
+      "title": "minify — the Vite, Rollup and esbuild spelling of the same setting",
+      "rationale": "A defect this rule missed and now catches. Imported from the sealed case that proved it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "export default { build: { minify: false } }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "operability/require-code-minification",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-operability/src/tests/operability/require-code-minification.test.ts"
+        }
+      ],
+      "importedFrom": "operability/require-code-minification#FN-501add",
+      "foundBy": "ecosystem fact"
+    },
+    {
+      "id": "ILB-0048",
+      "added": "2026-08-26",
+      "title": "a shipping address modifier",
+      "rationale": "Looks like a react-a11y/autocomplete-valid finding and is not. We reported it and have since sealed it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "<input autocomplete=\"shipping street-address\" />",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "react-a11y/autocomplete-valid",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts"
+        }
+      ],
+      "importedFrom": "react-a11y/autocomplete-valid#FP-46ca7a",
+      "foundBy": "spec diff",
+      "peers": [
+        {
+          "plugin": "eslint-plugin-jsx-a11y",
+          "rule": "autocomplete-valid",
+          "control": "<input autocomplete=\"fake-token\" />"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0049",
+      "added": "2026-08-26",
+      "title": "a billing address modifier",
+      "rationale": "Looks like a react-a11y/autocomplete-valid finding and is not. We reported it and have since sealed it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "<input autocomplete=\"billing cc-number\" />",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "react-a11y/autocomplete-valid",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts"
+        }
+      ],
+      "importedFrom": "react-a11y/autocomplete-valid#FP-6eaab1",
+      "foundBy": "spec diff",
+      "peers": [
+        {
+          "plugin": "eslint-plugin-jsx-a11y",
+          "rule": "autocomplete-valid",
+          "control": "<input autocomplete=\"fake-token\" />"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0050",
+      "added": "2026-08-26",
+      "title": "a contact-channel modifier",
+      "rationale": "Looks like a react-a11y/autocomplete-valid finding and is not. We reported it and have since sealed it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "<input autocomplete=\"home tel\" />",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "react-a11y/autocomplete-valid",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts"
+        }
+      ],
+      "importedFrom": "react-a11y/autocomplete-valid#FP-2e795e",
+      "foundBy": "spec diff",
+      "peers": [
+        {
+          "plugin": "eslint-plugin-jsx-a11y",
+          "rule": "autocomplete-valid",
+          "control": "<input autocomplete=\"fake-token\" />"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0051",
+      "added": "2026-08-26",
+      "title": "the webauthn credential suffix",
+      "rationale": "Looks like a react-a11y/autocomplete-valid finding and is not. We reported it and have since sealed it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "<input autocomplete=\"username webauthn\" />",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "react-a11y/autocomplete-valid",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts"
+        }
+      ],
+      "importedFrom": "react-a11y/autocomplete-valid#FP-3747c9",
+      "foundBy": "spec diff",
+      "peers": [
+        {
+          "plugin": "eslint-plugin-jsx-a11y",
+          "rule": "autocomplete-valid",
+          "control": "<input autocomplete=\"fake-token\" />"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0052",
+      "added": "2026-08-26",
+      "title": "two field names, where the grammar allows one",
+      "rationale": "A defect this rule missed and now catches. Imported from the sealed case that proved it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "<input autocomplete=\"name email\" />",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "react-a11y/autocomplete-valid",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-react-a11y/src/tests/autocomplete-valid.test.ts"
+        }
+      ],
+      "importedFrom": "react-a11y/autocomplete-valid#FN-880686",
+      "foundBy": "spec diff",
+      "peers": [
+        {
+          "plugin": "eslint-plugin-jsx-a11y",
+          "rule": "autocomplete-valid",
+          "control": "<input autocomplete=\"fake-token\" />"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0053",
+      "added": "2026-08-26",
+      "title": "a section label with no field name after it",
+      "rationale": "A defect this rule missed and now catches. Imported from the sealed case that proved it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "<input autocomplete=\"section-email\" />",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "react-a11y/autocomplete-valid",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-react-a11y/src/tests/coverage-dual-layer.test.ts"
+        }
+      ],
+      "importedFrom": "react-a11y/autocomplete-valid#FN-9f3d7c",
+      "foundBy": "spec diff",
+      "peers": [
+        {
+          "plugin": "eslint-plugin-jsx-a11y",
+          "rule": "autocomplete-valid",
+          "control": "<input autocomplete=\"fake-token\" />"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0054",
+      "added": "2026-08-26",
+      "title": "an empty lang names no language",
+      "rationale": "A defect this rule missed and now catches. Imported from the sealed case that proved it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "<html lang=\"\"></html>",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "react-a11y/html-has-lang",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-react-a11y/src/tests/html-has-lang.test.ts"
+        }
+      ],
+      "importedFrom": "react-a11y/html-has-lang#FN-6f5894",
+      "foundBy": "rule review",
+      "peers": [
+        {
+          "plugin": "eslint-plugin-jsx-a11y",
+          "rule": "html-has-lang",
+          "control": "<html></html>"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0055",
+      "added": "2026-08-26",
+      "title": "an empty title announces nothing",
+      "rationale": "A defect this rule missed and now catches. Imported from the sealed case that proved it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "<iframe src=\"a.html\" title=\"\"></iframe>",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "react-a11y/iframe-has-title",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-react-a11y/src/tests/iframe-has-title.test.ts"
+        }
+      ],
+      "importedFrom": "react-a11y/iframe-has-title#FN-3ed053",
+      "foundBy": "rule review",
+      "peers": [
+        {
+          "plugin": "eslint-plugin-jsx-a11y",
+          "rule": "iframe-has-title",
+          "control": "<iframe src=\"a.html\"></iframe>"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0056",
+      "added": "2026-08-26",
+      "title": "a promise passed as an argument to another call",
+      "rationale": "A defect this rule still misses. Registered with no coverage so the hole is visible rather than implied.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "console.log(fetch(url));",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "reliability/no-unhandled-promise",
+          "expect": "report"
+        }
+      ],
+      "importedFrom": "reliability/no-unhandled-promise#GAP-1611db",
+      "foundBy": "nested arguments are skipped so console.log(fetch(url)) does not report twice"
+    },
+    {
+      "id": "ILB-0057",
+      "added": "2026-08-26",
+      "title": "a dynamic import nobody awaits",
+      "rationale": "A defect this rule missed and now catches. Imported from the sealed case that proved it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import(\"./heavy-module\");",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "reliability/no-unhandled-promise",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        }
+      ],
+      "importedFrom": "reliability/no-unhandled-promise#FN-5353dc",
+      "foundBy": "grammar review",
+      "peers": [
+        {
+          "plugin": "eslint-plugin-promise",
+          "rule": "catch-or-return",
+          "control": "fetch(url).then(r => r.json());"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0058",
+      "added": "2026-08-26",
+      "title": "new Promise as a whole statement",
+      "rationale": "A defect this rule missed and now catches. Imported from the sealed case that proved it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "new Promise((resolve) => resolve(1));",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "reliability/no-unhandled-promise",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-reliability/src/tests/error-handling/no-unhandled-promise-evidence.test.ts"
+        }
+      ],
+      "importedFrom": "reliability/no-unhandled-promise#FN-e5d6de",
+      "foundBy": "grammar review",
+      "peers": [
+        {
+          "plugin": "eslint-plugin-promise",
+          "rule": "catch-or-return",
+          "control": "fetch(url).then(r => r.json());"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0059",
+      "added": "2026-08-26",
+      "title": "an array append written as a self-indexed length",
+      "rationale": "Looks like a secure-coding/detect-object-injection finding and is not. We reported it and have since sealed it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const arr = []; arr[arr.length] = x;",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        }
+      ],
+      "importedFrom": "secure-coding/detect-object-injection#FP-4a1cf2",
+      "foundBy": "head-to-head with eslint-plugin-security",
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0060",
+      "added": "2026-08-26",
+      "title": "the same allowlist behind Object.freeze",
+      "rationale": "Looks like a secure-coding/detect-object-injection finding and is not. We reported it and have since sealed it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const KEYS = Object.freeze([\"alpha\", \"beta\"]); const o = {}; for (const k of KEYS) { o[k] = 1; }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
+        }
+      ],
+      "importedFrom": "secure-coding/detect-object-injection#FP-27e850",
+      "foundBy": "head-to-head with eslint-plugin-security",
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ]
+    },
+    {
+      "id": "ILB-0061",
+      "added": "2026-08-26",
+      "title": "an error code is not a credential — 69 findings in the wild",
+      "rationale": "Looks like a secure-coding/no-insecure-comparison finding and is not. We reported it in real code (moleculerjs/moleculer utils.js:289) and have since sealed it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [
+        {
+          "repo": "moleculerjs/moleculer",
+          "path": "utils.js:289"
+        }
+      ],
+      "code": "if (e.code == 'MODULE_NOT_FOUND') { retry(); }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "secure-coding/no-insecure-comparison",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-secure-coding/src/rules/no-insecure-comparison/report-loose-equality.test.ts",
+          "options": [
+            {
+              "reportLooseEquality": false
+            }
+          ]
+        }
+      ],
+      "importedFrom": "secure-coding/no-insecure-comparison#FP-91ee4b",
+      "foundBy": "real-source scan"
+    },
+    {
+      "id": "ILB-0062",
+      "added": "2026-08-26",
+      "title": "a filename is not a credential — 71 findings, the largest shape",
+      "rationale": "Looks like a secure-coding/no-insecure-comparison finding and is not. We reported it in real code (IGNF/cartes.gouv.fr-entree-carto) and have since sealed it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [
+        {
+          "repo": "IGNF/cartes.gouv.fr-entree-carto"
+        }
+      ],
+      "code": "if (key == filename) { use(key); }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "secure-coding/no-insecure-comparison",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-secure-coding/src/rules/no-insecure-comparison/report-loose-equality.test.ts",
+          "options": [
+            {
+              "reportLooseEquality": false
+            }
+          ]
+        }
+      ],
+      "importedFrom": "secure-coding/no-insecure-comparison#FP-20481d",
+      "foundBy": "real-source scan"
+    },
+    {
+      "id": "ILB-0063",
+      "added": "2026-08-26",
+      "title": "the same code with template literals instead of quoted strings",
+      "rationale": "A defect this rule missed and now catches. Imported from the sealed case that proved it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "if (req.headers[`x-api-key`] === config[`apiKey`]) {}",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "secure-coding/no-insecure-comparison",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-secure-coding/src/spelling-seals.test.ts"
+        }
+      ],
+      "importedFrom": "secure-coding/no-insecure-comparison#FN-3f866d",
+      "foundBy": "spelling probe"
+    },
+    {
+      "id": "ILB-0064",
+      "added": "2026-08-26",
+      "title": "the same code with template literals instead of quoted strings",
+      "rationale": "A defect this rule missed and now catches. Imported from the sealed case that proved it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "console.log(`password: 123456`);",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "secure-coding/no-sensitive-data-exposure",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-secure-coding/src/spelling-seals.test.ts"
+        }
+      ],
+      "importedFrom": "secure-coding/no-sensitive-data-exposure#FN-ade7eb",
+      "foundBy": "spelling probe"
+    },
+    {
+      "id": "ILB-0065",
+      "added": "2026-08-26",
+      "title": "request value bound one line earlier",
+      "rationale": "Same defect, one binding of indirection.",
+      "cwe": "CWE-1321",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(o, req) { const k = req.body.key; o[k] = req.body.value; }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "report",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "D02"
+    },
+    {
+      "id": "ILB-0066",
+      "added": "2026-08-26",
+      "title": "destructured from the body",
+      "rationale": "Same defect, destructured.",
+      "cwe": "CWE-1321",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(o, req) { const { key } = req.body; o[key] = 1; }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "report",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "D03"
+    },
+    {
+      "id": "ILB-0067",
+      "added": "2026-08-26",
+      "title": "route parameter as a key",
+      "rationale": "A path segment is caller-chosen.",
+      "cwe": "CWE-1321",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(o, req) { o[req.params.id] = 1; }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "report",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "D04"
+    },
+    {
+      "id": "ILB-0068",
+      "added": "2026-08-26",
+      "title": "key from parsed JSON",
+      "rationale": "Parsed input is caller-controlled by definition.",
+      "cwe": "CWE-1321",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(o, s) { const d = JSON.parse(s); o[d.k] = d.v; }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "report",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "D05"
+    },
+    {
+      "id": "ILB-0069",
+      "added": "2026-08-26",
+      "title": "merge iterating the request body",
+      "rationale": "Same loop, attacker at the root, no parameter to hide behind.",
+      "cwe": "CWE-1321",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(dst, req) { for (const k in req.body) { dst[k] = req.body[k]; } }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "report",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "D07"
+    },
+    {
+      "id": "ILB-0070",
+      "added": "2026-08-26",
+      "title": "key reached through a template",
+      "rationale": "Interpolation does not launder the value.",
+      "cwe": "CWE-1321",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(o, req) { o[`${req.query.p}`] = 1; }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "report",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "D10"
+    },
+    {
+      "id": "ILB-0071",
+      "added": "2026-08-26",
+      "title": "header value as key",
+      "rationale": "A header is caller-chosen.",
+      "cwe": "CWE-1321",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(o, req) { o[req.headers[\"x-key\"]] = 1; }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "report",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "D11"
+    },
+    {
+      "id": "ILB-0072",
+      "added": "2026-08-26",
+      "title": "nested destructure from the body",
+      "rationale": "Two levels of destructuring do not launder it.",
+      "cwe": "CWE-1321",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(o, req) { const { a: { b } } = req.body; o[b] = 1; }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "report",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "D12"
+    },
+    {
+      "id": "ILB-0073",
+      "added": "2026-08-26",
+      "title": "two attacker-chosen keys in one chain",
+      "rationale": "Both segments are caller-chosen.",
+      "cwe": "CWE-1321",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(o, req) { o[req.body.a][req.body.b] = 1; }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "report",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "D13"
+    },
+    {
+      "id": "ILB-0074",
+      "added": "2026-08-26",
+      "title": "merge over Object.keys of the body",
+      "rationale": "The for-of spelling of D07.",
+      "cwe": "CWE-1321",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(o, req) { for (const k of Object.keys(req.body)) o[k] = req.body[k]; }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "report",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "D14"
+    },
+    {
+      "id": "ILB-0075",
+      "added": "2026-08-26",
+      "title": "key assigned after declaration",
+      "rationale": "A late write to the binding is still a caller-chosen key.",
+      "cwe": "CWE-1321",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(o, req) { let k; k = req.query.p; o[k] = 1; }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "report",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "D15"
+    },
+    {
+      "id": "ILB-0076",
+      "added": "2026-08-26",
+      "title": "write straight onto Object.prototype",
+      "rationale": "Pollution without an intermediate object at all.",
+      "cwe": "CWE-1321",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(req) { const k = req.query.k; ({}).constructor.prototype[k] = 1; }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "report",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "D16"
+    },
+    {
+      "id": "ILB-0077",
+      "added": "2026-08-26",
+      "title": "read by loop counter",
+      "rationale": "A read. [[Get]] returns the prototype, it does not replace it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(paths, i) { return paths[i]; }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "N01"
+    },
+    {
+      "id": "ILB-0078",
+      "added": "2026-08-26",
+      "title": "read by a sibling key",
+      "rationale": "A read.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(current, app) { return current[app.name]; }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "N02"
+    },
+    {
+      "id": "ILB-0079",
+      "added": "2026-08-26",
+      "title": "read in a call argument",
+      "rationale": "A read.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(config, name) { send(config[name]); }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "N03"
+    },
+    {
+      "id": "ILB-0080",
+      "added": "2026-08-26",
+      "title": "index write in a counted loop",
+      "rationale": "The key is provably numeric from its declaration.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(a, out) { for (let i = 0; i < a.length; i++) { out[i] = a[i]; } }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "N05"
+    },
+    {
+      "id": "ILB-0081",
+      "added": "2026-08-26",
+      "title": "index arithmetic",
+      "rationale": "Numeric by construction.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(out, i, v) { out[i + 1] = v; }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "N06"
+    },
+    {
+      "id": "ILB-0082",
+      "added": "2026-08-26",
+      "title": "typed-array element write",
+      "rationale": "A typed array has no string keys to pollute.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const buf = new Uint8Array(8); buf[0] = 1;",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "N07"
+    },
+    {
+      "id": "ILB-0083",
+      "added": "2026-08-26",
+      "title": "literal string key",
+      "rationale": "The key is written in the source.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(o) { return o[\"name\"]; }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "N11"
+    },
+    {
+      "id": "ILB-0084",
+      "added": "2026-08-26",
+      "title": "numeric literal key",
+      "rationale": "A number.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(o) { o[0] = 1; }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "N12"
+    },
+    {
+      "id": "ILB-0085",
+      "added": "2026-08-26",
+      "title": "write to a null-prototype bag",
+      "rationale": "No prototype to pollute.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(k, v) { const bag = Object.create(null); bag[k] = v; return bag; }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "N13"
+    },
+    {
+      "id": "ILB-0086",
+      "added": "2026-08-26",
+      "title": "Map, which has no prototype chain for keys",
+      "rationale": "Not a computed property access at all.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(m, k, v) { m.set(k, v); }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "N14"
+    },
+    {
+      "id": "ILB-0087",
+      "added": "2026-08-26",
+      "title": "read from a module-local lookup table",
+      "rationale": "A read.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const e = {}; function f(k) { return e[k] ?? null; }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "N15"
+    },
+    {
+      "id": "ILB-0088",
+      "added": "2026-08-26",
+      "title": "symbol key",
+      "rationale": "A symbol cannot name `__proto__`.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(o, g) { o[Symbol.iterator] = g; }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "N16"
+    },
+    {
+      "id": "ILB-0089",
+      "added": "2026-08-26",
+      "title": "write guarded by an explicit __proto__ check",
+      "rationale": "The other documented fix.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(dst, src) { for (const k in src) { if (k === \"__proto__\") continue; dst[k] = src[k]; } }",
+      "kind": "remedy",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "R02"
+    },
+    {
+      "id": "ILB-0090",
+      "added": "2026-08-26",
+      "title": "read guarded by hasOwnProperty",
+      "rationale": "Guarded, and a read besides.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(map, k) { if (Object.hasOwn(map, k)) { return map[k]; } return undefined; }",
+      "kind": "remedy",
+      "coverage": [
+        {
+          "rule": "secure-coding/detect-object-injection",
+          "expect": "silent",
+          "evidence": "scripts/doi-head-to-head.mts"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-object-injection",
+          "control": "o[key] = v;"
+        }
+      ],
+      "batteryId": "R03"
+    },
+    {
+      "id": "ILB-0091",
+      "added": "2026-08-26",
+      "title": "request value into innerHTML",
+      "rationale": "Attacker-supplied markup reaches an HTML sink.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(el, req) { el.innerHTML = req.query.q; }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "browser-security/no-innerhtml",
+          "expect": "report",
+          "evidence": "benchmarks/cases/batteries/browser-security__no-innerhtml.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-no-unsanitized",
+          "rule": "property",
+          "control": "el.innerHTML = x;"
+        }
+      ],
+      "batteryId": "D01"
+    },
+    {
+      "id": "ILB-0092",
+      "added": "2026-08-26",
+      "title": "the same through a computed key",
+      "rationale": "The same sink, spelled with brackets.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(el, req) { el[\"innerHTML\"] = req.query.q; }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "browser-security/no-innerhtml",
+          "expect": "report",
+          "evidence": "benchmarks/cases/batteries/browser-security__no-innerhtml.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-no-unsanitized",
+          "rule": "property",
+          "control": "el.innerHTML = x;"
+        }
+      ],
+      "batteryId": "D02"
+    },
+    {
+      "id": "ILB-0093",
+      "added": "2026-08-26",
+      "title": "the same through a template-literal key",
+      "rationale": "The same sink again; a no-substitution template IS a string.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(el, req) { el[`innerHTML`] = req.query.q; }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "browser-security/no-innerhtml",
+          "expect": "report",
+          "evidence": "benchmarks/cases/batteries/browser-security__no-innerhtml.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-no-unsanitized",
+          "rule": "property",
+          "control": "el.innerHTML = x;"
+        }
+      ],
+      "batteryId": "D03"
+    },
+    {
+      "id": "ILB-0094",
+      "added": "2026-08-26",
+      "title": "outerHTML",
+      "rationale": "outerHTML is the same sink.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(el, req) { el.outerHTML = req.body.html; }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "browser-security/no-innerhtml",
+          "expect": "report",
+          "evidence": "benchmarks/cases/batteries/browser-security__no-innerhtml.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-no-unsanitized",
+          "rule": "property",
+          "control": "el.innerHTML = x;"
+        }
+      ],
+      "batteryId": "D04"
+    },
+    {
+      "id": "ILB-0095",
+      "added": "2026-08-26",
+      "title": "a string constant written in the source",
+      "rationale": "The markup is in the file; nobody outside chose it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(el) { el.innerHTML = '<b>hi</b>'; }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "browser-security/no-innerhtml",
+          "expect": "silent",
+          "evidence": "benchmarks/cases/batteries/browser-security__no-innerhtml.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-no-unsanitized",
+          "rule": "property",
+          "control": "el.innerHTML = x;"
+        }
+      ],
+      "batteryId": "N01"
+    },
+    {
+      "id": "ILB-0096",
+      "added": "2026-08-26",
+      "title": "textContent, which does not parse markup",
+      "rationale": "textContent is the documented safe sink.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(el, req) { el.textContent = req.query.q; }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "browser-security/no-innerhtml",
+          "expect": "silent",
+          "evidence": "benchmarks/cases/batteries/browser-security__no-innerhtml.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-no-unsanitized",
+          "rule": "property",
+          "control": "el.innerHTML = x;"
+        }
+      ],
+      "batteryId": "N02"
+    },
+    {
+      "id": "ILB-0097",
+      "added": "2026-08-26",
+      "title": "reading innerHTML",
+      "rationale": "A read cannot inject anything.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(el) { return el.innerHTML; }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "browser-security/no-innerhtml",
+          "expect": "silent",
+          "evidence": "benchmarks/cases/batteries/browser-security__no-innerhtml.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-no-unsanitized",
+          "rule": "property",
+          "control": "el.innerHTML = x;"
+        }
+      ],
+      "batteryId": "N03"
+    },
+    {
+      "id": "ILB-0098",
+      "added": "2026-08-26",
+      "title": "sanitised before assignment",
+      "rationale": "The documented fix. Reporting it leaves the user nothing to do.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import DOMPurify from 'dompurify';\nfunction f(el, req) { el.innerHTML = DOMPurify.sanitize(req.query.q); }",
+      "kind": "remedy",
+      "coverage": [
+        {
+          "rule": "browser-security/no-innerhtml",
+          "expect": "silent",
+          "evidence": "benchmarks/cases/batteries/browser-security__no-innerhtml.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-no-unsanitized",
+          "rule": "property",
+          "control": "el.innerHTML = x;"
+        }
+      ],
+      "batteryId": "R01"
+    },
+    {
+      "id": "ILB-0099",
+      "added": "2026-08-26",
+      "title": "a bearer token compared with ===",
+      "rationale": "=== short-circuits at the first differing byte, so response time leaks the shared prefix.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import crypto from 'node:crypto';\nfunction f(req, apiKey) { if (req.headers.authorization === apiKey) { grant(); } }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "node-security/no-timing-unsafe-compare",
+          "expect": "report",
+          "evidence": "benchmarks/cases/batteries/node-security__no-timing-unsafe-compare.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-possible-timing-attacks",
+          "control": "if (password === input) { grant(); }"
+        }
+      ],
+      "batteryId": "D01"
+    },
+    {
+      "id": "ILB-0100",
+      "added": "2026-08-26",
+      "title": "the same through a computed key",
+      "rationale": "The same comparison, spelled with brackets.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import crypto from 'node:crypto';\nfunction f(req, apiKey) { if (req.headers['authorization'] === apiKey) { grant(); } }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "node-security/no-timing-unsafe-compare",
+          "expect": "report",
+          "evidence": "benchmarks/cases/batteries/node-security__no-timing-unsafe-compare.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-possible-timing-attacks",
+          "control": "if (password === input) { grant(); }"
+        }
+      ],
+      "batteryId": "D02"
+    },
+    {
+      "id": "ILB-0101",
+      "added": "2026-08-26",
+      "title": "a password compared with ==",
+      "rationale": "Loose equality short-circuits identically.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import crypto from 'node:crypto';\nfunction f(req, password) { if (req.body.password == password) { grant(); } }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "node-security/no-timing-unsafe-compare",
+          "expect": "report",
+          "evidence": "benchmarks/cases/batteries/node-security__no-timing-unsafe-compare.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-possible-timing-attacks",
+          "control": "if (password === input) { grant(); }"
+        }
+      ],
+      "batteryId": "D03"
+    },
+    {
+      "id": "ILB-0102",
+      "added": "2026-08-26",
+      "title": "a comparison written the other way round",
+      "rationale": "Operand order does not change the timing.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import crypto from 'node:crypto';\nfunction f(req, secret) { if (secret !== req.headers['x-secret']) { deny(); } }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "node-security/no-timing-unsafe-compare",
+          "expect": "report",
+          "evidence": "benchmarks/cases/batteries/node-security__no-timing-unsafe-compare.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-possible-timing-attacks",
+          "control": "if (password === input) { grant(); }"
+        }
+      ],
+      "batteryId": "D04"
+    },
+    {
+      "id": "ILB-0103",
+      "added": "2026-08-26",
+      "title": "an error code",
+      "rationale": "An error code is public.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(e) { if (e.code === 'MODULE_NOT_FOUND') { retry(); } }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "node-security/no-timing-unsafe-compare",
+          "expect": "silent",
+          "evidence": "benchmarks/cases/batteries/node-security__no-timing-unsafe-compare.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-possible-timing-attacks",
+          "control": "if (password === input) { grant(); }"
+        }
+      ],
+      "batteryId": "N02"
+    },
+    {
+      "id": "ILB-0104",
+      "added": "2026-08-26",
+      "title": "a bearer comparison in a file that imports no crypto",
+      "rationale": "Written as a decoy on the assumption a module-evidence gate applied. It does not, and should not: a `===` on a secret leaks its prefix whether or not the file imports crypto. The rule was right and the case was wrong.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(req, apiKey) { if (req.headers.authorization === apiKey) { grant(); } }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "node-security/no-timing-unsafe-compare",
+          "expect": "report",
+          "evidence": "benchmarks/cases/batteries/node-security__no-timing-unsafe-compare.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-possible-timing-attacks",
+          "control": "if (password === input) { grant(); }"
+        }
+      ],
+      "batteryId": "N03"
+    },
+    {
+      "id": "ILB-0105",
+      "added": "2026-08-26",
+      "title": "the documented fix",
+      "rationale": "Reporting the fix leaves the user nothing to do.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import crypto from 'node:crypto';\nfunction f(a, b) { return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b)); }",
+      "kind": "remedy",
+      "coverage": [
+        {
+          "rule": "node-security/no-timing-unsafe-compare",
+          "expect": "silent",
+          "evidence": "benchmarks/cases/batteries/node-security__no-timing-unsafe-compare.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-possible-timing-attacks",
+          "control": "if (password === input) { grant(); }"
+        }
+      ],
+      "batteryId": "R01"
+    },
+    {
+      "id": "ILB-0106",
+      "added": "2026-08-26",
+      "title": "a bare password comparison",
+      "rationale": "Silent BY DESIGN, and reported by the peer. Neither operand is reachable from outside this function, so nothing here shows an attacker can drive the comparison. Reporting it produced 27 findings on the scanned corpus with zero real oracles.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(password, input) { if (password === input) { grant(); } }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "node-security/no-timing-unsafe-compare",
+          "expect": "silent",
+          "evidence": "benchmarks/cases/batteries/node-security__no-timing-unsafe-compare.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-possible-timing-attacks",
+          "control": "if (password === input) { grant(); }"
+        }
+      ],
+      "batteryId": "N04"
+    },
+    {
+      "id": "ILB-0107",
+      "added": "2026-08-26",
+      "title": "a bare secret comparison",
+      "rationale": "Silent BY DESIGN, and reported by the peer. Neither operand is reachable from outside this function, so nothing here shows an attacker can drive the comparison. Reporting it produced 27 findings on the scanned corpus with zero real oracles.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(secret, given) { if (secret === given) { grant(); } }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "node-security/no-timing-unsafe-compare",
+          "expect": "silent",
+          "evidence": "benchmarks/cases/batteries/node-security__no-timing-unsafe-compare.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-possible-timing-attacks",
+          "control": "if (password === input) { grant(); }"
+        }
+      ],
+      "batteryId": "N05"
+    },
+    {
+      "id": "ILB-0108",
+      "added": "2026-08-26",
+      "title": "a bare apiKey comparison",
+      "rationale": "Silent BY DESIGN, and reported by the peer. Neither operand is reachable from outside this function, so nothing here shows an attacker can drive the comparison. Reporting it produced 27 findings on the scanned corpus with zero real oracles.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(apiKey, given) { if (apiKey === given) { grant(); } }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "node-security/no-timing-unsafe-compare",
+          "expect": "silent",
+          "evidence": "benchmarks/cases/batteries/node-security__no-timing-unsafe-compare.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-possible-timing-attacks",
+          "control": "if (password === input) { grant(); }"
+        }
+      ],
+      "batteryId": "N06"
+    },
+    {
+      "id": "ILB-0109",
+      "added": "2026-08-26",
+      "title": "request value concatenated into exec",
+      "rationale": "A shell metacharacter in the query string runs a second command.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const cp = require('child_process');\nfunction f(req) { cp.exec('ls ' + req.query.dir); }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "node-security/detect-child-process",
+          "expect": "report",
+          "evidence": "benchmarks/cases/batteries/node-security__detect-child-process.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-child-process",
+          "control": "const cp = require('child_process'); cp.exec(cmd);"
+        }
+      ],
+      "batteryId": "D01"
+    },
+    {
+      "id": "ILB-0110",
+      "added": "2026-08-26",
+      "title": "the same via a template literal",
+      "rationale": "Interpolation does not escape anything.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const cp = require('child_process');\nfunction f(req) { cp.exec(`ls ${req.query.dir}`); }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "node-security/detect-child-process",
+          "expect": "report",
+          "evidence": "benchmarks/cases/batteries/node-security__detect-child-process.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-child-process",
+          "control": "const cp = require('child_process'); cp.exec(cmd);"
+        }
+      ],
+      "batteryId": "D02"
+    },
+    {
+      "id": "ILB-0111",
+      "added": "2026-08-26",
+      "title": "ESM import spelling",
+      "rationale": "The module spelling does not change the defect.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import cp from 'node:child_process';\nfunction f(req) { cp.exec('ls ' + req.body.dir); }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "node-security/detect-child-process",
+          "expect": "report",
+          "evidence": "benchmarks/cases/batteries/node-security__detect-child-process.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-child-process",
+          "control": "const cp = require('child_process'); cp.exec(cmd);"
+        }
+      ],
+      "batteryId": "D03"
+    },
+    {
+      "id": "ILB-0112",
+      "added": "2026-08-26",
+      "title": "destructured exec",
+      "rationale": "Destructuring hides the receiver, not the sink.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const { exec } = require('child_process');\nfunction f(req) { exec('ls ' + req.query.dir); }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "node-security/detect-child-process",
+          "expect": "report",
+          "evidence": "benchmarks/cases/batteries/node-security__detect-child-process.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-child-process",
+          "control": "const cp = require('child_process'); cp.exec(cmd);"
+        }
+      ],
+      "batteryId": "D04"
+    },
+    {
+      "id": "ILB-0113",
+      "added": "2026-08-26",
+      "title": "a fully literal command",
+      "rationale": "The command is written in the file.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const cp = require('child_process');\ncp.exec('ls -la');",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "node-security/detect-child-process",
+          "expect": "silent",
+          "evidence": "benchmarks/cases/batteries/node-security__detect-child-process.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-child-process",
+          "control": "const cp = require('child_process'); cp.exec(cmd);"
+        }
+      ],
+      "batteryId": "N01"
+    },
+    {
+      "id": "ILB-0114",
+      "added": "2026-08-26",
+      "title": "execFile with a caller-chosen argument",
+      "rationale": "Written as a decoy on the assumption that no shell means no defect. Executed: `execFileSync('echo', ['safe; echo PWNED'])` yields the literal string, so command injection is indeed impossible — but the caller still chooses an ARGUMENT, and a leading `-` is a flag. The rule reports CWE-88 argument injection here, not CWE-78, and goes silent once `--` terminates option parsing. The rule was right and the case was wrong.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const cp = require('child_process');\nfunction f(req) { cp.execFile('ls', [req.query.dir]); }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "node-security/detect-child-process",
+          "expect": "report",
+          "evidence": "benchmarks/cases/batteries/node-security__detect-child-process.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-child-process",
+          "control": "const cp = require('child_process'); cp.exec(cmd);"
+        }
+      ],
+      "batteryId": "N02"
+    },
+    {
+      "id": "ILB-0115",
+      "added": "2026-08-26",
+      "title": "spawn with a caller-chosen argument",
+      "rationale": "Written as a decoy on the assumption that no shell means no defect. Executed: `execFileSync('echo', ['safe; echo PWNED'])` yields the literal string, so command injection is indeed impossible — but the caller still chooses an ARGUMENT, and a leading `-` is a flag. The rule reports CWE-88 argument injection here, not CWE-78, and goes silent once `--` terminates option parsing. The rule was right and the case was wrong.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const cp = require('child_process');\nfunction f(req) { cp.spawn('ls', [req.query.dir]); }",
+      "kind": "defect",
+      "coverage": [
+        {
+          "rule": "node-security/detect-child-process",
+          "expect": "report",
+          "evidence": "benchmarks/cases/batteries/node-security__detect-child-process.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-child-process",
+          "control": "const cp = require('child_process'); cp.exec(cmd);"
+        }
+      ],
+      "batteryId": "N03"
+    },
+    {
+      "id": "ILB-0116",
+      "added": "2026-08-26",
+      "title": "a call to something else named exec",
+      "rationale": "RegExp.prototype.exec is not a shell.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "function f(re, s) { return re.exec(s); }",
+      "kind": "decoy",
+      "coverage": [
+        {
+          "rule": "node-security/detect-child-process",
+          "expect": "silent",
+          "evidence": "benchmarks/cases/batteries/node-security__detect-child-process.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-child-process",
+          "control": "const cp = require('child_process'); cp.exec(cmd);"
+        }
+      ],
+      "batteryId": "N04"
+    },
+    {
+      "id": "ILB-0117",
+      "added": "2026-08-26",
+      "title": "the documented fix",
+      "rationale": "Reporting the fix leaves the user nothing to do.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const cp = require('child_process');\nfunction f(req) { cp.execFile('ls', ['--', req.query.dir]); }",
+      "kind": "remedy",
+      "coverage": [
+        {
+          "rule": "node-security/detect-child-process",
+          "expect": "silent",
+          "evidence": "benchmarks/cases/batteries/node-security__detect-child-process.json"
+        }
+      ],
+      "peers": [
+        {
+          "plugin": "eslint-plugin-security",
+          "rule": "detect-child-process",
+          "control": "const cp = require('child_process'); cp.exec(cmd);"
+        }
+      ],
+      "batteryId": "R01"
+    },
+    {
+      "id": "ILB-0118",
+      "added": "2026-08-30",
+      "title": "Cross-document message broadcast to any origin",
+      "rationale": "`'*'` tells the browser to deliver the message to whatever document currently occupies the frame. If the frame has navigated, or was navigated by an attacker, the payload lands in their document. MDN names this the primary security concern of the API.",
+      "cwe": "CWE-346",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "MDN Window.postMessage",
+          "url": "https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage#security_concerns",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "window.parent.postMessage({ token: t }, '*');",
+      "coverage": [
+        {
+          "rule": "browser-security/no-postmessage-wildcard-origin",
+          "expect": "report",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "defect"
+    },
+    {
+      "id": "ILB-0119",
+      "added": "2026-08-30",
+      "title": "A concrete target origin",
+      "rationale": "The same call with an origin the browser must match before delivering. Looks identical in shape to the defect and must stay quiet — this is the form the fix takes.",
+      "cwe": "CWE-346",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "MDN Window.postMessage",
+          "url": "https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage#security_concerns",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "window.parent.postMessage({ token: t }, 'https://app.example.com');",
+      "coverage": [
+        {
+          "rule": "browser-security/no-postmessage-wildcard-origin",
+          "expect": "silent",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "remedy"
+    },
+    {
+      "id": "ILB-0120",
+      "added": "2026-08-30",
+      "title": "A wildcard string that is not a target origin",
+      "rationale": "`'*'` appearing as the message BODY rather than the origin argument. A rule matching the literal without regard to argument position reports this.",
+      "cwe": "CWE-346",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "MDN Window.postMessage",
+          "url": "https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage#security_concerns",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "window.parent.postMessage('*', 'https://app.example.com');",
+      "coverage": [
+        {
+          "rule": "browser-security/no-postmessage-wildcard-origin",
+          "expect": "silent",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "decoy"
+    },
+    {
+      "id": "ILB-0121",
+      "added": "2026-08-30",
+      "title": "Request object spread straight into a Mongo filter",
+      "rationale": "A caller-controlled object becomes the query document. `{\"$ne\": null}` as a password turns the lookup into 'any user', which is the canonical NoSQL authentication bypass. Missed until 2026-08-30: the rule early-returned on any first argument that was not an object literal, so the most direct form of the bug went unreported.",
+      "cwe": "CWE-943",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "OWASP NoSQL Injection",
+          "url": "https://owasp.org/www-community/Injection_Flaws",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "import { MongoClient } from 'mongodb';\nasync function f(db, req) { return db.collection('u').find(req.body); }",
+      "coverage": [
+        {
+          "rule": "mongodb-security/no-unsafe-query",
+          "expect": "report",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "defect"
+    },
+    {
+      "id": "ILB-0122",
+      "added": "2026-08-30",
+      "title": "The same lookup with the value pinned to a string",
+      "rationale": "Coercing to a primitive removes the operator surface entirely. The fix, and it must stay quiet.",
+      "cwe": "CWE-943",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "OWASP NoSQL Injection",
+          "url": "https://owasp.org/www-community/Injection_Flaws",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "import { MongoClient } from 'mongodb';\nasync function f(db, req) { return db.collection('u').find({ name: String(req.body.name) }); }",
+      "coverage": [
+        {
+          "rule": "mongodb-security/no-unsafe-query",
+          "expect": "silent",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "remedy"
+    },
+    {
+      "id": "ILB-0123",
+      "added": "2026-08-30",
+      "title": "A module-scope constant reported as user input",
+      "rationale": "An object built from a `const` string in the same file. Nothing here is caller-controlled. Reported until 2026-08-30 with the message `User input \"NAME\" is used directly`, because any bare identifier in a filter counted as user input. That one heuristic produced this false positive and the miss in ILB-0121 together.",
+      "cwe": "CWE-943",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "OWASP NoSQL Injection",
+          "url": "https://owasp.org/www-community/Injection_Flaws",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "import { MongoClient } from 'mongodb';\nconst NAME = 'root';\nasync function f(db) { return db.collection('u').find({ name: NAME }); }",
+      "coverage": [
+        {
+          "rule": "mongodb-security/no-unsafe-query",
+          "expect": "silent",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "decoy"
+    },
+    {
+      "id": "ILB-0124",
+      "added": "2026-08-30",
+      "title": "A vendor secret key committed as a literal",
+      "rationale": "`sk_live_` is Stripe's published prefix for a live secret key. The name of the binding is irrelevant — the FORMAT is somebody else's contract, so the finding does not depend on what a project calls its variables.",
+      "cwe": "CWE-798",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "CWE-798",
+          "url": "https://cwe.mitre.org/data/definitions/798.html",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "const anything = 'sk_live_FAKE_LIVE_KEY_FOR_TESTING_PURPOSES_ONLY_123456';",
+      "coverage": [
+        {
+          "rule": "secure-coding/no-hardcoded-credentials",
+          "expect": "report",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "defect"
+    },
+    {
+      "id": "ILB-0125",
+      "added": "2026-08-30",
+      "title": "The same key read from the environment",
+      "rationale": "The literal is gone; the name is unchanged. A rule keying on the NAME still reports this, which is the false positive the format check exists to avoid.",
+      "cwe": "CWE-798",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "CWE-798",
+          "url": "https://cwe.mitre.org/data/definitions/798.html",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "const apiKey = process.env.STRIPE_SECRET_KEY;",
+      "coverage": [
+        {
+          "rule": "secure-coding/no-hardcoded-credentials",
+          "expect": "silent",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "remedy"
+    },
+    {
+      "id": "ILB-0126",
+      "added": "2026-08-30",
+      "title": "A publishable key, which is meant to be in the bundle",
+      "rationale": "`pk_live_` is the half Stripe documents as safe to ship to a browser. Reporting it teaches consumers to disable the rule.",
+      "cwe": "CWE-798",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "CWE-798",
+          "url": "https://cwe.mitre.org/data/definitions/798.html",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "const publishable = 'pk_live_FAKE_PUBLISHABLE_KEY_FOR_TESTING_ONLY_123456';",
+      "coverage": [
+        {
+          "rule": "secure-coding/no-hardcoded-credentials",
+          "expect": "silent",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "decoy"
+    },
+    {
+      "id": "ILB-0127",
+      "added": "2026-08-30",
+      "title": "Nested quantifier over an overlapping character class",
+      "rationale": "`(a+)+$` is the textbook catastrophic backtrack: the inner and outer quantifiers can partition the same input exponentially many ways, so a non-matching string of length n costs 2^n steps.",
+      "cwe": "CWE-1333",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "CWE-1333",
+          "url": "https://cwe.mitre.org/data/definitions/1333.html",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "const re = /^(a+)+$/;",
+      "coverage": [
+        {
+          "rule": "secure-coding/no-redos-vulnerable-regex",
+          "expect": "report",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "defect"
+    },
+    {
+      "id": "ILB-0128",
+      "added": "2026-08-30",
+      "title": "The same intent written without nesting",
+      "rationale": "One quantifier over one class matches the same language in linear time.",
+      "cwe": "CWE-1333",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "CWE-1333",
+          "url": "https://cwe.mitre.org/data/definitions/1333.html",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "const re = /^a+$/;",
+      "coverage": [
+        {
+          "rule": "secure-coding/no-redos-vulnerable-regex",
+          "expect": "silent",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "remedy"
+    },
+    {
+      "id": "ILB-0129",
+      "added": "2026-08-30",
+      "title": "Nested quantifiers over DISJOINT classes",
+      "rationale": "`(a+b+)+` nests, but the classes cannot overlap, so there is only one way to partition any input and no backtracking explosion. A rule matching the SHAPE rather than the ambiguity reports it.",
+      "cwe": "CWE-1333",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "CWE-1333",
+          "url": "https://cwe.mitre.org/data/definitions/1333.html",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "const re = /^(a+b+)+$/;",
+      "coverage": [
+        {
+          "rule": "secure-coding/no-redos-vulnerable-regex",
+          "expect": "silent",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "decoy"
+    },
+    {
+      "id": "ILB-0130",
+      "added": "2026-08-30",
+      "title": "A reactive value missing from the dependency array",
+      "rationale": "The effect closes over `userId` and declares no dependency on it, so it keeps the value from the render in which it first ran. React's own docs call this the stale-closure bug; the symptom is a screen that silently shows another user's data after navigation.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "React: useEffect dependencies",
+          "url": "https://react.dev/reference/react/useEffect#specifying-reactive-dependencies",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "import { useEffect } from 'react';\nexport function C({ userId }) { useEffect(() => { load(userId); }, []); return null; }",
+      "coverage": [
+        {
+          "rule": "react-features/hooks-exhaustive-deps",
+          "expect": "report",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "defect"
+    },
+    {
+      "id": "ILB-0131",
+      "added": "2026-08-30",
+      "title": "The same effect with the value declared",
+      "rationale": "Adding the dependency is the whole fix, and it must stay quiet.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "React: useEffect dependencies",
+          "url": "https://react.dev/reference/react/useEffect#specifying-reactive-dependencies",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "import { useEffect } from 'react';\nexport function C({ userId }) { useEffect(() => { load(userId); }, [userId]); return null; }",
+      "coverage": [
+        {
+          "rule": "react-features/hooks-exhaustive-deps",
+          "expect": "silent",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "remedy"
+    },
+    {
+      "id": "ILB-0132",
+      "added": "2026-08-30",
+      "title": "A ref read inside an effect that declares nothing",
+      "rationale": "`useRef` returns a stable object, so React explicitly tells you NOT to list it. A rule treating every closed-over binding as reactive reports this, and reporting it teaches consumers to add a dependency React documents as wrong.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "React: useEffect dependencies",
+          "url": "https://react.dev/reference/react/useEffect#specifying-reactive-dependencies",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "import { useEffect, useRef } from 'react';\nexport function C() { const r = useRef(null); useEffect(() => { look(r.current); }, []); return null; }",
+      "coverage": [
+        {
+          "rule": "react-features/hooks-exhaustive-deps",
+          "expect": "silent",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "decoy"
+    },
+    {
+      "id": "ILB-0133",
+      "added": "2026-08-30",
+      "title": "Model output written straight into the DOM",
+      "rationale": "A model's text is attacker-influenced whenever any part of the prompt is. Writing it to `innerHTML` makes prompt injection into stored XSS — OWASP's LLM02 in its shortest form.",
+      "cwe": "CWE-79",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "OWASP LLM02 Insecure Output Handling",
+          "url": "https://owasp.org/www-project-top-10-for-large-language-model-applications/",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "import { generateText } from 'ai';\nasync function f(el, prompt) { const { text } = await generateText({ model: m, prompt }); el.innerHTML = text; }",
+      "coverage": [
+        {
+          "rule": "vercel-ai-security/no-unsafe-output-handling",
+          "expect": "report",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "defect"
+    },
+    {
+      "id": "ILB-0134",
+      "added": "2026-08-30",
+      "title": "The same output assigned as text",
+      "rationale": "`textContent` cannot introduce markup. The fix, and it must stay quiet.",
+      "cwe": "CWE-79",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "OWASP LLM02 Insecure Output Handling",
+          "url": "https://owasp.org/www-project-top-10-for-large-language-model-applications/",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "import { generateText } from 'ai';\nasync function f(el, prompt) { const { text } = await generateText({ model: m, prompt }); el.textContent = text; }",
+      "coverage": [
+        {
+          "rule": "vercel-ai-security/no-unsafe-output-handling",
+          "expect": "silent",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "remedy"
+    },
+    {
+      "id": "ILB-0135",
+      "added": "2026-08-30",
+      "title": "A local string written to innerHTML in a file that also calls a model",
+      "rationale": "The sink is real but the value never touched the model. A rule keying on 'this file imports the AI SDK and something reaches innerHTML' reports it.",
+      "cwe": "CWE-79",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "OWASP LLM02 Insecure Output Handling",
+          "url": "https://owasp.org/www-project-top-10-for-large-language-model-applications/",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "import { generateText } from 'ai';\nasync function f(el) { const label = 'Loading…'; el.innerHTML = label; }",
+      "coverage": [
+        {
+          "rule": "vercel-ai-security/no-unsafe-output-handling",
+          "expect": "silent",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "decoy"
+    },
+    {
+      "id": "ILB-0136",
+      "added": "2026-08-30",
+      "title": "Two modules importing each other",
+      "rationale": "`a` imports `b`, `b` imports `a`. At runtime one of them observes the other half-initialised, so a `const` is `undefined` at module-evaluation time and the failure appears far from its cause. Needs real files: a cycle is a property of the module GRAPH, so a single source string cannot express one — the fixture pair under benchmarks/cases/fixtures/cycle exists for that reason.",
+      "cwe": "CWE-1047",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "CWE-1047",
+          "url": "https://cwe.mitre.org/data/definitions/1047.html",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "import { b } from './b';\nexport const a = b;\n",
+      "coverage": [
+        {
+          "rule": "import-next/no-cycle",
+          "expect": "report",
+          "filename": "benchmarks/cases/fixtures/cycle/a.ts",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "defect"
+    },
+    {
+      "id": "ILB-0137",
+      "added": "2026-08-30",
+      "title": "The same import, to a module that imports nothing back",
+      "rationale": "Structurally identical at the import site — same syntax, same directory, same resolver work. Only the far end differs, which is what makes it the decoy: a rule that reports on 'this file imports a sibling' rather than on the graph reports this too.",
+      "cwe": "CWE-1047",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "CWE-1047",
+          "url": "https://cwe.mitre.org/data/definitions/1047.html",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "import { leaf } from './leaf';\nexport const a = leaf;\n",
+      "coverage": [
+        {
+          "rule": "import-next/no-cycle",
+          "expect": "silent",
+          "filename": "benchmarks/cases/fixtures/cycle/a.ts",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "decoy"
+    },
+    {
+      "id": "ILB-0138",
+      "added": "2026-08-30",
+      "title": "Allocation sized by a request, on a handler whose parameter is not spelled req",
+      "rationale": "`Buffer.allocUnsafe(capacity)` where `capacity` comes from `req.query.capacity`. The rule recognised the request by the root identifier's SPELLING, against REQUEST_ROOTS = ['req','request','ctx','event'], so the identical handler written `(inbound, outbound)` — or TypeScript's own `(request: Request, response: Response)` renamed on the way in — allocated from a peer-chosen size and reported nothing. The rename probe found 18 true positives that went silent this way, with `.query.capacity` still in plain sight one link up. Fixed 2026-08-30 by asking readsRequestShape before walking to the root.",
+      "cwe": "CWE-770",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "CWE-770",
+          "url": "https://cwe.mitre.org/data/definitions/770.html",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "function reserve(foo2) {\n  let foo1 = 1024;\n  if (foo2.query.capacity) { foo1 = Number(foo2.query.capacity); }\n  return Buffer.allocUnsafe(foo1);\n}\n",
+      "coverage": [
+        {
+          "rule": "node-security/no-unsafe-buffer-alloc",
+          "expect": "report",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "defect"
+    },
+    {
+      "id": "ILB-0139",
+      "added": "2026-08-30",
+      "title": "A log line named message reported as bytes off the wire",
+      "rationale": "WIRE_NAMES hardcoded ['chunk','chunks','buffer','buf','payload','frame','packet','raw','message','msg'] with no way for a consumer to disagree. A project whose `message` is a log line, or whose `raw` is a template string, was reported on the word alone and could do nothing about it — an additive option can grow the list but never remove the word we guessed wrong about. Fixed 2026-08-30 by making wireNames, requestRootNames and countNames REPLACE their defaults; `wireNames: []` turns the name arm off entirely.",
+      "cwe": "CWE-770",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "CWE-770",
+          "url": "https://cwe.mitre.org/data/definitions/770.html",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "function f(message) { return Buffer.alloc(message.length); }\n",
+      "coverage": [
+        {
+          "rule": "node-security/no-unsafe-buffer-alloc",
+          "expect": "silent",
+          "options": [
+            {
+              "wireNames": [
+                "chunk"
+              ]
+            }
+          ],
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "false-positive"
+    }
+  ]
+}

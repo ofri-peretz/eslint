@@ -15,7 +15,7 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-credentials-in-query-params', noCredentialsInQueryParams, {
   valid: [
     // Safe URLs without credentials
-    { code: "const url = 'https://api.example.com/data'" },
+    { name: 'a URL with no credential in it', code: "const url = 'https://api.example.com/data'" },
     { code: "const url = 'https://api.example.com?user=john'" },
     { code: "fetch('https://api.example.com/users')" },
     { code: 'const x = 1' },
@@ -45,6 +45,7 @@ ruleTester.run('no-credentials-in-query-params', noCredentialsInQueryParams, {
     // A template that really does put a credential in a query string still
     // reports — okta/okta-signin-widget RouterUtil.js:34 is exactly this.
     {
+      name: 'a token in the query string, where logs and Referer keep it',
       code: 'const u = `${baseUrl}/login/sessionCookieRedirect?check=true&token=${token}`',
       errors: [{ messageId: 'violationDetected' }],
     },

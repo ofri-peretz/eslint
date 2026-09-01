@@ -163,4 +163,5 @@ delete user[key];
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
+| `sensitiveProperties` | `string[]` | `["password","passwd","pwd","passphrase","secret","token","jwt","bearer","credential","api key","secret key","private key","signing key","encryption key","access key","session id","ssn","credit card","card number","cvv"]` | Replace the built-in sensitive-property vocabulary. Takes precedence over additionalSensitiveProperties. |
 | `additionalSensitiveProperties` | `string[]` | `[]` | Extra sensitive property names, matched as whole words at the END of the name. "pin code", "pin_code" and "pinCode" all match a property called pinCode; "pincode" does not. |

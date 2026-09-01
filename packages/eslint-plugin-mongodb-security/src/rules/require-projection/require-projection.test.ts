@@ -87,6 +87,7 @@ describe('require-projection', () => {
         },
         // Unrelated code should not trigger
         {
+          name: 'the driver is imported but nothing queries',
           code: `const x = 1;`,
         },
         // Array operations are safe
@@ -118,6 +119,7 @@ describe('require-projection', () => {
       invalid: xmo([
         // Triggers requireProjection: user input in query
         {
+          name: 'a find with no projection ships every field',
           code: `db.users.find({ username: req.body.username });`,
           errors: [{ messageId: 'requireProjection' }],
         },

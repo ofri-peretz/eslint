@@ -16,6 +16,7 @@ ruleTester.run('prefer-tree-shakeable-imports', preferTreeShakeableImports, {
   valid: [
     // ✅ Named imports (tree-shakeable)
     {
+      name: 'named imports',
       code: `import { debounce, throttle } from 'lodash';`,
     },
 
@@ -68,6 +69,7 @@ ruleTester.run('prefer-tree-shakeable-imports', preferTreeShakeableImports, {
   invalid: [
     // ❌ Namespace import from lodash
     {
+      name: 'a namespace import pulls the whole package into the bundle',
       code: `import * as _ from 'lodash';`,
       errors: [{ messageId: 'namespaceImport' }],
     },

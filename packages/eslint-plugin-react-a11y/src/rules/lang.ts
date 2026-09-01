@@ -7,7 +7,7 @@
 /**
  * ESLint Rule: lang
  * Enforce that lang attribute has a valid value
- * 
+ *
  * @see https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/lang.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
@@ -34,7 +34,8 @@ export const lang = createRule<RuleOptions, MessageIds>({
         description: 'lang attribute must have a valid ISO 639-1 language code',
         severity: 'HIGH',
         fix: 'Use a valid language code (e.g., "en", "es")',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/lang.md',
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/lang.md',
       }),
     },
     schema: [],
@@ -48,19 +49,23 @@ export const lang = createRule<RuleOptions, MessageIds>({
         }
 
         const value = node.value;
-        if (!value || value.type !== 'Literal' || typeof value.value !== 'string') {
-            return;
+        if (
+          !value ||
+          value.type !== 'Literal' ||
+          typeof value.value !== 'string'
+        ) {
+          return;
         }
 
         const langCode = value.value.split('-')[0].toLowerCase(); // Handle en-US
-        
+
         // Basic validation - check if 2 chars or in list
         // We can also just check format if list is too restrictive
         if (langCode.length !== 2 && langCode.length !== 3) {
-             context.report({
-                node,
-                messageId: 'invalidLang',
-            });
+          context.report({
+            node,
+            messageId: 'invalidLang',
+          });
         }
       },
     };

@@ -16,6 +16,7 @@ ruleTester.run('no-full-package-import', noFullPackageImport, {
   valid: [
     // ✅ Subpath import from lodash
     {
+      name: 'a deep import of the one function',
       code: `import debounce from 'lodash/debounce';`,
     },
 
@@ -78,6 +79,7 @@ ruleTester.run('no-full-package-import', noFullPackageImport, {
   invalid: [
     // ❌ Default import from lodash
     {
+      name: 'importing all of lodash to use one function',
       code: `import _ from 'lodash';`,
       errors: [{ messageId: 'fullPackageImport' }],
     },

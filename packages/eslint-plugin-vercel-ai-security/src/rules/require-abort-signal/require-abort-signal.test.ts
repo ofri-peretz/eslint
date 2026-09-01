@@ -64,6 +64,7 @@ ruleTester.run('require-abort-signal', requireAbortSignal, {
         'function noop() {}',
     // Has abortSignal
     {
+      name: 'an AbortController signal is passed',
       code: `
         const controller = new AbortController();
         await streamText({
@@ -106,6 +107,7 @@ ruleTester.run('require-abort-signal', requireAbortSignal, {
   invalid: xai([
     // streamText without abortSignal
     {
+      name: 'a stream with no abort signal cannot be cancelled',
       code: `
         await streamText({
           model: openai('gpt-4'),

@@ -46,6 +46,7 @@ describe('no-unsafe-search-path', () => {
       valid: pg([
         // Unrelated code should not trigger
         {
+          name: 'pg is imported but nothing queries',
           code: `const x = 1;`,
         },
         // Array operations are safe
@@ -75,6 +76,7 @@ describe('no-unsafe-search-path', () => {
       invalid: pg([
         // Triggers noUnsafeSearchPath
         {
+          name: 'a schema name interpolated into SET search_path',
           code: `client.query(\`SET search_path TO \${schema}\`)`,
           errors: [{ messageId: 'noUnsafeSearchPath' }],
         },

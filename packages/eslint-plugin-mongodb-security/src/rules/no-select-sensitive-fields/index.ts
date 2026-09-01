@@ -10,7 +10,7 @@
  * CWE-200: Information Exposure
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath, staticString } from '@interlace/eslint-devkit';
 import { analyzeMongoScope } from '../../utils/receiver';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
 
@@ -109,7 +109,7 @@ export const noSelectSensitiveFields = createRule<RuleOptions, MessageIds>({
         if (p.type !== AST_NODE_TYPES.Property) continue;
         const keyName =
           p.key.type === AST_NODE_TYPES.Identifier ? p.key.name :
-          p.key.type === AST_NODE_TYPES.Literal && typeof p.key.value === 'string' ? p.key.value :
+          staticString(p.key) !== null ? staticString(p.key) :
           null;
         if (!keyName) continue;
         if (fields.includes(keyName)) {
@@ -197,8 +197,9 @@ export const noSelectSensitiveFields = createRule<RuleOptions, MessageIds>({
             selectCall.arguments.length > 0
           ) {
             const arg = selectCall.arguments[0];
-            if (arg.type === AST_NODE_TYPES.Literal && typeof arg.value === 'string') {
-              const selectStr = arg.value;
+            const staticText = staticString(arg);
+            if (staticText !== null) {
+              const selectStr = staticText;
               // If field is in select without exclusion prefix, it's included
               for (const field of fields) {
                 if (selectStr.includes(field) && !selectStr.includes(`-${field}`)) {

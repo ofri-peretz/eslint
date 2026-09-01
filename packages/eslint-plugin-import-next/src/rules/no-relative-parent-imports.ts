@@ -9,7 +9,7 @@
  * Prevents ../ imports (eslint-plugin-import inspired)
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, staticString } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -122,8 +122,9 @@ export const noRelativeParentImports = createRule<RuleOptions, MessageIds>({
           node.arguments.length === 1
         ) {
           const arg = node.arguments[0];
-          if (arg.type === 'Literal' && typeof arg.value === 'string') {
-            checkImport(arg.value, arg);
+          const staticText = staticString(arg);
+          if (staticText !== null) {
+            checkImport(staticText, arg);
           }
         }
 

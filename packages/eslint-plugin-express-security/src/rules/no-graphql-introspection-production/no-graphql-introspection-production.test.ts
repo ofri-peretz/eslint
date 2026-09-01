@@ -70,6 +70,7 @@ ruleTester.run(
     valid: xp([
       // Introspection disabled
       {
+        name: 'introspection off',
         code: `
         const server = new ApolloServer({
           typeDefs,
@@ -131,6 +132,7 @@ ruleTester.run(
     invalid: xp([
       // Introspection explicitly enabled
       {
+        name: 'introspection left on publishes the whole schema',
         code: `
         const server = new ApolloServer({
           typeDefs,

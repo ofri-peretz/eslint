@@ -25,6 +25,7 @@ describe('require-max-age', () => {
     ruleTester.run('valid - with maxAge', requireMaxAge, {
       valid: [
         {
+          name: 'an explicit maxAge',
           code: `import jwt from 'jsonwebtoken';
 jwt.verify(token, secret, { maxAge: '1h' });`,
         },
@@ -60,6 +61,7 @@ jwtVerify(token, key, { maxAge: '24h' });`,
       valid: [],
       invalid: [
         {
+          name: 'verify with no maxAge trusts whatever expiry the token carries',
           code: `import jwt from 'jsonwebtoken';
 jwt.verify(token, secret);`,
           errors: [{ messageId: 'missingMaxAge' }],

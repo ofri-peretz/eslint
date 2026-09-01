@@ -32,11 +32,16 @@
  * @see https://modelcontextprotocol.io/docs/concepts/tools
  */
 
-import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  TSESTree,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  staticString,
+} from '@interlace/eslint-devkit';
 import { fileUsesMcpSdk } from '../../utils/mcp-evidence';
 
 type MessageIds = 'dynamicDescription';
-
 
 const REGISTER_TOOL = 'registerTool';
 const LEGACY_TOOL = 'tool';
@@ -83,11 +88,10 @@ export function modelFacingProperties(
     const key =
       prop.key.type === 'Identifier'
         ? prop.key.name
-        : prop.key.type === 'Literal' && typeof prop.key.value === 'string'
-          ? prop.key.value
-          : undefined;
+        : (staticString(prop.key) ?? undefined);
     if (key === undefined) continue;
-    if (!MODEL_FACING_KEYS.includes(key as (typeof MODEL_FACING_KEYS)[number])) continue;
+    if (!MODEL_FACING_KEYS.includes(key as (typeof MODEL_FACING_KEYS)[number]))
+      continue;
     if (isStaticText(prop.value)) continue;
     found.push({ key, value: prop.value });
   }
@@ -116,8 +120,9 @@ export const noToolDescriptionInjection = createRule<[], MessageIds>({
           'The `{{key}}` for tool "{{tool}}" is assembled at runtime, so it reaches the model as instruction text this file does not control',
         severity: 'HIGH',
         compliance: ['SOC2'],
-        fix: 'Write the {{key}} as a literal. If it genuinely varies, register a separate tool per variant rather than interpolating — the text lands in the model\'s instruction block, so whoever controls the value controls the instructions.',
-        documentationLink: 'https://modelcontextprotocol.io/docs/concepts/tools',
+        fix: "Write the {{key}} as a literal. If it genuinely varies, register a separate tool per variant rather than interpolating — the text lands in the model's instruction block, so whoever controls the value controls the instructions.",
+        documentationLink:
+          'https://modelcontextprotocol.io/docs/concepts/tools',
       }),
     },
     schema: [],
@@ -131,17 +136,23 @@ export const noToolDescriptionInjection = createRule<[], MessageIds>({
     // Judged at Program:exit so the rule does not depend on the import
     // appearing above the registrations — same shape as
     // require-tool-input-schema.
-    const candidates: Array<{ node: TSESTree.Node; tool: string; key: string }> = [];
+    const candidates: Array<{
+      node: TSESTree.Node;
+      tool: string;
+      key: string;
+    }> = [];
 
     function toolNameOf(node: TSESTree.CallExpression): string {
       const first = node.arguments[0];
-      if (first?.type === 'Literal' && typeof first.value === 'string') return first.value;
+      if (first?.type === 'Literal' && typeof first.value === 'string')
+        return first.value;
       return 'unknown';
     }
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
-        if (node.callee.type !== 'MemberExpression' || node.callee.computed) return;
+        if (node.callee.type !== 'MemberExpression' || node.callee.computed)
+          return;
         if (node.callee.property.type !== 'Identifier') return;
         const method = node.callee.property.name;
         if (method !== REGISTER_TOOL && method !== LEGACY_TOOL) return;
@@ -152,13 +163,21 @@ export const noToolDescriptionInjection = createRule<[], MessageIds>({
         if (config?.type !== 'ObjectExpression') return;
 
         for (const finding of modelFacingProperties(config)) {
-          candidates.push({ node: finding.value, tool: toolNameOf(node), key: finding.key });
+          candidates.push({
+            node: finding.value,
+            tool: toolNameOf(node),
+            key: finding.key,
+          });
         }
       },
 
       'Program:exit'() {
         for (const { node, tool, key } of candidates) {
-          context.report({ node, messageId: 'dynamicDescription', data: { tool, key } });
+          context.report({
+            node,
+            messageId: 'dynamicDescription',
+            data: { tool, key },
+          });
         }
       },
     };

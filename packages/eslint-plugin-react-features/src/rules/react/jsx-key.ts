@@ -12,7 +12,15 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
-type MessageIds = 'missingKey' | 'invalidKey' | 'duplicateKey' | 'unstableKey' | 'suggestKey';
+/**
+ * @vocabulary `Array.from`, `map` and `React.Children` are ECMAScript and
+ * React APIs. The rule matches the iteration helpers those specifications
+ * define, not names a consumer chose.
+ *
+ * @see https://react.dev/reference/react/Children
+ */
+type MessageIds =
+  'missingKey' | 'invalidKey' | 'duplicateKey' | 'unstableKey' | 'suggestKey';
 
 export interface Options {
   /** Warn about potentially unstable keys */
@@ -38,7 +46,8 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
         description: 'Missing key prop for element in iterator',
         severity: 'HIGH',
         fix: 'Add unique, stable key prop based on item data',
-        documentationLink: 'https://react.dev/learn/render-and-commit#lists-and-keys',
+        documentationLink:
+          'https://react.dev/learn/render-and-commit#lists-and-keys',
       }),
       invalidKey: formatLLMMessage({
         icon: MessageIcons.WARNING,
@@ -46,7 +55,8 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
         description: 'Key prop should be unique and stable',
         severity: 'MEDIUM',
         fix: 'Use item.id, item.key, or index as last resort',
-        documentationLink: 'https://react.dev/learn/render-and-commit#lists-and-keys',
+        documentationLink:
+          'https://react.dev/learn/render-and-commit#lists-and-keys',
       }),
       duplicateKey: formatLLMMessage({
         icon: MessageIcons.WARNING,
@@ -54,7 +64,8 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
         description: 'Duplicate key values can break reconciliation',
         severity: 'HIGH',
         fix: 'Ensure all keys in the array are unique',
-        documentationLink: 'https://react.dev/learn/render-and-commit#lists-and-keys',
+        documentationLink:
+          'https://react.dev/learn/render-and-commit#lists-and-keys',
       }),
       unstableKey: formatLLMMessage({
         icon: MessageIcons.WARNING,
@@ -62,7 +73,8 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
         description: 'Using index as key can cause reconciliation issues',
         severity: 'MEDIUM',
         fix: 'Use stable identifier from data instead of array index',
-        documentationLink: 'https://react.dev/learn/render-and-commit#lists-and-keys',
+        documentationLink:
+          'https://react.dev/learn/render-and-commit#lists-and-keys',
       }),
       suggestKey: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -70,7 +82,8 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
         description: 'Add unique key prop to element',
         severity: 'LOW',
         fix: 'key={item.id}',
-        documentationLink: 'https://react.dev/learn/render-and-commit#lists-and-keys',
+        documentationLink:
+          'https://react.dev/learn/render-and-commit#lists-and-keys',
       }),
     },
     schema: [
@@ -112,7 +125,9 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
      * - React.Children.map(), Children.map()
      * - [...items].map() (spread then map)
      */
-    function isIteratorCall(node: TSESTree.Node): node is TSESTree.CallExpression {
+    function isIteratorCall(
+      node: TSESTree.Node,
+    ): node is TSESTree.CallExpression {
       if (node.type !== 'CallExpression') {
         return false;
       }
@@ -159,10 +174,10 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
      */
     function isInsideArrayFromMapFn(node: TSESTree.Node): boolean {
       let current: TSESTree.Node | undefined = node;
-      
+
       while (current?.parent) {
         const parent: TSESTree.Node = current.parent;
-        
+
         // Found a function - check if it's Array.from's 2nd argument
         if (
           parent.type === 'ArrowFunctionExpression' ||
@@ -181,10 +196,10 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
             return true;
           }
         }
-        
+
         current = parent;
       }
-      
+
       return false;
     }
 
@@ -193,10 +208,10 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
      */
     function isInsideChildrenMap(node: TSESTree.Node): boolean {
       let current: TSESTree.Node | undefined = node;
-      
+
       while (current?.parent) {
         const parent: TSESTree.Node = current.parent;
-        
+
         if (
           parent.type === 'ArrowFunctionExpression' ||
           parent.type === 'FunctionExpression'
@@ -227,17 +242,17 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
             }
           }
         }
-        
+
         current = parent;
       }
-      
+
       return false;
     }
 
     /**
      * Check if a JSXElement is the DIRECT return value of an iterator callback.
      * Uses node.parent traversal for reliability.
-     * 
+     *
      * Handles:
      * - array.map(item => <div>)
      * - array.map(function(item) { return <div>; })
@@ -255,15 +270,15 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
       }
 
       let current: TSESTree.Node = node;
-      
+
       while (current.parent) {
         const parent: TSESTree.Node = current.parent;
-        
+
         // If we hit another JSXElement, this is a nested element - skip
         if (parent.type === 'JSXElement' || parent.type === 'JSXFragment') {
           return false;
         }
-        
+
         // Check: arrow function expression body -> item => <div>
         if (
           parent.type === 'ArrowFunctionExpression' &&
@@ -274,12 +289,9 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
             return true;
           }
         }
-        
+
         // Check: return statement -> return <div>
-        if (
-          parent.type === 'ReturnStatement' &&
-          parent.argument === current
-        ) {
+        if (parent.type === 'ReturnStatement' && parent.argument === current) {
           // Walk up to find the function, then check if it's a map callback
           let funcParent: TSESTree.Node | undefined = parent.parent;
           while (funcParent) {
@@ -299,16 +311,19 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
             break;
           }
         }
-        
+
         // Check: JSX expression container inside another map
         if (parent.type === 'JSXExpressionContainer') {
           // This could be {items.map(...)} inside JSX - check if current is the map result
-          if (current.type === 'JSXElement' && parent.parent?.type === 'JSXElement') {
+          if (
+            current.type === 'JSXElement' &&
+            parent.parent?.type === 'JSXElement'
+          ) {
             // We're inside a JSX expression, check if we came from a map callback
             return false;
           }
         }
-        
+
         // Continue walking up for: conditional expressions, parentheses, etc.
         if (
           parent.type === 'ConditionalExpression' ||
@@ -318,16 +333,16 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
           current = parent;
           continue;
         }
-        
+
         // If we hit CallExpression directly, check if it's the map callback
         if (parent.type === 'CallExpression') {
           // We might be the map callback's return value
           break;
         }
-        
+
         current = parent;
       }
-      
+
       return false;
     }
 
@@ -336,15 +351,15 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
      */
     function isDirectReturnFromFunction(node: TSESTree.JSXElement): boolean {
       let current: TSESTree.Node = node;
-      
+
       while (current.parent) {
         const parent: TSESTree.Node = current.parent;
-        
+
         // Nested in another JSXElement - not a direct return
         if (parent.type === 'JSXElement' || parent.type === 'JSXFragment') {
           return false;
         }
-        
+
         // Arrow function with expression body: item => <div>
         if (
           parent.type === 'ArrowFunctionExpression' &&
@@ -352,15 +367,12 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
         ) {
           return true;
         }
-        
+
         // Return statement: return <div>
-        if (
-          parent.type === 'ReturnStatement' &&
-          parent.argument === current
-        ) {
+        if (parent.type === 'ReturnStatement' && parent.argument === current) {
           return true;
         }
-        
+
         // Continue for conditionals/logical expressions
         if (
           parent.type === 'ConditionalExpression' ||
@@ -369,17 +381,17 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
           current = parent;
           continue;
         }
-        
+
         current = parent;
       }
-      
+
       return false;
     }
 
     /**
      * Extract the callback parameter name from an iterator call.
      * Returns the first parameter name (e.g., 'user' from users.map(user => ...))
-     * 
+     *
      * Handles:
      * - array.map(item => ...) -> 'item'
      * - Array.from(items, (item, index) => ...) -> 'item'
@@ -387,11 +399,11 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
      */
     function getIteratorCallbackParamName(node: TSESTree.JSXElement): string {
       let current: TSESTree.Node = node;
-      
+
       while (current.parent) {
         const parent: TSESTree.Node = current.parent;
         const grandParent: TSESTree.Node | undefined = parent.parent;
-        
+
         // Check arrow function expression - isIteratorCall already handles Array.from
         if (
           parent.type === 'ArrowFunctionExpression' &&
@@ -402,7 +414,7 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
         ) {
           return parent.params[0].name;
         }
-        
+
         // Check function expression - isIteratorCall already handles Array.from
         if (
           parent.type === 'FunctionExpression' &&
@@ -413,14 +425,14 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
         ) {
           return parent.params[0].name;
         }
-        
+
         // Check block statement -> return -> function
         if (parent.type === 'ReturnStatement') {
           let funcParent: TSESTree.Node | undefined = parent.parent;
           while (funcParent) {
             if (
               (funcParent.type === 'ArrowFunctionExpression' ||
-               funcParent.type === 'FunctionExpression') &&
+                funcParent.type === 'FunctionExpression') &&
               funcParent.params.length > 0 &&
               funcParent.params[0].type === 'Identifier'
             ) {
@@ -436,17 +448,17 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
             break;
           }
         }
-        
+
         current = parent;
       }
-      
+
       // Default fallback
       return 'item';
     }
 
     function checkJSXElementInIteration(node: TSESTree.JSXElement) {
       const isDirectReturn = isDirectIteratorReturn(node);
-      
+
       // Only check elements that are direct returns from iterators
       if (!isDirectReturn) {
         return;
@@ -454,15 +466,16 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
 
       // Check for key prop
       const keyProp = node.openingElement.attributes.find(
-        (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute) => attr.type === 'JSXAttribute' &&
-                attr.name.type === 'JSXIdentifier' &&
-                attr.name.name === 'key'
+        (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute) =>
+          attr.type === 'JSXAttribute' &&
+          attr.name.type === 'JSXIdentifier' &&
+          attr.name.name === 'key',
       );
 
       if (!keyProp) {
         // Get the actual callback parameter name for the fix
         const paramName = getIteratorCallbackParamName(node);
-        
+
         // Missing key - this is the primary issue
         context.report({
           node: node.openingElement,
@@ -473,7 +486,7 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
               fix(fixer: TSESLint.RuleFixer) {
                 return fixer.insertTextAfter(
                   node.openingElement.name,
-                  ` key={${paramName}.id}`
+                  ` key={${paramName}.id}`,
                 );
               },
             },

@@ -29,6 +29,7 @@ describe('no-unchecked-loop-condition', () => {
       valid: [
         // Safe for loops with clear bounds
         {
+          name: 'a counted loop',
           code: 'for (let i = 0; i < 10; i++) { console.log(i); }',
         },
         {
@@ -75,6 +76,7 @@ describe('no-unchecked-loop-condition', () => {
       valid: [],
       invalid: [
         {
+          name: 'a loop with no exit condition',
           code: 'for (;;) { console.log("infinite"); }',
           errors: [
             {

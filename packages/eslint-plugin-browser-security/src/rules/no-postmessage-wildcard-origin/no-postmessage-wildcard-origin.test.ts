@@ -21,6 +21,7 @@ ruleTester.run('no-postmessage-wildcard-origin', noPostmessageWildcardOrigin, {
   valid: [
     // Correct usage: specific origin
     {
+      name: 'an explicit target origin',
       code: `window.postMessage(data, 'https://example.com');`,
     },
     {
@@ -59,6 +60,7 @@ ruleTester.run('no-postmessage-wildcard-origin', noPostmessageWildcardOrigin, {
   invalid: [
     // Basic wildcard usage
     {
+      name: "postMessage to '*' — any listener receives it",
       code: `window.postMessage(data, '*');`,
       errors: [
         {

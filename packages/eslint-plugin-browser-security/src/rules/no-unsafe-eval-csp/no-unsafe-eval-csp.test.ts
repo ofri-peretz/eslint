@@ -20,7 +20,7 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-unsafe-eval-csp', noUnsafeEvalCsp, {
   valid: [
     // Safe CSP without unsafe-eval
-    { code: `const csp = "script-src 'self'";` },
+    { name: 'a policy without it', code: `const csp = "script-src 'self'";` },
     // With nonce
     { code: `const csp = "script-src 'self' 'nonce-abc123'";` },
     // No CSP content
@@ -31,6 +31,7 @@ ruleTester.run('no-unsafe-eval-csp', noUnsafeEvalCsp, {
   invalid: [
     // String literal with unsafe-eval
     {
+      name: "'unsafe-eval' in the policy",
       code: `const csp = "script-src 'unsafe-eval'";`,
       errors: [{ messageId: 'unsafeEval' }],
     },

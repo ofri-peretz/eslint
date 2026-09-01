@@ -50,7 +50,7 @@
  *     evidence of anything.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, isStaticExpression, resolveModuleBinding } from '@interlace/eslint-devkit';
+import { createRule, isStaticExpression, resolveModuleBinding, staticString } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
 
@@ -224,9 +224,7 @@ const DEFAULT_DANGEROUS_PARSER_OPTIONS = [
 const optionKey = (prop: TSESTree.ObjectLiteralElement): string | undefined => {
   if (prop.type !== AST_NODE_TYPES.Property || prop.computed) return undefined;
   if (prop.key.type === AST_NODE_TYPES.Identifier) return prop.key.name;
-  return prop.key.type === AST_NODE_TYPES.Literal && typeof prop.key.value === 'string'
-    ? prop.key.value
-    : undefined;
+  return staticString(prop.key) ?? undefined;
 };
 
 /**

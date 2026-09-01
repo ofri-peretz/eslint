@@ -51,6 +51,7 @@ ruleTester.run('no-hybrid-app-config-loss', noHybridAppConfigLoss, {
   valid: nest([
     // The fix, in the shape the NestJS docs publish.
     {
+      name: 'inheritAppConfig is set',
       code: `
         const app = await NestFactory.create(AppModule);
         app.connectMicroservice(kafkaOptions, { inheritAppConfig: true });
@@ -107,6 +108,7 @@ ruleTester.run('no-hybrid-app-config-loss', noHybridAppConfigLoss, {
   invalid: nest([
     // amplication/packages/amplication-server/src/main.ts:41 and four siblings.
     {
+      name: 'a microservice attached without inheritAppConfig loses the global pipes and guards',
       code: `app.connectMicroservice<MicroserviceOptions>(createNestjsKafkaConfig());`,
       errors: [{ messageId: 'configNotInherited' }],
     },

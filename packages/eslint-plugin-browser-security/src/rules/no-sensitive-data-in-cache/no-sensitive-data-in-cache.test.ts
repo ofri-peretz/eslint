@@ -20,7 +20,7 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-sensitive-data-in-cache', noSensitiveDataInCache, {
   valid: [
-    { code: `const x = 1;` },
+    { name: 'nothing is cached', code: `const x = 1;` },
 
     // --- PRE-EXISTING DEFECT, now fixed -------------------------------------
     // The rule checked NO sink. Any `.set`/`.put`/`.store` whose first argument
@@ -70,6 +70,7 @@ ruleTester.run('no-sensitive-data-in-cache', noSensitiveDataInCache, {
   invalid: [
     // The awaited-binding form.
     {
+      name: 'a response holding an SSN put in the Cache API',
       code: `const cache = await caches.open('v1'); await cache.put('/api/me/ssn', res);`,
       errors: [
         { messageId: 'sensitiveInCache', data: { resource: '/api/me/ssn' } },

@@ -23,7 +23,7 @@ const BEAM = '\u{1D173}';
 describe('no-bidi-characters', () => {
   ruleTester.run('no-bidi-characters', noBidiCharacters, {
     valid: [
-      { code: `const greeting = 'hello';` },
+      { name: 'plain text', code: `const greeting = 'hello';` },
       // Escape sequences are the safe way to express bidi text: visible in review.
       { code: `const rtl = '\\u202E';` },
       { code: `// a normal comment about right-to-left text` },
@@ -44,6 +44,7 @@ describe('no-bidi-characters', () => {
     invalid: [
       // The Trojan Source comment-hiding shape from the original paper.
       {
+        name: 'bidi overrides make the source read differently from what it does',
         code: `if (accessLevel != 'user${LRI} // Check if admin${PDI} ${LRI}') {\n  grantAdmin();\n}`,
         // Three controls: the two isolates that fence the fake comment, plus the reopen.
         errors: 3,

@@ -20,6 +20,7 @@ import { AST_NODE_TYPES, formatLLMMessage, MessageIcons,
   matchesAnyUserPattern,
   nameHasAnyWord,
   type PatternTest,
+  staticString,
 } from '@interlace/eslint-devkit';
 import { createRule, isTestFilePath } from '@interlace/eslint-devkit';
 
@@ -176,8 +177,9 @@ function assignedPropertyName(member: TSESTree.MemberExpression): string | null 
   if (!member.computed && member.property.type === AST_NODE_TYPES.Identifier) {
     return member.property.name;
   }
-  if (member.property.type === AST_NODE_TYPES.Literal && typeof member.property.value === 'string') {
-    return member.property.value;
+  const staticText = staticString(member.property);
+  if (staticText !== null) {
+    return staticText;
   }
   return null;
 }

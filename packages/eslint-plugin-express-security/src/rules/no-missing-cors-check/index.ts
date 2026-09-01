@@ -13,12 +13,15 @@
  * @see https://owasp.org/www-community/attacks/CORS_Misconfiguration
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  isTestFilePath,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { fileUsesExpress } from '../../utils/express-evidence';
 
-type MessageIds =
-  'missingCorsCheck' | 'useCorsMiddleware';
+type MessageIds = 'missingCorsCheck' | 'useCorsMiddleware';
 
 export interface Options {
   /** Allow missing CORS checks in test files. Default: false */

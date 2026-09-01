@@ -25,7 +25,7 @@ describe('prefer-event-target', () => {
     ruleTester.run('detect EventEmitter import', preferEventTarget, {
       valid: [
         // EventTarget is fine
-        { code: 'class MyEmitter extends EventTarget {}' },
+        { name: 'EventTarget is the platform-native emitter', code: 'class MyEmitter extends EventTarget {}' },
         // Allow when option is set
         {
           code: 'import { EventEmitter } from "events";',
@@ -37,6 +37,7 @@ describe('prefer-event-target', () => {
       invalid: [
         // Import from events module
         {
+          name: 'importing the Node-only EventEmitter',
           code: 'import { EventEmitter } from "events";',
           // No fix. This previously asserted the rewritten binding as CORRECT
           // output, which pinned the bug in place: `events` exports no

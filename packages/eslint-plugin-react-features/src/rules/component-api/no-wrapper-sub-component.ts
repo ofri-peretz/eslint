@@ -19,8 +19,19 @@
  *   still flagged; consumers should import the primitive directly.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+} from '@interlace/eslint-devkit';
 
+/**
+ * @vocabulary PascalCase is not a word list — it is React's own rule for
+ * distinguishing a component from a host element in JSX, and the compiler
+ * enforces it. A lowercase tag IS a DOM element.
+ *
+ * @see https://react.dev/learn/your-first-component#nesting-and-organizing-components
+ */
 type MessageIds = 'wrapperSubComponent';
 type RuleOptions = [];
 
@@ -64,17 +75,20 @@ export const noWrapperSubComponent = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/component-api/no-wrapper-sub-component.md',
-      description: 'Ban pure-passthrough wrapper sub-components — slot the primitive directly (R12)',
+      description:
+        'Ban pure-passthrough wrapper sub-components — slot the primitive directly (R12)',
     },
     schema: [],
     messages: {
       wrapperSubComponent: formatLLMMessage({
         icon: MessageIcons.WARNING,
         issueName: 'Passthrough wrapper component',
-        description: 'Component `{{name}}` is a pure passthrough wrapper — slot the primitive directly (R12)',
+        description:
+          'Component `{{name}}` is a pure passthrough wrapper — slot the primitive directly (R12)',
         severity: 'MEDIUM',
         fix: 'Delete the wrapper and let consumers import the primitive. If the wrapper must exist, give it structural behavior (a slot, a default prop, or composition logic).',
-        documentationLink: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/component-api/no-wrapper-sub-component.md',
+        documentationLink:
+          'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/component-api/no-wrapper-sub-component.md',
       }),
     },
   },

@@ -53,6 +53,7 @@ ruleTester.run('no-hardcoded-credentials-sdk', noHardcodedCredentialsSdk, {
   valid: lambda([
     // ========== VALID: Credential Provider Chain ==========
     {
+      name: "the provider chain resolves the role's credentials",
       code: `
         import { fromNodeProviderChain } from '@aws-sdk/credential-providers';
         const client = new S3Client({ credentials: fromNodeProviderChain() });
@@ -137,6 +138,7 @@ ruleTester.run('no-hardcoded-credentials-sdk', noHardcodedCredentialsSdk, {
   invalid: lambda([
     // ========== INVALID: Real AWS access key pattern ==========
     {
+      name: 'an access key pair written into the client construction',
       code: `
         const client = new S3Client({ 
           credentials: { 

@@ -63,6 +63,7 @@ describe('no-error-details-in-response', () => {
     valid: xp([
       // Benchmark corpus: CWE-209/safe/generic-error-response.js (FP-lock)
       {
+        name: 'a correlation id to the client, the error to the log',
         code: `
 // CWE-209: safe — generic client message, real error logged server-side
 // This must NOT be flagged
@@ -161,6 +162,7 @@ module.exports = app;
     invalid: xp([
       // Benchmark corpus: CWE-209/vulnerable/error-object-in-json.js
       {
+        name: 'the caught error serialised into the JSON response',
         code: `
 // CWE-209: stack-trace exposure — the caught error is serialised into JSON
 // This MUST be detected

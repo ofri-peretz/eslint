@@ -1,0 +1,450 @@
+# Case philosophy — how a rule's claims are written down
+
+Every rule in this repository makes claims about code: this is a defect, that
+is not. `benchmarks/RULE_CASES.md` is the register of those claims, and it is
+generated out of the RuleTester cases themselves — there is no second copy to
+keep in sync. Delete a case and it leaves the register.
+
+This file is the contract those cases have to meet. `BENCHMARK-CRITERIA.md`
+governs what we *measure*; `FALSE-POSITIVE-CATALOGUE.md` catalogues FP
+*classes*. This one governs the individual case: what it must assert, how it
+must be named, and what has to be true before it counts as protection.
+
+---
+
+## 1. The five kinds, and what each one asserts
+
+| kind | array | asserts |
+| :--- | :--- | :--- |
+| **TP** | `invalid` | a defect we intend to catch |
+| **TN** | `valid` | code we intend to leave alone |
+| **FP** | `valid` | a report we made **in the wild** and have since sealed |
+| **FN** | `invalid` | a defect we **missed in the wild** and have since sealed |
+| **GAP** | `valid` | a defect we still miss — documented, and deliberately not counted |
+
+TP and TN follow from the array, so they need no marker. FP, FN and GAP are
+claims about *history* that the array cannot carry, so they are marked with a
+prefix on the case `name`: `FP: …`, `FN: …`, `GAP: …`.
+
+**FP and FN are the same asset seen from two sides.** Both are a mistake we
+made against real third-party code, now held shut by a case that fails on the
+rule as it was. Both are protection. Their sum is the only number in the
+register earned outside our own imagination — every TP and TN is a position we
+asserted and then satisfied, which proves consistency, not correctness.
+
+### The marker must agree with its array
+
+`FN:` in `valid` claims a sealed miss that still passes silently. `GAP:` in
+`invalid` claims an open miss the rule already catches. Neither is a subtler
+position; both are typos. The extractor **refuses** them rather than
+reinterpreting, and `benchmarks/__tests__/sealed-vs-open-lock.test.ts` proves
+it still refuses.
+
+This rule exists because the register lost the distinction once. A seal is
+applied by *editing a case that already exists* — an `FN:` case moves from
+`valid` to `invalid` when the fix lands — and on the first two occasions that
+happened, the marker was deleted in the move. The record of the mistake
+vanished at the exact moment it became worth keeping, and the register read
+`FN 0` while eleven found-and-fixed misses sat in the suite unlabelled.
+
+---
+
+## 2. A case is not documented until its name says what it proves
+
+**The name states the claim. The code is the evidence, not the claim.**
+
+A name that restates its own code documents nothing — the code is already
+there, and a reader who needed the restatement could read it. What a reader
+cannot recover from the code is *why this case is in the file*: which
+distinction it defends, which neighbouring case it is different from.
+
+```ts
+// ✗ restates the code
+{ name: 'crypto.createHash("md5")', code: 'crypto.createHash("md5");' }
+
+// ✓ states the claim
+{ name: 'a weak digest chosen explicitly, with the driver imported', code: '…' }
+
+// ✗ says nothing
+{ code: 'const x = obj[key];' }
+
+// ✓ names the distinction it is defending
+{ name: 'a read cannot pollute — [[Get]] returns the prototype, it does not replace it', code: '…' }
+```
+
+An unnamed case still runs and still counts as a test. It does **not** count as
+documentation, and the gate reports it.
+
+### Say what is true, not what the rule does
+
+`'does not report'` is a restatement of the array. `'a config value compared
+with === is not a credential'` is a claim someone can disagree with — which is
+what makes it worth writing down.
+
+---
+
+## 3. FP and FN carry provenance, in two separate fields
+
+| tag | answers | example |
+| :--- | :--- | :--- |
+| `@source` | *where in the world does this code exist* | `@source excalidraw/excalidraw packages/element/binding.ts:119` |
+| `@found` | *how did we learn we were wrong* | `@found real-source scan` |
+
+**They must not be folded together.** `@source` counts toward "rules with a
+case drawn from real code" — the one metric that is not about our own
+imagination. A specification citation is real provenance, but it is not a line
+somebody shipped, and putting it in `@source` would inflate that number.
+
+`@found` is a **category**, not a sentence. The current taxonomy:
+
+`real-source scan` · `spelling probe` · `spec diff` · `grammar review` ·
+`rule review` · `ecosystem fact` · `head-to-head with <peer>`
+
+A count, a rationale or a date inside `@found` fragments the taxonomy into one
+bucket per number. Put those in the comment beside it.
+
+---
+
+## 4. A seal is not a seal until it fails on the unfixed rule
+
+This is the whole difference between a receipt and a test.
+
+Before an `FP:` or `FN:` marker goes on a case, run the case against the rule
+**as it was before the fix** and confirm the opposite verdict:
+
+```bash
+git show HEAD:packages/<pkg>/src/rules/<rule>/index.ts > /tmp/old-rule.ts
+# lint the sealed case with the old rule; an FN must be SILENT, an FP must REPORT
+```
+
+If the old rule already behaved correctly, the case is a TP or TN with a good
+comment — not a seal, and it must not be counted as one. Two of this branch's
+near-misses were exactly that: `<nav role="navigation">` and `this[k] = v` both
+looked like defects and were deliberate, correct behaviour.
+
+**A rule that declines on purpose and a rule that cannot see are different
+facts, and the register has to tell them apart.**
+
+---
+
+## 5. Three classified cases a side, counted on code
+
+A rule needs **three** things it must catch and **three** it must leave alone.
+
+One case proves the rule matches one string. Two is a pair, and can still be
+two spellings of one thought. Three forces a shape: the canonical form, a
+variation, and a near-miss that must stay quiet — and it is the smallest number
+at which deleting any single case leaves the position still legible.
+
+Counted on `code`, not on descriptions: a case the rule was actually shown is
+checkable against the rule; a description is not.
+
+**`GAP` satisfies neither side.** A rule cannot discharge its obligation to
+catch three things by documenting that it does not work.
+
+---
+
+## 6. When a fix widens a rule, seal the class — not every instance
+
+A change that corrects a whole class of blindness produces hundreds of
+newly-caught cases. Seal **one case per rule**, naming the class, and record
+the measured count in the comment beside it.
+
+1,113 near-identical `FN:` rows would bury the eight considered gaps we
+actually have, and the register's value is that a reader can see every real
+position at once. Bulk findings live in their own generated report
+(`benchmarks/SPELLING_MISSES.md`) until they are fixed; each fix then arrives as
+one seal with its receipt.
+
+**Corollary:** a bulk finding is *not* a `GAP`. A `GAP` is a considered
+position — we looked, and this is a limit we accept. A mechanical blind spot
+nobody has considered is a to-do, and filing it as an admission dilutes the
+admissions that were actually made.
+
+---
+
+## 7. What the gate enforces
+
+`npx tsx scripts/rule-case-ledger.ts --check`
+
+| check | ratchet |
+| :--- | :--- |
+| every rule has a described TP **and** a described TN/FP | shrink-only baseline |
+| every rule holds ≥3 classified cases a side | shrink-only baseline |
+| undescribed cases | **shrink-only** — a new case must be named |
+| a marker that contradicts its array | hard failure |
+| byte-identical duplicate cases | counted, ids disambiguated |
+
+Plus `benchmarks/__tests__/sealed-vs-open-lock.test.ts`, which requires every
+FP and FN to carry a description and a `@found`, refuses a `GAP` propping up a
+thin invalid side, and — the material one — writes a file that makes the
+contradictory-marker mistake, runs the extractor, and requires it to refuse.
+Re-reading the generated JSON would pass identically against an extractor that
+had stopped checking.
+
+---
+
+## 8. Where the debt is
+
+81% of cases carry no name. That is the register's largest gap and it is not
+closable by generating text: a name that restates its code is worse than
+silence, because it looks like documentation.
+
+The order of work is:
+
+1. **Stop the bleeding.** New cases must be named — this is the ratchet, and it
+   is the only part that is automatic.
+2. **FP, FN and GAP first.** They are 100% described today and must stay so.
+3. **Rules with no described case at all.** A rule nobody can read the position
+   of is worse than a rule with a thin one.
+4. **Everything else**, worst rules first, as their code is touched for other
+   reasons. A case is cheapest to name while you are already reading it.
+
+---
+
+## 9. The case registry — what we are accountable for
+
+Sections 1–8 govern a rule's own cases. They cannot answer *"is prototype
+pollution through a request-supplied key covered, and how do we know"*, because
+**a rule cannot be missing a case it never claimed.** Rule-first documentation
+can only ever report what the tests happen to say.
+
+`benchmarks/cases/registry.json` inverts the unit. The entry is a **case** —
+a thing that happens in real code, identified like a vulnerability record:
+
+| field | holds |
+| :--- | :--- |
+| `id` | `ILB-nnnn`, permanent, never reused |
+| `title` / `rationale` | what it is, and why it is or is not a defect |
+| `cwe` | the classification, or `null` when it is a must-stay-silent case |
+| `severity` | `cvss`, `vector`, and **`source`** — a score with no source renders with a `*` |
+| `coverage` | `{ rule, expect: report or silent, evidence }` — a CLAIM |
+| `occurrences` | where it has actually been seen; empty says "constructed, not observed" |
+| `code` | the case itself |
+| `coverage` | `{ rule, expect: report\|silent, evidence }` — a CLAIM |
+
+### Coverage is a claim; the script turns it into evidence
+
+`npx tsx scripts/case-registry.mts` runs each case's own code through each rule
+that claims it and checks the verdict. Every status in `CASE_REGISTRY.md` is
+computed on that run. A stored `covered: yes` is a spreadsheet, and it starts
+decaying the moment a rule changes.
+
+### Improving without regressing
+
+Two properties make this safe for many hands:
+
+- **Append-only.** Ids are permanent. A case that no longer applies is
+  `retired` with a reason and keeps its number, so anything citing it still
+  resolves.
+- **The verified SET is ratcheted, not its size.** A run that verifies a new
+  case while dropping an old one keeps the same total. The gate compares ids,
+  so it fails *by name*: `1 case(s) were verified before and are not now:
+  ILB-0004`. Improving one area cannot quietly undo another.
+
+### A registry entry must be able to fail
+
+This was nearly got wrong on the first seed. ILB-0004 was written as
+`const arr = []; arr[arr.length] = x`, and a locally-constructed array was
+already cleared by an older path — so the entry passed whether or not the fix
+it documented existed. It was rewritten to take `arr` as a **parameter**, which
+is the form that actually exercises the fix.
+
+**Before trusting a new entry, break the code it covers and watch the gate name
+it.** An entry that cannot fail is not evidence, and it is worse than no entry
+because it reports as protection.
+
+### An uncovered case is a feature of the register
+
+ILB-0010 — a key reached through a call the file cannot summarise — has no
+coverage and says so. That row is the point: in a rule-first view it is invisible,
+because no rule claimed it and no test is missing.
+
+---
+
+## 10. Measuring against a neighbour
+
+A case may name `peers` — a plugin installed here that answers the same
+question. The registry runs the case through their rule too, and reports what
+it did.
+
+**There is no `expect` on a peer.** We do not get to assert what somebody
+else's rule ought to do, only measure what it did.
+
+### `ahead` is not "they reported less"
+
+A `defect` should fire; a `decoy` and a `remedy` should not. A rule that
+reports everything would otherwise win every comparison while being useless —
+which is precisely the design of the most-installed rule in this space, and it
+is a deliberate choice on their part, not a bug. So the question asked of a
+peer is *did it get the case right*, and on a decoy, firing is the wrong
+answer.
+
+### Every peer needs a positive control
+
+`peers[].control` is code the peer's **own documentation** says it reports on.
+If the peer is silent on its own example, it is not functioning in this
+harness, and every comparison against it is `unscoreable` — never `behind`.
+
+This is not hypothetical. `eslint-plugin-import/no-named-as-default` is silent
+on its own doc example here, because it resolves the imported module off disk
+and the file does not exist. Before the control existed, every comparison
+against it read as a win. Two peer rules are excluded on this basis today, and
+the report says which and why rather than dropping them quietly — a peer that
+vanishes from a table looks like it was never compared.
+
+**A comparison without a control measures our configuration, not their rule.**
+
+### Absence is reported, not scored
+
+A peer that is not installed says so. "They miss it" and "we did not ask" are
+different claims, and a scoreboard that merges them is marketing.
+
+---
+
+## 11. The procedure, end to end
+
+This is the loop. It is written down because it was invented twice before
+anybody wrote it down, and both times the second invention found something the
+first had missed — which is a good argument for the method and a bad one for
+keeping it in someone's head.
+
+Everything below is data plus one runner. Nothing is a script written for one
+rule.
+
+### Step 1 — Point a NEW instrument at the rule
+
+Not a new pass of an old one. Each of these found real defects the others could
+not, in `detect-object-injection` alone:
+
+| instrument | what it can see |
+| :--- | :--- |
+| real-source scan | shapes that occur, weighted by how often |
+| spelling probe | a rule blind to one spelling of a construct |
+| spec / doc diff | a rule that disagrees with the standard it enforces |
+| head-to-head | a rule that disagrees with a neighbour, either way |
+| adversarial pass | what the author did not think of, written to fail |
+
+A pass that finds nothing is a result. A pass that finds the same thing again
+means the instrument, not the rule, is what is exhausted.
+
+### Step 2 — Write the battery as DATA
+
+`benchmarks/cases/batteries/<plugin>__<rule>.json`:
+
+```
+rule          the rule under test
+control       code it certainly reports on
+peers[]       { plugin, rule, control, contract?, contractForms? }
+cases[]       { id, kind: defect|decoy|remedy, label, code, why }
+knownLimits[] what we get wrong, stated
+discarded[]   what was thrown out and why
+```
+
+`kind` carries the whole judgement. A `defect` must fire; a `decoy` (looks like
+the rule and is not) and a `remedy` (the documented fix) must not.
+
+### Step 3 — Run the adversarial pass against YOURSELF
+
+Write cases designed to make our own rule fail, before running anything.
+
+This is the step that makes the number mean something, and it is the one that
+is easiest to skip because it is unpleasant. Six of the sixteen
+`detect-object-injection` defects came from this pass.
+
+**It also catches bad cases.** `o?.[k] = 1` read as a miss until it was run: it
+is invalid JavaScript. Anything the adversarial pass turns up gets executed
+before it is believed.
+
+### Step 4 — Control, then compare
+
+```bash
+npx tsx scripts/rule-head-to-head.mts <plugin>/<rule> --md
+```
+
+Ours and every peer must answer a positive control first. **A peer that fails
+its control is excluded and named, never scored as behind** — otherwise our
+configuration is reported as their defect, which is how
+`eslint-plugin-import/no-named-as-default` read as a win until this existed.
+
+Where a peer publishes a contract, `contractForms` measures the peer against
+its own documentation. That is the only fair way to judge a promise we did not
+write.
+
+### Step 5 — Fix what is ours, seal it, register it
+
+A disagreement is a question, not a score. When the answer is that we were
+wrong: fix it, seal it per §4 (**it must fail on the unfixed rule**), and add
+it to the registry.
+
+```bash
+npx tsx scripts/rule-head-to-head.mts <plugin>/<rule> --registry
+npx tsx scripts/case-registry.mts --update
+```
+
+### Step 6 — The ratchet holds it
+
+`npx tsx scripts/case-registry.mts --check` re-executes every claim and fails
+by name if a case that was verified no longer is. It runs in `lefthook.yml`
+against rule source and the registry.
+
+### The invariant
+
+**Every number is produced by the run that prints it.** Nothing is stored,
+nothing is quoted from memory, and a run that could not be performed reports as
+unscoreable rather than as a zero.
+
+---
+
+## 12. Scale: refuse the next one, do not remediate the last thousand
+
+The register grows with the rule count, and the rule count is going to roughly
+double. Anything in this file that costs O(rules) of hand work is a plan that
+fails at 700.
+
+So the default for a defect CLASS is a **ratchet**, not a campaign.
+
+### The measurement that forced this
+
+3,825 meaning-preserving rewrites of known true positives produced **1,113
+cases where a rule reported the original and went silent on the rewrite**,
+across 159 of 470 rules. One cause, repeated: reading one spelling of a
+construct the grammar spells two ways.
+
+Two responses were available.
+
+**Remediate.** Fix 1,113 sites. Linear in rules, and every fix is a chance to
+break a working rule — wave one cost five distinct breakages, three caught only
+by the coverage gates. At 700 rules this is not a plan.
+
+**Refuse.** Baseline every existing site, fail the build on a new one, and put
+the four devkit primitives in the authoring guide. Constant work, and the debt
+stops growing the day it lands.
+
+`scripts/audit-rule-spellings.ts` is the second. It reports 1,022 sites, and a
+new one fails with the file, the line, what it misses, and the call that
+replaces it.
+
+### What makes a ratchet honest
+
+- **It must fail on a new violation.** Verified by writing a rule the blind way
+  and watching the gate name it, then deleting it and watching the gate pass.
+  A gate nobody has seen fail is a gate nobody has tested.
+- **The baseline is a debt register, not an amnesty.** 1,022 sites are recorded
+  by content, not line number, so moving code does not launder them.
+- **An escape hatch that costs a sentence.** A rule that genuinely means "a
+  quoted literal and nothing else" says so in a comment and runs `--update`.
+  The cost is deliberate: it is cheap to justify and impossible to do by
+  accident.
+
+### The order of operations at scale
+
+1. **Measure the class**, once, with an instrument (§11 step 1).
+2. **Ratchet it**, so it stops growing.
+3. **Make the right way the easy way** — a devkit primitive, and a line in the
+   authoring guide that says which call replaces which mistake.
+4. **Remediate opportunistically**, as rules are touched for other reasons. A
+   site is cheapest to fix while you are already reading it.
+
+Step 4 is last on purpose. It is the only step that does not scale, and it is
+the only one that is optional.

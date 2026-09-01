@@ -106,6 +106,7 @@ app.post('/articles', createArticle);
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
+| `appReceiverNames` | `string[]` | `["app","server","router","express","api","apiRouter","routes"]` | Identifiers that hold the Express app or a router. Replaces the default. |
 | `allowInTests` | `boolean` | `false` | Skip this rule in `*.test.*` / `*.spec.*` files |
 | `alternativeMiddleware` | `string[]` | `[]` | Extra middleware names that count as rate limiting |
 | `assumeRateLimiting` | `boolean` | `false` | Skip if rate limiting is provided by infrastructure (API Gateway, nginx, etc.) |

@@ -15,7 +15,7 @@ describe('prefer-template-literal', () => {
   ruleTester.run('prefer-template-literal', preferTemplateLiteral, {
     valid: [
       // Template literals already used
-      { code: 'const s = `Hello ${name}`;' },
+      { name: 'a template literal already', code: 'const s = `Hello ${name}`;' },
       { code: 'const url = `https://example.com/${path}`;' },
       // Pure string literal concat (no runtime value — fine as-is)
       { code: 'const s = "a" + "b";' },
@@ -26,6 +26,7 @@ describe('prefer-template-literal', () => {
     ],
     invalid: [
       {
+        name: 'string concatenation where a template reads better',
         code: 'const s = "Hello " + name;',
         errors: [{ messageId: 'preferTemplateLiteral' }],
         output: 'const s = `Hello ${name}`;',

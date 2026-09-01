@@ -25,6 +25,7 @@ describe('require-data-slot', () => {
     valid: [
       // Both data-testid and data-slot present
       {
+        name: 'both present',
         code: `<div data-testid="card" data-slot="card" />`,
       },
       // No data-testid → rule doesn't apply
@@ -37,8 +38,14 @@ describe('require-data-slot', () => {
       },
     ],
     invalid: [
+      {
+        name: 'a test id on a nested element with no slot beside it',
+        code: 'const El = () => <section data-testid="card-footer"><span /></section>;',
+        errors: 1,
+      },
       // data-testid without data-slot
       {
+        name: 'a test id with no matching data-slot',
         code: `<div data-testid="card-header" className="x" />`,
         errors: [{ messageId: 'missingDataSlot' }],
       },

@@ -20,6 +20,7 @@ const ruleTester = new RuleTester({
 ruleTester.run('no-filereader-innerhtml', noFilereaderInnerhtml, {
   valid: [
     {
+      name: 'a different property of the event, not the file bytes',
       // `result` on some other object is not FileReader content.
       code: `
         const reader = new FileReader();
@@ -75,6 +76,7 @@ ruleTester.run('no-filereader-innerhtml', noFilereaderInnerhtml, {
   ],
   invalid: [
     {
+      name: 'file contents written to innerHTML',
       // `result` read straight off the event object, no `.target` hop.
       code: `
         const reader = new FileReader();

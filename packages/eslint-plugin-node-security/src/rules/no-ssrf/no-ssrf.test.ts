@@ -16,7 +16,6 @@ const ruleTester = new RuleTester({
   languageOptions: { parser, ecmaVersion: 2022, sourceType: 'module' },
 });
 
-
 /**
  * The pre-inversion contract: a URL argument reports because its identifier is
  * NAMED like user input (`url`, `endpoint`, `targetUrl`).
@@ -33,9 +32,16 @@ describe('no-ssrf', () => {
     ruleTester.run('valid - safe requests', noSsrf, {
       valid: [
         // Literal URLs — always safe
-        { code: 'fetch("https://api.example.com/data");' },
-        { code: 'axios.get("https://api.stripe.com/charges");' },
-        { code: 'needle.get("https://api.example.com/data");' },
+        {
+          name: 'a fixed host',
+          code: 'fetch("https://api.example.com/data");',
+        },
+        {
+          code: 'import axios from "axios";\naxios.get("https://api.stripe.com/charges");',
+        },
+        {
+          code: 'import needle from "needle";\nneedle.get("https://api.example.com/data");',
+        },
         // Template literal without expressions — safe
         { code: 'fetch(`https://api.example.com/data`);' },
         // Non-HTTP calls — not relevant
@@ -60,30 +66,31 @@ describe('no-ssrf', () => {
       invalid: [
         // fetch with user-controlled URL
         {
+          name: 'a fetch to a URL the caller controls',
           code: 'fetch(userUrl);',
           options: NAME_ONLY,
           errors: [{ messageId: 'ssrfVulnerability' }],
         },
         // axios.get with user-controlled endpoint
         {
-          code: 'axios.get(endpoint);',
+          code: 'import axios from "axios";\naxios.get(endpoint);',
           options: NAME_ONLY,
           errors: [{ messageId: 'ssrfVulnerability' }],
         },
         // needle.get with user-controlled endpoint
         {
-          code: 'needle.get(req.query.url);',
+          code: 'import needle from "needle";\nneedle.get(req.query.url);',
           errors: [{ messageId: 'ssrfVulnerability' }],
         },
         // axios.post
         {
-          code: 'axios.post(targetUrl, data);',
+          code: 'import axios from "axios";\naxios.post(targetUrl, data);',
           options: NAME_ONLY,
           errors: [{ messageId: 'ssrfVulnerability' }],
         },
         // http.request
         {
-          code: 'http.request(userUrl);',
+          code: 'import http from "node:http";\nhttp.request(userUrl);',
           options: NAME_ONLY,
           errors: [{ messageId: 'ssrfVulnerability' }],
         },
@@ -138,7 +145,8 @@ describe('no-ssrf', () => {
         },
         // vuln_ssrf_axios — axios.get with unvalidated endpoint
         {
-          code: `
+          code: `import axios from "axios";
+
             async function vuln_ssrf_axios(endpoint) {
               return axios.get(endpoint);
             }
@@ -161,7 +169,8 @@ describe('no-ssrf', () => {
       valid: [
         // Verbatim from benchmarks/corpus/CWE-444/safe/request-default-parser.js
         {
-          code: `
+          code: `import https from "node:https";
+
             const https = require('https');
 
             function fetchProfile(host, path, cb) {
@@ -178,16 +187,22 @@ describe('no-ssrf', () => {
           `,
         },
         // Same shape, no callback — the options object alone is not a URL
-        { code: "http.request({ hostname: host, port, path });" },
+        {
+          code: 'import http from "node:http";\nhttp.request({ hostname: host, port, path });',
+        },
         // Interpolated path built from locals — no user-input-named identifier
-        { code: 'function load(id) { return fetch(`https://api.internal/items/${id}`); }' },
+        {
+          code: 'function load(id) { return fetch(`https://api.internal/items/${id}`); }',
+        },
         // Object literal in a non-URL key holding a local
-        { code: 'axios.request({ method: "GET", headers: authHeaders });' },
+        {
+          code: 'import axios from "axios";\naxios.request({ method: "GET", headers: authHeaders });',
+        },
       ],
       invalid: [
         // Still caught: the options object carries a request-sourced URL
         {
-          code: "https.request({ host: req.query.host, path: '/' });",
+          code: 'import https from "node:https";\nhttps.request({ host: req.query.host, path: "/" });',
           errors: [{ messageId: 'ssrfVulnerability' }],
         },
         // Still caught: a url-naming key holding a user-input-named identifier
@@ -221,7 +236,7 @@ describe('no-ssrf', () => {
         },
         // Still caught: new URL(...) wrapping user input
         {
-          code: 'axios.get(new URL(targetUrl, base));',
+          code: 'import axios from "axios";\naxios.get(new URL(targetUrl, base));',
           options: NAME_ONLY,
           errors: [{ messageId: 'ssrfVulnerability' }],
         },
@@ -303,9 +318,7 @@ describe('no-ssrf', () => {
  *   git stash && npx vitest run <this file>   # expect a failure
  */
 ruleTester.run('no-ssrf-ts-cast-taint', noSsrf, {
-  valid: [
-    `const r = await fetch('https://api.example.com/health' as string);`,
-  ],
+  valid: [`const r = await fetch('https://api.example.com/health' as string);`],
   invalid: [
     {
       code: `app.get('/proxy', async (req, res) => { const r = await fetch(req.query.url as string); res.send(await r.text()); });`,

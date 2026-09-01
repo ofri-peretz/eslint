@@ -26,7 +26,7 @@ describe('no-cryptojs-weak-random', () => {
         'const x = 42;',
         'const flag = true;',
         'function noop() {}',
-      { code: 'crypto.randomBytes(32);' },
+      { name: 'crypto.randomBytes', code: 'crypto.randomBytes(32);' },
       { code: 'crypto.getRandomValues(new Uint8Array(32));' },
       { code: 'SomeLib.random();' },
     ],
@@ -34,6 +34,7 @@ describe('no-cryptojs-weak-random', () => {
       // The script-tag case: `CryptoJS` is an undeclared global and the full
       // three-segment API path is the evidence.
       {
+        name: 'CryptoJS.lib.WordArray.random is not a CSPRNG',
         code: 'CryptoJS.lib.WordArray.random(16);',
         errors: [{ messageId: 'weakRandom' }],
       },

@@ -29,6 +29,7 @@ describe('no-weak-secret', () => {
       valid: [
         // Environment variable
         {
+          name: 'the secret comes from the environment, length unknown here',
           code: `import jwt from 'jsonwebtoken';
 jwt.sign(payload, process.env.JWT_SECRET);`,
         },
@@ -68,6 +69,7 @@ jwt.verify(token, process.env.JWT_SECRET);`,
       invalid: [
         // Known weak pattern: "secret"
         {
+          name: 'a six-character secret is inside brute-force range',
           code: `import jwt from 'jsonwebtoken';
 jwt.sign(payload, 'secret');`,
           errors: [{ messageId: 'weakSecret' }],

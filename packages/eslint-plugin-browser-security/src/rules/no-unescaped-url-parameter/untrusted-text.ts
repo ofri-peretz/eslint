@@ -41,7 +41,7 @@
  * makes `encodeURIComponent(q)` untainted without a special case for it.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, resolveModuleBinding } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, resolveModuleBinding, staticString } from '@interlace/eslint-devkit';
 import {
   isAttackerSteerableUrl,
   resolveBoundInitializer,
@@ -399,7 +399,7 @@ function isArithmetic(node: TSESTree.BinaryExpression): boolean {
   const isNumericLiteral = (n: TSESTree.Node): boolean =>
     n.type === AST_NODE_TYPES.Literal && typeof n.value === 'number';
   const isTextual = (n: TSESTree.Node): boolean =>
-    (n.type === AST_NODE_TYPES.Literal && typeof n.value === 'string') ||
+    (staticString(n) !== null) ||
     n.type === AST_NODE_TYPES.TemplateLiteral;
   const left = node.left as TSESTree.Node;
   return (

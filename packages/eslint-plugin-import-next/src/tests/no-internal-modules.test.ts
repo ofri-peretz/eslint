@@ -26,6 +26,7 @@ describe('no-internal-modules', () => {
     ruleTester.run('detect deep imports', noInternalModules, {
       valid: [
         {
+          name: 'the package entry',
           code: "import lodash from 'lodash';",
         },
         {
@@ -41,6 +42,7 @@ describe('no-internal-modules', () => {
       ],
       invalid: [
         {
+          name: "a deep import past the package's entry point",
           code: "import get from 'lodash/get';",
           options: [{ maxDepth: 0 }],
           errors: [{ messageId: 'internalModuleImport' }],

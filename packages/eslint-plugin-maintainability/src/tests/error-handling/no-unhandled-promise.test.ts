@@ -26,14 +26,11 @@ describe('no-unhandled-promise', () => {
       valid: [
         // Promise with .catch()
         {
+          name: 'the chain ends in .catch',
           code: 'fetch(url).then(r => r.json()).catch(e => console.error(e));',
         },
         {
           code: 'promise.catch(error => handleError(error));',
-        },
-        // Promise with .then()
-        {
-          code: 'promise.then(result => console.log(result));',
         },
         // Await in async function
         {
@@ -68,19 +65,37 @@ describe('no-unhandled-promise', () => {
       valid: [],
       invalid: [
         {
+          name: 'a floating fetch — rejection goes nowhere',
           code: 'fetch(url);',
           errors: [{ messageId: 'unhandledPromise' }],
         },
         {
+          // `axios` is not in the default `promiseReturning` list and cannot be
+          // resolved from the file, so the consumer names it. A rule that
+          // decides from a name has to let the consumer own the name.
+          name: 'a configured promise-returning receiver',
           code: 'axios.get(url);',
+          options: [{ promiseReturning: ['fetch', 'axios'] }],
           errors: [{ messageId: 'unhandledPromise' }],
         },
         {
-          code: 'myAsyncFunction();',
+          // The declaration is the evidence. Without it this case asserted only
+          // that the rule reported every call, which it did — 35 times per file
+          // on real code.
+          name: 'a locally declared async function, called and forgotten',
+          code: 'async function myAsyncFunction() {}\nmyAsyncFunction();',
           errors: [{ messageId: 'unhandledPromise' }],
         },
         {
           code: 'promise.then(result => {});', // .then() without .catch() might still be unhandled
+          errors: [{ messageId: 'unhandledPromise' }],
+        },
+        {
+          // Was asserted VALID until 2026-08. `.then` used to terminate the
+          // chain before the handled-check could look for a `.catch`, so the
+          // rule passed the shape it exists to catch.
+          name: 'a then chain with no catch',
+          code: 'promise.then(result => console.log(result));',
           errors: [{ messageId: 'unhandledPromise' }],
         },
       ],

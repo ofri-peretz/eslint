@@ -32,7 +32,8 @@ const mockPackageJson = {
 ruleTester.run('no-extraneous-dependencies', noExtraneousDependencies, {
   valid: [
     // Regular dependencies
-    { 
+    {
+      name: 'a declared dependency', 
       code: `import React from 'react';`,
       options: [{ packageJson: mockPackageJson }]
     },
@@ -120,6 +121,7 @@ ruleTester.run('no-extraneous-dependencies', noExtraneousDependencies, {
   invalid: [
     // Missing dependency
     {
+      name: 'an import of a package that is not in package.json',
       code: `import axios from 'axios';`,
       options: [{ packageJson: mockPackageJson }],
       errors: [{ 

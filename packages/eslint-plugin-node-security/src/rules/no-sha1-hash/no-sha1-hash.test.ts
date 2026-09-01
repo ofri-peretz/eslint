@@ -19,7 +19,7 @@ const ruleTester = new RuleTester({
 describe('no-sha1-hash', () => {
   ruleTester.run('no-sha1-hash', noSha1Hash, {
     valid: [
-      { code: 'import { sha256 } from "crypto-hash"; sha256(data);' },
+      { name: 'SHA-256', code: 'import { sha256 } from "crypto-hash"; sha256(data);' },
       { code: 'import { sha512 } from "crypto-hash"; sha512(data);' },
       { code: 'import crypto from "crypto"; crypto.createHash("sha256");' },
       { code: 'import { sha1 } from "some-other-package"; sha1(data);' },
@@ -28,6 +28,7 @@ describe('no-sha1-hash', () => {
     ],
     invalid: [
       {
+        name: 'SHA-1, which has practical collisions',
         code: 'import { sha1 } from "crypto-hash";',
         errors: [{ messageId: 'sha1Deprecated', suggestions: [
           { messageId: 'useSha256', output: 'import { sha256 } from "crypto-hash";' },

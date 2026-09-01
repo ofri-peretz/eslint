@@ -25,6 +25,7 @@ describe('no-sensitive-payload', () => {
       valid: [
         // Standard JWT claims
         {
+          name: 'a subject and a role',
           code: `import jwt from 'jsonwebtoken';
 jwt.sign({ sub: 'user123', role: 'admin' }, secret);`,
         },
@@ -79,6 +80,7 @@ jwt.sign({ phoneVerified: true }, secret);`,
       valid: [],
       invalid: [
         {
+          name: 'a password inside a token anyone can base64-decode',
           code: `import jwt from 'jsonwebtoken';
 jwt.sign({ password: 'secret123' }, secret);`,
           errors: [{ messageId: 'sensitivePayloadField' }],

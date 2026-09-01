@@ -32,6 +32,7 @@ describe('prefer-tag-over-role', () => {
       valid: [
         // Semantic elements without roles (preferred)
         {
+          name: 'the header element',
           code: '<header>Header content</header>',
         },
         {
@@ -114,6 +115,7 @@ describe('prefer-tag-over-role', () => {
       invalid: [
         // banner -> header
         {
+          name: "role='banner' where a header element says the same thing",
           code: '<div role="banner">Header content</div>',
           errors: [
             {

@@ -46,6 +46,7 @@ describe('prevent-double-release', () => {
       valid: pg([
         // Unrelated code should not trigger
         {
+          name: 'pg is imported but nothing queries',
           code: `const x = 1;`,
         },
         // Array operations are safe
@@ -75,6 +76,7 @@ describe('prevent-double-release', () => {
       invalid: pg([
         // Triggers doubleRelease
         {
+          name: 'release on both the success and the catch path',
           code: `async function test() { const client = await pool.connect(); try { await client.query('SELECT 1'); client.release(); } catch(e) { client.release(); } }`,
           errors: [{ messageId: 'doubleRelease' }],
         },

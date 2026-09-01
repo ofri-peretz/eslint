@@ -28,7 +28,7 @@ const jsxTester = new RuleTester({
 ruleTester.run('no-unsafe-inline-csp', noUnsafeInlineCsp, {
   valid: [
     // Safe CSP with nonce
-    { code: `const csp = "script-src 'self' 'nonce-abc123'";` },
+    { name: 'a nonce instead', code: `const csp = "script-src 'self' 'nonce-abc123'";` },
     // Safe CSP with hash
     { code: `const csp = "script-src 'self' 'sha256-xxx'";` },
     // No CSP content
@@ -39,6 +39,7 @@ ruleTester.run('no-unsafe-inline-csp', noUnsafeInlineCsp, {
   invalid: [
     // String literal with unsafe-inline
     {
+      name: "'unsafe-inline' in the policy",
       code: `const csp = "script-src 'unsafe-inline'";`,
       errors: [{ messageId: 'unsafeInline' }],
     },

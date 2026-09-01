@@ -7,7 +7,7 @@
 /**
  * ESLint Rule: no-static-element-interactions
  * Enforce that static elements don't have interactive handlers
- * 
+ *
  * @see https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/no-static-element-interactions.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
@@ -23,11 +23,30 @@ type Options = {
 type RuleOptions = [Options?];
 
 const STATIC_ELEMENTS = new Set([
-    'div', 'span', 'p', 'section', 'article', 'header', 'footer', 'main', 'aside', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'
+  'div',
+  'span',
+  'p',
+  'section',
+  'article',
+  'header',
+  'footer',
+  'main',
+  'aside',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
 ]);
 
 const INTERACTIVE_HANDLERS = [
-    'onClick', 'onMouseDown', 'onMouseUp', 'onKeyPress', 'onKeyDown', 'onKeyUp'
+  'onClick',
+  'onMouseDown',
+  'onMouseUp',
+  'onKeyPress',
+  'onKeyDown',
+  'onKeyUp',
 ];
 
 export const noStaticElementInteractions = createRule<RuleOptions, MessageIds>({
@@ -36,7 +55,8 @@ export const noStaticElementInteractions = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/no-static-element-interactions.md',
-      description: 'Enforce that static elements don\'t have interactive handlers',
+      description:
+        "Enforce that static elements don't have interactive handlers",
       wcag: 'WCAG 2.1.1',
     },
     messages: {
@@ -46,21 +66,25 @@ export const noStaticElementInteractions = createRule<RuleOptions, MessageIds>({
         description: 'Avoid non-interactive elements with interactive handlers',
         severity: 'MEDIUM',
         fix: 'Add role="button" and tabIndex="0", or use a <button>',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/no-static-element-interactions.md',
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/no-static-element-interactions.md',
       }),
     },
     schema: [
-        {
-            type: 'object',
-            properties: {
-                handlers: { type: 'array', items: { type: 'string' } }
-            },
-            additionalProperties: false
-        }
+      {
+        type: 'object',
+        properties: {
+          handlers: { type: 'array', items: { type: 'string' } },
+        },
+        additionalProperties: false,
+      },
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
+  create(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    [options = {} as Options],
+  ) {
     const { handlers = INTERACTIVE_HANDLERS } = options ?? {};
 
     return {
@@ -69,34 +93,55 @@ export const noStaticElementInteractions = createRule<RuleOptions, MessageIds>({
         if (!STATIC_ELEMENTS.has(node.name.name)) return;
 
         const hasInteractiveHandler = node.attributes.some(
-          (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
-            attr.type === 'JSXAttribute' && 
-            attr.name.type === 'JSXIdentifier' && 
-            handlers.includes(attr.name.name)
+          (
+            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+          ): attr is TSESTree.JSXAttribute =>
+            attr.type === 'JSXAttribute' &&
+            attr.name.type === 'JSXIdentifier' &&
+            handlers.includes(attr.name.name),
         );
 
         if (!hasInteractiveHandler) return;
 
         // Check if it has a role that makes it interactive
         const roleAttr = node.attributes.find(
-          (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
-             attr.type === 'JSXAttribute' &&
-             attr.name.type === 'JSXIdentifier' &&
-             attr.name.name === 'role'
+          (
+            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+          ): attr is TSESTree.JSXAttribute =>
+            attr.type === 'JSXAttribute' &&
+            attr.name.type === 'JSXIdentifier' &&
+            attr.name.name === 'role',
         );
 
         // presentation/none roles don't make an element interactive
-        const roleValue = roleAttr?.value?.type === 'Literal' ? String(roleAttr.value.value) : null;
-        const NON_INTERACTIVE_ROLES = new Set(['presentation', 'none', 'separator', 'img', 'figure', 'group', 'definition', 'note', 'status', 'log', 'marquee', 'alert', 'feed', 'tooltip']);
+        const roleValue =
+          roleAttr?.value?.type === 'Literal'
+            ? String(roleAttr.value.value)
+            : null;
+        const NON_INTERACTIVE_ROLES = new Set([
+          'presentation',
+          'none',
+          'separator',
+          'img',
+          'figure',
+          'group',
+          'definition',
+          'note',
+          'status',
+          'log',
+          'marquee',
+          'alert',
+          'feed',
+          'tooltip',
+        ]);
         if (roleValue && !NON_INTERACTIVE_ROLES.has(roleValue)) return; // has a real interactive role — OK
 
         // No role, or only a non-interactive role — report
         context.report({
-             node,
-             messageId: 'noStaticInteraction',
+          node,
+          messageId: 'noStaticInteraction',
         });
       },
     };
   },
 });
-

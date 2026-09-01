@@ -63,6 +63,7 @@ describe('no-idor-resource-access', () => {
     valid: xp([
       // THE safe pattern — the query is scoped to the principal
       {
+        name: 'the query is scoped to the caller',
         code: `
           app.get('/invoices/:id', (req, res) =>
             Invoice.findOne({ _id: req.params.id, owner: req.user.id }).then((doc) => res.json(doc)),
@@ -137,6 +138,7 @@ describe('no-idor-resource-access', () => {
     invalid: xp([
       // The textbook IDOR
       {
+        name: 'findById on a path parameter with no ownership predicate',
         code: `app.get('/invoices/:id', (req, res) => Invoice.findById(req.params.id).then((doc) => res.json(doc)));`,
         errors: [{ messageId: 'unscopedResourceLookup' as const }],
       },

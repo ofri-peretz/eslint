@@ -26,7 +26,7 @@ describe('jsx-no-target-blank', () => {
   ruleTester.run('jsx-no-target-blank', jsxNoTargetBlank, {
     valid: [
       // No target="_blank"
-      '<a href="https://example.com">Link</a>',
+      { name: 'no target=_blank to protect', code: '<a href="https://example.com">Link</a>' },
       // With rel="noopener"
       '<a href="https://example.com" target="_blank" rel="noopener">Link</a>',
       // With rel="noreferrer"
@@ -43,6 +43,7 @@ describe('jsx-no-target-blank', () => {
     ],
     invalid: [
       {
+        name: 'target=_blank with no rel — the opened page gets window.opener',
         code: '<a href="https://example.com" target="_blank">Link</a>',
         output: '<a href="https://example.com" target="_blank" rel="noopener noreferrer">Link</a>',
         errors: [{ messageId: 'noTargetBlank' }],

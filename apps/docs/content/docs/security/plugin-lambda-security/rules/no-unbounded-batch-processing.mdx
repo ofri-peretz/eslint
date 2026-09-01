@@ -211,5 +211,6 @@ export const handler = async (event) => {
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
+| `eventParamNames` | `string[]` | `["event","evt","e","request","req"]` | Parameter names that identify the Lambda event argument. Replaces the default. |
 | `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
 | `maxBatchSize` | `number` | `100` | Batch size above which processing must be explicitly bounded |

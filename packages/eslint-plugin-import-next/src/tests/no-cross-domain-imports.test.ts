@@ -28,6 +28,7 @@ describe('no-cross-domain-imports', () => {
       {
         valid: [
           {
+            name: 'a sibling import',
             code: `
             import { helper } from './helper';
           `,
@@ -62,6 +63,7 @@ describe('no-cross-domain-imports', () => {
       valid: [],
       invalid: [
         {
+          name: "an import that reaches into another domain's internals",
           code: `
             import { orderService } from '../../domains/order/order-service';
           `,

@@ -26,6 +26,7 @@ describe('no-console-log', () => {
     ruleTester.run('basic detection', noConsoleLog, {
       valid: [
         {
+          name: 'aliasing console is not a call to it',
           code: 'const logger = console;',
         },
         {
@@ -43,6 +44,7 @@ describe('no-console-log', () => {
       ],
       invalid: [
         {
+          name: 'a bare console.log ships to production',
           code: 'console.log("test");',
           output: '',
           errors: [

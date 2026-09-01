@@ -33,6 +33,7 @@ describe('no-this-in-sfc', () => {
       valid: [
         // Class components - this is allowed
         {
+          name: '`this` in a class render, where it is the instance',
           code: `
             class MyComponent extends React.Component {
               render() {
@@ -64,6 +65,7 @@ describe('no-this-in-sfc', () => {
       invalid: [
         // this in regular functions (not in classes)
         {
+          name: '`this` in a function component, where it is undefined',
           code: 'function notAComponent() { return this.value; }',
           errors: [
             {

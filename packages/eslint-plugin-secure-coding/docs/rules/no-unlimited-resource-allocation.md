@@ -106,6 +106,8 @@ const results = await Promise.all(urls.map((url) => limit(() => fetch(url))));
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
+| `sizeProperties` | `string[]` | `["length","size","byteLength","count"]` | Property names that carry a magnitude. Replaces the default. |
+| `limitOptionNames` | `string[]` | `["maxOutputLength","maxSize","limit"]` | Option keys a library accepts to cap an operation. Replaces the default. |
 | `maxResourceSize` | `number` | `1048576` | Allocation size in bytes above which a call is reported |
 | `userInputVariables` | `string[]` | `["req","request","body","query","params","input","data"]` | Variable names treated as user-controlled input |
 | `safeResourceFunctions` | `string[]` | `["validateSize","checkLimits","limitResource","safeAlloc"]` | Function names that bound an allocation |

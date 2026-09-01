@@ -22,7 +22,7 @@ ruleTester.run('require-storage-encryption', requireStorageEncryption, {
     'const items = [];',
     'const obj = {};',
     'class Foo {}',
-    { code: "await SecureStore.setItemAsync('token', token)" },
+    { name: "the platform's encrypted store", code: "await SecureStore.setItemAsync('token', token)" },
     { code: 'const encrypted = encrypt(data)' },
   ],
 
@@ -31,6 +31,7 @@ ruleTester.run('require-storage-encryption', requireStorageEncryption, {
     // filesystem. The two used to carry byte-identical implementations and reported every
     // match twice, under two rule ids and the same CWE.
     {
+      name: 'a password written to a plain file',
       code: "fs.writeFileSync('creds.json', password)",
       errors: [{ messageId: 'violationDetected' }],
     },

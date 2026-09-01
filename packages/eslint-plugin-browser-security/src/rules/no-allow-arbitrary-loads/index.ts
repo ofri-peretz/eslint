@@ -10,7 +10,7 @@
  * @see https://cwe.mitre.org/data/definitions/749.html
  */
 
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { createRule, formatLLMMessage, MessageIcons, staticString } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
@@ -52,8 +52,9 @@ const ATS_OPT_OUT_KEYS: string[] = [
 function propertyKeyName(node: TSESTree.Property): string | null {
   if (node.computed) return null;
   if (node.key.type === 'Identifier') return node.key.name;
-  if (node.key.type === 'Literal' && typeof node.key.value === 'string') {
-    return node.key.value;
+  const staticText = staticString(node.key);
+  if (staticText !== null) {
+    return staticText;
   }
   return null;
 }

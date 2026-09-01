@@ -14,7 +14,7 @@ const ruleTester = new RuleTester({
 ruleTester.run('export', exportRule, {
   valid: [
     // Single named exports
-    { code: `export const foo = 1;` },
+    { name: 'a single export', code: `export const foo = 1;` },
     { code: `export function bar() {}` },
     { code: `export class Baz {}` },
 
@@ -56,6 +56,7 @@ ruleTester.run('export', exportRule, {
   invalid: [
     // Duplicate named exports
     {
+      name: 'the same name exported twice',
       code: `
         export const foo = 1;
         export const foo = 2;

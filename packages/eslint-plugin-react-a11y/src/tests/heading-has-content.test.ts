@@ -25,7 +25,7 @@ describe('heading-has-content', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid headings', headingHasContent, {
       valid: [
-        { code: '<h1>Title</h1>' },
+        { name: 'a heading with text', code: '<h1>Title</h1>' },
         { code: '<h2>Subtitle</h2>' },
         { code: '<h3>Section</h3>' },
         { code: '<h4>Subsection</h4>' },
@@ -56,7 +56,7 @@ describe('heading-has-content', () => {
     ruleTester.run('invalid - empty headings', headingHasContent, {
       valid: [],
       invalid: [
-        { code: '<h1></h1>', errors: [{ messageId: 'missingContent' }] },
+        { name: 'an empty heading', code: '<h1></h1>', errors: [{ messageId: 'missingContent' }] },
         { code: '<h2></h2>', errors: [{ messageId: 'missingContent' }] },
         { code: '<h3 />', errors: [{ messageId: 'missingContent' }] },
         { code: '<h4></h4>', errors: [{ messageId: 'missingContent' }] },

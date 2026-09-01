@@ -19,16 +19,25 @@ type MessageIds = 'missingTabIndex';
 type RuleOptions = [];
 
 const INHERENTLY_FOCUSABLE = new Set([
-  'input', 'select', 'textarea', 'button', 'a', 'area'
+  'input',
+  'select',
+  'textarea',
+  'button',
+  'a',
+  'area',
 ]);
 
-export const ariaActivedescendantHasTabindex = createRule<RuleOptions, MessageIds>({
+export const ariaActivedescendantHasTabindex = createRule<
+  RuleOptions,
+  MessageIds
+>({
   name: 'aria-activedescendant-has-tabindex',
   meta: {
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/aria-activedescendant-has-tabindex.md',
-      description: 'Enforce that elements with aria-activedescendant have proper tabindex',
+      description:
+        'Enforce that elements with aria-activedescendant have proper tabindex',
       wcag: 'WCAG 4.1.2',
     },
     messages: {
@@ -38,8 +47,9 @@ export const ariaActivedescendantHasTabindex = createRule<RuleOptions, MessageId
         description: 'Elements with aria-activedescendant must be tabbable',
         severity: 'HIGH',
         fix: 'Add tabIndex={0} or tabIndex={-1}',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/aria-activedescendant-has-tabindex.md',
-        wcag: 'WCAG 4.1.2'
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/aria-activedescendant-has-tabindex.md',
+        wcag: 'WCAG 4.1.2',
       }),
     },
     schema: [],
@@ -53,10 +63,13 @@ export const ariaActivedescendantHasTabindex = createRule<RuleOptions, MessageId
         const element = node.name.name;
 
         // Check if element has aria-activedescendant
-        const ariaActivedescendant = node.attributes.find((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
-          attr.type === 'JSXAttribute' &&
-          attr.name.type === 'JSXIdentifier' &&
-          attr.name.name === 'aria-activedescendant'
+        const ariaActivedescendant = node.attributes.find(
+          (
+            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+          ): attr is TSESTree.JSXAttribute =>
+            attr.type === 'JSXAttribute' &&
+            attr.name.type === 'JSXIdentifier' &&
+            attr.name.name === 'aria-activedescendant',
         );
 
         if (!ariaActivedescendant) return;
@@ -65,10 +78,13 @@ export const ariaActivedescendantHasTabindex = createRule<RuleOptions, MessageId
         if (INHERENTLY_FOCUSABLE.has(element)) return;
 
         // Check if element has explicit tabIndex
-        const tabIndex = node.attributes.find((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
-          attr.type === 'JSXAttribute' &&
-          attr.name.type === 'JSXIdentifier' &&
-          attr.name.name === 'tabIndex'
+        const tabIndex = node.attributes.find(
+          (
+            attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+          ): attr is TSESTree.JSXAttribute =>
+            attr.type === 'JSXAttribute' &&
+            attr.name.type === 'JSXIdentifier' &&
+            attr.name.name === 'tabIndex',
         );
 
         if (!tabIndex) {
@@ -81,4 +97,3 @@ export const ariaActivedescendantHasTabindex = createRule<RuleOptions, MessageId
     };
   },
 });
-

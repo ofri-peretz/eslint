@@ -58,6 +58,7 @@ describe('no-dynamic-require', () => {
       valid: [
         // Test files with allowContexts
         {
+          name: 'a bare variable, whose value is not visible here',
           code: 'const mod = require(moduleName);',
           filename: 'src/utils.test.ts',
           options: [{ allowContexts: ['test'] }],
@@ -111,6 +112,7 @@ describe('no-dynamic-require', () => {
       invalid: [
         // CONTROL for case 1: the identical source, no option — reports.
         {
+          name: 'a require path built by interpolation',
           code: 'const messages = require(`./locales/${lang}.json`);',
           errors: [{ messageId: 'dynamicRequire' }],
         },

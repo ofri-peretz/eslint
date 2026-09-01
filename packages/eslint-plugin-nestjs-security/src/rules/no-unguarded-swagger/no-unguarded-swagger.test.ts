@@ -107,6 +107,7 @@ ruleTester.run('no-unguarded-swagger', noUnguardedSwagger, {
     // Top-level, outside any function — nothing to anchor on.
     `SwaggerModule.setup('docs', app, document);`,
     {
+      name: 'no document is built for the setup call to expose',
       code: `
         async function bootstrap() {
           const app = await NestFactory.create(AppModule);
@@ -119,6 +120,7 @@ ruleTester.run('no-unguarded-swagger', noUnguardedSwagger, {
   invalid: nest([
     // realworld/src/main.ts — straight-line in bootstrap, no check anywhere.
     {
+      name: 'the API schema served with nothing in front of it',
       code: `
         async function bootstrap() {
           const app = await NestFactory.create(ApplicationModule);

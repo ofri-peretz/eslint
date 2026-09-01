@@ -20,7 +20,7 @@ describe('no-dynamic-command-string', () => {
   ruleTester.run('no-dynamic-command-string', noDynamicCommandString, {
     valid: [
       // THE safe pattern — the program is invoked directly with its own argv
-      { code: `spawn('kill', ['-9', String(pid)]);` },
+      { name: 'argv passed as an array', code: `spawn('kill', ['-9', String(pid)]);` },
       { code: `execFile('git', ['clone', repoUrl]);` },
       { code: `cp.spawnSync('ls', ['-la', dir]);` },
       // A shell with a fully static command line
@@ -96,6 +96,7 @@ describe('no-dynamic-command-string', () => {
     invalid: [
       // bash -c with an interpolated command line
       {
+        name: 'bash -c with an interpolated string re-enters the shell',
         code: 'spawn(\'bash\', [\'-c\', `kill -9 ${pid}`]);',
         errors: [{ messageId: 'shellFlagInjection' as const }],
       },

@@ -11,7 +11,11 @@
  * @see https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/anchor-ambiguous-text.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  staticString,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'ambiguousText';
@@ -22,7 +26,13 @@ type Options = {
 
 type RuleOptions = [Options?];
 
-const DEFAULT_AMBIGUOUS_WORDS = ['click here', 'here', 'link', 'a link', 'learn more'];
+const DEFAULT_AMBIGUOUS_WORDS = [
+  'click here',
+  'here',
+  'link',
+  'a link',
+  'learn more',
+];
 
 const isJSXAttribute = (
   attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
@@ -34,14 +44,20 @@ const isJSXAttribute = (
 function getAccessibleText(element: TSESTree.JSXElement): string {
   // Check for aria-label first
   const ariaLabel = element.openingElement.attributes.find(
-    (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
+    (
+      attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+    ): attr is TSESTree.JSXAttribute =>
       isJSXAttribute(attr) &&
       attr.name.type === 'JSXIdentifier' &&
       attr.name.name === 'aria-label',
   );
 
-  if (ariaLabel && ariaLabel.type === 'JSXAttribute' && ariaLabel.value && ariaLabel.value.type === 'Literal' && typeof ariaLabel.value.value === 'string') {
-    return ariaLabel.value.value;
+  const labelText =
+    ariaLabel?.type === 'JSXAttribute' && ariaLabel.value
+      ? staticString(ariaLabel.value)
+      : null;
+  if (labelText !== null) {
+    return labelText;
   }
 
   // NOTE: getAccessibleText is only ever invoked on <a> elements (the JSXElement
@@ -64,7 +80,9 @@ function extractTextFromChildren(children: TSESTree.JSXChild[]): string {
     } else if (child.type === 'JSXElement') {
       // Check if element has aria-hidden
       const hasAriaHidden = child.openingElement.attributes.some(
-        (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
+        (
+          attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+        ): attr is TSESTree.JSXAttribute =>
           isJSXAttribute(attr) &&
           attr.name.type === 'JSXIdentifier' &&
           attr.name.name === 'aria-hidden' &&
@@ -75,16 +93,26 @@ function extractTextFromChildren(children: TSESTree.JSXChild[]): string {
 
       if (!hasAriaHidden) {
         // For img elements in anchor text, use alt
-        if (child.openingElement.name.type === 'JSXIdentifier' && child.openingElement.name.name === 'img') {
+        if (
+          child.openingElement.name.type === 'JSXIdentifier' &&
+          child.openingElement.name.name === 'img'
+        ) {
           const altAttr = child.openingElement.attributes.find(
-            (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
+            (
+              attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+            ): attr is TSESTree.JSXAttribute =>
               isJSXAttribute(attr) &&
               attr.name.type === 'JSXIdentifier' &&
               attr.name.name === 'alt',
           );
 
-          if (altAttr && altAttr.type === 'JSXAttribute' && altAttr.value && altAttr.value.type === 'Literal' && typeof altAttr.value.value === 'string') {
-            text += altAttr.value.value;
+          if (
+            altAttr &&
+            altAttr.type === 'JSXAttribute' &&
+            altAttr.value &&
+            staticString(altAttr.value) !== null
+          ) {
+            text += staticString(altAttr.value);
           }
         } else {
           text += extractTextFromChildren(child.children);
@@ -102,15 +130,20 @@ function extractTextFromChildren(children: TSESTree.JSXChild[]): string {
 /**
  * Extract text from JSX expression
  */
-function extractExpressionText(expression: TSESTree.Expression | TSESTree.JSXEmptyExpression): string {
+function extractExpressionText(
+  expression: TSESTree.Expression | TSESTree.JSXEmptyExpression,
+): string {
   if (expression.type === 'JSXEmptyExpression') {
     return '';
   }
   if (expression.type === 'Identifier') {
     return expression.name;
-  } else if (expression.type === 'Literal' && typeof expression.value === 'string') {
-    return expression.value;
-  } else if (expression.type === 'TemplateLiteral') {
+  }
+  const literalText = staticString(expression);
+  if (literalText !== null) {
+    return literalText;
+  }
+  if (expression.type === 'TemplateLiteral') {
     let result = '';
     for (let i = 0; i < expression.quasis.length; i++) {
       result += expression.quasis[i].value.raw;
@@ -119,7 +152,10 @@ function extractExpressionText(expression: TSESTree.Expression | TSESTree.JSXEmp
       }
     }
     return result;
-  } else if (expression.type === 'BinaryExpression' && expression.operator === '+') {
+  } else if (
+    expression.type === 'BinaryExpression' &&
+    expression.operator === '+'
+  ) {
     return `${extractExpressionText(expression.left)}+${extractExpressionText(expression.right)}`;
   }
   // For other expression types, return a placeholder
@@ -130,10 +166,7 @@ function extractExpressionText(expression: TSESTree.Expression | TSESTree.JSXEmp
  * Normalize text for comparison - only normalize whitespace, preserve punctuation
  */
 function normalizeText(text: string): string {
-  return text
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, ' '); // Normalize whitespace but preserve punctuation
+  return text.toLowerCase().trim().replace(/\s+/g, ' '); // Normalize whitespace but preserve punctuation
 }
 
 export const anchorAmbiguousText = createRule<RuleOptions, MessageIds>({
@@ -152,7 +185,8 @@ export const anchorAmbiguousText = createRule<RuleOptions, MessageIds>({
         description: 'Anchor text "{{text}}" is ambiguous',
         severity: 'MEDIUM',
         fix: 'Use descriptive link text instead of ambiguous phrases',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/anchor-ambiguous-text.md',
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/anchor-ambiguous-text.md',
       }),
     },
     schema: [
@@ -169,13 +203,21 @@ export const anchorAmbiguousText = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
+  create(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    [options = {} as Options],
+  ) {
     const { words = DEFAULT_AMBIGUOUS_WORDS } = options ?? {};
-    const ambiguousWords = new Set(words.map((word: string) => normalizeText(word)));
+    const ambiguousWords = new Set(
+      words.map((word: string) => normalizeText(word)),
+    );
 
     return {
       JSXElement(node: TSESTree.JSXElement) {
-        if (node.openingElement.name.type !== 'JSXIdentifier' || node.openingElement.name.name !== 'a') {
+        if (
+          node.openingElement.name.type !== 'JSXIdentifier' ||
+          node.openingElement.name.name !== 'a'
+        ) {
           return;
         }
 
@@ -185,7 +227,6 @@ export const anchorAmbiguousText = createRule<RuleOptions, MessageIds>({
 
         // Check for exact matches (after punctuation removal)
         const hasAmbiguousText = ambiguousWords.has(comparisonText);
-
 
         if (hasAmbiguousText) {
           context.report({
@@ -200,4 +241,3 @@ export const anchorAmbiguousText = createRule<RuleOptions, MessageIds>({
     };
   },
 });
-

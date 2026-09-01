@@ -28,7 +28,7 @@ describe('aria-role', () => {
     ruleTester.run('valid - standard ARIA roles', ariaRole, {
       valid: [
         // Landmark roles
-        { code: '<div role="banner"></div>' },
+        { name: 'a real role', code: '<div role="banner"></div>' },
         { code: '<div role="complementary"></div>' },
         { code: '<div role="contentinfo"></div>' },
         { code: '<div role="main"></div>' },
@@ -103,6 +103,7 @@ describe('aria-role', () => {
       invalid: [
         // Typos
         {
+          name: 'a misspelled role',
           code: '<div role="buton"></div>',
           errors: [{ messageId: 'invalidRole' }],
         },

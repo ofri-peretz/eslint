@@ -76,6 +76,26 @@ const scanned = [
   // the header that explains why they are forbidden. It is the one exemption.
 ].filter((f) => f !== __filename);
 
+/**
+ * Every scanned file's contents, read once.
+ *
+ * `it.each(FORBIDDEN)` makes one test per pattern, and each was re-reading all
+ * 200+ files from disk — the same I/O three times over, with a 5s default
+ * timeout on each test independently. Idle that took 730ms and passed; inside
+ * the full `turbo run test` fan-out, competing with ~30 other package suites
+ * for the same disk, it went past 5s and failed the push hook. It passed
+ * standalone every time, which is the signature of a resource problem rather
+ * than a broken assertion.
+ *
+ * Reading once is the fix. Raising the timeout would have left three redundant
+ * passes over the tree to be paid on every run.
+ */
+let cache: [string, string][] | null = null;
+function sources(): [string, string][] {
+  cache ??= scanned.map((f) => [f, fs.readFileSync(f, 'utf8')]);
+  return cache;
+}
+
 describe('no external-registry references in first-party source', () => {
   // Guards the guard. A scan-and-assert-empty test passes identically when it
   // is pointed at a directory that does not exist, so pin the floor: if a
@@ -92,9 +112,9 @@ describe('no external-registry references in first-party source', () => {
     'no file mentions $pattern',
     ({ pattern }) => {
       const re = FORBIDDEN.find((r) => String(r) === pattern)!;
-      const offenders = scanned
-        .filter((f) => re.test(fs.readFileSync(f, 'utf8')))
-        .map((f) => path.relative(REPO_ROOT, f));
+      const offenders = sources()
+        .filter(([, text]) => re.test(text))
+        .map(([f]) => path.relative(REPO_ROOT, f));
 
       expect(
         offenders,

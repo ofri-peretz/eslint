@@ -33,6 +33,7 @@ describe('no-is-mounted', () => {
       valid: [
         // Normal property access
         {
+          name: 'reading state',
           code: `this.state.count`,
         },
         // Normal method call
@@ -100,6 +101,7 @@ describe('no-is-mounted', () => {
       invalid: [
         // Basic property access
         {
+          name: 'isMounted, an anti-pattern React removed',
           code: `if (this.isMounted) { this.setState({}); }`,
           errors: [{ messageId: 'noIsMounted' }],
         },

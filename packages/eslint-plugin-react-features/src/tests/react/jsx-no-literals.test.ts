@@ -33,6 +33,7 @@ describe('jsx-no-literals', () => {
       valid: [
         // Variable reference
         {
+          name: 'text from a variable',
           code: `<div>{message}</div>`,
         },
         // Translation function
@@ -89,6 +90,7 @@ describe('jsx-no-literals', () => {
       invalid: [
         // Simple string
         {
+          name: 'user-facing text hard-coded in JSX',
           code: `<div>Hello World</div>`,
           errors: [{ messageId: 'jsxNoLiterals' }],
         },

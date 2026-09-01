@@ -46,6 +46,7 @@ describe('no-transaction-on-pool', () => {
       valid: pg([
         // Unrelated code should not trigger
         {
+          name: 'pg is imported but nothing queries',
           code: `const x = 1;`,
         },
         // Array operations are safe
@@ -78,6 +79,7 @@ describe('no-transaction-on-pool', () => {
         // `pool` used to be undeclared here and this still passed, because the
         // rule matched `objectName.includes('pool')`.
         {
+          name: 'BEGIN on the pool — the next statement may land on another connection',
           code: `const pool = new Pool();\npool.query('BEGIN')`,
           errors: [{ messageId: 'noTransactionOnPool' }],
         },

@@ -32,6 +32,7 @@ describe('no-noninteractive-tabindex', () => {
       valid: [
         // No tabindex attribute
         {
+          name: 'no tabIndex',
           code: '<div>Content</div>',
         },
         {
@@ -92,6 +93,7 @@ describe('no-noninteractive-tabindex', () => {
       invalid: [
         // Basic non-interactive elements with string tabindex
         {
+          name: 'tabIndex on an element with nothing to do',
           code: '<div tabIndex="0">Content</div>',
           errors: [
             {

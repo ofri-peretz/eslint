@@ -26,7 +26,7 @@ describe('no-find-dom-node', () => {
   ruleTester.run('no-find-dom-node', noFindDomNode, {
     valid: [
       // Using refs instead
-      'const ref = useRef(); <div ref={ref} />',
+      { name: 'a ref instead', code: 'const ref = useRef(); <div ref={ref} />' },
       'class MyComponent extends React.Component { ref = React.createRef(); }',
       // Not calling findDOMNode
       'const findDOMNode = "string";',
@@ -37,6 +37,7 @@ describe('no-find-dom-node', () => {
     ],
     invalid: [
       {
+        name: 'findDOMNode, removed in React 19',
         code: 'import ReactDOM from "react-dom"; ReactDOM.findDOMNode(this);',
         errors: [{ messageId: 'noFindDOMNode' }],
       },

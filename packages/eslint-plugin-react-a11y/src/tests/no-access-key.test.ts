@@ -25,7 +25,7 @@ describe('no-access-key', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - no accessKey', noAccessKey, {
       valid: [
-        { code: '<button>Click</button>' },
+        { name: 'no access key', code: '<button>Click</button>' },
         { code: '<a href="#">Link</a>' },
         { code: '<input />' },
         { code: '<div></div>' },
@@ -38,7 +38,7 @@ describe('no-access-key', () => {
     ruleTester.run('invalid - has accessKey', noAccessKey, {
       valid: [],
       invalid: [
-        { code: '<button accessKey="s">Save</button>', errors: [{ messageId: 'noAccessKey' }] },
+        { name: "accessKey collides with the screen reader's own shortcuts", code: '<button accessKey="s">Save</button>', errors: [{ messageId: 'noAccessKey' }] },
         { code: '<a href="#" accessKey="h">Home</a>', errors: [{ messageId: 'noAccessKey' }] },
         { code: '<input accessKey="i" />', errors: [{ messageId: 'noAccessKey' }] },
       ],

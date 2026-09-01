@@ -10,7 +10,7 @@
  * CWE-798: Hardcoded Credentials
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath, staticString } from '@interlace/eslint-devkit';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
 
 type MessageIds = 'hardcodedCredentials';
@@ -73,8 +73,9 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        if (node.value.type === AST_NODE_TYPES.Literal && typeof node.value.value === 'string') {
-          if (node.value.value.length > 0) {
+        const staticText = staticString(node.value);
+        if (staticText !== null) {
+          if (staticText.length > 0) {
             context.report({
               node,
               messageId: 'hardcodedCredentials',

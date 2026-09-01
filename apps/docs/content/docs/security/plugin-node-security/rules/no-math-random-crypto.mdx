@@ -57,7 +57,9 @@ const j = Math.floor(Math.random() * deck.length);
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `false` | Allow Math.random() in test files |
+| `allowInTests` | `boolean` | `true` | Allow Math.random() in test files. Default: true |
+| `secretWords` | `string[]` | `["token","tokens","key","keys","secret","secrets","password","passwd","salt","iv","nonce","seed","hash","cipher","auth","session","csrf","otp","pin","code","codes","verify","signature","credential","jwt","encryption","apikey","passphrase","mnemonic"]` | Words that name a security value in this codebase. Replaces the default list. |
+| `correlationIdWords` | `string[]` | `["request","req","correlation","trace","span","transaction","txn","message","msg","event","job","run","task","batch","element","node","row","record","instance","component","widget","dom","operation","call","invocation","frame","render"]` | Words that mark a trailing `id` as a correlation id rather than a credential. Replaces the default list. |
 
 ```js
 {

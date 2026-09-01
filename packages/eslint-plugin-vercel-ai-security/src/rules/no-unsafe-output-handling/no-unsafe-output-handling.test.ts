@@ -61,6 +61,7 @@ ruleTester.run('no-unsafe-output-handling', noUnsafeOutputHandling, {
   valid: xai([
     // Safe: using textContent
     {
+      name: 'model output assigned as text',
       code: `
         const result = await generateText({ prompt: 'Hello' });
         element.textContent = result.text;
@@ -92,6 +93,7 @@ ruleTester.run('no-unsafe-output-handling', noUnsafeOutputHandling, {
   invalid: xai([
     // eval with AI output - using result.text pattern
     {
+      name: 'model output passed to eval',
       code: `
         const result = await generateText({ prompt: 'Generate code' });
         eval(result.text);

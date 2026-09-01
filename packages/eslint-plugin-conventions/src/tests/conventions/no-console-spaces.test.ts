@@ -28,6 +28,7 @@ describe('no-console-spaces', () => {
       valid: [
         // Normal console calls without spaces
         {
+          name: 'separate arguments, which console spaces for you',
           code: 'console.log("hello", "world");',
         },
         {
@@ -76,6 +77,7 @@ describe('no-console-spaces', () => {
       invalid: [
         // String with trailing space
         {
+          name: 'a trailing space console already adds',
           code: 'console.log("hello ");',
           output: "console.log('hello');",
           errors: [

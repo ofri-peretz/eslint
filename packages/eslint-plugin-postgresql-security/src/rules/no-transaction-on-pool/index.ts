@@ -11,6 +11,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   resolveModuleBinding,
+  staticString,
 } from '@interlace/eslint-devkit';
 import { NoTransactionOnPoolOptions } from '../../types';
 import { fileUsesPostgres, PG_MODULES } from '../../utils';
@@ -55,14 +56,13 @@ function isPgPoolConstructor(callee: TSESTree.Node, scope: TSESLint.Scope.Scope)
 
 /** The statement text of a query argument, when it is written as a plain string. */
 function statementText(node: TSESTree.Node): string | null {
-  if (node.type === AST_NODE_TYPES.Literal && typeof node.value === 'string') {
-    return node.value.trim();
-  }
-  // A template literal with no interpolation is a plain string, and multi-line
-  // SQL arrives that way constantly. The rule read only `Literal`, so
-  // `pool.query(`BEGIN`)` was silent.
-  if (node.type === AST_NODE_TYPES.TemplateLiteral && node.expressions.length === 0) {
-    return node.quasis.map((q) => q.value.cooked).join('').trim();
+  // Both spellings, in one call. A template literal with no interpolation is a
+  // plain string and multi-line SQL arrives that way constantly, so
+  // `pool.query(`BEGIN`)` was once silent here; the arm that fixed it is now
+  // inside `staticString`, where every rule gets it rather than this one.
+  const staticText = staticString(node);
+  if (staticText !== null) {
+    return staticText.trim();
   }
   // node-postgres also takes a config object: `pool.query({ text, values })`.
   // Found by the adversarial wave — it is the same call written the other

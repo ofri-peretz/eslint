@@ -16,7 +16,7 @@ describe('no-template-injection', () => {
   ruleTester.run('no-template-injection', noTemplateInjection, {
     valid: [
       // String literals — safe (no injection surface)
-      { code: 'Handlebars.compile("<h1>{{title}}</h1>")' },
+      { name: 'a literal template', code: 'Handlebars.compile("<h1>{{title}}</h1>")' },
       { code: 'ejs.render("<p><%= name %></p>", { name })' },
       { code: 'pug.compile("h1 #{title}")' },
       { code: 'Mustache.render("Hello {{name}}", data)' },
@@ -43,6 +43,7 @@ describe('no-template-injection', () => {
     invalid: [
       // Dynamic variable — injection surface
       {
+        name: 'a template compiled from a user-supplied string',
         code: 'Handlebars.compile(userTemplate)',
         errors: [{ messageId: 'templateInjection', data: { engine: 'Handlebars', method: 'compile' } }],
       },

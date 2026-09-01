@@ -25,7 +25,7 @@ describe('mouse-events-have-key-events', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - mouse with key events', mouseEventsHaveKeyEvents, {
       valid: [
-        { code: '<div onMouseOver={handler} onFocus={handler}></div>' },
+        { name: 'both present', code: '<div onMouseOver={handler} onFocus={handler}></div>' },
         { code: '<div onMouseOut={handler} onBlur={handler}></div>' },
         { code: '<div onMouseEnter={handler} onFocus={handler}></div>' },
         { code: '<div onMouseLeave={handler} onBlur={handler}></div>' },
@@ -39,7 +39,12 @@ describe('mouse-events-have-key-events', () => {
     ruleTester.run('invalid - mouse without key events', mouseEventsHaveKeyEvents, {
       valid: [],
       invalid: [
-        { code: '<div onMouseOver={handler}></div>', errors: [{ messageId: 'missingOnFocus' }] },
+      {
+        name: 'the same omission on a different element',
+        code: '<span onMouseOver={handler}></span>',
+        errors: [{ messageId: 'missingOnFocus' }],
+      },
+        { name: 'onMouseOver with no onFocus', code: '<div onMouseOver={handler}></div>', errors: [{ messageId: 'missingOnFocus' }] },
         { code: '<div onMouseOut={handler}></div>', errors: [{ messageId: 'missingOnBlur' }] },
       ],
     });

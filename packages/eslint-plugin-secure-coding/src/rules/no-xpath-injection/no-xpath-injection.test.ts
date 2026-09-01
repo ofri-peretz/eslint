@@ -43,6 +43,7 @@ describe('no-xpath-injection', () => {
         // Only args[0] of an evaluator is the XPath expression; a template
         // in the context-node position is not the query.
         {
+          name: 'a literal expression',
           code: 'document.evaluate(expr, `//users/..`);',
         },
         // The safe-annotation escape hatch, now reached only when the string
@@ -135,6 +136,7 @@ describe('no-xpath-injection', () => {
       invalid: [
 
         {
+          name: 'a request value concatenated into an XPath expression',
           // Template quasis are string content too — same expression, backticks.
           code: "function q(req) { const x = `//user[name='` + req.query.n + `']`; doc.evaluate(x); }",
           errors: 1,
