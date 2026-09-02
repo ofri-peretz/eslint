@@ -26,6 +26,7 @@ import {
   AST_NODE_TYPES,
   createRule,
   staticString,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { resolvedReference } from '../../utils/resolve-reference';
@@ -314,9 +315,10 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
           if (
             callee.type === 'MemberExpression' &&
             callee.object.type === 'Identifier' &&
-            callee.property.type === 'Identifier'
+            propertyName(callee) !== null
           ) {
-            const key = `${callee.object.name}.${callee.property.name}`;
+            // A quoted method names the same safe caller.
+            const key = `${callee.object.name}.${propertyName(callee) as string}`;
             if (safeMemberCallers.has(key)) return true;
           }
           break; // Stop at first enclosing call
@@ -981,9 +983,9 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
         // Check for execute/query methods
         if (
           callee.type === 'MemberExpression' &&
-          callee.property.type === 'Identifier' &&
+          // `graphql['execute'](q, …)` runs the same operation.
           ['execute', 'executeQuery', 'query', 'mutate', 'subscribe'].includes(
-            callee.property.name,
+            propertyName(callee) as string,
           )
         ) {
           // Check arguments for unvalidated inputs

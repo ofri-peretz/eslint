@@ -2268,12 +2268,11 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       const callee = iterated.callee;
       if (
         callee.type !== AST_NODE_TYPES.MemberExpression ||
-        callee.computed ||
         callee.object.type !== AST_NODE_TYPES.Identifier ||
         callee.object.name !== 'Object' ||
-        callee.property.type !== AST_NODE_TYPES.Identifier ||
         // @vocabulary Object statics
-        !['keys', 'entries'].includes(callee.property.name)
+        // `Object['keys'](req.body)` enumerates the same caller keys.
+        !['keys', 'entries'].includes(propertyName(callee) as string)
       ) {
         return;
       }

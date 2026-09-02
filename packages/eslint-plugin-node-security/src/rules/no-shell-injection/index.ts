@@ -41,6 +41,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons,
   isModuleBinding,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 import { makeIsLiteralConstant } from '../../utils/constant-folding';
@@ -142,11 +143,12 @@ export const noShellInjection = createRule<RuleOptions, MessageIds>({
           fnName = callee.name;
         }
         // require('child_process').exec('cmd') — member access
+        // `child_process['exec'](cmd)` spawns the same shell.
         else if (
           callee.type === AST_NODE_TYPES.MemberExpression &&
-          callee.property.type === AST_NODE_TYPES.Identifier
+          propertyName(callee) !== null
         ) {
-          fnName = callee.property.name;
+          fnName = propertyName(callee) as string;
         }
 
         if (!fnName || !SHELL_EXEC_FUNCTIONS.has(fnName)) return;
