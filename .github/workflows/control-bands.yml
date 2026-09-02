@@ -115,19 +115,27 @@ jobs:
 
       # Bands that are still inside their limits produce new observations too, and the
       # series is only useful if it accumulates.
+      # This had the same bare `git push` at main as the three crons it was
+      # written alongside. It never surfaced because the step only runs when a
+      # band is recorded with nothing breached — so the watcher would have
+      # started dropping observations silently, which is precisely the failure
+      # a control band exists to notice.
       - name: 📌 Commit the series when nothing breached
         if: steps.bands.outcome == 'success'
-        run: |
-          set -euo pipefail
-          if [ -z "$(git status --porcelain benchmark-results/control-band-series.json)" ]; then
-            echo "No new observations."
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add benchmark-results/control-band-series.json
-          git commit -m "chore(benchmarks): record control-band observations"
-          git push
+        uses: ./.github/actions/commit-via-pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          branch: automated/control-band-series
+          paths: benchmark-results/control-band-series.json
+          commit-message: "chore(benchmarks): record control-band observations"
+          pr-title: "chore(benchmarks): record control-band observations"
+          pr-body: |
+            New observations appended to the control-band series by
+            `scripts/control-bands.ts --record`. No band breached on this run.
+
+            A band computed over a series that stopped updating looks perfectly
+            healthy, so these landing is what keeps Stage 6 honest.
 
       # Freshness is a Stage 6 concern too: a band computed over a series that
       # stopped updating looks perfectly healthy. `check:audit-freshness` age-bounds
