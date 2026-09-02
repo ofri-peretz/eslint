@@ -80,7 +80,7 @@ describe('no-env-injection', () => {
       `function h(req) { Object.assign(target, req.body); }`,
       `function h(req) { Object.assign(); }`,
       `function h(req) { Object.keys(req.body); }`,
-      `function h(req) { Object['assign'](process.env, req.body); }`,
+      `function h(req) { Object[merge](process.env, req.body); }`,
       `function h(req) { helpers.assign(process.env, req.body); }`,
       `function h(req) { assign(process.env, req.body); }`,
       `function h(req) { obj.deep.assign(process.env, req.body); }`,
@@ -99,6 +99,14 @@ describe('no-env-injection', () => {
       },
     ],
     invalid: [
+      // Was pinned as valid with no reason given. `Object['assign']` copies
+      // every request key into the environment exactly as `Object.assign`
+      // does — PATH, NODE_OPTIONS and LD_PRELOAD included.
+      {
+        name: 'a subscripted Object.assign into process.env',
+        code: `function h(req) { Object['assign'](process.env, req.body); }`,
+        errors: 1,
+      },
       // Was listed above under "Not process.env." — but `process['env']` is
       // exactly process.env, and this writes an attacker-chosen key into it.
       {

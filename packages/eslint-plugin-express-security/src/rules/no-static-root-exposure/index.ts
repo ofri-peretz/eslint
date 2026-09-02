@@ -215,8 +215,8 @@ export const noStaticRootExposure = createRule<RuleOptions, MessageIds>({
     function isExpressStaticCall(node: TSESTree.CallExpression): boolean {
       const callee = node.callee;
       if (callee.type !== AST_NODE_TYPES.MemberExpression) return false;
-      if (callee.property.type !== AST_NODE_TYPES.Identifier) return false;
-      if (callee.property.name !== 'static') return false;
+      // `express['static'](root)` mounts the same static handler.
+      if (propertyName(callee) !== 'static') return false;
       if (callee.object.type !== AST_NODE_TYPES.Identifier) return false;
       return callee.object.name.toLowerCase() === 'express';
     }

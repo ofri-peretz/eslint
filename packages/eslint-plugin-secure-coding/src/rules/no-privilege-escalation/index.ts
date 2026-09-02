@@ -649,10 +649,12 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
         }
       }
 
-      if (callee.type === 'MemberExpression' && callee.property.type === 'Identifier') {
-        if (isPrivilegeOperationCallee(callee.property.name)) {
+      if (callee.type === 'MemberExpression' && propertyName(callee) !== null) {
+        // `userService['elevate'](user, level)` is the same operation.
+        const method = propertyName(callee) as string;
+        if (isPrivilegeOperationCallee(method)) {
           isPrivilegeOperation = true;
-          operationName = callee.property.name.toLowerCase();
+          operationName = method.toLowerCase();
         }
       }
 

@@ -230,9 +230,9 @@ export const noEnvInjection = createRule<RuleOptions, MessageIds>({
       // Object.assign(process.env, req.body)
       CallExpression(node: TSESTree.CallExpression) {
         const { callee } = node;
-        if (callee.type !== 'MemberExpression' || callee.computed) return;
-        if (callee.property.type !== 'Identifier') return;
-        if (callee.property.name !== 'assign') return;
+        if (callee.type !== 'MemberExpression') return;
+        // `Object['assign'](process.env, req.body)` merges the same request.
+        if (propertyName(callee) !== 'assign') return;
         if (callee.object.type !== 'Identifier') return;
         if (callee.object.name !== 'Object') return;
         const [target, ...sources] = node.arguments;

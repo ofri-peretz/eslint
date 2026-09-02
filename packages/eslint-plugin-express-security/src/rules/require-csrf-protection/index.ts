@@ -329,9 +329,10 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
         // Check for route handlers: app.post(), router.put(), etc.
         if (
           callee.type === 'MemberExpression' &&
-          callee.property.type === 'Identifier'
+          propertyName(callee) !== null
         ) {
-          const method = callee.property.name.toLowerCase();
+          // `router['post']('/x', h)` registers the same unprotected route.
+          const method = (propertyName(callee) as string).toLowerCase();
 
           if (!protectedMethods.includes(method)) {
             return;

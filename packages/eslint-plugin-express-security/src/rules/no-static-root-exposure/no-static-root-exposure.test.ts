@@ -356,8 +356,8 @@ ruleTester.run(
       { code: `express.static(42);` },
       // variable root — documented false negative (no taint analysis)
       { code: `express.static(root);` },
-      // computed member callee — not recognized as express.static
-      { code: `express['static']('.');` },
+      // a callee named at RUNTIME is not recognized as express.static
+      { code: `express[serve]('.');` },
       // object of the callee is itself a member expression
       { code: `a.express.static(__dirname);` },
       // process-like negatives for the cwd detector
@@ -386,6 +386,23 @@ ruleTester.run(
       { code: `import express from 'express';` }, // different import source
     ]),
     invalid: xp([
+      // Was pinned as valid — "computed member callee, not recognized as
+      // express.static". It IS express.static, serving the whole cwd.
+      {
+        name: 'a subscripted express.static on the current directory',
+        code: `express['static']('.');`,
+        errors: [
+          {
+            messageId: 'staticRoot',
+            suggestions: [
+              {
+                messageId: 'scopeToSubdir',
+                output: `express['static'](path.join(__dirname, 'public'));`,
+              },
+            ],
+          },
+        ],
+      },
       // Both were pinned as valid above, described only as "computed
       // property". `process['cwd']()` resolves the same application root and
       // `path['join']` builds the same path — the subscript changes the

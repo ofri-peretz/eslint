@@ -39,6 +39,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'permissiveTrustProxy' | 'useHopCount';
@@ -72,9 +73,8 @@ function isAppMethodCall(
 ): boolean {
   const callee = node.callee;
   if (callee.type !== AST_NODE_TYPES.MemberExpression) return false;
-  if (callee.property.type !== AST_NODE_TYPES.Identifier) return false;
-  if (callee.computed) return false;
-  if (callee.property.name !== method) return false;
+  // `app['enable']('trust proxy')` sets the same flag.
+  if (propertyName(callee) !== method) return false;
   if (callee.object.type !== AST_NODE_TYPES.Identifier) return false;
   return isAppReceiver(callee.object.name, appReceiverNames);
 }
