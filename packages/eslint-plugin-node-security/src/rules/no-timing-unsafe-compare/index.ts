@@ -892,9 +892,11 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
         return [leftArg as TSESTree.Node, rightArg as TSESTree.Node];
       }
 
-      if (callee.type !== AST_NODE_TYPES.MemberExpression || callee.computed) return null;
-      if (callee.property.type !== AST_NODE_TYPES.Identifier) return null;
-      const method = callee.property.name;
+      if (callee.type !== AST_NODE_TYPES.MemberExpression) return null;
+      // `presented['localeCompare'](stored)` compares the same two values in
+      // the same non-constant time.
+      const method = propertyName(callee);
+      if (method === null) return null;
 
       // `Buffer.compare(a, b)` — the static form of `buf.equals`.
       if (

@@ -1145,13 +1145,11 @@ function joinedArrayElements(
   scope: TSESLint.Scope.Scope,
 ): TSESTree.Node[] | null {
   const { callee } = node;
-  if (callee.type !== AST_NODE_TYPES.MemberExpression || callee.computed) {
+  if (callee.type !== AST_NODE_TYPES.MemberExpression) {
     return null;
   }
-  if (
-    callee.property.type !== AST_NODE_TYPES.Identifier ||
-    callee.property.name !== 'join'
-  ) {
+  // `parts['join'](' ')` concatenates the same fragments into the same query.
+  if (propertyName(callee) !== 'join') {
     return null;
   }
   let receiver: TSESTree.Node = callee.object;

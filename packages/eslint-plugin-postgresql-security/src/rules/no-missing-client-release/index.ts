@@ -208,8 +208,8 @@ export const noMissingClientRelease: TSESLint.RuleModule<
       'CallExpression:exit'(node: TSESTree.CallExpression) {
         if (
           node.callee.type !== AST_NODE_TYPES.MemberExpression ||
-          node.callee.property.type !== AST_NODE_TYPES.Identifier ||
-          node.callee.property.name !== 'connect'
+          // `pool['connect']()` checks out the same client.
+          propertyName(node.callee) !== 'connect'
         ) {
           return;
         }

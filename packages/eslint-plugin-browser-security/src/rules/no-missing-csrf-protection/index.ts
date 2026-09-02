@@ -57,14 +57,12 @@ function asChainedRouteRegistration(
   methods: ReadonlySet<string>,
 ): ExpressRouteRegistration | null {
   const callee = node.callee;
-  if (
-    callee.type !== 'MemberExpression' ||
-    callee.computed ||
-    callee.property.type !== 'Identifier'
-  ) {
+  if (callee.type !== 'MemberExpression') {
     return null;
   }
-  const method = callee.property.name;
+  // `r['post'](h)` registers the same unprotected verb.
+  const method = propertyName(callee);
+  if (method === null) return null;
   if (!methods.has(method.toLowerCase())) return null;
 
   // Walk down the chain of verb calls to whatever sits at its root.
@@ -82,9 +80,8 @@ function asChainedRouteRegistration(
   if (
     receiver.type !== 'CallExpression' ||
     receiver.callee.type !== 'MemberExpression' ||
-    receiver.callee.computed ||
-    receiver.callee.property.type !== 'Identifier' ||
-    receiver.callee.property.name !== 'route'
+    // `r['route']('/x')` opens the same chain.
+    propertyName(receiver.callee) !== 'route'
   ) {
     return null;
   }
@@ -405,9 +402,8 @@ export const noMissingCsrfProtection = createRule<RuleOptions, MessageIds>({
         if (
           call.type !== 'CallExpression' ||
           call.callee.type !== 'MemberExpression' ||
-          call.callee.computed ||
-          call.callee.property.type !== 'Identifier' ||
-          call.callee.property.name !== 'use'
+          // `app['use'](csrf())` mounts the same protection.
+          propertyName(call.callee) !== 'use'
         ) {
           continue;
         }
