@@ -73,13 +73,22 @@ describe('require-secure-deletion coverage gaps', () => {
       { code: 'Reflect.deleteProperty(record, dynamicField);' },
       { code: 'Reflect.deleteProperty(record);' },
       { code: 'Reflect.get(record, "password");' },
-      { code: 'Reflect["deleteProperty"](record, "password");' },
+      { code: 'Reflect[op](record, "password");' },
       { code: 'mirror.deleteProperty(record, "password");' },
       { code: 'deleteProperty(record, "password");' },
       // A computed key that resolves to nothing.
       { code: 'delete user[fieldFromConfig];' },
     ],
     invalid: [
+      // Was pinned as valid next to `Reflect.deleteProperty(record,
+      // dynamicField)` and `Reflect.get(...)` — things that genuinely are not
+      // this deletion. `Reflect['deleteProperty']` IS it, and it unbinds the
+      // password without scrubbing the value.
+      {
+        name: 'a subscripted Reflect.deleteProperty of a sensitive key',
+        code: 'Reflect["deleteProperty"](record, "password");',
+        errors: [{ messageId: 'violationDetected' }],
+      },
       // Optional chaining still resolves to the property name
       { code: 'delete user?.password;', errors: [{ messageId: 'violationDetected' }] },
       // Custom term configured, in each of the three accepted spellings.

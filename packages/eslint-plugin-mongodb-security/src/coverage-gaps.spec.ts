@@ -543,8 +543,8 @@ ruleTester.run('require-lean-queries (coverage gaps)', requireLeanQueries, {
     // find() as an argument of a `.lean(...)` call — the chain walk starts at
     // a CallExpression whose callee is a `.lean` member expression.
     `helper.lean(User.find({}));`,
-    // Computed member access — methodName is null.
-    `User['find']({});`,
+    // A method chosen at RUNTIME names no read query.
+    `User[op]({});`,
   ]),
   invalid: [],
 });

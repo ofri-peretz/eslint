@@ -646,10 +646,9 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
         ) {
           const callee = current.callee;
           const name =
-            callee.type === AST_NODE_TYPES.MemberExpression &&
-            !callee.computed &&
-            callee.property.type === AST_NODE_TYPES.Identifier
-              ? callee.property.name
+            callee.type === AST_NODE_TYPES.MemberExpression
+              ? // `crypto['randomBytes'](n)` is the same CSPRNG call.
+                (propertyName(callee) ?? '')
               : callee.type === AST_NODE_TYPES.Identifier
                 ? callee.name
                 : '';
