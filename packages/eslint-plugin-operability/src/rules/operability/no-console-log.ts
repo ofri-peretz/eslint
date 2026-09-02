@@ -9,9 +9,16 @@
  * Disallows console.log with configurable strategies and LLM-optimized output
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { normalizePath, getRelativePath } from '@interlace/eslint-devkit';
+
+/*
+ * `console['log']('x')` writes to the same stream `console.log` does. The
+ * visitor bailed when the property was not an Identifier, so 30 of this rule's
+ * own true positives went silent when written with a string subscript — the
+ * notation a bundler emits.
+ */
 import { isNonProductionPath } from '../../lib/non-production-paths';
 
 /**
@@ -344,14 +351,18 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
       CallExpression(node: TSESTree.CallExpression) {
         if (
           node.callee.type !== 'MemberExpression' ||
-          node.callee.object.type !== 'Identifier' ||
-          node.callee.property.type !== 'Identifier'
+          node.callee.object.type !== 'Identifier'
         ) {
           return;
         }
 
         const sourceObject = node.callee.object.name;
-        const methodName = node.callee.property.name;
+        // A dynamic `console[m]()` names no method, so there is nothing to
+        // look up in the severity map.
+        const methodName = propertyName(node.callee);
+        if (methodName === null) {
+          return;
+        }
 
         /** Check if this source object is in our patterns to match */
         if (!sourcePatterns.includes(sourceObject)) {

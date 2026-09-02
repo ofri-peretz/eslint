@@ -52,6 +52,7 @@ import {
   createRule,
   AST_NODE_TYPES,
   isTestFilePath,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unhandledStreamError';
@@ -85,12 +86,9 @@ const LISTENER_METHODS: ReadonlySet<string> = new Set([
 /** The method name this callee invokes, for `f()` and `o.f()`. */
 export function calleeMethodName(callee: TSESTree.Node): string | undefined {
   if (callee.type === AST_NODE_TYPES.Identifier) return callee.name;
-  if (
-    callee.type === AST_NODE_TYPES.MemberExpression &&
-    !callee.computed &&
-    callee.property.type === AST_NODE_TYPES.Identifier
-  ) {
-    return callee.property.name;
+  if (callee.type === AST_NODE_TYPES.MemberExpression) {
+    // `fs['createReadStream'](p)` opens the same unhandled stream.
+    return propertyName(callee) ?? undefined;
   }
   return undefined;
 }
@@ -190,14 +188,10 @@ export const requireStreamErrorHandler = createRule<RuleOptions, MessageIds>({
 
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
-        if (
-          callee.type !== AST_NODE_TYPES.MemberExpression ||
-          callee.computed ||
-          callee.property.type !== AST_NODE_TYPES.Identifier
-        ) {
-          return;
-        }
-        const method = callee.property.name;
+        if (callee.type !== AST_NODE_TYPES.MemberExpression) return;
+        // `stream['on']('error', h)` attaches the same handler.
+        const method = propertyName(callee);
+        if (method === null) return;
 
         // `s.on('error', …)` — record the name as handled.
         if (LISTENER_METHODS.has(method)) {

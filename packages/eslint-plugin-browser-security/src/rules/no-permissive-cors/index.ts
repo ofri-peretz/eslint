@@ -10,7 +10,14 @@
  * @see https://cwe.mitre.org/data/definitions/942.html
  */
 
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  namesOneOf,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { resolveInitializer } from '../../utils/resolve-binding';
 
@@ -59,7 +66,9 @@ function foldToString(
   }
   if (node.type === AST_NODE_TYPES.Identifier) {
     const init = resolveInitializer(node, sourceCode);
-    return init === undefined ? null : foldToString(init, sourceCode, depth + 1);
+    return init === undefined
+      ? null
+      : foldToString(init, sourceCode, depth + 1);
   }
   return null;
 }
@@ -74,7 +83,9 @@ function foldToObject(
   if (node.type === AST_NODE_TYPES.ObjectExpression) return node;
   if (node.type === AST_NODE_TYPES.Identifier) {
     const init = resolveInitializer(node, sourceCode);
-    return init === undefined ? null : foldToObject(init, sourceCode, depth + 1);
+    return init === undefined
+      ? null
+      : foldToObject(init, sourceCode, depth + 1);
   }
   return null;
 }
@@ -121,9 +132,8 @@ function readsRequestOrigin(node: TSESTree.Node): boolean {
   const receiver = node.object;
   return (
     receiver.type === AST_NODE_TYPES.MemberExpression &&
-    !receiver.computed &&
-    receiver.property.type === AST_NODE_TYPES.Identifier &&
-    receiver.property.name === 'headers'
+    // `req['headers'].origin` is the same bag as `req.headers.origin`.
+    propertyName(receiver) === 'headers'
   );
 }
 
@@ -152,11 +162,12 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'violation Detected',
         cwe: 'CWE-942',
-        description: 'Prevent overly permissive CORS configuration detected - this is a security risk',
+        description:
+          'Prevent overly permissive CORS configuration detected - this is a security risk',
         severity: 'HIGH',
         fix: 'Review and apply secure practices',
         documentationLink: 'https://cwe.mitre.org/data/definitions/942.html',
-      })
+      }),
     },
     schema: [],
   },
@@ -168,7 +179,7 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
         messageId: 'violationDetected',
       });
     }
-    
+
     const sourceCode = context.sourceCode;
 
     return {
@@ -202,8 +213,7 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
         // A Property's parent is an ObjectExpression or an ObjectPattern, and
         // both carry `properties`.
         const entry = node.parent as
-          | TSESTree.ObjectExpression
-          | TSESTree.ObjectPattern;
+          TSESTree.ObjectExpression | TSESTree.ObjectPattern;
         const valueProperty = entry.properties.find(
           (p): p is TSESTree.Property =>
             p.type === AST_NODE_TYPES.Property && keyName(p) === 'value',
@@ -220,9 +230,8 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
         // res.setHeader / res.header / res.set — all three are the same header.
         if (
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          !node.callee.computed &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          HEADER_METHODS.has(node.callee.property.name) &&
+          // `res['setHeader'](…)` sets the same header.
+          namesOneOf(propertyName(node.callee), HEADER_METHODS) &&
           node.arguments[0] !== undefined &&
           foldToString(node.arguments[0], sourceCode)?.toLowerCase() ===
             ALLOW_ORIGIN &&
@@ -252,7 +261,7 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
             (p): p is TSESTree.Property =>
               p.type === AST_NODE_TYPES.Property &&
               p.key.type === AST_NODE_TYPES.Identifier &&
-              p.key.name === 'origin'
+              p.key.name === 'origin',
           );
           // `'*'` and `true` are both "every origin". In the `cors` package
           // `true` REFLECTS the request's Origin header, which is strictly

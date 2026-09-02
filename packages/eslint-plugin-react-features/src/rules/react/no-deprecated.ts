@@ -12,7 +12,7 @@
  * @see https://github.com/jsx-eslint/eslint-plugin-react/blob/master/docs/rules/no-deprecated.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'deprecated';
@@ -68,9 +68,11 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
 
     function checkMemberExpression(node: TSESTree.MemberExpression): void {
       if (node.object.type !== 'Identifier') return;
-      if (node.property.type !== 'Identifier') return;
+      // `ReactDOM['render']` names the same deprecated API.
+      const member = propertyName(node);
+      if (member === null) return;
 
-      const fullName = `${node.object.name}.${node.property.name}`;
+      const fullName = `${node.object.name}.${member}`;
       const deprecation = DEPRECATED_APIS[fullName];
 
       if (deprecation) {
@@ -114,9 +116,8 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
         if (node.superClass.type === 'MemberExpression') {
           if (node.superClass.object.type === 'Identifier' && 
               node.superClass.object.name === 'React' &&
-              node.superClass.property.type === 'Identifier' &&
-              (node.superClass.property.name === 'Component' || 
-               node.superClass.property.name === 'PureComponent')) {
+              (propertyName(node.superClass) === 'Component' || 
+               propertyName(node.superClass) === 'PureComponent')) {
             inClassComponent = true;
           }
         } else if (node.superClass.type === 'Identifier') {
@@ -136,9 +137,8 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
         if (node.superClass.type === 'MemberExpression') {
           if (node.superClass.object.type === 'Identifier' && 
               node.superClass.object.name === 'React' &&
-              node.superClass.property.type === 'Identifier' &&
-              (node.superClass.property.name === 'Component' || 
-               node.superClass.property.name === 'PureComponent')) {
+              (propertyName(node.superClass) === 'Component' || 
+               propertyName(node.superClass) === 'PureComponent')) {
             inClassComponent = true;
           }
         } else if (node.superClass.type === 'Identifier') {

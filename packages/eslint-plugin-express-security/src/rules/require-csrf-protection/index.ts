@@ -43,6 +43,8 @@ import {
   MessageIcons,
   createRule,
   isTestFilePath,
+  memberPropertyName,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'missingCsrf';
@@ -82,8 +84,7 @@ function isCsrfMiddleware(node: TSESTree.CallExpression): boolean {
     callee.type === 'MemberExpression' &&
     callee.object.type === 'Identifier' &&
     callee.object.name === 'lusca' &&
-    callee.property.type === 'Identifier' &&
-    callee.property.name === 'csrf'
+    propertyName(callee) === 'csrf'
   ) {
     return true;
   }
@@ -160,8 +161,7 @@ function isLikelyExpressObject(callee: TSESTree.MemberExpression): boolean {
       objCallee.type === 'MemberExpression' &&
       objCallee.object.type === 'Identifier' &&
       objCallee.object.name === 'express' &&
-      objCallee.property.type === 'Identifier' &&
-      objCallee.property.name === 'Router'
+      propertyName(objCallee) === 'Router'
     ) {
       return true;
     }
@@ -299,8 +299,7 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
         // Check for global app.use(csrf()) or app.use(csrfMiddleware)
         if (
           callee.type === 'MemberExpression' &&
-          callee.property.type === 'Identifier' &&
-          callee.property.name === 'use'
+          propertyName(callee) === 'use'
         ) {
           for (const arg of node.arguments) {
             // app.use(csrf())
@@ -329,11 +328,12 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
         }
 
         // Check for route handlers: app.post(), router.put(), etc.
-        if (
-          callee.type === 'MemberExpression' &&
-          callee.property.type === 'Identifier'
-        ) {
-          const method = callee.property.name.toLowerCase();
+        // `router['post']('/x', h)` registers the same unprotected route.
+        // Resolved before the guard so the guard has a binding to test: the
+        // chain below asks the same two questions the cast was asserting.
+        const routeMethod = memberPropertyName(callee);
+        if (callee.type === 'MemberExpression' && routeMethod !== null) {
+          const method = routeMethod.toLowerCase();
 
           if (!protectedMethods.includes(method)) {
             return;

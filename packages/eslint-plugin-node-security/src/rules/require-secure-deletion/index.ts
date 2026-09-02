@@ -16,6 +16,7 @@ import {
   formatLLMMessage,
   identifierWords,
   MessageIcons,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
@@ -217,11 +218,11 @@ export const requireSecureDeletion = createRule<RuleOptions, MessageIds>({
         const callee = node.callee;
         if (
           callee.type !== AST_NODE_TYPES.MemberExpression ||
-          callee.computed ||
           callee.object.type !== AST_NODE_TYPES.Identifier ||
           callee.object.name !== 'Reflect' ||
-          callee.property.type !== AST_NODE_TYPES.Identifier ||
-          callee.property.name !== 'deleteProperty'
+          // `Reflect['deleteProperty'](rec, 'refresh_token')` deletes the same
+          // key, and leaves the same value recoverable in memory.
+          propertyName(callee) !== 'deleteProperty'
         ) {
           return;
         }

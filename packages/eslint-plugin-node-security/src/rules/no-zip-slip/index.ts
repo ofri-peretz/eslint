@@ -20,7 +20,12 @@
  * - Trusted extraction libraries
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, staticString } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  staticString,
+  namesOneOf,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 /**
  * Six more used to sit here: `zipSlipVulnerability`, `validateArchivePaths`,
@@ -408,8 +413,7 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
       if (node.type === 'MemberExpression') {
         return (
           namesArchive(node.object) ||
-          (node.property.type === 'Identifier' &&
-            ARCHIVE_NAME.test(node.property.name))
+          ARCHIVE_NAME.test(propertyName(node) ?? '')
         );
       }
       return false;
@@ -427,18 +431,16 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
       const callee = node.callee;
 
       // Check for archive method calls (e.g., zip.extractAllTo)
-      if (
-        callee.type === 'MemberExpression' &&
-        callee.property.type === 'Identifier' &&
-        archiveFunctions.includes(callee.property.name)
-      ) {
+      const method =
+        callee.type === 'MemberExpression' ? propertyName(callee) : null;
+      if (method !== null && archiveFunctions.includes(method)) {
         // `extractAllTo` and `extractArchive` belong to adm-zip and collide
         // with nothing. `extract`, `extractAll`, `unzip` and `untar` are
         // ordinary English: a collection extracts a field, a propagator
         // extracts a trace context, a parser extracts a match. Those need a
         // receiver that names an archive before the name means anything.
-        if (!AMBIGUOUS_EXTRACTORS.has(callee.property.name)) return true;
-        return namesArchive(callee.object);
+        if (!AMBIGUOUS_EXTRACTORS.has(method)) return true;
+        return namesArchive((callee as TSESTree.MemberExpression).object);
       }
 
       // Check for standalone archive functions (e.g., extractArchive)
@@ -478,8 +480,7 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
           current.callee.type === 'MemberExpression' &&
           current.callee.object.type === 'Identifier' &&
           current.callee.object.name === 'path' &&
-          current.callee.property.type === 'Identifier' &&
-          current.callee.property.name === 'basename'
+          propertyName(current.callee) === 'basename'
         ) {
           return true;
         }
@@ -491,8 +492,7 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
           if (
             test.type === 'CallExpression' &&
             test.callee.type === 'MemberExpression' &&
-            test.callee.property.type === 'Identifier' &&
-            test.callee.property.name === 'startsWith'
+            propertyName(test.callee) === 'startsWith'
           ) {
             return true;
           }
@@ -501,8 +501,7 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
             test.operator === '!' &&
             test.argument.type === 'CallExpression' &&
             test.argument.callee.type === 'MemberExpression' &&
-            test.argument.callee.property.type === 'Identifier' &&
-            test.argument.callee.property.name === 'startsWith'
+            propertyName(test.argument.callee) === 'startsWith'
           ) {
             return true;
           }
@@ -510,8 +509,7 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
           if (
             test.type === 'CallExpression' &&
             test.callee.type === 'MemberExpression' &&
-            test.callee.property.type === 'Identifier' &&
-            test.callee.property.name === 'includes'
+            propertyName(test.callee) === 'includes'
           ) {
             return true;
           }
@@ -614,11 +612,12 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
           let destArg: TSESTree.Node | undefined;
 
           // Determine which argument is the destination based on the function
-          if (
-            node.callee.type === 'MemberExpression' &&
-            node.callee.property.type === 'Identifier'
-          ) {
-            const methodName = node.callee.property.name;
+          const extractor =
+            node.callee.type === 'MemberExpression'
+              ? propertyName(node.callee)
+              : null;
+          if (extractor !== null) {
+            const methodName = extractor;
             if (['extractAllTo', 'unzip'].includes(methodName)) {
               // Destination is the first argument
               destArg = args[0];
@@ -698,19 +697,20 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
         const callee = node.callee;
         if (
           callee.type === 'MemberExpression' &&
-          callee.property.type === 'Identifier' &&
           // @vocabulary Node path API
-          ['join', 'resolve', 'relative', 'normalize'].includes(
-            callee.property.name,
-          )
+          namesOneOf(propertyName(callee), [
+            'join',
+            'resolve',
+            'relative',
+            'normalize',
+          ])
         ) {
           // Check arguments for potential archive entry usage
           const args = node.arguments;
           for (const arg of args) {
             if (
               arg.type === 'MemberExpression' &&
-              arg.property.type === 'Identifier' &&
-              archiveEntryFields.has(arg.property.name)
+              namesOneOf(propertyName(arg), archiveEntryFields)
             ) {
               // This looks like path.join(dest, entry.name) — but only if an
               // archive is involved. `entry` is just as often an

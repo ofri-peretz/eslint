@@ -9,7 +9,7 @@
  * Prevent .bind() in JSX (performance issue)
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'jsxNoBind';
@@ -66,8 +66,7 @@ function isBindCall(node: TSESTree.Expression): boolean {
   if (node.type === 'CallExpression') {
     if (
       node.callee.type === 'MemberExpression' &&
-      node.callee.property.type === 'Identifier' &&
-      node.callee.property.name === 'bind'
+      propertyName(node.callee) === 'bind'
     ) {
       return true;
     }

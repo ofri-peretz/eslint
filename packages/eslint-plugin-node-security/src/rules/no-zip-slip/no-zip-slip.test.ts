@@ -26,6 +26,22 @@ describe('no-zip-slip', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - safe archive operations', noZipSlip, {
       valid: [
+        // A name chosen at RUNTIME resolves to nothing to match.
+        {
+          name: 'a name chosen at RUNTIME resolves to nothing to match',
+          code: `zip[extract]('/etc/app', true);`,
+        },
+        // An AMBIGUOUS extractor on a receiver whose own key is chosen at runtime
+        // still names no archive.
+        {
+          name: 'an AMBIGUOUS extractor on a receiver whose own key is chosen at runtime',
+          code: `x[k].extract(dest);`,
+        },
+        // A name chosen at RUNTIME resolves to nothing to match.
+        {
+          name: 'a name chosen at RUNTIME resolves to nothing to match',
+          code: `const p = path.join(dest, entry[field]);`,
+        },
         {
           // @source diia-open-source/be-diia-app src/grpc/grpcService.ts:280
           // @found real-source scan

@@ -30,6 +30,8 @@ import {
   formatLLMMessage,
   MessageIcons,
   createSafetyChecker,
+  namesOneOf,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { constInitializerOf, resolveConstant } from '../../utils/const-value';
 import {
@@ -142,10 +144,9 @@ function isBufferReturningRead(node: TSESTree.Node): boolean {
   const name =
     callee.type === AST_NODE_TYPES.Identifier
       ? callee.name
-      : callee.type === AST_NODE_TYPES.MemberExpression &&
-          !callee.computed &&
-          callee.property.type === AST_NODE_TYPES.Identifier
-        ? callee.property.name
+      : callee.type === AST_NODE_TYPES.MemberExpression
+        ? // `b['readUInt8'](0)` reads the same bytes `b.readUInt8(0)` reads.
+          propertyName(callee)
         : null;
   // A second argument is an encoding or an options bag, and either can turn the
   // result into a string. Only the unambiguous one-argument form counts.
@@ -477,8 +478,7 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
       }
       return (
         calleeNode.type === AST_NODE_TYPES.MemberExpression &&
-        calleeNode.property.type === AST_NODE_TYPES.Identifier &&
-        trustedSanitizers.includes(calleeNode.property.name)
+        namesOneOf(propertyName(calleeNode), trustedSanitizers)
       );
     };
 
@@ -666,16 +666,15 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
       }
       if (
         callee.type !== AST_NODE_TYPES.MemberExpression ||
-        callee.computed ||
-        callee.property.type !== AST_NODE_TYPES.Identifier
+        propertyName(callee) === null
       ) {
         return false;
       }
       return (
         (callee.object.type === AST_NODE_TYPES.Identifier &&
           callee.object.name === 'Math' &&
-          (callee.property.name === 'min' || callee.property.name === 'max')) ||
-        boundsCheckFunctions.includes(callee.property.name)
+          (propertyName(callee) === 'min' || propertyName(callee) === 'max')) ||
+        namesOneOf(propertyName(callee), boundsCheckFunctions)
       );
     };
 
@@ -801,9 +800,7 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
       buffer: TSESTree.Identifier,
     ): boolean =>
       node.type === AST_NODE_TYPES.MemberExpression &&
-      !node.computed &&
-      node.property.type === AST_NODE_TYPES.Identifier &&
-      node.property.name === 'length' &&
+      propertyName(node) === 'length' &&
       node.object.type === AST_NODE_TYPES.Identifier &&
       sameBinding(node.object, buffer);
 
@@ -877,15 +874,17 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
        *
        * Unconditional, because `noAssert: true` has no safe reading.
        */
-      // The selector pins the property to a plain Identifier, so no runtime
-      // type guard is needed for it — one would be an uncoverable branch, and
-      // this package gates on 100%.
-      'CallExpression[callee.type="MemberExpression"][callee.computed=false][callee.property.type="Identifier"]'(
+      // The selector used to pin the property to a plain Identifier, which put
+      // the blind spot in the SELECTOR STRING rather than in a guard —
+      // `b['readUInt8'](0, true)` never reached this visitor at all.
+      // `propertyName` resolves both spellings, and returns null for the
+      // runtime-keyed form that genuinely names no method.
+      'CallExpression[callee.type="MemberExpression"]'(
         node: TSESTree.CallExpression,
       ) {
         const callee = node.callee as TSESTree.MemberExpression;
-        const method = (callee.property as TSESTree.Identifier).name;
-        if (!/^(?:read|write)[A-Z]/.test(method)) return;
+        const method = propertyName(callee);
+        if (method === null || !/^(?:read|write)[A-Z]/.test(method)) return;
         // `readUIntBE(offset, byteLength, noAssert)` takes three; the rest two.
         const flag = node.arguments.at(-1);
         if (
@@ -921,11 +920,13 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
             node.init.callee.type === AST_NODE_TYPES.MemberExpression &&
             node.init.callee.object.type === AST_NODE_TYPES.Identifier &&
             node.init.callee.object.name === 'Buffer' &&
-            node.init.callee.property.type === AST_NODE_TYPES.Identifier &&
             // @vocabulary Node Buffer API
-            ['from', 'alloc', 'allocUnsafe'].includes(
-              node.init.callee.property.name,
-            )
+            // `Buffer['alloc'](n)` allocates the same buffer.
+            namesOneOf(propertyName(node.init.callee), [
+              'from',
+              'alloc',
+              'allocUnsafe',
+            ])
           ) {
             addBufferVar(node.id);
           }
@@ -941,8 +942,7 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
             const callee = node.init.callee;
             if (
               callee.type === AST_NODE_TYPES.MemberExpression &&
-              callee.property.type === AST_NODE_TYPES.Identifier &&
-              bufferMethods.includes(callee.property.name) &&
+              namesOneOf(propertyName(callee), bufferMethods) &&
               callee.object.type === AST_NODE_TYPES.Identifier &&
               isBufferType(callee.object)
             ) {
@@ -1049,8 +1049,7 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
 
         // Check for buffer method calls that need bounds checking
         if (
-          node.property.type === 'Identifier' &&
-          bufferMethods.includes(node.property.name) &&
+          namesOneOf(propertyName(node), bufferMethods) &&
           node.object.type === 'Identifier' &&
           isBufferType(node.object)
         ) {
@@ -1071,8 +1070,7 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
         // off `slice` silently lost the check.
         if (
           callee.type === 'MemberExpression' &&
-          callee.property.type === 'Identifier' &&
-          VIEW_METHODS.has(callee.property.name) &&
+          namesOneOf(propertyName(callee), VIEW_METHODS) &&
           callee.object.type === 'Identifier' &&
           isBufferType(callee.object)
         ) {
@@ -1114,9 +1112,8 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
         // findings — one line, two message ids, one underlying fact.
         if (
           callee.type === AST_NODE_TYPES.MemberExpression &&
-          callee.property.type === AST_NODE_TYPES.Identifier &&
-          bufferMethods.includes(callee.property.name) &&
-          !VIEW_METHODS.has(callee.property.name) &&
+          namesOneOf(propertyName(callee), bufferMethods) &&
+          !namesOneOf(propertyName(callee), VIEW_METHODS) &&
           callee.object.type === AST_NODE_TYPES.Identifier &&
           isBufferType(callee.object)
         ) {

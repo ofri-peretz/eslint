@@ -69,7 +69,12 @@ ruleTester.run('no-incomplete-url-sanitization', noIncompleteUrlSanitization, {
 
     // ── Receiver is not known to hold a URL ──────────────────────────────
     { code: "if (body.includes('trusted.com')) { go(); }" },
-    { code: "if (map['url'].includes('trusted.com')) { go(); }" },
+    // A METHOD chosen at runtime is not provably a substring check.
+    { name: 'a METHOD chosen at runtime is not provably a substring check', code: 'if (url[check](\'trusted.com\')) { go(); }' },
+    // Nor is a runtime method in the passthrough chain provably a passthrough.
+    { name: 'nor is a runtime method in the passthrough chain provably a passthrough', code: 'if (url[t]().includes(\'trusted.com\')) { go(); }' },
+    // A key chosen at RUNTIME names no field to recognise.
+    { name: 'a key chosen at RUNTIME names no field to recognise', code: 'if (map[key].includes(\'trusted.com\')) { go(); }' },
     { code: "if (getUrl().includes('trusted.com')) { go(); }" },
     { code: "if (String().includes('trusted.com')) { go(); }" },
     { code: "if ((a + b).includes('trusted.com')) { go(); }" },
@@ -137,6 +142,14 @@ ruleTester.run('no-incomplete-url-sanitization', noIncompleteUrlSanitization, {
   ],
 
   invalid: [
+    // Was pinned above as a receiver "not known to hold a URL". `map.url`
+    // is accepted as one three lines up; the bracket carries the same
+    // evidence, so refusing it was inconsistent rather than conservative.
+    {
+      name: 'was pinned above as a receiver "not known to hold a URL"',
+      code: "if (map['url'].includes('trusted.com')) { go(); }",
+      errors: [{ messageId: 'substringHostCheck' }],
+    },
     // ── Corpus lock: benchmarks/corpus/CWE-020/vulnerable/
     //    url-substring-sanitization.js ───────────────────────────────────
     {

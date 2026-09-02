@@ -35,7 +35,7 @@
  * Locked by `../no-insecure-redirects/url-navigation-partition.matrix.test.ts`.
  */
 
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { createRule, formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 import {
   isGuardedDestination,
@@ -118,9 +118,10 @@ export const requireUrlValidation = createRule<RuleOptions, MessageIds>({
       node: TSESTree.CallExpression,
     ): { object: TSESTree.Node; method: string } | null {
       const callee = node.callee;
-      if (callee.type !== 'MemberExpression' || callee.computed) return null;
-      if (callee.property.type !== 'Identifier') return null;
-      return { object: callee.object, method: callee.property.name };
+      if (callee.type !== 'MemberExpression') return null;
+      // `window['open'](u)` navigates exactly where `window.open(u)` does.
+      const method = propertyName(callee);
+      return method === null ? null : { object: callee.object, method };
     }
 
     // There is no `AssignmentExpression` visitor on purpose: every write that

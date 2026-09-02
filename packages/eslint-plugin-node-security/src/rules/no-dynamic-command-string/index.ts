@@ -41,6 +41,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { constInitializerOf, resolveConstantString } from '../../utils/const-value';
 
@@ -182,15 +183,16 @@ function isAssembledString(node: TSESTree.Node): boolean {
 function calleeName(callee: TSESTree.Node): string | null {
   if (callee.type === AST_NODE_TYPES.Identifier) return callee.name;
   if (callee.type !== AST_NODE_TYPES.MemberExpression) return null;
-  if (callee.property.type !== AST_NODE_TYPES.Identifier) return null;
-  if (callee.computed) return null;
+  // `cp['spawn']('bash', args)` calls the same function.
+  const method = propertyName(callee);
+  if (method === null) return null;
   if (
     callee.object.type === AST_NODE_TYPES.Identifier &&
     callee.object.name === '$'
   ) {
-    return `$.${callee.property.name}`;
+    return `$.${method}`;
   }
-  return callee.property.name;
+  return method;
 }
 
 export const noDynamicCommandString = createRule<RuleOptions, MessageIds>({

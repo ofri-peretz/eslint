@@ -28,6 +28,28 @@ describe('no-unlimited-resource-allocation', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - safe resource allocation', noUnlimitedResourceAllocation, {
       valid: [
+    // Each reaches a `propertyName(...) ?? ''` sentinel with a key that cannot
+    // be resolved, and each must fail CLOSED: an unnameable property is not a
+    // request surface, not a size, and not an fs write.
+    {
+      name: 'a dynamic key is not a request surface',
+      code: `function f(req, k) { return Buffer.alloc(req[k]); }`,
+    },
+    {
+      name: 'a dynamic key is not a size property',
+      code: `function f(body, k) { return Buffer.alloc(body[k]); }`,
+    },
+    {
+      // `couldBeASize` is only reached from the `new Buffer(x)` branch, and
+      // this is the member arm of its switch: a key that cannot be resolved
+      // names no size property, so the allocation is not sized by user input.
+      name: 'a dynamic key is not a size property',
+      code: 'function f(req, k) { return new Buffer(req.body[k]); }',
+    },
+    {
+      name: 'a dynamic fs method is not a known write',
+      code: `function f(fs, m, data) { return fs[m]('out.bin', data); }`,
+    },
         // Safe buffer allocation with limits
         {
           name: 'a fixed size',
@@ -977,15 +999,25 @@ describe('corpus regression — ZIP bomb detection', () => {
         name: 'named import specifier is not a module binding',
         code: `import { Extract } from 'unzipper';\nExtract({ path: 'out' });`,
       },
-      // A string-keyed member on an archive binding yields no Identifier
-      // property, so there is no method name to match. Not reported rather
-      // than reported on an empty name.
+      // A DYNAMIC key on an archive binding names no method, so there is
+      // nothing to match. This is where the line belongs — a string key is
+      // resolvable and now reports; see the invalid case below.
       {
-        name: 'string-keyed member on an archive binding',
-        code: `const tar = require('tar');\ntar['extract']();`,
+        name: 'dynamic-keyed member on an archive binding',
+        code: `const tar = require('tar');\ntar[m]();`,
       },
     ],
     invalid: [
+      {
+        // FN: was `valid`, on the ground that a string-keyed member "yields no
+        // Identifier property, so there is no method name to match". It yields
+        // a perfectly good method name — `tar['extract']()` extracts exactly
+        // as `tar.extract()` does, and decompresses unbounded either way.
+        // @found computed-key blind-spot probe
+        name: 'FN: an archive extract reached by a string subscript',
+        code: `const tar = require('tar');\ntar['extract']();`,
+        errors: 1,
+      },
       {
         name: 'unzipper.Extract still reports',
         code: `const unzipper = require('unzipper');\nstream.pipe(unzipper.Extract({ path: 'out' }));`,

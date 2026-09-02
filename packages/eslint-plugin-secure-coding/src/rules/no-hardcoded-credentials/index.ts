@@ -18,6 +18,7 @@ import {
   compileUserPatterns,
   type PatternTest,
   staticString,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import {
   createModuleEvidence,
@@ -408,16 +409,27 @@ function isUrlOrPath(value: string): boolean {
   if (/^[A-Za-z][A-Za-z0-9+.-]*:\/\//.test(value)) {
     return !/^[^/]*\/\/[^/@]*:[^/@]*@/.test(value);
   }
-  // A tool's path template is still a path. Jest writes `<rootDir>/…`, webpack
-  // and Rollup write `[name]/…`, and the leading token is not a path segment
-  // this function can parse — so `'<rootDir>/build/cjs/exports/default.js'`,
-  // the module map in okta/okta-auth-js's jest config, cleared every guard and
-  // was reported as a CRITICAL hard-coded credential.
-  //
-  // Only the ROOT token is stripped, and only when the remainder is rooted:
-  // the segment test below still has to pass, so this widens what counts as a
-  // path root without widening what counts as a path.
-  const rooted = value.replace(/^[<[][A-Za-z_][A-Za-z0-9_]*[>\]](?=\/)/, '');
+  /*
+   * A substituted root token is still a path root. Jest writes module paths
+   * against `<rootDir>/…`; webpack and Rollup write `[name]/…`. Either way the
+   * leading token is not a path segment this function can parse —
+   *
+   *   const OktaAuth = '<rootDir>/build/cjs/exports/default.js'
+   *
+   * — and the binding is named `OktaAuth`, which opens the credential-context
+   * gate. Without this the value fails the leading-slash test below, clears the
+   * two-character-class test on its slashes, dots and mixed case, and a jest
+   * `moduleNameMapper` entry is reported as a CRITICAL hard-coded credential.
+   * That was one of the two findings in okta/okta-auth-js.
+   *
+   * Only the ROOT token is stripped, and only when the remainder is rooted: the
+   * segment test below still has to pass, so this widens what counts as a path
+   * root without widening what counts as a path.
+   */
+  const rooted = value.replace(
+    /^(?:<[A-Za-z_$][\w$]*>|\[[A-Za-z_$][\w$]*\])(?=\/)/,
+    '',
+  );
   if (rooted !== value) return isUrlOrPath(rooted);
   if (!value.startsWith('/') || value.startsWith('//')) return false;
 
@@ -447,6 +459,25 @@ function isUrlOrPath(value: string): boolean {
     );
   }
   return true;
+}
+
+/**
+ * Is this value just its own slot's name, respelled?
+ *
+ * `MTLS_INCOMPATIBLE_CLIENT_AUTH: 'mtls_incompatible_client_auth'` is the
+ * error-code idiom every codebase writes, and the key ends in `auth`, which
+ * opens the credential-context gate. The value then clears the two-class test
+ * on its letters and underscores and a CVSS 9.8 finding lands on an enum. That
+ * was one of the two findings in auth0/express-openid-connect.
+ *
+ * A secret is never its own key's name: whoever generated it did not consult
+ * the variable it would be stored in. Comparing with separators and case
+ * stripped covers the SCREAMING_SNAKE, kebab and camel spellings at once.
+ */
+function echoesItsOwnSlotName(value: string, slotName: string): boolean {
+  if (slotName === '') return false;
+  const fold = (text: string): string => text.replace(/[-_.\s]/g, '').toLowerCase();
+  return fold(value) === fold(slotName);
 }
 
 export function isSecretShaped(value: string, minLength: number): boolean {
@@ -1544,8 +1575,7 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
           left.object.type === 'MemberExpression' &&
           left.object.object.type === 'Identifier' &&
           left.object.object.name === 'process' &&
-          left.object.property.type === 'Identifier' &&
-          left.object.property.name === 'env'
+          propertyName(left.object) === 'env'
         ) {
           return; // safe — fallback to process.env value
         }
@@ -1575,6 +1605,22 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
         confidence === 'ambiguous' &&
         !isCredentialContext(node, parent)
       ) {
+        finalIsCredential = false;
+      }
+
+      // An enum member named after itself is a code, not a credential. Gated
+      // to non-structural findings for the same reason placeholders are: a JWT
+      // or an `sk_live_` key keeps its shape whatever it is called.
+      //
+      // Held in a const, not applied once: the context-positive branch below
+      // re-enables a secret-shaped value in a credential-named slot, and an
+      // error code sits in exactly such a slot — suppressing here alone would
+      // have been undone three conditions later.
+      const echoesSlot =
+        confidence !== 'structural' &&
+        parent !== undefined &&
+        echoesItsOwnSlotName(value, slotNameOf(parent));
+      if (echoesSlot) {
         finalIsCredential = false;
       }
 
@@ -1608,6 +1654,7 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       if (
         !finalIsCredential &&
         !isPlaceholder &&
+        !echoesSlot &&
         !compiledIgnorePatterns.some((pattern) => pattern.test(value)) &&
         isSecretShaped(value, detectionOptions.minLength) &&
         isCredentialContext(node, parent)

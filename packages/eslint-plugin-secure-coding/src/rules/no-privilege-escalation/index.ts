@@ -8,12 +8,15 @@
  * ESLint Rule: no-privilege-escalation
  * Detects potential privilege escalation vulnerabilities
  * CWE-269: Improper Privilege Management
- * 
+ *
  * @see https://cwe.mitre.org/data/definitions/269.html
  * @see https://owasp.org/www-community/vulnerabilities/Improper_Access_Control
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, formatLLMMessage, MessageIcons,
+import {
+  AST_NODE_TYPES,
+  formatLLMMessage,
+  MessageIcons,
   compileUserPatterns,
   compileUserPattern,
   identifierWords,
@@ -21,6 +24,7 @@ import { AST_NODE_TYPES, formatLLMMessage, MessageIcons,
   nameHasAnyWord,
   type PatternTest,
   staticString,
+  memberPropertyName,
 } from '@interlace/eslint-devkit';
 import { createRule, isTestFilePath } from '@interlace/eslint-devkit';
 
@@ -29,19 +33,19 @@ type MessageIds = 'privilegeEscalation';
 export interface Options {
   /** Allow privilege escalation patterns in test files. Default: false */
   allowInTests?: boolean;
-  
+
   /**
    * Override which filenames `allowInTests` applies to, as a regex string.
    * Unset, the shared structural predicate (`isTestFilePath`) decides.
    */
   testFilePattern?: string | null;
-  
+
   /** Role check patterns to recognize. Default: ['hasRole', 'checkRole', 'isAdmin', 'isAuthorized'] */
   roleCheckPatterns?: string[];
-  
+
   /** User input patterns that should be validated. Default: ['req.body', 'req.query', 'req.params'] */
   userInputPatterns?: string[];
-  
+
   /** Additional patterns to ignore. Default: [] */
   ignorePatterns?: string[];
 
@@ -119,7 +123,12 @@ const DEFAULT_USER_INPUT_PATTERNS = [
  * `entitlement` wants that in. Both are options; neither changes that the
  * comparison is exact, never a substring.
  */
-const DEFAULT_PRIVILEGE_PROPERTIES = ['role', 'permission', 'privilege', 'access'];
+const DEFAULT_PRIVILEGE_PROPERTIES = [
+  'role',
+  'permission',
+  'privilege',
+  'access',
+];
 
 /**
  * Privilege operations, matched as WHOLE WORDS or whole consecutive phrases.
@@ -173,7 +182,9 @@ function isPrivilegeOperationName(
  * notation with a string literal key — the same property, written the way code
  * that also handles hyphenated field names writes it — was invisible.
  */
-function assignedPropertyName(member: TSESTree.MemberExpression): string | null {
+function assignedPropertyName(
+  member: TSESTree.MemberExpression,
+): string | null {
   if (!member.computed && member.property.type === AST_NODE_TYPES.Identifier) {
     return member.property.name;
   }
@@ -185,7 +196,10 @@ function assignedPropertyName(member: TSESTree.MemberExpression): string | null 
 }
 
 /** Every descendant node, `parent` links excluded. */
-function forEachNode(root: TSESTree.Node, visit: (node: TSESTree.Node) => void): void {
+function forEachNode(
+  root: TSESTree.Node,
+  visit: (node: TSESTree.Node) => void,
+): void {
   const pending: TSESTree.Node[] = [root];
 
   while (pending.length > 0) {
@@ -196,7 +210,11 @@ function forEachNode(root: TSESTree.Node, visit: (node: TSESTree.Node) => void):
       if (key === 'parent') continue;
       const children = Array.isArray(value) ? value : [value];
       for (const child of children) {
-        if (child !== null && typeof child === 'object' && typeof child.type === 'string') {
+        if (
+          child !== null &&
+          typeof child === 'object' &&
+          typeof child.type === 'string'
+        ) {
           pending.push(child as TSESTree.Node);
         }
       }
@@ -211,10 +229,16 @@ function forEachNode(root: TSESTree.Node, visit: (node: TSESTree.Node) => void):
  * rule ran `sourceCode.getText(test).includes(pattern)` over the printed
  * condition, which is the same substring defect in the SUPPRESSION direction.
  */
-function containsRoleCheck(root: TSESTree.Node, roleCheckPatterns: string[]): boolean {
+function containsRoleCheck(
+  root: TSESTree.Node,
+  roleCheckPatterns: string[],
+): boolean {
   let found = false;
   forEachNode(root, (node) => {
-    if (node.type === AST_NODE_TYPES.Identifier && nameHasAnyWord(node.name, roleCheckPatterns)) {
+    if (
+      node.type === AST_NODE_TYPES.Identifier &&
+      nameHasAnyWord(node.name, roleCheckPatterns)
+    ) {
       found = true;
     }
   });
@@ -233,7 +257,7 @@ function exitsUnconditionally(node: TSESTree.Statement): boolean {
     return node.body.some(
       (statement) =>
         statement.type === AST_NODE_TYPES.ReturnStatement ||
-        statement.type === AST_NODE_TYPES.ThrowStatement
+        statement.type === AST_NODE_TYPES.ThrowStatement,
     );
   }
   return false;
@@ -253,13 +277,19 @@ function exitsUnconditionally(node: TSESTree.Statement): boolean {
  * exactly still got the error. An early-return guard is a sibling statement,
  * not an ancestor.
  */
-function isAfterRoleGuard(node: TSESTree.Node, roleCheckPatterns: string[]): boolean {
+function isAfterRoleGuard(
+  node: TSESTree.Node,
+  roleCheckPatterns: string[],
+): boolean {
   let current: TSESTree.Node = node;
 
   while (current.parent) {
     const parent: TSESTree.Node = current.parent;
 
-    if (parent.type === AST_NODE_TYPES.BlockStatement || parent.type === AST_NODE_TYPES.Program) {
+    if (
+      parent.type === AST_NODE_TYPES.BlockStatement ||
+      parent.type === AST_NODE_TYPES.Program
+    ) {
       const body = parent.body as TSESTree.Statement[];
       const index = body.indexOf(current as TSESTree.Statement);
 
@@ -298,10 +328,10 @@ function matchesIgnorePattern(text: string, patterns: string[]): boolean {
 function containsUserInput(
   node: TSESTree.Node,
   sourceCode: TSESLint.SourceCode,
-  userInputPatterns: readonly PatternTest[]
+  userInputPatterns: readonly PatternTest[],
 ): boolean {
   const text = sourceCode.getText(node);
-  return userInputPatterns.some(pattern => pattern.test(text));
+  return userInputPatterns.some((pattern) => pattern.test(text));
 }
 
 /**
@@ -309,7 +339,7 @@ function containsUserInput(
  */
 function isInsideRoleCheck(
   node: TSESTree.Node,
-  roleCheckPatterns: string[]
+  roleCheckPatterns: string[],
 ): boolean {
   let current: TSESTree.Node | null = node;
 
@@ -341,8 +371,12 @@ function isInsideRoleCheck(
         }
       }
 
-      if (callee.type === 'MemberExpression' && callee.property.type === 'Identifier') {
-        if (nameHasAnyWord(callee.property.name, roleCheckPatterns)) {
+      // `guard['isAdmin'](user)` is the same role check. Resolved before the
+      // guard so the guard has a binding to test, and the word test below
+      // reads a narrowed `string` instead of a cast second call.
+      const memberName = memberPropertyName(callee);
+      if (callee.type === 'MemberExpression' && memberName !== null) {
+        if (nameHasAnyWord(memberName, roleCheckPatterns)) {
           return true;
         }
       }
@@ -374,12 +408,12 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Privilege Escalation',
         cwe: 'CWE-269',
-        description: 'Potential privilege escalation: {{issue}} - user input used without role validation',
+        description:
+          'Potential privilege escalation: {{issue}} - user input used without role validation',
         severity: 'HIGH',
         fix: 'Add role check before using user input: if (!hasRole(user, requiredRole)) throw new Error("Unauthorized");',
         documentationLink: 'https://cwe.mitre.org/data/definitions/269.html',
       }),
-
     },
     schema: [
       {
@@ -419,7 +453,8 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Additional user input patterns to check (regex strings)',
+            description:
+              'Additional user input patterns to check (regex strings)',
           },
           ignorePatterns: {
             type: 'array',
@@ -438,7 +473,8 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Extra privilege property names, on top of `privilegeProperties`.',
+            description:
+              'Extra privilege property names, on top of `privilegeProperties`.',
           },
           privilegeTerms: {
             type: 'array',
@@ -451,7 +487,8 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Extra privilege operation terms, on top of `privilegeTerms`.',
+            description:
+              'Extra privilege operation terms, on top of `privilegeTerms`.',
           },
           barePrivilegeVerbs: {
             type: 'array',
@@ -464,7 +501,8 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Extra bare privilege verbs, on top of `barePrivilegeVerbs`.',
+            description:
+              'Extra bare privilege verbs, on top of `barePrivilegeVerbs`.',
           },
         },
         additionalProperties: false,
@@ -487,7 +525,7 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
   ],
   create(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}]
+    [options = {}],
   ) {
     const {
       allowInTests = false,
@@ -511,8 +549,14 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
         name.toLowerCase(),
       ),
     );
-    const privilegeOperationTerms = [...privilegeTerms, ...additionalPrivilegeTerms];
-    const bareVerbs = new Set([...barePrivilegeVerbs, ...additionalBarePrivilegeVerbs]);
+    const privilegeOperationTerms = [
+      ...privilegeTerms,
+      ...additionalPrivilegeTerms,
+    ];
+    const bareVerbs = new Set([
+      ...barePrivilegeVerbs,
+      ...additionalBarePrivilegeVerbs,
+    ]);
     const isPrivilegeOperationCallee = (name: string): boolean =>
       isPrivilegeOperationName(name, privilegeOperationTerms, bareVerbs);
 
@@ -541,7 +585,8 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
     /** Any role check that dominates this node: a wrapping if/ternary, or a guard clause. */
     function isRoleChecked(node: TSESTree.Node): boolean {
       return (
-        isInsideRoleCheck(node, roleCheckPatterns) || isAfterRoleGuard(node, roleCheckPatterns)
+        isInsideRoleCheck(node, roleCheckPatterns) ||
+        isAfterRoleGuard(node, roleCheckPatterns)
       );
     }
 
@@ -565,7 +610,10 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
         // Walk out to the declarator, so `const { role } = req.body` reaches
         // its initialiser exactly as `const role = req.body.role` does.
         let declarator: TSESTree.Node | undefined = def.name as TSESTree.Node;
-        while (declarator && declarator.type !== AST_NODE_TYPES.VariableDeclarator) {
+        while (
+          declarator &&
+          declarator.type !== AST_NODE_TYPES.VariableDeclarator
+        ) {
           declarator = declarator.parent;
         }
 
@@ -584,7 +632,8 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
     /** Is this value attacker-controlled, directly or through one binding? */
     function isUserControlled(node: TSESTree.Node): boolean {
       return (
-        containsUserInput(node, sourceCode, userInputPatterns) || resolvesToUserInput(node)
+        containsUserInput(node, sourceCode, userInputPatterns) ||
+        resolvesToUserInput(node)
       );
     }
 
@@ -647,16 +696,19 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
         }
       }
 
-      if (callee.type === 'MemberExpression' && callee.property.type === 'Identifier') {
-        if (isPrivilegeOperationCallee(callee.property.name)) {
+      // `userService['elevate'](user, level)` is the same operation. Resolved
+      // once, before the guard, so the guard tests the binding the body reads.
+      const method = memberPropertyName(callee);
+      if (callee.type === 'MemberExpression' && method !== null) {
+        if (isPrivilegeOperationCallee(method)) {
           isPrivilegeOperation = true;
-          operationName = callee.property.name.toLowerCase();
+          operationName = method.toLowerCase();
         }
       }
 
       if (isPrivilegeOperation) {
         const text = sourceCode.getText(node);
-        
+
         // Check if it matches any ignore pattern
         if (matchesIgnorePattern(text, ignorePatterns)) {
           return;
@@ -690,7 +742,7 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
       for (const prop of node.properties) {
         if (prop.type === 'Property' && prop.key.type === 'Identifier') {
           const keyName = prop.key.name.toLowerCase();
-          
+
           if (privilegeProps.has(keyName)) {
             const text = sourceCode.getText(prop);
             if (matchesIgnorePattern(text, ignorePatterns)) continue;

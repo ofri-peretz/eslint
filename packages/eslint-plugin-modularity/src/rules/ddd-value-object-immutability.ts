@@ -12,7 +12,7 @@
  * @see https://martinfowler.com/bliki/ValueObject.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -91,8 +91,7 @@ function usesObjectFreeze(
               statement.expression.callee.type === 'MemberExpression' &&
               statement.expression.callee.object.type === 'Identifier' &&
               statement.expression.callee.object.name === 'Object' &&
-              statement.expression.callee.property.type === 'Identifier' &&
-              statement.expression.callee.property.name === 'freeze'
+              propertyName(statement.expression.callee) === 'freeze'
             ) {
               return true;
             }

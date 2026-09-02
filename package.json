@@ -74,7 +74,7 @@
     "typecheck:benchmarks": "tsgo --noEmit -p benchmarks/tsconfig.scripts.json",
     "release": "gh workflow run release.yml --ref main",
     "release:dry-run": "gh workflow run release.yml --ref main -f dry-run=true",
-    "ci:trigger": "gh workflow run ci.yml --ref local-playground-app && echo '✅ Workflow triggered!'",
+    "ci:trigger": "gh workflow run ci.yml --ref local-playground-app && echo '\u2705 Workflow triggered!'",
     "ci:status": "tsx scripts/ci-status.ts",
     "ci": "tsx scripts/ci-status.ts",
     "delete-branches": "bash scripts/delete-branches.sh",
@@ -249,6 +249,7 @@
     "ilb:preset-budget:baseline": "tsx benchmarks/suites/ilb-preset-budget/run.ts --update-baseline",
     "check:corpus-coverage": "tsx scripts/check-corpus-coverage.ts",
     "check:rule-cases": "tsx scripts/rule-case-ledger.ts --check",
+    "check:computed-keys": "npm run --silent rule-cases && tsx scripts/find-computed-key-blind-spots.mts",
     "case-registry": "tsx scripts/case-registry.mts",
     "case-registry:import": "tsx scripts/case-registry-import.mts",
     "audit:spellings": "tsx scripts/audit-rule-spellings.ts",
@@ -387,7 +388,10 @@
   },
   "overrides": {
     "html-encoding-sniffer": "^6.0.0",
-    "dompurify": "^3.4.13"
+    "dompurify": "^3.4.13",
+    "fast-uri": "^3.1.6",
+    "@humanfs/node": "^0.16.8",
+    "qs": "^6.16.0"
   },
   "dependencies": {
     "@fumadocs/mdx-remote": "^1.5.1",

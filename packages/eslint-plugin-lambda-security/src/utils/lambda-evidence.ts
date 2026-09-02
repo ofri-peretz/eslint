@@ -5,7 +5,7 @@
  */
 
 import type { TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, propertyName } from '@interlace/eslint-devkit';
 
 /**
  * Packages whose presence means this file is Lambda code.
@@ -120,8 +120,7 @@ function namesHandler(node: TSESTree.Node): boolean {
   if (node.type === AST_NODE_TYPES.Identifier) return node.name === 'handler';
   if (node.type === AST_NODE_TYPES.MemberExpression) {
     return (
-      node.property.type === AST_NODE_TYPES.Identifier &&
-      node.property.name === 'handler'
+      propertyName(node) === 'handler'
     );
   }
   return false;

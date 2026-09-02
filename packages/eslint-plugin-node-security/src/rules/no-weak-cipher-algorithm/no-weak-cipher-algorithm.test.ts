@@ -20,6 +20,11 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-weak-cipher-algorithm', noWeakCipherAlgorithm, {
   valid: [
+    // A name chosen at RUNTIME resolves to nothing to match.
+    {
+      name: 'a name chosen at RUNTIME resolves to nothing to match',
+      code: `const c = crypto[make]('des', key, iv);`,
+    },
     // Modern secure algorithms
     {
       name: 'a modern cipher',

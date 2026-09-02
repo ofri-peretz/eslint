@@ -872,8 +872,15 @@ function metadataContract(f: RuleFacts): Finding[] {
         !optSchema.includes(v.name) && !f.createBody.includes(`${v.name} =`),
     )
     .map((v) => `${v.name}${v.where}`);
+  // `namesOneOf(` is a membership test written through devkit — it takes the
+  // name and the container and answers the same question `SET.has(name)` does.
+  // Omitting it let a rule clear this check by changing HOW it asks, which is
+  // the helper-shaped evasion CLAUDE.md records for the name-inference gate:
+  // four browser-security rules dropped this finding in one refactor while
+  // their word lists stayed exactly as unconfigurable as before.
   const usesMembership =
-    /includes\(|\.has\(|some\(/.test(f.createBody) || f.utils.length > 0;
+    /includes\(|\.has\(|some\(|namesOneOf\(/.test(f.createBody) ||
+    f.utils.length > 0;
   if (vocabularies.length && usesMembership) {
     out.push({
       id: 'unconfigurable-vocabulary',

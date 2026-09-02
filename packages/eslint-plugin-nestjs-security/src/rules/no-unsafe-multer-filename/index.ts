@@ -53,6 +53,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { fileUsesNestjs } from '../../utils/nestjs-evidence';
 
@@ -114,9 +115,7 @@ function readsOriginalNameRaw(
   switch (node.type) {
     case AST_NODE_TYPES.MemberExpression:
       return (
-        !node.computed &&
-        node.property.type === AST_NODE_TYPES.Identifier &&
-        node.property.name === 'originalname' &&
+        propertyName(node) === 'originalname' &&
         node.object.type === AST_NODE_TYPES.Identifier &&
         node.object.name === fileParam
       );

@@ -12,6 +12,9 @@ import {
   MessageIcons,
   resolveModuleBinding,
   staticString,
+  namesOneOf,
+  memberPropertyName,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { NoTransactionOnPoolOptions } from '../../types';
 import { fileUsesPostgres, PG_MODULES } from '../../utils';
@@ -43,11 +46,16 @@ const TRANSACTION_STATEMENTS: readonly RegExp[] = [
  * construction, so a transaction on it is correct. The whole defect is that a
  * POOL hands out a different connection per query.
  */
-function isPgPoolConstructor(callee: TSESTree.Node, scope: TSESLint.Scope.Scope): boolean {
+function isPgPoolConstructor(
+  callee: TSESTree.Node,
+  scope: TSESLint.Scope.Scope,
+): boolean {
   const binding = resolveModuleBinding(callee, scope);
   if (binding === undefined) return false;
   const parts = binding.module.split('/');
-  const root = binding.module.startsWith('@') ? parts.slice(0, 2).join('/') : parts[0];
+  const root = binding.module.startsWith('@')
+    ? parts.slice(0, 2).join('/')
+    : parts[0];
   if (!PG_MODULE_SET.has(root)) return false;
   const [exported] = binding.path;
   // `const Pool = require('pg-pool')` — the module itself is the constructor.
@@ -71,8 +79,11 @@ function statementText(node: TSESTree.Node): string | null {
     const text = node.properties.find(
       (prop): prop is TSESTree.Property =>
         prop.type === AST_NODE_TYPES.Property &&
-        ((prop.key.type === AST_NODE_TYPES.Identifier && !prop.computed && prop.key.name === 'text') ||
-          (prop.key.type === AST_NODE_TYPES.Literal && prop.key.value === 'text')),
+        ((prop.key.type === AST_NODE_TYPES.Identifier &&
+          !prop.computed &&
+          prop.key.name === 'text') ||
+          (prop.key.type === AST_NODE_TYPES.Literal &&
+            prop.key.value === 'text')),
     );
     return text === undefined ? null : statementText(text.value);
   }
@@ -91,10 +102,12 @@ export const noTransactionOnPool: TSESLint.RuleModule<
   meta: {
     type: 'problem',
     docs: {
-      description: 'Prevent starting transactions directly on the Pool, which is unsafe due to lack of client affinity.',
+      description:
+        'Prevent starting transactions directly on the Pool, which is unsafe due to lack of client affinity.',
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-postgresql-security/docs/rules/no-transaction-on-pool.md',
       cwe: 'CWE-662',
-      cweJustification: 'CWE-662 (Improper Synchronization) — running BEGIN/COMMIT on a connection pool can split a logical transaction across different physical clients, breaking ACID atomicity.',
+      cweJustification:
+        'CWE-662 (Improper Synchronization) — running BEGIN/COMMIT on a connection pool can split a logical transaction across different physical clients, breaking ACID atomicity.',
       confidence: 'high',
     },
     messages: {
@@ -143,27 +156,39 @@ export const noTransactionOnPool: TSESLint.RuleModule<
      * package is a pool; `await pool.connect()` and `new Client()` are single
      * connections and correct.
      */
-    const isPool = (receiver: TSESTree.Node, scope: TSESLint.Scope.Scope): boolean => {
+    const isPool = (
+      receiver: TSESTree.Node,
+      scope: TSESLint.Scope.Scope,
+    ): boolean => {
       if (
         receiver.type === AST_NODE_TYPES.MemberExpression &&
         receiver.object.type === AST_NODE_TYPES.ThisExpression &&
-        !receiver.computed &&
-        receiver.property.type === AST_NODE_TYPES.Identifier
+        propertyName(receiver) !== null
       ) {
-        return poolProperties.has(receiver.property.name);
+        // `this['pool'].query(…)` is the same pool `this.pool` names.
+        return namesOneOf(propertyName(receiver), poolProperties);
       }
 
       if (receiver.type !== AST_NODE_TYPES.Identifier) return false;
 
-      for (let current: TSESLint.Scope.Scope | null = scope; current; current = current.upper) {
+      for (
+        let current: TSESLint.Scope.Scope | null = scope;
+        current;
+        current = current.upper
+      ) {
         const variable = current.set.get(receiver.name);
         if (variable === undefined) continue;
         // A handle reassigned somewhere else may hold a different connection by
         // the time it is used.
-        if (variable.references.filter((ref) => ref.isWrite()).length !== 1) return false;
+        if (variable.references.filter((ref) => ref.isWrite()).length !== 1)
+          return false;
         const def = variable.defs.find((d) => d.type === 'Variable');
-        const init = def === undefined ? null : (def.node as TSESTree.VariableDeclarator).init;
-        if (init == null || init.type !== AST_NODE_TYPES.NewExpression) return false;
+        const init =
+          def === undefined
+            ? null
+            : (def.node as TSESTree.VariableDeclarator).init;
+        if (init == null || init.type !== AST_NODE_TYPES.NewExpression)
+          return false;
         return isPgPoolConstructor(init.callee, scope);
       }
       return false;
@@ -173,18 +198,27 @@ export const noTransactionOnPool: TSESLint.RuleModule<
       // `this.pool = new Pool()` — record the property, so a method calling
       // `this.pool.query('BEGIN')` is judged on what was actually assigned.
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
+        // Resolved before the guard: the guard already asks whether the field
+        // is nameable, so the assignment below reads that answer instead of
+        // casting a second call past the same question.
+        const field = memberPropertyName(node.left);
         if (
           node.operator !== '=' ||
           node.left.type !== AST_NODE_TYPES.MemberExpression ||
           node.left.object.type !== AST_NODE_TYPES.ThisExpression ||
-          node.left.computed ||
-          node.left.property.type !== AST_NODE_TYPES.Identifier ||
+          field === null ||
           node.right.type !== AST_NODE_TYPES.NewExpression
         ) {
           return;
         }
-        if (isPgPoolConstructor(node.right.callee, context.sourceCode.getScope(node))) {
-          poolProperties.add(node.left.property.name);
+        if (
+          isPgPoolConstructor(
+            node.right.callee,
+            context.sourceCode.getScope(node),
+          )
+        ) {
+          // `this['pool'] = new Pool()` binds the same field.
+          poolProperties.add(field);
         }
       },
 
@@ -198,7 +232,12 @@ export const noTransactionOnPool: TSESLint.RuleModule<
         ) {
           return;
         }
-        if (isPgPoolConstructor(node.value.callee, context.sourceCode.getScope(node))) {
+        if (
+          isPgPoolConstructor(
+            node.value.callee,
+            context.sourceCode.getScope(node),
+          )
+        ) {
           poolProperties.add(node.key.name);
         }
       },
@@ -206,8 +245,8 @@ export const noTransactionOnPool: TSESLint.RuleModule<
       'CallExpression:exit'(node: TSESTree.CallExpression) {
         if (
           node.callee.type !== AST_NODE_TYPES.MemberExpression ||
-          node.callee.property.type !== AST_NODE_TYPES.Identifier ||
-          node.callee.property.name !== 'query'
+          // `db['query']('BEGIN')` runs the same statement.
+          propertyName(node.callee) !== 'query'
         ) {
           return;
         }

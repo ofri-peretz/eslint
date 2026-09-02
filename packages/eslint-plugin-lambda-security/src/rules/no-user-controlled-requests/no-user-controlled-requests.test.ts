@@ -108,6 +108,19 @@ ruleTester.run('no-user-controlled-requests', noUserControlledRequests, {
     },
   ]),
   invalid: lambda([
+    // The query BAG is named, the key inside it is not. Still attacker-chosen,
+    // so it still reports — the message just says `[...]` where a name would
+    // otherwise go.
+    {
+      name: 'a fetch to a URL under a runtime-keyed query parameter',
+      code: `
+        export const handler = async (event) => {
+          const url = event.queryStringParameters[k];
+          await fetch(url);
+        };
+      `,
+      errors: [{ messageId: 'ssrfVulnerability' }],
+    },
     // URL from query parameters
     {
       name: 'a fetch to a URL taken from the query string',

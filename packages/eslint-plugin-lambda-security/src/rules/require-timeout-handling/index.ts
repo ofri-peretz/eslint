@@ -25,6 +25,8 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  namesOneOf,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'missingTimeoutHandling';
@@ -222,10 +224,7 @@ export const requireTimeoutHandling = createRule<RuleOptions, MessageIds>({
       MemberExpression(node: TSESTree.MemberExpression) {
         if (!currentHandlerNode) return;
 
-        if (
-          node.property.type === AST_NODE_TYPES.Identifier &&
-          node.property.name === 'getRemainingTimeInMillis'
-        ) {
+        if (propertyName(node) === 'getRemainingTimeInMillis') {
           hasTimeoutCheck = true;
         }
       },
@@ -254,11 +253,8 @@ export const requireTimeoutHandling = createRule<RuleOptions, MessageIds>({
         }
 
         if (node.callee.type === AST_NODE_TYPES.MemberExpression) {
-          const property = node.callee.property;
-          if (
-            property.type === AST_NODE_TYPES.Identifier &&
-            EXTERNAL_CALL_PATTERNS.has(property.name)
-          ) {
+          // `client['send'](cmd)` is the same external call.
+          if (namesOneOf(propertyName(node.callee), EXTERNAL_CALL_PATTERNS)) {
             hasExternalCalls = true;
           }
         }
@@ -268,8 +264,7 @@ export const requireTimeoutHandling = createRule<RuleOptions, MessageIds>({
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
           node.callee.object.type === AST_NODE_TYPES.Identifier &&
           node.callee.object.name === 'Promise' &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          node.callee.property.name === 'race'
+          propertyName(node.callee) === 'race'
         ) {
           hasTimeoutCheck = true;
         }

@@ -967,8 +967,16 @@ describe('structural predicates', () => {
     valid: [
       // Template literal vs string literal.
       'if (`${a}b` == "x") { go(); }',
-      // `.length` vs numeric literal.
+      // `.length` vs numeric literal, in either notation. The subscripted
+      // form was pinned as INVALID under "a computed `.length`-looking read
+      // is not the language's `.length`" — it is exactly the language's
+      // `.length`, so the exemption above was being denied to a minifier's
+      // spelling of the same comparison.
       'if (list.length == 3) { go(); }',
+      {
+        name: 'a subscripted .length compared with == is the same numeric check',
+        code: 'if (list["length"] == 3) { go(); }',
+      },
       // Explicit coercions.
       'if (String(a) == "x") { go(); }',
       'if (Number(a) == 1) { go(); }',
@@ -992,9 +1000,9 @@ describe('structural predicates', () => {
         code: 'if (compute(a) == 1) { go(); }',
         errors: [{ messageId: 'looseEqualityTypeCheck' }],
       },
-      // A computed `.length`-looking read is not the language's `.length`.
+      // A `.length` read keyed at RUNTIME is not provably the length.
       {
-        code: 'if (list["length"] == 3) { go(); }',
+        code: 'if (list[k] == 3) { go(); }',
         errors: [{ messageId: 'looseEqualityTypeCheck' }],
       },
       // Mixed writes: one string, one number.

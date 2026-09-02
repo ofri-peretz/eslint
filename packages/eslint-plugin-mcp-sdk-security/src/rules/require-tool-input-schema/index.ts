@@ -18,6 +18,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { fileUsesMcpSdk } from '../../utils/mcp-evidence';
 
@@ -102,11 +103,10 @@ export const requireToolInputSchema = createRule<[], MessageIds>({
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
-        if (node.callee.type !== 'MemberExpression' || node.callee.computed)
-          return;
-        if (node.callee.property.type !== 'Identifier') return;
-
-        const method = node.callee.property.name;
+        if (node.callee.type !== 'MemberExpression') return;
+        // `server['registerTool'](…)` registers the same tool.
+        const method = propertyName(node.callee);
+        if (method === null) return;
 
         if (method === REGISTER_TOOL) {
           const config = node.arguments[1];

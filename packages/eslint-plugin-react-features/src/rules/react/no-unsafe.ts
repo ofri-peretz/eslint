@@ -11,7 +11,7 @@
  * @see https://github.com/jsx-eslint/eslint-plugin-react/blob/master/docs/rules/no-unsafe.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'noUnsafe';
@@ -110,9 +110,8 @@ export const noUnsafe = createRule<RuleOptions, MessageIds>({
         if (node.superClass.type === 'MemberExpression') {
           if (node.superClass.object.type === 'Identifier' && 
               node.superClass.object.name === 'React' &&
-              node.superClass.property.type === 'Identifier' &&
-              (node.superClass.property.name === 'Component' || 
-               node.superClass.property.name === 'PureComponent')) {
+              (propertyName(node.superClass) === 'Component' || 
+               propertyName(node.superClass) === 'PureComponent')) {
             inClassComponent = true;
           }
         } else if (node.superClass.type === 'Identifier') {

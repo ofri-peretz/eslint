@@ -101,13 +101,6 @@ ruleTester.run('require-tool-input-schema', requireToolInputSchema, {
         server.tool('read_file', 42);
       `,
     },
-    // Computed member call — server['tool'](...) is not matched
-    {
-      code: `
-        ${IMPORT}
-        server['registerTool']('read_file', { description: 'x' }, handler);
-      `,
-    },
     // Plain function call, not a member expression
     {
       code: `
@@ -140,6 +133,17 @@ ruleTester.run('require-tool-input-schema', requireToolInputSchema, {
   ],
 
   invalid: [
+    // Was pinned as valid — "computed member call, server['tool'](...) is not
+    // matched". `server['registerTool']` registers the same tool, still with
+    // no input schema.
+    {
+      name: 'a subscripted registerTool with no input schema',
+      code: `
+        ${IMPORT}
+        server['registerTool']('read_file', { description: 'x' }, handler);
+      `,
+      errors: [{ messageId: 'missingInputSchema' }],
+    },
     // The core case: registered with a config that carries no inputSchema
     {
       name: 'a tool registered with no input schema takes whatever the model sends',
