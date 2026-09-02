@@ -1,0 +1,31 @@
+{
+  "note": "Scheduled-workflow jobs that can fail with nobody reporting it. This is a RATCHET: entries may be removed, never added. See docs/intents/cron-failure-delivery/.",
+  "recorded": "2026-09-01",
+  "uncovered": {
+    "check-links.yml": [
+      "gate"
+    ],
+    "codeql.yml": [
+      "gate"
+    ],
+    "lighthouse.yml": [
+      "lighthouse"
+    ],
+    "metrics-freshness.yml": [
+      "check"
+    ],
+    "npm-token-health.yml": [
+      "check-npm-token"
+    ],
+    "quality-full.yml": [
+      "bench-configs",
+      "test-scope"
+    ],
+    "release-drift.yml": [
+      "drift"
+    ],
+    "release-hygiene.yml": [
+      "reconcile"
+    ]
+  }
+}
