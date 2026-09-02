@@ -24,6 +24,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  namesOneOf,
   propertyName,
 } from '@interlace/eslint-devkit';
 
@@ -207,26 +208,27 @@ export const noUnboundedBatchProcessing = createRule<RuleOptions, MessageIds>({
       MemberExpression(node: TSESTree.MemberExpression) {
         if (!currentHandlerNode) return;
 
-        // event.Records
+        // event.Records — resolved once, so the recorded source string is
+        // built from the name the membership test already accepted.
+        const batchProperty = propertyName(node);
         if (
           node.object.type === AST_NODE_TYPES.Identifier &&
           eventParamName.includes(node.object.name) &&
-          BATCH_SOURCE_PROPERTIES.has(propertyName(node) as string)
+          batchProperty !== null &&
+          BATCH_SOURCE_PROPERTIES.has(batchProperty)
         ) {
           batchAccessNodes.push({
             node,
-            source: `${node.object.name}.${propertyName(node) as string}`,
+            source: `${node.object.name}.${batchProperty}`,
           });
         }
 
         // Check for .length access (indicates size check)
-        if (
-          propertyName(node) === 'length'
-        ) {
+        if (propertyName(node) === 'length') {
           // Check if this is Records.length
           if (
             node.object.type === AST_NODE_TYPES.MemberExpression &&
-            BATCH_SOURCE_PROPERTIES.has(propertyName(node.object) as string)
+            namesOneOf(propertyName(node.object), BATCH_SOURCE_PROPERTIES)
           ) {
             hasBatchSizeCheck = true;
           }

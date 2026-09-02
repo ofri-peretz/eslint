@@ -38,6 +38,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  namesOneOf,
   propertyName,
 } from '@interlace/eslint-devkit';
 
@@ -209,7 +210,7 @@ export const noStaticRootExposure = createRule<RuleOptions, MessageIds>({
       if (callee.object.type !== AST_NODE_TYPES.Identifier) return false;
       if (callee.object.name !== 'path') return false;
       // `path['join'](…)` builds the same path.
-      return JOIN_METHODS.has(propertyName(callee) as string);
+      return namesOneOf(propertyName(callee), JOIN_METHODS);
     }
 
     function isExpressStaticCall(node: TSESTree.CallExpression): boolean {

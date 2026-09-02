@@ -20,6 +20,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   hasSafeAnnotation,
+  namesOneOf,
   propertyName,
 } from '@interlace/eslint-devkit';
 import { isDecodeOperation } from '../../utils';
@@ -181,11 +182,14 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
       if (parent.type === 'MemberExpression' && parent.object === outer) {
         // `has(null)` is already false for a runtime-keyed member, so no
         // `?? ''` sentinel — its empty-string arm is a branch no input reaches.
-        return TIME_CLAIMS.has(propertyName(parent) as string);
+        return namesOneOf(propertyName(parent), TIME_CLAIMS);
       }
 
       // const decoded = decode(token); ... decoded.exp
-      if (parent.type !== 'VariableDeclarator' || parent.id.type !== 'Identifier') {
+      if (
+        parent.type !== 'VariableDeclarator' ||
+        parent.id.type !== 'Identifier'
+      ) {
         return false;
       }
       const [variable] = context.sourceCode.getDeclaredVariables(parent);
@@ -212,7 +216,7 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
         const isTimeClaimRead =
           useParent.type === 'MemberExpression' &&
           useParent.object === use &&
-          TIME_CLAIMS.has(propertyName(useParent) as string);
+          namesOneOf(propertyName(useParent), TIME_CLAIMS);
         if (isTimeClaimRead) {
           sawTimeClaim = true;
         }

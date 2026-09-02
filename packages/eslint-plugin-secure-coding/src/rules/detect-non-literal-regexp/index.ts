@@ -104,7 +104,14 @@
  * @see https://cwe.mitre.org/data/definitions/400.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, isStaticExpression, MessageIcons, staticString, propertyName } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  isStaticExpression,
+  MessageIcons,
+  staticString,
+  namesOneOf,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import {
   isEnvironmentGlobal,
@@ -131,8 +138,7 @@ export interface Options {
    * contradicted its own contract. Set false to prefer `/…/` literal syntax.
    */
   allowLiterals?: boolean;
-  
-  
+
   /** Maximum allowed pattern length for dynamic regex */
   maxPatternLength?: number;
 }
@@ -155,7 +161,6 @@ interface RegExpPattern {
   effort: string;
   riskLevel: 'low' | 'medium' | 'high' | 'critical';
 }
-
 
 /**
  * String/array methods that turn constant inputs into a constant output.
@@ -198,7 +203,10 @@ const CONSTANT_PRESERVING_METHODS: ReadonlySet<string> = new Set([
  * The produced string is fixed at parse time; only the node type differs from a
  * plain literal.
  */
-function isStringRawTag(node: TSESTree.Node, sourceCode: TSESLint.SourceCode): boolean {
+function isStringRawTag(
+  node: TSESTree.Node,
+  sourceCode: TSESLint.SourceCode,
+): boolean {
   return (
     node.type === 'MemberExpression' &&
     propertyName(node) === 'raw' &&
@@ -243,7 +251,11 @@ function isBuildTimeConstant(
     case 'BinaryExpression':
       return (
         node.operator === '+' &&
-        isBuildTimeConstant(node.left as TSESTree.Node, sourceCode, depth + 1) &&
+        isBuildTimeConstant(
+          node.left as TSESTree.Node,
+          sourceCode,
+          depth + 1,
+        ) &&
         isBuildTimeConstant(node.right, sourceCode, depth + 1)
       );
     case 'ArrayExpression':
@@ -256,7 +268,7 @@ function isBuildTimeConstant(
     case 'CallExpression':
       return (
         node.callee.type === 'MemberExpression' &&
-        CONSTANT_PRESERVING_METHODS.has(propertyName(node.callee) as string) &&
+        namesOneOf(propertyName(node.callee), CONSTANT_PRESERVING_METHODS) &&
         isBuildTimeConstant(node.callee.object, sourceCode, depth + 1) &&
         node.arguments.every(
           (argument) =>
@@ -282,7 +294,11 @@ function isBuildTimeConstant(
         (property) =>
           property.type === 'Property' &&
           !property.computed &&
-          isBuildTimeConstant(property.value as TSESTree.Node, sourceCode, depth + 1),
+          isBuildTimeConstant(
+            property.value as TSESTree.Node,
+            sourceCode,
+            depth + 1,
+          ),
       );
     case 'MemberExpression':
       return isConstantTableLookup(node, sourceCode, depth);
@@ -330,7 +346,10 @@ function isConstantTableLookup(
 /** `{ … } as const` and `<const>{ … }` are annotations; the value is underneath. */
 function withoutTypeAnnotation(node: TSESTree.Node): TSESTree.Node {
   let current = node;
-  while (current.type === 'TSAsExpression' || current.type === 'TSTypeAssertion') {
+  while (
+    current.type === 'TSAsExpression' ||
+    current.type === 'TSTypeAssertion'
+  ) {
     current = current.expression;
   }
   return current;
@@ -369,30 +388,45 @@ function resolveLookup(
   const name = node.property.name;
   const match = unwrapped.properties.find(
     (property) =>
-      property.type === 'Property' && !property.computed && property.key.type === 'Identifier' && property.key.name === name,
+      property.type === 'Property' &&
+      !property.computed &&
+      property.key.type === 'Identifier' &&
+      property.key.name === name,
   );
   // A key the table does not define resolves to undefined at runtime, so
   // nothing is proven about it: absent is not constant.
-  return match !== undefined && match.type === 'Property' ? (match.value as TSESTree.Node) : null;
+  return match !== undefined && match.type === 'Property'
+    ? (match.value as TSESTree.Node)
+    : null;
 }
 
 /** The object literal a `const` binding holds, if nothing writes through it. */
-function constObjectBinding(node: TSESTree.Identifier, sourceCode: TSESLint.SourceCode): TSESTree.Node | null {
+function constObjectBinding(
+  node: TSESTree.Identifier,
+  sourceCode: TSESLint.SourceCode,
+): TSESTree.Node | null {
   const variable = resolveVariable(node.name, sourceCode.getScope(node));
   if (variable === null || variable.defs.length !== 1) {
     return null;
   }
   const definition = variable.defs[0]!;
-  if (definition.type !== 'Variable' || definition.parent.kind !== 'const' || definition.node.init === null) {
+  if (
+    definition.type !== 'Variable' ||
+    definition.parent.kind !== 'const' ||
+    definition.node.init === null
+  ) {
     return null;
   }
   return isMutatedThroughAnyReference(variable) ? null : definition.node.init;
 }
 
 /** Is any reference to this binding the object of an assignment target? */
-function isMutatedThroughAnyReference(variable: TSESLint.Scope.Variable): boolean {
+function isMutatedThroughAnyReference(
+  variable: TSESLint.Scope.Variable,
+): boolean {
   return variable.references.some((reference) => {
-    let current: TSESTree.Node | undefined = reference.identifier as TSESTree.Node;
+    let current: TSESTree.Node | undefined =
+      reference.identifier as TSESTree.Node;
     let parent = current.parent;
     while (parent?.type === 'MemberExpression' && parent.object === current) {
       current = parent;
@@ -404,7 +438,9 @@ function isMutatedThroughAnyReference(variable: TSESLint.Scope.Variable): boolea
     return (
       (parent?.type === 'AssignmentExpression' && parent.left === current) ||
       (parent?.type === 'UpdateExpression' && parent.argument === current) ||
-      (parent?.type === 'UnaryExpression' && parent.operator === 'delete' && parent.argument === current)
+      (parent?.type === 'UnaryExpression' &&
+        parent.operator === 'delete' &&
+        parent.argument === current)
     );
   });
 }
@@ -474,10 +510,11 @@ function isConstantBinding(
     if (!written) {
       return false;
     }
-    return written === init || isBuildTimeConstant(written, sourceCode, depth + 1);
+    return (
+      written === init || isBuildTimeConstant(written, sourceCode, depth + 1)
+    );
   });
 }
-
 
 /**
  * Is this construction a CLONE of an existing RegExp?
@@ -567,9 +604,16 @@ function isRegExpClone(
   if (receiver.type !== 'Identifier') {
     return false;
   }
-  const variable = resolveVariable(receiver.name, sourceCode.getScope(receiver));
+  const variable = resolveVariable(
+    receiver.name,
+    sourceCode.getScope(receiver),
+  );
   const def = variable?.defs.length === 1 ? variable.defs[0] : null;
-  if (!def || def.type !== 'Variable' || def.node.type !== 'VariableDeclarator') {
+  if (
+    !def ||
+    def.type !== 'Variable' ||
+    def.node.type !== 'VariableDeclarator'
+  ) {
     return false;
   }
   const init = def.node.init;
@@ -593,7 +637,8 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/detect-non-literal-regexp.md',
-      description: 'Detects RegExp(variable), which might allow an attacker to DOS your server with a long-running regular expression',
+      description:
+        'Detects RegExp(variable), which might allow an attacker to DOS your server with a long-running regular expression',
       cwe: 'CWE-400',
     },
     messages: {
@@ -623,9 +668,10 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
         severity: '{{riskLevel}}',
         // §C2.4 — names the safe shapes so a reader can close the finding.
         fix: '{{safeAlternative}} — Not a finding when the pattern is a module constant, a closed-set lookup, or escaped before construction',
-        documentationLink: 'https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS',
+        documentationLink:
+          'https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS',
       }),
-},
+    },
     schema: [
       {
         type: 'object',
@@ -641,17 +687,17 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
             // schema default and the destructured default agree.
             default: true,
             description:
-              'Allow literal string regex patterns — `new RegExp(\'^[a-z]+$\')`. ' +
+              "Allow literal string regex patterns — `new RegExp('^[a-z]+$')`. " +
               'A rule named "non-literal" reporting a literal by default contradicted ' +
               'its own contract. Set false to prefer `/…/` literal syntax; measured ' +
-              'effect on the 30-fixture corpus: +6 findings, all on safe/ files.'
+              'effect on the 30-fixture corpus: +6 findings, all on safe/ files.',
           },
           maxPatternLength: {
             type: 'number',
             default: 100,
             minimum: 1,
-            description: 'Maximum allowed pattern length for dynamic regex'
-          }
+            description: 'Maximum allowed pattern length for dynamic regex',
+          },
         },
         additionalProperties: false,
       },
@@ -661,17 +707,14 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
   defaultOptions: [
     {
       allowLiterals: true,
-      maxPatternLength: 100
+      maxPatternLength: 100,
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     // `options` is always an object here (defaulted just above), so a
     // second `|| {}` fallback could never fire — removed as dead code.
-    const {
-      allowLiterals = true,
-      maxPatternLength = 100,
-    }: Options = options;
+    const { allowLiterals = true, maxPatternLength = 100 }: Options = options;
 
     /**
      * Check if a node is a literal string (potentially safe)
@@ -679,12 +722,15 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
      */
     // oxlint-disable-next-line consistent-function-scoping
     // Both spellings are static, and `staticString` already says so.
-    const isLiteralString = (node: TSESTree.Node): boolean => staticString(node) !== null;
+    const isLiteralString = (node: TSESTree.Node): boolean =>
+      staticString(node) !== null;
 
     /**
      * Extract regex pattern from RegExp construction
      */
-    const extractPattern = (node: TSESTree.CallExpression | TSESTree.NewExpression): {
+    const extractPattern = (
+      node: TSESTree.CallExpression | TSESTree.NewExpression,
+    ): {
       pattern: string;
       patternNode: TSESTree.Node | null;
       constructor: string;
@@ -742,7 +788,9 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
           const re = (search as TSESTree.RegExpLiteral).regex;
           // A character class carrying regex metacharacters is the escaping
           // idiom; `.replace(/foo/g, 'bar')` is not and must not suppress.
-          return re !== undefined && /\[[^\]]*[.*+?^${}()|][^\]]*\]/.test(re.pattern);
+          return (
+            re !== undefined && /\[[^\]]*[.*+?^${}()|][^\]]*\]/.test(re.pattern)
+          );
         };
         if (escaped(patternNode)) return true;
 
@@ -753,7 +801,8 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
             .references.find((r) => r.identifier === patternNode)?.resolved;
           if (v && v.defs.length === 1 && v.defs[0].type === 'Variable') {
             // A reassigned binding no longer holds what it was declared with.
-            if (v.references.filter((r) => r.isWrite()).length > 1) return false;
+            if (v.references.filter((r) => r.isWrite()).length > 1)
+              return false;
             const init = (v.defs[0].node as TSESTree.VariableDeclarator).init;
             if (init && escaped(init)) return true;
             // Closed-set lookup: `PATTERNS[k]` where PATTERNS is a literal map
@@ -793,11 +842,15 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
       // `isLiteralString` still gates the LENGTH below: that path reads
       // `patternNode.value` directly, which only exists on an actual literal node.
       const isDynamic = patternNode
-        ? !isStaticExpression({ node: patternNode, scope: context.sourceCode.getScope(patternNode) }) &&
-          !isNeutralised(patternNode)
+        ? !isStaticExpression({
+            node: patternNode,
+            scope: context.sourceCode.getScope(patternNode),
+          }) && !isNeutralised(patternNode)
         : false;
-      const length = patternNode && isLiteralString(patternNode) ?
-                     String((patternNode as TSESTree.Literal).value).length : pattern.length;
+      const length =
+        patternNode && isLiteralString(patternNode)
+          ? String((patternNode as TSESTree.Literal).value).length
+          : pattern.length;
 
       return { pattern, patternNode, constructor, isDynamic, length };
     };
@@ -805,7 +858,10 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
     /**
      * Detect the specific vulnerability pattern
      */
-    const detectVulnerability = (pattern: string, isDynamic: boolean): RegExpPattern => {
+    const detectVulnerability = (
+      pattern: string,
+      isDynamic: boolean,
+    ): RegExpPattern => {
       // One outcome, because there was only ever one.
       //
       // A REGEXP_PATTERNS table used to be consulted here, matched with
@@ -834,10 +890,10 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
           safeAlternative: 'Pre-defined RegExp constants',
           example: {
             bad: pattern,
-            good: 'const PATTERNS = { email: /^[a-zA-Z0-9]+$/ }; PATTERNS[type]'
+            good: 'const PATTERNS = { email: /^[a-zA-Z0-9]+$/ }; PATTERNS[type]',
           },
           effort: '10-15 minutes',
-          riskLevel: 'high'
+          riskLevel: 'high',
         };
       }
 
@@ -871,7 +927,7 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
           '   2. Use object lookup: PATTERNS[userChoice]',
           '   3. If dynamic needed: escape input with regex escaping function',
           '   4. Add pattern length validation',
-          '   5. Consider using a safe regex library'
+          '   5. Consider using a safe regex library',
         ].join('\n');
       }
 
@@ -881,9 +937,9 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
       // nested quantifiers and possessive syntax — backtracking advice, from
       // the rule that does not decide backtracking.
       return [
-        '   1. Replace new RegExp(\'…\') with a /…/ literal',
+        "   1. Replace new RegExp('…') with a /…/ literal",
         '   2. Keep the flags as literal suffixes: /…/gi',
-        '   3. Escaping differs: a literal needs one backslash, not two'
+        '   3. Escaping differs: a literal needs one backslash, not two',
       ].join('\n');
     };
 
@@ -899,7 +955,9 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
     /**
      * Check RegExp constructor calls for vulnerabilities
      */
-    const checkRegExpCall = (node: TSESTree.CallExpression | TSESTree.NewExpression) => {
+    const checkRegExpCall = (
+      node: TSESTree.CallExpression | TSESTree.NewExpression,
+    ) => {
       // A clone of an existing RegExp carries the original's backtracking and
       // adds none of its own — proven by execution, see `isRegExpClone`.
       if (isRegExpClone(node, context.sourceCode)) {
@@ -945,13 +1003,15 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
         node,
         messageId: 'runtimeDecidedPattern',
         data: {
-          pattern: pattern.substring(0, 30) + (pattern.length > 30 ? '...' : ''),
+          pattern:
+            pattern.substring(0, 30) + (pattern.length > 30 ? '...' : ''),
           riskLevel,
           vulnerability: vulnerability.vulnerability,
           safeAlternative: vulnerability.safeAlternative,
           steps,
-          effort: vulnerability.effort
-        },});
+          effort: vulnerability.effort,
+        },
+      });
     };
 
     return {
@@ -959,7 +1019,7 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
       // before the check runs, so one code path handles both spellings.
       CallExpression: (node: TSESTree.CallExpression) =>
         checkRegExpCall(asDirectConstruction(node, context.sourceCode)),
-      NewExpression: checkRegExpCall
+      NewExpression: checkRegExpCall,
     };
   },
 });

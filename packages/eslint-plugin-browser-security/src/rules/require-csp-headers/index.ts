@@ -46,6 +46,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  namesOneOf,
   propertyName,
 } from '@interlace/eslint-devkit';
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
@@ -599,7 +600,7 @@ export const requireCspHeaders = createRule<RuleOptions, MessageIds>({
         if (
           child.type === 'CallExpression' &&
           child.callee.type === 'MemberExpression' &&
-          HEADER_METHODS.has(propertyName(child.callee) as string)
+          namesOneOf(propertyName(child.callee), HEADER_METHODS)
         ) {
           found = true;
         }
@@ -670,7 +671,7 @@ function isHeaderNamePosition(node: TSESTree.Literal): boolean {
     parent.type === 'CallExpression' &&
     parent.arguments[0] === node &&
     parent.callee.type === 'MemberExpression' &&
-    HEADER_METHODS.has(propertyName(parent.callee) as string)
+    namesOneOf(propertyName(parent.callee), HEADER_METHODS)
   ) {
     return true;
   }

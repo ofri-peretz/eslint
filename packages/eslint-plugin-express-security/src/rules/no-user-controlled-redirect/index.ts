@@ -39,6 +39,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  namesOneOf,
   propertyName,
 } from '@interlace/eslint-devkit';
 
@@ -289,7 +290,7 @@ export const noUserControlledRedirect = createRule<RuleOptions, MessageIds>({
         node,
         (n) =>
           n.type === AST_NODE_TYPES.MemberExpression &&
-          ORIGIN_PROPS.has(propertyName(n) as string) &&
+          namesOneOf(propertyName(n), ORIGIN_PROPS) &&
           isUrlParseOf(n.object, source),
         false,
       );

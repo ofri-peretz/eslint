@@ -12,13 +12,18 @@
  * @see https://blog.cloudflare.com/why-are-some-images-more-secure-than-others/
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES, isTestFilePath, propertyName } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  createRule,
+  AST_NODE_TYPES,
+  isTestFilePath,
+  namesOneOf,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { resolveConstantString } from '../../utils/const-value';
 
-type MessageIds =
-  | 'ecbMode'
-  | 'useGcm'
-  | 'useCbc';
+type MessageIds = 'ecbMode' | 'useGcm' | 'useCbc';
 
 export interface Options {
   /** Allow ECB in test files. Default: false */
@@ -43,26 +48,32 @@ export const noEcbMode = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'ECB mode detected',
         cwe: 'CWE-327',
-        description: 'ECB mode encrypts identical plaintext blocks to identical ciphertext, leaking data patterns. Famous example: the "ECB penguin".',
+        description:
+          'ECB mode encrypts identical plaintext blocks to identical ciphertext, leaking data patterns. Famous example: the "ECB penguin".',
         severity: 'HIGH',
         fix: 'Use GCM mode for authenticated encryption: crypto.createCipheriv("aes-256-gcm", key, iv)',
-        documentationLink: 'https://blog.cloudflare.com/why-are-some-images-more-secure-than-others/',
+        documentationLink:
+          'https://blog.cloudflare.com/why-are-some-images-more-secure-than-others/',
       }),
       useGcm: formatLLMMessage({
         icon: MessageIcons.INFO,
         issueName: 'Use GCM mode',
-        description: 'GCM provides authenticated encryption (confidentiality + integrity)',
+        description:
+          'GCM provides authenticated encryption (confidentiality + integrity)',
         severity: 'LOW',
         fix: 'crypto.createCipheriv("aes-256-gcm", key, iv)',
-        documentationLink: 'https://nodejs.org/api/crypto.html#cryptocreatecipherivalgorithm-key-iv-options',
+        documentationLink:
+          'https://nodejs.org/api/crypto.html#cryptocreatecipherivalgorithm-key-iv-options',
       }),
       useCbc: formatLLMMessage({
         icon: MessageIcons.INFO,
         issueName: 'Use CBC mode',
-        description: 'CBC with HMAC provides confidentiality (add separate MAC for integrity)',
+        description:
+          'CBC with HMAC provides confidentiality (add separate MAC for integrity)',
         severity: 'LOW',
         fix: 'crypto.createCipheriv("aes-256-cbc", key, iv)',
-        documentationLink: 'https://nodejs.org/api/crypto.html#cryptocreatecipherivalgorithm-key-iv-options',
+        documentationLink:
+          'https://nodejs.org/api/crypto.html#cryptocreatecipherivalgorithm-key-iv-options',
       }),
     },
     schema: [
@@ -86,7 +97,7 @@ export const noEcbMode = createRule<RuleOptions, MessageIds>({
   ],
   create(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}]
+    [options = {}],
   ) {
     const { allowInTests = false } = options as Options;
 
@@ -96,12 +107,17 @@ export const noEcbMode = createRule<RuleOptions, MessageIds>({
     function checkCallExpression(node: TSESTree.CallExpression) {
       if (isTestFile) return;
 
-      const cipherMethods = new Set(['createCipher', 'createCipheriv', 'createDecipher', 'createDecipheriv']);
+      const cipherMethods = new Set([
+        'createCipher',
+        'createCipheriv',
+        'createDecipher',
+        'createDecipheriv',
+      ]);
 
       // Check for crypto.createCipher*() pattern
       const isCipherCall =
         (node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          cipherMethods.has(propertyName(node.callee) as string)) ||
+          namesOneOf(propertyName(node.callee), cipherMethods)) ||
         (node.callee.type === AST_NODE_TYPES.Identifier &&
           cipherMethods.has(node.callee.name));
 
@@ -110,7 +126,10 @@ export const noEcbMode = createRule<RuleOptions, MessageIds>({
         // `const MODE = 'aes-256-ecb'; createCipheriv(MODE, …)` is still ECB.
         // Matching only an inline literal made a module constant a silencer —
         // see `utils/const-value`.
-        const resolved = resolveConstantString(context.sourceCode, algorithmArg);
+        const resolved = resolveConstantString(
+          context.sourceCode,
+          algorithmArg,
+        );
         if (resolved === null) return;
         const algorithm = resolved.value.toLowerCase();
         if (algorithm.includes('-ecb') || algorithm.endsWith('ecb')) {

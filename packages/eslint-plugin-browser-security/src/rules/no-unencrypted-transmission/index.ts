@@ -13,12 +13,16 @@
  * @see https://owasp.org/www-community/vulnerabilities/Insecure_Transport
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { isLoopbackHost, isNonTransmittingUrl } from '../../utils/loopback-hosts';
+import {
+  isLoopbackHost,
+  isNonTransmittingUrl,
+} from '../../utils/loopback-hosts';
 import {
   AST_NODE_TYPES,
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  namesOneOf,
   propertyName,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
@@ -181,7 +185,6 @@ function isNamespaceUri(value: string): boolean {
   return NAMESPACE_URI_PREFIXES.some((prefix) => value.startsWith(prefix));
 }
 
-
 /**
  * String methods that *inspect* a value rather than transmit it.
  *
@@ -223,7 +226,7 @@ function isProtocolInspection(
   if (
     parent.type === AST_NODE_TYPES.CallExpression &&
     parent.callee.type === AST_NODE_TYPES.MemberExpression &&
-    INSPECTION_METHODS.has(propertyName(parent.callee) as string)
+    namesOneOf(propertyName(parent.callee), INSPECTION_METHODS)
   ) {
     // `replace`/`replaceAll` take a *replacement* as their second argument, and
     // that one is content being written — `url.replace(p, 'http://evil.test')`
@@ -232,7 +235,7 @@ function isProtocolInspection(
     // Compared by identity against argument 0 rather than scanned for with
     // indexOf: the only question is whether this literal is the first argument,
     // and scanning made a call with many literal arguments O(n²) over the pass.
-    if (WRITES_SECOND_ARGUMENT.has(propertyName(parent.callee) as string)) {
+    if (namesOneOf(propertyName(parent.callee), WRITES_SECOND_ARGUMENT)) {
       return parent.arguments[0] === node;
     }
     return true;
@@ -399,7 +402,10 @@ export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
       // not, so the carve-out could never be the thing that returned. Removed rather than
       // covered — a test for an unreachable branch documents nothing.
 
-      const { isInsecure, protocol } = containsInsecureProtocol(value, protocolsToCheck);
+      const { isInsecure, protocol } = containsInsecureProtocol(
+        value,
+        protocolsToCheck,
+      );
 
       if (isInsecure) {
         // NOTE: localhost URLs in test files already returned above, so no
@@ -457,7 +463,10 @@ export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
       // Check each quasis (static parts) and expressions
       for (const quasi of node.quasis) {
         const value = quasi.value.raw;
-        const { isInsecure, protocol } = containsInsecureProtocol(value, protocolsToCheck);
+        const { isInsecure, protocol } = containsInsecureProtocol(
+          value,
+          protocolsToCheck,
+        );
 
         if (isInsecure) {
           const secureProtocol =

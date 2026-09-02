@@ -24,6 +24,7 @@ import {
   isTestFilePath,
   readsRequestShape,
   isModuleBinding,
+  namesOneOf,
   propertyName,
 } from '@interlace/eslint-devkit';
 import { bindingInit } from '../../utils/provenance';
@@ -506,7 +507,7 @@ export const noSsrf = createRule<RuleOptions, MessageIds>({
         if (
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
           node.callee.object.type === AST_NODE_TYPES.Identifier &&
-          HTTP_CLIENT_METHODS.has(propertyName(node.callee) as string) &&
+          namesOneOf(propertyName(node.callee), HTTP_CLIENT_METHODS) &&
           HTTP_CLIENT_MODULES.some((mod) =>
             isModuleBinding(
               (node.callee as TSESTree.MemberExpression).object,

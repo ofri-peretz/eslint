@@ -27,6 +27,7 @@ import {
   isStaticExpression,
   unwrapTypeSyntax,
   staticString,
+  namesOneOf,
   propertyName,
 } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
@@ -502,14 +503,16 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
         callee.object.name === 'console' &&
         // @vocabulary console API
         //
-        // `propertyName(...) as string` rather than `?? ''`: no input reaches
-        // THIS console test with an unresolvable key — a dynamic
-        // `console[k](...)` is filtered before it arrives — so the fallback
-        // was a branch nothing could exercise. `includes(undefined)` is false
-        // regardless.
-        ['log', 'error', 'warn', 'info', 'debug'].includes(
-          propertyName(callee) as string,
-        )
+        // `namesOneOf` asks the null question inside the membership test, so
+        // a dynamic `console[k](...)` is not a console method here — which it
+        // is not, rather than being cast into one and answered by accident.
+        namesOneOf(propertyName(callee), [
+          'log',
+          'error',
+          'warn',
+          'info',
+          'debug',
+        ])
       );
     };
 

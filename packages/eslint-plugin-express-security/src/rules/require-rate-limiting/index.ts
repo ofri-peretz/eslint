@@ -31,10 +31,7 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { fileUsesExpress } from '../../utils/express-evidence';
-import {
-  APP_RECEIVER_SCHEMA,
-  isAppReceiver,
-} from '../../utils/app-receiver';
+import { APP_RECEIVER_SCHEMA, isAppReceiver } from '../../utils/app-receiver';
 import {
   nodeReleasesBinding,
   RELEASE_SELECTOR,
@@ -44,7 +41,7 @@ import {
   MessageIcons,
   createRule,
   isTestFilePath,
-  propertyName,
+  memberPropertyName,
 } from '@interlace/eslint-devkit';
 
 /**
@@ -92,7 +89,6 @@ const STATE_CHANGING_METHODS: ReadonlySet<string> = new Set([
 ]);
 
 /** Receivers that are an Express application/router in practice. */
-
 
 /**
  * Route paths where the request carries a *secret to be checked* — the surface
@@ -287,11 +283,14 @@ export const requireRateLimiting = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        if (callee.type !== 'MemberExpression' || propertyName(callee) === null) {
+        // `app['post']('/auth/token', h)` registers the same unlimited route.
+        // Resolved before the guard so the guard has a binding to test, and
+        // the body reads a narrowed `string` rather than a cast one.
+        const routeMethod = memberPropertyName(callee);
+        if (callee.type !== 'MemberExpression' || routeMethod === null) {
           return;
         }
-        // `app['post']('/auth/token', h)` registers the same unlimited route.
-        const method = (propertyName(callee) as string).toLowerCase();
+        const method = routeMethod.toLowerCase();
 
         // A limiter anywhere in the file — `app.use(rateLimit())` or mounted
         // on a single route — covers the surface this rule judges.

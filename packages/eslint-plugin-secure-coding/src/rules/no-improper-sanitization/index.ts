@@ -20,7 +20,12 @@
  * - Context-aware validation
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, propertyName } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  namesOneOf,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 /*
@@ -547,7 +552,7 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
             if (
               callee.type === 'MemberExpression' &&
               // @vocabulary Express response API
-              ['write', 'send', 'json'].includes(propertyName(callee) as string)
+              namesOneOf(propertyName(callee), ['write', 'send', 'json'])
             ) {
               // Could be response output
               isInDangerousContext = true;

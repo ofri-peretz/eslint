@@ -42,6 +42,8 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  namesOneOf,
+  memberPropertyName,
   propertyName,
 } from '@interlace/eslint-devkit';
 
@@ -170,9 +172,13 @@ export const noHostHeaderInLinks = createRule<RuleOptions, MessageIds>({
 
       if (node.type === AST_NODE_TYPES.CallExpression) {
         const callee = node.callee;
+        // Resolved once: the membership test asks the null question, and the
+        // evidence string below is built from the name it accepted.
+        const getter = memberPropertyName(callee);
         if (
           callee.type === AST_NODE_TYPES.MemberExpression &&
-          HOST_GETTER_METHODS.has(propertyName(callee) as string) &&
+          getter !== null &&
+          HOST_GETTER_METHODS.has(getter) &&
           callee.object.type === AST_NODE_TYPES.Identifier &&
           isRequestIdent(callee.object.name)
         ) {
@@ -183,7 +189,7 @@ export const noHostHeaderInLinks = createRule<RuleOptions, MessageIds>({
             typeof arg.value === 'string' &&
             HOST_HEADER_NAMES.has(arg.value.toLowerCase())
           ) {
-            return `req.${propertyName(callee) as string}('${arg.value}')`;
+            return `req.${getter}('${arg.value}')`;
           }
         }
         return null;
@@ -240,7 +246,7 @@ export const noHostHeaderInLinks = createRule<RuleOptions, MessageIds>({
           }
           if (
             callee.type === AST_NODE_TYPES.MemberExpression &&
-            mailCallees.has(propertyName(callee) as string)
+            namesOneOf(propertyName(callee), mailCallees)
           ) {
             return true;
           }

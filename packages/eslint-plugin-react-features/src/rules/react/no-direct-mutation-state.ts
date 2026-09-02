@@ -9,7 +9,11 @@
  * Prevent direct mutation of this.state (requires deep React state understanding)
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, propertyName } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  memberPropertyName,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -273,13 +277,11 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
 
       // Array/object methods that mutate this.state
       CallExpression(node: TSESTree.CallExpression) {
-        if (
-          node.callee.type === 'MemberExpression' &&
-          // `this.state.items['push'](x)` mutates state just as `.push` does.
-          propertyName(node.callee) !== null
-        ) {
-          const methodName = propertyName(node.callee) as string;
-
+        // `this.state.items['push'](x)` mutates state just as `.push` does.
+        // Resolved once, before the guard, so the guard tests the binding the
+        // body reads rather than casting a second call past the same question.
+        const methodName = memberPropertyName(node.callee);
+        if (node.callee.type === 'MemberExpression' && methodName !== null) {
           if (isStatePropertyAccess(node.callee.object)) {
             // Methods that mutate arrays/objects
             const mutatingMethods = [

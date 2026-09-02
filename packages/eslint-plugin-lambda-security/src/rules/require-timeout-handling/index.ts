@@ -25,6 +25,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  namesOneOf,
   propertyName,
 } from '@interlace/eslint-devkit';
 
@@ -223,9 +224,7 @@ export const requireTimeoutHandling = createRule<RuleOptions, MessageIds>({
       MemberExpression(node: TSESTree.MemberExpression) {
         if (!currentHandlerNode) return;
 
-        if (
-          propertyName(node) === 'getRemainingTimeInMillis'
-        ) {
+        if (propertyName(node) === 'getRemainingTimeInMillis') {
           hasTimeoutCheck = true;
         }
       },
@@ -255,11 +254,7 @@ export const requireTimeoutHandling = createRule<RuleOptions, MessageIds>({
 
         if (node.callee.type === AST_NODE_TYPES.MemberExpression) {
           // `client['send'](cmd)` is the same external call.
-          if (
-            EXTERNAL_CALL_PATTERNS.has(
-              propertyName(node.callee) as string,
-            )
-          ) {
+          if (namesOneOf(propertyName(node.callee), EXTERNAL_CALL_PATTERNS)) {
             hasExternalCalls = true;
           }
         }

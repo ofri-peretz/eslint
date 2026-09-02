@@ -31,6 +31,7 @@ import {
   createRule,
   resolveModuleBinding,
   unwrapTypeSyntax,
+  namesOneOf,
   propertyName,
 } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
@@ -740,16 +741,18 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
         ) {
           // Reading a response or a request body yields remote bytes.
           if (
-            ['text', 'json', 'arrayBuffer', 'formData', 'blob'].includes(
-              propertyName(callee) as string,
-            )
+            namesOneOf(propertyName(callee), [
+              'text',
+              'json',
+              'arrayBuffer',
+              'formData',
+              'blob',
+            ])
           ) {
             return true;
           }
           // @vocabulary Node fs API
-          if (
-            ['readFile', 'readFileSync'].includes(propertyName(callee) as string)
-          ) {
+          if (namesOneOf(propertyName(callee), ['readFile', 'readFileSync'])) {
             return true;
           }
           // A method call carries its RECEIVER's provenance.
@@ -1067,9 +1070,7 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
                 callee.object.name === 'fs' &&
                 // @vocabulary Node fs API
                 // `fs['readFileSync'](p)` reads the same untrusted bytes.
-                ['readFile', 'readFileSync'].includes(
-                  propertyName(callee) as string,
-                )
+                namesOneOf(propertyName(callee), ['readFile', 'readFileSync'])
               ) {
                 untrustedVariables.add(declarator.id.name);
                 // Track whether the path is a literal — used downstream to skip

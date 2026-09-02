@@ -23,6 +23,7 @@ import {
   createRule,
   AST_NODE_TYPES,
   isTestFilePath,
+  memberPropertyName,
   propertyName,
   objectKeyName,
 } from '@interlace/eslint-devkit';
@@ -675,17 +676,18 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
     function isMathRandomCallee(callee: TSESTree.Node): boolean {
       if (isMathRandomProperty(callee)) return true;
 
-      // `rng.next()` where `rng` is a stable object literal.
+      // `rng.next()` where `rng` is a stable object literal. `rng['next']()`
+      // reaches the same aliased `Math.random`; resolved once, before the
+      // guard, so the guard tests the binding the body then reads.
+      const wanted = memberPropertyName(callee);
       if (
         callee.type === AST_NODE_TYPES.MemberExpression &&
         callee.object.type === AST_NODE_TYPES.Identifier &&
-        propertyName(callee) !== null
+        wanted !== null
       ) {
         const init = stableDeclarator(callee.object)?.init;
         if (!init || init.type !== AST_NODE_TYPES.ObjectExpression)
           return false;
-        // `rng['next']()` reaches the same aliased `Math.random`.
-        const wanted = propertyName(callee) as string;
         return init.properties.some(
           (property) =>
             property.type === AST_NODE_TYPES.Property &&
@@ -879,11 +881,11 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
           namesThisValue &&
           current.type === AST_NODE_TYPES.AssignmentExpression
         ) {
+          const propName = memberPropertyName(current.left);
           if (
             current.left.type === AST_NODE_TYPES.MemberExpression &&
-            propertyName(current.left) !== null
+            propName !== null
           ) {
-            const propName = propertyName(current.left) as string;
             if (nameSuggestsCrypto(propName, vocab)) {
               return true;
             }

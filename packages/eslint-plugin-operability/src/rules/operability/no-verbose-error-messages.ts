@@ -15,6 +15,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  namesOneOf,
   propertyName,
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
@@ -67,7 +68,7 @@ export const noVerboseErrorMessages = createRule<RuleOptions, MessageIds>({
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
           // @vocabulary Express response API
           // `res['send'](err.stack)` leaks the same stack `res.send` does.
-          ['send', 'json'].includes(propertyName(node.callee) as string)
+          namesOneOf(propertyName(node.callee), ['send', 'json'])
         ) {
           const arg = node.arguments[0];
 

@@ -20,6 +20,8 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  namesOneOf,
+  memberPropertyName,
   propertyName,
 } from '@interlace/eslint-devkit';
 
@@ -155,25 +157,29 @@ export const noUserControlledRequests = createRule<RuleOptions, MessageIds>({
     function getEventInputSource(
       node: TSESTree.MemberExpression,
     ): string | null {
-      // event.body, event.queryStringParameters, etc.
+      // event.body, event.queryStringParameters, etc. Resolved once: the
+      // membership test asks the null question, and the source string is
+      // built from the answer rather than from a cast repeat call.
+      const field = propertyName(node);
       if (
         node.object.type === AST_NODE_TYPES.Identifier &&
         isEventParameter(node.object.name) &&
-        USER_INPUT_PROPERTIES.has(propertyName(node) as string)
+        field !== null &&
+        USER_INPUT_PROPERTIES.has(field)
       ) {
-        return `event.${propertyName(node) as string}`;
+        return `event.${field}`;
       }
 
       // event.queryStringParameters.url, event.body.targetUrl, etc.
+      const outer = memberPropertyName(node.object);
       if (
         node.object.type === AST_NODE_TYPES.MemberExpression &&
         node.object.object.type === AST_NODE_TYPES.Identifier &&
         isEventParameter(node.object.object.name) &&
-        USER_INPUT_PROPERTIES.has(propertyName(node.object) as string)
+        outer !== null &&
+        USER_INPUT_PROPERTIES.has(outer)
       ) {
-        return `event.${propertyName(node.object) as string}.${
-          propertyName(node) ?? '[...]'
-        }`;
+        return `event.${outer}.${propertyName(node) ?? '[...]'}`;
       }
 
       return null;
@@ -239,9 +245,14 @@ export const noUserControlledRequests = createRule<RuleOptions, MessageIds>({
       if (
         node.callee.type === AST_NODE_TYPES.MemberExpression &&
         // `client['post'](url)` issues the same request.
-        ['get', 'post', 'put', 'delete', 'patch', 'request'].includes(
-          propertyName(node.callee) as string,
-        )
+        namesOneOf(propertyName(node.callee), [
+          'get',
+          'post',
+          'put',
+          'delete',
+          'patch',
+          'request',
+        ])
       ) {
         return true;
       }

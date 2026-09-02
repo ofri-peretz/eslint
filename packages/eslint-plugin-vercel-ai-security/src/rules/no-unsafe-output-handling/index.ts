@@ -12,7 +12,7 @@
  */
 
 import type { TSESLint } from '@interlace/eslint-devkit';
-import { TSESTree, createRule, formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
+import { TSESTree, createRule, formatLLMMessage, MessageIcons, namesOneOf, propertyName } from '@interlace/eslint-devkit';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
 
 type MessageIds = 'unsafeOutputExecution' | 'unsafeOutputInSQL' | 'unsafeOutputInHTML';
@@ -169,7 +169,7 @@ export const noUnsafeOutputHandling = createRule<RuleOptions, MessageIds>({
       // sentinel — its empty-string arm is a branch no input can reach.
       if (
         callee.type === 'MemberExpression' &&
-        AI_SDK_CALLS.has(propertyName(callee) as string)
+        namesOneOf(propertyName(callee), AI_SDK_CALLS)
       )
         return true;
       return false;

@@ -139,6 +139,7 @@ import {
   TSESLint,
   TSESTree,
   staticString,
+  namesOneOf,
   propertyName,
 } from '@interlace/eslint-devkit';
 import {
@@ -2196,8 +2197,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       const objectIsObject =
         callee.object.type === AST_NODE_TYPES.Identifier &&
         callee.object.name === 'Object';
-      const propIsAssign =
-        propertyName(callee) === 'assign';
+      const propIsAssign = propertyName(callee) === 'assign';
       if (!objectIsObject || !propIsAssign) return;
       // Object.assign({}, …) — first arg is fresh literal, no taint risk.
       if (node.arguments[0]?.type === AST_NODE_TYPES.ObjectExpression) return;
@@ -2272,7 +2272,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         callee.object.name !== 'Object' ||
         // @vocabulary Object statics
         // `Object['keys'](req.body)` enumerates the same caller keys.
-        !['keys', 'entries'].includes(propertyName(callee) as string)
+        !namesOneOf(propertyName(callee), ['keys', 'entries'])
       ) {
         return;
       }

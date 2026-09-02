@@ -39,7 +39,11 @@
  * helper exists to remove.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { isModuleBinding, propertyName } from '@interlace/eslint-devkit';
+import {
+  isModuleBinding,
+  namesOneOf,
+  propertyName,
+} from '@interlace/eslint-devkit';
 
 /** Methods on an Express app/router that return a chainable router-like value. */
 const ROUTER_RETURNING_METHODS: ReadonlySet<string> = new Set(['route', 'use']);
@@ -69,7 +73,7 @@ export function isExpressAppOrRouter(
     if (
       callee.type === 'MemberExpression' &&
       // `app['use'](…)` hands back the same router `app.use(…)` does.
-      ROUTER_RETURNING_METHODS.has(propertyName(callee) as string)
+      namesOneOf(propertyName(callee), ROUTER_RETURNING_METHODS)
     ) {
       return isExpressAppOrRouter(callee.object, scope, seen);
     }
@@ -80,13 +84,18 @@ export function isExpressAppOrRouter(
 
   // `const app = express()` — resolve the binding and ask again. Only a
   // single-write const/let says anything about what the name holds.
-  for (let current: TSESLint.Scope.Scope | null = scope; current; current = current.upper) {
+  for (
+    let current: TSESLint.Scope.Scope | null = scope;
+    current;
+    current = current.upper
+  ) {
     const variable = current.variables.find((v) => v.name === node.name);
     if (variable === undefined) continue;
     if (variable.defs.length !== 1) return false;
     const def = variable.defs[0];
     if (def.type !== 'Variable' || def.node.init === null) return false;
-    if (variable.references.filter((ref) => ref.isWrite()).length > 1) return false;
+    if (variable.references.filter((ref) => ref.isWrite()).length > 1)
+      return false;
     return isExpressAppOrRouter(def.node.init, scope, seen);
   }
   return false;

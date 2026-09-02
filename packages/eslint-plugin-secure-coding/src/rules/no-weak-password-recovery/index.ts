@@ -20,7 +20,7 @@
  * - JSDoc annotations (@secure-recovery, @rate-limited)
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, propertyName } from '@interlace/eslint-devkit';
+import { createRule, namesOneOf, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   createSafetyChecker,
@@ -313,9 +313,7 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
      * may well wrap crypto.randomBytes, and this check cannot see inside it.
      * Report evidence of weakness instead of absence of a known-good name.
      */
-    const usesPredictableSource = (
-      callExpression: TSESTree.Node,
-    ): boolean => {
+    const usesPredictableSource = (callExpression: TSESTree.Node): boolean => {
       const text = sourceCode.getText(callExpression);
       /*
        * These match SOURCE TEXT, so the blind spot lived in the PATTERN rather
@@ -593,9 +591,12 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
               callee.object.name === 'logger') &&
             // @vocabulary console API
             // `console['log'](resetToken)` logs the same token.
-            ['log', 'info', 'warn', 'error'].includes(
-              propertyName(callee) as string,
-            )) ||
+            namesOneOf(propertyName(callee), [
+              'log',
+              'info',
+              'warn',
+              'error',
+            ])) ||
           (callee.type === 'Identifier' && callee.name === 'logger')
         ) {
           const args = node.arguments;

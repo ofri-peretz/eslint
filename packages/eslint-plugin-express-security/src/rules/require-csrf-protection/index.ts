@@ -43,6 +43,7 @@ import {
   MessageIcons,
   createRule,
   isTestFilePath,
+  memberPropertyName,
   propertyName,
 } from '@interlace/eslint-devkit';
 
@@ -327,12 +328,12 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
         }
 
         // Check for route handlers: app.post(), router.put(), etc.
-        if (
-          callee.type === 'MemberExpression' &&
-          propertyName(callee) !== null
-        ) {
-          // `router['post']('/x', h)` registers the same unprotected route.
-          const method = (propertyName(callee) as string).toLowerCase();
+        // `router['post']('/x', h)` registers the same unprotected route.
+        // Resolved before the guard so the guard has a binding to test: the
+        // chain below asks the same two questions the cast was asserting.
+        const routeMethod = memberPropertyName(callee);
+        if (callee.type === 'MemberExpression' && routeMethod !== null) {
+          const method = routeMethod.toLowerCase();
 
           if (!protectedMethods.includes(method)) {
             return;

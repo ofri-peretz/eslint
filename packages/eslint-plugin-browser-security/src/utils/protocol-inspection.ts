@@ -5,7 +5,11 @@
  */
 
 import type { TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, propertyName } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  namesOneOf,
+  propertyName,
+} from '@interlace/eslint-devkit';
 
 /**
  * Shared by `no-unencrypted-transmission` and `no-http-urls` so the two cannot disagree
@@ -20,7 +24,16 @@ import { AST_NODE_TYPES, propertyName } from '@interlace/eslint-devkit';
 /** Of the inspection methods, these write their second argument. */
 const WRITES_SECOND_ARGUMENT = new Set(['replace', 'replaceAll']);
 
-const COMPARISON_OPERATORS = new Set(['===', '!==', '==', '!=', '>', '<', '>=', '<=']);
+const COMPARISON_OPERATORS = new Set([
+  '===',
+  '!==',
+  '==',
+  '!=',
+  '>',
+  '<',
+  '>=',
+  '<=',
+]);
 
 const INSPECTION_METHODS = new Set([
   'startsWith',
@@ -51,7 +64,7 @@ export function isProtocolInspection(
   if (
     parent.type === AST_NODE_TYPES.CallExpression &&
     parent.callee.type === AST_NODE_TYPES.MemberExpression &&
-    INSPECTION_METHODS.has(propertyName(parent.callee) as string)
+    namesOneOf(propertyName(parent.callee), INSPECTION_METHODS)
   ) {
     // `replace`/`replaceAll` take a *replacement* as their second argument, and
     // that one is content being written — `url.replace(p, 'http://evil.test')`
@@ -60,7 +73,7 @@ export function isProtocolInspection(
     // Compared by identity against argument 0 rather than scanned for with
     // indexOf: the only question is whether this literal is the first argument,
     // and scanning made a call with many literal arguments O(n²) over the pass.
-    if (WRITES_SECOND_ARGUMENT.has((propertyName(parent.callee) as string))) {
+    if (namesOneOf(propertyName(parent.callee), WRITES_SECOND_ARGUMENT)) {
       return parent.arguments[0] === node;
     }
     return true;

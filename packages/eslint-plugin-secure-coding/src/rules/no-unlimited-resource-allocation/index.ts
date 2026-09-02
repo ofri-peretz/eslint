@@ -24,6 +24,8 @@ import {
   AST_NODE_TYPES,
   createRule,
   isStaticExpression,
+  namesOneOf,
+  memberPropertyName,
   propertyName,
 } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
@@ -389,7 +391,7 @@ export const noUnlimitedResourceAllocation = createRule<
       // not a safeguard. A dynamic `req[k]` still resolves to nothing and is
       // still not a request surface.
       node?.type === AST_NODE_TYPES.MemberExpression &&
-      REQUEST_SURFACE.has(propertyName(node) as string);
+      namesOneOf(propertyName(node), REQUEST_SURFACE);
 
     /**
      * The initializer of a local binding, or `undefined`.
@@ -551,7 +553,7 @@ export const noUnlimitedResourceAllocation = createRule<
         }
         case AST_NODE_TYPES.MemberExpression:
           // Same: `body['size']` is the same size property as `body.size`.
-          return sizeProperties.has(propertyName(node) as string);
+          return namesOneOf(propertyName(node), sizeProperties);
         case AST_NODE_TYPES.Identifier: {
           const init = initializerOf(node);
           // A binding this file cannot see the value of is left ALONE rather
@@ -791,15 +793,18 @@ export const noUnlimitedResourceAllocation = createRule<
     ): boolean => {
       const callee = node.callee;
       let name: string | undefined;
+      // `Buffer['alloc'](n)` allocates exactly what `Buffer.alloc(n)` does.
+      // Resolved once, before the guard, so the dotted name is built from the
+      // binding the guard accepted rather than a cast second call.
+      const member = memberPropertyName(callee);
       if (callee.type === 'Identifier') {
         name = callee.name;
       } else if (
         callee.type === 'MemberExpression' &&
         callee.object.type === 'Identifier' &&
-        propertyName(callee) !== null
+        member !== null
       ) {
-        // `Buffer['alloc'](n)` allocates exactly what `Buffer.alloc(n)` does.
-        name = `${callee.object.name}.${propertyName(callee) as string}`;
+        name = `${callee.object.name}.${member}`;
       }
       if (name === undefined || !ALLOCATORS.has(name)) return false;
 

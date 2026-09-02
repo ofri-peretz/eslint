@@ -9,7 +9,12 @@
  * Prevent leading/trailing space between console.log parameters
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, propertyName, staticString } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  namesOneOf,
+  propertyName,
+  staticString,
+} from '@interlace/eslint-devkit';
 
 /*
  * `console['log'](' x ')` has the same stray padding `console.log(' x ')` does.
@@ -74,7 +79,7 @@ export const noConsoleSpaces = createRule<RuleOptions, MessageIds>({
         node.callee.type === 'MemberExpression' &&
         node.callee.object.type === 'Identifier' &&
         node.callee.object.name === 'console' &&
-        consoleMethods.has(propertyName(node.callee) as string)
+        namesOneOf(propertyName(node.callee), consoleMethods)
       ) {
         return true;
       }
@@ -83,14 +88,20 @@ export const noConsoleSpaces = createRule<RuleOptions, MessageIds>({
     }
 
     // oxlint-disable-next-line consistent-function-scoping
-    function getConsoleMethodName(node: TSESTree.CallExpression): string {
+    function getConsoleMethodName(
+      node: TSESTree.CallExpression,
+    ): string | null {
       // Only ever called after `isConsoleCall` has matched, which already
       // required a MemberExpression whose property resolves to a console
       // method — so the name is always there. The previous `return 'console'`
       // fallback was unreachable once the property is resolved rather than
       // required to be an Identifier, and an unreachable fallback reads as a
       // safeguard while guaranteeing nothing.
-      return propertyName(node.callee as TSESTree.MemberExpression) as string;
+      //
+      // The `string | null` return is `propertyName`'s own, carried through
+      // rather than cast away: both call sites pass it to report `data`,
+      // which takes `unknown`, so nothing needed the narrower type.
+      return propertyName(node.callee as TSESTree.MemberExpression);
     }
 
     // oxlint-disable-next-line consistent-function-scoping
@@ -117,7 +128,8 @@ export const noConsoleSpaces = createRule<RuleOptions, MessageIds>({
             // as `'...'` — which would silently convert every backtick in the
             // codebase to a quote. The `TemplateLiteral` branch below owns them
             // and fixes them in place.
-            const staticText = arg.type === 'TemplateLiteral' ? null : staticString(arg);
+            const staticText =
+              arg.type === 'TemplateLiteral' ? null : staticString(arg);
             if (staticText !== null) {
               if (hasLeadingOrTrailingSpaces(staticText)) {
                 context.report({

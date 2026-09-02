@@ -9,7 +9,7 @@
  * Detect missing or incorrect React keys (requires deep reconciliation understanding)
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, propertyName } from '@interlace/eslint-devkit';
+import { createRule, namesOneOf, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 /*
@@ -146,7 +146,7 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
       // Pattern 1: array.map(), array.forEach(), array.flatMap()
       if (
         callee.type === 'MemberExpression' &&
-        ITERATOR_METHODS.has(propertyName(callee) as string)
+        namesOneOf(propertyName(callee), ITERATOR_METHODS)
       ) {
         return true;
       }

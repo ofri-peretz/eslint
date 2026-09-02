@@ -12,11 +12,17 @@
  * @see https://nodejs.org/api/crypto.html#cryptocreatecipheralgorithm-password-options
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES, isTestFilePath, propertyName } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  createRule,
+  AST_NODE_TYPES,
+  isTestFilePath,
+  namesOneOf,
+  propertyName,
+} from '@interlace/eslint-devkit';
 
-type MessageIds =
-  | 'deprecatedCipherMethod'
-  | 'useCipheriv';
+type MessageIds = 'deprecatedCipherMethod' | 'useCipheriv';
 
 export interface Options {
   /** Allow deprecated methods in test files. Default: false */
@@ -33,7 +39,8 @@ export const noDeprecatedCipherMethod = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-deprecated-cipher-method.md',
-      description: 'Disallow deprecated crypto.createCipher/createDecipher methods (use createCipheriv/createDecipheriv instead)',
+      description:
+        'Disallow deprecated crypto.createCipher/createDecipher methods (use createCipheriv/createDecipheriv instead)',
       cwe: 'CWE-327',
       cvss: 7.5,
     },
@@ -43,18 +50,22 @@ export const noDeprecatedCipherMethod = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Deprecated cipher method',
         cwe: 'CWE-327',
-        description: 'crypto.{{method}}() is deprecated. It derives key from password without salt and uses no IV, making encryption deterministic and vulnerable.',
+        description:
+          'crypto.{{method}}() is deprecated. It derives key from password without salt and uses no IV, making encryption deterministic and vulnerable.',
         severity: 'HIGH',
         fix: 'Use crypto.{{replacement}}() with explicit key and random IV',
-        documentationLink: 'https://nodejs.org/api/crypto.html#cryptocreatecipherivalgorithm-key-iv-options',
+        documentationLink:
+          'https://nodejs.org/api/crypto.html#cryptocreatecipherivalgorithm-key-iv-options',
       }),
       useCipheriv: formatLLMMessage({
         icon: MessageIcons.INFO,
         issueName: 'Use createCipheriv',
-        description: 'Use createCipheriv with explicit key derivation and random IV',
+        description:
+          'Use createCipheriv with explicit key derivation and random IV',
         severity: 'LOW',
         fix: 'const key = crypto.scryptSync(password, salt, 32);\nconst iv = crypto.randomBytes(16);\nconst cipher = crypto.createCipheriv(algorithm, key, iv);',
-        documentationLink: 'https://nodejs.org/api/crypto.html#cryptocreatecipherivalgorithm-key-iv-options',
+        documentationLink:
+          'https://nodejs.org/api/crypto.html#cryptocreatecipherivalgorithm-key-iv-options',
       }),
     },
     schema: [
@@ -78,7 +89,7 @@ export const noDeprecatedCipherMethod = createRule<RuleOptions, MessageIds>({
   ],
   create(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}]
+    [options = {}],
   ) {
     const { allowInTests = false } = options as Options;
 
@@ -91,13 +102,14 @@ export const noDeprecatedCipherMethod = createRule<RuleOptions, MessageIds>({
       // Check for crypto.createCipher() or crypto.createDecipher()
       if (
         node.callee.type === AST_NODE_TYPES.MemberExpression &&
-        DEPRECATED_METHODS.has(propertyName(node.callee) as string)
+        namesOneOf(propertyName(node.callee), DEPRECATED_METHODS)
       ) {
         // Capture narrowed type before callback (TypeScript loses narrowing in closures)
         const callee = node.callee;
         const propertyNode = callee.property as TSESTree.Identifier;
         const methodName = propertyNode.name;
-        const replacementName = methodName === 'createCipher' ? 'createCipheriv' : 'createDecipheriv';
+        const replacementName =
+          methodName === 'createCipher' ? 'createCipheriv' : 'createDecipheriv';
 
         context.report({
           node: propertyNode,
@@ -123,7 +135,8 @@ export const noDeprecatedCipherMethod = createRule<RuleOptions, MessageIds>({
         DEPRECATED_METHODS.has(node.callee.name)
       ) {
         const methodName = node.callee.name;
-        const replacementName = methodName === 'createCipher' ? 'createCipheriv' : 'createDecipheriv';
+        const replacementName =
+          methodName === 'createCipher' ? 'createCipheriv' : 'createDecipheriv';
 
         context.report({
           node: node.callee,

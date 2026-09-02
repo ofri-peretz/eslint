@@ -23,7 +23,14 @@
  * - Parameterized LDAP query construction
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createModuleEvidence, createRule, isStaticExpression, staticString, propertyName } from '@interlace/eslint-devkit';
+import {
+  createModuleEvidence,
+  createRule,
+  isStaticExpression,
+  staticString,
+  memberPropertyName,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   createSafetyChecker,
@@ -224,10 +231,6 @@ const DEFAULT_VALIDATION_FUNCTIONS = [
   'checkLdapFilter',
 ];
 
-
-
-
-
 export const noLdapInjection = createRule<RuleOptions, MessageIds>({
   name: 'no-ldap-injection',
   meta: {
@@ -350,7 +353,8 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Extra request-object root names, on top of `requestRoots`.',
+            description:
+              'Extra request-object root names, on top of `requestRoots`.',
           },
         },
         additionalProperties: false,
@@ -386,8 +390,14 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
       additionalRequestRoots = [],
     }: Options = options;
 
-    const ldapPackageSet = new Set([...ldapPackages, ...additionalLdapPackages]);
-    const requestRootSet = new Set([...requestRoots, ...additionalRequestRoots]);
+    const ldapPackageSet = new Set([
+      ...ldapPackages,
+      ...additionalLdapPackages,
+    ]);
+    const requestRootSet = new Set([
+      ...requestRoots,
+      ...additionalRequestRoots,
+    ]);
     // Built per run rather than at module scope, because the package list is now
     // an option. The devkit probe is a closure over the specifier set, so it has
     // to be constructed after the options are read.
@@ -432,10 +442,14 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
       };
       const isLdapSource = (raw: unknown): boolean =>
         typeof raw === 'string' &&
-        (ldapPackageSet.has(raw) || [...LDAP_SCOPES].some((scope) => raw.startsWith(`${scope}/`)));
+        (ldapPackageSet.has(raw) ||
+          [...LDAP_SCOPES].some((scope) => raw.startsWith(`${scope}/`)));
 
       for (const statement of program.body) {
-        if (statement.type === 'ImportDeclaration' && isLdapSource(statement.source.value)) {
+        if (
+          statement.type === 'ImportDeclaration' &&
+          isLdapSource(statement.source.value)
+        ) {
           for (const specifier of statement.specifiers) record(specifier.local);
         }
         if (statement.type === 'VariableDeclaration') {
@@ -470,13 +484,18 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
     };
 
     /** Every expression ever written to a binding, resolved through the scope. */
-    const writesOf = (identifier: TSESTree.Identifier): TSESTree.Expression[] => {
+    const writesOf = (
+      identifier: TSESTree.Identifier,
+    ): TSESTree.Expression[] => {
       for (
-        let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(identifier);
+        let scope: TSESLint.Scope.Scope | null =
+          sourceCode.getScope(identifier);
         scope;
         scope = scope.upper
       ) {
-        const variable = scope.variables.find((v) => v.name === identifier.name);
+        const variable = scope.variables.find(
+          (v) => v.name === identifier.name,
+        );
         if (!variable) continue;
         return variable.references
           .filter((ref) => ref.isWrite() && ref.writeExpr)
@@ -486,7 +505,9 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
     };
 
     /** The single value a binding provably holds, or undefined if it is written more than once. */
-    const soleWriteOf = (identifier: TSESTree.Identifier): TSESTree.Expression | undefined => {
+    const soleWriteOf = (
+      identifier: TSESTree.Identifier,
+    ): TSESTree.Expression | undefined => {
       const writes = writesOf(identifier);
       return writes.length === 1 ? writes[0] : undefined;
     };
@@ -518,8 +539,14 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
 
     /** The class body enclosing a node, if any. */
     // oxlint-disable-next-line consistent-function-scoping
-    const enclosingClassBody = (node: TSESTree.Node): TSESTree.ClassBody | undefined => {
-      for (let current: TSESTree.Node | undefined = node; current; current = current.parent) {
+    const enclosingClassBody = (
+      node: TSESTree.Node,
+    ): TSESTree.ClassBody | undefined => {
+      for (
+        let current: TSESTree.Node | undefined = node;
+        current;
+        current = current.parent
+      ) {
         if (current.type === 'ClassBody') return current;
       }
       return undefined;
@@ -551,7 +578,10 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
         return true;
       }
 
-      if (expression.type === 'NewExpression' || expression.type === 'CallExpression') {
+      if (
+        expression.type === 'NewExpression' ||
+        expression.type === 'CallExpression'
+      ) {
         return !isLdapConstruction(expression);
       }
 
@@ -576,13 +606,14 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
       }
 
       // `this.client` — read the class field's initializer, when the class declares one.
+      // `this['baseDN']` names the same field `this.baseDN` names. Resolved
+      // once, before the guard, so the guard tests the binding the body reads.
+      const fieldName = memberPropertyName(expression);
       if (
         expression.type === 'MemberExpression' &&
         expression.object.type === 'ThisExpression' &&
-        propertyName(expression) !== null
+        fieldName !== null
       ) {
-        // `this['baseDN']` names the same field `this.baseDN` names.
-        const fieldName = propertyName(expression) as string;
         const body = enclosingClassBody(expression);
         if (!body) return false;
         const field = body.body.find(
@@ -617,12 +648,18 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
     };
 
     function isEscapedAt(node: TSESTree.Node): boolean {
-      for (let current: TSESTree.Node | undefined = node; current; current = current.parent) {
+      for (
+        let current: TSESTree.Node | undefined = node;
+        current;
+        current = current.parent
+      ) {
         if (current.type !== 'CallExpression') continue;
         const { callee } = current;
-        if (callee.type === 'MemberExpression' && propertyName(callee) !== null) {
-          // `esc['filterValue'](x)` escapes exactly as `esc.filterValue(x)` does.
-          const escapeMethod = propertyName(callee) as string;
+        // `esc['filterValue'](x)` escapes exactly as `esc.filterValue(x)` does.
+        // Resolved once, before the guard, so the guard tests the binding the
+        // body reads rather than casting a second call past the same question.
+        const escapeMethod = memberPropertyName(callee);
+        if (callee.type === 'MemberExpression' && escapeMethod !== null) {
           // Exact membership against the configured escape functions, matching either
           // the bare name (`filterEscape`) or the tail of a dotted path
           // (`escape.filterValue` -> `filterValue`). The previous test was
@@ -631,7 +668,8 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
           if (
             ldapEscapeFunctions.some(
               (escapeFunc) =>
-                escapeFunc === escapeMethod || escapeFunc.endsWith(`.${escapeMethod}`),
+                escapeFunc === escapeMethod ||
+                escapeFunc.endsWith(`.${escapeMethod}`),
             )
           ) {
             return true;
@@ -639,7 +677,8 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
         }
         if (
           callee.type === 'Identifier' &&
-          (ldapValidationFunctions.includes(callee.name) || ldapEscapeFunctions.includes(callee.name))
+          (ldapValidationFunctions.includes(callee.name) ||
+            ldapEscapeFunctions.includes(callee.name))
         ) {
           return true;
         }
@@ -673,10 +712,15 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
       seen.add(expression);
 
       if (expression.type === 'TemplateLiteral') {
-        return expression.expressions.filter((part) => !isStatic(part) && !isEscaped(part));
+        return expression.expressions.filter(
+          (part) => !isStatic(part) && !isEscaped(part),
+        );
       }
 
-      if (expression.type === 'BinaryExpression' && expression.operator === '+') {
+      if (
+        expression.type === 'BinaryExpression' &&
+        expression.operator === '+'
+      ) {
         const leaves: TSESTree.Node[] = [];
         const flatten = (n: TSESTree.Node): void => {
           const inner = unwrap(n);
@@ -690,8 +734,7 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
         // which is what makes the result a string at all.
         const hasStringPart = leaves.some(
           (leaf) =>
-            (staticString(leaf) !== null) ||
-            leaf.type === 'TemplateLiteral',
+            staticString(leaf) !== null || leaf.type === 'TemplateLiteral',
         );
         if (!hasStringPart) return null;
         return leaves.filter((leaf) => !isStatic(leaf) && !isEscaped(leaf));
@@ -720,7 +763,10 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
      * member chains: `LOOKUP[req.params.x]` is a computed read out of a table this file
      * declares, and its value is whatever the table holds, not what the request said.
      */
-    const isRequestValue = (node: TSESTree.Node, seen: Set<TSESTree.Node> = new Set()): boolean => {
+    const isRequestValue = (
+      node: TSESTree.Node,
+      seen: Set<TSESTree.Node> = new Set(),
+    ): boolean => {
       const expression = unwrap(node);
       // `var a = b; var b = a;` resolves forever without this — a stack overflow that
       // takes the whole ESLint run down, not just the rule. Found by the structural
@@ -737,10 +783,12 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
       if (expression.type === 'CallExpression') {
         if (isEscaped(expression)) return false;
         return expression.arguments.some(
-          (argument) => argument.type !== 'SpreadElement' && isRequestValue(argument, seen),
+          (argument) =>
+            argument.type !== 'SpreadElement' && isRequestValue(argument, seen),
         );
       }
-      if (expression.type !== 'MemberExpression' || expression.computed) return false;
+      if (expression.type !== 'MemberExpression' || expression.computed)
+        return false;
       return !isStatic(expression) && isUntrustedRequestChain(expression);
     };
 
@@ -763,14 +811,18 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
         scope;
         scope = scope.upper
       ) {
-        const variable = scope.variables.find((v) => v.name === (current as TSESTree.Identifier).name);
+        const variable = scope.variables.find(
+          (v) => v.name === (current as TSESTree.Identifier).name,
+        );
         if (!variable) continue;
         return variable.defs.some((def) => {
           if (def.type !== 'Variable') return false;
           const init = def.node.init ? unwrap(def.node.init) : undefined;
           if (!init) return false;
           if (init.type === 'Identifier') return requestRootSet.has(init.name);
-          return init.type === 'MemberExpression' && isUntrustedRequestChain(init);
+          return (
+            init.type === 'MemberExpression' && isUntrustedRequestChain(init)
+          );
         });
       }
       return false;
@@ -788,10 +840,15 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
       for (const property of expression.properties) {
         if (property.type !== 'Property') continue;
         const { key } = property;
-        if (!property.computed && key.type === 'Identifier' && key.name === 'filter') {
+        if (
+          !property.computed &&
+          key.type === 'Identifier' &&
+          key.name === 'filter'
+        ) {
           return property.value;
         }
-        if (key.type === 'Literal' && key.value === 'filter') return property.value;
+        if (key.type === 'Literal' && key.value === 'filter')
+          return property.value;
         // `{ [FILTER_KEY]: … }` — resolve the key through its binding.
         if (property.computed && key.type === 'Identifier') {
           const keyWrite = soleWriteOf(key);
@@ -822,7 +879,11 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
       context.report({
         node,
         messageId,
-        data: { filePath: filename, line: String(node.loc.start.line), ...data },
+        data: {
+          filePath: filename,
+          line: String(node.loc.start.line),
+          ...data,
+        },
       });
     };
 
@@ -832,7 +893,10 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
      * the text whose grammar is checked - never the printed source of the whole
      * expression, which drags the interpolated variable NAMES into the match.
      */
-    const staticSkeleton = (node: TSESTree.Node, seen: Set<TSESTree.Node> = new Set()): string => {
+    const staticSkeleton = (
+      node: TSESTree.Node,
+      seen: Set<TSESTree.Node> = new Set(),
+    ): string => {
       const expression = unwrap(node);
       if (seen.has(expression)) return '';
       seen.add(expression);
@@ -842,11 +906,22 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
       if (expression.type === 'TemplateLiteral') {
         return expression.quasis.map((quasi) => quasi.value.raw).join('\u0000');
       }
-      if (expression.type === 'BinaryExpression' && expression.operator === '+') {
-        return staticSkeleton(expression.left, seen) + '\u0000' + staticSkeleton(expression.right, seen);
+      if (
+        expression.type === 'BinaryExpression' &&
+        expression.operator === '+'
+      ) {
+        return (
+          staticSkeleton(expression.left, seen) +
+          '\u0000' +
+          staticSkeleton(expression.right, seen)
+        );
       }
       if (expression.type === 'ConditionalExpression') {
-        return staticSkeleton(expression.consequent, seen) + '\u0000' + staticSkeleton(expression.alternate, seen);
+        return (
+          staticSkeleton(expression.consequent, seen) +
+          '\u0000' +
+          staticSkeleton(expression.alternate, seen)
+        );
       }
       if (expression.type === 'Identifier') {
         const write = soleWriteOf(expression);
@@ -886,7 +961,11 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
       // A hardcoded filter that matches everything. Checked on the STATIC text of the
       // construction, so a template literal whose interpolations all fold to constants
       // is examined the same way a plain string literal is.
-      if (containsDangerousLdapFilter(staticSkeleton(filterNode).split('\u0000').join(''))) {
+      if (
+        containsDangerousLdapFilter(
+          staticSkeleton(filterNode).split('\u0000').join(''),
+        )
+      ) {
         report(filterNode, 'dangerousLdapOperation', {});
       }
     };
@@ -898,7 +977,8 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
       if (parts && parts.length > 0) {
         report(dnNode, 'ldapInjection', {
           severity: 'HIGH',
-          safeAlternative: 'Use ldap.escape.dnValue() or build the DN from validated components',
+          safeAlternative:
+            'Use ldap.escape.dnValue() or build the DN from validated components',
         });
         return;
       }
@@ -949,7 +1029,8 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
         if (isProvablyNotLdapReceiver(callee.object)) return;
 
         const args = node.arguments.filter(
-          (argument): argument is TSESTree.Expression => argument.type !== 'SpreadElement',
+          (argument): argument is TSESTree.Expression =>
+            argument.type !== 'SpreadElement',
         );
         if (args.length === 0) return;
 

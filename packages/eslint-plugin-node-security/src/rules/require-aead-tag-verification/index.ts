@@ -29,6 +29,7 @@ import {
   createRule,
   AST_NODE_TYPES,
   isTestFilePath,
+  memberPropertyName,
   propertyName,
 } from '@interlace/eslint-devkit';
 
@@ -172,13 +173,16 @@ export const requireAeadTagVerification = createRule<RuleOptions, MessageIds>({
         // The initialising write — `const decipher = createDecipheriv(…)`.
         if (parent.type === AST_NODE_TYPES.VariableDeclarator) continue;
 
+        // `decipher['final']()` is the same call in the method set. Resolved
+        // once, before the guard, so the set records the name the guard
+        // accepted rather than a cast repeat of it.
+        const method = memberPropertyName(parent);
         if (
           parent.type === AST_NODE_TYPES.MemberExpression &&
           parent.object === identifier &&
-          propertyName(parent) !== null
+          method !== null
         ) {
-          // `decipher['final']()` is the same call in the method set.
-          methods.add(propertyName(parent) as string);
+          methods.add(method);
           continue;
         }
 

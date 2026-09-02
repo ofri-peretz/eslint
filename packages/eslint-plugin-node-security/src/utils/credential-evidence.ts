@@ -24,7 +24,12 @@
  * but it is a name match on the thing being stored rather than on the method doing the
  * storing — the difference between "this holds a token" and "this is a function call".
  */
-import { AST_NODE_TYPES, propertyName, resolveModuleBinding } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  namesOneOf,
+  propertyName,
+  resolveModuleBinding,
+} from '@interlace/eslint-devkit';
 
 /*
  * SHARED evidence, so a gate here is a blind spot in every rule that reads it —
@@ -80,14 +85,47 @@ const CREDENTIAL_WORDS = [
  * @protocol-constant
  */
 const CONFIG_ABOUT_A_CREDENTIAL: ReadonlySet<string> = new Set([
-  'alg', 'algo', 'algorithm', 'cipher', 'digest',
-  'expiry', 'expiration', 'ttl', 'lifetime', 'maxage', 'rotation',
-  'type', 'kind', 'format', 'encoding', 'scheme',
-  'length', 'len', 'size', 'count', 'limit',
-  'name', 'label', 'id', 'prefix', 'suffix',
-  'path', 'file', 'url', 'uri', 'endpoint', 'host', 'header',
-  'issuer', 'audience', 'realm',
-  'enabled', 'disabled', 'required', 'strategy', 'provider',
+  'alg',
+  'algo',
+  'algorithm',
+  'cipher',
+  'digest',
+  'expiry',
+  'expiration',
+  'ttl',
+  'lifetime',
+  'maxage',
+  'rotation',
+  'type',
+  'kind',
+  'format',
+  'encoding',
+  'scheme',
+  'length',
+  'len',
+  'size',
+  'count',
+  'limit',
+  'name',
+  'label',
+  'id',
+  'prefix',
+  'suffix',
+  'path',
+  'file',
+  'url',
+  'uri',
+  'endpoint',
+  'host',
+  'header',
+  'issuer',
+  'audience',
+  'realm',
+  'enabled',
+  'disabled',
+  'required',
+  'strategy',
+  'provider',
 ]);
 
 /** Lowercase word segments of an identifier-ish name. */
@@ -371,7 +409,7 @@ function provablyEncrypts(
 
       if (
         callee.type === AST_NODE_TYPES.MemberExpression &&
-        CIPHER_OUTPUT_METHODS.has(propertyName(callee) as string) &&
+        namesOneOf(propertyName(callee), CIPHER_OUTPUT_METHODS) &&
         recurse(callee.object)
       ) {
         return true;
@@ -464,7 +502,7 @@ export function isWebStorageWrite(node: TSESTree.CallExpression): boolean {
   // `window.localStorage.setItem(...)` / `globalThis.sessionStorage.setItem(...)`
   return (
     object.type === AST_NODE_TYPES.MemberExpression &&
-    CLIENT_STORES.has(propertyName(object) as string)
+    namesOneOf(propertyName(object), CLIENT_STORES)
   );
 }
 

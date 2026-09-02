@@ -12,11 +12,8 @@
  * useEffect, useCallback, useMemo, and useLayoutEffect.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, propertyName } from '@interlace/eslint-devkit';
-import {
-  formatLLMMessage,
-  MessageIcons,
-} from '@interlace/eslint-devkit';
+import { createRule, namesOneOf, propertyName } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds =
   | 'missingDep'
@@ -201,7 +198,7 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
         callee.type === 'MemberExpression' &&
         callee.object.type === 'Identifier' &&
         callee.object.name === 'React' &&
-        HOOKS_WITH_DEPS.has(propertyName(callee) as string)
+        namesOneOf(propertyName(callee), HOOKS_WITH_DEPS)
       ) {
         return true;
       }
@@ -213,7 +210,7 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
      * Get the hook name from a call expression
      */
     // oxlint-disable-next-line consistent-function-scoping
-    function getHookName(node: TSESTree.CallExpression): string {
+    function getHookName(node: TSESTree.CallExpression): string | null {
       const callee = node.callee;
       if (callee.type === 'Identifier') {
         return callee.name;
@@ -222,7 +219,11 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
       // The `'unknown'` fallback that stood here is gone rather than covered:
       // `isHookWithDeps` gates every call to this function, and it already
       // required a `React.<hook>` whose name `propertyName` could resolve.
-      return propertyName(callee as TSESTree.MemberExpression) as string;
+      //
+      // `string | null` is `propertyName`'s own result, carried through rather
+      // than cast: the sole caller passes it to report `data`, which takes
+      // `unknown`, so nothing here ever needed the narrower type.
+      return propertyName(callee as TSESTree.MemberExpression);
     }
 
     /**

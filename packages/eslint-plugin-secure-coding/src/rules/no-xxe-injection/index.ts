@@ -50,7 +50,14 @@
  *     evidence of anything.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, isStaticExpression, resolveModuleBinding, staticString, propertyName } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  isStaticExpression,
+  resolveModuleBinding,
+  staticString,
+  namesOneOf,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
 
@@ -241,7 +248,8 @@ const hasDangerousParserOptions = (
     if (key === undefined || !dangerousKeys.has(key)) continue;
     // `prop` is a Property here — `optionKey` returns undefined for anything else.
     const { value } = prop as TSESTree.Property;
-    if (value.type === AST_NODE_TYPES.Literal && value.value === true) return true;
+    if (value.type === AST_NODE_TYPES.Literal && value.value === true)
+      return true;
   }
 
   return false;
@@ -251,8 +259,7 @@ const hasDangerousParserOptions = (
  * Check if XML contains dangerous entity declarations
  */
 const containsDangerousEntities = (xmlText: string): boolean => {
-  return /<!ENTITY/i.test(xmlText) &&
-         /SYSTEM\s+["']/i.test(xmlText);
+  return /<!ENTITY/i.test(xmlText) && /SYSTEM\s+["']/i.test(xmlText);
 };
 
 export const noXxeInjection = createRule<RuleOptions, MessageIds>({
@@ -273,7 +280,8 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
         description: 'XML contains dangerous entity declarations',
         severity: 'CRITICAL',
         fix: 'Remove SYSTEM/PUBLIC entity declarations or use safe XML parser',
-        documentationLink: 'https://owasp.org/www-community/vulnerabilities/XML_External_Entity_(XXE)_Processing',
+        documentationLink:
+          'https://owasp.org/www-community/vulnerabilities/XML_External_Entity_(XXE)_Processing',
       }),
       unsafeXmlParser: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -282,7 +290,8 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
         description: 'Using unsafe XML parser without secure configuration',
         severity: 'HIGH',
         fix: 'Use libxmljs with noent: false or xmldom with entityResolver: null',
-        documentationLink: 'https://cheatsheetseries.owasp.org/cheatsheets/XML_External_Entity_Prevention_Cheat_Sheet.html',
+        documentationLink:
+          'https://cheatsheetseries.owasp.org/cheatsheets/XML_External_Entity_Prevention_Cheat_Sheet.html',
       }),
       externalEntityEnabled: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -300,7 +309,8 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
         description: 'XML from untrusted source without validation',
         severity: 'HIGH',
         fix: 'Validate and sanitize XML input before parsing',
-        documentationLink: 'https://cheatsheetseries.owasp.org/cheatsheets/XML_External_Entity_Prevention_Cheat_Sheet.html',
+        documentationLink:
+          'https://cheatsheetseries.owasp.org/cheatsheets/XML_External_Entity_Prevention_Cheat_Sheet.html',
       }),
     },
     schema: [
@@ -315,7 +325,8 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
             // the rule behaved as if specific entity-expansion switches were
             // named, and the generated docs could not state either.
             default: DEFAULT_SAFE_PARSER_OPTIONS,
-            description: 'Parser option keys whose disabled value proves entity expansion is off',
+            description:
+              'Parser option keys whose disabled value proves entity expansion is off',
           },
           xmlValidationFunctions: {
             type: 'array',
@@ -334,7 +345,8 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Extra XML package specifiers, on top of `xmlModules`.',
+            description:
+              'Extra XML package specifiers, on top of `xmlModules`.',
           },
           xmlParseMethods: {
             type: 'array',
@@ -347,7 +359,8 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Extra XML-only parse method names, on top of `xmlParseMethods`.',
+            description:
+              'Extra XML-only parse method names, on top of `xmlParseMethods`.',
           },
           dangerousParserOptions: {
             type: 'array',
@@ -409,7 +422,10 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
 
     const xmlPackages = new Set([...xmlModules, ...additionalXmlModules]);
     const incapablePackages = new Set(entityIncapableModules);
-    const parseMethods = new Set([...xmlParseMethods, ...additionalXmlParseMethods]);
+    const parseMethods = new Set([
+      ...xmlParseMethods,
+      ...additionalXmlParseMethods,
+    ]);
     const dangerousKeys = new Set([
       ...dangerousParserOptions,
       ...additionalDangerousParserOptions,
@@ -467,7 +483,9 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
      * on `parse`, so the proof that a call is safe — or dangerous — lives at
      * the construction site of the receiver, one binding away.
      */
-    const constructionSite = (callee: TSESTree.Node): TSESTree.NewExpression | undefined => {
+    const constructionSite = (
+      callee: TSESTree.Node,
+    ): TSESTree.NewExpression | undefined => {
       if (callee.type !== AST_NODE_TYPES.MemberExpression) return undefined;
       const receiver = callee.object;
 
@@ -476,11 +494,16 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
 
       const variable = sourceCode
         .getScope(receiver)
-        .references.find((reference) => reference.identifier === receiver)?.resolved;
+        .references.find(
+          (reference) => reference.identifier === receiver,
+        )?.resolved;
       const definition = variable?.defs[0];
       if (definition?.type !== 'Variable') return undefined;
       // A rebound binding may hold a different parser by the time it is used.
-      if (variable!.references.filter((reference) => reference.isWrite()).length !== 1) {
+      if (
+        variable!.references.filter((reference) => reference.isWrite())
+          .length !== 1
+      ) {
         return undefined;
       }
       return definition.node.init?.type === AST_NODE_TYPES.NewExpression
@@ -511,23 +534,28 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
       // sentinel — its empty-string arm would be a branch no input can reach.
       if (
         callee.type === AST_NODE_TYPES.MemberExpression &&
-        parseMethods.has(propertyName(callee) as string)
+        namesOneOf(propertyName(callee), parseMethods)
       ) {
         return true;
       }
 
-      if (hasDangerousParserOptions(node.arguments[1], dangerousKeys)) return true;
+      if (hasDangerousParserOptions(node.arguments[1], dangerousKeys))
+        return true;
 
       if (resolvesToXmlModule(callee)) return true;
 
       const construction = constructionSite(callee);
-      return construction !== undefined && resolvesToXmlModule(construction.callee);
+      return (
+        construction !== undefined && resolvesToXmlModule(construction.callee)
+      );
     };
 
     /**
      * Check if parser options are secure
      */
-    const hasSecureParserOptions = (optionsNode: TSESTree.Node | undefined): boolean => {
+    const hasSecureParserOptions = (
+      optionsNode: TSESTree.Node | undefined,
+    ): boolean => {
       if (optionsNode?.type !== AST_NODE_TYPES.ObjectExpression) return false;
 
       for (const prop of optionsNode.properties) {
@@ -574,7 +602,10 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
      * parameter, a member access, a call result — is reachable from the wire.
      */
     const isTrustedXmlSource = (xmlSource: TSESTree.Node): boolean =>
-      isStaticExpression({ node: xmlSource, scope: sourceCode.getScope(xmlSource) });
+      isStaticExpression({
+        node: xmlSource,
+        scope: sourceCode.getScope(xmlSource),
+      });
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
@@ -618,11 +649,15 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
         }
 
         // Entity expansion proven OFF, at either site.
-        if (hasSecureParserOptions(callOptions) || hasSecureParserOptions(constructionOptions)) {
+        if (
+          hasSecureParserOptions(callOptions) ||
+          hasSecureParserOptions(constructionOptions)
+        ) {
           return;
         }
 
-        if (isTrustedXmlSource(xmlInput) || isXmlInputValidated(xmlInput)) return;
+        if (isTrustedXmlSource(xmlInput) || isXmlInputValidated(xmlInput))
+          return;
 
         // Untrusted input is only half of it. The other half is a parser that
         // can reach the filesystem — see DEFAULT_EXTERNAL_ENTITY_MODULES.
@@ -644,8 +679,15 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
       // A SYSTEM entity declared in the source itself. Multi-line XML is
       // written as a template literal, so both string forms are read.
       Literal(node: TSESTree.Literal) {
-        if (typeof node.value === 'string' && containsDangerousEntities(node.value)) {
-          context.report({ node, messageId: 'xxeInjection', data: reportData(node) });
+        if (
+          typeof node.value === 'string' &&
+          containsDangerousEntities(node.value)
+        ) {
+          context.report({
+            node,
+            messageId: 'xxeInjection',
+            data: reportData(node),
+          });
         }
       },
 
@@ -653,7 +695,11 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
         // `raw`, not `cooked`: a DOCTYPE carries no escape sequences, and
         // `cooked` is null for a tagged template with an invalid escape.
         if (containsDangerousEntities(node.value.raw)) {
-          context.report({ node, messageId: 'xxeInjection', data: reportData(node) });
+          context.report({
+            node,
+            messageId: 'xxeInjection',
+            data: reportData(node),
+          });
         }
       },
     };

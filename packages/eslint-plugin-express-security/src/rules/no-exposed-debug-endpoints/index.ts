@@ -12,6 +12,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  namesOneOf,
   propertyName,
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
@@ -117,7 +118,7 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
         node.callee.type === 'MemberExpression' &&
         node.callee.object.type === 'Identifier' &&
         ['app', 'router', 'express'].includes(node.callee.object.name) &&
-        HTTP_METHODS.has(propertyName(node.callee) as string)
+        namesOneOf(propertyName(node.callee), HTTP_METHODS)
       );
     };
 

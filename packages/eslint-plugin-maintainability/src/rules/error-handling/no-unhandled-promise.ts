@@ -16,6 +16,7 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   formatLLMMessage,
   MessageIcons,
+  namesOneOf,
   propertyName,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
@@ -140,7 +141,7 @@ export function hasPromiseEvidence(
       object.type === 'Identifier' &&
       object.name === 'Promise' &&
       // `Promise['all']([…])` is the same static `Promise.all` is.
-      PROMISE_STATICS.has(propertyName(node.callee) as string)
+      namesOneOf(propertyName(node.callee), PROMISE_STATICS)
     ) {
       return true;
     }

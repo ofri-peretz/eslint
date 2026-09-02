@@ -5,7 +5,11 @@
  */
 
 import type { TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, propertyName } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  namesOneOf,
+  propertyName,
+} from '@interlace/eslint-devkit';
 
 /*
  * SHARED evidence, read by 16 rules, so a gate here is a blind spot in all of
@@ -120,7 +124,8 @@ function isMongoDynamicLoad(
 function isSchemaConstruction(node: TSESTree.Node): boolean {
   if (node.type !== AST_NODE_TYPES.NewExpression) return false;
   const { callee } = node;
-  if (callee.type === AST_NODE_TYPES.Identifier) return callee.name === 'Schema';
+  if (callee.type === AST_NODE_TYPES.Identifier)
+    return callee.name === 'Schema';
   return (
     callee.type === AST_NODE_TYPES.MemberExpression &&
     propertyName(callee) === 'Schema'
@@ -178,9 +183,11 @@ function bindsMongooseName(node: TSESTree.Node): boolean {
   if (node.type === AST_NODE_TYPES.VariableDeclarator) {
     return node.id.type === AST_NODE_TYPES.Identifier && named(node.id.name);
   }
-  if (node.type === AST_NODE_TYPES.ImportDefaultSpecifier ||
-      node.type === AST_NODE_TYPES.ImportNamespaceSpecifier ||
-      node.type === AST_NODE_TYPES.ImportSpecifier) {
+  if (
+    node.type === AST_NODE_TYPES.ImportDefaultSpecifier ||
+    node.type === AST_NODE_TYPES.ImportNamespaceSpecifier ||
+    node.type === AST_NODE_TYPES.ImportSpecifier
+  ) {
     return named(node.local.name);
   }
   return false;
@@ -348,7 +355,7 @@ function isNativeCollectionCall(node: TSESTree.Node): boolean {
   return (
     node.type === AST_NODE_TYPES.CallExpression &&
     node.callee.type === AST_NODE_TYPES.MemberExpression &&
-    NATIVE_COLLECTION_METHODS.has(propertyName(node.callee) as string) &&
+    namesOneOf(propertyName(node.callee), NATIVE_COLLECTION_METHODS) &&
     isNativeCollectionHandle(node.callee.object)
   );
 }

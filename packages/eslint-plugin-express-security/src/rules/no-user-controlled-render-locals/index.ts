@@ -42,6 +42,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  namesOneOf,
   propertyName,
 } from '@interlace/eslint-devkit';
 
@@ -227,7 +228,7 @@ export const noUserControlledRenderLocals = createRule<RuleOptions, MessageIds>(
         if (callee.type === AST_NODE_TYPES.MemberExpression) {
           // A suppression path: `esc['clean'](v)` sanitises as `esc.clean(v)`
           // does, and missing it reports an already-clean value.
-          return sanitizers.has(propertyName(callee) as string);
+          return namesOneOf(propertyName(callee), sanitizers);
         }
         return false;
       }

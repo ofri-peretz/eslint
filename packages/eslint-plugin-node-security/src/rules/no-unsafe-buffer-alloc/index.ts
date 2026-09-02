@@ -75,6 +75,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  namesOneOf,
   propertyName,
   readsRequestShape,
   unwrapTypeSyntax,
@@ -929,7 +930,7 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
         callee.type === AST_NODE_TYPES.MemberExpression &&
         callee.object.type === AST_NODE_TYPES.Identifier &&
         callee.object.name === 'Buffer' &&
-        BUFFER_ALLOCATORS.has(propertyName(callee) as string)
+        namesOneOf(propertyName(callee), BUFFER_ALLOCATORS)
       ) {
         return size;
       }
@@ -1044,7 +1045,7 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
     function destinationArgumentCallee(callee: TSESTree.Node): string | null {
       if (
         callee.type === AST_NODE_TYPES.MemberExpression &&
-        DESTINATION_ARGUMENT_CALLS.has(propertyName(callee) as string)
+        namesOneOf(propertyName(callee), DESTINATION_ARGUMENT_CALLS)
       ) {
         return propertyName(callee);
       }

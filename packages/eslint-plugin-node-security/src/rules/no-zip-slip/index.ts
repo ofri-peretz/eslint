@@ -20,7 +20,12 @@
  * - Trusted extraction libraries
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, staticString, propertyName } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  staticString,
+  namesOneOf,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 /**
  * Six more used to sit here: `zipSlipVulnerability`, `validateArchivePaths`,
@@ -426,7 +431,8 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
       const callee = node.callee;
 
       // Check for archive method calls (e.g., zip.extractAllTo)
-      const method = callee.type === 'MemberExpression' ? propertyName(callee) : null;
+      const method =
+        callee.type === 'MemberExpression' ? propertyName(callee) : null;
       if (method !== null && archiveFunctions.includes(method)) {
         // `extractAllTo` and `extractArchive` belong to adm-zip and collide
         // with nothing. `extract`, `extractAll`, `unzip` and `untar` are
@@ -692,16 +698,19 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
         if (
           callee.type === 'MemberExpression' &&
           // @vocabulary Node path API
-          ['join', 'resolve', 'relative', 'normalize'].includes(
-            propertyName(callee) as string,
-          )
+          namesOneOf(propertyName(callee), [
+            'join',
+            'resolve',
+            'relative',
+            'normalize',
+          ])
         ) {
           // Check arguments for potential archive entry usage
           const args = node.arguments;
           for (const arg of args) {
             if (
               arg.type === 'MemberExpression' &&
-              archiveEntryFields.has(propertyName(arg) as string)
+              namesOneOf(propertyName(arg), archiveEntryFields)
             ) {
               // This looks like path.join(dest, entry.name) — but only if an
               // archive is involved. `entry` is just as often an

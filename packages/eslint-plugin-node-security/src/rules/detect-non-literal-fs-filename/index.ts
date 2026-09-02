@@ -95,6 +95,7 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   AST_NODE_TYPES,
   formatLLMMessage,
+  namesOneOf,
   propertyName,
   resolveModuleBinding,
   staticString,
@@ -699,7 +700,7 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
     // input can distinguish from the null one.
     const readsRequestSurface = (node: TSESTree.Node | undefined): boolean =>
       node?.type === AST_NODE_TYPES.MemberExpression &&
-      REQUEST_SURFACE.has(propertyName(node) as string);
+      namesOneOf(propertyName(node), REQUEST_SURFACE);
 
     const hasRequestEvidence = (id: TSESTree.Identifier): boolean => {
       // The access in hand: `ctx.query.file` reaches here as the `ctx` of
@@ -932,7 +933,7 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
           if (
             node.object.type === AST_NODE_TYPES.Identifier &&
             node.object.name === 'process' &&
-            !PROCESS_INPUT_MEMBERS.has(propertyName(node) as string)
+            !namesOneOf(propertyName(node), PROCESS_INPUT_MEMBERS)
           ) {
             return false;
           }

@@ -29,7 +29,7 @@
  * test: `myLocalStorageWrapper` is not `localStorage`.
  */
 import type { TSESTree } from '@interlace/eslint-devkit';
-import { propertyName } from '@interlace/eslint-devkit';
+import { namesOneOf, propertyName } from '@interlace/eslint-devkit';
 
 const GLOBAL_ALIASES: ReadonlySet<string> = new Set([
   'window',
@@ -56,11 +56,14 @@ export function resolveGlobalObject(
   }
   if (
     node.type === 'MemberExpression' &&
-    names.has(propertyName(node) as string) &&
+    namesOneOf(propertyName(node), names) &&
     node.object.type === 'Identifier' &&
     GLOBAL_ALIASES.has(node.object.name)
   ) {
-    return propertyName(node) as string;
+    // The membership test above resolved this name; returning the same
+    // call keeps `string | null` — which is exactly this function's
+    // contract — instead of casting the absent case out of sight.
+    return propertyName(node);
   }
   return null;
 }

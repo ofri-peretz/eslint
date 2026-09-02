@@ -21,6 +21,7 @@ import {
   resolveModuleBinding,
   unwrapTypeSyntax,
   staticString,
+  namesOneOf,
   propertyName,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
@@ -406,7 +407,7 @@ function isTrustedMemberEscaper(callee: TSESTree.Node): boolean {
   ) {
     return true;
   }
-  return MEMBER_ESCAPERS.has(propertyName(callee) as string);
+  return namesOneOf(propertyName(callee), MEMBER_ESCAPERS);
 }
 
 /**
@@ -500,10 +501,7 @@ function isEscaped(
  * was a false positive on Mongoose's `cloneRegExp` and Fastify's route normaliser.
  */
 function isRegexClone(node: TSESTree.Node): boolean {
-  if (
-    node.type === 'MemberExpression' &&
-    propertyName(node) === 'source'
-  ) {
+  if (node.type === 'MemberExpression' && propertyName(node) === 'source') {
     return true;
   }
   // `re.source + '$'` — anchoring a cloned pattern is still a clone.

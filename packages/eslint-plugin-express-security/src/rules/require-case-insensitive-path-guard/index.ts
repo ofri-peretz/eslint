@@ -51,6 +51,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   staticString,
+  namesOneOf,
   propertyName,
 } from '@interlace/eslint-devkit';
 
@@ -184,7 +185,7 @@ export const requireCaseInsensitivePathGuard = createRule<
         node.type === AST_NODE_TYPES.MemberExpression &&
         node.object.type === AST_NODE_TYPES.Identifier &&
         isRequestIdent(node.object.name) &&
-        PATH_PROPS.has(propertyName(node) as string)
+        namesOneOf(propertyName(node), PATH_PROPS)
       );
     }
 

@@ -23,7 +23,13 @@
  * @see https://owasp.org/www-community/attacks/Log_Injection
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  namesOneOf,
+  propertyName,
+} from '@interlace/eslint-devkit';
 
 type MessageIds = 'logInjection';
 
@@ -135,13 +141,7 @@ const LOG_LEVEL_METHODS: ReadonlySet<string> = new Set([
  * domain noun drops it through `requestRootNames`. Neither changes that the
  * root is compared by exact name.
  */
-const DEFAULT_REQUEST_ROOTS = [
-  'req',
-  'request',
-  'ctx',
-  'event',
-  'message',
-];
+const DEFAULT_REQUEST_ROOTS = ['req', 'request', 'ctx', 'event', 'message'];
 
 /**
  * Properties of a request that carry caller-supplied data.
@@ -252,7 +252,11 @@ function attributableSource(
     const variable = findLocalVariable(scope, node.name);
     if (!variable) return null;
     const definition = variable.defs[0];
-    if (!definition || definition.type !== 'Variable' || !definition.node.init) {
+    if (
+      !definition ||
+      definition.type !== 'Variable' ||
+      !definition.node.init
+    ) {
       return null;
     }
     return requestFieldOf(definition.node.init, roots, requestProperties);
@@ -414,7 +418,7 @@ export const noLogInjection = createRule<RuleOptions, MessageIds>({
       const callee = node.callee;
       if (callee.type !== 'MemberExpression') return false;
       // `logger['warn'](…)` writes the same line at the same level.
-      if (!LOG_LEVEL_METHODS.has(propertyName(callee) as string)) return false;
+      if (!namesOneOf(propertyName(callee), LOG_LEVEL_METHODS)) return false;
       return receiverName(callee.object, receivers) !== null;
     }
 

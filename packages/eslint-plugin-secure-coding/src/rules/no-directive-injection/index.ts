@@ -20,7 +20,13 @@
  * - Framework-specific safe patterns
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, unwrapTypeSyntax, staticString, propertyName } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  unwrapTypeSyntax,
+  staticString,
+  memberPropertyName,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   createSafetyChecker,
@@ -146,9 +152,12 @@ function findUnsafeSanitizerConfig(
 
     if (ATTR_OPTIONS.has(option)) {
       const bad = values.find(
-        (v) => v.toLowerCase().startsWith('on') || DANGEROUS_ATTRS.has(v.toLowerCase()),
+        (v) =>
+          v.toLowerCase().startsWith('on') ||
+          DANGEROUS_ATTRS.has(v.toLowerCase()),
       );
-      if (bad) return { node: property, option, allowed: `the "${bad}" attribute` };
+      if (bad)
+        return { node: property, option, allowed: `the "${bad}" attribute` };
     }
   }
 
@@ -226,7 +235,8 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
         description: 'innerHTML set with user-controlled content',
         severity: 'HIGH',
         fix: 'Use textContent or sanitize HTML content',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/API/Element/innerHTML',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/API/Element/innerHTML',
       }),
       unsafeSanitizerConfig: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -236,7 +246,8 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
           'DOMPurify was configured with {{option}} re-enabling {{allowed}}, which is exactly what the sanitizer removes by default. The call returns markup that can execute script, so the sanitization provides no protection.',
         severity: 'HIGH',
         fix: 'Drop {{allowed}} from {{option}}. If the markup genuinely needs it, render it outside the sanitized region rather than widening the allow-list.',
-        documentationLink: 'https://github.com/cure53/DOMPurify#can-i-configure-dompurify',
+        documentationLink:
+          'https://github.com/cure53/DOMPurify#can-i-configure-dompurify',
       }),
     },
     schema: [
@@ -246,19 +257,31 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
           userInputVariables: {
             type: 'array',
             items: { type: 'string' },
-            default: ['req', 'request', 'body', 'query', 'params', 'input', 'data', 'userInput'], description: 'Variable names treated as user-controlled input'
+            default: [
+              'req',
+              'request',
+              'body',
+              'query',
+              'params',
+              'input',
+              'data',
+              'userInput',
+            ],
+            description: 'Variable names treated as user-controlled input',
           },
           trustedSanitizers: {
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Additional function names to consider as template sanitizers',
+            description:
+              'Additional function names to consider as template sanitizers',
           },
           trustedAnnotations: {
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Additional JSDoc annotations to consider as safe markers',
+            description:
+              'Additional JSDoc annotations to consider as safe markers',
           },
           strictMode: {
             type: 'boolean',
@@ -272,7 +295,16 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [
     {
-      userInputVariables: ['req', 'request', 'body', 'query', 'params', 'input', 'data', 'userInput'],
+      userInputVariables: [
+        'req',
+        'request',
+        'body',
+        'query',
+        'params',
+        'input',
+        'data',
+        'userInput',
+      ],
       trustedSanitizers: [],
       trustedAnnotations: [],
       strictMode: false,
@@ -281,7 +313,16 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const {
-      userInputVariables = ['req', 'request', 'body', 'query', 'params', 'input', 'data', 'userInput'],
+      userInputVariables = [
+        'req',
+        'request',
+        'body',
+        'query',
+        'params',
+        'input',
+        'data',
+        'userInput',
+      ],
       trustedSanitizers = [],
       trustedAnnotations = [],
       strictMode = false,
@@ -428,7 +469,9 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
         case 'MemberExpression':
           return memberChainNames(node).some(namesUserInput);
         case 'TemplateLiteral':
-          return node.expressions.some((expr) => isUserInputExpression(expr, seen));
+          return node.expressions.some((expr) =>
+            isUserInputExpression(expr, seen),
+          );
         case 'BinaryExpression':
           return (
             isUserInputExpression(node.left, seen) ||
@@ -465,7 +508,10 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
         const attrValue = node.value;
 
         // Check for dangerouslySetInnerHTML
-        if (attrName.type === 'JSXIdentifier' && attrName.name === 'dangerouslySetInnerHTML') {
+        if (
+          attrName.type === 'JSXIdentifier' &&
+          attrName.name === 'dangerouslySetInnerHTML'
+        ) {
           if (attrValue && attrValue.type === 'JSXExpressionContainer') {
             const expression = attrValue.expression;
 
@@ -489,33 +535,37 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
 
         // Check for dynamic directive names (Angular/Vue style)
         // Check for dynamic directive names (Angular/Vue style)
-        const isNamespaceDirective = (
-          (attrName.type === 'JSXNamespacedName' && (attrName.namespace.name === 'v' || attrName.namespace.name === 'ng')) ||
-          (attrName.type === 'JSXIdentifier' && (attrName.name.startsWith('ng:') || attrName.name.startsWith('v:')))
-        );
+        const isNamespaceDirective =
+          (attrName.type === 'JSXNamespacedName' &&
+            (attrName.namespace.name === 'v' ||
+              attrName.namespace.name === 'ng')) ||
+          (attrName.type === 'JSXIdentifier' &&
+            (attrName.name.startsWith('ng:') ||
+              attrName.name.startsWith('v:')));
 
         if (isNamespaceDirective && attrValue) {
-            if (attrValue.type === 'JSXExpressionContainer') {
-              const expression = attrValue.expression;
+          if (attrValue.type === 'JSXExpressionContainer') {
+            const expression = attrValue.expression;
 
-              // Check if directive value comes from user input
-              if (isUserInputExpression(expression)) {
-                if (safetyChecker.isSafe(node, context)) {
-                  return;
-                }
-
-                context.report({
-                  node: attrValue,
-                  messageId: 'directiveInjection',
-                  data: {
-                    filePath: filename,
-                    line: String(node.loc?.start.line ?? 0),
-                    severity: 'HIGH',
-                    safeAlternative: 'Use hardcoded directive values or validate user input',
-                  },
-                });
+            // Check if directive value comes from user input
+            if (isUserInputExpression(expression)) {
+              if (safetyChecker.isSafe(node, context)) {
+                return;
               }
+
+              context.report({
+                node: attrValue,
+                messageId: 'directiveInjection',
+                data: {
+                  filePath: filename,
+                  line: String(node.loc?.start.line ?? 0),
+                  severity: 'HIGH',
+                  safeAlternative:
+                    'Use hardcoded directive values or validate user input',
+                },
+              });
             }
+          }
         }
 
         // Check for dynamic component binding (React/Angular)
@@ -538,7 +588,7 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
                   data: {
                     filePath: filename,
                     line: String(node.loc?.start.line ?? 0),
-                },
+                  },
                 });
               }
             }
@@ -552,8 +602,10 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
         const right = node.right;
 
         // Check for element.innerHTML = userInput
-        if (left.type === 'MemberExpression' &&
-            propertyName(left) === 'innerHTML') {
+        if (
+          left.type === 'MemberExpression' &&
+          propertyName(left) === 'innerHTML'
+        ) {
           // A sanitizer call IS the documented fix for this defect, so reporting
           // `node.innerHTML = DOMPurify.sanitize(html, { ALLOWED_TAGS: [...] })` tells the
           // reader to do what they already did. Only skip when the config is not one of the
@@ -606,23 +658,33 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
           context.report({
             node: unsafeConfig.node,
             messageId: 'unsafeSanitizerConfig',
-            data: { option: unsafeConfig.option, allowed: unsafeConfig.allowed },
+            data: {
+              option: unsafeConfig.option,
+              allowed: unsafeConfig.allowed,
+            },
           });
         }
 
         // Check for template compilation functions
         // `ng['$compile'](tpl)` compiles the same directive template.
-        if (callee.type === 'MemberExpression' && propertyName(callee) !== null) {
-          const methodName = propertyName(callee) as string;
-          const objectName = callee.object.type === 'Identifier' ? callee.object.name : '';
+        // Resolved once, before the guard, so the guard tests the binding the
+        // body reads rather than casting a second call past the same question.
+        const methodName = memberPropertyName(callee);
+        if (callee.type === 'MemberExpression' && methodName !== null) {
+          const objectName =
+            callee.object.type === 'Identifier' ? callee.object.name : '';
 
           // Template compilation functions
-          if (['compile', 'template', '$compile', '$interpolate'].includes(methodName) ||
-              (objectName === 'Handlebars' && methodName === 'compile') ||
-              (objectName === '_' && methodName === 'template') ||
-              (objectName === 'ejs' && methodName === 'render') ||
-              (objectName === 'pug' && methodName === 'render') ||
-              (objectName === 'mustache' && methodName === 'render')) {
+          if (
+            ['compile', 'template', '$compile', '$interpolate'].includes(
+              methodName,
+            ) ||
+            (objectName === 'Handlebars' && methodName === 'compile') ||
+            (objectName === '_' && methodName === 'template') ||
+            (objectName === 'ejs' && methodName === 'render') ||
+            (objectName === 'pug' && methodName === 'render') ||
+            (objectName === 'mustache' && methodName === 'render')
+          ) {
             const args = node.arguments;
             if (args.length > 0) {
               const templateArg = args[0];
@@ -719,19 +781,27 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
         while (current) {
           if (current.type === 'JSXExpressionContainer') {
             // Check if we are inside dangerouslySetInnerHTML attribute
-            if (current.parent?.type === 'JSXAttribute' &&
-                current.parent.name.type === 'JSXIdentifier' &&
-                current.parent.name.name === 'dangerouslySetInnerHTML') {
+            if (
+              current.parent?.type === 'JSXAttribute' &&
+              current.parent.name.type === 'JSXIdentifier' &&
+              current.parent.name.name === 'dangerouslySetInnerHTML'
+            ) {
               // A synthetic node may carry no expression at all; absence is not evidence.
-              if (current.expression && isUserInputExpression(current.expression)) return;
+              if (
+                current.expression &&
+                isUserInputExpression(current.expression)
+              )
+                return;
               isInDangerousContext = true;
               break;
             }
           } else if (current.type === 'AssignmentExpression') {
             // Check for innerHTML assignment
             const left = current.left;
-            if (left.type === 'MemberExpression' &&
-                propertyName(left) === 'innerHTML') {
+            if (
+              left.type === 'MemberExpression' &&
+              propertyName(left) === 'innerHTML'
+            ) {
               if (current.right && isUserInputExpression(current.right)) return;
               isInDangerousContext = true;
               break;
@@ -742,8 +812,8 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
 
         if (isInDangerousContext) {
           // Check if template contains user input
-          const hasUserInput = node.expressions.some((expr: TSESTree.Expression) =>
-            isUserInputExpression(expr),
+          const hasUserInput = node.expressions.some(
+            (expr: TSESTree.Expression) => isUserInputExpression(expr),
           );
 
           if (hasUserInput) {
@@ -763,7 +833,7 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
             });
           }
         }
-      }
+      },
     };
   },
 });
