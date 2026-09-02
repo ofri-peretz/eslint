@@ -5,6 +5,20 @@ All notable changes to `eslint-plugin-import-next` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.7.2
+
+### Patch Changes
+
+- **🐛 Fix** — import gates resolve a subscripted member
+
+  A member spelled `o['k']` reaches exactly what `o.k` reaches, and these gates
+  compared `property.name` before asking what the property was. They now resolve
+  through the devkit's `propertyName`, which still abstains on the one shape that
+  genuinely cannot be resolved: a key chosen at runtime, whose name is not
+  statically known.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`
+
 ## 2.7.1
 
 ### Patch Changes

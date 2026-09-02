@@ -19,6 +19,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 import { resolveGlobalObject } from '../../utils/global-object';
@@ -43,9 +44,8 @@ function isUrlMethod(node: TSESTree.CallExpression, method: string): boolean {
   const callee = node.callee;
   return (
     callee.type === AST_NODE_TYPES.MemberExpression &&
-    !callee.computed &&
-    callee.property.type === AST_NODE_TYPES.Identifier &&
-    callee.property.name === method &&
+    // `URL['createObjectURL'](blob)` mints the same object URL.
+    propertyName(callee) === method &&
     resolveGlobalObject(callee.object, URL_GLOBAL) !== null
   );
 }

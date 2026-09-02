@@ -64,7 +64,9 @@ conn.execute('SELECT * FROM users WHERE id = ?', [userId]);
 
 ## Known limitations
 
-- Only identifier member access is matched, so `conn['query'](...)` is a false negative.
+- A method chosen at runtime — `conn[verb](...)` — names nothing to
+  match against the sink list, so it is not reported. The quoted spelling
+  `conn['query'](...)` names `query` and IS reported.
 - Taint tracking is single-scope and name-based — it does not follow a query
   string across function boundaries.
 

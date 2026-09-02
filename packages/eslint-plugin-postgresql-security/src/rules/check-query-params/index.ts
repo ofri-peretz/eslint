@@ -10,7 +10,8 @@ import {
   TSESTree,
   formatLLMMessage,
   MessageIcons,
-  staticString,
+  propertyName,
+  objectKeyName,
 } from '@interlace/eslint-devkit';
 import { CheckQueryParamsOptions } from '../../types';
 import { fileUsesPostgres } from '../../utils';
@@ -73,11 +74,9 @@ function isStringRawTag(node: TSESTree.TaggedTemplateExpression): boolean {
   const { tag } = node;
   return (
     tag.type === AST_NODE_TYPES.MemberExpression &&
-    !tag.computed &&
     tag.object.type === AST_NODE_TYPES.Identifier &&
     tag.object.name === 'String' &&
-    tag.property.type === AST_NODE_TYPES.Identifier &&
-    tag.property.name === 'raw'
+    propertyName(tag) === 'raw'
   );
 }
 
@@ -236,20 +235,6 @@ function knowableValueCount(node: TSESTree.Node, scope: TSESLint.Scope.Scope): n
  * rule for now)", which is an evasion any minifier or codegen produces for
  * free.
  */
-function propertyName(property: TSESTree.Property): string | null {
-  if (property.computed) {
-    return property.key.type === AST_NODE_TYPES.Literal &&
-      staticString(property.key) !== null
-      ? staticString(property.key)
-      : null;
-  }
-  if (property.key.type === AST_NODE_TYPES.Identifier) return property.key.name;
-  const staticText = staticString(property.key);
-  if (staticText !== null) {
-    return staticText;
-  }
-  return null;
-}
 
 /** The `text` / `values` pair of a `query({ text, values })` config object. */
 function configPair(
@@ -259,7 +244,7 @@ function configPair(
   let values: TSESTree.Node | null = null;
   for (const property of node.properties) {
     if (property.type !== AST_NODE_TYPES.Property) continue;
-    const name = propertyName(property);
+    const name = objectKeyName(property);
     if (name === 'text') text = property.value;
     if (name === 'values') values = property.value;
   }

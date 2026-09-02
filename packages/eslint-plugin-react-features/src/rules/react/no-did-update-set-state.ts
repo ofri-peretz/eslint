@@ -9,7 +9,7 @@
  * Prevent setState in componentDidUpdate
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'noDidUpdateSetState';
@@ -83,8 +83,7 @@ export const noDidUpdateSetState = createRule<RuleOptions, MessageIds>({
         // Check if this is a setState call
         if (
           node.callee.type === 'MemberExpression' &&
-          node.callee.property.type === 'Identifier' &&
-          node.callee.property.name === 'setState'
+          propertyName(node.callee) === 'setState'
         ) {
           // Allow if there's a conditional check or callback is allowed
           if (!hasConditionalCheck && !options?.allowInCallback) {

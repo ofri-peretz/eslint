@@ -5,6 +5,71 @@ All notable changes to `eslint-plugin-conventions` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.3.0
+
+### Minor Changes
+
+- **🐛 Fix** — `console['log']` is the same call as `console.log`
+
+  `no-console-spaces` — `console['log'](' x ')` reaches the same property the dotted spelling does, and the rule went
+  silent on it. That is the notation bundlers emit, so the rule was off on built
+  output.
+
+  A dynamic `o[m]` has no statically known property name, so it is still ignored.
+
+### Patch Changes
+
+- **🐛 Fix** — member gates resolve a quoted key without a second arm
+
+  `prefer-code-point` and `prefer-dom-node-text-content` each carried a
+  separate branch for `obj['charCodeAt']` / `element['innerText']` alongside the
+  dotted one. `propertyName` answers both, so the duplicate arms are gone rather
+  than left as dead code — as is `shouldIgnoreCall`'s runtime-key arm, which the
+  caller's own `isCharCodeAtCall` check now filters out first.
+
+- **🐛 Fix** — commented-out code is recognised through a string subscript
+
+  `no-commented-code` decides whether a comment holds code from source-text
+  shapes, and every call pattern required a DOT — so `// await
+client['connect']()` did not read as code. Minified or generated code pasted
+  into a comment is still commented-out code.
+
+- **🐛 Fix** — remaining member gates resolve a subscripted key
+
+  A member spelled `o['k']` reaches exactly what `o.k` reaches, and these gates
+  compared `property.name` before asking what the property was. They now resolve
+  through the devkit's `propertyName`, which still abstains on the one shape that
+  genuinely cannot be resolved: a key chosen at runtime, whose name is not
+  statically known.
+
+- **🧹 Refactor** — `no-console-spaces` returns the console method it resolved, or null
+
+  `SET.has(propertyName(node) as string)` reaches the right answer for the wrong
+  reason. `propertyName` returns `string | null` because `o[k]` names a property
+  the AST cannot read, and that is not the same answer as "named, and not one of
+  these" — the cast collapses both, and `Set.prototype.has(null)` being false is
+  what made it look correct.
+
+  2 sites across 1 file now ask the two questions separately, via
+  `namesOneOf` / `memberPropertyName` from the devkit or an explicit `!== null`.
+
+  No rule behaviour changes: this package's test count and coverage are unchanged.
+
+- **🐛 Fix** — `no-deprecated-api` reads a subscripted member, and its suggestion stays valid
+
+  `obj['deprecatedMethod']()` calls exactly the API `obj.deprecatedMethod()`
+  calls; the rule matched on `property.name` and ignored it. A test had pinned
+  that miss under a run named after the coverage line it existed to execute,
+  with the genuine refusal `obj[propName]()` listed beside it as though the two
+  were the same case.
+
+  The fixer needed correcting in the same change: writing the bare replacement
+  over a computed property produced `obj[newMethod]()` — a reference to a
+  variable that does not exist, offered to the user as the fix. A computed
+  property now keeps its quotes.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`
+
 ## 5.2.1
 
 ### Patch Changes

@@ -22,6 +22,8 @@ import {
   staticString,
   isStaticString,
   propertyName,
+  namesOneOf,
+  memberPropertyName,
   objectKeyName,
   memberPath,
   readsRequestShape,
@@ -369,5 +371,66 @@ describe('staticString and an escape the parser cannot cook', () => {
       quasis: [quasi],
     } as unknown as TSESTree.TemplateLiteral;
     expect(staticString(node)).toBe('BEGIN');
+  });
+});
+
+describe('namesOneOf', () => {
+  const SET: ReadonlySet<string> = new Set(['createHash', 'createCipheriv']);
+  const LIST = ['createHash', 'createCipheriv'] as const;
+
+  it('answers for a name that resolved, against either container', () => {
+    expect(namesOneOf('createHash', SET)).toBe(true);
+    expect(namesOneOf('createHash', LIST)).toBe(true);
+    expect(namesOneOf('readFile', SET)).toBe(false);
+    expect(namesOneOf('readFile', LIST)).toBe(false);
+  });
+
+  it('declines a name that did not resolve, against either container', () => {
+    // This is the whole reason the helper exists. `SET.has(name as string)`
+    // is false here too, but it reaches that answer by lying about the type
+    // and spells "the AST could not name this" exactly like "named, absent".
+    expect(namesOneOf(null, SET)).toBe(false);
+    expect(namesOneOf(null, LIST)).toBe(false);
+  });
+
+  it('reads the property of a computed member the same as a dotted one', () => {
+    const name = (code: string): string | null => {
+      const ast = parse(code) as unknown as TSESTree.Program;
+      const statement = ast.body[0] as TSESTree.ExpressionStatement;
+      return propertyName(statement.expression as TSESTree.MemberExpression);
+    };
+    expect(namesOneOf(name('crypto.createHash'), SET)).toBe(true);
+    expect(namesOneOf(name("crypto['createHash']"), SET)).toBe(true);
+    // `crypto[k]` names no property the AST can read, so it is not a member
+    // of the set — and, crucially, not a member for a different reason.
+    expect(namesOneOf(name('crypto[k]'), SET)).toBe(false);
+  });
+});
+
+describe('memberPropertyName', () => {
+  const first = (code: string): TSESTree.Node => {
+    const ast = parse(code) as unknown as TSESTree.Program;
+    return (ast.body[0] as TSESTree.ExpressionStatement).expression;
+  };
+
+  it('reads the property, in either spelling', () => {
+    expect(memberPropertyName(first('app.post'))).toBe('post');
+    expect(memberPropertyName(first("app['post']"))).toBe('post');
+    expect(memberPropertyName(first('app[`post`]'))).toBe('post');
+  });
+
+  it('is null for a member whose key is decided at runtime', () => {
+    expect(memberPropertyName(first('app[verb]'))).toBeNull();
+  });
+
+  it('is null for a node that reads no property at all', () => {
+    // The case `propertyName` cannot be asked: not a member expression.
+    expect(memberPropertyName(first('post'))).toBeNull();
+    expect(memberPropertyName(first('f()'))).toBeNull();
+  });
+
+  it('is null for an absent node', () => {
+    expect(memberPropertyName(null)).toBeNull();
+    expect(memberPropertyName(undefined)).toBeNull();
   });
 });

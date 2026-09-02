@@ -115,9 +115,12 @@ function looksLikeCode(comment: string, isBlockComment: boolean): boolean {
     // "await for the retry window to elapse", which is a sentence — the same
     // trap the keyword patterns fell into, one keyword further along.
     /^throw\s+new\s+[A-Za-z_$]/,
-    /^(throw|await|yield)\s+[A-Za-z_$][\w$]*\s*[.(]/,
+    // `[` alongside `.` and `(`: commented-out code is code, and
+    // `await client['connect']()` is as much a call as `await client.connect()`.
+    // A minifier's output pasted into a comment is still commented-out code.
+    /^(throw|await|yield)\s+[A-Za-z_$][\w$]*\s*[.([]/,
     /^return\s+(new|await)\s/,
-    /^[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*)+\s*\(/,
+    /^[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*|\[\s*['"][^'"]+['"]\s*\])+\s*\(/,
     /=>/,
     /===|!==/,
     /^@[A-Za-z_$][\w$]*\s*\(/,

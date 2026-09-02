@@ -25,6 +25,7 @@ import {
   MessageIcons,
   createRule,
   isTestFilePath,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 /**
@@ -60,7 +61,8 @@ function isHelmetMiddleware(node: TSESTree.CallExpression): boolean {
     return false;
   }
 
-  if (callee.property.type !== 'Identifier' || callee.property.name !== 'use') {
+  // `app['use'](helmet())` installs the same middleware.
+  if (propertyName(callee) !== 'use') {
     return false;
   }
 

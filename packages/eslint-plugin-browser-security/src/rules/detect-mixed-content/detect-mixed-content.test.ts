@@ -43,6 +43,8 @@ ruleTester.run('detect-mixed-content', detectMixedContent, {
     // HTTPS subresources are the remediation.
     { code: "el.src = 'https://cdn.acmecorp.io/lib.js'" },
     { code: "importScripts('https://cdn.acmecorp.io/sw.js')" },
+    // A loader chosen at RUNTIME names nothing that fetches a subresource.
+    { name: 'a loader chosen at RUNTIME names nothing that fetches a subresource', code: "self[load]('http://cdn.acmecorp.io/sw-helper.js')" },
     { code: "el.setAttribute('src', 'https://cdn.acmecorp.io/a.js')" },
     // A relative subresource inherits the page scheme, so it cannot be mixed.
     { code: "el.src = '/static/lib.js'" },
@@ -104,6 +106,11 @@ ruleTester.run('detect-mixed-content', detectMixedContent, {
     },
     {
       code: "self.importScripts('http://cdn.acmecorp.io/sw-helper.js')",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'a subscripted importScripts over plain http',
+      code: "self['importScripts']('http://cdn.acmecorp.io/sw-helper.js')",
       errors: [{ messageId: 'violationDetected' }],
     },
     // A loopback-LOOKING host that is a real remote host.

@@ -15,6 +15,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 import { isNonProductionPath } from '../../lib/non-production-paths';
@@ -89,8 +90,7 @@ export const noDebugCodeInProduction = createRule<RuleOptions, MessageIds>({
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
           node.callee.object.type === AST_NODE_TYPES.Identifier &&
           node.callee.object.name === 'console' &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          node.callee.property.name === 'log'
+          propertyName(node.callee) === 'log'
         ) {
           context.report({ node, messageId: 'violationDetected' });
         }

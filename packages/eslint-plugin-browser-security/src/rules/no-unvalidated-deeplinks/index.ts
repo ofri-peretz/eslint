@@ -8,7 +8,7 @@
  * @fileoverview Require validation of deep link URLs
  */
 
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { createRule, formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   identityArgumentIndex,
@@ -46,8 +46,10 @@ function memberPath(
   const parts: string[] = [];
   let current: TSESTree.Node = node;
   while (current.type === 'MemberExpression') {
-    if (!current.computed && current.property.type === 'Identifier') {
-      parts.unshift(current.property.name);
+    // A quoted link names the same member a dotted one does.
+    const link = propertyName(current);
+    if (link !== null) {
+      parts.unshift(link);
     }
     current = current.object;
   }
@@ -87,11 +89,10 @@ function isLinkingCall(node: TSESTree.Node, method: string): boolean {
   return (
     node.type === 'CallExpression' &&
     node.callee.type === 'MemberExpression' &&
-    !node.callee.computed &&
     node.callee.object.type === 'Identifier' &&
     node.callee.object.name === 'Linking' &&
-    node.callee.property.type === 'Identifier' &&
-    node.callee.property.name === method
+    // `Linking['openURL'](u)` opens the same deep link.
+    propertyName(node.callee) === method
   );
 }
 
@@ -139,9 +140,7 @@ function deepLinkParamKind(
     // `Linking.getInitialURL().then(fn)` — the parameter IS the URL.
     if (
       call.callee.type === 'MemberExpression' &&
-      !call.callee.computed &&
-      call.callee.property.type === 'Identifier' &&
-      call.callee.property.name === 'then' &&
+      propertyName(call.callee) === 'then' &&
       isLinkingCall(call.callee.object, 'getInitialURL')
     ) {
       return 'url';
@@ -198,9 +197,8 @@ function isDeepLinkSteerable(
   // `event.url` on a `'url'` listener parameter.
   if (
     node.type === 'MemberExpression' &&
-    !node.computed &&
-    node.property.type === 'Identifier' &&
-    node.property.name === 'url' &&
+    // `event['url']` carries the same inbound link `event.url` carries.
+    propertyName(node) === 'url' &&
     node.object.type === 'Identifier'
   ) {
     return deepLinkParamKind(node.object, sourceCode) === 'event';
@@ -285,8 +283,7 @@ export const noUnvalidatedDeeplinks = createRule<RuleOptions, MessageIds>({
         // hands the string to the OS URL-scheme handler, which is the sink
         // CWE-939 is about.
         if (node.callee.type === 'MemberExpression' &&
-            node.callee.property.type === 'Identifier' &&
-            node.callee.property.name === 'navigate') {
+            propertyName(node.callee) === 'navigate') {
 
           const urlArg = node.arguments[0];
           if (urlArg && isSteerableUrlValue(urlArg, context.sourceCode)) {

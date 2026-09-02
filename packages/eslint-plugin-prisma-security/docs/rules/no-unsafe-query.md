@@ -62,7 +62,9 @@ await prisma.$queryRaw`SELECT * FROM User WHERE email = ${email}`;
 
 ## Known limitations
 
-- Only identifier member access is matched, so `prisma['$queryRawUnsafe'](...)` is a false negative.
+- A method chosen at runtime — `prisma[verb](...)` — names nothing to
+  match against the sink list, so it is not reported. The quoted spelling
+  `prisma['$queryRawUnsafe'](...)` names `$queryRawUnsafe` and IS reported.
 - Taint tracking is single-scope and name-based — it does not follow a query
   string across function boundaries.
 

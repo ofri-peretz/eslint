@@ -23,7 +23,7 @@
  * `no-buffer-overread` report on identifiers it had never seen declared.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, unwrapTypeSyntax } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, unwrapTypeSyntax, propertyName } from '@interlace/eslint-devkit';
 
 type SourceCode = TSESLint.SourceCode;
 
@@ -190,10 +190,13 @@ export function makeReadsTaintSource(
         return lastWrite !== undefined && reads(lastWrite, depth + 1);
       }
       case AST_NODE_TYPES.MemberExpression: {
+        // `req['query']` names the same request surface `req.query` names.
+        // `has(null)` would be false anyway, but the name has to exist before
+        // it can be lowercased.
+        const surface = propertyName(node);
         if (
-          !node.computed &&
-          node.property.type === AST_NODE_TYPES.Identifier &&
-          REQUEST_PROPERTY_NAMES.has(node.property.name.toLowerCase())
+          surface !== null &&
+          REQUEST_PROPERTY_NAMES.has(surface.toLowerCase())
         ) {
           return true;
         }

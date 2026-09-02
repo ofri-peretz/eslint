@@ -284,21 +284,30 @@ describe('no-unhandled-promise', () => {
 
   describe('Computed promise-method callbacks', () => {
     ruleTester.run(
-      'computed member callee is not a promise chain',
+      'a subscripted then IS a promise chain',
       noUnhandledPromise,
       {
         valid: [],
         invalid: [
-          // `p["then"](() => {...})` — the arrow IS an argument of a call whose
-          // callee is a MemberExpression, but the property is a Literal, so
-          // isInsidePromiseCallback does not treat it as a promise callback.
-          // Both the outer computed call and the inner doAsync() report.
+          // Was pinned as TWO findings, on the grounds that "the property is a
+          // Literal, so isInsidePromiseCallback does not treat it as a promise
+          // callback" — so the inner `doAsync()` was reported a second time.
+          // `p['then'](…)` IS the promise chain, so the callback is a promise
+          // callback and only the outer chain — which still has no `.catch` —
+          // reports.
           {
+            name: 'a subscripted then with no catch reports once, not twice',
             code: 'async function doAsync() {}\np["then"](() => { doAsync(); });',
-            errors: [
-              { messageId: 'unhandledPromise' },
-              { messageId: 'unhandledPromise' },
-            ],
+            errors: [{ messageId: 'unhandledPromise' }],
+          },
+          // The shape the old comment actually described: a method named at
+          // RUNTIME. There is no name to match, so `p[m](…)` is not a promise
+          // chain and does not report — but the arrow is not a promise
+          // callback either, so the inner `doAsync()` does.
+          {
+            name: 'a runtime-keyed callee reports the inner call, not the chain',
+            code: 'async function doAsync() {}\np[m](() => { doAsync(); });',
+            errors: [{ messageId: 'unhandledPromise' }],
           },
         ],
       },

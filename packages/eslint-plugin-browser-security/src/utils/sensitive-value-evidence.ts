@@ -66,6 +66,7 @@ import {
   identifierWords,
   nameHasAnyWord,
   resolveModuleBinding,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 import { resolveGlobalObject } from './global-object';
@@ -510,9 +511,8 @@ function isCachesOpenCall(node: TSESTree.Node): boolean {
   return (
     call.type === AST_NODE_TYPES.CallExpression &&
     call.callee.type === AST_NODE_TYPES.MemberExpression &&
-    !call.callee.computed &&
-    call.callee.property.type === AST_NODE_TYPES.Identifier &&
-    call.callee.property.name === 'open' &&
+    // `caches['open']('v1')` hands back the same Cache.
+    propertyName(call.callee) === 'open' &&
     resolveGlobalObject(call.callee.object, CACHE_STORAGE_GLOBAL) !== null
   );
 }
@@ -536,9 +536,7 @@ function isCachesOpenThenParameter(
       call !== undefined &&
       call.type === AST_NODE_TYPES.CallExpression &&
       call.callee.type === AST_NODE_TYPES.MemberExpression &&
-      !call.callee.computed &&
-      call.callee.property.type === AST_NODE_TYPES.Identifier &&
-      call.callee.property.name === 'then' &&
+      propertyName(call.callee) === 'then' &&
       isCachesOpenCall(call.callee.object)
     );
   }
@@ -570,10 +568,9 @@ function isObjectStoreCall(node: TSESTree.Node): boolean {
   return (
     call.type === AST_NODE_TYPES.CallExpression &&
     call.callee.type === AST_NODE_TYPES.MemberExpression &&
-    !call.callee.computed &&
-    call.callee.property.type === AST_NODE_TYPES.Identifier &&
-    (call.callee.property.name === 'objectStore' ||
-      call.callee.property.name === 'createObjectStore')
+    // `tx['objectStore']('vault')` hands back the same IDBObjectStore.
+    (propertyName(call.callee) === 'objectStore' ||
+      propertyName(call.callee) === 'createObjectStore')
   );
 }
 

@@ -29,8 +29,16 @@ import {
   isStaticExpression,
   resolveModuleBinding,
   staticString,
+  namesOneOf,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+
+/*
+ * `doc['evaluate'](expr)` evaluates the same XPath `doc.evaluate(expr)` does.
+ * Both call gates required the property to be an Identifier, so 23 of this
+ * rule's own true positives went silent when written with a string subscript.
+ */
 import {
   createSafetyChecker,
   hasSafeAnnotation,
@@ -285,7 +293,6 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         fix: 'Restrict XPath to safe patterns and validate expressions',
         documentationLink: 'https://cwe.mitre.org/data/definitions/643.html',
       }),
-
     },
     schema: [
       {
@@ -361,7 +368,8 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Extra XPath package specifiers, on top of `xpathPackages`.',
+            description:
+              'Extra XPath package specifiers, on top of `xpathPackages`.',
           },
         },
         additionalProperties: false,
@@ -422,8 +430,10 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
       strictMode = false,
     }: Options = options;
 
-    const xpathPackageSet = new Set([...xpathPackages, ...additionalXpathPackages]);
-
+    const xpathPackageSet = new Set([
+      ...xpathPackages,
+      ...additionalXpathPackages,
+    ]);
 
     const sourceCode = context.sourceCode;
     const filename = context.filename;
@@ -507,9 +517,9 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
       // that no valid declarator can reach.
       // A declarator with an Identifier id declares exactly one variable; the cast
       // records that rather than adding an undefined branch nothing can reach.
-      const [variable] = context.sourceCode.getDeclaredVariables(declarator) as [
-        TSESLint.Scope.Variable,
-      ];
+      const [variable] = context.sourceCode.getDeclaredVariables(
+        declarator,
+      ) as [TSESLint.Scope.Variable];
       const reads = variable.references.filter((ref) => ref.isRead());
       // No reads at all: the value's destination is unknown, not safe.
       if (reads.length === 0) return false;
@@ -548,7 +558,11 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         // A bare call needs the IMPORT as evidence — see `isXpathModuleExport`.
         return (
           xpathFunctions.includes(callee.name) &&
-          isXpathModuleExport(callee, sourceCode.getScope(callee), xpathPackageSet)
+          isXpathModuleExport(
+            callee,
+            sourceCode.getScope(callee),
+            xpathPackageSet,
+          )
         );
       }
       // Returned as one expression rather than an `if` plus a trailing
@@ -556,10 +570,14 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
       // MemberExpression callee, so that trailing statement was unreachable —
       // istanbul flagged it, and the 100% gate would otherwise have demanded a
       // test for a case the code cannot receive.
+      // `propertyName` here, without a `?? ''` fallback: no test reaches this
+      // particular sink test with an unresolvable key, so the fallback was a
+      // branch nothing could exercise — the same reasoning the comment above
+      // records for the old `name !== null &&` guard. `includes(undefined)` is
+      // false for any configured list, so the cast carries no risk.
       return (
         callee.type === AST_NODE_TYPES.MemberExpression &&
-        callee.property.type === AST_NODE_TYPES.Identifier &&
-        xpathFunctions.includes(callee.property.name)
+        namesOneOf(propertyName(callee), xpathFunctions)
       );
     }
 
@@ -587,7 +605,9 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         const declared = parent.id;
         const resolved = sourceCode
           .getScope(node)
-          .references.find((r) => r.identifier.name === declared.name)?.resolved;
+          .references.find(
+            (r) => r.identifier.name === declared.name,
+          )?.resolved;
         return (resolved?.references ?? []).some((ref) => {
           const refParent = ref.identifier.parent;
           return (
@@ -627,10 +647,9 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
       // nothing else in common use.
       if (
         callee.type === AST_NODE_TYPES.MemberExpression &&
-        callee.property.type === AST_NODE_TYPES.Identifier &&
-        xpathFunctions.includes(callee.property.name)
+        namesOneOf(propertyName(callee), xpathFunctions)
       ) {
-        if (callee.property.name !== 'select') {
+        if (propertyName(callee) !== 'select') {
           return true;
         }
         const receiver = callee.object;
@@ -638,8 +657,7 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
           (receiver.type === AST_NODE_TYPES.Identifier &&
             /xpath|xpth/i.test(receiver.name)) ||
           (receiver.type === AST_NODE_TYPES.MemberExpression &&
-            receiver.property.type === AST_NODE_TYPES.Identifier &&
-            /xpath/i.test(receiver.property.name))
+            /xpath/i.test(propertyName(receiver) ?? ''))
         );
       }
 
@@ -649,7 +667,11 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
       if (
         callee.type === 'Identifier' &&
         xpathFunctions.includes(callee.name) &&
-        isXpathModuleExport(callee, sourceCode.getScope(callee), xpathPackageSet)
+        isXpathModuleExport(
+          callee,
+          sourceCode.getScope(callee),
+          xpathPackageSet,
+        )
       ) {
         return true;
       }
@@ -700,10 +722,13 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
           inputNode.object.type === 'MemberExpression' &&
           inputNode.object.object.type === 'Identifier' &&
           inputNode.object.object.name === 'req' &&
-          inputNode.object.property.type === 'Identifier' &&
-          ['query', 'body', 'params', 'param'].includes(
-            inputNode.object.property.name,
-          )
+          // `req['query'].id` is the same client-supplied value.
+          namesOneOf(propertyName(inputNode.object), [
+            'query',
+            'body',
+            'params',
+            'param',
+          ])
         ) {
           return true;
         }
@@ -813,7 +838,9 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
      * `const xpathVar = userInput; document.evaluate(xpathVar)` has the sink in a later
      * statement, not in an ancestor. Resolve the binding and look at its references.
      */
-    const declarationReachesSink = (declarator: TSESTree.VariableDeclarator): boolean => {
+    const declarationReachesSink = (
+      declarator: TSESTree.VariableDeclarator,
+    ): boolean => {
       // No `id.type !== Identifier` guard here: the VariableDeclarator handler already
       // returns on that, so a second check would be unreachable.
       const name = (declarator.id as TSESTree.Identifier).name;
@@ -825,7 +852,9 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
       ) {
         const variable = scope.variables.find((v) => v.name === name);
         if (variable) {
-          return variable.references.some((ref) => reachesXpathSink(ref.identifier));
+          return variable.references.some((ref) =>
+            reachesXpathSink(ref.identifier),
+          );
         }
       }
       return false;
@@ -851,7 +880,9 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         // not have, and it fires wherever the template sits — argument or not.
         // Reading them in both places reported the same expression twice.
         const staticText =
-          xpathArg.type === AST_NODE_TYPES.TemplateLiteral ? null : staticString(xpathArg);
+          xpathArg.type === AST_NODE_TYPES.TemplateLiteral
+            ? null
+            : staticString(xpathArg);
         if (staticText !== null) {
           const xpathText = staticText;
 
@@ -912,10 +943,15 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         }
       },
 
-      'MemberExpression[computed=false] > Identifier.property'(
-        node: TSESTree.Identifier,
-      ) {
-        if (DOM_XPATH_MEMBERS.has(node.name)) {
+      // The selector used to read `MemberExpression[computed=false] >
+      // Identifier.property`, which put the blind spot in the SELECTOR: a file
+      // whose only evaluator is `doc['evaluate'](q)` never set this flag, so
+      // the pending template was never reported. Matching the member itself
+      // and asking `propertyName` covers both spellings, and still answers
+      // null for a key chosen at runtime.
+      MemberExpression(node: TSESTree.MemberExpression) {
+        const member = propertyName(node);
+        if (member !== null && DOM_XPATH_MEMBERS.has(member)) {
           moduleEvaluatesXpath = true;
         }
       },

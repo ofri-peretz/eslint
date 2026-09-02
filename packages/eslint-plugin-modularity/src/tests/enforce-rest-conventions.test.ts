@@ -44,6 +44,13 @@ describe('enforce-rest-conventions', () => {
           code: 'app.get("/user", handler);',
           errors: [{ messageId: 'restConventionViolation' }],
         },
+        // The same route, subscripted. Was pinned as valid because "property
+        // is not an Identifier"; Express registers it identically.
+        {
+          name: 'a singular collection path, subscripted',
+          code: "app['get']('/user', handler);",
+          errors: [{ messageId: 'restConventionViolation' }],
+        },
         {
           code: 'app.post("/order", handler);',
           errors: [{ messageId: 'restConventionViolation' }],
@@ -74,8 +81,8 @@ describe('enforce-rest-conventions', () => {
       valid: [
         // Plain identifier call: callee is not a MemberExpression at all
         { code: 'doWork();' },
-        // Computed member access: property is not an Identifier
-        { code: "app['get']('/user', handler);" },
+        // A method chosen at RUNTIME names no HTTP verb.
+        { name: 'a method chosen at RUNTIME names no HTTP verb', code: 'app[verb](\'/user\', handler);' },
         // First argument is not a string literal
         { code: 'app.get(handler);' },
         // Path does not start with a slash

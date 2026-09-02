@@ -31,6 +31,13 @@ ruleTester.run(
   noMissingAuthentication,
   {
     valid: [
+    {
+      // A dynamic method names no route — `propertyName` returns null, so
+      // `resolvedMethod !== null` is false and the rule cannot claim this
+      // registers anything. The negative half of resolving string subscripts.
+      name: 'a dynamic router method registers no nameable route',
+      code: `router[verb]('/admin/accounts', (req, res) => { res.json(listUsers()); });`,
+    },
       // The corpus shape.
       `router.get('/is-alive', (req, res) => { res.status(200).json({ status: 'ok' }); });`,
       `router.get('/alive', (req, res) => { res.send('ok'); });`,

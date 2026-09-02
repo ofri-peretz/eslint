@@ -25,6 +25,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { resolveConstant } from '../../utils/const-value';
 import { findVariable } from '../../utils/provenance';
@@ -143,9 +144,7 @@ export const noDeprecatedBuffer: TSESLint.RuleModule<MessageIds, []> = createRul
       // `const BufferCtor = require('buffer').Buffer`
       if (
         init.type === AST_NODE_TYPES.MemberExpression &&
-        !init.computed &&
-        init.property.type === AST_NODE_TYPES.Identifier &&
-        init.property.name === 'Buffer'
+        propertyName(init) === 'Buffer'
       ) {
         return isBufferModuleRequire(init.object);
       }
@@ -201,9 +200,7 @@ export const noDeprecatedBuffer: TSESLint.RuleModule<MessageIds, []> = createRul
       }
       if (
         callee.type === AST_NODE_TYPES.MemberExpression &&
-        !callee.computed &&
-        callee.property.type === AST_NODE_TYPES.Identifier &&
-        callee.property.name === 'Buffer' &&
+        propertyName(callee) === 'Buffer' &&
         isBufferNamespace(callee.object)
       ) {
         return callee;

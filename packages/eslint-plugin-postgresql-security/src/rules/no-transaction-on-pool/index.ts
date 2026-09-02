@@ -12,7 +12,9 @@ import {
   MessageIcons,
   resolveModuleBinding,
   staticString,
-  objectKeyName,
+  namesOneOf,
+  memberPropertyName,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { NoTransactionOnPoolOptions } from '../../types';
 import { fileUsesPostgres, PG_MODULES } from '../../utils';
@@ -74,12 +76,14 @@ function statementText(node: TSESTree.Node): string | null {
   // Found by the adversarial wave — it is the same call written the other
   // documented way, and it went straight past a rule that only read a string.
   if (node.type === AST_NODE_TYPES.ObjectExpression) {
-    // `objectKeyName` rather than an Identifier/Literal pair: `{ text }`,
-    // `{ 'text': … }`, `{ ['text']: … }` and `` { [`text`]: … } `` all declare
-    // the same property, and hand-rolling the check caught two of the four.
     const text = node.properties.find(
       (prop): prop is TSESTree.Property =>
-        prop.type === AST_NODE_TYPES.Property && objectKeyName(prop) === 'text',
+        prop.type === AST_NODE_TYPES.Property &&
+        ((prop.key.type === AST_NODE_TYPES.Identifier &&
+          !prop.computed &&
+          prop.key.name === 'text') ||
+          (prop.key.type === AST_NODE_TYPES.Literal &&
+            prop.key.value === 'text')),
     );
     return text === undefined ? null : statementText(text.value);
   }
@@ -159,10 +163,10 @@ export const noTransactionOnPool: TSESLint.RuleModule<
       if (
         receiver.type === AST_NODE_TYPES.MemberExpression &&
         receiver.object.type === AST_NODE_TYPES.ThisExpression &&
-        !receiver.computed &&
-        receiver.property.type === AST_NODE_TYPES.Identifier
+        propertyName(receiver) !== null
       ) {
-        return poolProperties.has(receiver.property.name);
+        // `this['pool'].query(…)` is the same pool `this.pool` names.
+        return namesOneOf(propertyName(receiver), poolProperties);
       }
 
       if (receiver.type !== AST_NODE_TYPES.Identifier) return false;
@@ -194,12 +198,15 @@ export const noTransactionOnPool: TSESLint.RuleModule<
       // `this.pool = new Pool()` — record the property, so a method calling
       // `this.pool.query('BEGIN')` is judged on what was actually assigned.
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
+        // Resolved before the guard: the guard already asks whether the field
+        // is nameable, so the assignment below reads that answer instead of
+        // casting a second call past the same question.
+        const field = memberPropertyName(node.left);
         if (
           node.operator !== '=' ||
           node.left.type !== AST_NODE_TYPES.MemberExpression ||
           node.left.object.type !== AST_NODE_TYPES.ThisExpression ||
-          node.left.computed ||
-          node.left.property.type !== AST_NODE_TYPES.Identifier ||
+          field === null ||
           node.right.type !== AST_NODE_TYPES.NewExpression
         ) {
           return;
@@ -210,7 +217,8 @@ export const noTransactionOnPool: TSESLint.RuleModule<
             context.sourceCode.getScope(node),
           )
         ) {
-          poolProperties.add(node.left.property.name);
+          // `this['pool'] = new Pool()` binds the same field.
+          poolProperties.add(field);
         }
       },
 
@@ -237,8 +245,8 @@ export const noTransactionOnPool: TSESLint.RuleModule<
       'CallExpression:exit'(node: TSESTree.CallExpression) {
         if (
           node.callee.type !== AST_NODE_TYPES.MemberExpression ||
-          node.callee.property.type !== AST_NODE_TYPES.Identifier ||
-          node.callee.property.name !== 'query'
+          // `db['query']('BEGIN')` runs the same statement.
+          propertyName(node.callee) !== 'query'
         ) {
           return;
         }

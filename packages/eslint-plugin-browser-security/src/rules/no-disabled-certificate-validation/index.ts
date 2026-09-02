@@ -8,7 +8,7 @@
  * @fileoverview Prevent disabled SSL/TLS certificate validation
  */
 
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { createRule, formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected' | 'noopHostnameVerification';
@@ -171,10 +171,8 @@ export const noDisabledCertificateValidation = createRule<RuleOptions, MessageId
             node.left.object.type === 'MemberExpression' &&
             node.left.object.object.type === 'Identifier' &&
             node.left.object.object.name === 'process' &&
-            node.left.object.property.type === 'Identifier' &&
-            node.left.object.property.name === 'env' &&
-            node.left.property.type === 'Identifier' &&
-            node.left.property.name === 'NODE_TLS_REJECT_UNAUTHORIZED') {
+            propertyName(node.left.object) === 'env' &&
+            propertyName(node.left) === 'NODE_TLS_REJECT_UNAUTHORIZED') {
           
           if (node.right.type === 'Literal' && node.right.value === '0') {
             report(node);

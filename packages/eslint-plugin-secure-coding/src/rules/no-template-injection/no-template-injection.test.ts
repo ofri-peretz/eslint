@@ -33,14 +33,23 @@ describe('no-template-injection', () => {
       // Callee object is not a plain Identifier (e.g. a call expression or member chain)
       { code: 'getEngine().compile(userTemplate)' },
       { code: 'Handlebars.utils.compile(userTemplate)' },
-      // Callee property is computed / not a plain Identifier (e.g. bracket access)
+      // A method chosen at RUNTIME names no template API.
       { code: 'Handlebars[methodName](userTemplate)' },
-      { code: 'Handlebars["compile"](userTemplate)' },
       // Known engine + known method, but called with zero arguments
       { code: 'Handlebars.compile()' },
       { code: 'ejs.render()' },
     ],
     invalid: [
+      // Was pinned as valid alongside the runtime-key form, as though the two
+      // were the same refusal. `Handlebars['compile']` names `compile` and
+      // compiles the same user-supplied template.
+      {
+        name: 'the same compile, spelled with a subscript',
+        code: 'Handlebars["compile"](userTemplate)',
+        errors: [
+          { messageId: 'templateInjection', data: { engine: 'Handlebars', method: 'compile' } },
+        ],
+      },
       // Dynamic variable — injection surface
       {
         name: 'a template compiled from a user-supplied string',

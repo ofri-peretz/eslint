@@ -120,9 +120,13 @@ const TOKENISED = /\.split\(/;
 const WORD_LIST =
   /(?:const|let)\s+([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=\s*(?:new Set\()?\[\s*((?:'[^']*'|"[^"]*")\s*,\s*){3,}/g;
 
-/** `x.name.includes(` / `x.name.toLowerCase().includes(` — the inline form. */
+/**
+ * `x.name.includes(` / `x.name.toLowerCase().includes(` — the inline form,
+ * and the same thing written against a resolver call:
+ * `propertyName(node)?.includes('token')`.
+ */
 const INLINE_NAME_SUBSTRING = new RegExp(
-  `\\.name(?:\\.toLowerCase\\(\\)|\\.toUpperCase\\(\\))?\\.(?:${SUBSTRING_METHODS})\\(`,
+  `(?:\\.name|(?:propertyName|objectKeyName|memberPropertyName|memberPath)\\([^)]*\\)\\??)(?:\\.toLowerCase\\(\\)|\\.toUpperCase\\(\\))?\\??\\.(?:${SUBSTRING_METHODS})\\(`,
 );
 
 /**
@@ -146,9 +150,29 @@ const INLINE_NAME_SUBSTRING = new RegExp(
 const REGEX_LIST =
   /(?:const|let)\s+([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=\s*\[\s*(?:\/(?:[^/\\\n]|\\.)+\/[gimsuy]*\s*,\s*)+\/(?:[^/\\\n]|\\.)+\/[gimsuy]*/g;
 
+/**
+ * A spelling does not only arrive as `.name`.
+ *
+ * The devkit's resolvers — `propertyName`, `objectKeyName`,
+ * `memberPropertyName`, `memberPath` — each RETURN an identifier's SPELLING.
+ * `staticString` is deliberately NOT among them: it returns a string
+ * literal's CONTENT, and `importPath.startsWith('./')` on a module specifier
+ * is not this defect class at all. Including it produced four false alarms
+ * immediately, which is how a gate earns being switched off. `propertyName` exists
+ * so a rule reads `o['k']` the same as `o.k`, and moving 150 rules onto it put
+ * every name-substring site behind a call with no `.name` in it. This gate
+ * then reported the debt as PAID and asked for the registry entry to be
+ * deleted, while `no-buffer-overread` went on testing `/^(?:read|write)[A-Z]/`
+ * against a method spelling. A gate that goes quiet when the code is
+ * refactored is worse than no gate: it hands you a green tick for the change
+ * that hid the defect.
+ */
+const SPELLING_SOURCE =
+  /\.name\b|\b(?:propertyName|objectKeyName|memberPropertyName|memberPath)\s*\(/;
+
 /** `/…/.test(x.name)` — a literal regex tested directly against a spelling. */
 const INLINE_NAME_REGEX =
-  /\/(?:[^/\\\n]|\\.)+\/[gimsuy]*\.test\(\s*[A-Za-z_$][\w$.]*\.name\b/;
+  /\/(?:[^/\\\n]|\\.)+\/[gimsuy]*\.test\(\s*(?:[A-Za-z_$][\w$.]*\.name\b|(?:propertyName|objectKeyName|memberPropertyName|memberPath)\s*\()/;
 
 export interface Site {
   line: number;
@@ -175,7 +199,7 @@ export function findNameSubstringSites(source: string): Site[] {
     // for `const isUntrusted = (n) => { const varName = n.name…; }` is inside
     // the arrow body — so the inner binding was skipped and the rule went
     // undetected. Two earlier shapes of this regex each dropped a real site.
-    if (!/\.name\b/.test(initializer)) continue;
+    if (!SPELLING_SOURCE.test(initializer)) continue;
     if (TOKENISED.test(initializer)) continue;
     nameBindings.add(match[1]);
   }

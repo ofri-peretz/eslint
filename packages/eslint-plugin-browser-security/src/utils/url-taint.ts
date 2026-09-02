@@ -93,6 +93,17 @@ export function isLocationObject(node: TSESTree.Node): boolean {
   }
   return (
     node.type === 'MemberExpression' &&
+    /*
+     * DELIBERATELY the dotted spelling only, and reverted twice now.
+     *
+     * Accepting `window['location']` here changes nothing observable — probed
+     * both ways, the corpus-wide blind-spot count did not move — because
+     * `navigation-targets`'s own `staticKey` already resolves the computed
+     * holder for every rule that asks. What it DOES do is make
+     * `urlContainerKind`'s `'params'` return unreachable, because an earlier
+     * arm starts answering first, and that is a permanent hole in a package
+     * held at a 100% coverage threshold.
+     */
     !node.computed &&
     node.property.type === 'Identifier' &&
     node.property.name === 'location' &&
@@ -419,9 +430,10 @@ export function isAttackerSteerableUrl(
       const callee = node.callee;
       if (
         callee.type === 'MemberExpression' &&
-        !callee.computed &&
-        callee.property.type === 'Identifier' &&
-        STEERABILITY_PRESERVING_METHODS.has(callee.property.name)
+        // `location.hash['slice'](1)` strips the same leading `#` that
+        // `location.hash.slice(1)` does. `staticProperty` above exists for
+        // this; the passthrough gate never adopted it.
+        STEERABILITY_PRESERVING_METHODS.has(staticProperty(callee) ?? '')
       ) {
         return isAttackerSteerableUrl(callee.object, sourceCode, seen);
       }

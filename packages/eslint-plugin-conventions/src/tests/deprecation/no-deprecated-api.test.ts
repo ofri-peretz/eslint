@@ -325,27 +325,19 @@ describe('no-deprecated-api', () => {
 
   describe('Edge Cases - MemberExpression', () => {
     ruleTester.run(
-      'edge cases - non-identifier property (line 121)',
+      'a property named at runtime, and one merely bracketed',
       noDeprecatedApi,
       {
         valid: [
-          // Test with computed property (not Identifier) to cover line 121
+          // The only genuine refusal of the pair. A key chosen at RUNTIME
+          // names no API to look up, so there is nothing to match against the
+          // deprecation list. Its bracketed neighbour was listed here too,
+          // under one comment, as though the two were the same case — and the
+          // run was named after the coverage line it existed to execute rather
+          // than the position it takes. `obj["oldMethod"]()` calls exactly the
+          // API `obj.oldMethod()` calls; it is now in the invalid table.
           {
-            code: 'obj["oldMethod"]();',
-            options: [
-              {
-                apis: [
-                  {
-                    name: 'oldMethod',
-                    replacement: 'newMethod',
-                    deprecatedSince: '2024-01-01',
-                    reason: 'Use newMethod instead',
-                  },
-                ],
-              },
-            ],
-          },
-          {
+            name: 'a key chosen at runtime names no API',
             code: 'obj[propName]();',
             options: [
               {
@@ -361,7 +353,37 @@ describe('no-deprecated-api', () => {
             ],
           },
         ],
-        invalid: [],
+        invalid: [
+          {
+            name: 'a deprecated API named through a string subscript',
+            code: 'obj["oldMethod"]();',
+            options: [
+              {
+                apis: [
+                  {
+                    name: 'oldMethod',
+                    replacement: 'newMethod',
+                    deprecatedSince: '2024-01-01',
+                    reason: 'Use newMethod instead',
+                  },
+                ],
+              },
+            ],
+            errors: [
+              {
+                messageId: 'deprecatedAPI',
+                suggestions: [
+                  {
+                    messageId: 'useReplacement',
+                    // Quoted, not bare: `obj[newMethod]()` would be a reference
+                    // to a variable that does not exist.
+                    output: 'obj["newMethod"]();',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
       },
     );
   });

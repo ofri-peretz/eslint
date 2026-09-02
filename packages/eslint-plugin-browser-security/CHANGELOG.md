@@ -5,6 +5,171 @@ All notable changes to `eslint-plugin-browser-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.1.2
+
+### Patch Changes
+
+- **🐛 Fix** — header and host-check detection now read a string-subscript method
+
+  `res['setHeader'](…)` sets the same header, `NextResponse['next'](…)` builds
+  the same response, and `url['includes']('trusted.com')` is the same incomplete
+  host check. `no-missing-security-headers` and `no-incomplete-url-sanitization`
+  compared `property.name` first, so 57 of their true positives disappeared
+  behind one bracket.
+
+  Three tests had pinned the miss. Two described the guard rather than a
+  behaviour ("computed member property", "property is not an Identifier"); the
+  third refused `map['url']` as a receiver "not known to hold a URL" while
+  accepting `map.url` two lines above. All three now assert the report, and the
+  genuinely unknowable runtime-key forms — `res[method](…)`, `url[check](…)`,
+  `NextResponse[make](…)` — are pinned as the refusals.
+
+- **🐛 Fix** — the innerHTML sink family and the transport gate read a subscripted member
+
+  `el['innerHTML'] = e.data` and `el['insertAdjacentHTML'](…)` write the same
+  markup from the same untrusted payload as the dotted spellings, and
+  `axios['get'](…)` / `self['importScripts'](…)` fetch the same resource.
+  `no-postmessage-innerhtml`, `no-filereader-innerhtml`,
+  `no-websocket-innerhtml`, `no-worker-message-innerhtml` and the shared
+  `transport-ownership` gate all compared `property.name` first.
+
+  A sink chosen at runtime — `el[sink] = e.data` — has no statically known name to recognise
+  and is now pinned as the refusal in each of the four rules.
+
+- **🐛 Fix** — seven more browser rules read a string-subscript member
+
+  `window['addEventListener']('message', …)`, `URL['createObjectURL'](blob)`,
+  `window['open'](location.hash)`, `localStorage['getItem']('isAdmin')`,
+  `navigator.serviceWorker['register'](u)`, `res['setHeader'](…)` and
+  `req['headers'].origin` all reach exactly what their dotted spellings reach.
+  Seven rules compared `property.name` first and went silent on every one.
+
+  One pinned test was a false POSITIVE rather than a miss:
+  `require-postmessage-origin-check` reported a message handler that guards on
+  `ALLOWED.test(event['origin'])` — a working anchored origin check the rule
+  could not see. It is now correctly accepted.
+
+- **🐛 Fix** — cache, IndexedDB and XHR receivers resolve a subscripted member
+
+  `caches['open']('v1')` hands back the same Cache and `tx['objectStore']('vault')`
+  the same IDBObjectStore. These are RECEIVER resolvers rather than method-name
+  gates: `no-sensitive-data-in-cache` and `no-sensitive-indexeddb` already read
+  `c['put'](…)` correctly and lost the finding on the handle instead.
+
+  Also `xhr['open'](m, url)` and the `addEventListener` arm of the
+  untrusted-text walk behind `no-unescaped-url-parameter`.
+
+- **🐛 Fix** — `no-insecure-redirects` now reports the string-subscript spelling
+
+  `res['redirect'](req.query.url)` is the same open redirect as
+  `res.redirect(req.query.url)`, and `location.hash['slice'](1)` strips the same
+  leading `#`. Both went unreported: the sink test and the steerability
+  passthrough compared `property.name` before asking what the property was, so a
+  single bracket — the notation minifiers and generated clients emit — made the
+  finding disappear.
+
+  Four spellings are now pinned in the rule's own tests, so neither half can
+  re-open.
+
+- **🐛 Fix** — analytics and Express route detection now read a string-subscript method
+
+  `analytics['track'](…)` reaches the same vendor `analytics.track(…)` does, and
+  `app['post']('/x', h)` registers the same unprotected route as `app.post`. Both
+  shared utilities compared `property.name` before asking what the property was,
+  so four rules — `no-tracking-without-consent`,
+  `no-sensitive-data-in-analytics`, `no-missing-csrf-protection` and
+  `no-missing-cors-check` — went silent on the notation minifiers emit.
+
+  Two tests had pinned the miss as intended behaviour ("a computed method is not
+  a route registration"); neither gave a reason a bracket should change the
+  destination. Both now assert the report, with the genuinely unknowable case —
+  a method chosen at runtime, `app[verb](…)` — pinned separately as the refusal
+  it should be.
+
+- **🐛 Fix** — `app['use'](cors({ origin: '*' }))` installs the same middleware
+
+  `no-missing-cors-check` read the middleware method off `property.name`, so a
+  subscripted `use` registered a wildcard CORS config unreported.
+
+- **🐛 Fix** — `r['route']('/x').post(h)` is the same unprotected route chain
+
+  `no-missing-csrf-protection` gated the verb, the `.route(…)` root and the
+  `app.use(csrf())` mount on `property.name`, so a fully subscripted router
+  chain registered a POST with no CSRF middleware and reported nothing.
+
+- **🐛 Fix** — transmission, CSP and MIME gates resolve a subscripted method
+
+  A member spelled `o['k']` reaches exactly what `o.k` reaches, and these gates
+  compared `property.name` before asking what the property was. They now resolve
+  through the devkit's `propertyName`, which still abstains on the one shape that
+  genuinely cannot be resolved: a key chosen at runtime, whose name is not
+  statically known.
+
+- **🐛 Fix** — the CORS checks read subscripted calls and quoted option keys
+
+  `app['use'](cors({…}))` and `{ ['origin']: '*' }` are the same middleware and
+  the same option. Three source-text patterns were dotted-only and are now
+  named constants accepting either spelling; the `origin` key resolves through
+  `objectKeyName` in all three places it is read.
+
+- **🧹 Refactor** — the innerHTML sinks and URL guards no longer cast an unnameable property
+
+  `SET.has(propertyName(node) as string)` reaches the right answer for the wrong
+  reason. `propertyName` returns `string | null` because `o[k]` names a property
+  the AST cannot read, and that is not the same answer as "named, and not one of
+  these" — the cast collapses both, and `Set.prototype.has(null)` being false is
+  what made it look correct.
+
+  36 sites across 16 files now ask the two questions separately, via
+  `namesOneOf` / `memberPropertyName` from the devkit or an explicit `!== null`.
+
+  No rule behaviour changes: this package's test count and coverage are unchanged.
+
+- **🧹 Refactor** — `no-incomplete-url-sanitization` checks the resolved name explicitly
+
+  `PASSTHROUGH_METHODS.has(propertyName(callee) as string)` leaned on
+  `Set.has(null)` being false, which spells "the name could not be resolved" and
+  "the name is not in the set" identically. The check is now explicit, and the
+  node-type comparisons beside it use `AST_NODE_TYPES` rather than raw strings.
+  No behaviour change.
+
+- **🐛 Fix** — sanitiser, logger, postMessage and query gates read a subscripted member
+
+  `DOMPurify['sanitize'](html)`, `container['logger'].warn(…)`,
+  `w['postMessage'](data, '*')` and `User['find']({…})` each reach exactly what
+  their dotted spellings reach. Six gates across three plugins compared
+  `property.name` first.
+
+  `no-log-injection` also carried two arms for the same question — an Identifier
+  branch and a `staticString` fallback — where `propertyName` answers both.
+
+  A test had pinned `container['logger']` as an unresolvable receiver; it holds
+  the same logger, and the same unescaped username reaches the same log line.
+
+- **🐛 Fix** — deep-link, CORS, IAM and state-mutation gates read a subscripted member
+
+  `Linking['openURL'](event['url'])`, `res['setHeader']('Access-Control-Allow-Origin', '*')`,
+  `registry['create'](payload)` and `this.state.items['push'](x)` each do exactly
+  what their dotted spellings do. Seven gates across three plugins compared
+  `property.name` before asking what the property was.
+
+  Two more tests had pinned the miss — one describing the guard ("property is not
+  an Identifier"), the other the notation ("computed callee property").
+
+- **🐛 Fix** — MIME, helmet, TLS and stream gates read a subscripted member
+
+  `file['type']`, `form['append'](k, file)`, `app['use'](helmet())`,
+  `mongoose['connect'](uri)` and `fs['createReadStream'](p)` each do exactly what
+  their dotted spellings do. Seven gates across four plugins compared
+  `property.name` before asking what the property was.
+
+  `require-tls-connection` had pinned `mongoose['connect'](uri)` as valid on the
+  grounds that "methodName is null" — it opens the same connection with no TLS,
+  and the rule now offers the same `{ tls: true }` repair it offers the dotted
+  form.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`
+
 ## 2.1.1
 
 ### Patch Changes

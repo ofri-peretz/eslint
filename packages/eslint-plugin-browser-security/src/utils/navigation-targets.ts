@@ -361,9 +361,10 @@ export function isSteerableUrlValue(
       const callee = node.callee;
       if (
         callee.type === 'MemberExpression' &&
-        !callee.computed &&
-        callee.property.type === 'Identifier' &&
-        PARAM_READERS.has(callee.property.name) &&
+        // `params['get']('next')` reads the same parameter `params.get` does.
+        // This file already carries `staticKey` for exactly this; the test
+        // never adopted it.
+        PARAM_READERS.has(staticKey(callee) ?? '') &&
         urlContainerKind(callee.object, sourceCode, seen) === 'params'
       ) {
         return true;
@@ -486,9 +487,7 @@ export function isRelativePathGuard(
     if (
       current.type !== 'CallExpression' ||
       current.callee.type !== 'MemberExpression' ||
-      current.callee.computed ||
-      current.callee.property.type !== 'Identifier' ||
-      current.callee.property.name !== 'startsWith'
+      staticKey(current.callee) !== 'startsWith'
     ) {
       return null;
     }

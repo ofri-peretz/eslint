@@ -11,7 +11,7 @@
  * @see https://github.com/jsx-eslint/eslint-plugin-react/blob/master/docs/rules/no-find-dom-node.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'noFindDOMNode';
@@ -47,8 +47,7 @@ export const noFindDomNode = createRule<RuleOptions, MessageIds>({
           node.callee.type === 'MemberExpression' &&
           node.callee.object.type === 'Identifier' &&
           node.callee.object.name === 'ReactDOM' &&
-          node.callee.property.type === 'Identifier' &&
-          node.callee.property.name === 'findDOMNode'
+          propertyName(node.callee) === 'findDOMNode'
         ) {
           context.report({
             node,
