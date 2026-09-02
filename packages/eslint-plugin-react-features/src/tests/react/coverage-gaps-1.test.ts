@@ -137,7 +137,7 @@ describe('no-danger-with-children coverage gaps', () => {
       { name: 'non-React object createElement', code: "Foo.createElement('div', { dangerouslySetInnerHTML: x }, 'child');" },
       { name: 'deep member callee', code: "a.b.createElement('div', {}, 'child');" },
       { name: 'React.other call', code: "React.cloneElement('div', { dangerouslySetInnerHTML: x }, 'child');" },
-      { name: 'computed React member callee', code: "React['createElement']('div', { dangerouslySetInnerHTML: x }, 'child');" },
+      { name: 'a React callee named at runtime', code: "React[make]('div', { dangerouslySetInnerHTML: x }, 'child');" },
       { name: 'createElement with single argument', code: "React.createElement('div');" },
       { name: 'createElement with non-object props', code: "React.createElement('div', null, 'child');" },
       { name: 'createElement with spread props only', code: "React.createElement('div', { ...props }, 'child');" },

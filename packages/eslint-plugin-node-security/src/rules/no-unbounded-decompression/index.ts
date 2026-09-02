@@ -30,6 +30,7 @@ import {
   createRule,
   AST_NODE_TYPES,
   isTestFilePath,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unboundedDecompression';
@@ -157,11 +158,11 @@ export const noUnboundedDecompression = createRule<RuleOptions, MessageIds>({
       if (
         callee.type === AST_NODE_TYPES.MemberExpression &&
         callee.object.type === AST_NODE_TYPES.Identifier &&
-        callee.property.type === AST_NODE_TYPES.Identifier &&
-        !callee.computed &&
+        // `zlib['unzipSync'](body)` inflates the same unbounded input.
+        propertyName(callee) !== null &&
         namespaceBindings.has(callee.object.name)
       ) {
-        const name = callee.property.name;
+        const name = propertyName(callee) as string;
         return ASYNC_DECOMPRESSORS.has(name) || SYNC_DECOMPRESSORS.has(name)
           ? name
           : null;

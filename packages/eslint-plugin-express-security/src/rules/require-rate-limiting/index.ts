@@ -44,6 +44,7 @@ import {
   MessageIcons,
   createRule,
   isTestFilePath,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 /**
@@ -286,13 +287,11 @@ export const requireRateLimiting = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        if (
-          callee.type !== 'MemberExpression' ||
-          callee.property.type !== 'Identifier'
-        ) {
+        if (callee.type !== 'MemberExpression' || propertyName(callee) === null) {
           return;
         }
-        const method = callee.property.name.toLowerCase();
+        // `app['post']('/auth/token', h)` registers the same unlimited route.
+        const method = (propertyName(callee) as string).toLowerCase();
 
         // A limiter anywhere in the file — `app.use(rateLimit())` or mounted
         // on a single route — covers the surface this rule judges.

@@ -21,6 +21,7 @@ import { AST_NODE_TYPES, formatLLMMessage, MessageIcons,
   nameHasAnyWord,
   type PatternTest,
   staticString,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { createRule, isTestFilePath } from '@interlace/eslint-devkit';
 
@@ -341,8 +342,9 @@ function isInsideRoleCheck(
         }
       }
 
-      if (callee.type === 'MemberExpression' && callee.property.type === 'Identifier') {
-        if (nameHasAnyWord(callee.property.name, roleCheckPatterns)) {
+      if (callee.type === 'MemberExpression' && propertyName(callee) !== null) {
+        // `guard['isAdmin'](user)` is the same role check.
+        if (nameHasAnyWord(propertyName(callee) as string, roleCheckPatterns)) {
           return true;
         }
       }

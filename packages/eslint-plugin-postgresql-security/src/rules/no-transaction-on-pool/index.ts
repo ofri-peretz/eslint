@@ -12,6 +12,7 @@ import {
   MessageIcons,
   resolveModuleBinding,
   staticString,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { NoTransactionOnPoolOptions } from '../../types';
 import { fileUsesPostgres, PG_MODULES } from '../../utils';
@@ -147,10 +148,10 @@ export const noTransactionOnPool: TSESLint.RuleModule<
       if (
         receiver.type === AST_NODE_TYPES.MemberExpression &&
         receiver.object.type === AST_NODE_TYPES.ThisExpression &&
-        !receiver.computed &&
-        receiver.property.type === AST_NODE_TYPES.Identifier
+        propertyName(receiver) !== null
       ) {
-        return poolProperties.has(receiver.property.name);
+        // `this['pool'].query(…)` is the same pool `this.pool` names.
+        return poolProperties.has(propertyName(receiver) as string);
       }
 
       if (receiver.type !== AST_NODE_TYPES.Identifier) return false;
@@ -177,14 +178,14 @@ export const noTransactionOnPool: TSESLint.RuleModule<
           node.operator !== '=' ||
           node.left.type !== AST_NODE_TYPES.MemberExpression ||
           node.left.object.type !== AST_NODE_TYPES.ThisExpression ||
-          node.left.computed ||
-          node.left.property.type !== AST_NODE_TYPES.Identifier ||
+          propertyName(node.left) === null ||
           node.right.type !== AST_NODE_TYPES.NewExpression
         ) {
           return;
         }
         if (isPgPoolConstructor(node.right.callee, context.sourceCode.getScope(node))) {
-          poolProperties.add(node.left.property.name);
+          // `this['pool'] = new Pool()` binds the same field.
+          poolProperties.add(propertyName(node.left) as string);
         }
       },
 
@@ -206,8 +207,8 @@ export const noTransactionOnPool: TSESLint.RuleModule<
       'CallExpression:exit'(node: TSESTree.CallExpression) {
         if (
           node.callee.type !== AST_NODE_TYPES.MemberExpression ||
-          node.callee.property.type !== AST_NODE_TYPES.Identifier ||
-          node.callee.property.name !== 'query'
+          // `db['query']('BEGIN')` runs the same statement.
+          propertyName(node.callee) !== 'query'
         ) {
           return;
         }

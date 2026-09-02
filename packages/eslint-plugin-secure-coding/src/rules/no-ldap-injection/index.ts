@@ -23,7 +23,7 @@
  * - Parameterized LDAP query construction
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createModuleEvidence, createRule, isStaticExpression, staticString } from '@interlace/eslint-devkit';
+import { createModuleEvidence, createRule, isStaticExpression, staticString, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   createSafetyChecker,
@@ -579,10 +579,10 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
       if (
         expression.type === 'MemberExpression' &&
         expression.object.type === 'ThisExpression' &&
-        !expression.computed &&
-        expression.property.type === 'Identifier'
+        propertyName(expression) !== null
       ) {
-        const fieldName = expression.property.name;
+        // `this['baseDN']` names the same field `this.baseDN` names.
+        const fieldName = propertyName(expression) as string;
         const body = enclosingClassBody(expression);
         if (!body) return false;
         const field = body.body.find(
@@ -620,16 +620,18 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
       for (let current: TSESTree.Node | undefined = node; current; current = current.parent) {
         if (current.type !== 'CallExpression') continue;
         const { callee } = current;
-        if (callee.type === 'MemberExpression' && callee.property.type === 'Identifier') {
-          const propertyName = callee.property.name;
+        if (callee.type === 'MemberExpression' && propertyName(callee) !== null) {
+          // `esc['filterValue'](x)` escapes exactly as `esc.filterValue(x)` does.
+          const escapeMethod = propertyName(callee) as string;
           // Exact membership against the configured escape functions, matching either
           // the bare name (`filterEscape`) or the tail of a dotted path
           // (`escape.filterValue` -> `filterValue`). The previous test was
-          // `propertyName.includes('escape')`, a substring match in a SUPPRESSION path:
+          // `escapeMethod.includes('escape')`, a substring match in a SUPPRESSION path:
           // any method whose name merely contained "escape" cleared the value.
           if (
             ldapEscapeFunctions.some(
-              (escapeFunc) => escapeFunc === propertyName || escapeFunc.endsWith(`.${propertyName}`),
+              (escapeFunc) =>
+                escapeFunc === escapeMethod || escapeFunc.endsWith(`.${escapeMethod}`),
             )
           ) {
             return true;
