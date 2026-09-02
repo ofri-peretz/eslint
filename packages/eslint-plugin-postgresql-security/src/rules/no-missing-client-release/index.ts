@@ -11,6 +11,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   resolveModuleBinding,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { NoMissingClientReleaseOptions } from '../../types';
 import { fileUsesPostgres, PG_MODULES } from '../../utils';
@@ -44,10 +45,10 @@ function isPgPool(
   if (
     receiver.type === AST_NODE_TYPES.MemberExpression &&
     receiver.object.type === AST_NODE_TYPES.ThisExpression &&
-    !receiver.computed &&
-    receiver.property.type === AST_NODE_TYPES.Identifier
+    propertyName(receiver) !== null
   ) {
-    return poolProperties.has(receiver.property.name);
+    // `this['pool'].connect()` is the same pool.
+    return poolProperties.has(propertyName(receiver) as string);
   }
   if (receiver.type !== AST_NODE_TYPES.Identifier) return false;
 
@@ -69,9 +70,8 @@ function isReleaseCall(identifier: TSESTree.Node): boolean {
   if (
     member?.type !== AST_NODE_TYPES.MemberExpression ||
     member.object !== identifier ||
-    member.computed ||
-    member.property.type !== AST_NODE_TYPES.Identifier ||
-    member.property.name !== 'release'
+    // `client['release']()` returns the same client to the pool.
+    propertyName(member) !== 'release'
   ) {
     return false;
   }

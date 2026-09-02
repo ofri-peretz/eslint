@@ -509,14 +509,22 @@ ruleTester.run('no-unsafe-where (coverage gaps)', noUnsafeWhere, {
 
 ruleTester.run('require-auth-mechanism (coverage gaps)', requireAuthMechanism, {
   valid: xmo([
-    // Computed member access — methodName is null.
-    `mongoose['connect'](uri);`,
+    // A method chosen at RUNTIME names no connect call.
+    `mongoose[open](uri);`,
     // Options argument is not an object literal — not inspected.
     `mongoose.connect(uri, getOptions());`,
     // String-literal 'authMechanism' key is recognized.
     `mongoose.connect(uri, { 'authMechanism': 'SCRAM-SHA-256' });`,
   ]),
   invalid: xmo([
+    // Was pinned as valid — "computed member access, methodName is null".
+    // `mongoose['connect'](uri)` opens the same connection with no
+    // authMechanism.
+    {
+      name: 'a subscripted connect with no authMechanism',
+      code: `mongoose['connect'](uri);`,
+      errors: [{ messageId: 'requireAuthMechanism' }],
+    },
     // Spread-only options — authMechanism cannot be proven present.
     {
       code: `mongoose.connect(uri, { ...opts });`,

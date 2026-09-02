@@ -941,10 +941,10 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
       CallExpression(node: TSESTree.CallExpression) {
         if (!ldapInFile) return;
         const callee = unwrap(node.callee);
-        if (callee.type !== 'MemberExpression' || callee.computed) return;
-        // A non-computed member's property is always an Identifier or a PrivateIdentifier.
-        if (callee.property.type !== 'Identifier') return;
-        const method = callee.property.name;
+        if (callee.type !== 'MemberExpression') return;
+        // `client['search'](baseDN, filter)` runs the same query.
+        const method = propertyName(callee);
+        if (method === null) return;
         if (!ldapFunctions.includes(method)) return;
         if (isProvablyNotLdapReceiver(callee.object)) return;
 
