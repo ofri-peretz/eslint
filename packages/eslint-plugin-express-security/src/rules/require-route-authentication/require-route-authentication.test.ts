@@ -62,6 +62,13 @@ const ruleTester = new RuleTester({
 describe('require-route-authentication', () => {
   ruleTester.run('require-route-authentication', requireRouteAuthentication, {
     valid: xp([
+    // Was pinned as INVALID on the grounds that `registry['auth']` "names the
+    // map, not the middleware inside it". It names `auth` exactly as
+    // `registry.auth` does, so this route IS authenticated and the finding
+    // was a false positive.
+    {
+      code: `app.post('/account/password', registry['auth'], changePassword);`,
+    },
       // Replacing the list drops the default `app`, so nothing is a route.
       {
         name: 'the default receiver list replaced away',
@@ -188,6 +195,13 @@ describe('require-route-authentication', () => {
       },
     ]),
     invalid: xp([
+    // A middleware named at RUNTIME contributes no name to match against the
+    // auth vocabulary, so this route is still unauthenticated.
+    {
+      name: 'a runtime-keyed middleware is not auth evidence',
+      code: `app.post('/account/password', registry[which], changePassword);`,
+      errors: [{ messageId: 'missingAuthentication' as const }],
+    },
       // LOCK COMPLEMENT: the new public vocabulary is whole-word anchored, so
       // a route that merely *contains* one of its words is still judged.
       // `unlocked` is not `unlock`; this route stays reported.
@@ -272,12 +286,6 @@ describe('require-route-authentication', () => {
           let showProfile;
           app.get('/profile', showProfile);
         `,
-        errors: [{ messageId: 'missingAuthentication' as const }],
-      },
-      // A computed member reference contributes only its receiver's name:
-      // `registry['auth']` names the map, not the middleware inside it.
-      {
-        code: `app.post('/account/password', registry['auth'], changePassword);`,
         errors: [{ messageId: 'missingAuthentication' as const }],
       },
       // LOCK: the auth test reads the middleware *reference*, not the printed

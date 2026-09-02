@@ -16,7 +16,7 @@
  */
 
 import type { TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, propertyName } from '@interlace/eslint-devkit';
 import { readsPrincipal } from './index';
 
 /** Middleware whose name says "this request is authenticated". */
@@ -39,9 +39,8 @@ function referenceNames(node: TSESTree.Node): string[] {
     case AST_NODE_TYPES.MemberExpression:
       return [
         ...referenceNames(node.object),
-        ...(node.property.type === AST_NODE_TYPES.Identifier
-          ? [node.property.name]
-          : []),
+        // A quoted link in the chain names the same member a dotted one does.
+        ...(propertyName(node) === null ? [] : [propertyName(node) as string]),
       ];
     case AST_NODE_TYPES.CallExpression:
       return referenceNames(node.callee);
