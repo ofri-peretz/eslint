@@ -5,6 +5,53 @@ All notable changes to `eslint-plugin-operability` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 4.1.0
+
+### Minor Changes
+
+- **🐛 Fix** — `console['log']` reaches the same sink as `console.log`
+
+  `no-console-log` — `console['log']('x')` reaches the same property the dotted spelling does, and the rule went
+  silent on it. That is the notation bundlers emit, so the rule was off on built
+  output.
+
+  A dynamic `o[m]` has no statically known property name, so it is still ignored.
+
+### Patch Changes
+
+- **🐛 Fix** — `process['exit']()` is the same call as `process.exit()`
+
+  Gates compared `property.name` before asking what the property was, so the
+  subscripted spelling — what a minifier emits — did not reach them.
+
+- **🐛 Fix** — `res['send'](err.stack)` leaks the same stack as `res.send`
+
+  The Express response gate compared `property.name` before asking what the
+  property was.
+
+- **🐛 Fix** — remaining console gates resolve a subscripted method
+
+  A member spelled `o['k']` reaches exactly what `o.k` reaches, and these gates
+  compared `property.name` before asking what the property was. They now resolve
+  through the devkit's `propertyName`, which still abstains on the one shape that
+  genuinely cannot be resolved: a key chosen at runtime, whose name is not
+  statically known.
+
+- **🧹 Refactor** — the verbose-error check no longer casts an unnameable member
+
+  `SET.has(propertyName(node) as string)` reaches the right answer for the wrong
+  reason. `propertyName` returns `string | null` because `o[k]` names a property
+  the AST cannot read, and that is not the same answer as "named, and not one of
+  these" — the cast collapses both, and `Set.prototype.has(null)` being false is
+  what made it look correct.
+
+  1 site across 1 file now ask the two questions separately, via
+  `namesOneOf` / `memberPropertyName` from the devkit or an explicit `!== null`.
+
+  No rule behaviour changes: this package's test count and coverage are unchanged.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`
+
 ## 4.0.1
 
 ### Patch Changes

@@ -5,6 +5,80 @@ All notable changes to `eslint-plugin-mongodb-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 9.1.2
+
+### Patch Changes
+
+- **🐛 Fix** — sanitiser, logger, postMessage and query gates read a subscripted member
+
+  `DOMPurify['sanitize'](html)`, `container['logger'].warn(…)`,
+  `w['postMessage'](data, '*')` and `User['find']({…})` each reach exactly what
+  their dotted spellings reach. Six gates across three plugins compared
+  `property.name` first.
+
+  `no-log-injection` also carried two arms for the same question — an Identifier
+  branch and a `staticString` fallback — where `propertyName` answers both.
+
+  A test had pinned `container['logger']` as an unresolvable receiver; it holds
+  the same logger, and the same unescaped username reaches the same log line.
+
+- **🐛 Fix** — MIME, helmet, TLS and stream gates read a subscripted member
+
+  `file['type']`, `form['append'](k, file)`, `app['use'](helmet())`,
+  `mongoose['connect'](uri)` and `fs['createReadStream'](p)` each do exactly what
+  their dotted spellings do. Seven gates across four plugins compared
+  `property.name` before asking what the property was.
+
+  `require-tls-connection` had pinned `mongoose['connect'](uri)` as valid on the
+  grounds that "methodName is null" — it opens the same connection with no TLS,
+  and the rule now offers the same `{ tls: true }` repair it offers the dotted
+  form.
+
+- **🐛 Fix** — remaining Mongo gates resolve a subscripted method
+
+  A member spelled `o['k']` reaches exactly what `o.k` reaches, and these gates
+  compared `property.name` before asking what the property was. They now resolve
+  through the devkit's `propertyName`, which still abstains on the one shape that
+  genuinely cannot be resolved: a key chosen at runtime, whose name is not
+  statically known.
+
+- **🐛 Fix** — `mongoose['connect'](uri)` opens the same unauthenticated connection
+
+  `require-auth-mechanism` resolved the connect method off `property.name`, so
+  the subscripted spelling skipped the authMechanism check.
+
+- **🐛 Fix** — `Model['find']({…})` is the same unlean read
+
+  `require-lean-queries` matched the read method on `property.name`, so a
+  subscripted find/findOne still hydrated full documents unreported.
+
+- **🐛 Fix** — `collection('u')['findOne']` is the same query as `.findOne`
+
+  Gates across this plugin compared `property.name` before asking what the
+  property was, so `o['k']` — the notation minifiers and generated clients
+  emit — did not reach them. They now resolve through the devkit's
+  `propertyName` / `objectKeyName`.
+
+  `db.collection('users')['findOne']({})` was listed as a REJECTION of Mongo
+  evidence. The receiver is already a proven collection handle and `['findOne']`
+  names `findOne`; it is now accepted, with `[op]` — a method chosen at runtime
+  — pinned as the refusal.
+
+- **🧹 Refactor** — the Mongo evidence helper no longer casts an unnameable member
+
+  `SET.has(propertyName(node) as string)` reaches the right answer for the wrong
+  reason. `propertyName` returns `string | null` because `o[k]` names a property
+  the AST cannot read, and that is not the same answer as "named, and not one of
+  these" — the cast collapses both, and `Set.prototype.has(null)` being false is
+  what made it look correct.
+
+  1 site across 1 file now ask the two questions separately, via
+  `namesOneOf` / `memberPropertyName` from the devkit or an explicit `!== null`.
+
+  No rule behaviour changes: this package's test count and coverage are unchanged.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`
+
 ## 9.1.1
 
 ### Patch Changes

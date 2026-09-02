@@ -5,6 +5,57 @@ All notable changes to `eslint-plugin-lambda-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.1.2
+
+### Patch Changes
+
+- **🐛 Fix** — deep-link, CORS, IAM and state-mutation gates read a subscripted member
+
+  `Linking['openURL'](event['url'])`, `res['setHeader']('Access-Control-Allow-Origin', '*')`,
+  `registry['create'](payload)` and `this.state.items['push'](x)` each do exactly
+  what their dotted spellings do. Seven gates across three plugins compared
+  `property.name` before asking what the property was.
+
+  Two more tests had pinned the miss — one describing the guard ("property is not
+  an Identifier"), the other the notation ("computed callee property").
+
+- **🐛 Fix** — `client['send'](cmd)` is the same external call as `client.send`
+
+  `require-timeout-handling` read the call name off `property.name`, so a
+  subscripted AWS SDK send did not register as an external call.
+
+- **🐛 Fix** — `client['post'](url)` issues the same user-controlled request
+
+  `no-user-controlled-requests` matched the chained HTTP method on
+  `property.name`, so a subscripted call on an axios instance passed an
+  event-derived URL unreported.
+
+- **🐛 Fix** — `exports['handler']` is the same handler as `exports.handler`
+
+  Gates across this plugin compared `property.name` before asking what the
+  property was, so `o['k']` — the notation minifiers and generated clients
+  emit — did not reach them. They now resolve through the devkit's
+  `propertyName` / `objectKeyName`.
+
+  `exports['handler'] = fn` IS the exports.handler convention; it was pinned as
+  valid because the key was computed, so an unvalidated `event.body` read inside
+  it went unreported.
+
+- **🧹 Refactor** — event-shape and handler reads keep the unnameable property visible
+
+  `SET.has(propertyName(node) as string)` reaches the right answer for the wrong
+  reason. `propertyName` returns `string | null` because `o[k]` names a property
+  the AST cannot read, and that is not the same answer as "named, and not one of
+  these" — the cast collapses both, and `Set.prototype.has(null)` being false is
+  what made it look correct.
+
+  11 sites across 4 files now ask the two questions separately, via
+  `namesOneOf` / `memberPropertyName` from the devkit or an explicit `!== null`.
+
+  No rule behaviour changes: this package's test count and coverage are unchanged.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`
+
 ## 2.1.1
 
 ### Patch Changes
