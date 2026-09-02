@@ -58,6 +58,22 @@ function repoRoot(): string {
 
 const REPO_ROOT = repoRoot();
 const JSON_OUT = process.argv.includes('--json');
+/**
+ * Skip the "main is ahead of npm" half.
+ *
+ * A push to main that lands version bumps IS the release commit: versions are
+ * bumped and `release.yml` has not published yet, so every package reads
+ * main=N npm=N-1. Checking publish lag there does not detect a stall, it
+ * detects the ordinary shape of a release in progress — it fired on all three
+ * push runs of 2026-09-01 and produced #791 and #795 while the pipeline was
+ * healthy.
+ *
+ * The changeset half does NOT race and stays on: a changeset that lands with
+ * no Version PR is worth knowing about in minutes, which is why the push
+ * trigger exists at all. Publish lag is a slow condition; the six-hourly cron
+ * catches it without inventing an alarm on every release.
+ */
+const SKIP_PUBLISH_LAG = process.argv.includes('--skip-publish-lag');
 const REPO = process.env.GITHUB_REPOSITORY ?? 'ofri-peretz/eslint';
 
 type Finding = { kind: string; detail: string };
@@ -225,7 +241,7 @@ function compareVersions(a: string, b: string): number {
 
 let neverPublished = 0;
 let compared = 0;
-for (const m of manifests) {
+for (const m of SKIP_PUBLISH_LAG ? [] : manifests) {
   const pkg = JSON.parse(fs.readFileSync(m, 'utf8')) as {
     name?: string;
     version?: string;
@@ -291,7 +307,11 @@ for (const m of manifests) {
     });
 }
 checked.push(
-  `${compared} published package version(s) compared against npm` +
+  SKIP_PUBLISH_LAG
+    ? 'publish-lag check SKIPPED (--skip-publish-lag): a push that lands ' +
+      'version bumps is the release commit, where npm is legitimately behind. ' +
+      'The six-hourly run checks it.'
+    : `${compared} published package version(s) compared against npm` +
     (neverPublished > 0
       ? `; ${neverPublished} never published (first release pending)`
       : ''),
@@ -299,7 +319,12 @@ checked.push(
 
 // A run that compared nothing proves nothing — the same silent-green failure
 // this script exists to detect, reproduced inside the detector.
-if (compared === 0 && pending.length === 0)
+//
+// `--skip-publish-lag` is the one case where comparing nothing is deliberate
+// and stated: the changeset half still ran and still speaks. Without this
+// exemption the flag would trade one false alarm for another, which is the
+// trap that produced the flag in the first place.
+if (!SKIP_PUBLISH_LAG && compared === 0 && pending.length === 0)
   findings.push({
     kind: 'nothing-checked',
     detail:
@@ -314,7 +339,10 @@ if (JSON_OUT) {
   for (const f of findings) console.error(`::error::[${f.kind}] ${f.detail}`);
   console.log(
     findings.length === 0
-      ? '\n✅ Release pipeline is alive: nothing queued without a PR, nothing bumped without a publish.'
+      ? SKIP_PUBLISH_LAG
+        ? '\n✅ Nothing queued without a Version PR. Publish lag was NOT checked ' +
+          'on this run — the six-hourly run covers it.'
+        : '\n✅ Release pipeline is alive: nothing queued without a PR, nothing bumped without a publish.'
       : `\n❌ ${findings.length} release-pipeline stall(s).`,
   );
 }
