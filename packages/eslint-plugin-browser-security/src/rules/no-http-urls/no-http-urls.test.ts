@@ -26,7 +26,10 @@ ruleTester.run('no-http-urls', noHttpUrls, {
     // `const URL_PREFIXES = ['http://', 'https://', 'data:']`. There is no host
     // here to be insecure and nothing to rewrite; the report it drew read
     // `Hardcoded HTTP URL detected: "http://"`, a statement about nothing.
-    { name: 'a list of scheme prefixes is not a request', code: "const URL_PREFIXES = ['http://', 'https://', 'data:'];" },
+    {
+      name: 'a list of scheme prefixes is not a request',
+      code: "const URL_PREFIXES = ['http://', 'https://', 'data:'];",
+    },
     { code: "if (u.startsWith('http://')) { upgrade(u); }" },
     { code: "const scheme = 'http://';" },
     // The template form of the same thing, for the same reason.
@@ -75,18 +78,18 @@ ruleTester.run('no-http-urls', noHttpUrls, {
     { code: "const devUrl = 'http://localhost:3000'" },
     { code: "const localApi = 'http://127.0.0.1:8080/api'" },
     // Allowed hosts via options
-    { 
+    {
       code: "const devUrl = 'http://dev.local/api'",
-      options: [{ allowedHosts: ['dev.local'] }]
+      options: [{ allowedHosts: ['dev.local'] }],
     },
     // Allowed ports via options
-    { 
+    {
       code: "const devUrl = 'http://0.0.0.0:5000/api'",
-      options: [{ allowedHosts: ['0.0.0.0'], allowedPorts: [5000] }]
+      options: [{ allowedHosts: ['0.0.0.0'], allowedPorts: [5000] }],
     },
     // Non-URL strings
     { code: "const protocol = 'http'" },
-    { code: "const x = 1" },
+    { code: 'const x = 1' },
 
     // --- Interpolated authority: not a HARDCODED URL ------------------------
     // 5 of the 8 remaining corpus findings. Each reports on the old code with
@@ -98,9 +101,13 @@ ruleTester.run('no-http-urls', noHttpUrls, {
     { code: 'const proxy = { target: `http://${HOST}:${MOCK_SERVER_PORT}` };' },
     // Shopify/cli theme dev server — services/dev.ts:121-122.
     { code: 'const urls = { local: `http://${host}:${port}` };' },
-    { code: 'const p = `http://${host}:${port}/gift_cards/[store_id]/preview`;' },
+    {
+      code: 'const p = `http://${host}:${port}/gift_cards/[store_id]/preview`;',
+    },
     // theme-environment/proxy.ts:196 and theme-environment.ts:136.
-    { code: 'const newBaseUrl = `http://${ctx.options.host}:${ctx.options.port}`;' },
+    {
+      code: 'const newBaseUrl = `http://${ctx.options.host}:${ctx.options.port}`;',
+    },
 
     // --- Loopback, via the helper detect-mixed-content already uses ---------
     // Potentially trustworthy per the Secure Contexts spec; the allowedHosts
@@ -129,6 +136,7 @@ ruleTester.run('no-http-urls', noHttpUrls, {
     // @typescript-eslint 8.68.0, the raw text under 8.54.0. The host is still
     // written down, so dropping the quasi would lose a real finding.
     {
+      name: 'String.raw with an escape the cooked value cannot hold',
       code: 'const u = String.raw`http://api.acmecorp.io/x \\x`;',
       errors: [{ messageId: 'insecureHttpWithException' }],
     },
@@ -166,24 +174,24 @@ ruleTester.run('no-http-urls', noHttpUrls, {
     },
 
     // Insecure http URLs
-    { 
-      code: "const apiUrl = 'http://api.acmecorp.io/data'", 
-      errors: [{ messageId: 'insecureHttpWithException' }] 
+    {
+      code: "const apiUrl = 'http://api.acmecorp.io/data'",
+      errors: [{ messageId: 'insecureHttpWithException' }],
     },
     {
       code: "const endpoint = 'http://insecure.acmecorp.io/api'",
       errors: [{ messageId: 'insecureHttpWithException' }],
     },
     // Template literals
-    { 
-      code: "const url = `http://external.com/api/${path}`", 
-      errors: [{ messageId: 'insecureHttpWithException' }] 
+    {
+      code: 'const url = `http://external.com/api/${path}`',
+      errors: [{ messageId: 'insecureHttpWithException' }],
     },
     // Without allowed hosts (uses insecureHttp message)
-    { 
+    {
       code: "const url = 'http://prod.acmecorp.io/api'",
       options: [{ allowedHosts: [] }],
-      errors: [{ messageId: 'insecureHttp' }] 
+      errors: [{ messageId: 'insecureHttp' }],
     },
   ],
 });
@@ -322,29 +330,39 @@ const W3C_NAMESPACE_IDENTIFIERS = [
   'http://www.w3.org/2000/xmlns/',
 ];
 
-ruleTester.run('lock: W3C namespace identifiers are never endpoints', noHttpUrls, {
-  valid: [
-    // Each as a bare literal…
-    ...W3C_NAMESPACE_IDENTIFIERS.map((ns) => ({ code: `const NS = '${ns}';` })),
-    // …and as the createElementNS argument, the shape from the blog hit.
-    ...W3C_NAMESPACE_IDENTIFIERS.map((ns) => ({
-      code: `document.createElementNS('${ns}', 'svg');`,
-    })),
-    // The namespaced attribute setter takes the identifier first.
-    { code: "img.setAttributeNS('http://www.w3.org/1999/xlink', 'href', url);" },
-    // A namespaceURI comparison is how code branches on document type.
-    { code: "if (svg.namespaceURI === 'http://www.w3.org/2000/svg') { serialize(svg); }" },
-  ],
-  invalid: [
-    // POSITIVE CONTROL — a genuine http:// resource URL in the same statement
-    // shape still reports, so the valid cases above are quiet for the right
-    // reason and not because the suite lost its sink.
-    {
-      code: "const NS = 'http://cdn.acmecorp.io/asset.js';",
-      errors: [{ messageId: 'insecureHttpWithException' }],
-    },
-  ],
-});
+ruleTester.run(
+  'lock: W3C namespace identifiers are never endpoints',
+  noHttpUrls,
+  {
+    valid: [
+      // Each as a bare literal…
+      ...W3C_NAMESPACE_IDENTIFIERS.map((ns) => ({
+        code: `const NS = '${ns}';`,
+      })),
+      // …and as the createElementNS argument, the shape from the blog hit.
+      ...W3C_NAMESPACE_IDENTIFIERS.map((ns) => ({
+        code: `document.createElementNS('${ns}', 'svg');`,
+      })),
+      // The namespaced attribute setter takes the identifier first.
+      {
+        code: "img.setAttributeNS('http://www.w3.org/1999/xlink', 'href', url);",
+      },
+      // A namespaceURI comparison is how code branches on document type.
+      {
+        code: "if (svg.namespaceURI === 'http://www.w3.org/2000/svg') { serialize(svg); }",
+      },
+    ],
+    invalid: [
+      // POSITIVE CONTROL — a genuine http:// resource URL in the same statement
+      // shape still reports, so the valid cases above are quiet for the right
+      // reason and not because the suite lost its sink.
+      {
+        code: "const NS = 'http://cdn.acmecorp.io/asset.js';",
+        errors: [{ messageId: 'insecureHttpWithException' }],
+      },
+    ],
+  },
+);
 
 /**
  * Regression lock — RFC 2606 reserved domains.
@@ -376,24 +394,31 @@ ruleTester.run('lock: reserved example domains are not endpoints', noHttpUrls, {
  * backwards. Shares `isProtocolInspection` with `no-unencrypted-transmission` so the two
  * cannot disagree about what counts as inspection.
  */
-ruleTester.run('lock: inspecting a protocol string is not using one', noHttpUrls, {
-  valid: [
-    { code: "if (name.indexOf('http://') !== -1) { install(name); }" },
-    { code: "if (url.startsWith('http://')) { reject(url); }" },
-    { code: "if (proto === 'http://') { upgrade(); }" },
-    { code: "const isHttp = spec.includes('http://');" },
-    { code: "spec.split('http://');" },
-    // `replace` writes its SECOND argument, so only the search operand is inspection.
-    { code: "url.replace('http://', 'https://');" },
-  ],
-  invalid: [
-    { code: "const u = 'http://api.acmecorp.io';", errors: 1 },
-    // A fetch() URL argument is `require-https-only`'s, so the positive control
-    // for "an http:// string that is USED, not inspected" moved to a shape this
-    // rule still owns.
-    { code: "const u = { endpoint: 'http://api.acmecorp.io/x' };", errors: 1 },
-  ],
-});
+ruleTester.run(
+  'lock: inspecting a protocol string is not using one',
+  noHttpUrls,
+  {
+    valid: [
+      { code: "if (name.indexOf('http://') !== -1) { install(name); }" },
+      { code: "if (url.startsWith('http://')) { reject(url); }" },
+      { code: "if (proto === 'http://') { upgrade(); }" },
+      { code: "const isHttp = spec.includes('http://');" },
+      { code: "spec.split('http://');" },
+      // `replace` writes its SECOND argument, so only the search operand is inspection.
+      { code: "url.replace('http://', 'https://');" },
+    ],
+    invalid: [
+      { code: "const u = 'http://api.acmecorp.io';", errors: 1 },
+      // A fetch() URL argument is `require-https-only`'s, so the positive control
+      // for "an http:// string that is USED, not inspected" moved to a shape this
+      // rule still owns.
+      {
+        code: "const u = { endpoint: 'http://api.acmecorp.io/x' };",
+        errors: 1,
+      },
+    ],
+  },
+);
 
 /*
  * ── Family partition: the shapes this rule hands to a sibling ────────────────

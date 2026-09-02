@@ -251,10 +251,12 @@ describe('no-transaction-on-pool', () => {
           // spellings a property can take; `objectKeyName` resolves all four, and
           // `check:spellings` flagged the gap before a consumer hit it.
           {
+            name: 'a computed key declares the same property as a dotted one',
             code: "import { Pool } from 'pg';\nconst db = new Pool();\ndb.query({ ['text']: 'BEGIN' });",
             errors: [{ messageId: 'noTransactionOnPool' }],
           },
           {
+            name: 'a string-literal key declares the same property too',
             code: "import { Pool } from 'pg';\nconst db = new Pool();\ndb.query({ 'text': 'BEGIN' });",
             errors: [{ messageId: 'noTransactionOnPool' }],
           },

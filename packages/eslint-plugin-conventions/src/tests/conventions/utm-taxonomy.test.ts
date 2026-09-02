@@ -27,7 +27,10 @@ describe('utm-taxonomy', () => {
   ruleTester.run('utm-taxonomy', utmTaxonomy, {
     valid: [
       // Strings without UTM are untouched.
-      { name: 'a URL with no UTM parameters at all', code: 'const url = "https://example.com/path";' },
+      {
+        name: 'a URL with no UTM parameters at all',
+        code: 'const url = "https://example.com/path";',
+      },
       { code: 'const url = "/relative/path";' },
       // Valid utm_source values.
       {
@@ -70,6 +73,7 @@ describe('utm-taxonomy', () => {
       // @typescript-eslint 8.68.0, the raw text under 8.54.0. Reading only
       // `cooked` drops the quasi and the bad source ships unreported.
       {
+        name: 'a tagged template whose escape has no cooked value still reports',
         code: 'const url = String.raw`https://eslint.interlace.tools/?utm_source=Blog \\x`;',
         errors: [{ messageId: 'invalidUtmSource' }],
       },
