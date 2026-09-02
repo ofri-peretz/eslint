@@ -238,9 +238,9 @@ export const noUserControlledRequests = createRule<RuleOptions, MessageIds>({
       // axios.create().get(url) - chained methods
       if (
         node.callee.type === AST_NODE_TYPES.MemberExpression &&
-        node.callee.property.type === AST_NODE_TYPES.Identifier &&
+        // `client['post'](url)` issues the same request.
         ['get', 'post', 'put', 'delete', 'patch', 'request'].includes(
-          node.callee.property.name,
+          propertyName(node.callee) as string,
         )
       ) {
         return true;
