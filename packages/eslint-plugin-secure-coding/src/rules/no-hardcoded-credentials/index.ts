@@ -448,7 +448,8 @@ function isUrlOrPath(value: string): boolean {
  */
 function echoesItsOwnSlotName(value: string, slotName: string): boolean {
   if (slotName === '') return false;
-  const fold = (text: string): string => text.replace(/[-_.\s]/g, '').toLowerCase();
+  const fold = (text: string): string =>
+    text.replace(/[-_.\s]/g, '').toLowerCase();
   return fold(value) === fold(slotName);
 }
 
@@ -761,11 +762,12 @@ function slotNameOf(parent: TSESTree.Node): string {
   }
   if (parent.type === 'AssignmentExpression') {
     const left = parent.left;
-    if (
-      left.type === 'MemberExpression' &&
-      left.property.type === 'Identifier'
-    ) {
-      return left.property.name.toLowerCase();
+    if (left.type === 'MemberExpression') {
+      // `this['password'] = '…'` names the same slot `this.password` names,
+      // and a minifier writes the first. A key chosen at runtime names no
+      // slot to match against the credential vocabulary.
+      const named = propertyName(left);
+      if (named !== null) return named.toLowerCase();
     }
   }
   return '';
@@ -1231,14 +1233,12 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
         (parent as TSESTree.AssignmentExpression).right === node
       ) {
         const left = (parent as TSESTree.AssignmentExpression).left;
-        if (
-          left.type === 'MemberExpression' &&
-          left.property.type === 'Identifier'
-        ) {
-          if (
-            LABEL_CONTEXT_NAMES.has((left.property as TSESTree.Identifier).name)
-          )
-            return true;
+        if (left.type === 'MemberExpression') {
+          // `input['type'] = 'password'` labels the same field `input.type`
+          // labels. The suppression has to widen with the detection, or the
+          // subscripted spelling starts reporting where the dotted one does not.
+          const slot = propertyName(left);
+          if (slot !== null && LABEL_CONTEXT_NAMES.has(slot)) return true;
         }
       }
 
@@ -1438,11 +1438,11 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
         (parent as TSESTree.AssignmentExpression).right === node
       ) {
         const left = (parent as TSESTree.AssignmentExpression).left;
-        if (
-          left.type === 'MemberExpression' &&
-          left.property.type === 'Identifier'
-        ) {
-          if (matches((left.property as TSESTree.Identifier).name)) return true;
+        if (left.type === 'MemberExpression') {
+          // `this['password'] = '…'` assigns the same secret to the same slot
+          // as `this.password = '…'`, and a bundler emits the first.
+          const slot = propertyName(left);
+          if (slot !== null && matches(slot)) return true;
         }
         if (left.type === 'Identifier') {
           if (matches((left as TSESTree.Identifier).name)) return true;

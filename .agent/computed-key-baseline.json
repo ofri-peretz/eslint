@@ -22,11 +22,9 @@
     "react-features/no-typos",
     "react-features/react-class-to-hooks",
     "secure-coding/no-graphql-injection",
-    "secure-coding/no-hardcoded-credentials",
     "secure-coding/no-improper-sanitization",
     "secure-coding/no-improper-type-validation",
     "secure-coding/no-ldap-injection",
-    "secure-coding/no-privilege-escalation",
     "secure-coding/no-sql-injection",
     "secure-coding/no-template-injection"
   ]
