@@ -441,17 +441,37 @@ function sh(cmd: string, args: string[], cwd?: string): string {
      * why it failed, and the CI log showed `stdout: '', stderr: ''` under
      * `--silent` — a stack trace pointing at the line that broke and no cause.
      */
-    const child = error as { stdout?: string; stderr?: string; message?: string };
+    const child = error as {
+      stdout?: string;
+      stderr?: string;
+      message?: string;
+    };
     const detail = [child.stdout, child.stderr]
       .map((stream) => (stream ?? '').trim())
       .filter(Boolean)
       .join('\n');
-    throw new Error(
+    const wrapped = new Error(
       `${child.message ?? String(error)}` +
         (detail === ''
           ? '\n  (the command produced no output — check for a --silent flag)'
           : `\n\n${detail}`),
     );
+    /*
+     * Carry the child's streams ONTO the wrapped error.
+     *
+     * Losing them broke `scanTarget`, which recovers a successful scan from a
+     * non-zero exit: ESLint exits 1 whenever it reports anything, so its
+     * findings arrive on `error.stdout` and the scan is complete. That handler
+     * reads `error.stdout` and rethrows when it is empty — and this wrapper
+     * made it empty for every target, so a scan that produced 3,474 findings
+     * across 900 files reported "every target failed to scan — no findings
+     * were measured".
+     *
+     * Two correct fixes, and the second silently disabled the first: the
+     * recovery landed 2026-08-12 (#533), the wrapper 2026-08-31 (#739).
+     */
+    Object.assign(wrapped, { stdout: child.stdout, stderr: child.stderr });
+    throw wrapped;
   }
 }
 
