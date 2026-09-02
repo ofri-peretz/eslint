@@ -50,21 +50,26 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run peer-health
 
+      # Was a bare `git push` at main, which branch protection declines with
+      # GH006 — the fetch succeeded and the snapshot was thrown away. The job
+      # already asks for `pull-requests: write` for "the snapshot PR"; this is
+      # the step finally using it.
       - name: Commit snapshot if changed
-        run: |
-          if [ -n "$(git status --porcelain benchmark-results/peer-health.json benchmark-results/peer-health.md)" ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add benchmark-results/peer-health.json benchmark-results/peer-health.md
-            git commit -m "chore(benchmarks): refresh peer-health snapshot
+        uses: ./.github/actions/commit-via-pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          branch: automated/peer-health-snapshot
+          paths: benchmark-results/peer-health.json benchmark-results/peer-health.md
+          commit-message: "chore(benchmarks): refresh peer-health snapshot"
+          pr-title: "chore(benchmarks): refresh peer-health snapshot"
+          pr-body: |
+            Automated weekly refresh of the peer-plugin health metrics named in
+            `distribution/ECOSYSTEM_LANDSCAPE.md`. Source data from the npm
+            registry + GitHub API.
 
-            Automated weekly refresh of the peer-plugin health metrics
-            named in distribution/ECOSYSTEM_LANDSCAPE.md. Source data
-            from npm registry + GitHub API."
-            git push
-          else
-            echo "No peer-health changes detected."
-          fi
+            Contents come entirely from `npm run peer-health`, so review the diff
+            rather than hand-editing.
 
       # A scheduled refresher that fails notifies nobody by default. This one failed
       # every run for months — the commit step used a scope commitlint rejected — and

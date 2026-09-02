@@ -135,3 +135,37 @@ the wrong worklist.
   same-titled issues with no thread. Reopening would keep one thread; the cost
   is that a closed issue is a human's statement that the matter is settled, and
   reopening overrides it.
+
+---
+
+## Amendment, 2026-09-01 — the count was 3, not 4, and the graph found more
+
+Re-derived against the live API before building, because a plan built on a
+stale survey is the same defect this intent describes.
+
+**Two of the four "silent" workflows were not silent — they were early.**
+`resource-profile` filed #802 the moment its monthly cron next fired, and
+`integration-health`'s `inputs.*` fix *is* on `main` (the earlier "not on main"
+reading was a bad grep escape, not a missing commit). Both had report steps
+that postdated their last failing run. That is diagnosis error on my part, not
+a defect in them, and the original table overstated the problem by two.
+
+Corrected: **7 failing, 3 alerting, 3 genuinely silent** — `benchmark`,
+`eslint-version-matrix`, `oxlint-parity`. All three now report from aggregate
+jobs.
+
+**The graph check then found nine more.** Running the shape lock across all 43
+workflows surfaced nine uncovered jobs in eight workflows that no failure had
+yet exposed — including single-job crons that file *finding* issues (their
+purpose) while having no *failure* reporter. My earlier claim that "21 of 22
+declare reporting" came from a loose grep for `issues: write` and did not
+survive contact with the job graph.
+
+Those nine are carried in `.github/cron-alerting-debt.json` as a ratchet rather
+than fixed blind. Recorded in [ADR 0006](../../adr/0006-a-cron-reports-from-an-aggregate-job.md).
+
+**The canary is deferred, not dropped.** #802 and #803 were both filed by crons
+on 2026-09-01, so the channel demonstrably delivers; the shape was the failing
+half. Open question 1 (canary shape) therefore stays open with less urgency,
+and the R5 verification — revoke the canary's `issues: write` and require its
+assert job to go red — is still the only proposed check on the checker.
