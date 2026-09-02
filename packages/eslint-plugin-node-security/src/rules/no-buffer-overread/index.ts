@@ -873,15 +873,17 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
        *
        * Unconditional, because `noAssert: true` has no safe reading.
        */
-      // The selector pins the property to a plain Identifier, so no runtime
-      // type guard is needed for it — one would be an uncoverable branch, and
-      // this package gates on 100%.
-      'CallExpression[callee.type="MemberExpression"][callee.computed=false][callee.property.type="Identifier"]'(
+      // The selector used to pin the property to a plain Identifier, which put
+      // the blind spot in the SELECTOR STRING rather than in a guard —
+      // `b['readUInt8'](0, true)` never reached this visitor at all.
+      // `propertyName` resolves both spellings, and returns null for the
+      // runtime-keyed form that genuinely names no method.
+      'CallExpression[callee.type="MemberExpression"]'(
         node: TSESTree.CallExpression,
       ) {
         const callee = node.callee as TSESTree.MemberExpression;
-        const method = (callee.property as TSESTree.Identifier).name;
-        if (!/^(?:read|write)[A-Z]/.test(method)) return;
+        const method = propertyName(callee);
+        if (method === null || !/^(?:read|write)[A-Z]/.test(method)) return;
         // `readUIntBE(offset, byteLength, noAssert)` takes three; the rest two.
         const flag = node.arguments.at(-1);
         if (
@@ -917,10 +919,10 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
             node.init.callee.type === AST_NODE_TYPES.MemberExpression &&
             node.init.callee.object.type === AST_NODE_TYPES.Identifier &&
             node.init.callee.object.name === 'Buffer' &&
-            node.init.callee.property.type === AST_NODE_TYPES.Identifier &&
             // @vocabulary Node Buffer API
+            // `Buffer['alloc'](n)` allocates the same buffer.
             ['from', 'alloc', 'allocUnsafe'].includes(
-              node.init.callee.property.name,
+              propertyName(node.init.callee) as string,
             )
           ) {
             addBufferVar(node.id);
