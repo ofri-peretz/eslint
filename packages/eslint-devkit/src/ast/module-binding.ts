@@ -29,6 +29,7 @@
  * ```
  */
 import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
+import { propertyName } from './spellings';
 // The shim, not the package: `@typescript-eslint/utils` is an OPTIONAL peer,
 // so a runtime import of it makes devkit unloadable wherever the consumer
 // did not install it. Only the type import above may name the package.
@@ -131,11 +132,13 @@ function resolve(
   if (required !== undefined) return { module: required, path: [] };
 
   // fs.promises / fs.readFile / require('fs').readFile
-  if (node.type === AST_NODE_TYPES.MemberExpression && !node.computed) {
-    // Non-computed member access is always Identifier | PrivateIdentifier; a `#private`
-    // field can never name a module export, so abstain on it.
-    if (node.property.type !== AST_NODE_TYPES.Identifier) return undefined;
-    const property = node.property.name;
+  if (node.type === AST_NODE_TYPES.MemberExpression) {
+    // `child_process['exec']` and `pg['Pool']` name the same exports their
+    // dotted spellings name, and bundlers emit them. `propertyName` abstains
+    // on the two shapes that genuinely name nothing: a `#private` field, which
+    // can never be a module export, and a key chosen at runtime.
+    const property = propertyName(node);
+    if (property === null) return undefined;
     const base = resolve(node.object, scope, options, seen);
     return base && { module: base.module, path: [...base.path, property] };
   }

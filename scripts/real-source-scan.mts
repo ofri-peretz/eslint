@@ -44,7 +44,12 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
 const CACHE = path.join(ROOT, 'benchmarks', '.real-source-cache');
 const REPOS = path.join(ROOT, 'benchmarks', 'real-source-repos.json');
-const OUT = path.join(ROOT, 'benchmarks', 'budgets', 'real-world-rule-inventory.json');
+const OUT = path.join(
+  ROOT,
+  'benchmarks',
+  'budgets',
+  'real-world-rule-inventory.json',
+);
 const NO_CLONE = process.argv.includes('--no-clone');
 
 /**
@@ -58,8 +63,15 @@ const NO_CLONE = process.argv.includes('--no-clone');
  * machine has cores sitting idle, so the only reason it was serial is that
  * nobody had measured it.
  */
-const shardArg = process.argv.find((a) => a.startsWith('--shard='))?.slice('--shard='.length);
-const SHARD = shardArg ? { index: Number(shardArg.split('/')[0]), of: Number(shardArg.split('/')[1]) } : null;
+const shardArg = process.argv
+  .find((a) => a.startsWith('--shard='))
+  ?.slice('--shard='.length);
+const SHARD = shardArg
+  ? {
+      index: Number(shardArg.split('/')[0]),
+      of: Number(shardArg.split('/')[1]),
+    }
+  : null;
 
 /**
  * Files large enough that they are certainly generated — a bundle, a minified
@@ -86,12 +98,74 @@ function looksGenerated(file: string): boolean {
   } catch {
     return true;
   }
-  if (/^\s*(\/\/|\/\*)[^\n]*(@generated|DO NOT EDIT|auto-generated)/im.test(head.slice(0, 2_000))) return true;
+  if (
+    /^\s*(\/\/|\/\*)[^\n]*(@generated|DO NOT EDIT|auto-generated)/im.test(
+      head.slice(0, 2_000),
+    )
+  )
+    return true;
   return head.split('\n').some((line) => line.length > MAX_LINE_CHARS);
 }
 const STAMP = new Date().toISOString().slice(0, 10);
 
-const { repos } = JSON.parse(fs.readFileSync(REPOS, 'utf8')) as { repos: string[] };
+const { repos: allRepos } = JSON.parse(fs.readFileSync(REPOS, 'utf8')) as {
+  repos: string[];
+};
+
+/**
+ * `--repo-shard i/n` slices the REPOSITORY list, before anything is cloned.
+ *
+ * Distinct from `--shard`, which slices the FILE list among forked workers on
+ * one machine. That distinction is what makes this runnable in CI at all: a
+ * file-sharded run still needs every repository present, which is 9.7GB and
+ * more disk than a hosted runner has to spare, while a repo-sharded run clones
+ * only its own slice.
+ *
+ * The arithmetic that forces it: ~346,000 files against 566 rules and a
+ * TypeScript parser runs near one file per second per worker, and a
+ * GitHub-hosted runner has four cores, so two workers. One runner is roughly
+ * two days of work — well past the six-hour job ceiling. Twenty repo-shards of
+ * two workers each is forty-way parallelism, which brings a full pass inside a
+ * couple of hours per shard.
+ *
+ * Deterministic and index-based, so shard k holds the same repositories on
+ * every run and a failed shard can be re-run alone.
+ */
+const repoShardArg = process.argv
+  .find((a) => a.startsWith('--repo-shard='))
+  ?.slice('--repo-shard='.length);
+/*
+ * `i/n`, both parts required and nothing else.
+ *
+ * `Number('')` is 0 and `split('/')` ignores extra segments, so `--repo-shard=/20`
+ * silently scanned shard 0 and `--repo-shard=0/20/extra` passed validation.
+ * A shard argument that is wrong in a way that still parses is how 19/20ths
+ * of a corpus gets measured twice and the rest not at all.
+ */
+const shardParts = /^(\d+)\/(\d+)$/.exec(repoShardArg ?? '');
+if (repoShardArg !== undefined && shardParts === null) {
+  console.error(`--repo-shard must be <index>/<total>, got ${repoShardArg}`);
+  process.exit(1);
+}
+const REPO_SHARD = shardParts
+  ? { index: Number(shardParts[1]), of: Number(shardParts[2]) }
+  : null;
+if (
+  REPO_SHARD !== null &&
+  (!Number.isInteger(REPO_SHARD.index) ||
+    !Number.isInteger(REPO_SHARD.of) ||
+    REPO_SHARD.of < 1 ||
+    REPO_SHARD.index < 0 ||
+    REPO_SHARD.index >= REPO_SHARD.of)
+) {
+  throw new Error(
+    `--repo-shard=${repoShardArg} is not a valid i/n with 0 <= i < n`,
+  );
+}
+const repos =
+  REPO_SHARD === null
+    ? allRepos
+    : allRepos.filter((_, i) => i % REPO_SHARD.of === REPO_SHARD.index);
 
 /**
  * Every rule the suite ships, by the SAME rule as `rule-case-ledger.ts`: the
@@ -103,10 +177,15 @@ const { repos } = JSON.parse(fs.readFileSync(REPOS, 'utf8')) as { repos: string[
 function allRules(): string[] {
   const pkgDir = path.join(ROOT, 'packages');
   const manifest = JSON.parse(
-    fs.readFileSync(path.join(ROOT, '.agent', 'plugin-rule-manifest.json'), 'utf8'),
+    fs.readFileSync(
+      path.join(ROOT, '.agent', 'plugin-rule-manifest.json'),
+      'utf8',
+    ),
   ) as Record<string, Record<string, unknown>>;
   const onDisk = new Set<string>();
-  for (const pkg of fs.readdirSync(pkgDir).filter((d) => d.startsWith('eslint-plugin-'))) {
+  for (const pkg of fs
+    .readdirSync(pkgDir)
+    .filter((d) => d.startsWith('eslint-plugin-'))) {
     const rulesDir = path.join(pkgDir, pkg, 'src', 'rules');
     if (!fs.existsSync(rulesDir)) continue;
     const plugin = pkg.replace('eslint-plugin-', '');
@@ -114,9 +193,14 @@ function allRules(): string[] {
       for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
         const full = path.join(dir, entry.name);
         if (entry.isDirectory()) {
-          if (fs.existsSync(path.join(full, 'index.ts'))) onDisk.add(`${plugin}/${entry.name}`);
+          if (fs.existsSync(path.join(full, 'index.ts')))
+            onDisk.add(`${plugin}/${entry.name}`);
           walk(full);
-        } else if (entry.name.endsWith('.ts') && !/\.(test|spec)\./.test(entry.name) && entry.name !== 'index.ts') {
+        } else if (
+          entry.name.endsWith('.ts') &&
+          !/\.(test|spec)\./.test(entry.name) &&
+          entry.name !== 'index.ts'
+        ) {
           onDisk.add(`${plugin}/${entry.name.replace(/\.ts$/, '')}`);
         }
       }
@@ -141,7 +225,10 @@ function allRules(): string[] {
  * 26 rules reported as never scanned when they had simply been discarded.
  */
 function published(rule: string): string {
-  const aliases: Record<string, string> = { 'jwt-security/': 'jwt/', 'postgresql-security/': 'pg/' };
+  const aliases: Record<string, string> = {
+    'jwt-security/': 'jwt/',
+    'postgresql-security/': 'pg/',
+  };
   for (const [dir, id] of Object.entries(aliases)) {
     if (rule.startsWith(dir)) return id + rule.slice(dir.length);
   }
@@ -157,10 +244,21 @@ if (!NO_CLONE) {
     const dir = path.join(CACHE, repo.replace('/', '__'));
     if (fs.existsSync(dir)) continue;
     try {
-      execFileSync('git', ['clone', '--depth', '1', '--quiet', `https://github.com/${repo}.git`, dir], {
-        stdio: 'ignore',
-        timeout: 180_000,
-      });
+      execFileSync(
+        'git',
+        [
+          'clone',
+          '--depth',
+          '1',
+          '--quiet',
+          `https://github.com/${repo}.git`,
+          dir,
+        ],
+        {
+          stdio: 'ignore',
+          timeout: 180_000,
+        },
+      );
       cloned += 1;
     } catch {
       // A repository can be renamed, archived or made private between runs.
@@ -173,13 +271,17 @@ if (!NO_CLONE) {
   }
 }
 
-const present = repos.filter((r) => fs.existsSync(path.join(CACHE, r.replace('/', '__'))));
+const present = repos.filter((r) =>
+  fs.existsSync(path.join(CACHE, r.replace('/', '__'))),
+);
 // stdout carries the shard's JSON result and nothing else; a worker's progress
 // goes to stderr, which the parent inherits.
 const say = (line: string): void => {
   if (SHARD === null) console.log(line);
 };
-say(`  ${present.length} repositories cached (${cloned} newly cloned, ${missing} unreachable)\n`);
+say(
+  `  ${present.length} repositories cached (${cloned} newly cloned, ${missing} unreachable)\n`,
+);
 if (present.length === 0) {
   console.error('  nothing to scan');
   process.exit(1);
@@ -209,7 +311,10 @@ const walk = (dir: string): void => {
     if (entry.isSymbolicLink()) continue;
     if (entry.isDirectory()) {
       if (!SKIP_DIR.test(`/${path.relative(CACHE, full)}/`)) walk(full);
-    } else if (/\.[cm]?[jt]sx?$/.test(entry.name) && !SKIP_FILE.test(entry.name)) {
+    } else if (
+      /\.[cm]?[jt]sx?$/.test(entry.name) &&
+      !SKIP_FILE.test(entry.name)
+    ) {
       files.push(full);
     }
   }
@@ -231,74 +336,28 @@ const scannable = files.filter((f) => !oversized.includes(f));
 say(
   `  ${files.length} files, ${oversized.length} skipped as generated (over ${MAX_FILE_BYTES / 1000}KB, a line over ${MAX_LINE_CHARS} chars, or a generated header)\n`,
 );
-const mine = SHARD === null ? scannable : scannable.filter((_, i) => i % SHARD.of === SHARD.index);
+const mine =
+  SHARD === null
+    ? scannable
+    : scannable.filter((_, i) => i % SHARD.of === SHARD.index);
 
-if (SHARD === null) {
-  const workers = Math.max(1, Math.min(12, os.availableParallelism() - 2));
-  say(`  ${workers} workers\n`);
-  const merged = new Map<string, { count: number; repos: Set<string>; samples: string[] }>();
-  let linted = 0;
-  let failed = 0;
-  await Promise.all(
-    Array.from({ length: workers }, (_, index) => {
-      return new Promise<void>((resolve, reject) => {
-        const child = fork(new URL(import.meta.url).pathname, ['--no-clone', `--shard=${index}/${workers}`], {
-          execPath: process.execPath,
-          execArgv: process.execArgv,
-          stdio: ['ignore', 'pipe', 'inherit', 'ipc'],
-        });
-        let out = '';
-        child.stdout?.on('data', (chunk: Buffer) => {
-          out += chunk.toString();
-        });
-        /**
-         * `close`, not `exit`. `exit` fires when the process ends, which can be
-         * before its stdout has drained — and these payloads are megabytes, so
-         * the parse got a truncated object and threw. `close` fires once every
-         * stdio stream has ended.
-         */
-        child.on('close', (code) => {
-          if (code !== 0) {
-            reject(new Error(`shard ${index} exited ${code}`));
-            return;
-          }
-          let payload: {
-            linted: number;
-            failed: number;
-            rules: Record<string, { count: number; repos: string[]; samples: string[] }>;
-          };
-          try {
-            payload = JSON.parse(out) as typeof payload;
-          } catch (error) {
-            // Say WHICH shard and what it actually sent. The first version let
-            // the raw payload land in the stack trace, which is how a 60KB
-            // JSON blob ended up being the error message.
-            reject(
-              new Error(
-                `shard ${index} sent ${out.length} bytes that did not parse: ${String(error).slice(0, 120)}`,
-              ),
-            );
-            return;
-          }
-          linted += payload.linted;
-          failed += payload.failed;
-          for (const [id, hit] of Object.entries(payload.rules)) {
-            const existing = merged.get(id) ?? { count: 0, repos: new Set<string>(), samples: [] };
-            existing.count += hit.count;
-            for (const r of hit.repos) existing.repos.add(r);
-            for (const sample of hit.samples) if (existing.samples.length < 4) existing.samples.push(sample);
-            merged.set(id, existing);
-          }
-          console.log(`  shard ${index} done — ${payload.linted} files`);
-          resolve();
-        });
-      });
-    }),
-  );
-  writeInventory(merged, linted, failed, present.length);
-  process.exit(0);
-}
-
+/*
+ * These two hashes are declared HERE, above the coordinator block, and not
+ * beside the code that reads them.
+ *
+ * `writeInventory` is called from inside `if (SHARD === null)`, which runs at
+ * module top level. Declared below that block, `const CONFIG_HASH` is in its
+ * temporal dead zone when the coordinator finishes, and the run dies with
+ *
+ *   ReferenceError: Cannot access 'CONFIG_HASH' before initialization
+ *
+ * at the very last step — after every repository has been cloned and every
+ * file linted. The parallel coordinator has therefore never once written an
+ * inventory since it was introduced, which is why the committed artifact was
+ * stale and carried a `configHash` from an older, serial version of this
+ * script. Hours of work, discarded on the final line, silently enough that the
+ * artifact's own staleness warning was read as a scheduling problem.
+ */
 /**
  * The content hash of the config this run used.
  *
@@ -322,9 +381,100 @@ const CONFIG_HASH = createHash('sha256')
 
 /** The content hash of the repository list this run scanned. */
 const REPOS_HASH = createHash('sha256')
-  .update(fs.readFileSync(path.join(ROOT, 'benchmarks', 'real-source-repos.json')))
+  .update(
+    fs.readFileSync(path.join(ROOT, 'benchmarks', 'real-source-repos.json')),
+  )
   .digest('hex')
   .slice(0, 16);
+
+if (SHARD === null) {
+  const workers = Math.max(1, Math.min(12, os.availableParallelism() - 2));
+  say(`  ${workers} workers\n`);
+  const merged = new Map<
+    string,
+    { count: number; repos: Set<string>; samples: string[] }
+  >();
+  let linted = 0;
+  let failed = 0;
+  await Promise.all(
+    Array.from({ length: workers }, (_, index) => {
+      return new Promise<void>((resolve, reject) => {
+        const child = fork(
+          new URL(import.meta.url).pathname,
+          [
+            '--no-clone',
+            `--shard=${index}/${workers}`,
+            // The worker rebuilds the file list from the repo list, so it needs
+            // the same slice or it walks repositories this shard never cloned.
+            ...(REPO_SHARD
+              ? [`--repo-shard=${REPO_SHARD.index}/${REPO_SHARD.of}`]
+              : []),
+          ],
+          {
+            execPath: process.execPath,
+            execArgv: process.execArgv,
+            stdio: ['ignore', 'pipe', 'inherit', 'ipc'],
+          },
+        );
+        let out = '';
+        child.stdout?.on('data', (chunk: Buffer) => {
+          out += chunk.toString();
+        });
+        /**
+         * `close`, not `exit`. `exit` fires when the process ends, which can be
+         * before its stdout has drained — and these payloads are megabytes, so
+         * the parse got a truncated object and threw. `close` fires once every
+         * stdio stream has ended.
+         */
+        child.on('close', (code) => {
+          if (code !== 0) {
+            reject(new Error(`shard ${index} exited ${code}`));
+            return;
+          }
+          let payload: {
+            linted: number;
+            failed: number;
+            rules: Record<
+              string,
+              { count: number; repos: string[]; samples: string[] }
+            >;
+          };
+          try {
+            payload = JSON.parse(out) as typeof payload;
+          } catch (error) {
+            // Say WHICH shard and what it actually sent. The first version let
+            // the raw payload land in the stack trace, which is how a 60KB
+            // JSON blob ended up being the error message.
+            reject(
+              new Error(
+                `shard ${index} sent ${out.length} bytes that did not parse: ${String(error).slice(0, 120)}`,
+              ),
+            );
+            return;
+          }
+          linted += payload.linted;
+          failed += payload.failed;
+          for (const [id, hit] of Object.entries(payload.rules)) {
+            const existing = merged.get(id) ?? {
+              count: 0,
+              repos: new Set<string>(),
+              samples: [],
+            };
+            existing.count += hit.count;
+            for (const r of hit.repos) existing.repos.add(r);
+            for (const sample of hit.samples)
+              if (existing.samples.length < 4) existing.samples.push(sample);
+            merged.set(id, existing);
+          }
+          console.log(`  shard ${index} done — ${payload.linted} files`);
+          resolve();
+        });
+      });
+    }),
+  );
+  writeInventory(merged, linted, failed, present.length);
+  process.exit(0);
+}
 
 const eslint = new ESLint({
   // NOT the benchmark config: that one matches `**/*.js` with no TypeScript
@@ -360,7 +510,11 @@ for (let i = 0; i < mine.length; i += BATCH) {
     for (const message of result.messages) {
       const ruleId = message.ruleId;
       if (ruleId === null || ruleId === undefined) continue;
-      const hit = hits.get(ruleId) ?? { count: 0, repos: new Set<string>(), samples: [] };
+      const hit = hits.get(ruleId) ?? {
+        count: 0,
+        repos: new Set<string>(),
+        samples: [],
+      };
       hit.count += 1;
       hit.repos.add(repo);
       /**
@@ -372,14 +526,19 @@ for (let i = 0; i < mine.length; i += BATCH) {
        * vendored bundle. Four rows that are really one file cannot show what a
        * rule does across a corpus, which is the only reason to keep samples.
        */
-      if (!hit.samples.some((existing) => existing.startsWith(`${repo}/`)) && hit.samples.length < 8) {
+      if (
+        !hit.samples.some((existing) => existing.startsWith(`${repo}/`)) &&
+        hit.samples.length < 8
+      ) {
         hit.samples.push(`${rel}:${message.line}`);
       }
       hits.set(ruleId, hit);
     }
   }
   if (i % 4000 === 0 && SHARD !== null && SHARD.index === 0) {
-    console.error(`  shard 0: ${linted}/${mine.length} files, ${hits.size} rules firing`);
+    console.error(
+      `  shard 0: ${linted}/${mine.length} files, ${hits.size} rules firing`,
+    );
   }
 }
 
@@ -389,7 +548,10 @@ if (SHARD !== null) {
       linted,
       failed,
       rules: Object.fromEntries(
-        [...hits.entries()].map(([id, hit]) => [id, { count: hit.count, repos: [...hit.repos], samples: hit.samples }]),
+        [...hits.entries()].map(([id, hit]) => [
+          id,
+          { count: hit.count, repos: [...hit.repos], samples: hit.samples },
+        ]),
       ),
     }),
   );
@@ -424,7 +586,10 @@ function writeInventory(
     rules: Object.fromEntries(
       ours
         .sort((a, b) => b[1].count - a[1].count)
-        .map(([id, hit]) => [id, { count: hit.count, repos: hit.repos.size, samples: hit.samples }]),
+        .map(([id, hit]) => [
+          id,
+          { count: hit.count, repos: hit.repos.size, samples: hit.samples },
+        ]),
     ),
     note:
       'Which rules fire on real third-party code. Reproduce with `npx tsx scripts/real-source-scan.mts`; ' +

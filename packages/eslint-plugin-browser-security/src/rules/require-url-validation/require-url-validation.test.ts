@@ -72,7 +72,7 @@ ruleTester.run('require-url-validation', requireUrlValidation, {
     { code: 'window.close(url);' },
     { code: 'open(url);' },
     { code: 'window.open();' },
-    { code: 'window["open"](location.hash);' },
+    { name: 'non-navigation code that shares a shape', code: 'window[go](location.hash);' },
     { code: "const url = 'https://example.com'" },
     { code: 'const x = 1' },
   ],
@@ -204,12 +204,24 @@ ruleTester.run('require-url-validation — adversarial', requireUrlValidation, {
 // ── calleeParts refusals ──────────────────────────────────────────────────
 ruleTester.run('require-url-validation — refusals', requireUrlValidation, {
   valid: [
-    // A computed callee key.
-    "window['open'](location.hash);",
+    // A callee key chosen at RUNTIME names no method to recognise.
+    {
+      name: 'a callee key chosen at RUNTIME names no method to recognise',
+      code: 'window[go](location.hash);',
+    },
     // A non-identifier property (a private field).
     'class A { #open; go() { this.#open(location.hash); } }',
     // No callee receiver at all.
     'open(location.hash);',
   ],
-  invalid: [],
+  invalid: [
+    // Both spellings were pinned above as refusals, one of them as "a computed
+    // callee key". `window['open']` opens the same window on the same
+    // unvalidated hash.
+    {
+      name: 'both spellings were pinned above as refusals, one of them as "a computed',
+      code: "window['open'](location.hash);",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+  ],
 });

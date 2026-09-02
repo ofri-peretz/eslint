@@ -20,7 +20,7 @@
  * - JSDoc annotations (@validated, @type-checked)
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   createSafetyChecker,
@@ -346,9 +346,7 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
       if (node.type === 'TemplateLiteral') return 'string';
       if (
         node.type === 'MemberExpression' &&
-        !node.computed &&
-        node.property.type === 'Identifier' &&
-        node.property.name === 'length'
+        propertyName(node) === 'length'
       ) {
         return 'number';
       }

@@ -95,6 +95,8 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   AST_NODE_TYPES,
   formatLLMMessage,
+  namesOneOf,
+  propertyName,
   resolveModuleBinding,
   staticString,
 } from '@interlace/eslint-devkit';
@@ -411,11 +413,21 @@ export function fsMethodName(
   // `readFile(userPath)` — named import or destructured require.
   if (callee.type === AST_NODE_TYPES.Identifier) return named.get(callee.name);
 
-  if (
-    callee.type !== AST_NODE_TYPES.MemberExpression ||
-    callee.computed ||
-    callee.property.type !== AST_NODE_TYPES.Identifier
-  ) {
+  // `callee.computed` used to bail here, and that was the real blind spot:
+  // `fs['readFileSync'](userPath)` reaches exactly the same function as
+  // `fs.readFileSync(userPath)` and went unreported. `propertyName` resolves
+  // the dotted form, the string-subscript form and the template form alike, so
+  // asking it for a name is both narrower and wider than the old pair of
+  // conditions — narrower because a truly dynamic `fs[method]()` still yields
+  // null, wider because a static subscript now resolves.
+  if (callee.type !== AST_NODE_TYPES.MemberExpression) {
+    return undefined;
+  }
+  // Resolved ONCE. Asking again at each return produced a `?? undefined` the
+  // null check above had already made unreachable — a dead branch wearing the
+  // look of a safeguard.
+  const method = propertyName(callee);
+  if (method === null) {
     return undefined;
   }
 
@@ -426,19 +438,17 @@ export function fsMethodName(
     object.type === AST_NODE_TYPES.Identifier &&
     namespaces.has(object.name)
   ) {
-    return callee.property.name;
+    return method;
   }
 
   // `fs.promises.readFile(userPath)`.
   if (
     object.type === AST_NODE_TYPES.MemberExpression &&
-    !object.computed &&
     object.object.type === AST_NODE_TYPES.Identifier &&
     namespaces.has(object.object.name) &&
-    object.property.type === AST_NODE_TYPES.Identifier &&
-    object.property.name === 'promises'
+    propertyName(object) === 'promises'
   ) {
-    return callee.property.name;
+    return method;
   }
 
   return undefined;
@@ -685,11 +695,12 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
         .getScope(id)
         .references.find((ref) => ref.identifier === id)?.resolved != null;
 
+    // `has(null)` is false, which is the answer a runtime-keyed member should
+    // get — so the cast, not a `?? ''` sentinel whose empty-string arm no
+    // input can distinguish from the null one.
     const readsRequestSurface = (node: TSESTree.Node | undefined): boolean =>
       node?.type === AST_NODE_TYPES.MemberExpression &&
-      !node.computed &&
-      node.property.type === AST_NODE_TYPES.Identifier &&
-      REQUEST_SURFACE.has(node.property.name);
+      namesOneOf(propertyName(node), REQUEST_SURFACE);
 
     const hasRequestEvidence = (id: TSESTree.Identifier): boolean => {
       // The access in hand: `ctx.query.file` reaches here as the `ctx` of
@@ -920,11 +931,9 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
           // A closed set of member names off `process`, not a spelling heuristic:
           // these are the documented Node properties an invoker controls.
           if (
-            !node.computed &&
             node.object.type === AST_NODE_TYPES.Identifier &&
             node.object.name === 'process' &&
-            node.property.type === AST_NODE_TYPES.Identifier &&
-            !PROCESS_INPUT_MEMBERS.has(node.property.name)
+            !namesOneOf(propertyName(node), PROCESS_INPUT_MEMBERS)
           ) {
             return false;
           }
@@ -948,11 +957,9 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
           const callee = node.callee;
           if (
             callee.type === AST_NODE_TYPES.MemberExpression &&
-            !callee.computed &&
             callee.object.type === AST_NODE_TYPES.Identifier &&
             callee.object.name === 'path' &&
-            callee.property.type === AST_NODE_TYPES.Identifier &&
-            callee.property.name === 'basename'
+            propertyName(callee) === 'basename'
           ) {
             return false;
           }
@@ -1313,8 +1320,7 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
           callee.type === AST_NODE_TYPES.MemberExpression &&
           callee.object.type === AST_NODE_TYPES.Identifier &&
           callee.object.name === 'process' &&
-          callee.property.type === AST_NODE_TYPES.Identifier &&
-          callee.property.name === 'cwd'
+          propertyName(callee) === 'cwd'
         ) {
           return true;
         }
@@ -1372,11 +1378,9 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
         // `path.sep`
         if (
           n.type === AST_NODE_TYPES.MemberExpression &&
-          !n.computed &&
           n.object.type === AST_NODE_TYPES.Identifier &&
           n.object.name === 'path' &&
-          n.property.type === AST_NODE_TYPES.Identifier &&
-          n.property.name === 'sep'
+          propertyName(n) === 'sep'
         ) {
           return true;
         }
@@ -1483,9 +1487,8 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
           testNode.callee.type === AST_NODE_TYPES.MemberExpression &&
           testNode.callee.object.type === AST_NODE_TYPES.Identifier &&
           testNode.callee.object.name === varName &&
-          testNode.callee.property.type === AST_NODE_TYPES.Identifier &&
-          (testNode.callee.property.name === 'startsWith' ||
-            testNode.callee.property.name === 'includes')
+          (propertyName(testNode.callee) === 'startsWith' ||
+            propertyName(testNode.callee) === 'includes')
         ) {
           // A prefix test only contains the path if it is anchored to a
           // SEPARATOR. Measured: `'/safebad'.startsWith('/safe')` is TRUE, so
@@ -1497,7 +1500,7 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
           // until 2026-08-17. Accepting it here meant SUPPRESSING the vulnerable
           // shape on the strength of a guard that does not hold, which is the
           // worst direction for a suppression to be wrong in.
-          return testNode.callee.property.name === 'includes'
+          return propertyName(testNode.callee) === 'includes'
             ? true
             : isSeparatorAnchored(testNode.arguments[0]);
         }
@@ -1505,8 +1508,7 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
         // Pattern 2: ALLOWED_FILES.includes(varName) - allowlist validation
         if (
           testNode.callee.type === AST_NODE_TYPES.MemberExpression &&
-          testNode.callee.property.type === AST_NODE_TYPES.Identifier &&
-          testNode.callee.property.name === 'includes'
+          propertyName(testNode.callee) === 'includes'
         ) {
           // Check if varName is in the arguments
           for (const arg of testNode.arguments) {
@@ -1522,8 +1524,7 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
         // Pattern 3: /regex/.test(varName) - regex validation
         if (
           testNode.callee.type === AST_NODE_TYPES.MemberExpression &&
-          testNode.callee.property.type === AST_NODE_TYPES.Identifier &&
-          testNode.callee.property.name === 'test'
+          propertyName(testNode.callee) === 'test'
         ) {
           // Check if varName is in the arguments
           for (const arg of testNode.arguments) {

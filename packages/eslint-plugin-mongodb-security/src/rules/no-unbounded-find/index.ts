@@ -10,7 +10,7 @@
  * CWE-400: Resource Exhaustion
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath, propertyName } from '@interlace/eslint-devkit';
 import { analyzeMongoScope } from '../../utils/receiver';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
 
@@ -97,14 +97,12 @@ export const noUnboundedFind = createRule<RuleOptions, MessageIds>({
         while (cursor) {
           if (
             cursor.type === AST_NODE_TYPES.MemberExpression &&
-            cursor.property.type === AST_NODE_TYPES.Identifier &&
-            cursor.property.name === 'limit'
+            propertyName(cursor) === 'limit'
           ) return;
           if (
             cursor.type === AST_NODE_TYPES.CallExpression &&
             cursor.callee.type === AST_NODE_TYPES.MemberExpression &&
-            cursor.callee.property.type === AST_NODE_TYPES.Identifier &&
-            cursor.callee.property.name === 'limit'
+            propertyName(cursor.callee) === 'limit'
           ) return;
           // Stop walking once we leave the chain (the call is no longer the
           // object of a member expression / callee).

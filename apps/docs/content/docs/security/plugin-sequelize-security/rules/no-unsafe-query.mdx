@@ -110,8 +110,9 @@ Product.findAll({ order: [[column, 'DESC']] });
 
 ## Known limitations
 
-- Only identifier member access is matched, so `sequelize['query'](...)` is a
-  false negative.
+- A method chosen at runtime — `sequelize[verb](...)` — names nothing to match
+  against the sink list, so it is not reported. The quoted spelling
+  `sequelize['query'](...)` names `query` and IS reported.
 - Taint tracking is single-scope and name-based — it does not follow a query
   string across function boundaries.
 - `Sequelize.literal()` is matched by method name. A same-named method on an

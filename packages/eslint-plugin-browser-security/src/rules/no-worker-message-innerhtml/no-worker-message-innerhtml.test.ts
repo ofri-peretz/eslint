@@ -19,6 +19,18 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-worker-message-innerhtml', noWorkerMessageInnerhtml, {
   valid: [
+    // A sink chosen at RUNTIME names neither a property nor a method we
+    // can recognise — unlike `el['innerHTML']`, there is nothing to read.
+    {
+      name: 'a runtime-keyed sink names nothing',
+      code: `
+        const w = new Worker('worker.js');
+        w.onmessage = (e) => {
+          element[sink] = e.data;
+          element[write](e.data);
+        };
+      `,
+    },
     // Safe: textContent
     {
       name: 'the same data as textContent',

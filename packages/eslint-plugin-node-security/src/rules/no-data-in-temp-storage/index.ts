@@ -15,6 +15,8 @@ import {
   MessageIcons,
   resolveModuleBinding,
   staticString,
+  namesOneOf,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
@@ -91,7 +93,8 @@ function containsPathSegments(haystack: string, needle: string): boolean {
   if (target.length === 0) return false;
   const segments = split(haystack);
   for (let start = 0; start + target.length <= segments.length; start += 1) {
-    if (target.every((segment, offset) => segments[start + offset] === segment)) return true;
+    if (target.every((segment, offset) => segments[start + offset] === segment))
+      return true;
   }
   return false;
 }
@@ -109,11 +112,9 @@ function isTmpdirCall(node: TSESTree.Node): boolean {
   return (
     node.type === 'CallExpression' &&
     node.callee.type === 'MemberExpression' &&
-    !node.callee.computed &&
     node.callee.object.type === 'Identifier' &&
     node.callee.object.name === 'os' &&
-    node.callee.property.type === 'Identifier' &&
-    node.callee.property.name === 'tmpdir'
+    propertyName(node.callee) === 'tmpdir'
   );
 }
 
@@ -128,9 +129,10 @@ function isTmpdirCall(node: TSESTree.Node): boolean {
  */
 function isStaticTmpdirJoin(node: TSESTree.CallExpression): boolean {
   const { callee } = node;
-  if (callee.type !== 'MemberExpression' || callee.computed) return false;
-  if (callee.property.type !== 'Identifier') return false;
-  if (callee.property.name !== 'join' && callee.property.name !== 'resolve') {
+  if (callee.type !== 'MemberExpression') return false;
+  // `path['join'](os.tmpdir(), 'x')` builds the same static path.
+  const method = propertyName(callee);
+  if (method !== 'join' && method !== 'resolve') {
     return false;
   }
   if (callee.object.type !== 'Identifier' || callee.object.name !== 'path') {
@@ -138,9 +140,7 @@ function isStaticTmpdirJoin(node: TSESTree.CallExpression): boolean {
   }
   if (node.arguments.length < 2) return false;
   if (!isTmpdirCall(node.arguments[0])) return false;
-  return node.arguments
-    .slice(1)
-    .every((arg) => staticString(arg) !== null);
+  return node.arguments.slice(1).every((arg) => staticString(arg) !== null);
 }
 
 /**
@@ -163,7 +163,10 @@ function isStaticTmpdirTemplate(node: TSESTree.Node): boolean {
       sawTmpdir = true;
       continue;
     }
-    if (expression.type !== AST_NODE_TYPES.Literal || typeof expression.value !== 'string') {
+    if (
+      expression.type !== AST_NODE_TYPES.Literal ||
+      typeof expression.value !== 'string'
+    ) {
       return false;
     }
   }
@@ -177,7 +180,8 @@ function isStaticTmpdirTemplate(node: TSESTree.Node): boolean {
  * produces a path as constant as either of the other two forms.
  */
 function isStaticTmpdirConcat(node: TSESTree.Node): boolean {
-  if (node.type !== AST_NODE_TYPES.BinaryExpression || node.operator !== '+') return false;
+  if (node.type !== AST_NODE_TYPES.BinaryExpression || node.operator !== '+')
+    return false;
   const side = (part: TSESTree.Node): 'tmpdir' | 'static' | 'other' => {
     if (isTmpdirCall(part)) return 'tmpdir';
     if (staticString(part) !== null) return 'static';
@@ -246,17 +250,17 @@ export const noDataInTempStorage = createRule<RuleOptions, MessageIds>({
             // the truth; this default records it.
             default: DEFAULT_TEMP_PATHS,
             description:
-              'Temporary path prefixes to flag. Replaces the built-in list rather than extending it.'
+              'Temporary path prefixes to flag. Replaces the built-in list rather than extending it.',
           },
           ignoreFiles: {
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'List of files or patterns to ignore'
-          }
+            description: 'List of files or patterns to ignore',
+          },
         },
-        additionalProperties: false
-      }
+        additionalProperties: false,
+      },
     ],
   },
   defaultOptions: [{}],
@@ -266,14 +270,14 @@ export const noDataInTempStorage = createRule<RuleOptions, MessageIds>({
     const ignoreFiles = options.ignoreFiles || [];
     const filename = context.filename;
 
-    if (ignoreFiles.some(pattern => filename.includes(pattern))) {
+    if (ignoreFiles.some((pattern) => filename.includes(pattern))) {
       return {};
     }
 
     function report(node: TSESTree.Node) {
       context.report({ node, messageId: 'violationDetected' });
     }
-    
+
     /**
      * A predictable temp path only matters where it becomes the name something
      * is written to.
@@ -301,7 +305,10 @@ export const noDataInTempStorage = createRule<RuleOptions, MessageIds>({
      * debt, deliberately not extended: the resolver is what the new function
      * names ride on.
      */
-    function fsEntryPoint(node: TSESTree.CallExpression): string | undefined {
+    // `null`, not `undefined`, for "no fs entry point here": that is the absent
+    // value `propertyName` already returns, and mapping between the two was the
+    // only thing the `as string` cast at the member branch was doing.
+    function fsEntryPoint(node: TSESTree.CallExpression): string | null {
       const callee = node.callee;
 
       const scope = context.sourceCode.getScope(node);
@@ -309,45 +316,43 @@ export const noDataInTempStorage = createRule<RuleOptions, MessageIds>({
       // computed members because a computed key is usually unknowable — but a
       // string literal key names the export as precisely as dot notation does,
       // so resolve the RECEIVER and append the key by hand.
-      const binding =
-        callee.type === AST_NODE_TYPES.MemberExpression &&
-        callee.computed &&
-        callee.property.type === AST_NODE_TYPES.Literal &&
-        typeof callee.property.value === 'string'
-          ? ((base) =>
-              base && { module: base.module, path: [...base.path, callee.property.value as string] })(
-              resolveModuleBinding(callee.object, scope, { equivalents: FS_EQUIVALENTS }),
-            )
-          : resolveModuleBinding(callee, scope, { equivalents: FS_EQUIVALENTS });
+      // The hand-rolled append that stood here worked around
+      // `resolveModuleBinding` refusing every computed member. It resolves the
+      // quoted spelling itself now, so the workaround is gone rather than left
+      // to drift from the resolver it was compensating for.
+      const binding = resolveModuleBinding(callee, scope, {
+        equivalents: FS_EQUIVALENTS,
+      });
       if (binding) {
         const fn = binding.path.at(-1);
         const prefix = binding.path.slice(0, -1);
-        if (fn === undefined) return undefined;
+        if (fn === undefined) return null;
         // fs → root or `fs.promises`; fs/promises → root. Anything deeper is
         // some other API that merely shares a method name.
         const reachable =
           (binding.module === 'fs' &&
-            (prefix.length === 0 || (prefix.length === 1 && prefix[0] === 'promises'))) ||
+            (prefix.length === 0 ||
+              (prefix.length === 1 && prefix[0] === 'promises'))) ||
           (binding.module === 'fs/promises' && prefix.length === 0);
-        return reachable ? fn : undefined;
+        return reachable ? fn : null;
       }
 
       if (
         callee.type === AST_NODE_TYPES.MemberExpression &&
-        !callee.computed &&
         callee.object.type === AST_NODE_TYPES.Identifier &&
         callee.object.name === 'fs' &&
-        callee.property.type === AST_NODE_TYPES.Identifier
+        // `fs['writeFileSync'](p, data)` writes the same file.
+        propertyName(callee) !== null
       ) {
-        return callee.property.name;
+        return propertyName(callee);
       }
-      return undefined;
+      return null;
     }
 
     /** `fs.writeFile(path, …)` and every other spelling of "bytes land here". */
     function isFsWriteCall(node: TSESTree.CallExpression): boolean {
       const fn = fsEntryPoint(node);
-      return fn !== undefined && FS_WRITE_FUNCTIONS.has(fn);
+      return namesOneOf(fn, FS_WRITE_FUNCTIONS);
     }
 
     /**
@@ -370,7 +375,7 @@ export const noDataInTempStorage = createRule<RuleOptions, MessageIds>({
         if (parent?.type !== AST_NODE_TYPES.CallExpression) return false;
         if (parent.arguments[0] !== reference.identifier) return false;
         const fn = fsEntryPoint(parent);
-        return fn !== undefined && FS_MKDTEMP_FUNCTIONS.has(fn);
+        return namesOneOf(fn, FS_MKDTEMP_FUNCTIONS);
       });
     }
 
@@ -417,9 +422,8 @@ export const noDataInTempStorage = createRule<RuleOptions, MessageIds>({
       if (
         node.type === AST_NODE_TYPES.CallExpression &&
         node.callee.type === AST_NODE_TYPES.MemberExpression &&
-        !node.callee.computed &&
-        node.callee.property.type === AST_NODE_TYPES.Identifier &&
-        (node.callee.property.name === 'join' || node.callee.property.name === 'resolve')
+        (propertyName(node.callee) === 'join' ||
+          propertyName(node.callee) === 'resolve')
       ) {
         // Filter-then-map cannot narrow through the call, so resolve first and
         // drop the unresolvable in one pass.
@@ -461,7 +465,11 @@ export const noDataInTempStorage = createRule<RuleOptions, MessageIds>({
         const pathArg = node.arguments[0];
         if (pathArg) {
           const runs = resolvedPathRuns(pathArg);
-          if (runs.some((run) => tempPaths.some((tp) => containsPathSegments(run, tp)))) {
+          if (
+            runs.some((run) =>
+              tempPaths.some((tp) => containsPathSegments(run, tp)),
+            )
+          ) {
             report(pathArg);
             return;
           }

@@ -19,6 +19,18 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-websocket-innerhtml', noWebsocketInnerhtml, {
   valid: [
+    // A sink chosen at RUNTIME names neither a property nor a method we
+    // can recognise — unlike `el['innerHTML']`, there is nothing to read.
+    {
+      name: 'a runtime-keyed sink names nothing',
+      code: `
+        const ws = new WebSocket('wss://example.test');
+        ws.addEventListener('message', (e) => {
+          element[sink] = e.data;
+          element[write](e.data);
+        });
+      `,
+    },
     // Safe: using textContent
     {
       name: 'the same data as textContent',

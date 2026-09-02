@@ -41,6 +41,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { walk } from '../../utils';
 import {
@@ -331,11 +332,12 @@ export const requireRouteAuthentication = createRule<RuleOptions, MessageIds>({
     function routeMethodOf(node: TSESTree.CallExpression): string | null {
       const callee = node.callee;
       if (callee.type !== AST_NODE_TYPES.MemberExpression) return null;
-      if (callee.property.type !== AST_NODE_TYPES.Identifier) return null;
-      if (callee.computed) return null;
+      // `app['post']('/x', h)` registers the same route.
+      const method = propertyName(callee);
+      if (method === null) return null;
       if (callee.object.type !== AST_NODE_TYPES.Identifier) return null;
       if (!isAppReceiver(callee.object.name, appReceiverNames)) return null;
-      return callee.property.name;
+      return method;
     }
 
     return {

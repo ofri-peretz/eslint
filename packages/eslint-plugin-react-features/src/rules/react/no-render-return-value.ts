@@ -9,7 +9,7 @@
  * Prevent using render return value
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'noRenderReturnValue';
@@ -74,10 +74,8 @@ function isReactDOMRenderCall(node: TSESTree.CallExpression): boolean {
     node.callee.object.type === 'MemberExpression' &&
     node.callee.object.object.type === 'Identifier' &&
     node.callee.object.object.name === 'ReactDOM' &&
-    node.callee.object.property.type === 'Identifier' &&
-    node.callee.object.property.name === 'render' &&
-    node.callee.property.type === 'Identifier' &&
-    node.callee.property.name === 'render'
+    propertyName(node.callee.object) === 'render' &&
+    propertyName(node.callee) === 'render'
   ) {
     return false; // This would be ReactDOM.render.render which is invalid
   }
@@ -86,7 +84,6 @@ function isReactDOMRenderCall(node: TSESTree.CallExpression): boolean {
     node.callee.type === 'MemberExpression' &&
     node.callee.object.type === 'Identifier' &&
     node.callee.object.name === 'ReactDOM' &&
-    node.callee.property.type === 'Identifier' &&
-    node.callee.property.name === 'render'
+    propertyName(node.callee) === 'render'
   );
 }

@@ -62,7 +62,9 @@ knex.raw('SELECT * FROM users WHERE id = ?', [userId]);
 
 ## Known limitations
 
-- Only identifier member access is matched, so `knex['raw'](...)` is a false negative.
+- A method chosen at runtime — `knex[verb](...)` — names nothing to
+  match against the sink list, so it is not reported. The quoted spelling
+  `knex['raw'](...)` names `raw` and IS reported.
 - Taint tracking is single-scope and name-based — it does not follow a query
   string across function boundaries.
 

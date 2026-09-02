@@ -9,7 +9,7 @@
  * Prevent isMounted anti-pattern
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 /**
@@ -48,8 +48,7 @@ export const noIsMounted = createRule<RuleOptions, MessageIds>({
       // Check for isMounted property access (covers both property access and method calls)
       MemberExpression(node: TSESTree.MemberExpression) {
         if (
-          node.property.type === 'Identifier' &&
-          node.property.name === 'isMounted'
+          propertyName(node) === 'isMounted'
         ) {
           context.report({
             node: node.property,

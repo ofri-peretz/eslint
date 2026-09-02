@@ -412,11 +412,26 @@ describe('no-unsafe-deserialization', () => {
   describe('Coverage - branch gaps', () => {
     // ids 9+10 FALSE: computed property access → property/object type is Literal/MemberExpression not Identifier
     ruleTester.run(
-      'coverage - computed callee property (id 9 FALSE)',
+      'a subscripted deserialiser on a required library',
       noUnsafeDeserialization,
       {
-        valid: [{ code: "yaml['load'](req.body.data);" }],
-        invalid: [],
+        valid: [
+          {
+            // A method chosen at RUNTIME names no deserialiser.
+            name: 'a runtime-keyed callee names no deserialiser',
+            code: 'yaml[parse](req.body.data);',
+          },
+        ],
+        invalid: [
+          {
+            // Named after the branch it existed to execute, and it asserted the
+            // wrong answer to do it: `yaml['load']` deserialises exactly what
+            // `yaml.load` deserialises, from the same request body.
+            name: 'a subscripted yaml.load of a request body',
+            code: "yaml['load'](req.body.data);",
+            errors: 1,
+          },
+        ],
       },
     );
 
@@ -573,17 +588,26 @@ describe('no-unsafe-deserialization', () => {
       },
     );
 
-    // id 85 FALSE: computed method access on required library → propertyName = ''
+    // Named after the branch it existed to execute, and it asserted the wrong
+    // answer to do it: `s['unserialize'](userInput)` deserialises exactly what
+    // `s.unserialize(userInput)` deserialises. A method chosen at RUNTIME is
+    // the shape that genuinely names nothing.
     ruleTester.run(
-      'coverage - computed require method access (id 85 FALSE)',
+      'a subscripted method on a required library',
       noUnsafeDeserialization,
       {
         valid: [
           {
-            code: 'const s = require("node-serialize"); s["unserialize"](userInput);',
+            code: 'const s = require("node-serialize"); s[verb](userInput);',
           },
         ],
-        invalid: [],
+        invalid: [
+          {
+            name: 'a subscripted unserialize of user input',
+            code: 'const s = require("node-serialize"); s["unserialize"](userInput);',
+            errors: 1,
+          },
+        ],
       },
     );
 

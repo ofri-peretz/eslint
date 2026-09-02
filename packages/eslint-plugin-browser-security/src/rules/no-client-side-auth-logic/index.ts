@@ -8,12 +8,20 @@
  * @fileoverview Prevent authentication logic in client code
  */
 
-import { createRule, formatLLMMessage, MessageIcons,
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
   nameHasAnyWord,
+  namesOneOf,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 import { isGlobalObject } from '../../utils/global-object';
-import { resolveInitializer, resolveStringKey } from '../../utils/resolve-binding';
+import {
+  resolveInitializer,
+  resolveStringKey,
+} from '../../utils/resolve-binding';
 
 type MessageIds = 'violationDetected';
 
@@ -57,7 +65,11 @@ export const DEFAULT_AUTH_KEYWORDS = [
 /**
  * The credential property names compared in a client-side password check.
  */
-export const DEFAULT_CREDENTIAL_PROPERTIES = ['password', 'secret', 'token'] as const;
+export const DEFAULT_CREDENTIAL_PROPERTIES = [
+  'password',
+  'secret',
+  'token',
+] as const;
 
 export interface Options {
   /**
@@ -95,7 +107,7 @@ export const noClientSideAuthLogic = createRule<RuleOptions, MessageIds>({
         severity: 'CRITICAL',
         fix: 'Move authentication checks to the server',
         documentationLink: 'https://cwe.mitre.org/data/definitions/602.html',
-      })
+      }),
     },
     schema: [
       {
@@ -131,14 +143,14 @@ export const noClientSideAuthLogic = createRule<RuleOptions, MessageIds>({
     function report(node: TSESTree.Node) {
       context.report({ node, messageId: 'violationDetected' });
     }
-    
+
     // A vocabulary the consumer cannot reach is a vocabulary they must accept
     // whole — and every word list is wrong for somebody's domain.
     const {
       authKeywords = [...DEFAULT_AUTH_KEYWORDS],
       credentialProperties = [...DEFAULT_CREDENTIAL_PROPERTIES],
     } = options;
-    
+
     const { sourceCode } = context;
 
     /**
@@ -165,9 +177,8 @@ export const noClientSideAuthLogic = createRule<RuleOptions, MessageIds>({
       const callee = node.callee;
       if (
         callee.type !== 'MemberExpression' ||
-        callee.computed ||
-        callee.property.type !== 'Identifier' ||
-        callee.property.name !== 'getItem' ||
+        // `localStorage['getItem']('isAdmin')` reads the same flag.
+        propertyName(callee) !== 'getItem' ||
         !isGlobalObject(callee.object, STORAGES)
       ) {
         return false;
@@ -232,8 +243,7 @@ export const noClientSideAuthLogic = createRule<RuleOptions, MessageIds>({
       if (test.type !== 'BinaryExpression') return false;
       const isCredentialRead = (expr: TSESTree.Node): boolean =>
         expr.type === 'MemberExpression' &&
-        expr.property.type === 'Identifier' &&
-        credentialProperties.includes(expr.property.name);
+        namesOneOf(propertyName(expr), credentialProperties);
 
       const left = test.left as TSESTree.Node;
       const right = test.right as TSESTree.Node;

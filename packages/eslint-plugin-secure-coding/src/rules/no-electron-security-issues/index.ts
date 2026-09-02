@@ -24,6 +24,8 @@ import {
   createModuleEvidence,
   createRule,
   staticString,
+  propertyName,
+  objectKeyName,
 } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
@@ -157,16 +159,6 @@ function isOffProjectPreload(preloadPath: string): boolean {
   // A whole path segment, so `node_modules/@acme/preload.js` counts and
   // `./tools/node_modules-audit/preload.js` does not.
   return preloadPath.split(/[\\/]/).includes('node_modules');
-}
-
-function propertyName(property: TSESTree.Node): string | null {
-  if (property.type !== 'Property' || property.computed) return null;
-  if (property.key.type === 'Identifier') return property.key.name;
-  const staticText1 = staticString(property.key);
-  if (staticText1 !== null) {
-    return staticText1;
-  }
-  return null;
 }
 
 /**
@@ -366,7 +358,9 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
       optionsNode: TSESTree.ObjectExpression,
     ): void => {
       for (const prop of optionsNode.properties) {
-        const key = propertyName(prop);
+        // `objectKeyName` also resolves `{ ['nodeIntegration']: true }`,
+        // which the local helper this replaces refused outright.
+        const key = prop.type === 'Property' ? objectKeyName(prop) : null;
         if (key === null) continue;
         const setting = INSECURE_WEB_PREFERENCES.get(key);
         if (!setting) continue;
@@ -402,12 +396,15 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
       if (
         callee.type === 'MemberExpression' &&
         callee.object.type === 'Identifier' &&
-        ['ipcMain', 'ipcRenderer'].includes(callee.object.name) &&
-        callee.property.type === 'Identifier'
+        ['ipcMain', 'ipcRenderer'].includes(callee.object.name)
       ) {
+        // `ipcRenderer['send'](channel, data)` crosses the same bridge with
+        // the same payload. A runtime key names no method to match.
+        const method = propertyName(callee);
         // @vocabulary Electron ipcRenderer / ipcMain API
-        return ['send', 'invoke', 'handle', 'on', 'once'].includes(
-          callee.property.name,
+        return (
+          method !== null &&
+          ['send', 'invoke', 'handle', 'on', 'once'].includes(method)
         );
       }
 
@@ -578,8 +575,7 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
           // Look for preload script assignments
           if (
             node.left.type === 'MemberExpression' &&
-            node.left.property.type === 'Identifier' &&
-            node.left.property.name === 'preload'
+            propertyName(node.left) === 'preload'
           ) {
             const staticText3 = staticString(node.right);
             if (staticText3 !== null) {
@@ -610,7 +606,7 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
       // Check for insecure webPreferences patterns
       Property(node: TSESTree.Property) {
         try {
-          if (propertyName(node) === 'webPreferences') {
+          if (objectKeyName(node) === 'webPreferences') {
             if (node.value.type === 'ObjectExpression') {
               checkBrowserWindowOptions(node.value);
             }

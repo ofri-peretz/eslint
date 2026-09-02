@@ -978,8 +978,8 @@ ruleTester.run('no-sql-injection-resolution-edges', noSqlInjection, {
     // The receiver is declared without an initialiser, then assigned: the
     // declaration carries nothing to follow.
     "let parts; parts = ['SELECT * FROM t WHERE a =', req.query.a]; db.query(parts.join(' '));",
-    // A computed member is not `join`.
-    "const parts = ['SELECT * FROM t WHERE a =', req.query.a]; db.query(parts['join'](' '));",
+    // A method named at RUNTIME is not provably `join`.
+    "const parts = ['SELECT * FROM t WHERE a =', req.query.a]; db.query(parts[m](' '));",
     // Some other array method.
     "const parts = ['SELECT * FROM t WHERE a =', req.query.a]; db.query(parts.slice(0));",
 
@@ -1018,6 +1018,13 @@ db.query(q7);`,
     },
   ],
   invalid: [
+    {
+      // Was pinned as valid — "a computed member is not `join`". It joins the
+      // same fragments into the same query, with the same request value in it.
+      name: 'a subscripted join still concatenates the statement',
+      code: "const parts = ['SELECT * FROM t WHERE a =', req.query.a]; db.query(parts['join'](' '));",
+      errors: [{ messageId: 'sqlInjection' }],
+    },
     {
       // A cast at the SINK ARGUMENT position, not inside the statement: the
       // resolution walk erases it the same way attribution does.

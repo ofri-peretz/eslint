@@ -1,0 +1,175 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Real-Source Scan
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# WHICH RULES FIRE ON CODE WE DID NOT WRITE
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# `benchmarks/budgets/real-world-rule-inventory.json` is the input to every
+# sourced fixture: it says which rules have real-world material and where to
+# find it. When it goes stale, "this rule never fired" cannot be told from
+# "this rule never ran", and the corpus stops being able to grow honestly.
+#
+# WHY THIS IS NOT RUN LOCALLY, EVER
+#
+# The scan clones ~113 repositories (9.7GB) and forks one worker per core to
+# lint ~346,000 files against 566 rules with a TypeScript parser. Run on a
+# developer machine on 2026-08-31 it took the disk to 99% and the load average
+# to 53 on a 14-core box; `git log`, `ps` and `pkill` all began timing out, and
+# recovering cost more than the scan was worth.
+#
+# WHY IT IS SHARDED BY REPOSITORY
+#
+# ~1 file/second/worker × 346,000 files is ~96 hours single-threaded. A hosted
+# runner has 4 cores, so 2 workers — about two days, well past the 6-hour job
+# ceiling. `--repo-shard=i/n` slices the repository list BEFORE cloning, so
+# each runner clones ~6 repos and lints its own slice. Twenty shards of two
+# workers is forty-way parallelism, and each shard also stays inside a hosted
+# runner's disk.
+#
+# `--shard` (file-level, among forked workers) would NOT work here: every
+# file-shard still needs all 113 repositories present, which no hosted runner
+# has the disk for.
+#
+# See docs/intents/2026-09-01-every-rule-owes-a-real-code-tp.md
+# ═══════════════════════════════════════════════════════════════════════════════
+
+on:
+  schedule:
+    # 03:00 UTC Sunday — weekly. The inventory changes only when the repository
+    # list or the rule set does, and a full pass is ~20 runner-hours.
+    - cron: '0 3 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: real-source-scan
+  cancel-in-progress: false
+
+jobs:
+  shard:
+    name: Scan repos ${{ matrix.shard }}/20
+    runs-on: ubuntu-latest
+    timeout-minutes: 330 # under the 360 ceiling, with room to upload
+    strategy:
+      fail-fast: false # one unreachable repo must not lose the other 19 shards
+      matrix:
+        shard:
+          [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: 'false'
+
+      - name: Build plugins the scan lints with
+        run: npx turbo run build --output-logs=errors-only
+
+      - name: Reclaim runner disk before cloning
+        # A hosted runner ships with ~25GB of preinstalled toolchains this scan
+        # never touches. Clearing them buys the headroom the clones need.
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc || true
+          df -h / | tail -1
+
+      - name: Scan this shard
+        run: npx tsx scripts/real-source-scan.mts --repo-shard=${{ matrix.shard }}/20
+
+      - name: Upload partial inventory
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: inventory-shard-${{ matrix.shard }}
+          path: benchmarks/budgets/real-world-rule-inventory.json
+          if-no-files-found: error
+
+  merge:
+    name: Merge shards and commit the inventory
+    needs: shard
+    if: always() && needs.shard.result != 'cancelled'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: 'false'
+
+      - name: Download every shard's partial
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: inventory-shard-*
+          path: shards
+
+      - name: Merge
+        run: |
+          set -euo pipefail
+          # The merger refuses to combine shards whose configHash or reposHash
+          # disagree, so a partial matrix cannot silently produce a number that
+          # describes no actual scan.
+          # --expect=20 so a shard that failed — and therefore uploaded no
+          # artifact for `download-artifact` to silently skip — stops the
+          # merge instead of producing a partial inventory that looks whole.
+          npx tsx scripts/merge-real-source-inventory.mts --expect=20 \
+            shards/*/real-world-rule-inventory.json \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # Through a PR, not a bare `git push`. This runs on a schedule, so the
+      # checked-out branch is `main`, and branch protection has enforce_admins
+      # on — the push is declined with GH006 after the matrix has cloned 112
+      # repositories and linted 345,841 files. The whole scan, discarded on its
+      # last line. `no-bare-push-to-main.lock.test.ts` is what caught this one
+      # before it ever ran.
+      - name: Commit the refreshed inventory
+        uses: ./.github/actions/commit-via-pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          branch: automated/real-source-inventory
+          paths: benchmarks/budgets/real-world-rule-inventory.json
+          commit-message: 'chore(benchmarks): refresh the real-source inventory'
+          pr-title: 'chore(benchmarks): refresh the real-source inventory'
+          pr-body: |
+            Which rules fire on real third-party code, rescanned by
+            `real-source-scan.yml`. The merger refuses to combine shards whose
+            `configHash` or `reposHash` disagree, so a partial matrix cannot
+            produce a number describing no actual scan.
+
+            "Scanned and never fired" is the strongest negative claim the
+            ledger makes about a rule, and the artifact this replaces carried
+            no `configHash` at all — it listed 270 of 470 rules as having no
+            real-world material when whole plugins had simply never been run.
+
+  # A weekly scan nobody watches is how the inventory went unattributed in the
+  # first place: it stops producing, the artifact keeps its old numbers, and
+  # "270 rules never fire" reads as a product finding rather than an outage.
+  # Neither job above has anywhere to report to on its own, so this one does.
+  report:
+    name: Report a failed scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [shard, merge]
+    if: always() && contains(needs.*.result, 'failure')
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: 🚨 Open or update an issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          TITLE="Real-source scan is failing"
+          EXISTING=$(gh issue list --state open --search "$TITLE in:title" \
+            --json number --jq '.[0].number // empty')
+          BODY=$(printf '%s\n\n[Run](%s)\n' \
+            'The weekly real-source scan did not complete, so the rule inventory keeps whatever numbers it already had. Until it runs, no rule may be described as having no real-world instance — check:audit-freshness will say so.' "$RUN_URL")
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "$BODY"
+          else
+            gh issue create --title "$TITLE" --body "$BODY"
+          fi

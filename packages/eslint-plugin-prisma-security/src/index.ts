@@ -46,7 +46,7 @@ withCanonicalDocsUrls('plugin-prisma-security', rules);
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-prisma-security',
-    version: '0.3.6',
+    version: '0.3.7',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;

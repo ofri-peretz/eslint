@@ -75,6 +75,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  namesOneOf,
   propertyName,
   readsRequestShape,
   unwrapTypeSyntax,
@@ -411,9 +412,7 @@ function isBufferObject(node: TSESTree.Node): boolean {
   if (node.type === AST_NODE_TYPES.Identifier) return node.name === 'Buffer';
   return (
     node.type === AST_NODE_TYPES.MemberExpression &&
-    !node.computed &&
-    node.property.type === AST_NODE_TYPES.Identifier &&
-    node.property.name === 'Buffer' &&
+    propertyName(node) === 'Buffer' &&
     isBufferModuleRequire(node.object)
   );
 }
@@ -497,10 +496,18 @@ function fixedWriteSpan(
 /** The name a callee resolves to, for `f()`, `o.f()` and `this.#f()`. */
 function calleeName(callee: TSESTree.Node): string | null {
   if (callee.type === AST_NODE_TYPES.Identifier) return callee.name;
-  if (callee.type === AST_NODE_TYPES.MemberExpression && !callee.computed) {
-    // A non-computed property is an Identifier or a PrivateIdentifier and
-    // nothing else, so both carry a `name` and there is no third case to guard.
-    return callee.property.name;
+  if (callee.type === AST_NODE_TYPES.MemberExpression) {
+    // A `#private` method carries a name too, and `propertyName` — which
+    // answers "what member does this name?" — deliberately does not return it.
+    // Dropping this arm silently lost `this.#b(len)` from the call graph.
+    if (
+      !callee.computed &&
+      callee.property.type === AST_NODE_TYPES.PrivateIdentifier
+    ) {
+      return callee.property.name;
+    }
+    // `chunk['readUInt32BE'](0)` reads the same length prefix.
+    return propertyName(callee);
   }
   return null;
 }
@@ -848,8 +855,7 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
         size.callee.type === AST_NODE_TYPES.MemberExpression &&
         size.callee.object.type === AST_NODE_TYPES.Identifier &&
         size.callee.object.name === 'Math' &&
-        size.callee.property.type === AST_NODE_TYPES.Identifier &&
-        size.callee.property.name === 'min'
+        propertyName(size.callee) === 'min'
       ) {
         return size.arguments.some(
           (argument) =>
@@ -922,11 +928,9 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
       }
       if (
         callee.type === AST_NODE_TYPES.MemberExpression &&
-        !callee.computed &&
         callee.object.type === AST_NODE_TYPES.Identifier &&
         callee.object.name === 'Buffer' &&
-        callee.property.type === AST_NODE_TYPES.Identifier &&
-        BUFFER_ALLOCATORS.has(callee.property.name)
+        namesOneOf(propertyName(callee), BUFFER_ALLOCATORS)
       ) {
         return size;
       }
@@ -1041,11 +1045,9 @@ export const noUnsafeBufferAlloc = createRule<RuleOptions, MessageIds>({
     function destinationArgumentCallee(callee: TSESTree.Node): string | null {
       if (
         callee.type === AST_NODE_TYPES.MemberExpression &&
-        !callee.computed &&
-        callee.property.type === AST_NODE_TYPES.Identifier &&
-        DESTINATION_ARGUMENT_CALLS.has(callee.property.name)
+        namesOneOf(propertyName(callee), DESTINATION_ARGUMENT_CALLS)
       ) {
-        return callee.property.name;
+        return propertyName(callee);
       }
       if (
         callee.type !== AST_NODE_TYPES.Identifier ||

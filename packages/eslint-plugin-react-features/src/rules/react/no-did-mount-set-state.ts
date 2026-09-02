@@ -9,7 +9,7 @@
  * Prevent setState in componentDidMount
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'noDidMountSetState';
@@ -53,8 +53,7 @@ export const noDidMountSetState = createRule<[], MessageIds>({
         // Check if this is a setState call
         if (
           node.callee.type === 'MemberExpression' &&
-          node.callee.property.type === 'Identifier' &&
-          node.callee.property.name === 'setState'
+          propertyName(node.callee) === 'setState'
         ) {
           context.report({
             node: node.callee.property,

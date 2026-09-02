@@ -72,6 +72,7 @@ import {
   MessageIcons,
   resolveModuleBinding,
   isTestFilePath,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { carriesUntrustedText } from './untrusted-text';
 import { isEncodingPosition, urlKind, urlShape } from './url-shape';
@@ -277,9 +278,8 @@ export const noUnescapedUrlParameter = createRule<RuleOptions, MessageIds>({
       return (
         parent.arguments[XHR_OPEN_URL_INDEX] === node &&
         parent.callee.type === AST_NODE_TYPES.MemberExpression &&
-        !parent.callee.computed &&
-        parent.callee.property.type === AST_NODE_TYPES.Identifier &&
-        parent.callee.property.name === 'open'
+        // `xhr['open'](m, url)` opens the same request.
+        propertyName(parent.callee) === 'open'
       );
     }
 

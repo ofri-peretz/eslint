@@ -19,6 +19,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'wildcardOrigin' | 'specifyOrigin';
@@ -98,11 +99,9 @@ export const noPostmessageWildcardOrigin = createRule<RuleOptions, MessageIds>({
         if (node.callee.type !== AST_NODE_TYPES.MemberExpression) {
           return;
         }
-
-        const property = node.callee.property;
         if (
-          property.type !== AST_NODE_TYPES.Identifier ||
-          property.name !== 'postMessage'
+          // `w['postMessage'](data, '*')` posts to the same wildcard origin.
+          propertyName(node.callee) !== 'postMessage'
         ) {
           return;
         }

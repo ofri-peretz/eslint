@@ -66,6 +66,15 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('require-helmet', requireHelmet, {
   valid: xp([
+    // A method named at RUNTIME configures nothing this rule can recognise,
+    // so the app is not proven to serve documents and helmet is not required.
+    {
+      code: `
+        import express from 'express';
+        const app = express();
+        app[method]('index');
+      `,
+    },
     // -----------------------------------------------------------------
     // LOCK: helmet's headers are instructions to a *renderer*.
     //
@@ -246,14 +255,6 @@ ruleTester.run('require-helmet', requireHelmet, {
         app.set(1, 2);
       `,
     },
-    // a computed member call — the property is a Literal, not an Identifier
-    {
-      code: `
-        import express from 'express';
-        const app = express();
-        app['render']('index');
-      `,
-    },
     // `app.set` with no arguments at all
     {
       code: `
@@ -274,6 +275,18 @@ ruleTester.run('require-helmet', requireHelmet, {
     },
   ]),
   invalid: xp([
+    // Was pinned as valid because "the property is a Literal, not an
+    // Identifier". `app['render']` serves the same document `app.render`
+    // serves, so this app still needs helmet.
+    {
+      name: 'a subscripted render is still a document responder',
+      code: `
+        import express from 'express';
+        const app = express();
+        app['render']('index');
+      `,
+      errors: [{ messageId: 'missingHelmet' }],
+    },
     {
       name: 'an app that renders views with no helmet',
       // `express()` with no binding at all — there is nothing to follow, so the

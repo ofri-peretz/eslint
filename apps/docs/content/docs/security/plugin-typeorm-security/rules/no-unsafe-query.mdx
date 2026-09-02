@@ -62,7 +62,9 @@ await dataSource.query('SELECT * FROM users WHERE id = $1', [userId]);
 
 ## Known limitations
 
-- Only identifier member access is matched, so `dataSource['query'](...)` is a false negative.
+- A method chosen at runtime — `dataSource[verb](...)` — names nothing to
+  match against the sink list, so it is not reported. The quoted spelling
+  `dataSource['query'](...)` names `query` and IS reported.
 - Taint tracking is single-scope and name-based — it does not follow a query
   string across function boundaries.
 

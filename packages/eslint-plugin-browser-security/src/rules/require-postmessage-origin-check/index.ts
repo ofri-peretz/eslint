@@ -18,6 +18,7 @@ import {
   MessageIcons,
   createRule,
   isTestFilePath,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { isAnchoredRegexpTest } from '../../utils/regexp-anchoring';
 
@@ -227,9 +228,8 @@ export const requirePostmessageOriginCheck = createRule<
     function isOriginRead(node: TSESTree.Node): boolean {
       return (
         node.type === 'MemberExpression' &&
-        !node.computed &&
-        node.property.type === 'Identifier' &&
-        node.property.name === 'origin'
+        // `event['origin']` is the same check as `event.origin`.
+        propertyName(node) === 'origin'
       );
     }
 
@@ -285,8 +285,9 @@ export const requirePostmessageOriginCheck = createRule<
         // window.addEventListener('message', ...) or this.addEventListener('message', ...)
         if (
           callee.type === 'MemberExpression' &&
-          callee.property.type === 'Identifier' &&
-          callee.property.name === 'addEventListener'
+          // `window['addEventListener']('message', …)` registers the same
+          // unchecked listener.
+          propertyName(callee) === 'addEventListener'
         ) {
           const eventArg = node.arguments[0];
           if (

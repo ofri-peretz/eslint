@@ -20,6 +20,8 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  namesOneOf,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unsafeInnerhtml';
@@ -60,7 +62,6 @@ export const noWebsocketInnerhtml = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://developer.mozilla.org/en-US/docs/Web/API/WebSocket',
       }),
-
     },
     schema: [
       {
@@ -95,7 +96,6 @@ export const noWebsocketInnerhtml = createRule<RuleOptions, MessageIds>({
 
     return {
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
-
         // Check for innerHTML/outerHTML assignment within handler
         // The resolver is the sole sink condition. A mutable in-handler
         // flag was cleared by any NESTED handler's exit, so sinks after
@@ -104,15 +104,20 @@ export const noWebsocketInnerhtml = createRule<RuleOptions, MessageIds>({
 
         if (
           node.left.type === AST_NODE_TYPES.MemberExpression &&
-          node.left.property.type === AST_NODE_TYPES.Identifier &&
-          DANGEROUS_PROPERTIES.has(node.left.property.name)
+          // `el['innerHTML'] = …` and `el['insertAdjacentHTML'](…)` write
+          // the same markup the dotted spellings do.
+          namesOneOf(propertyName(node.left), DANGEROUS_PROPERTIES)
         ) {
           if (payloadSource(node.right) === 'websocket') {
             context.report({
               node,
               messageId: 'unsafeInnerhtml',
+              // The guard above resolved this name and found it in the set, so the
+              // `null` arm here is unreachable. It stays visible in the type rather
+              // than being cast away: an unresolved name and an absent one are not
+              // the same answer, and only one of them is possible here.
               data: {
-                method: node.left.property.name,
+                method: propertyName(node.left),
               },
             });
           }
@@ -120,7 +125,6 @@ export const noWebsocketInnerhtml = createRule<RuleOptions, MessageIds>({
       },
 
       CallExpression(node: TSESTree.CallExpression) {
-
         // Check for dangerous method calls within handler
         // The resolver is the sole sink condition. A mutable in-handler
         // flag was cleared by any NESTED handler's exit, so sinks after
@@ -129,16 +133,21 @@ export const noWebsocketInnerhtml = createRule<RuleOptions, MessageIds>({
 
         if (
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          DANGEROUS_METHODS.has(node.callee.property.name)
+          // `el['innerHTML'] = …` and `el['insertAdjacentHTML'](…)` write
+          // the same markup the dotted spellings do.
+          namesOneOf(propertyName(node.callee), DANGEROUS_METHODS)
         ) {
           for (const arg of node.arguments) {
             if (payloadSource(arg) === 'websocket') {
               context.report({
                 node,
                 messageId: 'unsafeInnerhtml',
+                // The guard above resolved this name and found it in the set, so the
+                // `null` arm here is unreachable. It stays visible in the type rather
+                // than being cast away: an unresolved name and an absent one are not
+                // the same answer, and only one of them is possible here.
                 data: {
-                  method: node.callee.property.name,
+                  method: propertyName(node.callee),
                 },
               });
               break;

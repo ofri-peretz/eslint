@@ -83,8 +83,6 @@ describe('require-query-type-guard (branch coverage)', () => {
         // --- isReqQuery bails ---
         // Root object is not an identifier
         { code: `f().query.name.trim();` },
-        // Computed query access — documented FN
-        { code: `req['query'].name.trim();` },
         // Property is not 'query'
         { code: `req.session.name.trim();` },
         // --- Array.isArray recognition bails (fall through, still no report) ---
@@ -134,6 +132,25 @@ describe('require-query-type-guard (branch coverage)', () => {
         },
       ]),
       invalid: xp([
+        // Was pinned as valid — a bracket on the request bag read as
+        // unresolvable, in places labelled a "documented false negative".
+        // `req['query']` is the same bag as `req.query`; the runtime-keyed
+        // form left above is the genuine refusal.
+        {
+          name: 'was pinned as valid — a bracket on the request bag read as unresolvable,',
+          code: `req['query'].name.trim();`,
+          errors: [
+            {
+              messageId: 'unguardedQueryStringMethod',
+              suggestions: [
+                {
+                  messageId: 'wrapString',
+                  output: `String(req['query'].name).trim();`,
+                },
+              ],
+            },
+          ],
+        },
         // Safe-call check: callee is neither identifier nor member (IIFE)
         {
           code: `let v = req.query.q; v = ((x) => x)(v); v.trim();`,

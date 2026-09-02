@@ -20,6 +20,8 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  namesOneOf,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unsafeInnerhtml';
@@ -60,7 +62,6 @@ export const noPostmessageInnerhtml = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage#security_concerns',
       }),
-
     },
     schema: [
       {
@@ -95,7 +96,6 @@ export const noPostmessageInnerhtml = createRule<RuleOptions, MessageIds>({
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
-
         // Check for dangerous methods: insertAdjacentHTML, document.write
         // The resolver is the sole sink condition. A mutable in-handler
         // flag was cleared by any NESTED handler's exit, so sinks after
@@ -104,8 +104,9 @@ export const noPostmessageInnerhtml = createRule<RuleOptions, MessageIds>({
 
         if (
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          DANGEROUS_METHODS.has(node.callee.property.name)
+          // `el['innerHTML'] = …` and `el['insertAdjacentHTML'](…)` write
+          // the same markup the dotted spellings do.
+          namesOneOf(propertyName(node.callee), DANGEROUS_METHODS)
         ) {
           // Check if any argument references event.data
           for (const arg of node.arguments) {
@@ -113,8 +114,12 @@ export const noPostmessageInnerhtml = createRule<RuleOptions, MessageIds>({
               context.report({
                 node,
                 messageId: 'unsafeInnerhtml',
+                // The guard above resolved this name and found it in the set, so the
+                // `null` arm here is unreachable. It stays visible in the type rather
+                // than being cast away: an unresolved name and an absent one are not
+                // the same answer, and only one of them is possible here.
                 data: {
-                  method: node.callee.property.name,
+                  method: propertyName(node.callee),
                 },
               });
               break;
@@ -132,16 +137,21 @@ export const noPostmessageInnerhtml = createRule<RuleOptions, MessageIds>({
         // Check for innerHTML/outerHTML assignment
         if (
           node.left.type === AST_NODE_TYPES.MemberExpression &&
-          node.left.property.type === AST_NODE_TYPES.Identifier &&
-          DANGEROUS_PROPERTIES.has(node.left.property.name)
+          // `el['innerHTML'] = …` and `el['insertAdjacentHTML'](…)` write
+          // the same markup the dotted spellings do.
+          namesOneOf(propertyName(node.left), DANGEROUS_PROPERTIES)
         ) {
           // Check if right side references event.data
           if (payloadSource(node.right) === 'postmessage') {
             context.report({
               node,
               messageId: 'unsafeInnerhtml',
+              // The guard above resolved this name and found it in the set, so the
+              // `null` arm here is unreachable. It stays visible in the type rather
+              // than being cast away: an unresolved name and an absent one are not
+              // the same answer, and only one of them is possible here.
               data: {
-                method: node.left.property.name,
+                method: propertyName(node.left),
               },
             });
           }

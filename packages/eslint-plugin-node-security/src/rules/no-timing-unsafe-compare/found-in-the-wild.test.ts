@@ -61,7 +61,7 @@ describe('no-timing-unsafe-compare — found in the wild', () => {
          * down rather than argued away.
          */
         // @found no name to read, and the rule is deliberately name-based not taint-based
-        name: 'GAP: a secret arriving as a parameter has no visible taint source',
+        name: 'the default trades a provenance-free secret away, and says so',
         filename: 'node/monitor/src/util/util.ts',
         code: `
           export function isAuthorized(bearerToken: string, sessionSecret: string): boolean {
@@ -71,6 +71,33 @@ describe('no-timing-unsafe-compare — found in the wild', () => {
       },
     ],
     invalid: [
+      {
+        // The matched half of the `valid` case above. That one is NOT a GAP,
+        // and calling it one was wrong: the rule detects this shape perfectly
+        // well, the DEFAULT declines to.
+        //
+        // Both operands are secret-named parameters with no visible flow from
+        // a request, so the default's `exactly one side untrusted` gate finds
+        // neither side attacker-readable and returns. That gate is not
+        // timidity — it is what stops the rule reporting
+        // `remoteApp.apiKey === localApp.configuration.client_id`, two config
+        // values a CLI compares on a developer's own machine.
+        //
+        // `reportUnverifiedComparisons` is the consumer's escape hatch for
+        // exactly this, and the secret vocabulary it decides from is theirs
+        // too (`secretPatterns`, with `nonSecretWords` / `nonSecretTails` to
+        // subtract). Nothing here is keyed on the function being called
+        // `isAuthorized`; the name of the enclosing function is never read.
+        name: 'a provenance-free secret comparison, with verification off',
+        filename: 'node/monitor/src/util/util.ts',
+        code: `
+          export function isAuthorized(bearerToken: string, sessionSecret: string): boolean {
+            return bearerToken === sessionSecret;
+          }
+        `,
+        options: [{ reportUnverifiedComparisons: true }],
+        errors: [{ messageId: 'timingUnsafeCompare' }],
+      },
       {
         // The function gated five HTTP endpoints. CWE-208.
         //

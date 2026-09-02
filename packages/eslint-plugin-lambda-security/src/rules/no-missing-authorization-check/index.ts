@@ -20,6 +20,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'missingAuthCheck';
@@ -227,11 +228,10 @@ export const noMissingAuthorizationCheck = createRule<RuleOptions, MessageIds>({
       node: TSESTree.CallExpression,
     ): string | null {
       if (node.callee.type === AST_NODE_TYPES.MemberExpression) {
-        const property = node.callee.property;
-        if (property.type === AST_NODE_TYPES.Identifier) {
-          if (SENSITIVE_OPERATIONS.has(property.name)) {
-            return property.name;
-          }
+        // `db['deleteItem'](…)` is the same sensitive operation.
+        const operation = propertyName(node.callee);
+        if (operation !== null && SENSITIVE_OPERATIONS.has(operation)) {
+          return operation;
         }
       }
       return null;

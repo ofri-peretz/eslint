@@ -64,16 +64,19 @@ const repo = arg('repo') ?? die('--repo owner/name is required');
 const relPath = arg('path') ?? die('--path <path inside the repo> is required');
 const lines = arg('lines') ?? die('--lines <start>-<end> is required');
 const cwe = arg('cwe') ?? die('--cwe CWE-NNN is required');
-const expected = arg('expected') ?? die('--expected vulnerable|safe is required');
+const expected =
+  arg('expected') ?? die('--expected vulnerable|safe is required');
 const slug = arg('slug') ?? die('--slug <kebab-case-name> is required');
-const why = arg('why') ?? die('--why "<one line: what makes it this label>" is required');
+const why =
+  arg('why') ?? die('--why "<one line: what makes it this label>" is required');
 const sealed = arg('sealed');
 
 if (expected !== 'vulnerable' && expected !== 'safe') {
   die('--expected must be exactly `vulnerable` or `safe`');
 }
 if (!/^CWE-\d{3,4}$/.test(cwe)) die(`--cwe must look like CWE-089, got ${cwe}`);
-if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) die(`--slug must be kebab-case, got ${slug}`);
+if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug))
+  die(`--slug must be kebab-case, got ${slug}`);
 
 const clone = path.join(CACHE, repo.replace('/', '__'));
 if (!fs.existsSync(clone)) {
@@ -93,13 +96,22 @@ const sha = execFileSync('git', ['-C', clone, 'rev-parse', 'HEAD'], {
 }).trim();
 
 const [start, end] = lines.split('-').map(Number);
-if (!Number.isInteger(start) || !Number.isInteger(end) || start < 1 || end < start) {
+if (
+  !Number.isInteger(start) ||
+  !Number.isInteger(end) ||
+  start < 1 ||
+  end < start
+) {
   die(`--lines must be <start>-<end> with 1 <= start <= end, got ${lines}`);
 }
 
 const all = fs.readFileSync(source, 'utf8').split('\n');
-if (end > all.length) die(`${relPath} has ${all.length} lines, --lines asked for ${end}`);
-const snippet = all.slice(start - 1, end).join('\n').replace(/\s+$/, '');
+if (end > all.length)
+  die(`${relPath} has ${all.length} lines, --lines asked for ${end}`);
+const snippet = all
+  .slice(start - 1, end)
+  .join('\n')
+  .replace(/\s+$/, '');
 
 const header = [
   `// ${cwe}: ${expected} — ${why}`,
@@ -109,7 +121,9 @@ const header = [
   `// @source        ${repo}@${sha} ${relPath}:${start}`,
   ...(sealed === null ? [] : [`// @sealed        ${sealed}`]),
   `// @expected      ${expected}`,
-  expected === 'vulnerable' ? '// This MUST be flagged' : '// This MUST NOT be flagged',
+  expected === 'vulnerable'
+    ? '// This MUST be flagged'
+    : '// This MUST NOT be flagged',
   '',
 ].join('\n');
 
@@ -132,7 +146,46 @@ try {
   );
 }
 
-const dir = path.join(ROOT, 'benchmarks', 'corpus', cwe, expected);
+/*
+ * `--under <segments>` keeps part of the ORIGINAL path.
+ *
+ * The corpus flattens every fixture to `CWE-NNN/<expected>/<slug>.js`, which
+ * silently discards the directory a file lived in — and a whole class of rules
+ * decides from exactly that. `modularity/ddd-anemic-domain-model` only reports
+ * inside a domain layer (`domain`, `entities`, `model`, ...), because an
+ * anemic class in a DTO folder is not a defect. Cut out of
+ * `src/model/namespace.js` and dropped flat, the rule went silent on code it
+ * genuinely reports in situ; restored under `model/`, it fires.
+ *
+ * So a fixture for a path-sensitive rule must carry enough of its path to
+ * still be the thing it was. Without this, those rules are unmeasurable by
+ * construction — not for want of real-world material, but because the corpus
+ * threw away the part the rule reads.
+ *
+ *   --under model            -> CWE-1047/vulnerable/model/<slug>.js
+ *   --under src/domain       -> CWE-1047/vulnerable/src/domain/<slug>.js
+ */
+const under = arg('under');
+// `path.isAbsolute` is the POSIX one on a POSIX host, and it says `false` for
+// `C:\\src` and `\\\\server\\share` — so both slipped through and `path.join` would
+// have created a literal `C:` directory under the fixture root. Ask both
+// platforms' rules, since the value is a path either way.
+if (
+  under !== null &&
+  (path.posix.isAbsolute(under) ||
+    path.win32.isAbsolute(under) ||
+    under.split(/[\\/]/).includes('..'))
+) {
+  die(`--under must be a relative path with no '..', got ${under}`);
+}
+const dir = path.join(
+  ROOT,
+  'benchmarks',
+  'corpus',
+  cwe,
+  expected,
+  ...(under === null ? [] : under.split(/[\\/]/).filter(Boolean)),
+);
 fs.mkdirSync(dir, { recursive: true });
 const out = path.join(dir, `${slug}.js`);
 if (fs.existsSync(out)) die(`${path.relative(ROOT, out)} already exists`);
