@@ -35,9 +35,16 @@ import * as tsparser from '@typescript-eslint/parser';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
 const LEDGER = path.join(ROOT, 'benchmarks', 'RULE_CASES.json');
-const only = process.argv.find((a) => a.startsWith('--rule='))?.slice('--rule='.length) ?? null;
+const only =
+  process.argv.find((a) => a.startsWith('--rule='))?.slice('--rule='.length) ??
+  null;
 
-type Case = { kind: string; code: string; description: string; options?: string };
+type Case = {
+  kind: string;
+  code: string;
+  description: string;
+  options?: string;
+};
 type Ledger = { rules: { rule: string; cases: Case[] }[] };
 
 const ledger = JSON.parse(fs.readFileSync(LEDGER, 'utf8')) as Ledger;
@@ -47,13 +54,22 @@ const plugins = new Map<string, Record<string, unknown>>();
 async function ruleFor(qualified: string): Promise<unknown | null> {
   const [pkg, ...rest] = qualified.split('/');
   if (!plugins.has(pkg)) {
-    const entry = path.join(ROOT, 'packages', `eslint-plugin-${pkg}`, 'src', 'index.ts');
+    const entry = path.join(
+      ROOT,
+      'packages',
+      `eslint-plugin-${pkg}`,
+      'src',
+      'index.ts',
+    );
     if (!fs.existsSync(entry)) return null;
     const mod = (await import(entry)) as {
       default?: { rules?: Record<string, unknown> };
       rules?: Record<string, unknown>;
     };
-    plugins.set(pkg, (mod.default?.rules ?? mod.rules ?? {}) as Record<string, unknown>);
+    plugins.set(
+      pkg,
+      (mod.default?.rules ?? mod.rules ?? {}) as Record<string, unknown>,
+    );
   }
   return plugins.get(pkg)?.[rest.join('/')] ?? null;
 }
@@ -67,7 +83,11 @@ function reports(rule: unknown, name: string, code: string): number | null {
         plugins: { p: { rules: { [name]: rule } } as never },
         languageOptions: {
           parser: tsparser as never,
-          parserOptions: { ecmaVersion: 2022, sourceType: 'module', ecmaFeatures: { jsx: true } },
+          parserOptions: {
+            ecmaVersion: 2022,
+            sourceType: 'module',
+            ecmaFeatures: { jsx: true },
+          },
         },
         rules: { [`p/${name}`]: 'error' },
       },
@@ -113,7 +133,11 @@ for (const entry of ledger.rules) {
     if (after === null) continue; // the rewrite broke parsing; not evidence
     probed += 1;
     if (after === 0) {
-      blind.push({ rule: entry.rule, description: c.description, code: rewritten.replace(/\s+/g, ' ').slice(0, 88) });
+      blind.push({
+        rule: entry.rule,
+        description: c.description,
+        code: rewritten.replace(/\s+/g, ' ').slice(0, 88),
+      });
     }
   }
 }
@@ -127,8 +151,25 @@ for (const b of blind) {
 
 console.log(`\n  probed ${probed} firing TP case(s) in both spellings.`);
 console.log(`  ${byRule.size} rule(s) go SILENT on a string subscript:\n`);
-for (const [rule, cases] of [...byRule.entries()].sort((a, b) => b[1].length - a[1].length)) {
+for (const [rule, cases] of [...byRule.entries()].sort(
+  (a, b) => b[1].length - a[1].length,
+)) {
   console.log(`  ${String(cases.length).padStart(3)}x  ${rule}`);
   console.log(`        ${cases[0].code}`);
 }
-if (byRule.size === 0) console.log('  (none — every firing TP case survives the rewrite)\n');
+if (byRule.size === 0)
+  console.log('  (none — every firing TP case survives the rewrite)\n');
+
+/*
+ * A rule that reports `o.k` and stays silent on `o["k"]` is a DEFECT, not a
+ * report line — the two spellings are the same program, and the subscripted
+ * one is what bundlers and minifiers emit. The count reached zero on
+ * 2026-09-02; failing here is what keeps it there, because none of the 150
+ * fixes that got it to zero is pinned by anything else. A rule can regress
+ * with every one of its own tests still green: the gate that would notice
+ * lives in this file and nowhere else.
+ *
+ * `--rule=` is a developer's magnifying glass, not a measurement of the
+ * workspace, so it never fails the build.
+ */
+if (byRule.size > 0 && only === null) process.exitCode = 1;

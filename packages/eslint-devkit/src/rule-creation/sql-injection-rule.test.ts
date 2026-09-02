@@ -178,6 +178,20 @@ describe('createSqlInjectionRule', () => {
           code: `client.query('SELECT * FROM users WHERE id = ' + id);`,
           errors: [{ messageId: 'noUnsafeQuery' }],
         },
+        // The case the valid table's comment points at. It was NOT here: the
+        // comment promised a lock that did not exist, and reverting this
+        // factory's callee resolution to `property.name` left all 1841 devkit
+        // tests and all seven SQL plugins green.
+        {
+          name: 'a sink named through a string subscript',
+          code: `client['query']('SELECT * FROM users WHERE id = ' + id);`,
+          errors: [{ messageId: 'noUnsafeQuery' }],
+        },
+        {
+          name: 'a subscripted sink reached through a subscripted namespace',
+          code: 'db["client"]["query"](`SELECT * FROM users WHERE id = ${id}`);',
+          errors: [{ messageId: 'unsafeTemplateLiteral' }],
+        },
         {
           name: 'direct interpolation',
           code: 'pool.query(`SELECT * FROM users WHERE id = ${id}`);',
