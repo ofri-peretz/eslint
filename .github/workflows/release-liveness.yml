@@ -74,11 +74,27 @@ jobs:
         with:
           turbo-cache: "false"
 
+      # On `push`, skip the publish-lag half.
+      #
+      # This trigger watches `.changeset/**` and `packages/*/package.json`, and
+      # a Version PR merge touches BOTH — it deletes the changesets it consumed
+      # and bumps every version. So the push fires on the release commit
+      # itself, at the one moment npm is legitimately behind main, and every
+      # package reports `unpublished-bump`. That is not a stall; it is a
+      # release in progress. It fired on all three push runs of 2026-09-01 and
+      # produced #791 and #795 against a healthy pipeline.
+      #
+      # The changeset half does not race and stays on, which is the reason this
+      # trigger exists: a changeset that lands with no Version PR is worth
+      # knowing about in minutes. Publish lag is slow-moving and the six-hourly
+      # run owns it.
       - name: Check release liveness
         env:
           GH_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-        run: node --experimental-strip-types scripts/check-release-liveness.ts
+        run: >-
+          node --experimental-strip-types scripts/check-release-liveness.ts
+          ${{ github.event_name == 'push' && '--skip-publish-lag' || '' }}
 
       - name: 🚨 Report a stalled release pipeline
         if: failure()
