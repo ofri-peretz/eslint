@@ -1,7 +1,7 @@
 {
-  "releaseCount": 568,
+  "releaseCount": 595,
   "packageCount": 34,
-  "entryCount": 1809,
+  "entryCount": 1962,
   "oldestYear": 2024,
   "releases": [
     {
@@ -14417,6 +14417,41 @@
     {
       "package": "@interlace/eslint-devkit",
       "short": "eslint-devkit",
+      "version": "1.19.0",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`createPayloadResolver` recognises a handler attached by string subscript",
+          "pr": null
+        },
+        {
+          "kind": "feature",
+          "title": "`namesOneOf` and `memberPropertyName` keep an unresolved name visible",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "module-member resolution reads a string subscript",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`db['query'](…)` is the same injection sink as `db.query(…)`",
+          "pr": null
+        },
+        {
+          "kind": "chore",
+          "title": "pin the shared deciders that resolve `o['k']`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
       "version": "1.17.0",
       "date": null,
       "isApp": false,
@@ -14481,6 +14516,271 @@
           "kind": "feature",
           "title": "`RemoteMarkdown` accepts `tags`, forwarded to the underlying fetch as `next.tags`.",
           "pr": 628
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-browser-security",
+      "short": "eslint-plugin-browser-security",
+      "version": "2.1.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "header and host-check detection now read a string-subscript method",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "the innerHTML sink family and the transport gate read a subscripted member",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "seven more browser rules read a string-subscript member",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "cache, IndexedDB and XHR receivers resolve a subscripted member",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-insecure-redirects` now reports the string-subscript spelling",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "analytics and Express route detection now read a string-subscript method",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`app['use'](cors({ origin: '*' }))` installs the same middleware",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`r['route']('/x').post(h)` is the same unprotected route chain",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "transmission, CSP and MIME gates resolve a subscripted method",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "the CORS checks read subscripted calls and quoted option keys",
+          "pr": null
+        },
+        {
+          "kind": "chore",
+          "title": "the innerHTML sinks and URL guards no longer cast an unnameable property",
+          "pr": null
+        },
+        {
+          "kind": "chore",
+          "title": "`no-incomplete-url-sanitization` checks the resolved name explicitly",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "sanitiser, logger, postMessage and query gates read a subscripted member",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "deep-link, CORS, IAM and state-mutation gates read a subscripted member",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "MIME, helmet, TLS and stream gates read a subscripted member",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-conventions",
+      "short": "eslint-plugin-conventions",
+      "version": "5.3.0",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`console['log']` is the same call as `console.log`",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "member gates resolve a quoted key without a second arm",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "commented-out code is recognised through a string subscript",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "remaining member gates resolve a subscripted key",
+          "pr": null
+        },
+        {
+          "kind": "chore",
+          "title": "`no-console-spaces` returns the console method it resolved, or null",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-deprecated-api` reads a subscripted member, and its suggestion stays valid",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-drizzle-security",
+      "short": "eslint-plugin-drizzle-security",
+      "version": "0.3.7",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`db['query'](…)` is the same injection sink as `db.query(…)`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-express-security",
+      "short": "eslint-plugin-express-security",
+      "version": "3.2.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "MIME, helmet, TLS and stream gates read a subscripted member",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "remaining Express gates resolve a subscripted method",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`process['cwd']()` is the same application root as `process.cwd()`",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`app['post']('/auth/token', h)` registers the same unlimited route",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "render, route and request-source gates read a subscripted member",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "static, trust-proxy and CSRF route gates read a subscripted member",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "the shared Express evidence utils read a subscripted member",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`req['query']` is the same request bag as `req.query`",
+          "pr": null
+        },
+        {
+          "kind": "chore",
+          "title": "route-method and host-getter reads resolve once instead of casting twice",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-import-next",
+      "short": "eslint-plugin-import-next",
+      "version": "2.7.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "import gates resolve a subscripted member",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-jwt-security",
+      "short": "eslint-plugin-jwt-security",
+      "version": "3.2.0",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "every JWT rule now sees `jwt['sign']` as the same call as `jwt.sign`",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`decoded['exp']` is the same time claim as `decoded.exp`",
+          "pr": null
+        },
+        {
+          "kind": "chore",
+          "title": "`no-decode-without-verify` no longer casts an unnameable member",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`",
+          "pr": null
         }
       ]
     },
@@ -14600,6 +14900,441 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-knex-security",
+      "short": "eslint-plugin-knex-security",
+      "version": "0.4.7",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`db['query'](…)` is the same injection sink as `db.query(…)`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-lambda-security",
+      "short": "eslint-plugin-lambda-security",
+      "version": "2.1.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "deep-link, CORS, IAM and state-mutation gates read a subscripted member",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`client['send'](cmd)` is the same external call as `client.send`",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`client['post'](url)` issues the same user-controlled request",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`exports['handler']` is the same handler as `exports.handler`",
+          "pr": null
+        },
+        {
+          "kind": "chore",
+          "title": "event-shape and handler reads keep the unnameable property visible",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-maintainability",
+      "short": "eslint-plugin-maintainability",
+      "version": "3.2.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`Promise['all']` and `p['then']` are the same promise API",
+          "pr": null
+        },
+        {
+          "kind": "chore",
+          "title": "the promise-handling check no longer casts an unnameable member",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-mcp-sdk-security",
+      "short": "eslint-plugin-mcp-sdk-security",
+      "version": "0.4.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`server['registerTool'](…)` registers the same tool",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`server['registerTool']` registers the same tool as `.registerTool`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-modernization",
+      "short": "eslint-plugin-modernization",
+      "version": "3.1.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "modernization gates read a subscripted member",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-modularity",
+      "short": "eslint-plugin-modularity",
+      "version": "2.5.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "barrel and boundary gates read a subscripted member",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`app['get']('/user', h)` is the same route as `app.get`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-mongodb-security",
+      "short": "eslint-plugin-mongodb-security",
+      "version": "9.1.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "sanitiser, logger, postMessage and query gates read a subscripted member",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "MIME, helmet, TLS and stream gates read a subscripted member",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "remaining Mongo gates resolve a subscripted method",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`mongoose['connect'](uri)` opens the same unauthenticated connection",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`Model['find']({…})` is the same unlean read",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`collection('u')['findOne']` is the same query as `.findOne`",
+          "pr": null
+        },
+        {
+          "kind": "chore",
+          "title": "the Mongo evidence helper no longer casts an unnameable member",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-mysql-security",
+      "short": "eslint-plugin-mysql-security",
+      "version": "0.3.7",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`db['query'](…)` is the same injection sink as `db.query(…)`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-nestjs-security",
+      "short": "eslint-plugin-nestjs-security",
+      "version": "3.1.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "NestJS gates resolve a subscripted member",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "5.4.0",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "five rules now see `o['k']` as the same access as `o.k`",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "MIME, helmet, TLS and stream gates read a subscripted member",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "twenty-one Node rules read a member spelled with a string subscript",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`fs['writeFileSync'](p, data)` writes the same file as `fs.writeFileSync`",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "crypto, temp-storage and zip-slip gates read a subscripted method",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`presented['localeCompare'](stored)` is the same non-constant-time compare",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "buffer, zlib and provenance gates resolve a subscripted member",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "buffer, AEAD and length-prefix gates read a subscripted method",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`stats['isFile']()` asks the same question of the same stat",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`zlib['gunzip'](body, cb)` is the same uncapped decompression",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`child_process['exec'](cmd)` spawns the same shell",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`module['require'](x)` loads the same module",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`Object['assign'](process.env, req.body)` is the same env injection",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "timing-compare, LDAP-adjacent and command gates read a subscripted member",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "TOCTOU roots, secure deletion and CSPRNG checks read a subscripted member",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "an alias to Math.random is found through either spelling",
+          "pr": null
+        },
+        {
+          "kind": "chore",
+          "title": "crypto, fs and archive reads distinguish an unnameable key from an unknown one",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`path['basename'](userPath)` sanitizes, and is no longer reported",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`b['readUInt8'](0, true)` reaches the bounds-check visitor",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-operability",
+      "short": "eslint-plugin-operability",
+      "version": "4.1.0",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`console['log']` reaches the same sink as `console.log`",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`process['exit']()` is the same call as `process.exit()`",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`res['send'](err.stack)` leaks the same stack as `res.send`",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "remaining console gates resolve a subscripted method",
+          "pr": null
+        },
+        {
+          "kind": "chore",
+          "title": "the verbose-error check no longer casts an unnameable member",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-postgresql-security",
+      "short": "eslint-plugin-postgresql-security",
+      "version": "2.3.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`pool['connect']()` checks out the same client",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`this['pool']` and `db['query']` name the same pool and statement",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`c['release']()` is the same client release",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "a quoted object key resolves like a bare one",
+          "pr": null
+        },
+        {
+          "kind": "chore",
+          "title": "pool-field tracking records the name its guard accepted",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`",
           "pr": null
         }
       ]
@@ -14725,6 +15460,306 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-prisma-security",
+      "short": "eslint-plugin-prisma-security",
+      "version": "0.3.7",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`db['query'](…)` is the same injection sink as `db.query(…)`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-react-features",
+      "short": "eslint-plugin-react-features",
+      "version": "1.7.0",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`items['map'](…)` is the same iteration as `items.map(…)`",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "deep-link, CORS, IAM and state-mutation gates read a subscripted member",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`React['Component']` is the same base class as `React.Component`",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`ReactDOM['render'](…)` is the same deprecated call",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`React['findDOMNode']` names the same deprecated API",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`React['createElement']` builds the same element",
+          "pr": null
+        },
+        {
+          "kind": "chore",
+          "title": "hook and state-mutation reads carry `string | null` instead of casting it away",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-reliability",
+      "short": "eslint-plugin-reliability",
+      "version": "4.1.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`rows['find'](…)` is the same nullable return as `rows.find(…)`",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "a subscripted `.then` chain is recognised, and stops double-reporting",
+          "pr": null
+        },
+        {
+          "kind": "chore",
+          "title": "nullable-return and promise-static tests ask the null question themselves",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.3.0",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "six rules now see `o['k']` as the same access as `o.k`",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "sanitiser, logger, postMessage and query gates read a subscripted member",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-hardcoded-credentials` stops reporting error codes and module paths",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "sixteen rules read a member spelled with a string subscript",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`ng['$compile'](tpl)` compiles the same directive template",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "template compilation and token generation read a subscripted method",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`console['log'](user.email)` logs the same PII as `console.log`",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "log levels, deserialisers and fs reads resolve a subscripted method",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`parts['join'](' ')` concatenates the same SQL statement",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "LDAP, privilege and loop gates resolve a subscripted member",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "three blind spots that lived in a selector, a regex and a substring list",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "LDAP escapes and role checks read a subscripted method",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`Object['keys']` and `graphql['execute']` name the same operations",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`userService['elevate'](user, level)` is the same privilege operation",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`client['search'](baseDN, filter)` runs the same LDAP query",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`db['query'](sql)` is the same SQL sink as `db.query(sql)`",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "XPath, password-length, fail-open and regex gates read a subscripted member",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`Math['random']()` is recognised as the same weak token source",
+          "pr": null
+        },
+        {
+          "kind": "chore",
+          "title": "injection and privilege checks resolve a property once, not twice",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`ipcRenderer['send'](...)` and `app['get'](...)` name the same call",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-sequelize-security",
+      "short": "eslint-plugin-sequelize-security",
+      "version": "0.3.8",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`db['query'](…)` is the same injection sink as `db.query(…)`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-sqlite-security",
+      "short": "eslint-plugin-sqlite-security",
+      "version": "0.1.10",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`db['query'](…)` is the same injection sink as `db.query(…)`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-typeorm-security",
+      "short": "eslint-plugin-typeorm-security",
+      "version": "0.3.7",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`db['query'](…)` is the same injection sink as `db.query(…)`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-vercel-ai-security",
+      "short": "eslint-plugin-vercel-ai-security",
+      "version": "2.1.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`ai['generateText'](…)` is the same SDK call as `ai.generateText`",
+          "pr": null
+        },
+        {
+          "kind": "chore",
+          "title": "the AI SDK call test no longer casts an unnameable member",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`",
           "pr": null
         }
       ]
