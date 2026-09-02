@@ -364,3 +364,32 @@ jobs:
                 body,
               });
             }
+
+  # Aggregate failure reporting.
+  #
+  # Reporting from inside the working jobs does not survive the shapes those
+  # jobs actually fail in: a `fail-fast` matrix cancels its siblings (and
+  # `failure()` is false in a cancelled job), and a report living in one job
+  # says nothing when a different job is the one that breaks. This job depends
+  # on all of them and runs with `if: always()`, so it sees the whole run.
+  report:
+    name: 🚨 Report a scheduled failure
+    needs: [gate, ilb-formatter, ilb-corpus-truth, ilb-preset-budget, audit-meta, typecheck-scripts, ilb-wild]
+    if: >-
+      always() && github.event_name == 'schedule' &&
+      contains(needs.*.result, 'failure')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/report-failure
+        with:
+          title: "Scheduled benchmark is failing"
+          body: >-
+            The weekly benchmark run did not complete, so the numbers behind the published comparison are not being refreshed. Until this is fixed the figures on the docs site are older than they appear.
+          token: ${{ github.token }}
