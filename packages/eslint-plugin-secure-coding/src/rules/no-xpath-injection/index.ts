@@ -709,9 +709,9 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
           inputNode.object.type === 'MemberExpression' &&
           inputNode.object.object.type === 'Identifier' &&
           inputNode.object.object.name === 'req' &&
-          inputNode.object.property.type === 'Identifier' &&
+          // `req['query'].id` is the same client-supplied value.
           ['query', 'body', 'params', 'param'].includes(
-            inputNode.object.property.name,
+            propertyName(inputNode.object) as string,
           )
         ) {
           return true;

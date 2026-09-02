@@ -24,6 +24,7 @@ import {
   AST_NODE_TYPES,
   isTestFilePath,
   propertyName,
+  objectKeyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'mathRandomCrypto' | 'pseudoRandomBytes';
@@ -677,20 +678,20 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
       // `rng.next()` where `rng` is a stable object literal.
       if (
         callee.type === AST_NODE_TYPES.MemberExpression &&
-        !callee.computed &&
         callee.object.type === AST_NODE_TYPES.Identifier &&
-        callee.property.type === AST_NODE_TYPES.Identifier
+        propertyName(callee) !== null
       ) {
         const init = stableDeclarator(callee.object)?.init;
         if (!init || init.type !== AST_NODE_TYPES.ObjectExpression)
           return false;
-        const wanted = callee.property.name;
+        // `rng['next']()` reaches the same aliased `Math.random`.
+        const wanted = propertyName(callee) as string;
         return init.properties.some(
           (property) =>
             property.type === AST_NODE_TYPES.Property &&
-            !property.computed &&
-            property.key.type === AST_NODE_TYPES.Identifier &&
-            property.key.name === wanted &&
+            // `{ ['next']: Math.random }` declares the same slot `{ next: … }`
+            // declares — the object-KEY half of the same blind spot.
+            objectKeyName(property) === wanted &&
             isMathRandomProperty(property.value),
         );
       }
@@ -880,9 +881,9 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
         ) {
           if (
             current.left.type === AST_NODE_TYPES.MemberExpression &&
-            current.left.property.type === AST_NODE_TYPES.Identifier
+            propertyName(current.left) !== null
           ) {
-            const propName = current.left.property.name;
+            const propName = propertyName(current.left) as string;
             if (nameSuggestsCrypto(propName, vocab)) {
               return true;
             }

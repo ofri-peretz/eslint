@@ -179,9 +179,8 @@ function measuresPasswordLength(
 
   if (
     access.type !== 'MemberExpression' ||
-    access.computed ||
-    access.property.type !== 'Identifier' ||
-    access.property.name !== 'length'
+    // `password['length'] < 6` is the same weak check.
+    propertyName(access) !== 'length'
   ) {
     return false;
   }
