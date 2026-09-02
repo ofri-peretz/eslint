@@ -89,6 +89,16 @@ const runningCheck = (name: string) => ({
   conclusion: '',
 });
 
+/**
+ * A required check GitHub has registered but not yet created. It carries none
+ * of the three fields. Observed on PRs #810 and #811 on 2026-09-01, in the
+ * window right after `pr update-branch` re-registered the required checks.
+ */
+const unreportedCheck = (name: string) => ({
+  __typename: 'CheckRun',
+  name,
+});
+
 /** The shape that broke the loop — no `conclusion`, no `status`. */
 const statusContext = (context: string, state: string) => ({
   __typename: 'StatusContext',
@@ -177,6 +187,40 @@ describe('the documented validation gate is what authorises --admin', () => {
   });
 });
 
+describe('an unreported check is refused, but not called a failure', () => {
+  it('the wait loop waits for it', () => {
+    const pending = jq(
+      documentedJq('wait'),
+      rollup([checkRun('Vitest', 'SUCCESS'), unreportedCheck('Quality Gate')]),
+    );
+    expect(pending).toBe('1');
+  });
+
+  it('the gate still refuses — an unknown result is not a pass', () => {
+    // The gate is reachable with one of these: a check can register between
+    // step 1 returning 0 and step 2 running.
+    const failed = jq(
+      documentedJq('validate'),
+      rollup([checkRun('Vitest', 'SUCCESS'), unreportedCheck('Quality Gate')]),
+    );
+    expect(failed).toContain('Quality Gate');
+  });
+
+  it('and names it UNREPORTED rather than printing a blank status', () => {
+    // The regression this locks. Without the fallback the entry printed as
+    // "  Quality Gate" — a blank where a conclusion goes, which reads as a
+    // failing check. On 2026-09-01 that cost two correct PRs a false refusal
+    // apiece, and the search that followed went looking for a broken test on
+    // a branch where every test had passed.
+    const failed = jq(
+      documentedJq('validate'),
+      rollup([unreportedCheck('Quality Gate')]),
+    );
+    expect(failed).toContain('UNREPORTED');
+    expect(failed).not.toMatch(/^\s{2,}Quality Gate/);
+  });
+});
+
 describe('both expressions read the same fields', () => {
   it('in the same order', () => {
     // They disagreed about the same object for months. The wait loop is the
@@ -190,6 +234,20 @@ describe('both expressions read the same fields', () => {
     expect(fields(documentedJq('wait'))).toEqual(
       fields(documentedJq('validate')),
     );
+  });
+
+  it('and both give an entry carrying none of them a fallback', () => {
+    // Reading the same fields is not the same as agreeing about them. Both
+    // expressions did read `.conclusion // .state // .status`, in that order,
+    // while only one supplied a `//` default after it — so the check above
+    // passed on the very version that classified an unreported entry as a
+    // failure. A missing fallback leaves `null`, and `null != "SUCCESS"`.
+    for (const step of ['wait', 'validate'] as const) {
+      expect(
+        documentedJq(step),
+        `the ${step} expression has no fallback after .status`,
+      ).toMatch(/\.status\s*\/\/\s*"/);
+    }
   });
 });
 
