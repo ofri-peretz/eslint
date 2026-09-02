@@ -68,51 +68,55 @@ ruleTester.run(
   noHardcodedCredentials,
   {
     valid: [
-      // auth0/express-openid-connect, verbatim.
-      `const codes = Object.freeze({
+      {
+        name: 'an error code whose only opaque token is an abbreviation (auth0)',
+        code: `const codes = Object.freeze({
          MTLS_INCOMPATIBLE_CLIENT_AUTH: 'mtls_incompatible_client_auth',
        });`,
-      // The same shape with other abbreviations code is full of — bound to
-      // names that DO open the credential gate, so each case exercises the
-      // value guard rather than passing because the rule never looked.
-      //
-      // The first draft used `JWT_SIGNATURE_INVALID` and friends as object
-      // keys. All three passed with the guard removed: the gate never opened,
-      // so they proved nothing. The second draft fixed the names and two were
-      // STILL vacuous — `xhr_request_failed` and `ssh_auth_rejected` are too
-      // short to be secret-shaped, so the guard was never what silenced them.
-      // Each case here was checked in BOTH directions — silent with the guard,
-      // reporting without it. A third draft used `ssh_tunnel_handshake_rejected`
-      // and it failed WITH the fix: `handshake` carries the consonant run
-      // `ndsh`, so it fails `isPronounceable` for a reason that predates this
-      // change. Checking only the without-guard direction had missed that.
-      `const authToken = 'jwt_signature_invalid';`,
-      `const apiSecret = 'ssh_tunnel_setup_rejected';`,
-      `const clientSecret = 'xhr_transport_layer_failure';`,
-      `const apiSecret = 'sql_migration_lock_timeout';`,
-
-      // okta/okta-auth-js, verbatim.
-      `const OktaAuth = '<rootDir>/build/cjs/exports/default.js';`,
-      // The bundler spelling of the same thing.
-      `const authChunk = '[name]/vendor/auth.js';`,
+      },
+      {
+        name: 'jwt — an abbreviation under a name that DOES open the gate',
+        code: `const authToken = 'jwt_signature_invalid';`,
+      },
+      {
+        name: 'ssh — same shape, different abbreviation',
+        code: `const apiSecret = 'ssh_tunnel_setup_rejected';`,
+      },
+      {
+        name: 'xhr — same shape, under clientSecret',
+        code: `const clientSecret = 'xhr_transport_layer_failure';`,
+      },
+      {
+        name: 'sql — same shape, under apiSecret',
+        code: `const apiSecret = 'sql_migration_lock_timeout';`,
+      },
+      {
+        name: 'a Jest module map entry rooted at <rootDir> (okta)',
+        code: `const OktaAuth = '<rootDir>/build/cjs/exports/default.js';`,
+      },
+      {
+        name: 'the bundler spelling of a templated path root',
+        code: `const authChunk = '[name]/vendor/auth.js';`,
+      },
     ],
     invalid: [
-      // The abbreviation allowance must not reach a key. Every one of these
-      // carries a digit, which is what keeps the vowel requirement in force.
       {
-        code: `const stripeSecret = 'vnd_live_7dQ82JmXzKvNbRt4Wy6Lp3Fa';`,
+        name: 'a key shape carries digits, so it keeps the vowel requirement',
+        code: `const vendorSecret = 'vnd_live_7dQ82JmXzKvNbRt4Wy6Lp3Fa';`,
         errors: 1,
       },
       {
+        name: 'a personal-access-token shape still reports',
         code: `const githubToken = 'pat_16C7e42F292c6912E7710c838347Ae178B4a';`,
         errors: 1,
       },
       {
+        name: 'a long mixed-case api key still reports',
         code: `const googleApiKey = 'AbcDeFgHiJkLmNoPqRsTuVwXyZ1234567890';`,
         errors: 1,
       },
-      // A templated ROOT is stripped; an opaque segment after it is not a path.
       {
+        name: 'only the templated ROOT is stripped — an opaque segment after it is still a credential',
         code: `const authSecret = '<rootDir>/K2n8Qv4xRtL9pWmZ3yBc7Hd5Fj1Ns6Ae0Ug';`,
         errors: 1,
       },
