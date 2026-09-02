@@ -921,10 +921,15 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         }
       },
 
-      'MemberExpression[computed=false] > Identifier.property'(
-        node: TSESTree.Identifier,
-      ) {
-        if (DOM_XPATH_MEMBERS.has(node.name)) {
+      // The selector used to read `MemberExpression[computed=false] >
+      // Identifier.property`, which put the blind spot in the SELECTOR: a file
+      // whose only evaluator is `doc['evaluate'](q)` never set this flag, so
+      // the pending template was never reported. Matching the member itself
+      // and asking `propertyName` covers both spellings, and still answers
+      // null for a key chosen at runtime.
+      MemberExpression(node: TSESTree.MemberExpression) {
+        const member = propertyName(node);
+        if (member !== null && DOM_XPATH_MEMBERS.has(member)) {
           moduleEvaluatesXpath = true;
         }
       },

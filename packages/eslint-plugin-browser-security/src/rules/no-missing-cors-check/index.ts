@@ -13,7 +13,7 @@
  * @see https://owasp.org/www-community/attacks/CORS_Misconfiguration
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, isTestFilePath, propertyName } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, isTestFilePath, propertyName, objectKeyName } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'missingCorsCheck';
@@ -140,6 +140,20 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
     const isTestFile = allowInTests && isTestFilePath(filename);
     const sourceCode = context.sourceCode;
 
+    /*
+     * These match SOURCE TEXT, so a dotted-only pattern puts the blind spot in
+     * the PATTERN rather than in a guard: `app['use'](…)` never matched
+     * `\buse\s*\(`, and the wildcard origin inside it went unreported.
+     * Each accepts `.name(` or `['name'](` and nothing else, so a key chosen at
+     * runtime still does not match. Written literally — a rule that assembles
+     * its own patterns at runtime is a shape this repo's rule-audit flags.
+     */
+    const CALLS_USE = /(?:\.\s*use|\[\s*['"]use['"]\s*\])\s*\(/i;
+    const CALLS_USE_OR_CORS =
+      /(?:\.\s*use|\[\s*['"]use['"]\s*\]|\bcors)\s*\(/i;
+    const CALLS_HEADER_SETTER =
+      /(?:\.\s*(?:setHeader|header)|\[\s*['"](?:setHeader|header)['"]\s*\])\s*\(/i;
+
     function checkLiteral(node: TSESTree.Literal) {
       if (isTestFile) {
         return;
@@ -165,16 +179,21 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
             const callText = sourceCode.getText(current);
             // Check if it's a setHeader/header call with Access-Control-Allow-Origin
             // Skip these - checkMemberExpression handles them
-            if (/\b(setHeader|header)\s*\(/i.test(callText) && /\bAccess-Control-Allow-Origin\b/i.test(callText)) {
+            // These match SOURCE TEXT, so the dotted-only form put the blind
+            // spot in the PATTERN: `res['setHeader'](…)` and `app['use'](…)`
+            // never matched `\buse\s*\(`. Each alternation now accepts the
+            // bracketed spelling too, and still not a runtime key.
+            if (CALLS_HEADER_SETTER.test(callText) && /\bAccess-Control-Allow-Origin\b/i.test(callText)) {
               shouldSkip = true;
               break;
             }
             // Check if it's app.use(cors({ origin: "*" })) - checkCallExpression handles these with suggestions
-            if (/\buse\s*\(/i.test(callText) && /\bcors\s*\(/i.test(callText)) {
+            if (CALLS_USE.test(callText) && /\bcors\s*\(/i.test(callText)) {
               // Check if the literal is in an object property named "origin"
               if (node.parent && node.parent.type === 'Property') {
                 const prop = node.parent as TSESTree.Property;
-                if (prop.key.type === 'Identifier' && prop.key.name === 'origin') {
+                // `{ ['origin']: '*' }` names the same option.
+                if (objectKeyName(prop) === 'origin') {
                   shouldSkip = true;
                   break;
                 }
@@ -200,7 +219,7 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
           if (current.type === 'CallExpression') {
             const callText = sourceCode.getText(current);
             // Check if it's a CORS middleware call
-            if (/\b(use|cors)\s*\(/i.test(callText) && /\bcors\s*\(/i.test(callText)) {
+            if (CALLS_USE_OR_CORS.test(callText) && /\bcors\s*\(/i.test(callText)) {
               isActualCorsContext = true;
               break;
             }
@@ -211,8 +230,10 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
         // but only if it's in a CORS-related call expression
         if (node.parent && node.parent.type === 'Property') {
           const prop = node.parent as TSESTree.Property;
-          if (prop.key.type === 'Identifier') {
-            const keyName = prop.key.name.toLowerCase();
+          // `{ ['origin']: '*' }` names the same option.
+          const key = objectKeyName(prop);
+          if (key !== null) {
+            const keyName = key.toLowerCase();
             if (keyName === 'origin' || keyName === 'allowedorigins') {
               // Check if this property is in a CORS call context
               let inCorsCall = false;
@@ -221,8 +242,8 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
                 checkNode = checkNode.parent as TSESTree.Node;
                 if (checkNode.type === 'CallExpression') {
                   const callText = sourceCode.getText(checkNode);
-                  if (/\bcors\s*\(/i.test(callText) || 
-                      (/\buse\s*\(/i.test(callText) && /\bcors/i.test(callText))) {
+                  if (/\bcors\s*\(/i.test(callText) ||
+                      (CALLS_USE.test(callText) && /\bcors/i.test(callText))) {
                     inCorsCall = true;
                     break;
                   }
@@ -314,8 +335,8 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
                 for (const prop of arg.properties) {
                   if (
                     prop.type === 'Property' &&
-                    prop.key.type === 'Identifier' &&
-                    prop.key.name === 'origin' &&
+                    // `{ ['origin']: '*' }` names the same option.
+                    objectKeyName(prop) === 'origin' &&
                     prop.value.type === 'Literal'
                   ) {
                     const issue = describePermissiveOrigin(prop.value.value);
@@ -355,8 +376,8 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
                               for (const prop of declarator.init.properties) {
                                 if (
                                   prop.type === 'Property' &&
-                                  prop.key.type === 'Identifier' &&
-                                  prop.key.name === 'origin' &&
+                                  // `{ ['origin']: '*' }` names the same option.
+                                  objectKeyName(prop) === 'origin' &&
                                   prop.value.type === 'Literal'
                                 ) {
                                   const issue = describePermissiveOrigin(prop.value.value);

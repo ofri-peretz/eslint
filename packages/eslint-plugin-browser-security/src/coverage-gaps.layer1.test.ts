@@ -742,7 +742,16 @@ ruleTester.run('no-missing-cors-check (coverage)', noMissingCorsCheck, {
       code: `app.use(cors('*'));`,
       errors: [{ messageId: 'missingCorsCheck' }],
     },
-    // computed origin key: shouldSkip stays false, actual CORS context reports
+    // An option key chosen at RUNTIME is not attributable to `origin`, so the
+    // suggestion path stands down — but a bare `'*'` inside a `cors(…)` call
+    // is a wildcard origin whichever key holds it, and the literal check
+    // still reports it.
+    {
+      name: 'a wildcard under a runtime-keyed cors option still reports',
+      code: `app.use(cors({ [k]: '*' }));`,
+      errors: [{ messageId: 'missingCorsCheck' }],
+    },
+    // computed origin key: now resolved, so checkCallExpression reports it
     {
       code: `app.use(cors({ ['origin']: '*' }));`,
       errors: [{ messageId: 'missingCorsCheck' }],

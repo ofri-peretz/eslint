@@ -314,7 +314,7 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
      * Report evidence of weakness instead of absence of a known-good name.
      */
     const usesPredictableSource = (
-      callExpression: TSESTree.CallExpression,
+      callExpression: TSESTree.Node,
     ): boolean => {
       const text = sourceCode.getText(callExpression);
       /*
@@ -490,14 +490,15 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
               });
             }
           } else if (node.init.type === 'BinaryExpression') {
-            // Check for predictable patterns
-            const weakPatterns = [
-              'Date.now()',
-              'Math.random()',
-              'timestamp',
-              'new Date()',
-            ];
-            if (weakPatterns.some((pattern) => initText.includes(pattern))) {
+            // `usesPredictableSource` rather than a second list of literal
+            // substrings. The list here read 'Date.now()' and 'Math.random()',
+            // so `Date['now']() + salt` — the same predictable token — matched
+            // neither. That helper already accepts both spellings, and keeping
+            // one definition means the next source added is added once.
+            if (
+              usesPredictableSource(node.init) ||
+              initText.includes('timestamp')
+            ) {
               // FALSE POSITIVE REDUCTION
               if (
                 safetyChecker.isSafe(node, context) ||
