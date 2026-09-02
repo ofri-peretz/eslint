@@ -309,7 +309,27 @@ export function isNaturalWordString(value: string): boolean {
     .filter(Boolean);
   const meaningful = tokens.filter((t) => t.length >= 3);
   if (meaningful.length === 0) return false;
-  return meaningful.every(isPronounceable);
+  if (meaningful.every(isPronounceable)) return true;
+
+  // A short vowel-less token is an abbreviation, not entropy — `mtls`, `jwt`,
+  // `xhr`, `sql`, `ssh`. auth0/express-openid-connect declares
+  // `MTLS_INCOMPATIBLE_CLIENT_AUTH: 'mtls_incompatible_client_auth'`, an error
+  // code whose every token but `mtls` is a dictionary word. That one token
+  // failed the vowel test and the value was reported as a CRITICAL CVSS 9.8
+  // hard-coded credential tagged SOC2 / PCI-DSS / HIPAA / GDPR.
+  //
+  // The allowance lives HERE and not in `isPronounceable`, because a token
+  // cannot see enough to be safe. Waiving the vowel per-token accepted `zdp`
+  // inside `vnd_live_7dQ82JmXzKvNbRt4Wy6Lp3Fa` and skipped a real Stripe key —
+  // caught by the true-positive probe before it shipped.
+  //
+  // The whole string decides: a value carrying ANY digit is a key shape, not an
+  // identifier, and keeps its vowel requirement. `mtls_…` has none;
+  // `sk_live_4eC39…` does.
+  if (/[0-9]/.test(value)) return false;
+  return meaningful.every(
+    (token) => isPronounceable(token) || token.length <= 4,
+  );
 }
 
 /**
@@ -388,6 +408,17 @@ function isUrlOrPath(value: string): boolean {
   if (/^[A-Za-z][A-Za-z0-9+.-]*:\/\//.test(value)) {
     return !/^[^/]*\/\/[^/@]*:[^/@]*@/.test(value);
   }
+  // A tool's path template is still a path. Jest writes `<rootDir>/…`, webpack
+  // and Rollup write `[name]/…`, and the leading token is not a path segment
+  // this function can parse — so `'<rootDir>/build/cjs/exports/default.js'`,
+  // the module map in okta/okta-auth-js's jest config, cleared every guard and
+  // was reported as a CRITICAL hard-coded credential.
+  //
+  // Only the ROOT token is stripped, and only when the remainder is rooted:
+  // the segment test below still has to pass, so this widens what counts as a
+  // path root without widening what counts as a path.
+  const rooted = value.replace(/^[<[][A-Za-z_][A-Za-z0-9_]*[>\]](?=\/)/, '');
+  if (rooted !== value) return isUrlOrPath(rooted);
   if (!value.startsWith('/') || value.startsWith('//')) return false;
 
   // A leading slash alone is not enough. `/` is in the base64 alphabet, so a
@@ -786,8 +817,7 @@ function looksLikeCredential(
           confidence: 'structural',
         };
       }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
+    } catch {
       continue;
     }
   }
