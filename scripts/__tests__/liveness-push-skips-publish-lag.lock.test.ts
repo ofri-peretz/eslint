@@ -8,7 +8,7 @@
  * A push to main must not check publish lag.
  *
  * `release-liveness.yml` triggers on `.changeset/**` and
- * `packages/*​/package.json`. A Version PR merge touches both: it deletes the
+ * `packages/<pkg>/package.json`. A Version PR merge touches both: it deletes the
  * changesets it consumed and bumps every version. So the push fires on the
  * release commit itself — the one moment npm is legitimately behind main — and
  * every package reports `unpublished-bump`.
