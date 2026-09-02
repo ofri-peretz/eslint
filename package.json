@@ -170,6 +170,7 @@
     "audit:cve-latency:strict": "tsx scripts/audit-cve-rule-latency.ts --strict",
     "audit:api-surface": "tsx scripts/audit-api-surface.ts",
     "audit:api-surface:strict": "tsx scripts/audit-api-surface.ts --strict",
+    "measure:api-surface": "tsx scripts/measure-api-surface.ts",
     "audit:stock-overlap": "tsx scripts/audit-stock-corpus-overlap.ts",
     "audit:stock-overlap:strict": "tsx scripts/audit-stock-corpus-overlap.ts --strict",
     "check:per-rule-budget": "tsx scripts/check-per-rule-budget.ts",
