@@ -64,6 +64,24 @@
  *     this rule's own message recommends, and a rule that reports its own
  *     advice cannot be satisfied.
  *
+ *   ✗ "The rule REPORTS on the `safePattern` it prints, so the sanitiser leaks."
+ *     It does not. What reports is the FRAGMENT the pattern is usually probed
+ *     with, where `SAFE_DIR` is declared nowhere:
+ *
+ *       fs.readFileSync(path.resolve(SAFE_DIR, path.basename(req.query.f)))  1
+ *       const SAFE_DIR = '/uploads'; …same expression…                       0
+ *       import { SAFE_DIR } from './config'; …same expression…               0
+ *       fs.readFileSync(path.resolve(SAFE_DIR, 'notes.txt'))                 1
+ *
+ *     The last line is the discriminator, and it was measured: NO taint of any
+ *     kind, same finding. `containsFreeVariable` is firing on a name bound
+ *     nowhere in the file — the mechanism three entries down, working as
+ *     documented — and `readsTaintSource` never sees past `basename` at all.
+ *     Do not "fix" the sanitiser, and do not weaken `safePattern`: the advice
+ *     is accepted verbatim in every file where its base actually exists.
+ *     Pinned in `path-guards.test.ts` by two valid cases and the literal-second-
+ *     argument CONTROL beside them; mutation-verified in both directions.
+ *
  *   ✗ "An allowlist only needs one part checked."
  *     Every tainted part must be. `'/s/' + a + b` with only `a` allowlisted
  *     still lets `b` traverse — pinned by a CONTROL case.
