@@ -30,17 +30,23 @@
  * @see https://owasp.org/www-project-secure-headers/
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, isTestFilePath, staticString } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  isTestFilePath,
+  staticString,
+  namesOneOf,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { resolveInitializer } from '../../utils/resolve-binding';
 
-type MessageIds =
-  | 'missingSecurityHeader';
+type MessageIds = 'missingSecurityHeader';
 
 export interface Options {
   /** Required security headers. Default: ['Content-Security-Policy', 'X-Frame-Options', 'X-Content-Type-Options'] */
   requiredHeaders?: string[];
-  
+
   /** Ignore in test files. Default: true */
   ignoreInTests?: boolean;
 }
@@ -209,7 +215,8 @@ function staticStringValue(
   }
   if (node.type === 'MemberExpression' && node.computed) {
     const index = node.property;
-    if (index.type !== 'Literal' || typeof index.value !== 'number') return null;
+    if (index.type !== 'Literal' || typeof index.value !== 'number')
+      return null;
     const container = foldToArray(node.object, sourceCode, depth + 1);
     const element = container?.elements[index.value];
     return element == null
@@ -233,7 +240,8 @@ function foldToArray(
   }
   if (node.type === 'MemberExpression' && node.computed) {
     const index = node.property;
-    if (index.type !== 'Literal' || typeof index.value !== 'number') return null;
+    if (index.type !== 'Literal' || typeof index.value !== 'number')
+      return null;
     const outer = foldToArray(node.object, sourceCode, depth + 1);
     const element = outer?.elements[index.value];
     return element == null ? null : foldToArray(element, sourceCode, depth + 1);
@@ -283,7 +291,10 @@ function parameterLiterals(
   for (const declared of sourceCode.getDeclaredVariables(declarator)) {
     for (const reference of declared.references) {
       const call = reference.identifier.parent;
-      if (call?.type !== 'CallExpression' || call.callee !== reference.identifier) {
+      if (
+        call?.type !== 'CallExpression' ||
+        call.callee !== reference.identifier
+      ) {
         continue;
       }
       const passed = call.arguments[position];
@@ -308,14 +319,10 @@ function isHeaderSet(
   requiredHeaders: readonly string[],
   sourceCode: TSESLint.SourceCode,
 ): boolean {
-  if (
-    node.callee.type !== 'MemberExpression' ||
-    node.callee.computed ||
-    node.callee.property.type !== 'Identifier'
-  ) {
-    return false;
-  }
-  const method = node.callee.property.name;
+  if (node.callee.type !== 'MemberExpression') return false;
+  // `res['setHeader'](…)` sets the same header `res.setHeader(…)` does.
+  const method = propertyName(node.callee);
+  if (method === null) return false;
   if (UNAMBIGUOUS_HEADER_METHODS.has(method)) return true;
   if (method !== 'set') return false;
 
@@ -361,7 +368,7 @@ function isDocumentMediaType(contentType: string): boolean {
 function checkFunctionForSecurityHeaders(
   node: TSESTree.CallExpression,
   requiredHeaders: string[],
-  context: TSESLint.RuleContext<MessageIds, RuleOptions>
+  context: TSESLint.RuleContext<MessageIds, RuleOptions>,
 ): string[] {
   // Lowercased. HTTP header names are case-insensitive (RFC 9110 §5.1) and
   // HTTP/2 requires them lowercase on the wire, so `res.setHeader(
@@ -380,13 +387,16 @@ function checkFunctionForSecurityHeaders(
   let scopeNode: TSESTree.Node | null = null;
 
   while (current) {
-    if (current.type === 'FunctionDeclaration' ||
-        current.type === 'FunctionExpression' ||
-        current.type === 'ArrowFunctionExpression') {
+    if (
+      current.type === 'FunctionDeclaration' ||
+      current.type === 'FunctionExpression' ||
+      current.type === 'ArrowFunctionExpression'
+    ) {
       scopeNode = current;
       break;
     }
-    current = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent ?? null;
+    current =
+      (current as TSESTree.Node & { parent?: TSESTree.Node }).parent ?? null;
   }
 
   // If no function found, use the program scope (for test cases)
@@ -460,14 +470,20 @@ function checkFunctionForSecurityHeaders(
   // scope, which broke 9 tests. A RuleTester snippet sets a header without sending anything
   // because the snippet is truncated, not because the handler serves no document — absence
   // of a send call is not evidence of absence of a document.
-  if (setHeaders.size > 0 && [...setHeaders].every((h) => NON_DOCUMENT_HEADERS.has(h))) {
+  if (
+    setHeaders.size > 0 &&
+    [...setHeaders].every((h) => NON_DOCUMENT_HEADERS.has(h))
+  ) {
     return [];
   }
 
   // The scope SAYS what it is serving. A Content-Type that is not a document
   // settles the question outright: a JSON API response has nothing to frame,
   // nothing to MIME-sniff into script and nothing for a policy to govern.
-  if (declaredContentType !== null && !isDocumentMediaType(declaredContentType)) {
+  if (
+    declaredContentType !== null &&
+    !isDocumentMediaType(declaredContentType)
+  ) {
     return [];
   }
 
@@ -594,9 +610,8 @@ function writeHeadHeaders(
 ): TSESTree.ObjectExpression | null {
   if (
     node.callee.type !== 'MemberExpression' ||
-    node.callee.computed ||
-    node.callee.property.type !== 'Identifier' ||
-    node.callee.property.name !== 'writeHead'
+    // `res['writeHead'](200, headers)` writes the same head.
+    propertyName(node.callee) !== 'writeHead'
   ) {
     return null;
   }
@@ -641,18 +656,17 @@ function isResponseInit(init: TSESTree.ObjectExpression): boolean {
   if (callee.type === 'Identifier') return callee.name === 'Response';
   if (
     callee.type === 'MemberExpression' &&
-    !callee.computed &&
-    callee.property.type === 'Identifier' &&
     callee.object.type === 'Identifier'
   ) {
+    // `NextResponse['json'](…)` builds the same response.
     return (
-      RESPONSE_FACTORIES.has(callee.property.name) &&
-      (callee.object.name === 'Response' || callee.object.name === 'NextResponse')
+      namesOneOf(propertyName(callee), RESPONSE_FACTORIES) &&
+      (callee.object.name === 'Response' ||
+        callee.object.name === 'NextResponse')
     );
   }
   return false;
 }
-
 
 export const noMissingSecurityHeaders = createRule<RuleOptions, MessageIds>({
   name: 'no-missing-security-headers',
@@ -676,7 +690,6 @@ export const noMissingSecurityHeaders = createRule<RuleOptions, MessageIds>({
         fix: 'Set security headers: Content-Security-Policy, X-Frame-Options, X-Content-Type-Options',
         documentationLink: 'https://owasp.org/www-project-secure-headers/',
       }),
-
     },
     schema: [
       {
@@ -685,7 +698,8 @@ export const noMissingSecurityHeaders = createRule<RuleOptions, MessageIds>({
           requiredHeaders: {
             type: 'array',
             items: { type: 'string' },
-            default: DEFAULT_REQUIRED_HEADERS, description: 'Security headers a response must set'
+            default: DEFAULT_REQUIRED_HEADERS,
+            description: 'Security headers a response must set',
           },
           ignoreInTests: {
             type: 'boolean',
@@ -702,12 +716,14 @@ export const noMissingSecurityHeaders = createRule<RuleOptions, MessageIds>({
       ignoreInTests: true,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
+  create(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    [options = {}],
+  ) {
     const {
-requiredHeaders = DEFAULT_REQUIRED_HEADERS,
+      requiredHeaders = DEFAULT_REQUIRED_HEADERS,
       ignoreInTests = true,
-    
-}: Options = options || {};
+    }: Options = options || {};
 
     const filename = context.filename;
     const isTestFile = ignoreInTests && isTestFilePath(filename);
@@ -725,12 +741,16 @@ requiredHeaders = DEFAULT_REQUIRED_HEADERS,
       // Find the function that contains this call
       let current: TSESTree.Node | null = node;
       while (current) {
-        if (current.type === 'FunctionDeclaration' ||
-            current.type === 'FunctionExpression' ||
-            current.type === 'ArrowFunctionExpression') {
+        if (
+          current.type === 'FunctionDeclaration' ||
+          current.type === 'FunctionExpression' ||
+          current.type === 'ArrowFunctionExpression'
+        ) {
           return `${current.range?.[0]}-${current.range?.[1]}`;
         }
-        current = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent ?? null;
+        current =
+          (current as TSESTree.Node & { parent?: TSESTree.Node }).parent ??
+          null;
       }
       // If no function found, use program scope
       return 'program';
@@ -753,7 +773,11 @@ requiredHeaders = DEFAULT_REQUIRED_HEADERS,
         return;
       }
 
-      const missing = checkFunctionForSecurityHeaders(node, requiredHeaders, context);
+      const missing = checkFunctionForSecurityHeaders(
+        node,
+        requiredHeaders,
+        context,
+      );
 
       // Mark as checked either way
       reportedScopes.add(scopeKey);
@@ -814,4 +838,3 @@ requiredHeaders = DEFAULT_REQUIRED_HEADERS,
     };
   },
 });
-

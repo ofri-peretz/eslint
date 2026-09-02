@@ -30,6 +30,27 @@ ruleTester.run(
     ],
 
     invalid: [
+    {
+      // FN: was `valid` alongside genuinely different receivers and methods,
+      // as though the notation belonged in that list. It does not —
+      // `Object['assign'](process.env, ...)` publishes the same map of secrets
+      // into the environment that the dotted form does.
+      // @found computed-key blind-spot probe
+      name: 'FN: a batch env write through a string subscript',
+      code: 'Object["assign"](process.env, { API_TOKEN: token });',
+      errors: 1,
+    },
+    {
+      // FN: this was `valid`, on the stated ground that "a computed METHOD name
+      // is not provably `setItem`". A string subscript is provably exactly
+      // that — it is the same slot the dotted form reaches, and it is what a
+      // bundler emits. `stores[name].setItem(...)` above remains valid because
+      // THAT key really is unresolvable.
+      // @found computed-key blind-spot probe
+      name: 'FN: a credential stored through a string subscript',
+      code: "localStorage['setItem']('password', p)",
+      errors: 1,
+    },
       {
         name: 'an API key in AsyncStorage, which is plain text on disk',
         code: "AsyncStorage.setItem('apiKey', key)",
@@ -102,8 +123,7 @@ ruleTester.run(
       { code: 'localStorage.setItem(...args)' },
       // A computed member with a non-identifier key carries no name to read.
       { code: 'localStorage.setItem(k, creds[0])' },
-      // A computed METHOD name is not provably `setItem`.
-      { code: "localStorage['setItem']('password', p)" },
+
     ],
     invalid: [
       {
@@ -259,8 +279,11 @@ ruleTester.run(
       // Not `process.env` — a lookalike object.
       'config.env.SESSION_TOKEN = t;',
       'process.argv.SECRET = s;',
-      // `env` reached through a computed property is not provably process.env.
-      'process["env"].SESSION_TOKEN = t;',
+      // An `env` chosen at RUNTIME is not provably process.env.
+      {
+        name: 'an env chosen at RUNTIME is not provably process.env',
+        code: 'process[bag].SESSION_TOKEN = t;',
+      },
 
       // ── The alias arm, and where it stops ──────────────────────────────────
       // A `let` can hold something else by the time the write happens, so its
@@ -284,16 +307,25 @@ ruleTester.run(
       'Object.assign(process.env, { ...resolvedSecrets });',
       // No target at all.
       'Object.assign();',
-      // Neither the receiver, the method, nor the notation is Object.assign.
+      // Neither the receiver nor the method is Object.assign. The NOTATION
+      // used to be listed here too, which was the error: a string subscript is
+      // still Object.assign.
       'Object.keys(process.env);',
       'lodash.assign(process.env, { API_TOKEN: token });',
-      'Object["assign"](process.env, { API_TOKEN: token });',
       'assign(process.env, { API_TOKEN: token });',
     ],
     invalid: [
       // Evidence in the TARGET name.
       {
         code: 'process.env.SESSION_TOKEN = sessionToken;',
+        errors: [{ messageId: 'credentialInEnvironment' }],
+      },
+      // Was pinned as valid — "`env` reached through a computed property is
+      // not provably process.env". `process['env']` IS process.env; it is
+      // what a minifier writes, and it holds the same token.
+      {
+        name: 'was pinned as valid — "env reached through a computed property is not',
+        code: 'process["env"].SESSION_TOKEN = sessionToken;',
         errors: [{ messageId: 'credentialInEnvironment' }],
       },
       // Bracket notation names the same slot as dot notation.

@@ -27,6 +27,15 @@ ruleTester.run('require-storage-encryption', requireStorageEncryption, {
   ],
 
   invalid: [
+    {
+      // FN: was `valid` as "a computed method name is not provably a write
+      // call". `fs['writeFile']` is provably a write call. The line belongs
+      // where `obj[method](...)` above already draws it — an unresolvable key.
+      // @found computed-key blind-spot probe
+      name: 'FN: an unencrypted credential written through a string subscript',
+      code: "fs['writeFile']('creds.json', password)",
+      errors: 1,
+    },
     // Web Storage now belongs to require-secure-credential-storage; this rule owns the
     // filesystem. The two used to carry byte-identical implementations and reported every
     // match twice, under two rule ids and the same CWE.
@@ -78,8 +87,7 @@ ruleTester.run(
       // Not a write at all.
       { code: "fs.readFileSync('creds.json')" },
       { code: "obj[method]('creds.json', password)" },
-      // A computed method name is not provably a write call.
-      { code: "fs['writeFile']('creds.json', password)" },
+
     ],
     invalid: [
       {

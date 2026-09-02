@@ -10,7 +10,7 @@
  * CWE-200: Information Exposure
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath, propertyName } from '@interlace/eslint-devkit';
 import { analyzeMongoScope } from '../../utils/receiver';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
 
@@ -28,16 +28,14 @@ function hasChainedSelect(node: TSESTree.CallExpression): boolean {
   while (current) {
     if (
       current.type === AST_NODE_TYPES.MemberExpression &&
-      current.property.type === AST_NODE_TYPES.Identifier &&
-      current.property.name === 'select'
+      propertyName(current) === 'select'
     ) {
       return true;
     }
     if (
       current.type === AST_NODE_TYPES.CallExpression &&
       current.callee.type === AST_NODE_TYPES.MemberExpression &&
-      current.callee.property.type === AST_NODE_TYPES.Identifier &&
-      current.callee.property.name === 'select'
+      propertyName(current.callee) === 'select'
     ) {
       return true;
     }

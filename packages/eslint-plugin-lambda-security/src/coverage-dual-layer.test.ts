@@ -299,18 +299,31 @@ ruleTester.run('no-hardcoded-credentials-sdk (coverage)', noHardcodedCredentials
 
 ruleTester.run('no-missing-authorization-check (coverage)', noMissingAuthorizationCheck, {
   valid: lambda([
-    // Computed callee property (not an Identifier) is not a tracked sensitive op;
+    // A method chosen at RUNTIME is not a tracked sensitive op; the
     // non-object return exercises the ReturnStatement fallthrough
     {
+      code: `
+        export const handler = async (event) => {
+          await registry[op](payload);
+          return 1;
+        };
+      `,
+    },
+  ]),
+invalid: lambda([
+    // Was pinned as valid because the callee property was computed.
+    // `registry['create'](payload)` is the same create, unauthorised.
+    {
+      name: 'a subscripted sensitive create with no authorization check',
       code: `
         export const handler = async (event) => {
           await registry['create'](payload);
           return 1;
         };
       `,
+      errors: [{ messageId: 'missingAuthCheck' }],
     },
   ]),
-  invalid: [],
 });
 
 // ---------------------------------------------------------------------------
@@ -425,8 +438,8 @@ ruleTester.run('no-unvalidated-event-body (coverage)', noUnvalidatedEventBody, {
   valid: lambda([
     // Assignment to a plain identifier is not the exports.handler convention
     { code: `h = function (e) { const x = e.body; };` },
-    // Computed exports key → left.property is a Literal
-    { code: `exports['handler'] = function (e) { const x = e.body; };` },
+    // An exports key chosen at RUNTIME names no handler.
+    { code: `exports[name] = function (e) { const x = e.body; };` },
     // Exported under a non-handler name
     { code: `exports.notHandler = function (e) { const x = e.body; };` },
     // Destructured first parameter → not an Identifier
@@ -438,6 +451,13 @@ ruleTester.run('no-unvalidated-event-body (coverage)', noUnvalidatedEventBody, {
     { code: `pipeline.use(mod.validator(opts));` },
   ]),
   invalid: lambda([
+    // Was pinned as valid because the key was computed. `exports['handler']`
+    // IS the exports.handler convention, and this reads `e.body` unvalidated.
+    {
+      name: 'a handler exported under a quoted key reading event.body',
+      code: `exports['handler'] = function (e) { const x = e.body; };`,
+      errors: [{ messageId: 'unvalidatedInput' }],
+    },
     // FunctionDeclaration named handler with short event param
     {
       code: `function handler(e) { const x = e.body; }`,

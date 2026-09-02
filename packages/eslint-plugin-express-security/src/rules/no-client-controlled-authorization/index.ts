@@ -42,6 +42,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'clientControlledAuthorization';
@@ -136,8 +137,7 @@ function clientContainerOf(node: TSESTree.MemberExpression): string | null {
   // ctx.req.body.role / this.request.query.role
   if (
     root.type === AST_NODE_TYPES.MemberExpression &&
-    root.property.type === AST_NODE_TYPES.Identifier &&
-    REQUEST_RECEIVER.test(root.property.name)
+    REQUEST_RECEIVER.test(propertyName(root) as string)
   ) {
     return container;
   }
@@ -183,9 +183,8 @@ function isAuthorizationDecision(node: TSESTree.Node): boolean {
       case AST_NODE_TYPES.CallExpression:
         if (
           parent.callee.type === AST_NODE_TYPES.MemberExpression &&
-          parent.callee.property.type === AST_NODE_TYPES.Identifier &&
-          (parent.callee.property.name === 'includes' ||
-            parent.callee.property.name === 'some')
+          (propertyName(parent.callee) === 'includes' ||
+            propertyName(parent.callee) === 'some')
         ) {
           return true;
         }

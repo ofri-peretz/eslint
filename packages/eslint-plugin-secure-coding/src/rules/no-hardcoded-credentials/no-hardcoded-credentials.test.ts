@@ -33,6 +33,29 @@ describe('no-hardcoded-credentials', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - no hardcoded credentials', noHardcodedCredentials, {
       valid: [
+        // Both of these were real findings against the pinned corpus, at CVSS 9.8
+        // each, and the corpus scan could not report them because its own error
+        // handling had been swallowing every result. Neither value is a secret.
+        {
+          // auth0/express-openid-connect lib/errors.js — the error-code idiom.
+          // The key ends in `auth`, which opens the credential-context gate, and
+          // the value then clears the two-character-class test on its underscores.
+          name: 'an error code named after its own key is not a credential',
+          code: "const E = { MTLS_INCOMPATIBLE_CLIENT_AUTH: 'mtls_incompatible_client_auth' };",
+        },
+        {
+          // okta/okta-auth-js jest.cjs.js — a `moduleNameMapper` target. The
+          // binding is named `OktaAuth`; the value is a path with a substituted
+          // root, which is still a path.
+          name: 'a module path under a substituted <root> is not a credential',
+          code: "const OktaAuth = '<rootDir>/build/cjs/exports/default.js';",
+        },
+        {
+          // The gate is an EQUALITY, not a prefix: a value that merely starts
+          // with its key's name is not exempted by it.
+          name: 'a value that only resembles its key is still judged on its shape',
+          code: "const clientSecret = 'clientsecret';",
+        },
         // Environment variables
         {
           name: 'the value comes from the environment',

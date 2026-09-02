@@ -19,7 +19,7 @@
  * @see https://refactoring.guru/replace-magic-literal
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'noMagicNumber' | 'extractConst';
@@ -372,9 +372,7 @@ export const noMagicNumbers = createRule<RuleOptions, MessageIds>({
         comparison.left === node ? comparison.right : comparison.left;
       return (
         other.type === 'MemberExpression' &&
-        !other.computed &&
-        other.property.type === 'Identifier' &&
-        other.property.name === 'length'
+        propertyName(other) === 'length'
       );
     }
 

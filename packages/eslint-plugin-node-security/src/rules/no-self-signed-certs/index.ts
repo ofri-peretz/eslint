@@ -12,7 +12,7 @@
  * @see https://cwe.mitre.org/data/definitions/295.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES, isTestFilePath } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES, isTestFilePath, propertyName } from '@interlace/eslint-devkit';
 
 type MessageIds =
   | 'insecureTls'
@@ -117,10 +117,8 @@ export const noSelfSignedCerts = createRule<RuleOptions, MessageIds>({
         node.left.object.type === AST_NODE_TYPES.MemberExpression &&
         node.left.object.object.type === AST_NODE_TYPES.Identifier &&
         node.left.object.object.name === 'process' &&
-        node.left.object.property.type === AST_NODE_TYPES.Identifier &&
-        node.left.object.property.name === 'env' &&
-        node.left.property.type === AST_NODE_TYPES.Identifier &&
-        node.left.property.name === 'NODE_TLS_REJECT_UNAUTHORIZED'
+        propertyName(node.left.object) === 'env' &&
+        propertyName(node.left) === 'NODE_TLS_REJECT_UNAUTHORIZED'
       ) {
         if (
           node.right.type === AST_NODE_TYPES.Literal &&

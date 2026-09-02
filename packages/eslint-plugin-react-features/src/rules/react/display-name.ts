@@ -22,7 +22,12 @@
  *   - `memo(() => <div />)` / `forwardRef(...)` not bound to a variable
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  namesOneOf,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'displayName';
@@ -85,7 +90,12 @@ export const displayName = createRule<RuleOptions, MessageIds>({
       CallExpression(node: TSESTree.CallExpression) {
         if (!isReactWrapperCall(node) || hasInferableName(node)) return;
         const inner = node.arguments[0];
-        if (inner && isFunctionNode(inner) && !inner.id && containsJSX(inner.body)) {
+        if (
+          inner &&
+          isFunctionNode(inner) &&
+          !inner.id &&
+          containsJSX(inner.body)
+        ) {
           report(inner);
         }
       },
@@ -131,7 +141,9 @@ function hasInferableName(node: TSESTree.Node): boolean {
 }
 
 /** `memo(...)`, `React.memo(...)`, `forwardRef(...)`, `React.forwardRef(...)`. */
-function isReactWrapperCall(node: TSESTree.Node): node is TSESTree.CallExpression {
+function isReactWrapperCall(
+  node: TSESTree.Node,
+): node is TSESTree.CallExpression {
   if (node.type !== AST_NODE_TYPES.CallExpression) return false;
   const callee = node.callee;
   if (callee.type === AST_NODE_TYPES.Identifier) {
@@ -139,8 +151,7 @@ function isReactWrapperCall(node: TSESTree.Node): node is TSESTree.CallExpressio
   }
   return (
     callee.type === AST_NODE_TYPES.MemberExpression &&
-    callee.property.type === AST_NODE_TYPES.Identifier &&
-    REACT_WRAPPERS.has(callee.property.name)
+    namesOneOf(propertyName(callee), REACT_WRAPPERS)
   );
 }
 
@@ -161,16 +172,18 @@ function isReactComponent(
   if (!node.superClass) return false;
 
   if (node.superClass.type === AST_NODE_TYPES.Identifier) {
-    return node.superClass.name === 'Component' || node.superClass.name === 'PureComponent';
+    return (
+      node.superClass.name === 'Component' ||
+      node.superClass.name === 'PureComponent'
+    );
   }
 
   if (node.superClass.type === AST_NODE_TYPES.MemberExpression) {
     return (
       node.superClass.object.type === AST_NODE_TYPES.Identifier &&
       node.superClass.object.name === 'React' &&
-      node.superClass.property.type === AST_NODE_TYPES.Identifier &&
-      (node.superClass.property.name === 'Component' ||
-        node.superClass.property.name === 'PureComponent')
+      (propertyName(node.superClass) === 'Component' ||
+        propertyName(node.superClass) === 'PureComponent')
     );
   }
 
@@ -205,7 +218,10 @@ function hasDisplayNameProperty(
  * coverage was a hand-built fake node.
  */
 function containsJSX(node: TSESTree.Node): boolean {
-  if (node.type === AST_NODE_TYPES.JSXElement || node.type === AST_NODE_TYPES.JSXFragment) {
+  if (
+    node.type === AST_NODE_TYPES.JSXElement ||
+    node.type === AST_NODE_TYPES.JSXFragment
+  ) {
     return true;
   }
 

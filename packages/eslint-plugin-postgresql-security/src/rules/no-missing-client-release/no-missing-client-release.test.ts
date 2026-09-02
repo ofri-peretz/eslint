@@ -228,12 +228,15 @@ describe('no-missing-client-release', () => {
           ),
           errors: [{ messageId: 'missingClientRelease' }],
         },
-        // A computed member is not a proven `release`.
+        // Was pinned as `missingClientRelease` — "a computed member is not a
+        // proven release". It IS the release call, so the finding is now the
+        // more precise one: the client IS released, just not from a `finally`,
+        // so a throw in the `query` below still leaks it.
         {
           code: declarePool(
             'async function f() { const c = await pool.connect(); c["release"](); await c.query("SELECT 1"); }',
           ),
-          errors: [{ messageId: 'missingClientRelease' }],
+          errors: [{ messageId: 'releaseNotGuaranteed' }],
         },
       ]),
     });

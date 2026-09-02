@@ -9,7 +9,7 @@
  * Enforce prop types usage
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'propTypes';
@@ -118,8 +118,7 @@ export const propTypes = createRule<[Options], MessageIds>({
         return (
           node.superClass.object.type === 'Identifier' &&
           node.superClass.object.name === 'React' &&
-          node.superClass.property.type === 'Identifier' &&
-          (node.superClass.property.name === 'Component' || node.superClass.property.name === 'PureComponent')
+          (propertyName(node.superClass) === 'Component' || propertyName(node.superClass) === 'PureComponent')
         );
       }
 
@@ -148,8 +147,7 @@ export const propTypes = createRule<[Options], MessageIds>({
       if (
         node.type === 'MemberExpression' &&
         node.object.type === 'ThisExpression' &&
-        node.property.type === 'Identifier' &&
-        node.property.name === 'props'
+        propertyName(node) === 'props'
       ) {
         return true;
       }

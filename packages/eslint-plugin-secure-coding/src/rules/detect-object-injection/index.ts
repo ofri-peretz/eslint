@@ -139,6 +139,8 @@ import {
   TSESLint,
   TSESTree,
   staticString,
+  namesOneOf,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import {
   formatLLMMessage,
@@ -479,8 +481,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         return (
           testNode.type === AST_NODE_TYPES.CallExpression &&
           testNode.callee.type === AST_NODE_TYPES.MemberExpression &&
-          testNode.callee.property.type === AST_NODE_TYPES.Identifier &&
-          testNode.callee.property.name === 'includes' &&
+          propertyName(testNode.callee) === 'includes' &&
           testNode.arguments.length > 0 &&
           testNode.arguments[0].type === AST_NODE_TYPES.Identifier &&
           testNode.arguments[0].name === keyName
@@ -498,8 +499,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         // Object.prototype.hasOwnProperty.call(obj, key)
         if (
           callee.type === AST_NODE_TYPES.MemberExpression &&
-          callee.property.type === AST_NODE_TYPES.Identifier &&
-          callee.property.name === 'call' &&
+          propertyName(callee) === 'call' &&
           args.length >= 2 &&
           args[1].type === AST_NODE_TYPES.Identifier &&
           args[1].name === keyName
@@ -510,11 +510,10 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         // obj.hasOwnProperty(key) OR Object.hasOwn(obj, key)
         if (
           callee.type === AST_NODE_TYPES.MemberExpression &&
-          callee.property.type === AST_NODE_TYPES.Identifier &&
-          (callee.property.name === 'hasOwnProperty' ||
-            callee.property.name === 'hasOwn')
+          (propertyName(callee) === 'hasOwnProperty' ||
+            propertyName(callee) === 'hasOwn')
         ) {
-          const keyArg = callee.property.name === 'hasOwn' ? args[1] : args[0];
+          const keyArg = propertyName(callee) === 'hasOwn' ? args[1] : args[0];
           if (
             keyArg?.type === AST_NODE_TYPES.Identifier &&
             keyArg.name === keyName
@@ -1379,11 +1378,9 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       const key = member.property;
       return (
         key.type === AST_NODE_TYPES.MemberExpression &&
-        !key.computed &&
         key.object.type === AST_NODE_TYPES.Identifier &&
         key.object.name === member.object.name &&
-        key.property.type === AST_NODE_TYPES.Identifier &&
-        key.property.name === 'length'
+        propertyName(key) === 'length'
       );
     };
 
@@ -1419,8 +1416,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         source.callee.type === AST_NODE_TYPES.MemberExpression &&
         source.callee.object.type === AST_NODE_TYPES.Identifier &&
         source.callee.object.name === 'Object' &&
-        source.callee.property.type === AST_NODE_TYPES.Identifier &&
-        source.callee.property.name === 'freeze' &&
+        propertyName(source.callee) === 'freeze' &&
         source.arguments[0] !== undefined
       ) {
         source = source.arguments[0];
@@ -1442,8 +1438,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         source.callee.type === AST_NODE_TYPES.MemberExpression &&
         source.callee.object.type === AST_NODE_TYPES.Identifier &&
         source.callee.object.name === 'Object' &&
-        source.callee.property.type === AST_NODE_TYPES.Identifier &&
-        source.callee.property.name === 'freeze' &&
+        propertyName(source.callee) === 'freeze' &&
         source.arguments[0] !== undefined
       ) {
         source = source.arguments[0];
@@ -1697,12 +1692,10 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       return (
         source.type === AST_NODE_TYPES.CallExpression &&
         source.callee.type === AST_NODE_TYPES.MemberExpression &&
-        !source.callee.computed &&
         source.callee.object.type === AST_NODE_TYPES.Identifier &&
         source.callee.object.name === 'Object' &&
-        source.callee.property.type === AST_NODE_TYPES.Identifier &&
-        (source.callee.property.name === 'keys' ||
-          source.callee.property.name === 'entries')
+        (propertyName(source.callee) === 'keys' ||
+          propertyName(source.callee) === 'entries')
       );
     };
 
@@ -1745,12 +1738,10 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         return (
           right.type === AST_NODE_TYPES.CallExpression &&
           right.callee.type === AST_NODE_TYPES.MemberExpression &&
-          !right.callee.computed &&
           right.callee.object.type === AST_NODE_TYPES.Identifier &&
           right.callee.object.name === 'Object' &&
-          right.callee.property.type === AST_NODE_TYPES.Identifier &&
-          (right.callee.property.name === 'keys' ||
-            right.callee.property.name === 'entries')
+          (propertyName(right.callee) === 'keys' ||
+            propertyName(right.callee) === 'entries')
         );
       }
 
@@ -2206,10 +2197,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       const objectIsObject =
         callee.object.type === AST_NODE_TYPES.Identifier &&
         callee.object.name === 'Object';
-      const propIsAssign =
-        !callee.computed &&
-        callee.property.type === AST_NODE_TYPES.Identifier &&
-        callee.property.name === 'assign';
+      const propIsAssign = propertyName(callee) === 'assign';
       if (!objectIsObject || !propIsAssign) return;
       // Object.assign({}, …) — first arg is fresh literal, no taint risk.
       if (node.arguments[0]?.type === AST_NODE_TYPES.ObjectExpression) return;
@@ -2280,12 +2268,11 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       const callee = iterated.callee;
       if (
         callee.type !== AST_NODE_TYPES.MemberExpression ||
-        callee.computed ||
         callee.object.type !== AST_NODE_TYPES.Identifier ||
         callee.object.name !== 'Object' ||
-        callee.property.type !== AST_NODE_TYPES.Identifier ||
         // @vocabulary Object statics
-        !['keys', 'entries'].includes(callee.property.name)
+        // `Object['keys'](req.body)` enumerates the same caller keys.
+        !namesOneOf(propertyName(callee), ['keys', 'entries'])
       ) {
         return;
       }
@@ -2322,6 +2309,15 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
           n.type === AST_NODE_TYPES.AssignmentExpression &&
           n.left.type === AST_NODE_TYPES.MemberExpression &&
           n.left.computed &&
+          // NOT `propertyName`: the property here is the loop VARIABLE, and
+          // matching it by name is the whole point. `propertyName` resolves a
+          // string subscript and returns null for a dynamic key — exactly
+          // backwards for this test.
+          //
+          // A sweep has now rewritten this line TWICE, stranding the comment
+          // above the wrong code both times; the mass-assignment tests caught
+          // it both times. If you are here from a third sweep, they are the
+          // lock — read them before "fixing" this.
           n.left.property.type === AST_NODE_TYPES.Identifier &&
           n.left.property.name === keyName
         ) {

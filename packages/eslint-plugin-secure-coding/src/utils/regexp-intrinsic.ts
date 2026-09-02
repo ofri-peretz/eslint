@@ -24,6 +24,7 @@
  * a new spelling is now learned once, by both.
  */
 import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
+import { propertyName } from '@interlace/eslint-devkit';
 
 /**
  * Global namespace objects that hold the intrinsic `RegExp`.
@@ -84,9 +85,7 @@ export function isRegExpConstructor(
 
   if (node.type === 'MemberExpression') {
     return (
-      !node.computed &&
-      node.property.type === 'Identifier' &&
-      node.property.name === 'RegExp' &&
+      propertyName(node) === 'RegExp' &&
       node.object.type === 'Identifier' &&
       GLOBAL_NAMESPACES.has(node.object.name) &&
       isEnvironmentGlobal(node.object.name, sourceCode.getScope(node.object))

@@ -144,12 +144,6 @@ const apiKey = rand().toString(36);`,
         {
           code: 'const rng = { next: Math.random }; const token = rng.other();',
         },
-        {
-          code: 'const rng = { ["next"]: Math.random }; const token = rng.next();',
-        },
-        {
-          code: 'const rng = { next: Math.random }; const token = rng["next"]();',
-        },
         { code: 'const token = Math["floor"](1.5);' },
         { code: 'const token = Math[keyName]();' },
         { code: 'const token = Maths.random();' },
@@ -169,6 +163,20 @@ const apiKey = rand().toString(36);`,
         },
       ],
       invalid: [
+        // Both spellings of the SAME alias were pinned valid — a quoted object
+        // KEY and a quoted member READ. `{ ['next']: Math.random }` declares
+        // the slot `{ next: … }` declares, and `rng['next']()` reads it, so
+        // both draw a token from `Math.random`.
+        {
+          name: 'a quoted object key aliasing Math.random',
+          code: 'const rng = { ["next"]: Math.random }; const token = rng.next();',
+          errors: [{ messageId: 'mathRandomCrypto' }],
+        },
+        {
+          name: 'a subscripted read of an alias to Math.random',
+          code: 'const rng = { next: Math.random }; const token = rng["next"]();',
+          errors: [{ messageId: 'mathRandomCrypto' }],
+        },
         // FN: the credential reaches the sink through one intermediate const.
         {
           code: `const raw = Math.random().toString(36).slice(2);

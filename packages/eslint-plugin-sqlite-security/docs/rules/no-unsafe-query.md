@@ -64,7 +64,9 @@ db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
 
 ## Known limitations
 
-- Only identifier member access is matched, so `db['prepare'](...)` is a false negative.
+- A method chosen at runtime — `db[verb](...)` — names nothing to
+  match against the sink list, so it is not reported. The quoted spelling
+  `db['prepare'](...)` names `prepare` and IS reported.
 - Taint tracking is single-scope and name-based — it does not follow a query
   string across function boundaries.
 

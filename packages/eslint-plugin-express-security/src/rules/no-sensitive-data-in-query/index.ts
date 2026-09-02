@@ -43,6 +43,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'sensitiveQueryParam';
@@ -193,11 +194,9 @@ export const noSensitiveDataInQuery = createRule<RuleOptions, MessageIds>({
     function isReqQuery(node: TSESTree.Node): boolean {
       return (
         node.type === AST_NODE_TYPES.MemberExpression &&
-        !node.computed &&
         node.object.type === AST_NODE_TYPES.Identifier &&
         isRequestIdent(node.object.name) &&
-        node.property.type === AST_NODE_TYPES.Identifier &&
-        node.property.name === 'query'
+        propertyName(node) === 'query'
       );
     }
 

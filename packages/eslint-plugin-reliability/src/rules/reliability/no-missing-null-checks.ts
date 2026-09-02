@@ -13,7 +13,12 @@
  * @see https://rules.sonarsource.com/javascript/RSPEC-2259/
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  namesOneOf,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -60,7 +65,9 @@ type RuleOptions = [Options?];
  * left operand, so their result is not the right-hand value and they keep the
  * conservative reading.
  */
-function assignedValue(init: TSESTree.Expression | null): TSESTree.Expression | null {
+function assignedValue(
+  init: TSESTree.Expression | null,
+): TSESTree.Expression | null {
   let current = init;
   while (current?.type === 'AssignmentExpression' && current.operator === '=') {
     current = current.right;
@@ -83,11 +90,19 @@ function assignedValue(init: TSESTree.Expression | null): TSESTree.Expression | 
  */
 const NULLABLE_RETURNS: ReadonlySet<string> = new Set([
   // Array — a miss is undefined
-  'find', 'findLast', 'pop', 'shift',
+  'find',
+  'findLast',
+  'pop',
+  'shift',
   // String / RegExp — a non-match is null
-  'match', 'exec',
+  'match',
+  'exec',
   // DOM — a miss is null
-  'getElementById', 'querySelector', 'closest', 'getAttribute', 'getNamedItem',
+  'getElementById',
+  'querySelector',
+  'closest',
+  'getAttribute',
+  'getNamedItem',
 ]);
 
 /**
@@ -118,7 +133,10 @@ const NULLABLE_RETURNS: ReadonlySet<string> = new Set([
  * definitions. Treating those as shadows makes every `= undefined` check
  * silently vacuous.
  */
-function isShadowedBinding(scope: TSESLint.Scope.Scope | null, name: string): boolean {
+function isShadowedBinding(
+  scope: TSESLint.Scope.Scope | null,
+  name: string,
+): boolean {
   for (let s = scope; s; s = s.upper) {
     const variable = s.variables.find((v) => v.name === name);
     if (variable) return variable.defs.length > 0;
@@ -161,7 +179,8 @@ function nullabilityEvidence(
     }
     if (variable.defs.length !== 1) return null;
     const [def] = variable.defs;
-    if (def.type !== 'Variable' || def.node?.type !== 'VariableDeclarator') return null;
+    if (def.type !== 'Variable' || def.node?.type !== 'VariableDeclarator')
+      return null;
 
     const declarator = def.node as TSESTree.VariableDeclarator;
     const init = assignedValue(declarator.init);
@@ -175,8 +194,12 @@ function nullabilityEvidence(
     // variable of every `for…of` in the corpus a finding — the single largest
     // source of what survived the first cut of this gate.
     if (init === null) {
-      const declParent = (declarator as TSESTree.Node & { parent?: TSESTree.Node }).parent;
-      const loopParent = (declParent as TSESTree.Node & { parent?: TSESTree.Node } | undefined)?.parent;
+      const declParent = (
+        declarator as TSESTree.Node & { parent?: TSESTree.Node }
+      ).parent;
+      const loopParent = (
+        declParent as (TSESTree.Node & { parent?: TSESTree.Node }) | undefined
+      )?.parent;
       if (
         loopParent?.type === 'ForOfStatement' ||
         loopParent?.type === 'ForInStatement'
@@ -227,7 +250,11 @@ function nullabilityEvidence(
     // `scopeHasBinding` lookup always finds it and would disable this arm
     // entirely. Only a binding with DEFS is a real shadow — `const undefined =
     // x` or a parameter — and only that should suppress.
-    if (init.type === 'Identifier' && init.name === 'undefined' && !isShadowedBinding(s, 'undefined')) {
+    if (
+      init.type === 'Identifier' &&
+      init.name === 'undefined' &&
+      !isShadowedBinding(s, 'undefined')
+    ) {
       return 'assigned-null';
     }
 
@@ -249,11 +276,16 @@ function nullabilityEvidence(
     // through untouched.
     if (init.type === 'ConditionalExpression') {
       for (const arm of [init.consequent, init.alternate]) {
-        if (arm.type === 'Literal' && arm.value === null) return 'assigned-null';
+        if (arm.type === 'Literal' && arm.value === null)
+          return 'assigned-null';
         // A bare `undefined` arm is the same evidence as a `null` one. Falling
         // through to the alias walk lost it, because resolving the global
         // `undefined` finds a variable with no definitions and answers null.
-        if (arm.type === 'Identifier' && arm.name === 'undefined' && !isShadowedBinding(s, 'undefined')) {
+        if (
+          arm.type === 'Identifier' &&
+          arm.name === 'undefined' &&
+          !isShadowedBinding(s, 'undefined')
+        ) {
           return 'assigned-null';
         }
         if (arm.type === 'Identifier') {
@@ -263,9 +295,7 @@ function nullabilityEvidence(
         if (
           arm.type === 'CallExpression' &&
           arm.callee.type === 'MemberExpression' &&
-          !arm.callee.computed &&
-          arm.callee.property.type === 'Identifier' &&
-          NULLABLE_RETURNS.has(arm.callee.property.name)
+          namesOneOf(propertyName(arm.callee), NULLABLE_RETURNS)
         ) {
           return 'nullable-return';
         }
@@ -278,9 +308,7 @@ function nullabilityEvidence(
     if (
       init.type === 'CallExpression' &&
       init.callee.type === 'MemberExpression' &&
-      !init.callee.computed &&
-      init.callee.property.type === 'Identifier' &&
-      NULLABLE_RETURNS.has(init.callee.property.name)
+      namesOneOf(propertyName(init.callee), NULLABLE_RETURNS)
     ) {
       return 'nullable-return';
     }
@@ -371,13 +399,18 @@ export function hasNullCheck(
   // guarantees obj is non-null before the consequent evaluates.
   let cur: TSESTree.Node = node;
   for (let depth = 0; depth < 8; depth++) {
-    const p: TSESTree.Node | undefined = (cur as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+    const p: TSESTree.Node | undefined = (
+      cur as TSESTree.Node & { parent?: TSESTree.Node }
+    ).parent;
     if (!p) break;
     if (
       p.type === 'ConditionalExpression' &&
       (p as TSESTree.ConditionalExpression).consequent === cur
     ) {
-      if (sourceCode.getText((p as TSESTree.ConditionalExpression).test) === objectText) {
+      if (
+        sourceCode.getText((p as TSESTree.ConditionalExpression).test) ===
+        objectText
+      ) {
         return true;
       }
     }
@@ -659,7 +692,10 @@ export const noMissingNullChecks = createRule<RuleOptions, MessageIds>({
       // Evidence-based: see nullabilityEvidence. A chain is judged by its BASE
       // — `a.b.c` carries no information about `a.b`, so asking about the
       // intermediate link would be guessing.
-      shouldCheck = baseHasNullabilityEvidence(objectNode, sourceCode.getScope(node));
+      shouldCheck = baseHasNullabilityEvidence(
+        objectNode,
+        sourceCode.getScope(node),
+      );
 
       if (shouldCheck && !hasNullCheck(node, sourceCode)) {
         const nodeKey = getMemberExpressionKey(node);
@@ -733,7 +769,10 @@ export const noMissingNullChecks = createRule<RuleOptions, MessageIds>({
         // Evidence-based: see nullabilityEvidence. Only the BASE of a chain is
         // asked, because that is the only link this file can say anything about
         // — `a.b.c` says nothing about `a.b`.
-        shouldCheck = baseHasNullabilityEvidence(objectNode, sourceCode.getScope(memberExpr));
+        shouldCheck = baseHasNullabilityEvidence(
+          objectNode,
+          sourceCode.getScope(memberExpr),
+        );
 
         if (shouldCheck && !hasNullCheck(memberExpr, sourceCode)) {
           const nodeKey = getMemberExpressionKey(memberExpr);

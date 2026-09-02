@@ -24,7 +24,21 @@
  * but it is a name match on the thing being stored rather than on the method doing the
  * storing — the difference between "this holds a token" and "this is a function call".
  */
-import { AST_NODE_TYPES, resolveModuleBinding } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  namesOneOf,
+  propertyName,
+  resolveModuleBinding,
+} from '@interlace/eslint-devkit';
+
+/*
+ * SHARED evidence, so a gate here is a blind spot in every rule that reads it —
+ * `require-secure-credential-storage` and `require-storage-encryption` both do.
+ * `AsyncStorage['setItem']('apiKey', key)` stores a credential exactly as the
+ * dotted form does, and 33 of one rule's own true positives went silent when
+ * rewritten that way. `propertyName` reads both spellings and still returns
+ * null for a dynamic `store[m]`, which names no sink.
+ */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 
 /**
@@ -71,14 +85,47 @@ const CREDENTIAL_WORDS = [
  * @protocol-constant
  */
 const CONFIG_ABOUT_A_CREDENTIAL: ReadonlySet<string> = new Set([
-  'alg', 'algo', 'algorithm', 'cipher', 'digest',
-  'expiry', 'expiration', 'ttl', 'lifetime', 'maxage', 'rotation',
-  'type', 'kind', 'format', 'encoding', 'scheme',
-  'length', 'len', 'size', 'count', 'limit',
-  'name', 'label', 'id', 'prefix', 'suffix',
-  'path', 'file', 'url', 'uri', 'endpoint', 'host', 'header',
-  'issuer', 'audience', 'realm',
-  'enabled', 'disabled', 'required', 'strategy', 'provider',
+  'alg',
+  'algo',
+  'algorithm',
+  'cipher',
+  'digest',
+  'expiry',
+  'expiration',
+  'ttl',
+  'lifetime',
+  'maxage',
+  'rotation',
+  'type',
+  'kind',
+  'format',
+  'encoding',
+  'scheme',
+  'length',
+  'len',
+  'size',
+  'count',
+  'limit',
+  'name',
+  'label',
+  'id',
+  'prefix',
+  'suffix',
+  'path',
+  'file',
+  'url',
+  'uri',
+  'endpoint',
+  'host',
+  'header',
+  'issuer',
+  'audience',
+  'realm',
+  'enabled',
+  'disabled',
+  'required',
+  'strategy',
+  'provider',
 ]);
 
 /** Lowercase word segments of an identifier-ish name. */
@@ -362,9 +409,7 @@ function provablyEncrypts(
 
       if (
         callee.type === AST_NODE_TYPES.MemberExpression &&
-        !callee.computed &&
-        callee.property.type === AST_NODE_TYPES.Identifier &&
-        CIPHER_OUTPUT_METHODS.has(callee.property.name) &&
+        namesOneOf(propertyName(callee), CIPHER_OUTPUT_METHODS) &&
         recurse(callee.object)
       ) {
         return true;
@@ -448,8 +493,7 @@ const CLIENT_STORES = new Set([
 export function isWebStorageWrite(node: TSESTree.CallExpression): boolean {
   const callee = node.callee;
   if (callee.type !== AST_NODE_TYPES.MemberExpression) return false;
-  if (callee.property.type !== AST_NODE_TYPES.Identifier) return false;
-  if (callee.property.name !== 'setItem') return false;
+  if (propertyName(callee) !== 'setItem') return false;
 
   const object = callee.object;
   if (object.type === AST_NODE_TYPES.Identifier) {
@@ -458,8 +502,7 @@ export function isWebStorageWrite(node: TSESTree.CallExpression): boolean {
   // `window.localStorage.setItem(...)` / `globalThis.sessionStorage.setItem(...)`
   return (
     object.type === AST_NODE_TYPES.MemberExpression &&
-    object.property.type === AST_NODE_TYPES.Identifier &&
-    CLIENT_STORES.has(object.property.name)
+    namesOneOf(propertyName(object), CLIENT_STORES)
   );
 }
 
@@ -491,11 +534,9 @@ export function isEnvironmentWrite(
   const object = target.object;
   return (
     object.type === AST_NODE_TYPES.MemberExpression &&
-    !object.computed &&
     object.object.type === AST_NODE_TYPES.Identifier &&
     object.object.name === 'process' &&
-    object.property.type === AST_NODE_TYPES.Identifier &&
-    object.property.name === 'env'
+    propertyName(object) === 'env'
   );
 }
 
@@ -503,11 +544,12 @@ export function isEnvironmentWrite(
 export function isFileWrite(node: TSESTree.CallExpression): boolean {
   const callee = node.callee;
   if (callee.type !== AST_NODE_TYPES.MemberExpression) return false;
-  if (callee.property.type !== AST_NODE_TYPES.Identifier) return false;
+  const method = propertyName(callee);
+  if (method === null) return false;
   return [
     'writeFile',
     'writeFileSync',
     'appendFile',
     'appendFileSync',
-  ].includes(callee.property.name);
+  ].includes(method);
 }

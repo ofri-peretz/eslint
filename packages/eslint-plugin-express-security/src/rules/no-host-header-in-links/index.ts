@@ -42,6 +42,9 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  namesOneOf,
+  memberPropertyName,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'hostHeaderInLink';
@@ -169,10 +172,13 @@ export const noHostHeaderInLinks = createRule<RuleOptions, MessageIds>({
 
       if (node.type === AST_NODE_TYPES.CallExpression) {
         const callee = node.callee;
+        // Resolved once: the membership test asks the null question, and the
+        // evidence string below is built from the name it accepted.
+        const getter = memberPropertyName(callee);
         if (
           callee.type === AST_NODE_TYPES.MemberExpression &&
-          callee.property.type === AST_NODE_TYPES.Identifier &&
-          HOST_GETTER_METHODS.has(callee.property.name) &&
+          getter !== null &&
+          HOST_GETTER_METHODS.has(getter) &&
           callee.object.type === AST_NODE_TYPES.Identifier &&
           isRequestIdent(callee.object.name)
         ) {
@@ -183,7 +189,7 @@ export const noHostHeaderInLinks = createRule<RuleOptions, MessageIds>({
             typeof arg.value === 'string' &&
             HOST_HEADER_NAMES.has(arg.value.toLowerCase())
           ) {
-            return `req.${callee.property.name}('${arg.value}')`;
+            return `req.${getter}('${arg.value}')`;
           }
         }
         return null;
@@ -193,8 +199,7 @@ export const noHostHeaderInLinks = createRule<RuleOptions, MessageIds>({
         const obj = node.object;
         if (
           obj.type === AST_NODE_TYPES.MemberExpression &&
-          obj.property.type === AST_NODE_TYPES.Identifier &&
-          obj.property.name === 'headers' &&
+          propertyName(obj) === 'headers' &&
           obj.object.type === AST_NODE_TYPES.Identifier &&
           isRequestIdent(obj.object.name)
         ) {
@@ -241,8 +246,7 @@ export const noHostHeaderInLinks = createRule<RuleOptions, MessageIds>({
           }
           if (
             callee.type === AST_NODE_TYPES.MemberExpression &&
-            callee.property.type === AST_NODE_TYPES.Identifier &&
-            mailCallees.has(callee.property.name)
+            namesOneOf(propertyName(callee), mailCallees)
           ) {
             return true;
           }

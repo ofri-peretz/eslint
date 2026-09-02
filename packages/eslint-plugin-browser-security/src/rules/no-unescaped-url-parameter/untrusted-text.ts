@@ -41,7 +41,13 @@
  * makes `encodeURIComponent(q)` untainted without a special case for it.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, resolveModuleBinding, staticString } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  resolveModuleBinding,
+  staticString,
+  namesOneOf,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import {
   isAttackerSteerableUrl,
   resolveBoundInitializer,
@@ -169,9 +175,8 @@ function isHandlerFunction(fn: TSESTree.Node): boolean {
   if (
     parent?.type === AST_NODE_TYPES.CallExpression &&
     parent.callee.type === AST_NODE_TYPES.MemberExpression &&
-    !parent.callee.computed &&
-    parent.callee.property.type === AST_NODE_TYPES.Identifier &&
-    parent.callee.property.name === 'addEventListener'
+    // `el['addEventListener'](…)` registers the same listener.
+    staticProperty(parent.callee) === 'addEventListener'
   ) {
     return true;
   }
@@ -192,7 +197,10 @@ function isReactRef(
   seen: Set<string>,
 ): boolean {
   if (node.type === AST_NODE_TYPES.CallExpression) {
-    const binding = resolveModuleBinding(node.callee, sourceCode.getScope(node));
+    const binding = resolveModuleBinding(
+      node.callee,
+      sourceCode.getScope(node),
+    );
     return binding !== undefined && REACT_MODULES.has(binding.module);
   }
   if (node.type !== AST_NODE_TYPES.Identifier) return false;
@@ -290,9 +298,7 @@ function isFormDataRead(
   const callee = node.callee;
   return (
     callee.type === AST_NODE_TYPES.MemberExpression &&
-    !callee.computed &&
-    callee.property.type === AST_NODE_TYPES.Identifier &&
-    FORM_DATA_READERS.has(callee.property.name) &&
+    namesOneOf(propertyName(callee), FORM_DATA_READERS) &&
     isFormData(callee.object, sourceCode, new Set(seen))
   );
 }
@@ -399,8 +405,7 @@ function isArithmetic(node: TSESTree.BinaryExpression): boolean {
   const isNumericLiteral = (n: TSESTree.Node): boolean =>
     n.type === AST_NODE_TYPES.Literal && typeof n.value === 'number';
   const isTextual = (n: TSESTree.Node): boolean =>
-    (staticString(n) !== null) ||
-    n.type === AST_NODE_TYPES.TemplateLiteral;
+    staticString(n) !== null || n.type === AST_NODE_TYPES.TemplateLiteral;
   const left = node.left as TSESTree.Node;
   return (
     (isNumericLiteral(left) || isNumericLiteral(node.right)) &&
@@ -438,9 +443,7 @@ export function carriesUntrustedText(
       const callee = node.callee;
       if (
         callee.type === AST_NODE_TYPES.MemberExpression &&
-        !callee.computed &&
-        callee.property.type === AST_NODE_TYPES.Identifier &&
-        TEXT_PRESERVING_METHODS.has(callee.property.name)
+        namesOneOf(propertyName(callee), TEXT_PRESERVING_METHODS)
       ) {
         return carriesUntrustedText(callee.object, sourceCode, seen);
       }

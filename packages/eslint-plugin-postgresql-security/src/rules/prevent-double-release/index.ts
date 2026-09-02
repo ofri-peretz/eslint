@@ -10,6 +10,7 @@ import {
   TSESTree,
   formatLLMMessage,
   MessageIcons,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { PreventDoubleReleaseOptions } from '../../types';
 import { fileUsesPostgres } from '../../utils';
@@ -113,9 +114,7 @@ function assignsTrue(node: TSESTree.Node, flag: string): boolean {
       if (left.type === AST_NODE_TYPES.Identifier && left.name === flag) found = true;
       if (
         left.type === AST_NODE_TYPES.MemberExpression &&
-        !left.computed &&
-        left.property.type === AST_NODE_TYPES.Identifier &&
-        left.property.name === flag
+        propertyName(left) === flag
       ) {
         found = true;
       }
@@ -422,8 +421,7 @@ export const preventDoubleRelease: TSESLint.RuleModule<
               if (
                 id.parent?.type === AST_NODE_TYPES.MemberExpression &&
                 id.parent.object === id &&
-                id.parent.property.type === AST_NODE_TYPES.Identifier &&
-                id.parent.property.name === 'release' &&
+                propertyName(id.parent) === 'release' &&
                 id.parent.parent?.type === AST_NODE_TYPES.CallExpression
               ) {
                 const callNode = id.parent.parent;

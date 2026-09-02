@@ -28,6 +28,8 @@ import {
   formatLLMMessage,
   MessageIcons,
   unwrapTypeSyntax,
+  namesOneOf,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'templateInjection';
@@ -98,7 +100,11 @@ interface Vocabulary {
  * `templateEngines` / `additionalTemplateEngines` instead.
  */
 const TEMPLATE_COMPILE_METHODS = new Set([
-  'compile', 'precompile', 'create', 'parse', 'template',
+  'compile',
+  'precompile',
+  'create',
+  'parse',
+  'template',
 ]);
 
 /**
@@ -114,7 +120,11 @@ const TEMPLATE_COMPILE_METHODS = new Set([
  * reported as server-side template injection.
  */
 const TEMPLATE_RENDER_METHODS = new Set([
-  'render', 'renderFile', 'renderString', 'renderToString', 'renderTemplate',
+  'render',
+  'renderFile',
+  'renderString',
+  'renderToString',
+  'renderTemplate',
 ]);
 
 const ALL_TEMPLATE_METHODS = new Set([
@@ -132,13 +142,17 @@ const ALL_TEMPLATE_METHODS = new Set([
  * noun drops it through `templateEngines`. Membership is exact either way.
  */
 const DEFAULT_TEMPLATE_ENGINES = [
-  'Handlebars', 'handlebars',
+  'Handlebars',
+  'handlebars',
   'ejs',
-  'pug', 'jade',
-  'mustache', 'Mustache',
+  'pug',
+  'jade',
+  'mustache',
+  'Mustache',
   'nunjucks',
   'swig',
-  'dust', 'Dust',
+  'dust',
+  'Dust',
   'doT',
   'consolidate',
 ];
@@ -151,9 +165,7 @@ const DEFAULT_TEMPLATE_ENGINES = [
  * `additionalRequestRoots`, and a codebase where `event` or `message` is an
  * ordinary domain noun drops it through `requestRoots`.
  */
-const DEFAULT_REQUEST_ROOTS = [
-  'req', 'request', 'ctx', 'event', 'message',
-];
+const DEFAULT_REQUEST_ROOTS = ['req', 'request', 'ctx', 'event', 'message'];
 
 /**
  * Properties of a request that carry caller-supplied data.
@@ -163,7 +175,14 @@ const DEFAULT_REQUEST_ROOTS = [
  * `additionalRequestProperties`, and `requestProperties` narrows it.
  */
 const DEFAULT_REQUEST_PROPERTIES = [
-  'query', 'params', 'body', 'headers', 'url', 'path', 'cookies', 'data',
+  'query',
+  'params',
+  'body',
+  'headers',
+  'url',
+  'path',
+  'cookies',
+  'data',
 ];
 
 /**
@@ -180,7 +199,13 @@ const DEFAULT_REQUEST_PROPERTIES = [
  * everything it returns as attacker-controlled.
  */
 const READER_METHODS: ReadonlySet<string> = new Set([
-  'readFile', 'readFileSync', 'text', 'json', 'arrayBuffer', 'formData', 'blob',
+  'readFile',
+  'readFileSync',
+  'text',
+  'json',
+  'arrayBuffer',
+  'formData',
+  'blob',
 ]);
 
 /**
@@ -200,7 +225,13 @@ const READER_METHODS: ReadonlySet<string> = new Set([
  * a WHOLE word of the split identifier.
  */
 const DEFAULT_UNTRUSTED_NAME_WORDS = [
-  'user', 'untrusted', 'attacker', 'external', 'remote', 'client', 'payload',
+  'user',
+  'untrusted',
+  'attacker',
+  'external',
+  'remote',
+  'client',
+  'payload',
   'input',
 ];
 
@@ -288,8 +319,11 @@ function untrustedSource(
     ) {
       return chain;
     }
-    if (root.name === 'process' && properties[0] === 'argv') return 'process.argv';
-    return [root.name, ...properties].some((part) => nameStatesUntrusted(part, vocabulary))
+    if (root.name === 'process' && properties[0] === 'argv')
+      return 'process.argv';
+    return [root.name, ...properties].some((part) =>
+      nameStatesUntrusted(part, vocabulary),
+    )
       ? chain
       : null;
   }
@@ -297,12 +331,17 @@ function untrustedSource(
   if (node.type === AST_NODE_TYPES.CallExpression) {
     const callee = node.callee;
     // Reading a file or a response body yields bytes from outside the program.
+    // `has(null)` is false, which is the answer a runtime-keyed member should
+    // get — so the cast, not a `?? ''` sentinel whose empty-string arm no
+    // input can distinguish from the null one.
     if (
       callee.type === AST_NODE_TYPES.MemberExpression &&
-      callee.property.type === AST_NODE_TYPES.Identifier &&
-      READER_METHODS.has(callee.property.name)
+      namesOneOf(propertyName(callee), READER_METHODS)
     ) {
-      return callee.property.name;
+      // The membership test above resolved this name, so the same call is
+      // returned as-is: `string | null` is this resolver's contract, and the
+      // absent case stays a value rather than a cast.
+      return propertyName(callee);
     }
     if (
       callee.type === AST_NODE_TYPES.Identifier &&
@@ -374,7 +413,8 @@ export const noTemplateInjection = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Extra request-object root names, on top of `requestRoots`.',
+            description:
+              'Extra request-object root names, on top of `requestRoots`.',
           },
           requestProperties: {
             type: 'array',
@@ -451,12 +491,13 @@ export const noTemplateInjection = createRule<RuleOptions, MessageIds>({
         const { callee, arguments: args } = node;
         if (callee.type !== AST_NODE_TYPES.MemberExpression) return;
 
-        const { object, property } = callee;
+        const { object } = callee;
         if (object.type !== AST_NODE_TYPES.Identifier) return;
-        if (property.type !== AST_NODE_TYPES.Identifier) return;
+        // `Handlebars['compile'](tpl)` compiles the same template.
+        const methodName = propertyName(callee);
+        if (methodName === null) return;
 
         const engineName = object.name;
-        const methodName = property.name;
 
         if (!engines.has(engineName)) return;
         if (!ALL_TEMPLATE_METHODS.has(methodName)) return;
@@ -470,13 +511,15 @@ export const noTemplateInjection = createRule<RuleOptions, MessageIds>({
         if (
           firstArg.type === AST_NODE_TYPES.Literal &&
           typeof (firstArg as TSESTree.Literal).value === 'string'
-        ) return;
+        )
+          return;
 
         // Template literal with NO expressions → safe (equivalent to a string literal)
         if (
           firstArg.type === AST_NODE_TYPES.TemplateLiteral &&
           (firstArg as TSESTree.TemplateLiteral).expressions.length === 0
-        ) return;
+        )
+          return;
 
         // Being dynamic is not being attacker-controlled. See untrustedSource.
         if (untrustedSource(firstArg, vocabulary) === null) return;

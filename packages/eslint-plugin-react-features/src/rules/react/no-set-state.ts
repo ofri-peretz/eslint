@@ -9,7 +9,7 @@
  * Disallow usage of setState (encourage functional components with hooks)
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'noSetState';
@@ -41,8 +41,7 @@ export const noSetState = createRule<[], MessageIds>({
         // Check if this is a setState call
         if (
           node.callee.type === 'MemberExpression' &&
-          node.callee.property.type === 'Identifier' &&
-          node.callee.property.name === 'setState'
+          propertyName(node.callee) === 'setState'
         ) {
           context.report({
             node: node.callee.property,

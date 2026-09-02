@@ -9,7 +9,7 @@
  * Require performance optimizations for React components (requires deep performance analysis)
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -350,11 +350,9 @@ export const requireOptimization = createRule<RuleOptions, MessageIds>({
           node.superClass.object.name === 'React'
         ) {
           extendsComponent =
-            node.superClass.property.type === 'Identifier' &&
-            node.superClass.property.name === 'Component';
+            propertyName(node.superClass) === 'Component';
           extendsPureComponent =
-            node.superClass.property.type === 'Identifier' &&
-            node.superClass.property.name === 'PureComponent';
+            propertyName(node.superClass) === 'PureComponent';
         }
       }
 
@@ -401,8 +399,7 @@ export const requireOptimization = createRule<RuleOptions, MessageIds>({
                     if (
                       decl.init.type === 'MemberExpression' &&
                       decl.init.object.type === 'ThisExpression' &&
-                      decl.init.property.type === 'Identifier' &&
-                      decl.init.property.name === 'props'
+                      propertyName(decl.init) === 'props'
                     ) {
                       propsCount = decl.id.properties.length;
                     }
@@ -415,8 +412,7 @@ export const requireOptimization = createRule<RuleOptions, MessageIds>({
             if (
               currentNode.type === 'MemberExpression' &&
               currentNode.object.type === 'ThisExpression' &&
-              currentNode.property.type === 'Identifier' &&
-              currentNode.property.name === 'props'
+              propertyName(currentNode) === 'props'
             ) {
               if (propsCount === 0) propsCount = 1; // At least 1 prop if this.props is used
             }

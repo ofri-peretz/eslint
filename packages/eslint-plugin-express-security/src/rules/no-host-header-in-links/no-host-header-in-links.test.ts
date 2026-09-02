@@ -128,10 +128,11 @@ module.exports = app;
       },
       // Non-mail identifier callee, no URL marker
       { code: `notify('host ' + req.headers.host);` },
-      // Computed (non-Identifier) callee property, no URL marker
-      { code: `obj['send']('host: ' + req.headers.host);` },
     ]),
     invalid: xp([
+      // Was pinned as valid because the callee property was computed.
+      // `obj['send']` is the same mail-ish sink as `obj.send`.
+      { name: 'was pinned as valid because the callee property was computed', code: `obj['send']('host: ' + req.headers.host);`, errors: [{ messageId: 'hostHeaderInLink' }] },
       // Benchmark corpus: CWE-640/vulnerable/reset-link-host-header.js
       {
         name: 'a password-reset link built from req.headers.host',
@@ -310,16 +311,12 @@ ruleTester.run('no-host-header-in-links (coverage wave)', noHostHeaderInLinks, {
     { code: `const u = 'https://' + req.fetch('host');` },
     // Call: callee is not a member expression
     { code: `const u = 'https://' + lookup('host');` },
-    // Call: computed (non-Identifier) callee property
-    { code: `const u = 'https://' + req['get']('host');` },
     // Call: callee object is itself a member expression
     { code: `const u = 'https://' + req.api.get('host');` },
     // Call: non-string literal header-name argument
     { code: `const u = 'https://' + req.get(0);` },
     // Member: computed numeric-literal property on headers
     { code: `const u = 'https://' + req.headers[0];` },
-    // Member: computed 'headers' segment is not resolved
-    { code: `const u = 'https://' + req['headers'].host;` },
     // Member: computed non-literal property on headers
     { code: `const u = 'https://' + req.headers[name];` },
     // Member: object chain root is not an identifier
@@ -340,6 +337,14 @@ ruleTester.run('no-host-header-in-links (coverage wave)', noHostHeaderInLinks, {
     },
   ]),
   invalid: xp([
+    // Was pinned as valid because the callee property was computed.
+    // `req['get']('host')` reads the same header as `req.get('host')`.
+    { name: 'was pinned as valid because the callee property was computed', code: `const u = 'https://' + req['get']('host');`, errors: [{ messageId: 'hostHeaderInLink' }] },
+    // Was pinned as valid — a bracket on the request bag read as
+    // unresolvable, in places labelled a "documented false negative".
+    // `req['headers']` is the same bag as `req.headers`; the runtime-keyed
+    // form left above is the genuine refusal.
+    { name: 'was pinned as valid — a bracket on the request bag read as unresolvable,', code: `const u = 'https://' + req['headers'].host;`, errors: [{ messageId: 'hostHeaderInLink' }] },
     // Direct host read as a mail-call argument via member callee
     {
       code: 'mailer.send(`link: ${req.headers.host}/go`);',

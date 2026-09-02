@@ -21,6 +21,8 @@ import {
   resolveModuleBinding,
   unwrapTypeSyntax,
   staticString,
+  namesOneOf,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
@@ -166,8 +168,9 @@ function taintSource(
     let root: TSESTree.Node = node;
     const properties: string[] = [];
     while (root.type === 'MemberExpression') {
-      if (root.property.type === 'Identifier')
-        properties.unshift(root.property.name);
+      // A quoted link names the same member a dotted one does.
+      const link = propertyName(root);
+      if (link !== null) properties.unshift(link);
       root = root.object;
     }
     if (root.type === 'Identifier') {
@@ -187,13 +190,12 @@ function taintSource(
 
   if (node.type === 'CallExpression') {
     const callee = node.callee;
-    if (
-      callee.type === 'MemberExpression' &&
-      callee.property.type === 'Identifier'
-    ) {
-      // Reading a file or a response body yields bytes from outside the program.
-      if (READER_METHODS.has(callee.property.name)) {
-        return callee.property.name;
+    if (callee.type === 'MemberExpression') {
+      // Reading a file or a response body yields bytes from outside the
+      // program — `res['text']()` no less than `res.text()`.
+      const reader = propertyName(callee);
+      if (reader !== null && READER_METHODS.has(reader)) {
+        return reader;
       }
     }
     if (callee.type === 'Identifier' && READER_METHODS.has(callee.name)) {
@@ -393,17 +395,19 @@ function isRegExpConstructor(
 }
 
 function isTrustedMemberEscaper(callee: TSESTree.Node): boolean {
-  if (callee.type !== 'MemberExpression' || callee.computed) return false;
-  if (callee.property.type !== 'Identifier') return false;
+  if (callee.type !== 'MemberExpression') return false;
+  // A SUPPRESSION path: `RegExp['escape'](s)` escapes as `RegExp.escape(s)`
+  // does, and missing it reports an already-escaped pattern.
+  if (propertyName(callee) === null) return false;
   // The ES2025 built-in, identified by the global it hangs off.
   if (
-    callee.property.name === 'escape' &&
+    propertyName(callee) === 'escape' &&
     callee.object.type === 'Identifier' &&
     callee.object.name === 'RegExp'
   ) {
     return true;
   }
-  return MEMBER_ESCAPERS.has(callee.property.name);
+  return namesOneOf(propertyName(callee), MEMBER_ESCAPERS);
 }
 
 /**
@@ -497,12 +501,7 @@ function isEscaped(
  * was a false positive on Mongoose's `cloneRegExp` and Fastify's route normaliser.
  */
 function isRegexClone(node: TSESTree.Node): boolean {
-  if (
-    node.type === 'MemberExpression' &&
-    !node.computed &&
-    node.property.type === 'Identifier' &&
-    node.property.name === 'source'
-  ) {
+  if (node.type === 'MemberExpression' && propertyName(node) === 'source') {
     return true;
   }
   // `re.source + '$'` — anchoring a cloned pattern is still a clone.

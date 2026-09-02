@@ -20,6 +20,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { isSignOperation, getOptionsArgument, hasOption } from '../../utils';
 import type { RequireExpirationOptions } from '../../types';
@@ -174,8 +175,7 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
         if (
           current.type === 'CallExpression' &&
           current.callee.type === 'MemberExpression' &&
-          current.callee.property.type === 'Identifier' &&
-          current.callee.property.name === 'setExpirationTime'
+          propertyName(current.callee) === 'setExpirationTime'
         ) {
           return true;
         }

@@ -27,8 +27,17 @@ import {
   isStaticExpression,
   unwrapTypeSyntax,
   staticString,
+  namesOneOf,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+
+/*
+ * `console['log'](fmt, x)` and `req['query'].name` are the same sink and the
+ * same source as their dotted spellings. Every gate here required an
+ * Identifier property, so 21 of this rule's own true positives went silent
+ * when written with a string subscript.
+ */
 // Temporarily remove complex imports to fix type issues
 // import {
 //   createSafetyChecker,
@@ -433,10 +442,9 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
           node.object.type === 'MemberExpression' &&
           node.object.object.type === 'Identifier' &&
           node.object.object.name === 'req' &&
-          node.object.property.type === 'Identifier' &&
           // @vocabulary Express request API
           ['query', 'body', 'params', 'param'].includes(
-            node.object.property.name,
+            propertyName(node.object) ?? '',
           )
         ) {
           return true;
@@ -462,14 +470,15 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
     const getMemberExpressionName = (
       node: TSESTree.MemberExpression,
     ): string => {
+      const own = propertyName(node);
       if (node.object.type === 'Identifier') {
-        if (node.property.type === 'Identifier') {
-          return `${node.object.name}.${node.property.name}`;
+        if (own !== null) {
+          return `${node.object.name}.${own}`;
         }
       } else if (node.object.type === 'MemberExpression') {
         const objectName = getMemberExpressionName(node.object);
-        if (node.property.type === 'Identifier') {
-          return `${objectName}.${node.property.name}`;
+        if (own !== null) {
+          return `${objectName}.${own}`;
         }
       }
       return '';
@@ -492,9 +501,18 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
         callee.type === 'MemberExpression' &&
         callee.object.type === 'Identifier' &&
         callee.object.name === 'console' &&
-        callee.property.type === 'Identifier' &&
         // @vocabulary console API
-        ['log', 'error', 'warn', 'info', 'debug'].includes(callee.property.name)
+        //
+        // `namesOneOf` asks the null question inside the membership test, so
+        // a dynamic `console[k](...)` is not a console method here — which it
+        // is not, rather than being cast into one and answered by accident.
+        namesOneOf(propertyName(callee), [
+          'log',
+          'error',
+          'warn',
+          'info',
+          'debug',
+        ])
       );
     };
 
@@ -506,8 +524,7 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
         callee.type === 'MemberExpression' &&
         callee.object.type === 'Identifier' &&
         callee.object.name === 'util' &&
-        callee.property.type === 'Identifier' &&
-        callee.property.name === 'format'
+        propertyName(callee) === 'format'
       ) {
         return true;
       }
@@ -532,9 +549,10 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
         callee.type === 'MemberExpression' &&
         callee.object.type === 'Identifier' &&
         callee.object.name === 'console' &&
-        callee.property.type === 'Identifier' &&
         // @vocabulary console API
-        ['log', 'error', 'warn', 'info', 'debug'].includes(callee.property.name)
+        ['log', 'error', 'warn', 'info', 'debug'].includes(
+          propertyName(callee) ?? '',
+        )
       ) {
         return true;
       }

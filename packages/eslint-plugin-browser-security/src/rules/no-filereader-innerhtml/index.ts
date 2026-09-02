@@ -20,6 +20,8 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  namesOneOf,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unsafeInnerhtml';
@@ -50,16 +52,12 @@ function readsFileReaderResult(node: TSESTree.Node): boolean {
   // `e.target.result.data` reports.
   let current: TSESTree.Node = node;
   while (current.type === AST_NODE_TYPES.MemberExpression) {
-    if (
-      current.property.type === AST_NODE_TYPES.Identifier &&
-      current.property.name === 'result'
-    ) {
+    if (propertyName(current) === 'result') {
       const owner = current.object;
       if (owner.type === AST_NODE_TYPES.Identifier) return true;
       return (
         owner.type === AST_NODE_TYPES.MemberExpression &&
-        owner.property.type === AST_NODE_TYPES.Identifier &&
-        owner.property.name === 'target' &&
+        propertyName(owner) === 'target' &&
         owner.object.type === AST_NODE_TYPES.Identifier
       );
     }
@@ -93,7 +91,6 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://developer.mozilla.org/en-US/docs/Web/API/FileReader',
       }),
-
     },
     schema: [
       {
@@ -136,8 +133,9 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
 
         if (
           node.left.type === AST_NODE_TYPES.MemberExpression &&
-          node.left.property.type === AST_NODE_TYPES.Identifier &&
-          DANGEROUS_PROPERTIES.has(node.left.property.name)
+          // `el['innerHTML'] = …` and `el['insertAdjacentHTML'](…)` write
+          // the same markup the dotted spellings do.
+          namesOneOf(propertyName(node.left), DANGEROUS_PROPERTIES)
         ) {
           if (
             payloadSource(node.right) === 'filereader' &&
@@ -146,8 +144,12 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
             context.report({
               node,
               messageId: 'unsafeInnerhtml',
+              // The guard above resolved this name and found it in the set, so the
+              // `null` arm here is unreachable. It stays visible in the type rather
+              // than being cast away: an unresolved name and an absent one are not
+              // the same answer, and only one of them is possible here.
               data: {
-                method: node.left.property.name,
+                method: propertyName(node.left),
               },
             });
           }
@@ -155,13 +157,13 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
       },
 
       CallExpression(node: TSESTree.CallExpression) {
-
         // Same here — the resolver is the sink condition, not the mutable flag.
 
         if (
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          DANGEROUS_METHODS.has(node.callee.property.name)
+          // `el['innerHTML'] = …` and `el['insertAdjacentHTML'](…)` write
+          // the same markup the dotted spellings do.
+          namesOneOf(propertyName(node.callee), DANGEROUS_METHODS)
         ) {
           for (const arg of node.arguments) {
             if (
@@ -171,8 +173,12 @@ export const noFilereaderInnerhtml = createRule<RuleOptions, MessageIds>({
               context.report({
                 node,
                 messageId: 'unsafeInnerhtml',
+                // The guard above resolved this name and found it in the set, so the
+                // `null` arm here is unreachable. It stays visible in the type rather
+                // than being cast away: an unresolved name and an absent one are not
+                // the same answer, and only one of them is possible here.
                 data: {
-                  method: node.callee.property.name,
+                  method: propertyName(node.callee),
                 },
               });
               break;

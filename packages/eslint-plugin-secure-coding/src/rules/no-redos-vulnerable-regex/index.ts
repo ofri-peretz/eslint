@@ -91,7 +91,7 @@
  * @see https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { RegExpParser } from '@eslint-community/regexpp';
 import { analyse } from 'scslre';
@@ -670,11 +670,9 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
       if (
         node.type === AST_NODE_TYPES.TaggedTemplateExpression &&
         node.tag.type === AST_NODE_TYPES.MemberExpression &&
-        !node.tag.computed &&
         node.tag.object.type === AST_NODE_TYPES.Identifier &&
         node.tag.object.name === 'String' &&
-        node.tag.property.type === AST_NODE_TYPES.Identifier &&
-        node.tag.property.name === 'raw' &&
+        propertyName(node.tag) === 'raw' &&
         !isShadowed('String', node)
       ) {
         return joinQuasis(

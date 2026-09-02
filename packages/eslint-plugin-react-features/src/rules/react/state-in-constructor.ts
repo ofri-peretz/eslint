@@ -9,7 +9,7 @@
  * Enforce state initialization in constructor
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'stateInConstructor';
@@ -56,8 +56,7 @@ export const stateInConstructor = createRule<[], MessageIds>({
         return (
           node.superClass.object.type === 'Identifier' &&
           node.superClass.object.name === 'React' &&
-          node.superClass.property.type === 'Identifier' &&
-          (node.superClass.property.name === 'Component' || node.superClass.property.name === 'PureComponent')
+          (propertyName(node.superClass) === 'Component' || propertyName(node.superClass) === 'PureComponent')
         );
       }
 
@@ -117,8 +116,7 @@ export const stateInConstructor = createRule<[], MessageIds>({
             statement.expression.type === 'AssignmentExpression' &&
             statement.expression.left.type === 'MemberExpression' &&
             statement.expression.left.object.type === 'ThisExpression' &&
-            statement.expression.left.property.type === 'Identifier' &&
-            statement.expression.left.property.name === 'state'
+            propertyName(statement.expression.left) === 'state'
           ) {
             return true;
           }

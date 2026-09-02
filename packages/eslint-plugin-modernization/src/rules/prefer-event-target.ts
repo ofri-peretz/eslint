@@ -9,7 +9,7 @@
  * Prefer EventTarget over EventEmitter (unicorn-inspired)
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'preferEventTarget';
@@ -100,8 +100,7 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
           });
         } else if (
           node.superClass.type === 'MemberExpression' &&
-          node.superClass.property.type === 'Identifier' &&
-          node.superClass.property.name === 'EventEmitter'
+          propertyName(node.superClass) === 'EventEmitter'
         ) {
           context.report({
             node: node.superClass.property,
@@ -182,8 +181,7 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
         }
 
         if (
-          node.property.type === 'Identifier' &&
-          node.property.name === 'EventEmitter'
+          propertyName(node) === 'EventEmitter'
         ) {
           // Check if it's accessing EventEmitter from require('events') or similar
           if (node.object.type === 'CallExpression' &&
