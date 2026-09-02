@@ -113,17 +113,59 @@ jobs:
           npx tsx scripts/merge-real-source-inventory.mts shards/*/real-world-rule-inventory.json \
             | tee -a "$GITHUB_STEP_SUMMARY"
 
+      # Through a PR, not a bare `git push`. This runs on a schedule, so the
+      # checked-out branch is `main`, and branch protection has enforce_admins
+      # on — the push is declined with GH006 after the matrix has cloned 112
+      # repositories and linted 345,841 files. The whole scan, discarded on its
+      # last line. `no-bare-push-to-main.lock.test.ts` is what caught this one
+      # before it ever ran.
       - name: Commit the refreshed inventory
+        uses: ./.github/actions/commit-via-pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          branch: automated/real-source-inventory
+          paths: benchmarks/budgets/real-world-rule-inventory.json
+          commit-message: "chore(benchmarks): refresh the real-source inventory"
+          pr-title: "chore(benchmarks): refresh the real-source inventory"
+          pr-body: |
+            Which rules fire on real third-party code, rescanned by
+            `real-source-scan.yml`. The merger refuses to combine shards whose
+            `configHash` or `reposHash` disagree, so a partial matrix cannot
+            produce a number describing no actual scan.
+
+            "Scanned and never fired" is the strongest negative claim the
+            ledger makes about a rule, and the artifact this replaces carried
+            no `configHash` at all — it listed 270 of 470 rules as having no
+            real-world material when whole plugins had simply never been run.
+
+  # A weekly scan nobody watches is how the inventory went unattributed in the
+  # first place: it stops producing, the artifact keeps its old numbers, and
+  # "270 rules never fire" reads as a product finding rather than an outage.
+  # Neither job above has anywhere to report to on its own, so this one does.
+  report:
+    name: Report a failed scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [shard, merge]
+    if: always() && contains(needs.*.result, 'failure')
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: 🚨 Open or update an issue
         env:
           GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set -euo pipefail
-          if git diff --quiet -- benchmarks/budgets/real-world-rule-inventory.json; then
-            echo "inventory unchanged — nothing to commit"
-            exit 0
+          TITLE="Real-source scan is failing"
+          EXISTING=$(gh issue list --state open --search "$TITLE in:title" \
+            --json number --jq '.[0].number // empty')
+          BODY=$(printf '%s\n\n[Run](%s)\n' \
+            'The weekly real-source scan did not complete, so the rule inventory keeps whatever numbers it already had. Until it runs, no rule may be described as having no real-world instance — check:audit-freshness will say so.' "$RUN_URL")
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "$BODY"
+          else
+            gh issue create --title "$TITLE" --body "$BODY"
           fi
-          git config user.name  "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add benchmarks/budgets/real-world-rule-inventory.json
-          git commit -m "chore(benchmarks): refresh the real-source inventory [skip ci]"
-          git push
