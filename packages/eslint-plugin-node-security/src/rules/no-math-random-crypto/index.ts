@@ -23,6 +23,9 @@ import {
   createRule,
   AST_NODE_TYPES,
   isTestFilePath,
+  memberPropertyName,
+  propertyName,
+  objectKeyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'mathRandomCrypto' | 'pseudoRandomBytes';
@@ -645,10 +648,9 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
         ) {
           const callee = current.callee;
           const name =
-            callee.type === AST_NODE_TYPES.MemberExpression &&
-            !callee.computed &&
-            callee.property.type === AST_NODE_TYPES.Identifier
-              ? callee.property.name
+            callee.type === AST_NODE_TYPES.MemberExpression
+              ? // `crypto['randomBytes'](n)` is the same CSPRNG call.
+                (propertyName(callee) ?? '')
               : callee.type === AST_NODE_TYPES.Identifier
                 ? callee.name
                 : '';
@@ -674,23 +676,24 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
     function isMathRandomCallee(callee: TSESTree.Node): boolean {
       if (isMathRandomProperty(callee)) return true;
 
-      // `rng.next()` where `rng` is a stable object literal.
+      // `rng.next()` where `rng` is a stable object literal. `rng['next']()`
+      // reaches the same aliased `Math.random`; resolved once, before the
+      // guard, so the guard tests the binding the body then reads.
+      const wanted = memberPropertyName(callee);
       if (
         callee.type === AST_NODE_TYPES.MemberExpression &&
-        !callee.computed &&
         callee.object.type === AST_NODE_TYPES.Identifier &&
-        callee.property.type === AST_NODE_TYPES.Identifier
+        wanted !== null
       ) {
         const init = stableDeclarator(callee.object)?.init;
         if (!init || init.type !== AST_NODE_TYPES.ObjectExpression)
           return false;
-        const wanted = callee.property.name;
         return init.properties.some(
           (property) =>
             property.type === AST_NODE_TYPES.Property &&
-            !property.computed &&
-            property.key.type === AST_NODE_TYPES.Identifier &&
-            property.key.name === wanted &&
+            // `{ ['next']: Math.random }` declares the same slot `{ next: … }`
+            // declares — the object-KEY half of the same blind spot.
+            objectKeyName(property) === wanted &&
             isMathRandomProperty(property.value),
         );
       }
@@ -878,11 +881,11 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
           namesThisValue &&
           current.type === AST_NODE_TYPES.AssignmentExpression
         ) {
+          const propName = memberPropertyName(current.left);
           if (
             current.left.type === AST_NODE_TYPES.MemberExpression &&
-            current.left.property.type === AST_NODE_TYPES.Identifier
+            propName !== null
           ) {
-            const propName = current.left.property.name;
             if (nameSuggestsCrypto(propName, vocab)) {
               return true;
             }
@@ -960,9 +963,7 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
          */
         if (
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          !node.callee.computed &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          node.callee.property.name === 'pseudoRandomBytes'
+          propertyName(node.callee) === 'pseudoRandomBytes'
         ) {
           context.report({ node, messageId: 'pseudoRandomBytes' });
           return;

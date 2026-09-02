@@ -41,6 +41,19 @@ describe('no-timing-unsafe-compare', () => {
   describe('Valid Code - Non-Secret Comparisons', () => {
     ruleTester.run('valid - false positive prevention', noTimingUnsafeCompare, {
       valid: [
+        {
+          name: 'a comparison method named at runtime matches no known compare',
+          code: `const presented = String(req.headers.authorization);
+const storedToken = await tokenStore.currentToken();
+if (presented[cmp](storedToken) === 0) { ok(); }`,
+        },
+        {
+          name: 'a callee that is neither an identifier nor a member names none',
+          code: `const presented = String(req.headers.authorization);
+const storedToken = await tokenStore.currentToken();
+if ((pick())(presented, storedToken) === 0) { ok(); }`,
+        },
+
         // An AST discriminant is not a credential. flint-fyi/flint compares
         // `operatorToken.kind` against a SyntaxKind inside its own lint rule; the
         // identifier carries `token`, the value is an enum member.

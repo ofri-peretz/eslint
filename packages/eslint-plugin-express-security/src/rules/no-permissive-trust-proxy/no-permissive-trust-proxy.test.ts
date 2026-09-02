@@ -86,7 +86,6 @@ describe('no-permissive-trust-proxy', () => {
       { code: `config.enable('trust proxy');` },
       { code: `set('trust proxy', true);` },
       { code: `app[method]('trust proxy', true);` },
-      { code: `app['set']('trust proxy', true);` },
       { code: `app().set('trust proxy', true);` },
     ]),
     invalid: xp([
@@ -101,6 +100,23 @@ describe('no-permissive-trust-proxy', () => {
               {
                 messageId: 'useHopCount' as const,
                 output: `gateway.set('trust proxy', 1);`,
+              },
+            ],
+          },
+        ],
+      },
+      // Was pinned as valid next to `app[method]`, as though the two were the
+      // same refusal. `app['set']` names `set` and trusts every hop.
+      {
+        name: 'a subscripted set of trust proxy true',
+        code: `app['set']('trust proxy', true);`,
+        errors: [
+          {
+            messageId: 'permissiveTrustProxy' as const,
+            suggestions: [
+              {
+                messageId: 'useHopCount' as const,
+                output: `app['set']('trust proxy', 1);`,
               },
             ],
           },

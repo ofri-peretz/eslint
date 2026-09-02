@@ -36,7 +36,7 @@
  */
 
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { createRule, formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
 
 type MessageIds = 'envKeyInjection' | 'envBulkInjection';
 
@@ -79,11 +79,9 @@ const MAX_TRACE_DEPTH = 3;
 function isProcessEnv(node: TSESTree.Node): boolean {
   return (
     node.type === 'MemberExpression' &&
-    !node.computed &&
     node.object.type === 'Identifier' &&
     node.object.name === 'process' &&
-    node.property.type === 'Identifier' &&
-    node.property.name === 'env'
+    propertyName(node) === 'env'
   );
 }
 
@@ -232,9 +230,9 @@ export const noEnvInjection = createRule<RuleOptions, MessageIds>({
       // Object.assign(process.env, req.body)
       CallExpression(node: TSESTree.CallExpression) {
         const { callee } = node;
-        if (callee.type !== 'MemberExpression' || callee.computed) return;
-        if (callee.property.type !== 'Identifier') return;
-        if (callee.property.name !== 'assign') return;
+        if (callee.type !== 'MemberExpression') return;
+        // `Object['assign'](process.env, req.body)` merges the same request.
+        if (propertyName(callee) !== 'assign') return;
         if (callee.object.type !== 'Identifier') return;
         if (callee.object.name !== 'Object') return;
         const [target, ...sources] = node.arguments;

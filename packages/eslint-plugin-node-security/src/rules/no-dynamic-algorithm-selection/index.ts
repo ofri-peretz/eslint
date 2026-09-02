@@ -53,6 +53,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 import {
@@ -130,10 +131,11 @@ export const noDynamicAlgorithmSelection = createRule<[], MessageIds>({
         // Match crypto.method(algo) — MemberExpression where object is 'crypto'
         if (callee.type !== AST_NODE_TYPES.MemberExpression) return;
         if (callee.object.type !== AST_NODE_TYPES.Identifier) return;
-        if (callee.property.type !== AST_NODE_TYPES.Identifier) return;
+        // `crypto['createHash'](algo)` selects the algorithm the same way.
+        const methodName = propertyName(callee);
+        if (methodName === null) return;
 
         const objectName = callee.object.name;
-        const methodName = callee.property.name;
 
         if (objectName !== 'crypto') return;
         if (!CRYPTO_ALGORITHM_FUNCTIONS.has(methodName)) return;

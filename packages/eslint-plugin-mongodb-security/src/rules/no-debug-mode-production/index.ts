@@ -10,7 +10,7 @@
  * CWE-489: Active Debug Code
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath, propertyName } from '@interlace/eslint-devkit';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
 
 type MessageIds = 'debugModeProduction' | 'suggestionGateOnNodeEnv';
@@ -66,8 +66,7 @@ export const noDebugModeProduction = createRule<RuleOptions, MessageIds>({
       CallExpression(node: TSESTree.CallExpression) {
         if (
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          node.callee.property.name === 'set' &&
+          propertyName(node.callee) === 'set' &&
           node.arguments.length >= 2
         ) {
           const firstArg = node.arguments[0];

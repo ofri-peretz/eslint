@@ -9,7 +9,7 @@
  * Prevents CommonJS require/module.exports (eslint-plugin-import inspired)
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -177,8 +177,7 @@ export const noCommonjs = createRule<RuleOptions, MessageIds>({
           left.type === 'MemberExpression' &&
           left.object.type === 'Identifier' &&
           left.object.name === 'module' &&
-          left.property.type === 'Identifier' &&
-          left.property.name === 'exports'
+          propertyName(left) === 'exports'
         ) {
           if (right.type === 'Identifier') {
             return `// Convert to: export default ${right.name};`;
@@ -252,8 +251,7 @@ export const noCommonjs = createRule<RuleOptions, MessageIds>({
           left.type === 'MemberExpression' &&
           left.object.type === 'Identifier' &&
           left.object.name === 'module' &&
-          left.property.type === 'Identifier' &&
-          left.property.name === 'exports' &&
+          propertyName(left) === 'exports' &&
           !allowModuleExports
         ) {
           context.report({
@@ -284,8 +282,7 @@ export const noCommonjs = createRule<RuleOptions, MessageIds>({
           left.object.type === 'MemberExpression' &&
           left.object.object.type === 'Identifier' &&
           left.object.object.name === 'module' &&
-          left.object.property.type === 'Identifier' &&
-          left.object.property.name === 'exports' &&
+          propertyName(left.object) === 'exports' &&
           !allowModuleExports
         ) {
           context.report({

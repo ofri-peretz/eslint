@@ -9,7 +9,7 @@
  * Disallow accessing this.state inside setState calls
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'noAccessStateInSetState';
@@ -41,8 +41,7 @@ export const noAccessStateInSetState = createRule<[], MessageIds>({
         // Check if this is a setState call
         if (
           node.callee.type === 'MemberExpression' &&
-          node.callee.property.type === 'Identifier' &&
-          node.callee.property.name === 'setState' &&
+          propertyName(node.callee) === 'setState' &&
           node.arguments.length > 0
         ) {
           const [firstArg] = node.arguments;
@@ -74,8 +73,7 @@ function containsThisStateAccess(node: TSESTree.Node, visited = new Set<TSESTree
     // Check for this.state or this.state.someProperty
     if (
       node.object.type === 'ThisExpression' &&
-      node.property.type === 'Identifier' &&
-      node.property.name === 'state'
+      propertyName(node) === 'state'
     ) {
       return true;
     }

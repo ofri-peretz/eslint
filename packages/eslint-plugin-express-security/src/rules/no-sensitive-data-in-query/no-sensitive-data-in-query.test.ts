@@ -131,9 +131,13 @@ module.exports = app;
       { code: `const y = req.search.password;` },
       // Computed query access is not resolvable (documented false negative)
       { code: `const z = req.query[key];` },
-      { code: `const w = req['query'].password;` },
     ]),
     invalid: xp([
+      // Was pinned as valid — a bracket on the request bag read as
+      // unresolvable, in places labelled a "documented false negative".
+      // `req['query']` is the same bag as `req.query`; the runtime-keyed
+      // form left above is the genuine refusal.
+      { code: `const w = req['query'].password;`, errors: [{ messageId: 'sensitiveQueryParam', data: { name: 'password' } }] },
       // Benchmark corpus: CWE-598/vulnerable/login-via-query.js
       {
         name: 'credentials in the query string, which lands in access logs and Referer',

@@ -64,15 +64,15 @@ import {
   formatLLMMessage,
   isModuleBinding,
   MessageIcons,
+  namesOneOf,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 
 import { resolveInitializer } from '../../utils/resolve-binding';
 
 type MessageIds =
-  | 'violationDetected'
-  | 'prefixMimeCheck'
-  | 'missingMimeValidation';
+  'violationDetected' | 'prefixMimeCheck' | 'missingMimeValidation';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-empty-interface -- Rule has no configurable options
 export interface Options {}
@@ -171,9 +171,8 @@ function isMediaTypeLiteral(node: TSESTree.Node): boolean {
 function isTypeRead(node: TSESTree.Node): boolean {
   return (
     node.type === AST_NODE_TYPES.MemberExpression &&
-    !node.computed &&
-    node.property.type === AST_NODE_TYPES.Identifier &&
-    node.property.name === 'type'
+    // `file['type']` reads the same MIME type `file.type` reads.
+    propertyName(node) === 'type'
   );
 }
 
@@ -181,9 +180,8 @@ function isTypeRead(node: TSESTree.Node): boolean {
 function isFilesRead(node: TSESTree.Node): boolean {
   return (
     node.type === AST_NODE_TYPES.MemberExpression &&
-    !node.computed &&
-    node.property.type === AST_NODE_TYPES.Identifier &&
-    node.property.name === 'files'
+    // `input['files']` is the same FileList.
+    propertyName(node) === 'files'
   );
 }
 
@@ -245,13 +243,11 @@ function isUploadSink(node: TSESTree.CallExpression): boolean {
         property.key.name === 'body',
     );
   }
-  if (
-    callee.type === AST_NODE_TYPES.MemberExpression &&
-    !callee.computed &&
-    callee.property.type === AST_NODE_TYPES.Identifier
-  ) {
-    if (callee.property.name === 'send') return node.arguments.length > 0;
-    if (callee.property.name === 'append') return node.arguments.length >= 2;
+  if (callee.type === AST_NODE_TYPES.MemberExpression) {
+    // `form['append'](k, file)` uploads the same unchecked file.
+    const method = propertyName(callee);
+    if (method === 'send') return node.arguments.length > 0;
+    if (method === 'append') return node.arguments.length >= 2;
   }
   return false;
 }
@@ -361,16 +357,18 @@ export const requireMimeTypeValidation = createRule<RuleOptions, MessageIds>({
         // ---- Detector 1: a media type tested by substring rather than equality.
         if (
           callee.type === AST_NODE_TYPES.MemberExpression &&
-          !callee.computed &&
-          callee.property.type === AST_NODE_TYPES.Identifier &&
-          SUBSTRING_TESTS.has(callee.property.name) &&
+          namesOneOf(propertyName(callee), SUBSTRING_TESTS) &&
           isTypeRead(callee.object) &&
           node.arguments.some(isMediaTypeLiteral)
         ) {
           context.report({
             node,
             messageId: 'prefixMimeCheck',
-            data: { method: callee.property.name },
+            // The guard above resolved this name and found it in the set, so
+            // the `null` arm here is unreachable. It stays visible in the type
+            // rather than cast away: an unresolved name and an absent one are
+            // different answers, and only one of them is reachable from here.
+            data: { method: propertyName(callee) },
           });
           return;
         }
@@ -378,9 +376,7 @@ export const requireMimeTypeValidation = createRule<RuleOptions, MessageIds>({
         // ---- Detector 2: multer without a fileFilter.
         if (
           callee.type === AST_NODE_TYPES.MemberExpression &&
-          !callee.computed &&
-          callee.property.type === AST_NODE_TYPES.Identifier &&
-          MULTER_FIELD_METHODS.has(callee.property.name)
+          namesOneOf(propertyName(callee), MULTER_FIELD_METHODS)
         ) {
           const factory = multerCall(
             callee.object,

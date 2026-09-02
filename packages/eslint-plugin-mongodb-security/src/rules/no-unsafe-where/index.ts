@@ -12,7 +12,7 @@
  * @see https://nvd.nist.gov/vuln/detail/CVE-2025-23061
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath, propertyName } from '@interlace/eslint-devkit';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
 
 type MessageIds = 'unsafeWhere';
@@ -81,8 +81,7 @@ export const noUnsafeWhere = createRule<RuleOptions, MessageIds>({
       CallExpression(node: TSESTree.CallExpression) {
         if (
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          node.callee.property.name === 'where' &&
+          propertyName(node.callee) === 'where' &&
           node.arguments.length > 0 &&
           node.arguments[0].type === AST_NODE_TYPES.Literal &&
           node.arguments[0].value === '$where'

@@ -13,8 +13,15 @@
  * @see https://cwe.mitre.org/data/definitions/78.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
 import { createRule, isStaticExpression } from '@interlace/eslint-devkit';
+
+/*
+ * `cp['spawn']('bash', ['-c', cmd])` spawns exactly what `cp.spawn(...)` does.
+ * The sink test read `property.name`, so 20 of this rule's own true positives
+ * went silent when written with a string subscript — the notation a bundler
+ * emits, and command injection is not less injectable for being minified.
+ */
 import { makeReadsTaintSource } from '../../utils/provenance';
 
 /**
@@ -827,8 +834,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
         // Pattern 1: if (ALLOWED.includes(arg)) { ... our call is inside ... }
         if (test.type === 'CallExpression' &&
             test.callee.type === 'MemberExpression' &&
-            test.callee.property.type === 'Identifier' &&
-            test.callee.property.name === 'includes') {
+            propertyName(test.callee) === 'includes') {
           const validatedVarNames = new Set<string>();
           for (const testArg of test.arguments) {
             if (testArg.type === 'Identifier') validatedVarNames.add(testArg.name);
@@ -843,8 +849,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
         if (test.type === AST_NODE_TYPES.UnaryExpression && test.operator === '!' &&
             test.argument.type === AST_NODE_TYPES.CallExpression &&
             test.argument.callee.type === AST_NODE_TYPES.MemberExpression &&
-            test.argument.callee.property.type === AST_NODE_TYPES.Identifier &&
-            test.argument.callee.property.name === 'includes') {
+            propertyName(test.argument.callee) === 'includes') {
           const consequent = ifNode.consequent;
           const isGuardBody = (
             consequent.type === AST_NODE_TYPES.ReturnStatement ||
@@ -1096,12 +1101,11 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       node: TSESTree.CallExpression
     ): { method: string; calleeNode: TSESTree.Node } | null => {
       // child_process.exec(...)
-      if (
-        node.callee.type === 'MemberExpression' &&
-        node.callee.property.type === 'Identifier'
-      ) {
-        const methodName = node.callee.property.name;
-        if (!dangerousMethodsSet.has(methodName)) {
+      if (node.callee.type === 'MemberExpression') {
+        // A dynamic `cp[m](...)` names no method, so there is nothing to look
+        // up in the dangerous set.
+        const methodName = propertyName(node.callee);
+        if (methodName === null || !dangerousMethodsSet.has(methodName)) {
           return null;
         }
 

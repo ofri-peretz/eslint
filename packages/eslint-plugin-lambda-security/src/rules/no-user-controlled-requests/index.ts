@@ -20,6 +20,9 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  namesOneOf,
+  memberPropertyName,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'ssrfVulnerability';
@@ -154,29 +157,29 @@ export const noUserControlledRequests = createRule<RuleOptions, MessageIds>({
     function getEventInputSource(
       node: TSESTree.MemberExpression,
     ): string | null {
-      // event.body, event.queryStringParameters, etc.
+      // event.body, event.queryStringParameters, etc. Resolved once: the
+      // membership test asks the null question, and the source string is
+      // built from the answer rather than from a cast repeat call.
+      const field = propertyName(node);
       if (
         node.object.type === AST_NODE_TYPES.Identifier &&
         isEventParameter(node.object.name) &&
-        node.property.type === AST_NODE_TYPES.Identifier &&
-        USER_INPUT_PROPERTIES.has(node.property.name)
+        field !== null &&
+        USER_INPUT_PROPERTIES.has(field)
       ) {
-        return `event.${node.property.name}`;
+        return `event.${field}`;
       }
 
       // event.queryStringParameters.url, event.body.targetUrl, etc.
+      const outer = memberPropertyName(node.object);
       if (
         node.object.type === AST_NODE_TYPES.MemberExpression &&
         node.object.object.type === AST_NODE_TYPES.Identifier &&
         isEventParameter(node.object.object.name) &&
-        node.object.property.type === AST_NODE_TYPES.Identifier &&
-        USER_INPUT_PROPERTIES.has(node.object.property.name)
+        outer !== null &&
+        USER_INPUT_PROPERTIES.has(outer)
       ) {
-        return `event.${node.object.property.name}.${
-          node.property.type === AST_NODE_TYPES.Identifier
-            ? node.property.name
-            : '[...]'
-        }`;
+        return `event.${outer}.${propertyName(node) ?? '[...]'}`;
       }
 
       return null;
@@ -241,10 +244,15 @@ export const noUserControlledRequests = createRule<RuleOptions, MessageIds>({
       // axios.create().get(url) - chained methods
       if (
         node.callee.type === AST_NODE_TYPES.MemberExpression &&
-        node.callee.property.type === AST_NODE_TYPES.Identifier &&
-        ['get', 'post', 'put', 'delete', 'patch', 'request'].includes(
-          node.callee.property.name,
-        )
+        // `client['post'](url)` issues the same request.
+        namesOneOf(propertyName(node.callee), [
+          'get',
+          'post',
+          'put',
+          'delete',
+          'patch',
+          'request',
+        ])
       ) {
         return true;
       }

@@ -13,11 +13,17 @@
  * @see https://people.redhat.com/~hkario/marvin/
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES, isTestFilePath } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  createRule,
+  AST_NODE_TYPES,
+  isTestFilePath,
+  namesOneOf,
+  propertyName,
+} from '@interlace/eslint-devkit';
 
-type MessageIds =
-  | 'insecureRsaPadding'
-  | 'useOaep';
+type MessageIds = 'insecureRsaPadding' | 'useOaep';
 
 export interface Options {
   /** Allow in test files. Default: false */
@@ -39,7 +45,8 @@ export const noInsecureRsaPadding = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-insecure-rsa-padding.md',
-      description: 'Disallow RSA PKCS#1 v1.5 padding (CVE-2023-46809 Marvin Attack)',
+      description:
+        'Disallow RSA PKCS#1 v1.5 padding (CVE-2023-46809 Marvin Attack)',
       cwe: 'CWE-327',
       cvss: 7.5,
     },
@@ -49,7 +56,8 @@ export const noInsecureRsaPadding = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Insecure RSA padding',
         cwe: 'CWE-327',
-        description: 'RSA PKCS#1 v1.5 padding is vulnerable to the Marvin Attack (CVE-2023-46809). Timing side-channels allow attackers to decrypt ciphertexts or forge signatures.',
+        description:
+          'RSA PKCS#1 v1.5 padding is vulnerable to the Marvin Attack (CVE-2023-46809). Timing side-channels allow attackers to decrypt ciphertexts or forge signatures.',
         severity: 'HIGH',
         fix: 'Use RSA_PKCS1_OAEP_PADDING instead',
         documentationLink: 'https://people.redhat.com/~hkario/marvin/',
@@ -57,10 +65,12 @@ export const noInsecureRsaPadding = createRule<RuleOptions, MessageIds>({
       useOaep: formatLLMMessage({
         icon: MessageIcons.INFO,
         issueName: 'Use OAEP padding',
-        description: 'Use RSA-OAEP which is not vulnerable to padding oracle attacks',
+        description:
+          'Use RSA-OAEP which is not vulnerable to padding oracle attacks',
         severity: 'LOW',
         fix: 'padding: crypto.constants.RSA_PKCS1_OAEP_PADDING',
-        documentationLink: 'https://nodejs.org/api/crypto.html#cryptopublicdecryptkey-buffer',
+        documentationLink:
+          'https://nodejs.org/api/crypto.html#cryptopublicdecryptkey-buffer',
       }),
     },
     schema: [
@@ -84,7 +94,7 @@ export const noInsecureRsaPadding = createRule<RuleOptions, MessageIds>({
   ],
   create(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}]
+    [options = {}],
   ) {
     const { allowInTests = false } = options as Options;
 
@@ -97,12 +107,16 @@ export const noInsecureRsaPadding = createRule<RuleOptions, MessageIds>({
       if (isTestFile) return;
 
       // Check for privateDecrypt, publicDecrypt, privateEncrypt, publicEncrypt
-      const rsaMethods = new Set(['privateDecrypt', 'publicDecrypt', 'privateEncrypt', 'publicEncrypt']);
+      const rsaMethods = new Set([
+        'privateDecrypt',
+        'publicDecrypt',
+        'privateEncrypt',
+        'publicEncrypt',
+      ]);
 
       const isRsaCall =
         (node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          rsaMethods.has(node.callee.property.name)) ||
+          namesOneOf(propertyName(node.callee), rsaMethods)) ||
         (node.callee.type === AST_NODE_TYPES.Identifier &&
           rsaMethods.has(node.callee.name));
 
@@ -118,7 +132,10 @@ export const noInsecureRsaPadding = createRule<RuleOptions, MessageIds>({
               prop.key.name === 'padding'
             ) {
               const paddingText = sourceCode.getText(prop.value);
-              if (PKCS1_PADDING_NAMES.has(paddingText) || paddingText.includes('RSA_PKCS1_PADDING')) {
+              if (
+                PKCS1_PADDING_NAMES.has(paddingText) ||
+                paddingText.includes('RSA_PKCS1_PADDING')
+              ) {
                 context.report({
                   node: prop,
                   messageId: 'insecureRsaPadding',
@@ -126,7 +143,10 @@ export const noInsecureRsaPadding = createRule<RuleOptions, MessageIds>({
                     {
                       messageId: 'useOaep',
                       fix: (fixer: TSESLint.RuleFixer) => {
-                        return fixer.replaceText(prop.value, 'crypto.constants.RSA_PKCS1_OAEP_PADDING');
+                        return fixer.replaceText(
+                          prop.value,
+                          'crypto.constants.RSA_PKCS1_OAEP_PADDING',
+                        );
                       },
                     },
                   ],

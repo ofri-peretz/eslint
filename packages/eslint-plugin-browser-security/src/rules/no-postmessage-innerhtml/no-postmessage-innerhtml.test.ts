@@ -19,6 +19,17 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-postmessage-innerhtml', noPostmessageInnerhtml, {
   valid: [
+    // A sink chosen at RUNTIME names neither a property nor a method we
+    // can recognise — unlike `el['innerHTML']`, there is nothing to read.
+    {
+      name: 'a runtime-keyed sink names nothing',
+      code: `
+        window.addEventListener('message', (event) => {
+          element[sink] = event.data;
+          element[write](event.data);
+        });
+      `,
+    },
     // Safe: using textContent
     {
       name: 'the same data as textContent',

@@ -117,6 +117,17 @@ describe('require-lean-queries', () => {
     ruleTester.run('invalid - dangerous patterns', requireLeanQueries, {
       valid: [],
       invalid: xmo([
+        // Was pinned as valid in coverage-gaps.spec.ts — "computed member
+        // access, methodName is null". `Model['find']` runs the same read and
+        // hydrates the same full documents.
+        {
+          name: 'a subscripted find that still hydrates full documents',
+          code: `const docs = await Model['find']({ active: true });`,
+          errors: [{
+            messageId: 'useLean',
+            suggestions: [{ messageId: 'suggestionAddLean', output: `const docs = await Model['find']({ active: true }).lean();` }],
+          }],
+        },
         // Triggers useLean: read query without .lean()
         {
           name: 'a read-only find that still hydrates full documents',

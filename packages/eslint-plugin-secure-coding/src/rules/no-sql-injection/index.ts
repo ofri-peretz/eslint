@@ -20,6 +20,7 @@ import {
   unwrapTypeSyntax,
   isStaticExpression,
   readsRequestShape,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 /**
@@ -301,13 +302,16 @@ function invokedMethodName(
   callee: TSESTree.MemberExpression,
   scope: TSESLint.Scope.Scope,
 ): string | null {
-  if (!callee.computed) {
-    return callee.property.type === AST_NODE_TYPES.Identifier
-      ? callee.property.name
-      : null;
-  }
-  const direct = stringLiteralValue(callee.property);
-  if (direct !== null) return direct;
+  // `propertyName` resolves the dotted form AND a string subscript, so the
+  // two branches this replaces — a non-computed Identifier, then a
+  // `stringLiteralValue` of the computed key — were the same question asked
+  // twice. Neither is left behind: the literal arm became unreachable the
+  // moment `propertyName` answered first, and an unreachable branch is a
+  // permanent hole in a package held at 100%.
+  const named = propertyName(callee);
+  if (named !== null) return named;
+  // Still live, and the reason this function exists: `db[QUERY](sql)` where
+  // `const QUERY = 'query'`. `propertyName` does not follow a binding.
   if (callee.property.type !== AST_NODE_TYPES.Identifier) return null;
   const variable = resolveVariable(callee.property.name, scope);
   if (variable === null) return null;
@@ -1141,13 +1145,11 @@ function joinedArrayElements(
   scope: TSESLint.Scope.Scope,
 ): TSESTree.Node[] | null {
   const { callee } = node;
-  if (callee.type !== AST_NODE_TYPES.MemberExpression || callee.computed) {
+  if (callee.type !== AST_NODE_TYPES.MemberExpression) {
     return null;
   }
-  if (
-    callee.property.type !== AST_NODE_TYPES.Identifier ||
-    callee.property.name !== 'join'
-  ) {
+  // `parts['join'](' ')` concatenates the same fragments into the same query.
+  if (propertyName(callee) !== 'join') {
     return null;
   }
   let receiver: TSESTree.Node = callee.object;

@@ -12,7 +12,7 @@
  * @see https://github.com/jsx-eslint/eslint-plugin-react/blob/master/docs/rules/no-danger-with-children.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'dangerWithChildren';
@@ -99,7 +99,8 @@ export const noDangerWithChildren = createRule<RuleOptions, MessageIds>({
       CallExpression(node: TSESTree.CallExpression) {
         if (node.callee.type !== 'MemberExpression') return;
         if (node.callee.object.type !== 'Identifier' || node.callee.object.name !== 'React') return;
-        if (node.callee.property.type !== 'Identifier' || node.callee.property.name !== 'createElement') return;
+        // `React['createElement'](…)` builds the same element.
+        if (propertyName(node.callee) !== 'createElement') return;
 
         // React.createElement(type, props, ...children)
         if (node.arguments.length < 2) return;

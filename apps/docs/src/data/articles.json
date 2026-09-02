@@ -1,6 +1,46 @@
 {
   "articles": [
     {
+      "id": 4556473,
+      "title": "I Shipped ESLint to the Browser in 362 KB. Now My Blog Posts Lint Your Code, Not Mine.",
+      "description": "Articles about lint rules can only ever show you someone else's code. ESLint's own linter compresses to 362 KB with two real plugins inside it — small enough to just ship. Here's the ~60-line esbuild recipe that puts a working linter in a blog post, the four traps that cost me an evening, and the demo bug that shipped because my test grepped for a string instead of running the rule.",
+      "url": "https://dev.to/ofri-peretz/i-shipped-eslint-to-the-browser-in-362-kb-now-my-blog-posts-lint-your-code-not-mine-3a4m",
+      "canonical_url": "https://ofriperetz.dev/articles/eslint-in-the-browser-live-lint-playground",
+      "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fofriperetz.dev%2Fcdn%2Fblog-cover-image%2Feslint-in-the-browser-live-lint-playground.jpg",
+      "published_at": "2026-09-02T13:07:33Z",
+      "readable_publish_date": "Sep 2",
+      "reading_time_minutes": 7,
+      "page_views_count": 0,
+      "public_reactions_count": 2,
+      "positive_reactions_count": 2,
+      "comments_count": 0,
+      "tag_list": [
+        "javascript",
+        "webdev",
+        "showdev"
+      ]
+    },
+    {
+      "id": 4542713,
+      "title": "I Ran My Plugins Against a Competitor's Own Test Suite",
+      "description": "eslint-plugin-security ships its tests. I ran 84 of its own vulnerable samples through my plugins: 51 caught, and 29 of the 33 misses are one obsolete rule.",
+      "url": "https://dev.to/ofri-peretz/i-ran-my-plugins-against-a-competitors-own-test-suite-3ad1",
+      "canonical_url": "https://ofriperetz.dev/articles/eslint-security-corpus-parity",
+      "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fofriperetz.dev%2Fcdn%2Fblog-cover-image%2Feslint-security-corpus-parity.jpg",
+      "published_at": "2026-09-01T06:07:09Z",
+      "readable_publish_date": "Sep 1",
+      "reading_time_minutes": 4,
+      "page_views_count": 0,
+      "public_reactions_count": 4,
+      "positive_reactions_count": 4,
+      "comments_count": 0,
+      "tag_list": [
+        "security",
+        "javascript",
+        "webdev"
+      ]
+    },
+    {
       "id": 4488830,
       "title": "My 9-Reviewer AI Gate Failed Articles It Scored 9.1",
       "description": "A reviewer scored 10.0 and its clean bill of health parsed as a blocker. Three ways my LLM-judge gate failed work it had just praised.",
@@ -1704,7 +1744,7 @@
       ]
     }
   ],
-  "total": 83,
-  "lastUpdated": "2026-08-30T16:32:46.520Z",
+  "total": 85,
+  "lastUpdated": "2026-09-02T21:20:28.616Z",
   "source": "public"
 }

@@ -700,8 +700,8 @@ ruleTester.run('no-missing-cors-check (coverage)', noMissingCorsCheck, {
     `const corsConfig = { origin: 'https://ok.example.com' }; app.use(cors(corsConfig));`,
     // arrow function with expression body: no lookup scope
     `const setup = () => app.use(cors(cfg));`,
-    // computed setHeader member: property is not an Identifier
-    `res['setHeader']('Access-Control-Allow-Origin', '*');`,
+    // a header method chosen at RUNTIME names no CORS write
+    `res[write]('Access-Control-Allow-Origin', '*');`,
     // member expression not part of a call
     `const fn = res.setHeader;`,
     // header without CORS relevance
@@ -723,6 +723,13 @@ ruleTester.run('no-missing-cors-check (coverage)', noMissingCorsCheck, {
     },
   ],
   invalid: [
+    // Was pinned as valid — "computed setHeader member: property is not an
+    // Identifier". It writes the same wildcard CORS header.
+    {
+      name: 'a wildcard CORS header written through a subscript',
+      code: `res['setHeader']('Access-Control-Allow-Origin', '*');`,
+      errors: [{ messageId: 'missingCorsCheck' }],
+    },
     // trusted library: checkCallExpression returns early (isTrustedLibrary),
     // but checkLiteral still reports the wildcard origin literal
     {
@@ -735,7 +742,16 @@ ruleTester.run('no-missing-cors-check (coverage)', noMissingCorsCheck, {
       code: `app.use(cors('*'));`,
       errors: [{ messageId: 'missingCorsCheck' }],
     },
-    // computed origin key: shouldSkip stays false, actual CORS context reports
+    // An option key chosen at RUNTIME is not attributable to `origin`, so the
+    // suggestion path stands down — but a bare `'*'` inside a `cors(…)` call
+    // is a wildcard origin whichever key holds it, and the literal check
+    // still reports it.
+    {
+      name: 'a wildcard under a runtime-keyed cors option still reports',
+      code: `app.use(cors({ [k]: '*' }));`,
+      errors: [{ messageId: 'missingCorsCheck' }],
+    },
+    // computed origin key: now resolved, so checkCallExpression reports it
     {
       code: `app.use(cors({ ['origin']: '*' }));`,
       errors: [{ messageId: 'missingCorsCheck' }],
@@ -819,12 +835,21 @@ ruleTester.run('no-missing-security-headers (coverage)', noMissingSecurityHeader
      }`,
     // non-member call expression
     `setHeader('X-Frame-Options');`,
-    // computed member property
-    `res['setHeader']('X-Frame-Options', 'DENY');`,
+    // A method chosen at RUNTIME names nothing to match against the header API.
+    `res[method]('X-Frame-Options', 'DENY');`,
     // non-header method
     `res.json({});`,
   ],
   invalid: [
+    // Was pinned above as valid under the comment "computed member property".
+    // That described the guard, not the code: this sets ONE of the required
+    // headers and leaves the rest missing, exactly as the dotted spelling
+    // three entries down does.
+    {
+      name: 'one required header set through a subscript, the rest still missing',
+      code: `function handler(req, res) { res['setHeader']('X-Frame-Options', 'DENY'); }`,
+      errors: [{ messageId: 'missingSecurityHeader' }],
+    },
     // setHeader without arguments: header name cannot be extracted
     {
       code: `res.setHeader();`,

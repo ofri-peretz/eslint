@@ -19,6 +19,11 @@ const ruleTester = new RuleTester({
 describe('no-deprecated-cipher-method', () => {
   ruleTester.run('no-deprecated-cipher-method', noDeprecatedCipherMethod, {
     valid: [
+      // A name chosen at RUNTIME resolves to nothing to match.
+      {
+        name: 'a name chosen at RUNTIME resolves to nothing to match',
+        code: `const c = crypto[make]('aes-128-cbc', key);`,
+      },
         'const x = 42;',
         'const flag = true;',
         'function noop() {}',

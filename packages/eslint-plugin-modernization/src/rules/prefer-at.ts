@@ -9,7 +9,7 @@
  * Prefer .at() method over array[index] for accessing elements from end (unicorn-inspired)
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'preferAtMethod' | 'useAtForLastElement' | 'useAtForNegativeIndex';
@@ -133,11 +133,9 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
           node.property.type === 'BinaryExpression' &&
           node.property.operator === '-' &&
           node.property.left.type === 'MemberExpression' &&
-          !node.property.left.computed &&
           node.property.left.object.type === 'Identifier' &&
           node.property.left.object.name === arrayName &&
-          node.property.left.property.type === 'Identifier' &&
-          node.property.left.property.name === 'length' &&
+          propertyName(node.property.left) === 'length' &&
           node.property.right.type === 'Literal' &&
           typeof node.property.right.value === 'number' &&
           node.property.right.value > 0
@@ -160,11 +158,9 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
           node.property.type === 'BinaryExpression' &&
           node.property.operator === '-' &&
           node.property.left.type === 'MemberExpression' &&
-          !node.property.left.computed &&
           node.property.left.object.type === 'Identifier' &&
           node.property.left.object.name === arrayName &&
-          node.property.left.property.type === 'Identifier' &&
-          node.property.left.property.name === 'length' &&
+          propertyName(node.property.left) === 'length' &&
           node.property.right.type === 'Identifier'
         ) {
           const varName = node.property.right.name;

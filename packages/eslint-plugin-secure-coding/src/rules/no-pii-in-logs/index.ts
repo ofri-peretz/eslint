@@ -16,6 +16,9 @@ import {
   formatLLMMessage,
   MessageIcons,
   nameHasAnyWord,
+  namesOneOf,
+  memberPropertyName,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 
@@ -96,7 +99,13 @@ const DEFAULT_PII_TERMS = ['email', 'ssn', 'password', 'credit card', 'phone'];
  * all. A literal is a compile-time constant — it cannot hold a user's data —
  * so the only thing a literal can contribute is a label for a SIBLING value.
  */
-const DEFAULT_PII_LABELS = ['email:', 'ssn:', 'password:', 'credit card:', 'creditcard:'];
+const DEFAULT_PII_LABELS = [
+  'email:',
+  'ssn:',
+  'password:',
+  'credit card:',
+  'creditcard:',
+];
 
 /**
  * The sub-expressions that place a value VERBATIM into the logged output.
@@ -123,7 +132,10 @@ function collectLoggedValues(root: TSESTree.Node): TSESTree.Node[] {
       pending.push(node.expression);
     } else if (node.type === AST_NODE_TYPES.TemplateLiteral) {
       pending.push(...node.expressions);
-    } else if (node.type === AST_NODE_TYPES.BinaryExpression && node.operator === '+') {
+    } else if (
+      node.type === AST_NODE_TYPES.BinaryExpression &&
+      node.operator === '+'
+    ) {
       pending.push(node.left, node.right);
     } else if (node.type === AST_NODE_TYPES.ObjectExpression) {
       for (const property of node.properties) {
@@ -140,11 +152,19 @@ function collectLoggedValues(root: TSESTree.Node): TSESTree.Node[] {
 }
 
 /** `user.email` / `account.holder.creditCardNumber` — a PII field read. */
-function isPiiFieldAccess(node: TSESTree.Node, piiTerms: readonly string[]): boolean {
+function isPiiFieldAccess(
+  node: TSESTree.Node,
+  piiTerms: readonly string[],
+): boolean {
+  // `user['email']` reads the same field `user.email` does. Resolved once,
+  // and the null case asked as its own question rather than cast into the
+  // word test — a field the AST cannot name is not a field without PII in
+  // its name, it is a field nothing here can judge.
+  const field = memberPropertyName(node);
   return (
     node.type === AST_NODE_TYPES.MemberExpression &&
-    node.property.type === AST_NODE_TYPES.Identifier &&
-    nameHasAnyWord(node.property.name, piiTerms)
+    field !== null &&
+    nameHasAnyWord(field, piiTerms)
   );
 }
 
@@ -163,11 +183,12 @@ export const noPiiInLogs = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'violation Detected',
         cwe: 'CWE-359',
-        description: 'Prevent PII (email, SSN, credit cards) in console logs detected - this is a security risk',
+        description:
+          'Prevent PII (email, SSN, credit cards) in console logs detected - this is a security risk',
         severity: 'HIGH',
         fix: 'Review and apply secure practices',
         documentationLink: 'https://cwe.mitre.org/data/definitions/359.html',
-      })
+      }),
     },
     schema: [
       {
@@ -237,12 +258,17 @@ export const noPiiInLogs = createRule<RuleOptions, MessageIds>({
       additionalPiiLabels = [],
     } = options as Options;
 
-    const logMethods = new Set([...consoleMethods, ...additionalConsoleMethods]);
+    const logMethods = new Set([
+      ...consoleMethods,
+      ...additionalConsoleMethods,
+    ]);
     const terms = [...piiTerms, ...additionalPiiTerms];
     // Normalised the same way the literal being tested is, so a user writing
     // `'DOB:'` matches `console.log('dob: ', v)` exactly as the built-ins do.
     const labels = new Set(
-      [...piiLabels, ...additionalPiiLabels].map((label) => label.trim().toLowerCase()),
+      [...piiLabels, ...additionalPiiLabels].map((label) =>
+        label.trim().toLowerCase(),
+      ),
     );
 
     const sourceCode = context.sourceCode;
@@ -302,8 +328,9 @@ export const noPiiInLogs = createRule<RuleOptions, MessageIds>({
           node.callee.type !== AST_NODE_TYPES.MemberExpression ||
           node.callee.object.type !== AST_NODE_TYPES.Identifier ||
           node.callee.object.name !== 'console' ||
-          node.callee.property.type !== AST_NODE_TYPES.Identifier ||
-          !logMethods.has(node.callee.property.name)
+          // `console['log'](user.email)` writes the same line to the same
+          // stream. A method chosen at runtime names no sink and is skipped.
+          !namesOneOf(propertyName(node.callee), logMethods)
         ) {
           return;
         }

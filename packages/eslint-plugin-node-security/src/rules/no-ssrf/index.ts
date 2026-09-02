@@ -24,6 +24,8 @@ import {
   isTestFilePath,
   readsRequestShape,
   isModuleBinding,
+  namesOneOf,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { bindingInit } from '../../utils/provenance';
 
@@ -340,13 +342,11 @@ function nodeContainsValidation(node: TSESTree.Node): boolean {
     node.type === AST_NODE_TYPES.BinaryExpression &&
     (node.operator === '===' || node.operator === '==') &&
     ((node.left.type === AST_NODE_TYPES.MemberExpression &&
-      node.left.property.type === AST_NODE_TYPES.Identifier &&
-      (node.left.property.name === 'hostname' ||
-        node.left.property.name === 'host')) ||
+      (propertyName(node.left) === 'hostname' ||
+        propertyName(node.left) === 'host')) ||
       (node.right.type === AST_NODE_TYPES.MemberExpression &&
-        node.right.property.type === AST_NODE_TYPES.Identifier &&
-        (node.right.property.name === 'hostname' ||
-          node.right.property.name === 'host')))
+        (propertyName(node.right) === 'hostname' ||
+          propertyName(node.right) === 'host')))
   ) {
     return true;
   }
@@ -507,8 +507,7 @@ export const noSsrf = createRule<RuleOptions, MessageIds>({
         if (
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
           node.callee.object.type === AST_NODE_TYPES.Identifier &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          HTTP_CLIENT_METHODS.has(node.callee.property.name) &&
+          namesOneOf(propertyName(node.callee), HTTP_CLIENT_METHODS) &&
           HTTP_CLIENT_MODULES.some((mod) =>
             isModuleBinding(
               (node.callee as TSESTree.MemberExpression).object,

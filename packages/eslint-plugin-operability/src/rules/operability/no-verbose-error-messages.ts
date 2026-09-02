@@ -15,6 +15,8 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  namesOneOf,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
@@ -64,17 +66,16 @@ export const noVerboseErrorMessages = createRule<RuleOptions, MessageIds>({
         if (
           node.type === AST_NODE_TYPES.CallExpression &&
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
           // @vocabulary Express response API
-          ['send', 'json'].includes(node.callee.property.name)
+          // `res['send'](err.stack)` leaks the same stack `res.send` does.
+          namesOneOf(propertyName(node.callee), ['send', 'json'])
         ) {
           const arg = node.arguments[0];
 
           // Check for error.stack or err.stack
           if (
             arg?.type === AST_NODE_TYPES.MemberExpression &&
-            arg.property.type === AST_NODE_TYPES.Identifier &&
-            arg.property.name === 'stack'
+            propertyName(arg) === 'stack'
           ) {
             report(node);
           }
@@ -87,8 +88,7 @@ export const noVerboseErrorMessages = createRule<RuleOptions, MessageIds>({
                 p.key.type === AST_NODE_TYPES.Identifier &&
                 (p.key.name === 'stack' ||
                   (p.value.type === AST_NODE_TYPES.MemberExpression &&
-                    p.value.property.type === AST_NODE_TYPES.Identifier &&
-                    p.value.property.name === 'stack')),
+                    propertyName(p.value) === 'stack')),
             );
             if (stackProp) {
               report(node);

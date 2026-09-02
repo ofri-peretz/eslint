@@ -20,6 +20,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unvalidatedInput';
@@ -103,10 +104,8 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
           'Lambda handler uses {{property}} without validation. This can lead to injection attacks.',
         severity: 'HIGH',
         fix: 'Validate event input using Middy validator, Zod, or Joi before use',
-        documentationLink:
-          'https://owasp.org/www-project-serverless-top-10/',
+        documentationLink: 'https://owasp.org/www-project-serverless-top-10/',
       }),
-
     },
     schema: [
       {
@@ -208,16 +207,17 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
     function isEventPropertyAccess(
       node: TSESTree.MemberExpression,
     ): { eventName: string; property: string } | null {
+      // Resolved once: the membership test below asks whether the property is
+      // nameable, so the returned record reads that answer instead of casting
+      // a second call past the same question.
+      const property = propertyName(node);
       if (
         node.object.type === AST_NODE_TYPES.Identifier &&
         eventParameters.has(node.object.name) &&
-        node.property.type === AST_NODE_TYPES.Identifier &&
-        dangerousProperties.has(node.property.name)
+        property !== null &&
+        dangerousProperties.has(property)
       ) {
-        return {
-          eventName: node.object.name,
-          property: node.property.name,
-        };
+        return { eventName: node.object.name, property };
       }
       return null;
     }
@@ -280,7 +280,10 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
     // of whether it has the (event, context) signature or just a single
     // `event` parameter — that's the AWS Lambda convention.
     function isExportedAsHandler(
-      node: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression | TSESTree.FunctionDeclaration,
+      node:
+        | TSESTree.ArrowFunctionExpression
+        | TSESTree.FunctionExpression
+        | TSESTree.FunctionDeclaration,
     ): boolean {
       // function handler() {}  /  export function handler() {}
       if (
@@ -289,7 +292,8 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
       ) {
         return true;
       }
-      const parent = (node as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+      const parent = (node as TSESTree.Node & { parent?: TSESTree.Node })
+        .parent;
       if (!parent) return false;
       // const handler = (...)  /  export const handler = (...)
       if (
@@ -304,8 +308,7 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
         const left = parent.left;
         if (
           left.type === AST_NODE_TYPES.MemberExpression &&
-          left.property.type === AST_NODE_TYPES.Identifier &&
-          left.property.name === 'handler'
+          propertyName(left) === 'handler'
         ) {
           return true;
         }
@@ -315,7 +318,10 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
 
     function isLambdaSignature(
       params: readonly TSESTree.Parameter[],
-      node: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression | TSESTree.FunctionDeclaration,
+      node:
+        | TSESTree.ArrowFunctionExpression
+        | TSESTree.FunctionExpression
+        | TSESTree.FunctionDeclaration,
     ): boolean {
       if (params.length < 1) return false;
       const first = params[0];
@@ -358,7 +364,10 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
       //   (c) function exported as `handler` (AWS Lambda export convention)
       // Express handlers never satisfy any of these.
       'ArrowFunctionExpression, FunctionExpression, FunctionDeclaration'(
-        node: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression | TSESTree.FunctionDeclaration,
+        node:
+          | TSESTree.ArrowFunctionExpression
+          | TSESTree.FunctionExpression
+          | TSESTree.FunctionDeclaration,
       ) {
         if (!isLambdaSignature(node.params, node)) return;
         // isLambdaSignature already guarantees params[0] is an Identifier
@@ -372,8 +381,7 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
         // Check for middy().use(validator(...))
         if (
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          node.callee.property.name === 'use'
+          propertyName(node.callee) === 'use'
         ) {
           // Check if argument is validator call
           for (const arg of node.arguments) {

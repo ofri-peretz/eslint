@@ -9,7 +9,7 @@
  * Prevent usage of process.exit()
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'noProcessExit';
@@ -73,8 +73,7 @@ export const noProcessExit = createRule<RuleOptions, MessageIds>({
           callee.type === 'MemberExpression' &&
           callee.object.type === 'Identifier' &&
           callee.object.name === 'process' &&
-          callee.property.type === 'Identifier' &&
-          callee.property.name === 'exit'
+          propertyName(callee) === 'exit'
         ) {
           return true;
         }

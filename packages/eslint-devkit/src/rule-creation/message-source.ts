@@ -40,6 +40,7 @@
  */
 
 import { AST_NODE_TYPES } from '../ast-node-types';
+import { propertyName } from '../ast/spellings';
 import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
 
 /** A source whose messages are attacker-influenced, and which owns its own rule. */
@@ -201,18 +202,20 @@ export function handlerSource(
   | undefined {
   if (node.type === AST_NODE_TYPES.AssignmentExpression) {
     if (node.left.type !== AST_NODE_TYPES.MemberExpression) return undefined;
-    if (node.left.property.type !== AST_NODE_TYPES.Identifier) return undefined;
+    // `ws['onmessage'] = fn` installs the same handler `ws.onmessage = fn`
+    // does. `propertyName` resolves both spellings.
+    const handlerProp = propertyName(node.left);
+    if (handlerProp === null) return undefined;
     const source = receiverSource(node.left.object, resolve);
     if (source === undefined) return undefined;
-    if (!HANDLER_PROPS[source].has(node.left.property.name)) return undefined;
+    if (!HANDLER_PROPS[source].has(handlerProp)) return undefined;
     return withHandler(source, node.right);
   }
 
   if (node.type === AST_NODE_TYPES.CallExpression) {
     if (node.callee.type !== AST_NODE_TYPES.MemberExpression) return undefined;
-    if (node.callee.property.type !== AST_NODE_TYPES.Identifier)
-      return undefined;
-    if (node.callee.property.name !== 'addEventListener') return undefined;
+    // `window['addEventListener']('message', fn)` registers the same listener.
+    if (propertyName(node.callee) !== 'addEventListener') return undefined;
     const [eventType, handler] = node.arguments;
     if (eventType?.type !== AST_NODE_TYPES.Literal) return undefined;
     if (typeof eventType.value !== 'string') return undefined;

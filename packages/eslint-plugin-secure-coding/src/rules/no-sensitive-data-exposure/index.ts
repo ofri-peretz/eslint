@@ -9,15 +9,23 @@
  * Detects PII/credentials in logs, responses, or error messages
  * Priority 5: Security with Data Flow Analysis
  * CWE-532: Information Exposure Through Log Files
- * 
+ *
  * @see https://cwe.mitre.org/data/definitions/532.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, AST_NODE_TYPES, unwrapTypeSyntax, isStaticExpression, staticString } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  AST_NODE_TYPES,
+  unwrapTypeSyntax,
+  isStaticExpression,
+  namesOneOf,
+  propertyName,
+  staticString,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
-type MessageIds =
-  | 'sensitiveDataExposure';
+type MessageIds = 'sensitiveDataExposure';
 
 /**
  * `checkApiResponses` (default `true`) used to be declared here and in
@@ -31,10 +39,10 @@ type MessageIds =
 export interface Options {
   /** Sensitive data patterns. Default: ['password', 'secret', 'token', 'key', 'ssn', 'credit', 'card'] */
   sensitivePatterns?: string[];
-  
+
   /** Check console.log statements. Default: true */
   checkConsoleLog?: boolean;
-  
+
   /** Check error messages. Default: true */
   checkErrorMessages?: boolean;
 
@@ -80,7 +88,9 @@ type RuleOptions = [Options?];
 function literalCarriesSecret(text: string, patterns: string[]): boolean {
   const normalized = text.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
   return patterns.some((pattern) => {
-    const escaped = pattern.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escaped = pattern
+      .toLowerCase()
+      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const flexPattern = escaped.replace(/[_ ]/g, '[_ ]');
     // Word, then a ':' or '=', then something non-empty.
     //
@@ -146,7 +156,9 @@ function literalCarriesSecret(text: string, patterns: string[]): boolean {
 function literalLabelsValue(text: string, patterns: string[]): string | null {
   const normalized = text.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
   for (const pattern of patterns) {
-    const escaped = pattern.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escaped = pattern
+      .toLowerCase()
+      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const flexPattern = escaped.replace(/[_ ]/g, '[_ ]');
     if (new RegExp(`\\b${flexPattern}\\b\\s*[:=]\\s*$`, 'i').test(normalized)) {
       return pattern;
@@ -175,9 +187,20 @@ function literalLabelsValue(text: string, patterns: string[]): string | null {
  * changes that the comparison is against the whole final segment of the name.
  */
 const DESCRIPTOR_SEGMENTS = [
-  'msg', 'message', 'error', 'err', 'label', 'prompt', 'hint',
-  'description', 'desc', 'regex', 'pattern', 'placeholder',
-  'warning', 'notice',
+  'msg',
+  'message',
+  'error',
+  'err',
+  'label',
+  'prompt',
+  'hint',
+  'description',
+  'desc',
+  'regex',
+  'pattern',
+  'placeholder',
+  'warning',
+  'notice',
 ];
 
 /**
@@ -228,7 +251,9 @@ function memberCarriesSecret(
     : prop.type === AST_NODE_TYPES.Identifier
       ? prop.name
       : null;
-  const fromProp = propName ? identifierNamesSecret(propName, patterns, descriptors) : null;
+  const fromProp = propName
+    ? identifierNamesSecret(propName, patterns, descriptors)
+    : null;
   if (fromProp) return fromProp;
   // The object-name fallback must not fire through a property that cannot
   // carry the value. `token.length` is a number and `buffer.byteLength` is a
@@ -243,7 +268,10 @@ function memberCarriesSecret(
   // is an HTTP status code, and reporting it read the RECEIVER's name and
   // ignored what was actually taken from it — the identical mistake, one
   // property set over.
-  if (propName && (VALUE_FREE_PROPERTIES.has(propName) || DIAGNOSTIC_ACCESSORS.has(propName)))
+  if (
+    propName &&
+    (VALUE_FREE_PROPERTIES.has(propName) || DIAGNOSTIC_ACCESSORS.has(propName))
+  )
     return null;
   return node.object.type === AST_NODE_TYPES.Identifier
     ? identifierNamesSecret(node.object.name, patterns, descriptors)
@@ -265,7 +293,12 @@ function memberCarriesSecret(
  * credential leak — or add a property that really does carry the secret
  * (`.value`, `.raw`) and silence every genuine finding reached through it.
  */
-const VALUE_FREE_PROPERTIES = new Set(['length', 'size', 'byteLength', 'byteOffset']);
+const VALUE_FREE_PROPERTIES = new Set([
+  'length',
+  'size',
+  'byteLength',
+  'byteOffset',
+]);
 
 /**
  * Properties that describe how an operation ENDED rather than what it carried.
@@ -281,7 +314,13 @@ const VALUE_FREE_PROPERTIES = new Set(['length', 'size', 'byteLength', 'byteOffs
  * authorization code, a 2FA code and a recovery code are all called `code` too,
  * and the rule cannot tell them apart — so `code` keeps reporting.
  */
-const DIAGNOSTIC_ACCESSORS = new Set(['message', 'stack', 'name', 'status', 'statusText']);
+const DIAGNOSTIC_ACCESSORS = new Set([
+  'message',
+  'stack',
+  'name',
+  'status',
+  'statusText',
+]);
 
 /**
  * `error.message`, `tokenResponse.status` — a value that names ITSELF as an
@@ -297,26 +336,26 @@ function isDiagnosticAccessor(node: TSESTree.Node): boolean {
   // TypeScript users actually write, and the finding comes back.
   const unwrapped = unwrapTypeSyntax(node) as TSESTree.Node;
   const value =
-    unwrapped.type === AST_NODE_TYPES.ChainExpression ? unwrapped.expression : unwrapped;
+    unwrapped.type === AST_NODE_TYPES.ChainExpression
+      ? unwrapped.expression
+      : unwrapped;
   return (
     value.type === AST_NODE_TYPES.MemberExpression &&
-    !value.computed &&
-    value.property.type === AST_NODE_TYPES.Identifier &&
-    DIAGNOSTIC_ACCESSORS.has(value.property.name)
+    namesOneOf(propertyName(value), DIAGNOSTIC_ACCESSORS)
   );
 }
 
 function containsSensitiveData(
   text: string,
-  patterns: string[]
+  patterns: string[],
 ): string | null {
   // Normalize camelCase → space separated for matching (secretKey → secret key)
-  const normalized = text
-    .replace(/([a-z])([A-Z])/g, '$1 $2')
-    .toLowerCase();
+  const normalized = text.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
 
   for (const pattern of patterns) {
-    const escaped = pattern.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escaped = pattern
+      .toLowerCase()
+      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     // Allow spaces or underscores as word separators (e.g. 'credit card' matches 'credit_card')
     const flexPattern = escaped.replace(/[_ ]/g, '[_ ]');
     if (new RegExp(`\\b${flexPattern}\\b`, 'i').test(normalized)) {
@@ -343,7 +382,8 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-sensitive-data-exposure.md',
-      description: 'Detects PII/credentials in logs, responses, or error messages',
+      description:
+        'Detects PII/credentials in logs, responses, or error messages',
       cwe: 'CWE-532',
       cvss: 5.3,
     },
@@ -365,7 +405,22 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
           sensitivePatterns: {
             type: 'array',
             items: { type: 'string' },
-            default: ['password', 'passwd', 'secret', 'token', 'access_token', 'auth_token', 'ssn', 'credit_card', 'creditcard', 'api_key', 'apikey', 'secret_key', 'private_key', 'encryption_key'],
+            default: [
+              'password',
+              'passwd',
+              'secret',
+              'token',
+              'access_token',
+              'auth_token',
+              'ssn',
+              'credit_card',
+              'creditcard',
+              'api_key',
+              'apikey',
+              'secret_key',
+              'private_key',
+              'encryption_key',
+            ],
             description: 'Sensitive data patterns',
           },
           checkConsoleLog: {
@@ -389,7 +444,8 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Extra descriptor segments, on top of `descriptorSegments`.',
+            description:
+              'Extra descriptor segments, on top of `descriptorSegments`.',
           },
         },
         additionalProperties: false,
@@ -398,21 +454,54 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [
     {
-      sensitivePatterns: ['password', 'passwd', 'secret', 'token', 'access_token', 'auth_token', 'ssn', 'credit_card', 'creditcard', 'api_key', 'apikey', 'secret_key', 'private_key', 'encryption_key'],
+      sensitivePatterns: [
+        'password',
+        'passwd',
+        'secret',
+        'token',
+        'access_token',
+        'auth_token',
+        'ssn',
+        'credit_card',
+        'creditcard',
+        'api_key',
+        'apikey',
+        'secret_key',
+        'private_key',
+        'encryption_key',
+      ],
       checkConsoleLog: true,
       checkErrorMessages: true,
       descriptorSegments: DESCRIPTOR_SEGMENTS,
       additionalDescriptorSegments: [],
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
+  create(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    [options = {}],
+  ) {
     const {
-sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'auth_token', 'ssn', 'credit_card', 'creditcard', 'api_key', 'apikey', 'secret_key', 'private_key', 'encryption_key'],
+      sensitivePatterns = [
+        'password',
+        'passwd',
+        'secret',
+        'token',
+        'access_token',
+        'auth_token',
+        'ssn',
+        'credit_card',
+        'creditcard',
+        'api_key',
+        'apikey',
+        'secret_key',
+        'private_key',
+        'encryption_key',
+      ],
       checkConsoleLog = true,
       checkErrorMessages = true,
       descriptorSegments = DESCRIPTOR_SEGMENTS,
       additionalDescriptorSegments = [],
-}: Options = options || {};
+    }: Options = options || {};
 
     const descriptors: ReadonlySet<string> = new Set([
       ...descriptorSegments,
@@ -435,7 +524,15 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
 
     /** Methods that write a record. Exact membership, closed set. */
     const LOG_METHODS = new Set([
-      'log', 'info', 'warn', 'error', 'debug', 'trace', 'fatal', 'verbose', 'silly',
+      'log',
+      'info',
+      'warn',
+      'error',
+      'debug',
+      'trace',
+      'fatal',
+      'verbose',
+      'silly',
     ]);
 
     /**
@@ -448,12 +545,14 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
       if (node.type === AST_NODE_TYPES.Identifier) {
         return LOGGER_RECEIVERS.has(node.name.toLowerCase());
       }
-      return (
-        node.type === AST_NODE_TYPES.MemberExpression &&
-        !node.computed &&
-        node.property.type === AST_NODE_TYPES.Identifier &&
-        LOGGER_RECEIVERS.has(node.property.name.toLowerCase())
-      );
+      // One expression rather than an early return: the old `&&` chain tested
+      // the member-ness inline, and splitting it out added a branch nothing
+      // reaches, since every caller passes an Identifier or a MemberExpression.
+      const name =
+        node.type === AST_NODE_TYPES.MemberExpression
+          ? propertyName(node)
+          : null;
+      return name !== null && LOGGER_RECEIVERS.has(name.toLowerCase());
     }
 
     /**
@@ -482,7 +581,10 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
         return pattern ? { node: arg, pattern } : null;
       }
 
-      if (arg.type === AST_NODE_TYPES.BinaryExpression && arg.operator === '+') {
+      if (
+        arg.type === AST_NODE_TYPES.BinaryExpression &&
+        arg.operator === '+'
+      ) {
         // `'password: ' + password` - the classic credential leak. The left
         // literal must END at the separator (see literalLabelsValue), and the
         // value on the right is read whether it is a bare identifier or a
@@ -508,15 +610,20 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
         // template splices a runtime value into the record.
         const fromExpression = arg.expressions
           .map((e) => namedValueExposure(e))
-          .find((m): m is { node: TSESTree.Node; pattern: string } => Boolean(m));
-        if (fromExpression) return { node: arg, pattern: fromExpression.pattern };
+          .find((m): m is { node: TSESTree.Node; pattern: string } =>
+            Boolean(m),
+          );
+        if (fromExpression)
+          return { node: arg, pattern: fromExpression.pattern };
 
         // The quasis are joined with a placeholder standing in for each
         // interpolation, rather than tested one by one. ``  `token=${t}` ``
         // splits into `token=` and ``, and neither half satisfies "label,
         // separator, then a value" - the value is the hole between them.
         const INTERPOLATION = '\u0001'; // cannot occur in source text
-        const joined = arg.quasis.map((q) => q.value.cooked).join(INTERPOLATION);
+        const joined = arg.quasis
+          .map((q) => q.value.cooked)
+          .join(INTERPOLATION);
         // The prose names a credential; the interpolations name themselves an
         // outcome. When EVERY hole is a diagnostic accessor the label is
         // describing the operation that failed, not the value being printed —
@@ -560,7 +667,8 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
         // rule's. `isStaticExpression` draws that line, rather than a second
         // guess at the name.
         for (const property of arg.properties) {
-          if (property.type !== AST_NODE_TYPES.Property || property.computed) continue;
+          if (property.type !== AST_NODE_TYPES.Property || property.computed)
+            continue;
           const keyName =
             property.key.type === AST_NODE_TYPES.Identifier
               ? property.key.name
@@ -589,7 +697,9 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
         // `isProduction ? '[redacted]' : user.password`. The branch that leaks
         // is reachable, and in every non-production environment it is the
         // branch that runs.
-        return describeExposure(arg.consequent) ?? describeExposure(arg.alternate);
+        return (
+          describeExposure(arg.consequent) ?? describeExposure(arg.alternate)
+        );
       }
 
       if (
@@ -613,7 +723,11 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
     /** Does anything in scope declare this name, rather than it being the global? */
     function isShadowed(name: string, node: TSESTree.Node): boolean {
       const scope = context.sourceCode.getScope(node);
-      for (let current: typeof scope | null = scope; current; current = current.upper) {
+      for (
+        let current: typeof scope | null = scope;
+        current;
+        current = current.upper
+      ) {
         const variable = current.variables.find((v) => v.name === name);
         if (variable) return variable.defs.length > 0;
       }
@@ -645,7 +759,11 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
         return namedValueExposure(value.expression, seen);
       }
       if (value.type === AST_NODE_TYPES.Identifier) {
-        const pattern = identifierNamesSecret(value.name, sensitivePatterns, descriptors);
+        const pattern = identifierNamesSecret(
+          value.name,
+          sensitivePatterns,
+          descriptors,
+        );
         if (pattern) return { node: value, pattern };
         const init = resolveBindingInit(value);
         const viaBinding = init ? namedValueExposure(init, seen) : null;
@@ -654,7 +772,11 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
         return viaBinding ? { node: value, pattern: viaBinding.pattern } : null;
       }
       if (value.type === AST_NODE_TYPES.MemberExpression) {
-        const pattern = memberCarriesSecret(value, sensitivePatterns, descriptors);
+        const pattern = memberCarriesSecret(
+          value,
+          sensitivePatterns,
+          descriptors,
+        );
         return pattern ? { node: value, pattern } : null;
       }
       return null;
@@ -666,9 +788,15 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
      * value with certainty, and reading the declaration would be reading code
      * the author did not run.
      */
-    function resolveBindingInit(node: TSESTree.Identifier): TSESTree.Expression | null {
+    function resolveBindingInit(
+      node: TSESTree.Identifier,
+    ): TSESTree.Expression | null {
       const scope = context.sourceCode.getScope(node);
-      for (let current: typeof scope | null = scope; current; current = current.upper) {
+      for (
+        let current: typeof scope | null = scope;
+        current;
+        current = current.upper
+      ) {
         const variable = current.variables.find((v) => v.name === node.name);
         if (!variable) continue;
         if (variable.defs.length !== 1) return null;
@@ -703,18 +831,23 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
       if (!isDiagnosticAccessor(expression)) return false;
       const unwrapped = unwrapTypeSyntax(expression) as TSESTree.Node;
       const member = (
-        unwrapped.type === AST_NODE_TYPES.ChainExpression ? unwrapped.expression : unwrapped
+        unwrapped.type === AST_NODE_TYPES.ChainExpression
+          ? unwrapped.expression
+          : unwrapped
       ) as TSESTree.MemberExpression;
       if (member.object.type !== AST_NODE_TYPES.Identifier) return true;
       const init = resolveBindingInit(member.object);
-      if (init === null || init.type !== AST_NODE_TYPES.ObjectExpression) return true;
+      if (init === null || init.type !== AST_NODE_TYPES.ObjectExpression)
+        return true;
       const key = (member.property as TSESTree.Identifier).name;
       const assigned = init.properties.find(
         (property): property is TSESTree.Property =>
           property.type === AST_NODE_TYPES.Property &&
           !property.computed &&
-          ((property.key.type === AST_NODE_TYPES.Identifier && property.key.name === key) ||
-            (property.key.type === AST_NODE_TYPES.Literal && property.key.value === key)),
+          ((property.key.type === AST_NODE_TYPES.Identifier &&
+            property.key.name === key) ||
+            (property.key.type === AST_NODE_TYPES.Literal &&
+              property.key.value === key)),
       );
       // The literal exists and does not set this key — nothing was aliased into
       // it, so the accessor is diagnostic after all.
@@ -746,11 +879,14 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
     function checkCallExpression(node: TSESTree.CallExpression) {
       const isLoggingCall = (() => {
         if (node.callee.type === AST_NODE_TYPES.MemberExpression) {
-          const property = node.callee.property;
+          // `console['log'](secret)` reaches the same sink as
+          // `console.log(secret)`. `propertyName` resolves the dotted form and
+          // a static subscript alike, and still returns null for a genuinely
+          // dynamic `console[m]`, which is not a log call we can name.
+          const method = propertyName(node.callee);
           return (
-            !node.callee.computed &&
-            property.type === AST_NODE_TYPES.Identifier &&
-            LOG_METHODS.has(property.name.toLowerCase()) &&
+            method !== null &&
+            LOG_METHODS.has(method.toLowerCase()) &&
             isLoggerReceiver(node.callee.object)
           );
         }
@@ -784,7 +920,10 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
       if (!checkErrorMessages) {
         return;
       }
-      if (node.callee.type === AST_NODE_TYPES.Identifier && node.callee.name === 'Error') {
+      if (
+        node.callee.type === AST_NODE_TYPES.Identifier &&
+        node.callee.name === 'Error'
+      ) {
         reportFirstExposure(node.arguments, 'error messages');
       }
     }
@@ -795,4 +934,3 @@ sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'a
     };
   },
 });
-

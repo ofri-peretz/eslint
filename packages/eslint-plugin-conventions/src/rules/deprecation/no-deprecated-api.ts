@@ -10,7 +10,7 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
 
 type MessageIds = 'deprecatedAPI' | 'useReplacement';
 
@@ -140,9 +140,11 @@ export const noDeprecatedApi = createRule<RuleOptions, MessageIds>({
     return {
       // Check member expressions (e.g., obj.deprecatedMethod())
       MemberExpression(node: TSESTree.MemberExpression) {
-        if (node.property.type !== 'Identifier') return;
+        // `obj['deprecatedMethod']()` calls the deprecated API `obj.deprecatedMethod()`
+        // calls. A key chosen at runtime names no API to look up.
+        const apiName = propertyName(node);
+        if (apiName === null) return;
 
-        const apiName = node.property.name;
         const deprecatedApi = apis.find(
           (api: DeprecatedAPI) => api.name === apiName,
         );
@@ -168,9 +170,16 @@ export const noDeprecatedApi = createRule<RuleOptions, MessageIds>({
               messageId: 'useReplacement',
               data: { replacement: deprecatedApi.replacement },
               fix: (fixer: TSESLint.RuleFixer) => {
+                // A COMPUTED property must stay quoted. Writing the bare
+                // replacement over `obj["oldMethod"]` produces
+                // `obj[newMethod]` — a reference to a variable that does not
+                // exist, from a suggestion offered as the fix. The dotted
+                // form takes the identifier as-is.
                 return fixer.replaceText(
                   node.property,
-                  deprecatedApi.replacement,
+                  node.computed
+                    ? JSON.stringify(deprecatedApi.replacement)
+                    : deprecatedApi.replacement,
                 );
               },
             },

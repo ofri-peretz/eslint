@@ -39,7 +39,11 @@
  * helper exists to remove.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { isModuleBinding } from '@interlace/eslint-devkit';
+import {
+  isModuleBinding,
+  namesOneOf,
+  propertyName,
+} from '@interlace/eslint-devkit';
 
 /** Methods on an Express app/router that return a chainable router-like value. */
 const ROUTER_RETURNING_METHODS: ReadonlySet<string> = new Set(['route', 'use']);
@@ -68,9 +72,8 @@ export function isExpressAppOrRouter(
     // can keep registering routes on.
     if (
       callee.type === 'MemberExpression' &&
-      !callee.computed &&
-      callee.property.type === 'Identifier' &&
-      ROUTER_RETURNING_METHODS.has(callee.property.name)
+      // `app['use'](…)` hands back the same router `app.use(…)` does.
+      namesOneOf(propertyName(callee), ROUTER_RETURNING_METHODS)
     ) {
       return isExpressAppOrRouter(callee.object, scope, seen);
     }
@@ -81,13 +84,18 @@ export function isExpressAppOrRouter(
 
   // `const app = express()` — resolve the binding and ask again. Only a
   // single-write const/let says anything about what the name holds.
-  for (let current: TSESLint.Scope.Scope | null = scope; current; current = current.upper) {
+  for (
+    let current: TSESLint.Scope.Scope | null = scope;
+    current;
+    current = current.upper
+  ) {
     const variable = current.variables.find((v) => v.name === node.name);
     if (variable === undefined) continue;
     if (variable.defs.length !== 1) return false;
     const def = variable.defs[0];
     if (def.type !== 'Variable' || def.node.init === null) return false;
-    if (variable.references.filter((ref) => ref.isWrite()).length > 1) return false;
+    if (variable.references.filter((ref) => ref.isWrite()).length > 1)
+      return false;
     return isExpressAppOrRouter(def.node.init, scope, seen);
   }
   return false;
@@ -119,14 +127,10 @@ export function asExpressRouteRegistration(
   methods: ReadonlySet<string>,
 ): ExpressRouteRegistration | null {
   const { callee } = node;
-  if (
-    callee.type !== 'MemberExpression' ||
-    callee.computed ||
-    callee.property.type !== 'Identifier'
-  ) {
-    return null;
-  }
-  const method = callee.property.name;
+  if (callee.type !== 'MemberExpression') return null;
+  // `app['post']('/a', h)` registers exactly the route `app.post` does.
+  const method = propertyName(callee);
+  if (method === null) return null;
   if (!methods.has(method.toLowerCase())) return null;
   if (!isExpressAppOrRouter(callee.object, scope)) return null;
 
@@ -147,9 +151,7 @@ function isRouteCall(node: TSESTree.Node): boolean {
   return (
     node.type === 'CallExpression' &&
     node.callee.type === 'MemberExpression' &&
-    !node.callee.computed &&
-    node.callee.property.type === 'Identifier' &&
-    node.callee.property.name === 'route'
+    propertyName(node.callee) === 'route'
   );
 }
 

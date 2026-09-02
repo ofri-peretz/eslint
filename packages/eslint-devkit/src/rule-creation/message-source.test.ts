@@ -392,13 +392,30 @@ describe('handlerSource', () => {
     ).toBeUndefined();
   });
 
-  it('is undefined when the attached property is not a plain name', () => {
+  // Was pinned as undefined under "the attached property is not a plain
+  // name". `ws['onmessage']` IS a plain name; it is the name a minifier
+  // writes. Both spellings attach the same handler to the same socket, and
+  // refusing the bracketed one hid the payload from every rule built on this
+  // resolver.
+  it('resolves a handler attached through a string subscript', () => {
     expect(
-      resolve('const ws = new WebSocket("x");\nws["onmessage"] = (e) => {};'),
-    ).toBeUndefined();
+      resolve('const ws = new WebSocket("x");\nws["onmessage"] = (e) => {};')
+        ?.source,
+    ).toBe('websocket');
     expect(
       resolve(
         'const ws = new WebSocket("x");\nws["addEventListener"]("message", (e) => {});',
+      )?.source,
+    ).toBe('websocket');
+  });
+
+  it('is undefined when the attached property is chosen at runtime', () => {
+    expect(
+      resolve('const ws = new WebSocket("x");\nws[prop] = (e) => {};'),
+    ).toBeUndefined();
+    expect(
+      resolve(
+        'const ws = new WebSocket("x");\nws[attach]("message", (e) => {});',
       ),
     ).toBeUndefined();
   });

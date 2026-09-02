@@ -31,6 +31,8 @@ import {
   createRule,
   resolveModuleBinding,
   unwrapTypeSyntax,
+  namesOneOf,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
@@ -594,8 +596,8 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
 
       // Check for member expressions like yaml.load, serialize.unserialize
       if (callee.type === 'MemberExpression') {
-        const memberName =
-          callee.property.type === 'Identifier' ? callee.property.name : '';
+        // `yaml['load'](text)` deserialises exactly what `yaml.load` does.
+        const memberName = propertyName(callee) ?? '';
         const objectName =
           callee.object.type === 'Identifier' ? callee.object.name : '';
 
@@ -735,18 +737,22 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
         const callee = inputNode.callee;
         if (
           callee.type === 'MemberExpression' &&
-          callee.property.type === 'Identifier'
+          propertyName(callee) !== null
         ) {
           // Reading a response or a request body yields remote bytes.
           if (
-            ['text', 'json', 'arrayBuffer', 'formData', 'blob'].includes(
-              callee.property.name,
-            )
+            namesOneOf(propertyName(callee), [
+              'text',
+              'json',
+              'arrayBuffer',
+              'formData',
+              'blob',
+            ])
           ) {
             return true;
           }
           // @vocabulary Node fs API
-          if (['readFile', 'readFileSync'].includes(callee.property.name)) {
+          if (namesOneOf(propertyName(callee), ['readFile', 'readFileSync'])) {
             return true;
           }
           // A method call carries its RECEIVER's provenance.
@@ -1062,9 +1068,9 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
                 callee.type === 'MemberExpression' &&
                 callee.object.type === 'Identifier' &&
                 callee.object.name === 'fs' &&
-                callee.property.type === 'Identifier' &&
                 // @vocabulary Node fs API
-                ['readFile', 'readFileSync'].includes(callee.property.name)
+                // `fs['readFileSync'](p)` reads the same untrusted bytes.
+                namesOneOf(propertyName(callee), ['readFile', 'readFileSync'])
               ) {
                 untrustedVariables.add(declarator.id.name);
                 // Track whether the path is a literal — used downstream to skip

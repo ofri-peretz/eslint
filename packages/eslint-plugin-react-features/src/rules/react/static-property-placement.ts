@@ -9,7 +9,7 @@
  * Enforce static property placement
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'staticPropertyPlacement';
@@ -99,8 +99,7 @@ export const staticPropertyPlacement = createRule<[Options], MessageIds>({
         return (
           node.superClass.object.type === 'Identifier' &&
           node.superClass.object.name === 'React' &&
-          node.superClass.property.type === 'Identifier' &&
-          (node.superClass.property.name === 'Component' || node.superClass.property.name === 'PureComponent')
+          (propertyName(node.superClass) === 'Component' || propertyName(node.superClass) === 'PureComponent')
         );
       }
 

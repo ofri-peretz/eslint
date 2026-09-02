@@ -27,11 +27,20 @@ describe('no-dynamic-algorithm-selection coverage gaps', () => {
       { code: 'doHash(algo);' },
       // Callee object is not an Identifier → second guard returns
       { code: 'getCrypto().createHash(algo);' },
-      // Computed member with a Literal property → third guard returns
-      { code: 'crypto["createHash"](algo);' },
+      // A method chosen at RUNTIME names no crypto entry point
+      { name: 'a method chosen at RUNTIME names no crypto entry point', code: 'crypto[make](algo);' },
       // Matching crypto method but zero arguments → firstArg guard returns
       { code: 'crypto.createHash();' },
     ],
-    invalid: [],
+    invalid: [
+      // Was pinned above as valid, described only by the guard it tripped.
+      // `crypto['createHash'](algo)` selects the algorithm at runtime exactly
+      // as `crypto.createHash(algo)` does.
+      {
+        name: 'was pinned above as valid, described only by the guard it tripped',
+        code: 'crypto["createHash"](algo);',
+        errors: [{ messageId: 'dynamicAlgorithm', data: { method: 'createHash' } }],
+      },
+    ],
   });
 });

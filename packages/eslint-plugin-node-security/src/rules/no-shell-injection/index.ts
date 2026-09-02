@@ -39,8 +39,13 @@
  */
 
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons,
+import {
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
   isModuleBinding,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 import { makeIsLiteralConstant } from '../../utils/constant-folding';
@@ -62,23 +67,24 @@ export interface Options {
 type RuleOptions = [Options?];
 
 /** Shell-execution functions from child_process that run the first arg as a shell command. */
-const SHELL_EXEC_FUNCTIONS = new Set([
-  'exec', 'execSync',
-]);
+const SHELL_EXEC_FUNCTIONS = new Set(['exec', 'execSync']);
 
 function isStringConcatOrTemplate(node: TSESTree.Node): boolean {
-  if (node.type === AST_NODE_TYPES.TemplateLiteral && node.expressions.length > 0) return true;
+  if (
+    node.type === AST_NODE_TYPES.TemplateLiteral &&
+    node.expressions.length > 0
+  )
+    return true;
   if (
     node.type === AST_NODE_TYPES.BinaryExpression &&
     node.operator === '+' &&
-    (
-      node.left.type === AST_NODE_TYPES.Literal ||
+    (node.left.type === AST_NODE_TYPES.Literal ||
       node.left.type === AST_NODE_TYPES.TemplateLiteral ||
       node.left.type === AST_NODE_TYPES.BinaryExpression ||
       node.right.type === AST_NODE_TYPES.Literal ||
-      node.right.type === AST_NODE_TYPES.TemplateLiteral
-    )
-  ) return true;
+      node.right.type === AST_NODE_TYPES.TemplateLiteral)
+  )
+    return true;
   return false;
 }
 
@@ -95,7 +101,8 @@ export const noShellInjection = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-shell-injection.md',
-      description: 'Disallow string concatenation or template expressions in shell command arguments (CWE-78)',
+      description:
+        'Disallow string concatenation or template expressions in shell command arguments (CWE-78)',
       cwe: 'CWE-78',
       cvss: 9.8,
     },
@@ -104,10 +111,12 @@ export const noShellInjection = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'OS Command Injection (CWE-78)',
         cwe: 'CWE-78',
-        description: 'Shell command built via string concatenation or template literal. An attacker who controls any interpolated value can execute arbitrary OS commands.',
+        description:
+          'Shell command built via string concatenation or template literal. An attacker who controls any interpolated value can execute arbitrary OS commands.',
         severity: 'CRITICAL',
         fix: 'Use spawn(cmd, [arg1, arg2]) with separate arguments instead of exec(cmd + args). Never build shell commands via string interpolation.',
-        documentationLink: 'https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html',
+        documentationLink:
+          'https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html',
       }),
     },
     schema: [
@@ -129,7 +138,10 @@ export const noShellInjection = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ requireModuleEvidence: true }],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
+  create(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    [options = {}],
+  ) {
     const isLiteralConstant = makeIsLiteralConstant(context.sourceCode);
     const { requireModuleEvidence = true } = options;
     return {
@@ -142,11 +154,12 @@ export const noShellInjection = createRule<RuleOptions, MessageIds>({
           fnName = callee.name;
         }
         // require('child_process').exec('cmd') — member access
-        else if (
-          callee.type === AST_NODE_TYPES.MemberExpression &&
-          callee.property.type === AST_NODE_TYPES.Identifier
-        ) {
-          fnName = callee.property.name;
+        // `child_process['exec'](cmd)` spawns the same shell.
+        // `fnName` is already `string | null`, and the `!fnName` test below
+        // is the one that acts on an unresolved name — so the resolver's
+        // answer is assigned straight through, guard and cast both gone.
+        else if (callee.type === AST_NODE_TYPES.MemberExpression) {
+          fnName = propertyName(callee);
         }
 
         if (!fnName || !SHELL_EXEC_FUNCTIONS.has(fnName)) return;
@@ -166,7 +179,11 @@ export const noShellInjection = createRule<RuleOptions, MessageIds>({
         // resolved binding, never on a spelling.
         if (
           requireModuleEvidence &&
-          !isModuleBinding(callee, context.sourceCode.getScope(node), 'child_process')
+          !isModuleBinding(
+            callee,
+            context.sourceCode.getScope(node),
+            'child_process',
+          )
         ) {
           return;
         }
