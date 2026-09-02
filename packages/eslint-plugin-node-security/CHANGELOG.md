@@ -5,6 +5,179 @@ All notable changes to `eslint-plugin-node-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.4.0
+
+### Minor Changes
+
+- **🐛 Fix** — five rules now see `o['k']` as the same access as `o.k`
+
+  - `detect-child-process` — `cp['spawn']('bash', ['-c', cmd])`
+  - `detect-non-literal-fs-filename` — `fs['readFileSync'](req.query.p)`
+  - `no-arbitrary-file-access` — `fs['readFileSync']`, `path['join']`
+  - `require-secure-credential-storage` — `AsyncStorage['setItem']('apiKey', key)`,
+    `Object['assign'](process.env, { … })`
+  - `require-storage-encryption` — `fs['writeFile']('creds.json', password)`
+
+  The credential fixes live in `credential-evidence.ts`, which both storage rules
+  read, so one change closed both.
+
+  Command injection is not less injectable for being minified, and a credential
+  written to disk unencrypted is unencrypted either way.
+
+### Patch Changes
+
+- **🐛 Fix** — MIME, helmet, TLS and stream gates read a subscripted member
+
+  `file['type']`, `form['append'](k, file)`, `app['use'](helmet())`,
+  `mongoose['connect'](uri)` and `fs['createReadStream'](p)` each do exactly what
+  their dotted spellings do. Seven gates across four plugins compared
+  `property.name` before asking what the property was.
+
+  `require-tls-connection` had pinned `mongoose['connect'](uri)` as valid on the
+  grounds that "methodName is null" — it opens the same connection with no TLS,
+  and the rule now offers the same `{ tls: true }` repair it offers the dotted
+  form.
+
+- **🐛 Fix** — twenty-one Node rules read a member spelled with a string subscript
+
+  `cp['spawn']`, `crypto['createCipheriv']`, `fs['writeFileSync']`,
+  `zip['extractAllTo']`, `b['readUInt8']`, `process['env']` — every one reaches
+  what its dotted spelling reaches, and twenty-one rules compared
+  `property.name` before asking what the property was.
+
+  Four tests had pinned the miss, and three of them were pinning a false
+  POSITIVE rather than a gap:
+
+  - `crypto['createHmac']('sha1', …)` was reported as a weak hash, while the
+    dotted form carries a documented HMAC exemption.
+  - `process.env['HOME']` was reported as a TOCTOU race, though it names the
+    same per-user namespace `process.env.HOME` does — no other user can win it.
+  - `process["env"].SESSION_TOKEN = t` was NOT reported as a credential in the
+    environment, because `env` behind a bracket was called "not provably
+    process.env".
+
+  The genuinely unknowable form — a name chosen at runtime, `crypto[make](…)` —
+  is pinned as the refusal in each rule touched.
+
+- **🐛 Fix** — `fs['writeFileSync'](p, data)` writes the same file as `fs.writeFileSync`
+
+  `no-data-in-temp-storage` read the fs method name off `property.name`, so a
+  subscripted write into a temp path went unreported.
+
+- **🐛 Fix** — crypto, temp-storage and zip-slip gates read a subscripted method
+
+  `crypto['createHash'](algo)` selects the algorithm at runtime exactly as
+  `crypto.createHash(algo)` does, `path['join'](os.tmpdir(), …)` builds the same
+  path, and `zip['extractAllTo'](dest)` extracts to the same destination.
+
+  `no-data-in-temp-storage` also carried a hand-rolled workaround that appended
+  a quoted key to a module binding by hand, compensating for the resolver's
+  refusal of computed members. The resolver handles it now, so the workaround is
+  deleted rather than left to drift from what it was compensating for.
+
+- **🐛 Fix** — `presented['localeCompare'](stored)` is the same non-constant-time compare
+
+  `no-timing-unsafe-compare` resolved the comparison method off `property.name`,
+  so a subscripted `equals`/`startsWith`/`localeCompare` against a stored token
+  leaked the same timing signal unreported.
+
+- **🐛 Fix** — buffer, zlib and provenance gates resolve a subscripted member
+
+  A member spelled `o['k']` reaches exactly what `o.k` reaches, and these gates
+  compared `property.name` before asking what the property was. They now resolve
+  through the devkit's `propertyName`, which still abstains on the one shape that
+  genuinely cannot be resolved: a key chosen at runtime, whose name is not
+  statically known.
+
+- **🐛 Fix** — buffer, AEAD and length-prefix gates read a subscripted method
+
+  `b['readUInt8'](0)` reads the same bytes, `crypto['createDecipheriv'](…)`
+  opens the same unauthenticated decipher, and `chunk['readUInt32BE'](0)` is the
+  same attacker-controlled length prefix.
+
+- **🐛 Fix** — `stats['isFile']()` asks the same question of the same stat
+
+  `no-toctou-vulnerability` matched the stat predicate on `property.name`, so a
+  fully subscripted check-then-use race went unreported.
+
+- **🐛 Fix** — `zlib['gunzip'](body, cb)` is the same uncapped decompression
+
+  `no-unbounded-decompression` resolved the zlib method off `property.name`, so
+  the subscripted spelling buffered the same unbounded output unreported.
+
+- **🐛 Fix** — `child_process['exec'](cmd)` spawns the same shell
+
+  `no-shell-injection` took the function name off `property.name`, so a
+  subscripted `exec`/`execSync` on a required `child_process` never matched the
+  shell-sink list.
+
+- **🐛 Fix** — `module['require'](x)` loads the same module
+
+  `no-dynamic-dependency-loading` matched the loader on `property.name`, so the
+  subscripted spelling of `module.require` and `require.main.require` passed an
+  attacker-controlled specifier unreported.
+
+- **🐛 Fix** — `Object['assign'](process.env, req.body)` is the same env injection
+
+  `no-env-injection` matched the merge on `property.name`, so the subscripted
+  spelling copied every request key into the environment — PATH, NODE_OPTIONS
+  and LD_PRELOAD included — unreported.
+
+- **🐛 Fix** — timing-compare, LDAP-adjacent and command gates read a subscripted member
+
+  `crypto['timingSafeEqual']`-adjacent constant lookups, `cp['spawn'](…)` and
+  `obj['execaCommand'](`git clone ${url}`)` all name what their dotted spellings
+  name. The deliberate refusal of `o[k]` — an identifier key under brackets is a
+  VARIABLE, not a property name — is preserved, since `propertyName` returns null
+  for exactly that.
+
+- **🐛 Fix** — TOCTOU roots, secure deletion and CSPRNG checks read a subscripted member
+
+  `os['homedir']()` names the same per-user root, `Reflect['deleteProperty'](rec,
+'password')` unbinds the same secret without scrubbing it, and
+  `crypto['randomBytes'](n)` is the same CSPRNG call.
+
+- **🐛 Fix** — an alias to Math.random is found through either spelling
+
+  `{ ['next']: Math.random }` declares the slot `{ next: … }` declares, and
+  `rng['next']()` reads it. Both halves — the object KEY and the member READ —
+  were pinned as valid side by side, so a token drawn from `Math.random` through
+  a renamed alias went unreported either way.
+
+- **🧹 Refactor** — crypto, fs and archive reads distinguish an unnameable key from an unknown one
+
+  `SET.has(propertyName(node) as string)` reaches the right answer for the wrong
+  reason. `propertyName` returns `string | null` because `o[k]` names a property
+  the AST cannot read, and that is not the same answer as "named, and not one of
+  these" — the cast collapses both, and `Set.prototype.has(null)` being false is
+  what made it look correct.
+
+  33 sites across 18 files now ask the two questions separately, via
+  `namesOneOf` / `memberPropertyName` from the devkit or an explicit `!== null`.
+
+  No rule behaviour changes: this package's test count and coverage are unchanged.
+
+- **🐛 Fix** — `path['basename'](userPath)` sanitizes, and is no longer reported
+
+  Six gates in `detect-non-literal-fs-filename` read
+  `property.type === Identifier` alongside a `propertyName(...)` call — strictly
+  narrower, and evaluated first — so the resolver never ran. `path.basename()`
+  is the remediation this rule's own message recommends, which made the rule
+  report code that had taken its advice.
+
+  Measured both ways: 1 finding before, 0 now, while `path[pick](...)` still
+  reports, because a key chosen at runtime cannot be shown to be `basename`.
+
+- **🐛 Fix** — `b['readUInt8'](0, true)` reaches the bounds-check visitor
+
+  `no-buffer-overread` selected its visitor with
+  `CallExpression[callee.computed=false][callee.property.type="Identifier"]`, so
+  the subscripted spelling never reached the rule at all — the blind spot was in
+  the SELECTOR STRING rather than in a guard the body could be read for.
+  `Buffer['alloc'](n)` was missed the same way.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`
+
 ## 5.3.1
 
 ### Patch Changes

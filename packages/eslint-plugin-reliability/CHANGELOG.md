@@ -5,6 +5,40 @@ All notable changes to `eslint-plugin-reliability` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 4.1.2
+
+### Patch Changes
+
+- **🐛 Fix** — `rows['find'](…)` is the same nullable return as `rows.find(…)`
+
+  The nullable-return gate compared `property.name`, so a subscripted `find`
+  or `match` did not register as returning undefined on a miss.
+
+- **🐛 Fix** — a subscripted `.then` chain is recognised, and stops double-reporting
+
+  `no-unhandled-promise` recognised `x["then"]` in one spot and not the other
+  two, so `Promise['all']([…])` and a subscripted `.catch` still read as
+  unhandled.
+
+  With the chain recognised the rule also stops DOUBLE-reporting: a call inside
+  a `p['then'](…)` callback is now correctly a promise callback, so only the
+  outer chain — which still has no `.catch` — reports.
+
+- **🧹 Refactor** — nullable-return and promise-static tests ask the null question themselves
+
+  `SET.has(propertyName(node) as string)` reaches the right answer for the wrong
+  reason. `propertyName` returns `string | null` because `o[k]` names a property
+  the AST cannot read, and that is not the same answer as "named, and not one of
+  these" — the cast collapses both, and `Set.prototype.has(null)` being false is
+  what made it look correct.
+
+  3 sites across 2 files now ask the two questions separately, via
+  `namesOneOf` / `memberPropertyName` from the devkit or an explicit `!== null`.
+
+  No rule behaviour changes: this package's test count and coverage are unchanged.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`
+
 ## 4.1.1
 
 ### Patch Changes

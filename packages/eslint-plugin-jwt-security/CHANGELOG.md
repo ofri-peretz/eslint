@@ -5,6 +5,47 @@ All notable changes to `eslint-plugin-jwt-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.2.0
+
+### Minor Changes
+
+- **🐛 Fix** — every JWT rule now sees `jwt['sign']` as the same call as `jwt.sign`
+
+  `isJwtLibraryCall` is the single place every rule in this plugin decides whether
+  a call is a JWT operation, and it required the callee's property to be an
+  Identifier. So `jwt['sign']({ password }, secret)` was not a sign,
+  `jwt['verify'](...)` was not a verify, and `jwt['decode'](...)` was not a decode.
+
+  One gate, seven rules reading it, thirteen showing measurably blind cases.
+
+  A dynamic `jwt[m](...)` has no statically known method name, so it is still
+  ignored.
+
+### Patch Changes
+
+- **🐛 Fix** — `decoded['exp']` is the same time claim as `decoded.exp`
+
+  A member spelled `o['k']` reaches exactly what `o.k` reaches, and these gates
+  compared `property.name` before asking what the property was. They now resolve
+  through the devkit's `propertyName`, which still abstains on the one shape that
+  genuinely cannot be resolved: a key chosen at runtime, whose name is not
+  statically known.
+
+- **🧹 Refactor** — `no-decode-without-verify` no longer casts an unnameable member
+
+  `SET.has(propertyName(node) as string)` reaches the right answer for the wrong
+  reason. `propertyName` returns `string | null` because `o[k]` names a property
+  the AST cannot read, and that is not the same answer as "named, and not one of
+  these" — the cast collapses both, and `Set.prototype.has(null)` being false is
+  what made it look correct.
+
+  2 sites across 1 file now ask the two questions separately, via
+  `namesOneOf` / `memberPropertyName` from the devkit or an explicit `!== null`.
+
+  No rule behaviour changes: this package's test count and coverage are unchanged.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`
+
 ## 3.1.1
 
 ### Patch Changes

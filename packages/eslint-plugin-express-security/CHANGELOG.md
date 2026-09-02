@@ -5,6 +5,103 @@ All notable changes to `eslint-plugin-express-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.2.2
+
+### Patch Changes
+
+- **🐛 Fix** — MIME, helmet, TLS and stream gates read a subscripted member
+
+  `file['type']`, `form['append'](k, file)`, `app['use'](helmet())`,
+  `mongoose['connect'](uri)` and `fs['createReadStream'](p)` each do exactly what
+  their dotted spellings do. Seven gates across four plugins compared
+  `property.name` before asking what the property was.
+
+  `require-tls-connection` had pinned `mongoose['connect'](uri)` as valid on the
+  grounds that "methodName is null" — it opens the same connection with no TLS,
+  and the rule now offers the same `{ tls: true }` repair it offers the dotted
+  form.
+
+- **🐛 Fix** — remaining Express gates resolve a subscripted method
+
+  A member spelled `o['k']` reaches exactly what `o.k` reaches, and these gates
+  compared `property.name` before asking what the property was. They now resolve
+  through the devkit's `propertyName`, which still abstains on the one shape that
+  genuinely cannot be resolved: a key chosen at runtime, whose name is not
+  statically known.
+
+- **🐛 Fix** — `process['cwd']()` is the same application root as `process.cwd()`
+
+  `no-static-root-exposure` refused the subscripted spelling of `process.cwd()`
+  and `path.join(…)`, so serving the application root went unreported.
+
+- **🐛 Fix** — `app['post']('/auth/token', h)` registers the same unlimited route
+
+  `require-rate-limiting` lowercased `property.name` to find the HTTP verb, so a
+  subscripted registration was never checked for a limiter.
+
+- **🐛 Fix** — render, route and request-source gates read a subscripted member
+
+  `res['render']('v', locals)` renders the same template, `req['body']` is the
+  same request body, and `app['post']('/x', h)` registers the same unauthenticated
+  route. The sanitizer allowlist is a suppression path — missing `esc['clean'](v)`
+  there meant reporting a value that had already been cleaned.
+
+  The genuine refusals beside them — `req[body]`, `res[render]`, `app[method]`,
+  where the key is chosen at runtime — stay refused.
+
+- **🐛 Fix** — static, trust-proxy and CSRF route gates read a subscripted member
+
+  `express['static']('.')` serves the same directory, `app['set']('trust proxy',
+true)` trusts every hop, and `router['post']('/x', h)` registers the same
+  unprotected route.
+
+- **🐛 Fix** — the shared Express evidence utils read a subscripted member
+
+  `req['params'].id` is the same client-supplied id, `res['user']` is the same
+  principal, `registry['auth']` names the same middleware, and
+  `app['set']('view engine', …)` configures the same renderer. Five gates in
+  `app-composition`, `auth-evidence` and the shared `utils/index` compared
+  `property.name` before asking what the property was.
+
+  Four tests had pinned the miss, and **two of them were pinning a false
+  positive**: `no-idor-resource-access` reported an unscoped lookup on a handler
+  that reads `res['user']` — one of them labelled "documented FN" — and
+  `require-route-authentication` reported a missing auth check on a route
+  guarded by `registry['auth']`, on the grounds that the subscript "names the
+  map, not the middleware inside it". It names `auth`.
+
+  The deliberate refusal of `req[config.session.name]` — a key computed from an
+  expression, which auth0/express-openid-connect actually writes — is preserved:
+  `propertyName` returns null for exactly that shape.
+
+- **🐛 Fix** — `req['query']` is the same request bag as `req.query`
+
+  Gates across this plugin compared `property.name` before asking what the
+  property was, so `o['k']` — the notation minifiers and generated clients
+  emit — did not reach them. They now resolve through the devkit's
+  `propertyName` / `objectKeyName`.
+
+  Five tests had pinned the miss, two of them labelled a "documented false
+  negative": `req['query'].password`, `req['headers'].host`, `req['path']`,
+  `req['get']('host')` and `obj['send'](…)` all name exactly what their dotted
+  spellings name. The runtime-keyed forms — `req.query[key]`,
+  `req.headers[name]` — stay pinned as the genuine refusals.
+
+- **🧹 Refactor** — route-method and host-getter reads resolve once instead of casting twice
+
+  `SET.has(propertyName(node) as string)` reaches the right answer for the wrong
+  reason. `propertyName` returns `string | null` because `o[k]` names a property
+  the AST cannot read, and that is not the same answer as "named, and not one of
+  these" — the cast collapses both, and `Set.prototype.has(null)` being false is
+  what made it look correct.
+
+  11 sites across 9 files now ask the two questions separately, via
+  `namesOneOf` / `memberPropertyName` from the devkit or an explicit `!== null`.
+
+  No rule behaviour changes: this package's test count and coverage are unchanged.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`
+
 ## 3.2.1
 
 ### Patch Changes

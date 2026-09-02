@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-reliability",
-  "version": "4.1.1",
+  "version": "4.1.2",
   "description": "ESLint plugin for runtime reliability — enforces error handling, network timeouts, null checks, and safe type narrowing.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
@@ -52,7 +52,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@interlace/eslint-devkit": "^1.18.2"
+    "@interlace/eslint-devkit": "^1.19.0"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.46.2",
