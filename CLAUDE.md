@@ -111,14 +111,14 @@ it governs every sibling repo, so it cannot live in any one of them, and a link 
 here would dangle in a standalone clone. Six stages, each handing off through a
 **committed Markdown artifact rather than a chat message**:
 
-| Stage | Artifact | Here |
-| :--- | :--- | :--- |
-| 1 Plan | `intent.md` — what is wanted, why, under which constraints | [`docs/intents/`](./docs/intents/) |
-| 2 Design | `design.md` — requirements + design, committed beside the intent | [`docs/intents/`](./docs/intents/) |
-| 3 Build | plan mode, this file, skills, worktrees | — |
-| 4 Test | a one-command feedback loop, plus config evals | [`evals/`](./evals/) |
-| 5 Deploy | AI review, hooks as gates, CI/CD | `.claude/hooks/release-gate.sh` |
-| 6 Maintain | control bands; a breach writes a **new `intent.md`** | `scripts/control-bands.ts` |
+| Stage      | Artifact                                                         | Here                               |
+| :--------- | :--------------------------------------------------------------- | :--------------------------------- |
+| 1 Plan     | `intent.md` — what is wanted, why, under which constraints       | [`docs/intents/`](./docs/intents/) |
+| 2 Design   | `design.md` — requirements + design, committed beside the intent | [`docs/intents/`](./docs/intents/) |
+| 3 Build    | plan mode, this file, skills, worktrees                          | —                                  |
+| 4 Test     | a one-command feedback loop, plus config evals                   | [`evals/`](./evals/)               |
+| 5 Deploy   | AI review, hooks as gates, CI/CD                                 | `.claude/hooks/release-gate.sh`    |
+| 6 Maintain | control bands; a breach writes a **new `intent.md`**             | `scripts/control-bands.ts`         |
 
 What this means in practice:
 
@@ -456,9 +456,19 @@ until [ "$(gh -R ofri-peretz/eslint pr view "$PR" \
 done
 
 # 2. Validation gate — refuse to merge unless EVERY required check is SUCCESS.
+#
+# The `// "UNREPORTED"` is the same requirement as the wait loop's `// ""`, and
+# is needed for the same reason: an entry can carry none of the three fields.
+# GitHub registers a required check before it creates it, so a branch update
+# re-registers checks and the rollup briefly lists them with nothing set. The
+# gate must still refuse — an unknown result is not a pass — but it must not
+# call it a FAILURE. Without the fallback such an entry prints as a blank
+# status, reads as a failing test, and sends the reader hunting one that does
+# not exist. Reaching this line with UNREPORTED means a check registered after
+# step 1 finished: re-run step 1, do not go looking for a break.
 FAILED=$(gh -R ofri-peretz/eslint pr view "$PR" \
   --json statusCheckRollup \
-  --jq '[.statusCheckRollup[]? | select((.conclusion // .state // .status) != "SUCCESS" and (.conclusion // .state // .status) != "SKIPPED" and (.conclusion // .state // .status) != "NEUTRAL") | "\(.conclusion // .state // .status)  \(.name // .context)"] | .[]')
+  --jq '[.statusCheckRollup[]? | select((.conclusion // .state // .status // "UNREPORTED") as $s | $s != "SUCCESS" and $s != "SKIPPED" and $s != "NEUTRAL") | "\(.conclusion // .state // .status // "UNREPORTED")  \(.name // .context)"] | .[]')
 if [ -n "$FAILED" ]; then
   echo "::error::PR $PR has non-success checks; not merging:"
   echo "$FAILED"
