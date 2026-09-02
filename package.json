@@ -388,7 +388,10 @@
   "overrides": {
     "html-encoding-sniffer": "^6.0.0",
     "dompurify": "^3.4.13",
-    "browserslist": "^4.28.7"
+    "browserslist": "^4.28.7",
+    "fast-uri": "^3.1.6",
+    "@humanfs/node": "^0.16.8",
+    "qs": "^6.16.0"
   },
   "dependencies": {
     "@fumadocs/mdx-remote": "^1.5.1",

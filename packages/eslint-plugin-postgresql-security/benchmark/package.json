@@ -1,13 +1,16 @@
 {
-    "name": "eslint-plugin-postgresql-security-benchmark",
-    "version": "1.0.0",
-    "private": true,
-    "type": "module",
-    "scripts": {
-        "benchmark": "tsx benchmark.ts"
-    },
-    "dependencies": {
-        "eslint": "^9.0.0",
-        "eslint-plugin-postgresql-security": "*"
-    }
+  "name": "eslint-plugin-postgresql-security-benchmark",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "benchmark": "tsx benchmark.ts"
+  },
+  "dependencies": {
+    "eslint": "^9.0.0",
+    "eslint-plugin-postgresql-security": "*"
+  },
+  "overrides": {
+    "@humanfs/node": "^0.16.8"
+  }
 }
