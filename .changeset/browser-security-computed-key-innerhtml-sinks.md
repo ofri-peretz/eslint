@@ -11,5 +11,5 @@ markup from the same untrusted payload as the dotted spellings, and
 `no-websocket-innerhtml`, `no-worker-message-innerhtml` and the shared
 `transport-ownership` gate all compared `property.name` first.
 
-A sink chosen at runtime — `el[sink] = e.data` — names nothing to recognise
+A sink chosen at runtime — `el[sink] = e.data` — has no statically known name to recognise
 and is now pinned as the refusal in each of the four rules.

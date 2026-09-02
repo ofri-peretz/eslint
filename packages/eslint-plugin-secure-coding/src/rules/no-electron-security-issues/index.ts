@@ -396,12 +396,15 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
       if (
         callee.type === 'MemberExpression' &&
         callee.object.type === 'Identifier' &&
-        ['ipcMain', 'ipcRenderer'].includes(callee.object.name) &&
-        callee.property.type === 'Identifier'
+        ['ipcMain', 'ipcRenderer'].includes(callee.object.name)
       ) {
+        // `ipcRenderer['send'](channel, data)` crosses the same bridge with
+        // the same payload. A runtime key names no method to match.
+        const method = propertyName(callee);
         // @vocabulary Electron ipcRenderer / ipcMain API
-        return ['send', 'invoke', 'handle', 'on', 'once'].includes(
-          callee.property.name,
+        return (
+          method !== null &&
+          ['send', 'invoke', 'handle', 'on', 'once'].includes(method)
         );
       }
 

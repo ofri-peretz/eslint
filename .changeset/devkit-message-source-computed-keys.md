@@ -12,4 +12,5 @@ lost the payload entirely and reported nothing.
 
 A test had pinned this as "the attached property is not a plain name". It is a
 plain name; it is the name a minifier writes. A property chosen at runtime,
-`ws[prop] = fn`, genuinely names nothing and is now the pinned refusal.
+`ws[prop] = fn`, has no statically known property name and is now the pinned
+refusal.

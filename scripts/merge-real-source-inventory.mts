@@ -25,7 +25,12 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
-const OUT = path.join(ROOT, 'benchmarks', 'budgets', 'real-world-rule-inventory.json');
+const OUT = path.join(
+  ROOT,
+  'benchmarks',
+  'budgets',
+  'real-world-rule-inventory.json',
+);
 
 type Rule = { count: number; repos: number; samples: string[] };
 type Inventory = {
@@ -34,7 +39,17 @@ type Inventory = {
   reposScanned: number;
   suiteRules: number;
   withMaterial: number;
-  withoutMaterial: number;
+  /*
+   * The rule IDs that fired NOWHERE — a list, not a count.
+   *
+   * `real-source-scan.mts` writes the list and `rule-case-ledger.ts` spreads
+   * it: `new Set([...Object.keys(inventory.rules), ...inventory.withoutMaterial])`.
+   * This merger wrote a count, so the first inventory it committed would have
+   * made every later ledger run die on `withoutMaterial is not iterable` — and
+   * the merger is the ONLY writer once the sharded workflow runs, so the
+   * serial script's correct shape would never have been seen again.
+   */
+  withoutMaterial: string[];
   rules: Record<string, Rule>;
   note: string;
   generated: string;
@@ -44,7 +59,36 @@ type Inventory = {
 
 const inputs = process.argv.slice(2).filter((a) => !a.startsWith('--'));
 if (inputs.length === 0) {
-  console.error('usage: merge-real-source-inventory.mts <partial.json>...');
+  console.error(
+    'usage: merge-real-source-inventory.mts [--expect=<n>] <partial.json>...',
+  );
+  process.exit(1);
+}
+
+/*
+ * How many shards were supposed to arrive.
+ *
+ * `fail-fast: false` is right — one unreachable repository must not lose the
+ * other nineteen shards — but it means a FAILED shard uploads no artifact,
+ * and `download-artifact` skips a missing pattern match without a word. The
+ * merge would then combine 19 partials into a file that looks complete and
+ * says "this rule never fired" about repositories no shard ever scanned.
+ *
+ * That is the same class of error `configHash` exists to prevent, one level
+ * up: there, shards that answered a DIFFERENT question; here, a question that
+ * was only partly asked. Both produce a number describing no actual scan, and
+ * "scanned and never fired" is the strongest negative claim this artifact
+ * makes about a rule.
+ */
+const expected = process.argv
+  .find((a) => a.startsWith('--expect='))
+  ?.slice('--expect='.length);
+if (expected !== undefined && inputs.length !== Number(expected)) {
+  console.error(
+    `\n  ✖ expected ${expected} shard(s), received ${inputs.length}.\n` +
+      '    A shard that failed uploads no artifact and is skipped silently.\n' +
+      '    Merging the rest would claim coverage of repositories nobody scanned.\n',
+  );
   process.exit(1);
 }
 
@@ -92,7 +136,19 @@ const merged: Inventory = {
   reposScanned: parts.reduce((n, p) => n + p.reposScanned, 0),
   suiteRules: Math.max(...parts.map((p) => p.suiteRules)),
   withMaterial: Object.keys(rules).length,
-  withoutMaterial: Math.max(...parts.map((p) => p.suiteRules)) - Object.keys(rules).length,
+  /*
+   * A rule is without material when it fired in NO shard — not when a count
+   * subtracts. Taking the union of every shard's universe (what it saw fire,
+   * plus what it saw stay silent) and removing everything that fired anywhere
+   * also survives a shard that ran a smaller rule set than its siblings.
+   */
+  withoutMaterial: [
+    ...new Set(
+      parts.flatMap((p) => [...Object.keys(p.rules), ...p.withoutMaterial]),
+    ),
+  ]
+    .filter((id) => !(id in rules))
+    .sort(),
   rules: Object.fromEntries(
     Object.entries(rules).sort((a, b) => b[1].count - a[1].count),
   ),
@@ -107,5 +163,5 @@ fs.writeFileSync(OUT, `${JSON.stringify(merged, null, 2)}\n`);
 console.log(
   `\n  merged ${parts.length} shard(s): ${merged.reposScanned} repos, ` +
     `${merged.filesLinted} files, ${merged.withMaterial} rules with material, ` +
-    `${merged.withoutMaterial} without.\n`,
+    `${merged.withoutMaterial.length} without.\n`,
 );

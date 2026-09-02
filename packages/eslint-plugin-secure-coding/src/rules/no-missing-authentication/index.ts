@@ -21,6 +21,7 @@ import {
   compileUserPatterns,
   matchesAnyUserPattern,
   nameHasAnyWord,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import {
   createRule,
@@ -289,15 +290,17 @@ function referencedName(node: TSESTree.Node): string | null {
   if (node.type === AST_NODE_TYPES.Identifier) {
     return node.name;
   }
-  if (
-    node.type === AST_NODE_TYPES.MemberExpression &&
-    node.property.type === AST_NODE_TYPES.Identifier
-  ) {
+  if (node.type === AST_NODE_TYPES.MemberExpression) {
+    // `app['get']` names the same route registration `app.get` names. The
+    // resolver abstains on a key chosen at runtime, which genuinely names
+    // nothing this function could return.
+    const property = propertyName(node);
+    if (property === null) return null;
     const objectPart =
       node.object.type === AST_NODE_TYPES.Identifier
         ? `${node.object.name}.`
         : '';
-    return `${objectPart}${node.property.name}`;
+    return `${objectPart}${property}`;
   }
   return null;
 }
@@ -362,7 +365,9 @@ function isInsideAuthMiddleware(
         callee.type === 'MemberExpression' &&
         resolvedPropertyName(callee) !== null
       ) {
-        const propertyName = (resolvedPropertyName(callee) as string).toLowerCase();
+        const propertyName = (
+          resolvedPropertyName(callee) as string
+        ).toLowerCase();
         if (propertyName === 'use' || propertyName === 'all') {
           // Check if any argument is an auth middleware
           for (const arg of callExpr.arguments) {

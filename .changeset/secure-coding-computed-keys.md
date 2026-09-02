@@ -17,5 +17,6 @@ rules were reliably off on built output — where nobody is reading by eye eithe
 - `no-xpath-injection` — `doc['evaluate'](expr)`
 - `no-format-string-injection` — `util['format'](userInput)`
 
-A genuinely dynamic `o[m]()` still names nothing and is still ignored; every
+A genuinely dynamic `o[m]()` has no statically known method name and is still
+ignored; every
 rule gained a case pinning that.

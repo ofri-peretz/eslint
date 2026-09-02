@@ -11,4 +11,5 @@ Identifier. So `jwt['sign']({ password }, secret)` was not a sign,
 
 One gate, seven rules reading it, thirteen showing measurably blind cases.
 
-A dynamic `jwt[m](...)` still names no method and is still ignored.
+A dynamic `jwt[m](...)` has no statically known method name, so it is still
+ignored.

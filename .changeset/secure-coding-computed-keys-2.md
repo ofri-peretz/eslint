@@ -10,6 +10,6 @@ template `Handlebars.compile` does, and a reset token built from
 
 Two more tests had pinned the miss. One listed `Handlebars['compile']` beside
 `Handlebars[methodName]` as though they were the same refusal — the first
-names `compile`, the second names nothing. The other was titled after the
+names `compile`, the second has no statically known method name. The other was titled after the
 coverage branch it existed to execute, "computed require method access (id 85
 FALSE)", and asserted that `s['unserialize'](userInput)` was safe.

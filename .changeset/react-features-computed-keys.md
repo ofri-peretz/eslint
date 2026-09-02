@@ -8,4 +8,4 @@ fix: `items['map'](…)` is the same iteration as `items.map(…)`
 silent on it. That is the notation bundlers emit, so the rule was off on built
 output.
 
-A dynamic `o[m]` still names nothing and is still ignored.
+A dynamic `o[m]` has no statically known property name, so it is still ignored.

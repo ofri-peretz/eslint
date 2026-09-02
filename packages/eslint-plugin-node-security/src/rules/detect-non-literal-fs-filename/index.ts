@@ -392,7 +392,6 @@ const FS_MODULES = new Set([
 export const isFsModule = (source: unknown): boolean =>
   typeof source === 'string' && FS_MODULES.has(source);
 
-
 /**
  * The fs method this callee invokes, if any.
  *
@@ -959,7 +958,6 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
             callee.type === AST_NODE_TYPES.MemberExpression &&
             callee.object.type === AST_NODE_TYPES.Identifier &&
             callee.object.name === 'path' &&
-            callee.property.type === AST_NODE_TYPES.Identifier &&
             propertyName(callee) === 'basename'
           ) {
             return false;
@@ -1321,7 +1319,6 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
           callee.type === AST_NODE_TYPES.MemberExpression &&
           callee.object.type === AST_NODE_TYPES.Identifier &&
           callee.object.name === 'process' &&
-          callee.property.type === AST_NODE_TYPES.Identifier &&
           propertyName(callee) === 'cwd'
         ) {
           return true;
@@ -1382,7 +1379,6 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
           n.type === AST_NODE_TYPES.MemberExpression &&
           n.object.type === AST_NODE_TYPES.Identifier &&
           n.object.name === 'path' &&
-          n.property.type === AST_NODE_TYPES.Identifier &&
           propertyName(n) === 'sep'
         ) {
           return true;
@@ -1490,7 +1486,6 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
           testNode.callee.type === AST_NODE_TYPES.MemberExpression &&
           testNode.callee.object.type === AST_NODE_TYPES.Identifier &&
           testNode.callee.object.name === varName &&
-          testNode.callee.property.type === AST_NODE_TYPES.Identifier &&
           (propertyName(testNode.callee) === 'startsWith' ||
             propertyName(testNode.callee) === 'includes')
         ) {
@@ -1512,7 +1507,6 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
         // Pattern 2: ALLOWED_FILES.includes(varName) - allowlist validation
         if (
           testNode.callee.type === AST_NODE_TYPES.MemberExpression &&
-          testNode.callee.property.type === AST_NODE_TYPES.Identifier &&
           propertyName(testNode.callee) === 'includes'
         ) {
           // Check if varName is in the arguments
@@ -1529,7 +1523,6 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
         // Pattern 3: /regex/.test(varName) - regex validation
         if (
           testNode.callee.type === AST_NODE_TYPES.MemberExpression &&
-          testNode.callee.property.type === AST_NODE_TYPES.Identifier &&
           propertyName(testNode.callee) === 'test'
         ) {
           // Check if varName is in the arguments

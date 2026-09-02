@@ -74,7 +74,49 @@ async function ruleFor(qualified: string): Promise<unknown | null> {
   return plugins.get(pkg)?.[rest.join('/')] ?? null;
 }
 
-function reports(rule: unknown, name: string, code: string): number | null {
+/*
+ * A case's own options, or `null` when it declares none or they cannot be read.
+ *
+ * 1,077 of the ledger's 7,515 TP cases carry options, and probing them under
+ * the DEFAULT configuration is not probing them: a case that only fires with
+ * `{ trustedSources: [...] }` set reports nothing by default, so the probe
+ * skipped it as "never fired" and it was excluded from the measurement
+ * entirely. The gate's own blind spot, in the instrument built to find blind
+ * spots.
+ *
+ * The text is a TypeScript expression from our own test files rather than
+ * JSON — `[{ insecureLoadKeys: ['cleartext'] }]` — so it is evaluated. It
+ * comes from the repository being measured, which is the same trust boundary
+ * as importing the rules themselves. A case whose options do not evaluate is
+ * dropped rather than silently probed under defaults: a wrong reading is
+ * worse than a missing one.
+ */
+function optionsOf(text: string | undefined): unknown[] | null {
+  if (text === undefined || text.trim() === '') return null;
+  try {
+    const value: unknown = new Function(`return (${text});`)();
+    return Array.isArray(value) ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Every string literal reachable inside a case's options, at any depth. */
+function literalsIn(value: unknown): string[] {
+  if (typeof value === 'string') return value === '' ? [] : [value];
+  if (Array.isArray(value)) return value.flatMap(literalsIn);
+  if (value !== null && typeof value === 'object') {
+    return Object.values(value).flatMap(literalsIn);
+  }
+  return [];
+}
+
+function reports(
+  rule: unknown,
+  name: string,
+  code: string,
+  options: unknown[] | null,
+): number | null {
   const messages = linter.verify(
     code,
     [
@@ -89,7 +131,9 @@ function reports(rule: unknown, name: string, code: string): number | null {
             ecmaFeatures: { jsx: true },
           },
         },
-        rules: { [`p/${name}`]: 'error' },
+        rules: {
+          [`p/${name}`]: options === null ? 'error' : ['error', ...options],
+        } as never,
       },
     ],
     'case.tsx',
@@ -127,9 +171,37 @@ for (const entry of ledger.rules) {
     const rewritten = toComputed(c.code);
     if (rewritten === c.code) continue;
 
-    const before = reports(rule, name, c.code);
+    // A case that declares options it cannot parse is not measurable either
+    // way; skipping beats probing it under a configuration it never asked for.
+    if (c.options !== undefined && c.options.trim() !== '') {
+      if (optionsOf(c.options) === null) continue;
+    }
+    const options = optionsOf(c.options);
+    /*
+     * Skip cases whose OPTIONS match the rewrite rather than the code.
+     *
+     * The probe's premise is that both spellings are the same program. An
+     * option that matches SOURCE TEXT breaks that premise: this rule's case
+     * sets `ignorePatterns: ['[']`, and `app["post"](…)` introduces the very
+     * `[` the pattern suppresses on. The rule is not blind there — the
+     * configuration stopped describing the same program, and reporting it as
+     * a blind spot would be measuring the rewrite instead of the rule.
+     *
+     * Generic rather than an exclusion list: any string in the options that
+     * the rewrite introduces and the original does not have perturbed the
+     * configuration, whatever rule or option it belongs to.
+     */
+    if (
+      options !== null &&
+      literalsIn(options).some(
+        (lit) => rewritten.includes(lit) && !c.code.includes(lit),
+      )
+    ) {
+      continue;
+    }
+    const before = reports(rule, name, c.code, options);
     if (before === null || before === 0) continue; // only cases that DID fire
-    const after = reports(rule, name, rewritten);
+    const after = reports(rule, name, rewritten, options);
     if (after === null) continue; // the rewrite broke parsing; not evidence
     probed += 1;
     if (after === 0) {
