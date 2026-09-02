@@ -146,7 +146,6 @@ describe('require-route-authentication', () => {
       { code: `app.post(routePath, createUser);` },
       { code: `app.post(42, createUser);` },
       { code: `app[method]('/users', createUser);` },
-      { code: `app['post']('/users', createUser);` },
       { code: `getRouter().post('/users', createUser);` },
       { code: `config.get('/users', createUser);` },
       { code: `post('/users', createUser);` },
@@ -195,6 +194,14 @@ describe('require-route-authentication', () => {
       },
     ]),
     invalid: xp([
+    // Was pinned as valid next to `app[method]`, as though the two were the
+    // same refusal. `app['post']` names the verb; the runtime key does not,
+    // and that one stays valid above.
+    {
+      name: 'a subscripted route registration with no auth middleware',
+      code: `app['post']('/users', createUser);`,
+      errors: [{ messageId: 'missingAuthentication' as const }],
+    },
     // A middleware named at RUNTIME contributes no name to match against the
     // auth vocabulary, so this route is still unauthenticated.
     {
