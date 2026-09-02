@@ -143,18 +143,68 @@ function reports(
 }
 
 /**
- * `obj.method(` -> `obj["method"](`.
+ * `obj.method(` -> `obj["method"](`, and `obj.prop` -> `obj["prop"]`.
  *
- * Only CALLS, and only where the receiver is a plain identifier or member
- * chain. Rewriting every dotted read would change `a.b.c` into something the
- * parser reads differently and produce false blind spots rather than find real
- * ones.
+ * ## Why reads, and not only calls
+ *
+ * Calls alone reached 282 of the ledger's 470 rules. A further 67 decide from
+ * a member READ and never appear in a call at all — `cookie.httpOnly`,
+ * `el.innerHTML`, `event.origin`, `req.body`. Those are exactly the rules
+ * whose subjects a minifier rewrites, and the probe was silent about every one
+ * of them: not "they pass", but "they were never asked".
+ *
+ * ## Why this was left out at first, and what changed
+ *
+ * The original comment said rewriting reads "would change `a.b.c` into
+ * something the parser reads differently". Only the LAST segment is rewritten,
+ * so `a.b.c` becomes `a.b["c"]` — the same member expression, not a different
+ * one. The real hazard is TYPE positions: `const n: TSESTree.Node` cannot be
+ * written `TSESTree["Node"]`, and a fixture carrying one stops parsing. That
+ * degrades safely, because a rewrite that fails to parse is discarded as
+ * "not evidence" rather than counted as a blind spot.
+ *
+ * Two shapes are still excluded, because rewriting them changes meaning rather
+ * than spelling: a segment followed by `(` is a call (handled above), and one
+ * followed by another `.` is a receiver, whose own last segment gets the
+ * rewrite instead.
  */
-function toComputed(code: string): string {
-  return code.replace(
-    /\b([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\.([A-Za-z_$][\w$]*)\(/g,
-    (_m, receiver: string, method: string) => `${receiver}["${method}"](`,
+/**
+ * A string or template literal, matched so it can be passed through UNTOUCHED.
+ *
+ * Without this the read rewrite reached inside literals and produced fictions:
+ * `spawn('cmd.exe', …)` became `spawn('cmd["exe"]', …)`, and a JWT fixture's
+ * `eyJ…J9.eyJ…` payload was rewritten mid-token. Both then "went silent", and
+ * both would have been reported as rule blind spots. The rewrite has to know
+ * what is code and what is data, or it manufactures exactly the defect it
+ * exists to detect.
+ */
+const LITERAL = /'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|`(?:\\.|[^`\\])*`/;
+
+const CALL_SITE =
+  /\b([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\.([A-Za-z_$][\w$]*)\(/;
+const READ_SITE =
+  /\b([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\.([A-Za-z_$][\w$]*)\b(?!\s*[(.])/;
+
+function rewriteOutsideLiterals(
+  code: string,
+  site: RegExp,
+  render: (receiver: string, name: string) => string,
+): string {
+  const combined = new RegExp(`${LITERAL.source}|${site.source}`, 'g');
+  return code.replace(combined, (match, receiver?: string, name?: string) =>
+    receiver === undefined || name === undefined
+      ? match // a literal: data, not code
+      : render(receiver, name),
   );
+}
+
+function toComputed(code: string): string {
+  const calls = rewriteOutsideLiterals(
+    code,
+    CALL_SITE,
+    (r, m) => `${r}["${m}"](`,
+  );
+  return rewriteOutsideLiterals(calls, READ_SITE, (r, p) => `${r}["${p}"]`);
 }
 
 const blind: { rule: string; description: string; code: string }[] = [];
@@ -244,4 +294,54 @@ if (byRule.size === 0)
  * `--rule=` is a developer's magnifying glass, not a measurement of the
  * workspace, so it never fails the build.
  */
-if (byRule.size > 0 && only === null) process.exitCode = 1;
+if (only === null) {
+  /*
+   * SHRINK-ONLY against a recorded baseline, not "must be zero".
+   *
+   * Zero was the honest answer while the probe rewrote calls only. Extending
+   * it to member reads raised the rules it can reach from 282 to 349 and found
+   * 22 that go silent — they had never been asked, which is not the same as
+   * passing. Failing outright on all 22 would make the gate un-mergeable and
+   * the pressure would be to weaken the probe; recording them makes the debt
+   * visible, stops a 23rd arriving unnoticed, and lets the list be driven down.
+   *
+   * A rule that LEAVES the list must be removed from the baseline in the same
+   * change, or the file stops describing the code and starts excusing it.
+   */
+  const baseline = new Set(
+    (
+      JSON.parse(
+        fs.readFileSync(
+          path.join(ROOT, '.agent', 'computed-key-baseline.json'),
+          'utf8',
+        ),
+      ) as { rules: string[] }
+    ).rules,
+  );
+  const arrived = [...byRule.keys()].filter((r) => !baseline.has(r)).sort();
+  const fixed = [...baseline].filter((r) => !byRule.has(r)).sort();
+
+  if (arrived.length > 0) {
+    console.log(
+      `\n  ⛔ ${arrived.length} rule(s) newly go silent on a string subscript:`,
+    );
+    for (const r of arrived) console.log(`     ${r}`);
+    console.log(
+      '     Fix the rule. Do not add it to .agent/computed-key-baseline.json.',
+    );
+    process.exitCode = 1;
+  }
+  if (fixed.length > 0) {
+    console.log(
+      `\n  ⛔ ${fixed.length} baseline rule(s) no longer go silent — remove them:`,
+    );
+    for (const r of fixed) console.log(`     ${r}`);
+    console.log(
+      '     Edit .agent/computed-key-baseline.json so it keeps describing the code.',
+    );
+    process.exitCode = 1;
+  }
+  if (arrived.length === 0 && fixed.length === 0) {
+    console.log(`  baseline ${baseline.size} — no regression\n`);
+  }
+}

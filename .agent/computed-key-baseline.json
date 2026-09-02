@@ -1,0 +1,33 @@
+{
+  "$schema": "./computed-key-baseline.schema.json",
+  "description": "Rules that report on a dotted member and go SILENT when the same member is written o['k'] \u2014 the notation bundlers and minifiers emit. SHRINK-ONLY: a rule may leave this list, never join it. Produced by scripts/find-computed-key-blind-spots.mts.",
+  "why": "The call-only probe reached 282 of 470 rules and reported zero blind spots. Extending it to member READS \u2014 cookie.httpOnly, err.stack, user.role \u2014 reached 349 and found these 22. They were not passing before; they were never asked. Recorded as debt rather than silently excluded, because a gate that only measures what already passes measures nothing.",
+  "recordedAt": "2026-09-02",
+  "known_probe_artefacts": {
+    "nestjs-security/no-permissive-cors": "A TYPE position: `const c: common.CorsOptions`. `common['CorsOptions']` is a valid indexed-access type, so it parses, but types are ERASED before a bundler emits anything \u2014 a subscripted type annotation cannot occur in the code this probe exists to model. Left listed rather than special-cased in the rewrite, so the judgement stays visible and reviewable."
+  },
+  "rules": [
+    "browser-security/no-innerhtml",
+    "browser-security/no-insecure-redirects",
+    "browser-security/require-blob-url-revocation",
+    "browser-security/require-csp-headers",
+    "express-security/no-error-details-in-response",
+    "import-next/no-deprecated",
+    "lambda-security/no-exposed-error-details",
+    "nestjs-security/no-permissive-cors",
+    "node-security/no-weak-hash-algorithm",
+    "prisma-security/no-raw-identifier-interpolation",
+    "react-features/default-props-match-prop-types",
+    "react-features/no-direct-mutation-state",
+    "react-features/no-typos",
+    "react-features/react-class-to-hooks",
+    "secure-coding/no-graphql-injection",
+    "secure-coding/no-hardcoded-credentials",
+    "secure-coding/no-improper-sanitization",
+    "secure-coding/no-improper-type-validation",
+    "secure-coding/no-ldap-injection",
+    "secure-coding/no-privilege-escalation",
+    "secure-coding/no-sql-injection",
+    "secure-coding/no-template-injection"
+  ]
+}
