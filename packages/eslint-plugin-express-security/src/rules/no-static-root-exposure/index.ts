@@ -38,6 +38,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 /**
@@ -195,8 +196,8 @@ export const noStaticRootExposure = createRule<RuleOptions, MessageIds>({
       if (callee.type !== AST_NODE_TYPES.MemberExpression) return false;
       if (callee.object.type !== AST_NODE_TYPES.Identifier) return false;
       if (callee.object.name !== 'process') return false;
-      if (callee.property.type !== AST_NODE_TYPES.Identifier) return false;
-      return callee.property.name === 'cwd';
+      // `process['cwd']()` resolves the same directory.
+      return propertyName(callee) === 'cwd';
     }
 
     function isPathJoinCall(
@@ -207,8 +208,8 @@ export const noStaticRootExposure = createRule<RuleOptions, MessageIds>({
       if (callee.type !== AST_NODE_TYPES.MemberExpression) return false;
       if (callee.object.type !== AST_NODE_TYPES.Identifier) return false;
       if (callee.object.name !== 'path') return false;
-      if (callee.property.type !== AST_NODE_TYPES.Identifier) return false;
-      return JOIN_METHODS.has(callee.property.name);
+      // `path['join'](…)` builds the same path.
+      return JOIN_METHODS.has(propertyName(callee) as string);
     }
 
     function isExpressStaticCall(node: TSESTree.CallExpression): boolean {

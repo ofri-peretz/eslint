@@ -143,10 +143,9 @@ function isBufferReturningRead(node: TSESTree.Node): boolean {
   const name =
     callee.type === AST_NODE_TYPES.Identifier
       ? callee.name
-      : callee.type === AST_NODE_TYPES.MemberExpression &&
-          !callee.computed &&
-          callee.property.type === AST_NODE_TYPES.Identifier
-        ? callee.property.name
+      : callee.type === AST_NODE_TYPES.MemberExpression
+        ? // `b['readUInt8'](0)` reads the same bytes `b.readUInt8(0)` reads.
+          propertyName(callee)
         : null;
   // A second argument is an encoding or an options bag, and either can turn the
   // result into a string. Only the unambiguous one-argument form counts.
@@ -666,16 +665,15 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
       }
       if (
         callee.type !== AST_NODE_TYPES.MemberExpression ||
-        callee.computed ||
-        callee.property.type !== AST_NODE_TYPES.Identifier
+        propertyName(callee) === null
       ) {
         return false;
       }
       return (
         (callee.object.type === AST_NODE_TYPES.Identifier &&
           callee.object.name === 'Math' &&
-          (callee.property.name === 'min' || callee.property.name === 'max')) ||
-        boundsCheckFunctions.includes(callee.property.name)
+          (propertyName(callee) === 'min' || propertyName(callee) === 'max')) ||
+        boundsCheckFunctions.includes(propertyName(callee) as string)
       );
     };
 

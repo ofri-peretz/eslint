@@ -68,9 +68,11 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
 
     function checkMemberExpression(node: TSESTree.MemberExpression): void {
       if (node.object.type !== 'Identifier') return;
-      if (node.property.type !== 'Identifier') return;
+      // `ReactDOM['render']` names the same deprecated API.
+      const member = propertyName(node);
+      if (member === null) return;
 
-      const fullName = `${node.object.name}.${node.property.name}`;
+      const fullName = `${node.object.name}.${member}`;
       const deprecation = DEPRECATED_APIS[fullName];
 
       if (deprecation) {

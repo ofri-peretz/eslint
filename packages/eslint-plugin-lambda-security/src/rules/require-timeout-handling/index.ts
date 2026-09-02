@@ -254,10 +254,11 @@ export const requireTimeoutHandling = createRule<RuleOptions, MessageIds>({
         }
 
         if (node.callee.type === AST_NODE_TYPES.MemberExpression) {
-          const property = node.callee.property;
+          // `client['send'](cmd)` is the same external call.
           if (
-            property.type === AST_NODE_TYPES.Identifier &&
-            EXTERNAL_CALL_PATTERNS.has(property.name)
+            EXTERNAL_CALL_PATTERNS.has(
+              propertyName(node.callee) as string,
+            )
           ) {
             hasExternalCalls = true;
           }

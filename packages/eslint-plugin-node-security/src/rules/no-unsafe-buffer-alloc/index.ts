@@ -495,10 +495,18 @@ function fixedWriteSpan(
 /** The name a callee resolves to, for `f()`, `o.f()` and `this.#f()`. */
 function calleeName(callee: TSESTree.Node): string | null {
   if (callee.type === AST_NODE_TYPES.Identifier) return callee.name;
-  if (callee.type === AST_NODE_TYPES.MemberExpression && !callee.computed) {
-    // A non-computed property is an Identifier or a PrivateIdentifier and
-    // nothing else, so both carry a `name` and there is no third case to guard.
-    return callee.property.name;
+  if (callee.type === AST_NODE_TYPES.MemberExpression) {
+    // A `#private` method carries a name too, and `propertyName` — which
+    // answers "what member does this name?" — deliberately does not return it.
+    // Dropping this arm silently lost `this.#b(len)` from the call graph.
+    if (
+      !callee.computed &&
+      callee.property.type === AST_NODE_TYPES.PrivateIdentifier
+    ) {
+      return callee.property.name;
+    }
+    // `chunk['readUInt32BE'](0)` reads the same length prefix.
+    return propertyName(callee);
   }
   return null;
 }

@@ -29,6 +29,7 @@ import {
   createRule,
   AST_NODE_TYPES,
   isTestFilePath,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'missingAuthTag' | 'missingFinal';
@@ -127,11 +128,9 @@ export const requireAeadTagVerification = createRule<RuleOptions, MessageIds>({
     function isCreateDecipheriv(
       callee: TSESTree.CallExpression['callee'],
     ): boolean {
-      if (
-        callee.type === AST_NODE_TYPES.MemberExpression &&
-        callee.property.type === AST_NODE_TYPES.Identifier
-      ) {
-        return callee.property.name === 'createDecipheriv';
+      if (callee.type === AST_NODE_TYPES.MemberExpression) {
+        // `crypto['createDecipheriv'](…)` opens the same AEAD decipher.
+        return propertyName(callee) === 'createDecipheriv';
       }
       return (
         callee.type === AST_NODE_TYPES.Identifier &&
@@ -176,10 +175,10 @@ export const requireAeadTagVerification = createRule<RuleOptions, MessageIds>({
         if (
           parent.type === AST_NODE_TYPES.MemberExpression &&
           parent.object === identifier &&
-          parent.property.type === AST_NODE_TYPES.Identifier &&
-          !parent.computed
+          propertyName(parent) !== null
         ) {
-          methods.add(parent.property.name);
+          // `decipher['final']()` is the same call in the method set.
+          methods.add(propertyName(parent) as string);
           continue;
         }
 

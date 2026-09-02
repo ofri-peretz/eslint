@@ -364,10 +364,10 @@ ruleTester.run(
       { code: `express.static(getRoot());` }, // callee is a bare identifier
       { code: `express.static(a.b.cwd());` }, // callee object is a member expression
       { code: `express.static(shell.cwd());` }, // object is not `process`
-      { code: `express.static(process['cwd']());` }, // computed property
+      { code: `express.static(process[dir]());` }, // method named at runtime
       { code: `express.static(process.uptime());` }, // property is not `cwd`
       // path-join negatives
-      { code: `express.static(path['join'](__dirname, x));` }, // computed property
+      { code: `express.static(path[fn](__dirname, x));` }, // method named at runtime
       { code: `express.static(path.basename(__dirname));` }, // not join/resolve
       { code: `express.static(pathlib.join(__dirname, x));` }, // object not `path`
       // absolute root of an allowlisted name
@@ -386,6 +386,30 @@ ruleTester.run(
       { code: `import express from 'express';` }, // different import source
     ]),
     invalid: xp([
+      // Both were pinned as valid above, described only as "computed
+      // property". `process['cwd']()` resolves the same application root and
+      // `path['join']` builds the same path — the subscript changes the
+      // notation, not what gets served.
+      {
+        name: 'a subscripted process.cwd() is still the application root',
+        code: `express.static(process['cwd']());`,
+        errors: [
+          {
+            messageId: 'staticRoot',
+            suggestions: [
+              {
+                messageId: 'scopeToSubdir',
+                output: `express.static(path.join(__dirname, 'public'));`,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'a subscripted path.join with a non-literal segment',
+        code: `express.static(path['join'](__dirname, x));`,
+        errors: [{ messageId: 'nonLiteralPath' }],
+      },
       // empty-string root
       {
         code: `express.static('');`,

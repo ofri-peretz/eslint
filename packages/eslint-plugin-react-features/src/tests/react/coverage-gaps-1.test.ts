@@ -37,7 +37,7 @@ describe('no-deprecated coverage gaps', () => {
   ruleTester.run('no-deprecated', noDeprecated, {
     valid: [
       { name: 'nested member expression object', code: 'a.b.c;' },
-      { name: 'computed member on React', code: "const x = React['findDOMNode'];" },
+      { name: 'a React member named at runtime', code: 'const x = React[api];' },
       { name: 'non-deprecated member', code: 'React.createElement("div");' },
       { name: 'class without superclass', code: 'class Plain { componentWillMount() {} }' },
       { name: 'class extends non-React member', code: 'class A extends Foo.Component { render() { return null; } }' },
@@ -54,6 +54,13 @@ describe('no-deprecated coverage gaps', () => {
       { name: 'class expression extends Foo.Component', code: 'const A = class extends Foo.Component { render() { return null; } };' },
     ],
     invalid: [
+      // Was pinned as valid under "computed member on React".
+      // `React['findDOMNode']` names the same deprecated API.
+      {
+        name: 'a subscripted read of a deprecated React member',
+        code: "const x = React['findDOMNode'];",
+        errors: [{ messageId: 'deprecated' }],
+      },
       // Both were pinned as valid because the superclass member was computed.
       // `React['Component']` IS `React.Component`, so these ARE React class
       // components defining a deprecated lifecycle method.
