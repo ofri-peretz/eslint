@@ -83,6 +83,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
         with:
+          deps: 'lean'
           turbo-cache: 'false'
       - run: npm run lint:md
 
@@ -94,6 +95,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
         with:
+          deps: 'lean'
           turbo-cache: 'false'
       - run: npm run audit:changelogs
 
@@ -105,6 +107,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
         with:
+          deps: 'lean'
           turbo-cache: 'false'
       - run: npm run lint:workflows
       # scripts/__tests__/ held five lock files but only oxlint-export-lock ran
@@ -123,6 +126,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
         with:
+          deps: 'lean'
           turbo-cache: 'false'
       # Three checks that existed and ran only when somebody typed them. Each is
       # deterministic and repo-only, so per docs/DOCS_QUALITY.md it belongs on the
@@ -145,6 +149,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
         with:
+          deps: 'lean'
           # check-changeset-coverage.ts takes a merge-base diff against main,
           # so it needs real history. It aborts rather than guessing when the
           # base is unreachable -- a shallow checkout would fail this job
@@ -197,6 +202,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
       - uses: ./.github/actions/setup
         with:
+          deps: 'lean'
           turbo-cache: 'false'
       - run: npm run lint:taxonomy
       # Same job rather than its own: both gates answer "is this rule allowed
@@ -364,6 +370,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
         with:
+          deps: 'lean'
           node-version-file: .nvmrc
           cache: npm
       # Re-resolve package-lock.json from package.json without installing.
@@ -404,6 +411,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          deps: 'lean'
           persist-credentials: false
 
       # Scans the checked-out tree only — no `npm ci`, so this sees committed
@@ -447,6 +455,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
         with:
+          deps: 'lean'
           turbo-cache: 'false'
       - run: npm run check:benchmark-results-size
 
