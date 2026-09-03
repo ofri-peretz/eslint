@@ -4,7 +4,7 @@
 > that pinned a rule's blind spot as intended behaviour, in packages that were
 > at 100% line and branch coverage the whole time.
 
-**Status:** draft · **Opened:** 2026-09-02 · **Owner:** @ofri-peretz
+**Status:** shipped · **Opened:** 2026-09-02 · **Owner:** @ofri-peretz
 
 ---
 

@@ -2,7 +2,7 @@
 
 > Stage 2 artifact. Accepts [intent.md](./intent.md).
 
-**Status:** draft · **Opened:** 2026-09-02 · **Owner:** @ofri-peretz
+**Status:** shipped · **Opened:** 2026-09-02 · **Owner:** @ofri-peretz
 
 ---
 
@@ -51,9 +51,9 @@ to decide what position the case actually takes, is a change nobody can review;
 and three of the six flipped this quarter turned out to be asserting the _wrong_
 position, which a rename would have quietly preserved.
 
-## Proving it fails on the unfixed state
+## Verification
 
-Required before this counts as done, per the repository's own rule:
+Done, both directions, before this shipped:
 
 1. Record the baseline, confirm `check:rule-cases` is green.
 2. Add a case named `something (L42 false arm)` to any rule — the gate exits 1

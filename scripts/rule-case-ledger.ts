@@ -752,7 +752,52 @@ console.log(
 );
 console.log(`  sealed against real code (FP+FN)        ${sealed}`);
 console.log(`  open misses, documented not sealed      ${counts.GAP}`);
+const NAMING_BASELINE = path.join(
+  ROOT,
+  'benchmarks',
+  'budgets',
+  'rule-case-naming-baseline.json',
+);
+
+/**
+ * A case named after the INSTRUMENT rather than the position it takes.
+ *
+ *     name: 'coverage - computed callee property (id 9 FALSE)'
+ *     name: 'computed class members and literal property access (L67/L81/L95 false arms)'
+ *
+ * Both say the same thing: this case exists so a branch executes. Neither says
+ * what the rule is supposed to DO with the input — and every package here is
+ * gated at 100% branch coverage, so that gate was green while 47 such cases
+ * asserted a rule's blind spot as intended behaviour. Six were flipped in one
+ * week; two had been labelled "documented false negative" in the case comment,
+ * and one rule's published DOCUMENTATION repeated the claim to users.
+ *
+ * Coverage proves a branch RAN. It says nothing about what the case CLAIMS
+ * while running it, and the two have been treated as one.
+ *
+ * The NAME is checked rather than the assertion, because deciding whether a
+ * rule should report on an input is exactly the judgement the case exists to
+ * encode — a linter that could recover it would not need the case. The name is
+ * the weaker signal and the only recoverable one. It is also the honest one:
+ * `(id 9 FALSE)` told the truth about its own purpose and nobody looked.
+ *
+ * See docs/intents/coverage-is-not-pinning/.
+ */
+const NAMED_AFTER_THE_INSTRUMENT =
+  /\bL\d+(?:\/L\d+)*\b|\bid \d+ (?:TRUE|FALSE)\b|\b(?:false|true) arms?\b|^coverage[\s\-–—:]/i;
+
+const instrumentNamedByRule: Record<string, number> = {};
+for (const entry of entries) {
+  const n = entry.cases.filter(
+    (c) => c.description && NAMED_AFTER_THE_INSTRUMENT.test(c.description),
+  ).length;
+  if (n > 0) instrumentNamedByRule[entry.rule] = n;
+}
+
 console.log(`  undescribed cases                       ${undescribed}`);
+console.log(
+  `  cases named after a branch              ${Object.values(instrumentNamedByRule).reduce((a, b) => a + b, 0)}`,
+);
 console.log(`  byte-identical duplicate cases          ${duplicates}`);
 console.log(`  rules without a described TP and TN     ${missing.length}`);
 console.log(
@@ -865,6 +910,46 @@ if (CHECK) {
     process.exit(1);
   }
 
+  const namingBaseline = readBaselineRecord(NAMING_BASELINE, 'rules');
+  const namingRegressed = Object.entries(instrumentNamedByRule)
+    .filter(([rule, n]) => n > (namingBaseline[rule] ?? 0))
+    .map(([rule, n]) => `${rule}  ${namingBaseline[rule] ?? 0} → ${n}`);
+  if (namingRegressed.length > 0) {
+    console.error(
+      `\n  ⛔ ${namingRegressed.length} rule(s) gained a case named after a branch:`,
+    );
+    for (const line of namingRegressed) console.error(`     ${line}`);
+    console.error(
+      '\n  A name like `(L67/L81/L95 false arms)` records which arms ran, not what' +
+        '\n  the rule should do with the input. 100% coverage was green while 47 such' +
+        '\n  cases asserted a blind spot as intended behaviour.' +
+        '\n  Name the case after the claim it makes.',
+    );
+    process.exit(1);
+  }
+
+  /*
+   * And the other direction: an entry LARGER than the truth is slack, and slack
+   * is a regression nobody sees. A rule recorded at 5 that now holds 2 will
+   * accept three new branch-named cases in silence — the file would have
+   * stopped describing the code and started excusing it, which is the failure
+   * every other ratchet here is written to avoid.
+   */
+  const namingStale = Object.entries(namingBaseline)
+    .filter(([rule, n]) => n > (instrumentNamedByRule[rule] ?? 0))
+    .map(([rule, n]) => `${rule}  ${n} → ${instrumentNamedByRule[rule] ?? 0}`);
+  if (namingStale.length > 0) {
+    console.error(
+      `\n  ⛔ ${namingStale.length} naming-baseline entr(ies) no longer describe the code:`,
+    );
+    for (const line of namingStale) console.error(`     ${line}`);
+    console.error(
+      '\n  The count fell and the record did not. Run `npm run rule-cases -- --update`' +
+        '\n  in the same change, so the baseline keeps describing what is there.',
+    );
+    process.exit(1);
+  }
+
   const baseline = readBaseline(BASELINE, 'rules');
   const known = new Set(baseline);
   const regressed = missing.map((e) => e.rule).filter((r) => !known.has(r));
@@ -925,6 +1010,37 @@ if (UPDATE) {
         note: 'Cases that run without a `name`, per rule. Shrink-only: a rule may never gain one.',
         rules: Object.fromEntries(
           Object.entries(undescribedByRule).sort(([a], [b]) =>
+            a.localeCompare(b),
+          ),
+        ),
+      },
+      null,
+      2,
+    )}\n`,
+  );
+
+  const previousNaming = readBaselineRecord(NAMING_BASELINE, 'rules');
+  const grewNaming = Object.entries(instrumentNamedByRule).filter(
+    ([rule, n]) => n > (previousNaming[rule] ?? 0),
+  );
+  if (Object.keys(previousNaming).length > 0 && grewNaming.length > 0) {
+    console.error(
+      `\n  ⛔ refusing to grow the naming baseline: ${grewNaming
+        .map(([r, n]) => `${r} ${previousNaming[r] ?? 0} → ${n}`)
+        .join(', ')}`,
+    );
+    process.exit(1);
+  }
+  fs.writeFileSync(
+    NAMING_BASELINE,
+    `${JSON.stringify(
+      {
+        note:
+          'Cases named after the coverage machinery they execute — `(L67/L81 false arms)`, ' +
+          '`(id 9 FALSE)` — rather than the position they take. Shrink-only: a rule may ' +
+          'never gain one. See docs/intents/coverage-is-not-pinning/.',
+        rules: Object.fromEntries(
+          Object.entries(instrumentNamedByRule).sort(([a], [b]) =>
             a.localeCompare(b),
           ),
         ),
