@@ -40,8 +40,22 @@ concurrency:
   group: a11y-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # Turborepo Remote Cache (Vercel). Free on every plan, and off the 10 GB
+  # Actions cache allowance that node_modules and Next.js compete for.
+  # Absent -> empty -> the setup action falls back to the Actions-backed cache,
+  # which is also what a fork PR gets, since forks receive no secrets.
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+
 permissions:
   contents: read
+  # For the Turborepo Remote Cache OIDC exchange in ./.github/actions/setup.
+  # The minted token grants Remote Cache access on the Vercel team and nothing
+  # else. Deliberately NOT added to release.yml or supply-chain-attestation.yml
+  # — `infra-metrics-lock` asserts those never enable the remote cache at all,
+  # because a cache write is a path into what we publish.
+  id-token: write
 
 jobs:
   gate:

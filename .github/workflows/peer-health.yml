@@ -86,7 +86,7 @@ jobs:
           EXISTING=$(gh issue list --state open --search "$TITLE in:title" \
             --json number --jq '.[0].number // empty')
           BODY=$(printf '%s\n\n[Run](%s)\n' \
-            "The weekly peer-health refresher failed, so `benchmark-results/peer-health.{json,md}` is now stale. Those numbers back `distribution/ECOSYSTEM_LANDSCAPE.md`." "$RUN_URL")
+            'The weekly peer-health refresher failed, so `benchmark-results/peer-health.{json,md}` is now stale. Those numbers back `distribution/ECOSYSTEM_LANDSCAPE.md`.' "$RUN_URL")
           if [ -n "$EXISTING" ]; then
             gh issue comment "$EXISTING" --body "$BODY"
           else

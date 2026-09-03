@@ -37,6 +37,7 @@
  */
 import fs from 'node:fs';
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Linter } from 'eslint';
@@ -47,6 +48,19 @@ import type { TSESTree } from '@typescript-eslint/utils';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
 const LEDGER = path.join(ROOT, 'benchmarks', 'RULE_CASES.json');
+
+// RULE_CASES.json is gitignored (135 k lines — see .gitignore). A fresh CI
+// checkout never has it. Rather than crashing with ENOENT and letting the
+// `if: failure()` reporter file a misleading issue, generate it on demand.
+// This is the same as adding `npm run rule-cases` as a prerequisite step in
+// the caller (comparison-refresh.yml), but self-contained so the probe works
+// whether it is called from a workflow, a developer's shell, or a lock test.
+if (!fs.existsSync(LEDGER)) {
+  console.log(
+    'benchmarks/RULE_CASES.json not found — generating with `npm run rule-cases`',
+  );
+  execFileSync('npm', ['run', 'rule-cases'], { cwd: ROOT, stdio: 'inherit' });
+}
 
 const filter = process.argv.includes('--rule')
   ? process.argv[process.argv.indexOf('--rule') + 1]
