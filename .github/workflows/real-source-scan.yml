@@ -161,19 +161,32 @@ jobs:
       contents: read
       issues: write
     steps:
+      # `-R "$GH_REPO"` on every call, and no checkout.
+      #
+      # This job had neither. `gh` falls back to inferring owner/repo from the
+      # git remote of the working directory, and a job that never checks out
+      # has no working directory to infer from — so every invocation died with
+      # "fatal: not a git repository". The reporter whose whole purpose is to
+      # announce a failed scan was itself the second failure, and it reported
+      # nothing.
+      #
+      # Passing the repo explicitly is better than adding a checkout: filing an
+      # issue does not need the source tree, and a clone here would be ~20s of
+      # runner time to satisfy an inference that an env var already answers.
       - name: 🚨 Open or update an issue
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set -euo pipefail
           TITLE="Real-source scan is failing"
-          EXISTING=$(gh issue list --state open --search "$TITLE in:title" \
+          EXISTING=$(gh issue list -R "$GH_REPO" --state open --search "$TITLE in:title" \
             --json number --jq '.[0].number // empty')
           BODY=$(printf '%s\n\n[Run](%s)\n' \
             'The weekly real-source scan did not complete, so the rule inventory keeps whatever numbers it already had. Until it runs, no rule may be described as having no real-world instance — check:audit-freshness will say so.' "$RUN_URL")
           if [ -n "$EXISTING" ]; then
-            gh issue comment "$EXISTING" --body "$BODY"
+            gh issue comment -R "$GH_REPO" "$EXISTING" --body "$BODY"
           else
-            gh issue create --title "$TITLE" --body "$BODY"
+            gh issue create -R "$GH_REPO" --title "$TITLE" --body "$BODY"
           fi
