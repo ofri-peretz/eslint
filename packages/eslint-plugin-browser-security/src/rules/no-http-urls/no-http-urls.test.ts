@@ -25,7 +25,10 @@ ruleTester.run('no-http-urls', noHttpUrls, {
       // the URL against and the rule stays quiet. Covers the null return from
       // `objectKeyName`, which replaced a hand-rolled `key.name` read that was
       // blind to `{ ['href']: v }`.
-      `const o = { [k]: 'http://example.com' };`,
+      {
+        name: 'a fully dynamic key resolves to no name, so there is no slot to judge',
+        code: `const o = { [k]: 'http://example.com' };`,
+      },
     // --- a bare scheme names no host ----------------------------------------
     // Lighthouse's `report/renderer/details-renderer.js` classifies URLs with
     // `const URL_PREFIXES = ['http://', 'https://', 'data:']`. There is no host

@@ -22,7 +22,10 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('utm-taxonomy — a malformed escape does not crash', utmTaxonomy, {
   valid: [
-    'const u = tag`https://x.test/?utm_source=github&utm_medium=referral`;',
+    {
+      name: 'a well-formed tagged template is still read normally',
+      code: 'const u = tag`https://x.test/?utm_source=github&utm_medium=referral`;',
+    },
   ],
   invalid: [
     {
