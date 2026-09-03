@@ -87,6 +87,28 @@ type SurfaceSpec = {
    * "0% of 7" by discarding all 99 of the APIs its rules exist to read.
    */
   capitalisedIsSurface?: boolean;
+  /**
+   * Enumerate only these exported classes' prototypes, not the whole module.
+   *
+   * `mongodb-security` declares its surface as "Collection / Db / cursor query
+   * methods". Enumerating the `mongodb` and `mongoose` packages whole gave 485,
+   * which charges the plugin for every Document method Mongoose happens to
+   * expose and describes a surface nobody claimed.
+   */
+  classRoots?: string[];
+  /**
+   * Or: the surface IS this list, named explicitly.
+   *
+   * `vercel-ai-security` declares "generateText / streamText / generateObject
+   * / tools". The `ai` package exports 157 callables — error classes, chat
+   * transports, 18 `experimental_` entry points. A denominator of 107 was
+   * measuring the package, not the surface a security rule must cover.
+   *
+   * Written out rather than matched by a pattern, because the list IS the
+   * claim: these are the APIs this plugin says it has an opinion about, and
+   * changing it should read as a change of scope in review.
+   */
+  only?: string[];
 };
 
 const SPECS: SurfaceSpec[] = [
@@ -111,8 +133,14 @@ const SPECS: SurfaceSpec[] = [
   },
   {
     plugin: 'eslint-plugin-mongodb-security',
-    modules: ['mongodb', 'mongoose'],
-    prototypes: true,
+    modules: ['mongodb'],
+    classRoots: [
+      'Collection',
+      'Db',
+      'FindCursor',
+      'AggregationCursor',
+      'MongoClient',
+    ],
   },
   { plugin: 'eslint-plugin-jwt-security', modules: ['jsonwebtoken'] },
   {
@@ -120,7 +148,21 @@ const SPECS: SurfaceSpec[] = [
     modules: ['express'],
     prototypes: true,
   },
-  { plugin: 'eslint-plugin-vercel-ai-security', modules: ['ai'] },
+  {
+    plugin: 'eslint-plugin-vercel-ai-security',
+    modules: ['ai'],
+    only: [
+      'generateText',
+      'streamText',
+      'generateObject',
+      'streamObject',
+      'generateImage',
+      'generateSpeech',
+      'embed',
+      'embedMany',
+      'tool',
+    ],
+  },
   {
     plugin: 'eslint-plugin-nestjs-security',
     modules: ['@nestjs/common'],
@@ -161,6 +203,37 @@ function callablesOf(spec: SurfaceSpec): {
   };
 
   for (const specifier of spec.modules) {
+    if (spec.only !== undefined) {
+      const mod = require_(specifier) as Record<string, unknown>;
+      for (const name of spec.only) {
+        if (typeof mod[name] === 'function') fns.add(name);
+        else
+          console.error(
+            `  ! ${spec.plugin}: ${specifier} has no export ${name}`,
+          );
+      }
+      continue;
+    }
+    if (spec.classRoots !== undefined) {
+      const mod = require_(specifier) as Record<string, unknown>;
+      for (const root of spec.classRoots) {
+        const cls = mod[root] as { prototype?: object } | undefined;
+        if (typeof cls !== 'function' || cls.prototype === undefined) {
+          console.error(
+            `  ! ${spec.plugin}: ${specifier} has no class ${root}`,
+          );
+          continue;
+        }
+        for (const m of Object.getOwnPropertyNames(cls.prototype)) {
+          try {
+            add(m, (cls.prototype as Record<string, unknown>)[m]);
+          } catch {
+            /* getter that throws */
+          }
+        }
+      }
+      continue;
+    }
     let mod: Record<string, unknown>;
     try {
       mod = require_(specifier) as Record<string, unknown>;

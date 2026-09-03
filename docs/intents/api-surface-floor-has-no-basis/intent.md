@@ -39,18 +39,30 @@ seconds.
 `npm run measure:api-surface` (shipped in #824) produces the right-hand column.
 It reports; it does not gate.
 
-## Why the gate cannot move yet
+## Why the gate could not move, and what changed
 
-Two denominators are not trustworthy, and the script says so rather than
-rounding it away:
+Two denominators were not trustworthy, and the script said so rather than
+rounding it away. **Both are now curated** (2026-09-02):
 
-- `mongodb-security` — 485, because the spec enumerates `mongodb` **and**
-  `mongoose` prototypes where the declared surface is "Collection / Db / cursor
-  query methods".
-- `vercel-ai-security` — 107, the whole `ai` package including internals.
+| Plugin               | Was |    Now | Because                                                                                                                                      |
+| :------------------- | --: | -----: | :------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mongodb-security`   | 485 | **87** | enumerated `mongodb` _and_ `mongoose` whole; the declared surface is `Collection` / `Db` / cursor / client prototypes                        |
+| `vercel-ai-security` | 107 |  **9** | the whole `ai` package, including 18 `experimental_` entry points and every error class; the declared surface is the generation entry points |
 
-Setting a floor against those would be repeating the original defect with fresh
-numbers, which is worse than the current state: it would look measured.
+The AI SDK list is written out by name rather than matched by a pattern,
+because the list **is** the claim: these are the APIs this plugin says it has
+an opinion about, and changing it should read as a change of scope in review.
+
+Seven of the manifest's ten plugins are now measurable. The remaining three
+have no enumerable runtime surface and are the reason the gate still cannot
+cover the whole table:
+
+- `browser-security` — the web platform. `lib.dom.d.ts` is the candidate source
+  and makes the platform version a pinned input.
+- `react-a11y` — same, plus JSX attribute semantics.
+- `secure-coding` — "generic JS": `eval`, `Function`, regex, serialization.
+  Enumerable from the language, but the surface is a judgement, not a module.
+- `lambda-security` — AWS SDK clients, which are not installed here.
 
 Calibration also caught a defect in the new instrument, which is the reason to
 distrust it until curated. A global "capitalised means constructor" rule is
