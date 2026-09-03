@@ -1,0 +1,102 @@
+{
+  "generatedAt": "2026-05-09T23:38:10.532Z",
+  "policy": {
+    "errorPrecisionFloor": 0.95,
+    "warnPrecisionFloor": 0.7,
+    "note": "Hard precision needs ground-truth labels on Wild; this audit uses indirect indicators (Edge ratio, fixture coverage, volume)."
+  },
+  "totals": {
+    "rulesAnalyzed": 149,
+    "edgeErrorRisk": 6,
+    "volumeErrorRisk": 2,
+    "unmeasuredErrorLevel": 8,
+    "promotionEligible": 0
+  },
+  "findings": {
+    "edgeErrorRisk": [
+      {
+        "rule": "secure-coding/no-graphql-injection",
+        "totalHits": 56,
+        "edgeHits": 34,
+        "edgeRatio": 0.61
+      },
+      {
+        "rule": "secure-coding/no-unlimited-resource-allocation",
+        "totalHits": 474,
+        "edgeHits": 430,
+        "edgeRatio": 0.91
+      },
+      {
+        "rule": "node-security/no-buffer-overread",
+        "totalHits": 136,
+        "edgeHits": 129,
+        "edgeRatio": 0.95
+      },
+      {
+        "rule": "secure-coding/no-unsafe-deserialization",
+        "totalHits": 148,
+        "edgeHits": 112,
+        "edgeRatio": 0.76
+      },
+      {
+        "rule": "secure-coding/no-unchecked-loop-condition",
+        "totalHits": 239,
+        "edgeHits": 183,
+        "edgeRatio": 0.77
+      },
+      {
+        "rule": "secure-coding/no-redos-vulnerable-regex",
+        "totalHits": 46,
+        "edgeHits": 42,
+        "edgeRatio": 0.91
+      }
+    ],
+    "volumeErrorRisk": [
+      {
+        "rule": "node-security/no-buffer-overread",
+        "totalHits": 136,
+        "repos": 18
+      },
+      {
+        "rule": "secure-coding/no-unchecked-loop-condition",
+        "totalHits": 239,
+        "repos": 19
+      }
+    ],
+    "promotionEligible": [],
+    "unmeasuredErrorLevel": [
+      {
+        "rule": "node-security/lock-file",
+        "totalHits": 48
+      },
+      {
+        "rule": "secure-coding/no-graphql-injection",
+        "totalHits": 56
+      },
+      {
+        "rule": "node-security/no-buffer-overread",
+        "totalHits": 136
+      },
+      {
+        "rule": "secure-coding/no-unchecked-loop-condition",
+        "totalHits": 239
+      },
+      {
+        "rule": "browser-security/no-clickjacking",
+        "totalHits": 3
+      },
+      {
+        "rule": "browser-security/no-credentials-in-query-params",
+        "totalHits": 4
+      },
+      {
+        "rule": "browser-security/no-http-urls",
+        "totalHits": 5
+      },
+      {
+        "rule": "browser-security/detect-mixed-content",
+        "totalHits": 5
+      }
+    ]
+  }
+}

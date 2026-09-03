@@ -1,0 +1,95 @@
+/**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
+ * ESLint Rule: no-operator-injection
+ * Detects potential operator injection attacks ($ne, $gt, $lt, etc.)
+ * CWE-943: NoSQL Injection
+ *
+ * @see https://cwe.mitre.org/data/definitions/943.html
+ */
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
+import { fileUsesMongo } from '../../utils/mongo-evidence';
+
+type MessageIds = 'operatorInjection';
+export interface Options { allowInTests?: boolean; }
+type RuleOptions = [Options?];
+
+const DANGEROUS_OPERATORS = new Set(['$ne', '$gt', '$gte', '$lt', '$lte', '$nin', '$not', '$nor', '$exists']);
+
+export const noOperatorInjection = createRule<RuleOptions, MessageIds>({
+  name: 'no-operator-injection',
+  meta: {
+    type: 'problem',
+    docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/no-operator-injection.md',
+      description: 'Prevent MongoDB operator injection attacks via user input',
+      cwe: 'CWE-943',
+      cvss: 9.1,
+    },
+    messages: {
+      operatorInjection: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'MongoDB Operator Injection',
+        cwe: 'CWE-943',
+        owasp: 'A03:2021',
+        cvss: 9.1,
+        description: 'User input may contain MongoDB operators like { $ne: null } to bypass filters',
+        severity: 'CRITICAL',
+        fix: 'Use { field: { $eq: value } } pattern to prevent operator injection',
+        documentationLink: 'https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/05.6-Testing_for_NoSQL_Injection',
+      }),
+    },
+    schema: [{ type: 'object', properties: { allowInTests: { type: 'boolean', default: true } }, additionalProperties: false }],
+  },
+  defaultOptions: [{ allowInTests: true }],
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    // Every rule here is MongoDB-specific, and none of them could ask the
+    // file-level question: over the corpus, 47% of this plugin's findings were
+    // in files with no Mongo in them. `receiver.ts` discriminates by receiver
+    // NAME, which matches `userModel.findOne()` in a TypeORM repository just as
+    // well as in a Mongoose one. Registering no visitors is both the gate and
+    // the cheap path.
+    if (!fileUsesMongo(context.sourceCode.ast)) return {};
+
+    const [options = {}] = context.options;
+    const { allowInTests = true } = options as Options;
+    const filename = context.filename;
+    const inTestFile = isTestFilePath(filename);
+
+    if (allowInTests && inTestFile) {
+      return {};
+    }
+
+    return {
+      Property(node: TSESTree.Property) {
+        const keyName = node.key.type === AST_NODE_TYPES.Identifier
+          ? node.key.name
+          : node.key.type === AST_NODE_TYPES.Literal
+            ? String(node.key.value)
+            : null;
+
+        if (!keyName) return;
+
+        if (DANGEROUS_OPERATORS.has(keyName)) {
+          const sourceCode = context.sourceCode;
+          const valueText = sourceCode.getText(node.value);
+          const userInputPatterns = ['req.body', 'req.query', 'req.params', 'request.body', 'ctx.request'];
+
+          if (userInputPatterns.some(p => valueText.includes(p))) {
+            context.report({
+              node,
+              messageId: 'operatorInjection',
+            });
+          }
+        }
+      },
+    };
+  },
+});
+
+export default noOperatorInjection;

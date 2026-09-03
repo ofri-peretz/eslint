@@ -1,0 +1,30 @@
+{
+  "rule": "secure-coding/no-improper-type-validation",
+  "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
+  "fixtures": 22,
+  "vulnerable": 12,
+  "results": [
+    {
+      "name": "Interlace secure-coding/no-improper-type-validation",
+      "tp": 6,
+      "fp": 0,
+      "fn": 6,
+      "tn": 10,
+      "precision": 1,
+      "recall": 0.5,
+      "specificity": 1,
+      "youdenJ": 0.5,
+      "f1": 0.6666666666666666,
+      "crashes": [],
+      "missed": [
+        "vulnerable/01-nosql-operator-object.js",
+        "vulnerable/02-array-coercion.js",
+        "vulnerable/04-ts-cast-is-not-a-check.ts",
+        "vulnerable/07-param-root-untyped.js",
+        "vulnerable/08-fake-mitigation-truthiness.js",
+        "vulnerable/11-local-fake-validator.js"
+      ],
+      "falsePositives": []
+    }
+  ]
+}

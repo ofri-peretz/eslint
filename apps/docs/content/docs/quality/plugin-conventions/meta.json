@@ -1,0 +1,10 @@
+{
+    "title": "Plugin: conventions",
+    "icon": "Code",
+    "defaultOpen": false,
+    "pages": [
+        "index",
+        "changelog",
+        "rules"
+    ]
+}

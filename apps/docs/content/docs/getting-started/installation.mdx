@@ -1,0 +1,188 @@
+---
+title: Installation
+description: Install ESLint Interlace plugins in your project
+icon: Download
+---
+
+import { CheckCircle } from 'lucide-react';
+
+## Prerequisites
+
+<Cards>
+  <Card title="Node.js 18+" icon={<CheckCircle />}>
+    Required for ESLint 9.x compatibility
+  </Card>
+  <Card title="ESLint 9.x" icon={<CheckCircle />}>
+    Flat config format is required
+  </Card>
+</Cards>
+
+<Callout type="warning" title="ESLint Version">
+  ESLint Interlace requires **ESLint 9.x** with flat config. See our [Flat
+  Config Migration](/docs/getting-started/flat-config) guide if you're
+  upgrading.
+</Callout>
+
+---
+
+## Quick Start
+
+Install ESLint and your first security plugin. Choose your package manager:
+
+### npm
+
+```bash tab="secure-coding"
+npm install eslint eslint-plugin-secure-coding --save-dev
+```
+
+```bash tab="browser-security"
+npm install eslint eslint-plugin-browser-security --save-dev
+```
+
+```bash tab="jwt"
+npm install eslint eslint-plugin-jwt-security --save-dev
+```
+
+```bash tab="node-security"
+npm install eslint eslint-plugin-node-security --save-dev
+```
+
+### pnpm
+
+```bash tab="secure-coding"
+pnpm add eslint eslint-plugin-secure-coding -D
+```
+
+```bash tab="browser-security"
+pnpm add eslint eslint-plugin-browser-security -D
+```
+
+```bash tab="jwt"
+pnpm add eslint eslint-plugin-jwt-security -D
+```
+
+```bash tab="node-security"
+pnpm add eslint eslint-plugin-node-security -D
+```
+
+### yarn
+
+```bash tab="secure-coding"
+yarn add eslint eslint-plugin-secure-coding --dev
+```
+
+```bash tab="browser-security"
+yarn add eslint eslint-plugin-browser-security --dev
+```
+
+```bash tab="jwt"
+yarn add eslint eslint-plugin-jwt-security --dev
+```
+
+```bash tab="node-security"
+yarn add eslint eslint-plugin-node-security --dev
+```
+
+Then create `eslint.config.js`:
+
+```js title="eslint.config.js"
+import secureCoding from 'eslint-plugin-secure-coding';
+
+export default [secureCoding.configs.recommended];
+```
+
+---
+
+## Security Plugins
+
+Choose the plugins that match your stack:
+
+<Cards>
+  <Card title="Browser Security" href="/docs/security/plugin-browser-security">
+    XSS prevention, DOM security, client-side vulnerabilities (50+ rules)
+  </Card>
+  <Card title="Secure Coding" href="/docs/security/plugin-secure-coding">
+    Injection prevention, input validation (26 rules)
+  </Card>
+  <Card title="JWT" href="/docs/security/plugin-jwt-security">
+    Token security, algorithm confusion (13 rules)
+  </Card>
+  <Card title="Node Security" href="/docs/security/plugin-node-security">
+    Server-side patterns, cryptography (31 rules)
+  </Card>
+</Cards>
+
+### Database Security
+
+<Cards>
+  <Card title="MongoDB Security" href="/docs/security/plugin-mongodb-security">
+    NoSQL injection prevention (19 rules)
+  </Card>
+  <Card title="PostgreSQL" href="/docs/security/plugin-postgresql-security">
+    SQL injection prevention (15 rules)
+  </Card>
+</Cards>
+
+### Framework Security
+
+<Cards>
+  <Card title="Express" href="/docs/security/plugin-express-security">
+    Express.js hardening (14 rules)
+  </Card>
+  <Card title="NestJS" href="/docs/security/plugin-nestjs-security">
+    NestJS security patterns (10 rules)
+  </Card>
+  <Card title="AWS Lambda" href="/docs/security/plugin-lambda-security">
+    Lambda & Middy security (16 rules)
+  </Card>
+  <Card title="Vercel AI" href="/docs/security/plugin-vercel-ai-security">
+    AI SDK security (22 rules)
+  </Card>
+</Cards>
+
+---
+
+## Quality Plugins
+
+<Cards>
+  <Card title="Import Next" href="/docs/quality/plugin-import-next">
+    Fast import organization, 8x faster cycle detection (61 rules)
+  </Card>
+  <Card title="Conventions" href="/docs/quality/plugin-conventions">
+    Team coding standards (9 rules)
+  </Card>
+  <Card title="Maintainability" href="/docs/quality/plugin-maintainability">
+    Code readability (8 rules)
+  </Card>
+  <Card title="Reliability" href="/docs/quality/plugin-reliability">
+    Error handling patterns (8 rules)
+  </Card>
+  <Card title="Modularity" href="/docs/quality/plugin-modularity">
+    Clean architecture (7 rules)
+  </Card>
+</Cards>
+
+---
+
+## Verify Installation
+
+```bash
+npx eslint --version
+npx eslint .
+```
+
+---
+
+## Next Steps
+
+<Cards>
+  <Card title="Configuration" href="/docs/getting-started/configuration">
+    Configure plugins and customize rules
+  </Card>
+  <Card
+    title="Editor Integration"
+    href="/docs/getting-started/editor-integration"
+  >
+    Set up VS Code, Cursor AI, and other editors
+  </Card>
+</Cards>

@@ -1,0 +1,84 @@
+---
+title: no-overly-permissive-iam-policy
+description: Security rule for lambda-security. This rule is part of eslint-plugin-lambda-security and provides LLM-optimized error messages.
+tags: ['security', 'aws', 'serverless']
+category: security
+severity: medium
+autofix: false
+---
+
+> **Keywords:** lambda-security, security, ESLint rule, LLM-optimized
+
+
+<!-- @rule-summary -->
+Security rule for lambda-security. This rule is part of eslint-plugin-lambda-security and provides LLM-optimized error messages.
+<!-- @/rule-summary -->
+
+This rule is part of [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security).
+
+## Quick Summary
+
+| Aspect         | Details                                 |
+| -------------- | --------------------------------------- |
+| **Severity**   | Warning (security)                      |
+| **Auto-Fix**   | ❌ No auto-fix                          |
+| **Category**   | Security                                |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
+
+## Value & investment case
+
+> Why this rule pays for itself. Framework: [`cicd-impact/philosophy.md`](../../../../cicd-impact/philosophy.md).
+
+| Dimension | Value |
+| :--- | :--- |
+| **CWE** | [CWE-732](https://cwe.mitre.org/data/definitions/732.html) — Incorrect Permission Assignment for Critical Resource (over-permissioned IAM policies) |
+| **Feedback-loop tier** | Editor / pre-commit (sub-second) — cheapest layer per the [feedback-loop hierarchy](../../../../cicd-impact/philosophy.md#the-feedback-loop-hierarchy--why-a-high-end-static-analyzer-is-the-highest-leverage-investment) |
+| **Defensive-layer leverage** | ~10× cheaper than unit-test · ~1,000× cheaper than production rollback · 10,000+× cheaper than customer disclosure ([cost-ratio anchors](../../../../cicd-impact/philosophy.md#deliverability-axis--quality-risk-and-ma-diligence)) |
+| **Niche relevance** | **Critical:** infra/devtools, fintech (cloud-resource isolation), cybersecurity, healthtech (HIPAA cloud controls) · **High:** B2B SaaS · **Medium:** B2C |
+| **Investor-frame impact** | Wildcard or over-broad IAM policies (`Action: "*"`, `Resource: "*"`) → privilege escalation if any single function compromised → blast radius extends across the entire AWS account. Lint-time enforcement of least-privilege is **AWS Well-Architected Framework Pillar 1 (Security)** evidence and a SOC2/HIPAA cloud-control finding-prevention. |
+
+**Read also:** [`philosophy.md` §investor-frame](../../../../cicd-impact/philosophy.md#the-investor-frame--engineering-efficiency-as-a-portfolio-metric) · [`niche-presets.json`](../../../../cicd-impact/data/niche-presets.json) · [`analyzer-evaluation-framework.md`](../../../../cicd-impact/analyzer-evaluation-framework.md)
+
+## Rule Details
+
+This rule helps enforce secure coding practices for lambda-security applications.
+
+## Examples
+
+### ❌ Incorrect
+
+```javascript
+// Wildcard Resource grants access to every resource in the account
+const policy = {
+  Effect: 'Allow',
+  Action: 's3:GetObject',
+  Resource: '*',
+};
+```
+
+### ✅ Correct
+
+```javascript
+// Scope Resource to the specific bucket and key prefix required
+const policy = {
+  Effect: 'Allow',
+  Action: 's3:GetObject',
+  Resource: 'arn:aws:s3:::my-bucket/uploads/*',
+};
+```
+
+## Configuration
+
+```javascript
+{
+  rules: {
+    'lambda-security/no-overly-permissive-iam-policy': 'warn'
+  }
+}
+```
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |

@@ -1,0 +1,63 @@
+{
+  "_comment": "Template for report-data.json. Copy to data/report-data.json (gitignored) and replace placeholders with values from data/metrics.json + your org's real wage table.",
+
+  "org_name": "<your-org>",
+  "currency_label": "USD",
+
+  "trend": {
+    "_comment": "Run cicd-impact/scripts/01-fetch-actions-data.sh with --window 90/30/14/7 four times, or extract from data/metrics.json. n_all = total successful runs in window; mean_all = mean wall-clock min across all events; n_pr / mean_pr = same restricted to PR-event runs (the 'developer felt' number).",
+    "windows": [
+      {"label": "Last 90 days", "n_all": 0, "mean_all": 0.0, "n_pr": 0, "mean_pr": 0.0, "p90_pr": 0.0, "direction": "baseline"},
+      {"label": "Last 30 days", "n_all": 0, "mean_all": 0.0, "n_pr": 0, "mean_pr": 0.0, "p90_pr": 0.0, "direction": "—"},
+      {"label": "Last 14 days", "n_all": 0, "mean_all": 0.0, "n_pr": 0, "mean_pr": 0.0, "p90_pr": 0.0, "direction": "—"},
+      {"label": "Last 7 days",  "n_all": 0, "mean_all": 0.0, "n_pr": 0, "mean_pr": 0.0, "p90_pr": 0.0, "direction": "—"}
+    ]
+  },
+
+  "inputs_seed": {
+    "_comment": "Initial values for the Inputs sheet. Wage values are the only ones an executive must define; the rest are measured.",
+    "D_active_devs": 0,
+    "R_runs_per_dev_day": 0,
+    "days_per_year": 250,
+    "W_low": 1.50,
+    "W_protective": 2.00,
+    "W_aggressive": 3.00,
+    "T_dur_min": 0,
+    "T_queue_min": 0,
+    "F_failure_rate": 0.20,
+    "K_blast_radius": 1.0,
+    "S_short": 0,
+    "S_medium": 5,
+    "S_long": 23,
+    "S_thresh_short": 2,
+    "S_thresh_long": 10,
+    "loading_multiplier": 1.40,
+    "working_min_per_year": 120000
+  },
+
+  "active_devs_options": {
+    "_comment": "Three measurements for D — the active-developer count. Pick which one matches the audience.",
+    "core":        {"value": 0, "label": "CORE TEAM",   "rule": "developers with >5 commits in the last 90 days"},
+    "recommended": {"value": 0, "label": "RECOMMENDED", "rule": "distinct authors with at least one commit in the last 90 days"},
+    "upper":       {"value": 0, "label": "UPPER BOUND", "rule": "distinct GitHub actors who triggered any CI run (includes one-off PR pushers, rerun-clickers, bot automation)"}
+  },
+
+  "regional_comp": [
+    {"region": "US — major hub",         "engineers": 0, "currency": "USD", "annual_base_usd": 220000, "note": "Levels.fyi 2024, senior IC."},
+    {"region": "US — mid-tier city",     "engineers": 0, "currency": "USD", "annual_base_usd": 170000, "note": "BLS OEWS 2024, P75."},
+    {"region": "Israel — Tel Aviv",      "engineers": 0, "currency": "ILS", "annual_base_usd": 165000, "note": "Senior Tel Aviv 2024."},
+    {"region": "Israel — outside TLV",   "engineers": 0, "currency": "ILS", "annual_base_usd": 135000, "note": "Lower-cost Israeli tech corridor."},
+    {"region": "EU — UK / Germany",      "engineers": 0, "currency": "EUR", "annual_base_usd": 130000, "note": "London/Berlin senior 2024."},
+    {"region": "EU — Spain / Poland",    "engineers": 0, "currency": "EUR", "annual_base_usd":  80000, "note": "Lower-cost EU."}
+  ],
+
+  "ref_salaries": [
+    {"salary":  70000, "comparable": "Junior US / non-US contractor"},
+    {"salary": 100000, "comparable": "Mid-level Spain/Poland senior"},
+    {"salary": 130000, "comparable": "London/Berlin senior"},
+    {"salary": 165000, "comparable": "Tel Aviv senior / mid-tier US"},
+    {"salary": 200000, "comparable": "US-only senior P50"},
+    {"salary": 240000, "comparable": "US-only senior P75"},
+    {"salary": 320000, "comparable": "FAANG-band senior / major-hub principal"}
+  ]
+}

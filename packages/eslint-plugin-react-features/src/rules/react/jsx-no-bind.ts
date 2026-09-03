@@ -1,0 +1,76 @@
+/**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
+ * ESLint Rule: jsx-no-bind
+ * Prevent .bind() in JSX (performance issue)
+ */
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+
+type MessageIds = 'jsxNoBind';
+
+export const jsxNoBind = createRule<[], MessageIds>({
+  name: 'jsx-no-bind',
+  meta: {
+    type: 'problem',
+    docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/jsx-no-bind.md',
+      description: 'Prevent .bind() in JSX',
+    },
+    schema: [],
+    messages: {
+      jsxNoBind: formatLLMMessage({
+        icon: MessageIcons.PERFORMANCE,
+        issueName: 'Bind in JSX',
+        description: 'Using .bind() in JSX creates new function on every render',
+        severity: 'HIGH',
+        fix: 'Use arrow function or bind in constructor/class field',
+        documentationLink: 'https://react.dev/learn/render-and-commit#should-you-add-eslint-rules',
+      }),
+    },
+  },
+  defaultOptions: [],
+  create(context: TSESLint.RuleContext<MessageIds, []>) {
+    return {
+      JSXAttribute(node: TSESTree.JSXAttribute) {
+        if (node.value && node.value.type === 'JSXExpressionContainer') {
+          const expression = node.value.expression;
+
+          // Skip empty expressions like {}
+          if (expression.type === 'JSXEmptyExpression') {
+            return;
+          }
+
+          // Check for .bind() calls
+          if (isBindCall(expression)) {
+            context.report({
+              node: expression,
+              messageId: 'jsxNoBind',
+            });
+          }
+        }
+      },
+    };
+  },
+});
+
+/**
+ * Check if expression is a .bind() call
+ */
+function isBindCall(node: TSESTree.Expression): boolean {
+  if (node.type === 'CallExpression') {
+    if (
+      node.callee.type === 'MemberExpression' &&
+      propertyName(node.callee) === 'bind'
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}

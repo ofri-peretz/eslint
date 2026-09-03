@@ -1,0 +1,84 @@
+{
+  "rule": "node-security/detect-non-literal-fs-filename",
+  "cases": [
+    {
+      "id": "fsPathTraversal-43e216dfbc76",
+      "signature": "43e216dfbc76",
+      "verdict": "undecided",
+      "messageId": "fsPathTraversal",
+      "shape": "Call(Mem(Id.readFileSync);Lit:string)",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "Unitech/pm2",
+          "file": "lib/tools/passwd.js",
+          "line": 5,
+          "source": "return fs.readFileSync('/etc/passwd')"
+        }
+      ],
+      "why": "CONTRACT CONFLICT, not a defect — and my earlier `exempt` here was a hasty call that contradicted the rule's own suite.\n\nThe rule deliberately reports a hardcoded path that ARRIVES somewhere sensitive, absolute or relative: `literal-paths.test.ts` asserts `fs.readFileSync('/etc/shadow')` must report, written when this branch was designed.\n\nAgainst that: CWE-22 is an attacker STEERING a path, and pm2/lib/tools/passwd.js:5 is a file whose entire job is parsing /etc/passwd. Nothing is invoker-controlled. Under a path-traversal message at CRITICAL, it reads as a false alarm — and the rule is named detect-non-literal-fs-filename, so a bare literal is arguably out of scope by name.\n\nEvidence for changing it is n=1 across 3.10M lines. That is not enough to overturn a deliberate decision, so the rule is unchanged and the disagreement is recorded instead. Deciding it means choosing what the literal branch is FOR: traversal only, or sensitive destinations generally — and if the latter, whether that belongs under CWE-497 with its own message rather than here.",
+      "limit": null
+    },
+    {
+      "id": "fsPathTraversal-c94e7c4b7e6b",
+      "signature": "c94e7c4b7e6b",
+      "verdict": "exempt",
+      "messageId": "fsPathTraversal",
+      "shape": "Call(Mem(Id.writeFileSync);Id,Id)",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "strapi/strapi",
+          "file": "examples/complex/scripts/db-mariadb.ts",
+          "line": 115,
+          "source": "fs.writeFileSync(snapshotPath, dump);"
+        }
+      ],
+      "why": "strapi examples/complex/scripts/db-mariadb.ts:115 — a developer CLI script writing a snapshot to a path derived from its own argument, which the same file validates through assertSafeSnapshotName(). The rule cannot see that validator: summarising a called function is outside single-file analysis (L1). Adjudicated FP; the rule does not yet agree."
+    },
+    {
+      "id": "fsPathTraversal-d422b1089f18",
+      "signature": "d422b1089f18",
+      "verdict": "exempt",
+      "messageId": "fsPathTraversal",
+      "shape": "Call(Mem(Id.readFileSync);Id)",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "strapi/strapi",
+          "file": "examples/complex/scripts/db-mariadb.ts",
+          "line": 157,
+          "source": "const sql = fs.readFileSync(restorePath);"
+        }
+      ],
+      "why": "Same script, the restore direction (db-mariadb.ts:157). Same argument, same limit."
+    },
+    {
+      "id": "fsPathTraversal-2026f6b4c6fc",
+      "signature": "2026f6b4c6fc",
+      "verdict": "exempt",
+      "messageId": "fsPathTraversal",
+      "shape": "Call(Mem(Id.copyFileSync);Id,Id)",
+      "context": "",
+      "firstSeen": "2026-08-18",
+      "examples": [
+        {
+          "repo": "strapi/strapi",
+          "file": "examples/complex/scripts/db-sqlite.ts",
+          "line": 78,
+          "source": "fs.copyFileSync(DATABASE_FILENAME, target);"
+        },
+        {
+          "repo": "strapi/strapi",
+          "file": "examples/complex/scripts/db-sqlite.ts",
+          "line": 108,
+          "source": "fs.copyFileSync(source, DATABASE_FILENAME);"
+        }
+      ],
+      "why": "strapi examples/complex/scripts/db-sqlite.ts:78 and :108 — both operands are operator-supplied: DATABASE_FILENAME resolves to process.env.SQLITE_DATABASE_FILENAME || process.env.DATABASE_FILENAME || a default, and the other side is snapshotPath(name) with the name validated in-file. The rule already holds `process` in WHOLE_VALUE_TRUSTED_ROOTS, so reporting here is inconsistent with its own doctrine and with the position taken for no-unlimited-resource-allocation on 2026-08-18."
+    }
+  ]
+}

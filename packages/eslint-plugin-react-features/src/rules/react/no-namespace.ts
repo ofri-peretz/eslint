@@ -1,0 +1,48 @@
+/**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
+ * ESLint Rule: no-namespace
+ * Prevent namespace imports
+ */
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { createRule } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+
+type MessageIds = 'noNamespace';
+
+export const noNamespace = createRule<[], MessageIds>({
+  name: 'no-namespace',
+  meta: {
+    type: 'problem',
+    docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-namespace.md',
+      description: 'Prevent namespace imports',
+    },
+    messages: {
+      noNamespace: formatLLMMessage({
+        icon: MessageIcons.WARNING,
+        issueName: 'Namespace Import',
+        description: 'Namespace import detected',
+        severity: 'LOW',
+        fix: 'Use named imports instead: import { Component } from "react"',
+        documentationLink: 'https://react.dev/learn/importing-and-exporting-components',
+      }),
+    },
+    schema: [],
+  },
+  defaultOptions: [],
+  create(context: TSESLint.RuleContext<MessageIds, []>) {
+    return {
+      ImportNamespaceSpecifier(node: TSESTree.ImportNamespaceSpecifier) {
+        context.report({
+          node,
+          messageId: 'noNamespace',
+        });
+      },
+    };
+  },
+});

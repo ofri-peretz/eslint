@@ -1,0 +1,128 @@
+/**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
+ * ESLint Rule: state-in-constructor
+ * Enforce state initialization in constructor
+ */
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+
+type MessageIds = 'stateInConstructor';
+
+export const stateInConstructor = createRule<[], MessageIds>({
+  name: 'state-in-constructor',
+  meta: {
+    type: 'problem',
+    docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/state-in-constructor.md',
+      description: 'Enforce state initialization in constructor',
+    },
+    schema: [],
+    messages: {
+      stateInConstructor: formatLLMMessage({
+        icon: MessageIcons.WARNING,
+        issueName: 'State Not in Constructor',
+        description: 'State should be initialized in constructor',
+        severity: 'MEDIUM',
+        fix: 'Move state initialization to constructor method',
+        documentationLink: 'https://react.dev/reference/react/Component#constructor',
+      }),
+    },
+  },
+  defaultOptions: [],
+  create(context: TSESLint.RuleContext<MessageIds, []>) {
+    return {
+      ClassDeclaration(node: TSESTree.ClassDeclaration) {
+        if (isReactComponent(node)) {
+          checkStateInitialization(node);
+        }
+      },
+    };
+
+    // oxlint-disable-next-line consistent-function-scoping
+    function isReactComponent(node: TSESTree.ClassDeclaration): boolean {
+      if (!node.superClass) return false;
+
+      if (node.superClass.type === 'Identifier') {
+        return node.superClass.name === 'Component' || node.superClass.name === 'PureComponent';
+      }
+
+      if (node.superClass.type === 'MemberExpression') {
+        return (
+          node.superClass.object.type === 'Identifier' &&
+          node.superClass.object.name === 'React' &&
+          (propertyName(node.superClass) === 'Component' || propertyName(node.superClass) === 'PureComponent')
+        );
+      }
+
+      return false;
+    }
+
+    function checkStateInitialization(node: TSESTree.ClassDeclaration) {
+      let hasConstructorWithState = false;
+      let hasStateProperty = false;
+
+      for (const member of node.body.body) {
+        // Check for state property (PropertyDefinition is used by TypeScript parser)
+        if (
+          member.type === 'PropertyDefinition' &&
+          member.key.type === 'Identifier' &&
+          member.key.name === 'state'
+        ) {
+          hasStateProperty = true;
+        }
+
+        // Check for constructor with state initialization
+        if (
+          member.type === 'MethodDefinition' &&
+          member.key.type === 'Identifier' &&
+          member.key.name === 'constructor'
+        ) {
+          hasConstructorWithState = hasStateInitializationInConstructor(member);
+        }
+      }
+
+      // Report if state is initialized as property instead of in constructor
+      if (hasStateProperty && !hasConstructorWithState) {
+        // Find the state property to report on
+        for (const member of node.body.body) {
+          if (
+            member.type === 'PropertyDefinition' &&
+            member.key.type === 'Identifier' &&
+            member.key.name === 'state'
+          ) {
+            context.report({
+              node: member.key,
+              messageId: 'stateInConstructor',
+            });
+            break;
+          }
+        }
+      }
+    }
+
+    // oxlint-disable-next-line consistent-function-scoping
+    function hasStateInitializationInConstructor(constructor: TSESTree.MethodDefinition): boolean {
+      if (constructor.value.type === 'FunctionExpression') {
+        const body = constructor.value.body;
+        for (const statement of body.body) {
+          if (
+            statement.type === 'ExpressionStatement' &&
+            statement.expression.type === 'AssignmentExpression' &&
+            statement.expression.left.type === 'MemberExpression' &&
+            statement.expression.left.object.type === 'ThisExpression' &&
+            propertyName(statement.expression.left) === 'state'
+          ) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+  },
+});

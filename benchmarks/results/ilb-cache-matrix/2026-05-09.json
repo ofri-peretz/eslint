@@ -1,0 +1,39 @@
+{
+  "bench": "ILB-Cache-Matrix",
+  "benchVersion": "0.1",
+  "timestamp": "2026-05-09T22:30:31.815Z",
+  "methodologyCommit": "19b89fc5b924386f2d1f7a5a8dd210c90664841f",
+  "toolchain": {
+    "node": "24.12.0",
+    "eslint": "9.39.2",
+    "typescript": "5.9.3",
+    "tsCompiler": "tsc-classic",
+    "typescriptEslint": "8.54.0",
+    "platform": "darwin-arm64"
+  },
+  "cost": {},
+  "effectiveness": {
+    "ruleSurvivalRate": 1
+  },
+  "latency": {
+    "meanLatencyMs": 720.5666665,
+    "coldMedianMs": 720.5666665,
+    "warmMedianMs": 661.3088125,
+    "msPerFile": 120.09444441666666
+  },
+  "cold": {
+    "medianMs": 720.5666665,
+    "msPerFile": 120.09444441666666,
+    "runs": 2
+  },
+  "warm": {
+    "medianMs": 661.3088125,
+    "msPerFile": 110.21813541666667,
+    "runs": 2
+  },
+  "cacheSpeedup": 1.089606932313487,
+  "cacheCorrect": true,
+  "drift": null,
+  "fileCount": 6,
+  "corpus": "benchmarks/corpus/CWE-089"
+}

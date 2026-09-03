@@ -1,0 +1,23 @@
+{
+  "rule": "secure-coding/no-directive-injection",
+  "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
+  "fixtures": 23,
+  "vulnerable": 11,
+  "results": [
+    {
+      "name": "Interlace secure-coding/no-directive-injection",
+      "tp": 11,
+      "fp": 0,
+      "fn": 0,
+      "tn": 12,
+      "precision": 1,
+      "recall": 1,
+      "specificity": 1,
+      "youdenJ": 1,
+      "f1": 1,
+      "crashes": [],
+      "missed": [],
+      "falsePositives": []
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "repo": "shadcn-ui",
+  "meta": {
+    "stars": 100000,
+    "commit": "main",
+    "category": "UI Library",
+    "plugins": [
+      "browser-security",
+      "secure-coding"
+    ],
+    "fpEdge": false,
+    "srcGlob": "packages/**/*.{ts,tsx}"
+  },
+  "fileCount": 117,
+  "loc": 22551,
+  "timing": {
+    "runsMs": [
+      1359
+    ],
+    "medianMs": 1359,
+    "meanMs": 1359,
+    "stddevMs": 0,
+    "cv": 0,
+    "msPerFile": 11.62
+  },
+  "peakRssMb": 223,
+  "findings": {
+    "total": 2,
+    "errors": 2,
+    "warnings": 0,
+    "filesWithFindings": 1,
+    "densityPerKloc": 0.09,
+    "externalDirectives": 0,
+    "parseErrors": 98
+  }
+}

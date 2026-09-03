@@ -1,0 +1,247 @@
+{
+  "secure-coding/no-hardcoded-credentials": {
+    "hits": 0,
+    "avgTimeMs": 0.81,
+    "samples": []
+  },
+  "secure-coding/no-graphql-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.55,
+    "samples": []
+  },
+  "secure-coding/no-xpath-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.41,
+    "samples": []
+  },
+  "browser-security/no-clickjacking": {
+    "hits": 0,
+    "avgTimeMs": 0.38,
+    "samples": []
+  },
+  "secure-coding/no-insecure-comparison": {
+    "hits": 0,
+    "avgTimeMs": 0.33,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-deserialization": {
+    "hits": 0,
+    "avgTimeMs": 0.31,
+    "samples": []
+  },
+  "browser-security/no-unsafe-inline-csp": {
+    "hits": 0,
+    "avgTimeMs": 0.28,
+    "samples": []
+  },
+  "secure-coding/no-unlimited-resource-allocation": {
+    "hits": 0,
+    "avgTimeMs": 0.27,
+    "samples": []
+  },
+  "secure-coding/detect-object-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.26,
+    "samples": []
+  },
+  "secure-coding/detect-non-literal-regexp": {
+    "hits": 0,
+    "avgTimeMs": 0.24,
+    "samples": []
+  },
+  "secure-coding/no-unchecked-loop-condition": {
+    "hits": 0,
+    "avgTimeMs": 0.24,
+    "samples": []
+  },
+  "secure-coding/no-improper-sanitization": {
+    "hits": 0,
+    "avgTimeMs": 0.24,
+    "samples": []
+  },
+  "secure-coding/no-ldap-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.23,
+    "samples": []
+  },
+  "secure-coding/no-weak-password-recovery": {
+    "hits": 0,
+    "avgTimeMs": 0.22,
+    "samples": []
+  },
+  "secure-coding/no-xxe-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.19,
+    "samples": []
+  },
+  "browser-security/no-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 0.19,
+    "samples": []
+  },
+  "secure-coding/no-missing-authentication": {
+    "hits": 0,
+    "avgTimeMs": 0.15,
+    "samples": []
+  },
+  "browser-security/no-postmessage-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 0.15,
+    "samples": []
+  },
+  "secure-coding/no-privilege-escalation": {
+    "hits": 0,
+    "avgTimeMs": 0.15,
+    "samples": []
+  },
+  "secure-coding/no-sensitive-data-exposure": {
+    "hits": 0,
+    "avgTimeMs": 0.14,
+    "samples": []
+  },
+  "browser-security/no-websocket-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 0.13,
+    "samples": []
+  },
+  "browser-security/no-filereader-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 0.13,
+    "samples": []
+  },
+  "browser-security/no-websocket-eval": {
+    "hits": 0,
+    "avgTimeMs": 0.13,
+    "samples": []
+  },
+  "browser-security/no-worker-message-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 0.13,
+    "samples": []
+  },
+  "browser-security/no-sensitive-localstorage": {
+    "hits": 0,
+    "avgTimeMs": 0.12,
+    "samples": []
+  },
+  "browser-security/no-http-urls": {
+    "hits": 0,
+    "avgTimeMs": 0.11,
+    "samples": []
+  },
+  "browser-security/no-eval": {
+    "hits": 0,
+    "avgTimeMs": 0.11,
+    "samples": []
+  },
+  "secure-coding/no-redos-vulnerable-regex": {
+    "hits": 0,
+    "avgTimeMs": 0.11,
+    "samples": []
+  },
+  "browser-security/no-insecure-redirects": {
+    "hits": 0,
+    "avgTimeMs": 0.1,
+    "samples": []
+  },
+  "browser-security/no-unsafe-eval-csp": {
+    "hits": 0,
+    "avgTimeMs": 0.1,
+    "samples": []
+  },
+  "browser-security/no-credentials-in-query-params": {
+    "hits": 0,
+    "avgTimeMs": 0.09,
+    "samples": []
+  },
+  "browser-security/no-postmessage-wildcard-origin": {
+    "hits": 0,
+    "avgTimeMs": 0.09,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-regex-construction": {
+    "hits": 0,
+    "avgTimeMs": 0.09,
+    "samples": []
+  },
+  "browser-security/require-blob-url-revocation": {
+    "hits": 0,
+    "avgTimeMs": 0.08,
+    "samples": []
+  },
+  "browser-security/no-jwt-in-storage": {
+    "hits": 0,
+    "avgTimeMs": 0.08,
+    "samples": []
+  },
+  "browser-security/no-sensitive-cookie-js": {
+    "hits": 0,
+    "avgTimeMs": 0.07,
+    "samples": []
+  },
+  "browser-security/no-sensitive-sessionstorage": {
+    "hits": 0,
+    "avgTimeMs": 0.07,
+    "samples": []
+  },
+  "browser-security/require-websocket-wss": {
+    "hits": 0,
+    "avgTimeMs": 0.07,
+    "samples": []
+  },
+  "browser-security/require-postmessage-origin-check": {
+    "hits": 0,
+    "avgTimeMs": 0.07,
+    "samples": []
+  },
+  "browser-security/no-sensitive-indexeddb": {
+    "hits": 0,
+    "avgTimeMs": 0.06,
+    "samples": []
+  },
+  "browser-security/no-cookie-auth-tokens": {
+    "hits": 0,
+    "avgTimeMs": 0.06,
+    "samples": []
+  },
+  "browser-security/no-client-side-auth-logic": {
+    "hits": 0,
+    "avgTimeMs": 0.06,
+    "samples": []
+  },
+  "browser-security/require-cookie-secure-attrs": {
+    "hits": 0,
+    "avgTimeMs": 0.05,
+    "samples": []
+  },
+  "browser-security/no-insecure-websocket": {
+    "hits": 0,
+    "avgTimeMs": 0.05,
+    "samples": []
+  },
+  "browser-security/require-https-only": {
+    "hits": 0,
+    "avgTimeMs": 0.05,
+    "samples": []
+  },
+  "browser-security/no-dynamic-service-worker-url": {
+    "hits": 0,
+    "avgTimeMs": 0.05,
+    "samples": []
+  },
+  "browser-security/no-unvalidated-deeplinks": {
+    "hits": 0,
+    "avgTimeMs": 0.04,
+    "samples": []
+  },
+  "browser-security/detect-mixed-content": {
+    "hits": 0,
+    "avgTimeMs": 0.04,
+    "samples": []
+  },
+  "browser-security/no-allow-arbitrary-loads": {
+    "hits": 0,
+    "avgTimeMs": 0.02,
+    "samples": []
+  }
+}

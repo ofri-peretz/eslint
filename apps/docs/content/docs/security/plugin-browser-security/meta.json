@@ -1,0 +1,10 @@
+{
+    "title": "Plugin: browser-security",
+    "icon": "Globe",
+    "defaultOpen": false,
+    "pages": [
+        "index",
+        "changelog",
+        "rules"
+    ]
+}

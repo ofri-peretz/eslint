@@ -1,0 +1,10 @@
+{
+    "title": "Plugin: mcp-sdk-security",
+    "icon": "Plug",
+    "defaultOpen": false,
+    "pages": [
+        "index",
+        "changelog",
+        "rules"
+    ]
+}

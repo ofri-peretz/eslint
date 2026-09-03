@@ -1,0 +1,46 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nicolo-ribaudo/oxlint-config-schema/main/src/schema.json",
+  "plugins": ["typescript", "unicorn", "import"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn",
+    "perf": "warn"
+  },
+  "jsPlugins": [
+    {
+      "name": "interlace-pg",
+      "specifier": "./tools/oxlint-plugins/interlace-pg.cjs"
+    }
+  ],
+  "rules": {
+    "no-debugger": "error",
+    "no-console": "off",
+    "no-unused-vars": "off",
+    "typescript/no-unused-vars": "off",
+    "eqeqeq": "warn",
+    "no-empty": "warn",
+    "no-constant-binary-expression": "error",
+    "no-self-compare": "error",
+    "no-template-curly-in-string": "warn",
+    "no-unsafe-finally": "error",
+    "no-unsafe-optional-chaining": "error",
+    "no-useless-rename": "warn",
+    "prefer-const": "warn",
+
+    "interlace-pg/no-unsafe-query": "error",
+    "interlace-pg/no-hardcoded-credentials": "error",
+    "interlace-pg/no-insecure-ssl": "warn",
+    "interlace-pg/check-query-params": "warn",
+    "interlace-pg/no-floating-query": "warn",
+    "interlace-pg/no-batch-insert-loop": "warn"
+  },
+  "ignorePatterns": [
+    "node_modules",
+    "dist",
+    "coverage",
+    "*.test.ts",
+    "*.spec.ts",
+    "benchmarks/suites/**",
+    "scripts/**"
+  ]
+}

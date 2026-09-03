@@ -1,0 +1,75 @@
+# no-internal-modules
+
+💼 This rule is enabled in the following configs: `recommended`, `typescript`.
+💡 This rule is automatically fixable by the `--fix` CLI option.
+
+<!-- end auto-generated rule header -->
+
+Forbid importing the submodules of other modules
+
+## Rule Details
+
+This rule aims to prevent issues related to internal-modules.
+
+## Options
+
+```json
+[
+  {
+    "type": "object",
+    "properties": {
+      "maxDepth": {
+        "type": "number",
+        "minimum": 0,
+        "default": 1,
+        "description": "Maximum allowed depth of module imports (0 = only root, 1 = one level deep)"
+      },
+      "allow": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "default": [],
+        "description": "Glob patterns for paths that are allowed regardless of depth"
+      },
+      "forbid": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "default": [],
+        "description": "Glob patterns for paths that are explicitly forbidden"
+      },
+      "ignorePaths": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "default": [],
+        "description": "Glob patterns for paths to ignore completely"
+      },
+      "strategy": {
+        "type": "string",
+        "enum": [
+          "error",
+          "warn",
+          "autofix",
+          "suggest"
+        ],
+        "default": "error",
+        "description": "How to handle violations: error (report), warn (report), autofix (fix automatically), suggest (provide suggestions)"
+      }
+    },
+    "additionalProperties": false
+  }
+]
+```
+
+## Implementation
+
+- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/no-internal-modules.ts)
+- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/no-internal-modules.test.ts)
+
+## OWASP Foundation
+
+- **Category**: A00:2021 - General Security

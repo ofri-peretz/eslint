@@ -1,0 +1,19 @@
+.env
+.DS_Store
+node_modules/
+fixtures/
+# ILB-Arena fixtures are hand-written test corpora consumed by suites/ilb-arena/run.js;
+# they must travel with the repo (CI cannot regenerate them) so they're allow-listed here.
+!/suites/ilb-arena/fixtures/
+!/suites/ilb-arena/fixtures/**
+
+# Case-registry fixtures are the same kind and for a sharper reason: ILB-0136
+# asserts `import-next/no-cycle` reports on a two-module cycle, and a cycle is a
+# property of the module GRAPH — no single source string can express one, so the
+# resolver needs `b.ts` to exist on disk. Ignored, the case verified only on
+# machines that happened to have the directory and REGRESSED on every clean
+# clone. A claim that cannot be checked from a fresh checkout is not a claim.
+!/cases/fixtures/
+!/cases/fixtures/**
+results/*.json
+!results/.gitkeep

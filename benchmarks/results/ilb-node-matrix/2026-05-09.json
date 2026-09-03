@@ -1,0 +1,265 @@
+{
+  "bench": "ILB-Node-Matrix",
+  "benchVersion": "0.1",
+  "timestamp": "2026-05-09T22:12:26.249Z",
+  "methodologyCommit": "19b89fc5b924386f2d1f7a5a8dd210c90664841f",
+  "toolchain": {
+    "node": "24.12.0",
+    "eslint": "9.39.2",
+    "typescript": "5.9.3",
+    "tsCompiler": "tsc-classic",
+    "typescriptEslint": "8.54.0",
+    "platform": "darwin-arm64"
+  },
+  "preregistration": {
+    "methodologyCommit": "19b89fc5b924386f2d1f7a5a8dd210c90664841f",
+    "dirtyPaths": [
+      "M benchmarks/score.mjs",
+      "benchmarks/suites/ilb-arena/README.md",
+      "scripts/ilb-wild.mjs",
+      "benchmarks/corpus/CVE/",
+      "benchmarks/lib/history.mjs",
+      "benchmarks/lib/preregister.mjs",
+      "benchmarks/lib/result-schema.json",
+      "benchmarks/lib/stats.mjs",
+      "benchmarks/lib/toolchain.mjs",
+      "benchmarks/suites/ilb-arena/eslint10-compat/",
+      "benchmarks/suites/ilb-arena/eslint9-compat/",
+      "benchmarks/suites/ilb-determinism/",
+      "benchmarks/suites/ilb-diff/",
+      "benchmarks/suites/ilb-flagship/",
+      "benchmarks/suites/ilb-formatter/",
+      "benchmarks/suites/ilb-node-matrix/",
+      "benchmarks/suites/ilb-tsc-matrix/"
+    ],
+    "capturedAt": "2026-05-09T22:12:19.566Z",
+    "paths": [
+      "benchmarks/corpus",
+      "benchmarks/suites",
+      "benchmarks/lib",
+      "benchmarks/score.mjs",
+      "scripts/ilb-wild.mjs",
+      "scripts/ilb-validate-fixtures.mjs"
+    ]
+  },
+  "cost": {},
+  "effectiveness": {
+    "ruleSurvivalRate": 1
+  },
+  "latency": {
+    "meanLatencyMs": 835.030807375
+  },
+  "supportPolicy": {
+    "active": [
+      "22",
+      "24"
+    ],
+    "maintenance": [
+      "20"
+    ],
+    "legacy": [
+      "18"
+    ]
+  },
+  "perVersion": {
+    "22.22.0": {
+      "supportTier": "active-lts",
+      "runs": 2,
+      "medianMs": 913.376625,
+      "meanMs": 913.376625,
+      "findings": [
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/dynamic-column.js",
+          "ruleId": "pg/no-floating-query",
+          "line": 7,
+          "column": 1
+        },
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/dynamic-column.js",
+          "ruleId": "pg/no-unsafe-query",
+          "line": 7,
+          "column": 10
+        },
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/string-concat.js",
+          "ruleId": "pg/no-floating-query",
+          "line": 8,
+          "column": 1
+        },
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/string-concat.js",
+          "ruleId": "pg/no-unsafe-query",
+          "line": 8,
+          "column": 10
+        },
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/template-literal.js",
+          "ruleId": "pg/no-floating-query",
+          "line": 7,
+          "column": 1
+        },
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/template-literal.js",
+          "ruleId": "pg/no-unsafe-query",
+          "line": 7,
+          "column": 10
+        }
+      ],
+      "findingCount": 6
+    },
+    "24.13.0": {
+      "supportTier": "active-lts",
+      "runs": 2,
+      "medianMs": 796.558771,
+      "meanMs": 796.558771,
+      "findings": [
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/dynamic-column.js",
+          "ruleId": "pg/no-floating-query",
+          "line": 7,
+          "column": 1
+        },
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/dynamic-column.js",
+          "ruleId": "pg/no-unsafe-query",
+          "line": 7,
+          "column": 10
+        },
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/string-concat.js",
+          "ruleId": "pg/no-floating-query",
+          "line": 8,
+          "column": 1
+        },
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/string-concat.js",
+          "ruleId": "pg/no-unsafe-query",
+          "line": 8,
+          "column": 10
+        },
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/template-literal.js",
+          "ruleId": "pg/no-floating-query",
+          "line": 7,
+          "column": 1
+        },
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/template-literal.js",
+          "ruleId": "pg/no-unsafe-query",
+          "line": 7,
+          "column": 10
+        }
+      ],
+      "findingCount": 6
+    },
+    "20.19.5": {
+      "supportTier": "maintenance-lts",
+      "runs": 2,
+      "medianMs": 770.0309375,
+      "meanMs": 770.0309375,
+      "findings": [
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/dynamic-column.js",
+          "ruleId": "pg/no-floating-query",
+          "line": 7,
+          "column": 1
+        },
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/dynamic-column.js",
+          "ruleId": "pg/no-unsafe-query",
+          "line": 7,
+          "column": 10
+        },
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/string-concat.js",
+          "ruleId": "pg/no-floating-query",
+          "line": 8,
+          "column": 1
+        },
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/string-concat.js",
+          "ruleId": "pg/no-unsafe-query",
+          "line": 8,
+          "column": 10
+        },
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/template-literal.js",
+          "ruleId": "pg/no-floating-query",
+          "line": 7,
+          "column": 1
+        },
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/template-literal.js",
+          "ruleId": "pg/no-unsafe-query",
+          "line": 7,
+          "column": 10
+        }
+      ],
+      "findingCount": 6
+    },
+    "18.19.1": {
+      "supportTier": "legacy-eol",
+      "runs": 2,
+      "medianMs": 860.156896,
+      "meanMs": 860.156896,
+      "findings": [
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/dynamic-column.js",
+          "ruleId": "pg/no-floating-query",
+          "line": 7,
+          "column": 1
+        },
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/dynamic-column.js",
+          "ruleId": "pg/no-unsafe-query",
+          "line": 7,
+          "column": 10
+        },
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/string-concat.js",
+          "ruleId": "pg/no-floating-query",
+          "line": 8,
+          "column": 1
+        },
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/string-concat.js",
+          "ruleId": "pg/no-unsafe-query",
+          "line": 8,
+          "column": 10
+        },
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/template-literal.js",
+          "ruleId": "pg/no-floating-query",
+          "line": 7,
+          "column": 1
+        },
+        {
+          "file": "benchmarks/corpus/CWE-089/vulnerable/template-literal.js",
+          "ruleId": "pg/no-unsafe-query",
+          "line": 7,
+          "column": 10
+        }
+      ],
+      "findingCount": 6
+    }
+  },
+  "driftPerVersion": {
+    "24.13.0": {
+      "onlyInA": [],
+      "onlyInB": [],
+      "shared": 6
+    },
+    "20.19.5": {
+      "onlyInA": [],
+      "onlyInB": [],
+      "shared": 6
+    },
+    "18.19.1": {
+      "onlyInA": [],
+      "onlyInB": [],
+      "shared": 6
+    }
+  },
+  "baselineVersion": "22.22.0",
+  "corpus": "benchmarks/corpus/CWE-089"
+}

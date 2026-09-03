@@ -1,0 +1,1644 @@
+{
+  "bench": "ILB-Discover",
+  "benchVersion": "1.0",
+  "timestamp": "2026-05-09T23:57:07.980Z",
+  "methodologyCommit": "19b89fc5b924386f2d1f7a5a8dd210c90664841f",
+  "toolchain": {
+    "node": "24.12.0",
+    "eslint": "9.39.2",
+    "typescript": "5.9.3",
+    "tsCompiler": "tsc-classic",
+    "typescriptEslint": "8.54.0",
+    "platform": "darwin-arm64"
+  },
+  "cost": {},
+  "effectiveness": {
+    "recall1": 0.26,
+    "recall5": 0.37
+  },
+  "latency": {},
+  "retriever": {
+    "type": "BM25",
+    "k1": 1.5,
+    "b": 0.75
+  },
+  "rulesIndexed": 207,
+  "perPrompt": [
+    {
+      "id": "d-001",
+      "prompt": "user input flows into shell command",
+      "expected": [
+        "node-security/no-child-process-shell-injection",
+        "secure-coding/no-eval"
+      ],
+      "hits": [
+        "node-security/detect-child-process",
+        "secure-coding/no-improper-sanitization",
+        "secure-coding/no-format-string-injection",
+        "mongodb-security/no-unsafe-query",
+        "secure-coding/no-directive-injection"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-002",
+      "prompt": "literal password or API key embedded in source",
+      "expected": [
+        "secure-coding/no-hardcoded-credentials"
+      ],
+      "hits": [
+        "mongodb-security/no-hardcoded-credentials",
+        "jwt/no-hardcoded-secret",
+        "pg/no-hardcoded-credentials",
+        "lambda-security/no-hardcoded-credentials-sdk",
+        "secure-coding/no-hardcoded-credentials"
+      ],
+      "recall1": false,
+      "recall5": true
+    },
+    {
+      "id": "d-003",
+      "prompt": "raw user input concatenated into a SQL query string",
+      "expected": [
+        "pg/no-unsafe-query",
+        "secure-coding/no-sql-injection"
+      ],
+      "hits": [
+        "pg/no-unsafe-query",
+        "vercel-ai-security/no-unsafe-output-handling",
+        "secure-coding/no-graphql-injection",
+        "mongodb-security/no-unsafe-query",
+        "mongodb-security/no-unsafe-regex-query"
+      ],
+      "recall1": true,
+      "recall5": true
+    },
+    {
+      "id": "d-004",
+      "prompt": "inserting user-controlled HTML into the DOM",
+      "expected": [
+        "browser-security/no-innerhtml"
+      ],
+      "hits": [
+        "browser-security/no-postmessage-innerhtml",
+        "browser-security/no-websocket-innerhtml",
+        "browser-security/no-innerhtml",
+        "browser-security/no-filereader-innerhtml",
+        "browser-security/no-worker-message-innerhtml"
+      ],
+      "recall1": false,
+      "recall5": true
+    },
+    {
+      "id": "d-005",
+      "prompt": "JWT verification with no algorithm specified or with algorithm none",
+      "expected": [
+        "jwt/no-algorithm-none"
+      ],
+      "hits": [
+        "jwt/no-algorithm-none",
+        "jwt/require-algorithm-whitelist",
+        "jwt/no-algorithm-confusion",
+        "jwt/no-decode-without-verify",
+        "jwt/require-issuer-validation"
+      ],
+      "recall1": true,
+      "recall5": true
+    },
+    {
+      "id": "d-006",
+      "prompt": "MD5 or SHA1 used for password hashing or integrity check",
+      "expected": [
+        "crypto/no-weak-hash"
+      ],
+      "hits": [
+        "node-security/no-weak-hash-algorithm",
+        "node-security/no-sha1-hash",
+        "node-security/no-weak-cipher-algorithm",
+        "crypto/require-secure-pbkdf2-digest",
+        "node-security/no-ecb-mode"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-007",
+      "prompt": "filename joined directly with user input for fs.readFile",
+      "expected": [
+        "node-security/no-path-traversal"
+      ],
+      "hits": [
+        "node-security/detect-non-literal-fs-filename",
+        "node-security/no-arbitrary-file-access",
+        "node-security/no-toctou-vulnerability",
+        "node-security/no-zip-slip",
+        "pg/no-unsafe-copy-from"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-008",
+      "prompt": "use of eval() or new Function() with non-literal arguments",
+      "expected": [
+        "secure-coding/no-eval"
+      ],
+      "hits": [
+        "node-security/detect-eval-with-expression",
+        "browser-security/no-eval",
+        "node-security/no-dynamic-require",
+        "secure-coding/no-unsafe-deserialization",
+        "vercel-ai-security/no-unsafe-output-handling"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-009",
+      "prompt": "MongoDB find query taking $where with user data",
+      "expected": [
+        "mongodb-security/no-unsafe-query"
+      ],
+      "hits": [
+        "mongodb-security/no-unsafe-query",
+        "mongodb-security/no-unsafe-where",
+        "mongodb-security/no-unsafe-populate",
+        "mongodb-security/no-operator-injection",
+        "pg/no-unsafe-query"
+      ],
+      "recall1": true,
+      "recall5": true
+    },
+    {
+      "id": "d-010",
+      "prompt": "Express app missing helmet or security headers middleware",
+      "expected": [
+        "express-security/require-helmet"
+      ],
+      "hits": [
+        "express-security/require-helmet",
+        "browser-security/no-missing-security-headers",
+        "browser-security/require-csp-headers",
+        "express-security/require-rate-limiting",
+        "secure-coding/no-missing-authentication"
+      ],
+      "recall1": true,
+      "recall5": true
+    },
+    {
+      "id": "d-011",
+      "prompt": "Lambda handler logging the entire event including secrets",
+      "expected": [
+        "lambda-security/no-secret-logging"
+      ],
+      "hits": [
+        "secure-coding/no-hardcoded-credentials",
+        "jwt/no-hardcoded-secret",
+        "lambda-security/no-secrets-in-env",
+        "pg/no-hardcoded-credentials",
+        "secure-coding/no-sensitive-data-exposure"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-012",
+      "prompt": "NestJS controller route lacking @UseGuards or auth decorator",
+      "expected": [
+        "nestjs-security/no-public-decorator-on-sensitive-route"
+      ],
+      "hits": [
+        "nestjs-security/require-guards",
+        "nestjs-security/require-throttler",
+        "nestjs-security/no-exposed-private-fields",
+        "nestjs-security/no-exposed-debug-endpoints",
+        "express-security/no-express-unsafe-regex-route"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-013",
+      "prompt": "fetching a URL from user input without allowlist (SSRF)",
+      "expected": [
+        "node-security/no-ssrf",
+        "vercel-ai-security/no-ssrf"
+      ],
+      "hits": [
+        "lambda-security/no-user-controlled-requests",
+        "node-security/no-ssrf",
+        "secure-coding/no-improper-sanitization",
+        "pg/no-unsafe-copy-from",
+        "secure-coding/require-backend-authorization"
+      ],
+      "recall1": false,
+      "recall5": true
+    },
+    {
+      "id": "d-014",
+      "prompt": "LLM completion result rendered directly to a webview",
+      "expected": [
+        "vercel-ai-security/no-unsafe-output-handling"
+      ],
+      "hits": [
+        "vercel-ai-security/no-unsafe-output-handling",
+        "browser-security/no-filereader-innerhtml",
+        "vercel-ai-security/require-output-validation",
+        "vercel-ai-security/require-validated-prompt",
+        "browser-security/no-postmessage-innerhtml"
+      ],
+      "recall1": true,
+      "recall5": true
+    },
+    {
+      "id": "d-015",
+      "prompt": "object property access using a user-controlled key",
+      "expected": [
+        "secure-coding/detect-object-injection"
+      ],
+      "hits": [
+        "secure-coding/detect-object-injection",
+        "node-security/no-ssrf",
+        "lambda-security/no-user-controlled-requests",
+        "node-security/no-buffer-overread",
+        "vercel-ai-security/require-tool-schema"
+      ],
+      "recall1": true,
+      "recall5": true
+    },
+    {
+      "id": "d-016",
+      "prompt": "comparing strings using == instead of timingSafeEqual for tokens",
+      "expected": [
+        "secure-coding/no-insecure-comparison"
+      ],
+      "hits": [
+        "secure-coding/no-insecure-comparison",
+        "node-security/no-timing-unsafe-compare",
+        "mongodb-security/no-hardcoded-connection-string",
+        "secure-coding/no-hardcoded-session-tokens",
+        "lambda-security/no-hardcoded-credentials-sdk"
+      ],
+      "recall1": true,
+      "recall5": true
+    },
+    {
+      "id": "d-017",
+      "prompt": "deserializing JSON or YAML from untrusted input",
+      "expected": [
+        "secure-coding/no-unsafe-deserialization"
+      ],
+      "hits": [
+        "secure-coding/no-unsafe-deserialization",
+        "browser-security/no-eval",
+        "node-security/detect-eval-with-expression",
+        "secure-coding/no-directive-injection",
+        "secure-coding/no-xxe-injection"
+      ],
+      "recall1": true,
+      "recall5": true
+    },
+    {
+      "id": "d-018",
+      "prompt": "logging an Error object with a stack trace to a public response",
+      "expected": [
+        "secure-coding/no-stack-trace-exposure"
+      ],
+      "hits": [
+        "secure-coding/no-sensitive-data-exposure",
+        "lambda-security/no-exposed-error-details",
+        "lambda-security/no-error-swallowing",
+        "vercel-ai-security/require-audit-logging",
+        "lambda-security/no-env-logging"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-019",
+      "prompt": "process.env reference for a critical secret without fallback handling",
+      "expected": [
+        "secure-coding/no-hardcoded-credentials"
+      ],
+      "hits": [
+        "secure-coding/no-hardcoded-credentials",
+        "pg/no-hardcoded-credentials",
+        "jwt/no-hardcoded-secret",
+        "mongodb-security/no-hardcoded-connection-string",
+        "lambda-security/no-secrets-in-env"
+      ],
+      "recall1": true,
+      "recall5": true
+    },
+    {
+      "id": "d-020",
+      "prompt": "child_process.exec with shell:true and template-string args",
+      "expected": [
+        "node-security/no-child-process-shell-injection"
+      ],
+      "hits": [
+        "node-security/detect-child-process",
+        "secure-coding/no-format-string-injection",
+        "pg/no-unsafe-query",
+        "mongodb-security/no-hardcoded-connection-string",
+        "secure-coding/no-directive-injection"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-021",
+      "prompt": "import cycle detected between two modules",
+      "expected": [
+        "import-next/no-cycle"
+      ],
+      "hits": [
+        "node-security/no-dynamic-dependency-loading",
+        "node-security/no-sha1-hash",
+        "lambda-security/no-hardcoded-credentials-sdk",
+        "secure-coding/detect-non-literal-regexp",
+        "nestjs-security/require-guards"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-022",
+      "prompt": "img tag missing alt attribute",
+      "expected": [
+        "react-a11y/alt-text"
+      ],
+      "hits": [
+        "browser-security/require-cookie-secure-attrs",
+        "browser-security/no-insecure-websocket",
+        "browser-security/no-postmessage-innerhtml",
+        "browser-security/no-websocket-innerhtml",
+        "browser-security/no-unencrypted-transmission"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-023",
+      "prompt": "useEffect missing a dependency from its closure",
+      "expected": [
+        "react-features/hooks-exhaustive-deps"
+      ],
+      "hits": [
+        "node-security/require-dependency-integrity",
+        "mongodb-security/no-bypass-middleware",
+        "node-security/no-dynamic-dependency-loading",
+        "node-security/detect-suspicious-dependencies",
+        "browser-security/no-missing-cors-check"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-024",
+      "prompt": "function with too many parameters",
+      "expected": [
+        "maintainability/max-params"
+      ],
+      "hits": [
+        "browser-security/no-credentials-in-query-params",
+        "pg/check-query-params",
+        "vercel-ai-security/require-max-tokens",
+        "vercel-ai-security/require-max-steps",
+        "browser-security/no-unescaped-url-parameter"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-025",
+      "prompt": "deeply nested if-else stacks",
+      "expected": [
+        "maintainability/max-nesting-depth"
+      ],
+      "hits": [
+        "secure-coding/no-redos-vulnerable-regex",
+        "lambda-security/no-unbounded-batch-processing",
+        "vercel-ai-security/require-max-tokens",
+        "vercel-ai-security/require-max-steps",
+        "jwt/require-max-age"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-026",
+      "prompt": "request to external HTTP endpoint without timeout",
+      "expected": [
+        "vercel-ai-security/require-request-timeout",
+        "node-security/require-request-timeout"
+      ],
+      "hits": [
+        "vercel-ai-security/require-request-timeout",
+        "lambda-security/require-timeout-handling",
+        "node-security/no-ssrf",
+        "lambda-security/no-user-controlled-requests",
+        "express-security/require-csrf-protection"
+      ],
+      "recall1": true,
+      "recall5": true
+    },
+    {
+      "id": "d-027",
+      "prompt": "regex constructed from user input",
+      "expected": [
+        "secure-coding/no-redos"
+      ],
+      "hits": [
+        "secure-coding/no-unsafe-regex-construction",
+        "mongodb-security/no-unsafe-regex-query",
+        "secure-coding/detect-non-literal-regexp",
+        "secure-coding/no-redos-vulnerable-regex",
+        "express-security/no-express-unsafe-regex-route"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-028",
+      "prompt": "SAST rule for prototype pollution via Object.assign or spread",
+      "expected": [
+        "secure-coding/no-prototype-pollution"
+      ],
+      "hits": [
+        "secure-coding/detect-object-injection",
+        "vercel-ai-security/require-tool-schema",
+        "pg/prevent-double-release",
+        "secure-coding/no-improper-type-validation",
+        "mongodb-security/no-unsafe-query"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-029",
+      "prompt": "Math.random used for token generation",
+      "expected": [
+        "crypto/no-insecure-randomness",
+        "secure-coding/no-insecure-randomness"
+      ],
+      "hits": [
+        "crypto/no-math-random-crypto",
+        "node-security/no-cryptojs-weak-random",
+        "mongodb-security/no-hardcoded-credentials",
+        "lambda-security/no-hardcoded-credentials-sdk",
+        "pg/no-hardcoded-credentials"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-030",
+      "prompt": "PostgreSQL query identifier interpolated from variable",
+      "expected": [
+        "pg/no-unsafe-query"
+      ],
+      "hits": [
+        "pg/no-unsafe-query",
+        "vercel-ai-security/no-unsafe-output-handling",
+        "secure-coding/no-graphql-injection",
+        "mongodb-security/no-unsafe-query",
+        "mongodb-security/no-unsafe-regex-query"
+      ],
+      "recall1": true,
+      "recall5": true
+    },
+    {
+      "id": "d-031",
+      "prompt": "Mongoose schema field marked as user-input without sanitization",
+      "expected": [
+        "mongodb-security/no-unsafe-query"
+      ],
+      "hits": [
+        "mongodb-security/no-unsafe-query",
+        "mongodb-security/no-operator-injection",
+        "mongodb-security/no-unsafe-populate",
+        "mongodb-security/require-schema-validation",
+        "mongodb-security/no-unsafe-where"
+      ],
+      "recall1": true,
+      "recall5": true
+    },
+    {
+      "id": "d-032",
+      "prompt": "open CORS allowing any origin in production",
+      "expected": [
+        "express-security/no-permissive-cors",
+        "browser-security/no-permissive-cors"
+      ],
+      "hits": [
+        "lambda-security/no-permissive-cors-response",
+        "lambda-security/no-permissive-cors-middy",
+        "express-security/no-permissive-cors",
+        "express-security/no-cors-credentials-wildcard",
+        "browser-security/no-missing-cors-check"
+      ],
+      "recall1": false,
+      "recall5": true
+    },
+    {
+      "id": "d-033",
+      "prompt": "S3 bucket policy or signed URL with no expiry",
+      "expected": [
+        "lambda-security/no-unbounded-presigned-url"
+      ],
+      "hits": [
+        "node-security/no-self-signed-certs",
+        "lambda-security/no-overly-permissive-iam-policy",
+        "browser-security/require-csp-headers",
+        "browser-security/no-unescaped-url-parameter",
+        "browser-security/require-blob-url-revocation"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-034",
+      "prompt": "AI prompt template directly concatenating user input",
+      "expected": [
+        "vercel-ai-security/no-prompt-injection-pattern"
+      ],
+      "hits": [
+        "vercel-ai-security/require-validated-prompt",
+        "secure-coding/no-directive-injection",
+        "vercel-ai-security/no-dynamic-system-prompt",
+        "vercel-ai-security/no-system-prompt-leak",
+        "vercel-ai-security/no-unsafe-output-handling"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-035",
+      "prompt": "arrow function with too many lines",
+      "expected": [
+        "maintainability/max-lines-per-function"
+      ],
+      "hits": [
+        "node-security/detect-eval-with-expression",
+        "secure-coding/detect-weak-password-validation",
+        "jwt/no-weak-secret",
+        "browser-security/no-eval",
+        "crypto/require-sufficient-length"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-036",
+      "prompt": "exec or spawn called with shell:true",
+      "expected": [
+        "node-security/no-child-process-shell-injection"
+      ],
+      "hits": [
+        "node-security/detect-child-process",
+        "pg/prevent-double-release",
+        "secure-coding/no-improper-sanitization",
+        "express-security/no-insecure-cookie-options",
+        "lambda-security/no-env-logging"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-037",
+      "prompt": "command line constructed from req.body fields",
+      "expected": [
+        "node-security/no-child-process-shell-injection",
+        "secure-coding/no-shell-injection"
+      ],
+      "hits": [
+        "node-security/detect-child-process",
+        "express-security/require-express-body-parser-limits",
+        "lambda-security/no-unvalidated-event-body",
+        "mongodb-security/no-select-sensitive-fields",
+        "nestjs-security/no-exposed-private-fields"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-038",
+      "prompt": "fs.readFile concat with userId",
+      "expected": [
+        "node-security/no-path-traversal"
+      ],
+      "hits": [
+        "node-security/detect-non-literal-fs-filename",
+        "node-security/no-arbitrary-file-access",
+        "node-security/no-toctou-vulnerability",
+        "node-security/no-zip-slip",
+        "pg/no-unsafe-copy-from"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-039",
+      "prompt": "constructing a require path from a variable",
+      "expected": [
+        "node-security/no-dynamic-require"
+      ],
+      "hits": [
+        "node-security/no-arbitrary-file-access",
+        "node-security/detect-non-literal-fs-filename",
+        "node-security/no-zip-slip",
+        "pg/no-unsafe-copy-from",
+        "pg/no-unsafe-search-path"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-040",
+      "prompt": "axios get to a URL built from request input",
+      "expected": [
+        "node-security/no-ssrf",
+        "vercel-ai-security/no-ssrf"
+      ],
+      "hits": [
+        "lambda-security/no-user-controlled-requests",
+        "node-security/no-ssrf",
+        "vercel-ai-security/require-request-timeout",
+        "secure-coding/no-improper-sanitization",
+        "secure-coding/no-ldap-injection"
+      ],
+      "recall1": false,
+      "recall5": true
+    },
+    {
+      "id": "d-041",
+      "prompt": "fetch a webhook URL the user provided",
+      "expected": [
+        "node-security/no-ssrf"
+      ],
+      "hits": [
+        "node-security/no-ssrf",
+        "lambda-security/no-user-controlled-requests",
+        "secure-coding/require-backend-authorization",
+        "secure-coding/no-improper-sanitization",
+        "pg/no-unsafe-copy-from"
+      ],
+      "recall1": true,
+      "recall5": true
+    },
+    {
+      "id": "d-042",
+      "prompt": "tls option rejectUnauthorized set to false",
+      "expected": [
+        "node-security/no-insecure-tls"
+      ],
+      "hits": [
+        "node-security/no-self-signed-certs",
+        "browser-security/no-disabled-certificate-validation",
+        "pg/no-insecure-ssl",
+        "mongodb-security/require-tls-connection",
+        "jwt/no-timestamp-manipulation"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-043",
+      "prompt": "secret printed to console.log",
+      "expected": [
+        "lambda-security/no-secret-logging",
+        "secure-coding/no-secret-logging"
+      ],
+      "hits": [
+        "secure-coding/no-hardcoded-credentials",
+        "mongodb-security/no-hardcoded-credentials",
+        "lambda-security/no-hardcoded-credentials-sdk",
+        "pg/no-hardcoded-credentials",
+        "jwt/no-hardcoded-secret"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-044",
+      "prompt": "logger.info with the entire event object",
+      "expected": [
+        "lambda-security/no-secret-logging"
+      ],
+      "hits": [
+        "vercel-ai-security/require-audit-logging",
+        "secure-coding/no-sensitive-data-exposure",
+        "express-security/no-graphql-introspection-production",
+        "secure-coding/detect-object-injection",
+        "lambda-security/no-env-logging"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-045",
+      "prompt": "presigned S3 url without expiry",
+      "expected": [
+        "lambda-security/no-unbounded-presigned-url"
+      ],
+      "hits": [
+        "mongodb-security/no-unbounded-find",
+        "lambda-security/no-unbounded-batch-processing",
+        "browser-security/no-credentials-in-query-params",
+        "lambda-security/no-permissive-cors-response",
+        "browser-security/require-blob-url-revocation"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-046",
+      "prompt": "innerHTML assigned a template literal",
+      "expected": [
+        "browser-security/no-innerhtml"
+      ],
+      "hits": [
+        "browser-security/no-postmessage-innerhtml",
+        "browser-security/no-websocket-innerhtml",
+        "browser-security/no-innerhtml",
+        "browser-security/no-filereader-innerhtml",
+        "browser-security/no-worker-message-innerhtml"
+      ],
+      "recall1": false,
+      "recall5": true
+    },
+    {
+      "id": "d-047",
+      "prompt": "dangerouslySetInnerHTML in a React component",
+      "expected": [
+        "browser-security/no-innerhtml",
+        "react-features/no-dangerouslySetInnerHTML"
+      ],
+      "hits": [
+        "browser-security/no-postmessage-innerhtml",
+        "browser-security/no-websocket-innerhtml",
+        "browser-security/no-innerhtml",
+        "browser-security/no-filereader-innerhtml",
+        "browser-security/no-worker-message-innerhtml"
+      ],
+      "recall1": false,
+      "recall5": true
+    },
+    {
+      "id": "d-048",
+      "prompt": "document.write call",
+      "expected": [
+        "browser-security/no-document-write"
+      ],
+      "hits": [
+        "browser-security/require-cookie-secure-attrs",
+        "browser-security/no-cookie-auth-tokens",
+        "vercel-ai-security/require-abort-signal",
+        "vercel-ai-security/require-error-handling",
+        "node-security/no-dynamic-require"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-049",
+      "prompt": "anchor with target underscore blank but no rel attribute",
+      "expected": [
+        "browser-security/no-target-blank-noopener",
+        "react-a11y/no-target-blank-noopener"
+      ],
+      "hits": [
+        "browser-security/no-postmessage-wildcard-origin",
+        "browser-security/require-cookie-secure-attrs",
+        "browser-security/no-insecure-redirects",
+        "browser-security/no-filereader-innerhtml",
+        "pg/no-missing-client-release"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-050",
+      "prompt": "window.postMessage with a wildcard origin",
+      "expected": [
+        "browser-security/no-postmessage-wildcard"
+      ],
+      "hits": [
+        "browser-security/no-postmessage-wildcard-origin",
+        "browser-security/require-postmessage-origin-check",
+        "express-security/no-cors-credentials-wildcard",
+        "lambda-security/no-permissive-cors-response",
+        "express-security/no-permissive-cors"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-051",
+      "prompt": "Access-Control-Allow-Origin: * with credentials true",
+      "expected": [
+        "express-security/no-permissive-cors",
+        "browser-security/no-permissive-cors"
+      ],
+      "hits": [
+        "express-security/no-cors-credentials-wildcard",
+        "secure-coding/no-hardcoded-credentials",
+        "mongodb-security/no-hardcoded-credentials",
+        "lambda-security/no-hardcoded-credentials-sdk",
+        "pg/no-hardcoded-credentials"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-052",
+      "prompt": "express app missing helmet middleware",
+      "expected": [
+        "express-security/require-helmet"
+      ],
+      "hits": [
+        "express-security/require-helmet",
+        "express-security/require-rate-limiting",
+        "browser-security/no-missing-security-headers",
+        "secure-coding/no-missing-authentication",
+        "express-security/require-csrf-protection"
+      ],
+      "recall1": true,
+      "recall5": true
+    },
+    {
+      "id": "d-053",
+      "prompt": "controller route without auth guard",
+      "expected": [
+        "express-security/no-skipped-auth-middleware",
+        "nestjs-security/no-public-decorator-on-sensitive-route"
+      ],
+      "hits": [
+        "nestjs-security/require-guards",
+        "express-security/no-express-unsafe-regex-route",
+        "secure-coding/no-missing-authentication",
+        "browser-security/no-cookie-auth-tokens",
+        "mongodb-security/require-auth-mechanism"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-054",
+      "prompt": "a NestJS @Public decorator on an admin route",
+      "expected": [
+        "nestjs-security/no-public-decorator-on-sensitive-route"
+      ],
+      "hits": [
+        "nestjs-security/require-guards",
+        "jwt/no-algorithm-confusion",
+        "nestjs-security/no-exposed-private-fields",
+        "express-security/no-express-unsafe-regex-route",
+        "secure-coding/no-missing-authentication"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-055",
+      "prompt": "Mongoose .find() without a projection field list",
+      "expected": [
+        "mongodb-security/no-find-without-projection"
+      ],
+      "hits": [
+        "mongodb-security/no-unsafe-query",
+        "mongodb-security/no-operator-injection",
+        "mongodb-security/require-projection",
+        "mongodb-security/no-unsafe-where",
+        "mongodb-security/no-unsafe-populate"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-056",
+      "prompt": "MongoDB query passing user data into $regex",
+      "expected": [
+        "mongodb-security/no-unsafe-query"
+      ],
+      "hits": [
+        "mongodb-security/no-unsafe-query",
+        "mongodb-security/no-unsafe-regex-query",
+        "mongodb-security/no-unsafe-where",
+        "mongodb-security/no-operator-injection",
+        "secure-coding/no-unsafe-regex-construction"
+      ],
+      "recall1": true,
+      "recall5": true
+    },
+    {
+      "id": "d-057",
+      "prompt": "AI agent shell execution with model output",
+      "expected": [
+        "vercel-ai-security/no-unsafe-output-handling"
+      ],
+      "hits": [
+        "vercel-ai-security/no-unsafe-output-handling",
+        "node-security/detect-child-process",
+        "vercel-ai-security/require-output-validation",
+        "vercel-ai-security/require-validated-prompt",
+        "vercel-ai-security/require-output-filtering"
+      ],
+      "recall1": true,
+      "recall5": true
+    },
+    {
+      "id": "d-058",
+      "prompt": "LLM completion injected into innerHTML",
+      "expected": [
+        "vercel-ai-security/no-unsafe-output-handling"
+      ],
+      "hits": [
+        "vercel-ai-security/no-unsafe-output-handling",
+        "browser-security/no-postmessage-innerhtml",
+        "browser-security/no-websocket-innerhtml",
+        "browser-security/no-innerhtml",
+        "browser-security/no-filereader-innerhtml"
+      ],
+      "recall1": true,
+      "recall5": true
+    },
+    {
+      "id": "d-059",
+      "prompt": "GenerateText prompt template concatenating user query",
+      "expected": [
+        "vercel-ai-security/no-prompt-injection-pattern"
+      ],
+      "hits": [
+        "pg/no-unsafe-query",
+        "vercel-ai-security/require-validated-prompt",
+        "mongodb-security/no-unsafe-query",
+        "vercel-ai-security/no-unsafe-output-handling",
+        "secure-coding/no-graphql-injection"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-060",
+      "prompt": "fetch to OpenAI without timeout option",
+      "expected": [
+        "vercel-ai-security/require-request-timeout"
+      ],
+      "hits": [
+        "vercel-ai-security/require-request-timeout",
+        "lambda-security/require-timeout-handling",
+        "secure-coding/detect-non-literal-regexp",
+        "jwt/require-max-age",
+        "lambda-security/no-unbounded-batch-processing"
+      ],
+      "recall1": true,
+      "recall5": true
+    },
+    {
+      "id": "d-061",
+      "prompt": "MD5 used to hash a password",
+      "expected": [
+        "crypto/no-weak-hash",
+        "crypto/no-md5"
+      ],
+      "hits": [
+        "node-security/no-weak-hash-algorithm",
+        "node-security/no-sha1-hash",
+        "mongodb-security/no-hardcoded-credentials",
+        "node-security/no-weak-cipher-algorithm",
+        "pg/no-hardcoded-credentials"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-062",
+      "prompt": "SHA1 used for a checksum on uploaded file",
+      "expected": [
+        "crypto/no-weak-hash",
+        "crypto/no-sha1"
+      ],
+      "hits": [
+        "node-security/no-weak-hash-algorithm",
+        "node-security/no-sha1-hash",
+        "node-security/no-arbitrary-file-access",
+        "node-security/detect-non-literal-fs-filename",
+        "node-security/no-zip-slip"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-063",
+      "prompt": "AES initialization vector hardcoded as a constant",
+      "expected": [
+        "crypto/no-static-iv"
+      ],
+      "hits": [
+        "pg/no-hardcoded-credentials",
+        "crypto/require-key-length",
+        "node-security/no-static-iv",
+        "node-security/no-weak-cipher-algorithm",
+        "node-security/no-timing-unsafe-compare"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-064",
+      "prompt": "scrypt salt is a string literal across users",
+      "expected": [
+        "crypto/no-static-salt"
+      ],
+      "hits": [
+        "node-security/no-insecure-key-derivation",
+        "vercel-ai-security/require-output-validation",
+        "crypto/no-predictable-salt",
+        "pg/no-unsafe-query",
+        "secure-coding/no-format-string-injection"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-065",
+      "prompt": "JWT secret is a 4-character string",
+      "expected": [
+        "jwt/no-weak-secret"
+      ],
+      "hits": [
+        "jwt/no-algorithm-none",
+        "jwt/no-hardcoded-secret",
+        "jwt/no-decode-without-verify",
+        "secure-coding/no-hardcoded-session-tokens",
+        "jwt/no-weak-secret"
+      ],
+      "recall1": false,
+      "recall5": true
+    },
+    {
+      "id": "d-066",
+      "prompt": "jwt.decode used instead of jwt.verify",
+      "expected": [
+        "jwt/no-skip-verification",
+        "jwt/no-decode-without-verify"
+      ],
+      "hits": [
+        "jwt/no-decode-without-verify",
+        "jwt/no-algorithm-none",
+        "jwt/require-algorithm-whitelist",
+        "jwt/no-algorithm-confusion",
+        "jwt/require-issuer-validation"
+      ],
+      "recall1": true,
+      "recall5": true
+    },
+    {
+      "id": "d-067",
+      "prompt": "JWT verify with algorithms array containing none",
+      "expected": [
+        "jwt/no-algorithm-none"
+      ],
+      "hits": [
+        "jwt/no-algorithm-none",
+        "jwt/require-algorithm-whitelist",
+        "jwt/no-decode-without-verify",
+        "jwt/no-algorithm-confusion",
+        "jwt/require-issuer-validation"
+      ],
+      "recall1": true,
+      "recall5": true
+    },
+    {
+      "id": "d-068",
+      "prompt": "PG client.query with template-literal interpolation",
+      "expected": [
+        "pg/no-unsafe-query"
+      ],
+      "hits": [
+        "pg/no-unsafe-query",
+        "secure-coding/no-graphql-injection",
+        "vercel-ai-security/no-unsafe-output-handling",
+        "mongodb-security/no-unsafe-query",
+        "pg/no-missing-client-release"
+      ],
+      "recall1": true,
+      "recall5": true
+    },
+    {
+      "id": "d-069",
+      "prompt": "pool.query starting a BEGIN transaction directly",
+      "expected": [
+        "pg/no-transaction-on-pool"
+      ],
+      "hits": [
+        "pg/no-transaction-on-pool",
+        "pg/prefer-pool-query",
+        "pg/no-unsafe-query",
+        "vercel-ai-security/no-unsafe-output-handling",
+        "secure-coding/no-graphql-injection"
+      ],
+      "recall1": true,
+      "recall5": true
+    },
+    {
+      "id": "d-070",
+      "prompt": "client.release() called twice in a finally block",
+      "expected": [
+        "pg/prevent-double-release"
+      ],
+      "hits": [
+        "pg/prevent-double-release",
+        "pg/no-missing-client-release",
+        "pg/prefer-pool-query",
+        "lambda-security/no-error-swallowing",
+        "browser-security/no-client-side-auth-logic"
+      ],
+      "recall1": true,
+      "recall5": true
+    },
+    {
+      "id": "d-071",
+      "prompt": "ssl: false in pg connection options",
+      "expected": [
+        "pg/no-insecure-ssl"
+      ],
+      "hits": [
+        "pg/no-insecure-ssl",
+        "pg/no-missing-client-release",
+        "pg/no-hardcoded-credentials",
+        "browser-security/no-disabled-certificate-validation",
+        "pg/prevent-double-release"
+      ],
+      "recall1": true,
+      "recall5": true
+    },
+    {
+      "id": "d-072",
+      "prompt": "username 'admin' and password 'admin' literal in source",
+      "expected": [
+        "secure-coding/no-hardcoded-credentials"
+      ],
+      "hits": [
+        "mongodb-security/no-hardcoded-credentials",
+        "pg/no-hardcoded-credentials",
+        "jwt/no-hardcoded-secret",
+        "lambda-security/no-hardcoded-credentials-sdk",
+        "secure-coding/no-hardcoded-credentials"
+      ],
+      "recall1": false,
+      "recall5": true
+    },
+    {
+      "id": "d-073",
+      "prompt": "sk_live or AKIA prefix in code",
+      "expected": [
+        "secure-coding/no-hardcoded-credentials"
+      ],
+      "hits": [
+        "browser-security/no-eval",
+        "browser-security/no-client-side-auth-logic",
+        "vercel-ai-security/no-unsafe-output-handling",
+        "node-security/detect-eval-with-expression",
+        "browser-security/no-websocket-eval"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-074",
+      "prompt": "BasicAuth with literal credentials in fetch headers",
+      "expected": [
+        "secure-coding/no-hardcoded-credentials"
+      ],
+      "hits": [
+        "browser-security/no-credentials-in-query-params",
+        "mongodb-security/no-hardcoded-credentials",
+        "lambda-security/no-hardcoded-credentials-sdk",
+        "pg/no-hardcoded-credentials",
+        "secure-coding/no-hardcoded-credentials"
+      ],
+      "recall1": false,
+      "recall5": true
+    },
+    {
+      "id": "d-075",
+      "prompt": "Object.assign({}, sourceFromUser)",
+      "expected": [
+        "secure-coding/no-prototype-pollution"
+      ],
+      "hits": [
+        "secure-coding/detect-object-injection",
+        "vercel-ai-security/require-tool-schema",
+        "pg/prevent-double-release",
+        "secure-coding/no-improper-type-validation"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-076",
+      "prompt": "deep merge of an attacker-controlled JSON body",
+      "expected": [
+        "secure-coding/no-prototype-pollution"
+      ],
+      "hits": [
+        "express-security/require-express-body-parser-limits",
+        "node-security/no-ssrf",
+        "browser-security/no-unvalidated-deeplinks",
+        "browser-security/no-websocket-eval",
+        "node-security/detect-eval-with-expression"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-077",
+      "prompt": "regex compiled from a request body field",
+      "expected": [
+        "secure-coding/no-redos",
+        "secure-coding/no-non-literal-regexp"
+      ],
+      "hits": [
+        "secure-coding/no-redos-vulnerable-regex",
+        "secure-coding/no-unsafe-regex-construction",
+        "express-security/no-express-unsafe-regex-route",
+        "mongodb-security/no-unsafe-regex-query",
+        "secure-coding/detect-non-literal-regexp"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-078",
+      "prompt": "exponential regex pattern like (a+)+",
+      "expected": [
+        "secure-coding/no-redos"
+      ],
+      "hits": [
+        "secure-coding/no-redos-vulnerable-regex",
+        "secure-coding/no-unsafe-regex-construction",
+        "express-security/no-express-unsafe-regex-route",
+        "secure-coding/detect-non-literal-regexp",
+        "mongodb-security/no-unsafe-regex-query"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-079",
+      "prompt": "JSON.parse on data fetched from an external API used as object keys",
+      "expected": [
+        "secure-coding/detect-object-injection"
+      ],
+      "hits": [
+        "browser-security/no-websocket-eval",
+        "browser-security/no-eval",
+        "secure-coding/no-unsafe-deserialization",
+        "secure-coding/detect-object-injection",
+        "vercel-ai-security/no-hardcoded-api-keys"
+      ],
+      "recall1": false,
+      "recall5": true
+    },
+    {
+      "id": "d-080",
+      "prompt": "yaml.load without specifying a safe schema",
+      "expected": [
+        "secure-coding/no-unsafe-deserialization"
+      ],
+      "hits": [
+        "secure-coding/no-unsafe-deserialization",
+        "mongodb-security/require-schema-validation",
+        "crypto/no-hardcoded-crypto-key",
+        "vercel-ai-security/require-tool-schema",
+        "secure-coding/no-directive-injection"
+      ],
+      "recall1": true,
+      "recall5": true
+    },
+    {
+      "id": "d-081",
+      "prompt": "user.role compared with == admin",
+      "expected": [
+        "secure-coding/no-insecure-comparison"
+      ],
+      "hits": [
+        "secure-coding/no-privilege-escalation",
+        "pg/no-unsafe-copy-from",
+        "secure-coding/no-graphql-injection",
+        "secure-coding/no-format-string-injection",
+        "lambda-security/no-user-controlled-requests"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-082",
+      "prompt": "session token comparison with strict equality",
+      "expected": [
+        "secure-coding/no-insecure-comparison"
+      ],
+      "hits": [
+        "secure-coding/no-insecure-comparison",
+        "node-security/no-timing-unsafe-compare",
+        "secure-coding/no-hardcoded-session-tokens",
+        "mongodb-security/no-hardcoded-credentials",
+        "lambda-security/no-hardcoded-credentials-sdk"
+      ],
+      "recall1": true,
+      "recall5": true
+    },
+    {
+      "id": "d-083",
+      "prompt": "Math.random for generating a CSRF token",
+      "expected": [
+        "crypto/no-insecure-randomness",
+        "secure-coding/no-insecure-randomness"
+      ],
+      "hits": [
+        "browser-security/no-missing-csrf-protection",
+        "express-security/require-csrf-protection",
+        "crypto/no-math-random-crypto",
+        "node-security/no-cryptojs-weak-random",
+        "browser-security/no-innerhtml"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-084",
+      "prompt": "res.send including stack trace in error response",
+      "expected": [
+        "secure-coding/no-stack-trace-exposure",
+        "secure-coding/no-leaked-error-message"
+      ],
+      "hits": [
+        "lambda-security/no-exposed-error-details",
+        "secure-coding/no-sensitive-data-exposure",
+        "lambda-security/no-error-swallowing",
+        "lambda-security/no-secrets-in-env",
+        "vercel-ai-security/require-audit-logging"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-085",
+      "prompt": "console.error with err.stack exposed in API response",
+      "expected": [
+        "secure-coding/no-stack-trace-exposure"
+      ],
+      "hits": [
+        "lambda-security/no-exposed-error-details",
+        "lambda-security/no-error-swallowing",
+        "vercel-ai-security/no-system-prompt-leak",
+        "vercel-ai-security/require-error-handling",
+        "lambda-security/no-permissive-cors-response"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-086",
+      "prompt": "circular import between two modules",
+      "expected": [
+        "import-next/no-cycle"
+      ],
+      "hits": [
+        "node-security/no-dynamic-dependency-loading",
+        "node-security/no-sha1-hash",
+        "nestjs-security/require-guards",
+        "nestjs-security/require-class-validator",
+        "nestjs-security/no-missing-validation-pipe"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-087",
+      "prompt": "image without alt attribute on a marketing page",
+      "expected": [
+        "react-a11y/alt-text"
+      ],
+      "hits": [
+        "browser-security/require-cookie-secure-attrs",
+        "browser-security/no-dynamic-service-worker-url",
+        "browser-security/no-insecure-websocket",
+        "browser-security/no-postmessage-innerhtml",
+        "browser-security/no-websocket-innerhtml"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-088",
+      "prompt": "button without an accessible label",
+      "expected": [
+        "react-a11y/button-name",
+        "react-a11y/anchor-has-content"
+      ],
+      "hits": [
+        "browser-security/no-cookie-auth-tokens"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-089",
+      "prompt": "useEffect missing the productId dep",
+      "expected": [
+        "react-features/hooks-exhaustive-deps"
+      ],
+      "hits": [
+        "browser-security/no-missing-cors-check",
+        "secure-coding/no-missing-authentication",
+        "browser-security/no-missing-csrf-protection",
+        "browser-security/no-missing-security-headers",
+        "pg/no-missing-client-release"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-090",
+      "prompt": "useState setter called inside render path",
+      "expected": [
+        "react-features/no-set-state-in-render"
+      ],
+      "hits": [
+        "node-security/no-arbitrary-file-access",
+        "node-security/detect-non-literal-fs-filename",
+        "node-security/no-zip-slip",
+        "browser-security/no-filereader-innerhtml",
+        "browser-security/no-postmessage-innerhtml"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-091",
+      "prompt": "function with 8+ parameters",
+      "expected": [
+        "maintainability/max-params"
+      ],
+      "hits": [
+        "browser-security/no-credentials-in-query-params",
+        "pg/check-query-params",
+        "vercel-ai-security/require-max-tokens",
+        "vercel-ai-security/require-max-steps",
+        "browser-security/no-unescaped-url-parameter"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-092",
+      "prompt": "if-else stack 6 levels deep",
+      "expected": [
+        "maintainability/max-nesting-depth"
+      ],
+      "hits": [
+        "browser-security/no-unvalidated-deeplinks",
+        "lambda-security/no-exposed-error-details",
+        "secure-coding/no-privilege-escalation",
+        "secure-coding/no-redos-vulnerable-regex",
+        "secure-coding/no-unchecked-loop-condition"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-093",
+      "prompt": "single function spanning 300 lines",
+      "expected": [
+        "maintainability/max-lines-per-function"
+      ],
+      "hits": [
+        "pg/prefer-pool-query",
+        "browser-security/no-eval",
+        "vercel-ai-security/require-error-handling",
+        "lambda-security/no-permissive-cors-response",
+        "node-security/detect-eval-with-expression"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-094",
+      "prompt": "magic number 86400 in code without const",
+      "expected": [
+        "maintainability/no-magic-numbers"
+      ],
+      "hits": [
+        "pg/check-query-params",
+        "node-security/no-unsafe-dynamic-require",
+        "browser-security/no-websocket-eval",
+        "crypto/no-hardcoded-crypto-key",
+        "browser-security/no-eval"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-095",
+      "prompt": "var keyword used instead of let/const",
+      "expected": [
+        "modernization/no-var"
+      ],
+      "hits": [
+        "browser-security/no-http-urls",
+        "lambda-security/no-secrets-in-env",
+        "secure-coding/detect-object-injection",
+        "browser-security/no-websocket-eval",
+        "crypto/require-authenticated-encryption"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-096",
+      "prompt": "string concatenation across 5+ pieces instead of template literal",
+      "expected": [
+        "modernization/prefer-template-literal"
+      ],
+      "hits": [
+        "pg/no-unsafe-query",
+        "node-security/detect-eval-with-expression",
+        "secure-coding/no-format-string-injection",
+        "vercel-ai-security/no-dynamic-system-prompt",
+        "mongodb-security/no-hardcoded-connection-string"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-097",
+      "prompt": "deprecated Buffer constructor used",
+      "expected": [
+        "modernization/no-deprecated-api"
+      ],
+      "hits": [
+        "node-security/no-deprecated-buffer",
+        "node-security/no-deprecated-cipher-method",
+        "node-security/no-buffer-overread",
+        "node-security/no-cryptojs",
+        "secure-coding/no-insecure-comparison"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-098",
+      "prompt": "import via deep relative path like ../../../utils",
+      "expected": [
+        "modularity/no-deep-imports",
+        "modularity/no-relative-parent-imports"
+      ],
+      "hits": [
+        "node-security/no-arbitrary-file-access",
+        "node-security/detect-non-literal-fs-filename",
+        "node-security/no-zip-slip",
+        "pg/no-unsafe-copy-from",
+        "pg/no-unsafe-search-path"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-099",
+      "prompt": "default export used in a library module",
+      "expected": [
+        "modularity/no-default-export"
+      ],
+      "hits": [
+        "node-security/prefer-native-crypto",
+        "node-security/no-cryptojs",
+        "crypto/no-web-crypto-export",
+        "secure-coding/require-secure-defaults",
+        "secure-coding/detect-non-literal-regexp"
+      ],
+      "recall1": false,
+      "recall5": false
+    },
+    {
+      "id": "d-100",
+      "prompt": "process.exit called from within a request handler",
+      "expected": [
+        "operability/no-process-exit"
+      ],
+      "hits": [
+        "pg/prevent-double-release",
+        "express-security/require-csrf-protection",
+        "vercel-ai-security/require-request-timeout",
+        "node-security/no-ssrf",
+        "lambda-security/no-user-controlled-requests"
+      ],
+      "recall1": false,
+      "recall5": false
+    }
+  ]
+}

@@ -1,0 +1,80 @@
+import { describe, it, expect } from 'vitest';
+import plugin, { rules, configs } from './index';
+
+describe('eslint-plugin-conventions plugin interface', () => {
+  it('should export correct meta information', () => {
+    expect(plugin.meta).toBeDefined();
+    expect(plugin.meta?.name).toBe('eslint-plugin-conventions');
+    expect(plugin.meta?.version).toBeDefined();
+    expect(typeof plugin.meta?.version).toBe('string');
+  });
+
+  it('should export all conventions rules', () => {
+    expect(plugin.rules).toBeDefined();
+    const ruleKeys = Object.keys(plugin.rules || {});
+    
+    expect(ruleKeys).toContain('no-commented-code');
+    expect(ruleKeys).toContain('expiring-todo-comments');
+    expect(ruleKeys).toContain('prefer-code-point');
+    expect(ruleKeys).toContain('prefer-dom-node-text-content');
+    expect(ruleKeys).toContain('no-console-spaces');
+    expect(ruleKeys).toContain('no-deprecated-api');
+    expect(ruleKeys).toContain('prefer-dependency-version-strategy');
+    expect(ruleKeys).toContain('filename-case');
+    expect(ruleKeys).toContain('consistent-existence-index-check');
+    expect(ruleKeys).toContain('no-json-schema-tags');
+    expect(ruleKeys).toContain('require-data-testid');
+    expect(ruleKeys).toContain('utm-taxonomy');
+    expect(ruleKeys).toContain('no-raw-cross-property-href');
+    expect(ruleKeys).toContain('analytics-event-naming');
+
+    expect(ruleKeys.length).toBe(15);
+  });
+
+  it('should export rules matching plugin.rules', () => {
+    expect(rules).toBeDefined();
+    expect(Object.keys(rules).length).toBeGreaterThan(0);
+    // rules export should contain flat names only
+    expect(Object.keys(rules)).toContain('no-commented-code');
+  });
+
+  describe('configurations', () => {
+    it('should provide recommended configuration', () => {
+      expect(configs['recommended']).toBeDefined();
+      expect(configs['recommended'].plugins?.['conventions']).toBeDefined();
+      
+      const recommendedRules = configs['recommended'].rules || {};
+      Object.keys(recommendedRules).forEach(ruleName => {
+        expect(ruleName).toMatch(/^conventions\//);
+      });
+      
+      // Verify at least one rule is configured
+      expect(Object.keys(recommendedRules).length).toBeGreaterThan(0);
+    });
+
+    it('keeps no-magic-numbers OUT of recommended while still exporting it', () => {
+      // 1421 findings on the pinned corpus — the largest single source in the
+      // whole ecosystem — and the triage ledger calls it "correct in contract,
+      // and a taste rule by nature". A taste rule on by default is what makes a
+      // consumer stop reading the output. ESLint core reaches the same verdict:
+      // its own `no-magic-numbers` is absent from `eslint:recommended`.
+      //
+      // The rule is NOT removed. This locks both halves, because dropping the
+      // rule entirely would be a different and worse change.
+      expect(Object.keys(rules)).toContain('no-magic-numbers');
+      expect(Object.keys(configs['recommended'].rules ?? {})).not.toContain(
+        'conventions/no-magic-numbers',
+      );
+    });
+
+    it('should have all recommended rules reference existing rules', () => {
+      const recommendedRules = Object.keys(configs['recommended'].rules || {});
+      const pluginRules = Object.keys(plugin.rules || {});
+      
+      recommendedRules.forEach(ruleName => {
+        const shortName = ruleName.replace('conventions/', '');
+        expect(pluginRules).toContain(shortName);
+      });
+    });
+  });
+});

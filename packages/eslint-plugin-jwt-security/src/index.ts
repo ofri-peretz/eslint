@@ -1,0 +1,254 @@
+/**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
+ * eslint-plugin-jwt-security
+ *
+ * Comprehensive JWT security ESLint plugin for Node.js applications.
+ * Detects vulnerabilities across jsonwebtoken, jose, express-jwt,
+ * @nestjs/jwt, jwks-rsa, and jwt-decode libraries.
+ *
+ * Features:
+ * - Algorithm confusion attack detection (CVE-2022-23540)
+ * - "Back to the Future" replay attack prevention (LightSEC 2025)
+ * - Signature verification enforcement
+ * - Weak secret detection
+ * - Expiration and claim validation
+ * - AI-assisted fix guidance with CWE references
+ *
+ * @see https://tools.ietf.org/html/rfc8725
+ * @see https://securitypattern.com/post/jwt-back-to-the-future
+ */
+import type { TSESLint } from '@interlace/eslint-devkit';
+import { withCanonicalDocsUrls } from '@interlace/eslint-devkit';
+
+// Import rules - Core Security
+import { noAlgorithmNone } from './rules/no-algorithm-none';
+import { noAlgorithmConfusion } from './rules/no-algorithm-confusion';
+import { requireAlgorithmWhitelist } from './rules/require-algorithm-whitelist';
+import { noDecodeWithoutVerify } from './rules/no-decode-without-verify';
+import { noWeakSecret } from './rules/no-weak-secret';
+import { requireExpiration } from './rules/require-expiration';
+import { noHardcodedSecret } from './rules/no-hardcoded-secret';
+
+// Import rules - 2025 Vulnerability Research
+import { requireIssuedAt } from './rules/require-issued-at';
+import { requireIssuerValidation } from './rules/require-issuer-validation';
+import { requireAudienceValidation } from './rules/require-audience-validation';
+import { noTimestampManipulation } from './rules/no-timestamp-manipulation';
+import { requireMaxAge } from './rules/require-max-age';
+import { noSensitivePayload } from './rules/no-sensitive-payload';
+
+/**
+ * Collection of all JWT security ESLint rules (13 rules)
+ */
+export const rules: Record<
+  string,
+  TSESLint.RuleModule<string, readonly unknown[]>
+> = {
+  // Core Security Rules
+  'no-algorithm-none': noAlgorithmNone,
+  'no-algorithm-confusion': noAlgorithmConfusion,
+  'require-algorithm-whitelist': requireAlgorithmWhitelist,
+  'no-decode-without-verify': noDecodeWithoutVerify,
+  'no-weak-secret': noWeakSecret,
+  'require-expiration': requireExpiration,
+  'no-hardcoded-secret': noHardcodedSecret,
+
+  // 2025 Vulnerability Research - "Back to the Future" & Replay Prevention
+  'require-issued-at': requireIssuedAt,
+  'require-issuer-validation': requireIssuerValidation,
+  'require-audience-validation': requireAudienceValidation,
+  'no-timestamp-manipulation': noTimestampManipulation,
+  'require-max-age': requireMaxAge,
+  'no-sensitive-payload': noSensitivePayload,
+} satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
+
+/**
+ * Stamp canonical documentation URLs onto every rule above.
+ *
+ * Applied as a statement rather than by wrapping the object literal: the docs
+ * stats generator locates the rule map with `export const rules ... = {`, and a
+ * wrapping call makes that regex miss and silently report zero rules. The helper
+ * mutates in place and returns the same object, so this is equivalent.
+ */
+withCanonicalDocsUrls('plugin-jwt-security', rules);
+
+
+/**
+ * ESLint Plugin object
+ */
+export const plugin: TSESLint.FlatConfig.Plugin = {
+  meta: {
+    name: 'eslint-plugin-jwt-security',
+    version: '3.2.0',
+  },
+  rules,
+} satisfies TSESLint.FlatConfig.Plugin;
+
+/**
+ * Recommended configuration - baseline security
+ * Critical rules as errors, high as warnings
+ */
+const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
+  // CRITICAL - Algorithm attacks
+  'jwt-security/no-algorithm-none': 'error',
+  'jwt-security/no-algorithm-confusion': 'error',
+
+  // HIGH - Verification and secrets
+  'jwt-security/require-algorithm-whitelist': 'error',
+  'jwt-security/no-decode-without-verify': 'error',
+  'jwt-security/no-weak-secret': 'error',
+  'jwt-security/no-hardcoded-secret': 'error',
+  'jwt-security/no-timestamp-manipulation': 'error', // LightSEC 2025
+
+  // MEDIUM - Best practices
+  'jwt-security/require-expiration': 'error',
+  'jwt-security/no-sensitive-payload': 'warn',
+};
+
+/**
+ * Strict configuration - maximum security (2025 research)
+ * All rules as errors - includes replay attack prevention
+ */
+const strictRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
+  // All core rules as errors
+  'jwt-security/no-algorithm-none': 'error',
+  'jwt-security/no-algorithm-confusion': 'error',
+  'jwt-security/require-algorithm-whitelist': 'error',
+  'jwt-security/no-decode-without-verify': 'error',
+  'jwt-security/no-weak-secret': 'error',
+  'jwt-security/no-hardcoded-secret': 'error',
+  'jwt-security/require-expiration': 'error',
+
+  // 2025 Research - Full replay attack prevention
+  'jwt-security/require-issued-at': 'error',
+  'jwt-security/require-issuer-validation': 'error',
+  'jwt-security/require-audience-validation': 'error',
+  'jwt-security/no-timestamp-manipulation': 'error',
+  'jwt-security/require-max-age': 'error',
+  'jwt-security/no-sensitive-payload': 'error',
+};
+
+/**
+ * Legacy configuration - migration mode
+ * Only critical rules enabled
+ */
+const legacyRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
+  // Only most critical rules
+  'jwt-security/no-algorithm-none': 'error',
+  'jwt-security/no-algorithm-confusion': 'error',
+  'jwt-security/no-hardcoded-secret': 'warn',
+};
+
+/**
+ * Configuration presets for flat config
+ */
+export const configs = {
+  /**
+   * Flagship preset — the rule from this plugin in the ecosystem-wide
+   * flagship list (`.agent/flagship-rules.md`). Use this when you want
+   * the highest-signal JWT subset shippable in CI gates.
+   */
+  flagship: {
+    plugins: {
+      'jwt-security': plugin,
+      // Deprecated alias. The package publishes as `eslint-plugin-jwt-security`
+      // but these presets emitted `jwt/` prefixes, so registering under the
+      // package name — the obvious thing — failed with "could not find plugin".
+      // Kept registered so a config that already writes `jwt/…` rule entries
+      // alongside this preset keeps resolving. Removed in the next major.
+      jwt: plugin,
+    },
+    rules: {
+      'jwt-security/no-algorithm-none': 'error',
+    },
+  } satisfies TSESLint.FlatConfig.Config,
+
+  /**
+   * Recommended preset - balanced security
+   */
+  recommended: {
+    plugins: {
+      'jwt-security': plugin,
+      // Deprecated alias. The package publishes as `eslint-plugin-jwt-security`
+      // but these presets emitted `jwt/` prefixes, so registering under the
+      // package name — the obvious thing — failed with "could not find plugin".
+      // Kept registered so a config that already writes `jwt/…` rule entries
+      // alongside this preset keeps resolving. Removed in the next major.
+      jwt: plugin,
+    },
+    rules: recommendedRules,
+  } satisfies TSESLint.FlatConfig.Config,
+
+  /**
+   * Strict preset - maximum security (includes 2025 research)
+   */
+  strict: {
+    plugins: {
+      'jwt-security': plugin,
+      // Deprecated alias. The package publishes as `eslint-plugin-jwt-security`
+      // but these presets emitted `jwt/` prefixes, so registering under the
+      // package name — the obvious thing — failed with "could not find plugin".
+      // Kept registered so a config that already writes `jwt/…` rule entries
+      // alongside this preset keeps resolving. Removed in the next major.
+      jwt: plugin,
+    },
+    rules: strictRules,
+  } satisfies TSESLint.FlatConfig.Config,
+
+  /**
+   * Legacy preset - migration mode
+   */
+  legacy: {
+    plugins: {
+      'jwt-security': plugin,
+      // Deprecated alias. The package publishes as `eslint-plugin-jwt-security`
+      // but these presets emitted `jwt/` prefixes, so registering under the
+      // package name — the obvious thing — failed with "could not find plugin".
+      // Kept registered so a config that already writes `jwt/…` rule entries
+      // alongside this preset keeps resolving. Removed in the next major.
+      jwt: plugin,
+    },
+    rules: legacyRules,
+  } satisfies TSESLint.FlatConfig.Config,
+
+  /**
+   * All rules preset
+   */
+  all: {
+    plugins: {
+      'jwt-security': plugin,
+      // Deprecated alias. The package publishes as `eslint-plugin-jwt-security`
+      // but these presets emitted `jwt/` prefixes, so registering under the
+      // package name — the obvious thing — failed with "could not find plugin".
+      // Kept registered so a config that already writes `jwt/…` rule entries
+      // alongside this preset keeps resolving. Removed in the next major.
+      jwt: plugin,
+    },
+    rules: strictRules,
+  } satisfies TSESLint.FlatConfig.Config,
+};
+
+// Default export for flat config usage
+export default plugin;
+
+// Named exports for flexibility
+export {
+  noAlgorithmNone,
+  noAlgorithmConfusion,
+  requireAlgorithmWhitelist,
+  noDecodeWithoutVerify,
+  noWeakSecret,
+  requireExpiration,
+  noHardcodedSecret,
+  requireIssuedAt,
+  requireIssuerValidation,
+  requireAudienceValidation,
+  noTimestampManipulation,
+  requireMaxAge,
+  noSensitivePayload,
+};

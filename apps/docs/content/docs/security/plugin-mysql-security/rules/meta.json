@@ -1,0 +1,9 @@
+{
+  "title": "Rules",
+  "defaultOpen": false,
+  "pages": [
+    "no-hardcoded-credentials",
+    "no-unsafe-query",
+    "require-tls"
+  ]
+}

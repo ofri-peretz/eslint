@@ -1,0 +1,27 @@
+# first
+
+💼 This rule is enabled in the following configs: `recommended`, `typescript`.
+💡 This rule is automatically fixable by the `--fix` CLI option.
+
+<!-- end auto-generated rule header -->
+
+Ensure all imports appear before other statements
+
+## Rule Details
+
+This rule aims to prevent issues related to first.
+
+## Options
+
+```json
+[]
+```
+
+## Implementation
+
+- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/first.ts)
+- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/first.test.ts)
+
+## OWASP Foundation
+
+- **Category**: A00:2021 - General Security

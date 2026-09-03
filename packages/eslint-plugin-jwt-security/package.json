@@ -1,0 +1,130 @@
+{
+  "name": "eslint-plugin-jwt-security",
+  "version": "3.2.0",
+  "description": "ESLint plugin for JWT security — detects algorithm confusion (CVE-2022-23540), alg:none, weak or hardcoded secrets, and decode-without-verify.",
+  "type": "commonjs",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
+    },
+    "./types": {
+      "types": "./src/types/index.d.ts",
+      "default": "./src/types/index.js"
+    },
+    "./oxlint": {
+      "types": "./dist/src/oxlint.d.ts",
+      "default": "./dist/src/oxlint.js"
+    }
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://eslint.interlace.tools/docs/security/plugin-jwt-security?utm_source=npm&utm_medium=referral&utm_campaign=eslint-plugin-jwt-security-security",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
+    "directory": "packages/eslint-plugin-jwt-security"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "src/",
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "AGENTS.md"
+  ],
+  "keywords": [
+    "eslint",
+    "eslintplugin",
+    "eslint-plugin",
+    "static-analysis",
+    "linting",
+    "code-quality",
+    "security",
+    "sast",
+    "appsec",
+    "vulnerability",
+    "owasp",
+    "cwe",
+    "interlace-security",
+    "jwt",
+    "json-web-token",
+    "jwt-security",
+    "jsonwebtoken",
+    "jose",
+    "express-jwt",
+    "nestjs-jwt",
+    "jwks-rsa",
+    "jwt-decode",
+    "algorithm-confusion",
+    "cve-2022-23540",
+    "cwe-347",
+    "cwe-757",
+    "token",
+    "authentication",
+    "authorization",
+    "llm-optimized",
+    "ai-assistant",
+    "typescript",
+    "auto-fix",
+    "auth-security",
+    "token-security"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@interlace/eslint-devkit": "^1.19.0"
+  },
+  "peerDependencies": {
+    "eslint": "^8.40.0 || ^9.0.0 || ^10.0.0",
+    "jsonwebtoken": "^8.0.0 || ^9.0.0",
+    "@nestjs/jwt": "^9.0.0 || ^10.0.0 || ^11.0.0",
+    "express-jwt": "^7.0.0 || ^8.0.0",
+    "jose": "^4.0.0 || ^5.0.0 || ^6.0.0",
+    "jwks-rsa": "^3.0.0 || ^4.0.0",
+    "jwt-decode": "^3.0.0 || ^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "jsonwebtoken": {
+      "optional": true
+    },
+    "@nestjs/jwt": {
+      "optional": true
+    },
+    "express-jwt": {
+      "optional": true
+    },
+    "jose": {
+      "optional": true
+    },
+    "jwks-rsa": {
+      "optional": true
+    },
+    "jwt-decode": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@typescript-eslint/parser": "^8.68.0",
+    "@typescript-eslint/rule-tester": "^8.68.0"
+  },
+  "scripts": {
+    "build": "tsx ../../scripts/build-package.ts",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsgo -p tsconfig.lib.json --noEmit"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/ofri-peretz/eslint"
+  }
+}

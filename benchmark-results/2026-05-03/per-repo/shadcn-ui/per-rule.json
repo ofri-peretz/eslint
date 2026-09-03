@@ -1,0 +1,265 @@
+{
+  "secure-coding/no-hardcoded-credentials": {
+    "hits": 1,
+    "avgTimeMs": 1.22,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-hardcoded-credentials",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/shadcn-ui/packages/shadcn/src/mcp/index.ts",
+        "line": 321,
+        "column": 12,
+        "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.h"
+      }
+    ]
+  },
+  "secure-coding/no-graphql-injection": {
+    "hits": 1,
+    "avgTimeMs": 1.98,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-graphql-injection",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/shadcn-ui/packages/shadcn/src/mcp/index.ts",
+        "line": 419,
+        "column": 25,
+        "message": "🔒 CWE-89 OWASP:A05-Injection CVSS:9.8 | Unsafe interpolation in GraphQL query | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use GraphQL variables instead of string interpolation | https://graphql.org/learn/queries/#variables"
+      }
+    ]
+  },
+  "secure-coding/no-xpath-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.71,
+    "samples": []
+  },
+  "browser-security/no-clickjacking": {
+    "hits": 0,
+    "avgTimeMs": 0.62,
+    "samples": []
+  },
+  "secure-coding/no-unlimited-resource-allocation": {
+    "hits": 0,
+    "avgTimeMs": 0.58,
+    "samples": []
+  },
+  "secure-coding/no-ldap-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.5,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-deserialization": {
+    "hits": 0,
+    "avgTimeMs": 0.48,
+    "samples": []
+  },
+  "secure-coding/no-unchecked-loop-condition": {
+    "hits": 0,
+    "avgTimeMs": 0.46,
+    "samples": []
+  },
+  "secure-coding/no-sensitive-data-exposure": {
+    "hits": 0,
+    "avgTimeMs": 0.41,
+    "samples": []
+  },
+  "secure-coding/no-improper-sanitization": {
+    "hits": 0,
+    "avgTimeMs": 0.41,
+    "samples": []
+  },
+  "secure-coding/no-weak-password-recovery": {
+    "hits": 0,
+    "avgTimeMs": 0.38,
+    "samples": []
+  },
+  "secure-coding/no-xxe-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.35,
+    "samples": []
+  },
+  "secure-coding/detect-object-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.35,
+    "samples": []
+  },
+  "secure-coding/no-privilege-escalation": {
+    "hits": 0,
+    "avgTimeMs": 0.35,
+    "samples": []
+  },
+  "secure-coding/no-insecure-comparison": {
+    "hits": 0,
+    "avgTimeMs": 0.35,
+    "samples": []
+  },
+  "browser-security/no-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 0.32,
+    "samples": []
+  },
+  "secure-coding/detect-non-literal-regexp": {
+    "hits": 0,
+    "avgTimeMs": 0.3,
+    "samples": []
+  },
+  "browser-security/no-credentials-in-query-params": {
+    "hits": 0,
+    "avgTimeMs": 0.28,
+    "samples": []
+  },
+  "browser-security/no-postmessage-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 0.28,
+    "samples": []
+  },
+  "secure-coding/no-missing-authentication": {
+    "hits": 0,
+    "avgTimeMs": 0.25,
+    "samples": []
+  },
+  "browser-security/no-websocket-eval": {
+    "hits": 0,
+    "avgTimeMs": 0.25,
+    "samples": []
+  },
+  "browser-security/no-websocket-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 0.23,
+    "samples": []
+  },
+  "browser-security/no-unsafe-inline-csp": {
+    "hits": 0,
+    "avgTimeMs": 0.21,
+    "samples": []
+  },
+  "browser-security/no-filereader-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 0.2,
+    "samples": []
+  },
+  "browser-security/no-worker-message-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 0.2,
+    "samples": []
+  },
+  "secure-coding/no-redos-vulnerable-regex": {
+    "hits": 0,
+    "avgTimeMs": 0.19,
+    "samples": []
+  },
+  "browser-security/no-sensitive-localstorage": {
+    "hits": 0,
+    "avgTimeMs": 0.19,
+    "samples": []
+  },
+  "browser-security/no-http-urls": {
+    "hits": 0,
+    "avgTimeMs": 0.19,
+    "samples": []
+  },
+  "browser-security/no-postmessage-wildcard-origin": {
+    "hits": 0,
+    "avgTimeMs": 0.18,
+    "samples": []
+  },
+  "browser-security/no-unvalidated-deeplinks": {
+    "hits": 0,
+    "avgTimeMs": 0.17,
+    "samples": []
+  },
+  "browser-security/no-eval": {
+    "hits": 0,
+    "avgTimeMs": 0.17,
+    "samples": []
+  },
+  "browser-security/no-insecure-redirects": {
+    "hits": 0,
+    "avgTimeMs": 0.16,
+    "samples": []
+  },
+  "browser-security/no-unsafe-eval-csp": {
+    "hits": 0,
+    "avgTimeMs": 0.16,
+    "samples": []
+  },
+  "browser-security/require-blob-url-revocation": {
+    "hits": 0,
+    "avgTimeMs": 0.16,
+    "samples": []
+  },
+  "browser-security/no-jwt-in-storage": {
+    "hits": 0,
+    "avgTimeMs": 0.13,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-regex-construction": {
+    "hits": 0,
+    "avgTimeMs": 0.12,
+    "samples": []
+  },
+  "browser-security/no-sensitive-sessionstorage": {
+    "hits": 0,
+    "avgTimeMs": 0.12,
+    "samples": []
+  },
+  "browser-security/no-sensitive-indexeddb": {
+    "hits": 0,
+    "avgTimeMs": 0.12,
+    "samples": []
+  },
+  "browser-security/require-postmessage-origin-check": {
+    "hits": 0,
+    "avgTimeMs": 0.11,
+    "samples": []
+  },
+  "browser-security/require-websocket-wss": {
+    "hits": 0,
+    "avgTimeMs": 0.1,
+    "samples": []
+  },
+  "browser-security/no-sensitive-cookie-js": {
+    "hits": 0,
+    "avgTimeMs": 0.1,
+    "samples": []
+  },
+  "browser-security/require-https-only": {
+    "hits": 0,
+    "avgTimeMs": 0.1,
+    "samples": []
+  },
+  "browser-security/no-client-side-auth-logic": {
+    "hits": 0,
+    "avgTimeMs": 0.1,
+    "samples": []
+  },
+  "browser-security/no-dynamic-service-worker-url": {
+    "hits": 0,
+    "avgTimeMs": 0.09,
+    "samples": []
+  },
+  "browser-security/no-insecure-websocket": {
+    "hits": 0,
+    "avgTimeMs": 0.08,
+    "samples": []
+  },
+  "browser-security/require-cookie-secure-attrs": {
+    "hits": 0,
+    "avgTimeMs": 0.07,
+    "samples": []
+  },
+  "browser-security/no-cookie-auth-tokens": {
+    "hits": 0,
+    "avgTimeMs": 0.07,
+    "samples": []
+  },
+  "browser-security/detect-mixed-content": {
+    "hits": 0,
+    "avgTimeMs": 0.07,
+    "samples": []
+  },
+  "browser-security/no-allow-arbitrary-loads": {
+    "hits": 0,
+    "avgTimeMs": 0.06,
+    "samples": []
+  }
+}

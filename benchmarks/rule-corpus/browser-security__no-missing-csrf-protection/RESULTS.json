@@ -1,0 +1,23 @@
+{
+  "rule": "browser-security/no-missing-csrf-protection",
+  "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
+  "fixtures": 17,
+  "vulnerable": 8,
+  "results": [
+    {
+      "name": "Interlace browser-security/no-missing-csrf-protection",
+      "tp": 8,
+      "fp": 0,
+      "fn": 0,
+      "tn": 9,
+      "precision": 1,
+      "recall": 1,
+      "specificity": 1,
+      "youdenJ": 1,
+      "f1": 1,
+      "crashes": [],
+      "missed": [],
+      "falsePositives": []
+    }
+  ]
+}

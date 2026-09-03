@@ -1,0 +1,80 @@
+{
+  "bench": "ILB-Determinism",
+  "benchVersion": "1.0",
+  "timestamp": "2026-05-09T23:38:12.271Z",
+  "methodologyCommit": "19b89fc5b924386f2d1f7a5a8dd210c90664841f",
+  "toolchain": {
+    "node": "24.12.0",
+    "eslint": "9.39.2",
+    "typescript": "5.9.3",
+    "tsCompiler": "tsc-classic",
+    "typescriptEslint": "8.54.0",
+    "platform": "darwin-arm64"
+  },
+  "preregistration": {
+    "methodologyCommit": "19b89fc5b924386f2d1f7a5a8dd210c90664841f",
+    "dirtyPaths": [
+      "M benchmarks/score.mjs",
+      "benchmarks/suites/ilb-arena/README.md",
+      "scripts/ilb-wild.mjs",
+      "benchmarks/corpus/CVE/",
+      "benchmarks/lib/history.mjs",
+      "benchmarks/lib/mappings/",
+      "benchmarks/lib/preregister.mjs",
+      "benchmarks/lib/result-schema.json",
+      "benchmarks/lib/stats-kappa.mjs",
+      "benchmarks/lib/stats.mjs",
+      "benchmarks/lib/toolchain.mjs",
+      "benchmarks/suites/ilb-arena/eslint10-compat/",
+      "benchmarks/suites/ilb-arena/eslint9-compat/",
+      "benchmarks/suites/ilb-cache-matrix/",
+      "benchmarks/suites/ilb-confidence/",
+      "benchmarks/suites/ilb-determinism/",
+      "benchmarks/suites/ilb-diff/",
+      "benchmarks/suites/ilb-discover/",
+      "benchmarks/suites/ilb-eslint-matrix/",
+      "benchmarks/suites/ilb-evade/",
+      "benchmarks/suites/ilb-flagship/",
+      "benchmarks/suites/ilb-formatter/",
+      "benchmarks/suites/ilb-mutate/",
+      "benchmarks/suites/ilb-node-matrix/",
+      "benchmarks/suites/ilb-oxlint-parity/",
+      "benchmarks/suites/ilb-parser-matrix/",
+      "benchmarks/suites/ilb-tsc-matrix/"
+    ],
+    "capturedAt": "2026-05-09T23:38:10.902Z",
+    "paths": [
+      "benchmarks/corpus",
+      "benchmarks/suites",
+      "benchmarks/lib",
+      "benchmarks/score.mjs",
+      "scripts/ilb-wild.mjs",
+      "scripts/ilb-validate-fixtures.mjs"
+    ]
+  },
+  "cost": {},
+  "effectiveness": {
+    "ruleSurvivalRate": 1
+  },
+  "latency": {
+    "meanLatencyMs": 683.5762705
+  },
+  "runs": [
+    {
+      "index": 0,
+      "hash": "4fb5002423562de662f3e761eb4aa5735d445296ba883e6a8f13816b2b95d3f2",
+      "findingCount": 6,
+      "durationMs": 688.637833
+    },
+    {
+      "index": 1,
+      "hash": "4fb5002423562de662f3e761eb4aa5735d445296ba883e6a8f13816b2b95d3f2",
+      "findingCount": 6,
+      "durationMs": 678.514708
+    }
+  ],
+  "drift": [],
+  "passed": true,
+  "corpus": "benchmarks/corpus/CWE-089",
+  "runsCount": 2
+}

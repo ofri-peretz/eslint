@@ -1,0 +1,121 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Integration Health
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LIVE INTEGRATION PROBE
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Asks production whether the integrations actually work, rather than reading
+# the config that describes them.
+#
+# Why: on 2026-08-23 four integration defects were found in a single sitting,
+# none caught by tests, CI, or review, because every one of them read
+# correctly and behaved wrongly:
+#
+#   - CSP report-uri 404'd from the day the header shipped. Violation reports
+#     went nowhere for weeks; an empty event stream is indistinguishable from
+#     a policy with nothing to report.
+#   - ds. and storybook. shipped no X-Frame-Options at all.
+#   - /images/* was pinned `immutable` for a year on URLs with no content
+#     hash, so a regenerated OG image could never be evicted — and those are
+#     fetched by Twitter, LinkedIn, Slack and GitHub's camo proxy.
+#   - Two plugin doc pages 404'd their README for six weeks, across 106 users.
+#
+# Credential-free by design. Every check runs against public surface, and the
+# CSP probe reads its token from the site's own response header rather than
+# holding one. Nothing here needs a secret, so nothing here can leak one.
+#
+# The probe POSTs one clearly-labelled synthetic CSP report per run. Exclude
+# `blocked-uri = https://integration-health-probe.invalid/synthetic` from any
+# real violation analysis.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+on:
+  schedule:
+    # Sat 04:50 UTC — weekly, staggered off the Sunday burst and clear of the
+    # existing 04:05–04:35 crons. Weekly, not daily: these break on a config
+    # change, not by drift, and one probe row a week keeps the violation
+    # stream clean.
+    - cron: '50 4 * * 6'
+  workflow_dispatch:
+    inputs:
+      create-issue:
+        description: 'Open a GitHub issue if any check fails'
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    name: 🩺 Probe live integrations
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write # opens / comments on the failure issue
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version-file: .nvmrc
+
+      - name: 🩺 Probe
+        id: probe
+        run: |
+          set -o pipefail
+          npx tsx scripts/integration-health.ts 2>&1 | tee probe.log
+        continue-on-error: true
+
+      - name: 📋 Job summary
+        if: always()
+        run: |
+          {
+            if [ "${{ steps.probe.outcome }}" = "success" ]; then
+              echo "# ✅ Integration health"
+            else
+              echo "# ❌ Integration health"
+            fi
+            echo ""
+            echo '```'
+            cat probe.log 2>/dev/null || echo "(probe produced no output)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 🚨 Open an issue on failure
+        # `inputs.*` is empty on a `schedule` run, and GitHub coerces '' to false, so
+        # `inputs.create-issue != false` evaluated FALSE on every cron — the issue was
+        # filed only on a manual dispatch, i.e. only when someone was already watching.
+        # The probe went red on 2026-08-24 and again on 2026-08-29 and opened nothing.
+        # Schedule always files; the toggle applies to manual runs, where it belongs.
+        if: >-
+          steps.probe.outcome == 'failure' &&
+          (github.event_name != 'workflow_dispatch' || inputs.create-issue)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          TITLE="Integration health check failed"
+          # One issue, reopened and commented — not a new one every week.
+          EXISTING=$(gh issue list --state open --search "$TITLE in:title" \
+            --json number --jq '.[0].number // empty')
+          BODY=$(printf '%s\n\n```\n%s\n```\n\n[Run](%s)\n' \
+            "A live integration probe failed. These check production behaviour, not config, so a failure here means something is broken for real users right now." \
+            "$(cat probe.log)" "$RUN_URL")
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "$BODY"
+          else
+            gh issue create --title "$TITLE" --body "$BODY"
+          fi
+
+      - name: ⛔ Fail the job when a check failed
+        if: steps.probe.outcome == 'failure'
+        run: |
+          echo "::error::One or more live integration checks failed — see the job summary."
+          exit 1

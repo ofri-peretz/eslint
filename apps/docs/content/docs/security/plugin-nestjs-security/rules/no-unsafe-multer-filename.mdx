@@ -1,0 +1,160 @@
+---
+title: no-unsafe-multer-filename
+description: "Flags a multer diskStorage filename callback that stores an upload under the name the client chose."
+tags: ['security', 'nestjs']
+category: security
+severity: high
+cwe: CWE-22
+owasp: 'A01:2021'
+autofix: false
+type_aware: false
+type_aware_status: unaware
+---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> Disallows storing an uploaded file under a client-controlled name
+
+Flags a multer `diskStorage` `filename` callback that passes `file.originalname`
+through to the stored name without doing anything to it.
+
+## Rule Details
+
+`file.originalname` is the `filename` field of the multipart part. It arrives
+verbatim from the client, and multer does not normalise it — no `basename`, no
+separator stripping, no length limit. Whatever the uploader typed is what
+`path.join(destination, name)` receives.
+
+The reason this is worth a rule is the shape it almost always takes:
+
+```ts
+const uniqueSuffix =
+  Date.now() + '-' + Math.round(Math.random() * 1e9) + '-' + file.originalname;
+cb(null, uniqueSuffix);
+```
+
+The timestamp and the random number read as a mitigation. They are not one. They
+prefix the attacker's bytes rather than replacing them, and traversal in the
+suffix works exactly as well:
+
+```
+1712345678-921-../../../../home/app/dist/main.js
+```
+
+That is an arbitrary write with the server's own uid — the payload is the next
+thing the process loads, not a file anyone has to go and find.
+
+Measured across 52,363 files in 49 NestJS repositories, 8 combine `diskStorage(`
+with `originalname` and **5 of those 8 hand it over raw**. A low file count is
+not a low hit rate: every project that writes this code writes it identically,
+because the same handful of tutorials teach it. Three of the five are course
+repositories, which is where the pattern is copied from.
+
+## ❌ Incorrect
+
+```ts
+import { diskStorage } from 'multer';
+
+diskStorage({
+  destination: './uploads',
+  filename(req, file, cb) {
+    cb(null, file.originalname);
+  },
+});
+```
+
+```ts
+diskStorage({
+  filename(req, file, cb) {
+    // A prefix is not a sanitiser — the traversal is in what follows it.
+    cb(null, `${Date.now()}-${file.originalname}`);
+  },
+});
+```
+
+```ts
+diskStorage({
+  filename: async (req, file, cd) => {
+    let originalname = file.originalname;
+    if (file.originalname.lastIndexOf('.') < 0) {
+      originalname = file.originalname + '.' + subtype;
+    }
+    cd(null, Date.now() + '-' + originalname);
+  },
+});
+```
+
+## ✅ Correct
+
+```ts
+import { randomUUID } from 'node:crypto';
+import { extname } from 'node:path';
+
+diskStorage({
+  destination: './uploads',
+  filename(req, file, cb) {
+    // The name is ours; the client controls at most the extension, and
+    // `extname` cannot return a path separator.
+    cb(null, `${randomUUID()}${extname(file.originalname)}`);
+  },
+});
+```
+
+Omitting `filename` entirely is also correct — multer then generates a random
+name with no extension, which is the safest default of all.
+
+## What this rule deliberately does not report
+
+Any value that reaches the callback through a **function call**. `extname()`,
+`basename()`, `parse().ext`, `slugify()`, a project helper like `resetName(file)`
+— all of them stop the check.
+
+That is a deliberate line, not an oversight. Deciding whether a given
+transformation is _sufficient_ means reading a function this rule cannot see, and
+a security rule that guesses at other people's helpers is how a plugin earns a
+reputation for noise. The three corpus files that do something to the name all
+stay quiet, including one (`originalname.split('.').pop()`) that is only
+accidentally safe.
+
+The practical consequence: a finding from this rule is never a judgement call.
+The value went from the wire to the filesystem untouched.
+
+## Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+
+```ts
+{
+  // Skip files matching the test-file heuristic. Default: true
+  allowInTests: true,
+}
+```
+
+## When Not To Use It
+
+Effectively never on a `filename` callback that reaches `file.originalname` raw.
+
+The tempting exemption — "our upload directory is not served, so a bad name is
+harmless" — does not hold, because a traversing name does not stay in the upload
+directory. `1712345678-921-../../../../home/app/dist/main.js` escapes it before
+any property of that directory applies; what matters is where the write lands,
+which the client chose. Reach for the two-line fix above (`path.basename`, or an
+extension-checked random name) rather than a disable comment.
+
+Disabling is defensible only where the name never reaches disk under client
+control at all — a fixture that hardcodes `filename`, or a callback whose value
+is generated and `originalname` is used solely for a MIME/extension lookup. In
+those cases the rule should not be firing; if it is, that is a false positive
+worth [reporting](https://github.com/ofri-peretz/eslint/issues) rather than
+suppressing.
+
+## Further Reading
+
+- [CWE-22: Improper Limitation of a Pathname to a Restricted Directory](https://cwe.mitre.org/data/definitions/22.html)
+- [CWE-434: Unrestricted Upload of File with Dangerous Type](https://cwe.mitre.org/data/definitions/434.html)
+- [multer — `diskStorage`](https://github.com/expressjs/multer#diskstorage)
+- [NestJS — File upload](https://docs.nestjs.com/techniques/file-upload)

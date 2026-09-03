@@ -1,0 +1,53 @@
+---
+title: eslint-plugin-import-next
+description: Drop-in replacement for eslint-plugin-import with 8x faster cycle detection
+icon: FileText
+---
+
+import { RemoteReadme } from '@/components/docs/remote-readme';
+import { Zap, BookOpen, History, ExternalLink } from 'lucide-react';
+import { Cards, Card } from 'fumadocs-ui/components/card';
+
+<Callout type="success" title="3.1x Faster End-to-End, 8x in Rule Time">
+  Measured on a 5,736-file / 455K-LoC React codebase: full lint 51.7s → 16.7s,
+  `no-cycle` rule time 39.2s → 4.9s, with 100% detection parity. See
+  [benchmarks](/docs/getting-started/concepts/benchmarks).
+</Callout>
+
+## Install
+
+<InstallSnippet packages="eslint-plugin-import-next" dev />
+
+<Cards>
+  <Card
+    title="Rules (56)"
+    description="Browse all available ESLint rules"
+    href="/docs/quality/plugin-import-next/rules"
+    icon={<BookOpen />}
+  />
+  <Card
+    title="Changelog"
+    description="View version history and updates"
+    href="/docs/quality/plugin-import-next/changelog"
+    icon={<History />}
+  />
+</Cards>
+
+---
+
+<Callout type="info" title="Live from GitHub">
+  This content is fetched directly from
+  [README.md](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/README.md)
+  on GitHub and cached for 1 hour.
+</Callout>
+
+<RemoteReadme plugin="import-next" sections={['full']} />
+
+<a
+  href="https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/README.md"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="inline-flex items-center gap-1 text-sm text-fd-muted-foreground hover:text-fd-foreground mt-6"
+>
+  View README.md on GitHub →
+</a>

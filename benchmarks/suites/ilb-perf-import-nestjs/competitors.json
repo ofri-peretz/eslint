@@ -1,0 +1,103 @@
+{
+  "$schema-note": "Comparison set for ilb-perf-import-nestjs. Sibling of ilb-perf-import — same configs, but run against the nestjs OSS corpus instead of generated fixtures.",
+  "corpus": {
+    "name": "nestjs",
+    "repo": "https://github.com/nestjs/nest.git",
+    "commit": "master",
+    "srcGlob": "packages/**/*.ts"
+  },
+  "competitors": [
+    {
+      "id": "import-official",
+      "displayName": "eslint-plugin-import (official)",
+      "host": "eslint",
+      "config": "configs/import-no-cycle.config.js",
+      "package": "eslint-plugin-import",
+      "version": "2.32.0",
+      "algorithm": "SCC + BFS per-import",
+      "resolver": "eslint-import-resolver-typescript",
+      "isOurs": false,
+      "purpose": "Industry incumbent — the baseline we beat to claim 'fastest'"
+    },
+    {
+      "id": "oxlint-builtin",
+      "displayName": "oxlint built-in (import plugin, Rust)",
+      "host": "oxlint",
+      "config": ".oxlintrc.builtin.json",
+      "extraArgs": ["--import-plugin"],
+      "ruleId": "eslint-plugin-import(no-cycle)",
+      "package": "oxlint",
+      "version": "1.62.0",
+      "algorithm": "Rust-native, parallel (oxlint walks files via rayon)",
+      "resolver": "oxc-resolver (built-in)",
+      "isOurs": false,
+      "purpose": "Rust-native floor — what does the algorithm cost when the host has no JS overhead"
+    },
+    {
+      "id": "oxlint-import",
+      "displayName": "eslint-plugin-import via oxlint (JS plugin)",
+      "host": "oxlint",
+      "config": ".oxlintrc.import.json",
+      "extraArgs": [],
+      "ruleId": "import-js(no-cycle)",
+      "package": "eslint-plugin-import + oxlint",
+      "version": "2.32.0 / 1.62.0",
+      "algorithm": "ESLint's import plugin hosted by oxlint instead of ESLint",
+      "resolver": "eslint-import-resolver-typescript",
+      "isOurs": false,
+      "purpose": "Cross-host: does the incumbent JS plugin work at all under oxlint?"
+    },
+    {
+      "id": "oxlint-import-x",
+      "displayName": "eslint-plugin-import-x via oxlint (JS plugin)",
+      "host": "oxlint",
+      "config": ".oxlintrc.import-x.json",
+      "extraArgs": [],
+      "ruleId": "import-x-js(no-cycle)",
+      "package": "eslint-plugin-import-x + oxlint",
+      "version": "4.16.2 / 1.62.0",
+      "algorithm": "TS-native fork hosted by oxlint instead of ESLint",
+      "resolver": "built-in (no resolver plugin needed)",
+      "isOurs": false,
+      "purpose": "Cross-host: does the TS-fork JS plugin work under oxlint?"
+    },
+    {
+      "id": "oxlint-import-next",
+      "displayName": "eslint-plugin-import-next via oxlint (JS plugin)",
+      "host": "oxlint",
+      "config": ".oxlintrc.import-next.json",
+      "extraArgs": [],
+      "ruleId": "interlace-import-next(no-cycle)",
+      "package": "eslint-plugin-import-next + oxlint",
+      "version": "2.3.6 / 1.62.0",
+      "algorithm": "Same JS rule, hosted by oxlint instead of ESLint",
+      "resolver": "oxc-resolver (Rust NAPI) + get-tsconfig",
+      "isOurs": true,
+      "purpose": "Apples-to-apples within oxlint host — JS-plugin cost vs Rust-native built-in"
+    },
+    {
+      "id": "import-x",
+      "displayName": "eslint-plugin-import-x (un-ts fork)",
+      "host": "eslint",
+      "config": "configs/import-x-no-cycle.config.js",
+      "package": "eslint-plugin-import-x",
+      "version": "4.16.2",
+      "algorithm": "SCC + BFS per-import (rewritten in TS, built-in TS resolver)",
+      "resolver": "built-in (no resolver plugin needed)",
+      "isOurs": false,
+      "purpose": "Modern TS-native fork of eslint-plugin-import — faster than the original on TS codebases"
+    },
+    {
+      "id": "import-next",
+      "displayName": "eslint-plugin-import-next (ESLint host)",
+      "host": "eslint",
+      "config": "configs/import-next-no-cycle.config.js",
+      "package": "eslint-plugin-import-next",
+      "version": "2.3.6",
+      "algorithm": "Tarjan SCC + DFS (per-import DFS + oxc-resolver)",
+      "resolver": "oxc-resolver (Rust NAPI) + get-tsconfig",
+      "isOurs": true,
+      "purpose": "Subject under test (ESLint host)"
+    }
+  ]
+}

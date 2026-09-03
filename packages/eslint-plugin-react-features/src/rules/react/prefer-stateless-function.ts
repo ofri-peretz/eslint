@@ -1,0 +1,168 @@
+/**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
+ * ESLint Rule: prefer-stateless-function
+ * Prefer stateless functions
+ */
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+
+type MessageIds = 'preferStatelessFunction';
+
+export interface Options {
+  ignorePureComponents?: boolean;
+}
+
+export const preferStatelessFunction = createRule<[Options], MessageIds>({
+  name: 'prefer-stateless-function',
+  meta: {
+    type: 'problem',
+    docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/prefer-stateless-function.md',
+      description: 'Prefer stateless functions',
+    },
+    messages: {
+      preferStatelessFunction: formatLLMMessage({
+        icon: MessageIcons.MIGRATION,
+        issueName: 'Class Component',
+        description: 'Class component without state or lifecycle methods',
+        severity: 'MEDIUM',
+        fix: 'Convert to functional component',
+        documentationLink: 'https://react.dev/learn/your-first-component',
+      }),
+    },
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          ignorePureComponents: {
+            type: 'boolean',
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
+  },
+  defaultOptions: [{ ignorePureComponents: false }],
+  create(context: TSESLint.RuleContext<MessageIds, [Options]>) {
+    const [options] = context.options;
+    const ignorePureComponents = options?.ignorePureComponents ?? false;
+
+    return {
+      ClassDeclaration(node: TSESTree.ClassDeclaration) {
+        if (!isReactComponent(node)) return;
+
+        // Skip if it's a PureComponent and we're ignoring them
+        if (ignorePureComponents && isPureComponent(node)) return;
+
+        // Check if class has state or lifecycle methods
+        if (!hasState(node) && !hasLifecycleMethods(node)) {
+          context.report({
+            node: node.id || node,
+            messageId: 'preferStatelessFunction',
+          });
+        }
+      },
+    };
+
+    // oxlint-disable-next-line consistent-function-scoping
+    function isReactComponent(node: TSESTree.ClassDeclaration): boolean {
+      if (!node.superClass) return false;
+
+      if (node.superClass.type === 'Identifier') {
+        return node.superClass.name === 'Component' || node.superClass.name === 'PureComponent';
+      }
+
+      if (node.superClass.type === 'MemberExpression') {
+        return (
+          node.superClass.object.type === 'Identifier' &&
+          node.superClass.object.name === 'React' &&
+          (propertyName(node.superClass) === 'Component' || propertyName(node.superClass) === 'PureComponent')
+        );
+      }
+
+      return false;
+    }
+
+    // oxlint-disable-next-line consistent-function-scoping
+    function isPureComponent(node: TSESTree.ClassDeclaration): boolean {
+      if (!node.superClass) return false;
+
+      if (node.superClass.type === 'Identifier') {
+        return node.superClass.name === 'PureComponent';
+      }
+
+      if (node.superClass.type === 'MemberExpression') {
+        return (
+          node.superClass.object.type === 'Identifier' &&
+          node.superClass.object.name === 'React' &&
+          propertyName(node.superClass) === 'PureComponent'
+        );
+      }
+
+      return false;
+    }
+
+    // oxlint-disable-next-line consistent-function-scoping
+    function hasState(node: TSESTree.ClassDeclaration): boolean {
+      for (const member of node.body.body) {
+        // PropertyDefinition is used by TypeScript parser for class properties
+        if (
+          member.type === 'PropertyDefinition' &&
+          member.key.type === 'Identifier' &&
+          member.key.name === 'state'
+        ) {
+          return true;
+        }
+
+        if (
+          member.type === 'MethodDefinition' &&
+          member.key.type === 'Identifier' &&
+          member.key.name === 'constructor'
+        ) {
+          // Check if constructor sets this.state
+          const body = member.value.body;
+          if (!body) continue;
+          for (const statement of body.body) {
+            if (
+              statement.type === 'ExpressionStatement' &&
+              statement.expression.type === 'AssignmentExpression' &&
+              statement.expression.left.type === 'MemberExpression' &&
+              statement.expression.left.object.type === 'ThisExpression' &&
+              propertyName(statement.expression.left) === 'state'
+            ) {
+              return true;
+            }
+          }
+        }
+      }
+      return false;
+    }
+
+    // oxlint-disable-next-line consistent-function-scoping
+    function hasLifecycleMethods(node: TSESTree.ClassDeclaration): boolean {
+      const lifecycleMethods = new Set([
+        'componentDidMount', 'componentDidUpdate', 'componentWillUnmount',
+        'componentWillMount', 'componentWillReceiveProps', 'componentWillUpdate',
+        'shouldComponentUpdate', 'getDerivedStateFromProps', 'getSnapshotBeforeUpdate',
+        'UNSAFE_componentWillMount', 'UNSAFE_componentWillReceiveProps', 'UNSAFE_componentWillUpdate',
+      ]);
+
+      for (const member of node.body.body) {
+        if (
+          member.type === 'MethodDefinition' &&
+          member.key.type === 'Identifier' &&
+          lifecycleMethods.has(member.key.name)
+        ) {
+          return true;
+        }
+      }
+      return false;
+    }
+  },
+});

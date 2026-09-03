@@ -1,0 +1,299 @@
+{
+  "vercel-ai-security/require-request-timeout": {
+    "hits": 2,
+    "avgTimeMs": 0.68,
+    "samples": [
+      {
+        "ruleId": "vercel-ai-security/require-request-timeout",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/vercel-ai/packages/codemod/src/codemods/v4/replace-roundtrips-with-maxsteps.ts",
+        "line": 6,
+        "column": 3,
+        "message": "⚠️ CWE-400 OWASP:A05-Security CVSS:5 | generateText call lacks timeout configuration. This can lead to denial of service. | MEDIUM [SOC2]\n   Fix: Add timeout configuration or use AbortController with setTimeout | https://owasp.org/www-proje"
+      },
+      {
+        "ruleId": "vercel-ai-security/require-request-timeout",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/vercel-ai/packages/codemod/src/codemods/v4/replace-roundtrips-with-maxsteps.ts",
+        "line": 11,
+        "column": 9,
+        "message": "⚠️ CWE-400 OWASP:A05-Security CVSS:5 | generateText call lacks timeout configuration. This can lead to denial of service. | MEDIUM [SOC2]\n   Fix: Add timeout configuration or use AbortController with setTimeout | https://owasp.org/www-proje"
+      }
+    ]
+  },
+  "secure-coding/no-hardcoded-credentials": {
+    "hits": 3,
+    "avgTimeMs": 1.68,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-hardcoded-credentials",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/vercel-ai/packages/codemod/src/codemods/v4/remove-deprecated-provider-registry-exports.ts",
+        "line": 16,
+        "column": 27,
+        "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.h"
+      },
+      {
+        "ruleId": "secure-coding/no-hardcoded-credentials",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/vercel-ai/packages/codemod/src/codemods/v4/remove-deprecated-provider-registry-exports.ts",
+        "line": 19,
+        "column": 28,
+        "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.h"
+      },
+      {
+        "ruleId": "secure-coding/no-hardcoded-credentials",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/vercel-ai/packages/codemod/src/codemods/v4/remove-deprecated-provider-registry-exports.ts",
+        "line": 79,
+        "column": 39,
+        "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.h"
+      }
+    ]
+  },
+  "node-security/lock-file": {
+    "hits": 0,
+    "avgTimeMs": 4.82,
+    "samples": []
+  },
+  "vercel-ai-security/no-sensitive-in-prompt": {
+    "hits": 0,
+    "avgTimeMs": 4.27,
+    "samples": []
+  },
+  "secure-coding/no-graphql-injection": {
+    "hits": 0,
+    "avgTimeMs": 2.22,
+    "samples": []
+  },
+  "node-security/no-buffer-overread": {
+    "hits": 0,
+    "avgTimeMs": 1.5,
+    "samples": []
+  },
+  "node-security/no-zip-slip": {
+    "hits": 0,
+    "avgTimeMs": 1.27,
+    "samples": []
+  },
+  "vercel-ai-security/require-validated-prompt": {
+    "hits": 0,
+    "avgTimeMs": 1.27,
+    "samples": []
+  },
+  "secure-coding/no-unlimited-resource-allocation": {
+    "hits": 0,
+    "avgTimeMs": 1.26,
+    "samples": []
+  },
+  "secure-coding/no-improper-sanitization": {
+    "hits": 0,
+    "avgTimeMs": 1.06,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-deserialization": {
+    "hits": 0,
+    "avgTimeMs": 1.06,
+    "samples": []
+  },
+  "secure-coding/detect-object-injection": {
+    "hits": 0,
+    "avgTimeMs": 1.03,
+    "samples": []
+  },
+  "secure-coding/no-xpath-injection": {
+    "hits": 0,
+    "avgTimeMs": 1,
+    "samples": []
+  },
+  "secure-coding/no-unchecked-loop-condition": {
+    "hits": 0,
+    "avgTimeMs": 0.9,
+    "samples": []
+  },
+  "node-security/detect-child-process": {
+    "hits": 0,
+    "avgTimeMs": 0.89,
+    "samples": []
+  },
+  "secure-coding/no-weak-password-recovery": {
+    "hits": 0,
+    "avgTimeMs": 0.88,
+    "samples": []
+  },
+  "vercel-ai-security/no-unsafe-output-handling": {
+    "hits": 0,
+    "avgTimeMs": 0.84,
+    "samples": []
+  },
+  "vercel-ai-security/no-hardcoded-api-keys": {
+    "hits": 0,
+    "avgTimeMs": 0.8,
+    "samples": []
+  },
+  "secure-coding/no-privilege-escalation": {
+    "hits": 0,
+    "avgTimeMs": 0.77,
+    "samples": []
+  },
+  "secure-coding/no-ldap-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.75,
+    "samples": []
+  },
+  "secure-coding/no-xxe-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.71,
+    "samples": []
+  },
+  "secure-coding/detect-non-literal-regexp": {
+    "hits": 0,
+    "avgTimeMs": 0.64,
+    "samples": []
+  },
+  "secure-coding/no-missing-authentication": {
+    "hits": 0,
+    "avgTimeMs": 0.63,
+    "samples": []
+  },
+  "vercel-ai-security/no-training-data-exposure": {
+    "hits": 0,
+    "avgTimeMs": 0.61,
+    "samples": []
+  },
+  "secure-coding/no-insecure-comparison": {
+    "hits": 0,
+    "avgTimeMs": 0.58,
+    "samples": []
+  },
+  "vercel-ai-security/require-rag-content-validation": {
+    "hits": 0,
+    "avgTimeMs": 0.57,
+    "samples": []
+  },
+  "vercel-ai-security/no-system-prompt-leak": {
+    "hits": 0,
+    "avgTimeMs": 0.57,
+    "samples": []
+  },
+  "node-security/detect-non-literal-fs-filename": {
+    "hits": 0,
+    "avgTimeMs": 0.55,
+    "samples": []
+  },
+  "node-security/no-toctou-vulnerability": {
+    "hits": 0,
+    "avgTimeMs": 0.54,
+    "samples": []
+  },
+  "node-security/detect-eval-with-expression": {
+    "hits": 0,
+    "avgTimeMs": 0.52,
+    "samples": []
+  },
+  "secure-coding/no-sensitive-data-exposure": {
+    "hits": 0,
+    "avgTimeMs": 0.51,
+    "samples": []
+  },
+  "node-security/no-weak-hash-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 0.48,
+    "samples": []
+  },
+  "vercel-ai-security/require-tool-confirmation": {
+    "hits": 0,
+    "avgTimeMs": 0.44,
+    "samples": []
+  },
+  "node-security/no-weak-cipher-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 0.44,
+    "samples": []
+  },
+  "node-security/no-data-in-temp-storage": {
+    "hits": 0,
+    "avgTimeMs": 0.44,
+    "samples": []
+  },
+  "node-security/no-static-iv": {
+    "hits": 0,
+    "avgTimeMs": 0.43,
+    "samples": []
+  },
+  "secure-coding/no-redos-vulnerable-regex": {
+    "hits": 0,
+    "avgTimeMs": 0.43,
+    "samples": []
+  },
+  "vercel-ai-security/require-output-filtering": {
+    "hits": 0,
+    "avgTimeMs": 0.4,
+    "samples": []
+  },
+  "node-security/no-arbitrary-file-access": {
+    "hits": 0,
+    "avgTimeMs": 0.38,
+    "samples": []
+  },
+  "vercel-ai-security/require-tool-schema": {
+    "hits": 0,
+    "avgTimeMs": 0.38,
+    "samples": []
+  },
+  "vercel-ai-security/require-max-tokens": {
+    "hits": 0,
+    "avgTimeMs": 0.37,
+    "samples": []
+  },
+  "node-security/no-ssrf": {
+    "hits": 0,
+    "avgTimeMs": 0.37,
+    "samples": []
+  },
+  "vercel-ai-security/no-dynamic-system-prompt": {
+    "hits": 0,
+    "avgTimeMs": 0.37,
+    "samples": []
+  },
+  "node-security/no-ecb-mode": {
+    "hits": 0,
+    "avgTimeMs": 0.36,
+    "samples": []
+  },
+  "node-security/require-dependency-integrity": {
+    "hits": 0,
+    "avgTimeMs": 0.33,
+    "samples": []
+  },
+  "node-security/detect-suspicious-dependencies": {
+    "hits": 0,
+    "avgTimeMs": 0.33,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-regex-construction": {
+    "hits": 0,
+    "avgTimeMs": 0.31,
+    "samples": []
+  },
+  "vercel-ai-security/require-max-steps": {
+    "hits": 0,
+    "avgTimeMs": 0.29,
+    "samples": []
+  },
+  "node-security/no-unsafe-dynamic-require": {
+    "hits": 0,
+    "avgTimeMs": 0.27,
+    "samples": []
+  },
+  "node-security/no-cryptojs": {
+    "hits": 0,
+    "avgTimeMs": 0.26,
+    "samples": []
+  },
+  "node-security/no-deprecated-buffer": {
+    "hits": 0,
+    "avgTimeMs": 0.24,
+    "samples": []
+  }
+}

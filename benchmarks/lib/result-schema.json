@@ -1,0 +1,382 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://benchmarks.interlace.dev/schemas/result-envelope-v1.json",
+  "title": "ILB Result Envelope v1",
+  "description": "Vocabulary contract for every Interlace bench result. Operationalizes roadmap item 1.11. Standard field names enforced; synonyms (`tokens`, `accuracy`, `time`) fail validation. See benchmarks/README.md \u00a71 'The three measurement aspects'.",
+  "type": "object",
+  "required": [
+    "bench",
+    "benchVersion",
+    "timestamp",
+    "toolchain"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "bench": {
+      "type": "string",
+      "enum": [
+        "ILB-Arena",
+        "ILB-Arena-Quality",
+        "ILB-Juliet",
+        "ILB-Wild",
+        "ILB-Edge",
+        "ILB-Cov",
+        "ILB-Perf",
+        "ILB-AI",
+        "ILB-LLM-Tokens",
+        "ILB-LLM-Fix",
+        "ILB-Formatter",
+        "ILB-Determinism",
+        "ILB-Autofix",
+        "ILB-Confidence",
+        "ILB-Discover",
+        "ILB-Evade",
+        "ILB-Provenance",
+        "ILB-Cache-Matrix",
+        "ILB-Diff",
+        "ILB-Node-Matrix",
+        "ILB-TSC-Matrix",
+        "ILB-ESLint-Matrix",
+        "ILB-Parser-Matrix",
+        "ILB-Mutate",
+        "ILB-Wild-Federated",
+        "ILB-Public-Submission",
+        "ILB-Landscape",
+        "ILB-Remediation",
+        "ILB-Corpus-Truth",
+    "ILB-CWE-Corpus",
+        "ILB-Preset-Budget"
+      ],
+      "description": "Bench identity. New benches added here MUST also be added to .agent/rules/bench-context.md and benchmarks/state.json."
+    },
+    "benchVersion": {
+      "type": "string",
+      "pattern": "^v?\\d+\\.\\d+(\\.\\d+)?$",
+      "description": "Bench version per principle #9. Bumping the corpus, scoring formula, or competitor set bumps this."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "methodologyCommit": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{7,40}$",
+      "description": "Pre-registration field (item 1.5): SHA of the commit that defined the methodology when the run started. NOT squash-proof \u2014 this repo squash-merges, so a branch SHA never enters main's history and is unreachable from a fresh clone. Useful provenance while the PR ref lives; `methodologyHash` is the durable receipt."
+    },
+    "methodologyHash": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "description": "Squash-proof pre-registration receipt (item 1.5): sha256 of the concatenated bytes of every file in `methodologyPaths`, in listed order. Survives squash/rebase/force-push and is recomputable from a fresh clone: `cat $(jq -r '.methodologyPaths[]' <result.json>) | shasum -a 256`. Required on results from 2026-08-03 onward; the older corpus predates it."
+    },
+    "methodologyPaths": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "description": "Repo-relative files covered by `methodologyHash`, in hash order: the suite entrypoint first, then its transitive repo-local imports (sorted). Recorded so the hash is self-describing \u2014 an unversioned 'hash of some files' is no better than a dead SHA."
+    },
+    "toolchain": {
+      "type": "object",
+      "required": [
+        "node",
+        "eslint",
+        "typescript",
+        "tsCompiler",
+        "platform"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "node": {
+          "type": "string",
+          "description": "process.version without leading 'v'"
+        },
+        "eslint": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "typescript": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "tsCompiler": {
+          "type": "string",
+          "enum": [
+            "tsc-classic",
+            "tsc-go",
+            "unknown"
+          ]
+        },
+        "typescriptEslint": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "platform": {
+          "type": "string"
+        }
+      }
+    },
+    "cost": {
+      "type": "object",
+      "description": "Token-cost aspect. Use these exact field names \u2014 synonyms (`tokens`, `cost`, `len`) fail validation.",
+      "additionalProperties": false,
+      "properties": {
+        "tokensO200k": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Headline. tiktoken o200k_base."
+        },
+        "tokensCl100k": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Sanity. tiktoken cl100k_base."
+        },
+        "meanTokensO200k": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Aggregate over fixtures."
+        }
+      }
+    },
+    "effectiveness": {
+      "type": "object",
+      "description": "Effectiveness aspect. Concrete fields per bench type \u2014 F1 family for rule benches, signalScore for formatter, passRate for LLM-Fix, vulnDetectionRate for AI.",
+      "additionalProperties": false,
+      "properties": {
+        "f1": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "precision": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "recall": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "ciLow": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "ciHigh": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "ciMethod": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "wilson",
+            "bootstrap",
+            "wilson+bootstrap",
+            null
+          ]
+        },
+        "signalScore": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 4
+        },
+        "passRate": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "vulnDetectionRate": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "activationRate": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "ruleSurvivalRate": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "recall1": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1,
+          "description": "ILB-Discover: top-1 retrieval recall."
+        },
+        "recall5": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1,
+          "description": "ILB-Discover: top-5 retrieval recall."
+        },
+        "ece": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1,
+          "description": "ILB-Confidence: Expected Calibration Error."
+        },
+        "mce": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1,
+          "description": "ILB-Confidence: Maximum Calibration Error."
+        },
+        "offSdkRate": {
+          "type": "number",
+          "description": "Percent of findings landing in files with no local evidence of the rule\u2019s SDK. Scope, not accuracy: a rule can be perfectly precise inside its SDK and still be 98% off-SDK."
+        },
+        "deadRules": {
+          "type": "integer",
+          "description": "Rules that did not fire once across the corpus."
+        },
+        "ruleCount": {
+          "type": "integer",
+          "description": "Rules measured, so deadRules has a denominator."
+        },
+        "medianFindingsPerRepo": {
+          "type": "number",
+          "description": "Median findings a plugin\u2019s recommended preset prints on one repository \u2014 what a developer sees on install."
+        },
+        "pluginsOverBudget": {
+          "type": "integer",
+          "description": "Plugins whose median exceeded their recorded ceiling."
+        }
+      }
+    },
+    "latency": {
+      "type": "object",
+      "description": "Latency aspect. Standard field names \u2014 synonyms (`time`, `duration`, `speed`) fail validation.",
+      "additionalProperties": false,
+      "properties": {
+        "latencyMsP50": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "latencyMsP95": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "meanLatencyMs": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "msPerFile": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "peakRssMb": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "coldMedianMs": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "ILB-Cache-Matrix: cold-cache median wall-clock."
+        },
+        "warmMedianMs": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "ILB-Cache-Matrix: warm-cache median wall-clock."
+        }
+      }
+    }
+  },
+  "definitions": {
+    "synonymsBlocked": {
+      "_comment": "These keys MUST NOT appear at the top level of a result file. They are common synonyms that drift the vocabulary contract.",
+      "blockedAtRoot": [
+        "tokens",
+        "accuracy",
+        "time",
+        "duration",
+        "speed",
+        "score",
+        "msPerFileMedian",
+        "p50",
+        "p95",
+        "rss",
+        "memory",
+        "cost"
+      ]
+    }
+  }
+}

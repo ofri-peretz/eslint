@@ -1,0 +1,37 @@
+{
+  "repo": "nestjs",
+  "meta": {
+    "stars": 70000,
+    "commit": "master",
+    "category": "Backend Framework",
+    "plugins": [
+      "nestjs-security",
+      "node-security",
+      "secure-coding"
+    ],
+    "fpEdge": false,
+    "srcGlob": "packages/**/*.ts"
+  },
+  "fileCount": 596,
+  "loc": 42142,
+  "timing": {
+    "runsMs": [
+      1383
+    ],
+    "medianMs": 1383,
+    "meanMs": 1383,
+    "stddevMs": 0,
+    "cv": 0,
+    "msPerFile": 2.32
+  },
+  "peakRssMb": 250,
+  "findings": {
+    "total": 0,
+    "errors": 0,
+    "warnings": 0,
+    "filesWithFindings": 0,
+    "densityPerKloc": 0,
+    "externalDirectives": 0,
+    "parseErrors": 481
+  }
+}

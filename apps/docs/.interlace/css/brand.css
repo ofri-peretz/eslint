@@ -1,0 +1,244 @@
+/**
+ * AUTO-GENERATED FILE — DO NOT EDIT DIRECTLY.
+ * Source: apps/interlace-docs-baseline/ in the agents repo.
+ * Edit there, then run `npm run sync` to redistribute.
+ * Local edits will be overwritten on next sync (or refused without --force).
+ */
+/* =========================================
+   INTERLACE BRAND TOKENS — single source of truth for the line.
+   =========================================
+ *
+ * Design-system rules this file enforces:
+ *
+ *   1. NO RAW COLORS IN COMPONENTS. Components consume token utilities
+ *      (`text-fd-foreground`, `bg-destructive`, `ring-fd-ring`), never
+ *      `text-black` / `bg-purple-900` / `#3c0366`. Hardcoded colors don't
+ *      respect the theme override and create silent dark/light bugs.
+ *
+ *   2. EVERY TOKEN HAS BOTH MODES. Adding a `--color-*` to `@theme` (light)
+ *      requires the same key in `.dark` below — otherwise dark-mode users
+ *      inherit the light value and the surface looks wrong.
+ *
+ *   3. EVERY FOREGROUND/BACKGROUND PAIR PASSES WCAG AA (4.5:1 normal text,
+ *      3:1 large/UI). Verified two ways:
+ *        a. Token math: `apps/baseline-storybook/src/__tests__/brand-contrast.test.ts`
+ *           parses this file and asserts the ratios in pure Node (~250ms).
+ *        b. Rendered axe: `STORYBOOK_A11Y=error npm test` in baseline-storybook
+ *           runs every story under axe-core in chromium — catches real
+ *           composition (e.g. text on a card, focus ring on a button).
+ *      Bumping a token here without re-running both is a regression.
+ *
+ *   4. NO `!important`. This file is imported AFTER `fumadocs-ui/css/preset.css`
+ *      in every consumer's `global.css`, so natural cascade order wins. If
+ *      you find yourself reaching for `!important`, fix the import order
+ *      instead — it's a sign the CSS layering is off.
+ *
+ *   5. `@theme` REGISTRATIONS ARE LOAD-BEARING. Tailwind v4 only compiles
+ *      `bg-destructive` if `--color-destructive` is registered with `@theme`
+ *      (not just declared on `:root`). The fumadocs preset only registers
+ *      `--color-fd-*`, so we register the unprefixed shadcn names here for
+ *      primitives like `bg-destructive`.
+ */
+@theme {
+  /* Burnt orange — mirrors --interlace-primary #7d350c in
+   * interlace/packages/ui/styles/interlace-theme.css (8.80:1 on white, AAA). */
+  --color-fd-primary: hsl(22, 82%, 27%);
+  --color-fd-primary-foreground: hsl(0, 0%, 100%);
+  --color-fd-foreground: hsl(0, 0%, 3.9%);
+  --color-fd-muted-foreground: hsl(0, 0%, 40%);
+  --color-fd-ring: hsl(22, 82%, 34%);
+
+  /* Destructive — shadcn primitives (`bg-destructive`) read these unprefixed
+   * tokens; mirror under the fumadocs prefix for parity. */
+  --color-destructive: hsl(0, 75%, 38%);
+  --color-destructive-foreground: hsl(0, 0%, 100%);
+  --color-fd-destructive: hsl(0, 75%, 38%);
+  --color-fd-destructive-foreground: hsl(0, 0%, 100%);
+
+  /* Unprefixed shadcn token aliases. The shadcn primitives (button, input,
+   * badge, card, etc.) reference utilities like `ring-ring`, `bg-input`,
+   * `border-border`, `bg-background`, `text-foreground`. Tailwind v4 only
+   * generates these utilities when the matching `--color-*` is registered
+   * with `@theme`. Register here as aliases of the `--color-fd-*` tokens
+   * fumadocs already manages — single source of truth, automatic dark-mode
+   * tracking. Without these, focus rings on form primitives literally don't
+   * render (the utility resolves to `var(--color-ring)` which is undefined). */
+  --color-ring: var(--color-fd-ring);
+  --color-input: var(--color-fd-border);
+  --color-border: var(--color-fd-border);
+  --color-background: var(--color-fd-background);
+  --color-foreground: var(--color-fd-foreground);
+  --color-primary: var(--color-fd-primary);
+  --color-primary-foreground: var(--color-fd-primary-foreground);
+  --color-secondary: var(--color-fd-secondary);
+  --color-secondary-foreground: var(--color-fd-secondary-foreground);
+  --color-accent: var(--color-fd-accent);
+  --color-accent-foreground: var(--color-fd-accent-foreground);
+  --color-muted: var(--color-fd-muted);
+  --color-muted-foreground: var(--color-fd-muted-foreground);
+  --color-popover: var(--color-fd-popover);
+  --color-popover-foreground: var(--color-fd-popover-foreground);
+  --color-card: var(--color-fd-card);
+  --color-card-foreground: var(--color-fd-card-foreground);
+
+  /* Brand-accent tokens. Legacy name kept for consumer compatibility; the
+   * value is now the brand burnt orange (was indigo `#6366F1`, then
+   * hsl(239, 70%, 58%)). Clears WCAG AA against `#ffffff` with headroom. */
+  --color-brand-snappy: hsl(22, 82%, 32%);
+
+  /* Decorative-primitive tokens — single source of truth for the literal
+   * colors that used to be baked into individual `components/ui/` primitives.
+   * Adding a new decorative primitive? Register its accent here so consumers
+   * can re-theme it without forking the component.
+   *
+   * Reach for these from primitives like `border-beam`, `meteors`,
+   * `particles`, `shimmer-button`, `animated-gradient-text`,
+   * `background-lines`, `background-gradient-animation`,
+   * `background-beams-with-collision`, `stars-background`.
+   *
+   * Each color resolves to the legacy literal in light mode; `.dark`
+   * overrides below preserve the original dark-mode visuals where the
+   * primitive cared. */
+  --color-beam-from: hsl(17, 89%, 55%);   /* brand orange (was `#ffaa40`) */
+  --color-beam-to: hsl(157, 84%, 32%);    /* brand green (was `#9c40ff`) */
+  --color-meteor-glow: hsl(0, 0%, 100%, 0.06);
+  --color-particles-default: hsl(0, 0%, 100%);
+  --color-shimmer: hsl(0, 0%, 100%);
+  --color-shimmer-bg: hsl(0, 0%, 0%);
+  --color-gradient-bg-start: hsl(22, 100%, 20%);   /* deep burnt orange (was purple) */
+  --color-gradient-bg-end: hsl(157, 100%, 12%);    /* deep bottle green (was navy) */
+  --color-shadow-card: hsl(218, 22%, 17%, 0.06);   /* legacy `rgba(34, 42, 53, 0.06)` */
+  --color-shadow-card-inset: hsl(0, 0%, 100%, 0.1);
+  /* Shooting-stars + twinkle star colors (legacy `#9E00FF`, `#2EB9DF`,
+   * `#e9d5ff` baked into stars-background). */
+  --color-shooting-star: hsl(22, 90%, 48%);
+  --color-shooting-trail: hsl(157, 76%, 40%);
+  --color-meteor-tail: hsl(22, 76%, 88%);
+  /* RGB triple (no `rgb()` wrapper) used by `<canvas fillStyle>` calls in
+   * stars-background — canvas doesn't accept `var(...)` directly, so the
+   * primitive reads this at mount time and concatenates an `rgba(...)`
+   * string. Override here if you want a non-white twinkle. */
+  --star-rgb: 255, 255, 255;
+  /* RGB triples consumed by background-gradient-animation. The primitive
+   * wraps these in `rgb(...)` / `rgba(...)` at use site, so they must
+   * remain bare (no `rgb()` envelope). Mapped from the legacy literal
+   * defaults `18, 113, 255` / `221, 74, 255` / `100, 220, 255` /
+   * `200, 50, 50` / `180, 180, 50` / `140, 100, 255`. */
+  --gradient-first-rgb: 244, 121, 74;
+  --gradient-second-rgb: 13, 148, 96;
+  --gradient-third-rgb: 251, 185, 154;
+  --gradient-fourth-rgb: 10, 125, 82;
+  --gradient-fifth-rgb: 168, 76, 36;
+  --gradient-pointer-rgb: 244, 121, 74;
+  /* Random palette for background-lines paths — exposed as a comma-separated
+   * list so the primitive can split it at runtime. Consumers can override
+   * with any palette length. */
+  --background-lines-palette: hsl(17, 89%, 62%), hsl(157, 84%, 32%), hsl(22, 82%, 45%), hsl(157, 60%, 45%), hsl(28, 90%, 55%), hsl(160, 50%, 60%), hsl(20, 70%, 35%), hsl(150, 70%, 25%), hsl(30, 45%, 70%), hsl(0, 0%, 60%), hsl(22, 60%, 50%), hsl(157, 40%, 50%);
+}
+
+/* Dark-mode overrides — runtime cascade, no token registration needed. */
+.dark {
+  /* Light burnt orange — mirrors dark --interlace-primary #fbb99a
+   * (11.79:1 on near-black, AAA). */
+  --color-fd-primary: hsl(19, 92%, 79%);
+  --color-fd-primary-foreground: hsl(0, 0%, 5%);
+  --color-fd-foreground: hsl(0, 0%, 92%);
+  /* 70% white (#b3b3b3) gives ~6.5:1 against the #1a1a1a base background.
+   * That headroom matters because consumers compose this with semi-transparent
+   * surfaces (`bg-fd-secondary/50`, `bg-fd-card/50`) where the rendered
+   * background is darker — bumping the foreground here keeps every
+   * composite above the 4.5:1 AA floor without forcing every surface to
+   * use full opacity. */
+  --color-fd-muted-foreground: hsl(0, 0%, 70%);
+  --color-fd-ring: hsl(19, 85%, 74%);
+
+  --color-destructive: hsl(0, 65%, 42%);
+  --color-destructive-foreground: hsl(0, 0%, 100%);
+  --color-fd-destructive: hsl(0, 65%, 42%);
+  --color-fd-destructive-foreground: hsl(0, 0%, 100%);
+
+  /* Brand-accent dark-mode lift. */
+  --color-brand-snappy: hsl(19, 92%, 79%);
+
+  /* Decorative-primitive tokens — dark-mode tuning. Lift saturation so the
+   * primitives stay visible against the near-black background. */
+  --color-beam-from: hsl(17, 89%, 62%);
+  --color-beam-to: hsl(157, 70%, 45%);
+  --color-meteor-glow: hsl(0, 0%, 100%, 0.1);
+  --color-shadow-card: hsl(0, 0%, 100%, 0.04);
+  --color-shadow-card-inset: hsl(0, 0%, 100%, 0.12);
+}
+
+/* =========================================
+   INTERLACE NAV LOCKUP — two-bar mark fills
+   =========================================
+ *
+ * Decorative fills for the canonical nav lockup: the two-bar Interlace mark
+ * next to the lowercase mono "interlace" wordmark. The inline SVG lives in
+ * `layouts/layout-options.tsx` (`InterlaceMark`); app-owned nav components
+ * (e.g. eslint's `layout.shared.tsx`) read the same tokens. Theme-paired
+ * AA-safe pairs keyed to `.dark` — light surfaces get the deep pair, dark
+ * surfaces the bright pair. Plain `:root` (not `@theme`): these are SVG
+ * `fill="var(--*)"` values, no Tailwind utility generation needed. */
+:root {
+  --brand-mark-bar-o: #a84c17;
+  --brand-mark-bar-g: #0a6b47;
+}
+.dark {
+  --brand-mark-bar-o: #f4794a;
+  --brand-mark-bar-g: #0d9460;
+}
+
+/* =========================================
+   UX BEST PRACTICES — global resets
+   =========================================
+ *
+ * Reduced-motion (WCAG 2.3.3 + media query for vestibular disorders).
+ * Disables non-essential animations for users who request it. Set duration
+ * and iteration to short/zero values rather than `none` so transitions still
+ * fire (some components use the `transitionend` event for state machines).
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Accessible focus-visible default for any element that becomes interactive
+ * via `tabindex` or role swap and doesn't carry its own `focus-visible:*`
+ * utility. Component primitives (button, input, badge) override this with
+ * their own ring; this is the safety net so a custom interactive element
+ * never ships without a visible focus indicator. WCAG 2.4.7. */
+:where(:focus-visible) {
+  outline: 2px solid var(--color-fd-ring);
+  outline-offset: 2px;
+}
+
+/* Skip-link styling — a screen-reader-only "Skip to content" link is the
+ * single biggest keyboard-UX win for any layout. The pattern: render the
+ * link first in the DOM with `.sr-only`, expose it on focus. Layouts opt in
+ * by including `<a href="#main" class="skip-link">Skip to content</a>` near
+ * the top of `<body>`. */
+.skip-link {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 0.75rem 1rem;
+  background: var(--color-fd-background);
+  color: var(--color-fd-foreground);
+  font-weight: 600;
+  border: 2px solid var(--color-fd-ring);
+  border-radius: 0.5rem;
+  transform: translateY(-150%);
+  transition: transform 150ms ease-out;
+  z-index: 100;
+}
+.skip-link:focus-visible {
+  transform: translateY(0.5rem);
+  outline: none;
+}

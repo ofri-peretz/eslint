@@ -1,0 +1,187 @@
+/**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
+ * ESLint Rule: no-secrets-in-env
+ * Detects secrets directly assigned to process.env or hardcoded in environment configurations
+ * CWE-798: Use of Hard-coded Credentials
+ *
+ * @see https://cwe.mitre.org/data/definitions/798.html
+ * @see https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html
+ */
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath, staticString, propertyName } from '@interlace/eslint-devkit';
+import { fileIsLambda } from '../../utils/lambda-evidence';
+
+type MessageIds = 'secretsInEnv';
+
+export interface Options {
+  /** Allow in test files. Default: true */
+  allowInTests?: boolean;
+  /** Additional secret patterns to detect. Default: [] */
+  additionalPatterns?: string[];
+}
+
+type RuleOptions = [Options?];
+
+// Patterns that indicate secrets
+const SECRET_PATTERNS = [
+  /password/i,
+  /secret/i,
+  /api[_-]?key/i,
+  /api[_-]?token/i,
+  /auth[_-]?token/i,
+  /access[_-]?token/i,
+  /private[_-]?key/i,
+  /encryption[_-]?key/i,
+  /db[_-]?pass/i,
+  /database[_-]?password/i,
+  /jwt[_-]?secret/i,
+  /signing[_-]?key/i,
+  /client[_-]?secret/i,
+  /aws[_-]?secret/i,
+];
+
+export const noSecretsInEnv = createRule<RuleOptions, MessageIds>({
+  name: 'no-secrets-in-env',
+  meta: {
+    type: 'problem',
+    docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/docs/rules/no-secrets-in-env.md',
+      description: 'Detects secrets directly assigned to environment variables',
+      cwe: 'CWE-798',
+      cvss: 9.8,
+    },
+    messages: {
+      secretsInEnv: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Secret in Environment Variable',
+        cwe: 'CWE-798',
+        description: 'Secret "{{varName}}" should not be hardcoded in environment variables',
+        severity: 'CRITICAL',
+        fix: 'Use AWS Secrets Manager: const secret = await secretsClient.send(new GetSecretValueCommand({ SecretId: "{{varName}}" }))',
+        documentationLink: 'https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html',
+      }),
+
+    },
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          allowInTests: { type: 'boolean', default: true },
+          additionalPatterns: { type: 'array', items: { type: 'string' }, default: [], description: 'Extra environment-variable name patterns to treat as secrets' },
+        },
+        additionalProperties: false,
+      },
+    ],
+  },
+  defaultOptions: [{ allowInTests: true, additionalPatterns: [] }],
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
+    // Every rule here is Lambda-specific, and none of them knew it: over 107,382
+    // files, 98% of this plugin's findings were in files with no AWS anything.
+    // Registering no visitors is both the gate and the cheap path.
+    if (!fileIsLambda(context.sourceCode.ast)) return {};
+
+    const { allowInTests = true, additionalPatterns = [] } = options as Options;
+    const filename = context.filename;
+    const isTestFile = isTestFilePath(filename);
+
+    if (allowInTests && isTestFile) {
+      return {};
+    }
+
+    // Compile additional patterns
+    const allPatterns = [
+      ...SECRET_PATTERNS,
+      ...additionalPatterns.map(p => new RegExp(p, 'i')),
+    ];
+
+    /**
+     * Check if a variable name looks like a secret
+     */
+    function isSecretName(name: string): boolean {
+      return allPatterns.some(pattern => pattern.test(name));
+    }
+
+    /**
+     * Check if a value looks like it contains a secret (not just a reference)
+     */
+    function isHardcodedSecretValue(node: TSESTree.Node): boolean {
+      // Literal strings with reasonable length could be secrets
+      const staticText = staticString(node);
+      if (staticText !== null) {
+        return staticText.length > 5;
+      }
+      // Template literals with string parts
+      if (node.type === AST_NODE_TYPES.TemplateLiteral) {
+        return node.quasis.some(quasi => quasi.value.raw.length > 5);
+      }
+      return false;
+    }
+
+    return {
+      // Detect process.env.SECRET_KEY = 'value'
+      AssignmentExpression(node: TSESTree.AssignmentExpression) {
+        if (
+          node.left.type === AST_NODE_TYPES.MemberExpression &&
+          node.left.object.type === AST_NODE_TYPES.MemberExpression &&
+          node.left.object.object.type === AST_NODE_TYPES.Identifier &&
+          node.left.object.object.name === 'process' &&
+          propertyName(node.left.object) === 'env'
+        ) {
+          let envVarName = '';
+          if (node.left.property.type === AST_NODE_TYPES.Identifier) {
+            envVarName = node.left.property.name;
+          } else {
+            envVarName = staticString(node.left.property) ?? '';
+          }
+
+          if (isSecretName(envVarName) && isHardcodedSecretValue(node.right)) {
+            context.report({
+              node,
+              messageId: 'secretsInEnv',
+              data: { varName: envVarName },
+            });
+          }
+        }
+      },
+
+      // Detect { DB_PASSWORD: 'value' } in environment config objects
+      Property(node: TSESTree.Property) {
+        let propName = '';
+        if (node.key.type === AST_NODE_TYPES.Identifier) {
+          propName = node.key.name;
+        } else {
+          propName = staticString(node.key) ?? '';
+        }
+
+        if (isSecretName(propName) && isHardcodedSecretValue(node.value)) {
+          // Check if this is in an environment/config context
+          let parent: TSESTree.Node | undefined = node.parent;
+          while (parent) {
+            if (parent.type === AST_NODE_TYPES.ObjectExpression) {
+              parent = parent.parent;
+              continue;
+            }
+            if (
+              parent.type === AST_NODE_TYPES.VariableDeclarator &&
+              parent.id.type === AST_NODE_TYPES.Identifier &&
+              /env|config|settings/i.test(parent.id.name)
+            ) {
+              context.report({
+                node,
+                messageId: 'secretsInEnv',
+                data: { varName: propName },
+              });
+              break;
+            }
+            break;
+          }
+        }
+      },
+    };
+  },
+});

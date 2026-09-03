@@ -1,0 +1,26 @@
+{
+  "rule": "node-security/no-math-random-crypto",
+  "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
+  "fixtures": 40,
+  "vulnerable": 22,
+  "results": [
+    {
+      "name": "Interlace node-security/no-math-random-crypto",
+      "tp": 20,
+      "fp": 0,
+      "fn": 2,
+      "tn": 18,
+      "precision": 1,
+      "recall": 0.9090909090909091,
+      "specificity": 1,
+      "youdenJ": 0.9090909090909092,
+      "f1": 0.9523809523809523,
+      "crashes": [],
+      "missed": [
+        "vulnerable/06-temp-upload-filename.js",
+        "vulnerable/33-unrevealing-name.js"
+      ],
+      "falsePositives": []
+    }
+  ]
+}

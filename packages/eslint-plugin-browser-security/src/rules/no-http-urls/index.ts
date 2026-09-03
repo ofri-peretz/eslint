@@ -1,0 +1,342 @@
+/**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
+ * @fileoverview Disallow hardcoded HTTP URLs
+ * @see https://owasp.org/www-project-mobile-top-10/
+ * @see https://cwe.mitre.org/data/definitions/319.html
+ */
+
+/**
+ * ## Rule partition — cleartext transport (CWE-319 / CWE-311)
+ *
+ * **This rule owns the general case**: any hardcoded `http://` URL that no
+ * more-specific sibling has claimed — a config constant, an object property, a
+ * `<a href>`, a template literal. It is the residual owner, so a shape only
+ * leaves this rule when another rule provably covers it.
+ *
+ * Defers to:
+ * - `require-https-only` — the URL argument of `fetch(…)` / `axios.<verb>(…)`.
+ *   A call site proves a request is made; that is the stronger finding.
+ * - `detect-mixed-content` — `http://` in a SUBRESOURCE position (`<img src>`,
+ *   `<script src>`, `el.src =`, `setAttribute('src', …)`, `importScripts`).
+ *   That is a load the browser will actually block, reported under CWE-311.
+ *   `<a href="http://…">` is NOT a subresource — a link is a navigation, no
+ *   browser blocks it — so anchors stay here.
+ *
+ * Owns against, and is not deferred to by:
+ * - `no-unencrypted-transmission`, which stood down on `http://` entirely.
+ *
+ * The boundary is `isRequestCallSiteUrl` / `isSubresourcePosition` in
+ * `utils/transport-ownership.ts`. Both sides of every deferral call the same
+ * function rather than restating the test, because two copies of a boundary
+ * drift and the drift shows up as a shape nobody reports.
+ *
+ * Before the partition, `const API_BASE = "http://api.acme-corp.io"` drew three
+ * reports and `fetch("http://api.acme-corp.io")` drew four. Each now draws one.
+ */
+
+import {
+  AST_NODE_TYPES,
+  MessageIcons,
+  TSESTree,
+  createRule,
+  formatLLMMessage,
+  objectKeyName,
+} from '@interlace/eslint-devkit';
+import {
+  isXmlNamespaceUri,
+  isTrustworthyLocalUrl,
+  isDiscardedUrlBase,
+} from '../../utils/namespace-uris';
+import { isReservedExampleUrl } from '../../utils/loopback-hosts';
+import { isProtocolInspection } from '../../utils/protocol-inspection';
+import {
+  isRequestCallSiteUrl,
+  isSubresourcePosition,
+} from '../../utils/transport-ownership';
+
+type MessageIds = 'insecureHttp' | 'insecureHttpWithException';
+
+export interface Options {
+  /** List of hostnames allowed to use HTTP (e.g., localhost, 127.0.0.1) */
+  allowedHosts?: string[];
+  
+  /** List of ports allowed for HTTP (e.g., 3000, 8080 for development) */
+  allowedPorts?: number[];
+}
+
+type RuleOptions = [Options?];
+
+/**
+ * The one place the default lives.
+ *
+ * It used to be written out three times — in `defaultOptions`, in the
+ * `create()` destructuring, and nowhere at all in `meta.schema`, so the
+ * generated docs claimed the option had no default while the code applied one.
+ */
+const DEFAULT_ALLOWED_HOSTS = ['localhost', '127.0.0.1'];
+
+export const noHttpUrls = createRule<RuleOptions, MessageIds>({
+  name: 'no-http-urls',
+  /**
+   * Test material states the insecure URL on purpose.
+   *
+   * Measured across four large public repositories: this rule drew 328 of the
+   * 665 findings between them, and 295 of its 328 were inside test suites,
+   * smoke-test definitions and integration fixtures — Lighthouse alone
+   * accounted for 186, every one under `cli/test/`. A smoke test named
+   * `redirects-http` cannot be written without an `http://` URL, and a
+   * mixed-content fixture exists precisely to hold one.
+   *
+   * This is a transport rule: it judges where bytes go at runtime, and test
+   * fixtures do not ship. That is what separates it from a secrets rule, where
+   * a credential in a test still leaks from the repository.
+   */
+  skipTestFiles: true,
+  meta: {
+    type: 'problem',
+    docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-http-urls.md',
+      description: 'Disallow hardcoded HTTP URLs (require HTTPS)',
+      cwe: 'CWE-319',
+      cvss: 7.5,
+    },
+    messages: {
+      insecureHttp: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Insecure HTTP URL',
+        cwe: 'CWE-319',
+        owasp: 'A02:2021',
+        cvss: 7.5,
+        description: 'Hardcoded HTTP URL detected: "{{url}}"',
+        severity: 'HIGH',
+        compliance: ['SOC2', 'PCI-DSS', 'HIPAA'],
+        fix: 'Use HTTPS instead: const url = "https://..."',
+        documentationLink: 'https://cwe.mitre.org/data/definitions/319.html',
+      }),
+      insecureHttpWithException: formatLLMMessage({
+        icon: MessageIcons.WARNING,
+        issueName: 'Insecure HTTP URL',
+        cwe: 'CWE-319',
+        owasp: 'A02:2021',
+        cvss: 5.3,
+        description: 'HTTP URL detected: "{{url}}"',
+        severity: 'MEDIUM',
+        fix: 'Use HTTPS or add to allowedHosts config',
+        documentationLink: 'https://cwe.mitre.org/data/definitions/319.html',
+      }),
+    },
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          allowedHosts: {
+            type: 'array',
+            items: { type: 'string' },
+            default: DEFAULT_ALLOWED_HOSTS,
+            description: 'List of hostnames allowed to use HTTP (e.g., localhost, 127.0.0.1)',
+          },
+          allowedPorts: {
+            type: 'array',
+            items: { type: 'number' },
+            default: [],
+            description: 'List of ports allowed for HTTP (e.g., 3000, 8080 for development)',
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
+  },
+  defaultOptions: [
+    {
+      allowedHosts: DEFAULT_ALLOWED_HOSTS,
+      allowedPorts: [],
+    },
+  ],
+  create(context) {
+    const [options = {}] = context.options;
+    const allowedHosts = options.allowedHosts ?? DEFAULT_ALLOWED_HOSTS;
+    const allowedPorts = options.allowedPorts ?? [];
+
+    function isAllowedException(url: string): boolean {
+      try {
+        const parsedUrl = new URL(url);
+        
+        // Check if host is in allowed list
+        if (allowedHosts.includes(parsedUrl.hostname)) {
+          return true;
+        }
+
+        // Check if port is in allowed list
+        if (parsedUrl.port && allowedPorts.includes(parseInt(parsedUrl.port, 10))) {
+          return true;
+        }
+
+        return false;
+      } catch {
+        // If URL parsing fails, treat as pattern match
+        return allowedHosts.some(host => url.includes(host));
+      }
+    }
+
+    /**
+     * The attribute or property this string was written under, when there is
+     * one. `xmlns="…"` settles the question on its own.
+     */
+    function declarationName(node: TSESTree.Node): string | undefined {
+      // Every node the visitors hand us is reached from Program, so it always
+      // has a parent — only Program itself does not, and Program is never a
+      // Literal or TemplateElement. Asserting beats an unreachable branch.
+      const parent = node.parent as TSESTree.Node;
+      if (parent.type === 'JSXAttribute') {
+        // JSXAttribute.name is exactly JSXIdentifier | JSXNamespacedName, so
+        // the ternary is exhaustive and needs no unreachable fallback.
+        const name = parent.name;
+        return name.type === 'JSXIdentifier'
+          ? name.name
+          : `${name.namespace.name}:${name.name.name}`;
+      }
+      if (parent.type === AST_NODE_TYPES.Property && parent.value === node) {
+        // `objectKeyName` rather than reading `key.name` behind `!computed`:
+        // `{ ['href']: v }` declares the same property as `{ href: v }`, and
+        // the hand-rolled form was blind to it. The spellings ratchet caught
+        // this the moment the line moved.
+        const name = objectKeyName(parent);
+        if (name !== null) return name;
+      }
+      return undefined;
+    }
+
+    /**
+     * Is the *authority* of this `http://` template chunk supplied by an
+     * interpolation rather than written down?
+     *
+     * ``` `http://${host}:${port}` ``` is not a hardcoded HTTP URL — it is a
+     * configured endpoint, and this rule has no host to judge. Five of the
+     * eight corpus findings were exactly this shape (webpack dev-server proxy
+     * targets and the Shopify CLI's local theme server), each reported with
+     * the message `Hardcoded HTTP URL detected: "http://"`, which is not true
+     * of the code and not actionable.
+     *
+     * Deliberately narrow: only a *fully* interpolated authority is unknowable.
+     * ``` `http://api.${env}.com/x` ``` still reports, because `api.` is
+     * already enough to know the host is not loopback.
+     */
+    function hasInterpolatedAuthority(node: TSESTree.TemplateElement, cooked: string): boolean {
+      const rest = /^http:\/\/(.*)$/is.exec(cooked)?.[1];
+      if (rest === undefined) return false;
+      // The authority runs to the first path / query / fragment delimiter.
+      const authority = rest.split(/[/?#]/)[0];
+      // Something was written down — judge it normally.
+      if (authority !== '') return false;
+      // Nothing written down, and another chunk follows: the next `${…}` IS
+      // the authority.
+      return !node.tail;
+    }
+
+    function checkStringValue(node: TSESTree.Node, value: string): void {
+      const httpPattern = /^http:\/\//i;
+
+      // An XML namespace URI is an opaque identifier, never fetched. Rewriting
+      // it to https breaks the document, so reporting it is worse than noise.
+      if (isXmlNamespaceUri(value, declarationName(node))) {
+        return;
+      }
+
+      // Loopback origins are potentially trustworthy per the Secure Contexts
+      // spec — no browser treats them as cleartext-transmission risk, and no
+      // packet leaves the machine. Shared with `detect-mixed-content` so the
+      // two rules cannot disagree about what "local" means; it covers `::1`,
+      // `0.0.0.0` and `*.localhost`, which the `allowedHosts` default misses.
+      if (isTrustworthyLocalUrl(value)) {
+        return;
+      }
+
+      // A literal being EXAMINED is a guard, not a destination.
+      // `canonic_module_name.indexOf('http://') !== -1` is pm2 deciding whether a module
+      // spec is a remote URL; reporting it flags the check as the vulnerability. Shared
+      // with no-unencrypted-transmission so the two cannot disagree.
+      {
+        const parent = (node as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+        if (parent !== undefined && isProtocolInspection(node, parent)) {
+          return;
+        }
+      }
+
+      // RFC 2606 reserved domains exist so that nothing treats them as a real endpoint.
+      // `redirectUri: 'http://example.com'` was the largest single false-positive shape
+      // for this rule — our highest-volume rule — across the real-source corpus.
+      if (isReservedExampleUrl(value)) {
+        return;
+      }
+
+      // A parsing base whose origin is destructured away transmits nothing —
+      // there is no URL object left to fetch. Shared with `detect-mixed-content`
+      // so the two rules cannot disagree about it.
+      if (isDiscardedUrlBase(node)) {
+        return;
+      }
+
+      // --- family partition ---------------------------------------------------
+      // A `fetch`/`axios` URL argument belongs to `require-https-only`, which
+      // can say a REQUEST is made rather than that a string exists. A
+      // subresource position belongs to `detect-mixed-content`, which can say
+      // the browser will BLOCK the load. Both siblings cover their shape
+      // totally — including the template-literal forms this rule reads — so
+      // standing down here loses nothing and stops one line drawing three
+      // findings under two CWEs.
+      if (
+        isRequestCallSiteUrl(node, context.sourceCode.getScope(node)) ||
+        isSubresourcePosition(node)
+      ) {
+        return;
+      }
+
+      // A bare scheme names no host, so there is nothing to judge and nothing to
+      // rewrite. `const URL_PREFIXES = ['http://', 'https://', 'data:']` is
+      // Lighthouse's table for classifying URLs, not a URL, and the report it
+      // drew read `Hardcoded HTTP URL detected: "http://"` — a statement about
+      // nothing. Same reasoning as the fully interpolated authority above.
+      //
+      // Deliberately last of the exemptions. Placed first it shadowed the
+      // protocol-inspection check, whose own shape (`s.indexOf('http://')`) is
+      // a bare scheme too — the more specific exemption should be the one that
+      // fires, and be the one seen to fire.
+      if (httpPattern.test(value) && !/^http:\/\/[^/?#]/i.test(value)) {
+        return;
+      }
+
+      if (httpPattern.test(value) && !isAllowedException(value)) {
+        context.report({
+          node,
+          messageId: allowedHosts.length > 0 || allowedPorts.length > 0 
+            ? 'insecureHttpWithException' 
+            : 'insecureHttp',
+          data: { url: value },
+        });
+      }
+    }
+
+    return {
+      Literal(node) {
+        if (typeof node.value === 'string') {
+          checkStringValue(node, node.value);
+        }
+      },
+      TemplateElement(node) {
+        // `cooked` is null for an invalid escape as of @typescript-eslint
+        // 8.68.0; 8.54.0 handed back the raw text. This selector is a bare
+        // `TemplateElement` visitor, so a TAGGED template reaches it and the
+        // host is still written down — dropping the quasi loses a real finding.
+        const cooked = node.value.cooked ?? node.value.raw;
+        if (cooked && !hasInterpolatedAuthority(node, cooked)) {
+          checkStringValue(node, cooked);
+        }
+      },
+    };
+  },
+});

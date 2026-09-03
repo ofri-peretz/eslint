@@ -1,0 +1,18 @@
+[
+  {
+    "ruleId": "secure-coding/no-insecure-comparison",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/medusa/packages/medusa/src/utils/default-policy-operations.ts",
+    "line": 5,
+    "column": 12,
+    "message": "🔒 CWE-208 | Secret comparison with !== can leak timing information | HIGH\n   Fix: Use crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b)) | https://nodejs.org/api/crypto.html#cryptotimingsafeequala-b"
+  },
+  {
+    "ruleId": "secure-coding/no-insecure-comparison",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/medusa/packages/medusa/src/utils/default-policy-operations.ts",
+    "line": 5,
+    "column": 29,
+    "message": "🔒 CWE-208 | Secret comparison with !== can leak timing information | HIGH\n   Fix: Use crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b)) | https://nodejs.org/api/crypto.html#cryptotimingsafeequala-b"
+  }
+]

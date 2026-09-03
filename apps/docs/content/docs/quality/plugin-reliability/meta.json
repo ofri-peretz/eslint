@@ -1,0 +1,10 @@
+{
+    "title": "Plugin: reliability",
+    "icon": "ShieldCheck",
+    "defaultOpen": false,
+    "pages": [
+        "index",
+        "changelog",
+        "rules"
+    ]
+}

@@ -1,0 +1,10 @@
+{
+    "title": "Plugin: openai-security",
+    "icon": "Terminal",
+    "defaultOpen": false,
+    "pages": [
+        "index",
+        "changelog",
+        "rules"
+    ]
+}

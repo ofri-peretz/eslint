@@ -1,0 +1,357 @@
+// README structure gate for packages/eslint-plugin-* README.md files.
+//
+// Enforces the canonical structure codified in
+// .agent/rules/readme-structure.md. Fail-fast: any violation exits non-zero
+// with a per-plugin report.
+//
+// Validates: required sections present in canonical order; Interlace logo +
+// standard badge row in the prelude; identical Philosophy paragraph; exactly
+// one rule-data table under the Rules heading with the brain type-aware
+// column populated for every row; no legacy "Set towarn" typo; no stray
+// AUTO-GENERATED markers above the Rules heading.
+
+import fs from 'fs';
+import path from 'path';
+
+const packagesDir = path.join(process.cwd(), 'packages');
+const logosDir = path.join(process.cwd(), 'apps', 'docs', 'public', 'logos');
+
+// Plugins that target a specific ecosystem carry that vendor's mark in the
+// prelude logo row. Plugins absent from this map are the generic quality
+// plugins and carry Interlace + oxlint + ESLint only. Keep in sync with the
+// row documented in .agent/rules/readme-structure.md.
+const ECOSYSTEM_LOGO: Record<string, string> = {
+  'eslint-plugin-anthropic-security': 'claude',
+  'eslint-plugin-openai-security': 'openai',
+  'eslint-plugin-gemini-security': 'gemini',
+  'eslint-plugin-mcp-sdk-security': 'mcp',
+  'eslint-plugin-jwt-security': 'jwt',
+  'eslint-plugin-postgresql-security': 'postgresql',
+  'eslint-plugin-browser-security': 'chromium',
+  'eslint-plugin-drizzle-security': 'drizzle',
+  'eslint-plugin-express-security': 'express',
+  'eslint-plugin-knex-security': 'knex',
+  'eslint-plugin-lambda-security': 'lambda',
+  'eslint-plugin-mongodb-security': 'mongodb',
+  'eslint-plugin-mysql-security': 'mysql',
+  'eslint-plugin-nestjs-security': 'nestjs',
+  'eslint-plugin-node-security': 'node',
+  'eslint-plugin-prisma-security': 'prisma',
+  'eslint-plugin-react-a11y': 'react',
+  'eslint-plugin-react-features': 'react',
+  'eslint-plugin-sequelize-security': 'sequelize',
+  'eslint-plugin-sqlite-security': 'sqlite',
+  'eslint-plugin-typeorm-security': 'typeorm',
+  'eslint-plugin-vercel-ai-security': 'vercel',
+};
+
+const packages = fs
+  .readdirSync(packagesDir, { withFileTypes: true })
+  .filter((d) => d.isDirectory())
+  .map((d) => d.name)
+  .filter((n) => n.startsWith('eslint-plugin-'));
+
+// Canonical section order — every README must contain these headers in this
+// relative order. Optional sections (FAQ, Supported Libraries, Test Coverage,
+// AI-Optimized Messages, etc.) are not asserted by this gate; they're allowed
+// anywhere between Configuration Presets and Rules per the structure rule.
+//
+// The why/how/what bullets replaced `## Philosophy`, and add NO heading of their
+// own — they are three lines between the DOCTRINE markers, under `## Description`.
+// Philosophy said nothing a reader could act on; the section-shaped replacements
+// that followed cost three table-of-contents entries for one thought. The reference
+// is the NestJS npm README: tagline, short Description, then the install command.
+// `scripts/sync-readme-rules.ts` generates them, so they cannot drift across packages.
+const REQUIRED_ORDER = [
+  '## Description',
+  '## Getting Started',
+  '## ⚙️ Configuration Presets',
+  '## 📦 Compatibility',
+  '## Rules',
+  '## 🔗 Related ESLint Plugins',
+  '## 📄 License',
+];
+
+// A line from each generated beat, enough to catch a hand-edited or half-migrated
+// block without pinning prose that is meant to be rewritable.
+const DOCTRINE_FINGERPRINTS = [
+  '- **Why** — a linter nobody reads protects nothing.',
+  '- **How** — evidence, not names.',
+  '- **What** — every finding carries its fix',
+];
+
+/** The Philosophy block the doctrine replaced. Must not come back. */
+const RETIRED_PHILOSOPHY = 'Interlace** fosters **strength through integration';
+
+interface Violation {
+  pkg: string;
+  reasons: string[];
+}
+
+function checkPlugin(pkg: string): Violation | null {
+  const readmePath = path.join(packagesDir, pkg, 'README.md');
+  if (!fs.existsSync(readmePath)) {
+    return { pkg, reasons: ['README.md missing'] };
+  }
+  const content = fs.readFileSync(readmePath, 'utf8');
+  const reasons: string[] = [];
+
+  // 1. Required sections in canonical order. The prior code assigned
+  // `cursor = -1` before `break`, but the cursor was never read after the
+  // loop (CodeQL: `js/useless-assignment-to-local`).
+  let cursor = 0;
+  for (const header of REQUIRED_ORDER) {
+    const idx = content.indexOf(header, cursor);
+    if (idx === -1) {
+      reasons.push(`missing or out-of-order section: \`${header}\``);
+      break;
+    }
+    cursor = idx + header.length;
+  }
+
+  // 1b. …and each appears exactly once. The order walk above is `indexOf` from
+  // a moving cursor, so it stops at the FIRST match of every header and a
+  // second copy further down is invisible to it — eslint-plugin-mcp-sdk-security
+  // shipped two `## Philosophy` blocks through a green gate that way (#377).
+  // Count line-anchored headings so a mention inside prose or a code fence
+  // (e.g. this file's own rule docs) doesn't register as a section.
+  for (const header of REQUIRED_ORDER) {
+    const occurrences = content.split('\n').filter((l) => l === header).length;
+    if (occurrences > 1) {
+      reasons.push(`duplicate section: \`${header}\` appears ${occurrences}×`);
+    }
+  }
+
+  // 2. Prelude: the logo row. Every plugin carries Interlace + oxlint + ESLint;
+  // the 17 plugins that target a specific ecosystem additionally carry that
+  // vendor's mark, between Interlace and oxlint. All marks are served from
+  // /logos/*.svg — normalised to a shared 120x90 canvas so the row aligns on
+  // one baseline regardless of whether a mark is a square icon or a wordmark.
+  // Theme-aware marks: each is a <picture> with a dark <source> and a -light <img>
+  // fallback, so GitHub dark gets the light-ink artwork and npm — which renders on
+  // white and may strip <source> — falls back to the dark-ink one. A bare
+  // `/logos/<mark>.svg` here is the pre-variant form.
+  for (const file of ['interlace', 'oxlint', 'eslint']) {
+    for (const surface of ['light', 'dark']) {
+      if (!content.includes(`/logos/${file}-${surface}.svg`)) {
+        reasons.push(`missing \`/logos/${file}-${surface}.svg\` in prelude logo row`);
+      }
+    }
+    if (new RegExp(`/logos/${file}\\.svg`).test(content)) {
+      reasons.push(`uses the theme-agnostic \`/logos/${file}.svg\` — use the -light/-dark pair`);
+    }
+  }
+  const eco = ECOSYSTEM_LOGO[pkg];
+  if (eco && !content.includes(`/logos/${eco}.svg`)) {
+    reasons.push(`missing ecosystem logo \`/logos/${eco}.svg\` in prelude logo row`);
+  }
+
+  // Presence alone would let a shuffled row through, so pin the canonical
+  // order too: Interlace -> ecosystem -> oxlint -> ESLint. Positions are read
+  // from the prelude only — a stray mention further down the README must not
+  // be able to satisfy the ordering.
+  const prelude = content.slice(0, content.indexOf('## Description') + 1 || content.length);
+  const at = (name: string) => prelude.indexOf(`/logos/${name}.svg`);
+  const iInterlace = at('interlace');
+  const iOxlint = at('oxlint');
+  const iEslint = at('eslint');
+  const iEco = eco ? at(eco) : -1;
+  const present = [iInterlace, iOxlint, iEslint, ...(eco ? [iEco] : [])].every((i) => i !== -1);
+  if (present) {
+    const sequence = eco
+      ? [iInterlace, iEco, iOxlint, iEslint]
+      : [iInterlace, iOxlint, iEslint];
+    const ordered = sequence.every((v, i) => i === 0 || sequence[i - 1] < v);
+    if (!ordered) {
+      reasons.push(
+        `logo row is out of canonical order (expected: Interlace → ${eco ? `${eco} → ` : ''}oxlint → ESLint)`,
+      );
+    }
+  }
+
+  // Every referenced mark must actually exist on the docs site, or npm renders
+  // a broken image that camo then caches as immutable.
+  for (const m of content.matchAll(/\/logos\/([a-z0-9-]+)\.svg/g)) {
+    if (!fs.existsSync(path.join(logosDir, `${m[1]}.svg`))) {
+      reasons.push(`logo \`${m[1]}.svg\` referenced but absent from apps/docs/public/logos/`);
+    }
+  }
+
+  // 2b. Closing footer: a standalone Interlace mark (/logos/interlace.svg,
+  // height=70) as the very last element (item 15 in readme-structure.md).
+  //
+  // The asset matters, not just its presence. The header migrated to the
+  // normalised `/logos/*.svg` set; the footer kept pointing at the pre-migration
+  // `/icon-light.svg` in all thirty READMEs, so one page shipped two generations
+  // of the same mark on different canvases. `/logos/interlace.svg` is what the
+  // header and the root README already use.
+  if (!content.includes('/logos/interlace-light.svg" alt="Interlace" height="70"')) {
+    reasons.push('missing closing Interlace mark footer (item 15 in readme-structure.md)');
+  }
+  if (content.includes('/icon-light.svg') || content.includes('/icon-dark.svg')) {
+    reasons.push('uses the legacy /icon-*.svg mark — use /logos/interlace.svg');
+  }
+
+  // 2c. Getting Started carries ONE guide link. The six-language block copied from
+  // the NestJS README pointed all six at the same English page — we ship no
+  // translations, so it was five dead entries between the reader and `npm install`.
+  for (const marker of ['要查看中文', '가이드', 'ガイド', 'Para ver la', 'الدليل']) {
+    if (content.includes(marker)) {
+      reasons.push(
+        'carries the retired multilingual guide links — every one pointed at the ' +
+          'same English page; keep one link (item 6 in readme-structure.md)',
+      );
+      break;
+    }
+  }
+  if (
+    !content.includes('img.shields.io/npm/v/') ||
+    !content.includes('img.shields.io/badge/License-MIT')
+  ) {
+    reasons.push('missing standard NPM/License badges in prelude');
+  }
+
+  // 3. The why/how/what beats match the generated text.
+  for (const fingerprint of DOCTRINE_FINGERPRINTS) {
+    if (!content.includes(fingerprint)) {
+      reasons.push(`doctrine drift — missing \`${fingerprint}\` (run \`npm run sync-readmes\`)`);
+    }
+  }
+  if (content.includes(RETIRED_PHILOSOPHY)) {
+    reasons.push('carries the retired `## Philosophy` block — run `npm run sync-readmes`');
+  }
+
+  // 4. Exactly one canonical 11-column rule-data table under `## Rules`.
+  //    Only tables whose header lists the canonical column set count — that
+  //    way Parity / Compatibility tables that happen to start with `| Rule |`
+  //    don't trigger the "duplicate" check.
+  const rulesHeaderIdx = content.indexOf('## Rules');
+  const canonicalHeader =
+    '| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |';
+  // Cells are matched with padding tolerance: a formatter that column-aligns
+  // the table (`| Rule    |   CWE   |`) must not make the gate silently stop
+  // covering that plugin. eslint-plugin-nestjs-security went unchecked this way
+  // from #336 until this fix.
+  const ruleTableRegex = new RegExp(
+    ['Rule', 'CWE', 'OWASP', 'CVSS', 'Description', '🧠', '💼', '⚠️', '🔧', '💡', '🚫']
+      .map((c) => `\\|\\s*${c}\\s*`)
+      .join('') + '\\|\\n\\|[\\s:|\\-]+\\|\\n(?:\\|[^\\n]*\\|\\n?)+',
+    'g',
+  );
+  const ruleTableMatches = Array.from(content.matchAll(ruleTableRegex));
+  if (ruleTableMatches.length === 0) {
+    reasons.push(`no canonical rule-data table found (expected header: \`${canonicalHeader}\`)`);
+  } else if (ruleTableMatches.length > 1) {
+    reasons.push(
+      `expected exactly 1 rule-data table, found ${ruleTableMatches.length} (duplicate generator run?)`,
+    );
+  } else if (rulesHeaderIdx !== -1 && ruleTableMatches[0].index! < rulesHeaderIdx) {
+    reasons.push(
+      'rule-data table sits above `## Rules` (auto-migration may have wrapped the wrong table)',
+    );
+  } else {
+    // 5. Every data row populates the 🧠 cell with a known glyph. The header
+    //    is guaranteed canonical by the regex above, so we go straight to
+    //    cell-level validation.
+    const dataRows = ruleTableMatches[0][0]
+      .split('\n')
+      .slice(2) // skip header + alignment
+      .filter((l) => l.startsWith('| ['));
+    const bad: string[] = [];
+    for (const row of dataRows) {
+      // 🧠 is the 6th data cell (index 5 after stripping the leading + trailing
+      // empties produced by `|`-split).
+      const cells = row.split('|').slice(1, -1).map((c) => c.trim());
+      const brain = cells[5];
+      if (!brain || !/^(🟢|🟡|🟠)$/.test(brain)) {
+        const ruleMatch = row.match(/\[([a-z0-9-]+)\]/);
+        bad.push(ruleMatch ? ruleMatch[1] : '(unknown)');
+      }
+    }
+    if (bad.length > 0) {
+      reasons.push(
+        `🧠 column is empty / invalid for ${bad.length} rule(s): ${bad.slice(0, 5).join(', ')}${bad.length > 5 ? '…' : ''}`,
+      );
+    }
+  }
+
+  // 7. Legacy "Set towarn" typo must be gone.
+  if (content.includes('Set towarn')) {
+    reasons.push('legacy `Set towarn` typo in legend (should be `Set to warn`)');
+  }
+
+  // 8. Stray AUTO-GENERATED markers outside `## Rules` body.
+  const autoGenMarkers = Array.from(
+    content.matchAll(/<!-- AUTO-GENERATED:RULES_TABLE:(START|END)[^\n]*-->/g)
+  );
+  if (autoGenMarkers.length > 0) {
+    if (rulesHeaderIdx === -1) {
+      reasons.push('AUTO-GENERATED markers present but `## Rules` is missing');
+    } else {
+      for (const m of autoGenMarkers) {
+        if (m.index! < rulesHeaderIdx) {
+          reasons.push(
+            'AUTO-GENERATED:RULES_TABLE marker sits above `## Rules` — generator wrapped the wrong table',
+          );
+          break;
+        }
+      }
+    }
+  }
+
+  return reasons.length > 0 ? { pkg, reasons } : null;
+}
+
+
+// Published non-plugin packages carry the universal row too (no ecosystem mark
+// and none of the plugin body sections). @interlace/eslint-devkit shipped
+// without any logo at all until this was locked.
+const PUBLISHED_NON_PLUGINS = ['eslint-devkit'];
+
+function checkNonPlugin(pkg: string): Violation | null {
+  const readmePath = path.join(packagesDir, pkg, 'README.md');
+  if (!fs.existsSync(readmePath)) return { pkg, reasons: ['README.md missing'] };
+  const content = fs.readFileSync(readmePath, 'utf8');
+  const reasons: string[] = [];
+  // Same theme-aware <picture> pair as the plugin row — see the note in checkPlugin.
+  const marks = ['interlace', 'oxlint', 'eslint'];
+  for (const m of marks) {
+    for (const surface of ['light', 'dark']) {
+      if (!content.includes(`/logos/${m}-${surface}.svg`)) {
+        reasons.push(`missing \`/logos/${m}-${surface}.svg\` in logo row`);
+      }
+    }
+  }
+  const pos = marks.map((m) => content.indexOf(`/logos/${m}-light.svg`));
+  if (pos.every((i) => i !== -1) && !pos.every((v, i) => i === 0 || pos[i - 1] < v)) {
+    reasons.push('logo row is out of canonical order (expected: Interlace → oxlint → ESLint)');
+  }
+  for (const m of content.matchAll(/\/logos\/([a-z0-9-]+)\.svg/g)) {
+    if (!fs.existsSync(path.join(logosDir, `${m[1]}.svg`))) {
+      reasons.push(`logo \`${m[1]}.svg\` referenced but absent from apps/docs/public/logos/`);
+    }
+  }
+  return reasons.length > 0 ? { pkg, reasons } : null;
+}
+
+console.log('🔍 Verifying README structure for all plugins...');
+
+const violations = [
+  ...packages.map(checkPlugin),
+  ...PUBLISHED_NON_PLUGINS.map(checkNonPlugin),
+].filter((v): v is Violation => v !== null);
+
+if (violations.length > 0) {
+  for (const v of violations) {
+    console.error(`❌ [${v.pkg}]`);
+    for (const r of v.reasons) {
+      console.error(`   - ${r}`);
+    }
+  }
+  console.error(`\n💥 README structure verification failed (${violations.length} plugin(s)).`);
+  process.exit(1);
+} else {
+  console.log(
+    `\n✅ All ${packages.length + PUBLISHED_NON_PLUGINS.length} READMEs follow the canonical structure.`,
+  );
+}

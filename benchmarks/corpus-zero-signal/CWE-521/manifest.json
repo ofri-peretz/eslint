@@ -1,0 +1,36 @@
+{
+  "cwe": "CWE-521",
+  "name": "Weak Password Requirements",
+  "owasp": "A07:2021",
+  "severity": "HIGH",
+  "expectedPlugins": [
+    "eslint-plugin-browser-security",
+    "eslint-plugin-secure-coding"
+  ],
+  "fixtures": {
+    "vulnerable": [
+      {
+        "file": "password-min-length-4.js",
+        "description": "password accepted at 4 characters",
+        "rule": "secure-coding/detect-weak-password-validation"
+      },
+      {
+        "file": "credentials-in-url.js",
+        "description": "basic-auth credentials embedded in a URL literal",
+        "rule": "browser-security/no-password-in-url"
+      }
+    ],
+    "safe": [
+      {
+        "file": "password-min-length-12.js",
+        "description": "password length floor at 12 characters",
+        "rule": "secure-coding/detect-weak-password-validation"
+      },
+      {
+        "file": "credentials-in-header.js",
+        "description": "credentials sent in an Authorization header",
+        "rule": "browser-security/no-password-in-url"
+      }
+    ]
+  }
+}

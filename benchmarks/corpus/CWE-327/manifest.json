@@ -1,0 +1,48 @@
+{
+  "cwe": "CWE-327",
+  "name": "Use of a Broken or Risky Cryptographic Algorithm",
+  "owasp": "A02:2021",
+  "severity": "CRITICAL",
+  "expectedPlugins": [
+    "eslint-plugin-jwt",
+    "eslint-plugin-node-security"
+  ],
+  "fixtures": {
+    "vulnerable": [
+      {
+        "file": "sign-alg-none.js",
+        "description": "jwt.sign with algorithm: 'none'"
+      },
+      {
+        "file": "verify-allows-none.js",
+        "description": "jwt.verify with algorithms array including 'none'"
+      },
+      {
+        "file": "gcm-decipher-no-final.js",
+        "description": "AEAD misuse \u2014 aes-256-gcm decryption never calls .final(), auth tag unverified"
+      },
+      {
+        "file": "gcm-decrypt-no-authtag.js",
+        "description": "AEAD misuse \u2014 aes-256-gcm decryption without setAuthTag, integrity never checked"
+      }
+    ],
+    "safe": [
+      {
+        "file": "sign-rs256.js",
+        "description": "jwt.sign with explicit RS256 algorithm"
+      },
+      {
+        "file": "verify-allowlist.js",
+        "description": "jwt.verify with explicit allowlist excluding none"
+      },
+      {
+        "file": "gcm-decrypt-verified.js",
+        "description": "aes-256-gcm decryption with setAuthTag + final() enforcing integrity"
+      },
+      {
+        "file": "gcm-encrypt-authtag.js",
+        "description": "aes-256-gcm encryption capturing the auth tag via getAuthTag()"
+      }
+    ]
+  }
+}

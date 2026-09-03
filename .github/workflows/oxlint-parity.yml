@@ -1,0 +1,250 @@
+name: Oxlint Parity Gate
+
+# Verifies that every Interlace plugin works correctly when loaded via
+# oxlint's JS-plugin runtime. Four checks, split across two surfaces:
+#
+#   Per-PR (light, fast — ~1m parity job):
+#     1. Static portability audit (unguarded type-aware/TS-bridge usage = fail).
+#     2. Shim drift check (generator output matches on-disk).
+#     3. Runtime smoke test — actually require()s every shim, asserts the
+#        rule-name set matches the snapshot baked into the manifest.
+#     4. Finding-level parity bench (CACHED) — full corpus, but only re-runs
+#        fixtures whose inputs changed since the last green run (cache at
+#        `.agent/oxlint-parity-cache.json`). On a typical docs/config PR
+#        ~20–30s; only rule-touching PRs re-run the affected rules.
+#
+#   Weekly + workflow_dispatch (deep, ~4m):
+#     5. Re-harvest fixtures from upstream RuleTester suites (catches new
+#        rule cases added since last harvest).
+#     6. Full finding-level parity bench against the re-harvested corpus,
+#        no cache short-circuits. Catches fixture drift + cache poisoning
+#        that the per-PR cached run could miss.
+#
+# The runtime smoke test catches the class of bug we hit during the
+# Turborepo migration: shims pointing at a stale dist path that loads
+# half the rules silently. Ratchet locks any future drift.
+
+on:
+  pull_request:
+    branches: [main]
+    types: [ready_for_review, labeled, synchronize]
+    paths:
+      - 'packages/eslint-plugin-*/**'
+      - 'packages/eslint-devkit/**'
+      - 'tools/oxlint-plugins/**'
+      - 'scripts/audit-rule-portability.ts'
+      - 'scripts/generate-oxlint-shims.ts'
+      - 'scripts/verify-oxlint-shims.ts'
+      - 'scripts/__tests__/oxlint-export-lock.test.ts'
+      - 'scripts/__tests__/vitest.config.mts'
+      - '.agent/oxlint-portability-baseline.json'
+      - '.agent/oxlint-jsplugins-manifest.json'
+      - 'benchmarks/suites/ilb-oxlint-parity/**'
+      - '.oxlintrc*.json'
+      - '.github/workflows/oxlint-parity.yml'
+      - 'package.json'
+  workflow_dispatch:
+  schedule:
+    # Sun 10:00 UTC — inside the 3-7am ET maintenance window year-round.
+    # GitHub cron is UTC and does not observe DST, so the slot must be valid at
+    # BOTH offsets: 08:00-11:00 UTC maps to 4-7am EDT and 3-6am EST. Anything
+    # earlier (07:00 UTC) drifts to 2am EST; anything later (12:00 UTC) drifts
+    # to 8am EDT and lands in working hours.
+    # Also moved off the 04:00-05:00 UTC cluster where several other crons
+    # already stack and compete for the 20 concurrent job slots.
+    - cron: "0 10 * * 0"
+
+concurrency:
+  group: oxlint-parity-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    name: Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    outputs:
+      run: ${{ steps.decide.outputs.run }}
+    steps:
+      - id: decide
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          IS_DRAFT: ${{ github.event.pull_request.draft }}
+          HAS_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'run-full-ci') }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" != "pull_request" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ "$IS_DRAFT" == "false" ]] || [[ "$HAS_LABEL" == "true" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Draft PR without \`run-full-ci\` label — skipping oxlint parity gate."
+          fi
+
+  static-audit:
+    name: Audit + shim drift (no build required)
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Runtime probe — every API surface our rules use
+        # Empirical functional verification: loads probe-oxlint-runtime.cjs
+        # into the actually-installed oxlint and asserts every probe fires.
+        # If oxlint changes the JS-plugin API, this names the broken surface
+        # specifically, no manual source-reading required.
+        run: npm run oxlint:verify-runtime
+      - name: Portability audit (blocker count, version pin, runtime hashes)
+        run: npm run audit:portability:ci
+      - name: Shim/manifest file-drift check
+        run: npm run oxlint:shims:check
+
+  # Cron / dispatch only. The cheap `static-audit` job above is the per-change
+  # correctness check — it catches shim drift and portability regressions, which
+  # is what a PR needs. This job is a ~3.3m runtime smoke that costs a scarce
+  # runner slot (20 concurrent, account-wide) for signal the weekly cron and the
+  # static audit already cover between them.
+  runtime-and-parity:
+    name: Runtime smoke + parity (cached)
+    needs: gate
+    if: needs.gate.outputs.run == 'true' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    # ~1–2m typical: build (cached/filtered) + shim smoke + cached parity bench.
+    # The cache at `.agent/oxlint-parity-cache.json` short-circuits unchanged
+    # fixtures so a docs-only PR runs the parity step in seconds.
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Build plugins + devkit + oxlint-plugins (parity surface only)
+        # Narrowed from `turbo run build` (30 packages, 1–2m on a fresh
+        # runner) to only what the parity check actually needs to load.
+        # Docs / registry / storybook are built by their own workflows.
+        run: |
+          npx turbo run build \
+            --filter='./packages/eslint-plugin-*' \
+            --filter='./packages/eslint-devkit' \
+            --filter='./tools/oxlint-plugins'
+      - name: Published-surface lock — every plugin's ./oxlint sub-export
+        # Workspace-level vitest lock (scripts/__tests__/oxlint-export-lock.test.ts):
+        # for EVERY packages/eslint-plugin-* — package.json declares the
+        # ./oxlint subpath export, src/oxlint.ts loads, and it exports a
+        # non-empty ESLint-shaped rule mapping. This is the published-package
+        # counterpart of the built-shim smoke below.
+        run: npm run test:oxlint-exports
+      - name: Runtime smoke — load every shim, compare rule names to manifest
+        # All-plugins contract: confirms every plugin loads under oxlint's
+        # JS-plugin host and exposes the rule-name set the manifest declares.
+        # Catches the "shims point at stale dist" class of bug.
+        run: npm run oxlint:shims:verify
+      - name: Finding-level parity bench (cached)
+        # Same script as the weekly deep bench, but `--cached` consults
+        # `.agent/oxlint-parity-cache.json` and skips fixtures whose
+        # (rule, fixture-hash, eslint-config-hash) tuple matches the last
+        # green run. Cache misses = only the changed rules re-run. The
+        # weekly schedule re-runs the full uncached bench to catch drift
+        # in the cache itself.
+        run: npm run ilb:oxlint-parity:cached
+      - name: Upload parity result artifact
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: oxlint-parity-${{ github.run_number }}
+          path: benchmarks/results/ilb-oxlint-parity/
+          retention-days: 30
+
+  deep-parity:
+    name: Deep parity (re-harvest + full bench)
+    needs: gate
+    # Only runs on the weekly schedule and on-demand via workflow_dispatch.
+    # Skipped on PRs entirely — the per-PR `runtime-and-parity` job uses the
+    # cached variant of the same script for fast feedback. This job exists
+    # to catch (a) new fixtures added upstream via re-harvest, and (b) cache
+    # poisoning in `.agent/oxlint-parity-cache.json`.
+    if: needs.gate.outputs.run == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write # open the failure issue (.github/actions/report-failure)
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Build plugins + devkit + oxlint-plugins
+        run: |
+          npx turbo run build \
+            --filter='./packages/eslint-plugin-*' \
+            --filter='./packages/eslint-devkit' \
+            --filter='./tools/oxlint-plugins'
+      - name: Re-harvest fixtures + run full parity bench
+        # `:full` script invokes `:harvest` then `--ci` (no cache). The
+        # harvest regenerates ./harvested-fixtures from the current upstream
+        # RuleTester suites; the bench then runs every fixture through both
+        # engines and diffs. Captures cache poisoning + new-upstream-rule
+        # coverage gaps that the per-PR cached run by design skips.
+        run: npm run ilb:oxlint-parity:full
+      - name: Upload parity result artifact
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: oxlint-parity-deep-${{ github.run_number }}
+          path: benchmarks/results/ilb-oxlint-parity/
+          retention-days: 30
+
+      # A red cron notifies nobody by default. See .github/actions/report-failure.
+      - name: 🚨 Report a scheduled failure
+        if: failure() && github.event_name == 'schedule'
+        uses: ./.github/actions/report-failure
+        with:
+          title: 'Oxlint parity check is failing'
+          body: 'The scheduled oxlint parity run failed, so the ESLint/oxlint parity claim in our docs is unverified.'
+          token: ${{ github.token }}
+
+  # Aggregate failure reporting.
+  #
+  # Reporting from inside the working jobs does not survive the shapes those
+  # jobs actually fail in: a `fail-fast` matrix cancels its siblings (and
+  # `failure()` is false in a cancelled job), and a report living in one job
+  # says nothing when a different job is the one that breaks. This job depends
+  # on all of them and runs with `if: always()`, so it sees the whole run.
+  report:
+    name: 🚨 Report a scheduled failure
+    needs: [gate, static-audit, runtime-and-parity, deep-parity]
+    if: >-
+      always() && github.event_name == 'schedule' &&
+      contains(needs.*.result, 'failure')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/report-failure
+        with:
+          title: "Oxlint parity check is failing"
+          body: >-
+            The oxlint parity run did not complete. Engine portability is the differentiator this repo claims, and parity drift is invisible until someone runs it.
+          token: ${{ github.token }}

@@ -1,0 +1,526 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Quality Gate
+
+run-name: >-
+  Quality · ${{ github.event_name == 'pull_request' && format('PR #{0} · {1}', github.event.pull_request.number, github.event.pull_request.title) || github.event.head_commit.message }}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Fast-loop quality gate. Auto-runs on every PR push + push to main.
+#
+# Heavy jobs (Build, Tests, Typecheck, Portability Audit) have moved to
+# `quality-full.yml` which only fires on a PR marked `ready_for_review` or
+# labelled `run-full-ci`, plus weekly Sunday cron. Run them locally with
+# `npm run ci:local` before promoting a PR.
+#
+# What stays auto here:
+#   - oxlint (fast pass)        ~15s
+#   - Markdown Lint             ~20s
+#   - CHANGELOG Check           ~15s
+#   - Workflow + script locks   ~30s
+#   - Plugin Taxonomy           ~5s
+#   - Lockfile Sync             ~10s
+#   - Supply-chain floor        ~90s  (OSV + Scorecard offline checks)
+#
+# All of the above run in PARALLEL, so wall-clock is the slowest single job,
+# not the sum. Supply-chain floor is the slowest at ~90s (image pull + scan);
+# everything else still finishes in ~30s.
+#
+# Caching: `./.github/actions/setup` hydrates node_modules and (where used)
+# the `.turbo` task cache. See AGENTS.md "Promotion gate" for the full model.
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # A merge queue builds `refs/heads/gh-readonly-queue/...` and waits for the
+  # REQUIRED checks to report on this event. Without this trigger the check
+  # never reports and every queued merge blocks forever with no error — a worse
+  # failure than the amplification the queue exists to fix. See
+  # docs/intents/merge-latency/design.md; this ships BEFORE the queue is enabled.
+  merge_group:
+
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  TURBO_TELEMETRY_DISABLED: '1'
+  # Turborepo Remote Cache (Vercel). Free on every plan, and off the 10 GB
+  # Actions cache allowance that node_modules and Next.js compete for.
+  # Absent -> empty -> the setup action falls back to the Actions-backed cache,
+  # which is also what a fork PR gets, since forks receive no secrets.
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+
+jobs:
+  oxlint:
+    name: oxlint (fast pass)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: 'false'
+      - run: npm run oxlint
+
+  markdown:
+    name: Markdown Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: 'false'
+      - run: npm run lint:md
+
+  changelog:
+    name: CHANGELOG Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: 'false'
+      - run: npm run audit:changelogs
+
+  workflows:
+    name: Workflow + CI Script Locks
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: 'false'
+      - run: npm run lint:workflows
+      # scripts/__tests__/ held five lock files but only oxlint-export-lock ran
+      # in CI, via a `test:oxlint-exports` script that names a single file and
+      # a path filter in oxlint-parity.yml. gap-closure, sync-source-versions
+      # and turbo-cache-inputs-lock never ran anywhere — including the one
+      # guarding the Turbo cache config. `test:scripts` runs the whole
+      # directory (137 tests, ~13s) so a new lock is covered by existing.
+      - run: npm run test:scripts
+
+  docs-integrity:
+    name: Docs integrity
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: 'false'
+      # Three checks that existed and ran only when somebody typed them. Each is
+      # deterministic and repo-only, so per docs/DOCS_QUALITY.md it belongs on the
+      # PR gate — the cheapest place to fix what it catches.
+      #
+      # `check-links` was red when it was first run in anger: fourteen dead relative
+      # links, including six philosophy documents that moved to the interlace repo in
+      # the split and were never repointed.
+      - run: npm run check-links
+      - run: npm run check:utm-links
+      - run: npm run audit:claims
+      # Layer 1 of the agent evals: every relative link in an agent-facing document
+      # resolves. Free, no key. Layer 2 lives in evals.yml, gated on config changes.
+      - run: npx tsx scripts/run-evals.ts --config
+
+  publish-metadata:
+    name: Publish Metadata
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
+        with:
+          # check-changeset-coverage.ts takes a merge-base diff against main,
+          # so it needs real history. It aborts rather than guessing when the
+          # base is unreachable -- a shallow checkout would fail this job
+          # loudly rather than pass it vacuously -- but full history is what
+          # lets it actually answer.
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: 'false'
+      - run: npm run lint:publish
+
+      # Why this is a merge gate and not only a pre-commit hook:
+      #
+      # A package source change that lands without a changeset never gets a
+      # version bump. release.yml's `detect` then compares local package.json
+      # against npm, sees them equal, and publishes nothing -- no failure, no
+      # signal. That is exactly how six packages sat versioned-but-unpublished
+      # on 2026-08-31.
+      #
+      # lefthook runs this same script on pre-commit, but a local hook is
+      # advisory by construction: --no-verify and LEFTHOOK_EXCLUDE both skip
+      # it, and agents committing in sandboxes skip it routinely. Enforcing it
+      # here is what makes "merging a package change releases that package"
+      # true rather than aspirational.
+      #
+      # `skip-changeset` on the PR opts out for genuinely internal-only work.
+      # The Version PR is exempt, and it is the one exemption that is not a
+      # judgement call. `changeset-release/main` is generated by the changesets
+      # action: it CONSUMES changesets -- deleting them -- and bumps `version`
+      # across every affected package. So it presents the exact shape this gate
+      # rejects (consumer-visible change, no added changeset) while being the
+      # only PR whose purpose is to publish.
+      #
+      # Without this, the gate blocks the release mechanism itself: #787 failed
+      # on 2026-09-01 naming 21 packages, and no version could ever ship. A
+      # gate that guarantees "merging a package change publishes it" must not
+      # be the reason nothing publishes.
+      - name: Changeset covers released code
+        if: >-
+          github.event_name == 'pull_request' &&
+          github.head_ref != 'changeset-release/main' &&
+          !contains(github.event.pull_request.labels.*.name, 'skip-changeset')
+        run: npx tsx scripts/check-changeset-coverage.ts --since=origin/main --strict
+
+  taxonomy:
+    name: Plugin Taxonomy
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: 'false'
+      - run: npm run lint:taxonomy
+      # Same job rather than its own: both gates answer "is this rule allowed
+      # to claim what it claims", both are pure static reads of the same rule
+      # sources, and each runs in well under a second. A separate job would
+      # spend more time on checkout and setup than on the check.
+      - run: npm run lint:name-inference
+      # Third gate on the same question, one layer down: a rule's DETECTION
+      # TABLE is a list of claims, and this asks whether anything exercises
+      # each one. #659 added twelve credential spellings and three reached the
+      # PR with no test — removing them from the rule left the suite green.
+      - run: npm run lint:detection-list-coverage
+      # Three gates that ran ONLY in the pre-commit hook until 2026-08-30.
+      #
+      # AI_SDLC.md names all three as the enforcement for a stage — spellings
+      # and key-vocabulary for Build, case-registry for Design — and none of
+      # them ran in CI. A hook is a convenience, not a gate: it is absent in a
+      # fresh worktree, absent for a commit made through the GitHub UI, and
+      # absent for anyone who has not run `lefthook install`. The stage was
+      # enforced on the machines that happened to be configured for it.
+      #
+      # 0.9s + 0.7s + 7.0s locally, and no network, so they belong in the
+      # cheap job rather than behind the heavy gate.
+      - run: npm run check:spellings
+      - run: npm run check:key-vocabulary
+      # `check:case-registry` DOES need a build, unlike the two above, and the
+      # comment here used to claim otherwise. It loads each plugin from
+      # `src/index.ts` under tsx, but those sources import
+      # `@interlace/eslint-devkit`, which resolves through that package's
+      # `main` to `dist/src/index.js`. It passed locally only because a working
+      # tree already has `dist/`; a fresh checkout does not, and the gate died
+      # with "Cannot find module .../eslint-devkit/dist/src/index.js".
+      #
+      # Only the devkit is built. Building every plugin would put a full
+      # workspace build in the job whose whole point is being cheap.
+      - run: npm run build --workspace=@interlace/eslint-devkit
+      - run: npm run check:case-registry
+      # And the same question one layer out, on the LEDGER rather than the
+      # rule: a triage verdict above a handful of findings has to say how
+      # much of it was actually looked at. no-cycle carried "the DETECTION
+      # is right" until the first sample read 66.7% wrong (#702, #705).
+      - run: npm run lint:triage-sampling
+      # The FULL rule-audit ratchet. The pre-commit hook runs a scoped version
+      # that only sees rules whose own files changed; a shared-util edit can
+      # move a rule's findings without touching it, so this run — every rule,
+      # every check — is the one that actually holds the line.
+      #
+      # ~340ms of analysis over 121 rules, so it belongs in this job rather
+      # than paying for its own checkout.
+      - run: npm run rule-audit:gate
+
+      # Every rule must say, in its own tests, what it means to catch and what
+      # it means to leave alone — one described `invalid` case and one described
+      # `valid` case. A rule that has neither still passes its suite while
+      # nobody can tell what position it takes.
+      #
+      # A static read of the test sources, so no build: it belongs here rather
+      # than in the corpus job. Shrink-only baseline, 342 rules when added.
+      - run: npm run check:rule-cases
+
+      # A rule that reports `o.k` and stays silent on `o["k"]` is not covering
+      # a narrower case — it is blind to the SAME program written the way
+      # bundlers and minifiers write it. This rewrites every firing TP case the
+      # ledger holds into the subscripted spelling and re-runs the rule: any
+      # rule that goes quiet fails here, with the case that proves it.
+      #
+      # The count was 150 rules before 2026-09-02 and is 0 now. Nothing else
+      # holds that line — a rule can regress with every one of its own tests
+      # green, because a test asserting the dotted form still passes. ~5s over
+      # 2,019 cases, and it regenerates the ledger it reads, so it does not
+      # depend on the step above having run.
+      - run: npm run check:computed-keys
+
+      # A rule that decides from an identifier NAME must let the consumer
+      # replace the vocabulary. The space of names a project might use is
+      # endless — `isAuthorized`, `hasAccess`, `canEdit`, `gate` — so a fixed
+      # list is wrong in both directions and the project cannot fix it.
+      # An `additional*` option does not count: it grows the list but cannot
+      # remove the word we guessed wrong about.
+      #
+      # A standard SDK API name is exempt and stays hardcoded:
+      # `dangerouslyAllowBrowser` is Anthropic's, not the consumer's.
+      - run: npm run check:name-vocabulary
+
+  recall:
+    name: Detection Recall (CWE corpus)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
+      # Remote cache instead of the `.turbo/cache` tarball: this job's build is
+      # `quality.yml`'s critical path, and the tarball demonstrably does not
+      # hit on a PR (see the setup action for the measurement). `turbo-cache`
+      # off because the two are redundant and restoring the tarball costs ~11s.
+      #
+      # Scoped to this job rather than defaulted in the composite on purpose —
+      # `release.yml` uses the same composite, and a third-party action has no
+      # business in the publish path.
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: 'false'
+          turbo-remote-cache: 'true'
+      # Guards the half a precision number cannot see. A sweep in August 2026
+      # cut false positives from 10 to 3 on this corpus and took recall from
+      # 73.9% to 50.7% at the same time — 16 labelled vulnerabilities silently
+      # stopped being detected across 67 commits, because every narrowing looked
+      # like an improvement on its own and nothing measured the other side.
+      #
+      # Fixtures are local and small, so unlike the network-heavy ILB-Wild run
+      # this is cheap enough to block a PR. The 8-repo precision scan
+      # (scripts/corpus-scan.ts) stays out of CI for that reason.
+      # The corpus config imports each plugin's `dist/`, so an unbuilt tree makes
+      # it unresolvable. The benchmark refuses to score in that state rather than
+      # reporting zero findings — which is why this job failed in 18s on its first
+      # run instead of silently passing with a perfect record.
+      # The step name is literal: build the plugins the corpus config imports,
+      # not every package in the repo.
+      #
+      # This built all 32 packages until 2026-08-30. Measured on run
+      # 33324089803: 159s of a 194s job — 82% — to serve a gate that takes 6s,
+      # and `quality.yml`'s wall-clock is this job. The corpus config
+      # (benchmarks/suites/ilb-arena/configs/interlace.config.js) imports TEN
+      # plugins. Turbo still builds `@interlace/eslint-devkit` because the
+      # `...` suffix pulls each plugin's dependencies — that is the correct
+      # reason for it to build, rather than because the glob happened to
+      # include it.
+      #
+      # `scripts/__tests__/corpus-build-filter-lock.test.ts` fails if this list
+      # and the config's plugin list drift apart, so a plugin added to the
+      # corpus cannot silently go unbuilt here.
+      - name: Build the plugins the corpus config imports
+        run: |
+          npx turbo build \
+            --filter=eslint-plugin-browser-security... \
+            --filter=eslint-plugin-express-security... \
+            --filter=eslint-plugin-jwt-security... \
+            --filter=eslint-plugin-lambda-security... \
+            --filter=eslint-plugin-mongodb-security... \
+            --filter=eslint-plugin-nestjs-security... \
+            --filter=eslint-plugin-node-security... \
+            --filter=eslint-plugin-postgresql-security... \
+            --filter=eslint-plugin-secure-coding... \
+            --filter=eslint-plugin-vercel-ai-security...
+
+      - name: Every CWE must still detect what it used to
+        run: npx tsx scripts/recall-gate.ts
+
+      # The precision counterpart. recall-gate asks whether the rules still
+      # catch what they used to; this asks whether a rule is measured at all.
+      # A rule with no corpus fixture has no precision number, so it can be
+      # wrong about real code indefinitely and nothing moves. 62 of 374 had
+      # evidence when this was added; the baseline may only shrink.
+      #
+      # It belongs in THIS job rather than Plugin Taxonomy: the other coverage
+      # gates are static reads of rule sources, while this one actually loads
+      # the plugins, so it needs the build above.
+      - name: No rule may ship without corpus evidence
+        run: npm run check:corpus-coverage
+
+  lockfile:
+    name: Lockfile Sync
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      # Re-resolve package-lock.json from package.json without installing.
+      # Any change indicates the lockfile is out of sync — the contributor
+      # edited package.json but didn't run `npm install`.
+      - name: Verify package-lock.json is in sync
+        run: |
+          set -euo pipefail
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          if ! git diff --exit-code --quiet package-lock.json; then
+            echo "::error::package-lock.json is out of sync with package.json."
+            echo ""
+            echo "Run \`npm install\` locally and commit the updated lockfile."
+            echo ""
+            echo "--- Diff (truncated to 80 lines) ---"
+            git --no-pager diff package-lock.json | head -80
+            exit 1
+          fi
+          echo "✅ Lockfile is in sync."
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Supply-chain floor. Runs as a sibling of the other fast gates, so it costs
+  # wall-clock only if it is the slowest one.
+  #
+  # Two assertions, both regressions this repo has actually suffered:
+  #   1. OSV over every committed lockfile. Two stale workspace-member
+  #      lockfiles carried 29 findings for ~8 months while `npm audit` showed
+  #      one low, because npm never reads those files and OSV-Scanner reads all
+  #      of them. Nothing in CI disagreed.
+  #   2. Scorecard per-check floors, for the offline-evaluable checks. The work
+  #      that moved the aggregate 6.8 -> 8.5 is otherwise unguarded.
+  # ───────────────────────────────────────────────────────────────────────────
+  supply-chain:
+    name: Supply-chain floor
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Scans the checked-out tree only — no `npm ci`, so this sees committed
+      # lockfiles and nothing from node_modules. Exits non-zero on any finding.
+      - name: OSV — no known vulnerabilities in any committed lockfile
+        uses: google/osv-scanner-action/osv-scanner-action@6e4298ebc4db23e847df9b2e2de2939d6f066c67 # v2.5.1
+        with:
+          scan-args: |-
+            --recursive
+            ./
+
+      # Pinned by digest, not tag: this job enforces Pinned-Dependencies, so it
+      # has no business pulling a mutable image itself.
+      #
+      # ghcr.io, not gcr.io. The Google-hosted copy started refusing anonymous
+      # pulls outright —
+      #   denied: Consumer 'projects/367732848534' is invalid
+      # — which fails this job on infrastructure that has nothing to do with
+      # the repository being scanned. OpenSSF publishes the same image to
+      # ghcr.io/ossf/scorecard, so the digest below is v5.4.0 from there.
+      - name: Scorecard — offline checks
+        env:
+          SCORECARD_IMAGE: ghcr.io/ossf/scorecard@sha256:546c3f019eb24974abda92004a9003e4059a10e9ee13b1c3ab40d29f4f32f764
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$GITHUB_WORKSPACE":/repo "$SCORECARD_IMAGE" \
+            --local=/repo --format=json \
+            --checks=Dangerous-Workflow,Token-Permissions,Binary-Artifacts,Security-Policy,Pinned-Dependencies \
+            > scorecard.json
+
+      - name: Scorecard — enforce per-check floors
+        run: |
+          set -euo pipefail
+          node scripts/check-scorecard-floor.mjs scorecard.json | tee -a "$GITHUB_STEP_SUMMARY"
+
+  bench-size:
+    name: Results size guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: 'false'
+      - run: npm run check:benchmark-results-size
+
+  # Aggregate gate so branch protection has a single required check to gate on.
+  # Heavy gates (test/build/typecheck/portability) live in quality-full.yml.
+  quality-gate:
+    name: Quality Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    needs:
+      [
+        oxlint,
+        markdown,
+        changelog,
+        workflows,
+        taxonomy,
+        publish-metadata,
+        lockfile,
+        supply-chain,
+        recall,
+        bench-size,
+      ]
+    if: always()
+    steps:
+      - name: Render gate report
+        env:
+          R_OXLINT: ${{ needs.oxlint.result }}
+          R_MARKDOWN: ${{ needs.markdown.result }}
+          R_CHANGELOG: ${{ needs.changelog.result }}
+          R_WORKFLOWS: ${{ needs.workflows.result }}
+          R_TAXONOMY: ${{ needs.taxonomy.result }}
+          R_PUBLISH: ${{ needs.publish-metadata.result }}
+          R_LOCKFILE: ${{ needs.lockfile.result }}
+          R_SUPPLY: ${{ needs.supply-chain.result }}
+          R_RECALL: ${{ needs.recall.result }}
+          R_BENCH_SIZE: ${{ needs.bench-size.result }}
+        run: |
+          set -euo pipefail
+          icon() {
+            case "$1" in
+              success)   echo "✅" ;;
+              failure)   echo "❌" ;;
+              cancelled) echo "⏹" ;;
+              skipped)   echo "⏭" ;;
+              *)         echo "⚠️" ;;
+            esac
+          }
+
+          all_pass=true
+          for r in "$R_OXLINT" "$R_MARKDOWN" "$R_CHANGELOG" "$R_WORKFLOWS" "$R_TAXONOMY" "$R_PUBLISH" "$R_LOCKFILE" "$R_SUPPLY" "$R_RECALL" "$R_BENCH_SIZE"; do
+            [ "$r" = "success" ] || all_pass=false
+          done
+          if $all_pass; then
+            header="✅ Fast quality gates passed"
+          else
+            header="❌ One or more fast quality gates failed"
+          fi
+
+          {
+            echo "# $header"
+            echo ""
+            echo "| Gate | Result | Notes |"
+            echo "|---|---|---|"
+            echo "| oxlint              | $(icon "$R_OXLINT") $R_OXLINT           | fast lint pass (Rust-native) |"
+            echo "| Markdown lint       | $(icon "$R_MARKDOWN") $R_MARKDOWN       | \`markdownlint-cli2\` |"
+            echo "| CHANGELOG present   | $(icon "$R_CHANGELOG") $R_CHANGELOG     | every published package has CHANGELOG.md |"
+            echo "| Workflow + script locks | $(icon "$R_WORKFLOWS") $R_WORKFLOWS | \`lint-workflows.ts\` + \`scripts/__tests__\` |"
+            echo "| Plugin taxonomy     | $(icon "$R_TAXONOMY") $R_TAXONOMY       | code-agnostic plugins carry no SDK gates |"
+            echo "| Publish metadata    | $(icon "$R_PUBLISH") $R_PUBLISH         | no package publishes with an npm warning |"
+            echo "| Lockfile sync       | $(icon "$R_LOCKFILE") $R_LOCKFILE      | \`package-lock.json\` matches \`package.json\` |"
+            echo "| Supply-chain floor  | $(icon "$R_SUPPLY") $R_SUPPLY          | OSV clean + Scorecard checks above floor |"
+            echo "| Detection recall    | $(icon "$R_RECALL") $R_RECALL          | no CWE detects less than it used to |"
+            echo "| Results size guard  | $(icon "$R_BENCH_SIZE") $R_BENCH_SIZE      | benchmarks/results/ under 20 MiB |"
+            echo ""
+            echo "_Heavy gates (build/tests/typecheck/portability) run via \`quality-full.yml\` when this PR is promoted (ready-for-review or \`run-full-ci\` label)._"
+            if ! $all_pass; then
+              echo ""
+              echo "**Investigate failures via the per-gate jobs above.**"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          $all_pass || { echo "::error::One or more quality gates failed"; exit 1; }
+          echo "All quality gates passed."

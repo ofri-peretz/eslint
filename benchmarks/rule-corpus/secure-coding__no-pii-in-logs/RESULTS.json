@@ -1,0 +1,25 @@
+{
+  "rule": "secure-coding/no-pii-in-logs",
+  "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
+  "fixtures": 15,
+  "vulnerable": 8,
+  "results": [
+    {
+      "name": "Interlace secure-coding/no-pii-in-logs",
+      "tp": 8,
+      "fp": 1,
+      "fn": 0,
+      "tn": 6,
+      "precision": 0.8888888888888888,
+      "recall": 1,
+      "specificity": 0.8571428571428571,
+      "youdenJ": 0.8571428571428572,
+      "f1": 0.9411764705882353,
+      "crashes": [],
+      "missed": [],
+      "falsePositives": [
+        "safe/07-tokenizer-metrics.js"
+      ]
+    }
+  ]
+}

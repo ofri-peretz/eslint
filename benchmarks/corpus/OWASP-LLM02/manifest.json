@@ -1,0 +1,17 @@
+{
+  "cwe": "—",
+  "name": "OWASP LLM02 — Insecure Output Handling (LLM result → unsanitized sink)",
+  "owasp": "LLM02:2025",
+  "severity": "CRITICAL",
+  "expectedPlugins": ["eslint-plugin-vercel-ai-security"],
+  "fixtures": {
+    "vulnerable": [
+      { "file": "innerhtml-sink.ts", "description": "generateText output piped to .innerHTML" },
+      { "file": "eval-sink.ts", "description": "streamText output evaluated as code" }
+    ],
+    "safe": [
+      { "file": "textcontent-sink.ts", "description": "LLM output rendered via textContent (escapes HTML)" },
+      { "file": "validated-output.ts", "description": "Output passed through DOMPurify-equivalent sanitizer" }
+    ]
+  }
+}

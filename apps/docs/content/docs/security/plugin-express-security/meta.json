@@ -1,0 +1,10 @@
+{
+    "title": "Plugin: express-security",
+    "icon": "Server",
+    "defaultOpen": false,
+    "pages": [
+        "index",
+        "changelog",
+        "rules"
+    ]
+}

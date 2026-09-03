@@ -1,0 +1,307 @@
+{
+  "node-security/lock-file": {
+    "hits": 0,
+    "avgTimeMs": 2.92,
+    "samples": []
+  },
+  "secure-coding/no-graphql-injection": {
+    "hits": 0,
+    "avgTimeMs": 1.04,
+    "samples": []
+  },
+  "node-security/detect-child-process": {
+    "hits": 0,
+    "avgTimeMs": 0.83,
+    "samples": []
+  },
+  "secure-coding/no-hardcoded-credentials": {
+    "hits": 0,
+    "avgTimeMs": 0.75,
+    "samples": []
+  },
+  "node-security/no-buffer-overread": {
+    "hits": 0,
+    "avgTimeMs": 0.74,
+    "samples": []
+  },
+  "secure-coding/no-ldap-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.63,
+    "samples": []
+  },
+  "secure-coding/no-xpath-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.6,
+    "samples": []
+  },
+  "node-security/no-zip-slip": {
+    "hits": 0,
+    "avgTimeMs": 0.59,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-deserialization": {
+    "hits": 0,
+    "avgTimeMs": 0.53,
+    "samples": []
+  },
+  "secure-coding/no-insecure-comparison": {
+    "hits": 0,
+    "avgTimeMs": 0.51,
+    "samples": []
+  },
+  "secure-coding/detect-object-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.49,
+    "samples": []
+  },
+  "secure-coding/no-unchecked-loop-condition": {
+    "hits": 0,
+    "avgTimeMs": 0.46,
+    "samples": []
+  },
+  "secure-coding/no-weak-password-recovery": {
+    "hits": 0,
+    "avgTimeMs": 0.43,
+    "samples": []
+  },
+  "secure-coding/no-improper-sanitization": {
+    "hits": 0,
+    "avgTimeMs": 0.42,
+    "samples": []
+  },
+  "secure-coding/no-unlimited-resource-allocation": {
+    "hits": 0,
+    "avgTimeMs": 0.4,
+    "samples": []
+  },
+  "secure-coding/no-xxe-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.39,
+    "samples": []
+  },
+  "secure-coding/detect-non-literal-regexp": {
+    "hits": 0,
+    "avgTimeMs": 0.38,
+    "samples": []
+  },
+  "node-security/detect-eval-with-expression": {
+    "hits": 0,
+    "avgTimeMs": 0.36,
+    "samples": []
+  },
+  "node-security/detect-non-literal-fs-filename": {
+    "hits": 0,
+    "avgTimeMs": 0.35,
+    "samples": []
+  },
+  "node-security/no-toctou-vulnerability": {
+    "hits": 0,
+    "avgTimeMs": 0.32,
+    "samples": []
+  },
+  "secure-coding/no-missing-authentication": {
+    "hits": 0,
+    "avgTimeMs": 0.3,
+    "samples": []
+  },
+  "secure-coding/no-privilege-escalation": {
+    "hits": 0,
+    "avgTimeMs": 0.3,
+    "samples": []
+  },
+  "secure-coding/no-redos-vulnerable-regex": {
+    "hits": 0,
+    "avgTimeMs": 0.24,
+    "samples": []
+  },
+  "secure-coding/no-sensitive-data-exposure": {
+    "hits": 0,
+    "avgTimeMs": 0.22,
+    "samples": []
+  },
+  "node-security/no-weak-hash-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 0.21,
+    "samples": []
+  },
+  "express-security/no-exposed-debug-endpoints": {
+    "hits": 0,
+    "avgTimeMs": 0.21,
+    "samples": []
+  },
+  "mongodb-security/no-hardcoded-connection-string": {
+    "hits": 0,
+    "avgTimeMs": 0.21,
+    "samples": []
+  },
+  "node-security/no-arbitrary-file-access": {
+    "hits": 0,
+    "avgTimeMs": 0.2,
+    "samples": []
+  },
+  "node-security/no-static-iv": {
+    "hits": 0,
+    "avgTimeMs": 0.2,
+    "samples": []
+  },
+  "node-security/no-data-in-temp-storage": {
+    "hits": 0,
+    "avgTimeMs": 0.19,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-regex-construction": {
+    "hits": 0,
+    "avgTimeMs": 0.19,
+    "samples": []
+  },
+  "express-security/require-helmet": {
+    "hits": 0,
+    "avgTimeMs": 0.18,
+    "samples": []
+  },
+  "express-security/require-csrf-protection": {
+    "hits": 0,
+    "avgTimeMs": 0.18,
+    "samples": []
+  },
+  "node-security/no-unsafe-dynamic-require": {
+    "hits": 0,
+    "avgTimeMs": 0.18,
+    "samples": []
+  },
+  "node-security/detect-suspicious-dependencies": {
+    "hits": 0,
+    "avgTimeMs": 0.17,
+    "samples": []
+  },
+  "node-security/no-ssrf": {
+    "hits": 0,
+    "avgTimeMs": 0.17,
+    "samples": []
+  },
+  "node-security/require-dependency-integrity": {
+    "hits": 0,
+    "avgTimeMs": 0.17,
+    "samples": []
+  },
+  "express-security/require-express-body-parser-limits": {
+    "hits": 0,
+    "avgTimeMs": 0.16,
+    "samples": []
+  },
+  "node-security/no-weak-cipher-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 0.15,
+    "samples": []
+  },
+  "express-security/no-permissive-cors": {
+    "hits": 0,
+    "avgTimeMs": 0.15,
+    "samples": []
+  },
+  "express-security/no-insecure-cookie-options": {
+    "hits": 0,
+    "avgTimeMs": 0.14,
+    "samples": []
+  },
+  "mongodb-security/no-unsafe-query": {
+    "hits": 0,
+    "avgTimeMs": 0.14,
+    "samples": []
+  },
+  "mongodb-security/no-select-sensitive-fields": {
+    "hits": 0,
+    "avgTimeMs": 0.13,
+    "samples": []
+  },
+  "node-security/no-ecb-mode": {
+    "hits": 0,
+    "avgTimeMs": 0.13,
+    "samples": []
+  },
+  "node-security/no-cryptojs": {
+    "hits": 0,
+    "avgTimeMs": 0.13,
+    "samples": []
+  },
+  "express-security/require-rate-limiting": {
+    "hits": 0,
+    "avgTimeMs": 0.13,
+    "samples": []
+  },
+  "express-security/no-graphql-introspection-production": {
+    "hits": 0,
+    "avgTimeMs": 0.12,
+    "samples": []
+  },
+  "node-security/no-deprecated-buffer": {
+    "hits": 0,
+    "avgTimeMs": 0.12,
+    "samples": []
+  },
+  "mongodb-security/no-unsafe-populate": {
+    "hits": 0,
+    "avgTimeMs": 0.12,
+    "samples": []
+  },
+  "mongodb-security/no-operator-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.1,
+    "samples": []
+  },
+  "mongodb-security/no-unsafe-regex-query": {
+    "hits": 0,
+    "avgTimeMs": 0.1,
+    "samples": []
+  },
+  "express-security/no-express-unsafe-regex-route": {
+    "hits": 0,
+    "avgTimeMs": 0.1,
+    "samples": []
+  },
+  "mongodb-security/no-unsafe-where": {
+    "hits": 0,
+    "avgTimeMs": 0.1,
+    "samples": []
+  },
+  "express-security/no-cors-credentials-wildcard": {
+    "hits": 0,
+    "avgTimeMs": 0.1,
+    "samples": []
+  },
+  "mongodb-security/require-tls-connection": {
+    "hits": 0,
+    "avgTimeMs": 0.09,
+    "samples": []
+  },
+  "mongodb-security/no-hardcoded-credentials": {
+    "hits": 0,
+    "avgTimeMs": 0.09,
+    "samples": []
+  },
+  "mongodb-security/require-auth-mechanism": {
+    "hits": 0,
+    "avgTimeMs": 0.09,
+    "samples": []
+  },
+  "mongodb-security/no-unbounded-find": {
+    "hits": 0,
+    "avgTimeMs": 0.09,
+    "samples": []
+  },
+  "mongodb-security/no-debug-mode-production": {
+    "hits": 0,
+    "avgTimeMs": 0.08,
+    "samples": []
+  },
+  "mongodb-security/no-bypass-middleware": {
+    "hits": 0,
+    "avgTimeMs": 0.08,
+    "samples": []
+  },
+  "mongodb-security/require-schema-validation": {
+    "hits": 0,
+    "avgTimeMs": 0.07,
+    "samples": []
+  }
+}

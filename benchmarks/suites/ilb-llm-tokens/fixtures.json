@@ -1,0 +1,266 @@
+{
+  "$schema-note": "Fixture corpus for ilb-llm-tokens v1.0. Each fixture pairs a V1 input shape with the equivalent V2 shape conveying the same lint finding. Edit here, not in source code.",
+  "version": "v1.0",
+  "security": [
+    {
+      "id": "sql-injection-pg",
+      "v1": {
+        "icon": "🔒",
+        "issueName": "SQL Injection",
+        "cwe": "CWE-89",
+        "description": "SQL injection via string concatenation",
+        "severity": "CRITICAL",
+        "fix": "Use parameterized queries ($1, $2)",
+        "documentationLink": "https://node-postgres.com/features/queries#parameterized-query"
+      },
+      "v2": {
+        "cwe": "CWE-89",
+        "severity": "CRITICAL",
+        "description": "SQL injection via string concatenation",
+        "why": "Attackers can modify the query structure to access unauthorized data",
+        "fix": "Use parameterized queries ($1, $2)",
+        "docs": "https://node-postgres.com/features/queries#parameterized-query",
+        "vulnerable": "db.query('SELECT * FROM users WHERE id=' + userId)",
+        "safe": "db.query('SELECT * FROM users WHERE id=$1', [userId])"
+      }
+    },
+    {
+      "id": "hardcoded-credential",
+      "v1": {
+        "icon": "🔒",
+        "issueName": "Hardcoded Credential",
+        "cwe": "CWE-798",
+        "description": "Hardcoded credential in source",
+        "severity": "HIGH",
+        "fix": "Read secret from environment variable or secret manager",
+        "documentationLink": "https://cwe.mitre.org/data/definitions/798.html"
+      },
+      "v2": {
+        "cwe": "CWE-798",
+        "severity": "HIGH",
+        "description": "Hardcoded credential in source",
+        "why": "Secrets in code leak via repos, logs, and crash dumps",
+        "fix": "Read secret from environment variable or secret manager",
+        "docs": "https://cwe.mitre.org/data/definitions/798.html",
+        "vulnerable": "const password = 'admin123';",
+        "safe": "const password = process.env.DB_PASSWORD;"
+      }
+    },
+    {
+      "id": "jwt-algorithm-none",
+      "v1": {
+        "icon": "🔒",
+        "issueName": "JWT alg=none",
+        "cwe": "CWE-347",
+        "description": "JWT verified with algorithm 'none' bypasses signature check",
+        "severity": "CRITICAL",
+        "fix": "Whitelist allowed algorithms, e.g. ['RS256', 'ES256']",
+        "documentationLink": "https://www.rfc-editor.org/rfc/rfc7519"
+      },
+      "v2": {
+        "cwe": "CWE-347",
+        "severity": "CRITICAL",
+        "description": "JWT verified with algorithm 'none' bypasses signature check",
+        "why": "Anyone can forge a token by setting alg=none in the header",
+        "fix": "Whitelist allowed algorithms, e.g. ['RS256', 'ES256']",
+        "docs": "https://www.rfc-editor.org/rfc/rfc7519",
+        "vulnerable": "jwt.verify(token, secret, { algorithms: ['none'] })",
+        "safe": "jwt.verify(token, secret, { algorithms: ['RS256'] })"
+      }
+    },
+    {
+      "id": "mongodb-unsafe-where",
+      "v1": {
+        "icon": "🔒",
+        "issueName": "Unsafe $where",
+        "cwe": "CWE-94",
+        "description": "MongoDB $where executes arbitrary JavaScript on the server",
+        "severity": "HIGH",
+        "fix": "Replace $where with $expr or specific query operators",
+        "documentationLink": "https://www.mongodb.com/docs/manual/reference/operator/query/where/"
+      },
+      "v2": {
+        "cwe": "CWE-94",
+        "severity": "HIGH",
+        "description": "MongoDB $where executes arbitrary JavaScript on the server",
+        "why": "String inputs concatenated into $where give attackers code execution",
+        "fix": "Replace $where with $expr or specific query operators",
+        "docs": "https://www.mongodb.com/docs/manual/reference/operator/query/where/",
+        "vulnerable": "coll.find({ $where: 'this.role == \"' + role + '\"' })",
+        "safe": "coll.find({ $expr: { $eq: ['$role', role] } })"
+      }
+    },
+    {
+      "id": "xss-innerhtml",
+      "v1": {
+        "icon": "🔒",
+        "issueName": "XSS via innerHTML",
+        "cwe": "CWE-79",
+        "description": "Untrusted input written to innerHTML enables XSS",
+        "severity": "HIGH",
+        "fix": "Use textContent, or sanitize with DOMPurify before assignment",
+        "documentationLink": "https://owasp.org/www-community/attacks/xss/"
+      },
+      "v2": {
+        "cwe": "CWE-79",
+        "severity": "HIGH",
+        "description": "Untrusted input written to innerHTML enables XSS",
+        "why": "innerHTML parses script tags and event handlers from the input",
+        "fix": "Use textContent, or sanitize with DOMPurify before assignment",
+        "docs": "https://owasp.org/www-community/attacks/xss/",
+        "vulnerable": "el.innerHTML = userInput;",
+        "safe": "el.textContent = userInput;"
+      }
+    },
+    {
+      "id": "weak-crypto-md5",
+      "v1": {
+        "icon": "🔒",
+        "issueName": "Weak hash algorithm",
+        "cwe": "CWE-327",
+        "description": "MD5 is broken for cryptographic use",
+        "severity": "MEDIUM",
+        "fix": "Use SHA-256 or SHA-3 for hashes; use bcrypt/argon2 for passwords",
+        "documentationLink": "https://cwe.mitre.org/data/definitions/327.html"
+      },
+      "v2": {
+        "cwe": "CWE-327",
+        "severity": "MEDIUM",
+        "description": "MD5 is broken for cryptographic use",
+        "why": "MD5 collisions are trivially generatable; not safe for integrity or auth",
+        "fix": "Use SHA-256 or SHA-3 for hashes; use bcrypt/argon2 for passwords",
+        "docs": "https://cwe.mitre.org/data/definitions/327.html",
+        "vulnerable": "createHash('md5').update(password).digest('hex')",
+        "safe": "await argon2.hash(password)"
+      }
+    }
+  ],
+  "quality": [
+    {
+      "id": "circular-dependency",
+      "v1": {
+        "icon": "🔄",
+        "issueName": "Circular dependency",
+        "description": "Circular import detected: A → B → C → A",
+        "severity": "MEDIUM",
+        "fix": "Extract shared types to a separate module",
+        "documentationLink": "https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-cycle.md"
+      },
+      "v2": {
+        "category": "circular-dependency",
+        "severity": "MEDIUM",
+        "description": "Circular import detected: A → B → C → A",
+        "why": "Circular imports cause undefined values at import time",
+        "fix": "Extract shared types to a separate module",
+        "docs": "https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-cycle.md",
+        "cycle": ["src/A.ts", "src/B.ts", "src/C.ts", "src/A.ts"]
+      }
+    },
+    {
+      "id": "barrel-file",
+      "v1": {
+        "icon": "📦",
+        "issueName": "Barrel file detected",
+        "description": "Barrel re-exports defeat tree-shaking",
+        "severity": "LOW",
+        "fix": "Import from the source module directly",
+        "documentationLink": "https://example.com/no-barrel"
+      },
+      "v2": {
+        "category": "barrel-file",
+        "severity": "LOW",
+        "description": "Barrel re-exports defeat tree-shaking",
+        "why": "Bundlers retain all transitive members when a barrel is in the import chain",
+        "fix": "Import from the source module directly",
+        "docs": "https://example.com/no-barrel",
+        "vulnerable": "import { Button } from '@/components';",
+        "safe": "import { Button } from '@/components/Button';"
+      }
+    },
+    {
+      "id": "unused-import",
+      "v1": {
+        "icon": "🧹",
+        "issueName": "Unused import",
+        "description": "Imported symbol is never used",
+        "severity": "LOW",
+        "fix": "Remove the unused import",
+        "documentationLink": "https://eslint.org/docs/latest/rules/no-unused-vars"
+      },
+      "v2": {
+        "category": "unused-import",
+        "severity": "LOW",
+        "description": "Imported symbol is never used",
+        "fix": "Remove the unused import",
+        "docs": "https://eslint.org/docs/latest/rules/no-unused-vars",
+        "vulnerable": "import { foo } from 'lib';",
+        "safe": "// import removed"
+      }
+    }
+  ],
+  "performance": [
+    {
+      "id": "loop-insert",
+      "v1": {
+        "icon": "⚡",
+        "issueName": "Loop INSERT",
+        "description": "Loop-based INSERT detected — O(n) database calls",
+        "severity": "MEDIUM",
+        "fix": "Use bulk INSERT with a single VALUES clause",
+        "documentationLink": "https://www.postgresql.org/docs/current/populate.html"
+      },
+      "v2": {
+        "severity": "MEDIUM",
+        "description": "Loop-based INSERT detected — O(n) database calls",
+        "why": "Each iteration opens a new round-trip, causing N×latency",
+        "fix": "Use bulk INSERT with a single VALUES clause",
+        "docs": "https://www.postgresql.org/docs/current/populate.html",
+        "vulnerable": "for (const row of rows) { await db.query(\"INSERT...\", row); }",
+        "safe": "await db.query(\"INSERT INTO t VALUES \" + values.join(\",\"), flat)",
+        "impact": { "current": "O(n) queries", "optimized": "O(1) query" }
+      }
+    },
+    {
+      "id": "n-plus-one",
+      "v1": {
+        "icon": "⚡",
+        "issueName": "N+1 query",
+        "description": "N+1 query pattern in collection iteration",
+        "severity": "HIGH",
+        "fix": "Eager-load related records with a single JOIN or batch lookup",
+        "documentationLink": "https://example.com/n-plus-one"
+      },
+      "v2": {
+        "severity": "HIGH",
+        "description": "N+1 query pattern in collection iteration",
+        "why": "Each row triggers an additional fetch, multiplying database load",
+        "fix": "Eager-load related records with a single JOIN or batch lookup",
+        "docs": "https://example.com/n-plus-one",
+        "vulnerable": "rows.forEach(r => db.fetch(r.id))",
+        "safe": "db.fetchAll(rows.map(r => r.id))",
+        "impact": { "current": "1+N queries", "optimized": "1 query" }
+      }
+    },
+    {
+      "id": "unbounded-array-grow",
+      "v1": {
+        "icon": "⚡",
+        "issueName": "Unbounded growth",
+        "description": "Array.push inside a recursive call without termination guard",
+        "severity": "MEDIUM",
+        "fix": "Add a max depth or size guard",
+        "documentationLink": "https://example.com/unbounded"
+      },
+      "v2": {
+        "severity": "MEDIUM",
+        "description": "Array.push inside a recursive call without termination guard",
+        "why": "Memory grows linearly with input size; risk of OOM on adversarial input",
+        "fix": "Add a max depth or size guard",
+        "docs": "https://example.com/unbounded",
+        "vulnerable": "walk(node) { acc.push(node); node.children.forEach(walk); }",
+        "safe": "walk(node, depth=0) { if (depth > MAX) return; acc.push(node); node.children.forEach(c => walk(c, depth+1)); }",
+        "impact": { "current": "unbounded memory", "optimized": "bounded by MAX" }
+      }
+    }
+  ]
+}

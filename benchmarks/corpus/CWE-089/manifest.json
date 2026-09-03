@@ -1,0 +1,19 @@
+{
+  "cwe": "CWE-089",
+  "name": "SQL Injection",
+  "owasp": "A03:2021",
+  "severity": "CRITICAL",
+  "expectedPlugins": ["eslint-plugin-secure-coding", "eslint-plugin-pg"],
+  "fixtures": {
+    "vulnerable": [
+      { "file": "string-concat.js", "description": "String concatenation in query" },
+      { "file": "template-literal.js", "description": "Template literal interpolation" },
+      { "file": "dynamic-column.js", "description": "Dynamic column name" }
+    ],
+    "safe": [
+      { "file": "parameterized.js", "description": "Parameterized query with $1" },
+      { "file": "static-query.js", "description": "Fully static query string" },
+      { "file": "prepared-statement.js", "description": "Named prepared statement" }
+    ]
+  }
+}

@@ -1,0 +1,40 @@
+# no-import-module-exports
+
+💼 This rule is enabled in the following configs: `recommended`, `typescript`.
+💡 This rule is automatically fixable by the `--fix` CLI option.
+
+<!-- end auto-generated rule header -->
+
+Forbid import statements with CommonJS module.exports
+
+## Rule Details
+
+This rule aims to prevent issues related to import-module-exports.
+
+## Options
+
+```json
+[
+  {
+    "type": "object",
+    "properties": {
+      "exceptions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "additionalProperties": false
+  }
+]
+```
+
+## Implementation
+
+- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/no-import-module-exports.ts)
+- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/no-import-module-exports.test.ts)
+
+## OWASP Foundation
+
+- **Category**: A00:2021 - General Security

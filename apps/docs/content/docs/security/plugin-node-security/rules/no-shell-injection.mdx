@@ -1,0 +1,109 @@
+---
+title: no-shell-injection
+description: "Disallow string concatenation or template expressions in shell command arguments (CWE-78)"
+tags: ['security', 'node']
+category: security
+severity: critical
+cwe: CWE-78
+autofix: false
+type_aware: false
+type_aware_status: unaware
+---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+**CWE:** [CWE-78](https://cwe.mitre.org/data/definitions/78.html)
+**OWASP:** [A03:2021 — Injection](https://owasp.org/Top10/A03_2021-Injection/)
+
+`exec` and `execSync` hand their argument to `/bin/sh`. The shell then interprets `;`,
+`&&`, `|`, `` ` ``, `$()` and newline as syntax. Any value spliced into that string stops
+being an argument and becomes code — which is why command injection remains one of the
+highest-severity defects a Node service can carry.
+
+## Rule details
+
+Reports a shell command assembled by concatenation or template interpolation.
+
+Examples of **incorrect** code:
+
+```js
+const { exec } = require('child_process');
+
+// `; rm -rf /` in `repoUrl` is a second command, not a URL.
+exec('git clone ' + repoUrl);
+```
+
+```js
+const { execSync } = require('child_process');
+execSync(`npm install ${packageName}`);
+```
+
+```js
+// A shell is a shell even when you asked for spawn.
+spawn(`tar -xzf ${archivePath}`, { shell: true });
+```
+
+Examples of **correct** code:
+
+```js
+const { execFile } = require('child_process');
+
+// The binary is named, the arguments are a vector. No shell, no metacharacters.
+execFile('git', ['clone', repoUrl], (err, stdout) => { /* … */ });
+```
+
+```js
+const { spawn } = require('child_process');
+spawn('npm', ['install', packageName], { shell: false });
+```
+
+```js
+const { execFile } = require('child_process');
+// `--` ends option parsing, so a filename beginning with `-` cannot become a flag.
+execFile('grep', ['--', pattern, file]);
+```
+
+## The fix is always the same shape
+
+Replace one string with a binary plus an argument array:
+
+```js
+// instead of                              use
+exec('cmd ' + arg)                      -> execFile('cmd', [arg])
+execSync(`cmd ${arg}`)                  -> execFileSync('cmd', [arg])
+spawn(`cmd ${arg}`, { shell: true })    -> spawn('cmd', [arg], { shell: false })
+```
+
+The argument vector is passed to `execve` directly. There is no shell to parse
+metacharacters, so quoting and escaping stop being your responsibility.
+
+## Argument injection still applies
+
+Removing the shell closes command injection, not argument injection. A tool that accepts
+`--upload-file` or `-o` can still be steered by a value that starts with a dash. Where the
+binary is fixed and the argument is attacker-influenced, pass `--` before the user value.
+
+## Why there is no autofix
+
+Splitting a command string into a binary and an argument vector requires shell-accurate
+tokenisation of quoting, escapes and expansions. An autofix that got it wrong would change
+what the program executes — the exact failure this rule exists to prevent.
+
+## When not to use it
+
+Disable it in a build script whose command is assembled entirely from literals and
+`__dirname`. Prefer a scoped `eslint-disable-next-line` over switching the rule off for
+the package.
+
+## Related
+
+- [`detect-child-process`](./detect-child-process)
+- [`detect-non-literal-fs-filename`](./detect-non-literal-fs-filename)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `requireModuleEvidence` | `boolean` | `true` | Only report when the callee resolves to child_process. Turning this off restores the pre-2026-08 behaviour, where any callee named exec/execSync/spawn was treated as a shell sink — which reported better-sqlite3 db.exec(sql) as CWE-78 at CVSS 9.8. |

@@ -1,0 +1,1010 @@
+{
+  "timestamp": "2026-05-10T01:55:14.925Z",
+  "corpus": "/Users/ofri/repos/ofriperetz.dev/eslint/node_modules/lodash",
+  "file_count": 1046,
+  "runs": 1,
+  "total_lint_ms": 1782.1100829999998,
+  "total_rule_ms": 531.8580919998255,
+  "ranked": [
+    {
+      "ruleId": "secure-coding/no-improper-type-validation",
+      "totalMs": 140.77962100000173,
+      "listenerCalls": 15559
+    },
+    {
+      "ruleId": "secure-coding/no-unchecked-loop-condition",
+      "totalMs": 55.03671500001059,
+      "listenerCalls": 12059
+    },
+    {
+      "ruleId": "secure-coding/detect-object-injection",
+      "totalMs": 17.94281500001432,
+      "listenerCalls": 15285
+    },
+    {
+      "ruleId": "secure-coding/no-graphql-injection",
+      "totalMs": 16.086215999980197,
+      "listenerCalls": 18149
+    },
+    {
+      "ruleId": "secure-coding/no-insecure-comparison",
+      "totalMs": 10.754126000005954,
+      "listenerCalls": 2488
+    },
+    {
+      "ruleId": "secure-coding/no-unsafe-deserialization",
+      "totalMs": 10.58791699999557,
+      "listenerCalls": 17912
+    },
+    {
+      "ruleId": "secure-coding/no-redos-vulnerable-regex",
+      "totalMs": 9.41331100000366,
+      "listenerCalls": 15822
+    },
+    {
+      "ruleId": "secure-coding/no-unlimited-resource-allocation",
+      "totalMs": 7.863143999986107,
+      "listenerCalls": 7114
+    },
+    {
+      "ruleId": "node-security/lock-file",
+      "totalMs": 6.891506999999365,
+      "listenerCalls": 1046
+    },
+    {
+      "ruleId": "secure-coding/no-format-string-injection",
+      "totalMs": 6.881988000013962,
+      "listenerCalls": 20607
+    },
+    {
+      "ruleId": "secure-coding/no-hardcoded-credentials",
+      "totalMs": 5.884990999999218,
+      "listenerCalls": 8708
+    },
+    {
+      "ruleId": "node-security/no-buffer-overread",
+      "totalMs": 5.841315999990854,
+      "listenerCalls": 19503
+    },
+    {
+      "ruleId": "vercel-ai-security/require-output-validation",
+      "totalMs": 5.4856329999951186,
+      "listenerCalls": 11899
+    },
+    {
+      "ruleId": "pg/prevent-double-release",
+      "totalMs": 5.268195000012554,
+      "listenerCalls": 12945
+    },
+    {
+      "ruleId": "secure-coding/no-weak-password-recovery",
+      "totalMs": 5.2633549999925435,
+      "listenerCalls": 14009
+    },
+    {
+      "ruleId": "secure-coding/no-xpath-injection",
+      "totalMs": 5.013594000007117,
+      "listenerCalls": 14387
+    },
+    {
+      "ruleId": "node-security/no-timing-unsafe-compare",
+      "totalMs": 4.996291000003907,
+      "listenerCalls": 2488
+    },
+    {
+      "ruleId": "vercel-ai-security/no-hardcoded-api-keys",
+      "totalMs": 4.623528999998086,
+      "listenerCalls": 8082
+    },
+    {
+      "ruleId": "vercel-ai-security/no-unsafe-output-handling",
+      "totalMs": 4.50766299998952,
+      "listenerCalls": 15115
+    },
+    {
+      "ruleId": "vercel-ai-security/require-embedding-validation",
+      "totalMs": 4.267776999992179,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "vercel-ai-security/no-system-prompt-leak",
+      "totalMs": 4.145238999997048,
+      "listenerCalls": 8853
+    },
+    {
+      "ruleId": "node-security/no-zip-slip",
+      "totalMs": 4.104169000030481,
+      "listenerCalls": 20607
+    },
+    {
+      "ruleId": "secure-coding/no-improper-sanitization",
+      "totalMs": 4.022531000004108,
+      "listenerCalls": 18877
+    },
+    {
+      "ruleId": "lambda-security/no-user-controlled-requests",
+      "totalMs": 3.6760169999818686,
+      "listenerCalls": 16675
+    },
+    {
+      "ruleId": "vercel-ai-security/require-rag-content-validation",
+      "totalMs": 3.542180000003441,
+      "listenerCalls": 11899
+    },
+    {
+      "ruleId": "secure-coding/no-ldap-injection",
+      "totalMs": 3.5334789999892564,
+      "listenerCalls": 11899
+    },
+    {
+      "ruleId": "lambda-security/no-unvalidated-event-body",
+      "totalMs": 3.5069679999961636,
+      "listenerCalls": 13629
+    },
+    {
+      "ruleId": "secure-coding/detect-non-literal-regexp",
+      "totalMs": 3.3259110000213354,
+      "listenerCalls": 15822
+    },
+    {
+      "ruleId": "crypto/require-random-iv",
+      "totalMs": 2.8491229999995085,
+      "listenerCalls": 11899
+    },
+    {
+      "ruleId": "vercel-ai-security/require-validated-prompt",
+      "totalMs": 2.764314999996543,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "browser-security/no-clickjacking",
+      "totalMs": 2.753992999984348,
+      "listenerCalls": 15872
+    },
+    {
+      "ruleId": "secure-coding/no-privilege-escalation",
+      "totalMs": 2.519224999999892,
+      "listenerCalls": 10330
+    },
+    {
+      "ruleId": "secure-coding/no-xxe-injection",
+      "totalMs": 2.483149999996556,
+      "listenerCalls": 15822
+    },
+    {
+      "ruleId": "browser-security/no-unencrypted-transmission",
+      "totalMs": 2.360856000001206,
+      "listenerCalls": 8708
+    },
+    {
+      "ruleId": "vercel-ai-security/require-tool-schema",
+      "totalMs": 2.342942000002324,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "express-security/require-helmet",
+      "totalMs": 2.294927000009011,
+      "listenerCalls": 7999
+    },
+    {
+      "ruleId": "browser-security/no-worker-message-innerhtml",
+      "totalMs": 2.2671950000041647,
+      "listenerCalls": 20338
+    },
+    {
+      "ruleId": "browser-security/no-websocket-eval",
+      "totalMs": 2.2547659999911502,
+      "listenerCalls": 20499
+    },
+    {
+      "ruleId": "vercel-ai-security/no-sensitive-in-prompt",
+      "totalMs": 2.2491180000109807,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "vercel-ai-security/require-max-tokens",
+      "totalMs": 2.221515000002171,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "browser-security/no-filereader-innerhtml",
+      "totalMs": 2.216162999988967,
+      "listenerCalls": 20338
+    },
+    {
+      "ruleId": "browser-security/no-websocket-innerhtml",
+      "totalMs": 2.2052180000028443,
+      "listenerCalls": 20338
+    },
+    {
+      "ruleId": "secure-coding/no-unsafe-regex-construction",
+      "totalMs": 2.174776000007796,
+      "listenerCalls": 7114
+    },
+    {
+      "ruleId": "vercel-ai-security/no-dynamic-system-prompt",
+      "totalMs": 2.1669829999875105,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "vercel-ai-security/require-request-timeout",
+      "totalMs": 2.142493000000968,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "browser-security/no-credentials-in-query-params",
+      "totalMs": 2.104109999999366,
+      "listenerCalls": 8708
+    },
+    {
+      "ruleId": "vercel-ai-security/require-error-handling",
+      "totalMs": 2.026529999990885,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "vercel-ai-security/require-audit-logging",
+      "totalMs": 2.0098069999890527,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "browser-security/no-unescaped-url-parameter",
+      "totalMs": 1.9958599999907278,
+      "listenerCalls": 5704
+    },
+    {
+      "ruleId": "secure-coding/no-electron-security-issues",
+      "totalMs": 1.9806710000083854,
+      "listenerCalls": 11459
+    },
+    {
+      "ruleId": "express-security/no-exposed-debug-endpoints",
+      "totalMs": 1.9092280000094775,
+      "listenerCalls": 15661
+    },
+    {
+      "ruleId": "node-security/prefer-native-crypto",
+      "totalMs": 1.8741789999873504,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "node-security/no-data-in-temp-storage",
+      "totalMs": 1.828789000009749,
+      "listenerCalls": 15661
+    },
+    {
+      "ruleId": "browser-security/no-postmessage-innerhtml",
+      "totalMs": 1.8244680000067888,
+      "listenerCalls": 17122
+    },
+    {
+      "ruleId": "nestjs-security/no-exposed-debug-endpoints",
+      "totalMs": 1.813923000014995,
+      "listenerCalls": 8708
+    },
+    {
+      "ruleId": "lambda-security/no-exposed-debug-endpoints",
+      "totalMs": 1.753544999989856,
+      "listenerCalls": 12325
+    },
+    {
+      "ruleId": "node-security/no-ecb-mode",
+      "totalMs": 1.7131009999935713,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "node-security/detect-child-process",
+      "totalMs": 1.6987699999958181,
+      "listenerCalls": 11899
+    },
+    {
+      "ruleId": "jwt/no-algorithm-none",
+      "totalMs": 1.685751999993954,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "node-security/no-static-iv",
+      "totalMs": 1.6593349999899942,
+      "listenerCalls": 11899
+    },
+    {
+      "ruleId": "vercel-ai-security/require-max-steps",
+      "totalMs": 1.642380000007222,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "lambda-security/no-secrets-in-env",
+      "totalMs": 1.630989999999258,
+      "listenerCalls": 4345
+    },
+    {
+      "ruleId": "lambda-security/no-missing-authorization-check",
+      "totalMs": 1.531142000019031,
+      "listenerCalls": 17089
+    },
+    {
+      "ruleId": "lambda-security/require-timeout-handling",
+      "totalMs": 1.4808799999976259,
+      "listenerCalls": 15350
+    },
+    {
+      "ruleId": "vercel-ai-security/require-abort-signal",
+      "totalMs": 1.4706630000019345,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "pg/no-unsafe-query",
+      "totalMs": 1.4706089999914411,
+      "listenerCalls": 15115
+    },
+    {
+      "ruleId": "secure-coding/no-sensitive-data-exposure",
+      "totalMs": 1.4189420000003565,
+      "listenerCalls": 7114
+    },
+    {
+      "ruleId": "lambda-security/no-unbounded-batch-processing",
+      "totalMs": 1.4174889999946458,
+      "listenerCalls": 17677
+    },
+    {
+      "ruleId": "node-security/no-insecure-rsa-padding",
+      "totalMs": 1.4038989999988871,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "browser-security/no-missing-csrf-protection",
+      "totalMs": 1.3665439999955993,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "browser-security/no-missing-cors-check",
+      "totalMs": 1.2509689999844227,
+      "listenerCalls": 20777
+    },
+    {
+      "ruleId": "node-security/no-weak-hash-algorithm",
+      "totalMs": 1.2451929999973572,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "vercel-ai-security/no-training-data-exposure",
+      "totalMs": 1.2242640000026768,
+      "listenerCalls": 9837
+    },
+    {
+      "ruleId": "crypto/no-key-reuse",
+      "totalMs": 1.2191370000099937,
+      "listenerCalls": 7999
+    },
+    {
+      "ruleId": "browser-security/no-insecure-redirects",
+      "totalMs": 1.2038700000015865,
+      "listenerCalls": 10169
+    },
+    {
+      "ruleId": "node-security/no-unsafe-dynamic-require",
+      "totalMs": 1.190012999994451,
+      "listenerCalls": 11899
+    },
+    {
+      "ruleId": "crypto/require-key-length",
+      "totalMs": 1.1869400000038581,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "node-security/detect-eval-with-expression",
+      "totalMs": 1.1858760000026791,
+      "listenerCalls": 7114
+    },
+    {
+      "ruleId": "node-security/no-weak-cipher-algorithm",
+      "totalMs": 1.1693580000024326,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "crypto/no-predictable-salt",
+      "totalMs": 1.1592930000142019,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "crypto/no-hardcoded-crypto-key",
+      "totalMs": 1.1564100000013582,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "browser-security/no-jwt-in-storage",
+      "totalMs": 1.1371659999915096,
+      "listenerCalls": 10169
+    },
+    {
+      "ruleId": "browser-security/no-sensitive-localstorage",
+      "totalMs": 1.1268249999977797,
+      "listenerCalls": 10169
+    },
+    {
+      "ruleId": "crypto/require-authenticated-encryption",
+      "totalMs": 1.0789899999971908,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "node-security/no-toctou-vulnerability",
+      "totalMs": 1.0692049999915412,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "node-security/no-arbitrary-file-access",
+      "totalMs": 1.0294359999851395,
+      "listenerCalls": 11899
+    },
+    {
+      "ruleId": "browser-security/no-eval",
+      "totalMs": 1.014031999999986,
+      "listenerCalls": 7114
+    },
+    {
+      "ruleId": "secure-coding/no-directive-injection",
+      "totalMs": 1.0109189999922137,
+      "listenerCalls": 10169
+    },
+    {
+      "ruleId": "node-security/no-deprecated-cipher-method",
+      "totalMs": 1.0100379999949496,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "crypto/require-secure-pbkdf2-digest",
+      "totalMs": 1.007247000000632,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "browser-security/no-missing-security-headers",
+      "totalMs": 0.9893649999986565,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "node-security/no-ssrf",
+      "totalMs": 0.98724199999657,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "lambda-security/no-permissive-cors-response",
+      "totalMs": 0.9734180000076549,
+      "listenerCalls": 6846
+    },
+    {
+      "ruleId": "browser-security/no-unsafe-inline-csp",
+      "totalMs": 0.9669649999975718,
+      "listenerCalls": 8708
+    },
+    {
+      "ruleId": "lambda-security/no-permissive-cors-middy",
+      "totalMs": 0.9299360000038632,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "lambda-security/no-exposed-error-details",
+      "totalMs": 0.9277939999942078,
+      "listenerCalls": 15869
+    },
+    {
+      "ruleId": "jwt/no-decode-without-verify",
+      "totalMs": 0.9225219999997876,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "browser-security/no-sensitive-sessionstorage",
+      "totalMs": 0.9162929999961307,
+      "listenerCalls": 10169
+    },
+    {
+      "ruleId": "browser-security/require-blob-url-revocation",
+      "totalMs": 0.8865480000030743,
+      "listenerCalls": 7999
+    },
+    {
+      "ruleId": "lambda-security/no-env-logging",
+      "totalMs": 0.8492269999920836,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "mongodb-security/no-hardcoded-connection-string",
+      "totalMs": 0.8431249999937904,
+      "listenerCalls": 8708
+    },
+    {
+      "ruleId": "node-security/no-dynamic-require",
+      "totalMs": 0.8282060000100273,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "browser-security/require-mime-type-validation",
+      "totalMs": 0.8111899999815364,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "express-security/no-graphql-introspection-production",
+      "totalMs": 0.8067479999917282,
+      "listenerCalls": 7114
+    },
+    {
+      "ruleId": "node-security/no-cryptojs",
+      "totalMs": 0.8055099999967297,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "node-security/no-cryptojs-weak-random",
+      "totalMs": 0.8035469999892939,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "browser-security/require-https-only",
+      "totalMs": 0.8021339999968404,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "node-security/no-insecure-key-derivation",
+      "totalMs": 0.8011469999721044,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "browser-security/no-innerhtml",
+      "totalMs": 0.799976999997341,
+      "listenerCalls": 10169
+    },
+    {
+      "ruleId": "secure-coding/no-missing-authentication",
+      "totalMs": 0.7951339999984839,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "mongodb-security/no-select-sensitive-fields",
+      "totalMs": 0.7830290000052287,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "browser-security/no-password-in-url",
+      "totalMs": 0.780237000002046,
+      "listenerCalls": 8708
+    },
+    {
+      "ruleId": "secure-coding/no-hardcoded-session-tokens",
+      "totalMs": 0.7739579999926036,
+      "listenerCalls": 8708
+    },
+    {
+      "ruleId": "browser-security/no-unsafe-eval-csp",
+      "totalMs": 0.773144999989313,
+      "listenerCalls": 8708
+    },
+    {
+      "ruleId": "browser-security/no-http-urls",
+      "totalMs": 0.7664640000077156,
+      "listenerCalls": 8708
+    },
+    {
+      "ruleId": "mongodb-security/no-unsafe-query",
+      "totalMs": 0.7545019999976716,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "lambda-security/no-error-swallowing",
+      "totalMs": 0.7506220000001349,
+      "listenerCalls": 12
+    },
+    {
+      "ruleId": "node-security/no-deprecated-buffer",
+      "totalMs": 0.743782000005524,
+      "listenerCalls": 7114
+    },
+    {
+      "ruleId": "node-security/require-dependency-integrity",
+      "totalMs": 0.7364720000009015,
+      "listenerCalls": 8708
+    },
+    {
+      "ruleId": "lambda-security/no-hardcoded-credentials-sdk",
+      "totalMs": 0.7252899999965052,
+      "listenerCalls": 5107
+    },
+    {
+      "ruleId": "browser-security/no-sensitive-indexeddb",
+      "totalMs": 0.7193430000046988,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "jwt/no-hardcoded-secret",
+      "totalMs": 0.7075650000057294,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "mongodb-security/no-unbounded-find",
+      "totalMs": 0.7016539999908673,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "express-security/no-permissive-cors",
+      "totalMs": 0.6825480000151742,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "mongodb-security/no-unsafe-regex-query",
+      "totalMs": 0.6814269999923113,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "jwt/no-weak-secret",
+      "totalMs": 0.6810139999976172,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "mongodb-security/no-unsafe-populate",
+      "totalMs": 0.6740479999917284,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "browser-security/require-url-validation",
+      "totalMs": 0.6724370000006843,
+      "listenerCalls": 10169
+    },
+    {
+      "ruleId": "node-security/no-self-signed-certs",
+      "totalMs": 0.6661469999896781,
+      "listenerCalls": 4345
+    },
+    {
+      "ruleId": "browser-security/no-postmessage-wildcard-origin",
+      "totalMs": 0.6629480000215722,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "browser-security/no-permissive-cors",
+      "totalMs": 0.659839999993892,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "pg/no-unsafe-copy-from",
+      "totalMs": 0.6589949999949454,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "jwt/no-algorithm-confusion",
+      "totalMs": 0.6453169999879265,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "mongodb-security/require-projection",
+      "totalMs": 0.640083999995511,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "mongodb-security/no-bypass-middleware",
+      "totalMs": 0.6335670000060531,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "mongodb-security/require-lean-queries",
+      "totalMs": 0.6315960000032987,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "pg/no-unsafe-search-path",
+      "totalMs": 0.630269000005228,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "mongodb-security/no-debug-mode-production",
+      "totalMs": 0.6207639999974504,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "node-security/no-dynamic-dependency-loading",
+      "totalMs": 0.618772000013621,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "crypto/no-web-crypto-export",
+      "totalMs": 0.6123360000134426,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "crypto/no-math-random-crypto",
+      "totalMs": 0.6104299999929594,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "jwt/no-sensitive-payload",
+      "totalMs": 0.601248999998802,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "pg/no-batch-insert-loop",
+      "totalMs": 0.5990169999845989,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "secure-coding/no-pii-in-logs",
+      "totalMs": 0.5914020000105324,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "pg/no-select-all",
+      "totalMs": 0.5824069999911217,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "express-security/no-cors-credentials-wildcard",
+      "totalMs": 0.581768000006889,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "mongodb-security/no-unsafe-where",
+      "totalMs": 0.577016000002402,
+      "listenerCalls": 8082
+    },
+    {
+      "ruleId": "mongodb-security/require-tls-connection",
+      "totalMs": 0.5632429999741362,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "mongodb-security/require-auth-mechanism",
+      "totalMs": 0.5574819999987426,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "pg/no-floating-query",
+      "totalMs": 0.5564079999901992,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "node-security/require-secure-credential-storage",
+      "totalMs": 0.5562689999844679,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "express-security/require-csrf-protection",
+      "totalMs": 0.5508099999905767,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "pg/check-query-params",
+      "totalMs": 0.5370570000024486,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "jwt/require-issuer-validation",
+      "totalMs": 0.5362010000020518,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "express-security/require-express-body-parser-limits",
+      "totalMs": 0.5296829999876422,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "express-security/require-rate-limiting",
+      "totalMs": 0.5244120000015187,
+      "listenerCalls": 7999
+    },
+    {
+      "ruleId": "pg/prefer-pool-query",
+      "totalMs": 0.5241129999986356,
+      "listenerCalls": 4946
+    },
+    {
+      "ruleId": "jwt/require-algorithm-whitelist",
+      "totalMs": 0.5204220000174473,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "node-security/no-pii-in-logs",
+      "totalMs": 0.5133269999975028,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "jwt/require-issued-at",
+      "totalMs": 0.510642999995639,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "express-security/no-express-unsafe-regex-route",
+      "totalMs": 0.5091369999956896,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "pg/no-missing-client-release",
+      "totalMs": 0.5050449999943112,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "jwt/require-expiration",
+      "totalMs": 0.4839089999957764,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "browser-security/no-sensitive-cookie-js",
+      "totalMs": 0.4815320000008114,
+      "listenerCalls": 3216
+    },
+    {
+      "ruleId": "pg/no-transaction-on-pool",
+      "totalMs": 0.47915900002629996,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "jwt/no-timestamp-manipulation",
+      "totalMs": 0.4745229999985554,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "browser-security/no-unvalidated-deeplinks",
+      "totalMs": 0.470395000002668,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "browser-security/no-tracking-without-consent",
+      "totalMs": 0.46914999999199836,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "browser-security/require-csp-headers",
+      "totalMs": 0.4657839999921407,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "browser-security/no-sensitive-data-in-analytics",
+      "totalMs": 0.46259200001424006,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "browser-security/require-postmessage-origin-check",
+      "totalMs": 0.45742600000045286,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "jwt/require-audience-validation",
+      "totalMs": 0.45304699999945797,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "browser-security/no-dynamic-service-worker-url",
+      "totalMs": 0.45103900000043495,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "browser-security/no-insecure-websocket",
+      "totalMs": 0.42736299999336325,
+      "listenerCalls": 8869
+    },
+    {
+      "ruleId": "browser-security/no-sensitive-data-in-cache",
+      "totalMs": 0.426032999990241,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "jwt/require-max-age",
+      "totalMs": 0.42441200001604784,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "node-security/detect-non-literal-fs-filename",
+      "totalMs": 0.4192520000030413,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "express-security/no-insecure-cookie-options",
+      "totalMs": 0.41107799999679173,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "crypto/no-numeric-only-tokens",
+      "totalMs": 0.40016599999080427,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "browser-security/detect-mixed-content",
+      "totalMs": 0.3940030000018737,
+      "listenerCalls": 8708
+    },
+    {
+      "ruleId": "browser-security/no-cookie-auth-tokens",
+      "totalMs": 0.38740799999925457,
+      "listenerCalls": 3216
+    },
+    {
+      "ruleId": "crypto/require-sufficient-length",
+      "totalMs": 0.38713100000575196,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "secure-coding/detect-weak-password-validation",
+      "totalMs": 0.36425699999858807,
+      "listenerCalls": 2488
+    },
+    {
+      "ruleId": "node-security/require-storage-encryption",
+      "totalMs": 0.35389300000093726,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "browser-security/require-cookie-secure-attrs",
+      "totalMs": 0.35363799999475987,
+      "listenerCalls": 3216
+    },
+    {
+      "ruleId": "vercel-ai-security/require-tool-confirmation",
+      "totalMs": 0.349938000000634,
+      "listenerCalls": 1129
+    },
+    {
+      "ruleId": "node-security/no-sha1-hash",
+      "totalMs": 0.31399999999922557,
+      "listenerCalls": 6953
+    },
+    {
+      "ruleId": "mongodb-security/no-hardcoded-credentials",
+      "totalMs": 0.3000939999980119,
+      "listenerCalls": 1129
+    },
+    {
+      "ruleId": "browser-security/no-disabled-certificate-validation",
+      "totalMs": 0.2766560000072218,
+      "listenerCalls": 4345
+    },
+    {
+      "ruleId": "browser-security/no-client-side-auth-logic",
+      "totalMs": 0.25389400000278783,
+      "listenerCalls": 1002
+    },
+    {
+      "ruleId": "secure-coding/require-backend-authorization",
+      "totalMs": 0.2440899999999715,
+      "listenerCalls": 1002
+    },
+    {
+      "ruleId": "mongodb-security/no-operator-injection",
+      "totalMs": 0.21680699999922126,
+      "listenerCalls": 1129
+    },
+    {
+      "ruleId": "pg/no-hardcoded-credentials",
+      "totalMs": 0.14153899999990927,
+      "listenerCalls": 161
+    },
+    {
+      "ruleId": "lambda-security/no-overly-permissive-iam-policy",
+      "totalMs": 0.1392540000011877,
+      "listenerCalls": 1129
+    },
+    {
+      "ruleId": "node-security/require-secure-deletion",
+      "totalMs": 0.13069900000033385,
+      "listenerCalls": 1007
+    },
+    {
+      "ruleId": "pg/no-insecure-ssl",
+      "totalMs": 0.08928799999932835,
+      "listenerCalls": 161
+    },
+    {
+      "ruleId": "mongodb-security/require-schema-validation",
+      "totalMs": 0.07724700000142093,
+      "listenerCalls": 161
+    },
+    {
+      "ruleId": "secure-coding/require-secure-defaults",
+      "totalMs": 0.06604900000331781,
+      "listenerCalls": 1129
+    },
+    {
+      "ruleId": "browser-security/no-allow-arbitrary-loads",
+      "totalMs": 0.0490700000018478,
+      "listenerCalls": 1129
+    },
+    {
+      "ruleId": "browser-security/require-websocket-wss",
+      "totalMs": 0.040792999997734114,
+      "listenerCalls": 161
+    }
+  ]
+}

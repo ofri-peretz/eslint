@@ -1,0 +1,32 @@
+---
+title: exports-last
+description: "Ensure all exports appear after other statements"
+type_aware: false
+type_aware_status: unaware
+---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+💼 This rule is enabled in the following configs: `recommended`, `typescript`.
+💡 This rule is automatically fixable by the `--fix` CLI option.
+
+## Rule Details
+
+This rule aims to prevent issues related to exports-last.
+
+## Options
+
+```json
+[]
+```
+
+## Implementation
+
+- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/exports-last.ts)
+- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/exports-last.test.ts)
+
+## OWASP Foundation
+
+- **Category**: A00:2021 - General Security

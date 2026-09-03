@@ -1,0 +1,66 @@
+/**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
+ * ESLint Rule: no-did-mount-set-state
+ * Prevent setState in componentDidMount
+ */
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+
+type MessageIds = 'noDidMountSetState';
+
+export const noDidMountSetState = createRule<[], MessageIds>({
+  name: 'no-did-mount-set-state',
+  meta: {
+    type: 'problem',
+    docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-did-mount-set-state.md',
+      description: 'Prevent setState in componentDidMount',
+    },
+    schema: [],
+    messages: {
+      noDidMountSetState: formatLLMMessage({
+        icon: MessageIcons.WARNING,
+        issueName: 'setState in componentDidMount',
+        description: 'setState called in componentDidMount',
+        severity: 'HIGH',
+        fix: 'Use initial state or constructor instead',
+        documentationLink: 'https://react.dev/reference/react/Component#componentdidmount',
+      }),
+    },
+  },
+  defaultOptions: [],
+  create(context: TSESLint.RuleContext<MessageIds, []>) {
+    let inComponentDidMount = false;
+
+    return {
+      'MethodDefinition[key.name="componentDidMount"]'() {
+        inComponentDidMount = true;
+      },
+
+      'MethodDefinition[key.name="componentDidMount"]:exit'() {
+        inComponentDidMount = false;
+      },
+
+      CallExpression(node: TSESTree.CallExpression) {
+        if (!inComponentDidMount) return;
+
+        // Check if this is a setState call
+        if (
+          node.callee.type === 'MemberExpression' &&
+          propertyName(node.callee) === 'setState'
+        ) {
+          context.report({
+            node: node.callee.property,
+            messageId: 'noDidMountSetState',
+          });
+        }
+      },
+    };
+  },
+});

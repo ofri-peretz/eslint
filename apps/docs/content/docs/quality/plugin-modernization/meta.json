@@ -1,0 +1,10 @@
+{
+    "title": "Plugin: modernization",
+    "icon": "Sparkles",
+    "defaultOpen": false,
+    "pages": [
+        "index",
+        "changelog",
+        "rules"
+    ]
+}

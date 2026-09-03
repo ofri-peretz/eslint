@@ -1,0 +1,9 @@
+{
+    "title": "Advanced",
+    "description": "Deep integration and contribution guides",
+    "pages": [
+        "ci-cd",
+        "changelog",
+        "contributing"
+    ]
+}

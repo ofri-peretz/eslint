@@ -1,0 +1,1069 @@
+{
+  "llmTokens": {
+    "schemaVersion": 1,
+    "timestamp": "2026-05-03T23:48:21.998Z",
+    "benchmark": "ilb-llm-tokens",
+    "benchmarkType": "token-cost",
+    "scoringMode": "composite-mean-delta",
+    "methodologyVersion": "v1.0",
+    "methodology": {
+      "file": "eslint/benchmarks/suites/ilb-llm-tokens/methodology.md",
+      "version": "v1.0",
+      "tokenizer": "gpt-tokenizer",
+      "tokenizerEncoding": "o200k_base (headline) + cl100k_base (sanity)",
+      "score": "mean across (category, fixture) of (tokens(format)/tokens(v1) − 1), as percent",
+      "sloHeadline": "security/v2-compact ≤ V1 (this is what V2 was designed to deliver). Quality/performance carry V2-only context that V1 lacks, so are not directly cost-comparable."
+    },
+    "versions": {
+      "tokenizer": "gpt-tokenizer@3.4.0",
+      "eslintDevkit": "@interlace/eslint-devkit@1.3.3",
+      "fixtures": "v1.0"
+    },
+    "environment": {
+      "nodeVersion": "v25.9.0",
+      "platform": "darwin",
+      "arch": "arm64"
+    },
+    "headlineScore": {
+      "v2-human": 105.3,
+      "v2-compact": 23,
+      "v2-agent": 44.4
+    },
+    "perCategoryScore": {
+      "security": {
+        "v2-human": 66.8,
+        "v2-compact": -8.7,
+        "v2-agent": 4.2
+      },
+      "quality": {
+        "v2-human": 88,
+        "v2-compact": 6.8,
+        "v2-agent": 35.8
+      },
+      "performance": {
+        "v2-human": 199.5,
+        "v2-compact": 102.7,
+        "v2-agent": 133.5
+      }
+    },
+    "summary": [
+      {
+        "category": "security",
+        "format": "v1",
+        "count": 6,
+        "meanChars": 231.3,
+        "meanTokensO200k": 68.8,
+        "meanTokensCl100k": 68.8
+      },
+      {
+        "category": "security",
+        "format": "v2-human",
+        "count": 6,
+        "meanChars": 399.2,
+        "meanTokensO200k": 113.8,
+        "meanTokensCl100k": 112.7
+      },
+      {
+        "category": "security",
+        "format": "v2-compact",
+        "count": 6,
+        "meanChars": 216,
+        "meanTokensO200k": 61.7,
+        "meanTokensCl100k": 60.2
+      },
+      {
+        "category": "security",
+        "format": "v2-agent",
+        "count": 6,
+        "meanChars": 233.2,
+        "meanTokensO200k": 70.3,
+        "meanTokensCl100k": 68.7
+      },
+      {
+        "category": "quality",
+        "format": "v1",
+        "count": 3,
+        "meanChars": 145.3,
+        "meanTokensO200k": 35.3,
+        "meanTokensCl100k": 35
+      },
+      {
+        "category": "quality",
+        "format": "v2-human",
+        "count": 3,
+        "meanChars": 261.7,
+        "meanTokensO200k": 65.3,
+        "meanTokensCl100k": 65
+      },
+      {
+        "category": "quality",
+        "format": "v2-compact",
+        "count": 3,
+        "meanChars": 139,
+        "meanTokensO200k": 36.3,
+        "meanTokensCl100k": 36.7
+      },
+      {
+        "category": "quality",
+        "format": "v2-agent",
+        "count": 3,
+        "meanChars": 176,
+        "meanTokensO200k": 46.7,
+        "meanTokensCl100k": 46.7
+      },
+      {
+        "category": "performance",
+        "format": "v1",
+        "count": 3,
+        "meanChars": 153.7,
+        "meanTokensO200k": 35.7,
+        "meanTokensCl100k": 36.7
+      },
+      {
+        "category": "performance",
+        "format": "v2-human",
+        "count": 3,
+        "meanChars": 396.3,
+        "meanTokensO200k": 105.7,
+        "meanTokensCl100k": 105.7
+      },
+      {
+        "category": "performance",
+        "format": "v2-compact",
+        "count": 3,
+        "meanChars": 264.3,
+        "meanTokensO200k": 71.3,
+        "meanTokensCl100k": 70
+      },
+      {
+        "category": "performance",
+        "format": "v2-agent",
+        "count": 3,
+        "meanChars": 290,
+        "meanTokensO200k": 82.3,
+        "meanTokensCl100k": 80
+      }
+    ],
+    "measurements": [
+      {
+        "fixtureId": "sql-injection-pg",
+        "category": "security",
+        "format": "v1",
+        "chars": 228,
+        "tokensO200k": 69,
+        "tokensCl100k": 70
+      },
+      {
+        "fixtureId": "sql-injection-pg",
+        "category": "security",
+        "format": "v2-human",
+        "chars": 420,
+        "tokensO200k": 120,
+        "tokensCl100k": 119
+      },
+      {
+        "fixtureId": "sql-injection-pg",
+        "category": "security",
+        "format": "v2-compact",
+        "chars": 210,
+        "tokensO200k": 65,
+        "tokensCl100k": 63
+      },
+      {
+        "fixtureId": "sql-injection-pg",
+        "category": "security",
+        "format": "v2-agent",
+        "chars": 226,
+        "tokensO200k": 72,
+        "tokensCl100k": 68
+      },
+      {
+        "fixtureId": "hardcoded-credential",
+        "category": "security",
+        "format": "v1",
+        "chars": 223,
+        "tokensO200k": 65,
+        "tokensCl100k": 66
+      },
+      {
+        "fixtureId": "hardcoded-credential",
+        "category": "security",
+        "format": "v2-human",
+        "chars": 366,
+        "tokensO200k": 102,
+        "tokensCl100k": 103
+      },
+      {
+        "fixtureId": "hardcoded-credential",
+        "category": "security",
+        "format": "v2-compact",
+        "chars": 190,
+        "tokensO200k": 46,
+        "tokensCl100k": 46
+      },
+      {
+        "fixtureId": "hardcoded-credential",
+        "category": "security",
+        "format": "v2-agent",
+        "chars": 206,
+        "tokensO200k": 54,
+        "tokensCl100k": 54
+      },
+      {
+        "fixtureId": "jwt-algorithm-none",
+        "category": "security",
+        "format": "v1",
+        "chars": 186,
+        "tokensO200k": 54,
+        "tokensCl100k": 53
+      },
+      {
+        "fixtureId": "jwt-algorithm-none",
+        "category": "security",
+        "format": "v2-human",
+        "chars": 368,
+        "tokensO200k": 104,
+        "tokensCl100k": 103
+      },
+      {
+        "fixtureId": "jwt-algorithm-none",
+        "category": "security",
+        "format": "v2-compact",
+        "chars": 247,
+        "tokensO200k": 69,
+        "tokensCl100k": 69
+      },
+      {
+        "fixtureId": "jwt-algorithm-none",
+        "category": "security",
+        "format": "v2-agent",
+        "chars": 267,
+        "tokensO200k": 79,
+        "tokensCl100k": 80
+      },
+      {
+        "fixtureId": "mongodb-unsafe-where",
+        "category": "security",
+        "format": "v1",
+        "chars": 262,
+        "tokensO200k": 70,
+        "tokensCl100k": 69
+      },
+      {
+        "fixtureId": "mongodb-unsafe-where",
+        "category": "security",
+        "format": "v2-human",
+        "chars": 449,
+        "tokensO200k": 123,
+        "tokensCl100k": 121
+      },
+      {
+        "fixtureId": "mongodb-unsafe-where",
+        "category": "security",
+        "format": "v2-compact",
+        "chars": 244,
+        "tokensO200k": 72,
+        "tokensCl100k": 70
+      },
+      {
+        "fixtureId": "mongodb-unsafe-where",
+        "category": "security",
+        "format": "v2-agent",
+        "chars": 262,
+        "tokensO200k": 83,
+        "tokensCl100k": 81
+      },
+      {
+        "fixtureId": "xss-innerhtml",
+        "category": "security",
+        "format": "v1",
+        "chars": 242,
+        "tokensO200k": 74,
+        "tokensCl100k": 74
+      },
+      {
+        "fixtureId": "xss-innerhtml",
+        "category": "security",
+        "format": "v2-human",
+        "chars": 377,
+        "tokensO200k": 108,
+        "tokensCl100k": 104
+      },
+      {
+        "fixtureId": "xss-innerhtml",
+        "category": "security",
+        "format": "v2-compact",
+        "chars": 196,
+        "tokensO200k": 54,
+        "tokensCl100k": 50
+      },
+      {
+        "fixtureId": "xss-innerhtml",
+        "category": "security",
+        "format": "v2-agent",
+        "chars": 212,
+        "tokensO200k": 62,
+        "tokensCl100k": 58
+      },
+      {
+        "fixtureId": "weak-crypto-md5",
+        "category": "security",
+        "format": "v1",
+        "chars": 247,
+        "tokensO200k": 81,
+        "tokensCl100k": 81
+      },
+      {
+        "fixtureId": "weak-crypto-md5",
+        "category": "security",
+        "format": "v2-human",
+        "chars": 415,
+        "tokensO200k": 126,
+        "tokensCl100k": 126
+      },
+      {
+        "fixtureId": "weak-crypto-md5",
+        "category": "security",
+        "format": "v2-compact",
+        "chars": 209,
+        "tokensO200k": 64,
+        "tokensCl100k": 63
+      },
+      {
+        "fixtureId": "weak-crypto-md5",
+        "category": "security",
+        "format": "v2-agent",
+        "chars": 226,
+        "tokensO200k": 72,
+        "tokensCl100k": 71
+      },
+      {
+        "fixtureId": "circular-dependency",
+        "category": "quality",
+        "format": "v1",
+        "chars": 186,
+        "tokensO200k": 46,
+        "tokensCl100k": 45
+      },
+      {
+        "fixtureId": "circular-dependency",
+        "category": "quality",
+        "format": "v2-human",
+        "chars": 301,
+        "tokensO200k": 77,
+        "tokensCl100k": 76
+      },
+      {
+        "fixtureId": "circular-dependency",
+        "category": "quality",
+        "format": "v2-compact",
+        "chars": 117,
+        "tokensO200k": 37,
+        "tokensCl100k": 37
+      },
+      {
+        "fixtureId": "circular-dependency",
+        "category": "quality",
+        "format": "v2-agent",
+        "chars": 174,
+        "tokensO200k": 51,
+        "tokensCl100k": 50
+      },
+      {
+        "fixtureId": "barrel-file",
+        "category": "quality",
+        "format": "v1",
+        "chars": 125,
+        "tokensO200k": 30,
+        "tokensCl100k": 31
+      },
+      {
+        "fixtureId": "barrel-file",
+        "category": "quality",
+        "format": "v2-human",
+        "chars": 304,
+        "tokensO200k": 72,
+        "tokensCl100k": 73
+      },
+      {
+        "fixtureId": "barrel-file",
+        "category": "quality",
+        "format": "v2-compact",
+        "chars": 181,
+        "tokensO200k": 42,
+        "tokensCl100k": 42
+      },
+      {
+        "fixtureId": "barrel-file",
+        "category": "quality",
+        "format": "v2-agent",
+        "chars": 207,
+        "tokensO200k": 51,
+        "tokensCl100k": 51
+      },
+      {
+        "fixtureId": "unused-import",
+        "category": "quality",
+        "format": "v1",
+        "chars": 125,
+        "tokensO200k": 30,
+        "tokensCl100k": 29
+      },
+      {
+        "fixtureId": "unused-import",
+        "category": "quality",
+        "format": "v2-human",
+        "chars": 180,
+        "tokensO200k": 47,
+        "tokensCl100k": 46
+      },
+      {
+        "fixtureId": "unused-import",
+        "category": "quality",
+        "format": "v2-compact",
+        "chars": 119,
+        "tokensO200k": 30,
+        "tokensCl100k": 31
+      },
+      {
+        "fixtureId": "unused-import",
+        "category": "quality",
+        "format": "v2-agent",
+        "chars": 147,
+        "tokensO200k": 38,
+        "tokensCl100k": 39
+      },
+      {
+        "fixtureId": "loop-insert",
+        "category": "performance",
+        "format": "v1",
+        "chars": 167,
+        "tokensO200k": 39,
+        "tokensCl100k": 40
+      },
+      {
+        "fixtureId": "loop-insert",
+        "category": "performance",
+        "format": "v2-human",
+        "chars": 406,
+        "tokensO200k": 109,
+        "tokensCl100k": 111
+      },
+      {
+        "fixtureId": "loop-insert",
+        "category": "performance",
+        "format": "v2-compact",
+        "chars": 265,
+        "tokensO200k": 72,
+        "tokensCl100k": 72
+      },
+      {
+        "fixtureId": "loop-insert",
+        "category": "performance",
+        "format": "v2-agent",
+        "chars": 295,
+        "tokensO200k": 85,
+        "tokensCl100k": 84
+      },
+      {
+        "fixtureId": "n-plus-one",
+        "category": "performance",
+        "format": "v1",
+        "chars": 153,
+        "tokensO200k": 36,
+        "tokensCl100k": 37
+      },
+      {
+        "fixtureId": "n-plus-one",
+        "category": "performance",
+        "format": "v2-human",
+        "chars": 336,
+        "tokensO200k": 89,
+        "tokensCl100k": 88
+      },
+      {
+        "fixtureId": "n-plus-one",
+        "category": "performance",
+        "format": "v2-compact",
+        "chars": 213,
+        "tokensO200k": 58,
+        "tokensCl100k": 56
+      },
+      {
+        "fixtureId": "n-plus-one",
+        "category": "performance",
+        "format": "v2-agent",
+        "chars": 236,
+        "tokensO200k": 68,
+        "tokensCl100k": 65
+      },
+      {
+        "fixtureId": "unbounded-array-grow",
+        "category": "performance",
+        "format": "v1",
+        "chars": 141,
+        "tokensO200k": 32,
+        "tokensCl100k": 33
+      },
+      {
+        "fixtureId": "unbounded-array-grow",
+        "category": "performance",
+        "format": "v2-human",
+        "chars": 447,
+        "tokensO200k": 119,
+        "tokensCl100k": 118
+      },
+      {
+        "fixtureId": "unbounded-array-grow",
+        "category": "performance",
+        "format": "v2-compact",
+        "chars": 315,
+        "tokensO200k": 84,
+        "tokensCl100k": 82
+      },
+      {
+        "fixtureId": "unbounded-array-grow",
+        "category": "performance",
+        "format": "v2-agent",
+        "chars": 339,
+        "tokensO200k": 94,
+        "tokensCl100k": 91
+      }
+    ]
+  },
+  "llmFix": {
+    "schemaVersion": 1,
+    "timestamp": "2026-05-03T23:58:13.216Z",
+    "benchmark": "ilb-llm-fix",
+    "benchmarkType": "fix-accuracy",
+    "scoringMode": "macro-pass-rate",
+    "methodologyVersion": "v1.3",
+    "methodology": {
+      "file": "eslint/benchmarks/suites/ilb-llm-fix/methodology.md",
+      "version": "v1.3",
+      "score": "macro-averaged pass rate across (variant, model) cells, %",
+      "verifierShape": "regex-must-match | regex-must-not-match | both"
+    },
+    "versions": {
+      "eslintDevkit": "@interlace/eslint-devkit@1.3.3",
+      "fixtures": "v1.3",
+      "models": "v1.0"
+    },
+    "environment": {
+      "nodeVersion": "v25.9.0",
+      "platform": "darwin",
+      "arch": "arm64"
+    },
+    "headlineScore": 97.22,
+    "passRateByVariant": {
+      "v1": 91.67,
+      "v2-human": 100,
+      "v2-agent": 100
+    },
+    "summary": [
+      {
+        "variant": "v1",
+        "model": "opus",
+        "pass": 11,
+        "errors": 0,
+        "total": 12,
+        "passRate": 0.9166666666666666,
+        "meanInputTokens": 21188.333333333332,
+        "meanOutputTokens": 122.83333333333333,
+        "totalCostUsd": 1.9665682499999997
+      },
+      {
+        "variant": "v2-human",
+        "model": "opus",
+        "pass": 12,
+        "errors": 0,
+        "total": 12,
+        "passRate": 1,
+        "meanInputTokens": 23114,
+        "meanOutputTokens": 107.91666666666667,
+        "totalCostUsd": 1.5877365
+      },
+      {
+        "variant": "v2-agent",
+        "model": "opus",
+        "pass": 12,
+        "errors": 0,
+        "total": 12,
+        "passRate": 1,
+        "meanInputTokens": 23114,
+        "meanOutputTokens": 105.75,
+        "totalCostUsd": 1.559724
+      }
+    ],
+    "results": [
+      {
+        "fixtureId": "jwt-missing-algorithms",
+        "category": "security",
+        "variant": "v1",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "matched required pattern",
+        "inputTokens": 6,
+        "outputTokens": 196,
+        "costUsd": 0.5360587499999999,
+        "modelResponse": "```\nasync canActivate(context: ExecutionContext): Promise<boolean> {\n  const request = context.switchToHttp().getRequest();\n  const token = request.headers.authorization?.split(' ')[1];\n  if (!token) throw new UnauthorizedException();\n  try {\n    const payload = await this.jwtService.verifyAsync(token, {\n      secret: jwtConstants.secret,\n      algorithms: ['HS256'],\n    });\n    request['user'] = payload;\n  } catch {\n    throw new UnauthorizedException();\n  }\n  return true;\n}\n```"
+      },
+      {
+        "fixtureId": "jwt-missing-algorithms",
+        "category": "security",
+        "variant": "v2-human",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "matched required pattern",
+        "inputTokens": 23114,
+        "outputTokens": 196,
+        "costUsd": 0.1401645,
+        "modelResponse": "```\nasync canActivate(context: ExecutionContext): Promise<boolean> {\n  const request = context.switchToHttp().getRequest();\n  const token = request.headers.authorization?.split(' ')[1];\n  if (!token) throw new UnauthorizedException();\n  try {\n    const payload = await this.jwtService.verifyAsync(token, {\n      secret: jwtConstants.secret,\n      algorithms: ['HS256'],\n    });\n    request['user'] = payload;\n  } catch {\n    throw new UnauthorizedException();\n  }\n  return true;\n}\n```"
+      },
+      {
+        "fixtureId": "jwt-missing-algorithms",
+        "category": "security",
+        "variant": "v2-agent",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "matched required pattern",
+        "inputTokens": 23114,
+        "outputTokens": 196,
+        "costUsd": 0.138477,
+        "modelResponse": "```\nasync canActivate(context: ExecutionContext): Promise<boolean> {\n  const request = context.switchToHttp().getRequest();\n  const token = request.headers.authorization?.split(' ')[1];\n  if (!token) throw new UnauthorizedException();\n  try {\n    const payload = await this.jwtService.verifyAsync(token, {\n      secret: jwtConstants.secret,\n      algorithms: ['HS256'],\n    });\n    request['user'] = payload;\n  } catch {\n    throw new UnauthorizedException();\n  }\n  return true;\n}\n```"
+      },
+      {
+        "fixtureId": "xss-innerhtml-three",
+        "category": "security",
+        "variant": "v1",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "both conditions met",
+        "inputTokens": 23114,
+        "outputTokens": 70,
+        "costUsd": 0.12643949999999998,
+        "modelResponse": "```\nfunction renderSearchResult(div, userQuery) {\n  // Adapted from three.js examples/index.html — innerHTML on user input\n  div.textContent = userQuery.trim();\n}\n```"
+      },
+      {
+        "fixtureId": "xss-innerhtml-three",
+        "category": "security",
+        "variant": "v2-human",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "both conditions met",
+        "inputTokens": 23114,
+        "outputTokens": 70,
+        "costUsd": 0.128127,
+        "modelResponse": "```\nfunction renderSearchResult(div, userQuery) {\n  // Adapted from three.js examples/index.html — innerHTML on user input\n  div.textContent = userQuery.trim();\n}\n```"
+      },
+      {
+        "fixtureId": "xss-innerhtml-three",
+        "category": "security",
+        "variant": "v2-agent",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "both conditions met",
+        "inputTokens": 23114,
+        "outputTokens": 70,
+        "costUsd": 0.12615825,
+        "modelResponse": "```\nfunction renderSearchResult(div, userQuery) {\n  // Adapted from three.js examples/index.html — innerHTML on user input\n  div.textContent = userQuery.trim();\n}\n```"
+      },
+      {
+        "fixtureId": "react-dangerously-set-inner-html-user-input",
+        "category": "security",
+        "variant": "v1",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": false,
+        "reason": "still contains forbidden pattern: Fix must not pass userBio through dangerouslySetInnerHTML — use a text child or sanitize first",
+        "inputTokens": 23114,
+        "outputTokens": 114,
+        "costUsd": 0.13028325,
+        "modelResponse": "```\nimport DOMPurify from 'dompurify';\n\nexport function ProfileBio({ userBio }: { userBio: string }) {\n  return (\n    <article className=\"prose\">\n      <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(userBio) }} />\n    </article>\n  );\n}\n```"
+      },
+      {
+        "fixtureId": "react-dangerously-set-inner-html-user-input",
+        "category": "security",
+        "variant": "v2-human",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "forbidden pattern absent",
+        "inputTokens": 23114,
+        "outputTokens": 69,
+        "costUsd": 0.1289895,
+        "modelResponse": "```\nexport function ProfileBio({ userBio }: { userBio: string }) {\n  return (\n    <article className=\"prose\">\n      <div>{userBio}</div>\n    </article>\n  );\n}\n```"
+      },
+      {
+        "fixtureId": "react-dangerously-set-inner-html-user-input",
+        "category": "security",
+        "variant": "v2-agent",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "forbidden pattern absent",
+        "inputTokens": 23114,
+        "outputTokens": 69,
+        "costUsd": 0.12653324999999999,
+        "modelResponse": "```\nexport function ProfileBio({ userBio }: { userBio: string }) {\n  return (\n    <article className=\"prose\">\n      <div>{userBio}</div>\n    </article>\n  );\n}\n```"
+      },
+      {
+        "fixtureId": "weak-md5-content-hash",
+        "category": "security",
+        "variant": "v1",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "option #1 matched: forbidden pattern absent",
+        "inputTokens": 23114,
+        "outputTokens": 83,
+        "costUsd": 0.127827,
+        "modelResponse": "```\nimport crypto from 'node:crypto';\n\n// Generates a stable cache key for vite plugin output.\nexport function generateContentHash(content: string) {\n  return crypto.createHash('sha256').update(content).digest('hex');\n}\n```"
+      },
+      {
+        "fixtureId": "weak-md5-content-hash",
+        "category": "security",
+        "variant": "v2-human",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "option #1 matched: forbidden pattern absent",
+        "inputTokens": 23114,
+        "outputTokens": 83,
+        "costUsd": 0.13101449999999998,
+        "modelResponse": "```\nimport crypto from 'node:crypto';\n\n// Generates a stable cache key for vite plugin output.\nexport function generateContentHash(content: string) {\n  return crypto.createHash('sha256').update(content).digest('hex');\n}\n```"
+      },
+      {
+        "fixtureId": "weak-md5-content-hash",
+        "category": "security",
+        "variant": "v2-agent",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "option #1 matched: forbidden pattern absent",
+        "inputTokens": 23114,
+        "outputTokens": 83,
+        "costUsd": 0.12784574999999998,
+        "modelResponse": "```\nimport crypto from 'node:crypto';\n\n// Generates a stable cache key for vite plugin output.\nexport function generateContentHash(content: string) {\n  return crypto.createHash('sha256').update(content).digest('hex');\n}\n```"
+      },
+      {
+        "fixtureId": "circular-dependency-cross-module",
+        "category": "quality",
+        "variant": "v1",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "forbidden pattern absent",
+        "inputTokens": 23114,
+        "outputTokens": 120,
+        "costUsd": 0.1302645,
+        "modelResponse": "```\n// src/types.ts\nexport interface UserA { id: string; }\n\n// src/A.ts\nimport { helperB } from './B';\nimport type { UserA } from './types';\nexport const helperA = (u: UserA) => helperB(u);\n\n// src/B.ts\nimport type { UserA } from './types';\nexport const helperB = (u: UserA) => u.id;\n```"
+      },
+      {
+        "fixtureId": "circular-dependency-cross-module",
+        "category": "quality",
+        "variant": "v2-human",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "forbidden pattern absent",
+        "inputTokens": 23114,
+        "outputTokens": 120,
+        "costUsd": 0.13180199999999997,
+        "modelResponse": "```\n// src/types.ts\nexport interface UserA { id: string; }\n\n// src/A.ts\nimport { helperB } from './B';\nimport type { UserA } from './types';\nexport const helperA = (u: UserA) => helperB(u);\n\n// src/B.ts\nimport type { UserA } from './types';\nexport const helperB = (u: UserA) => u.id;\n```"
+      },
+      {
+        "fixtureId": "circular-dependency-cross-module",
+        "category": "quality",
+        "variant": "v2-agent",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "forbidden pattern absent",
+        "inputTokens": 23114,
+        "outputTokens": 118,
+        "costUsd": 0.12996449999999998,
+        "modelResponse": "```\n// src/types.ts\nexport interface UserA { id: string; }\n\n// src/A.ts\nimport { helperB } from './B';\nimport { UserA } from './types';\nexport const helperA = (u: UserA) => helperB(u);\n\n// src/B.ts\nimport { UserA } from './types';\nexport const helperB = (u: UserA) => u.id;\n```"
+      },
+      {
+        "fixtureId": "n-plus-one-orm-iteration",
+        "category": "performance",
+        "variant": "v1",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "forbidden pattern absent",
+        "inputTokens": 23114,
+        "outputTokens": 171,
+        "costUsd": 0.13459575000000001,
+        "modelResponse": "```\nasync function loadUsersWithProfiles(userIds: string[]) {\n  const users = await db.user.findMany({ where: { id: { in: userIds } } });\n  const profiles = await db.profile.findMany({ where: { userId: { in: userIds } } });\n  const profileByUserId = new Map(profiles.map((p) => [p.userId, p]));\n  for (const user of users) {\n    user.profile = profileByUserId.get(user.id) ?? null;\n  }\n  return users;\n}\n```"
+      },
+      {
+        "fixtureId": "n-plus-one-orm-iteration",
+        "category": "performance",
+        "variant": "v2-human",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "forbidden pattern absent",
+        "inputTokens": 23114,
+        "outputTokens": 177,
+        "costUsd": 0.13793325,
+        "modelResponse": "```\nasync function loadUsersWithProfiles(userIds: string[]) {\n  const users = await db.user.findMany({ where: { id: { in: userIds } } });\n  const profiles = await db.profile.findMany({ where: { userId: { in: users.map(u => u.id) } } });\n  const profileByUserId = new Map(profiles.map(p => [p.userId, p]));\n  for (const user of users) {\n    user.profile = profileByUserId.get(user.id) ?? null;\n  }\n  return users;\n}\n```"
+      },
+      {
+        "fixtureId": "n-plus-one-orm-iteration",
+        "category": "performance",
+        "variant": "v2-agent",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "forbidden pattern absent",
+        "inputTokens": 23114,
+        "outputTokens": 177,
+        "costUsd": 0.13602075,
+        "modelResponse": "```\nasync function loadUsersWithProfiles(userIds: string[]) {\n  const users = await db.user.findMany({ where: { id: { in: userIds } } });\n  const profiles = await db.profile.findMany({ where: { userId: { in: users.map(u => u.id) } } });\n  const profileByUserId = new Map(profiles.map(p => [p.userId, p]));\n  for (const user of users) {\n    user.profile = profileByUserId.get(user.id) ?? null;\n  }\n  return users;\n}\n```"
+      },
+      {
+        "fixtureId": "timing-attack-credential-compare",
+        "category": "security",
+        "variant": "v1",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "both conditions met",
+        "inputTokens": 23114,
+        "outputTokens": 286,
+        "costUsd": 0.14282699999999998,
+        "modelResponse": "```\nimport crypto from 'node:crypto';\n\nfunction checkAppleCredentials(decryptedKey: { username: string; password: string }, username: string, password: string): boolean {\n  const expectedUsername = Buffer.from(decryptedKey.username);\n  const actualUsername = Buffer.from(username);\n  const expectedPassword = Buffer.from(decryptedKey.password);\n  const actualPassword = Buffer.from(password);\n\n  const usernameMatch =\n    expectedUsername.length === actualUsername.length &&\n    crypto.timingSafeEqual(expectedUsername, actualUsername);\n  const passwordMatch =\n    expectedPassword.length === actualPassword.length &&\n    crypto.timingSafeEqual(expectedPassword, actualPassword);\n\n  return usernameMatch && passwordMatch;\n}\n```"
+      },
+      {
+        "fixtureId": "timing-attack-credential-compare",
+        "category": "security",
+        "variant": "v2-human",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "both conditions met",
+        "inputTokens": 23114,
+        "outputTokens": 163,
+        "costUsd": 0.137127,
+        "modelResponse": "```\nimport crypto from 'node:crypto';\n\nfunction checkAppleCredentials(decryptedKey: { username: string; password: string }, username: string, password: string): boolean {\n  if (decryptedKey.username === username) {\n    const a = Buffer.from(decryptedKey.password);\n    const b = Buffer.from(password);\n    if (a.length === b.length && crypto.timingSafeEqual(a, b)) {\n      return true;\n    }\n  }\n  return false;\n}\n```"
+      },
+      {
+        "fixtureId": "timing-attack-credential-compare",
+        "category": "security",
+        "variant": "v2-agent",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "both conditions met",
+        "inputTokens": 23114,
+        "outputTokens": 163,
+        "costUsd": 0.13553325,
+        "modelResponse": "```\nimport crypto from 'node:crypto';\n\nfunction checkAppleCredentials(decryptedKey: { username: string; password: string }, username: string, password: string): boolean {\n  if (decryptedKey.username === username) {\n    const a = Buffer.from(decryptedKey.password);\n    const b = Buffer.from(password);\n    if (a.length === b.length && crypto.timingSafeEqual(a, b)) {\n      return true;\n    }\n  }\n  return false;\n}\n```"
+      },
+      {
+        "fixtureId": "hardcoded-jwt-secret",
+        "category": "security",
+        "variant": "v1",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "both conditions met",
+        "inputTokens": 23114,
+        "outputTokens": 77,
+        "costUsd": 0.127302,
+        "modelResponse": "```\nconst secret = process.env.JWT_SECRET;\n\nif (!secret) {\n  throw new Error('JWT_SECRET environment variable is required');\n}\n\nexport const jwtConstants = {\n  secret,\n};\n```"
+      },
+      {
+        "fixtureId": "hardcoded-jwt-secret",
+        "category": "security",
+        "variant": "v2-human",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "both conditions met",
+        "inputTokens": 23114,
+        "outputTokens": 74,
+        "costUsd": 0.13050825,
+        "modelResponse": "```\nif (!process.env.JWT_SECRET) throw new Error('JWT_SECRET env var required');\nexport const jwtConstants = {\n  secret: process.env.JWT_SECRET,\n};\n```"
+      },
+      {
+        "fixtureId": "hardcoded-jwt-secret",
+        "category": "security",
+        "variant": "v2-agent",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "both conditions met",
+        "inputTokens": 23114,
+        "outputTokens": 74,
+        "costUsd": 0.1279395,
+        "modelResponse": "```\nif (!process.env.JWT_SECRET) throw new Error('JWT_SECRET env var required');\nexport const jwtConstants = {\n  secret: process.env.JWT_SECRET,\n};\n```"
+      },
+      {
+        "fixtureId": "eval-on-dynamic-import",
+        "category": "security",
+        "variant": "v1",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "forbidden pattern absent",
+        "inputTokens": 23114,
+        "outputTokens": 51,
+        "costUsd": 0.125052,
+        "modelResponse": "```\nexport async function dynamicImport(importPath: string) {\n  return await import(/* webpackIgnore: true */ importPath);\n}\n```"
+      },
+      {
+        "fixtureId": "eval-on-dynamic-import",
+        "category": "security",
+        "variant": "v2-human",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "forbidden pattern absent",
+        "inputTokens": 23114,
+        "outputTokens": 38,
+        "costUsd": 0.12627075,
+        "modelResponse": "```\nexport async function dynamicImport(importPath: string) {\n  return await import(importPath);\n}\n```"
+      },
+      {
+        "fixtureId": "eval-on-dynamic-import",
+        "category": "security",
+        "variant": "v2-agent",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "forbidden pattern absent",
+        "inputTokens": 23114,
+        "outputTokens": 38,
+        "costUsd": 0.12360824999999999,
+        "modelResponse": "```\nexport async function dynamicImport(importPath: string) {\n  return await import(importPath);\n}\n```"
+      },
+      {
+        "fixtureId": "foreach-async-floating-promise",
+        "category": "quality",
+        "variant": "v1",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "forbidden pattern absent",
+        "inputTokens": 23114,
+        "outputTokens": 93,
+        "costUsd": 0.12758324999999998,
+        "modelResponse": "```\nasync function processBatch(items: Item[]) {\n  await Promise.all(items.map(async (item) => {\n    await processItem(item);\n  }));\n  // Caller assumes batch is done — but forEach returned immediately.\n  console.log('batch processed');\n}\n```"
+      },
+      {
+        "fixtureId": "foreach-async-floating-promise",
+        "category": "quality",
+        "variant": "v2-human",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "forbidden pattern absent",
+        "inputTokens": 23114,
+        "outputTokens": 84,
+        "costUsd": 0.129702,
+        "modelResponse": "```\nasync function processBatch(items: Item[]) {\n  await Promise.all(items.map((item) => processItem(item)));\n  // Caller assumes batch is done — but forEach returned immediately.\n  console.log('batch processed');\n}\n```"
+      },
+      {
+        "fixtureId": "foreach-async-floating-promise",
+        "category": "quality",
+        "variant": "v2-agent",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "forbidden pattern absent",
+        "inputTokens": 23114,
+        "outputTokens": 60,
+        "costUsd": 0.12613950000000002,
+        "modelResponse": "```\nasync function processBatch(items: Item[]) {\n  await Promise.all(items.map((item) => processItem(item)));\n  console.log('batch processed');\n}\n```"
+      },
+      {
+        "fixtureId": "insecure-random-api-key",
+        "category": "security",
+        "variant": "v1",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "both conditions met",
+        "inputTokens": 23114,
+        "outputTokens": 99,
+        "costUsd": 0.129027,
+        "modelResponse": "```\nimport crypto from 'node:crypto';\n\nasync function createApiKey() {\n  const apiKey = `cal_live_${crypto.randomBytes(32).toString('hex')}`;\n  await db.apiKey.insert({ key: apiKey });\n  return apiKey;\n}\n```"
+      },
+      {
+        "fixtureId": "insecure-random-api-key",
+        "category": "security",
+        "variant": "v2-human",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "both conditions met",
+        "inputTokens": 23114,
+        "outputTokens": 99,
+        "costUsd": 0.13253325000000002,
+        "modelResponse": "```\nimport crypto from 'node:crypto';\n\nasync function createApiKey() {\n  const apiKey = `cal_live_${crypto.randomBytes(24).toString('hex')}`;\n  await db.apiKey.insert({ key: apiKey });\n  return apiKey;\n}\n```"
+      },
+      {
+        "fixtureId": "insecure-random-api-key",
+        "category": "security",
+        "variant": "v2-agent",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "both conditions met",
+        "inputTokens": 23114,
+        "outputTokens": 99,
+        "costUsd": 0.12972075,
+        "modelResponse": "```\nimport crypto from 'node:crypto';\n\nasync function createApiKey() {\n  const apiKey = `cal_live_${crypto.randomBytes(24).toString('hex')}`;\n  await db.apiKey.insert({ key: apiKey });\n  return apiKey;\n}\n```"
+      },
+      {
+        "fixtureId": "barrel-file-deep-import",
+        "category": "quality",
+        "variant": "v1",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "forbidden pattern absent",
+        "inputTokens": 23114,
+        "outputTokens": 114,
+        "costUsd": 0.12930824999999999,
+        "modelResponse": "```\n// scripts/check-config.ts\nimport { sanitizeConfig } from 'payload/config';\n\nimport rawConfig from '../payload.config';\n\nasync function main() {\n  const cleaned = await sanitizeConfig(rawConfig);\n  console.log(JSON.stringify(cleaned, null, 2));\n}\n\nmain();\n```"
+      },
+      {
+        "fixtureId": "barrel-file-deep-import",
+        "category": "quality",
+        "variant": "v2-human",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "forbidden pattern absent",
+        "inputTokens": 23114,
+        "outputTokens": 122,
+        "costUsd": 0.13356449999999997,
+        "modelResponse": "```\n// scripts/check-config.ts\nimport { sanitizeConfig } from 'payload/dist/config/sanitize';\n\nimport rawConfig from '../payload.config';\n\nasync function main() {\n  const cleaned = await sanitizeConfig(rawConfig);\n  console.log(JSON.stringify(cleaned, null, 2));\n}\n\nmain();\n```"
+      },
+      {
+        "fixtureId": "barrel-file-deep-import",
+        "category": "quality",
+        "variant": "v2-agent",
+        "model": "opus",
+        "modelFullName": "claude-opus-4-7",
+        "pass": true,
+        "reason": "forbidden pattern absent",
+        "inputTokens": 23114,
+        "outputTokens": 122,
+        "costUsd": 0.13178325000000002,
+        "modelResponse": "```\n// scripts/check-config.ts\nimport { sanitizeConfig } from 'payload/dist/config/sanitize';\n\nimport rawConfig from '../payload.config';\n\nasync function main() {\n  const cleaned = await sanitizeConfig(rawConfig);\n  console.log(JSON.stringify(cleaned, null, 2));\n}\n\nmain();\n```"
+      }
+    ]
+  }
+}

@@ -1,0 +1,108 @@
+{
+  "rule": "secure-coding/no-unlimited-resource-allocation",
+  "status": "open",
+  "sealedOn": null,
+  "sealedTo": {
+    "ecmaVersion": 2022,
+    "typescript": "6.0.3",
+    "eslint": "10.8.1",
+    "plugin": "eslint-plugin-secure-coding@5.1.2",
+    "node": "24"
+  },
+  "axes": {
+    "oracle": {
+      "state": "unmet",
+      "evidence": "no independent decider named. Until one is, any precision figure for this rule is OUR opinion of our own output — a hand-rolled timing classifier scored no-redos at 28.6% where recheck scored the identical patterns at ~96%",
+      "command": "see ANALYSIS-LIMITS.md and the oracle column in RULE-SCORES.md"
+    },
+    "effectiveFp": {
+      "state": "unmet",
+      "evidence": "never measured. Technical FP is not effective FP: a finding counts against us when it is wrong, AND when it is right but nobody would act on it. Bar is 5% for anything a preset enables",
+      "command": "npm run cases -- secure-coding/no-unlimited-resource-allocation"
+    },
+    "reachability": {
+      "state": "unmet",
+      "evidence": "the rule's default contract is not asserted. A rule enabled by default must report only when it can resolve a path from an untrusted source; \"report unless proven safe\" is a different product and belongs opt-in",
+      "command": "grep -n \"return true\" packages/eslint-plugin-secure-coding/src/rules/no-unlimited-resource-allocation/index.ts"
+    },
+    "corpus": {
+      "state": "met",
+      "evidence": "10 vulnerable / 16 safe, written 2026-08-18 from the 173 measured false positives and from real framework idiom, not from the rule's tests",
+      "command": "ls benchmarks/rule-corpus/secure-coding__no-unlimited-resource-allocation"
+    },
+    "duel": {
+      "state": "met",
+      "evidence": "10 TP / 0 FP / 0 FN — 100.0% precision, 100.0% recall, 100.0% F1",
+      "command": "npx tsx benchmarks/suites/ilb-rule-duel/run.mjs secure-coding/no-unlimited-resource-allocation"
+    },
+    "adversarial": {
+      "state": "unmet",
+      "evidence": "NOT RUN. The corpus was written from measured false positives, so the rule was tuned against it — phase 4 exists precisely because that score is worth nothing on its own",
+      "command": "see RULE-TO-BAR-PLAYBOOK.md, phase 4"
+    },
+    "realSource": {
+      "state": "met",
+      "evidence": "2 case(s): 2 enforce, 0 exempt, 0 undecided, 0 unreviewed",
+      "command": "npm run cases -- secure-coding/no-unlimited-resource-allocation"
+    },
+    "partition": {
+      "state": "unmet",
+      "evidence": "Probed 2026-08-18 and FAILED. Exactly one report per shape, but from the wrong rule — see knownGaps/decompression-owned-by-the-generic-rule",
+      "command": "npx tsx scripts/probe-rule.mts secure-coding/no-unlimited-resource-allocation node-security/no-unbounded-decompression -- 'const zlib=require(\"zlib\"); const g = zlib.createGunzip();'"
+    },
+    "behaviour": {
+      "state": "met",
+      "evidence": "11/11, including the positive control",
+      "command": "npx tsx scripts/rule-seal-probe.mts secure-coding/no-unlimited-resource-allocation"
+    },
+    "coverage": {
+      "state": "met",
+      "evidence": "100.00% statements, 100.00% branches (istanbul JSON)",
+      "command": "npx vitest run --coverage src/rules/no-unlimited-resource-allocation"
+    },
+    "throughput": {
+      "state": "met",
+      "evidence": "attributed to the rule's own frames: 10x 8.42ms (113 samples) · 20x 6.95ms (167 samples) · 40x 8.53ms (213 samples) · 80x 15.52ms (434 samples) — 2.04x cost for 2.0x work (40x→80x), linear or better",
+      "command": "npx tsx scripts/seal-audit.mts secure-coding/no-unlimited-resource-allocation"
+    },
+    "recorded": {
+      "state": "unmet",
+      "evidence": "rule last changed 2026-08-20 · RULE-SCORES.md stamp 2026-08-18 · BENCHMARK-RESULTS.md stamp 2026-08-18",
+      "command": "grep -n 'seal secure-coding/no-unlimited-resource-allocation' benchmarks/RULE-SCORES.md BENCHMARK-RESULTS.md"
+    }
+  },
+  "knownGaps": [
+    {
+      "id": "decompression-owned-by-the-generic-rule",
+      "kind": "partition",
+      "summary": "node-security/no-unbounded-decompression is silent on zlib.createGunzip(), zlib.createUnzip() and unzipper.Extract(); this generic CWE-770 rule reports all three",
+      "why": "Not a double-report — exactly one finding per shape — but the dedicated CWE-409 rule does not see its own canonical sink, and all 3 of this rule's surviving real-source findings live in that overlap. Fixing it means deciding which rule owns decompression, which is a taxonomy decision across two plugins",
+      "reopenWhen": "the CWE-409/CWE-770 ownership boundary is settled",
+      "limit": null
+    },
+    {
+      "id": "axios-opt-in-limit-reads-as-mitigated",
+      "kind": "false-negative",
+      "summary": "A decompression whose output bytes are counted against a threshold in the same function is treated as bounded, even when that threshold is opt-in and defaults to unlimited",
+      "why": "axios counts decompressed bytes against maxContentLength, whose default is -1. The rule stops reporting the library that implements the mechanism; it cannot see whether a consumer enabled it. Reporting anyway would mean reporting the fix the author already applied",
+      "reopenWhen": "the rule can see a config default, or the check moves to the call site that sets maxContentLength",
+      "limit": "L6"
+    },
+    {
+      "id": "unresolvable-size-is-not-reported",
+      "kind": "false-negative",
+      "summary": "Buffer.alloc(n) where n is a function parameter with no visible initializer is not reported",
+      "why": "Deliberate. Taint starts at a binding this file can see the value of; assuming a parameter named `data` or `size` is attacker-controlled is what produced the 173 findings this rule was fixed for",
+      "reopenWhen": "cross-file taint is available, which no rule in this ecosystem has today",
+      "limit": "L1"
+    },
+    {
+      "id": "entity-expansion-not-covered",
+      "kind": "scope",
+      "summary": "No XML entity-expansion detection. The path was removed 2026-08-18 after xml2js was measured unable to expand entities at all",
+      "why": "The removed check could only ever fire on xml2js, which parses through sax-js and rejects custom entity references outright. libxmljs `noent: true` IS a real sink and is a different API on a different module",
+      "reopenWhen": "a rule is written against a parser whose entity handling was actually measured",
+      "limit": "L5"
+    }
+  ]
+}

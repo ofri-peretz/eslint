@@ -1,0 +1,17 @@
+{
+  "plugins": [
+    "jsx-a11y"
+  ],
+  "categories": {
+    "correctness": "off",
+    "suspicious": "off",
+    "pedantic": "off",
+    "style": "off",
+    "perf": "off",
+    "restriction": "off",
+    "nursery": "off"
+  },
+  "rules": {
+    "jsx-a11y/alt-text": "error"
+  }
+}

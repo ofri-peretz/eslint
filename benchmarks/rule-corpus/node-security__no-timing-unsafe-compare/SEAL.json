@@ -1,0 +1,92 @@
+{
+  "rule": "node-security/no-timing-unsafe-compare",
+  "status": "open",
+  "sealedOn": null,
+  "sealedTo": {
+    "ecmaVersion": 2022,
+    "eslint": "9",
+    "plugin": "eslint-plugin-node-security@5.1.1",
+    "node": "24"
+  },
+  "axes": {
+    "corpus": {
+      "state": "unmet",
+      "evidence": "fixtures in the rule's own suite plus an adversarial wave; no vulnerable/safe corpus authored beside this record.",
+      "command": "author benchmarks/rule-corpus/node-security__no-timing-unsafe-compare/{vulnerable,safe}"
+    },
+    "oracle": {
+      "state": "unmet",
+      "evidence": "no independent decider for 'is this value a secret'. CodeQL's js/timing-attack is the nearest comparable analysis.",
+      "command": "score findings against CodeQL js/timing-attack"
+    },
+    "effectiveFp": {
+      "state": "unmet",
+      "evidence": "not measured under the formal protocol. Corpus fell 42 -> 41 when the location tails landed, so the volume is too low here to sample n>=20 from this corpus alone.",
+      "command": "npm run cases -- --rule=node-security/no-timing-unsafe-compare --n=20 --corpus=real-source"
+    },
+    "reachability": {
+      "state": "met",
+      "evidence": "the rule requires an UNTRUSTED SOURCE on one side — untrustedSources defaults to req/request/ctx/event — and reports only where that path resolves. Confirmed by the adversarial wave: `a.apiToken === b.apiToken` with no taint source is silent, `req.headers.token === user.apiToken` reports. `process` is deliberately absent from the source list, because in `req.headers['x-sig'] === process.env.SIGNING_KEY` the env read is the secret being protected, not the lever.",
+      "command": "see the untrustedSources option"
+    },
+    "duel": {
+      "state": "unmet",
+      "evidence": "not scored against a competitor.",
+      "command": "benchmarks duel"
+    },
+    "adversarial": {
+      "state": "unmet",
+      "evidence": "a 9-case wave scored 9/9: five real secret comparisons (token, clientSecret, signature, signatureUrl, hmac) all report through an untrusted source, and four location tails (path, hostname, count, route) stay silent. `signatureUrl` is the deliberate one — a presigned URL carries its signature and IS the credential, which is why url/uri are excluded from the tails. UNMET until a second wave finds nothing new; this one found nothing, but it is the FIRST wave and the axis asks for a second.",
+      "command": "re-run the wave"
+    },
+    "realSource": {
+      "state": "met",
+      "evidence": "measured on 8 pinned repositories; the location-tails fix was driven by Shopify/cli's OAuth callback server, where `requestUrl.pathname !== STORE_AUTH_CALLBACK_PATH` was a CWE-208 finding on a route.",
+      "command": "npx tsx scripts/corpus-scan.ts"
+    },
+    "partition": {
+      "state": "unmet",
+      "evidence": "not probed against the other comparison rules.",
+      "command": "author a partition matrix test"
+    },
+    "behaviour": {
+      "state": "unmet",
+      "evidence": "scripts/rule-seal-probe.mts not run.",
+      "command": "npx tsx scripts/rule-seal-probe.mts --rule=node-security/no-timing-unsafe-compare"
+    },
+    "coverage": {
+      "state": "met",
+      "evidence": "100% across eslint-plugin-node-security, 2715 tests.",
+      "command": "npx vitest run --coverage"
+    },
+    "throughput": {
+      "state": "unmet",
+      "evidence": "not measured.",
+      "command": "see A4"
+    },
+    "recorded": {
+      "state": "unmet",
+      "evidence": "BENCHMARK-RESULTS.md not updated.",
+      "command": "D5"
+    }
+  },
+  "knownGaps": [
+    {
+      "id": "secret-by-name",
+      "kind": "false-negative",
+      "limit": "L2",
+      "summary": "whether a value is a secret is decided from its identifier, so a secret with a neutral name is invisible.",
+      "why": "without types there is nothing else to read; the untrusted-source requirement is what keeps this from being a name-only rule.",
+      "reopenWhen": "the rule becomes type-aware, or a taint summary can label the value."
+    },
+    {
+      "id": "tails-are-a-vocabulary",
+      "kind": "false-positive",
+      "limit": "L2",
+      "summary": "DEFAULT_NON_SECRET_TAILS is a word list, and a project may name a real secret with one of those tails.",
+      "why": "the list is documented, generated into the schema description, and REPLACEABLE via nonSecretTails — a consumer whose vocabulary differs can set their own.",
+      "reopenWhen": "a corpus finding shows a real secret suppressed by a tail."
+    }
+  ],
+  "notes": "Seal record OPENED 2026-08-21. `reachability` MET, which is the only record in this corpus with it met — the untrusted-source requirement is exactly what that axis asks for, and it is why the adversarial wave's first five cases were silent until the harness was corrected to include a taint source."
+}

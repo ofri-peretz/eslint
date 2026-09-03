@@ -1,0 +1,393 @@
+{
+  "_schema_version": "1.0",
+  "_purpose": "Per-software-niche presets for cicd-impact calculator. Pick the closest niche, copy the inputs_yml_overrides into your inputs.yml, and run scripts/03 to recompute. The recommendations are starting points anchored to the citations in philosophy.md; override any value where you have local data that's better than the niche default.",
+  "_authoritative_table": "../philosophy.md#investor-expectations-and-recommended-static-analysis-investment-by-software-niche",
+  "_default_units": {
+    "wage_per_minute_usd": "fully-loaded $/dev-min (salary + benefits + overhead, divided by working minutes/year ≈ 120k)",
+    "long_threshold_minutes": "wait threshold above which full Mark/Gloria/Klocke S=23 task-switch tax applies",
+    "blast_radius_multiplier": "K — empirical or executive override; how many other developers a broken deploy blocks",
+    "ci_failure_rate_overrides": "DORA-anchored sensitivity band [Low, null=measured, High]"
+  },
+
+  "presets": {
+    "b2b-saas-enterprise": {
+      "label": "B2B SaaS — Enterprise",
+      "investor_metrics": {
+        "north_stars": ["NRR ≥ 120%", "gross margin ≥ 75%", "Rule of 40", "CAC payback < 18 mo"],
+        "valuation_anchors": [
+          "https://www.bvp.com/atlas",
+          "https://openviewpartners.com/saas-benchmarks-report/"
+        ]
+      },
+      "cfr_tolerance": "low",
+      "deploy_frequency_norm": "daily–weekly per service",
+      "quality_vs_latency_emphasis": "quality_first",
+      "recommended_lint_budget_pct_of_payroll_range": [1.5, 2.5],
+      "expected_velocity_uplift_pct_range": [5, 10],
+      "expected_churn_reduction_pp_at_12mo_range": [2, 5],
+      "inputs_yml_overrides": {
+        "wage_per_minute_usd": 2.50,
+        "cognitive_tax_thresholds_minutes": { "short_threshold": 2, "long_threshold": 9 },
+        "ci_failure_policy": {
+          "count_cancelled_as_failure": true,
+          "count_timed_out_as_failure": true,
+          "retry_after_fail_counts_as": 1
+        },
+        "blast_radius_multiplier": 2.0,
+        "sensitivity": {
+          "ci_failure_rate_overrides": [0.07, null, 0.25]
+        }
+      },
+      "static_analysis_priority": {
+        "rule_families": ["secure-coding", "crypto", "jwt", "express-security", "node-security", "maintainability"],
+        "high_end_thresholds": {
+          "min_precision": 0.95,
+          "min_recall_on_cwe_corpus": 0.90,
+          "max_inner_loop_latency_seconds": 1.0
+        }
+      }
+    },
+
+    "b2b-saas-smb": {
+      "label": "B2B SaaS — SMB / mid-market",
+      "investor_metrics": {
+        "north_stars": ["magic number ≥ 0.7", "CAC payback < 12 mo", "NRR ≥ 105%"],
+        "valuation_anchors": [
+          "https://openviewpartners.com/saas-benchmarks-report/",
+          "https://tomtunguz.com/"
+        ]
+      },
+      "cfr_tolerance": "moderate",
+      "deploy_frequency_norm": "multiple times per day",
+      "quality_vs_latency_emphasis": "balanced",
+      "recommended_lint_budget_pct_of_payroll_range": [1.0, 1.5],
+      "expected_velocity_uplift_pct_range": [8, 12],
+      "inputs_yml_overrides": {
+        "wage_per_minute_usd": 2.10,
+        "cognitive_tax_thresholds_minutes": { "short_threshold": 2, "long_threshold": 10 },
+        "ci_failure_policy": {
+          "count_cancelled_as_failure": false,
+          "count_timed_out_as_failure": true,
+          "retry_after_fail_counts_as": 1
+        },
+        "blast_radius_multiplier": 1.7,
+        "sensitivity": {
+          "ci_failure_rate_overrides": [0.10, null, 0.30]
+        }
+      },
+      "static_analysis_priority": {
+        "rule_families": ["secure-coding", "modernization", "maintainability", "reliability", "import-next"],
+        "high_end_thresholds": {
+          "min_precision": 0.90,
+          "min_recall_on_cwe_corpus": 0.85,
+          "max_inner_loop_latency_seconds": 1.0
+        }
+      }
+    },
+
+    "consumer-saas-b2c": {
+      "label": "Consumer SaaS / B2C",
+      "investor_metrics": {
+        "north_stars": ["DAU/MAU ≥ 0.20", "retention curve flattens", "CAC payback < 6 mo", "K-factor"],
+        "valuation_anchors": [
+          "https://a16z.com/category/consumer/",
+          "https://openviewpartners.com/saas-benchmarks-report/"
+        ]
+      },
+      "cfr_tolerance": "moderate-high",
+      "deploy_frequency_norm": "multiple times per day; A/B-driven",
+      "quality_vs_latency_emphasis": "latency_first",
+      "recommended_lint_budget_pct_of_payroll_range": [0.8, 1.2],
+      "expected_velocity_uplift_pct_range": [10, 15],
+      "inputs_yml_overrides": {
+        "wage_per_minute_usd": 2.00,
+        "cognitive_tax_thresholds_minutes": { "short_threshold": 2, "long_threshold": 10 },
+        "ci_failure_policy": {
+          "count_cancelled_as_failure": false,
+          "count_timed_out_as_failure": true,
+          "retry_after_fail_counts_as": 1
+        },
+        "blast_radius_multiplier": 1.4,
+        "sensitivity": {
+          "ci_failure_rate_overrides": [0.10, null, 0.30]
+        }
+      },
+      "static_analysis_priority": {
+        "rule_families": ["react-features", "react-a11y", "modernization", "browser-security", "import-next"],
+        "high_end_thresholds": {
+          "min_precision": 0.92,
+          "min_recall_on_cwe_corpus": 0.80,
+          "max_inner_loop_latency_seconds": 0.5
+        }
+      }
+    },
+
+    "infra-devtools": {
+      "label": "Infrastructure / Developer tools",
+      "investor_metrics": {
+        "north_stars": ["OSS adoption (stars, downloads)", "OSS-to-paid conversion", "expansion revenue"],
+        "valuation_anchors": [
+          "https://a16z.com/category/devtools/",
+          "https://www.bvp.com/atlas"
+        ]
+      },
+      "cfr_tolerance": "very_low",
+      "deploy_frequency_norm": "per-PR / continuous",
+      "quality_vs_latency_emphasis": "both_required",
+      "recommended_lint_budget_pct_of_payroll_range": [2.0, 3.0],
+      "expected_velocity_uplift_pct_range": [10, 20],
+      "inputs_yml_overrides": {
+        "wage_per_minute_usd": 2.40,
+        "cognitive_tax_thresholds_minutes": { "short_threshold": 2, "long_threshold": 7 },
+        "ci_failure_policy": {
+          "count_cancelled_as_failure": true,
+          "count_timed_out_as_failure": true,
+          "retry_after_fail_counts_as": 1
+        },
+        "blast_radius_multiplier": 2.5,
+        "sensitivity": {
+          "ci_failure_rate_overrides": [0.05, null, 0.20]
+        }
+      },
+      "static_analysis_priority": {
+        "rule_families": ["maintainability", "reliability", "conventions", "modernization", "import-next", "secure-coding"],
+        "high_end_thresholds": {
+          "min_precision": 0.97,
+          "min_recall_on_cwe_corpus": 0.92,
+          "max_inner_loop_latency_seconds": 0.5
+        }
+      }
+    },
+
+    "fintech-payments": {
+      "label": "Fintech / Payments",
+      "investor_metrics": {
+        "north_stars": ["take rate", "transaction volume", "gross margin", "regulatory passes"],
+        "valuation_anchors": [
+          "https://a16z.com/category/fintech/",
+          "https://press.stripe.com/",
+          "https://www.verizon.com/business/resources/reports/dbir/"
+        ]
+      },
+      "cfr_tolerance": "critical",
+      "deploy_frequency_norm": "daily, with high-stakes pre-flight checks",
+      "quality_vs_latency_emphasis": "quality_dominant",
+      "recommended_lint_budget_pct_of_payroll_range": [2.5, 4.0],
+      "expected_velocity_uplift_pct_range": [5, 8],
+      "expected_audit_cost_reduction_usd_per_cycle_range": [30000, 80000],
+      "inputs_yml_overrides": {
+        "wage_per_minute_usd": 2.75,
+        "cognitive_tax_thresholds_minutes": { "short_threshold": 2, "long_threshold": 8 },
+        "ci_failure_policy": {
+          "count_cancelled_as_failure": true,
+          "count_timed_out_as_failure": true,
+          "retry_after_fail_counts_as": 1
+        },
+        "blast_radius_multiplier": 2.5,
+        "sensitivity": {
+          "ci_failure_rate_overrides": [0.05, null, 0.20]
+        }
+      },
+      "static_analysis_priority": {
+        "rule_families": ["secure-coding", "crypto", "jwt", "node-security", "express-security", "pg", "mongodb-security"],
+        "high_end_thresholds": {
+          "min_precision": 0.97,
+          "min_recall_on_cwe_corpus": 0.95,
+          "max_inner_loop_latency_seconds": 1.0
+        }
+      }
+    },
+
+    "healthtech-saas": {
+      "label": "Healthtech / Health SaaS",
+      "investor_metrics": {
+        "north_stars": ["HIPAA controls evidence", "FDA pathway progress (where applicable)", "churn", "NRR"],
+        "valuation_anchors": [
+          "https://a16z.com/bio/",
+          "https://www.hipaajournal.com/",
+          "https://www.ibm.com/reports/data-breach"
+        ]
+      },
+      "cfr_tolerance": "critical",
+      "deploy_frequency_norm": "weekly–daily",
+      "quality_vs_latency_emphasis": "quality_dominant",
+      "recommended_lint_budget_pct_of_payroll_range": [2.0, 3.5],
+      "expected_velocity_uplift_pct_range": [5, 10],
+      "_note": "IBM Cost of a Data Breach annual report consistently ranks healthcare as the highest-cost-per-breach industry — making counterfactual value of static analysis in healthtech the highest of any niche.",
+      "inputs_yml_overrides": {
+        "wage_per_minute_usd": 2.40,
+        "cognitive_tax_thresholds_minutes": { "short_threshold": 2, "long_threshold": 8 },
+        "ci_failure_policy": {
+          "count_cancelled_as_failure": true,
+          "count_timed_out_as_failure": true,
+          "retry_after_fail_counts_as": 1
+        },
+        "blast_radius_multiplier": 2.2,
+        "sensitivity": {
+          "ci_failure_rate_overrides": [0.05, null, 0.20]
+        }
+      },
+      "static_analysis_priority": {
+        "rule_families": ["secure-coding", "crypto", "jwt", "node-security", "browser-security", "mongodb-security"],
+        "high_end_thresholds": {
+          "min_precision": 0.97,
+          "min_recall_on_cwe_corpus": 0.93,
+          "max_inner_loop_latency_seconds": 1.0
+        }
+      }
+    },
+
+    "cybersecurity": {
+      "label": "Cybersecurity",
+      "investor_metrics": {
+        "north_stars": ["ARR growth", "retention", "threat-detection rate", "incident response time"],
+        "valuation_anchors": [
+          "https://a16z.com/category/security/",
+          "https://www.verizon.com/business/resources/reports/dbir/",
+          "https://www.ibm.com/reports/data-breach"
+        ]
+      },
+      "cfr_tolerance": "critical",
+      "deploy_frequency_norm": "daily",
+      "quality_vs_latency_emphasis": "both_required",
+      "recommended_lint_budget_pct_of_payroll_range": [3.0, 5.0],
+      "expected_velocity_uplift_pct_range": [8, 12],
+      "_note": "Highest static-analysis budget of any niche. Eating own dog food: a security company's CFR event undermines its product credibility with reference customers.",
+      "inputs_yml_overrides": {
+        "wage_per_minute_usd": 2.75,
+        "cognitive_tax_thresholds_minutes": { "short_threshold": 2, "long_threshold": 7 },
+        "ci_failure_policy": {
+          "count_cancelled_as_failure": true,
+          "count_timed_out_as_failure": true,
+          "retry_after_fail_counts_as": 1
+        },
+        "blast_radius_multiplier": 2.5,
+        "sensitivity": {
+          "ci_failure_rate_overrides": [0.04, null, 0.18]
+        }
+      },
+      "static_analysis_priority": {
+        "rule_families": ["secure-coding", "crypto", "jwt", "browser-security", "node-security", "express-security", "lambda-security", "mongodb-security", "pg", "vercel-ai-security"],
+        "high_end_thresholds": {
+          "min_precision": 0.98,
+          "min_recall_on_cwe_corpus": 0.95,
+          "max_inner_loop_latency_seconds": 0.5
+        }
+      }
+    },
+
+    "marketplaces-networks": {
+      "label": "Marketplaces / Network platforms",
+      "investor_metrics": {
+        "north_stars": ["GMV", "take rate", "two-sided liquidity", "retention by side", "NPS by side"],
+        "valuation_anchors": [
+          "https://a16z.com/marketplace-100/",
+          "https://avc.com/"
+        ]
+      },
+      "cfr_tolerance": "moderate",
+      "deploy_frequency_norm": "multiple times per day per service",
+      "quality_vs_latency_emphasis": "latency_first",
+      "recommended_lint_budget_pct_of_payroll_range": [1.2, 1.8],
+      "expected_velocity_uplift_pct_range": [8, 12],
+      "_note": "Two-sided coupling amplifies blast radius — set K higher than appearances suggest.",
+      "inputs_yml_overrides": {
+        "wage_per_minute_usd": 2.20,
+        "cognitive_tax_thresholds_minutes": { "short_threshold": 2, "long_threshold": 9 },
+        "ci_failure_policy": {
+          "count_cancelled_as_failure": false,
+          "count_timed_out_as_failure": true,
+          "retry_after_fail_counts_as": 1
+        },
+        "blast_radius_multiplier": 2.0,
+        "sensitivity": {
+          "ci_failure_rate_overrides": [0.08, null, 0.25]
+        }
+      },
+      "static_analysis_priority": {
+        "rule_families": ["modernization", "reliability", "secure-coding", "import-next", "react-features"],
+        "high_end_thresholds": {
+          "min_precision": 0.93,
+          "min_recall_on_cwe_corpus": 0.85,
+          "max_inner_loop_latency_seconds": 0.7
+        }
+      }
+    },
+
+    "ai-ml-platforms": {
+      "label": "AI / ML platforms",
+      "investor_metrics": {
+        "north_stars": ["model-cost vs revenue", "eval-quality scores", "customer ARR", "retention"],
+        "valuation_anchors": [
+          "https://a16z.com/category/artificial-intelligence/",
+          "https://openviewpartners.com/saas-benchmarks-report/"
+        ]
+      },
+      "cfr_tolerance": "moderate",
+      "deploy_frequency_norm": "multiple times per day",
+      "quality_vs_latency_emphasis": "quality_on_ai_specific_then_latency",
+      "recommended_lint_budget_pct_of_payroll_range": [1.5, 2.5],
+      "expected_velocity_uplift_pct_range": [10, 18],
+      "_note": "AI-specific rule families (prompt injection, eval drift, model output validation) are the leverage point. Generic lint rules are table stakes.",
+      "inputs_yml_overrides": {
+        "wage_per_minute_usd": 2.60,
+        "cognitive_tax_thresholds_minutes": { "short_threshold": 2, "long_threshold": 8 },
+        "ci_failure_policy": {
+          "count_cancelled_as_failure": false,
+          "count_timed_out_as_failure": true,
+          "retry_after_fail_counts_as": 1
+        },
+        "blast_radius_multiplier": 1.8,
+        "sensitivity": {
+          "ci_failure_rate_overrides": [0.08, null, 0.25]
+        }
+      },
+      "static_analysis_priority": {
+        "rule_families": ["vercel-ai-security", "secure-coding", "node-security", "modernization", "reliability"],
+        "high_end_thresholds": {
+          "min_precision": 0.95,
+          "min_recall_on_cwe_corpus": 0.88,
+          "max_inner_loop_latency_seconds": 0.7
+        }
+      }
+    },
+
+    "gaming-live-entertainment": {
+      "label": "Gaming / Live entertainment",
+      "investor_metrics": {
+        "north_stars": ["DAU", "ARPDAU", "retention curves", "live-ops cadence"],
+        "valuation_anchors": [
+          "https://newzoo.com/",
+          "https://a16z.com/category/games/"
+        ]
+      },
+      "cfr_tolerance": "high_during_dev_low_during_live_ops",
+      "deploy_frequency_norm": "continuous (live-ops)",
+      "quality_vs_latency_emphasis": "latency_dominant",
+      "recommended_lint_budget_pct_of_payroll_range": [0.8, 1.2],
+      "expected_velocity_uplift_pct_range": [8, 12],
+      "_note": "Artist + designer + developer feedback loops are nested; analyzer latency at the inner loop drives multi-disciplinary throughput.",
+      "inputs_yml_overrides": {
+        "wage_per_minute_usd": 2.20,
+        "cognitive_tax_thresholds_minutes": { "short_threshold": 2, "long_threshold": 11 },
+        "ci_failure_policy": {
+          "count_cancelled_as_failure": false,
+          "count_timed_out_as_failure": true,
+          "retry_after_fail_counts_as": 1
+        },
+        "blast_radius_multiplier": 1.5,
+        "sensitivity": {
+          "ci_failure_rate_overrides": [0.10, null, 0.30]
+        }
+      },
+      "static_analysis_priority": {
+        "rule_families": ["modernization", "reliability", "maintainability", "import-next"],
+        "high_end_thresholds": {
+          "min_precision": 0.92,
+          "min_recall_on_cwe_corpus": 0.80,
+          "max_inner_loop_latency_seconds": 0.4
+        }
+      }
+    }
+  }
+}

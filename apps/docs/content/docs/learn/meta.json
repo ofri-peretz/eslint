@@ -1,0 +1,12 @@
+{
+  "title": "Learn",
+  "description": "How ESLint plugins, AST traversal, taint analysis, and oxlint compatibility work — from the inside",
+  "icon": "BookOpen",
+  "root": true,
+  "defaultOpen": true,
+  "pages": [
+    "index",
+    "---Chapters---",
+    "how-eslint-plugins-work"
+  ]
+}

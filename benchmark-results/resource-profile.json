@@ -1,0 +1,50 @@
+{
+  "generatedAt": "2026-05-17T01:50:51.862Z",
+  "platform": "darwin-arm64",
+  "nodeVersion": "v24.12.0",
+  "ciMemoryBudgetMb": 5734,
+  "runs": [
+    {
+      "engine": "eslint",
+      "preset": "eslint-flagship",
+      "command": "npx eslint --no-warn-ignored --config eslint.flagship.config.mjs apps/docs/src",
+      "corpus": "apps/docs/src",
+      "fileCount": 117,
+      "coldStartMs": 2795,
+      "totalWallMs": 2821,
+      "peakRssMb": 91,
+      "averageRssMb": 87,
+      "rssSampleCount": 22,
+      "exitCode": 1,
+      "fitsCIBudget": true
+    },
+    {
+      "engine": "oxlint",
+      "preset": "oxlint-flagship",
+      "command": "npx oxlint --config .oxlintrc.flagship.json apps/docs/src",
+      "corpus": "apps/docs/src",
+      "fileCount": 117,
+      "coldStartMs": 1394,
+      "totalWallMs": 1476,
+      "peakRssMb": 91,
+      "averageRssMb": 77,
+      "rssSampleCount": 12,
+      "exitCode": 1,
+      "fitsCIBudget": true
+    },
+    {
+      "engine": "oxlint",
+      "preset": "oxlint-default",
+      "command": "npx oxlint apps/docs/src",
+      "corpus": "apps/docs/src",
+      "fileCount": 117,
+      "coldStartMs": 586,
+      "totalWallMs": 593,
+      "peakRssMb": 91,
+      "averageRssMb": 79,
+      "rssSampleCount": 5,
+      "exitCode": 0,
+      "fitsCIBudget": true
+    }
+  ]
+}

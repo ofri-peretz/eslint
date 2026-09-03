@@ -1,0 +1,67 @@
+/**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
+ * ESLint Rule: prefer-es6-class
+ * Prefer ES6 classes over createClass
+ */
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+
+type MessageIds = 'preferEs6Class';
+
+export const preferEs6Class = createRule<[], MessageIds>({
+  name: 'prefer-es6-class',
+  meta: {
+    type: 'problem',
+    docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/prefer-es6-class.md',
+      description: 'Prefer ES6 classes over createClass',
+    },
+    schema: [],
+    messages: {
+      preferEs6Class: formatLLMMessage({
+        icon: MessageIcons.MIGRATION,
+        issueName: 'Legacy createClass',
+        description: 'React.createClass() is deprecated',
+        severity: 'HIGH',
+        fix: 'Convert to ES6 class component',
+        documentationLink: 'https://react.dev/reference/react/createClass',
+      }),
+    },
+  },
+  defaultOptions: [],
+  create(context: TSESLint.RuleContext<MessageIds, []>) {
+    return {
+      CallExpression(node: TSESTree.CallExpression) {
+        // Check for React.createClass()
+        if (
+          node.callee.type === 'MemberExpression' &&
+          node.callee.object.type === 'Identifier' &&
+          node.callee.object.name === 'React' &&
+          propertyName(node.callee) === 'createClass'
+        ) {
+          context.report({
+            node: node.callee.property,
+            messageId: 'preferEs6Class',
+          });
+        }
+
+        // Check for createClass() (imported)
+        if (
+          node.callee.type === 'Identifier' &&
+          node.callee.name === 'createClass'
+        ) {
+          context.report({
+            node: node.callee,
+            messageId: 'preferEs6Class',
+          });
+        }
+      },
+    };
+  },
+});

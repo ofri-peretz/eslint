@@ -1,0 +1,10 @@
+{
+    "title": "Plugin: anthropic-security",
+    "icon": "Bot",
+    "defaultOpen": false,
+    "pages": [
+        "index",
+        "changelog",
+        "rules"
+    ]
+}

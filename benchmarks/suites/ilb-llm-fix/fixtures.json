@@ -1,0 +1,443 @@
+{
+  "$schema-note": "Fixture corpus for ilb-llm-fix v1.3. Each fixture pairs a lint finding with buggy code derived from a real pattern in ~/repos/ofriperetz.dev/oos/, a known-good fix, and a verifier the model output must satisfy. The `source` block cites the oos/ repo + file the pattern was extracted or adapted from. See ./corpus.md for the full citation table. v1.3 adds: hardcoded-jwt-secret (nestjs), eval-on-dynamic-import (payload), foreach-async-floating-promise (strapi), insecure-random-api-key (cal.com). Corpus now 12 fixtures (was 8 in v1.2).",
+  "version": "v1.3",
+  "fixtures": [
+    {
+      "id": "jwt-missing-algorithms",
+      "category": "security",
+      "source": {
+        "repo": "nestjs",
+        "path": "sample/19-auth-jwt/src/auth/auth.guard.ts",
+        "url": "https://github.com/nestjs/nest/blob/master/sample/19-auth-jwt/src/auth/auth.guard.ts",
+        "note": "Real-world NestJS JWT guard sample. The official sample passes only `{ secret }` with no `algorithms` whitelist, leaving the verifier vulnerable to alg-confusion attacks if the secret is ever interpretable as a public key."
+      },
+      "v1": {
+        "icon": "🔒",
+        "issueName": "JWT verify missing algorithms whitelist",
+        "cwe": "CWE-347",
+        "description": "JWT verify call lacks an explicit algorithms whitelist",
+        "severity": "HIGH",
+        "fix": "Pin the allowed algorithms, e.g. { algorithms: ['HS256'] }",
+        "documentationLink": "https://www.rfc-editor.org/rfc/rfc7519#section-6"
+      },
+      "v2": {
+        "cwe": "CWE-347",
+        "severity": "HIGH",
+        "description": "JWT verify call lacks an explicit algorithms whitelist",
+        "why": "Without an algorithms whitelist, attackers can downgrade or confuse the verification (alg=none, RS256→HS256 confusion using the public key as the HMAC secret).",
+        "fix": "Pin the allowed algorithms, e.g. { algorithms: ['HS256'] }",
+        "docs": "https://www.rfc-editor.org/rfc/rfc7519#section-6",
+        "vulnerable": "await jwtService.verifyAsync(token, { secret: jwtConstants.secret })",
+        "safe": "await jwtService.verifyAsync(token, { secret: jwtConstants.secret, algorithms: ['HS256'] })"
+      },
+      "buggyCode": "async canActivate(context: ExecutionContext): Promise<boolean> {\n  const request = context.switchToHttp().getRequest();\n  const token = request.headers.authorization?.split(' ')[1];\n  if (!token) throw new UnauthorizedException();\n  try {\n    const payload = await this.jwtService.verifyAsync(token, {\n      secret: jwtConstants.secret,\n    });\n    request['user'] = payload;\n  } catch {\n    throw new UnauthorizedException();\n  }\n  return true;\n}",
+      "knownGoodFix": "async canActivate(context: ExecutionContext): Promise<boolean> {\n  const request = context.switchToHttp().getRequest();\n  const token = request.headers.authorization?.split(' ')[1];\n  if (!token) throw new UnauthorizedException();\n  try {\n    const payload = await this.jwtService.verifyAsync(token, {\n      secret: jwtConstants.secret,\n      algorithms: ['HS256'],\n    });\n    request['user'] = payload;\n  } catch {\n    throw new UnauthorizedException();\n  }\n  return true;\n}",
+      "verify": {
+        "type": "regex-must-match",
+        "pattern": "algorithms\\s*:\\s*\\[",
+        "reason": "Fix must add an algorithms whitelist option to the verify call"
+      }
+    },
+    {
+      "id": "xss-innerhtml-three",
+      "category": "security",
+      "source": {
+        "repo": "three.js",
+        "path": "examples/index.html",
+        "url": "https://github.com/mrdoob/three.js/blob/master/examples/index.html",
+        "note": "Three.js examples index uses `div.innerHTML = htmlString.trim()` to inject filter results. Safe in this case (htmlString is internally constructed), but a fixture where htmlString comes from user input is a real CWE-79 pattern."
+      },
+      "v1": {
+        "icon": "🔒",
+        "issueName": "XSS via innerHTML",
+        "cwe": "CWE-79",
+        "description": "Untrusted input written to innerHTML enables XSS",
+        "severity": "HIGH",
+        "fix": "Use textContent, or sanitize with DOMPurify before assignment",
+        "documentationLink": "https://owasp.org/www-community/attacks/xss/"
+      },
+      "v2": {
+        "cwe": "CWE-79",
+        "severity": "HIGH",
+        "description": "Untrusted input written to innerHTML enables XSS",
+        "why": "innerHTML parses script tags and on* event handlers from the input string, so user-controlled data becomes executable code.",
+        "fix": "Use textContent for plain strings, or sanitize with DOMPurify when HTML is required",
+        "docs": "https://owasp.org/www-community/attacks/xss/",
+        "vulnerable": "div.innerHTML = userQuery.trim();",
+        "safe": "div.textContent = userQuery.trim();"
+      },
+      "buggyCode": "function renderSearchResult(div, userQuery) {\n  // Adapted from three.js examples/index.html — innerHTML on user input\n  div.innerHTML = userQuery.trim();\n}",
+      "knownGoodFix": "function renderSearchResult(div, userQuery) {\n  div.textContent = userQuery.trim();\n}",
+      "verify": {
+        "type": "both",
+        "mustNotMatch": "\\.innerHTML\\s*=\\s*userQuery",
+        "mustMatch": "(textContent|DOMPurify\\.sanitize|escapeHtml)",
+        "reason": "Fix must stop assigning userQuery to innerHTML and use textContent or a sanitizer"
+      }
+    },
+    {
+      "id": "react-dangerously-set-inner-html-user-input",
+      "category": "security",
+      "source": {
+        "repo": "shadcn-ui",
+        "path": "apps/v4/app/layout.tsx",
+        "url": "https://github.com/shadcn-ui/ui/blob/main/apps/v4/app/layout.tsx",
+        "note": "shadcn-ui uses `dangerouslySetInnerHTML` legitimately to inject a static theme-detection script before hydration. Adapted here to a hypothetical user-input variant — the lint rule should still flag the unsafe pattern."
+      },
+      "v1": {
+        "icon": "🔒",
+        "issueName": "dangerouslySetInnerHTML on user input",
+        "cwe": "CWE-79",
+        "description": "React dangerouslySetInnerHTML used on untrusted input",
+        "severity": "HIGH",
+        "fix": "Render as text, or sanitize the HTML with DOMPurify first",
+        "documentationLink": "https://react.dev/reference/react-dom/components/common#dangerouslysetinnerhtml"
+      },
+      "v2": {
+        "cwe": "CWE-79",
+        "severity": "HIGH",
+        "description": "React dangerouslySetInnerHTML used on untrusted input",
+        "why": "dangerouslySetInnerHTML bypasses React's automatic escaping. User-controlled HTML becomes executable script in the rendered DOM.",
+        "fix": "Render the value as a text child instead, or run it through DOMPurify.sanitize before injection",
+        "docs": "https://react.dev/reference/react-dom/components/common#dangerouslysetinnerhtml",
+        "vulnerable": "<div dangerouslySetInnerHTML={{ __html: userBio }} />",
+        "safe": "<div>{userBio}</div>"
+      },
+      "buggyCode": "export function ProfileBio({ userBio }: { userBio: string }) {\n  return (\n    <article className=\"prose\">\n      <div dangerouslySetInnerHTML={{ __html: userBio }} />\n    </article>\n  );\n}",
+      "knownGoodFix": "export function ProfileBio({ userBio }: { userBio: string }) {\n  return (\n    <article className=\"prose\">\n      <div>{userBio}</div>\n    </article>\n  );\n}",
+      "verify": {
+        "type": "regex-must-not-match",
+        "pattern": "dangerouslySetInnerHTML.*userBio",
+        "reason": "Fix must not pass userBio through dangerouslySetInnerHTML — use a text child or sanitize first"
+      }
+    },
+    {
+      "id": "weak-md5-content-hash",
+      "category": "security",
+      "source": {
+        "repo": "medusa",
+        "path": "packages/admin/admin-vite-plugin/src/utils.ts",
+        "url": "https://github.com/medusajs/medusa/blob/develop/packages/admin/admin-vite-plugin/src/utils.ts",
+        "note": "Medusa's admin Vite plugin uses MD5 for non-cryptographic content fingerprinting (cache key generation). This is a known FP pattern for naive `no-md5` rules. Acceptable fix should either switch to SHA-256 or, ideally, document why MD5 is fine here. We accept either — see verifier."
+      },
+      "v1": {
+        "icon": "🔒",
+        "issueName": "Weak hash algorithm",
+        "cwe": "CWE-327",
+        "description": "MD5 is broken for cryptographic use",
+        "severity": "MEDIUM",
+        "fix": "Use SHA-256 or annotate as non-cryptographic content fingerprint only",
+        "documentationLink": "https://cwe.mitre.org/data/definitions/327.html"
+      },
+      "v2": {
+        "cwe": "CWE-327",
+        "severity": "MEDIUM",
+        "description": "MD5 hash detected — broken for cryptographic use",
+        "why": "MD5 collisions are trivially generatable; must not be used for integrity, authentication, or signatures. Non-cryptographic content fingerprints (e.g. cache keys) are an acceptable use, but should be explicitly marked so the linter and future readers know it's intentional.",
+        "fix": "Switch to SHA-256, OR keep MD5 with a comment explicitly stating it's a non-cryptographic content fingerprint",
+        "docs": "https://cwe.mitre.org/data/definitions/327.html",
+        "vulnerable": "crypto.createHash('md5').update(content).digest('hex')",
+        "safe": "crypto.createHash('sha256').update(content).digest('hex')"
+      },
+      "buggyCode": "import crypto from 'node:crypto';\n\n// Generates a stable cache key for vite plugin output.\nexport function generateContentHash(content: string) {\n  return crypto.createHash('md5').update(content).digest('hex');\n}",
+      "knownGoodFix": "import crypto from 'node:crypto';\n\n// Generates a stable cache key for vite plugin output.\nexport function generateContentHash(content: string) {\n  return crypto.createHash('sha256').update(content).digest('hex');\n}",
+      "verify": {
+        "type": "any-of",
+        "reason": "Two acceptable fix paths: switch off MD5 (SHA-256 / stronger) OR keep MD5 with an explicit non-cryptographic comment. Either passes.",
+        "options": [
+          {
+            "type": "regex-must-not-match",
+            "pattern": "createHash\\(\\s*['\"]md5['\"]",
+            "reason": "Fix moved off MD5 to a stronger algorithm"
+          },
+          {
+            "type": "regex-must-match",
+            "pattern": "(non-?cryptographic|fingerprint only|cache.?key|not.?for.?security)",
+            "reason": "Fix kept MD5 but added an explicit non-cryptographic-use comment"
+          }
+        ]
+      }
+    },
+    {
+      "id": "circular-dependency-cross-module",
+      "category": "quality",
+      "source": {
+        "repo": "(generic — pattern present across payload, medusa, strapi, twentyhq)",
+        "note": "Circular import between two domain modules sharing a type. The most common shape across the oos/ TS server codebases is: A imports concrete from B, B imports type from A → cycle."
+      },
+      "v1": {
+        "icon": "🔄",
+        "issueName": "Circular dependency",
+        "description": "Circular import detected: src/A.ts → src/B.ts → src/A.ts",
+        "severity": "MEDIUM",
+        "fix": "Extract shared types to src/types.ts and import from there",
+        "documentationLink": "https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-cycle.md"
+      },
+      "v2": {
+        "category": "circular-dependency",
+        "severity": "MEDIUM",
+        "description": "Circular import detected: src/A.ts → src/B.ts → src/A.ts",
+        "why": "Circular imports cause undefined values at module init time and create unpredictable load order. Extracting the shared type breaks the cycle without changing runtime behavior.",
+        "fix": "Extract shared types to src/types.ts and import from there",
+        "docs": "https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-cycle.md",
+        "cycle": ["src/A.ts", "src/B.ts", "src/A.ts"]
+      },
+      "buggyCode": "// src/A.ts\nimport { helperB } from './B';\nexport interface UserA { id: string; }\nexport const helperA = (u: UserA) => helperB(u);\n\n// src/B.ts\nimport { UserA, helperA } from './A';\nexport const helperB = (u: UserA) => u.id;\n",
+      "knownGoodFix": "// src/types.ts\nexport interface UserA { id: string; }\n\n// src/A.ts\nimport type { UserA } from './types';\nimport { helperB } from './B';\nexport const helperA = (u: UserA) => helperB(u);\n\n// src/B.ts\nimport type { UserA } from './types';\nexport const helperB = (u: UserA) => u.id;\n",
+      "verify": {
+        "type": "regex-must-not-match",
+        "pattern": "from\\s+['\"]\\./A['\"][\\s\\S]*from\\s+['\"]\\./B['\"][\\s\\S]*from\\s+['\"]\\./A['\"]",
+        "reason": "Fix must break the A→B→A cycle (likely by extracting shared types)"
+      }
+    },
+    {
+      "id": "n-plus-one-orm-iteration",
+      "category": "performance",
+      "source": {
+        "repo": "(generic — pattern common in payload, medusa, strapi, twentyhq backends)",
+        "note": "Iterating a collection and awaiting a per-row DB lookup is a textbook N+1. Common shape across the oos/ Node ORM-backed services."
+      },
+      "v1": {
+        "icon": "⚡",
+        "issueName": "N+1 query",
+        "description": "N+1 query: per-row DB fetch inside an async loop",
+        "severity": "HIGH",
+        "fix": "Replace the per-row fetch with a single batched query (IN clause or .where({ id: { in: ids } }))",
+        "documentationLink": "https://www.prisma.io/docs/orm/prisma-client/queries/relation-queries#nested-reads-with-relation-load-strategies"
+      },
+      "v2": {
+        "severity": "HIGH",
+        "description": "N+1 query: per-row DB fetch inside an async loop",
+        "why": "Each iteration triggers a network round-trip to the database, so latency scales linearly with collection size. A single batched query collapses the work to one round-trip.",
+        "fix": "Replace the per-row fetch with a single batched query (e.g. `IN` clause or `findMany({ where: { id: { in: ids } } })`)",
+        "docs": "https://www.prisma.io/docs/orm/prisma-client/queries/relation-queries#nested-reads-with-relation-load-strategies",
+        "vulnerable": "for (const row of rows) { row.detail = await db.findOne(row.id); }",
+        "safe": "const details = await db.findMany({ where: { id: { in: rows.map(r => r.id) } } });",
+        "impact": { "current": "O(n) queries", "optimized": "1 query" }
+      },
+      "buggyCode": "async function loadUsersWithProfiles(userIds: string[]) {\n  const users = await db.user.findMany({ where: { id: { in: userIds } } });\n  for (const user of users) {\n    user.profile = await db.profile.findUnique({ where: { userId: user.id } });\n  }\n  return users;\n}",
+      "knownGoodFix": "async function loadUsersWithProfiles(userIds: string[]) {\n  const users = await db.user.findMany({ where: { id: { in: userIds } } });\n  const profiles = await db.profile.findMany({ where: { userId: { in: userIds } } });\n  const profileByUser = new Map(profiles.map((p) => [p.userId, p]));\n  for (const user of users) {\n    user.profile = profileByUser.get(user.id);\n  }\n  return users;\n}",
+      "verify": {
+        "type": "regex-must-not-match",
+        "pattern": "for\\s*\\([^)]*\\)\\s*\\{[^}]*await\\s+db\\.profile\\.findUnique",
+        "reason": "Fix must remove the per-row await db.profile.findUnique inside the for loop"
+      }
+    },
+    {
+      "id": "timing-attack-credential-compare",
+      "category": "security",
+      "source": {
+        "repo": "cal.com",
+        "path": "apps/api/v2/src/platform/calendars/services/apple-calendar.service.ts",
+        "url": "https://github.com/calcom/cal.com/blob/main/apps/api/v2/src/platform/calendars/services/apple-calendar.service.ts#L82",
+        "note": "Cal.com's Apple Calendar credential check uses `decryptedKey.password === password` (line 82) — a textbook CWE-208 timing-attack vector. An attacker can guess the password byte-by-byte by measuring response time of the early-exit `===` comparison."
+      },
+      "v1": {
+        "icon": "🔒",
+        "issueName": "Timing-unsafe credential comparison",
+        "cwe": "CWE-208",
+        "description": "Secret comparison uses === (early-exit) — vulnerable to timing attacks",
+        "severity": "MEDIUM",
+        "fix": "Use crypto.timingSafeEqual on Buffers of equal length",
+        "documentationLink": "https://cwe.mitre.org/data/definitions/208.html"
+      },
+      "v2": {
+        "cwe": "CWE-208",
+        "severity": "MEDIUM",
+        "description": "Secret comparison uses === (early-exit) — vulnerable to timing attacks",
+        "why": "JavaScript's === short-circuits on first character mismatch. An attacker can measure response time across many guesses to recover the secret one character at a time. Use a constant-time comparison.",
+        "fix": "Replace === with crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b)) — both inputs must be the same byte length, so check length separately first.",
+        "docs": "https://cwe.mitre.org/data/definitions/208.html",
+        "vulnerable": "if (decryptedKey.password === password) { ... }",
+        "safe": "const a = Buffer.from(decryptedKey.password); const b = Buffer.from(password); if (a.length === b.length && crypto.timingSafeEqual(a, b)) { ... }"
+      },
+      "buggyCode": "import crypto from 'node:crypto';\n\nfunction checkAppleCredentials(decryptedKey: { username: string; password: string }, username: string, password: string): boolean {\n  if (decryptedKey.username === username) {\n    if (decryptedKey.password === password) {\n      return true;\n    }\n  }\n  return false;\n}",
+      "knownGoodFix": "import crypto from 'node:crypto';\n\nfunction checkAppleCredentials(decryptedKey: { username: string; password: string }, username: string, password: string): boolean {\n  if (decryptedKey.username !== username) return false;\n  const a = Buffer.from(decryptedKey.password);\n  const b = Buffer.from(password);\n  return a.length === b.length && crypto.timingSafeEqual(a, b);\n}",
+      "verify": {
+        "type": "both",
+        "mustMatch": "timingSafeEqual",
+        "mustNotMatch": "decryptedKey\\.password\\s*===\\s*password",
+        "reason": "Fix must replace === comparison with crypto.timingSafeEqual"
+      }
+    },
+    {
+      "id": "hardcoded-jwt-secret",
+      "category": "security",
+      "source": {
+        "repo": "nestjs",
+        "path": "sample/19-auth-jwt/src/auth/constants.ts",
+        "url": "https://github.com/nestjs/nest/blob/master/sample/19-auth-jwt/src/auth/constants.ts",
+        "note": "NestJS's official JWT auth sample exports `jwtConstants.secret` as a hardcoded string. The string itself self-deprecates ('DO NOT USE THIS VALUE...') but the pattern is the textbook CWE-798 anti-pattern that any project copying the sample inherits."
+      },
+      "v1": {
+        "icon": "🔒",
+        "issueName": "Hardcoded JWT secret",
+        "cwe": "CWE-798",
+        "description": "JWT signing secret hardcoded in source",
+        "severity": "HIGH",
+        "fix": "Read the secret from process.env at module init",
+        "documentationLink": "https://cwe.mitre.org/data/definitions/798.html"
+      },
+      "v2": {
+        "cwe": "CWE-798",
+        "severity": "HIGH",
+        "description": "JWT signing secret hardcoded in source",
+        "why": "Secrets in source code leak through git history, CI logs, container images, and crash dumps. They cannot be rotated without a code deploy. JWT signing secrets in particular grant token-forging capability.",
+        "fix": "Read the secret from `process.env.JWT_SECRET` at module init; throw if missing.",
+        "docs": "https://cwe.mitre.org/data/definitions/798.html",
+        "vulnerable": "export const jwtConstants = { secret: 'literal-string-secret' };",
+        "safe": "if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET env var required'); export const jwtConstants = { secret: process.env.JWT_SECRET };"
+      },
+      "buggyCode": "export const jwtConstants = {\n  secret:\n    'DO NOT USE THIS VALUE. INSTEAD, CREATE A COMPLEX SECRET AND KEEP IT SAFE OUTSIDE OF THE SOURCE CODE.',\n};",
+      "knownGoodFix": "if (!process.env.JWT_SECRET) {\n  throw new Error('JWT_SECRET env var required');\n}\n\nexport const jwtConstants = {\n  secret: process.env.JWT_SECRET,\n};",
+      "verify": {
+        "type": "both",
+        "mustMatch": "process\\.env\\.[A-Z_]*SECRET",
+        "mustNotMatch": "secret:\\s*['\"][A-Z][A-Z\\s.]{10,}",
+        "reason": "Fix must read secret from process.env and remove the hardcoded string literal"
+      }
+    },
+    {
+      "id": "eval-on-dynamic-import",
+      "category": "security",
+      "source": {
+        "repo": "payload",
+        "path": "packages/payload/src/utilities/dynamicImport.ts",
+        "url": "https://github.com/payloadcms/payload/blob/main/packages/payload/src/utilities/dynamicImport.ts#L27",
+        "note": "Payload's dynamicImport.ts wraps a string-interpolated import path in eval() to dodge Next.js bundler static analysis. The comment is explicit about the workaround. While the input here happens to be developer-controlled, the same pattern in any user-input-touching code path is a CWE-95 vector."
+      },
+      "v1": {
+        "icon": "🔒",
+        "issueName": "eval() on string-interpolated input",
+        "cwe": "CWE-95",
+        "description": "eval() executed on a string built via template interpolation",
+        "severity": "CRITICAL",
+        "fix": "Replace with native dynamic import() — works in modern bundlers and avoids eval entirely",
+        "documentationLink": "https://cwe.mitre.org/data/definitions/95.html"
+      },
+      "v2": {
+        "cwe": "CWE-95",
+        "severity": "CRITICAL",
+        "description": "eval() executed on a string built via template interpolation",
+        "why": "Wrapping import() in eval() bypasses bundler analysis but also opens a CWE-95 vector if the interpolated value ever comes from user input. Native dynamic import() is now supported in all modern bundlers — no eval needed.",
+        "fix": "Replace `eval(\\`import('${path}')\\`)` with `import(path)` directly.",
+        "docs": "https://cwe.mitre.org/data/definitions/95.html",
+        "vulnerable": "return await eval(`import('${importPath}')`)",
+        "safe": "return await import(importPath)"
+      },
+      "buggyCode": "export async function dynamicImport(importPath: string) {\n  // Using eval to hide the import from Next.js bundler static analysis.\n  return await eval(`import('${importPath}')`);\n}",
+      "knownGoodFix": "export async function dynamicImport(importPath: string) {\n  return await import(importPath);\n}",
+      "verify": {
+        "type": "regex-must-not-match",
+        "pattern": "eval\\s*\\(",
+        "reason": "Fix must remove the eval() call and use native dynamic import()"
+      }
+    },
+    {
+      "id": "foreach-async-floating-promise",
+      "category": "quality",
+      "source": {
+        "repo": "(generic — pattern present in strapi tests, medusa, twentyhq)",
+        "url": "https://github.com/strapi/strapi/blob/main/packages/core/content-manager/admin/src/pages/tests/EditConfigurationPage.test.tsx#L72",
+        "note": "Array.forEach(async (...) => { await ... }) returns void from each iteration's async callback. Promises float, errors are silently swallowed, and the for-loop returns before any awaited work completes. Common shape across the oos/ TS codebases — the strapi instance is in a test file but the anti-pattern shape is what matters."
+      },
+      "v1": {
+        "icon": "🧹",
+        "issueName": "Floating promise in forEach",
+        "description": "Array.forEach with async callback creates floating promises",
+        "severity": "MEDIUM",
+        "fix": "Use a for...of loop or Promise.all(array.map(async ...))",
+        "documentationLink": "https://typescript-eslint.io/rules/no-floating-promises/"
+      },
+      "v2": {
+        "category": "no-floating-promises",
+        "severity": "MEDIUM",
+        "description": "Array.forEach with async callback creates floating promises",
+        "why": "forEach ignores return values, so async callbacks return discarded Promises. The outer function continues before any iteration's await resolves, and any rejection becomes an unhandled promise rejection — silent data corruption in production.",
+        "fix": "Use `for (const x of arr) { await fn(x); }` for sequential, or `await Promise.all(arr.map(fn))` for parallel.",
+        "docs": "https://typescript-eslint.io/rules/no-floating-promises/",
+        "vulnerable": "items.forEach(async (item) => { await processItem(item); });",
+        "safe": "await Promise.all(items.map((item) => processItem(item)));"
+      },
+      "buggyCode": "async function processBatch(items: Item[]) {\n  items.forEach(async (item) => {\n    await processItem(item);\n  });\n  // Caller assumes batch is done — but forEach returned immediately.\n  console.log('batch processed');\n}",
+      "knownGoodFix": "async function processBatch(items: Item[]) {\n  await Promise.all(items.map((item) => processItem(item)));\n  console.log('batch processed');\n}",
+      "verify": {
+        "type": "regex-must-not-match",
+        "pattern": "\\.forEach\\s*\\(\\s*async",
+        "reason": "Fix must remove the forEach(async (...) =>) anti-pattern — use for-of or Promise.all(map)"
+      }
+    },
+    {
+      "id": "insecure-random-api-key",
+      "category": "security",
+      "source": {
+        "repo": "cal.com",
+        "path": "apps/web/components/apps/make/Setup.tsx",
+        "url": "https://github.com/calcom/cal.com/blob/main/apps/web/components/apps/make/Setup.tsx#L38",
+        "note": "Cal.com's Make integration setup builds an API key string with `Math.random().toString(36).substring(2)` (line 38). Math.random() is a non-cryptographic PRNG — the resulting key is predictable to an attacker who can observe a few samples and recover the seed."
+      },
+      "v1": {
+        "icon": "🔒",
+        "issueName": "Insecure random for security token",
+        "cwe": "CWE-330",
+        "description": "Math.random() used to generate a security token",
+        "severity": "HIGH",
+        "fix": "Use crypto.randomBytes(32).toString('hex') or crypto.randomUUID()",
+        "documentationLink": "https://cwe.mitre.org/data/definitions/330.html"
+      },
+      "v2": {
+        "cwe": "CWE-330",
+        "severity": "HIGH",
+        "description": "Math.random() used to generate a security token",
+        "why": "Math.random() is a non-cryptographic PRNG — Mersenne Twister or similar. Its output is predictable: an attacker who observes a handful of generated values can recover the internal state and predict every future output. Never use it for tokens, session IDs, or secrets.",
+        "fix": "Use `crypto.randomBytes(32).toString('hex')` for opaque tokens, or `crypto.randomUUID()` for UUIDs.",
+        "docs": "https://cwe.mitre.org/data/definitions/330.html",
+        "vulnerable": "const apiKey = `cal_live_${Math.random().toString(36).substring(2)}`;",
+        "safe": "const apiKey = `cal_live_${crypto.randomBytes(24).toString('hex')}`;"
+      },
+      "buggyCode": "import crypto from 'node:crypto';\n\nasync function createApiKey() {\n  const apiKey = `cal_live_${Math.random().toString(36).substring(2)}`;\n  await db.apiKey.insert({ key: apiKey });\n  return apiKey;\n}",
+      "knownGoodFix": "import crypto from 'node:crypto';\n\nasync function createApiKey() {\n  const apiKey = `cal_live_${crypto.randomBytes(24).toString('hex')}`;\n  await db.apiKey.insert({ key: apiKey });\n  return apiKey;\n}",
+      "verify": {
+        "type": "both",
+        "mustMatch": "(crypto\\.randomBytes|crypto\\.randomUUID|crypto\\.getRandomValues)",
+        "mustNotMatch": "Math\\.random\\(\\)",
+        "reason": "Fix must replace Math.random() with a CSPRNG (crypto.randomBytes / randomUUID / getRandomValues)"
+      }
+    },
+    {
+      "id": "barrel-file-deep-import",
+      "category": "quality",
+      "source": {
+        "repo": "payload",
+        "path": "packages/payload/src/index.ts",
+        "url": "https://github.com/payloadcms/payload/blob/main/packages/payload/src/index.ts",
+        "note": "Payload's main package barrel re-exports from across the codebase (1893 lines as of 2026-05-03). Importing from the barrel for a single helper drags in the entire transitive dep graph — defeats tree-shaking and slows cold-start."
+      },
+      "v1": {
+        "icon": "📦",
+        "issueName": "Barrel file deep import",
+        "description": "Import from a deep barrel file pulls in unrelated transitive deps",
+        "severity": "LOW",
+        "fix": "Import directly from the source module instead of through the barrel",
+        "documentationLink": "https://example.com/no-barrel"
+      },
+      "v2": {
+        "category": "barrel-file",
+        "severity": "LOW",
+        "description": "Import from a deep barrel file pulls in unrelated transitive deps",
+        "why": "Bundlers retain every transitive member of a barrel even when only one is used (poor tree-shaking on re-export chains). For a 1900-line barrel, this can mean hundreds of KB of dead code in the final bundle and seconds added to cold-start.",
+        "fix": "Import the specific helper from its source module, e.g. `import { sanitizeConfig } from 'payload/dist/config/sanitize'` instead of `import { sanitizeConfig } from 'payload'`.",
+        "docs": "https://example.com/no-barrel",
+        "vulnerable": "import { sanitizeConfig } from 'payload';",
+        "safe": "import { sanitizeConfig } from 'payload/dist/config/sanitize';"
+      },
+      "buggyCode": "// scripts/check-config.ts\nimport { sanitizeConfig } from 'payload';\n\nimport rawConfig from '../payload.config';\n\nasync function main() {\n  const cleaned = await sanitizeConfig(rawConfig);\n  console.log(JSON.stringify(cleaned, null, 2));\n}\n\nmain();",
+      "knownGoodFix": "// scripts/check-config.ts\nimport { sanitizeConfig } from 'payload/dist/config/sanitize';\n\nimport rawConfig from '../payload.config';\n\nasync function main() {\n  const cleaned = await sanitizeConfig(rawConfig);\n  console.log(JSON.stringify(cleaned, null, 2));\n}\n\nmain();",
+      "verify": {
+        "type": "regex-must-not-match",
+        "pattern": "from\\s+['\"]payload['\"]",
+        "reason": "Fix must import from the deep path (e.g. 'payload/dist/config/sanitize'), not the top-level 'payload' barrel"
+      }
+    }
+  ]
+}

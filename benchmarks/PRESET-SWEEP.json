@@ -1,0 +1,915 @@
+{
+  "files": 21394,
+  "loc": 3104257,
+  "findings": 280409,
+  "perKLoc": 90.33,
+  "cases": 30354,
+  "rules": [
+    {
+      "rule": "reliability/no-missing-null-checks",
+      "findings": 157699,
+      "cases": 27299,
+      "repos": 20
+    },
+    {
+      "rule": "import-next/no-unresolved",
+      "findings": 41584,
+      "cases": 2,
+      "repos": 16
+    },
+    {
+      "rule": "conventions/no-magic-numbers",
+      "findings": 22942,
+      "cases": 29,
+      "repos": 20
+    },
+    {
+      "rule": "conventions/no-commented-code",
+      "findings": 10385,
+      "cases": 2,
+      "repos": 19
+    },
+    {
+      "rule": "import-next/no-extraneous-dependencies",
+      "findings": 7549,
+      "cases": 2,
+      "repos": 15
+    },
+    {
+      "rule": "import-next/order",
+      "findings": 6755,
+      "cases": 2,
+      "repos": 14
+    },
+    {
+      "rule": "maintainability/identical-functions",
+      "findings": 6650,
+      "cases": 13,
+      "repos": 19
+    },
+    {
+      "rule": "maintainability/cognitive-complexity",
+      "findings": 5982,
+      "cases": 8,
+      "repos": 20
+    },
+    {
+      "rule": "modernization/prefer-template-literal",
+      "findings": 3436,
+      "cases": 1248,
+      "repos": 19
+    },
+    {
+      "rule": "import-next/no-duplicates",
+      "findings": 2821,
+      "cases": 1,
+      "repos": 9
+    },
+    {
+      "rule": "modularity/ddd-anemic-domain-model",
+      "findings": 2371,
+      "cases": 2,
+      "repos": 15
+    },
+    {
+      "rule": "maintainability/max-parameters",
+      "findings": 2138,
+      "cases": 3,
+      "repos": 16
+    },
+    {
+      "rule": "operability/no-debug-code-in-production",
+      "findings": 1627,
+      "cases": 478,
+      "repos": 17
+    },
+    {
+      "rule": "operability/no-console-log",
+      "findings": 1613,
+      "cases": 477,
+      "repos": 17
+    },
+    {
+      "rule": "import-next/no-cycle",
+      "findings": 1094,
+      "cases": 6,
+      "repos": 7
+    },
+    {
+      "rule": "reliability/no-silent-errors",
+      "findings": 717,
+      "cases": 9,
+      "repos": 17
+    },
+    {
+      "rule": "react-features/hooks-exhaustive-deps",
+      "findings": 494,
+      "cases": 4,
+      "repos": 1
+    },
+    {
+      "rule": "import-next/export",
+      "findings": 460,
+      "cases": 3,
+      "repos": 6
+    },
+    {
+      "rule": "react-a11y/click-events-have-key-events",
+      "findings": 423,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "react-a11y/interactive-supports-focus",
+      "findings": 416,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "modernization/prefer-at",
+      "findings": 371,
+      "cases": 15,
+      "repos": 17
+    },
+    {
+      "rule": "reliability/require-network-timeout",
+      "findings": 341,
+      "cases": 151,
+      "repos": 12
+    },
+    {
+      "rule": "conventions/analytics-event-naming",
+      "findings": 331,
+      "cases": 4,
+      "repos": 1
+    },
+    {
+      "rule": "modularity/no-mutable-exports",
+      "findings": 322,
+      "cases": 1,
+      "repos": 7
+    },
+    {
+      "rule": "modularity/enforce-rest-conventions",
+      "findings": 133,
+      "cases": 1,
+      "repos": 5
+    },
+    {
+      "rule": "import-next/newline-after-import",
+      "findings": 123,
+      "cases": 1,
+      "repos": 9
+    },
+    {
+      "rule": "secure-coding/no-hardcoded-credentials",
+      "findings": 96,
+      "cases": 1,
+      "repos": 6
+    },
+    {
+      "rule": "knex-security/no-unsafe-query",
+      "findings": 88,
+      "cases": 12,
+      "repos": 2
+    },
+    {
+      "rule": "modernization/prefer-event-target",
+      "findings": 72,
+      "cases": 2,
+      "repos": 11
+    },
+    {
+      "rule": "lambda-security/no-error-swallowing",
+      "findings": 65,
+      "cases": 4,
+      "repos": 6
+    },
+    {
+      "rule": "modularity/no-external-api-calls-in-utils",
+      "findings": 63,
+      "cases": 37,
+      "repos": 7
+    },
+    {
+      "rule": "node-security/no-toctou-vulnerability",
+      "findings": 60,
+      "cases": 40,
+      "repos": 7
+    },
+    {
+      "rule": "import-next/first",
+      "findings": 59,
+      "cases": 1,
+      "repos": 5
+    },
+    {
+      "rule": "browser-security/no-http-urls",
+      "findings": 49,
+      "cases": 4,
+      "repos": 8
+    },
+    {
+      "rule": "conventions/utm-taxonomy",
+      "findings": 45,
+      "cases": 4,
+      "repos": 3
+    },
+    {
+      "rule": "node-security/no-zip-slip",
+      "findings": 41,
+      "cases": 26,
+      "repos": 4
+    },
+    {
+      "rule": "react-features/jsx-key",
+      "findings": 40,
+      "cases": 2,
+      "repos": 1
+    },
+    {
+      "rule": "secure-coding/no-xxe-injection",
+      "findings": 39,
+      "cases": 9,
+      "repos": 3
+    },
+    {
+      "rule": "secure-coding/no-sensitive-data-exposure",
+      "findings": 38,
+      "cases": 17,
+      "repos": 9
+    },
+    {
+      "rule": "secure-coding/no-unsafe-deserialization",
+      "findings": 36,
+      "cases": 22,
+      "repos": 6
+    },
+    {
+      "rule": "mongodb-security/no-bypass-middleware",
+      "findings": 32,
+      "cases": 31,
+      "repos": 5
+    },
+    {
+      "rule": "node-security/no-timing-unsafe-compare",
+      "findings": 30,
+      "cases": 22,
+      "repos": 4
+    },
+    {
+      "rule": "import-next/no-self-import",
+      "findings": 27,
+      "cases": 1,
+      "repos": 2
+    },
+    {
+      "rule": "secure-coding/no-xpath-injection",
+      "findings": 24,
+      "cases": 8,
+      "repos": 4
+    },
+    {
+      "rule": "node-security/no-shell-injection",
+      "findings": 23,
+      "cases": 11,
+      "repos": 5
+    },
+    {
+      "rule": "secure-coding/no-unsafe-regex-construction",
+      "findings": 22,
+      "cases": 14,
+      "repos": 6
+    },
+    {
+      "rule": "secure-coding/no-homoglyph-identifiers",
+      "findings": 21,
+      "cases": 1,
+      "repos": 2
+    },
+    {
+      "rule": "jwt-security/require-algorithm-whitelist",
+      "findings": 19,
+      "cases": 13,
+      "repos": 4
+    },
+    {
+      "rule": "browser-security/no-credentials-in-query-params",
+      "findings": 18,
+      "cases": 14,
+      "repos": 4
+    },
+    {
+      "rule": "node-security/no-unsafe-buffer-alloc",
+      "findings": 18,
+      "cases": 12,
+      "repos": 4
+    },
+    {
+      "rule": "mongodb-security/require-lean-queries",
+      "findings": 17,
+      "cases": 15,
+      "repos": 5
+    },
+    {
+      "rule": "react-a11y/control-has-associated-label",
+      "findings": 17,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "node-security/detect-eval-with-expression",
+      "findings": 16,
+      "cases": 15,
+      "repos": 4
+    },
+    {
+      "rule": "browser-security/no-unencrypted-transmission",
+      "findings": 15,
+      "cases": 2,
+      "repos": 6
+    },
+    {
+      "rule": "node-security/no-math-random-crypto",
+      "findings": 15,
+      "cases": 2,
+      "repos": 4
+    },
+    {
+      "rule": "mongodb-security/no-unsafe-populate",
+      "findings": 14,
+      "cases": 6,
+      "repos": 1
+    },
+    {
+      "rule": "import-next/no-named-as-default-member",
+      "findings": 14,
+      "cases": 5,
+      "repos": 2
+    },
+    {
+      "rule": "react-a11y/prefer-tag-over-role",
+      "findings": 14,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "mongodb-security/no-unsafe-query",
+      "findings": 13,
+      "cases": 1,
+      "repos": 3
+    },
+    {
+      "rule": "node-security/require-stream-error-handler",
+      "findings": 13,
+      "cases": 7,
+      "repos": 6
+    },
+    {
+      "rule": "secure-coding/no-log-injection",
+      "findings": 13,
+      "cases": 10,
+      "repos": 4
+    },
+    {
+      "rule": "mongodb-security/require-auth-mechanism",
+      "findings": 12,
+      "cases": 8,
+      "repos": 6
+    },
+    {
+      "rule": "jwt-security/no-decode-without-verify",
+      "findings": 12,
+      "cases": 7,
+      "repos": 5
+    },
+    {
+      "rule": "lambda-security/no-unbounded-batch-processing",
+      "findings": 12,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "react-a11y/no-missing-aria-labels",
+      "findings": 12,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "express-security/no-sensitive-data-in-query",
+      "findings": 11,
+      "cases": 3,
+      "repos": 3
+    },
+    {
+      "rule": "nestjs-security/require-validation-pipe-whitelist",
+      "findings": 11,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "nestjs-security/no-missing-validation-pipe",
+      "findings": 11,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "jwt-security/require-expiration",
+      "findings": 10,
+      "cases": 9,
+      "repos": 4
+    },
+    {
+      "rule": "lambda-security/no-missing-authorization-check",
+      "findings": 10,
+      "cases": 9,
+      "repos": 2
+    },
+    {
+      "rule": "import-next/no-empty-named-blocks",
+      "findings": 10,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "mongodb-security/no-unbounded-find",
+      "findings": 9,
+      "cases": 7,
+      "repos": 4
+    },
+    {
+      "rule": "mongodb-security/no-hardcoded-connection-string",
+      "findings": 9,
+      "cases": 1,
+      "repos": 4
+    },
+    {
+      "rule": "secure-coding/no-improper-sanitization",
+      "findings": 9,
+      "cases": 3,
+      "repos": 2
+    },
+    {
+      "rule": "node-security/no-weak-hash-algorithm",
+      "findings": 9,
+      "cases": 1,
+      "repos": 2
+    },
+    {
+      "rule": "browser-security/no-incomplete-url-sanitization",
+      "findings": 9,
+      "cases": 2,
+      "repos": 1
+    },
+    {
+      "rule": "conventions/expiring-todo-comments",
+      "findings": 9,
+      "cases": 2,
+      "repos": 2
+    },
+    {
+      "rule": "mongodb-security/require-tls-connection",
+      "findings": 8,
+      "cases": 7,
+      "repos": 5
+    },
+    {
+      "rule": "mongodb-security/require-projection",
+      "findings": 8,
+      "cases": 6,
+      "repos": 4
+    },
+    {
+      "rule": "node-security/no-unsafe-dynamic-require",
+      "findings": 8,
+      "cases": 5,
+      "repos": 4
+    },
+    {
+      "rule": "node-security/no-dynamic-algorithm-selection",
+      "findings": 8,
+      "cases": 6,
+      "repos": 4
+    },
+    {
+      "rule": "browser-security/no-innerhtml",
+      "findings": 8,
+      "cases": 8,
+      "repos": 2
+    },
+    {
+      "rule": "browser-security/no-eval",
+      "findings": 8,
+      "cases": 7,
+      "repos": 3
+    },
+    {
+      "rule": "vercel-ai-security/require-audit-logging",
+      "findings": 7,
+      "cases": 6,
+      "repos": 2
+    },
+    {
+      "rule": "express-security/no-exposed-debug-endpoints",
+      "findings": 7,
+      "cases": 1,
+      "repos": 3
+    },
+    {
+      "rule": "express-security/no-host-header-in-links",
+      "findings": 7,
+      "cases": 3,
+      "repos": 3
+    },
+    {
+      "rule": "express-security/require-route-authentication",
+      "findings": 7,
+      "cases": 1,
+      "repos": 2
+    },
+    {
+      "rule": "browser-security/no-client-side-auth-logic",
+      "findings": 7,
+      "cases": 1,
+      "repos": 6
+    },
+    {
+      "rule": "node-security/detect-child-process",
+      "findings": 7,
+      "cases": 5,
+      "repos": 3
+    },
+    {
+      "rule": "browser-security/no-disabled-certificate-validation",
+      "findings": 7,
+      "cases": 3,
+      "repos": 2
+    },
+    {
+      "rule": "node-security/no-self-signed-certs",
+      "findings": 7,
+      "cases": 3,
+      "repos": 2
+    },
+    {
+      "rule": "react-a11y/no-autofocus",
+      "findings": 7,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "modernization/no-instanceof-array",
+      "findings": 6,
+      "cases": 3,
+      "repos": 4
+    },
+    {
+      "rule": "browser-security/no-postmessage-wildcard-origin",
+      "findings": 6,
+      "cases": 1,
+      "repos": 2
+    },
+    {
+      "rule": "vercel-ai-security/require-max-tokens",
+      "findings": 6,
+      "cases": 5,
+      "repos": 2
+    },
+    {
+      "rule": "vercel-ai-security/require-request-timeout",
+      "findings": 6,
+      "cases": 5,
+      "repos": 2
+    },
+    {
+      "rule": "vercel-ai-security/require-error-handling",
+      "findings": 6,
+      "cases": 5,
+      "repos": 2
+    },
+    {
+      "rule": "vercel-ai-security/no-system-prompt-leak",
+      "findings": 6,
+      "cases": 1,
+      "repos": 2
+    },
+    {
+      "rule": "node-security/no-unbounded-decompression",
+      "findings": 6,
+      "cases": 2,
+      "repos": 2
+    },
+    {
+      "rule": "react-features/no-unknown-property",
+      "findings": 6,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "express-security/require-csrf-protection",
+      "findings": 5,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "postgresql-security/no-floating-query",
+      "findings": 5,
+      "cases": 4,
+      "repos": 3
+    },
+    {
+      "rule": "secure-coding/no-sql-injection",
+      "findings": 5,
+      "cases": 3,
+      "repos": 1
+    },
+    {
+      "rule": "node-security/require-dependency-integrity",
+      "findings": 5,
+      "cases": 5,
+      "repos": 2
+    },
+    {
+      "rule": "browser-security/no-jwt-in-storage",
+      "findings": 5,
+      "cases": 3,
+      "repos": 2
+    },
+    {
+      "rule": "lambda-security/no-overly-permissive-iam-policy",
+      "findings": 5,
+      "cases": 2,
+      "repos": 1
+    },
+    {
+      "rule": "import-next/no-amd",
+      "findings": 4,
+      "cases": 1,
+      "repos": 3
+    },
+    {
+      "rule": "secure-coding/no-fail-open-auth",
+      "findings": 4,
+      "cases": 1,
+      "repos": 3
+    },
+    {
+      "rule": "mysql-security/no-unsafe-query",
+      "findings": 4,
+      "cases": 3,
+      "repos": 3
+    },
+    {
+      "rule": "node-security/no-deprecated-buffer",
+      "findings": 4,
+      "cases": 3,
+      "repos": 1
+    },
+    {
+      "rule": "node-security/no-dynamic-command-string",
+      "findings": 4,
+      "cases": 3,
+      "repos": 2
+    },
+    {
+      "rule": "postgresql-security/no-unsafe-query",
+      "findings": 4,
+      "cases": 4,
+      "repos": 1
+    },
+    {
+      "rule": "secure-coding/no-unlimited-resource-allocation",
+      "findings": 3,
+      "cases": 2,
+      "repos": 3
+    },
+    {
+      "rule": "browser-security/require-https-only",
+      "findings": 3,
+      "cases": 3,
+      "repos": 1
+    },
+    {
+      "rule": "secure-coding/no-graphql-injection",
+      "findings": 3,
+      "cases": 2,
+      "repos": 1
+    },
+    {
+      "rule": "vercel-ai-security/no-training-data-exposure",
+      "findings": 3,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "jwt-security/no-timestamp-manipulation",
+      "findings": 3,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "react-a11y/media-has-caption",
+      "findings": 3,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "browser-security/require-blob-url-revocation",
+      "findings": 3,
+      "cases": 2,
+      "repos": 1
+    },
+    {
+      "rule": "browser-security/require-postmessage-origin-check",
+      "findings": 2,
+      "cases": 1,
+      "repos": 2
+    },
+    {
+      "rule": "vercel-ai-security/require-abort-signal",
+      "findings": 2,
+      "cases": 2,
+      "repos": 1
+    },
+    {
+      "rule": "express-security/no-idor-resource-access",
+      "findings": 2,
+      "cases": 2,
+      "repos": 1
+    },
+    {
+      "rule": "secure-coding/no-privilege-escalation",
+      "findings": 2,
+      "cases": 2,
+      "repos": 2
+    },
+    {
+      "rule": "secure-coding/no-weak-password-recovery",
+      "findings": 2,
+      "cases": 1,
+      "repos": 2
+    },
+    {
+      "rule": "express-security/require-helmet",
+      "findings": 2,
+      "cases": 1,
+      "repos": 2
+    },
+    {
+      "rule": "secure-coding/no-ldap-injection",
+      "findings": 2,
+      "cases": 2,
+      "repos": 2
+    },
+    {
+      "rule": "jwt-security/no-sensitive-payload",
+      "findings": 2,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "nestjs-security/no-hybrid-app-config-loss",
+      "findings": 2,
+      "cases": 2,
+      "repos": 1
+    },
+    {
+      "rule": "lambda-security/require-timeout-handling",
+      "findings": 2,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "react-features/no-danger",
+      "findings": 2,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "react-features/no-children-prop",
+      "findings": 2,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "react-a11y/no-keyboard-inaccessible-elements",
+      "findings": 2,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "react-a11y/no-static-element-interactions",
+      "findings": 2,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "modularity/ddd-value-object-immutability",
+      "findings": 2,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "node-security/detect-non-literal-fs-filename",
+      "findings": 1,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "browser-security/no-unsafe-eval-csp",
+      "findings": 1,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "express-security/no-static-root-exposure",
+      "findings": 1,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "express-security/no-client-controlled-authorization",
+      "findings": 1,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "node-security/no-weak-cipher-algorithm",
+      "findings": 1,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "node-security/no-ecb-mode",
+      "findings": 1,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "postgresql-security/no-unsafe-search-path",
+      "findings": 1,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "express-security/no-disabled-helmet-protections",
+      "findings": 1,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "browser-security/no-insecure-websocket",
+      "findings": 1,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "nestjs-security/no-unguarded-swagger",
+      "findings": 1,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "nestjs-security/require-throttler",
+      "findings": 1,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "express-security/no-graphql-introspection-production",
+      "findings": 1,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "react-a11y/alt-text",
+      "findings": 1,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "react-a11y/anchor-has-content",
+      "findings": 1,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "react-a11y/anchor-is-valid",
+      "findings": 1,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "react-a11y/aria-role",
+      "findings": 1,
+      "cases": 1,
+      "repos": 1
+    },
+    {
+      "rule": "react-a11y/label-has-associated-control",
+      "findings": 1,
+      "cases": 1,
+      "repos": 1
+    }
+  ]
+}

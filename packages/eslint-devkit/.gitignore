@@ -1,0 +1,5 @@
+# Exception: test-mocks/node_modules contains test fixtures that should be tracked
+# This overrides the root .gitignore pattern for node_modules/
+!test-mocks/node_modules/
+!test-mocks/node_modules/**
+

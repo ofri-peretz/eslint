@@ -1,0 +1,55 @@
+{
+  "$schema-note": "Declarative comparison set for ilb-perf-import suite. Each entry maps to one .config.js in ./configs/.",
+  "competitors": [
+    {
+      "id": "baseline",
+      "displayName": "Baseline (no cycle rules)",
+      "config": "configs/baseline.config.js",
+      "package": null,
+      "isOurs": false,
+      "purpose": "Establish the floor — what does the codebase cost without any cycle detection at all"
+    },
+    {
+      "id": "import-official",
+      "displayName": "eslint-plugin-import (official)",
+      "config": "configs/import-no-cycle.config.js",
+      "package": "eslint-plugin-import",
+      "version": "2.32.0",
+      "algorithm": "SCC + BFS per-import",
+      "resolver": "eslint-import-resolver-typescript",
+      "isOurs": false,
+      "purpose": "Industry incumbent — the baseline we beat to claim 'fastest'"
+    },
+    {
+      "id": "import-next",
+      "displayName": "eslint-plugin-import-next (Interlace)",
+      "config": "configs/import-next-no-cycle.config.js",
+      "package": "eslint-plugin-import-next",
+      "version": "2.3.5",
+      "algorithm": "Tarjan SCC + DFS (Phase 6 final: per-import DFS + oxc-resolver)",
+      "resolver": "oxc-resolver (Rust NAPI) + get-tsconfig",
+      "isOurs": true,
+      "purpose": "Subject under test"
+    },
+    {
+      "id": "custom-naive-dfs",
+      "displayName": "Custom inline rule (naive DFS + existsSync)",
+      "config": "configs/local-rules-no-circular.config.js",
+      "package": "eslint-plugin-local-rules (inline at consumer repo)",
+      "version": null,
+      "algorithm": "DFS per-file",
+      "resolver": "existsSync + 4-extension fan-out",
+      "isOurs": false,
+      "purpose": "Structural floor — zero plugin abstraction. Not publishable as a competitor (it's bespoke to one codebase) but useful as 'how fast is the irreducible minimum'"
+    },
+    {
+      "id": "current-production",
+      "displayName": "Current production config (import + custom)",
+      "config": "configs/import-recommended.config.js",
+      "package": "Both eslint-plugin-import + custom rule",
+      "isOurs": false,
+      "purpose": "What snappy-client-dashboard ships today — measures the cost of the dual-rule status quo"
+    }
+  ],
+  "addingCompetitor": "1) Add a .config.js under configs/. 2) Add an entry above. 3) Re-run the benchmark. 4) Commit the new dated JSON in results/."
+}

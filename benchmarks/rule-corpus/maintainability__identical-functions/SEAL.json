@@ -1,0 +1,108 @@
+{
+  "rule": "maintainability/identical-functions",
+  "status": "open",
+  "sealedOn": null,
+  "sealedTo": {
+    "ecmaVersion": 2022,
+    "eslint": "10.8.1",
+    "plugin": "eslint-plugin-maintainability@3.0.17",
+    "node": "24"
+  },
+  "axes": {
+    "corpus": {
+      "state": "unmet",
+      "evidence": "fixtures come from real corpus shapes plus an adversarial wave; no vulnerable/safe corpus authored beside this record.",
+      "command": "author benchmarks/rule-corpus/maintainability__identical-functions/{vulnerable,safe}"
+    },
+    "oracle": {
+      "state": "unmet",
+      "evidence": "no independent decider. A structural clone detector (Type-2 clone detection on the AST, as jscpd or PMD-CPD do) is the right one, and would replace the text-similarity premise entirely.",
+      "command": "score findings against jscpd on the same corpus"
+    },
+    "effectiveFp": {
+      "state": "unmet",
+      "evidence": "not measured under the formal protocol. The two classes the previous draft of this record NAMED as effective FPs are now out of scope by construction, measured by a single-rule sweep at `error` over the same 8 repositories: of 3,707 findings, 1,961 (52.9%) were in test code and a further 1,305 in machine-generated files, leaving 371. 507 FILES were silenced by the generated skip \u2014 a file count, not a finding count. Under corpus-scan's recommended presets the same change reads 2,076 -> 258. What remains has not been sampled.",
+      "command": "npm run cases -- --rule=maintainability/identical-functions --n=20"
+    },
+    "reachability": {
+      "state": "n/a",
+      "evidence": "not applicable. This is a structural duplication metric, not a source-to-sink question, so there is no path to prove reachable.",
+      "command": "n/a"
+    },
+    "duel": {
+      "state": "unmet",
+      "evidence": "not scored against sonarjs no-identical-functions, the direct competitor.",
+      "command": "benchmarks duel vs eslint-plugin-sonarjs"
+    },
+    "adversarial": {
+      "state": "unmet",
+      "evidence": "a wave of 9 deliberately-distinct pairs reported 6 as duplicates \u2014 every one differing by a single semantically load-bearing token (5000 vs 250, x+y vs x-y, === vs !==). Fixed by requiring an EXACT match below 120 normalised characters, since a ratio is weak evidence on a short body. Now 6/6 kept apart with both real duplicates still caught. UNMET until a second wave finds nothing new.",
+      "command": "re-run the wave"
+    },
+    "realSource": {
+      "state": "met",
+      "evidence": "8 pinned repositories under scripts/corpus-scan.ts (recommended presets). Published budget 2,076 -> 258 against the local tree. Measured against the local tree for the first time: before #612 the rig ran local plugins against the PUBLISHED devkit, so any number depending on a devkit predicate described the last release. scripts/corpus-scan.ts measures under the RECOMMENDED presets; the composition figures come from a single-rule sweep at `error` with default options over the same 8 repositories. Two instruments, two denominators \u2014 they are not interchangeable and an earlier draft of this record mixed them.",
+      "command": "npx tsx scripts/corpus-scan.ts --local"
+    },
+    "partition": {
+      "state": "met",
+      "evidence": "probed against cognitive-complexity and max-parameters, which visit the same function nodes. All three now share the devkit skipGeneratedFiles gate and the corpus splits cleanly: 258 / 227 / 74 with no rule subsuming another.",
+      "command": "npx tsx scripts/corpus-scan.ts --local"
+    },
+    "behaviour": {
+      "state": "unmet",
+      "evidence": "scripts/rule-seal-probe.mts not run.",
+      "command": "npx tsx scripts/rule-seal-probe.mts --rule=maintainability/identical-functions"
+    },
+    "coverage": {
+      "state": "met",
+      "evidence": "100% statements / branches / functions / lines across eslint-plugin-maintainability, 389 tests.",
+      "command": "npx vitest run --coverage"
+    },
+    "throughput": {
+      "state": "unmet",
+      "evidence": "not measured, and this rule is the one most likely to pay: the comparison is pairwise over every function in a file.",
+      "command": "see BENCHMARK-CRITERIA A4"
+    },
+    "recorded": {
+      "state": "unmet",
+      "evidence": "BENCHMARK-RESULTS.md not updated.",
+      "command": "D5"
+    }
+  },
+  "knownGaps": [
+    {
+      "id": "text-similarity-premise",
+      "kind": "false-positive",
+      "limit": "L10",
+      "summary": "the rule decides duplication by edit distance over normalised TEXT, not by structural clone detection.",
+      "why": "text similarity conflates 'looks alike' with 'is the same logic'. The short-body exact-match rule patches the worst of it; the premise is unchanged.",
+      "reopenWhen": "an AST-based Type-2 clone detector is prototyped and scored against the same corpus."
+    },
+    {
+      "id": "short-body-threshold",
+      "kind": "false-negative",
+      "limit": "L10",
+      "summary": "below 120 normalised characters a near-duplicate that is NOT exact is no longer reported.",
+      "why": "deliberate: on a short body a one-character difference is still 95%+ similar, so the ratio carries almost no information and reported 6 of 9 distinct pairs.",
+      "reopenWhen": "structural clone detection replaces the ratio, making length irrelevant."
+    },
+    {
+      "id": "generated-code",
+      "kind": "scope",
+      "limit": null,
+      "summary": "CLOSED 2026-08-22. The rule skips a file that declares itself machine-generated.",
+      "why": "the previous reopenWhen was \"a generated-file heuristic exists in the devkit\". It does: isGeneratedFile reads an @generated docblock or a \"this code was generated by\" banner in the LEADING comments. Decided by the file's own declaration, never by whether the path contains the word \u2014 src/generated-reports/summary.ts still reports. All 507 files it silenced carry a banner and all are in the one corpus repository that ships generated code; the other seven lost nothing.",
+      "reopenWhen": "a generated file is found that carries no banner and the class is large enough to matter, or ignoreGeneratedFiles proves to hide a defect someone would have fixed."
+    },
+    {
+      "id": "test-file-scope",
+      "kind": "scope",
+      "limit": null,
+      "summary": "the rule does not look at test files, which were 52.9% of findings in the single-rule sweep.",
+      "why": "ignoreTestFiles already defaulted true but matched a BASENAME regex, so a suite laid out as test/spec/**  with plain filenames \u2014 okta-auth-js, the largest single group \u2014 was never covered. Now uses the devkit isTestFilePath, which decides directories by exact path SEGMENT. A repeated it() block restates its setup so it reads independently when it fails; \"extract to a reusable function\" is advice nobody takes.",
+      "reopenWhen": "a user reports duplication in tests they would actually have refactored, or the effectiveFp sample finds actionable test-file findings."
+    }
+  ],
+  "notes": "Seal record OPENED 2026-08-21. The adversarial wave found the FP direction here, where the other rules leaked recall \u2014 6 of 9 distinct pairs called duplicates. UPDATED 2026-08-22: the generated-code gap this record opened with is closed, realSource re-measured at 258 under corpus-scan, partition met, reachability set to n/a. Still OPEN \u2014 oracle, effectiveFp, duel, adversarial, behaviour, throughput and recorded are untouched, and the text-similarity premise stands. scripts/corpus-scan.ts measures under the RECOMMENDED presets; the composition figures come from a single-rule sweep at `error` with default options over the same 8 repositories. Two instruments, two denominators \u2014 they are not interchangeable and an earlier draft of this record mixed them."
+}

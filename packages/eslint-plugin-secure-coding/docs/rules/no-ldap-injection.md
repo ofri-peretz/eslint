@@ -1,0 +1,173 @@
+---
+title: no-ldap-injection
+description: Detects LDAP injection vulnerabilities
+tags: ['security', 'core']
+category: security
+severity: critical
+cwe: CWE-90
+autofix: false
+---
+
+> **Keywords:** LDAP injection, CWE-90, directory service, authentication bypass, security, Active Directory
+
+<!-- @rule-summary -->
+Detects LDAP injection vulnerabilities
+<!-- @/rule-summary -->
+
+**CWE:** [CWE-74](https://cwe.mitre.org/data/definitions/74.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
+
+Detects LDAP injection vulnerabilities. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
+
+💼 This rule is set to **error** in the `recommended` config.
+
+## Quick Summary
+
+| Aspect            | Details                                                                   |
+| ----------------- | ------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-90](https://cwe.mitre.org/data/definitions/90.html) (LDAP Injection) |
+| **Severity**      | Critical (CVSS 9.8)                                                       |
+| **Auto-Fix**      | 💡 Suggestions available                                                  |
+| **Category**   | Security |
+
+## Vulnerability and Risk
+
+**Vulnerability:** LDAP Injection allows attackers to modify LDAP statements by supplying malicious input that is not properly sanitized or escaped.
+
+**Risk:** Attackers can alter LDAP queries to bypass authentication (e.g., logging in as any user), leak sensitive directory information (like emails, phone numbers, or passwords), or in some cases, modify user attributes.
+
+## Rule Details
+
+LDAP injection occurs when user input is improperly inserted into LDAP queries, allowing attackers to:
+
+- Bypass authentication and authorization
+- Extract sensitive directory information (users, groups, passwords)
+- Perform unauthorized LDAP operations
+- Enumerate users through blind injection techniques
+
+### Why This Matters
+
+| Issue              | Impact                  | Solution                    |
+| ------------------ | ----------------------- | --------------------------- |
+| 🔓 **Auth Bypass** | Unauthorized access     | Escape LDAP filter values   |
+| 📤 **Data Theft**  | Directory data exposure | Validate and sanitize input |
+| 👥 **Enumeration** | User discovery          | Use parameterized queries   |
+
+## Examples
+
+### ❌ Incorrect
+
+```typescript
+// String interpolation in LDAP filter
+const filter = `(uid=${username})`;
+ldapClient.search('ou=users,dc=example,dc=com', { filter });
+
+// String concatenation
+const searchFilter = '(cn=' + userInput + ')';
+
+// Template literal with untrusted input
+const ldapFilter = `(&(objectClass=user)(mail=${email}))`;
+```
+
+### ✅ Correct
+
+```typescript
+const filter = `(uid=${ldap.escape.filterValue(userId)})`;
+```
+
+## Configuration
+
+```javascript
+{
+  rules: {
+    'secure-coding/no-ldap-injection': ['error', {
+      ldapFunctions: ['search', 'bind', 'modify', 'add', 'delete'],
+      ldapEscapeFunctions: ['escape.filterValue', 'escape.dnValue'],
+      ldapValidationFunctions: ['validateLdapInput', 'sanitizeLdapFilter']
+    }]
+  }
+}
+```
+
+## Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `ldapFunctions` | `string[]` | `["search","searchAsync","searchPaginated","bind","modify","modifyDN","add","del","delete","compare"]` | LDAP client methods treated as query sinks |
+| `ldapEscapeFunctions` | `string[]` | `["escape.filterValue","escape.dnValue","filterValue","dnValue","filterEscape","dnEscape"]` | Function names that escape LDAP filter or DN values |
+| `ldapValidationFunctions` | `string[]` | `["validateLdapInput","sanitizeLdapFilter","cleanLdapValue","checkLdapFilter"]` | Function names that count as LDAP input validation |
+| `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as LDAP sanitizers |
+| `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
+| `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |
+| `ldapPackages` | `string[]` | `["ldapjs","ldapts","ldapauth-fork","passport-ldapauth","ldap-authentication","ldap-escape","ldap-filter","activedirectory","activedirectory2","node-ldap"]` | Package specifiers whose import opens the file gate. Nothing in a file is examined unless one of these is loaded. Replaces the built-in list. |
+| `additionalLdapPackages` | `string[]` | `[]` | Extra LDAP client packages, on top of `ldapPackages` — a house wrapper around ldapjs belongs here. |
+| `requestRoots` | `string[]` | `["req","request","ctx","httpRequest"]` | Identifiers naming a framework request object, matched as the exact ROOT of a member chain — never as a substring of the printed expression. Replaces the built-in list. |
+| `additionalRequestRoots` | `string[]` | `[]` | Extra request-object root names, on top of `requestRoots`. |
+
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-90 OWASP:A05 CVSS:9.8 | LDAP Injection detected | CRITICAL
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A05_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-90](https://cwe.mitre.org/data/definitions/90.html) [OWASP:A05](https://owasp.org/Top10/A05_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
+| **Issue Description** | Specific vulnerability | `LDAP Injection detected` |
+| **Severity & Compliance** | Impact assessment | `CRITICAL` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A05_2021-Injection/) |
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Query from Variable
+
+**Why**: Query strings from variables not traced.
+
+```typescript
+// ❌ NOT DETECTED - Query from variable
+const query = `SELECT * FROM users WHERE id = ${userId}`;
+db.execute(query);
+```
+
+**Mitigation**: Always use parameterized queries.
+
+### Custom Query Builders
+
+**Why**: Custom ORM/query builders not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom builder
+customQuery.where(userInput).execute();
+```
+
+**Mitigation**: Review all query builder patterns.
+
+### Template Engines
+
+**Why**: Template-based queries not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Template
+executeTemplate('query.sql', { userId });
+```
+
+**Mitigation**: Validate all template variables.
+
+## Further Reading
+
+- **[OWASP LDAP Injection](https://owasp.org/www-community/attacks/LDAP_Injection)** - Attack documentation
+- **[CWE-90](https://cwe.mitre.org/data/definitions/90.html)** - Official CWE entry
+- **[ldapjs Security](https://ldapjs.org/filters.html)** - Safe LDAP filter construction
+
+## Related Rules
+
+- [`no-sql-injection`](./no-sql-injection.md) - SQL injection prevention
+- [`no-xpath-injection`](./no-xpath-injection.md) - XPath injection prevention

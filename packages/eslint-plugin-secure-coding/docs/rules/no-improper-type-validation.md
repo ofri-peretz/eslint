@@ -1,0 +1,204 @@
+---
+title: no-improper-type-validation
+description: Detects improper type validation in user input handling
+tags: ['security', 'core']
+category: security
+severity: medium
+cwe: CWE-1287
+autofix: false
+---
+
+> **Keywords:** type validation, CWE-1287, type confusion, typeof, instanceof, security
+
+<!-- @rule-summary -->
+
+Detects improper type validation in user input handling
+<!-- @/rule-summary -->
+
+**CWE:** [CWE-20](https://cwe.mitre.org/data/definitions/20.html)  
+**OWASP Mobile:** [M4: Insufficient Input/Output Validation](https://owasp.org/www-project-mobile-top-10/)
+
+Detects improper type validation in user input handling. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
+
+⚠️ This rule is set to **warning** in the `recommended` config.
+
+## Quick Summary
+
+| Aspect            | Details                                                                                                       |
+| ----------------- | ------------------------------------------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-1287](https://cwe.mitre.org/data/definitions/1287.html) (Improper Validation of Specified Type of Input) |
+| **Severity**      | Medium (CVSS 5.3)                                                                                             |
+| **Auto-Fix**      | 💡 Suggestions available                                                                                      |
+| **Category**      | Security                                                                                                      |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Improper type validation occurs when the application relies on weak or incorrect checks to verify the type of user input (e.g., using `typeof null` which returns `'object'`, or loose equality).
+
+**Risk:** Attackers can exploit type confusion to bypass logic checks, cause application crashes (DoS) by passing unexpected types (like `null` where an object is expected), or manipulate program flow in unexpected ways.
+
+## Rule Details
+
+Improper type validation can lead to security vulnerabilities when user input is not properly validated. Attackers can bypass security checks using:
+
+- Type coercion tricks
+- Prototype pollution
+- `null` value confusion
+- Cross-realm `instanceof` failures
+
+### Why This Matters
+
+| Issue            | Impact                   | Solution                       |
+| ---------------- | ------------------------ | ------------------------------ |
+| 🔓 **Bypass**    | Security control evasion | Use proper type guards         |
+| 🎭 **Confusion** | Unexpected behavior      | Validate with schema libraries |
+| 💥 **Crash**     | Denial of service        | Check for null/undefined       |
+
+## Examples
+
+### ❌ Incorrect
+
+```typescript
+// typeof null returns 'object'
+if (typeof userInput === 'object') {
+  userInput.method(); // Crashes if null!
+}
+
+// instanceof can be bypassed across realms
+if (userInput instanceof Array) {
+  // May fail for arrays from iframes
+}
+
+// Loose equality type coercion
+if (userInput == true) {
+  // '1', 1, [1], ['1'] all pass!
+}
+
+// Missing null check
+function process(data: object) {
+  if (typeof data === 'object') {
+    return data.id; // Fails if data is null
+  }
+}
+```
+
+### ✅ Correct
+
+```typescript
+// Check for null explicitly
+if (userInput !== null && typeof userInput === 'object') {
+  userInput.method();
+}
+
+// Use Array.isArray() for arrays
+if (Array.isArray(userInput)) {
+  // Works across realms
+}
+
+// Strict equality
+if (userInput === true) {
+  // Only boolean true passes
+}
+
+// Use validation libraries
+import { z } from 'zod';
+const schema = z.object({
+  id: z.number(),
+  name: z.string(),
+});
+const result = schema.safeParse(userInput);
+if (result.success) {
+  const data = result.data;
+}
+```
+
+## Configuration
+
+```javascript
+{
+  rules: {
+    'secure-coding/no-improper-type-validation': ['warn', {
+      allowInstanceofSameRealm: false
+    }]
+  }
+}
+```
+
+## Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInstanceofSameRealm` | `boolean` | `true` | Allow instanceof for same-realm objects |
+| `checkLooseEquality` | `boolean` | `true` | Report loose == / != between operands of unprovable type. Set false to keep only the structural typeof/instanceof/constructor arms. |
+| `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as type validators |
+| `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
+| `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |
+
+> `userInputVariables` was removed. It was a list of substrings matched against
+> identifier spellings, and it decided the verdict for every message this rule emits:
+> `metadata` was user input because it contains "data", and renaming a variable turned
+> a real finding off. Nothing replaced it — the hazards this rule reports are
+> properties of the operator, not of where the value came from.
+
+| Option                     | Type       | Default | Description                                              |
+| -------------------------- | ---------- | ------- | -------------------------------------------------------- |
+| `allowInstanceofSameRealm` | `boolean`  | `true`  | Allow instanceof for same-realm objects                  |
+| `trustedSanitizers`        | `string[]` | `[]`    | Additional function names to consider as type validators |
+| `trustedAnnotations`       | `string[]` | `[]`    | Additional JSDoc annotations to consider as safe markers |
+| `strictMode`               | `boolean`  | `false` | Disable all false positive detection (strict mode)       |
+
+## Error Message Format
+
+```
+⚠️ CWE-1287 OWASP:A04-Design CVSS:5.3 | Improper Type Validation | MEDIUM [SOC2]
+   Fix: Use value != null && typeof value === 'object' | https://cwe.mitre.org/...
+```
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Values from Variables
+
+**Why**: Values stored in variables are not traced.
+
+```typescript
+// ❌ NOT DETECTED - Value from variable
+const value = userInput;
+dangerousOperation(value);
+```
+
+**Mitigation**: Validate all user inputs.
+
+### Wrapper Functions
+
+**Why**: Custom wrappers not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Wrapper
+myWrapper(userInput); // Uses dangerous API internally
+```
+
+**Mitigation**: Apply rule to wrapper implementations.
+
+### Dynamic Invocation
+
+**Why**: Dynamic calls not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic
+obj[method](userInput);
+```
+
+**Mitigation**: Avoid dynamic method invocation.
+
+## Further Reading
+
+- **[CWE-1287](https://cwe.mitre.org/data/definitions/1287.html)** - Improper validation of specified type
+- **[typeof null](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/typeof#typeof_null)** - JavaScript typeof quirks
+- **[Zod](https://zod.dev/)** - TypeScript-first schema validation
+
+## Related Rules
+
+- [`no-unvalidated-user-input`](./no-unvalidated-user-input.md) - Unvalidated user input
+- [`detect-object-injection`](./detect-object-injection.md) - Prototype pollution

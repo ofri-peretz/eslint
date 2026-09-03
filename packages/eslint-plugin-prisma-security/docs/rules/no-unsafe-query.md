@@ -1,0 +1,82 @@
+---
+title: no-unsafe-query
+description: Prevent SQL injection by disallowing string concatenation or interpolated template literals in Prisma raw queries.
+tags: ['security', 'prisma']
+category: security
+severity: critical
+cwe: CWE-89
+autofix: false
+---
+
+> **Keywords:** SQL injection, CWE-89, OWASP A03:2021, Prisma, @prisma/client, raw query, parameterized query
+
+<!-- @rule-summary -->
+Prevent SQL injection by disallowing string concatenation or interpolated template literals in Prisma raw queries.
+<!-- @/rule-summary -->
+
+**CWE:** [CWE-89](https://cwe.mitre.org/data/definitions/89.html)
+**OWASP:** [A03:2021 – Injection](https://owasp.org/Top10/A03_2021-Injection/)
+
+Detects SQL injection in Prisma raw queries. This rule is part of [`eslint-plugin-prisma-security`](https://www.npmjs.com/package/eslint-plugin-prisma-security).
+
+💼 This rule is set to **error** in the `recommended` config.
+
+## Quick Summary
+
+| Aspect            | Details                                                                  |
+| ----------------- | ------------------------------------------------------------------------ |
+| **CWE Reference** | [CWE-89](https://cwe.mitre.org/data/definitions/89.html) (SQL Injection) |
+| **Severity**      | Critical (CVSS 9.8)                                                      |
+| **Auto-Fix**      | ❌ No auto-fix available                                                 |
+| **Category**      | Security                                                                 |
+
+## Rule Details
+
+Reports three shapes when they reach a raw-SQL sink:
+
+1. String concatenation — `prisma.$queryRawUnsafe('SELECT ... ' + value)`
+2. Template interpolation — ``prisma.$queryRawUnsafe(`SELECT ... ${value}`)``
+3. A variable tainted by either, including via `+=`, then passed to a sink
+
+### Sinks
+
+`$queryRawUnsafe()` and `$executeRawUnsafe()` only. The safe `$queryRaw` / `$executeRaw` tagged templates parameterize their interpolations and are a different AST node, so they can never be reported.
+
+### ❌ Incorrect
+
+```typescript
+await prisma.$queryRawUnsafe(`SELECT * FROM users WHERE id = ${userId}`);
+
+await prisma.$queryRawUnsafe('SELECT * FROM users WHERE email = ' + email);
+
+let sql = 'SELECT * FROM products WHERE 1=1';
+sql += ` AND name = '${name}'`;
+await prisma.$queryRawUnsafe(sql);
+```
+
+### ✅ Correct
+
+```typescript
+await prisma.$queryRaw`SELECT * FROM User WHERE email = ${email}`;
+```
+
+## Known limitations
+
+- A method chosen at runtime — `prisma[verb](...)` — names nothing to
+  match against the sink list, so it is not reported. The quoted spelling
+  `prisma['$queryRawUnsafe'](...)` names `$queryRawUnsafe` and IS reported.
+- Taint tracking is single-scope and name-based — it does not follow a query
+  string across function boundaries.
+
+## Implementation
+
+The detection is shared across the driver plugins via `createSqlInjectionRule`
+in `@interlace/eslint-devkit`; this rule supplies Prisma's sinks and
+remediation copy. Install the plugin matching your stack and you get exactly
+one finding per line.
+
+## Further Reading
+
+- [Prisma — parameterized queries](https://www.prisma.io/docs/orm/prisma-client/queries/raw-database-access/raw-queries#queryrawunsafe)
+- [OWASP — SQL Injection](https://owasp.org/www-community/attacks/SQL_Injection)
+- [CWE-89](https://cwe.mitre.org/data/definitions/89.html)

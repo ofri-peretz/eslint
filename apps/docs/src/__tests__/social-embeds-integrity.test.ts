@@ -1,0 +1,668 @@
+// @vitest-environment node
+/**
+ * Social Embeds Integrity Tests
+ * 
+ * CRITICAL: These tests validate that all social media embeds (tweets, etc.)
+ * referenced in the docs are valid and fetchable at build time.
+ * 
+ * This prevents embarrassing "Tweet not found" errors on production like:
+ * - Deleted tweets
+ * - Suspended accounts
+ * - Invalid tweet IDs
+ * 
+ * The tests extract tweet IDs from source files and verify they return
+ * valid data from the Twitter/X API.
+ */
+
+import { describe, it, expect } from 'vitest';
+import { readFileSync, existsSync } from 'fs';
+import { globSync } from 'glob';
+import { join, resolve } from 'path';
+import { getTweet } from 'react-tweet/api';
+import { shouldFailSync } from '../../scripts/sync-tweet-cache';
+
+// ============================================================================
+// Configuration
+// ============================================================================
+
+// Use __dirname so this works regardless of whether vitest is invoked from the
+// repo root (npx vitest run apps/docs/…) or from apps/docs (turbo run test).
+const APP_ROOT = resolve(__dirname, '../..');
+const DOCS_ROOT = join(APP_ROOT, 'src');
+const CONTENT_ROOT = join(APP_ROOT, 'content');
+
+// Patterns to find tweet embeds in source files
+const TWEET_PATTERNS = [
+  // TweetCard component: <TweetCard id="123456789" />
+  /<TweetCard\s+[^>]*id=["'](\d+)["']/g,
+  // react-tweet Tweet component: <Tweet id="123456789" />
+  /<Tweet\s+[^>]*id=["'](\d+)["']/g,
+];
+
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
+function getAllSourceFiles(dir: string, pattern = '**/*.{tsx,jsx,ts,js,mdx}'): string[] {
+  // glob skips dot-directories by default, matching the old hand-rolled walk.
+  return globSync(pattern, {
+    cwd: dir,
+    absolute: true,
+    nodir: true,
+    ignore: ['**/node_modules/**', '**/__tests__/**'],
+  });
+}
+
+function extractTweetIds(content: string): { id: string; context: string }[] {
+  const tweetIds: { id: string; context: string }[] = [];
+  
+  for (const pattern of TWEET_PATTERNS) {
+    // Reset regex state
+    pattern.lastIndex = 0;
+    
+    let match;
+    while ((match = pattern.exec(content)) !== null) {
+      const id = match[1];
+      // Get some context around the match
+      const startIndex = Math.max(0, match.index - 20);
+      const endIndex = Math.min(content.length, match.index + match[0].length + 20);
+      const context = content.slice(startIndex, endIndex).replace(/\s+/g, ' ').trim();
+      
+      tweetIds.push({ id, context });
+    }
+  }
+  
+  return tweetIds;
+}
+
+function getRelativePath(fullPath: string, baseDir: string): string {
+  return fullPath.replace(baseDir + '/', '');
+}
+
+const DEVTO_CARD_PATTERNS = [
+  // DevToCard component: <DevToCard path="username/slug" />
+  /<DevToCard\s+[^>]*path=["']([^"']+)["']/g,
+];
+
+function extractDevToArticlePaths(content: string): { path: string; context: string }[] {
+  const paths: { path: string; context: string }[] = [];
+
+  for (const pattern of DEVTO_CARD_PATTERNS) {
+    pattern.lastIndex = 0;
+
+    let match;
+    while ((match = pattern.exec(content)) !== null) {
+      const path = match[1];
+      const startIndex = Math.max(0, match.index - 20);
+      const endIndex = Math.min(content.length, match.index + match[0].length + 20);
+      const context = content.slice(startIndex, endIndex).replace(/\s+/g, ' ').trim();
+
+      paths.push({ path, context });
+    }
+  }
+
+  return paths;
+}
+
+// ============================================================================
+// Corpus — one walk, one read pass, shared by every test below
+// ============================================================================
+
+interface Refs {
+  files: string[];
+  contexts: string[];
+}
+
+interface SocialCorpus {
+  fileCount: number;
+  /** Tweet ID → where it is embedded (paths relative to content/ or src/). */
+  tweets: Map<string, Refs>;
+  /** DEV.to article path → where it is embedded (paths relative to the app root). */
+  articles: Map<string, Refs>;
+}
+
+let cached: SocialCorpus | undefined;
+
+function addRef(map: Map<string, Refs>, key: string, file: string, context: string) {
+  const existing = map.get(key) ?? { files: [], contexts: [] };
+  if (!existing.files.includes(file)) {
+    existing.files.push(file);
+    existing.contexts.push(context);
+  }
+  map.set(key, existing);
+}
+
+/**
+ * Scan src/ and content/ once, lazily. Lazy — not module scope — so the read
+ * cost lands inside a test's timeout budget instead of during collection,
+ * where vitest has no timeout to give it.
+ *
+ * Six separate sites (four identical `beforeAll` blocks plus two inline scans
+ * in the cache tests) used to walk both trees and re-read every file. Only the
+ * extracted embed references are retained, never the file contents.
+ */
+function corpus(): SocialCorpus {
+  if (cached) return cached;
+
+  const files = [
+    ...getAllSourceFiles(DOCS_ROOT),
+    ...getAllSourceFiles(CONTENT_ROOT, '**/*.{mdx,md}'),
+  ];
+
+  const c: SocialCorpus = { fileCount: files.length, tweets: new Map(), articles: new Map() };
+
+  for (const file of files) {
+    const content = readFileSync(file, 'utf-8');
+
+    for (const { id, context } of extractTweetIds(content)) {
+      // Prefix check, not `file.includes('content/')` as the old code had: a
+      // checkout under any ancestor directory literally named `content` made
+      // that substring true for every src/ file too, yielding a wrong relpath.
+      const rel = file.startsWith(CONTENT_ROOT + '/')
+        ? getRelativePath(file, CONTENT_ROOT)
+        : getRelativePath(file, DOCS_ROOT);
+      addRef(c.tweets, id, rel, context);
+    }
+
+    for (const { path, context } of extractDevToArticlePaths(content)) {
+      addRef(c.articles, path, getRelativePath(file, APP_ROOT), context);
+    }
+  }
+
+  cached = c;
+  return c;
+}
+
+// ============================================================================
+// Tests: Tweet Embed Validation
+// ============================================================================
+
+describe('Social Embeds - Tweet Integrity', () => {
+  // Most checks in this file assert "no broken embeds found", which a corpus of
+  // zero files satisfies perfectly — and the embed tests below explicitly bail
+  // out early when nothing was found. This guard is the only thing standing
+  // between a broken glob and a green, meaningless suite.
+  it('should scan a non-empty corpus', () => {
+    expect(corpus().fileCount).toBeGreaterThan(580); // 617 today
+  });
+
+  it('should find tweet embeds in source files', () => {
+    const { tweets: tweetReferences } = corpus();
+
+    // This test documents what tweet embeds exist
+    if (tweetReferences.size === 0) {
+      console.log('No tweet embeds found in source files');
+      return;
+    }
+
+    console.log(`Found ${tweetReferences.size} unique tweet ID(s) across docs:`);
+    for (const [id, { files }] of tweetReferences) {
+      console.log(`  - Tweet ${id}: used in ${files.join(', ')}`);
+    }
+
+    expect(tweetReferences.size).toBeGreaterThan(0);
+  });
+
+  it('should validate all tweet IDs are fetchable (no "Tweet not found" errors)', async () => {
+    const { tweets: tweetReferences } = corpus();
+
+    if (tweetReferences.size === 0) {
+      console.log('No tweets to validate');
+      return;
+    }
+
+    const brokenTweets: {
+      id: string; 
+      files: string[]; 
+      error: string 
+    }[] = [];
+
+    // Validate each tweet ID
+    for (const [id, { files }] of tweetReferences) {
+      try {
+        const tweet = await getTweet(id);
+        
+        if (!tweet) {
+          brokenTweets.push({
+            id,
+            files,
+            error: 'Tweet not found (returned undefined)',
+          });
+        } else {
+          console.log(`✓ Tweet ${id} is valid: "@${tweet.user?.screen_name}" - "${tweet.text?.slice(0, 50)}..."`);
+        }
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        brokenTweets.push({
+          id,
+          files,
+          error: errorMessage,
+        });
+      }
+    }
+
+    // Report failures with clear instructions
+    if (brokenTweets.length > 0) {
+      const report = brokenTweets.map(({ id, files, error }) => 
+        `\n  Tweet ID: ${id}\n  Used in: ${files.join(', ')}\n  Error: ${error}`
+      ).join('\n');
+
+      expect(brokenTweets).toHaveLength(0);
+      console.error(`
+╔════════════════════════════════════════════════════════════════════╗
+║  BROKEN TWEET EMBEDS DETECTED - "Tweet not found" errors will     ║
+║  appear on the production site!                                    ║
+╠════════════════════════════════════════════════════════════════════╣
+║  ACTION REQUIRED:                                                  ║
+║  1. Find a valid, public tweet to replace the broken embed        ║
+║  2. Or remove the TweetCard component entirely                     ║
+║  3. Or replace with a static testimonial card                      ║
+╚════════════════════════════════════════════════════════════════════╝
+
+Broken tweets found:${report}
+
+To fix: Update the tweet ID in the file(s) listed above.
+`);
+    }
+
+    expect(
+      brokenTweets,
+      `Found ${brokenTweets.length} broken tweet embed(s) that will show "Tweet not found" on production!`
+    ).toHaveLength(0);
+  }, 30000); // 30s timeout for network calls
+});
+
+// ============================================================================
+// Tests: Static Analysis for Common Issues
+// ============================================================================
+
+describe('Social Embeds - Static Validation', () => {
+  it('should not have obviously invalid tweet IDs (too short/long)', () => {
+    const { tweets: tweetReferences } = corpus();
+    const invalidIds: { id: string; files: string[]; reason: string }[] = [];
+
+    for (const [id, { files }] of tweetReferences) {
+      // Twitter IDs are typically 18-19 digits for recent tweets
+      // Very old tweets might be shorter (10+ digits)
+      // Anything < 10 digits or > 25 digits is likely invalid
+      if (id.length < 10) {
+        invalidIds.push({
+          id,
+          files,
+          reason: `Tweet ID too short (${id.length} digits, expected 10+)`,
+        });
+      } else if (id.length > 25) {
+        invalidIds.push({
+          id,
+          files,
+          reason: `Tweet ID too long (${id.length} digits, expected ≤25)`,
+        });
+      }
+      
+      // Check it's all digits
+      if (!/^\d+$/.test(id)) {
+        invalidIds.push({
+          id,
+          files,
+          reason: 'Tweet ID contains non-numeric characters',
+        });
+      }
+    }
+    
+    if (invalidIds.length > 0) {
+      console.error('Invalid tweet ID formats found:');
+      for (const { id, files, reason } of invalidIds) {
+        console.error(`  - "${id}" in ${files.join(', ')}: ${reason}`);
+      }
+    }
+    
+    expect(
+      invalidIds,
+      `Found ${invalidIds.length} tweet ID(s) with invalid format`
+    ).toHaveLength(0);
+  });
+
+  it('should not have duplicate tweet embeds across pages', () => {
+    const { tweets: tweetReferences } = corpus();
+    const duplicates: { id: string; count: number; files: string[] }[] = [];
+
+    for (const [id, { files }] of tweetReferences) {
+      if (files.length > 1) {
+        duplicates.push({
+          id,
+          count: files.length,
+          files,
+        });
+      }
+    }
+    
+    // This is just a warning, not a failure
+    if (duplicates.length > 0) {
+      console.warn('Tweet IDs used in multiple locations (might be intentional):');
+      for (const { id, count, files } of duplicates) {
+        console.warn(`  - Tweet ${id}: used ${count} times in ${files.join(', ')}`);
+      }
+    }
+  });
+});
+
+// ============================================================================
+// Tests: Tweet Cache Validation
+// ============================================================================
+
+describe('Social Embeds - Cache Validation', () => {
+  const CACHE_FILE = join(APP_ROOT, 'src/data/cached-tweets.json');
+  
+  it('should have cached-tweets.json file', () => {
+    expect(existsSync(CACHE_FILE)).toBe(true);
+  });
+
+  it('should have all embedded tweets cached', () => {
+    if (!existsSync(CACHE_FILE)) {
+      throw new Error('Cache file does not exist - run `npm run sync-tweets` first');
+    }
+
+    const cache = JSON.parse(readFileSync(CACHE_FILE, 'utf-8'));
+
+    const usedTweetIds = corpus().tweets.keys();
+    const missingFromCache: string[] = [];
+
+    for (const id of usedTweetIds) {
+      if (!cache.tweets[id]) {
+        missingFromCache.push(id);
+      }
+    }
+    
+    if (missingFromCache.length > 0) {
+      console.error(`
+╔════════════════════════════════════════════════════════════════════╗
+║  TWEET CACHE OUT OF SYNC                                           ║
+╠════════════════════════════════════════════════════════════════════╣
+║  The following tweet IDs are used in source files but not cached: ║
+║  ${missingFromCache.join(', ').padEnd(64)}║
+║                                                                    ║
+║  Run: npm run sync-tweets                                          ║
+╚════════════════════════════════════════════════════════════════════╝
+`);
+    }
+    
+    expect(
+      missingFromCache,
+      `${missingFromCache.length} tweet(s) missing from cache. Run 'npm run sync-tweets'`
+    ).toHaveLength(0);
+  });
+
+  it('should have valid tweet data in cache', () => {
+    if (!existsSync(CACHE_FILE)) {
+      return;
+    }
+
+    const cache = JSON.parse(readFileSync(CACHE_FILE, 'utf-8'));
+    const invalidEntries: { id: string; reason: string }[] = [];
+
+    for (const [id, tweet] of Object.entries(cache.tweets)) {
+      if (!tweet || typeof tweet !== 'object') {
+        invalidEntries.push({ id, reason: 'Invalid tweet object' });
+        continue;
+      }
+
+      const tweetData = tweet as Record<string, unknown>;
+
+      if (!tweetData.text) {
+        invalidEntries.push({ id, reason: 'Missing tweet text' });
+      }
+
+      if (!tweetData.user) {
+        invalidEntries.push({ id, reason: 'Missing user data' });
+      }
+    }
+
+    if (invalidEntries.length > 0) {
+      console.error('Invalid cache entries found:');
+      for (const { id, reason } of invalidEntries) {
+        console.error(`  - Tweet ${id}: ${reason}`);
+      }
+    }
+
+    expect(invalidEntries).toHaveLength(0);
+  });
+
+  // Regression lock — TweetCard preview image (the `card.binding_values`
+  // photo URL) silently disappeared in prod after a `sync-tweet-cache`
+  // run that hit Twitter's syndication endpoint during a window where
+  // it returned a text-only card. The hardened sync script preserves
+  // prior image bindings if the API drops them; this test asserts the
+  // on-disk cache still satisfies that contract before a deploy. Pairs
+  // with the HEAD-check in `scripts/sync-tweet-cache.ts`, which catches
+  // the dynamic case (URL present in JSON but 404 upstream).
+  it('every cached tweet with a `card` retains a preview image URL (regression: 2026-05-10)', () => {
+    if (!existsSync(CACHE_FILE)) {
+      return;
+    }
+
+    const cache = JSON.parse(readFileSync(CACHE_FILE, 'utf-8')) as {
+      tweets: Record<string, Record<string, unknown>>;
+    };
+
+    const missing: { id: string; bindingsPresent: string[] }[] = [];
+
+    for (const [id, tweet] of Object.entries(cache.tweets)) {
+      const card = (tweet as { card?: { binding_values?: Record<string, unknown> } }).card;
+      if (!card) continue;
+
+      const bv = (card.binding_values ?? {}) as Record<
+        string,
+        { image_value?: { url?: string } } | undefined
+      >;
+
+      const url =
+        bv.photo_image_full_size_large?.image_value?.url ||
+        bv.thumbnail_image_large?.image_value?.url ||
+        bv.thumbnail_image?.image_value?.url;
+
+      if (!url) {
+        missing.push({ id, bindingsPresent: Object.keys(bv) });
+      }
+    }
+
+    if (missing.length > 0) {
+      console.error(`
+╔════════════════════════════════════════════════════════════════════╗
+║  REGRESSION: cached tweet has a \`card\` but no preview image URL.   ║
+╠════════════════════════════════════════════════════════════════════╣
+║  Twitter's syndication endpoint is non-deterministic — it can     ║
+║  return the same tweet's \`card\` with text-only bindings           ║
+║  (description/domain/title only) and drop the image bindings.     ║
+║                                                                    ║
+║  Fix: re-run \`npm run sync-tweets\` until the cache JSON contains  ║
+║  a \`card.binding_values.photo_image_full_size_large.image_value\`  ║
+║  for the tweet(s) listed below. The hardened sync script will     ║
+║  preserve prior bindings on subsequent runs.                       ║
+╚════════════════════════════════════════════════════════════════════╝`);
+      for (const { id, bindingsPresent } of missing) {
+        console.error(`  - Tweet ${id}: bindings present = [${bindingsPresent.join(', ')}]`);
+      }
+    }
+
+    expect(
+      missing,
+      `${missing.length} cached tweet(s) have a \`card\` field but no preview image URL — this renders an empty box where the article preview should be.`,
+    ).toHaveLength(0);
+  });
+});
+
+// ============================================================================
+// Tests: Sync-script exit policy (regression lock: 2026-07-04)
+// ============================================================================
+
+describe('sync-tweet-cache exit policy', () => {
+  // Regression lock — a cached tweet's upstream card image 404ing
+  // (Twitter deleted/rotated the pbs.twimg.com/card_img asset) used to
+  // hard-fail the docs build via `process.exit(1)`. That failure is
+  // unfixable by re-running the build, so it wedged every deploy. The
+  // policy is: unreachable card images on already-cached tweets are
+  // advisory (warn + keep the stale entry); only a fetch failure with
+  // NO cached fallback — i.e. "Tweet not found" would ship — fails.
+  it('does NOT fail the build for unreachable card images on cached tweets', () => {
+    expect(shouldFailSync(0, 1)).toBe(false);
+    expect(shouldFailSync(0, 5)).toBe(false);
+  });
+
+  it('does NOT fail the build when nothing went wrong', () => {
+    expect(shouldFailSync(0, 0)).toBe(false);
+  });
+
+  it('DOES fail the build when a tweet cannot be fetched and has no cached fallback', () => {
+    expect(shouldFailSync(1, 0)).toBe(true);
+    expect(shouldFailSync(2, 3)).toBe(true);
+  });
+});
+
+// ============================================================================
+// Tests: DEV.to Embed Validation
+// ============================================================================
+
+describe('Social Embeds - DEV.to Article Integrity', () => {
+  it('should find DEV.to article embeds in source files', () => {
+    const { articles: articleReferences } = corpus();
+
+    if (articleReferences.size > 0) {
+      console.log(`Found ${articleReferences.size} unique DEV.to article(s) across docs:`);
+      for (const [path, { files }] of articleReferences) {
+        console.log(`  - Article "${path}": used in ${files.join(', ')}`);
+      }
+    }
+
+    // This just logs what was found - not a failure if empty
+    expect(articleReferences).toBeDefined();
+  });
+
+  it('should validate all DEV.to article paths are fetchable', async () => {
+    const { articles: articleReferences } = corpus();
+
+    if (articleReferences.size === 0) {
+      console.log('No DEV.to article embeds found - skipping API validation');
+      return;
+    }
+
+    const brokenArticles: { path: string; error: string; files: string[] }[] = [];
+
+    for (const [path, { files }] of articleReferences) {
+      try {
+        const response = await fetch(`https://dev.to/api/articles/${path}`);
+        
+        if (!response.ok) {
+          brokenArticles.push({
+            path,
+            error: `API returned ${response.status}`,
+            files,
+          });
+          continue;
+        }
+
+        const article = await response.json();
+        console.log(`✓ Article "${path}" is valid: "${article.title?.slice(0, 50)}..."`);
+      } catch (error) {
+        brokenArticles.push({
+          path,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          files,
+        });
+      }
+    }
+
+    if (brokenArticles.length > 0) {
+      console.error(`
+╔════════════════════════════════════════════════════════════════════╗
+║  DEV.TO ARTICLE EMBED ERRORS DETECTED                              ║
+╠════════════════════════════════════════════════════════════════════╣
+║  The following DEV.to articles could not be fetched:               ║`);
+      for (const { path, error, files } of brokenArticles) {
+        console.error(`║  - "${path}"`);
+        console.error(`║    Error: ${error}`);
+        console.error(`║    Used in: ${files.join(', ')}`);
+      }
+      console.error(`╚════════════════════════════════════════════════════════════════════╝`);
+    }
+
+    expect(brokenArticles).toHaveLength(0);
+  }, 30000);
+});
+
+describe('Social Embeds - DEV.to Cache Validation', () => {
+  const CACHE_FILE = join(APP_ROOT, 'src/data/cached-devto-articles.json');
+  
+  it('should have cached-devto-articles.json file', () => {
+    expect(existsSync(CACHE_FILE)).toBe(true);
+  });
+
+  it('should have all embedded articles cached', () => {
+    if (!existsSync(CACHE_FILE)) {
+      throw new Error('Cache file does not exist - run cache sync first');
+    }
+
+    const cache = JSON.parse(readFileSync(CACHE_FILE, 'utf-8'));
+
+    const usedPaths = corpus().articles.keys();
+    const missingFromCache: string[] = [];
+
+    for (const path of usedPaths) {
+      if (!cache.articles[path]) {
+        missingFromCache.push(path);
+      }
+    }
+    
+    if (missingFromCache.length > 0) {
+      console.error(`
+╔════════════════════════════════════════════════════════════════════╗
+║  DEV.TO CACHE OUT OF SYNC                                          ║
+╠════════════════════════════════════════════════════════════════════╣
+║  The following article paths are used but not cached:              ║
+║  ${missingFromCache.join(', ').padEnd(64)}║
+║                                                                    ║
+║  Run: npm run sync-devto                                           ║
+╚════════════════════════════════════════════════════════════════════╝
+`);
+    }
+    
+    expect(
+      missingFromCache,
+      `${missingFromCache.length} article(s) missing from cache`
+    ).toHaveLength(0);
+  });
+
+  it('should have valid article data in cache', () => {
+    if (!existsSync(CACHE_FILE)) {
+      return;
+    }
+
+    const cache = JSON.parse(readFileSync(CACHE_FILE, 'utf-8'));
+    const invalidEntries: { path: string; reason: string }[] = [];
+    
+    for (const [path, article] of Object.entries(cache.articles)) {
+      if (!article || typeof article !== 'object') {
+        invalidEntries.push({ path, reason: 'Invalid article object' });
+        continue;
+      }
+      
+      const articleData = article as Record<string, unknown>;
+      
+      if (!articleData.title) {
+        invalidEntries.push({ path, reason: 'Missing article title' });
+      }
+      
+      if (!articleData.user) {
+        invalidEntries.push({ path, reason: 'Missing user data' });
+      }
+    }
+    
+    if (invalidEntries.length > 0) {
+      console.error('Invalid DEV.to cache entries found:');
+      for (const { path, reason } of invalidEntries) {
+        console.error(`  - Article "${path}": ${reason}`);
+      }
+    }
+    
+    expect(invalidEntries).toHaveLength(0);
+  });
+});

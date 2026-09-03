@@ -1,0 +1,173 @@
+---
+title: no-data-in-temp-storage
+description: Temporary directories (/tmp, /var/tmp, temp/) are often world-readable or persist longer than expected
+tags: ['security', 'node']
+category: security
+severity: medium
+cwe: CWE-312
+autofix: false
+---
+
+> Prevents sensitive data in temporary directories
+
+
+<!-- @rule-summary -->
+Temporary directories (/tmp, /var/tmp, temp/) are often world-readable or persist longer than expected
+<!-- @/rule-summary -->
+
+**Severity:** 🔴 CRITICAL | 🟠 HIGH  
+**CWE:** [CWE-312](https://cwe.mitre.org/data/definitions/312.html)  
+**OWASP:** [Insecure Data Storage](https://owasp.org/www-project-mobile-top-10/2024/M9-Insecure-Data-Storage/)  
+**CVSS:** 7.5
+
+## Quick Summary
+
+| Aspect            | Details                                                                        |
+| :---------------- | :----------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-312](https://cwe.mitre.org/data/definitions/312.html) (Cleartext Storage) |
+| **Severity**      | 🟠 HIGH                                                                        |
+| **Auto-Fix**      | ❌ Not available                                                               |
+| **Category**   | Security |
+| **Best For**      | Node.js File I/O                                                               |
+
+## Rule Details
+
+Temporary directories (`/tmp`, `/var/tmp`, `temp/`) are often world-readable or persist longer than expected. Writing sensitive data (credentials, PII, session tokens) to these locations exposes it to other processes on the system.
+
+Two things have to be true before there is a finding, and **both** are checked:
+
+1. **The path names the temp directory on a segment boundary.** The match is
+   over `/`- and `\`-separated segments, not a substring test. `/temp` matches
+   `/temp` and `/temp/cache`; it does not match `/templates.json`,
+   `attempted`, or `temporary-holder`. That substring test is what filed
+   `https://cdn.shopify.com/static/cli/extensions/templates.json` as sensitive
+   data in temp storage (Shopify/cli `app-management-client.ts:155`).
+2. **Something writes through it.** CWE-312 is about data *at rest* in a
+   world-readable place. A string that merely mentions a temp directory stores
+   nothing, so the path has to reach `fs.writeFile` / `fs.writeFileSync` —
+   either directly, or through the name it is bound to.
+
+```mermaid
+graph TD
+    A[String literal] --> B{Temp dir as whole path segments?}
+    B -- No --> E[✅ Not a temp path]
+    B -- Yes --> C{Reaches an fs write as the path argument?}
+    C -- No --> F[✅ Names a path, stores nothing]
+    C -- Yes --> D[🚨 HIGH: Insecure Temp Storage]
+```
+
+## ❌ Incorrect
+
+```typescript
+import fs from 'fs';
+
+// ❌ Writing sensitive data to world-readable temp path
+fs.writeFileSync('/tmp/credentials.json', JSON.stringify(creds));
+
+// ❌ Using temp path in variable assignment for persistence
+const tempTokenPath = '/var/tmp/session.token';
+fs.writeFile(tempTokenPath, token, (err) => { ... });
+
+// ❌ CWE-377: the portable spelling of the same exposure — os.tmpdir() with a
+// constant name resolves to the same path on every run, in a directory every
+// local user can write. An attacker pre-creates or symlinks that name and
+// wins the race before the write happens.
+const file = path.join(os.tmpdir(), 'report-cache.tmp');
+fs.writeFileSync(file, buffer);
+
+fs.writeFileSync(path.join(os.tmpdir(), 'report-cache.tmp'), buffer);
+```
+
+## ✅ Correct
+
+```typescript
+import fs from 'fs';
+import path from 'path';
+
+// ✅ Using app-specific secure data directory
+const secureDir = path.join(process.env.HOME, '.myapp', 'data');
+fs.writeFileSync(path.join(secureDir, 'session.json'), encryptedData);
+
+// ✅ Using in-memory storage for ephemeral data
+const sessionCache = new Map();
+sessionCache.set('token', token);
+
+// ✅ A fresh 0700 directory with a random suffix — the path is not guessable
+const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'app-export-'));
+fs.writeFileSync(path.join(dir, 'export.json'), JSON.stringify(records));
+
+// ✅ A randomised segment is the mitigation
+const file = path.join(os.tmpdir(), crypto.randomUUID() + '.tmp');
+
+// ✅ Not a temp path at all — `/temp` is matched on segment boundaries
+const TEMPLATE_JSON_URL = 'https://cdn.shopify.com/static/cli/extensions/templates.json';
+
+// ✅ Names a temp path but writes nothing through it
+const cacheDir = '/tmp/build-cache';
+console.log(`cache lives in ${cacheDir}`);
+```
+
+## ⚙️ Configuration
+
+| Option        | Type       | Default         | Description                            |
+| :------------ | :--------- | :-------------- | :------------------------------------- |
+| `tempPaths`   | `string[]` | `['/tmp', ...]` | Custom list of temporary paths to flag |
+| `ignoreFiles` | `string[]` | `[]`            | List of files or patterns to ignore    |
+
+### Example Configuration
+
+```json
+{
+  "rules": {
+    "node-security/no-data-in-temp-storage": [
+      "error",
+      {
+        "tempPaths": ["/private/tmp", "/var/folders"],
+        "ignoreFiles": ["**/tests/**"]
+      }
+    ]
+  }
+}
+```
+
+## 🛡️ Why This Matters
+
+1. **Information Leakage**: On multi-tenant systems, the `/tmp` directory is typically shared.
+2. **Persistence Risk**: Temp files are not always cleared on restart or app crash.
+3. **Forensic Recovery**: Unencrypted data in temp files can be recovered even after "deletion".
+
+## Known False Negatives
+
+- `os.tmpdir()` bound to a variable first (`const tmp = os.tmpdir(); path.join(tmp, 'x.tmp')`) — the rule matches `os.tmpdir()` written out in full.
+- `path.join()` reached through a renamed import (`const { join } = require('path')`).
+- Stream-based writes using `createWriteStream`.
+- Paths stored in environment variables.
+- A temp path written through a destructured or member binding
+  (`obj.p = '/tmp/x'; fs.writeFileSync(obj.p, data)`) — the write-sink check
+  follows a plain `const`/`let` name only.
+- A temp path written through an fs facade or a renamed import — the sink is
+  `fs.writeFile` / `fs.writeFileSync` spelled on the `fs` receiver.
+
+> **Not a false negative:** `path.join(os.tmpdir(), 'constant-name')` reports as
+> `predictableTempPath` (CWE-377). A segment that is not a string literal —
+> `crypto.randomUUID()`, `Date.now()`, an interpolated template — makes the path
+> unpredictable, which *is* the mitigation, so those stay silent by design.
+> `fs.mkdtempSync(path.join(os.tmpdir(), 'prefix-'))` likewise: the join names a
+> prefix, not the file that gets written.
+
+## 🔗 Related Rules
+
+- `node-security/no-arbitrary-file-access`
+- `node-security/detect-non-literal-fs-filename`
+
+## 📚 References
+
+- [CWE-312: Cleartext Storage of Sensitive Information](https://cwe.mitre.org/data/definitions/312.html)
+- [OWASP Mobile Top 10 M9: Insecure Data Storage](https://owasp.org/www-project-mobile-top-10/)
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `tempPaths` | `string[]` | `["/tmp","/var/tmp","temp/","/temp"]` | Temporary path prefixes to flag. Replaces the built-in list rather than extending it. |
+| `ignoreFiles` | `string[]` | `[]` | List of files or patterns to ignore |

@@ -1,0 +1,131 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Weekly Corpus Scan
+
+# Runs the recommended presets over eight pinned real repositories and fails
+# when any rule reports more than its checked-in budget.
+#
+# WHY. On 2026-08-10 the suite stood at 894 tests and 100% coverage and had
+# found zero of the defects fixed that day; one scan of these eight repos found
+# seven. Coverage measures whether our fixtures exercise our branches. It says
+# nothing about whether a rule is right about code nobody here wrote. This is
+# the gate that measures the second thing, and it is the one that finds the
+# next ten.
+#
+# The budget lives at .agent/corpus-findings-budget.json and is a RATCHET: the
+# scan prints every rule now under its budget so the number gets lowered rather
+# than drifting up. Raising a budget takes an explicit `--update` commit, which
+# shows up in review as a deliberate act.
+#
+# Weekly rather than per-PR: it clones eight repositories and installs a fresh
+# ESLint rig, which is minutes, not seconds. Per-PR signal comes from the unit
+# suites; this is the slow loop that catches what they structurally cannot.
+
+on:
+  schedule:
+    - cron: '0 6 * * 1' # 06:00 UTC Monday
+  workflow_dispatch:
+  # Automatic for any PR that changes rule LOGIC, and on demand via the label
+  # for anything else.
+  #
+  # It was label-only until 2026-08-20. On that day six PRs changed rule logic
+  # and none carried the label, so none were scanned — including two that fixed
+  # false positives this scan is built to catch (a shell-free `spawn` reported
+  # as CWE-78 command injection at CVSS 9.8, and `gh … -c NAME` read as a shell
+  # eval flag). A gate that depends on remembering to ask for it is not a gate.
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+    paths:
+      - 'packages/eslint-plugin-*/src/rules/**'
+      - 'packages/eslint-devkit/src/**'
+      - '.agent/corpus-findings-budget.json'
+
+concurrency:
+  group: weekly-corpus-scan-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    name: Scan pinned corpus
+    # `paths:` already limits pull_request runs to rule-logic changes, so the
+    # only thing left to filter is a `labeled` event that named some OTHER
+    # label — those would otherwise re-run the scan on every label edit.
+    if: github.event.action != 'labeled' || github.event.label.name == 'run-corpus-scan'
+    runs-on: ubuntu-latest
+    # Eight shallow clones plus a fresh rig install. Observed ~6 min locally
+    # with a warm clone cache and no cache in CI; 25 leaves room for a slow
+    # npm registry without letting a wedged run burn an hour.
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      # Required so the failure step can open / update the tracking issue.
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install workspace
+        run: npm ci
+
+      # The scan installs the plugins from THIS checkout, not from npm, so it
+      # measures the code in the branch rather than the last published release.
+      - name: Build plugins
+        run: npx turbo run build --output-logs=errors-only
+
+      # `--local` on a PR, the published default on the cron.
+      #
+      # The comment above and the `Build plugins` step before it both describe
+      # the LOCAL mode — but the command ran the default, which installs the
+      # plugins from npm and ignores that build entirely. So a PR was measured
+      # against the last RELEASE, and a PR that fixes a false positive could
+      # never turn this green: the finding it removes is still in the published
+      # package. #816 removed two CVSS 9.8 false positives and this gate
+      # reported them as still over budget.
+      #
+      # `--local` is not the weaker check. It still exits 1 when a rule reports
+      # MORE than the published version, which is the regression this gate
+      # exists to catch; it simply stops failing a branch for an improvement it
+      # has not shipped yet. The cron keeps the published default, because
+      # tracking what consumers actually get is a different question and both
+      # are worth asking.
+      - name: Scan corpus against the findings budget
+        id: scan
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            npx tsx scripts/corpus-scan.ts --local
+          else
+            npx tsx scripts/corpus-scan.ts
+          fi
+
+      - name: Report
+        if: always()
+        run: |
+          {
+            if [ "${{ steps.scan.outcome }}" = "success" ]; then
+              echo "# ✅ Every rule at or under budget"
+            else
+              echo "# ❌ At least one rule is over its corpus budget"
+              echo ""
+              echo "A rule reported more findings on real repositories than "
+              echo "\`.agent/corpus-findings-budget.json\` allows."
+              echo ""
+              echo "Fix the rule. If the increase is a deliberate detection "
+              echo "improvement, run \`npx tsx scripts/corpus-scan.ts --update\` "
+              echo "and commit the budget change so it is reviewable."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # A red cron notifies nobody by default. See .github/actions/report-failure.
+      - name: 🚨 Report a scheduled failure
+        if: failure() && github.event_name == 'schedule'
+        uses: ./.github/actions/report-failure
+        with:
+          title: 'Weekly corpus scan is failing'
+          body: 'The weekly corpus scan failed, so new false positives and negatives on the corpus are no longer being surfaced.'
+          token: ${{ github.token }}

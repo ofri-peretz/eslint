@@ -1,0 +1,214 @@
+@import 'tailwindcss';
+@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/preset.css';
+@import 'fumadocs-twoslash/twoslash.css';
+@import 'tw-animate-css';
+@import '@interlace/ui/styles/tokens.css';
+/* Foundation: type scale, spacing scale, radius, container widths, font
+   families — brand-invariant structure every consumer needs so primitives map
+   to real tokens (R19). See @interlace/ui/styles/foundation.css. */
+@import '@interlace/ui/styles/foundation.css';
+/* Token-aware baseline that goes beyond Tailwind preflight: selection color,
+   --ring focus outline, Inter font-feature-settings, reduced-motion smooth-scroll,
+   subtle scrollbar, ::placeholder, min-viewport container contract. */
+@import '@interlace/ui/styles/preflight.css';
+/* App-agnostic theme: shadcn-token bridge, Shiki AAA boosts, fumadocs TOC
+   overrides, remote-content base, lightweight CSS animations. Lives in
+   @interlace/ui so every consumer gets the same baseline. Brand colors
+   (burnt-orange primary) below stay app-specific. */
+@import '@interlace/ui/styles/theme.css';
+/* Baseline brand layer synced from `interlace/docs-baseline` in the agents
+   repo (AUTO-GENERATED — edit there, then `npm run docs-baseline:sync`).
+   Source of the `--brand-mark-bar-*` fills the nav lockup reads
+   (see `src/lib/layout.shared.tsx` + nav-brand-lock.test.tsx). Its fd-token
+   values never win here: every app override below carries !important. */
+@import '../../.interlace/css/brand.css';
+
+@custom-variant dark (&:is(.dark *));
+
+/* Scan fumadocs packages from app-level node_modules (symlinked to workspace root) */
+@source "../../node_modules/fumadocs-ui";
+@source "../../node_modules/fumadocs-twoslash";
+
+/* Scan @interlace/ui dist for class usage in primitives + decorative components */
+@source "../../../../packages/ui/dist";
+
+/* Scan the synced interlace baseline — Tailwind's default scanner skips
+   dot-directories, so classes that appear ONLY in .interlace/** are never
+   generated without this. */
+@source "../../.interlace";
+
+/* =========================================
+   BRAND COLORS - ESLint Interlace
+   Override fumadocs neutral theme with burnt-orange accent.
+   WCAG 2 AAA-compliant: ≥7:1 contrast for normal text on background,
+   ≥4.5:1 for large/UI text. Verified via @axe-core color-contrast-enhanced.
+   ========================================= */
+
+/* Light mode - AAA contrast on white */
+:root {
+  /* Primary burnt orange — #74320b. 9.7:1 on white AND 7.2:1 on the 10% tint
+     of itself that fumadocs paints behind an active sidebar link.
+     
+     It was hsl(22 82% 27%), justified as "8.8:1 on white" — true, and the wrong
+     background. `bg-fd-primary/10` composites to #e5deda, where the same colour
+     is 6.57:1 and misses AAA by four hundredths. fumadocs 16.14.5 restyled the
+     active link onto that tint and the axe run caught it immediately.
+     
+     Two points of lightness is the whole fix, and the constraint is recorded
+     here so the next adjustment is checked against BOTH backgrounds. */
+  --color-fd-primary: hsl(22, 82%, 25%) !important;
+  --color-fd-primary-foreground: hsl(0, 0%, 100%) !important;
+
+  /* shadcn-style primary tokens (used by `bg-primary` / `text-primary-foreground`
+     in @interlace/ui Button + similar). Match fd-primary so the visual
+     identity is consistent and contrast on white is AAA. */
+  --primary: hsl(22, 82%, 25%);
+  --primary-foreground: hsl(0, 0%, 100%);
+
+  /* Foreground for body text — 19.6:1 on white (well clear of AAA) */
+  --color-fd-foreground: hsl(0, 0%, 3.9%) !important;
+
+  /* Muted foreground — 7.4:1 on white (AAA pass) */
+  --color-fd-muted-foreground: hsl(0, 0%, 27%) !important;
+
+  /* Accent foreground (used for hover state on links/items) — AAA */
+  --color-fd-accent-foreground: hsl(0, 0%, 9%) !important;
+
+  /* Ring/focus color — UI element threshold (≥3:1 vs adjacent colors) */
+  --color-fd-ring: hsl(22, 82%, 34%) !important;
+
+  /* shadcn-token bridge + Tailwind v4 @theme-side aliases now live in
+   * @interlace/ui/styles/theme.css (imported at top). Brand-specific
+   * primary tokens stay in this file. */
+
+  /* shadcn chart palette — five hues for `<ChartContainer>` series colors.
+     App-local because the chart primitive lives in `@/components/ui/chart`.
+     Light-mode values pass ≥4.5:1 on `bg-card` (white). */
+  --chart-1: oklch(0.55 0.16 41);
+  --chart-2: oklch(0.55 0.14 162);
+  --chart-3: oklch(0.55 0.18 264);
+  --chart-4: oklch(0.55 0.14 90);
+  --chart-5: oklch(0.55 0.13 200);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+}
+
+/* Dark mode - AAA contrast on near-black */
+.dark {
+  /* Primary light burnt orange — #fbb99a, 11.8:1 on hsl(0, 0%, 4%) (AAA pass) */
+  --color-fd-primary: hsl(19, 92%, 79%) !important;
+  --color-fd-primary-foreground: hsl(0, 0%, 5%) !important;
+
+  /* shadcn-style primary tokens — match fd-primary for visual consistency
+     and AAA contrast on near-black bg. */
+  --primary: hsl(19, 92%, 79%);
+  --primary-foreground: hsl(0, 0%, 5%);
+
+  /* Foreground — 18:1 on near-black (well past AAA) */
+  --color-fd-foreground: hsl(0, 0%, 95%) !important;
+
+  /* Muted foreground — 7.5:1 on near-black (AAA pass) */
+  --color-fd-muted-foreground: hsl(0, 0%, 75%) !important;
+
+  /* Accent foreground for hover states — AAA */
+  --color-fd-accent-foreground: hsl(0, 0%, 98%) !important;
+
+  /* Ring/focus color */
+  --color-fd-ring: hsl(19, 85%, 74%) !important;
+
+  /* Dark-mode chart palette — lifted lightness so each series stays
+     ≥4.5:1 on `bg-card` (near-black). */
+  --chart-1: oklch(0.78 0.14 41);
+  --chart-2: oklch(0.78 0.12 162);
+  --chart-3: oklch(0.78 0.16 264);
+  --chart-4: oklch(0.78 0.12 90);
+  --chart-5: oklch(0.78 0.11 200);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+}
+
+/* =========================================
+   App-agnostic overrides moved to @interlace/ui/styles/theme.css:
+     - Shiki AAA token-color boosts
+     - Fumadocs TOC single-line indicator + popover spacing + responsive visibility
+     - Remote-content styling (README / changelog / rule-doc)
+     - Lightweight CSS animations (fade-in-up / slide-in-left / scale-in)
+   Brand-specific bits (burnt-orange primary colors above) stay in this file.
+   ========================================= */
+
+/* Base styling is provided by fumadocs-ui/css/preset.css */
+
+/* border-beam keyframes + .animate-border-beam class live in
+   @interlace/ui/styles/tokens.css (imported above). */
+
+/* =========================================
+   MARKETING-SURFACE CTA TOKENS
+   --------------------------------------------------------
+   Brand oranges/greens used by BorderBeam (homepage code-window) and
+   ShimmerButton (final-CTA + hero secondary). Defined here so JSX
+   call sites read `var(--cta-*)` instead of raw hex/rgba literals —
+   the `react-features/component-api/no-raw-color-literal` rule
+   forbids the literals in JSX attribute values (R19).
+
+   Values are theme-stable: these are brand accents that read against
+   the cosmic dark hero AND the white code-window card. Do not split
+   into `:root` / `.dark` variants unless contrast on a new surface
+   demands it — divergence here means the same CTA looks like a
+   different brand on each theme.
+   ========================================= */
+:root {
+  /* BorderBeam on the homepage code-window (brand orange → bottle green,
+     the decorative dark-surface pair) */
+  --cta-beam-from: #f4794a;
+  --cta-beam-to: #0d9460;
+
+  /* ShimmerButton primary — light orange spark over a burnt-orange fill
+     (fill pair keeps ≥4.5:1 with the white label) */
+  --cta-shimmer: #fbb99a;
+  --cta-bg-start: #a84c17;
+  --cta-bg-end: #7d350c;
+  --cta-bg-gradient: linear-gradient(
+    135deg,
+    var(--cta-bg-start) 0%,
+    var(--cta-bg-end) 100%
+  );
+
+  /* ShimmerButton secondary — translucent white pill for the hero's
+     "GitHub" CTA. Sits over the cosmic dark gradient and survives a
+     light-theme flash during hydration (~12% white keeps the boundary
+     legible on either surface). */
+  --cta-secondary-bg: rgba(255, 255, 255, 0.12);
+
+  /* =========================================
+     BRAND MARK TOKENS
+     --------------------------------------------------------
+     Fills for the inline brand marks, defined via tokens so their JSX
+     call sites read `var(--*)` instead of raw hex literals (R19 /
+     `no-raw-color-literal` doctrine — same reasoning as --cta-*).
+
+     - --brand-mark-bar-*: the Interlace two-bar mark in the top nav
+       (`src/lib/layout.shared.tsx`) is NOT defined here — it comes from
+       the synced `.interlace/css/brand.css` (imported at top), the
+       ecosystem-wide source for the nav-lockup fills.
+     - --eslint-mark-*: the official ESLint hexagon in the homepage
+       hero badge (`src/components/home/hero-section.tsx`). Colors are
+       ESLint's own — light theme keeps the purple pair, dark theme
+       uses their white/grey dark-variant fills (mirrors the
+       `prefers-color-scheme` block ESLint ships inside
+       `public/eslint-logo.svg`, but keyed to the site's `.dark`
+       class so the mark follows the THEME, not the OS). */
+  --eslint-mark-outer: #4b32c3;
+  --eslint-mark-inner: #8080f2;
+}
+
+.dark {
+  --eslint-mark-outer: #ffffff;
+  --eslint-mark-inner: #999999;
+}

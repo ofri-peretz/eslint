@@ -1,0 +1,54 @@
+{
+  "cwe": "CWE-020",
+  "name": "Improper Input Validation (validation-bypass cluster)",
+  "owasp": "A03:2021",
+  "severity": "HIGH",
+  "expectedPlugins": ["eslint-plugin-browser-security"],
+  "expectedPluginsNote": "Was eslint-plugin-secure-coding, and had been wrong since these fixtures landed in #290 — not broken by any later change. They are candidate-research fixtures, written for rules that were PLANNED for secure-coding; the rules were then built in browser-security instead (no-incomplete-url-sanitization, no-insecure-redirects, require-postmessage-origin-check), which is where a redirect allowlist, a postMessage origin test and a URL scheme check belong. The only secure-coding rule carrying CWE-020 is no-graphql-injection, which could never fire on a URL substring check. Every fixture here IS detected, with accurate messages, by the plugin now named. Safe to correct: expectedPlugins reaches ilb-cwe-corpus output metadata only and does not gate scoring — every plugin is run against every fixture — so this restates no published number.",
+  "fixtures": {
+    "vulnerable": [
+      {
+        "file": "incomplete-hostname-regexp.js",
+        "description": "Unescaped '.' in a hostname regexp used as a redirect allowlist"
+      },
+      {
+        "file": "missing-regexp-anchor.js",
+        "description": "postMessage origin check with an unanchored regular expression"
+      },
+      {
+        "file": "url-substring-sanitization.js",
+        "description": "includes()/indexOf() substring match on a URL as an authorization decision"
+      },
+      {
+        "file": "incomplete-url-scheme-check.js",
+        "description": "Scheme denylist blocking only 'javascript:', leaving data:/vbscript:/blob:"
+      },
+      {
+        "file": "incorrect-suffix-check.js",
+        "description": "indexOf-emulated endsWith with no tail boundary (.trusted.com.evil.io passes)"
+      }
+    ],
+    "safe": [
+      {
+        "file": "escaped-anchored-hostname.js",
+        "description": "Hostname regexp with escaped dots and ^…$ anchoring"
+      },
+      {
+        "file": "anchored-origin-regexp.js",
+        "description": "Fully anchored origin regexp for postMessage validation"
+      },
+      {
+        "file": "url-parse-hostname.js",
+        "description": "new URL(url).hostname equality check with fail-closed parse handling"
+      },
+      {
+        "file": "scheme-allowlist.js",
+        "description": "Protocol allowlist permitting only http:/https:"
+      },
+      {
+        "file": "endswith-boundary.js",
+        "description": "String.prototype.endsWith suffix check with explicit dot boundary"
+      }
+    ]
+  }
+}

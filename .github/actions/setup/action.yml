@@ -1,0 +1,400 @@
+# Composite action: standard repo setup for CI jobs.
+#
+# IMPORTANT: caller must run `actions/checkout@v4` first — composite actions
+# referenced via `./.github/actions/setup` need the workspace populated to load
+# this file. Caller controls fetch-depth (some jobs need full history for
+# affected detection, others don't).
+#
+# Layered caching, fastest-first:
+#   1. node_modules cache keyed on package-lock.json — skips `npm ci` on hit.
+#   2. ~/.npm cache (via setup-node) — falls back to a warm registry on miss.
+#   3. .turbo/cache — Turborepo's task cache, one shared per-OS lineage across
+#      every job and workflow. Written only by pushes to main; branch builds
+#      restore from it read-only so PR traffic can't churn the 10 GB quota.
+#   4. (opt-in) ~/.cache/ms-playwright — Playwright browser binaries.
+#   5. (opt-in) apps/docs/.next/cache — Next.js incremental build cache.
+#
+# Node version comes from .nvmrc (single source of truth). Override via the
+# `node-version` input only when intentionally testing a different version
+# (e.g. cross-version matrix workflows).
+
+name: Setup
+description: Install Node, hydrate npm + Turbo caches, run `npm ci` (skipped on cache hit).
+
+inputs:
+  node-version:
+    description: Node version override. Defaults to .nvmrc.
+    required: false
+    default: ""
+  install:
+    description: Run `npm ci` after restoring caches. Set to "false" to skip (rare).
+    required: false
+    default: "true"
+  deps:
+    description: >-
+      Which dependency archive to restore: "full" (everything `npm ci`
+      installs) or "lean" (everything except the Next.js/React tree).
+
+      The lean archive omits `next`, `@next`, `mermaid`, posthog, `fumadocs-*`,
+      `@base-ui`, `lucide-react`, `recharts` and `storybook` — ~600 MB unpacked
+      that no ESLint plugin, the devkit, the formatters or the tools ever load.
+      Measured on run 33337052316: the full archive is 451 MB and costs 13.3s
+      to restore, paid by every job; eight of the ten test shards held nothing
+      but plugins and never opened a byte of it.
+
+      "lean" is only safe for the `node` lane in scripts/ci-test-shard.mts.
+      `scripts/__tests__/lane-deps-lock.test.ts` fails if a node-lane workspace
+      declares anything the lean archive omits — the check that caught
+      `date-fns`, which four node-lane packages import and which is therefore
+      NOT omitted.
+    required: false
+    default: "full"
+  turbo-cache:
+    description: Restore + save the Turborepo task cache. Set to "false" for jobs that don't run turbo.
+    required: false
+    default: "true"
+  turbo-cache-scope:
+    description: >-
+      Optional cache-lineage name. Jobs sharing a scope share one cache entry;
+      different scopes get independent lineages. Set this for matrix jobs (e.g.
+      "test-shard-3") so parallel shards stop racing for a single key.
+    required: false
+    default: "shared"
+  playwright-cache:
+    description: Restore + save the Playwright browser cache (~/.cache/ms-playwright). Set to "true" for jobs that run Playwright.
+    required: false
+    default: "false"
+  next-cache:
+    description: Restore + save the Next.js incremental build cache (apps/docs/.next/cache). Set to "true" for jobs that build apps/docs.
+    required: false
+    default: "false"
+  turbo-remote-cache:
+    description: >-
+      Back Turborepo's REMOTE cache API with GitHub Actions' cache instead of
+      the `.turbo/cache` tarball. Entries are content-addressed per task hash
+      rather than keyed on a commit SHA, so a PR reuses main's entries for every
+      package it did not change — which the tarball cannot do (measured on run
+      33324089803: cache restored, all 32 tasks still missed).
+
+      DEFAULT OFF, DELIBERATELY. This runs a third-party action, and
+      `release.yml` uses this same composite four times. Enabling it by default
+      would put that action into the supply chain of every published package.
+      Turn it on per job, in PR-CI jobs only — never in a job that publishes,
+      signs, or attests.
+
+      Set `turbo-cache: "false"` alongside it: the tarball is redundant once
+      this is on, and restoring it costs ~11s for nothing.
+    required: false
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    # `npm ci` runs `prepare` → `lefthook install`, so every CI job that later
+    # commits or pushes silently fires the local pre-commit/commit-msg/pre-push
+    # battery on the bot's own commit. That is never what a workflow wants: the
+    # real gates run as their own jobs, and the hooks are scoped for a developer
+    # working tree, not a fresh checkout. docs-data.yml died exactly this way —
+    # its `git push` triggered pre-push, whose affected-scoped build produced
+    # dist for one package, and the chained `oxlint:shims:verify` then failed on
+    # the 9 packages it could not see (run 31341768906).
+    #
+    # Set once here rather than per-step in each workflow: CI has no use for git
+    # hooks in any job.
+    - name: Disable lefthook git hooks for this job
+      shell: bash
+      run: echo "LEFTHOOK=0" >> "$GITHUB_ENV"
+
+    # No `cache: npm` here. ~/.npm is read by `npm ci` and nothing else, and
+    # `npm ci` is skipped whenever the node_modules cache hits — which is the
+    # common case, since its key is the lockfile hash. Every job was therefore
+    # paying a cache lookup + download + post-job save check for an archive it
+    # never opened. Proven in the logs: the "Install dependencies" step starts
+    # and ends in the same millisecond on a hit.
+    #
+    # The miss path stays fast: the ~/.npm restore below is conditional on the
+    # node_modules cache having missed, so a lockfile change still gets a warm
+    # registry cache instead of a cold network install.
+    - name: Setup Node (from .nvmrc)
+      if: inputs.node-version == ''
+      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+      with:
+        node-version-file: .nvmrc
+        # Explicit false. Omitting `cache` does NOT disable this: setup-node
+        # v6 defaults `package-manager-cache: true` and auto-detects npm from
+        # package.json#packageManager, so ~/.npm was still being restored on
+        # every job — verified in the run logs ("Auto caching...", "Cache hit
+        # for: node-cache-Linux-x64-npm-..."). The restore below replaces it,
+        # gated on actually needing it.
+        package-manager-cache: false
+
+    - name: Setup Node (override)
+      if: inputs.node-version != ''
+      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+      with:
+        node-version: ${{ inputs.node-version }}
+        package-manager-cache: false
+
+    - name: Restore node_modules cache (full)
+      if: inputs.install == 'true' && inputs.deps != 'lean'
+      id: node-modules-cache-full
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+      with:
+        path: |
+          node_modules
+          packages/*/node_modules
+          apps/*/node_modules
+          tools/*/node_modules
+          benchmarks/node_modules
+          # Recursive, and after the positive paths: workspace node_modules are
+          # cached too, so root-relative exclusions missed theirs.
+          # `/**` matters: @actions/glob matches FILES, so `!dir` excludes only
+          # the directory entry and keeps everything inside it. Without the
+          # suffix these two exclusions did nothing.
+          !**/node_modules/.vite/**
+          !**/node_modules/.vite-temp/**
+        key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+    # Same tree minus the web dependency closure. A SEPARATE KEY, not a
+    # variant of the one above — sharing a key would let whichever job saved
+    # first decide what every other job restores, and a lean save would then
+    # silently strip Next.js out from under the docs build.
+    #
+    # The exclusions are the ones measured as both large and web-only. The
+    # list is deliberately short: it is a deny-list over a hoisted tree, so
+    # each entry is a claim that nothing in the node lane resolves that module,
+    # and a wrong claim costs a MODULE_NOT_FOUND. `date-fns` is the standing
+    # counter-example — root-declared and web-looking, but imported by
+    # eslint-plugin-import-next, -modularity, -secure-coding and
+    # cwe-analytics-engine, so it stays.
+    # Same paths as the full archive; only the KEY differs. The lean tree is
+    # produced by the trim step at the end of the node-lane job (see
+    # .github/lean-node-modules.txt), not by path exclusions — when a positive
+    # pattern matches a directory, actions/cache tars it whole and negations
+    # never apply. Measured three times before that was believed.
+    #
+    # A SEPARATE KEY, not a variant of the full one: sharing a key would let
+    # whichever job saved first decide what every other job restores, and a
+    # lean save would silently strip Next.js out from under the docs build.
+    #
+    # `-v4-` is a manual cache-buster, bumped whenever the trim list changes.
+    # The key is otherwise a function of the lockfile alone, so an edited list
+    # would keep restoring the archive built under the old one.
+    - name: Restore node_modules cache (lean — web tree trimmed)
+      if: inputs.install == 'true' && inputs.deps == 'lean'
+      id: node-modules-cache-lean
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+      with:
+        path: |
+          node_modules
+          packages/*/node_modules
+          tools/*/node_modules
+          benchmarks/node_modules
+          !**/node_modules/.vite/**
+          !**/node_modules/.vite-temp/**
+        key: node-modules-lean-v4-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+    # Only on a node_modules miss — see the setup-node note above.
+    # `npm config get cache` rather than a hardcoded ~/.npm — an .npmrc or a
+    # non-Linux runner can move it.
+    #
+    # Both cache steps are named because only one of them runs: the other is
+    # skipped and reports an empty `cache-hit`, which is correctly "not a hit".
+    # The npm registry cache was removed on 2026-09-02. It only ever restored on
+    # the path where the node_modules cache had already missed — a lockfile
+    # change — and it held 2.36 GB across four entries.
+    #
+    # Actions cache is capped at 10 GB PER REPOSITORY on every plan, and this
+    # repo measured 9.73 GB across 685 entries: 97% full, so GitHub was evicting
+    # LRU on every write. Under eviction a cache is not free storage, it is a
+    # bidder against every other cache. 2.36 GB held for the rare path was
+    # outbidding node_modules (3.74 GB) and Next.js (2.68 GB) on the common one.
+    #
+    # `npm ci` still runs on that path; it fetches from the registry instead.
+
+    - name: Install dependencies
+      if: inputs.install == 'true' && steps.node-modules-cache-full.outputs.cache-hit != 'true' && steps.node-modules-cache-lean.outputs.cache-hit != 'true'
+      shell: bash
+      run: npm ci --prefer-offline --no-audit --fund=false
+
+    # Turbo cache — restore-only on branches, restore+save on main.
+    #
+    # The repo shares a hard 10 GB Actions cache quota. The previous key
+    # (`turbo-<os>-<job>-<sha>`) minted a fresh multi-hundred-MB entry per job
+    # per commit and split one logical cache into five per-job lineages that
+    # never reused each other's work. That put the repo at 11.7 GB / 10 GB, so
+    # GitHub was LRU-evicting the 431 MB node_modules entries and every job
+    # paid a cold `npm ci`.
+    #
+    # Lineage is per `turbo-cache-scope`, and that matters more than it looks.
+    # With a single shared key, every job on main raced to save it: GitHub's
+    # cache reserves a key atomically, so the first writer won and the rest were
+    # discarded. Only one job's outputs were ever banked per commit, which is
+    # why a restored cache still produced `Cached: 0 cached, 8 total` — the
+    # entry held the Build job's artifacts, not the test shards'.
+    #
+    # Scoped keys give each shard its own lineage. Because bucketing is
+    # deterministic, shard N always handles the same packages, so its cache is
+    # exactly the set it needs. The lineages are disjoint, not duplicated: total
+    # size stays ~one full cache split N ways, so this does not eat the 10 GB
+    # quota. PRs restore read-only and save nothing, so extra shards cost zero
+    # quota there.
+    #
+    # The `-build-` fallback is load-bearing. `test`/`test:coverage` dependsOn
+    # `build`, so a shard has to materialize its packages' whole dependency
+    # chain. Its own lineage only holds its own outputs, so without a fallback
+    # into the Build job's lineage every shard cold-builds the graph
+    # independently — ten shards, ten copies of eslint-devkit and friends,
+    # which looks exactly like "the sharding does nothing". Build's lineage
+    # holds dist for every package, so falling back to it lets a shard replay
+    # dependencies instead of rebuilding them. Order matters: own scope first
+    # (most specific), then build, then the legacy `shared` name.
+    # Turborepo REMOTE cache, backed by GitHub Actions' cache service.
+    #
+    # The tarball cache below restores one ~65 MB blob keyed on a commit SHA and
+    # written only by main. A PR falls back by prefix to whatever main SHA last
+    # saved, and every task hash that moved since then misses — measured on run
+    # 33324089803: "Cache restored from key: turbo-Linux-shared-554be80a..."
+    # followed by 32 of 32 "cache miss, executing". 159s of build to serve a 6s
+    # gate. The same tree with a warm cache builds in 7.2s (FULL TURBO).
+    #
+    # A remote-cache API is addressed by TASK HASH, so a PR reuses main's entry
+    # for every package it did not touch, and entries dedupe across branches
+    # instead of being re-tarballed into 14 lineages per push (the store was
+    # 36.89 GB / 210 entries against a 10 GB budget, i.e. permanently evicting).
+    #
+    # Vercel's hosted remote cache is free on every plan and would also work.
+    # This backend was chosen over it for two reasons that outlive the price:
+    # it needs no secret, so it keeps working on pull requests from forks (which
+    # never receive secrets), and it adds no external service to the critical
+    # path of CI correctness.
+    # Vercel's hosted cache is used when `TURBO_TOKEN` is present, and this
+    # backend when it is not. That keeps both original reasons intact: a fork PR
+    # receives no secrets, so it lands here and still caches, and an outage of
+    # the hosted cache is a fallback rather than a CI failure.
+    #
+    # What changed on 2026-09-02 is the constraint, not the reasoning. This
+    # backend stores turbo artifacts in the SAME 10 GB Actions allowance that
+    # node_modules, Next.js and Playwright compete for, and that allowance was
+    # 97% full. A cache that evicts its neighbours is not free. The hosted cache
+    # is off that budget entirely and, unlike Actions cache, is readable across
+    # branches — which is what a merge-queue run (all shards, synthetic branch)
+    # needs to hit anything at all.
+    #
+    # Exactly one of these runs. Both at once would leave the shim's local
+    # TURBO_API pointing at localhost while credentials say Vercel.
+    - name: Turborepo remote cache (GitHub Actions backend — no token)
+      if: inputs.turbo-remote-cache == 'true' && env.TURBO_TOKEN == ''
+      uses: rharkor/caching-for-turbo@2238fae6eb9a9936f92356f54cb3660200d105e7 # v2.5.1
+
+    - name: Turborepo remote cache (Vercel — token present)
+      if: inputs.turbo-remote-cache == 'true' && env.TURBO_TOKEN != ''
+      shell: bash
+      run: echo "Remote cache = Vercel (TURBO_TEAM=${TURBO_TEAM:-unset})"
+
+    - name: Restore Turbo cache (branches — read-only)
+      if: inputs.turbo-cache == 'true' && github.ref != 'refs/heads/main'
+      uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+      with:
+        path: .turbo/cache
+        key: turbo-${{ runner.os }}-${{ inputs.turbo-cache-scope }}-${{ github.sha }}
+        restore-keys: |
+          turbo-${{ runner.os }}-${{ inputs.turbo-cache-scope }}-
+          turbo-${{ runner.os }}-build-
+          turbo-${{ runner.os }}-shared-
+
+    - name: Turbo cache (main — restore + save)
+      if: inputs.turbo-cache == 'true' && github.ref == 'refs/heads/main'
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+      with:
+        path: .turbo/cache
+        key: turbo-${{ runner.os }}-${{ inputs.turbo-cache-scope }}-${{ github.sha }}
+        restore-keys: |
+          turbo-${{ runner.os }}-${{ inputs.turbo-cache-scope }}-
+          turbo-${{ runner.os }}-build-
+          turbo-${{ runner.os }}-shared-
+
+    # Turborepo never evicts its own local cache — it is append-only, so a
+    # restored dir grows monotonically across runs (observed locally: 39 GB /
+    # 48,938 entries; in CI the `build` lineage grew 341 MB -> 1224 MB).
+    # Prune after the restore and before any turbo task runs, so the post-job
+    # save captures the pruned tree. Entries older than the window that are
+    # still valid simply rebuild once and get re-saved.
+    #
+    # main-only, and that condition is load-bearing: branch jobs restore
+    # read-only, so a prune there would delete entries nothing re-saves —
+    # turbo would rebuild those tasks and discard the result, making PR runs
+    # slower than doing nothing at all.
+    - name: Prune stale Turbo cache entries
+      if: inputs.turbo-cache == 'true' && github.ref == 'refs/heads/main'
+      shell: bash
+      run: |
+        set -euo pipefail
+        [ -d .turbo/cache ] || exit 0
+        before=$(du -sm .turbo/cache | cut -f1)
+        find .turbo/cache -type f -mtime +7 -delete 2>/dev/null || true
+        # -type f leaves the parent dirs behind; they'd be tarred into the
+        # saved artifact and counted against the 10 GB quota for nothing.
+        find .turbo/cache -mindepth 1 -type d -empty -delete 2>/dev/null || true
+        echo "Turbo cache pruned: ${before}MB -> $(du -sm .turbo/cache | cut -f1)MB"
+
+    - name: Restore Playwright browser cache
+      if: inputs.playwright-cache == 'true'
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+        restore-keys: |
+          playwright-${{ runner.os }}-
+
+    # `npm run typecheck` is one `tsgo --build tsconfig.solution.json` over the
+    # whole plugin graph. That runs *outside* Turbo, and the `typecheck` task
+    # declared `outputs: []`, so nothing preserved its incremental state and
+    # every CI run retypechecked all 21 projects from scratch — a measured 81s
+    # on PR #356, identical whether or not anything changed.
+    #
+    # `tsgo --build` is incremental: each composite project writes
+    # `<pkg>/.tsbuildinfo` (see tsBuildInfoFile in each tsconfig.lib.json) and
+    # skips projects whose inputs are unchanged. Persisting those files is what
+    # makes the incrementality real across runs.
+    #
+    # Keyed on the sources tsgo actually reads, so a source change invalidates
+    # it; the restore-key fallback still gives a partial graph to build on.
+    # There is deliberately NO TypeScript incremental cache here.
+    #
+    # There was one, and it cached `packages/*/.tsbuildinfo` WITHOUT
+    # `packages/*/dist` -- the dist half having been dropped because it is
+    # hundreds of MB and once pushed this repo's cache store to 36.89 GB against
+    # a 10 GB budget, where GitHub LRU-evicts entries and a perfectly good
+    # `restore-keys` prefix ends up with nothing to fall back to.
+    #
+    # Splitting them is incoherent. `tsgo --build` reads the buildinfo, concludes
+    # every project is up to date, and skips emitting -- so the `.d.ts` files
+    # downstream projects reference are never written. Reproduced exactly on
+    # 2026-09-01 by keeping the 31 buildinfo files and deleting dist:
+    #
+    #   TS2307: Cannot find module '@interlace/eslint-devkit' or its
+    #           corresponding type declarations
+    #   TS7006: Parameter 'context' implicitly has an 'any' type
+    #
+    # That surfaced as a type error in code nobody had touched, which is the
+    # expensive kind of wrong: it reads as a real defect in a real file.
+    # The step's own comment claimed "a stale buildinfo is safe by construction
+    # -- tsgo re-checks every project whose inputs no longer match". That is
+    # true of stale *inputs* and false of absent *outputs*.
+    #
+    # So: buildinfo and its outputs are one unit, and the unit is too big to
+    # cache. Cold `tsgo --build` over the whole graph is a measured 25s, paid in
+    # a job that runs in parallel with the rest of the gate. Correctness is not
+    # worth 25s. `scripts/__tests__/tsbuildinfo-cache-pairing-lock.test.ts`
+    # fails if either half is ever cached without the other.
+
+    - name: Restore Next.js build cache
+      if: inputs.next-cache == 'true'
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+      with:
+        path: apps/docs/.next/cache
+        key: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('apps/docs/**/*.[jt]s', 'apps/docs/**/*.[jt]sx', 'apps/docs/**/*.mdx', 'packages/ui/src/**') }}
+        restore-keys: |
+          nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+          nextjs-${{ runner.os }}-

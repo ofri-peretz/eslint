@@ -1,0 +1,27 @@
+{
+  "$schema-note": "Models tested by ilb-llm-fix v1.0. Each entry is invoked via the local `claude` CLI with --model <name>. Edit to add/remove models; doing so does NOT bump the methodology version.",
+  "version": "v1.0",
+  "models": [
+    {
+      "id": "haiku",
+      "fullName": "claude-haiku-4-5",
+      "tier": "fast",
+      "approxCostPerMTokensInput": 0.8,
+      "approxCostPerMTokensOutput": 4.0
+    },
+    {
+      "id": "sonnet",
+      "fullName": "claude-sonnet-4-6",
+      "tier": "balanced",
+      "approxCostPerMTokensInput": 3.0,
+      "approxCostPerMTokensOutput": 15.0
+    },
+    {
+      "id": "opus",
+      "fullName": "claude-opus-4-7",
+      "tier": "frontier",
+      "approxCostPerMTokensInput": 15.0,
+      "approxCostPerMTokensOutput": 75.0
+    }
+  ]
+}

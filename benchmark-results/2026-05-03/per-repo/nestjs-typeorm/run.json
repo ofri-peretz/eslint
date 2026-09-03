@@ -1,0 +1,38 @@
+{
+  "repo": "nestjs-typeorm",
+  "meta": {
+    "stars": 1700,
+    "commit": "master",
+    "category": "NestJS Module",
+    "plugins": [
+      "nestjs-security",
+      "node-security",
+      "secure-coding",
+      "pg"
+    ],
+    "fpEdge": false,
+    "srcGlob": "lib/**/*.ts"
+  },
+  "fileCount": 16,
+  "loc": 803,
+  "timing": {
+    "runsMs": [
+      1363
+    ],
+    "medianMs": 1363,
+    "meanMs": 1363,
+    "stddevMs": 0,
+    "cv": 0,
+    "msPerFile": 85.19
+  },
+  "peakRssMb": 206,
+  "findings": {
+    "total": 0,
+    "errors": 0,
+    "warnings": 0,
+    "filesWithFindings": 0,
+    "densityPerKloc": 0,
+    "externalDirectives": 0,
+    "parseErrors": 12
+  }
+}

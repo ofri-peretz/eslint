@@ -1,0 +1,68 @@
+name: Per-Rule p95 Budget Gate
+
+# Compares the latest committed `benchmarks/results/ilb-flagship/<date>.json`
+# against the per-rule p50/p95 budgets in
+# `benchmarks/budgets/per-rule-p95.json`. Fails CI if any rule exceeds the
+# budget by more than the policy's `tolerance_pct`, or if any rule crosses
+# the hard ceiling.
+#
+# Triggers on PR-touch of:
+#   - the budget file (someone raising a budget needs justification),
+#   - a new flagship result (the measurement that drives the gate),
+#   - the gate script itself.
+#
+# Closes the §3 "Per-rule p95 budget enforcement" top-priority gate in
+# `distribution/EVALUATION_METRICS.md`.
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - 'benchmarks/budgets/per-rule-p95.json'
+      - 'benchmarks/results/ilb-flagship/**'
+      - 'scripts/check-per-rule-budget.ts'
+      - '.github/workflows/per-rule-budget.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: per-rule-budget-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  check:
+    name: Per-rule p50/p95 budget check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Composite setup: node from .nvmrc + node_modules cache + npm ci on
+      # miss. Saves ~60s per PR push when the cache hits. turbo/playwright/
+      # next aren't needed — this is a tsx-only check.
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: "false"
+
+      - name: Check per-rule budget against latest flagship result
+        run: npm run check:per-rule-budget
+
+      # The check script always writes the .md before exiting (pass or
+      # fail), so the sticky comment reflects the same state the gate did.
+      - name: Post audit report as sticky PR comment
+        if: always()
+        uses: ./.github/actions/post-audit-comment
+        with:
+          report-path: benchmark-results/per-rule-budget-check.md
+
+      - name: Upload budget report on failure
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: per-rule-budget-check
+          path: benchmark-results/per-rule-budget-check.md
+          retention-days: 14

@@ -1,0 +1,256 @@
+---
+title: no-timing-unsafe-compare
+description: "Disallow timing-unsafe comparison of secrets"
+tags: ['security', 'timing-attack', 'cwe-208', 'nodejs']
+category: security
+severity: high
+cwe: CWE-208
+owasp: "A02:2021"
+autofix: false
+type_aware: false
+type_aware_status: unaware
+---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+Detects timing-unsafe comparison of secrets using `===` or `==` operators. This rule is part of [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security) and provides LLM-optimized error messages with fix suggestions.
+
+**🚨 Security rule** | **💡 Provides suggestions** | **⚠️ Set to error in `recommended`**
+
+## Quick Summary
+
+| Aspect            | Details                                                                    |
+| ----------------- | -------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-208](https://cwe.mitre.org/data/definitions/208.html) (Timing Attack) |
+| **Severity**      | High (security vulnerability)                                              |
+| **Auto-Fix**      | 💡 Suggests crypto.timingSafeEqual()                                       |
+| **Category**      | Security                                                                   |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                    |
+| **Best For**      | Node.js applications comparing tokens, secrets, or signatures              |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Using `===` to compare secrets enables timing attacks. The comparison short-circuits on the first mismatched character, so the time taken reveals information about how many characters matched.
+
+**Risk:** An attacker can measure comparison times to guess secret values character-by-character. For example, comparing API keys or HMAC signatures with `===` allows attackers to brute-force the correct value.
+
+## Rule Details
+
+This rule detects `===`, `==`, `!==`, and `!=` comparisons where at least one operand has a name suggesting it's a secret (token, password, key, secret, hash, signature, etc.).
+
+## Why This Matters
+
+| Risk                      | Impact                               | Solution                     |
+| ------------------------- | ------------------------------------ | ---------------------------- |
+| ⏱️ **Timing Leak**        | Comparison time reveals match length | Use crypto.timingSafeEqual() |
+| 🔑 **Secret Brute Force** | Attack one character at a time       | Constant-time comparison     |
+| 🔒 **Token Bypass**       | Forge tokens by timing analysis      | Never use === for secrets    |
+
+## Configuration
+
+| Option           | Type       | Default                           | Description                        |
+| ---------------- | ---------- | --------------------------------- | ---------------------------------- |
+| `secretPatterns` | `string[]` | `['token', 'secret', 'key', ...]` | Variable name patterns for secrets |
+
+```javascript
+{
+  rules: {
+    'node-security/no-timing-unsafe-compare': ['error', {
+      secretPatterns: [
+        'token', 'secret', 'key', 'password', 'hash', 'signature',
+        'mac', 'hmac', 'digest', 'apiKey', 'api_key', 'auth',
+        'credential', 'bearer', 'jwt', 'csrf', 'nonce'
+      ]
+    }]
+  }
+}
+```
+
+## Examples
+
+### ❌ Incorrect
+
+```typescript
+// Timing-unsafe comparison of API key - HIGH risk
+function validateApiKey(userKey: string, storedKey: string) {
+  return userKey === storedKey; // ❌ Leaks timing information
+}
+
+// Comparing tokens with ===
+if (submittedToken === validToken) {
+  // ❌ Vulnerable
+  grantAccess();
+}
+
+// HMAC verification with ===
+const expectedHash = crypto.createHmac('sha256', secret).update(data).digest();
+if (receivedHash === expectedHash) {
+  // ❌ Timing attack possible
+  processData();
+}
+```
+
+### ✅ Correct
+
+```typescript
+import crypto from 'crypto';
+
+// Constant-time comparison
+function validateApiKey(userKey: string, storedKey: string) {
+  const userBuffer = Buffer.from(userKey);
+  const storedBuffer = Buffer.from(storedKey);
+
+  // Lengths must match for timingSafeEqual
+  if (userBuffer.length !== storedBuffer.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(userBuffer, storedBuffer); // ✅ Safe
+}
+
+// HMAC verification (constant-time)
+function verifyHmac(data: Buffer, receivedHmac: Buffer, secret: Buffer) {
+  const expectedHmac = crypto
+    .createHmac('sha256', secret)
+    .update(data)
+    .digest();
+
+  if (receivedHmac.length !== expectedHmac.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(receivedHmac, expectedHmac); // ✅ Safe
+}
+
+// JWT verification (use library)
+import jwt from 'jsonwebtoken';
+jwt.verify(token, secret); // ✅ Library handles timing-safe comparison
+```
+
+## How Timing Attacks Work
+
+```
+Secret:   "s3cr3t_k3y"
+Guess 1:  "aaaaaaaaaa" → Fast rejection (0 chars match)
+Guess 2:  "saaaaaaaaa" → Slightly slower (1 char matches)
+Guess 3:  "s3aaaaaaaa" → Even slower (2 chars match)
+...
+Guess N:  "s3cr3t_k3y" → Slowest (all chars match)
+```
+
+Each additional matching character adds measurable time, allowing attackers to discover secrets character-by-character.
+
+## Security Impact
+
+| Vulnerability      | CWE | OWASP    | CVSS       | Impact                 |
+| ------------------ | --- | -------- | ---------- | ---------------------- |
+| Timing Discrepancy | 208 | A02:2021 | 5.9 Medium | Secret value leak      |
+| Observable Timing  | 208 | A02:2021 | 5.3 Medium | Brute force enablement |
+
+## Migration Guide
+
+### Phase 1: Discovery
+
+```javascript
+{
+  rules: {
+    'node-security/no-timing-unsafe-compare': 'warn'
+  }
+}
+```
+
+### Phase 2: Replacement
+
+```javascript
+// Replace === with timingSafeEqual
+if (userToken === validToken)  // ❌ Before
+if (crypto.timingSafeEqual(Buffer.from(userToken), Buffer.from(validToken)))  // ✅ After
+```
+
+### Phase 3: Enforcement
+
+```javascript
+{
+  rules: {
+    'node-security/no-timing-unsafe-compare': 'error'
+  }
+}
+```
+
+## Related Rules
+
+- [`no-hardcoded-credentials`](../secure-coding/no-hardcoded-credentials.md) - Detect hardcoded secrets
+- [`no-weak-hash-algorithm`](./no-weak-hash-algorithm) - Detect weak hash algorithms
+
+<WhenNotToUse />
+
+<FalseNegativeCTA />
+
+## Known False Negatives
+
+### Non-Standard Variable Names
+
+**Why**: Only configured patterns are detected.
+
+```typescript
+// ❌ NOT DETECTED - unusual variable name
+if (userValue === dbValue) { ... }  // Actually comparing tokens
+```
+
+**Mitigation**: Add patterns to configuration or use consistent naming.
+
+### Indirect Comparisons
+
+**Why**: Cross-function data flow not tracked.
+
+```typescript
+// ❌ NOT DETECTED
+function compare(a, b) {
+  return a === b;
+}
+compare(userToken, validToken);
+```
+
+**Mitigation**: Search codebase for comparison patterns.
+
+## Further Reading
+
+- **[Node.js timingSafeEqual](https://nodejs.org/api/crypto.html#cryptotimingsafeequala-b)** - Official documentation
+- **[CWE-208: Observable Timing Discrepancy](https://cwe.mitre.org/data/definitions/208.html)** - Official CWE entry
+- **[Timing Attacks Explained](https://codahale.com/a-lesson-in-timing-attacks/)** - Classic article on timing attacks
+
+## ⚙️ Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `secretPatterns` | `string[]` | `["token","secret","password","hash","signature","mac","hmac","digest","apiKey","api_key","api-key","auth","credential","bearer","jwt","csrf","nonce","ssn","social_security","social-security","pii","private_key","private-key","privateKey","access_token","access-token","accessToken","refresh_token","refresh-token","refreshToken","session_id","session-id","sessionId","auth_token","auth-token","authToken","encryption_key","encryption-key","encryptionKey"]` | Variable name patterns that indicate secrets |
+| `untrustedSources` | `string[]` | `["req","request","ctx","event"]` | Identifier roots treated as attacker-controlled (default: req, request, ctx, event) |
+| `reportUnverifiedComparisons` | `boolean` | `false` | Report on a secret-looking name alone, without an attacker-controlled operand. Restores the pre-inversion behaviour. |
+| `nonSecretWords` | `string[]` | `["author","authors","authored","authoring","authorship","hashtag","hashtags"]` | Whole words that mean a secretPatterns match was a collision (default: author, authors, authored, authoring, authorship, hashtag, hashtags). Replaces the list. |
+| `nonSecretTails` | `string[]` | `["count","counts","limit","limits","usage","total","size","length","price","cost","quota","address","addresses","index","rank","percent","path","paths","pathname","pathnames","endpoint","endpoints","route","routes","hostname","host","port","origin","kind","kinds","type","types","flag","flags","category"]` | Trailing words that make the value a measurement or location rather than a credential (default: count, counts, limit, limits, usage, total, size, length, price, cost, quota, address, addresses, index, rank, percent, path, paths, pathname, pathnames, endpoint, endpoints, route, routes, hostname, host, port, origin, kind, kinds, type, types, flag, flags, category). Replaces the list. |
+
+### Both halves of the vocabulary are yours
+
+`secretPatterns` says *this is a secret*; `nonSecretWords` and `nonSecretTails`
+say *…except when*. All three are substring-or-word matches on identifiers, so
+all three are tunable — a rule that lets you widen the positive list but not the
+exclusions makes the widening unusable.
+
+```jsonc
+{
+  "node-security/no-timing-unsafe-compare": ["error", {
+    // Re-admit a bare `key`, then exclude the senses this codebase uses.
+    "secretPatterns": ["token", "secret", "key", "signature"],
+    "nonSecretWords": ["author", "hashtag", "keyboard", "keyring"],
+    // `tokenChapter` is a position in a document, not a credential.
+    "nonSecretTails": ["count", "limit", "size", "length", "index", "chapter"]
+  }]
+}
+```
+
+`nonSecretWords` matches any word of the identifier; `nonSecretTails` matches
+only the last one. Setting either to `[]` removes that guard, which restores
+the collisions it exists to prevent (`authorId` matching `auth`, `tokenCount`
+matching `token`).

@@ -1,0 +1,40 @@
+# no-namespace
+
+💼 This rule is enabled in the following configs: `recommended`, `typescript`.
+💡 This rule is automatically fixable by the `--fix` CLI option.
+
+<!-- end auto-generated rule header -->
+
+Forbid namespace (a.k.a. "wildcard" *) imports
+
+## Rule Details
+
+This rule aims to prevent issues related to namespace.
+
+## Options
+
+```json
+[
+  {
+    "type": "object",
+    "properties": {
+      "ignore": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "additionalProperties": false
+  }
+]
+```
+
+## Implementation
+
+- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/no-namespace.ts)
+- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/no-namespace.test.ts)
+
+## OWASP Foundation
+
+- **Category**: A00:2021 - General Security

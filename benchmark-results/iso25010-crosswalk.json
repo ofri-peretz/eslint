@@ -1,0 +1,325 @@
+{
+  "generatedAt": "2026-08-30T20:43:06.389Z",
+  "summary": {
+    "qualityRules": 60,
+    "mapped": 3,
+    "coveragePct": 5
+  },
+  "rules": [
+    {
+      "ruleId": "conventions/conventions/analytics-event-naming",
+      "plugin": "conventions",
+      "mappings": []
+    },
+    {
+      "ruleId": "conventions/conventions/consistent-existence-index-check",
+      "plugin": "conventions",
+      "mappings": []
+    },
+    {
+      "ruleId": "conventions/conventions/expiring-todo-comments",
+      "plugin": "conventions",
+      "mappings": []
+    },
+    {
+      "ruleId": "conventions/conventions/filename-case",
+      "plugin": "conventions",
+      "mappings": []
+    },
+    {
+      "ruleId": "conventions/conventions/no-commented-code",
+      "plugin": "conventions",
+      "mappings": []
+    },
+    {
+      "ruleId": "conventions/conventions/no-console-spaces",
+      "plugin": "conventions",
+      "mappings": []
+    },
+    {
+      "ruleId": "conventions/conventions/no-json-schema-tags.test",
+      "plugin": "conventions",
+      "mappings": []
+    },
+    {
+      "ruleId": "conventions/conventions/no-json-schema-tags",
+      "plugin": "conventions",
+      "mappings": []
+    },
+    {
+      "ruleId": "conventions/conventions/no-magic-numbers",
+      "plugin": "conventions",
+      "mappings": []
+    },
+    {
+      "ruleId": "conventions/conventions/no-raw-cross-property-href",
+      "plugin": "conventions",
+      "mappings": []
+    },
+    {
+      "ruleId": "conventions/conventions/prefer-code-point",
+      "plugin": "conventions",
+      "mappings": []
+    },
+    {
+      "ruleId": "conventions/conventions/prefer-dependency-version-strategy",
+      "plugin": "conventions",
+      "mappings": []
+    },
+    {
+      "ruleId": "conventions/conventions/prefer-dom-node-text-content.binding.test",
+      "plugin": "conventions",
+      "mappings": []
+    },
+    {
+      "ruleId": "conventions/conventions/prefer-dom-node-text-content",
+      "plugin": "conventions",
+      "mappings": []
+    },
+    {
+      "ruleId": "conventions/conventions/require-data-testid",
+      "plugin": "conventions",
+      "mappings": []
+    },
+    {
+      "ruleId": "conventions/conventions/utm-taxonomy",
+      "plugin": "conventions",
+      "mappings": []
+    },
+    {
+      "ruleId": "conventions/deprecation/no-deprecated-api",
+      "plugin": "conventions",
+      "mappings": []
+    },
+    {
+      "ruleId": "maintainability/error-handling/error-message",
+      "plugin": "maintainability",
+      "mappings": []
+    },
+    {
+      "ruleId": "maintainability/error-handling/no-missing-error-context",
+      "plugin": "maintainability",
+      "mappings": []
+    },
+    {
+      "ruleId": "maintainability/error-handling/no-silent-errors",
+      "plugin": "maintainability",
+      "mappings": []
+    },
+    {
+      "ruleId": "maintainability/error-handling/no-unhandled-promise",
+      "plugin": "maintainability",
+      "mappings": []
+    },
+    {
+      "ruleId": "maintainability/maintainability/cognitive-complexity",
+      "plugin": "maintainability",
+      "mappings": []
+    },
+    {
+      "ruleId": "maintainability/maintainability/consistent-function-scoping",
+      "plugin": "maintainability",
+      "mappings": []
+    },
+    {
+      "ruleId": "maintainability/maintainability/identical-functions",
+      "plugin": "maintainability",
+      "mappings": []
+    },
+    {
+      "ruleId": "maintainability/maintainability/max-parameters.this-param.test",
+      "plugin": "maintainability",
+      "mappings": []
+    },
+    {
+      "ruleId": "maintainability/maintainability/max-parameters",
+      "plugin": "maintainability",
+      "mappings": []
+    },
+    {
+      "ruleId": "maintainability/maintainability/nested-complexity-hotspots",
+      "plugin": "maintainability",
+      "mappings": []
+    },
+    {
+      "ruleId": "maintainability/maintainability/no-lonely-if",
+      "plugin": "maintainability",
+      "mappings": []
+    },
+    {
+      "ruleId": "maintainability/maintainability/no-nested-ternary",
+      "plugin": "maintainability",
+      "mappings": []
+    },
+    {
+      "ruleId": "maintainability/maintainability/no-unreadable-iife",
+      "plugin": "maintainability",
+      "mappings": []
+    },
+    {
+      "ruleId": "modernization/no-instanceof-array",
+      "plugin": "modernization",
+      "mappings": []
+    },
+    {
+      "ruleId": "modernization/prefer-at",
+      "plugin": "modernization",
+      "mappings": []
+    },
+    {
+      "ruleId": "modernization/prefer-at.write-positions.test",
+      "plugin": "modernization",
+      "mappings": []
+    },
+    {
+      "ruleId": "modernization/prefer-event-target.no-autofix.test",
+      "plugin": "modernization",
+      "mappings": []
+    },
+    {
+      "ruleId": "modernization/prefer-event-target",
+      "plugin": "modernization",
+      "mappings": []
+    },
+    {
+      "ruleId": "modernization/prefer-template-literal",
+      "plugin": "modernization",
+      "mappings": [
+        {
+          "characteristic": "Maintainability",
+          "subCharacteristic": "Modifiability"
+        }
+      ]
+    },
+    {
+      "ruleId": "modularity/ddd-anemic-domain-model.dto-suffix.test",
+      "plugin": "modularity",
+      "mappings": []
+    },
+    {
+      "ruleId": "modularity/ddd-anemic-domain-model",
+      "plugin": "modularity",
+      "mappings": []
+    },
+    {
+      "ruleId": "modularity/ddd-value-object-immutability.census.test",
+      "plugin": "modularity",
+      "mappings": []
+    },
+    {
+      "ruleId": "modularity/ddd-value-object-immutability",
+      "plugin": "modularity",
+      "mappings": []
+    },
+    {
+      "ruleId": "modularity/enforce-naming",
+      "plugin": "modularity",
+      "mappings": []
+    },
+    {
+      "ruleId": "modularity/enforce-rest-conventions",
+      "plugin": "modularity",
+      "mappings": []
+    },
+    {
+      "ruleId": "modularity/no-external-api-calls-in-utils",
+      "plugin": "modularity",
+      "mappings": []
+    },
+    {
+      "ruleId": "modularity/no-mutable-exports",
+      "plugin": "modularity",
+      "mappings": []
+    },
+    {
+      "ruleId": "operability/operability/no-console-log",
+      "plugin": "operability",
+      "mappings": []
+    },
+    {
+      "ruleId": "operability/operability/no-debug-code-in-production",
+      "plugin": "operability",
+      "mappings": []
+    },
+    {
+      "ruleId": "operability/operability/no-process-exit",
+      "plugin": "operability",
+      "mappings": [
+        {
+          "characteristic": "Reliability",
+          "subCharacteristic": "Availability"
+        }
+      ]
+    },
+    {
+      "ruleId": "operability/operability/no-verbose-error-messages",
+      "plugin": "operability",
+      "mappings": []
+    },
+    {
+      "ruleId": "operability/operability/require-code-minification",
+      "plugin": "operability",
+      "mappings": []
+    },
+    {
+      "ruleId": "operability/operability/require-data-minimization",
+      "plugin": "operability",
+      "mappings": []
+    },
+    {
+      "ruleId": "reliability/error-handling/error-message",
+      "plugin": "reliability",
+      "mappings": []
+    },
+    {
+      "ruleId": "reliability/error-handling/no-missing-error-context",
+      "plugin": "reliability",
+      "mappings": []
+    },
+    {
+      "ruleId": "reliability/error-handling/no-silent-errors",
+      "plugin": "reliability",
+      "mappings": []
+    },
+    {
+      "ruleId": "reliability/error-handling/no-unhandled-promise",
+      "plugin": "reliability",
+      "mappings": [
+        {
+          "characteristic": "Reliability",
+          "subCharacteristic": "Faultlessness"
+        }
+      ]
+    },
+    {
+      "ruleId": "reliability/reliability/no-await-in-loop",
+      "plugin": "reliability",
+      "mappings": []
+    },
+    {
+      "ruleId": "reliability/reliability/no-jsdoc-terminator-in-example.test",
+      "plugin": "reliability",
+      "mappings": []
+    },
+    {
+      "ruleId": "reliability/reliability/no-jsdoc-terminator-in-example",
+      "plugin": "reliability",
+      "mappings": []
+    },
+    {
+      "ruleId": "reliability/reliability/no-missing-null-checks",
+      "plugin": "reliability",
+      "mappings": []
+    },
+    {
+      "ruleId": "reliability/reliability/no-unsafe-type-narrowing",
+      "plugin": "reliability",
+      "mappings": []
+    },
+    {
+      "ruleId": "reliability/reliability/require-network-timeout",
+      "plugin": "reliability",
+      "mappings": []
+    }
+  ]
+}

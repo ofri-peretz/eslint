@@ -1,0 +1,483 @@
+/**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
+ * Enhanced ESLint rule: no-console-log
+ * Disallows console.log with configurable strategies and LLM-optimized output
+ */
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
+import { createRule } from '@interlace/eslint-devkit';
+import { normalizePath, getRelativePath } from '@interlace/eslint-devkit';
+
+/*
+ * `console['log']('x')` writes to the same stream `console.log` does. The
+ * visitor bailed when the property was not an Identifier, so 30 of this rule's
+ * own true positives went silent when written with a string subscript — the
+ * notation a bundler emits.
+ */
+import { isNonProductionPath } from '../../lib/non-production-paths';
+
+/**
+ * Strategy for handling console.log
+ * @enum {string}
+ * @description The strategy to use when handling console.log
+ * @example
+ * - 'remove': Remove the console.log statement
+ * - 'convert': Convert the console.log statement to a logger method
+ */
+type Strategy = 'remove' | 'convert' | 'comment' | 'warn';
+
+/**
+ * Message IDs for the rule
+ * @enum {string}
+ * @description The message IDs for the rule
+ * @example
+ * - 'consoleLogFound': The message ID for the console.log statement found
+ * - 'strategyRemove': The message ID for the strategy to remove the console.log statement
+ * - 'strategyConvert': The message ID for the strategy to convert the console.log statement to a logger method
+ */
+type MessageIds =
+  | 'consoleLogFound'
+  | 'strategyRemove'
+  | 'strategyConvert'
+  | 'strategyComment'
+  | 'strategyWarn';
+
+interface SeverityMapping {
+  [consoleMethod: string]: string; // e.g., { "log": "info", "debug": "verbose", "error": "error" }
+}
+
+// Default severity map: only flags console.log by default for minimal disruption
+// Can be extended via severityMap option to include other console methods
+const DEFAULT_SEVERITY_MAP: SeverityMapping = {
+  log: 'debug',
+};
+
+export interface Options {
+  /** How to handle console.log: 'remove', 'convert', 'comment', or 'warn' */
+  strategy?: Strategy;
+
+  /** File path patterns to ignore */
+  ignorePaths?: string[];
+
+  /**
+   * Also skip directories that never ship — `scripts/`, `bin/`, `tools/`,
+   * `env/`, `benchmarks/`, examples and demos — plus top-level build config
+   * (`*.config.js`, `Gruntfile`). Default: true.
+   *
+   * A `console.log` in a build script is a deliberate build-time message, not
+   * debug output left in an application. Off by default this rule reported 107
+   * findings on the pinned corpus, largely the same lines
+   * `no-debug-code-in-production` was reporting under a different name.
+   */
+  ignoreNonProductionPaths?: boolean;
+
+  /** Name of the logger to use (e.g., 'logger', 'winston'). Default: 'logger' */
+  loggerName?: string;
+
+  /** Maximum occurrences to report: number (e.g., 5), 'all' (report all instances), or undefined (no limit). Default: undefined */
+  maxOccurrences?: number | 'all';
+
+  /** Map console methods to logger methods */
+  severityMap?: SeverityMapping;
+
+  /** Auto-detect logger import in file. Default: true */
+  autoDetectLogger?: boolean;
+
+  /** Object names to match (e.g., ['console', 'winston', 'oldLogger']). Default: ['console'] */
+  sourcePatterns?: string[];
+}
+
+type RuleOptions = [Options?];
+
+export const noConsoleLog = createRule<RuleOptions, MessageIds>({
+  name: 'no-console-log',
+  meta: {
+    type: 'problem',
+    docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-operability/docs/rules/no-console-log.md',
+      description:
+        'Disallow console.log with configurable remediation strategies',
+      cwe: 'CWE-532',
+      cvss: 5,
+    },
+    fixable: 'code',
+    hasSuggestions: false,
+    messages: {
+      // 🎯 Token optimization: 43% reduction (51→29 tokens) - compact format for logger context
+      consoleLogFound: formatLLMMessage({
+        icon: MessageIcons.WARNING,
+        issueName: 'console.log in production',
+        cwe: 'CWE-532',
+        description: 'console.log found in production code',
+        severity: 'MEDIUM',
+        fix: 'Use logger.debug() or remove statement',
+        documentationLink: 'https://owasp.org/www-project-log-review-guide/',
+      }),
+      strategyRemove: formatLLMMessage({
+        icon: MessageIcons.STRATEGY,
+        issueName: 'Remove Strategy',
+        description: 'Remove console.log statement',
+        severity: 'LOW',
+        fix: 'Delete the console.log statement',
+        documentationLink: 'https://owasp.org/www-project-log-review-guide/',
+      }),
+      strategyConvert: formatLLMMessage({
+        icon: MessageIcons.STRATEGY,
+        issueName: 'Convert Strategy',
+        description: 'Convert to logger method',
+        severity: 'LOW',
+        fix: 'logger.debug() or logger.info()',
+        documentationLink: 'https://github.com/winstonjs/winston',
+      }),
+      strategyComment: formatLLMMessage({
+        icon: MessageIcons.STRATEGY,
+        issueName: 'Comment Strategy',
+        description: 'Comment out console.log',
+        severity: 'LOW',
+        fix: '// console.log(...)',
+        documentationLink: 'https://owasp.org/www-project-log-review-guide/',
+      }),
+      strategyWarn: formatLLMMessage({
+        icon: MessageIcons.STRATEGY,
+        issueName: 'Warn Strategy',
+        description: 'Replace with console.warn()',
+        severity: 'LOW',
+        fix: 'console.warn()',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/API/console/warn',
+      }),
+    },
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          strategy: {
+            type: 'string',
+            enum: ['remove', 'convert', 'comment', 'warn'],
+            default: 'remove',
+            description: 'Strategy for handling console.log',
+          },
+          ignoreNonProductionPaths: { type: 'boolean', default: true },
+          ignorePaths: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description: 'File path patterns to ignore',
+          },
+          loggerName: {
+            type: 'string',
+            default: 'logger',
+            description:
+              'Name of the logger to use for convert strategy (e.g., "logger", "winston")',
+          },
+          maxOccurrences: {
+            oneOf: [
+              {
+                type: 'number',
+                minimum: 1,
+                description: 'Maximum number of occurrences to report',
+              },
+              {
+                type: 'string',
+                enum: ['all'],
+                description: 'Report all violations',
+              },
+            ],
+            description:
+              'Maximum occurrences to report: number (e.g., 5), "all" (report all), or undefined (no limit)',
+          },
+          severityMap: {
+            type: 'object',
+            additionalProperties: { type: 'string' },
+            default: {
+              log: 'debug',
+            },
+            description:
+              'Advanced: Map console methods to logger methods, e.g., {"log": "info", "debug": "verbose"}',
+          },
+          autoDetectLogger: {
+            type: 'boolean',
+            default: true,
+            description: 'Auto-detect logger import in file',
+          },
+          sourcePatterns: {
+            type: 'array',
+            items: { type: 'string' },
+            default: ['console'],
+            description:
+              'Object names to match and replace (e.g., ["console", "winston", "oldLogger"]). Uses exact string matching for safety.',
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
+  },
+  defaultOptions: [
+    {
+      strategy: 'remove',
+      ignorePaths: [],
+      ignoreNonProductionPaths: true,
+      loggerName: 'logger',
+      severityMap: { log: 'log' }, // Only flag console.log by default
+      autoDetectLogger: true,
+      sourcePatterns: ['console'],
+    },
+  ],
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    const options = context.options[0] || {};
+    const {
+      strategy = 'remove',
+      ignorePaths = [],
+      ignoreNonProductionPaths = true,
+      loggerName,
+      maxOccurrences,
+      severityMap = {},
+      autoDetectLogger = true,
+      sourcePatterns = ['console'],
+    } = options;
+
+    /** Merge user's severityMap with defaults to determine method mappings */
+    const effectiveSeverityMap = { ...DEFAULT_SEVERITY_MAP, ...severityMap };
+
+    const filename = context.filename;
+    // oxlint-disable-next-line no-shadow
+    const sourceCode = context.sourceCode;
+    const occurrences: number[] = [];
+
+    /**
+     * Auto-detect logger in file by scanning imports.
+     * Uses strict pattern matching to avoid false positives (e.g., 'reactLogo').
+     */
+    let detectedLogger: string | null = null;
+
+    if (autoDetectLogger) {
+      const ast = sourceCode.ast;
+      const loggerPatterns = /^(logger|log|winston|bunyan|pino|console)$/i;
+
+      for (const statement of ast.body) {
+        if (statement.type === 'ImportDeclaration') {
+          for (const specifier of statement.specifiers) {
+            if (
+              specifier.type === 'ImportDefaultSpecifier' ||
+              specifier.type === 'ImportSpecifier'
+            ) {
+              const name = specifier.local.name;
+              if (loggerPatterns.test(name)) {
+                detectedLogger = name;
+                break;
+              }
+            }
+          }
+        }
+        // Look for require() calls
+        if (statement.type === 'VariableDeclaration') {
+          for (const declarator of statement.declarations) {
+            if (
+              declarator.init?.type === 'CallExpression' &&
+              declarator.init.callee.type === 'Identifier' &&
+              declarator.init.callee.name === 'require' &&
+              declarator.id.type === 'Identifier'
+            ) {
+              const name = declarator.id.name;
+              if (loggerPatterns.test(name)) {
+                detectedLogger = name;
+                break;
+              }
+            }
+          }
+        }
+        if (detectedLogger) break;
+      }
+    }
+
+    /**
+     * Determine the effective logger to use.
+     * Priority: explicit loggerName from config > auto-detected logger > default 'logger'
+     */
+    const effectiveLogger = loggerName || detectedLogger || 'logger';
+
+    /**
+     * Check if the current file should be ignored based on ignorePaths patterns.
+     * Supports exact matches, directory prefixes, and glob-like patterns.
+     */
+    const shouldIgnoreFile = (): boolean => {
+      if (ignoreNonProductionPaths && isNonProductionPath(filename)) return true;
+      if (ignorePaths.length === 0) return false;
+
+      const normalizedPath = normalizePath(filename);
+
+      return ignorePaths.some((pattern: string) => {
+        const normalizedPattern = pattern.replace(/\\/g, '/');
+
+        /** Exact match */
+        if (normalizedPath === normalizedPattern) return true;
+
+        /** Directory match */
+        if (normalizedPath.startsWith(normalizedPattern + '/')) return true;
+
+        /**
+         * Glob-like pattern support. Escape ALL regex metacharacters (the
+         * previous logic only escaped `.`, so `(`, `)`, `+`, `[`, `]`, `\`
+         * etc. were interpreted as regex syntax). CodeQL specifically flagged
+         * the unescaped backslash as `js/incomplete-sanitization`. The escape
+         * set MUST include `*` and `?` so the subsequent replaces can find
+         * the escaped tokens and translate them to glob equivalents — without
+         * that, raw `*` / `?` reach `new RegExp()` and the pattern matching
+         * is silently broken.
+         */
+        const escaped = normalizedPattern.replace(/[.+^${}()|[\]\\*?]/g, '\\$&');
+        const regexPattern = escaped
+          .replace(/\\\*/g, '.*')
+          .replace(/\\\?/g, '.');
+
+        return new RegExp(regexPattern).test(normalizedPath);
+      });
+    };
+
+    if (shouldIgnoreFile()) {
+      return {};
+    }
+
+    return {
+      /**
+       * CallExpression visitor that checks for member expressions matching source patterns.
+       * Handles calls like console.log(), winston.info(), oldLogger.debug(), etc.
+       */
+      CallExpression(node: TSESTree.CallExpression) {
+        if (
+          node.callee.type !== 'MemberExpression' ||
+          node.callee.object.type !== 'Identifier'
+        ) {
+          return;
+        }
+
+        const sourceObject = node.callee.object.name;
+        // A dynamic `console[m]()` names no method, so there is nothing to
+        // look up in the severity map.
+        const methodName = propertyName(node.callee);
+        if (methodName === null) {
+          return;
+        }
+
+        /** Check if this source object is in our patterns to match */
+        if (!sourcePatterns.includes(sourceObject)) {
+          return;
+        }
+
+        /** Only handle methods that are in the effectiveSeverityMap */
+        if (!effectiveSeverityMap[methodName]) {
+          return;
+        }
+
+        const line = node.loc?.start.line ?? 0;
+        occurrences.push(line);
+
+        // ✅ Calculate skip condition (don't return early)
+        // 'all' means report all instances
+        // undefined means no limit
+        // number > 0 means limit to that count
+        const shouldSkipReport =
+          maxOccurrences !== undefined &&
+          maxOccurrences !== 'all' &&
+          typeof maxOccurrences === 'number' &&
+          maxOccurrences > 0 &&
+          occurrences.length > maxOccurrences;
+
+        const relativePath = getRelativePath(process.cwd(), filename);
+
+        /**
+         * Determine the target logger method to use based on severityMap.
+         * The guard above already returned unless `effectiveSeverityMap[methodName]`
+         * is truthy, so no fallback is needed here.
+         *
+         * @example
+         * Default: console.log → logger.log, console.debug → logger.debug
+         *
+         * @example
+         * With severityMap: { log: 'info' } → console.log → logger.info, console.debug → logger.debug
+         */
+        const targetLoggerMethod = effectiveSeverityMap[methodName];
+
+        /**
+         * Generate fix based on the configured strategy.
+         * Handles remove, convert, comment, and warn strategies.
+         */
+        const fix = (fixer: TSESLint.RuleFixer) => {
+          const statement = findParentStatement(node);
+          if (!statement) return null;
+
+          switch (strategy) {
+            case 'remove':
+              return fixer.remove(statement);
+
+            case 'convert':
+              return fixer.replaceText(
+                node.callee,
+                `${effectiveLogger}.${targetLoggerMethod}`,
+              );
+
+            case 'comment': {
+              const text = sourceCode.getText(statement);
+              return fixer.replaceText(statement, `// ${text}`);
+            }
+
+            case 'warn':
+              return fixer.replaceText(node.callee, 'console.warn');
+
+            default:
+              return null;
+          }
+        };
+
+        /** Build conversion info for the error message */
+        let conversionInfo = '';
+        if (strategy === 'convert') {
+          conversionInfo = ` → ${effectiveLogger}.${targetLoggerMethod}()`;
+        }
+
+        // ✅ Only report if not exceeding limit
+        if (!shouldSkipReport) {
+          context.report({
+            node,
+            messageId: 'consoleLogFound',
+            data: {
+              consoleMethod: `${sourceObject}.${methodName}`,
+              filePath: relativePath,
+              line: String(line),
+              strategy,
+              conversionInfo,
+              logger: effectiveLogger,
+              method: targetLoggerMethod,
+            },
+            fix,
+          });
+        }
+      },
+    };
+  },
+});
+
+/**
+ * Find the parent statement node for proper removal
+ */
+function findParentStatement(node: TSESTree.Node): TSESTree.Statement | null {
+  let current: TSESTree.Node | undefined = node;
+
+  while (current) {
+    if (
+      current.type === 'ExpressionStatement' ||
+      current.type === 'ReturnStatement' ||
+      current.type === 'VariableDeclaration'
+    ) {
+      return current as TSESTree.Statement;
+    }
+    current = current.parent;
+  }
+
+  return null;
+}

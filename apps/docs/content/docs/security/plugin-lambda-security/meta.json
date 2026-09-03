@@ -1,0 +1,10 @@
+{
+    "title": "Plugin: lambda-security",
+    "icon": "Cloud",
+    "defaultOpen": false,
+    "pages": [
+        "index",
+        "changelog",
+        "rules"
+    ]
+}

@@ -1,0 +1,136 @@
+/**
+ * Comprehensive tests for no-cross-domain-imports rule
+ * Architecture: Prevents imports across domain/feature boundaries
+ */
+import { RuleTester } from '@typescript-eslint/rule-tester';
+import { describe, it, afterAll } from 'vitest';
+import parser from '@typescript-eslint/parser';
+import { noCrossDomainImports } from '../rules/no-cross-domain-imports';
+
+RuleTester.afterAll = afterAll;
+RuleTester.it = it;
+RuleTester.itOnly = it.only;
+RuleTester.describe = describe;
+
+const ruleTester = new RuleTester({
+  languageOptions: {
+    parser,
+    ecmaVersion: 2022,
+    sourceType: 'module',
+  },
+});
+
+describe('no-cross-domain-imports', () => {
+  describe('Valid Code', () => {
+    ruleTester.run(
+      'valid - same domain or shared modules',
+      noCrossDomainImports,
+      {
+        valid: [
+          {
+            name: 'a sibling import',
+            code: `
+            import { helper } from './helper';
+          `,
+            filename: 'domains/user/user-service.ts',
+          },
+          {
+            code: `
+            import { utils } from '../../shared/utils';
+          `,
+            filename: 'domains/user/user-service.ts',
+          },
+          {
+            code: `
+            import { lib } from 'external-lib';
+          `,
+            filename: 'domains/user/user-service.ts',
+          },
+          {
+            code: `
+            import { helper } from '../helper';
+          `,
+            filename: 'domains/user/user-service.ts',
+          },
+        ],
+        invalid: [],
+      },
+    );
+  });
+
+  describe('Invalid Code - Cross-Domain Imports', () => {
+    ruleTester.run('invalid - imports across domains', noCrossDomainImports, {
+      valid: [],
+      invalid: [
+        {
+          name: "an import that reaches into another domain's internals",
+          code: `
+            import { orderService } from '../../domains/order/order-service';
+          `,
+          filename: 'domains/user/user-service.ts',
+          errors: [{ messageId: 'crossDomainImport' }],
+        },
+        {
+          code: `
+            import { productHelper } from '../product/helper';
+          `,
+          filename: 'features/user/user-feature.ts',
+          errors: [{ messageId: 'crossDomainImport' }],
+        },
+      ],
+    });
+  });
+
+  describe('Options', () => {
+    ruleTester.run('options - custom domain patterns', noCrossDomainImports, {
+      valid: [
+        {
+          code: `
+            import { helper } from '../other/helper';
+          `,
+          filename: 'modules/user/user-module.ts',
+          options: [{ domainPatterns: ['modules'] }],
+        },
+        // Dynamic import with non-literal (should be skipped)
+        {
+            code: `import(someVar);`,
+            filename: 'domains/user/user-service.ts'
+        },
+        // Custom rules - Allowed
+        {
+            code: `import { shared } from '../../features/shared/utils';`,
+            filename: 'features/legacy/old.ts',
+            options: [{
+                customRules: [{
+                    from: 'features/legacy',
+                    to: ['features/shared'],
+                    allowed: ['utils']
+                }]
+            }]
+        }
+      ],
+      invalid: [
+        {
+          code: `
+            import { helper } from '../../modules/other/helper';
+          `,
+          filename: 'modules/user/user-module.ts',
+          options: [{ domainPatterns: ['modules'] }],
+          errors: [{ messageId: 'crossDomainImport' }],
+        },
+        // Custom rules - Restricted
+        {
+            code: `import { secret } from '../../features/internal/secret';`,
+            filename: 'features/legacy/old.ts',
+            options: [{
+                customRules: [{
+                    from: 'features/legacy',
+                    to: ['features/internal']
+                }]
+            }],
+            errors: [{ messageId: 'crossDomainImport' }]
+        }
+      ],
+    });
+  });
+});

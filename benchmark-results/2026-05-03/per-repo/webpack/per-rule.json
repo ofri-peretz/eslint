@@ -1,0 +1,377 @@
+{
+  "secure-coding/no-hardcoded-credentials": {
+    "hits": 265,
+    "avgTimeMs": 12.92,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-hardcoded-credentials",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/webpack.js",
+        "line": 206,
+        "column": 5,
+        "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.h"
+      },
+      {
+        "ruleId": "secure-coding/no-hardcoded-credentials",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/webpack.js",
+        "line": 260,
+        "column": 5,
+        "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.h"
+      },
+      {
+        "ruleId": "secure-coding/no-hardcoded-credentials",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/index.js",
+        "line": 274,
+        "column": 4,
+        "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.h"
+      },
+      {
+        "ruleId": "secure-coding/no-hardcoded-credentials",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/index.js",
+        "line": 281,
+        "column": 4,
+        "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.h"
+      },
+      {
+        "ruleId": "secure-coding/no-hardcoded-credentials",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/index.js",
+        "line": 467,
+        "column": 5,
+        "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.h"
+      }
+    ]
+  },
+  "secure-coding/no-insecure-comparison": {
+    "hits": 199,
+    "avgTimeMs": 13.54,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-insecure-comparison",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/validateSchema.js",
+        "line": 90,
+        "column": 8,
+        "message": "🔒 CWE-208 | Secret comparison with === can leak timing information | HIGH\n   Fix: Use crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b)) | https://nodejs.org/api/crypto.html#cryptotimingsafeequala-b"
+      },
+      {
+        "ruleId": "secure-coding/no-insecure-comparison",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/validateSchema.js",
+        "line": 101,
+        "column": 8,
+        "message": "🔒 CWE-208 | Secret comparison with === can leak timing information | HIGH\n   Fix: Use crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b)) | https://nodejs.org/api/crypto.html#cryptotimingsafeequala-b"
+      },
+      {
+        "ruleId": "secure-coding/no-insecure-comparison",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/validateSchema.js",
+        "line": 111,
+        "column": 9,
+        "message": "🔒 CWE-208 | Secret comparison with === can leak timing information | HIGH\n   Fix: Use crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b)) | https://nodejs.org/api/crypto.html#cryptotimingsafeequala-b"
+      }
+    ]
+  },
+  "secure-coding/detect-object-injection": {
+    "hits": 745,
+    "avgTimeMs": 22.45,
+    "samples": [
+      {
+        "ruleId": "secure-coding/detect-object-injection",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/validateSchema.js",
+        "line": 120,
+        "column": 8,
+        "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+      },
+      {
+        "ruleId": "secure-coding/detect-object-injection",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/validateSchema.js",
+        "line": 133,
+        "column": 8,
+        "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+      },
+      {
+        "ruleId": "secure-coding/detect-object-injection",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/index.js",
+        "line": 117,
+        "column": 22,
+        "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+      },
+      {
+        "ruleId": "secure-coding/detect-object-injection",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+        "line": 115,
+        "column": 18,
+        "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+      },
+      {
+        "ruleId": "secure-coding/detect-object-injection",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+        "line": 217,
+        "column": 3,
+        "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | HIGH [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+      }
+    ]
+  },
+  "secure-coding/no-graphql-injection": {
+    "hits": 34,
+    "avgTimeMs": 32.12,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-graphql-injection",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/validateSchema.js",
+        "line": 154,
+        "column": 9,
+        "message": "🔒 CWE-89 OWASP:A05-Injection CVSS:9.8 | GraphQL injection vulnerability detected | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use GraphQL variables or query builders instead of string concatenation | https://owasp.org/Top10/2025/A05_2025-I"
+      },
+      {
+        "ruleId": "secure-coding/no-graphql-injection",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/validateSchema.js",
+        "line": 154,
+        "column": 9,
+        "message": "🔒 CWE-89 OWASP:A05-Injection CVSS:9.8 | GraphQL injection vulnerability detected | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use GraphQL variables or query builders instead of string concatenation | https://owasp.org/Top10/2025/A05_2025-I"
+      },
+      {
+        "ruleId": "secure-coding/no-graphql-injection",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/validateSchema.js",
+        "line": 154,
+        "column": 9,
+        "message": "🔒 CWE-89 OWASP:A05-Injection CVSS:9.8 | GraphQL injection vulnerability detected | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use GraphQL variables or query builders instead of string concatenation | https://owasp.org/Top10/2025/A05_2025-I"
+      },
+      {
+        "ruleId": "secure-coding/no-graphql-injection",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/validateSchema.js",
+        "line": 154,
+        "column": 9,
+        "message": "🔒 CWE-89 OWASP:A05-Injection CVSS:9.8 | GraphQL injection vulnerability detected | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use GraphQL variables or query builders instead of string concatenation | https://owasp.org/Top10/2025/A05_2025-I"
+      },
+      {
+        "ruleId": "secure-coding/no-graphql-injection",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/validateSchema.js",
+        "line": 154,
+        "column": 9,
+        "message": "🔒 CWE-89 OWASP:A05-Injection CVSS:9.8 | GraphQL injection vulnerability detected | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use GraphQL variables or query builders instead of string concatenation | https://owasp.org/Top10/2025/A05_2025-I"
+      }
+    ]
+  },
+  "secure-coding/no-unchecked-loop-condition": {
+    "hits": 129,
+    "avgTimeMs": 38.94,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-unchecked-loop-condition",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+        "line": 133,
+        "column": 28,
+        "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Loop condition may cause DoS through excessive iterations | MEDIUM\n   Fix: Limit collection size before iteration | https://cwe.mitre.org/data/definitions/400.html"
+      },
+      {
+        "ruleId": "secure-coding/no-unchecked-loop-condition",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+        "line": 148,
+        "column": 28,
+        "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Loop condition may cause DoS through excessive iterations | MEDIUM\n   Fix: Limit collection size before iteration | https://cwe.mitre.org/data/definitions/400.html"
+      },
+      {
+        "ruleId": "secure-coding/no-unchecked-loop-condition",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+        "line": 162,
+        "column": 28,
+        "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Loop condition may cause DoS through excessive iterations | MEDIUM\n   Fix: Limit collection size before iteration | https://cwe.mitre.org/data/definitions/400.html"
+      }
+    ]
+  },
+  "secure-coding/no-unlimited-resource-allocation": {
+    "hits": 225,
+    "avgTimeMs": 37.82,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-unlimited-resource-allocation",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+        "line": 470,
+        "column": 25,
+        "message": "🔒 CWE-770 | Resource allocation inside loop without limits | HIGH\n   Fix: Move resource allocation outside loop or add iteration limits | https://cwe.mitre.org/data/definitions/770.html"
+      },
+      {
+        "ruleId": "secure-coding/no-unlimited-resource-allocation",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/webpack/lib/cli.js",
+        "line": 472,
+        "column": 16,
+        "message": "🔒 CWE-770 | Resource allocation inside loop without limits | HIGH\n   Fix: Move resource allocation outside loop or add iteration limits | https://cwe.mitre.org/data/definitions/770.html"
+      }
+    ]
+  },
+  "secure-coding/no-redos-vulnerable-regex": {
+    "hits": 34,
+    "avgTimeMs": 7.36,
+    "samples": []
+  },
+  "secure-coding/detect-non-literal-regexp": {
+    "hits": 23,
+    "avgTimeMs": 6.91,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-regex-construction": {
+    "hits": 20,
+    "avgTimeMs": 4.06,
+    "samples": []
+  },
+  "node-security/no-buffer-overread": {
+    "hits": 11,
+    "avgTimeMs": 25.79,
+    "samples": []
+  },
+  "secure-coding/no-missing-authentication": {
+    "hits": 3,
+    "avgTimeMs": 6.6,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-deserialization": {
+    "hits": 91,
+    "avgTimeMs": 14.94,
+    "samples": []
+  },
+  "node-security/no-unsafe-dynamic-require": {
+    "hits": 3,
+    "avgTimeMs": 4.31,
+    "samples": []
+  },
+  "secure-coding/no-xxe-injection": {
+    "hits": 7,
+    "avgTimeMs": 7.54,
+    "samples": []
+  },
+  "node-security/detect-non-literal-fs-filename": {
+    "hits": 22,
+    "avgTimeMs": 5.3,
+    "samples": []
+  },
+  "node-security/no-arbitrary-file-access": {
+    "hits": 9,
+    "avgTimeMs": 4.4,
+    "samples": []
+  },
+  "secure-coding/no-xpath-injection": {
+    "hits": 7,
+    "avgTimeMs": 12.65,
+    "samples": []
+  },
+  "node-security/no-zip-slip": {
+    "hits": 3,
+    "avgTimeMs": 15.83,
+    "samples": []
+  },
+  "secure-coding/no-ldap-injection": {
+    "hits": 2,
+    "avgTimeMs": 10.46,
+    "samples": []
+  },
+  "node-security/no-weak-hash-algorithm": {
+    "hits": 1,
+    "avgTimeMs": 6.44,
+    "samples": []
+  },
+  "node-security/detect-eval-with-expression": {
+    "hits": 1,
+    "avgTimeMs": 4.7,
+    "samples": []
+  },
+  "node-security/no-ssrf": {
+    "hits": 1,
+    "avgTimeMs": 6.67,
+    "samples": []
+  },
+  "secure-coding/no-improper-sanitization": {
+    "hits": 12,
+    "avgTimeMs": 11.9,
+    "samples": []
+  },
+  "secure-coding/no-weak-password-recovery": {
+    "hits": 0,
+    "avgTimeMs": 16.35,
+    "samples": []
+  },
+  "node-security/lock-file": {
+    "hits": 0,
+    "avgTimeMs": 16.09,
+    "samples": []
+  },
+  "secure-coding/no-privilege-escalation": {
+    "hits": 0,
+    "avgTimeMs": 12.18,
+    "samples": []
+  },
+  "node-security/detect-child-process": {
+    "hits": 0,
+    "avgTimeMs": 12.09,
+    "samples": []
+  },
+  "node-security/no-ecb-mode": {
+    "hits": 0,
+    "avgTimeMs": 11.09,
+    "samples": []
+  },
+  "node-security/no-data-in-temp-storage": {
+    "hits": 0,
+    "avgTimeMs": 9.3,
+    "samples": []
+  },
+  "secure-coding/no-sensitive-data-exposure": {
+    "hits": 0,
+    "avgTimeMs": 8.02,
+    "samples": []
+  },
+  "node-security/no-weak-cipher-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 7.12,
+    "samples": []
+  },
+  "node-security/no-static-iv": {
+    "hits": 0,
+    "avgTimeMs": 6.77,
+    "samples": []
+  },
+  "node-security/no-toctou-vulnerability": {
+    "hits": 0,
+    "avgTimeMs": 4.93,
+    "samples": []
+  },
+  "node-security/require-dependency-integrity": {
+    "hits": 0,
+    "avgTimeMs": 4.02,
+    "samples": []
+  },
+  "node-security/no-deprecated-buffer": {
+    "hits": 0,
+    "avgTimeMs": 3.62,
+    "samples": []
+  },
+  "node-security/no-cryptojs": {
+    "hits": 0,
+    "avgTimeMs": 3.25,
+    "samples": []
+  },
+  "node-security/detect-suspicious-dependencies": {
+    "hits": 0,
+    "avgTimeMs": 0.63,
+    "samples": []
+  }
+}

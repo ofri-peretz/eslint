@@ -1,0 +1,95 @@
+---
+title: no-dynamic-algorithm-selection
+description: "Disallow dynamic algorithm names in Node.js crypto functions (CWE-327)"
+tags: ['security', 'node']
+category: security
+severity: high
+cwe: CWE-327
+autofix: false
+type_aware: false
+type_aware_status: unaware
+---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+**CWE:** [CWE-327](https://cwe.mitre.org/data/definitions/327.html)
+**OWASP:** [A02:2021 — Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
+
+Node's crypto functions take the algorithm as a **string**, and accept every algorithm
+OpenSSL supports — including the broken ones. When that string is dynamic, whoever
+controls it chooses the cryptography: `md5` instead of `sha256`, `rc4` instead of
+`aes-256-gcm`, or a name that does not exist at all, which throws at runtime in a code
+path that was supposed to be a security boundary.
+
+This is a downgrade attack expressed as a configuration read.
+
+## Rule details
+
+Reports when the algorithm argument to `createHash`, `createHmac`, `createCipheriv`,
+`createDecipheriv`, `createSign` or `createVerify` is not a static string.
+
+Examples of **incorrect** code:
+
+```js
+const crypto = require('crypto');
+
+// The caller picks the hash. `?alg=md5` downgrades every signature check.
+function hash(value, algorithm) {
+  return crypto.createHash(algorithm).update(value).digest('hex');
+}
+```
+
+```js
+// Environment-driven, which means deploy-time configurable, which means
+// a misconfigured environment silently weakens production.
+crypto.createHmac(process.env.HMAC_ALG, key).update(body).digest('hex');
+```
+
+```js
+// A stored value is still a dynamic value.
+crypto.createCipheriv(record.cipherName, key, iv);
+```
+
+Examples of **correct** code:
+
+```js
+const crypto = require('crypto');
+
+// Static, auditable, greppable.
+const hash = (value) => crypto.createHash('sha256').update(value).digest('hex');
+```
+
+```js
+// A closed allowlist keeps the flexibility without the downgrade.
+const ALGORITHMS = { strong: 'sha256', stronger: 'sha512' };
+function hash(value, tier) {
+  const algorithm = ALGORITHMS[tier];
+  if (!algorithm) throw new Error(`unsupported tier: ${tier}`);
+  return crypto.createHash(algorithm).update(value).digest('hex');
+}
+```
+
+## Why an allowlist satisfies the rule
+
+The rule asks a narrow question: can the algorithm be steered to a value the author did
+not choose? A lookup into a `const` object literal whose values are all string literals
+cannot be — the closed set is visible at the call site and reviewable in the diff.
+
+## Legacy interoperability
+
+Verifying signatures from a system that still emits SHA-1 is a real requirement. Name the
+weak algorithm as a literal in the one function that needs it, and disable the rule there
+with a comment saying which counterparty requires it. That leaves an artefact a future
+reader can act on, which a dynamic string does not.
+
+## When not to use it
+
+Disable it in a cryptographic test suite that deliberately iterates over algorithms, or in
+a benchmark. Do not disable it in application code.
+
+## Related
+
+- [`no-math-random-crypto`](./no-math-random-crypto)
+- [`no-cryptojs-weak-random`](./no-cryptojs-weak-random)

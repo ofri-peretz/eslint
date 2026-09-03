@@ -1,0 +1,10 @@
+{
+    "title": "Plugin: react-features",
+    "icon": "Puzzle",
+    "defaultOpen": false,
+    "pages": [
+        "index",
+        "changelog",
+        "rules"
+    ]
+}

@@ -1,0 +1,10 @@
+{
+    "title": "Plugin: node-security",
+    "icon": "Terminal",
+    "defaultOpen": false,
+    "pages": [
+        "index",
+        "changelog",
+        "rules"
+    ]
+}

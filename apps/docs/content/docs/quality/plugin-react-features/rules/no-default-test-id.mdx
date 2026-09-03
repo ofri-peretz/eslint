@@ -1,0 +1,60 @@
+---
+title: "no-default-test-id"
+description: "data-testid must be consumer-provided — no runtime default value (R5)"
+category: quality
+autofix: true
+type_aware: false
+type_aware_status: unaware
+---
+
+import { RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> **Part of:** `componentApi` preset (opt-in — not in `recommended`)
+
+`data-testid` must be type-required and consumer-provided. A runtime default contradicts the type-level requirement and silently masks consumer omissions — the consumer believes they are covered by the type system, but the default lets the component render with a generic test-id that collides in multi-instance tests.
+
+## Why This Matters
+
+| Issue | Impact | Solution |
+| ----- | ------ | -------- |
+| **Silent masking** | Consumer omits `data-testid`; default fires instead of a type error | Remove the default; require it at the type level |
+| **Collision** | Multiple instances share the same default test-id | Each consumer must provide a unique, descriptive id |
+
+## Examples
+
+### Incorrect
+
+```tsx
+function Button({ "data-testid": testId = "button", ...props }) {
+  return <button data-testid={testId} {...props} />;
+}
+```
+
+### Correct
+
+```tsx
+function Button({ "data-testid": testId, ...props }: { "data-testid": string }) {
+  return <button data-testid={testId} {...props} />;
+}
+```
+
+## Auto-fix
+
+This rule provides an **auto-fix** that removes the default value, leaving the bare binding identifier.
+
+## Configuration
+
+```javascript
+// eslint.config.mjs
+export default [
+  {
+    rules: {
+      "react-features/no-default-test-id": "error",
+    },
+  },
+];
+```
+
+This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).

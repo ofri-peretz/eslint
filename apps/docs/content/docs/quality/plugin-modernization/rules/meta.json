@@ -1,0 +1,11 @@
+{
+  "title": "Rules",
+  "icon": "BookOpen",
+  "defaultOpen": false,
+  "pages": [
+    "no-instanceof-array",
+    "prefer-at",
+    "prefer-event-target",
+    "prefer-template-literal"
+  ]
+}

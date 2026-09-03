@@ -1,0 +1,253 @@
+---
+title: Configuration
+description: Configure ESLint Interlace plugins for your project
+icon: Settings
+---
+
+import { Shield, Zap, Settings } from 'lucide-react';
+
+<Callout type="info" title="Plugin-Based Configuration">
+  ESLint Interlace is a collection of independent plugins. Each plugin provides
+  its own `recommended` and `strict` configs. The examples below show
+  `eslint-plugin-browser-security` but apply to all Interlace plugins.
+</Callout>
+
+## Configuration Presets
+
+Each Interlace plugin provides preset configurations:
+
+<Cards>
+  <Card title="Recommended" icon={<Shield />}>
+    Balanced rules for most projects. Security errors, quality warnings.
+  </Card>
+  <Card title="Strict" icon={<Zap />}>
+    Maximum security. All rules as errors. For high-security applications.
+  </Card>
+</Cards>
+
+### Using Presets
+
+```js title="eslint.config.js"
+import browserSecurity from 'eslint-plugin-browser-security';
+import secureCoding from 'eslint-plugin-secure-coding';
+
+export default [
+  // Use recommended preset from each plugin
+  browserSecurity.configs.recommended,
+  secureCoding.configs.recommended,
+
+  // Or use strict preset for maximum security
+  // browserSecurity.configs.strict,
+  // secureCoding.configs.strict,
+];
+```
+
+## Custom Configuration
+
+### Multi-Plugin Configuration
+
+Combine multiple plugins for comprehensive coverage:
+
+```js title="eslint.config.js"
+import browserSecurity from 'eslint-plugin-browser-security';
+import jwt from 'eslint-plugin-jwt-security';
+import secureCoding from 'eslint-plugin-secure-coding';
+import conventions from 'eslint-plugin-conventions';
+
+export default [
+  // Security plugins
+  browserSecurity.configs.recommended,
+  jwt.configs.recommended,
+  secureCoding.configs.recommended,
+
+  // Quality plugins
+  conventions.configs.recommended,
+
+  // Custom rule overrides
+  {
+    rules: {
+      'browser-security/no-insecure-url': 'error',
+      'jwt/no-hardcoded-secret': 'error',
+    },
+  },
+];
+```
+
+### Rule Severity Levels
+
+| Severity  | Meaning  | When to Use                         |
+| --------- | -------- | ----------------------------------- |
+| `'off'`   | Disabled | Rule not applicable to your project |
+| `'warn'`  | Warning  | Review needed, doesn't fail CI      |
+| `'error'` | Error    | Must be fixed before merge          |
+
+### File-Specific Rules
+
+Apply different rules to different file types:
+
+```js title="eslint.config.js"
+import browserSecurity from 'eslint-plugin-browser-security';
+import secureCoding from 'eslint-plugin-secure-coding';
+import jwt from 'eslint-plugin-jwt-security';
+import pg from 'eslint-plugin-postgresql-security';
+
+export default [
+  browserSecurity.configs.recommended,
+  secureCoding.configs.recommended,
+  jwt.configs.recommended,
+  pg.configs.recommended,
+
+  // Stricter rules for API routes
+  {
+    files: ['**/api/**/*.ts', '**/routes/**/*.ts'],
+    rules: {
+      'pg/no-unsafe-query': 'error',
+      'jwt/no-algorithm-none': 'error',
+    },
+  },
+
+  // Relaxed rules for tests
+  {
+    files: ['**/*.test.ts', '**/*.spec.ts'],
+    rules: {
+      'browser-security/no-insecure-url': 'off',
+    },
+  },
+];
+```
+
+## Ignoring Files
+
+### Using `ignores` Property
+
+```js title="eslint.config.js"
+import browserSecurity from 'eslint-plugin-browser-security';
+
+export default [
+  {
+    ignores: [
+      'node_modules/**',
+      'dist/**',
+      'build/**',
+      '.next/**',
+      'coverage/**',
+    ],
+  },
+  browserSecurity.configs.recommended,
+];
+```
+
+### Inline Ignore Comments
+
+```js
+// eslint-disable-next-line browser-security/no-insecure-url
+const legacyUrl = 'http://legacy-internal-service.local';
+
+/* eslint-disable jwt/no-hardcoded-secret */
+// This is a test fixture, not a real secret
+const testToken = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...';
+/* eslint-enable jwt/no-hardcoded-secret */
+```
+
+<Callout type="warning" title="Use Sparingly">
+  Disable comments should be rare. If you're disabling rules frequently,
+  consider adjusting your configuration instead.
+</Callout>
+
+## TypeScript Configuration
+
+### Type-Aware Linting
+
+Some rules can use TypeScript type information for more accurate detection:
+
+```js title="eslint.config.js"
+import browserSecurity from 'eslint-plugin-browser-security';
+import tseslint from 'typescript-eslint';
+
+export default tseslint.config(browserSecurity.configs.recommended, {
+  languageOptions: {
+    parserOptions: {
+      project: './tsconfig.json',
+    },
+  },
+});
+```
+
+### Monorepo TypeScript
+
+For monorepos with multiple `tsconfig.json` files:
+
+```js title="eslint.config.js"
+import browserSecurity from 'eslint-plugin-browser-security';
+import secureCoding from 'eslint-plugin-secure-coding';
+import tseslint from 'typescript-eslint';
+
+export default tseslint.config(
+  browserSecurity.configs.recommended,
+  secureCoding.configs.recommended,
+  {
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.json', './packages/*/tsconfig.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
+);
+```
+
+## Shared Team Configuration
+
+### Create a Shared Package
+
+```js title="packages/eslint-config-mycompany/index.js"
+import browserSecurity from 'eslint-plugin-browser-security';
+import secureCoding from 'eslint-plugin-secure-coding';
+import jwt from 'eslint-plugin-jwt-security';
+import conventions from 'eslint-plugin-conventions';
+
+export default [
+  // Security plugins
+  browserSecurity.configs.strict,
+  secureCoding.configs.strict,
+  jwt.configs.strict,
+
+  // Quality plugins
+  conventions.configs.recommended,
+
+  {
+    rules: {
+      // Company-wide overrides
+      'jwt/no-algorithm-none': 'error',
+      'browser-security/no-insecure-url': 'error',
+    },
+  },
+];
+```
+
+### Use in Projects
+
+```js title="apps/my-app/eslint.config.js"
+import companyConfig from 'eslint-config-mycompany';
+
+export default [
+  ...companyConfig,
+  {
+    // Project-specific additions
+  },
+];
+```
+
+## Next Steps
+
+<Cards>
+  <Card title="Flat Config Migration" href="/docs/getting-started/flat-config">
+    Migrate from legacy .eslintrc format
+  </Card>
+  <Card
+    title="Editor Integration"
+    href="/docs/getting-started/editor-integration"
+  >
+    Set up your IDE for real-time linting
+  </Card>
+</Cards>

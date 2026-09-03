@@ -1,0 +1,12 @@
+{
+  "id": "utm-on-docs-links",
+  "why": "The UTM contract: links from a README or article to our own properties carry utm_source/medium/campaign, stamped by scripts/stamp-utm-links.ts.",
+  "prompt": "I am adding a link from a plugin README in this repository to our docs site. What must the URL carry beyond the path?",
+  "allowedTools": "Read,Grep,Glob",
+  "expect": [
+    {
+      "check": "output-contains",
+      "value": "utm"
+    }
+  ]
+}

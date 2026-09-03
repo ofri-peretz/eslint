@@ -1,0 +1,109 @@
+/**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
+ * ESLint Rule: react-in-jsx-scope
+ * Ensure React is in scope
+ */
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { createRule } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+
+type MessageIds = 'reactInJsxScope';
+
+export const reactInJsxScope = createRule<[], MessageIds>({
+  name: 'react-in-jsx-scope',
+  meta: {
+    type: 'problem',
+    docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/react-in-jsx-scope.md',
+      description: 'Ensure React is in scope',
+    },
+    schema: [],
+    messages: {
+      reactInJsxScope: formatLLMMessage({
+        icon: MessageIcons.WARNING,
+        issueName: 'React Not in Scope',
+        description: 'React must be in scope when using JSX',
+        severity: 'CRITICAL',
+        fix: 'Add import React from "react" at the top of the file',
+        documentationLink: 'https://react.dev/learn/add-react-to-a-website#optional-using-jsx-without-a-build-step',
+      }),
+    },
+  },
+  defaultOptions: [],
+  create(context: TSESLint.RuleContext<MessageIds, []>) {
+    let hasReactImport = false;
+    let hasJsxUsage = false;
+
+    return {
+      ImportDeclaration(node: TSESTree.ImportDeclaration) {
+        // Check for React import
+        if (node.source.value === 'react') {
+          for (const specifier of node.specifiers) {
+            if (
+              specifier.type === 'ImportDefaultSpecifier' &&
+              specifier.local.name === 'React'
+            ) {
+              hasReactImport = true;
+              break;
+            }
+            if (
+              specifier.type === 'ImportNamespaceSpecifier' &&
+              specifier.local.name === 'React'
+            ) {
+              hasReactImport = true;
+              break;
+            }
+          }
+        }
+      },
+
+      // Check for JSX usage
+      JSXElement() {
+        hasJsxUsage = true;
+      },
+
+      JSXFragment() {
+        hasJsxUsage = true;
+      },
+
+      // Check at the end of the program
+      'Program:exit'(node: TSESTree.Program) {
+        if (hasJsxUsage && !hasReactImport) {
+          // Find the first JSX element to report on
+          for (const statement of node.body) {
+            if (statement.type === 'ExpressionStatement' && statement.expression.type === 'JSXElement') {
+              context.report({
+                node: statement.expression.openingElement.name,
+                messageId: 'reactInJsxScope',
+              });
+              break;
+            }
+            if (statement.type === 'VariableDeclaration') {
+              for (const declarator of statement.declarations) {
+                if (declarator.init && declarator.init.type === 'JSXElement') {
+                  context.report({
+                    node: declarator.init.openingElement.name,
+                    messageId: 'reactInJsxScope',
+                  });
+                  return;
+                }
+              }
+            }
+            if (statement.type === 'ReturnStatement' && statement.argument && statement.argument.type === 'JSXElement') {
+              context.report({
+                node: statement.argument.openingElement.name,
+                messageId: 'reactInJsxScope',
+              });
+              break;
+            }
+          }
+        }
+      },
+    };
+  },
+});

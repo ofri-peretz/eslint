@@ -1,0 +1,10 @@
+{
+    "title": "Plugin: react-a11y",
+    "icon": "Accessibility",
+    "defaultOpen": false,
+    "pages": [
+        "index",
+        "changelog",
+        "rules"
+    ]
+}

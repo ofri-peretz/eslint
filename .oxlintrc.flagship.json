@@ -1,0 +1,71 @@
+{
+  "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
+  "plugins": [],
+  "categories": {
+    "correctness": "off",
+    "suspicious": "off",
+    "pedantic": "off",
+    "style": "off",
+    "perf": "off",
+    "restriction": "off",
+    "nursery": "off"
+  },
+  "jsPlugins": [
+    {
+      "name": "interlace-import-next",
+      "specifier": "./tools/oxlint-plugins/interlace-import-next.cjs"
+    },
+    {
+      "name": "interlace-pg",
+      "specifier": "./tools/oxlint-plugins/interlace-pg.cjs"
+    },
+    {
+      "name": "interlace-secure-coding",
+      "specifier": "./tools/oxlint-plugins/interlace-secure-coding.cjs"
+    },
+    {
+      "name": "interlace-mongodb-security",
+      "specifier": "./tools/oxlint-plugins/interlace-mongodb-security.cjs"
+    },
+    {
+      "name": "interlace-jwt",
+      "specifier": "./tools/oxlint-plugins/interlace-jwt.cjs"
+    },
+    {
+      "name": "interlace-browser-security",
+      "specifier": "./tools/oxlint-plugins/interlace-browser-security.cjs"
+    },
+    {
+      "name": "interlace-react-features",
+      "specifier": "./tools/oxlint-plugins/interlace-react-features.cjs"
+    },
+    {
+      "name": "interlace-react-a11y",
+      "specifier": "./tools/oxlint-plugins/interlace-react-a11y.cjs"
+    },
+    {
+      "name": "interlace-vercel-ai-security",
+      "specifier": "./tools/oxlint-plugins/interlace-vercel-ai-security.cjs"
+    }
+  ],
+  "rules": {
+    "interlace-import-next/no-cycle": "error",
+    "interlace-pg/no-unsafe-query": "error",
+    "interlace-secure-coding/no-hardcoded-credentials": "error",
+    "interlace-secure-coding/no-redos-vulnerable-regex": "error",
+    "interlace-mongodb-security/no-unsafe-query": "error",
+    "interlace-jwt/no-algorithm-none": "error",
+    "interlace-browser-security/no-postmessage-wildcard-origin": "error",
+    "interlace-react-features/hooks-exhaustive-deps": "error",
+    "interlace-react-a11y/alt-text": "error",
+    "interlace-vercel-ai-security/no-unsafe-output-handling": "error"
+  },
+  "ignorePatterns": [
+    "node_modules",
+    ".next",
+    "coverage",
+    "*.min.js",
+    "*.test.ts",
+    "*.spec.ts"
+  ]
+}

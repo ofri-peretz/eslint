@@ -1,0 +1,75 @@
+---
+title: "no-kind-prop-discriminator"
+description: "Ban `type`/`kind` string-union props that select between rendered trees (R11)"
+category: quality
+autofix: false
+type_aware: false
+type_aware_status: unaware
+---
+
+import { RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> **Part of:** `componentApi` preset (opt-in — not in `recommended`)
+
+Ban the `type: "A" | "B"` kind-prop pattern when the value is intended to switch the rendered tree. This heuristic detects TypeScript interfaces / type aliases where a property named `type` or `kind` carries a string-literal union of 2 or more members, signalling a component that renders different element trees per variant. The correct fix is to split into sub-components (`Foo.A`, `Foo.B`).
+
+Note: `variant` is not flagged by default because the dominant CVA usage only switches `className` / `role`, not the element tree.
+
+## Why This Matters
+
+| Issue | Impact | Solution |
+| ----- | ------ | -------- |
+| **Conditional tree complexity** | One component renders N different trees, inflating its test surface | Split into sub-components |
+| **Type unsafety** | Narrowing on `type` at the call site is brittle | Let TypeScript discriminate on the import name instead |
+| **API bloat** | A single component accumulates props from multiple logical variants | Separate components with focused prop surfaces |
+
+## Examples
+
+### Incorrect
+
+```tsx
+interface AlertProps {
+  type: "error" | "warning" | "info";  // ❌ R11 — kind-prop discriminator
+  message: string;
+}
+
+function Alert({ type, message }: AlertProps) {
+  if (type === "error") return <div className="text-red-600">{message}</div>;
+  if (type === "warning") return <div className="text-yellow-600">{message}</div>;
+  return <div className="text-blue-600">{message}</div>;
+}
+```
+
+### Correct
+
+```tsx
+// Split into sub-components
+function AlertError({ message }: { message: string }) {
+  return <div className="text-red-600">{message}</div>;
+}
+
+function AlertWarning({ message }: { message: string }) {
+  return <div className="text-yellow-600">{message}</div>;
+}
+
+// Or as a namespace
+Alert.Error = AlertError;
+Alert.Warning = AlertWarning;
+```
+
+## Configuration
+
+```javascript
+// eslint.config.mjs
+export default [
+  {
+    rules: {
+      "react-features/no-kind-prop-discriminator": "error",
+    },
+  },
+];
+```
+
+This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).

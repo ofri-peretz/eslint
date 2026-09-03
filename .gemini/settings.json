@@ -1,0 +1,47 @@
+{
+    "agent": {
+        "planningMode": "auto"
+    },
+    "codebaseIndexing": {
+        "excludePatterns": [
+            "// ===== Package Managers =====",
+            "**/node_modules/**",
+            "packages/**/package-lock.json",
+            "apps/**/package-lock.json",
+            "// ===== Build Outputs =====",
+            "**/dist/**",
+            "**/build/**",
+            "**/out/**",
+            "**/.next/**",
+            "**/standalone/**",
+            "**/_next/**",
+            "// ===== Framework Caches =====",
+            "**/.nx/**",
+            "**/.cache/**",
+            "**/.parcel-cache/**",
+            "**/.contentlayer/**",
+            "**/.source/**",
+            "**/.turbo/**",
+            "**/.vercel/**",
+            "// ===== Test Artifacts =====",
+            "**/coverage/**",
+            "**/test-results/**",
+            "**/.nyc_output/**",
+            "**/.jest/**",
+            "**/*.junit.xml",
+            "// ===== Temporary Files =====",
+            "**/tmp/**",
+            "// ===== Version Control =====",
+            "**/.git/**",
+            "// ===== Large Generated Files =====",
+            "**/graph.json",
+            "**/*.tsbuildinfo",
+            "**/*.log",
+            "**/*.map",
+            "// ===== OS Artifacts =====",
+            "**/.DS_Store",
+            "**/Thumbs.db",
+            "**/ehthumbs.db"
+        ]
+    }
+}

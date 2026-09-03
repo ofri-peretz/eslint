@@ -1,0 +1,511 @@
+{
+  "secure-coding/detect-object-injection": {
+    "hits": 1428,
+    "avgTimeMs": 29.99,
+    "samples": [
+      {
+        "ruleId": "secure-coding/detect-object-injection",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/utils.js",
+        "line": 105,
+        "column": 13,
+        "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+      },
+      {
+        "ruleId": "secure-coding/detect-object-injection",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/textures/Texture.js",
+        "line": 531,
+        "column": 21,
+        "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+      },
+      {
+        "ruleId": "secure-coding/detect-object-injection",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/textures/Texture.js",
+        "line": 540,
+        "column": 25,
+        "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+      },
+      {
+        "ruleId": "secure-coding/detect-object-injection",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/textures/Texture.js",
+        "line": 563,
+        "column": 5,
+        "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | HIGH [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+      },
+      {
+        "ruleId": "secure-coding/detect-object-injection",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/textures/Texture.js",
+        "line": 582,
+        "column": 26,
+        "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+      }
+    ]
+  },
+  "browser-security/detect-mixed-content": {
+    "hits": 1,
+    "avgTimeMs": 1.73,
+    "samples": [
+      {
+        "ruleId": "browser-security/detect-mixed-content",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/utils.js",
+        "line": 133,
+        "column": 35,
+        "message": "🔒 CWE-311 OWASP:A04-Cryptographic CVSS:7.5 | Detect HTTP resources in HTTPS pages detected - Literal containing http:// in HTTPS context | MEDIUM\n   Fix: Review and apply secure practices | https://cwe.mitre.org/data/definitions/311.html"
+      }
+    ]
+  },
+  "browser-security/no-http-urls": {
+    "hits": 1,
+    "avgTimeMs": 3.55,
+    "samples": [
+      {
+        "ruleId": "browser-security/no-http-urls",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/utils.js",
+        "line": 133,
+        "column": 35,
+        "message": "⚠️ CWE-319 OWASP:A02-Cryptographic CVSS:5.3 | HTTP URL detected: \"http://www.w3.org/1999/xhtml\" | MEDIUM\n   Fix: Use HTTPS or add to allowedHosts config | https://cwe.mitre.org/data/definitions/319.html"
+      }
+    ]
+  },
+  "secure-coding/no-unsafe-deserialization": {
+    "hits": 21,
+    "avgTimeMs": 13.94,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-unsafe-deserialization",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/utils.js",
+        "line": 399,
+        "column": 6,
+        "message": "🔒 CWE-502 OWASP:A08-Software CVSS:9.8 | eval() used for deserialization (code execution vulnerability) | CRITICAL\n   Fix: Use JSON.parse() or safe deserialization libraries | https://cwe.mitre.org/data/definitions/502.html"
+      },
+      {
+        "ruleId": "secure-coding/no-unsafe-deserialization",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/utils.js",
+        "line": 409,
+        "column": 3,
+        "message": "🔒 CWE-502 OWASP:A08-Software CVSS:9.8 | eval() used for deserialization (code execution vulnerability) | CRITICAL\n   Fix: Use JSON.parse() or safe deserialization libraries | https://cwe.mitre.org/data/definitions/502.html"
+      }
+    ]
+  },
+  "secure-coding/no-hardcoded-credentials": {
+    "hits": 14,
+    "avgTimeMs": 8.64,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-hardcoded-credentials",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/renderers/WebGLRenderer.js",
+        "line": 2042,
+        "column": 25,
+        "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.h"
+      }
+    ]
+  },
+  "node-security/no-buffer-overread": {
+    "hits": 118,
+    "avgTimeMs": 27.62,
+    "samples": [
+      {
+        "ruleId": "node-security/no-buffer-overread",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/renderers/WebGLRenderer.js",
+        "line": 2961,
+        "column": 26,
+        "message": "🔒 CWE-126 | Buffer accessed without bounds validation | HIGH\n   Fix: Add bounds check before buffer access | https://nodejs.org/api/buffer.html"
+      },
+      {
+        "ruleId": "node-security/no-buffer-overread",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/renderers/WebGLRenderer.js",
+        "line": 2963,
+        "column": 21,
+        "message": "🔒 CWE-126 | Buffer accessed without bounds validation | HIGH\n   Fix: Add bounds check before buffer access | https://nodejs.org/api/buffer.html"
+      },
+      {
+        "ruleId": "node-security/no-buffer-overread",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/renderers/WebGLRenderer.js",
+        "line": 2967,
+        "column": 21,
+        "message": "🔒 CWE-126 | Buffer accessed without bounds validation | HIGH\n   Fix: Add bounds check before buffer access | https://nodejs.org/api/buffer.html"
+      },
+      {
+        "ruleId": "node-security/no-buffer-overread",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/renderers/WebGLRenderer.js",
+        "line": 2981,
+        "column": 21,
+        "message": "🔒 CWE-126 | Buffer accessed without bounds validation | HIGH\n   Fix: Add bounds check before buffer access | https://nodejs.org/api/buffer.html"
+      }
+    ]
+  },
+  "secure-coding/no-unlimited-resource-allocation": {
+    "hits": 205,
+    "avgTimeMs": 25.02,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-unlimited-resource-allocation",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/renderers/webxr/WebXRManager.js",
+        "line": 983,
+        "column": 6,
+        "message": "🔒 CWE-770 | Resource allocation inside loop without limits | HIGH\n   Fix: Move resource allocation outside loop or add iteration limits | https://cwe.mitre.org/data/definitions/770.html"
+      },
+      {
+        "ruleId": "secure-coding/no-unlimited-resource-allocation",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/renderers/webxr/WebXRManager.js",
+        "line": 985,
+        "column": 6,
+        "message": "🔒 CWE-770 | Resource allocation inside loop without limits | HIGH\n   Fix: Move resource allocation outside loop or add iteration limits | https://cwe.mitre.org/data/definitions/770.html"
+      },
+      {
+        "ruleId": "secure-coding/no-unlimited-resource-allocation",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/renderers/webxr/WebXRController.js",
+        "line": 250,
+        "column": 7,
+        "message": "🔒 CWE-770 | Resource allocation inside loop without limits | HIGH\n   Fix: Move resource allocation outside loop or add iteration limits | https://cwe.mitre.org/data/definitions/770.html"
+      }
+    ]
+  },
+  "secure-coding/no-insecure-comparison": {
+    "hits": 61,
+    "avgTimeMs": 17.29,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-insecure-comparison",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/renderers/webxr/WebXRManager.js",
+        "line": 1009,
+        "column": 6,
+        "message": "🔒 CWE-697 OWASP:A06-Insecure CVSS:5.3 | Insecure comparison operator (==) detected - can lead to type coercion vulnerabilities | HIGH\n   Fix: Use strict equality (===) instead: session.depthUsage === 'gpu-optimized' | https://cwe.mitre.org"
+      }
+    ]
+  },
+  "secure-coding/no-unchecked-loop-condition": {
+    "hits": 54,
+    "avgTimeMs": 23.57,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-unchecked-loop-condition",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/renderers/webxr/WebXRController.js",
+        "line": 165,
+        "column": 31,
+        "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Loop condition may cause DoS through excessive iterations | MEDIUM\n   Fix: Limit collection size before iteration | https://cwe.mitre.org/data/definitions/400.html"
+      },
+      {
+        "ruleId": "secure-coding/no-unchecked-loop-condition",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/renderers/webxr/WebXRController.js",
+        "line": 240,
+        "column": 31,
+        "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Loop condition may cause DoS through excessive iterations | MEDIUM\n   Fix: Limit collection size before iteration | https://cwe.mitre.org/data/definitions/400.html"
+      }
+    ]
+  },
+  "secure-coding/no-redos-vulnerable-regex": {
+    "hits": 8,
+    "avgTimeMs": 5.08,
+    "samples": []
+  },
+  "secure-coding/no-missing-authentication": {
+    "hits": 2,
+    "avgTimeMs": 6.47,
+    "samples": []
+  },
+  "secure-coding/no-xpath-injection": {
+    "hits": 11,
+    "avgTimeMs": 13.83,
+    "samples": []
+  },
+  "secure-coding/no-ldap-injection": {
+    "hits": 1,
+    "avgTimeMs": 10.56,
+    "samples": []
+  },
+  "secure-coding/no-xxe-injection": {
+    "hits": 5,
+    "avgTimeMs": 6.47,
+    "samples": []
+  },
+  "secure-coding/detect-non-literal-regexp": {
+    "hits": 2,
+    "avgTimeMs": 6.2,
+    "samples": []
+  },
+  "node-security/lock-file": {
+    "hits": 0,
+    "avgTimeMs": 32.66,
+    "samples": []
+  },
+  "secure-coding/no-graphql-injection": {
+    "hits": 0,
+    "avgTimeMs": 28.81,
+    "samples": []
+  },
+  "secure-coding/no-weak-password-recovery": {
+    "hits": 0,
+    "avgTimeMs": 14.16,
+    "samples": []
+  },
+  "node-security/no-zip-slip": {
+    "hits": 0,
+    "avgTimeMs": 13.12,
+    "samples": []
+  },
+  "browser-security/no-clickjacking": {
+    "hits": 0,
+    "avgTimeMs": 11.73,
+    "samples": []
+  },
+  "secure-coding/no-privilege-escalation": {
+    "hits": 0,
+    "avgTimeMs": 9.93,
+    "samples": []
+  },
+  "secure-coding/no-improper-sanitization": {
+    "hits": 0,
+    "avgTimeMs": 9.86,
+    "samples": []
+  },
+  "browser-security/no-websocket-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 7.91,
+    "samples": []
+  },
+  "browser-security/no-websocket-eval": {
+    "hits": 0,
+    "avgTimeMs": 7.86,
+    "samples": []
+  },
+  "browser-security/no-filereader-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 7.35,
+    "samples": []
+  },
+  "browser-security/no-worker-message-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 7.34,
+    "samples": []
+  },
+  "node-security/detect-child-process": {
+    "hits": 0,
+    "avgTimeMs": 6.99,
+    "samples": []
+  },
+  "secure-coding/no-sensitive-data-exposure": {
+    "hits": 0,
+    "avgTimeMs": 6.8,
+    "samples": []
+  },
+  "browser-security/no-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 6.8,
+    "samples": []
+  },
+  "browser-security/no-sensitive-localstorage": {
+    "hits": 0,
+    "avgTimeMs": 6.35,
+    "samples": []
+  },
+  "browser-security/no-postmessage-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 6.33,
+    "samples": []
+  },
+  "node-security/no-ssrf": {
+    "hits": 0,
+    "avgTimeMs": 5.74,
+    "samples": []
+  },
+  "node-security/no-weak-cipher-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 5.66,
+    "samples": []
+  },
+  "node-security/no-static-iv": {
+    "hits": 0,
+    "avgTimeMs": 5.56,
+    "samples": []
+  },
+  "browser-security/no-credentials-in-query-params": {
+    "hits": 0,
+    "avgTimeMs": 4.94,
+    "samples": []
+  },
+  "node-security/no-ecb-mode": {
+    "hits": 0,
+    "avgTimeMs": 4.85,
+    "samples": []
+  },
+  "browser-security/no-eval": {
+    "hits": 0,
+    "avgTimeMs": 4.74,
+    "samples": []
+  },
+  "node-security/no-weak-hash-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 4.67,
+    "samples": []
+  },
+  "browser-security/no-insecure-redirects": {
+    "hits": 0,
+    "avgTimeMs": 4.59,
+    "samples": []
+  },
+  "node-security/no-data-in-temp-storage": {
+    "hits": 0,
+    "avgTimeMs": 4.21,
+    "samples": []
+  },
+  "browser-security/no-sensitive-indexeddb": {
+    "hits": 0,
+    "avgTimeMs": 4.19,
+    "samples": []
+  },
+  "browser-security/no-jwt-in-storage": {
+    "hits": 0,
+    "avgTimeMs": 4.07,
+    "samples": []
+  },
+  "node-security/no-toctou-vulnerability": {
+    "hits": 0,
+    "avgTimeMs": 3.92,
+    "samples": []
+  },
+  "browser-security/no-postmessage-wildcard-origin": {
+    "hits": 0,
+    "avgTimeMs": 3.92,
+    "samples": []
+  },
+  "browser-security/require-blob-url-revocation": {
+    "hits": 0,
+    "avgTimeMs": 3.87,
+    "samples": []
+  },
+  "browser-security/no-sensitive-sessionstorage": {
+    "hits": 0,
+    "avgTimeMs": 3.84,
+    "samples": []
+  },
+  "node-security/no-unsafe-dynamic-require": {
+    "hits": 0,
+    "avgTimeMs": 3.75,
+    "samples": []
+  },
+  "node-security/detect-non-literal-fs-filename": {
+    "hits": 0,
+    "avgTimeMs": 3.64,
+    "samples": []
+  },
+  "node-security/no-arbitrary-file-access": {
+    "hits": 0,
+    "avgTimeMs": 3.58,
+    "samples": []
+  },
+  "node-security/detect-eval-with-expression": {
+    "hits": 0,
+    "avgTimeMs": 3.44,
+    "samples": []
+  },
+  "browser-security/no-client-side-auth-logic": {
+    "hits": 0,
+    "avgTimeMs": 3.43,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-regex-construction": {
+    "hits": 0,
+    "avgTimeMs": 3.34,
+    "samples": []
+  },
+  "browser-security/require-https-only": {
+    "hits": 0,
+    "avgTimeMs": 3.23,
+    "samples": []
+  },
+  "browser-security/no-unsafe-inline-csp": {
+    "hits": 0,
+    "avgTimeMs": 3.07,
+    "samples": []
+  },
+  "browser-security/no-sensitive-cookie-js": {
+    "hits": 0,
+    "avgTimeMs": 2.9,
+    "samples": []
+  },
+  "node-security/require-dependency-integrity": {
+    "hits": 0,
+    "avgTimeMs": 2.81,
+    "samples": []
+  },
+  "node-security/no-deprecated-buffer": {
+    "hits": 0,
+    "avgTimeMs": 2.7,
+    "samples": []
+  },
+  "browser-security/no-unsafe-eval-csp": {
+    "hits": 0,
+    "avgTimeMs": 2.69,
+    "samples": []
+  },
+  "browser-security/require-postmessage-origin-check": {
+    "hits": 0,
+    "avgTimeMs": 2.67,
+    "samples": []
+  },
+  "node-security/no-cryptojs": {
+    "hits": 0,
+    "avgTimeMs": 2.67,
+    "samples": []
+  },
+  "browser-security/no-dynamic-service-worker-url": {
+    "hits": 0,
+    "avgTimeMs": 2.43,
+    "samples": []
+  },
+  "browser-security/no-cookie-auth-tokens": {
+    "hits": 0,
+    "avgTimeMs": 2.01,
+    "samples": []
+  },
+  "browser-security/require-cookie-secure-attrs": {
+    "hits": 0,
+    "avgTimeMs": 1.93,
+    "samples": []
+  },
+  "browser-security/no-insecure-websocket": {
+    "hits": 0,
+    "avgTimeMs": 1.91,
+    "samples": []
+  },
+  "browser-security/no-unvalidated-deeplinks": {
+    "hits": 0,
+    "avgTimeMs": 1.87,
+    "samples": []
+  },
+  "browser-security/require-websocket-wss": {
+    "hits": 0,
+    "avgTimeMs": 1.75,
+    "samples": []
+  },
+  "node-security/detect-suspicious-dependencies": {
+    "hits": 0,
+    "avgTimeMs": 1.07,
+    "samples": []
+  },
+  "browser-security/no-allow-arbitrary-loads": {
+    "hits": 0,
+    "avgTimeMs": 0.8,
+    "samples": []
+  }
+}

@@ -1,0 +1,369 @@
+{
+  "_comment": "Cached tweet data to avoid Twitter API rate limits during builds. Updated by scripts/sync-tweet-cache.mjs",
+  "_lastUpdated": "2026-08-30T18:20:59.769Z",
+  "tweets": {
+    "2006790779537121585": {
+      "__typename": "Tweet",
+      "favorite_count": 9,
+      "lang": "en",
+      "possibly_sensitive": false,
+      "created_at": "2026-01-01T18:13:00.000Z",
+      "display_text_range": [
+        0,
+        243
+      ],
+      "entities": {
+        "urls": [
+          {
+            "display_url": "dev.to/ofri-peretz/th…",
+            "expanded_url": "https://dev.to/ofri-peretz/the-30-minute-security-audit-onboarding-a-new-codebase-4f91",
+            "indices": [
+              220,
+              243
+            ],
+            "url": "https://t.co/5aWCclnWlG"
+          }
+        ]
+      },
+      "id_str": "2006790779537121585",
+      "text": "Onboarding to a new codebase? You need a security pulse check.\n\nHere is how to conduct a \"30-Minute Security Audit\" to find the glaring vulnerabilities before you write your first line of code.\n\n{ author: Ofri Peretz }\n\nhttps://t.co/5aWCclnWlG",
+      "user": {
+        "id_str": "2735246778",
+        "name": "DEV Community",
+        "screen_name": "ThePracticalDev",
+        "is_blue_verified": true,
+        "profile_image_shape": "Circle",
+        "verified": false,
+        "profile_image_url_https": "https://pbs.twimg.com/profile_images/1694461743865749504/QyaBFrhh_normal.jpg"
+      },
+      "edit_control": {
+        "edit_tweet_ids": [
+          "2006790779537121585"
+        ],
+        "editable_until_msecs": "1767294780000",
+        "edits_remaining": "5",
+        "is_edit_eligible": true
+      },
+      "conversation_count": 1,
+      "news_action_type": "conversation",
+      "card": {
+        "card_platform": {
+          "platform": {
+            "audience": {
+              "name": "production"
+            },
+            "device": {
+              "name": "iPhone",
+              "version": "13"
+            }
+          }
+        },
+        "name": "summary_large_image",
+        "url": "https://t.co/5aWCclnWlG",
+        "binding_values": {
+          "photo_image_full_size_large": {
+            "image_value": {
+              "height": 419,
+              "url": "https://pbs.twimg.com/card_img/2092798711881490432/UslvvcMn?format=jpg&name=800x419",
+              "width": 800
+            },
+            "type": "IMAGE"
+          },
+          "thumbnail_image": {
+            "image_value": {
+              "height": 168,
+              "url": "https://pbs.twimg.com/card_img/2092798711881490432/UslvvcMn?format=jpg&name=400x400",
+              "width": 400
+            },
+            "type": "IMAGE"
+          },
+          "description": {
+            "string_value": "A 30-minute static-analysis protocol for any inherited Node.js codebase — human- or AI-written: the three ESLint plugins to install, the jq one-liner that ranks findings by rule, and how to read the...",
+            "type": "STRING"
+          },
+          "domain": {
+            "string_value": "dev.to",
+            "type": "STRING"
+          },
+          "thumbnail_image_large": {
+            "image_value": {
+              "height": 320,
+              "url": "https://pbs.twimg.com/card_img/2092798711881490432/UslvvcMn?format=jpg&name=800x320_1",
+              "width": 762
+            },
+            "type": "IMAGE"
+          },
+          "summary_photo_image_small": {
+            "image_value": {
+              "height": 202,
+              "url": "https://pbs.twimg.com/card_img/2092798711881490432/UslvvcMn?format=jpg&name=386x202",
+              "width": 386
+            },
+            "type": "IMAGE"
+          },
+          "thumbnail_image_original": {
+            "image_value": {
+              "height": 420,
+              "url": "https://pbs.twimg.com/card_img/2092798711881490432/UslvvcMn?format=jpg&name=orig",
+              "width": 1000
+            },
+            "type": "IMAGE"
+          },
+          "site": {
+            "scribe_key": "publisher_id",
+            "type": "USER",
+            "user_value": {
+              "id_str": "2735246778",
+              "path": []
+            }
+          },
+          "photo_image_full_size_small": {
+            "image_value": {
+              "height": 202,
+              "url": "https://pbs.twimg.com/card_img/2092798711881490432/UslvvcMn?format=jpg&name=386x202",
+              "width": 386
+            },
+            "type": "IMAGE"
+          },
+          "summary_photo_image_large": {
+            "image_value": {
+              "height": 419,
+              "url": "https://pbs.twimg.com/card_img/2092798711881490432/UslvvcMn?format=jpg&name=800x419",
+              "width": 800
+            },
+            "type": "IMAGE"
+          },
+          "thumbnail_image_small": {
+            "image_value": {
+              "height": 60,
+              "url": "https://pbs.twimg.com/card_img/2092798711881490432/UslvvcMn?format=jpg&name=144x144",
+              "width": 144
+            },
+            "type": "IMAGE"
+          },
+          "creator": {
+            "type": "USER",
+            "user_value": {
+              "id_str": "2006844490255052802",
+              "path": []
+            }
+          },
+          "thumbnail_image_x_large": {
+            "image_value": {
+              "height": 420,
+              "url": "https://pbs.twimg.com/card_img/2092798711881490432/UslvvcMn?format=png&name=2048x2048_2_exp",
+              "width": 1000
+            },
+            "type": "IMAGE"
+          },
+          "photo_image_full_size_original": {
+            "image_value": {
+              "height": 420,
+              "url": "https://pbs.twimg.com/card_img/2092798711881490432/UslvvcMn?format=jpg&name=orig",
+              "width": 1000
+            },
+            "type": "IMAGE"
+          },
+          "vanity_url": {
+            "scribe_key": "vanity_url",
+            "string_value": "dev.to",
+            "type": "STRING"
+          },
+          "photo_image_full_size": {
+            "image_value": {
+              "height": 314,
+              "url": "https://pbs.twimg.com/card_img/2092798711881490432/UslvvcMn?format=jpg&name=600x314",
+              "width": 600
+            },
+            "type": "IMAGE"
+          },
+          "thumbnail_image_color": {
+            "image_color_value": {
+              "palette": [
+                {
+                  "percentage": 92.23,
+                  "rgb": {
+                    "blue": 10,
+                    "green": 10,
+                    "red": 10
+                  }
+                },
+                {
+                  "percentage": 6.25,
+                  "rgb": {
+                    "blue": 87,
+                    "green": 132,
+                    "red": 13
+                  }
+                },
+                {
+                  "percentage": 0.94,
+                  "rgb": {
+                    "blue": 40,
+                    "green": 60,
+                    "red": 12
+                  }
+                },
+                {
+                  "percentage": 0.3,
+                  "rgb": {
+                    "blue": 57,
+                    "green": 92,
+                    "red": 181
+                  }
+                },
+                {
+                  "percentage": 0.2,
+                  "rgb": {
+                    "blue": 28,
+                    "green": 41,
+                    "red": 76
+                  }
+                }
+              ]
+            },
+            "type": "IMAGE_COLOR"
+          },
+          "title": {
+            "string_value": "The 30-Minute Security Audit: 140 Gemini-Written Functions, 102 Shipped Vulnerable",
+            "type": "STRING"
+          },
+          "summary_photo_image_color": {
+            "image_color_value": {
+              "palette": [
+                {
+                  "percentage": 92.23,
+                  "rgb": {
+                    "blue": 10,
+                    "green": 10,
+                    "red": 10
+                  }
+                },
+                {
+                  "percentage": 6.25,
+                  "rgb": {
+                    "blue": 87,
+                    "green": 132,
+                    "red": 13
+                  }
+                },
+                {
+                  "percentage": 0.94,
+                  "rgb": {
+                    "blue": 40,
+                    "green": 60,
+                    "red": 12
+                  }
+                },
+                {
+                  "percentage": 0.3,
+                  "rgb": {
+                    "blue": 57,
+                    "green": 92,
+                    "red": 181
+                  }
+                },
+                {
+                  "percentage": 0.2,
+                  "rgb": {
+                    "blue": 28,
+                    "green": 41,
+                    "red": 76
+                  }
+                }
+              ]
+            },
+            "type": "IMAGE_COLOR"
+          },
+          "summary_photo_image_x_large": {
+            "image_value": {
+              "height": 420,
+              "url": "https://pbs.twimg.com/card_img/2092798711881490432/UslvvcMn?format=png&name=2048x2048_2_exp",
+              "width": 1000
+            },
+            "type": "IMAGE"
+          },
+          "summary_photo_image": {
+            "image_value": {
+              "height": 314,
+              "url": "https://pbs.twimg.com/card_img/2092798711881490432/UslvvcMn?format=jpg&name=600x314",
+              "width": 600
+            },
+            "type": "IMAGE"
+          },
+          "photo_image_full_size_color": {
+            "image_color_value": {
+              "palette": [
+                {
+                  "percentage": 92.23,
+                  "rgb": {
+                    "blue": 10,
+                    "green": 10,
+                    "red": 10
+                  }
+                },
+                {
+                  "percentage": 6.25,
+                  "rgb": {
+                    "blue": 87,
+                    "green": 132,
+                    "red": 13
+                  }
+                },
+                {
+                  "percentage": 0.94,
+                  "rgb": {
+                    "blue": 40,
+                    "green": 60,
+                    "red": 12
+                  }
+                },
+                {
+                  "percentage": 0.3,
+                  "rgb": {
+                    "blue": 57,
+                    "green": 92,
+                    "red": 181
+                  }
+                },
+                {
+                  "percentage": 0.2,
+                  "rgb": {
+                    "blue": 28,
+                    "green": 41,
+                    "red": 76
+                  }
+                }
+              ]
+            },
+            "type": "IMAGE_COLOR"
+          },
+          "photo_image_full_size_x_large": {
+            "image_value": {
+              "height": 420,
+              "url": "https://pbs.twimg.com/card_img/2092798711881490432/UslvvcMn?format=png&name=2048x2048_2_exp",
+              "width": 1000
+            },
+            "type": "IMAGE"
+          },
+          "card_url": {
+            "scribe_key": "card_url",
+            "string_value": "https://t.co/5aWCclnWlG",
+            "type": "STRING"
+          },
+          "summary_photo_image_original": {
+            "image_value": {
+              "height": 420,
+              "url": "https://pbs.twimg.com/card_img/2092798711881490432/UslvvcMn?format=jpg&name=orig",
+              "width": 1000
+            },
+            "type": "IMAGE"
+          }
+        }
+      },
+      "isEdited": false,
+      "isStaleEdit": false,
+      "_cachedAt": "2026-08-30T18:20:59.267Z"
+    }
+  }
+}

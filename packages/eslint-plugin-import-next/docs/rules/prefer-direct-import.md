@@ -1,0 +1,59 @@
+# prefer-direct-import
+
+💼 This rule is enabled in the following configs: `recommended`, `typescript`.
+💡 This rule is automatically fixable by the `--fix` CLI option.
+
+<!-- end auto-generated rule header -->
+
+Prefer direct imports over barrel imports for better tree-shaking and build performance
+
+## Rule Details
+
+This rule aims to prevent issues related to prefer-direct-import.
+
+## Options
+
+```json
+[
+  {
+    "type": "object",
+    "properties": {
+      "mappings": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "barrel": {
+              "type": "string"
+            },
+            "directPath": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "barrel",
+            "directPath"
+          ]
+        },
+        "default": [],
+        "description": "Mapping of barrel paths to direct import patterns"
+      },
+      "autoFix": {
+        "type": "boolean",
+        "default": true,
+        "description": "Auto-fix the imports when possible"
+      }
+    },
+    "additionalProperties": false
+  }
+]
+```
+
+## Implementation
+
+- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/prefer-direct-import.ts)
+- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/prefer-direct-import.test.ts)
+
+## OWASP Foundation
+
+- **Category**: A00:2021 - General Security

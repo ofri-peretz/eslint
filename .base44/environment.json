@@ -1,0 +1,6 @@
+{
+  "previewPort": 3000,
+  "healthPath": "/",
+  "startCommand": "docker compose -f compose.dev.yml -f sandboxes/base44/compose.override.yml up -d",
+  "secrets": []
+}

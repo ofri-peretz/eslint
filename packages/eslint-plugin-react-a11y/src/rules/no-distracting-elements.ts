@@ -1,0 +1,89 @@
+/**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
+ * ESLint Rule: no-distracting-elements
+ * Enforce that distracting elements are not used
+ *
+ * @see https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/no-distracting-elements.md
+ */
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { createRule } from '@interlace/eslint-devkit';
+
+type MessageIds = 'noDistractingElements';
+
+type Options = {
+  elements?: string[];
+};
+
+type RuleOptions = [Options?];
+
+export const noDistractingElements = createRule<RuleOptions, MessageIds>({
+  name: 'no-distracting-elements',
+  meta: {
+    type: 'problem',
+    docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/no-distracting-elements.md',
+      description: 'Enforce that distracting elements are not used',
+      wcag: 'WCAG 2.3.1',
+    },
+    messages: {
+      noDistractingElements: formatLLMMessage({
+        icon: MessageIcons.ACCESSIBILITY,
+        issueName: 'Distracting Element',
+        description:
+          '<{{element}}> elements are distracting and cause accessibility issues',
+        severity: 'HIGH',
+        fix: 'Remove the <{{element}}> element',
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/no-distracting-elements.md',
+        wcag: 'WCAG 2.3.1',
+      }),
+    },
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          elements: {
+            type: 'array',
+            items: { type: 'string' },
+            default: ['marquee', 'blink'],
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
+  },
+  defaultOptions: [
+    {
+      elements: ['marquee', 'blink'],
+    },
+  ],
+  create(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    [options = {} as Options],
+  ) {
+    const { elements = ['marquee', 'blink'] } = options ?? ({} as Options);
+
+    return {
+      JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
+        if (
+          node.name.type === 'JSXIdentifier' &&
+          elements.includes(node.name.name)
+        ) {
+          context.report({
+            node,
+            messageId: 'noDistractingElements',
+            data: {
+              element: node.name.name,
+            },
+          });
+        }
+      },
+    };
+  },
+});

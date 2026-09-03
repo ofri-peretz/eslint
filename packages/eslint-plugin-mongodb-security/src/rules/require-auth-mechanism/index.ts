@@ -1,0 +1,118 @@
+/**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
+ * ESLint Rule: require-auth-mechanism
+ * Requires explicit authentication mechanism
+ * CWE-287: Improper Authentication
+ */
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath, propertyName } from '@interlace/eslint-devkit';
+import { analyzeMongoScope } from '../../utils/receiver';
+import { fileUsesMongo } from '../../utils/mongo-evidence';
+
+type MessageIds = 'requireAuthMechanism';
+export interface Options { allowInTests?: boolean; }
+type RuleOptions = [Options?];
+
+const CONNECTION_METHODS = new Set(['connect', 'createConnection']);
+
+export const requireAuthMechanism = createRule<RuleOptions, MessageIds>({
+  name: 'require-auth-mechanism',
+  meta: {
+    type: 'suggestion',
+    docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/require-auth-mechanism.md', description: 'Require explicit authentication mechanism (SCRAM-SHA-256)',
+      cwe: 'CWE-287',
+      cvss: 6.5,
+    },
+    messages: {
+      requireAuthMechanism: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Implicit Auth Mechanism',
+        cwe: 'CWE-287',
+        owasp: 'A07:2021',
+        cvss: 6.5,
+        description: 'MongoDB connection uses default authentication mechanism',
+        severity: 'MEDIUM',
+        fix: 'Add { authMechanism: "SCRAM-SHA-256" } to connection options',
+        documentationLink: 'https://www.mongodb.com/docs/manual/core/authentication/',
+      }),
+    },
+    schema: [{ type: 'object', properties: { allowInTests: { type: 'boolean', default: true } }, additionalProperties: false }],
+  },
+  defaultOptions: [{ allowInTests: true }],
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    // Every rule here is MongoDB-specific, and none of them could ask the
+    // file-level question: over the corpus, 47% of this plugin's findings were
+    // in files with no Mongo in them. `receiver.ts` discriminates by receiver
+    // NAME, which matches `userModel.findOne()` in a TypeORM repository just as
+    // well as in a Mongoose one. Registering no visitors is both the gate and
+    // the cheap path.
+    if (!fileUsesMongo(context.sourceCode.ast)) return {};
+
+    const [options = {}] = context.options;
+    const { allowInTests = true } = options as Options;
+    const filename = context.filename;
+    const inTestFile = isTestFilePath(filename);
+
+    if (allowInTests && inTestFile) {
+      return {};
+    }
+
+    const mongo = analyzeMongoScope(context.sourceCode.ast);
+
+    return {
+      CallExpression(node: TSESTree.CallExpression) {
+        if (node.callee.type !== AST_NODE_TYPES.MemberExpression) {
+          return;
+        }
+
+        // `mongoose['connect'](url, opts)` opens the same connection.
+        const methodName = propertyName(node.callee);
+
+        if (!methodName || !CONNECTION_METHODS.has(methodName)) {
+          return;
+        }
+
+        // Redis clients, TypeORM query runners and pino transports all have a
+        // `.connect()`. Calling one of those "a MongoDB connection" is the
+        // most damaging thing this rule can do, so require proof.
+        if (!mongo.isConnectionReceiver(node)) {
+          return;
+        }
+
+        // Connection string is first argument, options is second
+        const optionsArg = node.arguments[1];
+
+        // No options at all
+        if (!optionsArg) {
+          context.report({ node, messageId: 'requireAuthMechanism' });
+          return;
+        }
+
+        // Options exist, check for authMechanism
+        if (optionsArg.type === AST_NODE_TYPES.ObjectExpression) {
+          const hasAuthMechanism = optionsArg.properties.some((prop) => {
+            if (prop.type !== AST_NODE_TYPES.Property) return false;
+            const keyName = prop.key.type === AST_NODE_TYPES.Identifier
+              ? prop.key.name
+              : prop.key.type === AST_NODE_TYPES.Literal
+                ? String(prop.key.value)
+                : null;
+            return keyName === 'authMechanism';
+          });
+
+          if (!hasAuthMechanism) {
+            context.report({ node, messageId: 'requireAuthMechanism' });
+          }
+        }
+      },
+    };
+  },
+});
+
+export default requireAuthMechanism;

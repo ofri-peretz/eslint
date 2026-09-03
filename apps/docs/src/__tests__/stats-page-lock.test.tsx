@@ -1,0 +1,285 @@
+/**
+ * /stats regression-lock — source-string assertions per CLAUDE.md.
+ *
+ * /stats is the public data surface for the Interlace ecosystem. A silent
+ * regression here (a chart dropped, a card swapped for a `<div>`, the
+ * plugins table reverting to raw HTML, internal engagement metrics leaking
+ * back onto the visitor-facing page) erodes trust without showing up in CI
+ * unless a structural lock catches it. Pattern mirrors `scorecard-lock`.
+ */
+
+import { describe, it, expect, beforeAll } from 'vitest';
+import { existsSync, readFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+
+/**
+ * Blank comments so prose in docstrings can neither satisfy nor trip a
+ * source-string assertion — only code and JSX text count.
+ */
+function blankComments(src: string): string {
+  return src
+    .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
+    .replace(/(^|[^:])\/\/[^\n]*/g, (_m, p1: string) => p1);
+}
+
+// Use __dirname so this works regardless of whether vitest is invoked from the
+// repo root (npx vitest run apps/docs/…) or from apps/docs (turbo run test).
+const APP_ROOT = resolve(__dirname, '../..');
+
+describe('Stats page: structure lock', () => {
+  const pagePath = join(APP_ROOT, 'src/app/stats/page.tsx');
+  const layoutPath = join(APP_ROOT, 'src/app/stats/layout.tsx');
+  const impactCardPath = join(
+    APP_ROOT,
+    'src/components/stats/impact-card.tsx',
+  );
+  const helperPath = join(APP_ROOT, 'src/lib/stats-page.ts');
+  let pageSource: string;
+  let layoutSource: string;
+  let impactCardSource: string;
+  let helperSource: string;
+
+  beforeAll(() => {
+    pageSource = readFileSync(pagePath, 'utf-8');
+    layoutSource = readFileSync(layoutPath, 'utf-8');
+    impactCardSource = readFileSync(impactCardPath, 'utf-8');
+    helperSource = readFileSync(helperPath, 'utf-8');
+  });
+
+  it('page + layout + helper + ImpactCard all exist', () => {
+    expect(existsSync(pagePath)).toBe(true);
+    expect(existsSync(layoutPath)).toBe(true);
+    expect(existsSync(impactCardPath)).toBe(true);
+    expect(existsSync(helperPath)).toBe(true);
+  });
+
+  describe('Required imports', () => {
+    it('imports the data loader + PluginRow type from @/lib/stats-page', () => {
+      expect(pageSource).toContain("from '@/lib/stats-page'");
+      expect(pageSource).toContain('getStatsPageData');
+      expect(pageSource).toContain('PluginRow');
+    });
+
+    it('imports shadcn primitives from @/components/ui/{card,table}', () => {
+      expect(pageSource).toContain("from '@/components/ui/card'");
+      expect(pageSource).toContain("from '@/components/ui/table'");
+      for (const sym of [
+        'Card',
+        'CardHeader',
+        'CardContent',
+        'CardTitle',
+        'Table',
+        'TableHeader',
+        'TableBody',
+        'TableRow',
+        'TableHead',
+        'TableCell',
+        'TableCaption',
+      ]) {
+        expect(pageSource).toContain(sym);
+      }
+    });
+
+    it('imports DownloadsByPackage chart from @/components/charts', () => {
+      expect(pageSource).toContain(
+        "from '@/components/charts/downloads-by-package'",
+      );
+    });
+
+    it('imports the shadcn ImpactCard from @/components/stats', () => {
+      expect(pageSource).toContain("from '@/components/stats/impact-card'");
+    });
+
+    it('uses shadcn Badge for plugin-category cells (not raw <span>)', () => {
+      expect(pageSource).toContain("from '@interlace/ui/badge'");
+      expect(pageSource).toContain('<Badge');
+    });
+
+    it('frames the page around adoption (visitor-facing), not internal metrics', () => {
+      expect(pageSource).toMatch(/adoption/i);
+    });
+
+    it('uses Container primitive (LAYOUT_PHILOSOPHY §2)', () => {
+      expect(pageSource).toContain("from '@interlace/ui/container'");
+      expect(pageSource).toContain('<Container');
+    });
+
+    it("opts into Next's static cache so JSON reads happen once at build", () => {
+      expect(pageSource).toMatch(/export const dynamic\s*=\s*'force-static'/);
+    });
+
+    it('exports Next.js Metadata with /stats canonical', () => {
+      expect(pageSource).toContain('export const metadata');
+      expect(pageSource).toMatch(/alternates:\s*{\s*canonical:\s*'\/stats'/);
+    });
+
+    it('layout wraps with fumadocs HomeLayout (parity with /scorecard, /articles)', () => {
+      expect(layoutSource).toContain("from 'fumadocs-ui/layouts/home'");
+      expect(layoutSource).toContain('HomeLayout');
+    });
+  });
+
+  describe('Required sections', () => {
+    const REQUIRED_SECTION_IDS = [
+      'impact-heading',
+      'downloads-heading',
+      'plugins-heading',
+    ];
+
+    it.each(REQUIRED_SECTION_IDS)(
+      'pins section id=%s with matching aria-labelledby',
+      (id) => {
+        expect(pageSource).toContain(`id="${id}"`);
+        expect(pageSource).toContain(`aria-labelledby="${id}"`);
+      },
+    );
+
+    it('exposes catalog + live timestamps in the provenance footer', () => {
+      expect(pageSource).toContain('catalogGeneratedAt');
+      expect(pageSource).toContain('liveFetchedAt');
+    });
+  });
+
+  describe('Plugins table columns', () => {
+    const REQUIRED_COLUMNS = [
+      'Plugin',
+      'Category',
+      'Rules',
+      // Was 'Downloads / wk' — the data source is cumulative (impact-source:
+      // "Cumulative npm downloads"), so the unit suffix was simply wrong.
+      'Downloads',
+      'Coverage',
+      'Version',
+    ];
+
+    it.each(REQUIRED_COLUMNS)(
+      'renders a <TableHead>%s</TableHead> header (className optional)',
+      (col) => {
+        const escaped = col.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+        const re = new RegExp(
+          `<TableHead\\b[^>]*>\\s*${escaped}\\s*</TableHead>`,
+        );
+        expect(pageSource).toMatch(re);
+      },
+    );
+  });
+
+  describe('Engagement stays internal (2026-08-24 decision)', () => {
+    it('helper still exposes Reach + EngagementRate for internal consumers', () => {
+      expect(helperSource).toContain('reach');
+      expect(helperSource).toContain('ratePercent');
+      // The old misleading sum and breakdown shape must NOT come back.
+      expect(helperSource).not.toMatch(/engagement\.total/);
+      expect(helperSource).not.toMatch(/engagement\.breakdown/);
+    });
+
+    // Article engagement (reach / rate / reactions) is an internal growth
+    // metric. On a visitor-facing page it answers a question no visitor
+    // asks — and while the audience is early-stage, a sparse value reads
+    // as abandonment. It must not leak back onto the public surface.
+    it('public /stats surfaces render no engagement / North Star metrics', () => {
+      for (const src of [blankComments(pageSource), blankComments(impactCardSource)]) {
+        expect(src).not.toMatch(/North Star/i);
+        expect(src).not.toMatch(/\bengagement\b/i);
+        expect(src).not.toMatch(/\bReach\b/);
+      }
+    });
+
+    it('ImpactCard renders the adoption metrics', () => {
+      expect(impactCardSource).toMatch(/Code adoption/);
+      expect(impactCardSource).toMatch(/GitHub stars/);
+      expect(impactCardSource).toMatch(/npm downloads/);
+    });
+  });
+
+  describe('Forbidden patterns', () => {
+    it('forbids open-coded HTML <table> (must use @/components/ui/table primitive)', () => {
+      expect(pageSource).not.toMatch(/<table[\s>]/);
+      expect(pageSource).not.toMatch(/<\/table>/);
+      expect(pageSource).not.toMatch(/<thead[\s>]/);
+      expect(pageSource).not.toMatch(/<tbody[\s>]/);
+    });
+
+    it('forbids ad-hoc `max-w-*` widths beyond `max-w-prose` (LAYOUT_PHILOSOPHY §2)', () => {
+      const matches = pageSource.match(/\bmax-w-(\w+)/g) ?? [];
+      const offenders = matches.filter((m) => m !== 'max-w-prose');
+      expect(offenders).toEqual([]);
+    });
+
+    it('forbids inline style props (feedback_no_inline_styles)', () => {
+      expect(pageSource).not.toMatch(/style=\{\{/);
+      expect(impactCardSource).not.toMatch(/style=\{\{/);
+    });
+
+    it('forbids the misleading engagement-as-sum NSM model in ImpactCard', () => {
+      expect(impactCardSource).not.toMatch(/engagement\.total/);
+      expect(impactCardSource).not.toMatch(/engagement\.breakdown/);
+    });
+  });
+
+  describe('CTA + Audience locks', () => {
+    const ctaPath = join(process.cwd(), 'src/components/stats/cta.tsx');
+
+    it('the CTA island component exists', () => {
+      expect(existsSync(ctaPath)).toBe(true);
+    });
+
+    it('imports + renders the Star and per-plugin Install CTAs', () => {
+      expect(pageSource).toContain("from '@/components/stats/cta'");
+      for (const sym of ['StarButton', 'InstallCell']) {
+        expect(pageSource).toContain(sym);
+      }
+      expect(pageSource).toContain('<StarButton');
+      expect(pageSource).toContain('<InstallCell');
+    });
+
+    it('links each plugin row to its docs (not plain text)', () => {
+      expect(pageSource).toContain('pluginDocsHref');
+      expect(pageSource).toMatch(/<Link[^>]*href={pluginDocsHref/);
+    });
+
+    it('shows followers as Audience reach, null-guarded in the helper', () => {
+      expect(pageSource).toMatch(/Audience/);
+      expect(pageSource).toMatch(/followers/i);
+      expect(helperSource).toContain('audience');
+      expect(helperSource).toContain('githubFollowers');
+      expect(helperSource).toContain('devtoFollowers');
+    });
+  });
+});
+
+describe('download loader honesty (2026-08-24: all-zero /stats incident)', () => {
+  const impactSource = readFileSync(
+    join(APP_ROOT, 'src/lib/impact-source.ts'),
+    'utf-8',
+  );
+
+  it('per-package loader refuses to cache an empty map', () => {
+    // The empty-success hole: rows with null embedded names returned {}
+    // successfully, unstable_cache stored it, and the Data Cache served
+    // zeros for every plugin until the key changed. Both loaders must
+    // throw on empty — a rejected promise is never cached.
+    expect(impactSource).toMatch(
+      /Object\.keys\(out\)\.length === 0[\s\S]{0,400}throw new Error/,
+    );
+  });
+
+  it('the cache key stays versioned (the only purge mechanism that exists)', () => {
+    expect(impactSource).toContain("['package-downloads-alltime-v2']");
+    expect(impactSource).not.toContain("['package-downloads-alltime']");
+  });
+});
+
+describe('download outage degrades to em dash, never fake zeros', () => {
+  it('helper returns null (not {}) when the loader fails', () => {
+    const helper = readFileSync(join(APP_ROOT, 'src/lib/stats-page.ts'), 'utf-8');
+    expect(helper).not.toMatch(/return \{\} as Record<string, number>/);
+    expect(helper).toContain('downloads: number | null');
+  });
+
+  it('the table renders an aria-labelled em dash for null downloads', () => {
+    const page = readFileSync(join(APP_ROOT, 'src/app/stats/page.tsx'), 'utf-8');
+    expect(page).toContain('aria-label="No download data"');
+    expect(page).toMatch(/p\.downloads === null/);
+  });
+});

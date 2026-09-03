@@ -1,0 +1,72 @@
+# no-legacy-imports
+
+💼 This rule is enabled in the following configs: `recommended`, `typescript`.
+💡 This rule is automatically fixable by the `--fix` CLI option.
+
+<!-- end auto-generated rule header -->
+
+Detect imports from deprecated internal paths and suggest alternatives
+
+## Rule Details
+
+This rule aims to prevent issues related to legacy-imports.
+
+## Options
+
+```json
+[
+  {
+    "type": "object",
+    "properties": {
+      "mappings": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "deprecated": {
+              "type": "string"
+            },
+            "replacement": {
+              "type": "string"
+            },
+            "reason": {
+              "type": "string"
+            },
+            "since": {
+              "type": "string"
+            },
+            "deadline": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "deprecated",
+            "replacement"
+          ]
+        }
+      },
+      "severity": {
+        "type": "string",
+        "enum": [
+          "warn",
+          "error"
+        ],
+        "default": "warn"
+      }
+    },
+    "required": [
+      "mappings"
+    ],
+    "additionalProperties": false
+  }
+]
+```
+
+## Implementation
+
+- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/no-legacy-imports.ts)
+- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/no-legacy-imports.test.ts)
+
+## OWASP Foundation
+
+- **Category**: A00:2021 - General Security

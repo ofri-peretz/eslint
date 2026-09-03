@@ -1,0 +1,188 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Upload Coverage to Codecov
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Runs every package's `test:coverage` task via Turbo, uploads lcov + JUnit
+# results to Codecov for badges + Test Analytics.
+#
+# Triggers:
+#   • push to main — keeps badges fresh after every merge
+#   • weekly schedule — guards against silent drift (stale Turbo cache)
+#   • workflow_dispatch — on-demand after a coverage-focused branch
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  # Coverage is collected HERE and nowhere else. PR test shards run with
+  # `--coverage.enabled=false`: v8 instrumentation costs ~15% on every shard
+  # for a number nobody reads per-PR, and it competes for the 20 concurrent
+  # job slots. This daily run is the backstop — a coverage regression surfaces
+  # within 24h rather than at the PR.
+  #
+  # Daily 08:45 UTC = 4:45am EDT / 3:45am EST — inside the 3-7am ET window at
+  # both offsets, since GitHub cron is UTC and ignores DST. Staggered off the
+  # other drift crons (08:15, 09:00, 09:30, 10:00).
+  schedule:
+    - cron: "45 8 * * *"
+  workflow_dispatch:
+    inputs:
+      filter:
+        description: "Turbo filter (e.g. eslint-plugin-postgresql-security). Empty = all packages."
+        required: false
+        type: string
+        default: ""
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  TURBO_TELEMETRY_DISABLED: "1"
+
+jobs:
+  coverage:
+    name: Test Coverage
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write # open the failure issue (.github/actions/report-failure)
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Run tests with coverage
+        env:
+          FILTER_ARG: ${{ inputs.filter && format('--filter={0}', inputs.filter) || '' }}
+          # This is the one place coverage is collected and thresholds are
+          # enforced. PR shards pass --coverage.enabled=false.
+          CI_TEST_SHARD_COVERAGE: "1"
+        # No `|| npx turbo run test` fallback. Every package declares
+        # `thresholds: { lines: 100, statements: 100, functions: 100,
+        # branches: 100 }`, and a breach makes `test:coverage` exit non-zero —
+        # which the `||` then caught, ran the plain (coverage-free) suite, and
+        # reported green. Coverage regressions were structurally incapable of
+        # failing this job, which is the one job whose entire purpose is to
+        # catch them.
+        run: npx turbo run test:coverage $FILTER_ARG --continue
+
+      - name: Locate coverage + JUnit reports
+        id: find
+        run: |
+          set -euo pipefail
+          LCOV=$(find packages -path '*/coverage/lcov.info' -type f | sort | head -200)
+          JUNIT=$(find packages \( -name 'junit.xml' -o -name 'test-report.junit.xml' \) 2>/dev/null | head -200)
+          {
+            echo "lcov<<EOF"; echo "$LCOV"; echo "EOF"
+            echo "junit<<EOF"; echo "$JUNIT"; echo "EOF"
+            echo "has_lcov=$([ -n "$LCOV" ] && echo true || echo false)"
+            echo "has_junit=$([ -n "$JUNIT" ] && echo true || echo false)"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Rewrite lcov SF paths to repo-root-relative
+        if: steps.find.outputs.has_lcov == 'true'
+        run: |
+          # Vitest runs per-package so SF: lines are package-relative (e.g. SF:src/rules/foo.ts).
+          # Codecov component_management uses repo-root paths (packages/<pkg>/**).
+          # Prepend the package directory so components and overall tree both match.
+          for lcov in packages/*/coverage/lcov.info; do
+            [ -f "$lcov" ] || continue
+            pkg=$(basename "$(dirname "$(dirname "$lcov")")")
+            sed -i "s|^SF:|SF:packages/${pkg}/|g" "$lcov"
+          done
+
+      - name: Upload combined coverage to Codecov
+        if: steps.find.outputs.has_lcov == 'true'
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v6
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+
+      - name: Upload per-package coverage flags to Codecov
+        if: steps.find.outputs.has_lcov == 'true'
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: |
+          # Each package gets its own flag so per-plugin badge URLs work:
+          # https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?flag=<flag>
+          #
+          # `--require-hashes` against a committed set, not a bare version pin:
+          # `codecov-cli==11.3.1` pins the CLI but lets every transitive dep
+          # re-resolve from PyPI at run time, which is what Scorecard's
+          # PinnedDependenciesID flags. See the regenerate command in that file.
+          pip3 install --quiet --require-hashes -r .github/requirements/codecov-cli.txt
+          for lcov in packages/*/coverage/lcov.info; do
+            [ -f "$lcov" ] || continue
+            pkg=$(basename "$(dirname "$(dirname "$lcov")")")
+            echo "→ uploading $pkg …"
+            codecovcli upload-process \
+              --token "$CODECOV_TOKEN" \
+              --flag "$pkg" \
+              --file "$lcov" \
+              --name "$pkg" || true
+          done
+
+      - name: Upload test results (Test Analytics)
+        if: steps.find.outputs.has_junit == 'true'
+        uses: codecov/test-results-action@0fa95f0e1eeaafde2c782583b36b28ad0d8c77d3 # v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Coverage summary
+        if: always()
+        run: |
+          set -euo pipefail
+          {
+            echo "## Coverage Report"
+            echo ""
+            echo "Triggered by: ${{ github.event_name }}"
+            echo ""
+            echo "### Per-package coverage"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          shopt -s nullglob
+          found=false
+          for lcov in packages/*/coverage/lcov.info; do
+            found=true
+            pkg=$(basename "$(dirname "$(dirname "$lcov")")")
+            total=$(grep -c '^DA:' "$lcov" || true)
+            hit=$(grep '^DA:' "$lcov" | grep -cv ',0$' || true)
+            if [ "${total:-0}" -gt 0 ]; then
+              pct=$((hit * 100 / total))
+              if [ "$pct" -ge 80 ]; then emoji="🟢"
+              elif [ "$pct" -ge 60 ]; then emoji="🟡"
+              else emoji="🔴"
+              fi
+              echo "- $emoji **$pkg**: ${pct}% ($hit/$total lines) | [badge](https://codecov.io/gh/${{ github.repository }}/graph/badge.svg?flag=$pkg)" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
+          [ "$found" = true ] || echo "_No coverage reports found._" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "[View on Codecov](https://codecov.io/gh/${{ github.repository }})" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: coverage-reports-${{ github.run_id }}
+          path: |
+            packages/*/coverage/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      # A red cron notifies nobody by default. See .github/actions/report-failure.
+      - name: 🚨 Report a scheduled failure
+        if: failure() && github.event_name == 'schedule'
+        uses: ./.github/actions/report-failure
+        with:
+          title: 'Coverage upload is failing'
+          body: 'The scheduled coverage run failed, so Codecov has no fresh data and every component badge is reporting a stale or unknown number.'
+          token: ${{ github.token }}

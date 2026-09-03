@@ -1,0 +1,74 @@
+---
+title: CWE Compatibility
+description: How Interlace exposes MITRE CWE Identifiers — for security review, compliance reporting, and SARIF-based tooling.
+---
+
+# MITRE CWE Compatibility
+
+The Interlace ESLint ecosystem is **CWE-compatible** — every security rule maps to one or more [MITRE CWE](https://cwe.mitre.org/) identifiers, and every diagnostic the ecosystem emits surfaces those identifiers in machine-readable form. This page documents how that compatibility works so security teams, auditors, and SARIF consumers can pivot Interlace findings on CWE.
+
+The compatibility design follows the [MITRE CWE Compatibility Program](https://cwe.mitre.org/compatible/requirements.html) — the same review standard met by Coverity, Fortify, Sonar, and Checkmarx.
+
+## The four contracts
+
+| MITRE criterion | How Interlace implements it |
+| :--- | :--- |
+| **Searchable** (MR-1) | Every rule's `meta.cwe` carries the identifier. The docs site search indexes it. SARIF output emits `properties.cwe` + `tags: ['external/cwe/CWE-NNN']`. |
+| **Output** (MR-2) | ESLint diagnostic messages include the CWE ID (`[CWE-798] Hardcoded credential detected`). SARIF output (via [`@interlace/eslint-formatter-sarif`](https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-formatter-sarif)) emits CWE tags consumable by GitHub Advanced Security, Microsoft Defender, GitLab Ultimate, Sonar, and Snyk. |
+| **Mapping accuracy** (MR-3) | Every CWE assignment is enforced by `npm run docs:cwe-coverage --check` — a CI gate that fails if any rule has no `cwe` annotation and no `cweJustification`. Re-runs after every rule change. |
+| **Documentation** (MR-4) | This page (linked from the security plugin index), plus the per-rule docs pages, plus the auto-generated [coverage report](#current-coverage). |
+
+## Current coverage
+
+The live, auto-generated CWE coverage table lives at [`benchmark-results/cwe-coverage.md`](https://github.com/ofri-peretz/eslint/blob/main/benchmark-results/cwe-coverage.md). It's regenerated on every rule change by `npm run docs:cwe-coverage`. Summary fields published in [`benchmark-results/cwe-coverage.json`](https://github.com/ofri-peretz/eslint/blob/main/benchmark-results/cwe-coverage.json):
+
+- Distinct CWEs covered
+- CWE Top-25 covered (of 25)
+- CWE Top-25 gaps (with justification)
+- Rules unmapped to any CWE (with justification)
+
+The gap list — CWE Top-25 entries Interlace doesn't cover yet — lives at [`benchmark-results/cwe-coverage-gaps.md`](https://github.com/ofri-peretz/eslint/blob/main/benchmark-results/cwe-coverage-gaps.md). It also documents the *justification for non-coverage* per criterion RR-4.
+
+## What's emphasized, what's not (RR-4 Coverage Justification)
+
+We cover CWEs that meet **all three** of:
+
+1. **Detectable from a JS/TS Abstract Syntax Tree** — pattern-matchable in source without runtime instrumentation.
+2. **Common in the JavaScript ecosystem** — driven by real-world prevalence, not generic SAST checklists.
+3. **Pre-deployment-actionable** — a developer reading the diagnostic should know what to change before merging.
+
+We **don't** cover:
+
+- **C/C++ memory-safety CWEs** (CWE-787 buffer overflow, CWE-125 out-of-bounds read, CWE-416 use-after-free, CWE-119 buffer access errors, CWE-476 NULL dereference, CWE-190 integer overflow). These require pointer-level analysis JS/TS source doesn't expose. Use [CodeQL](https://codeql.github.com/) or [Coverity](https://www.synopsys.com/software-integrity/security-testing/static-analysis-sast.html) for those.
+- **Information-disclosure CWEs requiring full data-flow analysis** (CWE-200 in its general form). Interlace covers concrete patterns (`secure-coding/no-leaked-error-message`, `secure-coding/no-stack-trace-exposure`), but not arbitrary taint tracking.
+- **Application-semantics-only CWEs** (CWE-862 missing authorization, CWE-863 incorrect authorization, CWE-269 improper privilege management) — these are application-design concerns, not lint-detectable. We cover *framework-specific* patterns (`nestjs-security/no-public-decorator-on-sensitive-route`, `express-security/no-skipped-auth-middleware`) where the framework hooks make detection tractable.
+
+## Using CWE in the field
+
+### Filter findings by CWE in CI
+
+```bash
+# Emit SARIF and feed it to GitHub Advanced Security
+npx eslint --format @interlace/eslint-formatter-sarif src/ > eslint.sarif
+
+# Now in GitHub UI: Code Scanning → filter by tag → external/cwe/CWE-89
+```
+
+### Pull a CWE rollup for an audit report
+
+```bash
+npm run docs:cwe-coverage         # writes JSON + Markdown
+cat benchmark-results/cwe-coverage.json | jq '.byCwe["CWE-798"]'
+# → { "rules": ["secure-coding/no-hardcoded-credentials", ...], "top25": true, "owaspTop10": false }
+```
+
+### Grep the rule that fired by CWE
+
+```bash
+# Every rule's source carries `cwe: 'CWE-NNN'` in its meta block
+grep -r "cwe.*CWE-89" packages/eslint-plugin-*/src/rules/
+```
+
+## Submission status
+
+The Interlace ecosystem's MITRE CWE Compatibility submission readiness review is published at [`benchmarks/audits/2026-05-09-mitre-cwe-compatibility-readiness.md`](https://github.com/ofri-peretz/eslint/blob/main/benchmarks/audits/2026-05-09-mitre-cwe-compatibility-readiness.md). Once reviewed and submitted, this page will link to the official MITRE CWE-Compatible Products listing.

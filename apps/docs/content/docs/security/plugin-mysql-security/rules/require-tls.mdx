@@ -1,0 +1,117 @@
+---
+title: require-tls
+description: "Require TLS on mysql2 / mysql connections, so queries and credentials are not sent in cleartext and the server is authenticated."
+tags: ['security', 'mysql']
+category: security
+severity: high
+cwe: CWE-319
+autofix: false
+type_aware: false
+type_aware_status: unaware
+---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+**CWE:** [CWE-319](https://cwe.mitre.org/data/definitions/319.html)
+**OWASP:** [A02:2021 – Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
+
+Detects mysql2 / mysql connection configuration that turns TLS off, or that keeps encryption but stops authenticating the server. This rule is part of [`eslint-plugin-mysql-security`](https://www.npmjs.com/package/eslint-plugin-mysql-security).
+
+💼 This rule is set to **error** in the `strict` config.
+
+## Quick Summary
+
+| Aspect            | Details                                                                          |
+| ----------------- | -------------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-319](https://cwe.mitre.org/data/definitions/319.html) (Cleartext Transmission of Sensitive Information) |
+| **Severity**      | High (CVSS 7.4)                                                                  |
+| **Auto-Fix**      | ❌ No auto-fix available                                                         |
+| **Category**      | Security                                                                         |
+
+## Why this matters
+
+A database connection carries more sensitive data than almost anything else in
+an application: every query, every row that comes back, and the credentials used
+to open the session. With TLS off, all of it is readable by anything on the
+path — a shared VPC, a misconfigured load balancer, a compromised sidecar.
+
+The second failure is subtler and more common. `rejectUnauthorized: false`
+leaves encryption on, so a packet capture looks fine, but the client no longer
+checks *who* it is talking to. It will happily complete a handshake with an
+attacker who answered in the database's place, hand over the credentials, and
+proxy every query. This is why the two cases are reported separately: the fix
+for the first is "turn TLS on", and the fix for the second is "supply the CA",
+never "switch the check off".
+
+mysql2 configures TLS through `ssl` — an object, or the string name of a
+bundled CA — and its URL form takes `?ssl=false`. Both shapes are checked.
+`ssl: "Amazon RDS"` selects a bundled CA and is correct, not a finding.
+
+## ❌ Incorrect
+
+```ts
+import mysql from 'mysql2/promise';
+
+// ❌ plaintext
+const c = mysql.createConnection({ host, user, password, ssl: false });
+
+// ❌ encrypted to whoever answered
+const c2 = mysql.createConnection({ host, ssl: { rejectUnauthorized: false } });
+
+// ❌ same thing in the URL form
+const c3 = mysql.createConnection('mysql://app@db.internal/app?ssl=false');
+```
+
+## ✅ Correct
+
+```ts
+import mysql from 'mysql2/promise';
+
+// ✅ CA supplied
+const c = mysql.createConnection({ host, user, ssl: { ca: fs.readFileSync(caPath) } });
+
+// ✅ the bundled RDS CA
+const c2 = mysql.createConnection({ host, user, ssl: 'Amazon RDS' });
+```
+
+## What this rule deliberately does not report
+
+- **A value it cannot read.** `ssl: useTls` or `ssl: process.env.DB_SSL === '1'`
+  is a decision made at runtime. Guessing there is how a security rule earns a
+  false-positive reputation, so the rule stays silent — a deliberate false
+  negative in exchange for findings that are always real.
+- **A TLS key with no connection-shaped neighbour.** `{ rejectUnauthorized: false }`
+  on its own is an https agent or a fetch option, not a database connection.
+  That belongs to `eslint-plugin-node-security`, and reporting it here would
+  double-report the same line from two plugins.
+- **A file that never imports mysql2 / mysql.** The driver import is the gate that
+  keeps this rule inside its own plugin.
+
+## When Not To Use It
+
+Local development against a database on the same host — a docker-compose
+MySQL reached over a loopback socket — has no network to protect. Disable the
+rule for those files rather than for the project, so the production
+configuration stays covered:
+
+```js
+// eslint.config.js
+export default [
+  {
+    // Filename-scoped on purpose. A directory glob such as `docker/**` would
+    // also switch the rule off for production connection code that happens to
+    // live there, which is the configuration this rule exists to protect.
+    files: ['**/*.local.ts'],
+    rules: { 'mysql-security/require-tls': 'off' },
+  },
+];
+```
+
+## Further Reading
+
+- [CWE-319: Cleartext Transmission of Sensitive Information](https://cwe.mitre.org/data/definitions/319.html)
+- [CWE-295: Improper Certificate Validation](https://cwe.mitre.org/data/definitions/295.html) — the weakness behind the `certificateValidationDisabled` finding
+- [OWASP A02:2021 – Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
+- [mysql2 / mysql connection options](https://sidorares.github.io/node-mysql2/docs/documentation/ssl)

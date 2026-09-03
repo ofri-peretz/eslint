@@ -1,0 +1,216 @@
+---
+title: require-csrf-protection
+description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+tags: ['security', 'express']
+category: security
+severity: high
+cwe: CWE-352
+autofix: false
+type_aware: false
+type_aware_status: unaware
+---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> Require CSRF protection middleware for state-changing HTTP methods
+
+**Severity:** 🔴 High  
+**CWE:** [CWE-352](https://cwe.mitre.org/data/definitions/352.html)
+
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-352 OWASP:A01 CVSS:8.8 | Cross-Site Request Forgery (CSRF) detected | HIGH
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A01_2021/
+```
+
+### Message Components
+
+| Component                 | Purpose                | Example                                                                                                                                                                                                                                                       |
+| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Risk Standards**        | Security benchmarks    | [CWE-352](https://cwe.mitre.org/data/definitions/352.html) [OWASP:A01](https://owasp.org/Top10/A01_2021-Injection/) [CVSS:8.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
+| **Issue Description**     | Specific vulnerability | `Cross-Site Request Forgery (CSRF) detected`                                                                                                                                                                                                                  |
+| **Severity & Compliance** | Impact assessment      | `HIGH`                                                                                                                                                                                                                                                        |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                                                          |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A01_2021-Injection/)                                                                                                                                                                                                   |
+
+## Rule Details
+
+This rule detects an Express route that mutates state on behalf of a
+browser-held credential without a CSRF token.
+
+### The two preconditions
+
+CSRF is not "a state-changing method without a token". It is _the browser
+attaching a credential the attacker cannot read but can cause to be sent_. Two
+things must hold before the control means anything, and the rule abstains
+unless both do:
+
+1. **Ambient credential material exists in the file.** A cookie, a session, a
+   `cookie-parser` / `express-session` / `passport` import, `req.session`,
+   `req.cookies`, `res.cookie(…)`. With none of them — a bearer-token API, an
+   OAuth callback, a form-post demo — a cross-site request carries no authority
+   and a token would protect nothing.
+2. **The route is authenticated.** Auth middleware in its own chain, a handler
+   that reads a principal, or a router-wide `app.use(requireAuth)`. An endpoint
+   that requires no principal has nothing for a forged request to ride.
+
+### Partition with `require-route-authentication`
+
+Precondition 2 is the exact complement of `require-route-authentication`'s
+test, so the two rules never report the same route. An unauthenticated critical
+route is CWE-306 and that rule owns it; adding a CSRF token there fixes no
+vulnerability. Before 2026-08-12 both rules reported the same seven routes on
+the 8-repo corpus.
+
+## Examples
+
+### ❌ Incorrect
+
+```javascript
+import express from 'express';
+import session from 'express-session';
+
+const app = express();
+app.use(session({ secret }));
+app.use(requireAuth);
+
+// A session cookie, an authenticated route, no token - VULNERABLE
+app.post('/transfer', (req, res) => {
+  transferFunds(req.body);
+});
+```
+
+### ✅ Correct
+
+```javascript
+import express from 'express';
+import csrf from 'csurf';
+
+const app = express();
+const csrfProtection = csrf({ cookie: true });
+
+// Global CSRF protection
+app.use(csrfProtection);
+
+app.post('/transfer', (req, res) => {
+  transferFunds(req.body);
+});
+
+// Or per-route protection
+app.post('/transfer', csrfProtection, (req, res) => {
+  transferFunds(req.body);
+});
+```
+
+```javascript
+// No cookie and no session anywhere in the file: nothing to forge with.
+// Not reported.
+const router = express.Router();
+router.post('/select-authenticator', (req, res, next) => proceed(req.body));
+
+// Unauthenticated route: require-route-authentication owns this site.
+// Not reported here.
+app.post('/signup', createAccount);
+```
+
+## Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `allowInTests` | `boolean` | `false` | Allow missing CSRF in test files |
+| `protectedMethods` | `string[]` | `["post","put","patch","delete"]` | HTTP methods that require CSRF protection |
+| `ignorePatterns` | `string[]` | `[]` | Route patterns to ignore |
+
+```json
+{
+  "rules": {
+    "express-security/require-csrf-protection": [
+      "error",
+      {
+        "ignorePatterns": ["/api/webhook", "/api/public/.*"]
+      }
+    ]
+  }
+}
+```
+
+## When Not To Use It
+
+Disable for:
+
+- Stateless API-only backends using token-based auth (JWT)
+- Webhook endpoints that use signature verification
+- Public APIs without session-based authentication
+
+<WhenNotToUse />
+
+<FalseNegativeCTA />
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### CSRF Middleware in External Router
+
+**Why**: Middleware applied in other modules is not tracked.
+
+```typescript
+// ❌ NOT DETECTED - CSRF in external router file
+// routes.ts applies csrf, but main.ts doesn't see it
+import { router } from './routes';
+app.use(router);
+```
+
+**Mitigation**: Apply CSRF globally in main file. Document middleware location.
+
+### Custom CSRF Implementation
+
+**Why**: Custom CSRF token validation is not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom CSRF check
+app.post('/transfer', (req, res) => {
+  if (req.headers['x-csrf-token'] !== req.session.csrf) {
+    return res.status(403).send('Invalid CSRF');
+  }
+  // ... handle request
+});
+```
+
+**Mitigation**: Configure rule to recognize custom middleware names.
+
+### Framework CSRF Abstraction
+
+**Why**: Framework-specific CSRF is not detected.
+
+```typescript
+// ❌ NOT DETECTED - Next.js API routes
+export async function POST(req) {
+  // Next.js has different CSRF handling
+}
+```
+
+**Mitigation**: Use framework-specific linting. Configure ignorePatterns.
+
+### Token-Based API with Session Fallback
+
+**Why**: Rule can't determine if endpoint uses session or JWT.
+
+```typescript
+// ❌ FALSE POSITIVE RISK - JWT API doesn't need CSRF
+app.post('/api/data', jwtAuth, (req, res) => {
+  // Safe: JWT auth, not session-based
+});
+```
+
+**Mitigation**: Use ignorePatterns for API routes. Document auth strategy.
+
+## Further Reading
+
+- [OWASP CSRF Prevention](https://owasp.org/www-community/attacks/csrf)
+- [csurf npm package](https://www.npmjs.com/package/csurf)

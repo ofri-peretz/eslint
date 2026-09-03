@@ -1,0 +1,10 @@
+{
+    "title": "Plugin: modularity",
+    "icon": "Package",
+    "defaultOpen": false,
+    "pages": [
+        "index",
+        "changelog",
+        "rules"
+    ]
+}

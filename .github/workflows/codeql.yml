@@ -1,0 +1,136 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: CodeQL
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Static security analysis. CodeQL is expensive (~4min wall) so it does NOT
+# run on every PR push — it fires on the T3 "promote" gate (ready_for_review
+# or `run-full-ci` label) and on a weekly Monday cron. Findings show up under
+# Security → Code scanning.
+#
+# Why we want this on a security-focused plugin monorepo: our rules look for
+# vulnerabilities — we should not be the source of any. CodeQL also catches
+# JS/TS-level issues that ESLint won't (e.g. tainted-data flows across files).
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  # The `push: branches: [main]` trigger was REMOVED on 2026-08-31, to stop
+  # CodeQL competing for runners on every merge — it was the longest job on a
+  # main push at 208s, against 109s for the whole quality gate.
+  #
+  # KNOWN COST, accepted deliberately: analysis drops from every commit to one
+  # scan a day. Scorecard's SAST check measures precisely that ratio and had
+  # reported 25 of 30 commits analysed; expect that score, and the README
+  # badge, to fall. A vulnerability introduced by a merge is now caught within
+  # 24 hours rather than ~208 seconds.
+  #
+  # To revert, restore:
+  #   push:
+  #     branches: [main]
+  workflow_dispatch:
+  schedule:
+    # NIGHTLY, 03:17 UTC. Was weekly; a full scan is ~212s and this repo is
+    # public, so Actions minutes are free — there is no reason to analyse a
+    # security surface once a week when it can be analysed once a day. Off-peak
+    # minute keeps us out of cron storms at the top of the hour.
+    - cron: "17 3 * * *"
+
+# The `pull_request` trigger was REMOVED on 2026-08-30, deliberately.
+#
+# CodeQL averaged 212s per run and gated nothing — it is not a required check,
+# so it never blocked a merge; it only competed for runners and lengthened the
+# PR page. The trigger's own note above described it as "a fast-feedback
+# convenience" that "cannot stand alone", and that remains the accurate reading:
+# every commit that lands on main is still analysed by the `push` trigger, which
+# is also what Scorecard's SAST check measures.
+#
+# What is genuinely traded away: a finding now surfaces just after a PR merges
+# rather than just before. Analysis time is the tool's, not ours — it cannot be
+# made 3x faster — so the only lever on a 60s CI target was when it runs. The
+# nightly cadence above is the compensating half of that trade.
+
+concurrency:
+  # Keyed on the SHA for push, the ref for everything else. Two merges landing
+  # close together share a ref, so a ref-keyed group would cancel the first
+  # commit's analysis and leave it permanently unscanned — reintroducing the
+  # SAST gap this workflow's push trigger exists to close. Superseding a PR
+  # push is fine; superseding a commit already on main is not.
+  group: codeql-${{ github.event_name == 'push' && github.sha || github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'push' }}
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    name: Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    outputs:
+      run: ${{ steps.decide.outputs.run }}
+    steps:
+      - id: decide
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          IS_DRAFT: ${{ github.event.pull_request.draft }}
+          HAS_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'run-full-ci') }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" != "pull_request" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ "$IS_DRAFT" == "false" ]] || [[ "$HAS_LABEL" == "true" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Draft PR without \`run-full-ci\` label — skipping CodeQL scan."
+          fi
+
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      security-events: write
+      packages: read
+      issues: write # the failure channel — see the report step below
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [javascript-typescript]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4
+        with:
+          languages: ${{ matrix.language }}
+          config-file: .github/codeql/codeql-config.yml
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4
+        with:
+          category: "/language:${{ matrix.language }}"
+
+      # Moving CodeQL off per-merge and onto a schedule traded coverage for
+      # cost, and that trade is only sound if a failed scan is noticed. A cron
+      # job that breaks silently scans nothing and reports nothing — the same
+      # green-while-doing-nothing shape this PR exists to remove. Nobody is
+      # watching a scheduled run's tab, so it files an issue instead.
+      - name: 🚨 Report a failed CodeQL scan
+        if: failure()
+        uses: ./.github/actions/report-failure
+        with:
+          title: "CodeQL scan is failing"
+          body: >-
+            The scheduled CodeQL analysis did not complete, so no new alerts
+            were produced for this commit. Since CodeQL no longer runs per
+            merge (see docs/adr/0001-codeql-runs-post-merge-not-per-pr.md),
+            a failing scan means the SAST coverage gap widens silently until
+            this is fixed.
+          token: ${{ github.token }}

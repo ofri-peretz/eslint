@@ -1,0 +1,10 @@
+{
+    "title": "Plugin: pg",
+    "icon": "Database",
+    "defaultOpen": false,
+    "pages": [
+        "index",
+        "changelog",
+        "rules"
+    ]
+}

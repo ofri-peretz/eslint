@@ -1,0 +1,82 @@
+# cicd-impact — executive inputs (SHAREABLE TEMPLATE)
+#
+# To use:
+#   cp inputs.template.yml inputs.yml
+# Then edit inputs.yml with your org-specific values. inputs.yml is gitignored;
+# this template stays in the repo as the public starting point.
+#
+# These are the values *only humans can decide*. The scripts in scripts/ produce
+# the measurable side (pipeline duration, frequency, failure rate, active devs)
+# from the GitHub Actions API automatically. The numbers in this file are the
+# ones a finance lead, eng manager, or VP needs to sign off on.
+#
+# Edit, then re-run:
+#   ./scripts/03-compute-unit-cost.cjs
+#   ./scripts/04-render-report.cjs
+#
+# Each value below is annotated with the seeded default and the citation that
+# justifies it. Override freely.
+
+# --- Wage ---------------------------------------------------------------------
+# Fully-loaded cost per developer-minute. Salary + benefits + overhead, divided
+# by working minutes per year (≈ 120,000 = 50 weeks × 40 h × 60 min).
+#
+# Seeded default of $2.00/min ≈ $240k/yr fully loaded — middle of the published
+# range for US-based senior software engineers in 2025-2026 (BLS OEWS + Levels.fyi
+# fully-loaded markups). Override with HR's actual figure for the dashboard team.
+wage_per_minute_usd: 2.00
+
+# --- Active developer count ---------------------------------------------------
+# How many people actually push code to this repo on a given day. Not headcount;
+# *effective* developers. The script seeds this from `git shortlog -sne --since=90d`
+# and writes it to data/actors-90d.txt — override here only if you want to count
+# contractors differently, exclude PMs, etc.
+#
+# null = use the measured number from data/actors-90d.txt
+active_developers: null
+
+# --- Cognitive tax (piecewise) ------------------------------------------------
+# How much focus a developer loses when CI takes "too long". Piecewise to absorb
+# the critique that the Mark/Gloria/Klocke 23-min figure is an *average* across
+# all interruption types. Self-initiated, anticipated CI waits recover faster.
+#
+# Cypher & Yarrison (2017) on flow-state recovery: short, predictable
+# interruptions cost <5 min if attention can stay parked; long ones (>10 min)
+# trigger full task-switch and recover at the canonical 23-min rate.
+cognitive_tax_minutes:
+  short:  0    # waits < short_threshold_minutes — assume zero recovery cost
+  medium: 5    # waits between short and long thresholds
+  long:   23   # waits >= long_threshold_minutes (Mark/Gloria/Klocke 2008)
+
+cognitive_tax_thresholds_minutes:
+  short_threshold: 2   # below this, no measurable cost
+  long_threshold:  10  # at/above this, full context-switch tax
+
+# --- CI failure rate policy ---------------------------------------------------
+# How to treat non-success runs. Cancelled runs are usually rebases/aborts and
+# don't represent rework — counting them as failures inflates the number.
+ci_failure_policy:
+  count_cancelled_as_failure: false
+  count_timed_out_as_failure: true   # timeout = real failure (the build hung)
+  retry_after_fail_counts_as: 1      # rebases on a failed branch are 1 attempt, not N
+
+# --- Blast-radius multiplier --------------------------------------------------
+# When a developer ships a broken build to STG, how many *other* developers does
+# it block? Set to null to use the empirical value from concurrency-lock waits
+# behind failed deploys (computed by 02-compute-baseline.cjs). Override with a
+# fixed number only if the empirical signal is too noisy.
+#
+# Reasonable bounds: 1.0 (no spillover) to 3.0 (heavy spillover).
+blast_radius_multiplier: null
+
+# --- Annualisation ------------------------------------------------------------
+working_days_per_year: 250   # standard finance default (52 weeks × 5 - holidays)
+
+# --- Sensitivity sweep --------------------------------------------------------
+# Used by 03-compute-unit-cost.cjs to produce outputs/sensitivity.csv. Each axis
+# is multiplied against the seeded base value above to produce the Low/Med/High
+# matrix the report shows.
+sensitivity:
+  wage_multipliers:           [0.75, 1.00, 1.25]   # ±25% around base wage
+  blast_radius_multipliers:   [1.0, 2.0, 3.0]      # explicit absolute values, override empirical
+  ci_failure_rate_overrides:  [0.10, null, 0.30]   # null = use measured; flank with DORA Low/High

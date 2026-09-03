@@ -1,0 +1,74 @@
+# GitHub Labels Configuration
+#
+# Run this file with GitHub CLI to create/update labels:
+#   gh label create "sdk-compatibility" --color "0E8A16" --description "SDK interface compatibility testing" --force
+#
+# Or import via Settings > Labels
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SDK COMPATIBILITY LABELS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Master label for all SDK compatibility issues
+- name: sdk-compatibility
+  color: "0E8A16"
+  description: "SDK interface compatibility testing"
+
+# Breaking change marker
+- name: breaking-change
+  color: "D93F0B"
+  description: "Breaking change detected in upstream SDK"
+
+# Maintenance category
+- name: maintenance
+  color: "FBCA04"
+  description: "Repository maintenance and infrastructure"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# TECHNOLOGY-SPECIFIC LABELS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# PostgreSQL
+- name: pg
+  color: "336791"
+  description: "PostgreSQL / node-postgres (pg) related"
+
+# JWT
+- name: jwt
+  color: "000000"
+  description: "JWT ecosystem (jsonwebtoken, jose, etc.)"
+
+# Express
+- name: express
+  color: "000000"
+  description: "Express.js ecosystem"
+
+# Vercel AI
+- name: vercel-ai
+  color: "000000"
+  description: "Vercel AI SDK"
+
+# NestJS
+- name: nestjs
+  color: "E0234E"
+  description: "NestJS framework"
+
+# Lambda/Middy
+- name: lambda
+  color: "FF9900"
+  description: "AWS Lambda / Middy"
+
+# MongoDB (future)
+- name: mongodb
+  color: "47A248"
+  description: "MongoDB / Mongoose"
+
+# Crypto
+- name: crypto
+  color: "5E35B1"
+  description: "Cryptography related"
+
+# Browser Security
+- name: browser-security
+  color: "1976D2"
+  description: "Browser security related"

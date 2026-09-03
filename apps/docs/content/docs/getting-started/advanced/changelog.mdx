@@ -1,0 +1,136 @@
+---
+title: Changelog
+description: Version history for all Interlace plugins
+icon: FileText
+---
+
+import {
+  FileText,
+  AlertTriangle,
+  Shield,
+  Sparkles,
+  ExternalLink,
+} from 'lucide-react';
+
+## Version History
+
+This page aggregates changelog information from all ESLint Interlace plugins, fetched dynamically from GitHub.
+
+<Callout type="info" title="Live Data">
+  Changelog data is fetched directly from GitHub CHANGELOG.md files and cached
+  for 2 hours. Updates to the repository are reflected automatically—no
+  redeployment needed.
+</Callout>
+
+---
+
+## How It Works
+
+Each plugin maintains its own `CHANGELOG.md` in its package directory. This page aggregates them in real-time:
+
+1. **GitHub Raw Content** — Files are fetched from `raw.githubusercontent.com`
+2. **2-Hour Cache** — Data is cached using our json-cache policy
+3. **Parsed Entries** — Markdown is parsed to extract version, date, and type
+
+---
+
+## Plugin Changelogs
+
+Each plugin has its own changelog page in this docs site (built from the release history at deploy time via `<PluginChangelog>`, so it matches the version these docs describe) plus a `CHANGELOG.md` file in its package directory. The cross-package view lives at [/changelog](/changelog).
+
+---
+
+### Security Plugins
+
+| Plugin               | Description                         | In-site changelog                                              | Source `CHANGELOG.md`                                                                                          |
+| :------------------- | :---------------------------------- | :------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------- |
+| `browser-security`   | XSS, DOM security                   | [View](/docs/security/plugin-browser-security/changelog)       | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/CHANGELOG.md)   |
+| `express-security`   | Express middleware hardening        | [View](/docs/security/plugin-express-security/changelog)       | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/CHANGELOG.md)   |
+| `jwt`                | Token security                      | [View](/docs/security/plugin-jwt-security/changelog)                    | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt-security/CHANGELOG.md)                |
+| `lambda-security`    | AWS Lambda hardening                | [View](/docs/security/plugin-lambda-security/changelog)        | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/CHANGELOG.md)    |
+| `mongodb-security`   | MongoDB injection                   | [View](/docs/security/plugin-mongodb-security/changelog)       | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/CHANGELOG.md)   |
+| `nestjs-security`    | NestJS framework hardening          | [View](/docs/security/plugin-nestjs-security/changelog)        | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-nestjs-security/CHANGELOG.md)    |
+| `node-security`      | Server-side patterns                | [View](/docs/security/plugin-node-security/changelog)          | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/CHANGELOG.md)      |
+| `pg`                 | PostgreSQL security                 | [View](/docs/security/plugin-postgresql-security/changelog)                     | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-postgresql-security/CHANGELOG.md)                 |
+| `secure-coding`      | Injection prevention                | [View](/docs/security/plugin-secure-coding/changelog)          | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/CHANGELOG.md)      |
+| `vercel-ai-security` | AI SDK security                     | [View](/docs/security/plugin-vercel-ai-security/changelog)     | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/CHANGELOG.md) |
+
+---
+
+### Quality Plugins
+
+| Plugin            | Description                              | In-site changelog                                          | Source `CHANGELOG.md`                                                                                       |
+| :---------------- | :--------------------------------------- | :--------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------- |
+| `conventions`     | Team-specific habits and styles          | [View](/docs/quality/plugin-conventions/changelog)         | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-conventions/CHANGELOG.md)     |
+| `import-next`     | Fast cycle + import-graph analysis       | [View](/docs/quality/plugin-import-next/changelog)         | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/CHANGELOG.md)     |
+| `maintainability` | Cognitive load and clean-code patterns   | [View](/docs/quality/plugin-maintainability/changelog)     | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-maintainability/CHANGELOG.md) |
+| `modernization`   | ESNext migration + syntax evolution      | [View](/docs/quality/plugin-modernization/changelog)       | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-modernization/CHANGELOG.md)   |
+| `modularity`      | Structural integrity and DDD patterns    | [View](/docs/quality/plugin-modularity/changelog)          | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-modularity/CHANGELOG.md)      |
+| `operability`     | Production readiness and resource health | [View](/docs/quality/plugin-operability/changelog)         | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-operability/CHANGELOG.md)     |
+| `react-a11y`      | React accessibility / WCAG               | [View](/docs/quality/plugin-react-a11y/changelog)          | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/CHANGELOG.md)      |
+| `react-features`  | React best practices and optimization    | [View](/docs/quality/plugin-react-features/changelog)      | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/CHANGELOG.md)  |
+| `reliability`     | Runtime stability and error safety       | [View](/docs/quality/plugin-reliability/changelog)         | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-reliability/CHANGELOG.md)     |
+
+---
+
+## API Access
+
+You can programmatically access changelog data via our API:
+
+```bash
+# Get all changelogs (parsed)
+curl https://eslint.interlace.tools/api/changelog
+
+# Get specific plugin changelog
+curl https://eslint.interlace.tools/api/changelog?plugin=jwt
+
+# Get raw markdown
+curl https://eslint.interlace.tools/api/changelog?plugin=jwt&raw=true
+```
+
+### Response Format
+
+```json
+{
+  "success": true,
+  "data": {
+    "plugin": "jwt",
+    "path": "packages/eslint-plugin-jwt-security/CHANGELOG.md",
+    "entries": [
+      {
+        "version": "1.4.0",
+        "date": "2026-01-15",
+        "type": "feature",
+        "content": "Added no-none-algorithm rule..."
+      }
+    ],
+    "fetchedAt": "2026-01-31T12:00:00Z"
+  },
+  "meta": {
+    "source": "github",
+    "ttl": 7200
+  }
+}
+```
+
+---
+
+## Entry Types
+
+| Symbol | Type       | Meaning                 |
+| ------ | ---------- | ----------------------- |
+| 🟢     | `feature`  | New feature or rule     |
+| 🔧     | `fix`      | Bug fix                 |
+| 🛡️     | `security` | Security improvement    |
+| 🔴     | `breaking` | Breaking change         |
+| ⚡     | `perf`     | Performance improvement |
+
+---
+
+## Next Steps
+
+<Cards>
+  <Card title="Contributing" href="/docs/getting-started/advanced/contributing">
+    Help build new rules
+  </Card>
+</Cards>

@@ -1,0 +1,64 @@
+---
+title: "require-data-slot"
+description: "Named composition parts must carry data-slot (R6)"
+category: quality
+autofix: false
+type_aware: false
+type_aware_status: unaware
+---
+
+import { RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> **Part of:** `componentApi` preset (opt-in — not in `recommended`)
+
+Every named composition part must carry `data-slot="<part-name>"` so consumers can target sub-elements with CSS selectors like `[data-slot="trigger"]`. The heuristic: a JSX element that carries `data-testid` is a named part and must also carry `data-slot`.
+
+## Why This Matters
+
+| Issue | Impact | Solution |
+| ----- | ------ | -------- |
+| **Styling hooks missing** | Consumers cannot target sub-elements without fragile class selectors | Add `data-slot="<part-name>"` to every named part |
+| **API surface incomplete** | Component does not expose the slot contract documented in the design system | Every `data-testid` element is also a slot |
+
+## Examples
+
+### Incorrect
+
+```tsx
+function Dialog({ "data-testid": testId }) {
+  return (
+    <div data-testid={testId}>
+      <header data-testid="dialog-header">...</header>  {/* missing data-slot */}
+    </div>
+  );
+}
+```
+
+### Correct
+
+```tsx
+function Dialog({ "data-testid": testId }) {
+  return (
+    <div data-testid={testId} data-slot="root">
+      <header data-testid="dialog-header" data-slot="header">...</header>
+    </div>
+  );
+}
+```
+
+## Configuration
+
+```javascript
+// eslint.config.mjs
+export default [
+  {
+    rules: {
+      "react-features/require-data-slot": "error",
+    },
+  },
+];
+```
+
+This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).

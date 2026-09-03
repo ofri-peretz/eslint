@@ -1,0 +1,395 @@
+name: ILB Benchmark Regression Gate
+
+# Runs ILB-Wild on a small, fast subset of the corpus and compares the
+# resulting scorecard against benchmark-results/baseline.json. PR fails on
+# regression beyond thresholds defined in scripts/ilb-regression-check.ts.
+#
+# Full 17-repo corpus runs are intentionally NOT in CI (~30 min, network-
+# heavy). Run those locally before bumping the baseline:
+#   npm run ilb:wild
+#   tsx scripts/ilb-regression-check.ts --update-baseline
+#   git commit benchmark-results/baseline.json
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NOT run on pull requests — deliberately.
+#
+# This workflow costs 5 of the account's 20 concurrent GitHub-hosted job
+# slots. Measured 2026-08-04: one PR fanned out to 37 jobs across 11 workflows,
+# oversubscribing the budget 1.9x on its own, and 82% of all CI job-time was
+# spent queueing for a runner rather than computing.
+#
+# This is drift detection, not per-change correctness, and it already has a
+# weekly Tue cron backstop — so the PR trigger bought a slower queue for every
+# contributor in exchange for signal the cron delivers anyway. Run it on demand
+# with `workflow_dispatch` when a change plausibly affects it.
+# ─────────────────────────────────────────────────────────────────────────────
+on:
+  workflow_dispatch:
+    inputs:
+      repos:
+        description: 'Repos to bench (comma-sep, default: smoke subset)'
+        required: false
+        default: 'sst,vercel-ai,lodash'
+      update_baseline:
+        description: 'Commit current results as new baseline'
+        required: false
+        type: boolean
+        default: false
+  schedule:
+    # Tue 09:00 UTC — inside the 3-7am ET maintenance window year-round.
+    # GitHub cron is UTC and does not observe DST, so the slot must be valid at
+    # BOTH offsets: 08:00-11:00 UTC maps to 4-7am EDT and 3-6am EST. Anything
+    # earlier (07:00 UTC) drifts to 2am EST; anything later (12:00 UTC) drifts
+    # to 8am EDT and lands in working hours.
+    # Also moved off the 04:00-05:00 UTC cluster where several other crons
+    # already stack and compete for the 20 concurrent job slots.
+    - cron: "0 9 * * 2" # Tue 09:00 UTC = 5:00am EDT / 4:00am EST
+
+concurrency:
+  group: ilb-bench-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  gate:
+    name: Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    outputs:
+      run: ${{ steps.decide.outputs.run }}
+    steps:
+      - id: decide
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          IS_DRAFT: ${{ github.event.pull_request.draft }}
+          HAS_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'run-full-ci') }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" != "pull_request" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ "$IS_DRAFT" == "false" ]] || [[ "$HAS_LABEL" == "true" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Draft PR without \`run-full-ci\` label — skipping benchmark gate."
+          fi
+
+  # Synthetic, deterministic, ~10 s wall-clock — runs on every matching PR
+  # with three hard gates: signal-preservation contract (4/4 on every
+  # structured-format cell), latency contract (per-scale ms ceilings on
+  # interlace-* cells), and per-cell regression check vs baseline.json
+  # (+5 % tokens / max(+50 %, +0.5 ms) latency / signal floor). Failure
+  # at any of the three exits the runner non-zero and fails the job.
+  ilb-formatter:
+    name: ILB-Formatter (signal + latency + regression gate)
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Build @interlace/eslint-formatter
+        run: npx tsc -p packages/eslint-formatter/tsconfig.lib.json
+      - name: Unit + snapshot + ESLint integration tests
+        run: npx vitest run --root packages/eslint-formatter --reporter=default
+      - name: Run ILB-Formatter (270 cells, 3 contracts)
+        run: npm run ilb:formatter
+      - name: Validate vocabulary contract on result envelope
+        run: npm run ilb:validate-results
+      - name: Fleet CWE-rendering smoke (every plugin's first CWE-bearing rule renders end-to-end)
+        run: npm run audit:cwe-rendering
+      - name: Upload formatter result artifact
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ilb-formatter-${{ github.run_number }}
+          path: |
+            benchmarks/results/ilb-formatter/latest.json
+            benchmarks/results/ilb-formatter/baseline.json
+          retention-days: 30
+
+  # Static-source audit: every plugin's rule meta is scanned for the
+  # fields the whole-run formatter renders. Holes here translate directly
+  # into less-actionable LLM output. As of 2026-05-09 this is a HARD
+  # GATE: --strict enforces per-plugin completeness floors (description
+  # ≥ 75%, score ≥ 50%, security-plugin CWE ≥ 85%). The floors are set
+  # at the current passing minimum so the gate is a "don't get worse"
+  # ratchet — bump them in scripts/audit-rule-meta-completeness.ts as
+  # plugins improve.
+  ilb-corpus-truth:
+    # The one bench that measures behaviour on code we did not write: 107
+    # pinned repositories, ~110k files. It answers "how many findings are about
+    # an SDK the file never imports?" — the question that found four broken
+    # plugins on 2026-08-10 and that no fixture-based bench can ask.
+    #
+    # Scheduled only, never on PRs. Cloning 107 repos is network-heavy and the
+    # per-PR half of this guarantee is `benchmarks/__tests__/
+    # sdk-gate-coverage.lock.test.ts`, which runs in the normal test task in
+    # seconds.
+    name: ILB-Corpus-Truth (off-SDK regression gate)
+    needs: gate
+    # `gate` sets run=true for any non-draft pull_request, so gating on it alone
+    # would run this 60-minute 107-repo clone on every PR — the opposite of what
+    # the comment above promises. The event check is what makes it schedule-only.
+    if: needs.gate.outputs.run == 'true' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # This job clones and lints 107 third-party repositories. It never
+          # pushes, so leaving GITHUB_TOKEN in .git/config only widens what that
+          # third-party code sits next to.
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Cache the pinned corpus
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          # Keyed on the manifest: a repo or commit change is a corpus version
+          # bump and must re-clone rather than silently measure the old tree.
+          path: .bench-repos
+          key: corpus-truth-${{ hashFiles('benchmarks/suites/ilb-corpus-truth/repos.json') }}
+      - name: Run ILB-Corpus-Truth
+        # Exits non-zero when any rule reports more off-SDK findings than its
+        # recorded baseline, or when a new rule arrives with off-SDK findings.
+        run: npm run ilb:corpus-truth
+      - name: Validate vocabulary contract on result envelope
+        run: npm run ilb:validate-results
+      - name: Upload corpus-truth result artifact
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ilb-corpus-truth-${{ github.run_number }}
+          path: benchmarks/results/ilb-corpus-truth/
+
+  ilb-preset-budget:
+    # The other half of the corpus story: Corpus-Truth asks whether a rule is
+    # about the right SDK, this asks whether a plugin's `recommended` is
+    # something a developer keeps. It covers the 224 rules Corpus-Truth cannot
+    # — the platform and quality plugins, which have no SDK to gate on and hold
+    # roughly three-quarters of consumer downloads.
+    #
+    # Scheduled only, for the same reason as Corpus-Truth: 107 clones.
+    name: ILB-Preset-Budget (recommended-preset noise gate)
+    needs: gate
+    if: needs.gate.outputs.run == 'true' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Clones and lints 107 third-party repositories and never pushes.
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Cache the pinned corpus
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: .bench-repos
+          key: corpus-truth-${{ hashFiles('benchmarks/suites/ilb-corpus-truth/repos.json') }}
+      - name: Run ILB-Preset-Budget
+        # 30 plugins over 107 repositories needs more than the default heap.
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192
+        run: npm run ilb:preset-budget
+      - name: Validate vocabulary contract on result envelope
+        run: npm run ilb:validate-results
+      - name: Upload preset-budget result artifact
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ilb-preset-budget-${{ github.run_number }}
+          path: benchmarks/results/ilb-preset-budget/
+
+  audit-meta:
+    name: Plugin rule-meta hygiene audit (strict)
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Run audit:meta:strict (gates the build)
+        run: npm run audit:meta:strict
+      - name: Upload meta-hygiene report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: meta-hygiene-${{ github.run_number }}
+          path: docs/META_HYGIENE.md
+          retention-days: 30
+
+  # Typecheck the build/dev scripts and benchmark runners under their
+  # looser tsconfigs. The strict per-package typecheck is in
+  # `npm run typecheck` (turbo) — this gate covers `scripts/*.ts` and
+  # `benchmarks/{score,lib/**,suites/*/run,scorecard,harvest-fixtures}.ts`
+  # which are excluded from the root tsconfig because they're JS-flavored
+  # TS converted from .mjs in the 2026-05-09 batch.
+  typecheck-scripts:
+    name: Typecheck scripts + benchmark runners
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: typecheck:scripts (scripts/tsconfig.json)
+        run: npm run typecheck:scripts
+      - name: typecheck:benchmarks (benchmarks/tsconfig.scripts.json)
+        run: npm run typecheck:benchmarks
+
+  ilb-wild:
+    name: ILB-Wild smoke + regression gate
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      # Cache cloned target repos between CI runs to keep things fast.
+      - name: Restore .bench-repos cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: .bench-repos
+          key: ilb-bench-repos-${{ hashFiles('scripts/ilb-wild.ts') }}
+          restore-keys: |
+            ilb-bench-repos-
+
+      - name: Run ILB-Wild on smoke subset
+        env:
+          ILB_REPOS: ${{ github.event.inputs.repos || 'sst,vercel-ai,lodash' }}
+        run: |
+          set -e
+          IFS=',' read -ra REPOS <<< "$ILB_REPOS"
+          for r in "${REPOS[@]}"; do
+            echo "::group::ilb:wild --repo $r"
+            tsx scripts/ilb-wild.ts --repo "$r" --runs 1 || echo "::warning::repo $r failed"
+            echo "::endgroup::"
+          done
+
+      - name: Generate unified scorecard
+        run: npx tsx scripts/ilb-scorecard.ts
+
+      - name: Run regression check
+        # The PR job runs ILB-Wild on a 3-repo smoke subset, while the
+        # baseline tracks the full 22-repo corpus. Apples-to-oranges, so
+        # we publish the scorecard as a comment but don't fail the gate
+        # here. Real regression detection happens locally / via
+        # workflow_dispatch with the full corpus before bumping the
+        # baseline.
+        if: github.event.inputs.update_baseline != 'true'
+        continue-on-error: true
+        run: npx tsx scripts/ilb-regression-check.ts
+
+      - name: Update baseline (workflow_dispatch only)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.update_baseline == 'true'
+        run: npx tsx scripts/ilb-regression-check.ts --update-baseline
+
+      - name: Upload scorecard + summary
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ilb-scorecard-${{ github.run_number }}
+          path: |
+            benchmark-results/scorecard.md
+            benchmark-results/scorecard.json
+            benchmark-results/*/summary.md
+            benchmark-results/*/summary.json
+            benchmark-results/*/per-repo/*/report.md
+          retention-days: 30
+
+      - name: Comment scorecard on PR
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        with:
+          script: |
+            const fs = require('fs');
+            const scorecardPath = 'benchmark-results/scorecard.md';
+            if (!fs.existsSync(scorecardPath)) return;
+            const md = fs.readFileSync(scorecardPath, 'utf-8');
+            const body = `## ILB Benchmark Scorecard\n\n${md}\n\n_Generated by \`.github/workflows/benchmark.yml\` (smoke subset only — run \`npm run ilb:wild\` locally for full corpus)._`;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find((c) => c.body?.startsWith('## ILB Benchmark Scorecard'));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+  # Aggregate failure reporting.
+  #
+  # Reporting from inside the working jobs does not survive the shapes those
+  # jobs actually fail in: a `fail-fast` matrix cancels its siblings (and
+  # `failure()` is false in a cancelled job), and a report living in one job
+  # says nothing when a different job is the one that breaks. This job depends
+  # on all of them and runs with `if: always()`, so it sees the whole run.
+  report:
+    name: 🚨 Report a scheduled failure
+    needs: [gate, ilb-formatter, ilb-corpus-truth, ilb-preset-budget, audit-meta, typecheck-scripts, ilb-wild]
+    if: >-
+      always() && github.event_name == 'schedule' &&
+      contains(needs.*.result, 'failure')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/report-failure
+        with:
+          title: "Scheduled benchmark is failing"
+          body: >-
+            The weekly benchmark run did not complete, so the numbers behind the published comparison are not being refreshed. Until this is fixed the figures on the docs site are older than they appear.
+          token: ${{ github.token }}

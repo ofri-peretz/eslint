@@ -1,0 +1,89 @@
+/**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
+ * ESLint Rule: no-render-return-value
+ * Prevent using render return value
+ */
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+
+type MessageIds = 'noRenderReturnValue';
+
+export const noRenderReturnValue = createRule<[], MessageIds>({
+  name: 'no-render-return-value',
+  meta: {
+    type: 'problem',
+    docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-render-return-value.md',
+      description: 'Prevent using render return value',
+    },
+    messages: {
+      noRenderReturnValue: formatLLMMessage({
+        icon: MessageIcons.WARNING,
+        issueName: 'Render Return Value Usage',
+        description: 'Using return value of ReactDOM.render()',
+        severity: 'HIGH',
+        fix: 'ReactDOM.render() return value is deprecated, use refs instead',
+        documentationLink: 'https://react.dev/reference/react-dom/render',
+      }),
+    },
+    schema: [],
+  },
+  defaultOptions: [],
+  create(context: TSESLint.RuleContext<MessageIds, []>) {
+    return {
+      VariableDeclarator(node: TSESTree.VariableDeclarator) {
+        if (
+          node.init &&
+          node.init.type === 'CallExpression' &&
+          isReactDOMRenderCall(node.init)
+        ) {
+          context.report({
+            node: node.id,
+            messageId: 'noRenderReturnValue',
+          });
+        }
+      },
+
+      AssignmentExpression(node: TSESTree.AssignmentExpression) {
+        if (
+          node.right.type === 'CallExpression' &&
+          isReactDOMRenderCall(node.right)
+        ) {
+          context.report({
+            node: node.left,
+            messageId: 'noRenderReturnValue',
+          });
+        }
+      },
+    };
+  },
+});
+
+/**
+ * Check if call expression is ReactDOM.render()
+ */
+function isReactDOMRenderCall(node: TSESTree.CallExpression): boolean {
+  if (
+    node.callee.type === 'MemberExpression' &&
+    node.callee.object.type === 'MemberExpression' &&
+    node.callee.object.object.type === 'Identifier' &&
+    node.callee.object.object.name === 'ReactDOM' &&
+    propertyName(node.callee.object) === 'render' &&
+    propertyName(node.callee) === 'render'
+  ) {
+    return false; // This would be ReactDOM.render.render which is invalid
+  }
+
+  return (
+    node.callee.type === 'MemberExpression' &&
+    node.callee.object.type === 'Identifier' &&
+    node.callee.object.name === 'ReactDOM' &&
+    propertyName(node.callee) === 'render'
+  );
+}

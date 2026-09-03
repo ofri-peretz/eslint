@@ -1,0 +1,119 @@
+/**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
+ * ESLint Rule: anchor-has-content
+ * Enforce that anchors have content to be accessible to screen readers
+ *
+ * @see https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/anchor-has-content.md
+ */
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { createRule } from '@interlace/eslint-devkit';
+
+type MessageIds = 'missingContent';
+
+type Options = {
+  components?: string[];
+};
+
+type RuleOptions = [Options?];
+
+/**
+ * Check if node has accessible content
+ */
+function hasContent(
+  node: TSESTree.JSXOpeningElement,
+  children: TSESTree.JSXChild[],
+): boolean {
+  // Check children
+  if (children.length > 0) {
+    return true;
+  }
+
+  // Check props (dangerouslySetInnerHTML, children prop, aria-label, title)
+  return node.attributes.some(
+    (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute) => {
+      if (attr.type !== 'JSXAttribute' || attr.name.type !== 'JSXIdentifier') {
+        return false;
+      }
+
+      const name = attr.name.name;
+      return (
+        name === 'dangerouslySetInnerHTML' ||
+        name === 'children' ||
+        name === 'aria-label' ||
+        name === 'aria-labelledby' ||
+        name === 'title'
+      );
+    },
+  );
+}
+
+export const anchorHasContent = createRule<RuleOptions, MessageIds>({
+  name: 'anchor-has-content',
+  meta: {
+    type: 'problem',
+    docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/anchor-has-content.md',
+      description: 'Enforce that anchors have content',
+      wcag: 'WCAG 2.4.4',
+    },
+    messages: {
+      missingContent: formatLLMMessage({
+        icon: MessageIcons.ACCESSIBILITY,
+        issueName: 'Anchor Missing Content',
+        description: 'Anchor must have content',
+        severity: 'HIGH',
+        fix: 'Provide text content or aria-label',
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/anchor-has-content.md',
+        wcag: 'WCAG 2.4.4',
+      }),
+    },
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          components: {
+            type: 'array',
+            items: { type: 'string' },
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
+  },
+  defaultOptions: [{}],
+  create(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    [options = {} as Options],
+  ) {
+    const { components = [] } = options ?? {};
+    const anchors = new Set(['a', ...components]);
+
+    return {
+      JSXElement(node: TSESTree.JSXElement) {
+        const openingElement = node.openingElement;
+
+        if (openingElement.name.type !== 'JSXIdentifier') {
+          return;
+        }
+
+        if (!anchors.has(openingElement.name.name)) {
+          return;
+        }
+
+        if (!hasContent(openingElement, node.children)) {
+          context.report({
+            node: openingElement,
+            messageId: 'missingContent',
+          });
+        }
+      },
+    };
+  },
+});

@@ -1,0 +1,309 @@
+/**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
+ * ONE RULE, scored head-to-head against every competitor that covers the same
+ * sink, on a corpus written from the vulnerability's semantics rather than from
+ * anybody's tests.
+ *
+ * WHY PER-RULE AND NOT PER-PLUGIN
+ *
+ * The ecosystem-wide leaderboard says "Interlace 100% F1" and that number is
+ * true of the corpus it runs on — a corpus this project also authored. It
+ * cannot tell you whether ONE rule is better than the specific competitor a
+ * user would otherwise install. That is the question a consumer actually asks:
+ * "I need XSS coverage, is yours better than Mozilla's?"
+ *
+ * HOW TO READ THE NUMBERS
+ *
+ * Every plugin is scored on the SAME files. A fixture in `vulnerable/` must be
+ * reported at least once; a fixture in `safe/` must produce no report at all.
+ * There is no partial credit and no per-line matching: a rule that reports the
+ * right file for the wrong reason still passes, which flatters everyone
+ * equally.
+ *
+ *   TP  a vulnerable fixture reported
+ *   FN  a vulnerable fixture missed        -> costs recall
+ *   FP  a safe fixture reported            -> costs precision, and costs trust
+ *
+ * A CRASH is reported separately and never silently scored as "no findings" —
+ * that mistake once turned a broken harness into a clean bill of health here.
+ *
+ * Usage:
+ *   node benchmarks/suites/ilb-rule-duel/run.mjs <plugin>/<rule>
+ *   node benchmarks/suites/ilb-rule-duel/run.mjs browser-security/no-innerhtml --json
+ */
+import fs from 'node:fs';
+import path from 'node:path';
+import url from 'node:url';
+
+import { createRequire } from 'node:module';
+
+import { Linter } from 'eslint';
+
+// `require` is not defined in an ES module; without this every competitor
+// loaded as null and the table printed "not installed" for all of them — a
+// silent 0-0 that reads as "no competitor covers this".
+const require = createRequire(import.meta.url);
+
+const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
+const REPO = path.resolve(__dirname, '..', '..', '..');
+
+/**
+ * Competitor rule sets, per sink family.
+ *
+ * Listed by hand and deliberately generous: every rule a competitor ships that
+ * could plausibly fire on this corpus is enabled, so a miss is theirs and not an
+ * artefact of us configuring them badly. `no-unsanitized` in particular is
+ * Mozilla's dedicated implementation of exactly this check.
+ */
+/** Non-default options to score OUR rule under, when the default is deliberately conservative. */
+const RULE_OPTIONS = {};
+
+const COMPETITORS = {
+  // The competitors here are BOTH external plugins AND our own driver-specific
+  // ones. The second group is the point: this rule is the complement of those,
+  // so if they cover the same fixtures it is redundant.
+  'postgresql-security/no-unsafe-query': [
+    { name: 'sonarjs', pkg: 'eslint-plugin-sonarjs', rules: ['sql-queries'] },
+    { name: 'eslint-plugin-security', pkg: 'eslint-plugin-security', rules: ['detect-object-injection'] },
+  ],
+  // The head-to-head this rule exists for. eslint-plugin-security ships a rule
+  // of the SAME NAME, it is the most-installed implementation of this check, and
+  // it is the loudest rule in our own real-source measurement (10,359 findings
+  // over 5 repos). Scoring against it on shapes derived from the WEAKNESS —
+  // not from either implementation — is the only way to tell precision from
+  // silence.
+  // Their SECOND loudest rule in our real-source measurement (1,457 findings over
+  // 5 repos), same name as ours, same weakness. Precision is the axis that
+  // matters here — both plugins detect the canonical shapes, so the question is
+  // what each reports that it should not.
+  'node-security/detect-non-literal-fs-filename': [
+    { name: 'eslint-plugin-security', pkg: 'eslint-plugin-security', rules: ['detect-non-literal-fs-filename'] },
+  ],
+  'secure-coding/detect-non-literal-regexp': [
+    { name: 'eslint-plugin-security', pkg: 'eslint-plugin-security', rules: ['detect-non-literal-regexp'] },
+  ],
+  // Their rule for this weakness is spelled `detect-unsafe-regex`, not
+  // `no-redos-vulnerable-regex`, so a name-matched wiring found nothing and this
+  // rule scored with no competitor row at all. The 76.2% published for it on
+  // 2026-08-17 was produced by a one-off script that is gone — exactly the
+  // "figure with no committed runner" §0.1 exists to forbid. Wired by SINK, which
+  // is the only durable way to pair rules across plugins.
+  //
+  // `eslint-plugin-regexp` is listed second because it is the other real
+  // implementation a consumer would install, and because it shares `scslre` with
+  // us — so a disagreement between the two rows is a disagreement about the
+  // corrections layer, not about the analyser.
+  'secure-coding/no-redos-vulnerable-regex': [
+    { name: 'eslint-plugin-security', pkg: 'eslint-plugin-security', rules: ['detect-unsafe-regex'] },
+    { name: 'eslint-plugin-regexp', pkg: 'eslint-plugin-regexp', rules: ['no-super-linear-backtracking'] },
+  ],
+  'secure-coding/detect-object-injection': [
+    { name: 'eslint-plugin-security', pkg: 'eslint-plugin-security', rules: ['detect-object-injection'] },
+    { name: 'sonarjs', pkg: 'eslint-plugin-sonarjs', rules: ['no-vulnerable-dom-methods'] },
+  ],
+  'secure-coding/no-sql-injection': [
+    { name: 'sonarjs', pkg: 'eslint-plugin-sonarjs', rules: ['sql-queries'] },
+    { name: 'eslint-plugin-security', pkg: 'eslint-plugin-security', rules: ['detect-object-injection'] },
+  ],
+  'browser-security/no-innerhtml': [
+    { name: 'no-unsanitized (Mozilla)', pkg: 'eslint-plugin-no-unsanitized', rules: ['property', 'method'] },
+    { name: '@microsoft/sdl', pkg: '@microsoft/eslint-plugin-sdl', rules: ['no-inner-html', 'no-html-method', 'no-document-write'] },
+    { name: 'sonarjs', pkg: 'eslint-plugin-sonarjs', rules: ['no-vulnerable-dom-methods', 'dompurify-unsafe-config'] },
+  ],
+};
+
+function fixtures(ruleId) {
+  const base = path.join(REPO, 'benchmarks', 'rule-corpus', ruleId.replace('/', '__'));
+  const read = (kind) => {
+    const dir = path.join(base, kind);
+    if (!fs.existsSync(dir)) return [];
+    return fs
+      .readdirSync(dir)
+      .filter((f) => /\.[jt]sx?$/.test(f))
+      .map((f) => ({ file: path.join(dir, f), name: `${kind}/${f}`, expectReport: kind === 'vulnerable' }));
+  };
+  const all = [...read('vulnerable'), ...read('safe')];
+  if (all.length === 0) {
+    // Fail loudly. A missing corpus scoring as 0/0 would read as a tie.
+    throw new Error(`No corpus at ${base}. Create vulnerable/ and safe/ fixtures first.`);
+  }
+  return all;
+}
+
+async function loadOurRule(ruleId) {
+  const [plugin, rule] = [ruleId.split('/')[0], ruleId.split('/').slice(1).join('/')];
+  const file = path.join(REPO, 'packages', `eslint-plugin-${plugin}`, 'src', 'rules', rule, 'index.ts');
+  const mod = await import(url.pathToFileURL(file).href);
+  const exported = Object.values(mod).find((v) => v && typeof v === 'object' && 'create' in v);
+  if (!exported) throw new Error(`${ruleId} exports no rule`);
+  return { [rule]: exported };
+}
+
+function loadCompetitor(entry) {
+  let pkg;
+  try {
+    pkg = require(entry.pkg);
+  } catch {
+    return null;
+  }
+  const available = pkg.rules ?? {};
+  const picked = {};
+  for (const r of entry.rules) if (available[r]) picked[r] = available[r];
+  return Object.keys(picked).length ? picked : null;
+}
+
+function score(linter, rules, prefix, files, parser, options) {
+  const enabled = Object.fromEntries(
+    Object.keys(rules).map((r) => [`${prefix}/${r}`, options ? ['error', ...options] : 'error']),
+  );
+  let tp = 0, fp = 0, fn = 0;
+  let tn = 0;
+  const crashes = [];
+  const missed = [];
+  const falsePositives = [];
+
+  for (const f of files) {
+    const code = fs.readFileSync(f.file, 'utf8');
+    let messages;
+    try {
+      messages = linter.verify(
+        code,
+        {
+          files: ['**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx'],
+          languageOptions: {
+            ...(parser ? { parser } : {}),
+            ecmaVersion: 2022,
+            sourceType: 'module',
+            parserOptions: { ecmaFeatures: { jsx: true } },
+          },
+          plugins: { [prefix]: { rules } },
+          rules: enabled,
+        },
+        path.basename(f.file),
+      );
+    } catch (e) {
+      crashes.push(`${f.name}: ${e.message}`);
+      continue;
+    }
+    const crashed = messages.filter((m) => !m.ruleId);
+    if (crashed.length) crashes.push(`${f.name}: ${crashed[0].message}`);
+    const reported = messages.some((m) => m.ruleId);
+
+    if (f.expectReport) {
+      if (reported) tp++;
+      else { fn++; missed.push(f.name); }
+    } else if (reported) {
+      fp++; falsePositives.push(f.name);
+    } else {
+      // A safe fixture left alone. Counted explicitly rather than derived,
+      // because Youden's J needs true negatives and a fixture that crashed the
+      // rule is neither a TN nor a pass.
+      tn++;
+    }
+  }
+  const precision = tp + fp === 0 ? 0 : tp / (tp + fp);
+  const recall = tp + fn === 0 ? 0 : tp / (tp + fn);
+  const f1 = precision + recall === 0 ? 0 : (2 * precision * recall) / (precision + recall);
+
+  // Youden's J — sensitivity + specificity - 1, i.e. TPR - FPR. The OWASP
+  // Benchmark's headline score, and it is here as a GUARD rather than a
+  // decoration.
+  //
+  // F1 can be raised by reporting more, and precision alone can be raised by
+  // reporting less. We have committed the second: one sweep took false
+  // positives from 10 to 3 while false negatives went from 18 to 34, and the
+  // precision number read as progress. J moves in neither of those directions —
+  // a tool that reports everything drives FPR to 1, a tool that goes quiet
+  // drives TPR to 0, and both collapse it.
+  //
+  // TN is the safe fixtures left alone, which the corpus knows exactly because
+  // it is labelled independently of any implementation.
+  const specificity = tn + fp === 0 ? 0 : tn / (tn + fp);
+  const youdenJ = recall + specificity - 1;
+  return { tp, fp, fn, tn, precision, recall, specificity, youdenJ, f1, crashes, missed, falsePositives };
+}
+
+async function main() {
+  const ruleId = process.argv[2];
+  if (!ruleId) throw new Error('usage: run.mjs <plugin>/<rule> [--json]');
+  const asJson = process.argv.includes('--json');
+
+  const files = fixtures(ruleId);
+  const linter = new Linter();
+  // `require`, not `await import`. The ESM interop handed back a module
+  // namespace whose `.default` was undefined, so `parser` was silently unset
+  // and every file fell back to espree. JavaScript fixtures parsed fine, which
+  // hid it — only the one TypeScript fixture failed, and it looked like a bad
+  // fixture rather than a harness that had been scoring every rule under the
+  // wrong parser.
+  const tsParser = require('@typescript-eslint/parser');
+
+  const results = [];
+  results.push({
+    name: `Interlace ${ruleId}`,
+    ...score(linter, await loadOurRule(ruleId), 'ours', files, tsParser, RULE_OPTIONS[ruleId]),
+  });
+
+  for (const entry of COMPETITORS[ruleId] ?? []) {
+    const rules = loadCompetitor(entry);
+    if (!rules) {
+      results.push({ name: entry.name, unavailable: true });
+      continue;
+    }
+    results.push({ name: `${entry.name} [${Object.keys(rules).join(', ')}]`, ...score(linter, rules, 'them', files, tsParser) });
+  }
+
+  // Write RESULTS.json ALWAYS, next to the corpus it scored.
+  //
+  // This runner used to only print. Every RESULTS.json in the tree was therefore
+  // hand-transcribed by whoever ran it, and one of them claimed 93.3% for a rule
+  // that scored 76.9% at HEAD — a published number that had drifted from the
+  // measurement it named, with nothing in CI able to notice. A results file that
+  // is a BYPRODUCT of running the bench cannot drift from it; one that is an act
+  // of authorship always eventually does.
+  //
+  // It is written before the report prints, so a crash in the formatting below
+  // still leaves the measurement on disk.
+  const payload = {
+    rule: ruleId,
+    generatedBy: 'benchmarks/suites/ilb-rule-duel/run.mjs',
+    fixtures: files.length,
+    vulnerable: files.filter((f) => f.expectReport).length,
+    results,
+  };
+  const corpusDir = path.join(REPO, 'benchmarks', 'rule-corpus', ruleId.replace('/', '__'));
+  if (fs.existsSync(corpusDir)) {
+    fs.writeFileSync(path.join(corpusDir, 'RESULTS.json'), `${JSON.stringify(payload, null, 2)}\n`);
+  }
+
+  if (asJson) {
+    console.log(JSON.stringify(payload, null, 2));
+    return;
+  }
+
+  const v = files.filter((f) => f.expectReport).length;
+  console.log(`\n══ ${ruleId} — ${v} vulnerable / ${files.length - v} safe fixtures\n`);
+  console.log(`| Plugin | TP | FP | FN | Precision | Recall | F1 | Youden J |`);
+  console.log(`|---|---:|---:|---:|---:|---:|---:|`);
+  for (const r of results) {
+    if (r.unavailable) { console.log(`| ${r.name} | — | — | — | not installed | | |`); continue; }
+    const pct = (x) => `${(x * 100).toFixed(1)}%`;
+    console.log(
+      `| ${r.name} | ${r.tp} | ${r.fp} | ${r.fn} | ${pct(r.precision)} | ${pct(r.recall)} | **${pct(r.f1)}** | ${pct(r.youdenJ)} |`,
+    );
+  }
+  for (const r of results) {
+    if (r.unavailable) continue;
+    if (r.crashes.length) console.log(`\n💥 ${r.name} CRASHED on ${r.crashes.length}:\n   ${r.crashes.slice(0, 3).join('\n   ')}`);
+    if (r.missed.length) console.log(`\n   ${r.name} missed: ${r.missed.join(', ')}`);
+    if (r.falsePositives.length) console.log(`   ${r.name} false positives: ${r.falsePositives.join(', ')}`);
+  }
+  console.log('');
+}
+
+main().catch((e) => { console.error(e.message); process.exit(1); });

@@ -1,0 +1,59 @@
+/**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
+ * ESLint Rule: no-access-key
+ * Enforce that accessKey attribute is not used
+ *
+ * @see https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/no-access-key.md
+ */
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { createRule } from '@interlace/eslint-devkit';
+
+type MessageIds = 'noAccessKey';
+
+type RuleOptions = [];
+
+export const noAccessKey = createRule<RuleOptions, MessageIds>({
+  name: 'no-access-key',
+  meta: {
+    type: 'problem',
+    docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/no-access-key.md',
+      description: 'Enforce that accessKey attribute is not used',
+      wcag: 'WCAG 2.1.1',
+    },
+    messages: {
+      noAccessKey: formatLLMMessage({
+        icon: MessageIcons.ACCESSIBILITY,
+        issueName: 'No Access Key',
+        description: 'accessKey attribute is problematic for accessibility',
+        severity: 'MEDIUM',
+        fix: 'Remove accessKey attribute',
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/main/docs/rules/no-access-key.md',
+      }),
+    },
+    schema: [],
+  },
+  defaultOptions: [],
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    return {
+      JSXAttribute(node: TSESTree.JSXAttribute) {
+        if (
+          node.name.type === 'JSXIdentifier' &&
+          node.name.name === 'accessKey'
+        ) {
+          context.report({
+            node,
+            messageId: 'noAccessKey',
+          });
+        }
+      },
+    };
+  },
+});

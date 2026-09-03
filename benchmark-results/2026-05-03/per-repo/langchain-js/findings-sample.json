@@ -1,0 +1,18 @@
+[
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/langchain-js/libs/langchain-core/src/utils/uuid/nil.ts",
+    "line": 1,
+    "column": 16,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.h"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/langchain-js/libs/langchain-core/src/utils/uuid/max.ts",
+    "line": 1,
+    "column": 16,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.h"
+  }
+]

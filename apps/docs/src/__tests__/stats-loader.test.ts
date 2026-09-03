@@ -1,0 +1,337 @@
+/**
+ * Stats Loader Unit Tests
+ *
+ * Comprehensive tests for the stats-loader module to prevent regressions.
+ * These tests ensure that:
+ * 1. Stats are loaded correctly from JSON files
+ * 2. Fallback values are used when files are missing
+ * 3. Category calculations are correct
+ * 4. Display stats format is consistent
+ */
+
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import * as fs from 'fs/promises';
+
+// Mock next/cache before importing the module
+vi.mock('next/cache', () => ({
+  unstable_cache: <T>(fn: () => Promise<T>) => fn,
+}));
+
+// Mock fs/promises with an explicit factory — vitest 4 requires this for ESM
+// namespace imports; the auto-mock returns an empty object that has no
+// `mockResolvedValue` on its members.
+vi.mock('fs/promises', () => {
+  const readFile = vi.fn();
+  return {
+    default: { readFile },
+    readFile,
+  };
+});
+
+// Sample test data matching the expected schema
+const mockPluginStats = {
+  plugins: [
+    {
+      name: 'eslint-plugin-browser-security',
+      rules: 52,
+      description: 'Security-focused ESLint plugin for browser applications',
+      category: 'security',
+      version: '1.1.1',
+      published: true,
+    },
+    {
+      name: 'eslint-plugin-jwt',
+      rules: 13,
+      description: 'JWT security plugin',
+      category: 'security',
+      version: '2.1.1',
+      published: true,
+    },
+    {
+      name: 'eslint-plugin-express-security',
+      rules: 14,
+      description: 'Express framework security',
+      category: 'framework',
+      version: '1.1.1',
+      published: true,
+    },
+    {
+      name: 'eslint-plugin-conventions',
+      rules: 9,
+      description: 'Code conventions',
+      category: 'quality',
+      version: '1.0.0',
+      published: true,
+    },
+    {
+      name: 'eslint-plugin-maintainability',
+      rules: 8,
+      description: 'Maintainability rules',
+      category: 'quality',
+      version: '1.0.0',
+      published: true,
+    },
+  ],
+  totalRules: 96,
+  totalPlugins: 5,
+  allPluginsCount: 5,
+  generatedAt: '2026-02-01T12:00:00.000Z',
+};
+
+const mockCoverageStats = {
+  summary: {
+    totalCoverage: 85.4,
+    totalFiles: 245,
+    totalLines: 12500,
+    coveredLines: 10625,
+    uncoveredLines: 1875,
+  },
+  plugins: {
+    security: [
+      {
+        name: 'eslint-plugin-browser-security',
+        slug: 'browser-security',
+        coverage: 90.2,
+        status: 'production',
+        category: 'security',
+      },
+      {
+        name: 'eslint-plugin-jwt',
+        slug: 'jwt',
+        coverage: 92.1,
+        status: 'production',
+        category: 'security',
+      },
+    ],
+    quality: [
+      {
+        name: 'eslint-plugin-conventions',
+        slug: 'conventions',
+        coverage: 82.3,
+        status: 'production',
+        category: 'quality',
+      },
+    ],
+  },
+  standards: {
+    coreSecurity: 85,
+    frameworkPlugins: 80,
+    qualityPlugins: 75,
+  },
+  meta: {
+    generatedAt: '2026-02-01T12:00:00Z',
+    source: 'estimated',
+    ttl: 14400,
+  },
+};
+
+describe('stats-loader unit tests', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  describe('loadPluginStats', () => {
+    it('should load plugin stats from JSON file', async () => {
+      const mockedFs = vi.mocked(fs);
+      mockedFs.readFile.mockResolvedValue(JSON.stringify(mockPluginStats));
+
+      const { loadPluginStats } = await import('../lib/stats-loader');
+      const result = await loadPluginStats();
+
+      expect(result).not.toBeNull();
+      expect(result?.plugins).toHaveLength(5);
+      expect(result?.totalRules).toBe(96);
+      expect(result?.totalPlugins).toBe(5);
+    });
+
+    it('should return null when file is missing', async () => {
+      const mockedFs = vi.mocked(fs);
+      mockedFs.readFile.mockRejectedValue(new Error('ENOENT'));
+
+      const { loadPluginStats } = await import('../lib/stats-loader');
+      const result = await loadPluginStats();
+
+      expect(result).toBeNull();
+    });
+
+    it('should return null for invalid JSON', async () => {
+      const mockedFs = vi.mocked(fs);
+      mockedFs.readFile.mockResolvedValue('{ invalid json');
+
+      const { loadPluginStats } = await import('../lib/stats-loader');
+      const result = await loadPluginStats();
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('loadCoverageStats', () => {
+    it('should load coverage stats from JSON file', async () => {
+      const mockedFs = vi.mocked(fs);
+      mockedFs.readFile.mockResolvedValue(JSON.stringify(mockCoverageStats));
+
+      const { loadCoverageStats } = await import('../lib/stats-loader');
+      const result = await loadCoverageStats();
+
+      expect(result).not.toBeNull();
+      expect(result?.summary.totalCoverage).toBe(85.4);
+      expect(result?.plugins.security).toHaveLength(2);
+      expect(result?.plugins.quality).toHaveLength(1);
+    });
+
+    it('should return null when file is missing', async () => {
+      const mockedFs = vi.mocked(fs);
+      mockedFs.readFile.mockRejectedValue(new Error('ENOENT'));
+
+      const { loadCoverageStats } = await import('../lib/stats-loader');
+      const result = await loadCoverageStats();
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('getEcosystemStats', () => {
+    it('should aggregate stats from plugin and coverage data', async () => {
+      const mockedFs = vi.mocked(fs);
+      mockedFs.readFile
+        .mockResolvedValueOnce(JSON.stringify(mockPluginStats))
+        .mockResolvedValueOnce(JSON.stringify(mockCoverageStats));
+
+      const { getEcosystemStats } = await import('../lib/stats-loader');
+      const result = await getEcosystemStats();
+
+      expect(result.plugins.total).toBe(5);
+      expect(result.plugins.published).toBe(5);
+      expect(result.rules.total).toBe(96);
+      expect(result.coverage.average).toBe(85);
+      expect(result.lastUpdated).toBe('2026-02-01T12:00:00.000Z');
+    });
+
+    it('falls back to the committed manifest when the runtime read fails', async () => {
+      const mockedFs = vi.mocked(fs);
+      mockedFs.readFile.mockRejectedValue(new Error('ENOENT'));
+
+      const { getEcosystemStats } = await import('../lib/stats-loader');
+      const committed = (await import('../data/plugin-stats.json')).default;
+      const result = await getEcosystemStats();
+
+      // Fallback is the committed plugin-stats.json, never hand-typed numbers
+      expect(result.plugins.total).toBe(committed.allPluginsCount);
+      expect(result.plugins.security).toBe(
+        committed.plugins.filter((p) =>
+          ['security', 'framework'].includes(p.category),
+        ).length,
+      );
+      expect(result.plugins.quality).toBe(
+        committed.plugins.filter((p) =>
+          ['quality', 'architecture'].includes(p.category),
+        ).length,
+      );
+      expect(result.rules.total).toBe(committed.totalRules);
+      expect(result.coverage.average).toBe(85);
+    });
+
+    it('should correctly categorize plugins by type', async () => {
+      const mockedFs = vi.mocked(fs);
+      mockedFs.readFile
+        .mockResolvedValueOnce(JSON.stringify(mockPluginStats))
+        .mockResolvedValueOnce(JSON.stringify(mockCoverageStats));
+
+      const { getEcosystemStats } = await import('../lib/stats-loader');
+      const result = await getEcosystemStats();
+
+      // Security: browser-security, jwt (2) + framework: express-security (1) = 3
+      expect(result.plugins.security).toBe(3);
+      // Quality: conventions, maintainability (2)
+      expect(result.plugins.quality).toBe(2);
+      // Framework: express-security (1)
+      expect(result.plugins.framework).toBe(1);
+    });
+  });
+
+  describe('getDisplayStats', () => {
+    it('should return simplified stats for UI display', async () => {
+      const mockedFs = vi.mocked(fs);
+      mockedFs.readFile
+        .mockResolvedValueOnce(JSON.stringify(mockPluginStats))
+        .mockResolvedValueOnce(JSON.stringify(mockCoverageStats));
+
+      const { getDisplayStats } = await import('../lib/stats-loader');
+      const result = await getDisplayStats();
+
+      expect(result).toHaveProperty('plugins');
+      expect(result).toHaveProperty('rules');
+      expect(result).toHaveProperty('securityPlugins');
+      expect(result).toHaveProperty('qualityPlugins');
+      expect(result).toHaveProperty('coverage');
+
+      // Values should be numbers
+      expect(typeof result.plugins).toBe('number');
+      expect(typeof result.rules).toBe('number');
+      expect(typeof result.coverage).toBe('number');
+    });
+
+    it('should only count published plugins', async () => {
+      const mockedFs = vi.mocked(fs);
+      mockedFs.readFile
+        .mockResolvedValueOnce(JSON.stringify(mockPluginStats))
+        .mockResolvedValueOnce(JSON.stringify(mockCoverageStats));
+
+      const { getDisplayStats } = await import('../lib/stats-loader');
+      const result = await getDisplayStats();
+
+      expect(result.plugins).toBe(5);
+    });
+  });
+
+  describe('getPublishedPluginNames', () => {
+    it('should return categorized list of plugin names', async () => {
+      const mockedFs = vi.mocked(fs);
+      mockedFs.readFile.mockResolvedValue(JSON.stringify(mockPluginStats));
+
+      const { getPublishedPluginNames } = await import('../lib/stats-loader');
+      const result = await getPublishedPluginNames();
+
+      expect(result).toHaveProperty('security');
+      expect(result).toHaveProperty('quality');
+      expect(result).toHaveProperty('framework');
+
+      // Should only include published plugins
+      expect(result.security).toContain('browser-security');
+      expect(result.security).toContain('jwt');
+      expect(result.framework).toContain('express-security');
+      expect(result.quality).toContain('conventions');
+      expect(result.quality).toContain('maintainability');
+    });
+
+    it('should strip eslint-plugin- prefix from names', async () => {
+      const mockedFs = vi.mocked(fs);
+      mockedFs.readFile.mockResolvedValue(JSON.stringify(mockPluginStats));
+
+      const { getPublishedPluginNames } = await import('../lib/stats-loader');
+      const result = await getPublishedPluginNames();
+
+      // Names should not have the prefix
+      expect(result.security).not.toContain('eslint-plugin-browser-security');
+      expect(result.security).toContain('browser-security');
+    });
+
+    it('should use fallback list when stats are unavailable', async () => {
+      const mockedFs = vi.mocked(fs);
+      mockedFs.readFile.mockRejectedValue(new Error('ENOENT'));
+
+      const { getPublishedPluginNames } = await import('../lib/stats-loader');
+      const result = await getPublishedPluginNames();
+
+      // Should return fallback list
+      expect(result.security.length).toBeGreaterThan(0);
+      expect(result.quality.length).toBeGreaterThan(0);
+      expect(result.security).toContain('browser-security');
+    });
+  });
+});

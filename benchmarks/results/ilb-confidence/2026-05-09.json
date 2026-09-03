@@ -1,0 +1,58 @@
+{
+  "bench": "ILB-Confidence",
+  "benchVersion": "0.1",
+  "timestamp": "2026-05-09T23:38:12.563Z",
+  "methodologyCommit": "19b89fc5b924386f2d1f7a5a8dd210c90664841f",
+  "toolchain": {
+    "node": "24.12.0",
+    "eslint": "9.39.2",
+    "typescript": "5.9.3",
+    "tsCompiler": "tsc-classic",
+    "typescriptEslint": "8.54.0",
+    "platform": "darwin-arm64"
+  },
+  "cost": {},
+  "effectiveness": {
+    "ece": null,
+    "mce": 0
+  },
+  "latency": {},
+  "declaredCoverage": {
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "unstated": 207
+  },
+  "calibration": {
+    "perBucket": {
+      "high": {
+        "count": 0,
+        "empiricalPrecision": null,
+        "target": 0.95,
+        "gap": null
+      },
+      "medium": {
+        "count": 0,
+        "empiricalPrecision": null,
+        "target": 0.8,
+        "gap": null
+      },
+      "low": {
+        "count": 0,
+        "empiricalPrecision": null,
+        "target": 0.6,
+        "gap": null
+      },
+      "unstated": {
+        "count": 0,
+        "empiricalPrecision": null,
+        "target": null,
+        "gap": null
+      }
+    },
+    "expectedCalibrationError": null,
+    "maximumCalibrationError": 0
+  },
+  "arenaSource": "latest",
+  "rulesAnalyzed": 207
+}

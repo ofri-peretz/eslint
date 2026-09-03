@@ -1,0 +1,10 @@
+{
+    "title": "Plugin: mongodb-security",
+    "icon": "Database",
+    "defaultOpen": false,
+    "pages": [
+        "index",
+        "changelog",
+        "rules"
+    ]
+}

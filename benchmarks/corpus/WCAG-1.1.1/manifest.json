@@ -1,0 +1,19 @@
+{
+  "cwe": "—",
+  "name": "WCAG 2.1 SC 1.1.1 — Non-text Content (alt text)",
+  "owasp": "—",
+  "severity": "HIGH",
+  "expectedPlugins": ["eslint-plugin-react-a11y"],
+  "fixtures": {
+    "vulnerable": [
+      { "file": "img-no-alt.tsx", "description": "<img> without alt attribute" },
+      { "file": "next-image-no-alt.tsx", "description": "next/image <Image> without alt — requires custom-component config" },
+      { "file": "input-image-no-alt.tsx", "description": "<input type=\"image\"> without alt" }
+    ],
+    "safe": [
+      { "file": "img-with-alt.tsx", "description": "<img alt=\"description\">" },
+      { "file": "img-decorative.tsx", "description": "<img alt=\"\"> for decorative images" },
+      { "file": "img-dynamic-alt.tsx", "description": "<img alt={prop}> with forwarded alt prop" }
+    ]
+  }
+}

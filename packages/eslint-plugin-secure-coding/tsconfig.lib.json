@@ -1,0 +1,44 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "sourceMap": false,
+    "composite": true,
+    // Declarations only. The .js this pass used to emit was thrown away:
+    // build-package.ts recompiles with --removeComments into a scratch dir and
+    // copies ONLY the .js back over dist, so every .js here was overwritten.
+    // The whole-graph typecheck (tsgo --build tsconfig.solution.json) never
+    // wanted .js at all. Measured on react-features: 2.71s -> 1.96s (-28%).
+    // .d.ts must still be emitted — project references consume it, and it is
+    // what validates declaration emit for the published packages.
+    "emitDeclarationOnly": true,
+    "rootDir": "./src",
+    "outDir": "./dist/src",
+    "tsBuildInfoFile": "./.tsbuildinfo",
+    "declaration": true,
+    "types": [
+      "node"
+    ]
+  },
+  "references": [
+    {
+      "path": "../eslint-devkit/tsconfig.lib.json"
+    }
+  ],
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "vite.config.ts",
+    "vite.config.mts",
+    "vitest.config.ts",
+    "vitest.config.mts",
+    "src/**/*.test.ts",
+    "src/**/*.spec.ts",
+    "src/**/*.test.tsx",
+    "src/**/*.spec.tsx",
+    "src/**/*.test.js",
+    "src/**/*.spec.js",
+    "src/**/*.test.jsx",
+    "src/**/*.spec.jsx"
+  ]
+}

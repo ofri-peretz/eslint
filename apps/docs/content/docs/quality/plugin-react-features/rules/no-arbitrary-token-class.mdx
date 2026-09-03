@@ -1,0 +1,71 @@
+---
+title: "no-arbitrary-token-class"
+description: "No Tailwind arbitrary values when a token exists for that property (R19)"
+category: quality
+autofix: false
+type_aware: false
+type_aware_status: unaware
+---
+
+import { RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> **Part of:** `componentApi` preset (opt-in — not in `recommended`)
+
+No Tailwind arbitrary-value classes (`rounded-[12px]`, `px-[18px]`) on properties that have a design-token equivalent. This prevents bypassing the spacing and radius scale with one-off pixel values. Arbitrary values that reference CSS variables (`rounded-[var(--token)]`), computed expressions (`w-[calc(...)]`), or non-pixel units that don't map to the token scale (`min-h-[60vh]`) are allowed.
+
+## Why This Matters
+
+| Issue | Impact | Solution |
+| ----- | ------ | -------- |
+| **Scale drift** | One-off `px-[18px]` diverges from the 4/8-point spacing grid | Use the nearest token (`px-4`, `px-5`) |
+| **Inconsistency** | Arbitrary sizes accumulate across the codebase | Centralize in theme extension |
+| **Audit blindspot** | Arbitrary values bypass design-token audit tooling | Extend the Tailwind theme to add named tokens |
+
+## Flagged Properties
+
+Spacing (`px`, `py`, `pt`, `pb`, `pl`, `pr`, `p`, `mx`, `my`, `mt`, `mb`, `ml`, `mr`, `m`, `gap`, `gap-x`, `gap-y`, `space-x`, `space-y`) and radius (`rounded`, `rounded-t/r/b/l/tl/tr/bl/br`) with pixel/rem/em arbitrary values.
+
+## Examples
+
+### Incorrect
+
+```tsx
+// Arbitrary spacing — use the scale
+<div className="px-[18px] gap-[12px]">...</div>
+
+// Arbitrary radius — use the scale
+<div className="rounded-[8px]">...</div>
+```
+
+### Correct
+
+```tsx
+// Token-based spacing
+<div className="px-4 gap-3">...</div>
+
+// Token-based radius
+<div className="rounded-lg">...</div>
+
+// Allowed: CSS variable arbitrary value
+<div className="rounded-[var(--radius)]">...</div>
+
+// Allowed: non-tokenizable unit
+<div className="min-h-[60vh]">...</div>
+```
+
+## Configuration
+
+```javascript
+// eslint.config.mjs
+export default [
+  {
+    rules: {
+      "react-features/no-arbitrary-token-class": "error",
+    },
+  },
+];
+```
+
+This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).

@@ -1,0 +1,97 @@
+{
+  "$id": "https://benchmarks.interlace.dev/mappings/iso-25010-2023.json",
+  "title": "ISO/IEC 25010:2023 — System and Software Quality Models",
+  "description": "Quality model that the Interlace quality plugins (maintainability, reliability, modernization, conventions, modularity, operability) map against. Roadmap item 4.2. Source: https://www.iso.org/standard/78176.html",
+  "version": "2023",
+  "lastReviewed": "2026-05-09",
+  "characteristics": {
+    "FunctionalSuitability": {
+      "description": "Degree to which the software provides functions that meet stated and implied needs.",
+      "subCharacteristics": ["FunctionalCompleteness", "FunctionalCorrectness", "FunctionalAppropriateness"],
+      "interlaceApplicability": "low — out of lint scope"
+    },
+    "PerformanceEfficiency": {
+      "description": "Performance relative to the amount of resources used under stated conditions.",
+      "subCharacteristics": ["TimeBehaviour", "ResourceUtilization", "Capacity"],
+      "interlaceApplicability": "medium",
+      "examplePlugins": ["operability"]
+    },
+    "Compatibility": {
+      "description": "Degree to which the software can exchange information with other products / systems / components.",
+      "subCharacteristics": ["Coexistence", "Interoperability"],
+      "interlaceApplicability": "low"
+    },
+    "Interaction Capability": {
+      "description": "Renamed from 'Usability' in ISO 25010:2023 — operator-facing fitness.",
+      "subCharacteristics": ["Appropriateness Recognizability", "Learnability", "Operability", "User Error Protection", "User Interface Aesthetics", "Accessibility"],
+      "interlaceApplicability": "high",
+      "examplePlugins": ["react-a11y"]
+    },
+    "Reliability": {
+      "description": "Degree to which the software performs functions under specified conditions for a specified period.",
+      "subCharacteristics": ["Faultlessness", "Availability", "Fault Tolerance", "Recoverability"],
+      "interlaceApplicability": "high",
+      "examplePlugins": ["reliability", "operability"]
+    },
+    "Security": {
+      "description": "Degree to which the software protects information so that other products or persons have appropriate degree of access.",
+      "subCharacteristics": ["Confidentiality", "Integrity", "Non-repudiation", "Accountability", "Authenticity", "Resistance"],
+      "interlaceApplicability": "high",
+      "examplePlugins": ["secure-coding", "browser-security", "node-security", "crypto", "jwt", "express-security", "lambda-security", "mongodb-security", "nestjs-security", "vercel-ai-security", "pg"]
+    },
+    "Maintainability": {
+      "description": "Degree of effectiveness and efficiency with which the software can be modified.",
+      "subCharacteristics": ["Modularity", "Reusability", "Analyzability", "Modifiability", "Testability"],
+      "interlaceApplicability": "high",
+      "examplePlugins": ["maintainability", "modularity", "modernization", "conventions"]
+    },
+    "Flexibility": {
+      "description": "New top-level characteristic in ISO 25010:2023 — capacity to adapt to changes.",
+      "subCharacteristics": ["Adaptability", "Scalability", "Installability", "Replaceability"],
+      "interlaceApplicability": "low"
+    },
+    "Safety": {
+      "description": "New top-level characteristic in ISO 25010:2023 — risk to people, property, or environment.",
+      "subCharacteristics": ["Operational Constraint", "Risk Identification", "Fail Safe", "Hazard Warning", "Safe Integration"],
+      "interlaceApplicability": "medium — overlaps with Security where rules block dangerous operations"
+    }
+  },
+  "exampleRuleMappings": {
+    "_comment": "Per-rule meta.iso25010 overrides these. Seed coverage for the 6 quality plugins:",
+    "maintainability/max-params": [{ "characteristic": "Maintainability", "subCharacteristic": "Analyzability" }],
+    "maintainability/max-nesting-depth": [{ "characteristic": "Maintainability", "subCharacteristic": "Analyzability" }],
+    "maintainability/max-lines-per-function": [{ "characteristic": "Maintainability", "subCharacteristic": "Modifiability" }],
+    "modularity/no-unused-exports": [{ "characteristic": "Maintainability", "subCharacteristic": "Modularity" }],
+    "modularity/no-circular-imports": [{ "characteristic": "Maintainability", "subCharacteristic": "Modularity" }],
+    "reliability/no-empty-catch": [{ "characteristic": "Reliability", "subCharacteristic": "Fault Tolerance" }],
+    "reliability/no-unhandled-promise": [{ "characteristic": "Reliability", "subCharacteristic": "Faultlessness" }],
+    "modernization/no-var": [{ "characteristic": "Maintainability", "subCharacteristic": "Modifiability" }],
+    "modernization/prefer-const": [{ "characteristic": "Maintainability", "subCharacteristic": "Modifiability" }],
+    "conventions/naming-convention": [{ "characteristic": "Maintainability", "subCharacteristic": "Analyzability" }],
+    "operability/no-blocking-call": [{ "characteristic": "PerformanceEfficiency", "subCharacteristic": "TimeBehaviour" }, { "characteristic": "Reliability", "subCharacteristic": "Availability" }],
+    "maintainability/max-function-complexity": [{ "characteristic": "Maintainability", "subCharacteristic": "Analyzability" }, { "characteristic": "Maintainability", "subCharacteristic": "Testability" }],
+    "maintainability/max-file-length": [{ "characteristic": "Maintainability", "subCharacteristic": "Modifiability" }],
+    "maintainability/no-magic-numbers": [{ "characteristic": "Maintainability", "subCharacteristic": "Analyzability" }],
+    "maintainability/no-deeply-nested-callbacks": [{ "characteristic": "Maintainability", "subCharacteristic": "Analyzability" }],
+    "modularity/no-default-export": [{ "characteristic": "Maintainability", "subCharacteristic": "Modularity" }, { "characteristic": "Maintainability", "subCharacteristic": "Reusability" }],
+    "modularity/no-deep-imports": [{ "characteristic": "Maintainability", "subCharacteristic": "Modularity" }],
+    "modularity/no-relative-parent-imports": [{ "characteristic": "Maintainability", "subCharacteristic": "Modularity" }],
+    "modularity/no-cross-feature-imports": [{ "characteristic": "Maintainability", "subCharacteristic": "Modularity" }],
+    "reliability/no-floating-promise": [{ "characteristic": "Reliability", "subCharacteristic": "Faultlessness" }, { "characteristic": "Reliability", "subCharacteristic": "Fault Tolerance" }],
+    "reliability/no-promise-without-error-handling": [{ "characteristic": "Reliability", "subCharacteristic": "Fault Tolerance" }],
+    "reliability/no-uncaught-await": [{ "characteristic": "Reliability", "subCharacteristic": "Fault Tolerance" }],
+    "reliability/no-unbounded-loop": [{ "characteristic": "Reliability", "subCharacteristic": "Availability" }, { "characteristic": "PerformanceEfficiency", "subCharacteristic": "ResourceUtilization" }],
+    "modernization/no-var": [{ "characteristic": "Maintainability", "subCharacteristic": "Modifiability" }],
+    "modernization/prefer-const": [{ "characteristic": "Maintainability", "subCharacteristic": "Modifiability" }],
+    "modernization/prefer-arrow-callback": [{ "characteristic": "Maintainability", "subCharacteristic": "Modifiability" }],
+    "modernization/prefer-template-literal": [{ "characteristic": "Maintainability", "subCharacteristic": "Modifiability" }],
+    "modernization/no-deprecated-api": [{ "characteristic": "Maintainability", "subCharacteristic": "Modifiability" }, { "characteristic": "Reliability", "subCharacteristic": "Faultlessness" }],
+    "conventions/naming-convention": [{ "characteristic": "Maintainability", "subCharacteristic": "Analyzability" }],
+    "conventions/prefer-named-export": [{ "characteristic": "Maintainability", "subCharacteristic": "Analyzability" }],
+    "conventions/no-export-star": [{ "characteristic": "Maintainability", "subCharacteristic": "Modularity" }, { "characteristic": "Maintainability", "subCharacteristic": "Analyzability" }],
+    "operability/require-graceful-shutdown": [{ "characteristic": "Reliability", "subCharacteristic": "Recoverability" }, { "characteristic": "Reliability", "subCharacteristic": "Availability" }],
+    "operability/no-process-exit": [{ "characteristic": "Reliability", "subCharacteristic": "Availability" }],
+    "operability/require-health-check": [{ "characteristic": "Reliability", "subCharacteristic": "Availability" }],
+    "operability/no-sync-in-handler": [{ "characteristic": "PerformanceEfficiency", "subCharacteristic": "TimeBehaviour" }, { "characteristic": "Reliability", "subCharacteristic": "Availability" }]
+  }
+}

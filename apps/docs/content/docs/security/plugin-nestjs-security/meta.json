@@ -1,0 +1,10 @@
+{
+    "title": "Plugin: nestjs-security",
+    "icon": "Shield",
+    "defaultOpen": false,
+    "pages": [
+        "index",
+        "changelog",
+        "rules"
+    ]
+}

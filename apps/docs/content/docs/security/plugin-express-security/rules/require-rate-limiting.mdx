@@ -1,0 +1,192 @@
+---
+title: require-rate-limiting
+description: "This rule detects Express.js applications missing rate-limiting middleware"
+tags: ['security', 'express']
+category: security
+severity: medium
+cwe: CWE-770
+autofix: false
+type_aware: false
+type_aware_status: unaware
+---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> Require rate-limiting middleware to prevent DDoS and brute-force attacks
+
+**Severity:** 🟡 Warning  
+**CWE:** [CWE-770](https://cwe.mitre.org/data/definitions/770.html)
+
+## Rule Details
+
+This rule detects an Express app that accepts **a secret to be checked** —
+login, token, password reset, OTP, invite redemption — on a state-changing
+route, with no rate limiter anywhere in the file.
+
+### Why the endpoint and not the app
+
+"An Express app exists and `rateLimit` was not called" matches a _shape_: it
+fires on every app ever written, including a static-file server with nothing to
+throttle. The exploitable form of CWE-770 here is the guess-and-retry loop
+against a credential check (OWASP, _Blocking Brute Force Attacks_), so the
+surface — a state-changing route whose path names a secret — is the
+precondition, and that route is the reported node.
+
+A read-only or purely static app is **not** reported. That is a deliberate
+scope choice: throttling a GET is capacity engineering, and a linter cannot
+tell an expensive read from a cheap one.
+
+Only the first such route is reported, because the fix (`app.use(rateLimit(…))`)
+is one edit for the whole app. If the app binding leaves the file
+(`module.exports = app`, `export default app`, `return app`, `configure(app)`),
+the rule abstains.
+
+### Partition with `require-helmet`
+
+Both rules used to report the identical `express()` node, with two unrelated
+fixes. `require-helmet` owns the app-creation site; this rule owns the
+endpoint.
+
+## Examples
+
+### ❌ Incorrect
+
+```javascript
+import express from 'express';
+const app = express();
+
+// A credential check with no throttle - VULNERABLE
+app.post('/login', (req, res) => {
+  authenticate(req.body);
+});
+
+app.listen(3000);
+```
+
+### ✅ Correct
+
+```javascript
+import express from 'express';
+import rateLimit from 'express-rate-limit';
+
+const app = express();
+
+// Global rate limiter
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per window
+});
+
+app.use(limiter);
+
+// Stricter limiter for login
+const loginLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5, // 5 attempts per hour
+});
+
+app.post('/login', loginLimiter, (req, res) => {
+  authenticate(req.body);
+});
+```
+
+```javascript
+// Nothing to brute-force. Not reported.
+const app = express();
+app.use(express.static('./public'));
+app.get('/login/callback', redirectToOrigin);
+
+// A state-changing route that is not a credential surface. Not reported.
+app.post('/articles', createArticle);
+```
+
+## Options
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `appReceiverNames` | `string[]` | `["app","server","router","express","api","apiRouter","routes"]` | Identifiers that hold the Express app or a router. Replaces the default. |
+| `allowInTests` | `boolean` | `false` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `alternativeMiddleware` | `string[]` | `[]` | Extra middleware names that count as rate limiting |
+| `assumeRateLimiting` | `boolean` | `false` | Skip if rate limiting is provided by infrastructure (API Gateway, nginx, etc.) |
+
+```json
+{
+  "rules": {
+    "express-security/require-rate-limiting": [
+      "warn",
+      {
+        "allowInTests": true
+      }
+    ]
+  }
+}
+```
+
+## When Not To Use It
+
+- Internal microservices behind a load balancer with rate limiting
+- Development environments (use `allowInTests`)
+
+<WhenNotToUse />
+
+<FalseNegativeCTA />
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Rate Limiter in External Module
+
+**Why**: Middleware applied in other modules is not tracked.
+
+```typescript
+// ❌ NOT DETECTED - Limiter in security.ts
+import { setupSecurity } from './security'; // Applies rate limiting
+setupSecurity(app);
+```
+
+**Mitigation**: Apply rate limiting in main file. Document middleware location.
+
+### Reverse Proxy Rate Limiting
+
+**Why**: Infrastructure-level rate limiting is not visible to ESLint.
+
+```typescript
+// ❌ NOT DETECTED (correctly) - Rate limiting in Nginx/Cloudflare
+app.post('/api', handler); // Nginx handles rate limiting
+```
+
+**Mitigation**: Document infrastructure rate limits. Add inline comment.
+
+### Custom Rate Limiting Implementation
+
+**Why**: Custom rate limiting logic is not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom rate limiting
+const rateLimits = new Map();
+app.use((req, res, next) => {
+  // Custom rate limiting logic
+});
+```
+
+**Mitigation**: Use standard middleware. Configure rule to recognize custom names.
+
+### Per-Route vs Global
+
+**Why**: Route-level limiters may miss some endpoints.
+
+```typescript
+// ❌ NOT DETECTED - Some routes may be unprotected
+app.use('/api', rateLimiter);
+app.get('/public/data', handler); // No limiter!
+```
+
+**Mitigation**: Apply rate limiting globally. Review all routes.
+
+## Further Reading
+
+- [express-rate-limit](https://www.npmjs.com/package/express-rate-limit)
+- [OWASP Rate Limiting](https://cheatsheetseries.owasp.org/cheatsheets/Denial_of_Service_Cheat_Sheet.html)

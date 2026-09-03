@@ -1,0 +1,403 @@
+{
+  "secure-coding/no-insecure-comparison": {
+    "hits": 330,
+    "avgTimeMs": 12.11,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-insecure-comparison",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/util/src/zod/index.js",
+        "line": 50,
+        "column": 9,
+        "message": "🔒 CWE-208 | Secret comparison with === can leak timing information | HIGH\n   Fix: Use crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b)) | https://nodejs.org/api/crypto.html#cryptotimingsafeequala-b"
+      },
+      {
+        "ruleId": "secure-coding/no-insecure-comparison",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/util/src/telemetry/index.js",
+        "line": 27,
+        "column": 9,
+        "message": "🔒 CWE-208 | Secret comparison with === can leak timing information | HIGH\n   Fix: Use crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b)) | https://nodejs.org/api/crypto.html#cryptotimingsafeequala-b"
+      },
+      {
+        "ruleId": "secure-coding/no-insecure-comparison",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/util/src/telemetry/index.js",
+        "line": 27,
+        "column": 36,
+        "message": "🔒 CWE-208 | Secret comparison with === can leak timing information | HIGH\n   Fix: Use crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b)) | https://nodejs.org/api/crypto.html#cryptotimingsafeequala-b"
+      },
+      {
+        "ruleId": "secure-coding/no-insecure-comparison",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/util/src/proxy/aws.js",
+        "line": 111,
+        "column": 7,
+        "message": "🔒 CWE-208 | Secret comparison with === can leak timing information | HIGH\n   Fix: Use crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b)) | https://nodejs.org/api/crypto.html#cryptotimingsafeequala-b"
+      },
+      {
+        "ruleId": "secure-coding/no-insecure-comparison",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/util/src/logger/index.js",
+        "line": 64,
+        "column": 24,
+        "message": "🔒 CWE-697 OWASP:A06-Insecure CVSS:5.3 | Insecure comparison operator (!=) detected - can lead to type coercion vulnerabilities | HIGH\n   Fix: Use strict equality (!==) instead: renderer.spinner._spinner !== null | https://cwe.mitre.org/dat"
+      }
+    ]
+  },
+  "secure-coding/detect-object-injection": {
+    "hits": 1255,
+    "avgTimeMs": 22.99,
+    "samples": [
+      {
+        "ruleId": "secure-coding/detect-object-injection",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/util/src/telemetry/helpers.js",
+        "line": 19,
+        "column": 35,
+        "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+      },
+      {
+        "ruleId": "secure-coding/detect-object-injection",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/util/src/state/index.js",
+        "line": 261,
+        "column": 19,
+        "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+      },
+      {
+        "ruleId": "secure-coding/detect-object-injection",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/util/src/state/index.js",
+        "line": 263,
+        "column": 11,
+        "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+      },
+      {
+        "ruleId": "secure-coding/detect-object-injection",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/util/src/state/index.js",
+        "line": 268,
+        "column": 11,
+        "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+      },
+      {
+        "ruleId": "secure-coding/detect-object-injection",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/util/src/state/index.js",
+        "line": 273,
+        "column": 11,
+        "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+      }
+    ]
+  },
+  "node-security/detect-non-literal-fs-filename": {
+    "hits": 62,
+    "avgTimeMs": 4.88,
+    "samples": [
+      {
+        "ruleId": "node-security/detect-non-literal-fs-filename",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/util/src/proxy/aws.js",
+        "line": 91,
+        "column": 26,
+        "message": "🔑 CWE-22 OWASP:A01-Broken CVSS:7.5 | Path traversal vulnerability | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use path.resolve() with validation | https://owasp.org/www-community/attacks/Path_Traversal"
+      }
+    ]
+  },
+  "node-security/no-arbitrary-file-access": {
+    "hits": 38,
+    "avgTimeMs": 4.03,
+    "samples": [
+      {
+        "ruleId": "node-security/no-arbitrary-file-access",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/util/src/proxy/aws.js",
+        "line": 91,
+        "column": 26,
+        "message": "🔒 CWE-22 OWASP:A01-Broken CVSS:7.5 | File path from user input - path traversal vulnerability | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Validate and sanitize file paths, use allowlists | https://cwe.mitre.org/data/definitions/22.html"
+      }
+    ]
+  },
+  "secure-coding/no-hardcoded-credentials": {
+    "hits": 320,
+    "avgTimeMs": 17.57,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-hardcoded-credentials",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/util/src/globalBucket/deployment.js",
+        "line": 6,
+        "column": 31,
+        "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.S3_BUCKET_NAME_PREFIX or secret management service | https://cwe.mitre.org/data/def"
+      },
+      {
+        "ruleId": "secure-coding/no-hardcoded-credentials",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/util/src/errors/index.js",
+        "line": 3,
+        "column": 41,
+        "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.ACM_CERTIFICATE_VALIDATION_TIMEOUT or secret management service | https://cwe.mitre"
+      },
+      {
+        "ruleId": "secure-coding/no-hardcoded-credentials",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/util/src/errors/index.js",
+        "line": 12,
+        "column": 39,
+        "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.FAILED_TO_CREATE_FARGATE_SERVICE or secret management service | https://cwe.mitre.o"
+      },
+      {
+        "ruleId": "secure-coding/no-hardcoded-credentials",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/util/src/errors/index.js",
+        "line": 16,
+        "column": 42,
+        "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.FAILED_TO_CREATE_S2S_SECURITY_GROUP or secret management service | https://cwe.mitr"
+      },
+      {
+        "ruleId": "secure-coding/no-hardcoded-credentials",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/util/src/errors/index.js",
+        "line": 18,
+        "column": 7,
+        "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.FAILED_TO_CREATE_LOAD_BALANCER_SECURITY_GROUP or secret management service | https:"
+      }
+    ]
+  },
+  "node-security/detect-child-process": {
+    "hits": 3,
+    "avgTimeMs": 8.16,
+    "samples": []
+  },
+  "secure-coding/no-xxe-injection": {
+    "hits": 10,
+    "avgTimeMs": 7.08,
+    "samples": []
+  },
+  "node-security/no-buffer-overread": {
+    "hits": 7,
+    "avgTimeMs": 17.82,
+    "samples": []
+  },
+  "secure-coding/detect-non-literal-regexp": {
+    "hits": 21,
+    "avgTimeMs": 6.1,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-regex-construction": {
+    "hits": 18,
+    "avgTimeMs": 3.59,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-deserialization": {
+    "hits": 35,
+    "avgTimeMs": 13.06,
+    "samples": []
+  },
+  "node-security/no-zip-slip": {
+    "hits": 12,
+    "avgTimeMs": 16.07,
+    "samples": []
+  },
+  "node-security/no-weak-hash-algorithm": {
+    "hits": 13,
+    "avgTimeMs": 10.62,
+    "samples": []
+  },
+  "secure-coding/no-unlimited-resource-allocation": {
+    "hits": 42,
+    "avgTimeMs": 23.34,
+    "samples": []
+  },
+  "secure-coding/no-unchecked-loop-condition": {
+    "hits": 55,
+    "avgTimeMs": 24.29,
+    "samples": []
+  },
+  "secure-coding/no-improper-sanitization": {
+    "hits": 5,
+    "avgTimeMs": 11.55,
+    "samples": []
+  },
+  "node-security/no-ssrf": {
+    "hits": 10,
+    "avgTimeMs": 6.21,
+    "samples": []
+  },
+  "secure-coding/no-ldap-injection": {
+    "hits": 1,
+    "avgTimeMs": 9.28,
+    "samples": []
+  },
+  "secure-coding/no-sensitive-data-exposure": {
+    "hits": 7,
+    "avgTimeMs": 9.99,
+    "samples": []
+  },
+  "secure-coding/no-xpath-injection": {
+    "hits": 7,
+    "avgTimeMs": 12.13,
+    "samples": []
+  },
+  "node-security/no-toctou-vulnerability": {
+    "hits": 1,
+    "avgTimeMs": 4.51,
+    "samples": []
+  },
+  "secure-coding/no-redos-vulnerable-regex": {
+    "hits": 3,
+    "avgTimeMs": 5.39,
+    "samples": []
+  },
+  "lambda-security/no-overly-permissive-iam-policy": {
+    "hits": 27,
+    "avgTimeMs": 4.42,
+    "samples": []
+  },
+  "secure-coding/no-graphql-injection": {
+    "hits": 21,
+    "avgTimeMs": 35.18,
+    "samples": []
+  },
+  "lambda-security/no-missing-authorization-check": {
+    "hits": 16,
+    "avgTimeMs": 11.1,
+    "samples": []
+  },
+  "node-security/lock-file": {
+    "hits": 47,
+    "avgTimeMs": 34.58,
+    "samples": []
+  },
+  "lambda-security/no-unbounded-batch-processing": {
+    "hits": 12,
+    "avgTimeMs": 6.23,
+    "samples": []
+  },
+  "lambda-security/require-timeout-handling": {
+    "hits": 10,
+    "avgTimeMs": 6.33,
+    "samples": []
+  },
+  "secure-coding/no-missing-authentication": {
+    "hits": 7,
+    "avgTimeMs": 6.89,
+    "samples": []
+  },
+  "lambda-security/no-exposed-error-details": {
+    "hits": 1,
+    "avgTimeMs": 4.65,
+    "samples": []
+  },
+  "node-security/no-unsafe-dynamic-require": {
+    "hits": 2,
+    "avgTimeMs": 3.19,
+    "samples": []
+  },
+  "lambda-security/no-exposed-debug-endpoints": {
+    "hits": 1,
+    "avgTimeMs": 8.32,
+    "samples": []
+  },
+  "lambda-security/no-unvalidated-event-body": {
+    "hits": 0,
+    "avgTimeMs": 15.08,
+    "samples": []
+  },
+  "secure-coding/no-weak-password-recovery": {
+    "hits": 0,
+    "avgTimeMs": 15.08,
+    "samples": []
+  },
+  "lambda-security/no-secrets-in-env": {
+    "hits": 0,
+    "avgTimeMs": 13.52,
+    "samples": []
+  },
+  "lambda-security/no-user-controlled-requests": {
+    "hits": 0,
+    "avgTimeMs": 13.09,
+    "samples": []
+  },
+  "lambda-security/no-hardcoded-credentials-sdk": {
+    "hits": 0,
+    "avgTimeMs": 11.89,
+    "samples": []
+  },
+  "secure-coding/no-privilege-escalation": {
+    "hits": 0,
+    "avgTimeMs": 11.47,
+    "samples": []
+  },
+  "lambda-security/no-env-logging": {
+    "hits": 0,
+    "avgTimeMs": 8.34,
+    "samples": []
+  },
+  "node-security/no-weak-cipher-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 6.02,
+    "samples": []
+  },
+  "node-security/no-static-iv": {
+    "hits": 0,
+    "avgTimeMs": 5.77,
+    "samples": []
+  },
+  "node-security/no-data-in-temp-storage": {
+    "hits": 0,
+    "avgTimeMs": 5.66,
+    "samples": []
+  },
+  "node-security/no-ecb-mode": {
+    "hits": 0,
+    "avgTimeMs": 4.94,
+    "samples": []
+  },
+  "node-security/require-dependency-integrity": {
+    "hits": 0,
+    "avgTimeMs": 4.59,
+    "samples": []
+  },
+  "lambda-security/no-permissive-cors-response": {
+    "hits": 0,
+    "avgTimeMs": 4.58,
+    "samples": []
+  },
+  "lambda-security/no-permissive-cors-middy": {
+    "hits": 0,
+    "avgTimeMs": 3.52,
+    "samples": []
+  },
+  "node-security/detect-suspicious-dependencies": {
+    "hits": 0,
+    "avgTimeMs": 3.31,
+    "samples": []
+  },
+  "node-security/detect-eval-with-expression": {
+    "hits": 0,
+    "avgTimeMs": 3.3,
+    "samples": []
+  },
+  "node-security/no-deprecated-buffer": {
+    "hits": 0,
+    "avgTimeMs": 2.91,
+    "samples": []
+  },
+  "node-security/no-cryptojs": {
+    "hits": 0,
+    "avgTimeMs": 2.56,
+    "samples": []
+  },
+  "lambda-security/no-error-swallowing": {
+    "hits": 0,
+    "avgTimeMs": 2.23,
+    "samples": []
+  },
+  "camelcase": {
+    "hits": 0,
+    "avgTimeMs": 0.51,
+    "samples": []
+  }
+}
