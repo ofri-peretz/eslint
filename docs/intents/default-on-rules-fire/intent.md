@@ -52,6 +52,34 @@ That hit rate is the argument. It was measured on the _examined_ population;
 there is no reason to believe the unexamined 278 are healthier, and one
 concrete reason — `ddd-anemic` — to believe some are worse.
 
+## Progress — 2026-09-02
+
+`scripts/recommended-rules-fire.mts` runs each rule's own TP case through the
+preset rather than through the rule. It found **287** rules across the
+`recommended` presets — the first read said 7, because it looked for `configs`
+on the default export when most plugins export it as a NAMED export. A probe
+that quietly measured four plugins of twenty-six and reported as though it had
+measured all of them.
+
+It reports 187 firing and 96 silent, **and the 96 is not yet a finding.** Many
+rules are evidence-gated: they refuse to fire in a file that does not import the
+framework they are about. The test suites supply that through a harness
+(`sdk()`, `lambda()`, `xp()`) that wraps each case; the ledger records the
+FRAGMENT. Measured:
+
+```
+app.use(cors({ origin: '*', credentials: true }));      -> 0
+import express from 'express'; … the same line          -> 1
+```
+
+So the probe hands rules a file their harness would never have produced, and a
+correct abstention reads as a defect.
+
+**The blocking design question this surfaces:** a positive control needs the
+whole file the case runs in, and `RULE_CASES.json` stores only the fragment.
+Recording the harness per case is a change to `rule-case-ledger.ts`, and it is
+what this intent actually needs before its number means anything.
+
 ## The finding
 
 Zero findings has two causes, and they are not the same thing:
