@@ -38,7 +38,27 @@ const SOURCE = readFileSync(
 describe('scorecard corpus selection', () => {
   it('selects runs by corpus, not only by date', () => {
     expect(SOURCE).toContain('function latestSummaryOfCorpus(');
-    expect(SOURCE).toMatch(/Boolean\(data\?\.fpCorpusMode\) !== fpCorpus/);
+    // `data?.` or `data.` — the optional chain stopped being needed once an
+    // unreadable summary was skipped outright (below). Pinning the punctuation
+    // rather than the comparison made this lock fail on a strictly better
+    // implementation, which is the wrong thing for a lock to do.
+    expect(SOURCE).toMatch(/Boolean\(data\??\.fpCorpusMode\) !== fpCorpus/);
+  });
+
+  it('an unreadable summary matches no corpus', () => {
+    /*
+     * `readJson` returns null on invalid JSON, and `Boolean(null?.fpCorpusMode)`
+     * is `false` — which is exactly the WILD predicate. So a corrupt
+     * `summary.json` was returned as the latest Wild run, and ILB-Wild,
+     * ILB-Perf and ILB-Cov all reported missing data instead of falling
+     * through to the newest run that actually parses.
+     *
+     * The guard has to come BEFORE the corpus comparison, or null takes the
+     * Wild branch again.
+     */
+    const guardThenCompare =
+      /if \(data === null\) continue;[\s\S]{0,200}?Boolean\(data\??\.fpCorpusMode\) !== fpCorpus/;
+    expect(guardThenCompare.test(SOURCE)).toBe(true);
   });
 
   it('Wild, Perf and Cov read the Wild corpus', () => {
