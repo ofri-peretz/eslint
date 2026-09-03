@@ -188,6 +188,26 @@ function reports(
 const LITERAL =
   /'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|`(?:\\.|[^`\\])*`|(?<=[(,=:[!&|?{};]\s*)\/(?:[^/\\\n[]|\\.|\[(?:[^\]\\]|\\.)*\])+\/[gimsuy]*/;
 
+/**
+ * An object literal KEY: `{ k: v }` -> `{ ['k']: v }`.
+ *
+ * The same property under both spellings, and the second is what a minifier
+ * emits. `check:spellings` counts 195 sites reading a bare object key — the
+ * largest of its three classes — and none of them was reachable by this probe,
+ * which rewrote member access only. "1 rule goes silent" described the 117
+ * dotted-property sites and said nothing about the 195.
+ *
+ * Two shapes are deliberately excluded because the rewrite would change
+ * meaning rather than spelling:
+ *   - a key followed by `(` is a method shorthand, `{ k() {} }`, where
+ *     `{ ['k']() {} }` is valid but the rewrite below would produce `['k']:`
+ *   - shorthand `{ k }` is a BINDING, not a property, and has no equivalent
+ *
+ * Requires the key to be preceded by `{` or `,` so a ternary's `? a : b` and a
+ * type annotation's `x: T` are not mistaken for object keys.
+ */
+const KEY_SITE = /([{,]\s*)([A-Za-z_$][\w$]*)\s*:(?!\s*:)/;
+
 const CALL_SITE =
   /\b([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\.([A-Za-z_$][\w$]*)\(/;
 const READ_SITE =
@@ -243,7 +263,16 @@ function toComputed(code: string): string {
     CALL_SITE,
     (r, m) => `${r}["${m}"](`,
   );
-  return rewriteOutsideLiterals(calls, READ_SITE, (r, p) => `${r}["${p}"]`);
+  const reads = rewriteOutsideLiterals(
+    calls,
+    READ_SITE,
+    (r, p) => `${r}["${p}"]`,
+  );
+  return rewriteOutsideLiterals(
+    reads,
+    KEY_SITE,
+    (prefix, k) => `${prefix}['${k}']:`,
+  );
 }
 
 const blind: { rule: string; description: string; code: string }[] = [];
