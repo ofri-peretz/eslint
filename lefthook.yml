@@ -41,6 +41,24 @@ pre-commit:
       # gate, which is what actually holds the line.
       glob: '{packages/eslint-plugin-*/src/rules/**/*.ts,packages/eslint-plugin-*/src/utils/**/*.ts}'
       run: npm run --silent rule-audit:gate -- --changed
+    case-descriptions:
+      # The description ratchet has no DOWNWARD force. It freezes undescribed
+      # cases per rule and permits only a fall — which has held, no rule has
+      # gained one — but a rule at 197 may be edited forever provided it never
+      # reaches 198. 419 rules carry 14,890 undescribed cases and the mechanism
+      # to reduce them is "somebody decides to". Nobody decides to.
+      #
+      # So an edit to a rule must leave its descriptions better than it found
+      # them: STRICTLY lower, not zero. A rule at 197 cannot be cleared in the
+      # change that fixes a bug in it, and demanding that makes the gate
+      # something people route around. One name per edit drains the debt at the
+      # rate the code is actually worked on.
+      #
+      # Same glob and the same `changedRules()` resolver as the audit above —
+      # two diff-to-rules mappings that could disagree is a defect this repo
+      # has already paid for once.
+      glob: '{packages/eslint-plugin-*/src/rules/**/*.ts,packages/eslint-plugin-*/src/utils/**/*.ts}'
+      run: npm run --silent check:rule-cases:touched
     key-vocabulary:
       # An inline list of PROPERTY names compared against a key, with no option
       # and no stated authority.

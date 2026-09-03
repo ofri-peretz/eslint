@@ -1,4 +1,5 @@
 {
+  "command": "npx tsx scripts/lint-detection-list-coverage.ts --update",
   "packages/eslint-plugin-browser-security/src/rules/no-client-side-auth-logic/index.ts#DEFAULT_AUTH_KEYWORDS": [
     "isAuthenticated"
   ],

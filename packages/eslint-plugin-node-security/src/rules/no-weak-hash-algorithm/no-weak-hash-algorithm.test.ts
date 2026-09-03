@@ -34,6 +34,14 @@ const UNCLASSIFIED = [{ reportUnclassifiedHashes: true }];
 describe('no-weak-hash-algorithm', () => {
   ruleTester.run('no-weak-hash-algorithm', noWeakHashAlgorithm, {
     valid: [
+      // The assignment target decides what the hashed value IS, and only a
+      // name can. `user['password']` names the same field `user.password`
+      // names and reports; a DESTRUCTURING target names no single field, so
+      // there is nothing to weigh and the rule abstains.
+      {
+        name: 'a destructuring assignment target names no credential field',
+        code: `const crypto = require('crypto');\n[out] = crypto.createHash('md5').update(x).digest('hex');`,
+      },
       // Valid: SHA-256 (strong)
       { name: 'SHA-256', code: 'crypto.createHash("sha256").update(data);' },
       { code: 'crypto.createHash("sha512").update(data);' },

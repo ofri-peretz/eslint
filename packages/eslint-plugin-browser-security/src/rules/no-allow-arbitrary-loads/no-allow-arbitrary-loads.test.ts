@@ -14,17 +14,29 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-allow-arbitrary-loads', noAllowArbitraryLoads, {
   valid: [
-    'const x = 42;',
-    'const flag = true;',
-    'function noop() {}',
-    'const items = [];',
+    {
+      name: 'a number declaration is not a policy object',
+      code: 'const x = 42;',
+    },
+    {
+      name: 'a boolean declaration is not a policy object',
+      code: 'const flag = true;',
+    },
+    {
+      name: 'an empty function declares no policy',
+      code: 'function noop() {}',
+    },
+    { name: 'an empty array declares no policy', code: 'const items = [];' },
 
     // ---- FP lock: `allowArbitraryLoads` is a key in no API ----------------
     // The rule used to match this spelling and only this spelling. Apple's key
     // is `NSAllowsArbitraryLoads`; the lowercase unprefixed form appears in no
     // Expo, React Native, Capacitor or Cordova schema, so anything a project
     // does spell that way is its own invention and not an ATS opt-out.
-    { name: 'a look-alike key outside the iOS plist structure', code: 'const config = { allowArbitraryLoads: true }' },
+    {
+      name: 'a look-alike key outside the iOS plist structure',
+      code: 'const config = { allowArbitraryLoads: true }',
+    },
     {
       code: 'module.exports = { NSAppTransportSecurity: { allowArbitraryLoads: true } }',
     },

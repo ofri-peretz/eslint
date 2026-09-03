@@ -27,6 +27,13 @@ describe('no-graphql-injection', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - safe GraphQL operations', noGraphqlInjection, {
       valid: [
+        // `apollo['gql']` tags the same template and DOES report. A tag chosen
+        // at RUNTIME names no tag function, so the rule cannot know the
+        // template is GraphQL at all.
+        {
+          name: 'a template tag named at runtime is not a known GraphQL tag',
+          code: 'const t = apollo[tagName]`interface Node { ${extraField} }`;',
+        },
         // Safe GraphQL queries with variables
         {
           name: 'a parameterised query',
@@ -55,100 +62,115 @@ describe('no-graphql-injection', () => {
   });
 
   describe('Invalid Code - Introspection Queries', () => {
-    ruleTester.run('invalid - dangerous introspection queries', noGraphqlInjection, {
-      valid: [],
-      invalid: [
-        {
-          name: 'an introspection query shipped in application code',
-          code: 'const query = `{ __schema { types { name } } }`;',
-          errors: [
-            {
-              messageId: 'introspectionQuery',
-            },
-          ],
-        },
-        {
-          code: 'const introspectionQuery = `query { __type(name: "User") { name fields { name } } }`;',
-          errors: [
-            {
-              messageId: 'introspectionQuery',
-            },
-          ],
-        },
-        {
-          code: 'const schemaQuery = `{ __schema { queryType { name } mutationType { name } } }`;',
-          errors: [
-            {
-              messageId: 'introspectionQuery',
-            },
-          ],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - dangerous introspection queries',
+      noGraphqlInjection,
+      {
+        valid: [],
+        invalid: [
+          {
+            name: 'an introspection query shipped in application code',
+            code: 'const query = `{ __schema { types { name } } }`;',
+            errors: [
+              {
+                messageId: 'introspectionQuery',
+              },
+            ],
+          },
+          {
+            code: 'const introspectionQuery = `query { __type(name: "User") { name fields { name } } }`;',
+            errors: [
+              {
+                messageId: 'introspectionQuery',
+              },
+            ],
+          },
+          {
+            code: 'const schemaQuery = `{ __schema { queryType { name } mutationType { name } } }`;',
+            errors: [
+              {
+                messageId: 'introspectionQuery',
+              },
+            ],
+          },
+        ],
+      },
+    );
   });
 
   describe('Invalid Code - Unsafe Interpolation', () => {
-    ruleTester.run('invalid - unsafe variable interpolation', noGraphqlInjection, {
-      valid: [],
-      invalid: [
-        // Unsafe variable interpolation in GraphQL query
-        {
-          code: 'const query = `query { user(id: "${userId}") { name } }`;',
-          errors: [
-            {
-              messageId: 'unsafeVariableInterpolation',
-            },
-          ],
-        },
-        {
-          code: 'const mutation = `mutation { createUser(name: "${name}", email: "${email}") { id } }`;',
-          errors: [
-            {
-              messageId: 'unsafeVariableInterpolation',
-            },
-          ],
-        },
-        {
-          code: 'const complexQuery = `query { users(filter: { name: "${searchTerm}", status: "${status}" }) { id } }`;',
-          errors: [
-            {
-              messageId: 'unsafeVariableInterpolation',
-            },
-          ],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - unsafe variable interpolation',
+      noGraphqlInjection,
+      {
+        valid: [],
+        invalid: [
+          // Unsafe variable interpolation in GraphQL query
+          {
+            code: 'const query = `query { user(id: "${userId}") { name } }`;',
+            errors: [
+              {
+                messageId: 'unsafeVariableInterpolation',
+              },
+            ],
+          },
+          {
+            code: 'const mutation = `mutation { createUser(name: "${name}", email: "${email}") { id } }`;',
+            errors: [
+              {
+                messageId: 'unsafeVariableInterpolation',
+              },
+            ],
+          },
+          {
+            code: 'const complexQuery = `query { users(filter: { name: "${searchTerm}", status: "${status}" }) { id } }`;',
+            errors: [
+              {
+                messageId: 'unsafeVariableInterpolation',
+              },
+            ],
+          },
+        ],
+      },
+    );
   });
 
   describe('Invalid Code - String Concatenation', () => {
-    ruleTester.run('invalid - dangerous string concatenation', noGraphqlInjection, {
-      valid: [],
-      invalid: [
-        // String concatenation produces 2 errors for nested BinaryExpressions
-        {
-          code: 'const query = "query { user(id: \\"" + userId + "\\") { name } }";',
-          errors: [
-            {
-              messageId: 'graphqlInjection',
-            },
-            {
-              messageId: 'graphqlInjection',
-            },
-          ],
-        },
-        // Note: Removed test case with "baseQuery + ..." as it lacks clear GraphQL syntax
-        // and is now correctly NOT flagged after FP reduction
-      ],
-    });
+    ruleTester.run(
+      'invalid - dangerous string concatenation',
+      noGraphqlInjection,
+      {
+        valid: [],
+        invalid: [
+          // String concatenation produces 2 errors for nested BinaryExpressions
+          {
+            code: 'const query = "query { user(id: \\"" + userId + "\\") { name } }";',
+            errors: [
+              {
+                messageId: 'graphqlInjection',
+              },
+              {
+                messageId: 'graphqlInjection',
+              },
+            ],
+          },
+          // Note: Removed test case with "baseQuery + ..." as it lacks clear GraphQL syntax
+          // and is now correctly NOT flagged after FP reduction
+        ],
+      },
+    );
   });
 
   describe('Invalid Code - Complex Queries (DoS)', () => {
-    ruleTester.run('invalid - complex queries risking DoS', noGraphqlInjection, {
-      valid: [],
-      invalid: [
-        // Deep query with depth > 10 (default maxQueryDepth)
-        {
-          code: `const deepQuery = \`query {
+    ruleTester.run(
+      'invalid - complex queries risking DoS',
+      noGraphqlInjection,
+      {
+        valid: [],
+        invalid: [
+          // Deep query with depth > 10 (default maxQueryDepth)
+          {
+            code: `const deepQuery = \`query {
             users {
               friends {
                 friends {
@@ -173,24 +195,25 @@ describe('no-graphql-injection', () => {
               }
             }
           }\`;`,
-          errors: [
-            {
-              messageId: 'complexQueryDos',
-            },
-          ],
-        },
-        // Complex nested query exceeding lower depth limit
-        {
-          code: 'const complexQuery = `{ users { posts { comments { author { posts { comments { author { name } } } } } } } }`;',
-          options: [{ maxQueryDepth: 5 }],
-          errors: [
-            {
-              messageId: 'complexQueryDos',
-            },
-          ],
-        },
-      ],
-    });
+            errors: [
+              {
+                messageId: 'complexQueryDos',
+              },
+            ],
+          },
+          // Complex nested query exceeding lower depth limit
+          {
+            code: 'const complexQuery = `{ users { posts { comments { author { posts { comments { author { name } } } } } } } }`;',
+            options: [{ maxQueryDepth: 5 }],
+            errors: [
+              {
+                messageId: 'complexQueryDos',
+              },
+            ],
+          },
+        ],
+      },
+    );
   });
 
   describe('Invalid Code - Missing Input Validation', () => {
@@ -319,11 +342,14 @@ describe('no-graphql-injection', () => {
   });
 
   describe('Complex GraphQL Scenarios', () => {
-    ruleTester.run('complex - real-world GraphQL patterns', noGraphqlInjection, {
-      valid: [],
-      invalid: [
-        {
-          code: `
+    ruleTester.run(
+      'complex - real-world GraphQL patterns',
+      noGraphqlInjection,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: `
             function getUserQuery(userId) {
               // DANGEROUS: Direct interpolation
               return \`query {
@@ -340,14 +366,14 @@ describe('no-graphql-injection', () => {
               }\`;
             }
           `,
-          errors: [
-            {
-              messageId: 'unsafeVariableInterpolation',
-            },
-          ],
-        },
-        {
-          code: `
+            errors: [
+              {
+                messageId: 'unsafeVariableInterpolation',
+              },
+            ],
+          },
+          {
+            code: `
             const searchUsers = (term, limit) => {
               // DANGEROUS: Multiple interpolations + potential DoS
               const query = \`query {
@@ -368,17 +394,18 @@ describe('no-graphql-injection', () => {
               return graphql.execute(query);
             }
           `,
-          errors: [
-            {
-              messageId: 'unsafeVariableInterpolation',
-            },
-            {
-              messageId: 'missingInputValidation',
-            },
-          ],
-        },
-      ],
-    });
+            errors: [
+              {
+                messageId: 'unsafeVariableInterpolation',
+              },
+              {
+                messageId: 'missingInputValidation',
+              },
+            ],
+          },
+        ],
+      },
+    );
   });
 
   /**
@@ -401,24 +428,31 @@ describe('no-graphql-injection', () => {
       invalid: [],
     });
 
-    ruleTester.run('benchmark FP: safe_cmd_validated template', noGraphqlInjection, {
-      valid: [
-        // Template literal in execFile args is not a GraphQL query
-        {
-          code: `
+    ruleTester.run(
+      'benchmark FP: safe_cmd_validated template',
+      noGraphqlInjection,
+      {
+        valid: [
+          // Template literal in execFile args is not a GraphQL query
+          {
+            code: `
             const { execFile } = require('child_process');
             execFile('convert', ['input.img', \`output.\${format}\`]);
           `,
-        },
-      ],
-      invalid: [],
-    });
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('benchmark FP: safe_redirect_sameorigin', noGraphqlInjection, {
-      valid: [
-        // URL constructor with template literal is not GraphQL
-        {
-          code: `
+    ruleTester.run(
+      'benchmark FP: safe_redirect_sameorigin',
+      noGraphqlInjection,
+      {
+        valid: [
+          // URL constructor with template literal is not GraphQL
+          {
+            code: `
             function redirect(req, res) {
               const target = req.query.returnTo;
               const url = new URL(target, \`https://\${req.headers.host}\`);
@@ -428,315 +462,400 @@ describe('no-graphql-injection', () => {
               res.redirect(url.pathname);
             }
           `,
-        },
-      ],
-      invalid: [],
-    });
+          },
+        ],
+        invalid: [],
+      },
+    );
   });
 
   describe('Safe Caller Context - Additional Constructors', () => {
-    ruleTester.run('valid - new Error TypeError RangeError with template literal', noGraphqlInjection, {
-      valid: [
-        // Built-in safe constructors other than URL should also short-circuit
-        {
-          code: 'throw new Error(`query { user { name } }`);',
-        },
-        {
-          code: 'throw new TypeError(`{ users { posts { comments { author { name } } } } }`);',
-        },
-        {
-          code: 'throw new RangeError(`{ users { posts { comments { author { name } } } } }`);',
-        },
-        // Unknown constructor is NOT a safe caller - GraphQL template still flagged
-      ],
-      invalid: [
-        {
-          code: 'const x = new SomeOtherClass(`query { user(id: "${userId}") { name } }`);',
-          errors: [{ messageId: 'unsafeVariableInterpolation' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'valid - new Error TypeError RangeError with template literal',
+      noGraphqlInjection,
+      {
+        valid: [
+          // Built-in safe constructors other than URL should also short-circuit
+          {
+            code: 'throw new Error(`query { user { name } }`);',
+          },
+          {
+            code: 'throw new TypeError(`{ users { posts { comments { author { name } } } } }`);',
+          },
+          {
+            code: 'throw new RangeError(`{ users { posts { comments { author { name } } } } }`);',
+          },
+          // Unknown constructor is NOT a safe caller - GraphQL template still flagged
+        ],
+        invalid: [
+          {
+            code: 'const x = new SomeOtherClass(`query { user(id: "${userId}") { name } }`);',
+            errors: [{ messageId: 'unsafeVariableInterpolation' }],
+          },
+        ],
+      },
+    );
 
-    ruleTester.run('valid - safeTemplateLiteralCallers option (member + constructor forms)', noGraphqlInjection, {
-      valid: [
-        // Custom member caller (contains '.') merged into safe callers
-        {
-          code: 'myLog.debug(`query { user { name } }`);',
-          options: [{ safeTemplateLiteralCallers: ['myLog.debug'] }],
-        },
-        // Custom constructor form (no '.') merged into safe constructors
-        {
-          code: 'throw new MyCustomError(`query { user { name } }`);',
-          options: [{ safeTemplateLiteralCallers: ['MyCustomError'] }],
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'valid - safeTemplateLiteralCallers option (member + constructor forms)',
+      noGraphqlInjection,
+      {
+        valid: [
+          // Custom member caller (contains '.') merged into safe callers
+          {
+            code: 'myLog.debug(`query { user { name } }`);',
+            options: [{ safeTemplateLiteralCallers: ['myLog.debug'] }],
+          },
+          // Custom constructor form (no '.') merged into safe constructors
+          {
+            code: 'throw new MyCustomError(`query { user { name } }`);',
+            options: [{ safeTemplateLiteralCallers: ['MyCustomError'] }],
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('invalid - template literal in unrecognized call breaks out at first enclosing call', noGraphqlInjection, {
-      valid: [],
-      invalid: [
-        // Wrapped in a non-safe call - walk stops at first CallExpression (break),
-        // so the GraphQL template is still flagged rather than walking further up.
-        {
-          code: 'wrapWithNoise(`query { user(id: "${userId}") { name } }`);',
-          errors: [{ messageId: 'unsafeVariableInterpolation' }],
-        },
-        // A bare (non-dotted) name in safeTemplateLiteralCallers is only ever
-        // merged into safeConstructors (for `new Name(...)`), never into
-        // safeMemberCallers - so a direct function call using that same name
-        // is NOT treated as a safe caller and the GraphQL template is flagged.
-        {
-          code: 'myLogFn(`query { user(id: "${userId}") { name } }`);',
-          options: [{ safeTemplateLiteralCallers: ['myLogFn'] }],
-          errors: [{ messageId: 'unsafeVariableInterpolation' }],
-        },
-        // MemberExpression callee (object.method pattern) that is NOT in the
-        // safe-caller set - exercises the false side of `safeMemberCallers.has(key)`.
-        {
-          code: 'someObject.someMethod(`query { user(id: "${userId}") { name } }`);',
-          errors: [{ messageId: 'unsafeVariableInterpolation' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - template literal in unrecognized call breaks out at first enclosing call',
+      noGraphqlInjection,
+      {
+        valid: [],
+        invalid: [
+          // Wrapped in a non-safe call - walk stops at first CallExpression (break),
+          // so the GraphQL template is still flagged rather than walking further up.
+          {
+            code: 'wrapWithNoise(`query { user(id: "${userId}") { name } }`);',
+            errors: [{ messageId: 'unsafeVariableInterpolation' }],
+          },
+          // A bare (non-dotted) name in safeTemplateLiteralCallers is only ever
+          // merged into safeConstructors (for `new Name(...)`), never into
+          // safeMemberCallers - so a direct function call using that same name
+          // is NOT treated as a safe caller and the GraphQL template is flagged.
+          {
+            code: 'myLogFn(`query { user(id: "${userId}") { name } }`);',
+            options: [{ safeTemplateLiteralCallers: ['myLogFn'] }],
+            errors: [{ messageId: 'unsafeVariableInterpolation' }],
+          },
+          // MemberExpression callee (object.method pattern) that is NOT in the
+          // safe-caller set - exercises the false side of `safeMemberCallers.has(key)`.
+          {
+            code: 'someObject.someMethod(`query { user(id: "${userId}") { name } }`);',
+            errors: [{ messageId: 'unsafeVariableInterpolation' }],
+          },
+        ],
+      },
+    );
   });
 
   describe('Keyword Boundary and Brace Scanner Edge Cases', () => {
-    ruleTester.run('valid - keyword substring never at a word boundary is not GraphQL', noGraphqlInjection, {
-      valid: [
-        // "query" appears only as part of longer identifiers (myquery, queryx),
-        // never at a standalone word boundary - findKeywordAtBoundary must
-        // exhaust its scan and return -1 rather than false-matching.
-        {
-          code: 'const s = `myquery queryx myqueryx`;',
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'valid - keyword substring never at a word boundary is not GraphQL',
+      noGraphqlInjection,
+      {
+        valid: [
+          // "query" appears only as part of longer identifiers (myquery, queryx),
+          // never at a standalone word boundary - findKeywordAtBoundary must
+          // exhaust its scan and return -1 rather than false-matching.
+          {
+            code: 'const s = `myquery queryx myqueryx`;',
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('valid - single-level braces without GraphQL keywords stay below depth 2', noGraphqlInjection, {
-      valid: [
-        // Exactly one open+close brace pair: braceDepth increments to 1 then
-        // decrements back via the `}` branch, never reaching the depth-2
-        // threshold that would flag a selection set.
-        {
-          code: 'const s = `plain ${value} text {single}`;',
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'valid - single-level braces without GraphQL keywords stay below depth 2',
+      noGraphqlInjection,
+      {
+        valid: [
+          // Exactly one open+close brace pair: braceDepth increments to 1 then
+          // decrements back via the `}` branch, never reaching the depth-2
+          // threshold that would flag a selection set.
+          {
+            code: 'const s = `plain ${value} text {single}`;',
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('valid - interpolated expression that is itself a validation call', noGraphqlInjection, {
-      valid: [
-        // The interpolated expression IS the validation CallExpression itself
-        // (not a separately-declared variable), so isInputValidated() finds
-        // the CallExpression while walking up from the expression node.
-        {
-          code: 'const query = `query { user(id: "${validate(userId)}") { name } }`;',
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'valid - interpolated expression that is itself a validation call',
+      noGraphqlInjection,
+      {
+        valid: [
+          // The interpolated expression IS the validation CallExpression itself
+          // (not a separately-declared variable), so isInputValidated() finds
+          // the CallExpression while walking up from the expression node.
+          {
+            code: 'const query = `query { user(id: "${validate(userId)}") { name } }`;',
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('valid - non-string literals are ignored', noGraphqlInjection, {
-      valid: [
-        // Numeric, boolean, null, and regex literals must short-circuit
-        // before any GraphQL text scanning.
-        'const n = 42;',
-        'const b = true;',
-        'const nul = null;',
-        'const r = /query/;',
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'valid - non-string literals are ignored',
+      noGraphqlInjection,
+      {
+        valid: [
+          // Numeric, boolean, null, and regex literals must short-circuit
+          // before any GraphQL text scanning.
+          'const n = 42;',
+          'const b = true;',
+          'const nul = null;',
+          'const r = /query/;',
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('valid - plain string concatenation without GraphQL syntax', noGraphqlInjection, {
-      valid: [
-        // '+' concatenation whose combined text contains no GraphQL keywords
-        // or nested braces must not be flagged.
-        {
-          code: 'const greeting = "Hello, " + name + "!";',
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'valid - plain string concatenation without GraphQL syntax',
+      noGraphqlInjection,
+      {
+        valid: [
+          // '+' concatenation whose combined text contains no GraphQL keywords
+          // or nested braces must not be flagged.
+          {
+            code: 'const greeting = "Hello, " + name + "!";',
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('valid - schema keyword at the very end of a template with nothing after it', noGraphqlInjection, {
-      valid: [
-        // The schema keyword scan pointer lands exactly at staticText.length
-        // (`scan >= staticText.length`), so the "must have whitespace then a
-        // word" guard exits via its length check rather than the whitespace
-        // check.
-        {
-          code: 'const s = `the type`;',
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'valid - schema keyword at the very end of a template with nothing after it',
+      noGraphqlInjection,
+      {
+        valid: [
+          // The schema keyword scan pointer lands exactly at staticText.length
+          // (`scan >= staticText.length`), so the "must have whitespace then a
+          // word" guard exits via its length check rather than the whitespace
+          // check.
+          {
+            code: 'const s = `the type`;',
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('valid - operation keyword in string literal with nothing after it', noGraphqlInjection, {
-      valid: [
-        // "query" found at a word boundary in a plain string Literal, but
-        // followed by an identifier and end-of-string (no `{` or `(`), so
-        // containsGraphqlText's operation-keyword branch does not match and
-        // falls through to the (also non-matching) fragment/schema/brace checks.
-        {
-          code: 'const s = "query foo";',
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'valid - operation keyword in string literal with nothing after it',
+      noGraphqlInjection,
+      {
+        valid: [
+          // "query" found at a word boundary in a plain string Literal, but
+          // followed by an identifier and end-of-string (no `{` or `(`), so
+          // containsGraphqlText's operation-keyword branch does not match and
+          // falls through to the (also non-matching) fragment/schema/brace checks.
+          {
+            code: 'const s = "query foo";',
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('valid - fragment keyword with no name in a string literal', noGraphqlInjection, {
-      valid: [
-        // "fragment" at a word boundary immediately followed by punctuation
-        // (no identifier name), so containsGraphqlText's fragment branch
-        // exits via `scan > nameStart` being false.
-        {
-          code: 'const s = "fragment: nope";',
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'valid - fragment keyword with no name in a string literal',
+      noGraphqlInjection,
+      {
+        valid: [
+          // "fragment" at a word boundary immediately followed by punctuation
+          // (no identifier name), so containsGraphqlText's fragment branch
+          // exits via `scan > nameStart` being false.
+          {
+            code: 'const s = "fragment: nope";',
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('valid - missingInputValidation skipped when arg is validated via an outer wrapping call', noGraphqlInjection, {
-      valid: [
-        // `cleanId` is a direct Identifier argument to `graphql.execute`, but
-        // walking up its ancestor chain reaches `validate(...)` as an outer
-        // CallExpression with an Identifier callee matching validationFunctions -
-        // isInputValidated() must find it and skip the report.
-        {
-          code: 'validate(graphql.execute(cleanId));',
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'valid - missingInputValidation skipped when arg is validated via an outer wrapping call',
+      noGraphqlInjection,
+      {
+        valid: [
+          // `cleanId` is a direct Identifier argument to `graphql.execute`, but
+          // walking up its ancestor chain reaches `validate(...)` as an outer
+          // CallExpression with an Identifier callee matching validationFunctions -
+          // isInputValidated() must find it and skip the report.
+          {
+            code: 'validate(graphql.execute(cleanId));',
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('invalid - operation keyword template followed directly by parenthesis (no brace)', noGraphqlInjection, {
-      valid: [],
-      invalid: [
-        // "mutation(" with no name/whitespace in between - exercises the
-        // `staticText[scan] === '('` half of isGraphqlTemplate's op-keyword check.
-        {
-          code: 'const m = `mutation(id: "${userId}") { ok }`;',
-          errors: [{ messageId: 'unsafeVariableInterpolation' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - operation keyword template followed directly by parenthesis (no brace)',
+      noGraphqlInjection,
+      {
+        valid: [],
+        invalid: [
+          // "mutation(" with no name/whitespace in between - exercises the
+          // `staticText[scan] === '('` half of isGraphqlTemplate's op-keyword check.
+          {
+            code: 'const m = `mutation(id: "${userId}") { ok }`;',
+            errors: [{ messageId: 'unsafeVariableInterpolation' }],
+          },
+        ],
+      },
+    );
 
-    ruleTester.run('invalid - operation keyword template with a name AND trailing whitespace before the brace', noGraphqlInjection, {
-      valid: [],
-      invalid: [
-        // "query GetUser  {" - keyword, whitespace, name, MORE whitespace,
-        // then brace - exercises the second whitespace-skip loop
-        // (after the optional name) in isGraphqlTemplate's op-keyword check.
-        {
-          code: 'const q = `query GetUser  { id(x: "${userId}") }`;',
-          errors: [{ messageId: 'unsafeVariableInterpolation' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - operation keyword template with a name AND trailing whitespace before the brace',
+      noGraphqlInjection,
+      {
+        valid: [],
+        invalid: [
+          // "query GetUser  {" - keyword, whitespace, name, MORE whitespace,
+          // then brace - exercises the second whitespace-skip loop
+          // (after the optional name) in isGraphqlTemplate's op-keyword check.
+          {
+            code: 'const q = `query GetUser  { id(x: "${userId}") }`;',
+            errors: [{ messageId: 'unsafeVariableInterpolation' }],
+          },
+        ],
+      },
+    );
 
-    ruleTester.run('invalid - operation keyword in string literal with a name AND trailing whitespace before the brace', noGraphqlInjection, {
-      valid: [],
-      invalid: [
-        // Same shape as above but through containsGraphqlText (plain string
-        // Literal) - exercises the equivalent second whitespace-skip loop there.
-        {
-          code: 'const q = "query GetUser  { id { nested } }";',
-          errors: [{ messageId: 'complexQueryDos' }],
-          options: [{ maxQueryDepth: 1 }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - operation keyword in string literal with a name AND trailing whitespace before the brace',
+      noGraphqlInjection,
+      {
+        valid: [],
+        invalid: [
+          // Same shape as above but through containsGraphqlText (plain string
+          // Literal) - exercises the equivalent second whitespace-skip loop there.
+          {
+            code: 'const q = "query GetUser  { id { nested } }";',
+            errors: [{ messageId: 'complexQueryDos' }],
+            options: [{ maxQueryDepth: 1 }],
+          },
+        ],
+      },
+    );
 
-    ruleTester.run('valid - operation keyword template with nothing GraphQL-shaped after it', noGraphqlInjection, {
-      valid: [
-        // "query" at a word boundary inside a template literal, but followed
-        // by a name and then end-of-string (no `{` or `(` afterwards), and no
-        // other GraphQL indicator anywhere else in the template - exercises
-        // the false side of isGraphqlTemplate's op-keyword `{`/`(` check.
-        {
-          code: 'const s = `query foo`;',
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'valid - operation keyword template with nothing GraphQL-shaped after it',
+      noGraphqlInjection,
+      {
+        valid: [
+          // "query" at a word boundary inside a template literal, but followed
+          // by a name and then end-of-string (no `{` or `(` afterwards), and no
+          // other GraphQL indicator anywhere else in the template - exercises
+          // the false side of isGraphqlTemplate's op-keyword `{`/`(` check.
+          {
+            code: 'const s = `query foo`;',
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('valid - fragment keyword template with a name but not followed by "on"', noGraphqlInjection, {
-      valid: [
-        // "fragment Foo" has a name (passes `scan > nameStart`) but is not
-        // followed by "on" - exercises the false side of isGraphqlTemplate's
-        // fragment-"on" check, while the rest of the template stays free of
-        // any other GraphQL indicator.
-        {
-          code: 'const s = `fragment Foo bar baz`;',
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'valid - fragment keyword template with a name but not followed by "on"',
+      noGraphqlInjection,
+      {
+        valid: [
+          // "fragment Foo" has a name (passes `scan > nameStart`) but is not
+          // followed by "on" - exercises the false side of isGraphqlTemplate's
+          // fragment-"on" check, while the rest of the template stays free of
+          // any other GraphQL indicator.
+          {
+            code: 'const s = `fragment Foo bar baz`;',
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('invalid - schema keyword template (type) with a following name', noGraphqlInjection, {
-      valid: [
-        // `type Name {` is TypeScript as often as it is GraphQL SDL, so the
-        // schema-keyword path now asks for corroboration. Bound to `t`, with
-        // no tag and no GraphQL caller, there is nothing saying this is
-        // GraphQL. See hasGraphqlAttribution.
-        'const t = `type User { id: "${userId}" }`;',
-      ],
-      invalid: [
-        // "type User" with unsafe interpolation elsewhere in the same template -
-        // exercises the true side of isGraphqlTemplate's schema-keyword check
-        // using the `type` keyword specifically (interface was already covered).
-        {
-          code: 'const typeDefs = `type User { id: "${userId}" }`;',
-          errors: [{ messageId: 'unsafeVariableInterpolation' }],
-        },
-        // …and the tagged form, which is how SDL is normally written.
-        {
-          code: 'const t = gql`type User { id: "${userId}" }`;',
-          errors: [{ messageId: 'unsafeVariableInterpolation' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - schema keyword template (type) with a following name',
+      noGraphqlInjection,
+      {
+        valid: [
+          // `type Name {` is TypeScript as often as it is GraphQL SDL, so the
+          // schema-keyword path now asks for corroboration. Bound to `t`, with
+          // no tag and no GraphQL caller, there is nothing saying this is
+          // GraphQL. See hasGraphqlAttribution.
+          'const t = `type User { id: "${userId}" }`;',
+        ],
+        invalid: [
+          // "type User" with unsafe interpolation elsewhere in the same template -
+          // exercises the true side of isGraphqlTemplate's schema-keyword check
+          // using the `type` keyword specifically (interface was already covered).
+          {
+            code: 'const typeDefs = `type User { id: "${userId}" }`;',
+            errors: [{ messageId: 'unsafeVariableInterpolation' }],
+          },
+          // …and the tagged form, which is how SDL is normally written.
+          {
+            code: 'const t = gql`type User { id: "${userId}" }`;',
+            errors: [{ messageId: 'unsafeVariableInterpolation' }],
+          },
+        ],
+      },
+    );
 
-    ruleTester.run('invalid - operation keyword in string literal followed by parenthesis', noGraphqlInjection, {
-      valid: [],
-      invalid: [
-        // "mutation(" in a plain string Literal - exercises the `(` half of
-        // containsGraphqlText's operation-keyword `{`/`(` check.
-        {
-          code: 'const m = "mutation(id: 1) { ok { nested } }";',
-          errors: [{ messageId: 'complexQueryDos' }],
-          options: [{ maxQueryDepth: 1 }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - operation keyword in string literal followed by parenthesis',
+      noGraphqlInjection,
+      {
+        valid: [],
+        invalid: [
+          // "mutation(" in a plain string Literal - exercises the `(` half of
+          // containsGraphqlText's operation-keyword `{`/`(` check.
+          {
+            code: 'const m = "mutation(id: 1) { ok { nested } }";',
+            errors: [{ messageId: 'complexQueryDos' }],
+            options: [{ maxQueryDepth: 1 }],
+          },
+        ],
+      },
+    );
 
-    ruleTester.run('valid - fragment keyword in string literal with a name but not followed by "on"', noGraphqlInjection, {
-      valid: [
-        // "fragment Foo" has a name but is not followed by "on" - exercises
-        // the false side of containsGraphqlText's fragment-"on" check.
-        {
-          code: 'const s = "fragment Foo bar baz";',
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'valid - fragment keyword in string literal with a name but not followed by "on"',
+      noGraphqlInjection,
+      {
+        valid: [
+          // "fragment Foo" has a name but is not followed by "on" - exercises
+          // the false side of containsGraphqlText's fragment-"on" check.
+          {
+            code: 'const s = "fragment Foo bar baz";',
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('valid - schema keyword template followed by whitespace but no name', noGraphqlInjection, {
-      valid: [
-        // "type" followed by whitespace (passes the line-454 length/whitespace
-        // guard) but then punctuation rather than a word character - exercises
-        // the false side of isGraphqlTemplate's schema-keyword "must be a word"
-        // check (line 456), while the rest of the template stays free of any
-        // other GraphQL indicator.
-        {
-          code: 'const s = `type : nope`;',
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'valid - schema keyword template followed by whitespace but no name',
+      noGraphqlInjection,
+      {
+        valid: [
+          // "type" followed by whitespace (passes the line-454 length/whitespace
+          // guard) but then punctuation rather than a word character - exercises
+          // the false side of isGraphqlTemplate's schema-keyword "must be a word"
+          // check (line 456), while the rest of the template stays free of any
+          // other GraphQL indicator.
+          {
+            code: 'const s = `type : nope`;',
+          },
+        ],
+        invalid: [],
+      },
+    );
   });
 
   describe('GraphQL Detection - Fragment and Schema Keywords', () => {
@@ -751,142 +870,186 @@ describe('no-graphql-injection', () => {
       ],
     });
 
-    ruleTester.run('valid - fragment keyword without a following name is not GraphQL', noGraphqlInjection, {
-      valid: [
-        // "fragment" with no identifier name afterwards (immediately punctuation)
-        // must not be treated as a GraphQL fragment definition.
-        {
-          code: 'const s = `fragment: 3`;',
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'valid - fragment keyword without a following name is not GraphQL',
+      noGraphqlInjection,
+      {
+        valid: [
+          // "fragment" with no identifier name afterwards (immediately punctuation)
+          // must not be treated as a GraphQL fragment definition.
+          {
+            code: 'const s = `fragment: 3`;',
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('invalid - schema definition keyword template (interface)', noGraphqlInjection, {
-      valid: [],
-      invalid: [
-        {
-          code: 'const schema = `interface Node { ${extraField} }`;',
-          errors: [{ messageId: 'unsafeVariableInterpolation' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - schema definition keyword template (interface)',
+      noGraphqlInjection,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: 'const schema = `interface Node { ${extraField} }`;',
+            errors: [{ messageId: 'unsafeVariableInterpolation' }],
+          },
+        ],
+      },
+    );
 
-    ruleTester.run('invalid - fragment keyword in string literal', noGraphqlInjection, {
-      valid: [],
-      invalid: [
-        {
-          code: 'const frag = "fragment UserFields on User { id name { nested } }";',
-          errors: [{ messageId: 'complexQueryDos' }],
-          options: [{ maxQueryDepth: 1 }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - fragment keyword in string literal',
+      noGraphqlInjection,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: 'const frag = "fragment UserFields on User { id name { nested } }";',
+            errors: [{ messageId: 'complexQueryDos' }],
+            options: [{ maxQueryDepth: 1 }],
+          },
+        ],
+      },
+    );
 
-    ruleTester.run('invalid - schema definition keyword in string literal (enum)', noGraphqlInjection, {
-      valid: [],
-      invalid: [
-        {
-          code: 'const schema = "enum Color { RED { GREEN } BLUE }";',
-          errors: [{ messageId: 'complexQueryDos' }],
-          options: [{ maxQueryDepth: 1 }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - schema definition keyword in string literal (enum)',
+      noGraphqlInjection,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: 'const schema = "enum Color { RED { GREEN } BLUE }";',
+            errors: [{ messageId: 'complexQueryDos' }],
+            options: [{ maxQueryDepth: 1 }],
+          },
+        ],
+      },
+    );
 
-    ruleTester.run('valid - schema keyword with no following identifier is not GraphQL', noGraphqlInjection, {
-      valid: [
-        // "type" followed immediately by punctuation (no whitespace + identifier)
-        {
-          code: 'const s = "type:3";',
-        },
-        // "type" at end of string with no name after whitespace
-        {
-          code: 'const s = "the type ";',
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'valid - schema keyword with no following identifier is not GraphQL',
+      noGraphqlInjection,
+      {
+        valid: [
+          // "type" followed immediately by punctuation (no whitespace + identifier)
+          {
+            code: 'const s = "type:3";',
+          },
+          // "type" at end of string with no name after whitespace
+          {
+            code: 'const s = "the type ";',
+          },
+        ],
+        invalid: [],
+      },
+    );
   });
 
   describe('Introspection and Depth via String Literal', () => {
-    ruleTester.run('invalid - introspection query as string literal', noGraphqlInjection, {
-      valid: [],
-      invalid: [
-        {
-          code: 'const q = "query { __schema { types { name } } }";',
-          errors: [{ messageId: 'introspectionQuery' }],
-        },
-        {
-          code: 'const q = "query { __type(name: \\"User\\") { name } }";',
-          errors: [{ messageId: 'introspectionQuery' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - introspection query as string literal',
+      noGraphqlInjection,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: 'const q = "query { __schema { types { name } } }";',
+            errors: [{ messageId: 'introspectionQuery' }],
+          },
+          {
+            code: 'const q = "query { __type(name: \\"User\\") { name } }";',
+            errors: [{ messageId: 'introspectionQuery' }],
+          },
+        ],
+      },
+    );
 
-    ruleTester.run('valid - introspection string literal skipped when annotated @safe', noGraphqlInjection, {
-      valid: [
-        {
-          code: `
+    ruleTester.run(
+      'valid - introspection string literal skipped when annotated @safe',
+      noGraphqlInjection,
+      {
+        valid: [
+          {
+            code: `
             /** @safe */
             const q = "query { __schema { types { name } } }";
           `,
-        },
-      ],
-      invalid: [],
-    });
+          },
+        ],
+        invalid: [],
+      },
+    );
 
-    ruleTester.run('invalid - deep query string literal exceeds maxQueryDepth', noGraphqlInjection, {
-      valid: [],
-      invalid: [
-        {
-          code: 'const q = "{ users { posts { comments { author { name } } } } }";',
-          options: [{ maxQueryDepth: 3 }],
-          errors: [{ messageId: 'complexQueryDos' }],
-        },
-      ],
-    });
+    ruleTester.run(
+      'invalid - deep query string literal exceeds maxQueryDepth',
+      noGraphqlInjection,
+      {
+        valid: [],
+        invalid: [
+          {
+            code: 'const q = "{ users { posts { comments { author { name } } } } }";',
+            options: [{ maxQueryDepth: 3 }],
+            errors: [{ messageId: 'complexQueryDos' }],
+          },
+        ],
+      },
+    );
   });
 
   describe('BinaryExpression Injection - Safe Annotation', () => {
-    ruleTester.run('valid - string concatenation skipped when annotated @safe', noGraphqlInjection, {
-      valid: [
-        {
-          code: `
+    ruleTester.run(
+      'valid - string concatenation skipped when annotated @safe',
+      noGraphqlInjection,
+      {
+        valid: [
+          {
+            code: `
             /** @safe */
             const query = "query { user(id: \\"" + userId + "\\") { name } }";
           `,
-        },
-      ],
-      invalid: [],
-    });
+          },
+        ],
+        invalid: [],
+      },
+    );
   });
 
   describe('CallExpression Missing Validation - Safe Annotation', () => {
-    ruleTester.run('valid - missing input validation skipped when arg annotated @safe', noGraphqlInjection, {
-      valid: [
-        {
-          code: `
+    ruleTester.run(
+      'valid - missing input validation skipped when arg annotated @safe',
+      noGraphqlInjection,
+      {
+        valid: [
+          {
+            code: `
             /** @safe */
             graphql.execute(query);
           `,
-        },
-      ],
-      invalid: [],
-    });
+          },
+        ],
+        invalid: [],
+      },
+    );
   });
 
   describe('isGraphqlRelated - non-Identifier, non-MemberExpression callee', () => {
-    ruleTester.run('valid - computed call callee is never treated as a GraphQL library call', noGraphqlInjection, {
-      valid: [
-        // Callee is itself a CallExpression (not Identifier or MemberExpression),
-        // so isGraphqlRelated() must return false via its final fallthrough.
-        {
-          code: 'getClient()(query, variables);',
-        },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'valid - computed call callee is never treated as a GraphQL library call',
+      noGraphqlInjection,
+      {
+        valid: [
+          // Callee is itself a CallExpression (not Identifier or MemberExpression),
+          // so isGraphqlRelated() must return false via its final fallthrough.
+          {
+            code: 'getClient()(query, variables);',
+          },
+        ],
+        invalid: [],
+      },
+    );
   });
 
   // ─── Layer 2: raw unit tests via createWithMockContext ───────────────────
@@ -898,12 +1061,19 @@ describe('no-graphql-injection', () => {
         options: [{}],
       });
 
-      const templateListener = listeners['TemplateLiteral'] as (node: unknown) => void;
+      const templateListener = listeners['TemplateLiteral'] as (
+        node: unknown,
+      ) => void;
       const node = {
         type: 'TemplateLiteral',
         parent: undefined,
         quasis: [
-          { value: { cooked: '{ __schema { types { name } } }', raw: '{ __schema { types { name } } }' } },
+          {
+            value: {
+              cooked: '{ __schema { types { name } } }',
+              raw: '{ __schema { types { name } } }',
+            },
+          },
         ],
         expressions: [],
         loc: undefined,
@@ -936,18 +1106,27 @@ describe('no-graphql-injection', () => {
     });
 
     it('BinaryExpression report uses fallback line "0" when node.loc is missing', () => {
-      const { listeners, reports, context } = createWithMockContext(noGraphqlInjection, {
-        options: [{}],
-        sourceText: 'query { user(id: "" + userId + "") { name } }',
-      });
+      const { listeners, reports, context } = createWithMockContext(
+        noGraphqlInjection,
+        {
+          options: [{}],
+          sourceText: 'query { user(id: "" + userId + "") { name } }',
+        },
+      );
 
-      const binaryListener = listeners['BinaryExpression'] as (node: unknown) => void;
+      const binaryListener = listeners['BinaryExpression'] as (
+        node: unknown,
+      ) => void;
       // The rule reads the concatenation's static string parts from the AST
       // (not sourceCode.getText), so the synthetic node carries real Literals.
       const node = {
         type: 'BinaryExpression',
         operator: '+',
-        left: { type: 'Literal', value: 'query { user(id: "', parent: undefined },
+        left: {
+          type: 'Literal',
+          value: 'query { user(id: "',
+          parent: undefined,
+        },
         right: { type: 'Literal', value: '") { name } }', parent: undefined },
         loc: undefined,
       };
@@ -961,9 +1140,13 @@ describe('no-graphql-injection', () => {
     });
 
     it('BinaryExpression static-text reassembly falls back to a quasi raw value when cooked is absent', () => {
-      const { listeners, reports } = createWithMockContext(noGraphqlInjection, { options: [{}] });
+      const { listeners, reports } = createWithMockContext(noGraphqlInjection, {
+        options: [{}],
+      });
 
-      const binaryListener = listeners['BinaryExpression'] as (node: unknown) => void;
+      const binaryListener = listeners['BinaryExpression'] as (
+        node: unknown,
+      ) => void;
       // `cooked` is undefined for a template element containing an invalid
       // escape sequence (only legal in tagged templates), so the raw text is
       // the only source of the static string.
@@ -972,7 +1155,12 @@ describe('no-graphql-injection', () => {
         operator: '+',
         left: {
           type: 'TemplateLiteral',
-          quasis: [{ type: 'TemplateElement', value: { cooked: undefined, raw: 'query { user(id: "' } }],
+          quasis: [
+            {
+              type: 'TemplateElement',
+              value: { cooked: undefined, raw: 'query { user(id: "' },
+            },
+          ],
           expressions: [],
           parent: undefined,
         },
@@ -989,8 +1177,14 @@ describe('no-graphql-injection', () => {
         options: [{}],
       });
 
-      const callListener = listeners['CallExpression'] as (node: unknown) => void;
-      const argNode = { type: 'Identifier', name: 'userInput', parent: undefined };
+      const callListener = listeners['CallExpression'] as (
+        node: unknown,
+      ) => void;
+      const argNode = {
+        type: 'Identifier',
+        name: 'userInput',
+        parent: undefined,
+      };
       const node = {
         type: 'CallExpression',
         callee: {
@@ -1016,8 +1210,14 @@ describe('no-graphql-injection', () => {
         sourceText: 'query { user { name } }',
       });
 
-      const binaryListener = listeners['BinaryExpression'] as (node: unknown) => void;
-      binaryListener({ type: 'BinaryExpression', operator: '-', loc: undefined });
+      const binaryListener = listeners['BinaryExpression'] as (
+        node: unknown,
+      ) => void;
+      binaryListener({
+        type: 'BinaryExpression',
+        operator: '-',
+        loc: undefined,
+      });
 
       expect(reports).toHaveLength(0);
     });
@@ -1027,13 +1227,17 @@ describe('no-graphql-injection', () => {
         options: [{}],
       });
 
-      const templateListener = listeners['TemplateLiteral'] as (node: unknown) => void;
+      const templateListener = listeners['TemplateLiteral'] as (
+        node: unknown,
+      ) => void;
       const expr = { type: 'Identifier', name: 'userId', parent: undefined };
       const node = {
         type: 'TemplateLiteral',
         parent: undefined,
         quasis: [
-          { value: { cooked: 'query { user(id: "', raw: 'query { user(id: "' } },
+          {
+            value: { cooked: 'query { user(id: "', raw: 'query { user(id: "' },
+          },
           { value: { cooked: '") { name } }', raw: '") { name } }' } },
         ],
         expressions: [expr],
@@ -1053,7 +1257,9 @@ describe('no-graphql-injection', () => {
         options: [{ maxQueryDepth: 1 }],
       });
 
-      const templateListener = listeners['TemplateLiteral'] as (node: unknown) => void;
+      const templateListener = listeners['TemplateLiteral'] as (
+        node: unknown,
+      ) => void;
       const deepText = 'query { a { b { c } } }';
       const node = {
         type: 'TemplateLiteral',
@@ -1094,7 +1300,9 @@ describe('no-graphql-injection', () => {
         options: [{}],
       });
 
-      const templateListener = listeners['TemplateLiteral'] as (node: unknown) => void;
+      const templateListener = listeners['TemplateLiteral'] as (
+        node: unknown,
+      ) => void;
       // Synthetic quasi with cooked: undefined (impossible for a real,
       // successfully-parsed untagged template literal - an invalid escape
       // sequence there is a hard parse error, not a null `cooked`). Exercises
@@ -1121,7 +1329,9 @@ describe('no-graphql-injection', () => {
         options: [{}],
       });
 
-      const templateListener = listeners['TemplateLiteral'] as (node: unknown) => void;
+      const templateListener = listeners['TemplateLiteral'] as (
+        node: unknown,
+      ) => void;
       const node = {
         type: 'TemplateLiteral',
         parent: undefined,
@@ -1139,7 +1349,9 @@ describe('no-graphql-injection', () => {
 
       templateListener(node);
 
-      expect(reports.some(r => r.messageId === 'introspectionQuery')).toBe(true);
+      expect(reports.some((r) => r.messageId === 'introspectionQuery')).toBe(
+        true,
+      );
     });
 
     it('templateQueryDepth falls back to quasi.value.raw when cooked is nullish', () => {
@@ -1147,7 +1359,9 @@ describe('no-graphql-injection', () => {
         options: [{ maxQueryDepth: 1, allowIntrospection: true }],
       });
 
-      const templateListener = listeners['TemplateLiteral'] as (node: unknown) => void;
+      const templateListener = listeners['TemplateLiteral'] as (
+        node: unknown,
+      ) => void;
       const node = {
         type: 'TemplateLiteral',
         parent: undefined,
@@ -1161,12 +1375,10 @@ describe('no-graphql-injection', () => {
 
       templateListener(node);
 
-      expect(reports.some(r => r.messageId === 'complexQueryDos')).toBe(true);
+      expect(reports.some((r) => r.messageId === 'complexQueryDos')).toBe(true);
     });
   });
-
 });
-
 
 /**
  * Regression lock — a template literal is not a GraphQL query.
@@ -1185,66 +1397,73 @@ describe('no-graphql-injection', () => {
  * a bare selection set IS the whole document. Both are now required.
  */
 describe('no-graphql-injection — corpus regression', () => {
-  ruleTester.run('graphql syntax must actually be graphql', noGraphqlInjection, {
-    valid: [
-      // Verbatim from ack-nestjs-boilerplate migration.seed.base.ts:24
-      'logger.warn(`Please specify --type ${a} or ${b}`);',
-      // Mid-sentence schema keywords in ESLint-style message strings
-      'const m = `Invalid type ${actual} for input ${name}`;',
-      'const m = `expected interface ${a} but got enum ${b}`;',
-      // Verbatim shape from webpack errors/ModuleNotFoundError.js:71
-      'const m = `add a fallback: resolve.fallback: { "${request}": require.resolve("${alias}") }`;',
-      // Generated-code templates: nested braces that are not a selection set
-      'const src = `function ${name}() { return { ok: 1 }; }`;',
-      'const s = "prefix { a { b } } suffix";',
-      // Starts and ends with a brace, but the braces never nest — two sibling
-      // blocks are not a selection set.
-      'const s = `{ a } and { b }`;',
-      // Every keyword class, present but mid-line, in both the template-literal
-      // scanner and the string/concatenation scanner.
-      'const s = `the query { x } here`;',
-      'const s = `the fragment Foo on Bar here`;',
-      'const s = `the type Foo { x } here`;',
-      'const s = "the query { x } here";',
-      'const s = "the fragment Foo on Bar here";',
-      'const s = "the type Foo { x } here";',
-      // Schema keyword at the start of a line but with nothing after it, and
-      // with a non-word character after it — neither is a type definition.
-      'const s = `{}\\ntype`;',
-      'const s = `{}\\ntype {`;',
-      'const s = "{}\\ntype";',
-      'const s = "{}\\ntype {";',
-    ],
-    invalid: [
-      // TRUE POSITIVE: operation keyword at the start of the document.
-      {
-        code: 'const q = `query { user(id: "${userId}") { name } }`;',
-        errors: [{ messageId: 'unsafeVariableInterpolation' }],
-      },
-      // TRUE POSITIVE: indented multi-line query — keyword starts its line.
-      {
-        code: [
-          'const q = `',
-          '  mutation CreateUser {',
-          '    createUser(name: "${name}") { id }',
-          '  }',
-          '`;',
-        ].join('\\n'),
-        errors: [{ messageId: 'unsafeVariableInterpolation' }],
-      },
-      // TRUE POSITIVE: bare selection set that IS the whole document.
-      {
-        code: 'const q = `{ users(name: "${name}") { posts { id } } }`;',
-        errors: [{ messageId: 'unsafeVariableInterpolation' }],
-      },
-      // TRUE POSITIVE: a concatenation mixing a template literal and a string
-      // literal — the static text is reassembled from both operand kinds.
-      {
-        code: 'const q = `query { user(id: "` + userId + \'") { name } }\';',
-        errors: [{ messageId: 'graphqlInjection' }, { messageId: 'graphqlInjection' }],
-      },
-    ],
-  });
+  ruleTester.run(
+    'graphql syntax must actually be graphql',
+    noGraphqlInjection,
+    {
+      valid: [
+        // Verbatim from ack-nestjs-boilerplate migration.seed.base.ts:24
+        'logger.warn(`Please specify --type ${a} or ${b}`);',
+        // Mid-sentence schema keywords in ESLint-style message strings
+        'const m = `Invalid type ${actual} for input ${name}`;',
+        'const m = `expected interface ${a} but got enum ${b}`;',
+        // Verbatim shape from webpack errors/ModuleNotFoundError.js:71
+        'const m = `add a fallback: resolve.fallback: { "${request}": require.resolve("${alias}") }`;',
+        // Generated-code templates: nested braces that are not a selection set
+        'const src = `function ${name}() { return { ok: 1 }; }`;',
+        'const s = "prefix { a { b } } suffix";',
+        // Starts and ends with a brace, but the braces never nest — two sibling
+        // blocks are not a selection set.
+        'const s = `{ a } and { b }`;',
+        // Every keyword class, present but mid-line, in both the template-literal
+        // scanner and the string/concatenation scanner.
+        'const s = `the query { x } here`;',
+        'const s = `the fragment Foo on Bar here`;',
+        'const s = `the type Foo { x } here`;',
+        'const s = "the query { x } here";',
+        'const s = "the fragment Foo on Bar here";',
+        'const s = "the type Foo { x } here";',
+        // Schema keyword at the start of a line but with nothing after it, and
+        // with a non-word character after it — neither is a type definition.
+        'const s = `{}\\ntype`;',
+        'const s = `{}\\ntype {`;',
+        'const s = "{}\\ntype";',
+        'const s = "{}\\ntype {";',
+      ],
+      invalid: [
+        // TRUE POSITIVE: operation keyword at the start of the document.
+        {
+          code: 'const q = `query { user(id: "${userId}") { name } }`;',
+          errors: [{ messageId: 'unsafeVariableInterpolation' }],
+        },
+        // TRUE POSITIVE: indented multi-line query — keyword starts its line.
+        {
+          code: [
+            'const q = `',
+            '  mutation CreateUser {',
+            '    createUser(name: "${name}") { id }',
+            '  }',
+            '`;',
+          ].join('\\n'),
+          errors: [{ messageId: 'unsafeVariableInterpolation' }],
+        },
+        // TRUE POSITIVE: bare selection set that IS the whole document.
+        {
+          code: 'const q = `{ users(name: "${name}") { posts { id } } }`;',
+          errors: [{ messageId: 'unsafeVariableInterpolation' }],
+        },
+        // TRUE POSITIVE: a concatenation mixing a template literal and a string
+        // literal — the static text is reassembled from both operand kinds.
+        {
+          code: 'const q = `query { user(id: "` + userId + \'") { name } }\';',
+          errors: [
+            { messageId: 'graphqlInjection' },
+            { messageId: 'graphqlInjection' },
+          ],
+        },
+      ],
+    },
+  );
 });
 
 /**
@@ -1425,7 +1644,10 @@ describe('corpus regression — introspection, selection sets and SDL keywords',
         // concatenation and finding the `typeDefs` binding.
         name: 'attributed concatenation climbs the + chain',
         code: 'const typeDefs = "type User {" + fields + "}";',
-        errors: [{ messageId: 'graphqlInjection' }, { messageId: 'graphqlInjection' }],
+        errors: [
+          { messageId: 'graphqlInjection' },
+          { messageId: 'graphqlInjection' },
+        ],
       },
     ],
   });
@@ -1433,30 +1655,67 @@ describe('corpus regression — introspection, selection sets and SDL keywords',
 
 /** Branch coverage for the attribution gate and the schema-keyword scanners. */
 describe('coverage — attribution and schema-keyword scanning', () => {
-  ruleTester.run('schema keyword shapes that do not qualify', noGraphqlInjection, {
-    valid: [
-      // Tagged, but the tag is not a name at all (a call result).
-      { name: 'call-expression tag', code: 'const t = getTag()`interface Node { ${x} }`;' },
-      // Tagged with a member whose property is not `gql`.
-      { name: 'non-gql member tag', code: 'const t = lib.sql`interface Node { ${x} }`;' },
-      // Attributed, but the keyword is mid-line — not a definition.
-      { name: 'template: keyword mid-line', code: 'const typeDefs = `a type User { ${x} }`;' },
-      { name: 'literal: keyword mid-line', code: 'const typeDefs = "a type User { x }" + y;' },
-      // Attributed, keyword at line start, but no whitespace after it.
-      { name: 'template: keyword then colon', code: 'const typeDefs = `type: { ${x} }`;' },
-      { name: 'literal: keyword then colon', code: 'const typeDefs = "type: { x }" + y;' },
-      // Attributed, keyword at line start and at end of text.
-      { name: 'template: keyword at end', code: 'const typeDefs = `{ a }\ntype`;' },
-      { name: 'literal: keyword at end', code: 'const typeDefs = "{ a }\\ntype" + y;' },
-      // Attributed, keyword at line start with whitespace after it, but no
-      // type name follows — a brace is not a name.
-      { name: 'template: keyword then brace', code: 'const typeDefs = `type { ${x} }`;' },
-      { name: 'literal: keyword then brace', code: 'const typeDefs = "type {" + x;' },
-      // Unattributed literal concatenation carrying a schema keyword.
-      { name: 'literal: unattributed', code: 'const t = "type User {" + fields + "}";' },
-    ],
-    invalid: [],
-  });
+  ruleTester.run(
+    'schema keyword shapes that do not qualify',
+    noGraphqlInjection,
+    {
+      valid: [
+        // Tagged, but the tag is not a name at all (a call result).
+        {
+          name: 'call-expression tag',
+          code: 'const t = getTag()`interface Node { ${x} }`;',
+        },
+        // Tagged with a member whose property is not `gql`.
+        {
+          name: 'non-gql member tag',
+          code: 'const t = lib.sql`interface Node { ${x} }`;',
+        },
+        // Attributed, but the keyword is mid-line — not a definition.
+        {
+          name: 'template: keyword mid-line',
+          code: 'const typeDefs = `a type User { ${x} }`;',
+        },
+        {
+          name: 'literal: keyword mid-line',
+          code: 'const typeDefs = "a type User { x }" + y;',
+        },
+        // Attributed, keyword at line start, but no whitespace after it.
+        {
+          name: 'template: keyword then colon',
+          code: 'const typeDefs = `type: { ${x} }`;',
+        },
+        {
+          name: 'literal: keyword then colon',
+          code: 'const typeDefs = "type: { x }" + y;',
+        },
+        // Attributed, keyword at line start and at end of text.
+        {
+          name: 'template: keyword at end',
+          code: 'const typeDefs = `{ a }\ntype`;',
+        },
+        {
+          name: 'literal: keyword at end',
+          code: 'const typeDefs = "{ a }\\ntype" + y;',
+        },
+        // Attributed, keyword at line start with whitespace after it, but no
+        // type name follows — a brace is not a name.
+        {
+          name: 'template: keyword then brace',
+          code: 'const typeDefs = `type { ${x} }`;',
+        },
+        {
+          name: 'literal: keyword then brace',
+          code: 'const typeDefs = "type {" + x;',
+        },
+        // Unattributed literal concatenation carrying a schema keyword.
+        {
+          name: 'literal: unattributed',
+          code: 'const t = "type User {" + fields + "}";',
+        },
+      ],
+      invalid: [],
+    },
+  );
 });
 
 /**
@@ -1479,12 +1738,20 @@ ruleTester.run('lock: a selection set must name a field', noGraphqlInjection, {
   ],
   invalid: [
     { code: 'const q = `query { user(id: "${id}") }`;', errors: 1 },
-    { code: 'const q = `query GetUser { user(id: "${id}") { name } }`;', errors: 1 },
-    { code: 'const q = `mutation Add { createUser(name: "${n}") }`;', errors: 1 },
-    { code: 'const q = `subscription S { onEvent(f: "${f}") { id } }`;', errors: 1 },
+    {
+      code: 'const q = `query GetUser { user(id: "${id}") { name } }`;',
+      errors: 1,
+    },
+    {
+      code: 'const q = `mutation Add { createUser(name: "${n}") }`;',
+      errors: 1,
+    },
+    {
+      code: 'const q = `subscription S { onEvent(f: "${f}") { id } }`;',
+      errors: 1,
+    },
   ],
 });
-
 
 /**
  * Regression lock — the field probe skips whitespace then requires a word character.
@@ -1506,7 +1773,10 @@ ruleTester.run('lock: selection-set field probe', noGraphqlInjection, {
   invalid: [
     { code: 'const q = `query {   user(id: "${id}") }`;', errors: 1 },
     // Concatenation reaches containsGraphqlText with a real field name present.
-    { code: 'const q = \'query { user(id: "\' + req.body.id + \'") }\';', errors: 2 },
+    {
+      code: "const q = 'query { user(id: \"' + req.body.id + '\") }';",
+      errors: 2,
+    },
   ],
 });
 

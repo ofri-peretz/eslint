@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-maintainability",
   "version": "3.2.2",
-  "description": "ESLint plugin for maintainable code — limits cognitive complexity, nesting depth, parameter counts, duplicate functions, and unhandled or silent errors.",
+  "description": "ESLint plugin for maintainable code \u2014 limits cognitive complexity, nesting depth, parameter counts, duplicate functions, and unhandled or silent errors.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -89,5 +89,11 @@
   "funding": {
     "type": "github",
     "url": "git+https://github.com/ofri-peretz/eslint.git"
+  },
+  "interlace": {
+    "surface": {
+      "kind": "language",
+      "note": "Complexity and structure over plain JS/TS. `typescript` is used for type-aware checks, not analysed."
+    }
   }
 }

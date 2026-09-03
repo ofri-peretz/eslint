@@ -13,12 +13,12 @@ All six fixtures in `benchmarks/corpus/CWE-089/{safe,vulnerable}/` call a bare,
 undeclared `db.query(...)` with no driver import. Measured side by side on identical
 files:
 
-| package | fires on `vulnerable/` |
-| :--- | :--- |
-| `eslint-plugin-pg@1.4.14` (frozen, pre-rename) | 3 / 3 |
-| `eslint-plugin-postgresql-security@2.2.1` (shipped) | 0 / 3 |
+| package                                             | fires on `vulnerable/` |
+| :-------------------------------------------------- | :--------------------- |
+| `eslint-plugin-pg@1.4.14` (frozen, pre-rename)      | 3 / 3                  |
+| `eslint-plugin-postgresql-security@2.2.1` (shipped) | 0 / 3                  |
 
-This is **not a plugin regression.** The old rule fired on the *name* `.query`; the
+This is **not a plugin regression.** The old rule fired on the _name_ `.query`; the
 current rule requires evidence the receiver is a pg client, which is the deliberate
 "evidence, not names" hardening the plugin's own doctrine describes. Adding
 `import { Pool } from 'pg'` to a fixture makes 2.2.1 fire correctly — verified.
@@ -68,3 +68,18 @@ Downstream: `BENCHMARK-RESULTS.md` and every published claim derived from it.
   evidence gating may be measuring a rule we no longer ship.
 - Should the flagship smoke gate stay red until this is settled, or should the row be
   marked known-failing with a link to this intent?
+
+## Re-checked 2026-09-02
+
+**Still open. Verified rather than assumed:** none of the CWE-089 vulnerable
+fixtures imports `pg`.
+
+```
+dynamic-column.js      pg-import=NO
+string-concat.js       pg-import=NO
+template-literal.js    pg-import=NO
+```
+
+The evidence-gated rule therefore cannot fire on any of them, and the flagship
+benchmark scores this corpus at zero for a reason that has nothing to do with
+detection quality.

@@ -219,14 +219,21 @@ const fired = rulesWithCorpusEvidence();
  * so the claim can be checked. `scripts/real-source-scan.mts` produces exactly
  * that coordinate.
  */
-const CURATED = ['benchmarks/corpus/CWE-*/**/*.js', 'benchmarks/corpus/CVE/**/*.js'];
+const CURATED = [
+  'benchmarks/corpus/CWE-*/**/*.js',
+  'benchmarks/corpus/CVE/**/*.js',
+];
 const firedCurated = rulesWithCorpusEvidence(CURATED);
 
 /** Fixture files that record where their code came from. */
 function sourcedFixtures(): string[] {
   return fs
     .globSync(CURATED, { cwd: ROOT })
-    .filter((rel) => /^\/\/ @source\s+\S+/m.test(fs.readFileSync(path.join(ROOT, rel), 'utf8')));
+    .filter((rel) =>
+      /^\/\/ @source\s+\S+/m.test(
+        fs.readFileSync(path.join(ROOT, rel), 'utf8'),
+      ),
+    );
 }
 
 const sourced = sourcedFixtures();
@@ -254,7 +261,9 @@ const sourced = sourcedFixtures();
  *              it. Real code, known good, rule kept quiet. Worth having, but it
  *              is a false-positive lock, not evidence of detection.
  */
-const sourcedVulnerable = sourced.filter((rel) => /(^|\/)vulnerable\//.test(rel));
+const sourcedVulnerable = sourced.filter((rel) =>
+  /(^|\/)vulnerable\//.test(rel),
+);
 const sourcedSafe = sourced.filter((rel) => /(^|\/)safe\//.test(rel));
 /*
  * A rule is credited only for the fixture that was added FOR it.
@@ -280,7 +289,12 @@ const sourcedSafe = sourced.filter((rel) => /(^|\/)safe\//.test(rel));
 function sealedRules(rel: string): string[] {
   const header = fs.readFileSync(path.join(ROOT, rel), 'utf8');
   const match = /^\/\/ @sealed\s+(\S.*)$/m.exec(header);
-  return match === null ? [] : match[1].trim().split(/[,\s]+/).filter(Boolean);
+  return match === null
+    ? []
+    : match[1]
+        .trim()
+        .split(/[,\s]+/)
+        .filter(Boolean);
 }
 
 const firedOnVulnerable =
@@ -288,7 +302,9 @@ const firedOnVulnerable =
     ? rulesWithCorpusEvidence(sourcedVulnerable)
     : new Set<string>();
 const firedOnSafe =
-  sourcedSafe.length > 0 ? rulesWithCorpusEvidence(sourcedSafe) : new Set<string>();
+  sourcedSafe.length > 0
+    ? rulesWithCorpusEvidence(sourcedSafe)
+    : new Set<string>();
 
 const missed: string[] = [];
 const confirmedFalsePositives: string[] = [];
@@ -355,7 +371,7 @@ if (UPDATE) {
   fs.mkdirSync(path.dirname(BASELINE), { recursive: true });
   fs.writeFileSync(
     BASELINE,
-    `${JSON.stringify({ note: 'Rules with no corpus fixture, and therefore no measured precision. May only shrink — see scripts/check-corpus-coverage.ts.', total: rules.length, measured, unmeasured }, null, 2)}\n`,
+    `${JSON.stringify({ command: 'npx tsx scripts/check-corpus-coverage.ts --update', note: 'Rules with no corpus fixture, and therefore no measured precision. May only shrink — see scripts/check-corpus-coverage.ts.', total: rules.length, measured, unmeasured }, null, 2)}\n`,
   );
   console.log(
     `↻ baseline written: ${unmeasured.length} unmeasured rules recorded.`,

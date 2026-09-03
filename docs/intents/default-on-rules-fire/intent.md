@@ -13,7 +13,7 @@
 
 **Every rule enabled in a `recommended` preset has a demonstrated positive
 control** — a snippet, committed, that makes it report. Not a fixture it was
-born with: a check that the rule *can* fire under the configuration a consumer
+born with: a check that the rule _can_ fire under the configuration a consumer
 actually installs.
 
 Scope is the default-on surface only. Opt-in rules are the author's problem;
@@ -37,10 +37,10 @@ Both blind spots are now closed. The rules behind them are not.
 
 ## Measured today (2026-08-25)
 
-| | rules |
-| :--- | ---: |
-| enabled in a `recommended` preset | **327** |
-| with at least one corpus finding — examined | **49** |
+|                                                |   rules |
+| :--------------------------------------------- | ------: |
+| enabled in a `recommended` preset              | **327** |
+| with at least one corpus finding — examined    |  **49** |
 | with **zero** corpus findings — never examined | **278** |
 
 The 49 are the entire evidential basis for the ecosystem's default behaviour.
@@ -48,9 +48,37 @@ Of the eight examined closely this week, **five carried real defects**, two of
 them reporting false on every single finding (`prefer-tag-over-role` 31/31,
 `no-unknown-property` 65/65).
 
-That hit rate is the argument. It was measured on the *examined* population;
+That hit rate is the argument. It was measured on the _examined_ population;
 there is no reason to believe the unexamined 278 are healthier, and one
 concrete reason — `ddd-anemic` — to believe some are worse.
+
+## Progress — 2026-09-02
+
+`scripts/recommended-rules-fire.mts` runs each rule's own TP case through the
+preset rather than through the rule. It found **287** rules across the
+`recommended` presets — the first read said 7, because it looked for `configs`
+on the default export when most plugins export it as a NAMED export. A probe
+that quietly measured four plugins of twenty-six and reported as though it had
+measured all of them.
+
+It reports 187 firing and 96 silent, **and the 96 is not yet a finding.** Many
+rules are evidence-gated: they refuse to fire in a file that does not import the
+framework they are about. The test suites supply that through a harness
+(`sdk()`, `lambda()`, `xp()`) that wraps each case; the ledger records the
+FRAGMENT. Measured:
+
+```
+app.use(cors({ origin: '*', credentials: true }));      -> 0
+import express from 'express'; … the same line          -> 1
+```
+
+So the probe hands rules a file their harness would never have produced, and a
+correct abstention reads as a defect.
+
+**The blocking design question this surfaces:** a positive control needs the
+whole file the case runs in, and `RULE_CASES.json` stores only the fragment.
+Recording the harness per case is a change to `rule-case-ledger.ts`, and it is
+what this intent actually needs before its number means anything.
 
 ## The finding
 
@@ -91,3 +119,19 @@ as health.
   `identical-functions`). Those are the examined population and continue on
   their own track.
 - `ANTHROPIC_API_KEY` for eval layer 2 — a repo secret, needs the owner.
+
+## Re-checked 2026-09-02
+
+**The opening figure cannot be reproduced.** This intent records 327 rules
+enabled in a `recommended` preset on 2026-08-25 and does not say how that was
+counted. Enumerating every plugin's `recommended` config today gives **287**.
+
+Forty rules is too large a gap to be drift, and there is no recorded method to
+check it against — which makes 327 the same kind of number this intent was
+opened to object to. Either the count included the `strict` presets, or it read
+`eslint-config-interlace` rather than the per-plugin configs, or rules have
+been removed. The honest position is that we do not know.
+
+**287 is the figure with a method behind it**, and the method is
+`npm run measure:default-on-rules`. The 327 should be treated as unattributed
+and not quoted again.

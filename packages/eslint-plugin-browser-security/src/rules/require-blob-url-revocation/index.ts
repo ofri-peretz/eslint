@@ -65,13 +65,14 @@ function isUrlMethod(node: TSESTree.CallExpression, method: string): boolean {
 function pathKey(node: TSESTree.Node): string | null {
   if (node.type === AST_NODE_TYPES.Identifier) return node.name;
   if (node.type === AST_NODE_TYPES.ThisExpression) return 'this';
-  if (
-    node.type === AST_NODE_TYPES.MemberExpression &&
-    !node.computed &&
-    node.property.type === AST_NODE_TYPES.Identifier
-  ) {
+  if (node.type === AST_NODE_TYPES.MemberExpression) {
+    // `preview['src']` is the same path as `preview.src`, so both must key the
+    // same way — otherwise a URL created under one spelling is never matched to
+    // the revoke written in the other. A runtime key names no stable path.
+    const segment = propertyName(node);
+    if (segment === null) return null;
     const base = pathKey(node.object);
-    return base === null ? null : `${base}.${node.property.name}`;
+    return base === null ? null : `${base}.${segment}`;
   }
   return null;
 }
@@ -158,7 +159,6 @@ export const requireBlobUrlRevocation = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://developer.mozilla.org/en-US/docs/Web/API/URL/revokeObjectURL',
       }),
-
     },
     schema: [
       {

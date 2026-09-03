@@ -3,7 +3,7 @@ import { defineConfig } from 'vite';
 export default defineConfig(() => ({
   root: __dirname,
   cacheDir: '../../node_modules/.vite/packages/eslint-plugin-lambda-security',
-    // Uncomment this if you are using workers.
+  // Uncomment this if you are using workers.
   // worker: {
   //    // },
   test: {

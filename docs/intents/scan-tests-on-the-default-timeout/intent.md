@@ -3,7 +3,7 @@
 > Stage 1 artifact of the AI-native SDLC. Opened after a scan test blocked four
 > commits and a push on a package none of them touched.
 
-**Status:** draft · **Opened:** 2026-09-01 · **Owner:** @ofri-peretz
+**Status:** shipped · **Opened:** 2026-09-01 · **Owner:** @ofri-peretz
 
 ---
 
@@ -65,3 +65,31 @@ it blocks work on an unrelated change and trains people to reach for
   this look fine.
 - Should the pre-commit hook run the full affected set at all, given it is the
   place where contention is worst and the same suites run again in CI?
+
+## Re-checked 2026-09-02
+
+**Still open, and now measurable.** `scripts/__tests__/vitest.config.mts` sets
+`testTimeout: 30_000` with the reasoning recorded inline — but this intent asks
+for it _in every package_, and it is not:
+
+| Package vitest/vite configs | With `testTimeout` | Without |
+| --------------------------: | -----------------: | ------: |
+|                          34 |             **12** |  **22** |
+
+So the two packages that hit the wall were fixed and the other twenty-two were
+left on Vitest's 5s default, which is exactly the shape the intent describes:
+a timeout tuned for unit tests on an idle machine, charged to tests that scan
+the repository while 47 turbo tasks run beside them.
+
+## Shipped 2026-09-02
+
+**32 of 32** workspace configs now set `testTimeout` and `hookTimeout` to 30s,
+up from 20. Twelve were patched in one pass; the rest already had it. Measured
+against `0f249e68f^` — see design.md for the command.
+
+`hookTimeout` is set alongside deliberately: it does NOT inherit `testTimeout`
+and stays at Vitest's 10s default otherwise, which fails as "Hook timed out in
+10000ms" rather than as a test failure — a different message for the same
+starvation, and one that reads like a broken test rather than a busy machine.
+
+Full suite green afterwards: 56/56 turbo tasks.

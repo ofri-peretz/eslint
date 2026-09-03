@@ -104,8 +104,18 @@ const DEFAULT_ROLE_CHECK_PATTERNS = [
  * own is not evidence of anything — `userInput`, which names the request, is.
  */
 const DEFAULT_USER_INPUT_PATTERNS = [
-  /\breq\.(body|query|params)\b/,
-  /\brequest\.(body|query|params)\b/,
+  // Both spellings of the same read. These match SOURCE TEXT, so a dotted-only
+  // pattern is blind to `req['body']` — the notation a bundler emits — and the
+  // rule's assignment side already resolved a string subscript. The two halves
+  // have to agree, or a request value reaches an authorisation field through
+  // the half that cannot see it.
+  // The dotted branch needs a trailing boundary. Without one it matched a
+  // PREFIX: `req.bodyParser` contains `req.body`, `request.queryString`
+  // contains `request.query`, and either made a non-request property read as
+  // user input — a privilege-escalation finding on code that has none. The
+  // bracket branch already ends at its own quote and closing `]`.
+  /\breq\s*(?:\.\s*(?:body|query|params)(?![\w$])|\[\s*['"](?:body|query|params)['"]\s*\])/,
+  /\brequest\s*(?:\.\s*(?:body|query|params)(?![\w$])|\[\s*['"](?:body|query|params)['"]\s*\])/,
   /\buserInput\b/,
 ];
 

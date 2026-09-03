@@ -1,4 +1,5 @@
 {
+  "command": "npx tsx scripts/check-artifact-size.ts --update",
   "generated": "2026-08-30",
   "packages": {
     "@interlace/eslint-devkit": {

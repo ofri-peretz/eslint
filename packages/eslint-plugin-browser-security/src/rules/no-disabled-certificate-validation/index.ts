@@ -8,7 +8,13 @@
  * @fileoverview Prevent disabled SSL/TLS certificate validation
  */
 
-import { createRule, formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  objectKeyName,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected' | 'noopHostnameVerification';
@@ -43,7 +49,10 @@ export interface Options {}
 
 type RuleOptions = [Options?];
 
-export const noDisabledCertificateValidation = createRule<RuleOptions, MessageIds>({
+export const noDisabledCertificateValidation = createRule<
+  RuleOptions,
+  MessageIds
+>({
   name: 'no-disabled-certificate-validation',
   // An integration test that points at a local server with a self-signed
   // certificate sets `rejectUnauthorized: false` because that is the only way
@@ -63,7 +72,8 @@ export const noDisabledCertificateValidation = createRule<RuleOptions, MessageId
         icon: MessageIcons.SECURITY,
         issueName: 'Disabled Certificate Validation',
         cwe: 'CWE-295',
-        description: 'SSL/TLS certificate validation is disabled - man-in-the-middle attack possible',
+        description:
+          'SSL/TLS certificate validation is disabled - man-in-the-middle attack possible',
         severity: 'CRITICAL',
         fix: 'Remove rejectUnauthorized: false or verify: false, fix certificate issues properly',
         documentationLink: 'https://cwe.mitre.org/data/definitions/295.html',
@@ -86,8 +96,12 @@ export const noDisabledCertificateValidation = createRule<RuleOptions, MessageId
     function report(node: TSESTree.Node) {
       context.report({ node, messageId: 'violationDetected' });
     }
-    
-    const dangerousProperties = new Set(['rejectUnauthorized', 'strictSSL', 'verify']);
+
+    const dangerousProperties = new Set([
+      'rejectUnauthorized',
+      'strictSSL',
+      'verify',
+    ]);
 
     /**
      * Open `checkServerIdentity` block bodies, innermost last. A body is
@@ -101,17 +115,17 @@ export const noDisabledCertificateValidation = createRule<RuleOptions, MessageId
     return {
       Property(node: TSESTree.Property) {
         // Check for dangerous SSL options set to false
-        if (node.key.type === 'Identifier' &&
-            dangerousProperties.has(node.key.name) &&
-            node.value.type === 'Literal' &&
-            node.value.value === false) {
+        const keyName = objectKeyName(node);
+        if (
+          keyName !== null &&
+          dangerousProperties.has(keyName) &&
+          node.value.type === 'Literal' &&
+          node.value.value === false
+        ) {
           report(node);
         }
 
-        if (
-          node.key.type !== 'Identifier' ||
-          node.key.name !== 'checkServerIdentity'
-        ) {
+        if (keyName !== 'checkServerIdentity') {
           return;
         }
         const implementation = node.value;
@@ -164,16 +178,16 @@ export const noDisabledCertificateValidation = createRule<RuleOptions, MessageId
         }
       },
 
-
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
         // Check for NODE_TLS_REJECT_UNAUTHORIZED = '0'
-        if (node.left.type === 'MemberExpression' &&
-            node.left.object.type === 'MemberExpression' &&
-            node.left.object.object.type === 'Identifier' &&
-            node.left.object.object.name === 'process' &&
-            propertyName(node.left.object) === 'env' &&
-            propertyName(node.left) === 'NODE_TLS_REJECT_UNAUTHORIZED') {
-          
+        if (
+          node.left.type === 'MemberExpression' &&
+          node.left.object.type === 'MemberExpression' &&
+          node.left.object.object.type === 'Identifier' &&
+          node.left.object.object.name === 'process' &&
+          propertyName(node.left.object) === 'env' &&
+          propertyName(node.left) === 'NODE_TLS_REJECT_UNAUTHORIZED'
+        ) {
           if (node.right.type === 'Literal' && node.right.value === '0') {
             report(node);
           }

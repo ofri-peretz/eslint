@@ -1,4 +1,5 @@
 {
+  "command": "npm run case-registry -- --update",
   "note": "Case ids verified at least once. Grow-only: losing one is a regression.",
   "verified": [
     "ILB-0001",

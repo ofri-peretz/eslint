@@ -217,10 +217,11 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
             node.superClass.type === 'MemberExpression' &&
             node.superClass.object.type === 'Identifier' &&
             node.superClass.object.name === 'React' &&
-            node.superClass.property.type === 'Identifier' &&
+            // `React['Component']` names the same base class. A key chosen at
+            // runtime names no base to match against the React vocabulary.
             // @vocabulary React API
             ['Component', 'PureComponent'].includes(
-              node.superClass.property.name,
+              propertyName(node.superClass) ?? '',
             )
           ) {
             inClassComponent = true;

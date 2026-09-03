@@ -53,7 +53,7 @@ type Case = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
 };
-const lambda = <T,>(cases: T[]): T[] =>
+const lambda = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asLambda(c) as T;
     const test = c as Case;
@@ -63,7 +63,9 @@ const lambda = <T,>(cases: T[]): T[] =>
       // Autofix and suggestion fixtures assert the WHOLE file back, so every
       // `output` needs the same prefix or each fixable rule fails on the header
       // alone — including the ones nested under errors[].suggestions[].
-      ...(typeof test.output === 'string' ? { output: asLambda(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asLambda(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -82,7 +84,6 @@ const lambda = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
@@ -149,50 +150,54 @@ ruleTester.run('no-error-swallowing (coverage)', noErrorSwallowing, {
 // Layer 1 — no-exposed-debug-endpoints
 // ---------------------------------------------------------------------------
 
-ruleTester.run('no-exposed-debug-endpoints (coverage)', noExposedDebugEndpoints, {
-  valid: lambda([
-    // ignoreFiles option matches the filename → rule short-circuits to {}
-    {
-      code: `const route = '/debug';`,
-      options: [{ ignoreFiles: ['debug-routes'] }],
-      filename: 'src/debug-routes.ts',
-    },
-    // Property listener: path value that is NOT a debug path
-    { code: `const config = { http: { path: '/users' } };` },
-    // Literal includes a debug path but comparison target is a plain identifier
-    { code: `const x = pathName === '/debug/x';` },
-    // MemberExpression object is not event/evt
-    { code: `const x = req.path === '/debug/x';` },
-    // Computed event access → property is a Literal, not Identifier
-    { code: `const x = event['path'] === '/debug/x';` },
-    // Event property outside the checked list
-    { code: `const x = event.url === '/debug/x';` },
-    // Computed identifier property with non-checked name
-    { code: `const x = event[prop] === '/debug/x';` },
-  ]),
-  invalid: lambda([
-    // Debug literal on the LEFT of the comparison (checkNode side === node.left)
-    {
-      code: `if ('/debug' === event.path) { enableDebug(); }`,
-      errors: [{ messageId: 'violationDetected' }],
-    },
-    // Exact debug literal compared against a plain identifier → Literal listener reports
-    {
-      code: `const x = '/debug' == y;`,
-      errors: [{ messageId: 'violationDetected' }],
-    },
-    // Exact debug literal vs member expression on non-event object → still reported
-    {
-      code: `const x = req.path === '/debug';`,
-      errors: [{ messageId: 'violationDetected' }],
-    },
-    // Exact debug literal vs member expression whose object is a call → still reported
-    {
-      code: `const x = getEvent().path === '/debug';`,
-      errors: [{ messageId: 'violationDetected' }],
-    },
-  ]),
-});
+ruleTester.run(
+  'no-exposed-debug-endpoints (coverage)',
+  noExposedDebugEndpoints,
+  {
+    valid: lambda([
+      // ignoreFiles option matches the filename → rule short-circuits to {}
+      {
+        code: `const route = '/debug';`,
+        options: [{ ignoreFiles: ['debug-routes'] }],
+        filename: 'src/debug-routes.ts',
+      },
+      // Property listener: path value that is NOT a debug path
+      { code: `const config = { http: { path: '/users' } };` },
+      // Literal includes a debug path but comparison target is a plain identifier
+      { code: `const x = pathName === '/debug/x';` },
+      // MemberExpression object is not event/evt
+      { code: `const x = req.path === '/debug/x';` },
+      // Computed event access → property is a Literal, not Identifier
+      { code: `const x = event['path'] === '/debug/x';` },
+      // Event property outside the checked list
+      { code: `const x = event.url === '/debug/x';` },
+      // Computed identifier property with non-checked name
+      { code: `const x = event[prop] === '/debug/x';` },
+    ]),
+    invalid: lambda([
+      // Debug literal on the LEFT of the comparison (checkNode side === node.left)
+      {
+        code: `if ('/debug' === event.path) { enableDebug(); }`,
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      // Exact debug literal compared against a plain identifier → Literal listener reports
+      {
+        code: `const x = '/debug' == y;`,
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      // Exact debug literal vs member expression on non-event object → still reported
+      {
+        code: `const x = req.path === '/debug';`,
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      // Exact debug literal vs member expression whose object is a call → still reported
+      {
+        code: `const x = getEvent().path === '/debug';`,
+        errors: [{ messageId: 'violationDetected' }],
+      },
+    ]),
+  },
+);
 
 // ---------------------------------------------------------------------------
 // Layer 1 — no-exposed-error-details
@@ -200,14 +205,6 @@ ruleTester.run('no-exposed-debug-endpoints (coverage)', noExposedDebugEndpoints,
 
 ruleTester.run('no-exposed-error-details (coverage)', noExposedErrorDetails, {
   valid: lambda([
-    // Computed sensitive access → property is a Literal (documented FN)
-    {
-      code: `
-        function h(err) {
-          return { statusCode: 500, body: err['stack'] };
-        }
-      `,
-    },
     // Sensitive member whose parent is a BinaryExpression, not Property/Call (documented FN)
     {
       code: `
@@ -233,113 +230,147 @@ ruleTester.run('no-exposed-error-details (coverage)', noExposedErrorDetails, {
       `,
     },
   ]),
-  invalid: [],
+  invalid: lambda([
+    // Was pinned VALID as a "documented FN". `err['stack']` returns exactly
+    // the trace `err.stack` returns, and a bundler emits that spelling.
+    {
+      name: 'a stack trace read through a string subscript',
+      code: `
+        function h(err) {
+          return { statusCode: 500, body: err['stack'] };
+        }
+      `,
+      errors: [{ messageId: 'exposedErrorDetails' }],
+    },
+  ]),
 });
 
 // ---------------------------------------------------------------------------
 // Layer 1 — no-hardcoded-credentials-sdk
 // ---------------------------------------------------------------------------
 
-ruleTester.run('no-hardcoded-credentials-sdk (coverage)', noHardcodedCredentialsSdk, {
-  valid: lambda([
-    // NewExpression callee is not an Identifier
-    { code: `const c = new (getClientCtor())({ credentials: { accessKeyId: 'AKIAIOSFODNN7EXAMPLE' } });` },
-    // Spread inside config object
-    { code: `const c = new S3Client({ ...baseConfig });` },
-    // Top-level credential property with a non-string literal
-    { code: `const c = new S3Client({ accessKeyId: 12345 });` },
-    // Top-level credential property with a non-literal value
-    { code: `const c = new S3Client({ secretAccessKey: someVar });` },
-    // Spread inside credentials object
-    { code: `const c = new S3Client({ credentials: { ...creds } });` },
-    // Non-credential property inside credentials object
-    { code: `const c = new S3Client({ credentials: { region: 'us-east-1' } });` },
-    // secretAccessKey shorter than 20 chars → not flagged
-    { code: `const c = new S3Client({ credentials: { secretAccessKey: 'short' } });` },
-    // sessionToken shorter than 15 chars → not flagged
-    { code: `const c = new S3Client({ credentials: { sessionToken: 'abc' } });` },
-    // Credential property that is none of the three length-checked keys
-    // inside the nested credentials object (documented FN for aws* aliases)
-    { code: `const c = new S3Client({ credentials: { awsAccessKeyId: 'AKIAIOSFODNN7EXAMPLE' } });` },
-    // No constructor arguments
-    { code: `const c = new S3Client();` },
-    // First argument is not an object literal
-    { code: `const c = new S3Client(config);` },
-    // Variable name without "credential"
-    { code: `const settings = { accessKeyId: 'AKIAIOSFODNN7EXAMPLE' };` },
-    // credential-named variable with no initializer
-    { code: `let userCredentials;` },
-    // credential-named variable with non-object initializer
-    { code: `const credentialsFromVault = getCreds();` },
-    // Destructured id → not an Identifier
-    { code: `const { credentials } = config;` },
-  ]),
-  invalid: lambda([
-    // *Client name matched via the AWS-prefix regex (not the known-client set)
-    {
-      code: `const c = new BedrockClient({ credentials: { accessKeyId: 'AKIAIOSFODNN7EXAMPLE' } });`,
-      errors: [{ messageId: 'hardcodedCredentials' }],
-    },
-    // Top-level (v2-style) credential property with hardcoded string
-    {
-      code: `const c = new S3Client({ accessKeyId: 'AKIAIOSFODNN7EXAMPLE' });`,
-      errors: [{ messageId: 'hardcodedCredentials' }],
-    },
-    // credential-named variable holding a credentials object literal
-    {
-      code: `const myCredentials = { accessKeyId: 'AKIAIOSFODNN7EXAMPLE' };`,
-      errors: [{ messageId: 'hardcodedCredentials' }],
-    },
-  ]),
-});
+ruleTester.run(
+  'no-hardcoded-credentials-sdk (coverage)',
+  noHardcodedCredentialsSdk,
+  {
+    valid: lambda([
+      // NewExpression callee is not an Identifier
+      {
+        code: `const c = new (getClientCtor())({ credentials: { accessKeyId: 'AKIAIOSFODNN7EXAMPLE' } });`,
+      },
+      // Spread inside config object
+      { code: `const c = new S3Client({ ...baseConfig });` },
+      // Top-level credential property with a non-string literal
+      { code: `const c = new S3Client({ accessKeyId: 12345 });` },
+      // Top-level credential property with a non-literal value
+      { code: `const c = new S3Client({ secretAccessKey: someVar });` },
+      // Spread inside credentials object
+      { code: `const c = new S3Client({ credentials: { ...creds } });` },
+      // Non-credential property inside credentials object
+      {
+        code: `const c = new S3Client({ credentials: { region: 'us-east-1' } });`,
+      },
+      // secretAccessKey shorter than 20 chars → not flagged
+      {
+        code: `const c = new S3Client({ credentials: { secretAccessKey: 'short' } });`,
+      },
+      // sessionToken shorter than 15 chars → not flagged
+      {
+        code: `const c = new S3Client({ credentials: { sessionToken: 'abc' } });`,
+      },
+      // Credential property that is none of the three length-checked keys
+      // inside the nested credentials object (documented FN for aws* aliases)
+      {
+        code: `const c = new S3Client({ credentials: { awsAccessKeyId: 'AKIAIOSFODNN7EXAMPLE' } });`,
+      },
+      // No constructor arguments
+      { code: `const c = new S3Client();` },
+      // First argument is not an object literal
+      { code: `const c = new S3Client(config);` },
+      // Variable name without "credential"
+      { code: `const settings = { accessKeyId: 'AKIAIOSFODNN7EXAMPLE' };` },
+      // credential-named variable with no initializer
+      { code: `let userCredentials;` },
+      // credential-named variable with non-object initializer
+      { code: `const credentialsFromVault = getCreds();` },
+      // Destructured id → not an Identifier
+      { code: `const { credentials } = config;` },
+    ]),
+    invalid: lambda([
+      // *Client name matched via the AWS-prefix regex (not the known-client set)
+      {
+        code: `const c = new BedrockClient({ credentials: { accessKeyId: 'AKIAIOSFODNN7EXAMPLE' } });`,
+        errors: [{ messageId: 'hardcodedCredentials' }],
+      },
+      // Top-level (v2-style) credential property with hardcoded string
+      {
+        code: `const c = new S3Client({ accessKeyId: 'AKIAIOSFODNN7EXAMPLE' });`,
+        errors: [{ messageId: 'hardcodedCredentials' }],
+      },
+      // credential-named variable holding a credentials object literal
+      {
+        code: `const myCredentials = { accessKeyId: 'AKIAIOSFODNN7EXAMPLE' };`,
+        errors: [{ messageId: 'hardcodedCredentials' }],
+      },
+    ]),
+  },
+);
 
 // ---------------------------------------------------------------------------
 // Layer 1 — no-missing-authorization-check
 // ---------------------------------------------------------------------------
 
-ruleTester.run('no-missing-authorization-check (coverage)', noMissingAuthorizationCheck, {
-  valid: lambda([
-    // A method chosen at RUNTIME is not a tracked sensitive op; the
-    // non-object return exercises the ReturnStatement fallthrough
-    {
-      code: `
+ruleTester.run(
+  'no-missing-authorization-check (coverage)',
+  noMissingAuthorizationCheck,
+  {
+    valid: lambda([
+      // A method chosen at RUNTIME is not a tracked sensitive op; the
+      // non-object return exercises the ReturnStatement fallthrough
+      {
+        code: `
         export const handler = async (event) => {
           await registry[op](payload);
           return 1;
         };
       `,
-    },
-  ]),
-invalid: lambda([
-    // Was pinned as valid because the callee property was computed.
-    // `registry['create'](payload)` is the same create, unauthorised.
-    {
-      name: 'a subscripted sensitive create with no authorization check',
-      code: `
+      },
+    ]),
+    invalid: lambda([
+      // Was pinned as valid because the callee property was computed.
+      // `registry['create'](payload)` is the same create, unauthorised.
+      {
+        name: 'a subscripted sensitive create with no authorization check',
+        code: `
         export const handler = async (event) => {
           await registry['create'](payload);
           return 1;
         };
       `,
-      errors: [{ messageId: 'missingAuthCheck' }],
-    },
-  ]),
-});
+        errors: [{ messageId: 'missingAuthCheck' }],
+      },
+    ]),
+  },
+);
 
 // ---------------------------------------------------------------------------
 // Layer 1 — no-overly-permissive-iam-policy
 // ---------------------------------------------------------------------------
 
-ruleTester.run('no-overly-permissive-iam-policy (coverage)', noOverlyPermissiveIamPolicy, {
-  valid: [],
-  invalid: lambda([
-    // Array with non-literal and non-string elements around the wildcard
-    {
-      code: `const policy = { Effect: 'Allow', Action: [dynamicAction, 42, '*'], Resource: 'arn:aws:s3:::bucket/key' };`,
-      errors: [{ messageId: 'permissivePolicy' }],
-    },
-  ]),
-});
+ruleTester.run(
+  'no-overly-permissive-iam-policy (coverage)',
+  noOverlyPermissiveIamPolicy,
+  {
+    valid: [],
+    invalid: lambda([
+      // Array with non-literal and non-string elements around the wildcard
+      {
+        code: `const policy = { Effect: 'Allow', Action: [dynamicAction, 42, '*'], Resource: 'arn:aws:s3:::bucket/key' };`,
+        errors: [{ messageId: 'permissivePolicy' }],
+      },
+    ]),
+  },
+);
 
 // ---------------------------------------------------------------------------
 // Layer 1 — no-permissive-cors-middy
@@ -363,28 +394,36 @@ ruleTester.run('no-permissive-cors-middy (coverage)', noPermissiveCorsMiddy, {
 // Layer 1 — no-permissive-cors-response
 // ---------------------------------------------------------------------------
 
-ruleTester.run('no-permissive-cors-response (coverage)', noPermissiveCorsResponse, {
-  valid: lambda([
-    // Spread inside headers object
-    { code: `function h() { return { statusCode: 200, headers: { ...baseHeaders } }; }` },
-    // Numeric header key → neither Identifier nor string Literal
-    { code: `function h() { return { body: 'ok', headers: { 1: 'x' } }; }` },
-    // response variable initialized from a call, not an object literal
-    { code: `const response = buildResponse();` },
-    // response variable with no initializer
-    { code: `let response;` },
-    // response-named object literal that is NOT a Lambda response shape
-    { code: `const response = { headers: { 'Access-Control-Allow-Origin': '*' } };` },
-  ]),
-  invalid: lambda([
-    // Identifier header key (Vary) + string-literal response key + wildcard → autofixed
-    {
-      code: `function h() { return { statusCode: 200, 'x-extra': 1, headers: { Vary: 'Origin', 'Access-Control-Allow-Origin': '*' } }; }`,
-      output: `function h() { return { statusCode: 200, 'x-extra': 1, headers: { Vary: 'Origin', 'Access-Control-Allow-Origin': "https://your-domain.com" } }; }`,
-      errors: [{ messageId: 'permissiveCors' }],
-    },
-  ]),
-});
+ruleTester.run(
+  'no-permissive-cors-response (coverage)',
+  noPermissiveCorsResponse,
+  {
+    valid: lambda([
+      // Spread inside headers object
+      {
+        code: `function h() { return { statusCode: 200, headers: { ...baseHeaders } }; }`,
+      },
+      // Numeric header key → neither Identifier nor string Literal
+      { code: `function h() { return { body: 'ok', headers: { 1: 'x' } }; }` },
+      // response variable initialized from a call, not an object literal
+      { code: `const response = buildResponse();` },
+      // response variable with no initializer
+      { code: `let response;` },
+      // response-named object literal that is NOT a Lambda response shape
+      {
+        code: `const response = { headers: { 'Access-Control-Allow-Origin': '*' } };`,
+      },
+    ]),
+    invalid: lambda([
+      // Identifier header key (Vary) + string-literal response key + wildcard → autofixed
+      {
+        code: `function h() { return { statusCode: 200, 'x-extra': 1, headers: { Vary: 'Origin', 'Access-Control-Allow-Origin': '*' } }; }`,
+        output: `function h() { return { statusCode: 200, 'x-extra': 1, headers: { Vary: 'Origin', 'Access-Control-Allow-Origin': "https://your-domain.com" } }; }`,
+        errors: [{ messageId: 'permissiveCors' }],
+      },
+    ]),
+  },
+);
 
 // ---------------------------------------------------------------------------
 // Layer 1 — no-secrets-in-env
@@ -409,13 +448,16 @@ ruleTester.run('no-secrets-in-env (coverage)', noSecretsInEnv, {
 // Layer 1 — no-unbounded-batch-processing
 // ---------------------------------------------------------------------------
 
-ruleTester.run('no-unbounded-batch-processing (coverage)', noUnboundedBatchProcessing, {
-  valid: [],
-  invalid: lambda([
-    // .length on a computed member, non-size binary comparisons — none of them
-    // count as a batch-size check, so the unbounded loop still reports
-    {
-      code: `
+ruleTester.run(
+  'no-unbounded-batch-processing (coverage)',
+  noUnboundedBatchProcessing,
+  {
+    valid: [],
+    invalid: lambda([
+      // .length on a computed member, non-size binary comparisons — none of them
+      // count as a batch-size check, so the unbounded loop still reports
+      {
+        code: `
         export const handler = async (event) => {
           const meta = tags['prod'].length;
           if (mode === strictMode) { setup(); }
@@ -425,10 +467,11 @@ ruleTester.run('no-unbounded-batch-processing (coverage)', noUnboundedBatchProce
           }
         };
       `,
-      errors: [{ messageId: 'unboundedBatch' }],
-    },
-  ]),
-});
+        errors: [{ messageId: 'unboundedBatch' }],
+      },
+    ]),
+  },
+);
 
 // ---------------------------------------------------------------------------
 // Layer 1 — no-unvalidated-event-body
@@ -446,7 +489,9 @@ ruleTester.run('no-unvalidated-event-body (coverage)', noUnvalidatedEventBody, {
     { code: `export const handler = ({ body }, context) => body;` },
     // Express signatures are explicitly rejected
     { code: `const middleware = (req, res) => { const x = req.body; };` },
-    { code: `const middleware2 = (request, response) => { const y = request.body; };` },
+    {
+      code: `const middleware2 = (request, response) => { const y = request.body; };`,
+    },
     // .use() argument whose callee is a MemberExpression (not bare validator())
     { code: `pipeline.use(mod.validator(opts));` },
   ]),
@@ -488,38 +533,54 @@ ruleTester.run('no-unvalidated-event-body (coverage)', noUnvalidatedEventBody, {
 // Layer 1 — no-user-controlled-requests
 // ---------------------------------------------------------------------------
 
-ruleTester.run('no-user-controlled-requests (coverage)', noUserControlledRequests, {
-  valid: lambda([
-    // Template literal whose expressions are untainted
-    { code: `const handler = async (event) => { const id = 5; await fetch(\`https://api.example.com/\${id}\`); };` },
-    // Binary concatenation with no tainted operand
-    { code: `const handler = async (event) => { await fetch('https://a.example.com' + '/b'); };` },
-    // No arguments at all
-    { code: `const handler = async (event) => { await fetch(); };` },
-    // Config object with spread and non-URL keys
-    { code: `const handler = async (event) => { await axios({ method: 'GET', ...rest }); };` },
-    // Config object with a safe literal URL
-    { code: `const handler = async (event) => { await axios({ url: 'https://safe.example.com' }); };` },
-    // Destructured parameter → not an Identifier
-    { code: `function destructured({ a }) { return a; }` },
-    // Assignment to a member expression is not identifier tainting
-    { code: `const handler = async (event) => { const store = {}; store.url = event.rawPath; };` },
-    // Assignment from an untainted source
-    { code: `const handler = async (event) => { let u; u = 'https://static.example.com'; await fetch(u); };` },
-  ]),
-  invalid: lambda([
-    // Computed (non-Identifier) leaf property → source rendered as [...]
-    {
-      code: `const handler = async (event) => { await fetch(event.queryStringParameters['target']); };`,
-      errors: [{ messageId: 'ssrfVulnerability' }],
-    },
-    // Tainted LEFT operand of a concatenation
-    {
-      code: `const handler = async (event) => { await fetch(event.rawPath + '/x'); };`,
-      errors: [{ messageId: 'ssrfVulnerability' }],
-    },
-  ]),
-});
+ruleTester.run(
+  'no-user-controlled-requests (coverage)',
+  noUserControlledRequests,
+  {
+    valid: lambda([
+      // Template literal whose expressions are untainted
+      {
+        code: `const handler = async (event) => { const id = 5; await fetch(\`https://api.example.com/\${id}\`); };`,
+      },
+      // Binary concatenation with no tainted operand
+      {
+        code: `const handler = async (event) => { await fetch('https://a.example.com' + '/b'); };`,
+      },
+      // No arguments at all
+      { code: `const handler = async (event) => { await fetch(); };` },
+      // Config object with spread and non-URL keys
+      {
+        code: `const handler = async (event) => { await axios({ method: 'GET', ...rest }); };`,
+      },
+      // Config object with a safe literal URL
+      {
+        code: `const handler = async (event) => { await axios({ url: 'https://safe.example.com' }); };`,
+      },
+      // Destructured parameter → not an Identifier
+      { code: `function destructured({ a }) { return a; }` },
+      // Assignment to a member expression is not identifier tainting
+      {
+        code: `const handler = async (event) => { const store = {}; store.url = event.rawPath; };`,
+      },
+      // Assignment from an untainted source
+      {
+        code: `const handler = async (event) => { let u; u = 'https://static.example.com'; await fetch(u); };`,
+      },
+    ]),
+    invalid: lambda([
+      // Computed (non-Identifier) leaf property → source rendered as [...]
+      {
+        code: `const handler = async (event) => { await fetch(event.queryStringParameters['target']); };`,
+        errors: [{ messageId: 'ssrfVulnerability' }],
+      },
+      // Tainted LEFT operand of a concatenation
+      {
+        code: `const handler = async (event) => { await fetch(event.rawPath + '/x'); };`,
+        errors: [{ messageId: 'ssrfVulnerability' }],
+      },
+    ]),
+  },
+);
 
 // ---------------------------------------------------------------------------
 // Layer 1 — require-timeout-handling
@@ -553,7 +614,8 @@ type Listener = (node: unknown) => void;
  * createWithMockContext is not usable for this rule).
  */
 function createUnvalidatedEventBodyListeners() {
-  const reports: Array<{ messageId: string; data?: Record<string, unknown> }> = [];
+  const reports: Array<{ messageId: string; data?: Record<string, unknown> }> =
+    [];
   const sourceCode = {
     text: '',
     getText: () => '',
@@ -584,7 +646,10 @@ function createUnvalidatedEventBodyListeners() {
     sourceCode,
     getFilename: () => 'handler.ts',
     getSourceCode: () => sourceCode,
-    report: (descriptor: { messageId: string; data?: Record<string, unknown> }) => {
+    report: (descriptor: {
+      messageId: string;
+      data?: Record<string, unknown>;
+    }) => {
       reports.push(descriptor);
     },
   };

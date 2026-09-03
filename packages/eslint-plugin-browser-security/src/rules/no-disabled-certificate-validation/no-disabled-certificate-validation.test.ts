@@ -12,20 +12,26 @@ const ruleTester = new RuleTester({
   },
 });
 
-ruleTester.run('no-disabled-certificate-validation', noDisabledCertificateValidation, {
-  valid: [
-    // Proper SSL configuration
-    { name: 'certificate validation left on', code: "const options = { rejectUnauthorized: true }" },
-    { code: "const config = { strictSSL: true }" },
-    { code: "const settings = { verify: true }" },
-    // Non-SSL code
-    { code: "const x = 1" },
+ruleTester.run(
+  'no-disabled-certificate-validation',
+  noDisabledCertificateValidation,
+  {
+    valid: [
+      // Proper SSL configuration
+      {
+        name: 'certificate validation left on',
+        code: 'const options = { rejectUnauthorized: true }',
+      },
+      { name: 'strictSSL left on', code: 'const config = { strictSSL: true }' },
+      { name: 'verify left on', code: 'const settings = { verify: true }' },
+      // Non-SSL code
+      { name: 'no TLS options object at all', code: 'const x = 1' },
 
-    // ── checkServerIdentity that can still report a mismatch ──────────────
-    // Corpus lock: benchmarks/corpus/CWE-295/safe/
-    //              tls-checkserveridentity-validates.js
-    {
-      code: `
+      // ── checkServerIdentity that can still report a mismatch ──────────────
+      // Corpus lock: benchmarks/corpus/CWE-295/safe/
+      //              tls-checkserveridentity-validates.js
+      {
+        code: `
         tls.connect({
           host,
           port: 443,
@@ -39,84 +45,96 @@ ruleTester.run('no-disabled-certificate-validation', noDisabledCertificateValida
           },
         });
       `,
-    },
-    // Corpus lock: benchmarks/corpus/CWE-295/safe/tls-default-verification.js
-    {
-      code: "https.request({ host, path: '/secret', method: 'GET' }, onRes)",
-    },
-    // Delegation as a single expression.
-    {
-      code: "tls.connect({ checkServerIdentity: (h, c) => tls.checkServerIdentity(h, c) })",
-    },
-    // Throwing is reporting.
-    {
-      code: "tls.connect({ checkServerIdentity: function (h, c) { throw new Error('nope'); } })",
-    },
-    // A named reference is opaque — guessing would be reporting without evidence.
-    { code: "tls.connect({ checkServerIdentity: verifyPeer })" },
-    // Not a `checkServerIdentity` property at all.
-    { code: "tls.connect({ onError: () => undefined })" },
-    { code: "tls.connect({ [dynamicKey]: () => undefined })" },
-    // A `return` outside any checkServerIdentity must not be attributed to one.
-    { code: "function f() { return new Error('x'); }" },
-    { code: "function f() { throw new Error('x'); }" },
-  ],
+      },
+      // Corpus lock: benchmarks/corpus/CWE-295/safe/tls-default-verification.js
+      {
+        code: "https.request({ host, path: '/secret', method: 'GET' }, onRes)",
+      },
+      // Delegation as a single expression.
+      {
+        code: 'tls.connect({ checkServerIdentity: (h, c) => tls.checkServerIdentity(h, c) })',
+      },
+      // Throwing is reporting.
+      {
+        code: "tls.connect({ checkServerIdentity: function (h, c) { throw new Error('nope'); } })",
+      },
+      // A named reference is opaque — guessing would be reporting without evidence.
+      { code: 'tls.connect({ checkServerIdentity: verifyPeer })' },
+      // Not a `checkServerIdentity` property at all.
+      { code: 'tls.connect({ onError: () => undefined })' },
+      { code: 'tls.connect({ [dynamicKey]: () => undefined })' },
+      // A `return` outside any checkServerIdentity must not be attributed to one.
+      { code: "function f() { return new Error('x'); }" },
+      { code: "function f() { throw new Error('x'); }" },
+    ],
 
-  invalid: [
-    // Disabled certificate validation
-    { name: 'rejectUnauthorized false accepts any certificate', code: "const options = { rejectUnauthorized: false }", errors: [{ messageId: 'violationDetected' }] },
-    { code: "https.request({ strictSSL: false })", errors: [{ messageId: 'violationDetected' }] },
-    { code: "const config = { verify: false }", errors: [{ messageId: 'violationDetected' }] },
-    // Environment variable disable
-    { code: "process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'", errors: [{ messageId: 'violationDetected' }] },
+    invalid: [
+      // Disabled certificate validation
+      {
+        name: 'rejectUnauthorized false accepts any certificate',
+        code: 'const options = { rejectUnauthorized: false }',
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      {
+        code: 'https.request({ strictSSL: false })',
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      {
+        code: 'const config = { verify: false }',
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      // Environment variable disable
+      {
+        code: "process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'",
+        errors: [{ messageId: 'violationDetected' }],
+      },
 
-    // ── checkServerIdentity stubbed out ───────────────────────────────────
-    // Corpus lock: benchmarks/corpus/CWE-295/vulnerable/
-    //              tls-checkserveridentity-noop.js
-    {
-      code: `
+      // ── checkServerIdentity stubbed out ───────────────────────────────────
+      // Corpus lock: benchmarks/corpus/CWE-295/vulnerable/
+      //              tls-checkserveridentity-noop.js
+      {
+        code: `
         tls.connect({
           host,
           port: 443,
           checkServerIdentity: () => undefined,
         });
       `,
-      errors: [{ messageId: 'noopHostnameVerification' }],
-    },
-    {
-      code: "tls.connect({ checkServerIdentity: () => null })",
-      errors: [{ messageId: 'noopHostnameVerification' }],
-    },
-    {
-      code: "tls.connect({ checkServerIdentity: () => void 0 })",
-      errors: [{ messageId: 'noopHostnameVerification' }],
-    },
-    {
-      code: "tls.connect({ checkServerIdentity: () => {} })",
-      errors: [{ messageId: 'noopHostnameVerification' }],
-    },
-    {
-      code: "tls.connect({ checkServerIdentity: function () { return; } })",
-      errors: [{ messageId: 'noopHostnameVerification' }],
-    },
-    {
-      code: "tls.connect({ checkServerIdentity: function (h, c) { log(h); return undefined; } })",
-      errors: [{ messageId: 'noopHostnameVerification' }],
-    },
-    {
-      code: "tls.connect({ checkServerIdentity: (h, c) => { return true; } })",
-      errors: [{ messageId: 'noopHostnameVerification' }],
-    },
-    // A nested property that is not the open checkServerIdentity must not pop
-    // the stack out from under it.
-    {
-      code: "tls.connect({ checkServerIdentity: () => { emit({ level: 'debug' }); } })",
-      errors: [{ messageId: 'noopHostnameVerification' }],
-    },
-  ],
-
-
-});
+        errors: [{ messageId: 'noopHostnameVerification' }],
+      },
+      {
+        code: 'tls.connect({ checkServerIdentity: () => null })',
+        errors: [{ messageId: 'noopHostnameVerification' }],
+      },
+      {
+        code: 'tls.connect({ checkServerIdentity: () => void 0 })',
+        errors: [{ messageId: 'noopHostnameVerification' }],
+      },
+      {
+        code: 'tls.connect({ checkServerIdentity: () => {} })',
+        errors: [{ messageId: 'noopHostnameVerification' }],
+      },
+      {
+        code: 'tls.connect({ checkServerIdentity: function () { return; } })',
+        errors: [{ messageId: 'noopHostnameVerification' }],
+      },
+      {
+        code: 'tls.connect({ checkServerIdentity: function (h, c) { log(h); return undefined; } })',
+        errors: [{ messageId: 'noopHostnameVerification' }],
+      },
+      {
+        code: 'tls.connect({ checkServerIdentity: (h, c) => { return true; } })',
+        errors: [{ messageId: 'noopHostnameVerification' }],
+      },
+      // A nested property that is not the open checkServerIdentity must not pop
+      // the stack out from under it.
+      {
+        code: "tls.connect({ checkServerIdentity: () => { emit({ level: 'debug' }); } })",
+        errors: [{ messageId: 'noopHostnameVerification' }],
+      },
+    ],
+  },
+);
 
 // A certificate check relaxed in a TEST file.
 //
@@ -124,10 +142,23 @@ ruleTester.run('no-disabled-certificate-validation', noDisabledCertificateValida
 // certificate has no other way to talk to it. Verified on
 // mariadb-corporation/mariadb-connector-nodejs: 41 findings between this rule
 // and its sibling, every single one under `test/`.
-ruleTester.run('no-disabled-certificate-validation - test files', noDisabledCertificateValidation, {
-  valid: [{ code: `const opts = { ssl: { rejectUnauthorized: false } };`, filename: 'test/integration/auth-plugin.test.js' }],
-  invalid: [
-    // Production code is untouched.
-    { code: `const opts = { ssl: { rejectUnauthorized: false } };`, filename: 'lib/connection.js', errors: 1 },
-  ],
-});
+ruleTester.run(
+  'no-disabled-certificate-validation - test files',
+  noDisabledCertificateValidation,
+  {
+    valid: [
+      {
+        code: `const opts = { ssl: { rejectUnauthorized: false } };`,
+        filename: 'test/integration/auth-plugin.test.js',
+      },
+    ],
+    invalid: [
+      // Production code is untouched.
+      {
+        code: `const opts = { ssl: { rejectUnauthorized: false } };`,
+        filename: 'lib/connection.js',
+        errors: 1,
+      },
+    ],
+  },
+);

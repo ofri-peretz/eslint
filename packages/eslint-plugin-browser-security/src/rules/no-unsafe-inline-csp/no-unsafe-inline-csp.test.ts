@@ -28,13 +28,19 @@ const jsxTester = new RuleTester({
 ruleTester.run('no-unsafe-inline-csp', noUnsafeInlineCsp, {
   valid: [
     // Safe CSP with nonce
-    { name: 'a nonce instead', code: `const csp = "script-src 'self' 'nonce-abc123'";` },
+    {
+      name: 'a nonce instead',
+      code: `const csp = "script-src 'self' 'nonce-abc123'";`,
+    },
     // Safe CSP with hash
     { code: `const csp = "script-src 'self' 'sha256-xxx'";` },
     // No CSP content
     { code: `const message = "Hello world";` },
     // Test files allowed
-    { code: `const csp = "script-src 'unsafe-inline'";`, filename: 'csp.test.ts' },
+    {
+      code: `const csp = "script-src 'unsafe-inline'";`,
+      filename: 'csp.test.ts',
+    },
   ],
   invalid: [
     // String literal with unsafe-inline
@@ -74,51 +80,64 @@ ruleTester.run('no-unsafe-inline-csp', noUnsafeInlineCsp, {
 });
 
 // ── Shape is not meaning: the token alone is not a policy ────────────────────
-ruleTester.run('a policy, not a string containing the token', noUnsafeInlineCsp, {
-  valid: [
-    // The token with no directive and no delivery point. A keyword table, a
-    // docs example, an error message — none of these serve a policy, and the
-    // rule's claim ("inline scripts will execute") is untrue of them.
-    `const CSP_KEYWORDS = ["'self'", "'unsafe-inline'", "'unsafe-eval'"];`,
-    `throw new Error("remove 'unsafe-inline' from your policy");`,
-    "const doc = `the 'unsafe-inline' keyword defeats XSS protection`;",
-    // A header setter whose header is something else entirely.
-    `res.setHeader('X-Docs-Hint', "'unsafe-inline' is not allowed here");`,
-    // A property key that is not a CSP name.
-    `const help = { hint: "'unsafe-inline'" };`,
-    // A computed property key names a variable, not a header.
-    `const o = { [k]: "'unsafe-inline'" };`,
-    // A numeric key is neither an identifier nor a header name.
-    `const rows = { 1: "'unsafe-inline'" };`,
-    // A single-argument call is not a header setter.
-    `log("'unsafe-inline'");`,
-    // A two-argument call whose first argument is not a string literal.
-    `res.setHeader(headerName, "'unsafe-inline'");`,
-  ],
-  invalid: [
-    // Delivered as a header, so it IS a policy even with no directive token
-    // this rule recognises.
-    {
-      code: `res.setHeader('Content-Security-Policy-Report-Only', "'unsafe-inline'");`,
-      errors: [{ messageId: 'unsafeInline' }],
-    },
-    // Same, as an object property in a headers map.
-    {
-      code: `const headers = { 'Content-Security-Policy': "'unsafe-inline'" };`,
-      errors: [{ messageId: 'unsafeInline' }],
-    },
-    // Same, spelled as a camelCase config key.
-    {
-      code: `const config = { contentSecurityPolicy: "'unsafe-inline'" };`,
-      errors: [{ messageId: 'unsafeInline' }],
-    },
-    // The short spelling frameworks use for the same option.
-    {
-      code: `const config = { csp: "'unsafe-inline'" };`,
-      errors: [{ messageId: 'unsafeInline' }],
-    },
-  ],
-});
+ruleTester.run(
+  'a policy, not a string containing the token',
+  noUnsafeInlineCsp,
+  {
+    valid: [
+      // The token with no directive and no delivery point. A keyword table, a
+      // docs example, an error message — none of these serve a policy, and the
+      // rule's claim ("inline scripts will execute") is untrue of them.
+      {
+        name: 'the token inside a keyword table, which declares no policy',
+        code: `const CSP_KEYWORDS = ["'self'", "'unsafe-inline'", "'unsafe-eval'"];`,
+      },
+      {
+        name: 'the token inside an error message telling somebody to remove it',
+        code: `throw new Error("remove 'unsafe-inline' from your policy");`,
+      },
+      {
+        name: 'the token inside prose about the token',
+        code: "const doc = `the 'unsafe-inline' keyword defeats XSS protection`;",
+      },
+      // A header setter whose header is something else entirely.
+      `res.setHeader('X-Docs-Hint', "'unsafe-inline' is not allowed here");`,
+      // A property key that is not a CSP name.
+      `const help = { hint: "'unsafe-inline'" };`,
+      // A computed property key names a variable, not a header.
+      `const o = { [k]: "'unsafe-inline'" };`,
+      // A numeric key is neither an identifier nor a header name.
+      `const rows = { 1: "'unsafe-inline'" };`,
+      // A single-argument call is not a header setter.
+      `log("'unsafe-inline'");`,
+      // A two-argument call whose first argument is not a string literal.
+      `res.setHeader(headerName, "'unsafe-inline'");`,
+    ],
+    invalid: [
+      // Delivered as a header, so it IS a policy even with no directive token
+      // this rule recognises.
+      {
+        code: `res.setHeader('Content-Security-Policy-Report-Only', "'unsafe-inline'");`,
+        errors: [{ messageId: 'unsafeInline' }],
+      },
+      // Same, as an object property in a headers map.
+      {
+        code: `const headers = { 'Content-Security-Policy': "'unsafe-inline'" };`,
+        errors: [{ messageId: 'unsafeInline' }],
+      },
+      // Same, spelled as a camelCase config key.
+      {
+        code: `const config = { contentSecurityPolicy: "'unsafe-inline'" };`,
+        errors: [{ messageId: 'unsafeInline' }],
+      },
+      // The short spelling frameworks use for the same option.
+      {
+        code: `const config = { csp: "'unsafe-inline'" };`,
+        errors: [{ messageId: 'unsafeInline' }],
+      },
+    ],
+  },
+);
 
 // ── The regression the `g` flag caused ───────────────────────────────────────
 ruleTester.run('every policy in the file reports', noUnsafeInlineCsp, {
@@ -133,10 +152,7 @@ ruleTester.run('every policy in the file reports', noUnsafeInlineCsp, {
         `const a = "script-src 'unsafe-inline'";`,
         `const b = "style-src 'unsafe-inline'";`,
       ].join('\n'),
-      errors: [
-        { messageId: 'unsafeInline' },
-        { messageId: 'unsafeInline' },
-      ],
+      errors: [{ messageId: 'unsafeInline' }, { messageId: 'unsafeInline' }],
     },
     // Three in a row: the old code reported the first and third only.
     {
@@ -165,7 +181,7 @@ ruleTester.run('corpus CSP sites', noUnsafeInlineCsp, {
       code:
         'res.setHeader(\n' +
         "  'Content-Security-Policy',\n" +
-        '  `script-src \'unsafe-inline\' http://localhost:${DEFAULT_SERVER_PORT}`\n' +
+        "  `script-src 'unsafe-inline' http://localhost:${DEFAULT_SERVER_PORT}`\n" +
         ');',
       errors: [{ messageId: 'unsafeInline' }],
     },

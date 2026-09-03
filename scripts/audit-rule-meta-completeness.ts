@@ -30,7 +30,13 @@
  *   tsx scripts/audit-rule-meta-completeness.ts --strict   # exit non-zero below floors (CI gate)
  */
 
-import { readdirSync, readFileSync, writeFileSync, statSync, mkdirSync } from 'node:fs';
+import {
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+  statSync,
+  mkdirSync,
+} from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -90,19 +96,25 @@ function isPluginDir(name: string): boolean {
 
 function listPluginDirs(): string[] {
   return readdirSync(PACKAGES_DIR, { withFileTypes: true })
-    .filter(d => d.isDirectory() && isPluginDir(d.name))
-    .map(d => join(PACKAGES_DIR, d.name))
-    .filter(p => {
-      try { return statSync(join(p, 'src')).isDirectory(); }
-      catch { return false; }
+    .filter((d) => d.isDirectory() && isPluginDir(d.name))
+    .map((d) => join(PACKAGES_DIR, d.name))
+    .filter((p) => {
+      try {
+        return statSync(join(p, 'src')).isDirectory();
+      } catch {
+        return false;
+      }
     });
 }
 
 function walkTsFiles(dir: string): string[] {
   const out: string[] = [];
   let entries;
-  try { entries = readdirSync(dir, { withFileTypes: true }); }
-  catch { return out; }
+  try {
+    entries = readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return out;
+  }
   for (const entry of entries) {
     const full = join(dir, entry.name);
     if (entry.isDirectory()) {
@@ -170,7 +182,10 @@ function hasRuleMetaBlock(source: string): boolean {
 function isPluginMetaBlock(source: string, braceIdx: number): boolean {
   const block = extractBalancedBlock(source, braceIdx);
   if (!block) return false;
-  return /\bversion\s*:/.test(block) && !/\b(docs|messages|schema|type)\s*:/.test(block);
+  return (
+    /\bversion\s*:/.test(block) &&
+    !/\b(docs|messages|schema|type)\s*:/.test(block)
+  );
 }
 
 /**
@@ -189,14 +204,20 @@ function extractRuleNamesAroundMeta(source: string): string[] {
     if (isPluginMetaBlock(source, m.index + m[0].length - 1)) continue;
     const lookbehind = source.slice(Math.max(0, m.index - 400), m.index);
     let name: string | null = null;
-    const stringRule = lookbehind.match(/['"]([a-z][a-z0-9-]+)['"]\s*:\s*\{[^}]*$/);
+    const stringRule = lookbehind.match(
+      /['"]([a-z][a-z0-9-]+)['"]\s*:\s*\{[^}]*$/,
+    );
     if (stringRule) name = stringRule[1]!;
     if (!name) {
-      const exportConst = lookbehind.match(/export\s+const\s+([A-Za-z_][\w]*)[\s:=]/);
+      const exportConst = lookbehind.match(
+        /export\s+const\s+([A-Za-z_][\w]*)[\s:=]/,
+      );
       if (exportConst) name = camelToKebab(exportConst[1]!);
     }
     if (!name) {
-      const constLet = lookbehind.match(/(?:const|let)\s+([A-Za-z_][\w]*)[\s:=]/);
+      const constLet = lookbehind.match(
+        /(?:const|let)\s+([A-Za-z_][\w]*)[\s:=]/,
+      );
       if (constLet) name = camelToKebab(constLet[1]!);
     }
     if (name) names.push(name);
@@ -234,17 +255,34 @@ function extractBalancedBlock(source: string, openIdx: number): string | null {
       continue;
     }
     if (inBlockComment) {
-      if (ch === '*' && next === '/') { inBlockComment = false; i++; }
+      if (ch === '*' && next === '/') {
+        inBlockComment = false;
+        i++;
+      }
       continue;
     }
     if (inString) {
-      if (ch === '\\') { i++; continue; }
+      if (ch === '\\') {
+        i++;
+        continue;
+      }
       if (ch === inString) inString = null;
       continue;
     }
-    if (ch === '/' && next === '/') { inLineComment = true; i++; continue; }
-    if (ch === '/' && next === '*') { inBlockComment = true; i++; continue; }
-    if (ch === '"' || ch === "'" || ch === '`') { inString = ch as StringDelim; continue; }
+    if (ch === '/' && next === '/') {
+      inLineComment = true;
+      i++;
+      continue;
+    }
+    if (ch === '/' && next === '*') {
+      inBlockComment = true;
+      i++;
+      continue;
+    }
+    if (ch === '"' || ch === "'" || ch === '`') {
+      inString = ch as StringDelim;
+      continue;
+    }
     if (ch === '{') depth++;
     else if (ch === '}') {
       depth--;
@@ -269,16 +307,39 @@ function findKeyBlock(scope: string, key: string): string | null {
     for (let i = 0; i < openIdx; i++) {
       const ch = scope[i];
       const next = scope[i + 1];
-      if (inLineComment) { if (ch === '\n') inLineComment = false; continue; }
-      if (inBlockComment) { if (ch === '*' && next === '/') { inBlockComment = false; i++; } continue; }
+      if (inLineComment) {
+        if (ch === '\n') inLineComment = false;
+        continue;
+      }
+      if (inBlockComment) {
+        if (ch === '*' && next === '/') {
+          inBlockComment = false;
+          i++;
+        }
+        continue;
+      }
       if (inString) {
-        if (ch === '\\') { i++; continue; }
+        if (ch === '\\') {
+          i++;
+          continue;
+        }
         if (ch === inString) inString = null;
         continue;
       }
-      if (ch === '/' && next === '/') { inLineComment = true; i++; continue; }
-      if (ch === '/' && next === '*') { inBlockComment = true; i++; continue; }
-      if (ch === '"' || ch === "'" || ch === '`') { inString = ch as StringDelim; continue; }
+      if (ch === '/' && next === '/') {
+        inLineComment = true;
+        i++;
+        continue;
+      }
+      if (ch === '/' && next === '*') {
+        inBlockComment = true;
+        i++;
+        continue;
+      }
+      if (ch === '"' || ch === "'" || ch === '`') {
+        inString = ch as StringDelim;
+        continue;
+      }
       if (ch === '{') depth++;
       else if (ch === '}') depth--;
     }
@@ -300,16 +361,39 @@ function hasKey(scope: string, key: string): boolean {
     for (let i = 0; i < idx; i++) {
       const ch = scope[i];
       const next = scope[i + 1];
-      if (inLineComment) { if (ch === '\n') inLineComment = false; continue; }
-      if (inBlockComment) { if (ch === '*' && next === '/') { inBlockComment = false; i++; } continue; }
+      if (inLineComment) {
+        if (ch === '\n') inLineComment = false;
+        continue;
+      }
+      if (inBlockComment) {
+        if (ch === '*' && next === '/') {
+          inBlockComment = false;
+          i++;
+        }
+        continue;
+      }
       if (inString) {
-        if (ch === '\\') { i++; continue; }
+        if (ch === '\\') {
+          i++;
+          continue;
+        }
         if (ch === inString) inString = null;
         continue;
       }
-      if (ch === '/' && next === '/') { inLineComment = true; i++; continue; }
-      if (ch === '/' && next === '*') { inBlockComment = true; i++; continue; }
-      if (ch === '"' || ch === "'" || ch === '`') { inString = ch as StringDelim; continue; }
+      if (ch === '/' && next === '/') {
+        inLineComment = true;
+        i++;
+        continue;
+      }
+      if (ch === '/' && next === '*') {
+        inBlockComment = true;
+        i++;
+        continue;
+      }
+      if (ch === '"' || ch === "'" || ch === '`') {
+        inString = ch as StringDelim;
+        continue;
+      }
       if (ch === '{') depth++;
       else if (ch === '}') depth--;
     }
@@ -342,7 +426,11 @@ function detectEmbeddedCwe(source: string): boolean {
 // AUDIT
 // ---------------------------------------------------------------------------
 
-function auditRule(ruleName: string, path: string, occurrenceIndex = 0): RuleAudit {
+function auditRule(
+  ruleName: string,
+  path: string,
+  occurrenceIndex = 0,
+): RuleAudit {
   const source = readFileSync(path, 'utf8');
   const meta = findNthMetaBlock(source, occurrenceIndex);
   if (!meta) {
@@ -378,10 +466,12 @@ function auditRule(ruleName: string, path: string, occurrenceIndex = 0): RuleAud
   // Score: 4 core fields (type, description, url) + 2 advanced (cwe, cvss)
   // + 2 contextual (fixable, hasSuggestions). Total 7. We weight the core
   // 3 heavier — they're what the formatter renders by default.
-  const core = (checks.type ? 1 : 0) + (checks.description ? 1 : 0) + (checks.url ? 1 : 0);
+  const core =
+    (checks.type ? 1 : 0) + (checks.description ? 1 : 0) + (checks.url ? 1 : 0);
   const advanced = (checks.cwe ? 1 : 0) + (checks.cvss ? 1 : 0);
   const contextual = (checks.fixable ? 1 : 0) + (checks.hasSuggestions ? 1 : 0);
-  const score = (core * 3 + advanced * 2 + contextual * 1) / (3 * 3 + 2 * 2 + 1 * 2);
+  const score =
+    (core * 3 + advanced * 2 + contextual * 1) / (3 * 3 + 2 * 2 + 1 * 2);
 
   return {
     ruleName,
@@ -395,20 +485,21 @@ function auditRule(ruleName: string, path: string, occurrenceIndex = 0): RuleAud
 
 function auditPlugin(pluginDir: string): PluginAudit | null {
   const pluginName = relative(PACKAGES_DIR, pluginDir);
-  const rules = listRuleDefinitions(pluginDir).map(({ ruleName, path, occurrenceIndex }) =>
-    auditRule(ruleName, path, occurrenceIndex),
+  const rules = listRuleDefinitions(pluginDir).map(
+    ({ ruleName, path, occurrenceIndex }) =>
+      auditRule(ruleName, path, occurrenceIndex),
   );
   const ruleCount = rules.length;
   if (ruleCount === 0) return null;
   const counts = {
-    type: rules.filter(r => r.type).length,
-    description: rules.filter(r => r.description).length,
-    url: rules.filter(r => r.url).length,
-    cwe: rules.filter(r => r.cwe).length,
-    cvss: rules.filter(r => r.cvss).length,
-    fixable: rules.filter(r => r.fixable).length,
-    hasSuggestions: rules.filter(r => r.hasSuggestions).length,
-    cweEmbeddedInMessage: rules.filter(r => r.cweEmbeddedInMessage).length,
+    type: rules.filter((r) => r.type).length,
+    description: rules.filter((r) => r.description).length,
+    url: rules.filter((r) => r.url).length,
+    cwe: rules.filter((r) => r.cwe).length,
+    cvss: rules.filter((r) => r.cvss).length,
+    fixable: rules.filter((r) => r.fixable).length,
+    hasSuggestions: rules.filter((r) => r.hasSuggestions).length,
+    cweEmbeddedInMessage: rules.filter((r) => r.cweEmbeddedInMessage).length,
   };
   const avgScore = rules.reduce((s, r) => s + r.score, 0) / ruleCount;
   return {
@@ -433,44 +524,77 @@ function buildMarkdown(audit: PluginAudit[]): string {
   const lines: string[] = [];
   lines.push('# Plugin Rule Meta Hygiene Audit');
   lines.push('');
-  lines.push(`> Generated by \`tsx scripts/audit-rule-meta-completeness.ts\` on ${new Date().toISOString().slice(0, 10)}.`);
-  lines.push('> Source-of-truth contract: every rule should populate the fields the whole-run formatter renders. Holes here translate directly into less-actionable LLM output.');
+  lines.push(
+    `> Generated by \`tsx scripts/audit-rule-meta-completeness.ts\` on ${new Date().toISOString().slice(0, 10)}.`,
+  );
+  lines.push(
+    '> Source-of-truth contract: every rule should populate the fields the whole-run formatter renders. Holes here translate directly into less-actionable LLM output.',
+  );
   lines.push('');
   lines.push('## What we check');
   lines.push('');
   lines.push('| Field | Why the formatter cares |');
   lines.push('| :--- | :--- |');
-  lines.push('| `meta.type` | Drives ESLint built-in classification — `problem` vs `suggestion` vs `layout`. |');
-  lines.push('| `meta.docs.description` | Fallback in the formatter when no per-message text is present. |');
-  lines.push('| `meta.docs.url` | Rendered as a clickable docs link in human + JSON modes. |');
-  lines.push('| `meta.docs.cwe` *(Interlace ext.)* | Surfaced inline in human + compact + JSON + XML + NDJSON. Most actionable single TP-classification field for a security finding. |');
-  lines.push('| `meta.docs.cvss` *(Interlace ext.)* | Surfaced as severity context in human + JSON + XML + NDJSON. |');
-  lines.push('| `meta.fixable` | Drives the `(fixable)` / `[fixable]` markers in every mode. |');
-  lines.push('| `meta.hasSuggestions` | Drives the `(has suggestions)` marker + lifts ESLint suggestions into the formatter render. |');
+  lines.push(
+    '| `meta.type` | Drives ESLint built-in classification — `problem` vs `suggestion` vs `layout`. |',
+  );
+  lines.push(
+    '| `meta.docs.description` | Fallback in the formatter when no per-message text is present. |',
+  );
+  lines.push(
+    '| `meta.docs.url` | Rendered as a clickable docs link in human + JSON modes. |',
+  );
+  lines.push(
+    '| `meta.docs.cwe` *(Interlace ext.)* | Surfaced inline in human + compact + JSON + XML + NDJSON. Most actionable single TP-classification field for a security finding. |',
+  );
+  lines.push(
+    '| `meta.docs.cvss` *(Interlace ext.)* | Surfaced as severity context in human + JSON + XML + NDJSON. |',
+  );
+  lines.push(
+    '| `meta.fixable` | Drives the `(fixable)` / `[fixable]` markers in every mode. |',
+  );
+  lines.push(
+    '| `meta.hasSuggestions` | Drives the `(has suggestions)` marker + lifts ESLint suggestions into the formatter render. |',
+  );
   lines.push('');
   lines.push('## Per-plugin summary');
   lines.push('');
-  lines.push('Sorted by descending completeness. CWE column counts rules with `meta.docs.cwe` set; the parenthesised number after it is rules where CWE is *embedded inside `formatLLMMessage`* (so the rule "has a CWE" but the formatter cannot see it — these are recommended fixes).');
+  lines.push(
+    'Sorted by descending completeness. CWE column counts rules with `meta.docs.cwe` set; the parenthesised number after it is rules where CWE is *embedded inside `formatLLMMessage`* (so the rule "has a CWE" but the formatter cannot see it — these are recommended fixes).',
+  );
   lines.push('');
-  lines.push('| Plugin | Rules | Score | type | description | url | **cwe** | cvss | fixable | hasSuggestions |');
-  lines.push('| :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |');
+  lines.push(
+    '| Plugin | Rules | Score | type | description | url | **cwe** | cvss | fixable | hasSuggestions |',
+  );
+  lines.push(
+    '| :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |',
+  );
   const sorted = [...audit].toSorted((a, b) => b.avgScore - a.avgScore);
   for (const p of sorted) {
-    const cweCol = p.counts.cweEmbeddedInMessage > 0
-      ? `${p.counts.cwe}/${p.ruleCount} (+${p.counts.cweEmbeddedInMessage} embedded)`
-      : `${p.counts.cwe}/${p.ruleCount}`;
-    lines.push(`| \`${p.pluginName}\` | ${p.ruleCount} | ${(p.avgScore * 100).toFixed(0)}% | ${pct(p.counts.type, p.ruleCount)} | ${pct(p.counts.description, p.ruleCount)} | ${pct(p.counts.url, p.ruleCount)} | ${cweCol} | ${pct(p.counts.cvss, p.ruleCount)} | ${pct(p.counts.fixable, p.ruleCount)} | ${pct(p.counts.hasSuggestions, p.ruleCount)} |`);
+    const cweCol =
+      p.counts.cweEmbeddedInMessage > 0
+        ? `${p.counts.cwe}/${p.ruleCount} (+${p.counts.cweEmbeddedInMessage} embedded)`
+        : `${p.counts.cwe}/${p.ruleCount}`;
+    lines.push(
+      `| \`${p.pluginName}\` | ${p.ruleCount} | ${(p.avgScore * 100).toFixed(0)}% | ${pct(p.counts.type, p.ruleCount)} | ${pct(p.counts.description, p.ruleCount)} | ${pct(p.counts.url, p.ruleCount)} | ${cweCol} | ${pct(p.counts.cvss, p.ruleCount)} | ${pct(p.counts.fixable, p.ruleCount)} | ${pct(p.counts.hasSuggestions, p.ruleCount)} |`,
+    );
   }
   lines.push('');
 
-  const allRules = audit.flatMap(p => p.rules.map(r => ({ ...r, pluginName: p.pluginName })));
-  const missingCore = allRules.filter(r => r.hasMeta && (!r.type || !r.description || !r.url));
+  const allRules = audit.flatMap((p) =>
+    p.rules.map((r) => ({ ...r, pluginName: p.pluginName })),
+  );
+  const missingCore = allRules.filter(
+    (r) => r.hasMeta && (!r.type || !r.description || !r.url),
+  );
   lines.push('## Rules missing core fields (`type` / `description` / `url`)');
   lines.push('');
   if (missingCore.length === 0) {
     lines.push('None — every rule has the three core meta fields. ✅');
   } else {
-    lines.push(`${missingCore.length} rule(s) are missing one of the three fields the formatter falls back on:`);
+    lines.push(
+      `${missingCore.length} rule(s) are missing one of the three fields the formatter falls back on:`,
+    );
     lines.push('');
     lines.push('| Plugin | Rule | Missing |');
     lines.push('| :--- | :--- | :--- |');
@@ -479,7 +603,9 @@ function buildMarkdown(audit: PluginAudit[]): string {
       if (!r.type) missing.push('`type`');
       if (!r.description) missing.push('`description`');
       if (!r.url) missing.push('`url`');
-      lines.push(`| \`${r.pluginName}\` | \`${r.ruleName}\` | ${missing.join(', ')} |`);
+      lines.push(
+        `| \`${r.pluginName}\` | \`${r.ruleName}\` | ${missing.join(', ')} |`,
+      );
     }
     if (missingCore.length > 50) {
       lines.push(`| _… ${missingCore.length - 50} more_ | | |`);
@@ -487,13 +613,17 @@ function buildMarkdown(audit: PluginAudit[]): string {
   }
   lines.push('');
 
-  const embedded = allRules.filter(r => r.cweEmbeddedInMessage);
+  const embedded = allRules.filter((r) => r.cweEmbeddedInMessage);
   lines.push('## CWE embedded in messages but not in `meta.docs.cwe`');
   lines.push('');
   if (embedded.length === 0) {
-    lines.push('None — every rule that knows its CWE exposes it via `meta.docs.cwe`. ✅');
+    lines.push(
+      'None — every rule that knows its CWE exposes it via `meta.docs.cwe`. ✅',
+    );
   } else {
-    lines.push(`${embedded.length} rule(s) put their CWE inside \`formatLLMMessage(...)\` in \`messages.*\` rather than on \`meta.docs.cwe\`. The formatter can't see those, so no CWE prefix appears in the output. Lifting the value to \`meta.docs.cwe\` is a one-line change per rule and unlocks security context in every render.`);
+    lines.push(
+      `${embedded.length} rule(s) put their CWE inside \`formatLLMMessage(...)\` in \`messages.*\` rather than on \`meta.docs.cwe\`. The formatter can't see those, so no CWE prefix appears in the output. Lifting the value to \`meta.docs.cwe\` is a one-line change per rule and unlocks security context in every render.`,
+    );
     lines.push('');
     lines.push('| Plugin | Rule |');
     lines.push('| :--- | :--- |');
@@ -506,10 +636,14 @@ function buildMarkdown(audit: PluginAudit[]): string {
   }
   lines.push('');
 
-  const fullyDecorated = allRules.filter(r => r.hasMeta && r.type && r.description && r.url && r.cwe);
+  const fullyDecorated = allRules.filter(
+    (r) => r.hasMeta && r.type && r.description && r.url && r.cwe,
+  );
   lines.push(`## Fully-decorated rules (have type + description + url + cwe)`);
   lines.push('');
-  lines.push(`${fullyDecorated.length} of ${allRules.length} (${pct(fullyDecorated.length, allRules.length)}).`);
+  lines.push(
+    `${fullyDecorated.length} of ${allRules.length} (${pct(fullyDecorated.length, allRules.length)}).`,
+  );
   lines.push('');
 
   return lines.join('\n');
@@ -519,25 +653,41 @@ function buildConsoleSummary(audit: PluginAudit[]): string {
   const lines: string[] = [];
   const total = audit.reduce((s, p) => s + p.ruleCount, 0);
   const totalCwe = audit.reduce((s, p) => s + p.counts.cwe, 0);
-  const totalEmbedded = audit.reduce((s, p) => s + p.counts.cweEmbeddedInMessage, 0);
+  const totalEmbedded = audit.reduce(
+    (s, p) => s + p.counts.cweEmbeddedInMessage,
+    0,
+  );
   lines.push(`Audit: ${audit.length} plugins · ${total} rules total`);
   lines.push('');
-  lines.push('Plugin                                 Rules  Score  desc   url    cwe (embedded)');
-  lines.push('────────────────────────────────────  ─────  ─────  ─────  ─────  ──────────────');
+  lines.push(
+    'Plugin                                 Rules  Score  desc   url    cwe (embedded)',
+  );
+  lines.push(
+    '────────────────────────────────────  ─────  ─────  ─────  ─────  ──────────────',
+  );
   const sorted = [...audit].toSorted((a, b) => b.avgScore - a.avgScore);
   for (const p of sorted) {
-    lines.push([
-      p.pluginName.padEnd(38),
-      String(p.ruleCount).padStart(5),
-      `${(p.avgScore * 100).toFixed(0)}%`.padStart(5),
-      pct(p.counts.description, p.ruleCount).padStart(5),
-      pct(p.counts.url, p.ruleCount).padStart(5),
-      `${p.counts.cwe}/${p.ruleCount}`.padStart(7) + (p.counts.cweEmbeddedInMessage > 0 ? ` (+${p.counts.cweEmbeddedInMessage})` : ''),
-    ].join('  '));
+    lines.push(
+      [
+        p.pluginName.padEnd(38),
+        String(p.ruleCount).padStart(5),
+        `${(p.avgScore * 100).toFixed(0)}%`.padStart(5),
+        pct(p.counts.description, p.ruleCount).padStart(5),
+        pct(p.counts.url, p.ruleCount).padStart(5),
+        `${p.counts.cwe}/${p.ruleCount}`.padStart(7) +
+          (p.counts.cweEmbeddedInMessage > 0
+            ? ` (+${p.counts.cweEmbeddedInMessage})`
+            : ''),
+      ].join('  '),
+    );
   }
   lines.push('');
-  lines.push(`Across all plugins: ${totalCwe}/${total} rules expose CWE at meta.docs.cwe (formatter-visible).`);
-  lines.push(`Embedded-only CWE  : ${totalEmbedded} more rule(s) have CWE inside formatLLMMessage but not at meta.docs.cwe — formatter cannot see them.`);
+  lines.push(
+    `Across all plugins: ${totalCwe}/${total} rules expose CWE at meta.docs.cwe (formatter-visible).`,
+  );
+  lines.push(
+    `Embedded-only CWE  : ${totalEmbedded} more rule(s) have CWE inside formatLLMMessage but not at meta.docs.cwe — formatter cannot see them.`,
+  );
   return lines.join('\n');
 }
 
@@ -573,15 +723,25 @@ function checkStrictFloors(audit: PluginAudit[]): string[] {
   for (const p of audit) {
     const descPct = p.counts.description / p.ruleCount;
     if (descPct < STRICT_FLOORS.descriptionPct) {
-      failures.push(`${p.pluginName}: description ${pct(p.counts.description, p.ruleCount)} below floor ${STRICT_FLOORS.descriptionPct * 100}%`);
+      failures.push(
+        `${p.pluginName}: description ${pct(p.counts.description, p.ruleCount)} below floor ${STRICT_FLOORS.descriptionPct * 100}%`,
+      );
     }
     if (p.avgScore < STRICT_FLOORS.scorePct) {
-      failures.push(`${p.pluginName}: overall score ${(p.avgScore * 100).toFixed(0)}% below floor ${STRICT_FLOORS.scorePct * 100}%`);
+      failures.push(
+        `${p.pluginName}: overall score ${(p.avgScore * 100).toFixed(0)}% below floor ${STRICT_FLOORS.scorePct * 100}%`,
+      );
     }
     if (SECURITY_PLUGIN_RE.test(p.pluginName)) {
       const cwePct = p.counts.cwe / p.ruleCount;
       if (cwePct < STRICT_FLOORS.cwePctSecurity) {
-        failures.push(`${p.pluginName}: CWE coverage ${pct(p.counts.cwe, p.ruleCount)} below security-plugin floor ${STRICT_FLOORS.cwePctSecurity * 100}%`);
+        // Report the RATIO, not `pct()`. pct() rounds, so 11/13 printed as
+        // "85%" and the failure read "CWE coverage 85% below floor 85%" — a
+        // sentence that cannot be true, sending the reader to look for a
+        // rounding bug in the floor rather than at the two rules missing a CWE.
+        failures.push(
+          `${p.pluginName}: CWE coverage ${p.counts.cwe}/${p.ruleCount} below security-plugin floor ${STRICT_FLOORS.cwePctSecurity * 100}%`,
+        );
       }
     }
   }
@@ -596,7 +756,9 @@ function main(): void {
   const wantJson = process.argv.includes('--json');
   const strict = process.argv.includes('--strict');
   const plugins = listPluginDirs();
-  const audit = plugins.map(auditPlugin).filter((p): p is PluginAudit => p !== null);
+  const audit = plugins
+    .map(auditPlugin)
+    .filter((p): p is PluginAudit => p !== null);
 
   if (wantJson) {
     process.stdout.write(JSON.stringify(audit, null, 2) + '\n');
@@ -615,9 +777,13 @@ function main(): void {
     const failures = checkStrictFloors(audit);
     console.log('');
     if (failures.length === 0) {
-      console.log(`Strict mode: PASS — every plugin clears the completeness floors (description ≥ ${STRICT_FLOORS.descriptionPct * 100}%, score ≥ ${STRICT_FLOORS.scorePct * 100}%, security-plugin CWE ≥ ${STRICT_FLOORS.cwePctSecurity * 100}%).`);
+      console.log(
+        `Strict mode: PASS — every plugin clears the completeness floors (description ≥ ${STRICT_FLOORS.descriptionPct * 100}%, score ≥ ${STRICT_FLOORS.scorePct * 100}%, security-plugin CWE ≥ ${STRICT_FLOORS.cwePctSecurity * 100}%).`,
+      );
     } else {
-      console.log(`Strict mode: FAIL — ${failures.length} plugin-level violation(s):`);
+      console.log(
+        `Strict mode: FAIL — ${failures.length} plugin-level violation(s):`,
+      );
       for (const f of failures) console.log(`  • ${f}`);
       process.exit(1);
     }

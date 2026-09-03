@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-secure-coding",
   "version": "5.3.1",
-  "description": "ESLint plugin for secure coding — detects LDAP, XPath, XXE, GraphQL and template injection, unsafe deserialization, ReDoS, missing authentication, and PII in logs.",
+  "description": "ESLint plugin for secure coding \u2014 detects LDAP, XPath, XXE, GraphQL and template injection, unsafe deserialization, ReDoS, missing authentication, and PII in logs.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -107,6 +107,12 @@
   "peerDependenciesMeta": {
     "recheck": {
       "optional": true
+    }
+  },
+  "interlace": {
+    "surface": {
+      "kind": "language",
+      "note": "Generic JS: eval, Function, regex, serialization, credentials. `recheck` is a ReDoS oracle this plugin CALLS, not a surface it analyses \u2014 the distinction the measurement got wrong, reading its surface as recheck's two exports."
     }
   }
 }

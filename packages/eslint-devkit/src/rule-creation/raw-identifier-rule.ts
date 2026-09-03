@@ -48,6 +48,7 @@
 // so a *runtime value*, and `@typescript-eslint/utils` is an optional peer npm
 // does not install. See sql-injection-rule.ts for the full note.
 import { AST_NODE_TYPES } from '../ast-node-types';
+import { propertyName } from '../ast/spellings';
 import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
 import { formatLLMMessage, MessageIcons } from '../messaging';
 import { driverBindings } from './unscoped-mutation-rule';
@@ -201,9 +202,12 @@ export function identifierPosition(
 /** Dotted source text of a callee, e.g. `sql.identifier`. */
 export function calleeText(node: TSESTree.Node): string {
   if (node.type === AST_NODE_TYPES.Identifier) return node.name;
-  if (node.type === AST_NODE_TYPES.MemberExpression && !node.computed) {
+  if (node.type === AST_NODE_TYPES.MemberExpression) {
+    // `sql['identifier']` names the same callee `sql.identifier` names. A key
+    // chosen at runtime names nothing, and returning '' keeps the pre-existing
+    // "no match" behaviour for that shape.
     const object = calleeText(node.object);
-    const property = calleeText(node.property);
+    const property = propertyName(node);
     return object && property ? `${object}.${property}` : '';
   }
   return '';
@@ -242,12 +246,11 @@ export function isExemptExpression(
 /** The matched name of a template tag: `sql` or `$queryRaw`. */
 export function tagName(tag: TSESTree.Node): string | undefined {
   if (tag.type === AST_NODE_TYPES.Identifier) return tag.name;
-  if (
-    tag.type === AST_NODE_TYPES.MemberExpression &&
-    !tag.computed &&
-    tag.property.type === AST_NODE_TYPES.Identifier
-  ) {
-    return tag.property.name;
+  if (tag.type === AST_NODE_TYPES.MemberExpression) {
+    // `prisma['$queryRaw']` tags the same template `prisma.$queryRaw` tags,
+    // and a bundler emits the first. `propertyName` returns null for a key
+    // chosen at runtime, which names no tag.
+    return propertyName(tag) ?? undefined;
   }
   return undefined;
 }
