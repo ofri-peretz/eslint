@@ -200,20 +200,17 @@ runs:
     #
     # Both cache steps are named because only one of them runs: the other is
     # skipped and reports an empty `cache-hit`, which is correctly "not a hit".
-    - name: Resolve npm cache directory
-      if: inputs.install == 'true' && steps.node-modules-cache-full.outputs.cache-hit != 'true' && steps.node-modules-cache-lean.outputs.cache-hit != 'true'
-      id: npm-cache-dir
-      shell: bash
-      run: echo "dir=$(npm config get cache)" >> "$GITHUB_OUTPUT"
-
-    - name: Restore npm registry cache (only when npm ci will run)
-      if: inputs.install == 'true' && steps.node-modules-cache-full.outputs.cache-hit != 'true' && steps.node-modules-cache-lean.outputs.cache-hit != 'true'
-      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
-      with:
-        path: ${{ steps.npm-cache-dir.outputs.dir }}
-        key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-        restore-keys: |
-          npm-${{ runner.os }}-
+    # The npm registry cache was removed on 2026-09-02. It only ever restored on
+    # the path where the node_modules cache had already missed — a lockfile
+    # change — and it held 2.36 GB across four entries.
+    #
+    # Actions cache is capped at 10 GB PER REPOSITORY on every plan, and this
+    # repo measured 9.73 GB across 685 entries: 97% full, so GitHub was evicting
+    # LRU on every write. Under eviction a cache is not free storage, it is a
+    # bidder against every other cache. 2.36 GB held for the rare path was
+    # outbidding node_modules (3.74 GB) and Next.js (2.68 GB) on the common one.
+    #
+    # `npm ci` still runs on that path; it fetches from the registry instead.
 
     - name: Install dependencies
       if: inputs.install == 'true' && steps.node-modules-cache-full.outputs.cache-hit != 'true' && steps.node-modules-cache-lean.outputs.cache-hit != 'true'
@@ -271,9 +268,29 @@ runs:
     # it needs no secret, so it keeps working on pull requests from forks (which
     # never receive secrets), and it adds no external service to the critical
     # path of CI correctness.
-    - name: Turborepo remote cache (GitHub Actions backend)
-      if: inputs.turbo-remote-cache == 'true'
+    # Vercel's hosted cache is used when `TURBO_TOKEN` is present, and this
+    # backend when it is not. That keeps both original reasons intact: a fork PR
+    # receives no secrets, so it lands here and still caches, and an outage of
+    # the hosted cache is a fallback rather than a CI failure.
+    #
+    # What changed on 2026-09-02 is the constraint, not the reasoning. This
+    # backend stores turbo artifacts in the SAME 10 GB Actions allowance that
+    # node_modules, Next.js and Playwright compete for, and that allowance was
+    # 97% full. A cache that evicts its neighbours is not free. The hosted cache
+    # is off that budget entirely and, unlike Actions cache, is readable across
+    # branches — which is what a merge-queue run (all shards, synthetic branch)
+    # needs to hit anything at all.
+    #
+    # Exactly one of these runs. Both at once would leave the shim's local
+    # TURBO_API pointing at localhost while credentials say Vercel.
+    - name: Turborepo remote cache (GitHub Actions backend — no token)
+      if: inputs.turbo-remote-cache == 'true' && env.TURBO_TOKEN == ''
       uses: rharkor/caching-for-turbo@2238fae6eb9a9936f92356f54cb3660200d105e7 # v2.5.1
+
+    - name: Turborepo remote cache (Vercel — token present)
+      if: inputs.turbo-remote-cache == 'true' && env.TURBO_TOKEN != ''
+      shell: bash
+      run: echo "Remote cache = Vercel (TURBO_TEAM=${TURBO_TEAM:-unset})"
 
     - name: Restore Turbo cache (branches — read-only)
       if: inputs.turbo-cache == 'true' && github.ref != 'refs/heads/main'
