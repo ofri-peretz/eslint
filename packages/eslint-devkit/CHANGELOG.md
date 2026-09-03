@@ -5,6 +5,16 @@ All notable changes to `@interlace/eslint-devkit` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 1.19.2
+
+### Patch Changes
+
+- **🐛 Fix** — `createRawIdentifierRule` reads a subscripted tag and callee
+
+  `tagName` and `calleeText` both required a dotted member, so
+  ``prisma['$queryRaw']`SELECT * FROM ${table}` `` was not recognised as a raw
+  query tag at all. Shared by the Prisma and Drizzle raw-identifier rules.
+
 ## 1.19.1
 
 ### Patch Changes

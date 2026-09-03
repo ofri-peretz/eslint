@@ -5,6 +5,17 @@ All notable changes to `eslint-plugin-import-next` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.7.3
+
+### Patch Changes
+
+- **🐛 Fix** — `obj['deprecatedProp']` reads the same deprecated export
+
+  `no-deprecated` resolved member reads on `property.name`, so the subscripted
+  spelling of a deprecated export was not reported.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.2`
+
 ## 2.7.2
 
 ### Patch Changes
