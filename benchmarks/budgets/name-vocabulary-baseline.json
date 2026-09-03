@@ -1,4 +1,5 @@
 {
+  "command": "npm run check:name-vocabulary -- --update",
   "note": "Rules that decide from an identifier name with no option to REPLACE the vocabulary. Shrink-only.",
   "rules": []
 }

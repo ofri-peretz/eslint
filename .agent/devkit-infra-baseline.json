@@ -1,9 +1,8 @@
 {
+  "command": "npx tsx scripts/devkit-infra-metrics.ts --update",
   "generated": "2026-08-30",
   "metrics": {
-    "mandatoryPeers": [
-      "eslint"
-    ],
+    "mandatoryPeers": ["eslint"],
     "barrelOwnFiles": 45,
     "barrelOwnKb": 180,
     "barrelExternals": [],

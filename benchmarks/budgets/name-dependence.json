@@ -1,5 +1,6 @@
 {
-  "note": "Rules whose verdict changed when every local binding was renamed to foo1, foo2, … The rename litmus, mechanised: a rule listed here decided from a NAME. That is only a defect when the consumer cannot replace the vocabulary — see scripts/check-name-vocabulary.ts. Regenerate with `npx tsx scripts/name-dependence-probe.mts`.",
+  "command": "npx tsx scripts/name-dependence-probe.mts",
+  "note": "Rules whose verdict changed when every local binding was renamed to foo1, foo2, \u2026 The rename litmus, mechanised: a rule listed here decided from a NAME. That is only a defect when the consumer cannot replace the vocabulary \u2014 see scripts/check-name-vocabulary.ts. Regenerate with `npx tsx scripts/name-dependence-probe.mts`.",
   "generated": "2026-09-03",
   "probeStamp": "0f8711c07532e914",
   "probed": 2449,

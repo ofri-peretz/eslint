@@ -1,4 +1,5 @@
 {
+  "command": "npm run rule-cases -- --update",
   "note": "Cases that run without a `name`, per rule. Shrink-only: a rule may never gain one.",
   "rules": {
     "anthropic-security/no-hardcoded-api-key": 19,

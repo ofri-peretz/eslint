@@ -1,4 +1,5 @@
 {
+  "command": "npm run audit:spellings -- --update",
   "note": "Sites that read one spelling of a construct the grammar spells two ways. Shrink-only: a NEW one fails the gate. See CASE_PHILOSOPHY.md and benchmarks/SPELLING_MISSES.md.",
   "sites": [
     "packages/eslint-plugin-browser-security/src/rules/no-allow-arbitrary-loads/index.ts::bare-object-key-only::if (node.key.type === 'Identifier') return node.key.name;",

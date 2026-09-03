@@ -1,4 +1,5 @@
 {
+  "command": "npx tsx scripts/real-source-scan.mts  # CI only \u2014 never run on a developer machine",
   "filesLinted": 347301,
   "filesFailed": 3339,
   "reposScanned": 113,
@@ -3624,9 +3625,7 @@
     "node-security/require-aead-tag-verification": {
       "count": 6,
       "repos": 1,
-      "samples": [
-        "nodejs__node/test/parallel/test-crypto-authenticated.js:176"
-      ]
+      "samples": ["nodejs__node/test/parallel/test-crypto-authenticated.js:176"]
     },
     "mcp-sdk-security/no-tool-description-injection": {
       "count": 6,
@@ -3789,9 +3788,7 @@
     "node-security/no-insecure-rsa-padding": {
       "count": 3,
       "repos": 1,
-      "samples": [
-        "nodejs__node/test/common/tls.js:56"
-      ]
+      "samples": ["nodejs__node/test/common/tls.js:56"]
     },
     "mysql-security/no-unsafe-query": {
       "count": 3,
@@ -3869,9 +3866,7 @@
     "vercel-ai-security/require-tool-schema": {
       "count": 3,
       "repos": 1,
-      "samples": [
-        "vercel__ai/packages/workflow/src/serializable-schema.ts:165"
-      ]
+      "samples": ["vercel__ai/packages/workflow/src/serializable-schema.ts:165"]
     },
     "lambda-security/no-exposed-error-details": {
       "count": 3,
@@ -3884,9 +3879,7 @@
     "express-security/no-unsafe-csp-directives": {
       "count": 3,
       "repos": 1,
-      "samples": [
-        "ghostfolio__ghostfolio/apps/api/src/main.ts:106"
-      ]
+      "samples": ["ghostfolio__ghostfolio/apps/api/src/main.ts:106"]
     },
     "browser-security/detect-mixed-content": {
       "count": 2,
@@ -3945,9 +3938,7 @@
     "express-security/no-cors-credentials-wildcard": {
       "count": 2,
       "repos": 1,
-      "samples": [
-        "okta__okta-signin-widget/playground/mocks/server.js:73"
-      ]
+      "samples": ["okta__okta-signin-widget/playground/mocks/server.js:73"]
     },
     "browser-security/no-unsafe-eval-csp": {
       "count": 2,
@@ -4027,9 +4018,7 @@
     "browser-security/require-websocket-wss": {
       "count": 1,
       "repos": 1,
-      "samples": [
-        "nodejs__node/benchmark/websocket/simple.js:90"
-      ]
+      "samples": ["nodejs__node/benchmark/websocket/simple.js:90"]
     },
     "browser-security/no-filereader-innerhtml": {
       "count": 1,
@@ -4095,7 +4084,7 @@
       ]
     }
   },
-  "note": "Which rules fire on real third-party code. Reproduce with `npx tsx scripts/real-source-scan.mts`; the repository list is `benchmarks/real-source-repos.json`. Firing is not catching — see the header of that script. Inline eslint-disable comments in the scanned source are ignored, and files over 200KB are skipped as generated.",
+  "note": "Which rules fire on real third-party code. Reproduce with `npx tsx scripts/real-source-scan.mts`; the repository list is `benchmarks/real-source-repos.json`. Firing is not catching \u2014 see the header of that script. Inline eslint-disable comments in the scanned source are ignored, and files over 200KB are skipped as generated.",
   "generated": "2026-09-03",
   "configHash": "e0197e67d7f92d24",
   "reposHash": "1c7dac70cd86da32"

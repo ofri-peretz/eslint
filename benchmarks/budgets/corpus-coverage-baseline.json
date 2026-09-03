@@ -1,5 +1,6 @@
 {
-  "note": "Rules with no corpus fixture, and therefore no measured precision. May only shrink — see scripts/check-corpus-coverage.ts.",
+  "command": "npx tsx scripts/check-corpus-coverage.ts --update",
+  "note": "Rules with no corpus fixture, and therefore no measured precision. May only shrink \u2014 see scripts/check-corpus-coverage.ts.",
   "total": 374,
   "measured": 228,
   "unmeasured": [
