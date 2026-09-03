@@ -438,9 +438,42 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
         return true;
       }
 
-      // Check naming conventions that suggest safety
+      /*
+       * A NAME may not overrule what the code plainly shows.
+       *
+       * This withheld on `/^(safe|sanitized|validated|clean)/i` unconditionally,
+       * so the same CWE-22 traversal reported or not depending only on the
+       * spelling of a binding:
+       *
+       *   const userPath      = req.query.f  ->  reported
+       *   const cleanPath     = req.query.f  ->  SILENT
+       *   const validatedPath = req.query.f  ->  SILENT
+       *
+       * Nothing was sanitized in any of them. A name that causes a REPORT
+       * produces a false positive somebody complains about; a name that causes
+       * SILENCE produces a false negative nobody ever sees, which is why this
+       * direction needs the stricter rule.
+       *
+       * The convention still counts where the code says nothing — a parameter
+       * named `sanitizedHtml` arriving from another function has no visible
+       * initialiser, and refusing to trust it would flood the noise floor. It
+       * is ignored only when the binding's own initialiser is a user-input
+       * read, which is the code CONTRADICTING the name rather than being
+       * silent about it.
+       */
       if (/^(safe|sanitized|validated|clean)/i.test(varName)) {
-        return true;
+        const bound = bindings.get(varName);
+        if (bound === undefined) return true;
+        /*
+         * A CALL is where laundering happens, so it is not a contradiction.
+         * `const cleanPath = sanitizePath(req.query.f)` reads user input and
+         * is exactly what the name claims; treating any taint below the
+         * initialiser as contradicting cost a false positive on that shape the
+         * first time this was tightened. Only a DIRECT read — the request
+         * expression assigned straight to the binding — says the name is wrong.
+         */
+        if (bound.type === AST_NODE_TYPES.CallExpression) return true;
+        return !readsUserInput(bound);
       }
 
       return false;

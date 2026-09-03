@@ -221,7 +221,7 @@
     "node-security/detect-non-literal-fs-filename": 106,
     "node-security/detect-suspicious-dependencies": 43,
     "node-security/lock-file": 8,
-    "node-security/no-arbitrary-file-access": 69,
+    "node-security/no-arbitrary-file-access": 52,
     "node-security/no-buffer-overread": 165,
     "node-security/no-cryptojs": 28,
     "node-security/no-cryptojs-weak-random": 27,

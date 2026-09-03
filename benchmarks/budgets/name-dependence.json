@@ -1,11 +1,10 @@
 {
-  "command": "npx tsx scripts/name-dependence-probe.mts",
-  "note": "Rules whose verdict changed when every local binding was renamed to foo1, foo2, \u2026 The rename litmus, mechanised: a rule listed here decided from a NAME. That is only a defect when the consumer cannot replace the vocabulary \u2014 see scripts/check-name-vocabulary.ts. Regenerate with `npx tsx scripts/name-dependence-probe.mts`.",
+  "note": "Rules whose verdict changed when every local binding was renamed to foo1, foo2, … The rename litmus, mechanised: a rule listed here decided from a NAME. That is only a defect when the consumer cannot replace the vocabulary — see scripts/check-name-vocabulary.ts. Regenerate with `npx tsx scripts/name-dependence-probe.mts`.",
   "generated": "2026-09-03",
-  "probeStamp": "0f8711c07532e914",
-  "probed": 2449,
-  "structural": 2102,
-  "nameDependent": 347,
+  "probeStamp": "d796e2a68f775df1",
+  "probed": 2451,
+  "structural": 2108,
+  "nameDependent": 343,
   "rules": {
     "browser-security/no-incomplete-url-sanitization": 4,
     "browser-security/no-insecure-redirects": 19,
@@ -28,7 +27,6 @@
     "lambda-security/no-user-controlled-requests": 16,
     "lambda-security/require-timeout-handling": 13,
     "modularity/ddd-value-object-immutability": 2,
-    "nestjs-security/no-permissive-cors": 4,
     "node-security/detect-non-literal-fs-filename": 15,
     "node-security/no-arbitrary-file-access": 2,
     "node-security/no-buffer-overread": 4,
@@ -60,5 +58,14 @@
     "secure-coding/no-unsafe-regex-construction": 6,
     "secure-coding/no-weak-password-recovery": 16,
     "secure-coding/no-xpath-injection": 5
+  },
+  "probedSilent": 4682,
+  "silenceStructural": 4670,
+  "suppressedByName": 12,
+  "suppressionRules": {
+    "node-security/no-weak-hash-algorithm": 3,
+    "secure-coding/no-fail-open-auth": 2,
+    "secure-coding/no-hardcoded-credentials": 5,
+    "secure-coding/no-unsafe-deserialization": 2
   }
 }

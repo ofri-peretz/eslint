@@ -33,6 +33,36 @@
  * `no-timing-unsafe-compare` is supposed to fail this. The output is a list to
  * adjudicate, not a defect count.
  *
+ * ## Both directions, because the quiet one is the dangerous one
+ *
+ * The pass above starts from a case that REPORTS and asks whether a rename
+ * silences it. That was the whole probe for a quarter, and it can only ever
+ * see half the question, because it skips every case that is already silent
+ * (`base === 0`). The other half:
+ *
+ *   a name that PREVENTS a report — `const cleanPath = req.query.f` reaching
+ *   `fs.readFileSync`, where the only thing standing between the traversal and
+ *   the finding is that somebody spelled the variable `clean`.
+ *
+ * Those live in the VALID table, report nothing at baseline, and were
+ * therefore invisible to a probe that requires a report to start from. The
+ * asymmetry matters: a name that CAUSES a report is a false positive somebody
+ * complains about, so it self-reports. A name that PREVENTS one is a false
+ * negative on a rule shipping enabled by default, and nobody ever sees it.
+ * `node-security/no-arbitrary-file-access` shipped exactly that — three
+ * spellings of the same traversal, silent — and this probe called the rule
+ * clean the whole time.
+ *
+ * So the second pass starts from the silent cases and asks the mirror
+ * question: does renaming every binding make the rule START reporting? If it
+ * does, the SILENCE came from a name.
+ *
+ * Same adjudication caveat, and it bites harder here: a legitimate suppression
+ * can be name-shaped on purpose. `const cleanPath = sanitizePath(x)` should
+ * stay silent, and it lands in this list because renaming it removes the only
+ * evidence the rule had. Read the list; do not read the total as a defect
+ * count.
+ *
  *   npx tsx scripts/name-dependence-probe.mts [--rule <substring>]
  */
 import fs from 'node:fs';
@@ -226,8 +256,23 @@ function renameBindings(code: string): string | null {
         parent?.type === 'ExportSpecifier' && parentKey === 'exported';
       if (!isMemberProperty && !isObjectKey && !isImported && !isExportedName) {
         if (!fresh.has(node.name)) fresh.set(node.name, `foo${fresh.size + 1}`);
+        /*
+         * An Identifier's RANGE covers its type annotation and its optional
+         * marker: `d: 'asc' | 'desc'` and `stream: EventSource` are one node
+         * each, starting at the name and ending after the type. Overwriting
+         * the whole range therefore DELETED the type, and the probe then
+         * measured a rule that had lost the evidence it decides on:
+         *
+         *   silent   function s(d: 'asc' | 'desc') { …`?d=${d}` }
+         *   reports  function foo2(foo1)           { …`?d=${foo1}` }
+         *
+         * which reads as "renaming the parameter turned the finding on" and is
+         * really "deleting the union type turned the finding on". The name is
+         * always the first token of the node, so edit only that many
+         * characters and leave everything after it alone.
+         */
         edits.push({
-          range: node.range as [number, number],
+          range: [node.range[0], node.range[0] + node.name.length],
           text: fresh.get(node.name) as string,
         });
       }
@@ -299,9 +344,53 @@ for (const entry of ledger.rules) {
   }
 }
 
+/*
+ * The mirror pass: start from SILENCE and see whose silence survives a rename.
+ *
+ * Kept as a separate loop and a separate total on purpose. Folding it into the
+ * count above would produce one number covering two different defects with
+ * opposite consequences, which is how a metric stops meaning anything.
+ */
+const suppressedByName: Finding[] = [];
+let probedSilent = 0;
+let silenceStructural = 0;
+
+for (const entry of ledger.rules) {
+  if (filter !== null && !entry.rule.includes(filter)) continue;
+  const rule = await ruleFor(entry.rule);
+  if (rule === null) continue;
+  const name = entry.rule.split('/').slice(1).join('/');
+  for (const c of entry.cases) {
+    // The mirror of the pass above: a case that reports nothing, so that a
+    // rename can reveal a silence that rested on a name.
+    if (c.kind !== 'TN' && c.kind !== 'FP') continue;
+    if (c.code === '' || c.code.length > 400 || c.options !== undefined)
+      continue;
+    const base = reports(rule, name, c.code);
+    if (base === null || base > 0) continue;
+    const renamed = renameBindings(c.code);
+    if (renamed === null) continue;
+    probedSilent += 1;
+    const after = reports(rule, name, renamed);
+    if (after === null) continue;
+    if (after === 0) silenceStructural += 1;
+    else
+      suppressedByName.push({
+        rule: entry.rule,
+        description: c.description,
+        before: c.code,
+        after: renamed,
+      });
+  }
+}
+
 const byRule = new Map<string, Finding[]>();
 for (const f of nameDependent)
   byRule.set(f.rule, [...(byRule.get(f.rule) ?? []), f]);
+
+const byRuleSuppression = new Map<string, Finding[]>();
+for (const f of suppressedByName)
+  byRuleSuppression.set(f.rule, [...(byRuleSuppression.get(f.rule) ?? []), f]);
 
 console.log(`\n  ${probed} true positives renamed`);
 console.log(`  ${structural} still report — the verdict came from structure`);
@@ -309,6 +398,15 @@ console.log(
   `  ${nameDependent.length} go silent across ${byRule.size} rules — the verdict came from a name\n`,
 );
 const ranked = [...byRule.entries()].sort((a, b) => b[1].length - a[1].length);
+
+console.log(`  ${probedSilent} silent cases renamed`);
+console.log(
+  `  ${silenceStructural} stay silent — the suppression came from structure`,
+);
+console.log(
+  `  ${suppressedByName.length} START REPORTING across ${byRuleSuppression.size} rules — ` +
+    'the SILENCE came from a name\n',
+);
 
 // The detailed head, with a worked example each.
 const DETAIL = 25;
@@ -332,9 +430,43 @@ if (ranked.length > DETAIL) {
     console.log(`  ${String(list.length).padStart(3)}  ${rule}`);
   }
 }
+// The suppression direction, ranked the same way. Printed in full: it is the
+// smaller list and the one nobody has adjudicated yet.
+const rankedSuppression = [...byRuleSuppression.entries()].sort(
+  (a, b) => b[1].length - a[1].length,
+);
+if (rankedSuppression.length > 0) {
+  console.log(
+    `\n  SILENCE THAT RESTED ON A NAME — ${suppressedByName.length} case(s), ` +
+      `${rankedSuppression.length} rule(s).` +
+      '\n  Each reports once its bindings are renamed, so the name was the only thing' +
+      '\n  suppressing it. Some of these are legitimate. Adjudicate, do not total.\n',
+  );
+  for (const [rule, list] of rankedSuppression) {
+    console.log(`  ${String(list.length).padStart(3)}  ${rule}`);
+    console.log(
+      `       silent  : ${JSON.stringify(list[0].before).slice(0, 110)}`,
+    );
+    console.log(
+      `       reports : ${JSON.stringify(list[0].after).slice(0, 110)}`,
+    );
+  }
+}
+
 fs.writeFileSync(
   path.join(ROOT, 'benchmarks', 'NAME_DEPENDENCE.json'),
-  `${JSON.stringify({ probed, structural, nameDependent }, null, 2)}\n`,
+  `${JSON.stringify(
+    {
+      probed,
+      structural,
+      nameDependent,
+      probedSilent,
+      silenceStructural,
+      suppressedByName,
+    },
+    null,
+    2,
+  )}\n`,
 );
 
 /*
@@ -365,6 +497,12 @@ const rules = Object.fromEntries(
     .sort(([a], [b]) => a.localeCompare(b)),
 );
 
+const suppressionRules = Object.fromEntries(
+  [...byRuleSuppression.entries()]
+    .map(([rule, list]) => [rule, list.length] as const)
+    .sort(([a], [b]) => a.localeCompare(b)),
+);
+
 fs.writeFileSync(
   path.join(ROOT, 'benchmarks', 'budgets', 'name-dependence.json'),
   `${JSON.stringify(
@@ -380,6 +518,17 @@ fs.writeFileSync(
       structural,
       nameDependent: nameDependent.length,
       rules,
+      /*
+       * The mirror direction, kept under its own keys. `rules` above is what
+       * `check:name-vocabulary` adjudicates; these are not wired into a gate
+       * yet, deliberately — the list has never been read by a human and
+       * gating on an unadjudicated number is how a budget becomes a thing
+       * people raise instead of a thing they meet.
+       */
+      probedSilent,
+      silenceStructural,
+      suppressedByName: suppressedByName.length,
+      suppressionRules,
     },
     null,
     2,
