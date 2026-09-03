@@ -11,6 +11,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
+  AST_NODE_TYPES,
   createRule,
   objectKeyName,
   propertyName,
@@ -107,7 +108,7 @@ export const reactClassToHooks = createRule<RuleOptions, MessageIds>({
       if (!node.superClass) return false;
 
       // Check for Identifier (e.g., Component, PureComponent)
-      if (node.superClass.type === 'Identifier') {
+      if (node.superClass.type === AST_NODE_TYPES.Identifier) {
         return (
           node.superClass.name === 'Component' ||
           node.superClass.name === 'PureComponent'
@@ -115,9 +116,9 @@ export const reactClassToHooks = createRule<RuleOptions, MessageIds>({
       }
 
       // Check for MemberExpression (e.g., React.Component, React.PureComponent)
-      if (node.superClass.type === 'MemberExpression') {
+      if (node.superClass.type === AST_NODE_TYPES.MemberExpression) {
         if (
-          node.superClass.object.type === 'Identifier' &&
+          node.superClass.object.type === AST_NODE_TYPES.Identifier &&
           node.superClass.object.name === 'React'
         ) {
           // `class A extends React['Component']` extends the same base class,
@@ -155,8 +156,8 @@ export const reactClassToHooks = createRule<RuleOptions, MessageIds>({
 
       for (const member of classBody) {
         if (
-          member.type === 'MethodDefinition' &&
-          member.key.type === 'Identifier' &&
+          member.type === AST_NODE_TYPES.MethodDefinition &&
+          member.key.type === AST_NODE_TYPES.Identifier &&
           lifecycleMap[member.key.name]
         ) {
           lifecycleMethods.push(member.key.name);
@@ -192,7 +193,7 @@ export const reactClassToHooks = createRule<RuleOptions, MessageIds>({
         const hasRenderMethod = node.body.body.some(
           (member: TSESTree.ClassElement) =>
             // `['render']() {}` declares the same method `render() {}` does.
-            member.type === 'MethodDefinition' &&
+            member.type === AST_NODE_TYPES.MethodDefinition &&
             objectKeyName(member) === 'render',
         );
 
@@ -225,8 +226,21 @@ export const reactClassToHooks = createRule<RuleOptions, MessageIds>({
                       // Real implementation would need more sophisticated AST manipulation
                       const funcText = classText
                         // Match: class Name extends React.Component or class Name extends Component
+                        /*
+                         * The superclass may be spelled three ways, and this
+                         * consumed only two. `class A extends React['Component']`
+                         * matched as far as `React`, so the suggestion emitted
+                         *
+                         *     function A(props)['Component'] { … }
+                         *
+                         * which does not parse. The rule started accepting the
+                         * computed spelling when it learned that a bundler
+                         * emits it; the fixer was not taught the same thing,
+                         * and a suggestion that produces invalid code is worse
+                         * than no suggestion.
+                         */
                         .replace(
-                          /class\s+(\w+)\s+extends\s+(\w+\.)?\w+/,
+                          /class\s+(\w+)\s+extends\s+\w+(?:\s*\.\s*\w+|\s*\[\s*(['"])[^'"]+\2\s*\])?/,
                           'function $1(props)',
                         )
                         .replace(/this\.props\./g, 'props.')

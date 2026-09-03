@@ -150,6 +150,7 @@ describe('no-improper-sanitization', () => {
           // Hardcoded but genuinely dangerous: the literal IS the vector, so
           // author-controlled is not a defence. Must still report.
           {
+            name: 'literal markup with no user input in it',
             code: `res.send('<script>alert(1)</script>');`,
             errors: [{ messageId: 'unsafeReplaceSanitization' }],
           },
@@ -790,6 +791,7 @@ describe('corpus regressions', () => {
           code: `res.send({ error: "Sorry, can't find that" })`,
         },
         {
+          name: 'a literal angle bracket in a JSON message',
           code: `res.json({ message: 'Done <ok>' })`,
         },
         // A sanitizer reached through a member chain, not a bare identifier.

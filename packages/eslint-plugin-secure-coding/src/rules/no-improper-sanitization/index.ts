@@ -441,7 +441,7 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
         const right = node.right;
 
         // Check for assignments to potentially dangerous properties
-        if (left.type === 'MemberExpression') {
+        if (left.type === AST_NODE_TYPES.MemberExpression) {
           // Named `sink`, not `propertyName`: a local of that name shadows the
           // devkit import and the call below would silently resolve to itself.
           // `element['innerHTML'] = x` assigns the same sink `element.innerHTML`

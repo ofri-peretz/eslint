@@ -83,8 +83,9 @@ the repository while 47 turbo tasks run beside them.
 
 ## Shipped 2026-09-02
 
-**34 of 34** package configs now set `testTimeout` and `hookTimeout` to 30s,
-up from 12. Seventeen were patched in one pass; the rest already had it.
+**32 of 32** workspace configs now set `testTimeout` and `hookTimeout` to 30s,
+up from 20. Twelve were patched in one pass; the rest already had it. Measured
+against `0f249e68f^` — see design.md for the command.
 
 `hookTimeout` is set alongside deliberately: it does NOT inherit `testTimeout`
 and stays at Vitest's 10s default otherwise, which fails as "Hook timed out in

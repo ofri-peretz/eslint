@@ -119,8 +119,14 @@ single question, and `maintainability/cognitive-complexity` scoring zero across
 Both hashes are now present and match, so the artifact says which rule set it
 asked and which repositories it asked about. That was the entire ask.
 
-Delivered as [#835](https://github.com/ofri-peretz/eslint/pull/835). The
-workflow pushed the branch and then failed on
-`Resource not accessible by integration (createPullRequest)` — Actions cannot
-open PRs here. The scan is green; only delivery failed, which is worth fixing
-at the workflow level because it reads as a failed scan.
+Delivered as [#835](https://github.com/ofri-peretz/eslint/pull/835), merged
+2026-09-03 — but NOT by the automated path. The workflow pushed
+`automated/real-source-inventory` and then failed on
+`Resource not accessible by integration (createPullRequest)`: Actions cannot
+open PRs in this repository. The PR was opened and merged by hand.
+
+So the scan works and the artifact is correct; what is still broken is the last
+step, and it fails in the worst available way — the workflow goes red after a
+green scan, so it reads as "the scan failed" when the scan succeeded and only
+the handoff did not. Worth fixing at the workflow level for that reason, and
+until then the inventory needs a human to notice the branch and open the PR.

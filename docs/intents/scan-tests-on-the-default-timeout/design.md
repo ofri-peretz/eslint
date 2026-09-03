@@ -29,8 +29,19 @@ rather than a busy machine, and sends the reader looking in the wrong place.
 
 ## Verification
 
-- 12 of 34 package configs set a timeout before; **34 of 34** after.
-- Seventeen patched in one pass, each into its existing `test: {}` block.
+- 20 of 32 workspace configs set a timeout before; **32 of 32** after, and all
+  32 set `hookTimeout` too. Twelve patched in one pass, each into its existing
+  `test: {}` block.
+  Counted with:
+
+      find . -name 'vitest.config.*' -not -path '*/node_modules/*' \
+        | xargs grep -l testTimeout | wc -l
+
+  An earlier version of this section said "12 of 34 before, seventeen patched",
+  which does not add up and did not match the tree: 12 was the number PATCHED,
+  and 34 was never the number of configs. Measured against `0f249e68f^`, the
+  commit that did the rollout.
+
 - Full suite green afterwards: **56/56** turbo tasks.
 - Spot-checked three of the patched packages individually — anthropic-security
   (67), sqlite-security (30), postgresql-security (1160) — to confirm the

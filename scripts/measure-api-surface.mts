@@ -39,9 +39,9 @@
  * misuse snippet, which cannot be generated mechanically. That is the honest
  * ceiling of automation here, and it is recorded rather than papered over.
  *
- *   npx tsx scripts/measure-api-surface.ts
- *   npx tsx scripts/measure-api-surface.ts --plugin eslint-plugin-node-security
- *   npx tsx scripts/measure-api-surface.ts --uncovered   # list what is missing
+ *   npx tsx scripts/measure-api-surface.mts
+ *   npx tsx scripts/measure-api-surface.mts --plugin eslint-plugin-node-security
+ *   npx tsx scripts/measure-api-surface.mts --uncovered   # list what is missing
  */
 
 import fs from 'node:fs';
@@ -54,10 +54,23 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
 const MANIFEST = path.join(ROOT, '.agent', 'api-surface-manifest.json');
 
-const only =
-  process.argv
-    .find((a) => a.startsWith('--plugin='))
-    ?.slice('--plugin='.length) ?? null;
+/*
+ * BOTH spellings. The usage block above documents the space-separated form,
+ * and only `--plugin=` was accepted — so `--plugin eslint-plugin-node-security`
+ * left `only` null and silently measured all 30 plugins, which reads exactly
+ * like a run that worked.
+ */
+const only = ((): string | null => {
+  const argv = process.argv.slice(2);
+  const joined = argv.find((a) => a.startsWith('--plugin='));
+  if (joined !== undefined) return joined.slice('--plugin='.length);
+  const flag = argv.indexOf('--plugin');
+  if (flag !== -1) {
+    const next = argv[flag + 1];
+    if (next !== undefined && !next.startsWith('-')) return next;
+  }
+  return null;
+})();
 const showUncovered = process.argv.includes('--uncovered');
 
 /**

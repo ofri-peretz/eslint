@@ -807,7 +807,21 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
      */
     function isUntrustedRequestChain(node: TSESTree.MemberExpression): boolean {
       let current: TSESTree.Node = node;
-      while (current.type === 'MemberExpression') current = current.object;
+      /*
+       * EVERY segment, not just the outermost. The caller checks
+       * `propertyName` on the expression it was handed, then this walked
+       * straight to the root — so `req[part].id` resolved its own `.id`,
+       * reached `req`, and reported. `part` is chosen at runtime and the rule
+       * cannot know it names a request field; refusing exactly that is the
+       * contract, and it was only being honoured one level deep.
+       *
+       * `req.body['x']` still passes: `propertyName` returns `x` for a static
+       * subscript, which is the distinction being kept.
+       */
+      while (current.type === 'MemberExpression') {
+        if (propertyName(current) === null) return false;
+        current = current.object;
+      }
       if (current.type !== 'Identifier') return false;
       if (requestRootSet.has(current.name)) return true;
       // `const { query } = req; … query.filter` — the root was destructured out of a
