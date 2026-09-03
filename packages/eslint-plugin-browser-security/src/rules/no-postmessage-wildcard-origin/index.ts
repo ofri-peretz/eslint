@@ -16,6 +16,7 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   AST_NODE_TYPES,
   createRule,
+  objectKeyName,
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
@@ -143,10 +144,8 @@ export const noPostmessageWildcardOrigin = createRule<RuleOptions, MessageIds>({
           for (const prop of targetOriginArg.properties) {
             if (prop.type !== AST_NODE_TYPES.Property) continue;
 
-            const key = prop.key;
             if (
-              key.type === AST_NODE_TYPES.Identifier &&
-              key.name === 'targetOrigin' &&
+              objectKeyName(prop) === 'targetOrigin' &&
               prop.value.type === AST_NODE_TYPES.Literal &&
               prop.value.value === '*'
             ) {

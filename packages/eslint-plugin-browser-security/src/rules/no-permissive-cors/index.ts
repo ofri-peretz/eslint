@@ -16,6 +16,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   namesOneOf,
+  objectKeyName,
   propertyName,
 } from '@interlace/eslint-devkit';
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
@@ -86,19 +87,6 @@ function foldToObject(
     return init === undefined
       ? null
       : foldToObject(init, sourceCode, depth + 1);
-  }
-  return null;
-}
-
-/** The name a non-computed property key spells, quoted or bare. */
-function keyName(property: TSESTree.Property): string | null {
-  if (property.computed) return null;
-  if (property.key.type === AST_NODE_TYPES.Identifier) return property.key.name;
-  if (
-    property.key.type === AST_NODE_TYPES.Literal &&
-    typeof property.key.value === 'string'
-  ) {
-    return property.key.value;
   }
   return null;
 }
@@ -192,7 +180,7 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
        * rule: 'never *' }` documents the policy; it does not set it.
        */
       Property(node: TSESTree.Property) {
-        const name = keyName(node);
+        const name = objectKeyName(node);
 
         // `{ 'Access-Control-Allow-Origin': '*' }`
         if (
@@ -216,7 +204,7 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
           TSESTree.ObjectExpression | TSESTree.ObjectPattern;
         const valueProperty = entry.properties.find(
           (p): p is TSESTree.Property =>
-            p.type === AST_NODE_TYPES.Property && keyName(p) === 'value',
+            p.type === AST_NODE_TYPES.Property && objectKeyName(p) === 'value',
         );
         if (
           valueProperty !== undefined &&
@@ -257,11 +245,18 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
             ? foldToObject(node.arguments[0], sourceCode)
             : null;
         if (corsOptions !== null) {
+          /*
+           * `objectKeyName`, not `key.name`. Requiring an Identifier key meant
+           * the rule saw `{ origin: '*' }` and missed BOTH `{ 'origin': '*' }`
+           * — an ordinary quoted key, nothing exotic — and the computed
+           * `{ ['origin']: '*' }` that bundlers and minifiers emit. Same
+           * object, same wildcard, same CORS hole, three spellings, one
+           * detected.
+           */
           const originProp = corsOptions.properties.find(
             (p): p is TSESTree.Property =>
               p.type === AST_NODE_TYPES.Property &&
-              p.key.type === AST_NODE_TYPES.Identifier &&
-              p.key.name === 'origin',
+              objectKeyName(p) === 'origin',
           );
           // `'*'` and `true` are both "every origin". In the `cors` package
           // `true` REFLECTS the request's Origin header, which is strictly

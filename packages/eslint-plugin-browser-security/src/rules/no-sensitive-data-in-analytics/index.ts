@@ -46,6 +46,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   nameHasAnyWord,
+  objectKeyName,
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 import { isAnalyticsTransmission } from '../../utils/analytics-sinks';
@@ -80,17 +81,16 @@ export const DEFAULT_SENSITIVE_FIELDS = [
   'national id',
 ] as const;
 
-/** The static name of a property key, identifier or string literal. */
+/** The static name of a property key, bare, quoted or computed. */
+/*
+ * `objectKeyName` rather than a local equivalent. Every rule that hand-rolled
+ * this got the same detail wrong — bailing on `computed` — so the shared
+ * spelling is the fix, not a corrected copy of it. It returns an Identifier's
+ * name only when the key is NOT computed (in `{ [x]: v }` the key names a
+ * VARIABLE) and any statically-known string otherwise.
+ */
 function propertyKeyName(property: TSESTree.Property): string | null {
-  if (property.computed) return null;
-  if (property.key.type === AST_NODE_TYPES.Identifier) return property.key.name;
-  if (
-    property.key.type === AST_NODE_TYPES.Literal &&
-    typeof property.key.value === 'string'
-  ) {
-    return property.key.value;
-  }
-  return null;
+  return objectKeyName(property);
 }
 
 export interface Options {
@@ -118,11 +118,12 @@ export const noSensitiveDataInAnalytics = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Sensitive Data in Analytics',
         cwe: 'CWE-359',
-        description: 'Sensitive field sent to analytics - this is a privacy violation',
+        description:
+          'Sensitive field sent to analytics - this is a privacy violation',
         severity: 'HIGH',
         fix: 'Remove PII from analytics tracking data',
         documentationLink: 'https://cwe.mitre.org/data/definitions/359.html',
-      })
+      }),
     },
     schema: [
       {
