@@ -78,6 +78,8 @@ interface WildPluginRollupEntry {
 
 interface WildSummary {
   date: string;
+  /** True when the run used the adversarial Edge corpus rather than Wild. */
+  fpCorpusMode?: boolean;
   success: number;
   corpusSize: number;
   aggregate: { avgDensityPerKloc: number; totalLoc: number };
@@ -97,7 +99,29 @@ interface WildResult {
 
 const latestFile = latestDatedFile;
 
-function latestWildSummary(): WildResult | null {
+/**
+ * Latest run of a given corpus.
+ *
+ * `ilb-wild.ts` writes BOTH corpora into `benchmark-results/<date>/`, tagged by
+ * `fpCorpusMode`: the Wild corpus (broad popular OSS) and the Edge corpus (five
+ * adversarial-real repos chosen to provoke false positives). They answer
+ * different questions and are not comparable.
+ *
+ * This used to take the newest dated directory whatever it held. The 2026-08-03
+ * Edge run then became the source for ILB-Wild, ILB-Perf and ILB-Cov, so three
+ * rows reported against the wrong denominator and their SLO verdicts were
+ * meaningless:
+ *
+ *   - Perf read 35.2 ms/file — three.js and webpack under FP-hunting config —
+ *     and appeared to breach its ≤15 SLO, which was set against Wild.
+ *   - Cov read 25/111 rules across 3 plugins instead of Wild's 208 across 11.
+ *   - Wild read 7.37 findings/kLoC from code selected to provoke findings.
+ *
+ * The trend sparkline made it worse by drawing those points in one series, so a
+ * corpus swap looked like a regression. Selecting by corpus is what makes the
+ * numbers mean what their SLO says.
+ */
+function latestSummaryOfCorpus(fpCorpus: boolean): WildResult | null {
   if (!fs.existsSync(WILD_RESULTS)) return null;
   const dirs = fs
     .readdirSync(WILD_RESULTS)
@@ -107,9 +131,31 @@ function latestWildSummary(): WildResult | null {
     .toReversed();
   for (const d of dirs) {
     const p = path.join(WILD_RESULTS, d, 'summary.json');
-    if (fs.existsSync(p)) return { path: p, date: d, data: readJson<WildSummary>(p) };
+    if (!fs.existsSync(p)) continue;
+    const data = readJson<WildSummary>(p);
+    /*
+     * An unreadable summary is not a match for ANYTHING. `readJson` returns
+     * null on invalid JSON, and `Boolean(null?.fpCorpusMode)` is `false` —
+     * which is exactly the Wild predicate, so a corrupt file was returned as
+     * the latest Wild run and Wild/Perf/Cov then reported "missing data"
+     * instead of falling through to the newest run that actually parses.
+     */
+    if (data === null) continue;
+    // An older run predating the flag is a Wild run; that is what existed then.
+    if (Boolean(data.fpCorpusMode) !== fpCorpus) continue;
+    return { path: p, date: d, data };
   }
   return null;
+}
+
+/** The Wild corpus — what ILB-Wild, ILB-Perf and ILB-Cov are defined against. */
+function latestWildSummary(): WildResult | null {
+  return latestSummaryOfCorpus(false);
+}
+
+/** The Edge corpus — adversarial-real repos, what ILB-Edge is defined against. */
+function latestEdgeSummary(): WildResult | null {
+  return latestSummaryOfCorpus(true);
 }
 
 function readJson<T = unknown>(p: string): T | null {
@@ -121,7 +167,12 @@ function readJson<T = unknown>(p: string): T | null {
 }
 
 function missing(where: string): BenchScore {
-  return { score: '—', detail: `not yet generated (${where})`, date: null, source: where };
+  return {
+    score: '—',
+    detail: `not yet generated (${where})`,
+    date: null,
+    source: where,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -145,7 +196,19 @@ function readArena(): BenchScore {
   const f = latestFile(path.join(BENCH_RESULTS, 'ilb-arena'));
   if (!f) return missing('benchmarks/results/ilb-arena/');
   const d = readJson<{
-    plugins?: Record<string, { metrics?: { TP: number; FP: number; FN: number; f1Score: string; precision: string; recall: string } }>;
+    plugins?: Record<
+      string,
+      {
+        metrics?: {
+          TP: number;
+          FP: number;
+          FN: number;
+          f1Score: string;
+          precision: string;
+          recall: string;
+        };
+      }
+    >;
     timestamp?: string;
   }>(f);
   if (!d) return missing(f);
@@ -153,13 +216,17 @@ function readArena(): BenchScore {
   const m = interlace?.metrics;
   if (m && Number.isFinite(m.TP)) {
     const sorted = Object.entries(d.plugins ?? {})
-      .map(([name, p]) => ({ name, f1: parseFloat(p.metrics?.f1Score ?? '0') || 0 }))
+      .map(([name, p]) => ({
+        name,
+        f1: parseFloat(p.metrics?.f1Score ?? '0') || 0,
+      }))
       .toSorted((a, b) => b.f1 - a.f1);
     const rank = sorted.findIndex((p) => p.name === 'interlace') + 1;
     return {
       score: `F1 ${m.f1Score} (rank ${rank}/${sorted.length})`,
       detail: `TP ${m.TP}/40 · FP ${m.FP} · FN ${m.FN} · precision ${m.precision} · recall ${m.recall}`,
-      date: d.timestamp?.slice(0, 10) ?? path.basename(f).replace(/\.json$/, ''),
+      date:
+        d.timestamp?.slice(0, 10) ?? path.basename(f).replace(/\.json$/, ''),
       source: path.relative(ROOT, f),
       raw: d,
     };
@@ -176,7 +243,18 @@ function readJuliet(): BenchScore {
   const f = latestFile(path.join(BENCH_RESULTS, 'ilb-cwe-corpus'));
   if (!f) return missing('benchmarks/results/ilb-cwe-corpus/');
   const d = readJson<{
-    plugins?: Record<string, { aggregate?: { TP: number; FP: number; FN: number; f1: number; bas: number } }>;
+    plugins?: Record<
+      string,
+      {
+        aggregate?: {
+          TP: number;
+          FP: number;
+          FN: number;
+          f1: number;
+          bas: number;
+        };
+      }
+    >;
     corpus?: unknown[];
     timestamp?: string;
   }>(f);
@@ -191,7 +269,8 @@ function readJuliet(): BenchScore {
     return {
       score: `F1 ${interlace.f1}% (rank ${rank}/${sorted.length})`,
       detail: `TP ${interlace.TP} · FP ${interlace.FP} · FN ${interlace.FN} · BAS ${interlace.bas}% · ${cwes} CWEs`,
-      date: d.timestamp?.slice(0, 10) ?? path.basename(f).replace(/\.json$/, ''),
+      date:
+        d.timestamp?.slice(0, 10) ?? path.basename(f).replace(/\.json$/, ''),
       source: path.relative(ROOT, f),
       raw: d,
     };
@@ -208,7 +287,10 @@ function readAI(): BenchScore {
   const f = latestFile(path.join(BENCH_RESULTS, 'ilb-ai'));
   if (!f) return missing('benchmarks/results/ilb-ai/');
   const d = readJson<{
-    models?: Record<string, { totalFunctions?: number; functionsWithVulnerabilities?: number }>;
+    models?: Record<
+      string,
+      { totalFunctions?: number; functionsWithVulnerabilities?: number }
+    >;
     timestamp?: string;
   }>(f);
   if (!d) return missing(f);
@@ -227,7 +309,8 @@ function readAI(): BenchScore {
       return {
         score: `${detection.toFixed(0)}% detection`,
         detail: `${totals.vuln}/${totals.total} LLM-generated functions flagged across ${modelCount} model${modelCount === 1 ? '' : 's'}`,
-        date: d.timestamp?.slice(0, 10) ?? path.basename(f).replace(/\.json$/, ''),
+        date:
+          d.timestamp?.slice(0, 10) ?? path.basename(f).replace(/\.json$/, ''),
         source: path.relative(ROOT, f),
         raw: d,
       };
@@ -243,7 +326,9 @@ function readPerf(): BenchScore {
   if (ok.length === 0) return missing(wild.path);
   const median = (arr: number[]): number => {
     const s = [...arr].toSorted((a, b) => a - b);
-    return s.length % 2 ? s[(s.length - 1) / 2] : (s[s.length / 2 - 1] + s[s.length / 2]) / 2;
+    return s.length % 2
+      ? s[(s.length - 1) / 2]
+      : (s[s.length / 2 - 1] + s[s.length / 2]) / 2;
   };
   const msPerFile = median(ok.map((r) => r.timing.msPerFile));
   const peakRss = Math.max(...ok.map((r) => r.peakRssMb));
@@ -273,15 +358,26 @@ function readCoverage(wildData: WildSummary | null): BenchScore {
   };
 }
 
-function readEdge(wildData: WildSummary | null): BenchScore {
-  if (!wildData) return missing('derived from ILB-Wild');
-  const fp = wildData.repos.filter((r) => r.success && r.fpEdge);
+function readEdge(_unusedWildData: WildSummary | null): BenchScore {
+  // Reads the EDGE corpus, not whatever ILB-Wild happened to load. Passing the
+  // Wild summary here is what let an Edge run masquerade as a Wild one.
+  const edgeData = latestEdgeSummary()?.data ?? null;
+  /*
+   * The fallback text names EDGE too. The read was switched to the Edge
+   * summary and these strings were left saying "derived from ILB-Wild" and
+   * "latest Wild run" — so when the Edge summary is missing, the scorecard
+   * blamed the Wild corpus for it, which is the same confusion between the
+   * two corpora that this whole change exists to remove.
+   */
+  if (!edgeData) return missing('derived from ILB-Edge');
+  const fp = edgeData.repos.filter((r) => r.success && r.fpEdge);
   if (fp.length === 0) {
     return {
       score: '—',
-      detail: 'no FP-Edge repos in latest Wild run · run `npm run ilb:wild -- --fp-corpus`',
-      date: wildData.date,
-      source: 'derived from ILB-Wild',
+      detail:
+        'no FP-Edge repos in latest Edge run · run `npm run ilb:wild -- --fp-corpus`',
+      date: edgeData.date,
+      source: 'derived from ILB-Edge',
     };
   }
   const totalFindings = fp.reduce((s, r) => s + r.findings.total, 0);
@@ -289,15 +385,16 @@ function readEdge(wildData: WildSummary | null): BenchScore {
   return {
     score: `${totalFindings} FP candidates`,
     detail: `${fp.length} adversarial-real repos · ${totalLoc.toLocaleString()} LoC · awaiting triage`,
-    date: wildData.date,
-    source: 'derived from ILB-Wild',
+    date: edgeData.date,
+    source: 'derived from ILB-Edge',
     raw: fp,
   };
 }
 
 function readLlmTokens(): BenchScore {
   const f = path.join(BENCH_RESULTS, 'ilb-llm-tokens', 'latest.json');
-  if (!fs.existsSync(f)) return missing('benchmarks/results/ilb-llm-tokens/latest.json');
+  if (!fs.existsSync(f))
+    return missing('benchmarks/results/ilb-llm-tokens/latest.json');
   const d = readJson<{
     headlineScore?: Record<string, number | null>;
     perCategoryScore?: Record<string, Record<string, number | null>>;
@@ -315,7 +412,8 @@ function readLlmTokens(): BenchScore {
   // the result (e.g. result was generated by an older runner).
   const securityCompact = d.perCategoryScore?.['security']?.['v2-compact'];
   const aggregateCompact = d.headlineScore?.['v2-compact'];
-  const headlineNumber = typeof securityCompact === 'number' ? securityCompact : aggregateCompact;
+  const headlineNumber =
+    typeof securityCompact === 'number' ? securityCompact : aggregateCompact;
 
   if (typeof headlineNumber !== 'number') {
     return {
@@ -345,7 +443,8 @@ function readLlmTokens(): BenchScore {
 
 function readLlmFix(): BenchScore {
   const f = path.join(BENCH_RESULTS, 'ilb-llm-fix', 'latest.json');
-  if (!fs.existsSync(f)) return missing('benchmarks/results/ilb-llm-fix/latest.json');
+  if (!fs.existsSync(f))
+    return missing('benchmarks/results/ilb-llm-fix/latest.json');
   const d = readJson<{
     headlineScore?: number;
     passRateByVariant?: Record<string, number | null>;
@@ -366,7 +465,10 @@ function readLlmFix(): BenchScore {
   const variantParts = Object.entries(variants)
     .map(([v, pct]) => `${v}=${pct === null ? '—' : pct + '%'}`)
     .join(' · ');
-  const totalCost = (d.summary ?? []).reduce((s, c) => s + (c.totalCostUsd ?? 0), 0);
+  const totalCost = (d.summary ?? []).reduce(
+    (s, c) => s + (c.totalCostUsd ?? 0),
+    0,
+  );
   const uniqueModels = (d.summary ?? [])
     .map((s) => s.model)
     .filter((v, i, a) => a.indexOf(v) === i)
@@ -450,7 +552,16 @@ function aggregatePerRule(): PerRuleAgg[] {
   type Sample = { ruleId: string; severity: string };
   type RuleEntry = { hits: number; avgTimeMs?: number; samples?: Sample[] };
 
-  const acc = new Map<string, { hits: number; msTimesHits: number; repos: Set<string>; error: number; warn: number }>();
+  const acc = new Map<
+    string,
+    {
+      hits: number;
+      msTimesHits: number;
+      repos: Set<string>;
+      error: number;
+      warn: number;
+    }
+  >();
 
   for (const repoDir of fs.readdirSync(perRepoDir)) {
     const f = path.join(perRepoDir, repoDir, 'per-rule.json');
@@ -458,7 +569,14 @@ function aggregatePerRule(): PerRuleAgg[] {
     const data = readJson<Record<string, RuleEntry>>(f);
     if (!data) continue;
     for (const [rule, entry] of Object.entries(data)) {
-      if (!acc.has(rule)) acc.set(rule, { hits: 0, msTimesHits: 0, repos: new Set(), error: 0, warn: 0 });
+      if (!acc.has(rule))
+        acc.set(rule, {
+          hits: 0,
+          msTimesHits: 0,
+          repos: new Set(),
+          error: 0,
+          warn: 0,
+        });
       const a = acc.get(rule)!;
       a.hits += entry.hits;
       a.msTimesHits += (entry.avgTimeMs ?? 0) * entry.hits;
@@ -470,8 +588,12 @@ function aggregatePerRule(): PerRuleAgg[] {
     }
   }
 
-  const measuredArena = readMeasuredRuleSet(path.join(BENCH_RESULTS, 'ilb-arena'));
-  const measuredJuliet = readMeasuredRuleSet(path.join(BENCH_RESULTS, 'ilb-cwe-corpus'));
+  const measuredArena = readMeasuredRuleSet(
+    path.join(BENCH_RESULTS, 'ilb-arena'),
+  );
+  const measuredJuliet = readMeasuredRuleSet(
+    path.join(BENCH_RESULTS, 'ilb-cwe-corpus'),
+  );
 
   return [...acc.entries()]
     .map(([rule, a]) => ({
@@ -491,7 +613,10 @@ function readMeasuredRuleSet(dir: string): Set<string> {
   const f = latestFile(dir);
   if (!f) return new Set();
   const raw = fs.readFileSync(f, 'utf-8');
-  const matches = raw.match(/"(?:[a-z][a-z0-9-]*\/)?(?:@[a-z0-9-]+\/)?[a-z][a-z0-9-]*\/[a-z][a-z0-9-/]*"/gi) ?? [];
+  const matches =
+    raw.match(
+      /"(?:[a-z][a-z0-9-]*\/)?(?:@[a-z0-9-]+\/)?[a-z][a-z0-9-]*\/[a-z][a-z0-9-/]*"/gi,
+    ) ?? [];
   const set = new Set<string>();
   for (const m of matches) {
     const name = m.slice(1, -1);
@@ -507,35 +632,77 @@ function readMeasuredRuleSet(dir: string): Set<string> {
 function appendHistory(rows: BenchRow[]) {
   const today = new Date().toISOString().split('T')[0];
   const historyPath = path.join(WILD_RESULTS, 'history.ndjson');
+  /*
+   * `source` goes in the row. A history entry used to carry only
+   * `date|bench|score|asOf`, so nothing on it said WHICH corpus produced the
+   * number — and this file has just changed what "ILB-Edge" is derived from.
+   * The four existing ILB-Edge rows were computed by filtering `fpEdge` out of
+   * the WILD summary; every row after this one reads the Edge summary. Same
+   * bench name, two methods, and without provenance a sparkline would draw
+   * them as one series and call the step a regression.
+   *
+   * This does NOT retro-label the four legacy rows — `superseded` exists in
+   * the schema for that, and deciding which historical numbers to withdraw is
+   * a judgement for whoever owns the benchmark, not a side effect of adding a
+   * field. See the reply on this thread in #851.
+   */
   const lines = rows.map((b) =>
-    JSON.stringify({ date: today, bench: b.name, score: b.score, asOf: b.date }),
+    JSON.stringify({
+      date: today,
+      bench: b.name,
+      score: b.score,
+      asOf: b.date,
+      source: b.source,
+    }),
   );
   fs.mkdirSync(WILD_RESULTS, { recursive: true });
   // Append-only; idempotent per date+bench (skip if same date already recorded)
   let existing = '';
-  try { existing = fs.readFileSync(historyPath, 'utf-8'); } catch { /* first run */ }
+  try {
+    existing = fs.readFileSync(historyPath, 'utf-8');
+  } catch {
+    /* first run */
+  }
   const existingKeys = new Set(
-    existing.trim().split('\n').filter(Boolean).map((line) => {
-      try {
-        const o = JSON.parse(line) as { date: string; bench: string };
-        return `${o.date}|${o.bench}`;
-      } catch { return ''; }
-    }),
+    existing
+      .trim()
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => {
+        try {
+          const o = JSON.parse(line) as { date: string; bench: string };
+          return `${o.date}|${o.bench}`;
+        } catch {
+          return '';
+        }
+      }),
   );
   const fresh = lines.filter((l) => {
     try {
       const o = JSON.parse(l) as { date: string; bench: string };
       return !existingKeys.has(`${o.date}|${o.bench}`);
-    } catch { return false; }
+    } catch {
+      return false;
+    }
   });
   if (fresh.length === 0) return;
   fs.appendFileSync(historyPath, fresh.join('\n') + '\n');
 }
 
-function readHistory(): Array<{ date: string; bench: string; score: string; asOf: string | null }> {
+function readHistory(): Array<{
+  date: string;
+  bench: string;
+  score: string;
+  asOf: string | null;
+}> {
   const p = path.join(WILD_RESULTS, 'history.ndjson');
   if (!fs.existsSync(p)) return [];
-  return fs.readFileSync(p, 'utf-8').trim().split('\n').filter(Boolean).map((line) => JSON.parse(line));
+  return fs
+    .readFileSync(p, 'utf-8')
+    .trim()
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => JSON.parse(line));
 }
 
 function sparkline(scores: Array<number | null>): string {
@@ -546,7 +713,13 @@ function sparkline(scores: Array<number | null>): string {
   const max = Math.max(...valid);
   const blocks = '▁▂▃▄▅▆▇█';
   const range = max - min || 1;
-  return scores.map((n) => (n == null ? ' ' : blocks[Math.min(7, Math.floor(((n - min) / range) * 7))])).join('');
+  return scores
+    .map((n) =>
+      n == null
+        ? ' '
+        : blocks[Math.min(7, Math.floor(((n - min) / range) * 7))],
+    )
+    .join('');
 }
 
 // ---------------------------------------------------------------------------
@@ -559,15 +732,69 @@ const coverage = readCoverageSignals();
 const perRuleAgg = aggregatePerRule();
 
 const benches: BenchRow[] = [
-  { name: 'ILB-CWE-Corpus', dimension: 'Synthetic CWE accuracy (self-authored)', industry: 'Internal — not an external corpus', target: 'F1 ≥ 80%', ...readJuliet() },
-  { name: 'ILB-Arena', dimension: 'Head-to-head vs competitors', industry: 'OWASP Benchmark', target: 'Rank ≤ 3', ...readArena() },
-  { name: 'ILB-Wild', dimension: 'Findings on popular OSS', industry: '(we define this)', target: '—', ...wild },
-  { name: 'ILB-Edge', dimension: 'FP resilience on adversarial-real code', industry: 'Adversarial GLUE / CheckList', target: 'FP rate ≤ 2%', ...readEdge(wildData) },
-  { name: 'ILB-Perf', dimension: 'Lint throughput', industry: 'MLPerf / SPEC CPU', target: '≤ 15 ms/file', ...readPerf() },
-  { name: 'ILB-Cov', dimension: 'Rule activation rate', industry: '(analogous to mutation testing)', target: '≥ 70%', ...readCoverage(wildData) },
-  { name: 'ILB-AI', dimension: 'Vuln detection on LLM-generated code', industry: 'HumanEval (task design)', target: '—', ...readAI() },
-  { name: 'ILB-LLM-Tokens', dimension: 'Formatter token cost', industry: '(we define this)', target: 'sec/compact ≤ V1', ...readLlmTokens() },
-  { name: 'ILB-LLM-Fix', dimension: 'First-fix accuracy on LLM-consumed lint output', industry: 'HumanEval / SWE-Bench (task design)', target: '≥ 80% macro pass', ...readLlmFix() },
+  {
+    name: 'ILB-CWE-Corpus',
+    dimension: 'Synthetic CWE accuracy (self-authored)',
+    industry: 'Internal — not an external corpus',
+    target: 'F1 ≥ 80%',
+    ...readJuliet(),
+  },
+  {
+    name: 'ILB-Arena',
+    dimension: 'Head-to-head vs competitors',
+    industry: 'OWASP Benchmark',
+    target: 'Rank ≤ 3',
+    ...readArena(),
+  },
+  {
+    name: 'ILB-Wild',
+    dimension: 'Findings on popular OSS',
+    industry: '(we define this)',
+    target: '—',
+    ...wild,
+  },
+  {
+    name: 'ILB-Edge',
+    dimension: 'FP resilience on adversarial-real code',
+    industry: 'Adversarial GLUE / CheckList',
+    target: 'FP rate ≤ 2%',
+    ...readEdge(wildData),
+  },
+  {
+    name: 'ILB-Perf',
+    dimension: 'Lint throughput',
+    industry: 'MLPerf / SPEC CPU',
+    target: '≤ 15 ms/file',
+    ...readPerf(),
+  },
+  {
+    name: 'ILB-Cov',
+    dimension: 'Rule activation rate',
+    industry: '(analogous to mutation testing)',
+    target: '≥ 70%',
+    ...readCoverage(wildData),
+  },
+  {
+    name: 'ILB-AI',
+    dimension: 'Vuln detection on LLM-generated code',
+    industry: 'HumanEval (task design)',
+    target: '—',
+    ...readAI(),
+  },
+  {
+    name: 'ILB-LLM-Tokens',
+    dimension: 'Formatter token cost',
+    industry: '(we define this)',
+    target: 'sec/compact ≤ V1',
+    ...readLlmTokens(),
+  },
+  {
+    name: 'ILB-LLM-Fix',
+    dimension: 'First-fix accuracy on LLM-consumed lint output',
+    industry: 'HumanEval / SWE-Bench (task design)',
+    target: '≥ 80% macro pass',
+    ...readLlmFix(),
+  },
 ];
 
 if (EMIT_JSON) {
@@ -577,8 +804,13 @@ if (EMIT_JSON) {
   };
   if (PRINT) console.log(JSON.stringify(out, null, 2));
   fs.mkdirSync(WILD_RESULTS, { recursive: true });
-  fs.writeFileSync(path.join(WILD_RESULTS, 'scorecard.json'), JSON.stringify(out, null, 2));
-  console.log(`✅ ${path.relative(ROOT, path.join(WILD_RESULTS, 'scorecard.json'))}`);
+  fs.writeFileSync(
+    path.join(WILD_RESULTS, 'scorecard.json'),
+    JSON.stringify(out, null, 2),
+  );
+  console.log(
+    `✅ ${path.relative(ROOT, path.join(WILD_RESULTS, 'scorecard.json'))}`,
+  );
   process.exit(0);
 }
 
@@ -588,7 +820,9 @@ appendHistory(benches);
 const md = renderMd(benches);
 fs.mkdirSync(WILD_RESULTS, { recursive: true });
 fs.writeFileSync(path.join(WILD_RESULTS, 'scorecard.md'), md);
-console.log(`✅ ${path.relative(ROOT, path.join(WILD_RESULTS, 'scorecard.md'))}`);
+console.log(
+  `✅ ${path.relative(ROOT, path.join(WILD_RESULTS, 'scorecard.md'))}`,
+);
 if (PRINT) {
   console.log('\n' + md);
 }
@@ -664,7 +898,10 @@ ${pluginRows}
     const renderKappas = (kappas: Record<string, number | null>) =>
       Object.entries(kappas)
         .toSorted((a, b) => (b[1] ?? 0) - (a[1] ?? 0))
-        .map(([k, v]) => `| ${k} | ${v == null ? '—' : v} | ${interpretKappa(v)} |`)
+        .map(
+          ([k, v]) =>
+            `| ${k} | ${v == null ? '—' : v} | ${interpretKappa(v)} |`,
+        )
         .join('\n');
 
     const breadthRows = coverage.coverageBreadth.cwes
@@ -676,11 +913,16 @@ ${pluginRows}
 
     const onlyJuliet =
       coverage.juliet.onlyInterlace
-        .map((x) => (typeof x === 'string' ? `- ${x}` : `- ${x.cwe} / ${x.file}`))
-        .join('\n') || '_(none — every Interlace TP also caught by ≥1 competitor)_';
+        .map((x) =>
+          typeof x === 'string' ? `- ${x}` : `- ${x.cwe} / ${x.file}`,
+        )
+        .join('\n') ||
+      '_(none — every Interlace TP also caught by ≥1 competitor)_';
     const onlyArena =
       coverage.arena.onlyInterlace
-        .map((x) => (typeof x === 'string' ? `- ${x}` : `- ${x.cwe} / ${x.file}`))
+        .map((x) =>
+          typeof x === 'string' ? `- ${x}` : `- ${x.cwe} / ${x.file}`,
+        )
         .join('\n') || '_(none)_';
 
     trustSection = `
@@ -741,16 +983,22 @@ ${coverage.coverageBreadth.gaps.length === 0 ? '✅ Every CWE meets the ≥ 2 fi
     const top = perRuleAgg.slice(0, 15);
     const topRows = top
       .map((r) => {
-        const measured = r.measuredInArena || r.measuredInJuliet
-          ? `${r.measuredInArena ? 'A' : ' '}${r.measuredInJuliet ? 'J' : ' '}`.trim()
-          : '⚠️ none';
-        const sevMix = r.errorHits + r.warnHits === 0 ? '—' : `${r.errorHits}E / ${r.warnHits}W`;
+        const measured =
+          r.measuredInArena || r.measuredInJuliet
+            ? `${r.measuredInArena ? 'A' : ' '}${r.measuredInJuliet ? 'J' : ' '}`.trim()
+            : '⚠️ none';
+        const sevMix =
+          r.errorHits + r.warnHits === 0
+            ? '—'
+            : `${r.errorHits}E / ${r.warnHits}W`;
         return `| \`${r.rule}\` | ${r.totalHits.toLocaleString()} | ${r.weightedAvgMs} | ${r.reposExercising} | ${sevMix} | ${measured} |`;
       })
       .join('\n');
 
     const unmeasured = perRuleAgg
-      .filter((r) => r.totalHits >= 50 && !r.measuredInArena && !r.measuredInJuliet)
+      .filter(
+        (r) => r.totalHits >= 50 && !r.measuredInArena && !r.measuredInJuliet,
+      )
       .slice(0, 20);
     const unmeasuredRows = unmeasured
       .map(
@@ -773,11 +1021,15 @@ ${topRows}
 
 ### Unmeasured rules — fire on Wild but no fixture coverage (≥ 50 hits)
 
-${unmeasured.length === 0 ? '✅ Every rule that fires ≥ 50 times on Wild has fixture coverage in Arena or CWE-Corpus.' : `⚠️ ${unmeasured.length} rule(s) firing on real OSS without synthetic-bench coverage. Add fixtures to bring these under measurement.
+${
+  unmeasured.length === 0
+    ? '✅ Every rule that fires ≥ 50 times on Wild has fixture coverage in Arena or CWE-Corpus.'
+    : `⚠️ ${unmeasured.length} rule(s) firing on real OSS without synthetic-bench coverage. Add fixtures to bring these under measurement.
 
 | Rule | Wild hits | Repos | Avg ms / hit |
 |---|---:|---:|---:|
-${unmeasuredRows}`}
+${unmeasuredRows}`
+}
 `;
   }
 
