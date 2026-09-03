@@ -123,10 +123,10 @@ export const noExposedErrorDetails = createRule<RuleOptions, MessageIds>({
     function getSensitiveProperty(
       node: TSESTree.MemberExpression,
     ): string | null {
-      if (node.property.type === AST_NODE_TYPES.Identifier) {
-        if (SENSITIVE_ERROR_PROPERTIES.has(node.property.name)) {
-          return node.property.name;
-        }
+      // `error['stack']` exposes the same trace `error.stack` exposes.
+      const field = propertyName(node);
+      if (field !== null && SENSITIVE_ERROR_PROPERTIES.has(field)) {
+        return field;
       }
       return null;
     }

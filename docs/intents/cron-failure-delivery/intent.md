@@ -8,7 +8,7 @@
 
 When a scheduled workflow fails, a human finds out — whichever way it failed.
 
-Today the repo already *declares* that: 21 of 22 scheduled workflows carry a
+Today the repo already _declares_ that: 21 of 22 scheduled workflows carry a
 failure-reporting step. The declaration is not the outcome. This intent is
 satisfied when the reporting is shown to fire for every failure shape those
 workflows can actually produce, and when a shape nobody handled makes CI red
@@ -20,16 +20,16 @@ A survey of every scheduled workflow on 2026-09-01 (`gh run list --event
 schedule --limit 1` per workflow, cross-referenced against
 `gh issue list --state all`):
 
-| workflow | failing since | issue filed |
-| :--- | :--- | :--- |
-| `resource-profile` | 2026-08-01 | none |
-| `benchmark` | 2026-08-25 | none |
-| `eslint-version-matrix` | 2026-08-29 | none |
-| `integration-health` | 2026-08-29 | none |
-| `oxlint-parity` | 2026-08-30 | none |
-| `peer-health` | 2026-08-31 | #784 |
-| `weekly-corpus-scan` | 2026-08-31 | #782 |
-| `evals` | *not failing* — see below | n/a |
+| workflow                | failing since             | issue filed |
+| :---------------------- | :------------------------ | :---------- |
+| `resource-profile`      | 2026-08-01                | none        |
+| `benchmark`             | 2026-08-25                | none        |
+| `eslint-version-matrix` | 2026-08-29                | none        |
+| `integration-health`    | 2026-08-29                | none        |
+| `oxlint-parity`         | 2026-08-30                | none        |
+| `peer-health`           | 2026-08-31                | #784        |
+| `weekly-corpus-scan`    | 2026-08-31                | #782        |
+| `evals`                 | _not failing_ — see below | n/a         |
 
 **Seven failing, two reported.** Not one issue was ever filed — open or closed
 — for four of them.
@@ -45,10 +45,10 @@ The reason it is worth an intent rather than five fixes is that the five
 silences have **five different causes**:
 
 1. `oxlint-parity` — the report step exists in `deep-parity` only. The job that
-   failed, `runtime-and-parity`, has none. The *file* mentions
+   failed, `runtime-and-parity`, has none. The _file_ mentions
    `report-failure`, so any scan of the file passes.
 2. `integration-health` — the step's `if:` tested `inputs.create-issue !=
-   false`. On a `schedule` run `inputs.*` is empty and GitHub coerces `''` to
+false`. On a `schedule` run `inputs.*` is empty and GitHub coerces `''` to
    false, so it fired only on manual dispatch: only when someone was already
    watching. Found reactively and fixed in #754; the fix is not yet on `main`.
 3. `eslint-version-matrix` — `fail-fast: true` with the report step inside the
@@ -123,7 +123,7 @@ the wrong worklist.
 - Should `report-failure` reopen rather than duplicate? **Answered, and it is
   not the risk this question assumed.** The action searches `--state open`
   only and has no reopen path — just `gh issue comment` on a match and
-  `gh issue create` otherwise. So a recurrence after close files a *new* issue:
+  `gh issue create` otherwise. So a recurrence after close files a _new_ issue:
   visible, not silent, and criterion 5 holds. But the action's own header
   comment claims "One issue per title, reopened and commented", and nothing
   reopens anything. Either the comment is wrong or the behaviour is; that is a
@@ -145,7 +145,7 @@ stale survey is the same defect this intent describes.
 
 **Two of the four "silent" workflows were not silent — they were early.**
 `resource-profile` filed #802 the moment its monthly cron next fired, and
-`integration-health`'s `inputs.*` fix *is* on `main` (the earlier "not on main"
+`integration-health`'s `inputs.*` fix _is_ on `main` (the earlier "not on main"
 reading was a bad grep escape, not a missing commit). Both had report steps
 that postdated their last failing run. That is diagnosis error on my part, not
 a defect in them, and the original table overstated the problem by two.
@@ -156,8 +156,8 @@ jobs.
 
 **The graph check then found nine more.** Running the shape lock across all 43
 workflows surfaced nine uncovered jobs in eight workflows that no failure had
-yet exposed — including single-job crons that file *finding* issues (their
-purpose) while having no *failure* reporter. My earlier claim that "21 of 22
+yet exposed — including single-job crons that file _finding_ issues (their
+purpose) while having no _failure_ reporter. My earlier claim that "21 of 22
 declare reporting" came from a loose grep for `issues: write` and did not
 survive contact with the job graph.
 

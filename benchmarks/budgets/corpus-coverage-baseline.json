@@ -1,7 +1,8 @@
 {
+  "command": "npx tsx scripts/check-corpus-coverage.ts --update",
   "note": "Rules with no corpus fixture, and therefore no measured precision. May only shrink — see scripts/check-corpus-coverage.ts.",
   "total": 374,
-  "measured": 228,
+  "measured": 229,
   "unmeasured": [
     "anthropic-security/no-browser-api-key-exposure",
     "anthropic-security/no-untrusted-content-in-prompt",
@@ -24,7 +25,6 @@
     "express-security/require-strict-transport-security",
     "gemini-security/no-hardcoded-api-key",
     "gemini-security/no-untrusted-content-in-prompt",
-    "import-next/consistent-type-specifier-style",
     "import-next/default",
     "import-next/enforce-dependency-direction",
     "import-next/export",

@@ -25,7 +25,7 @@ project percentage per package. This is the input to every decision below and no
 has it yet.
 
 **2. Admit at the measured floor, ratchet upward.** Each of the eleven gets a
-component whose target is its measured coverage rounded *down* to the nearest whole
+component whose target is its measured coverage rounded _down_ to the nearest whole
 percent — so it is green on day one (R3) and any regression is immediately red. The
 ratchet is the existing `chore/coverage-100` work raising each floor over time; this
 spec does not do that work, it only makes it visible.

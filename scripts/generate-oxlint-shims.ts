@@ -252,6 +252,12 @@ const previousRuntimeSnapshot = previous?.runtimeRuleNames;
 // matches, keep the prior `generatedAt` to avoid spurious drift.
 const today = new Date().toISOString().slice(0, 10);
 const manifestBase = {
+  // What a reader runs to get this file back. Emitted by the GENERATOR rather
+  // than hand-added to the artefact, because a hand-added field is dropped by
+  // the next regeneration and the lock that requires it would then fail on
+  // somebody else's unrelated change.
+  // See docs/intents/a-surface-figure-must-name-its-method/.
+  command: 'npm run oxlint:shims',
   generatedBy: 'scripts/generate-oxlint-shims.mjs',
   generatedAt: today,
   totalPlugins: manifestEntries.length,

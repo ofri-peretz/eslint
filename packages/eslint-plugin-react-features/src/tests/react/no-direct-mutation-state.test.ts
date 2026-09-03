@@ -31,6 +31,13 @@ describe('no-direct-mutation-state', () => {
           name: 'the same assignment outside any component',
           code: 'this.state.count = 5;',
         },
+        // `React['Component']` IS recognised — it names the same base class a
+        // bundler would have written. A base chosen at RUNTIME names nothing,
+        // so the class cannot be shown to be a React component at all.
+        {
+          name: 'a base class named at runtime is not a known React component',
+          code: 'class A extends React[base] { m() { this.state.count = 5; } }',
+        },
         // Functional component (no this.state)
         {
           code: 'function Component() { const [count, setCount] = useState(0); }',

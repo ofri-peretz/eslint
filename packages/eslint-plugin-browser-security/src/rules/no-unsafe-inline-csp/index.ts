@@ -17,9 +17,9 @@ import {
   AST_NODE_TYPES,
   createRule,
   formatLLMMessage,
-  MessageIcons,
   isTestFilePath,
-  staticString,
+  MessageIcons,
+  objectKeyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unsafeInline';
@@ -55,7 +55,6 @@ export const noUnsafeInlineCsp = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP',
       }),
-
     },
     schema: [
       {
@@ -129,13 +128,12 @@ export const noUnsafeInlineCsp = createRule<RuleOptions, MessageIds>({
         );
       }
       // Object property whose key names the header.
-      if (parent.type === AST_NODE_TYPES.Property && parent.value === node && !parent.computed) {
-        if (parent.key.type === AST_NODE_TYPES.Identifier) return isCspName(parent.key.name);
-        const staticText = staticString(parent.key);
-        if (staticText !== null) {
-          return isCspName(staticText);
-        }
-        return false;
+      if (parent.type === AST_NODE_TYPES.Property && parent.value === node) {
+        // `objectKeyName` resolves bare, quoted and computed-static keys
+        // alike; the rule previously required an Identifier and so saw only
+        // the first of the three.
+        const keyText = objectKeyName(parent);
+        return keyText !== null && isCspName(keyText);
       }
       // `content="…"` on a meta tag that declares the policy.
       if (

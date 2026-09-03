@@ -1,6 +1,7 @@
 {
+  "command": "npm run oxlint:shims",
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-08-13",
+  "generatedAt": "2026-09-03",
   "totalPlugins": 30,
   "totalRules": 477,
   "oxlintCompatible": 477,

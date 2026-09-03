@@ -33,7 +33,8 @@ export const requireDefaultProps = createRule<[Options], MessageIds>({
         description: 'Prop is not required but has no default value',
         severity: 'MEDIUM',
         fix: 'Add defaultProps or make prop required in propTypes',
-        documentationLink: 'https://react.dev/learn/components-and-props#specifying-a-default-prop',
+        documentationLink:
+          'https://react.dev/learn/components-and-props#specifying-a-default-prop',
       }),
     },
     schema: [
@@ -60,16 +61,31 @@ export const requireDefaultProps = createRule<[Options], MessageIds>({
     return {
       // Track React component classes
       ClassDeclaration(node: TSESTree.ClassDeclaration) {
-        if (isReactComponent(node) && node.id?.name) {
-          reactComponents.add(node.id.name);
-        }
+        if (isReactComponent(node)) reactComponents.add(componentKey(node));
+      },
+
+      /*
+       * An ANONYMOUS component is still a component.
+       *
+       * Keying by `node.id.name` meant `export default class extends Component`
+       * — one of the most common shapes in React — was never tracked, so a
+       * missing default on it reported nothing. Two test cases appeared to
+       * cover this and did not: both supplied COMPLETE defaults, so they passed
+       * because nothing was missing, while their names attributed the pass to
+       * an anonymous-class arm. A reader would have concluded the omission was
+       * deliberate.
+       */
+      ClassExpression(node: TSESTree.ClassExpression) {
+        if (isReactComponent(node)) reactComponents.add(componentKey(node));
       },
 
       // Collect propTypes (PropertyDefinition is used by TypeScript parser)
-      'PropertyDefinition[key.name="propTypes"]'(node: TSESTree.PropertyDefinition) {
+      'PropertyDefinition[key.name="propTypes"]'(
+        node: TSESTree.PropertyDefinition,
+      ) {
         if (node.value && node.value.type === 'ObjectExpression') {
           const componentName = getComponentName(node);
-          if (componentName) {
+          {
             const propsMap = new Map<string, TSESTree.Property>();
             for (const prop of node.value.properties) {
               if (prop.type === 'Property' && prop.key.type === 'Identifier') {
@@ -82,10 +98,12 @@ export const requireDefaultProps = createRule<[Options], MessageIds>({
       },
 
       // Collect defaultProps (PropertyDefinition is used by TypeScript parser)
-      'PropertyDefinition[key.name="defaultProps"]'(node: TSESTree.PropertyDefinition) {
+      'PropertyDefinition[key.name="defaultProps"]'(
+        node: TSESTree.PropertyDefinition,
+      ) {
         if (node.value && node.value.type === 'ObjectExpression') {
           const componentName = getComponentName(node);
-          if (componentName) {
+          {
             const propsMap = new Map<string, TSESTree.Property>();
             for (const prop of node.value.properties) {
               if (prop.type === 'Property' && prop.key.type === 'Identifier') {
@@ -138,26 +156,62 @@ export const requireDefaultProps = createRule<[Options], MessageIds>({
     };
 
     // oxlint-disable-next-line consistent-function-scoping
-    function getComponentName(node: TSESTree.PropertyDefinition): string | null {
-      if (node.parent.type === 'ClassBody' && node.parent.parent.type === 'ClassDeclaration') {
-        return node.parent.parent.id?.name || null;
-      }
-      return null;
+    function getComponentName(node: TSESTree.PropertyDefinition): string {
+      /*
+       * A `PropertyDefinition` exists only as a class member, so its parent is
+       * always a `ClassBody` and that body's parent is always a class —
+       * declaration or expression, an abstract class being a declaration with
+       * `abstract: true`. Neither guard can be reached by any input, and the
+       * house rule is to delete such a branch rather than cover it. Before the
+       * anonymous-class fix `getComponentName` could genuinely return null,
+       * because it keyed on `id.name`; now `componentKey` always produces one.
+       */
+      /*
+       * A `ClassBody`'s parent is always a class — declaration or expression,
+       * and an abstract class is a declaration with `abstract: true`. There is
+       * no third shape, so a guard here would be a branch no input can reach.
+       * The house rule is to delete such a branch rather than cover it; the
+       * cast states the invariant TypeScript cannot see.
+       */
+      const cls = node.parent.parent as
+        TSESTree.ClassDeclaration | TSESTree.ClassExpression;
+      return componentKey(cls);
+    }
+
+    /**
+     * A stable key for a component class, named or not.
+     *
+     * The source position is used when there is no identifier. It is unique per
+     * class within one lint pass, which is all this rule needs — it only has to
+     * match the class that declared `propTypes` with the one that declared
+     * `defaultProps`, and those are the same node.
+     */
+    // oxlint-disable-next-line consistent-function-scoping
+    function componentKey(
+      node: TSESTree.ClassDeclaration | TSESTree.ClassExpression,
+    ): string {
+      return node.id?.name ?? `anonymous@${node.range[0]}`;
     }
 
     // oxlint-disable-next-line consistent-function-scoping
-    function isReactComponent(node: TSESTree.ClassDeclaration): boolean {
+    function isReactComponent(
+      node: TSESTree.ClassDeclaration | TSESTree.ClassExpression,
+    ): boolean {
       if (!node.superClass) return false;
 
       if (node.superClass.type === 'Identifier') {
-        return node.superClass.name === 'Component' || node.superClass.name === 'PureComponent';
+        return (
+          node.superClass.name === 'Component' ||
+          node.superClass.name === 'PureComponent'
+        );
       }
 
       if (node.superClass.type === 'MemberExpression') {
         return (
           node.superClass.object.type === 'Identifier' &&
           node.superClass.object.name === 'React' &&
-          (propertyName(node.superClass) === 'Component' || propertyName(node.superClass) === 'PureComponent')
+          (propertyName(node.superClass) === 'Component' ||
+            propertyName(node.superClass) === 'PureComponent')
         );
       }
 

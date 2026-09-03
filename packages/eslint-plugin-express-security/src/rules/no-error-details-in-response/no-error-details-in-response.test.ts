@@ -21,14 +21,16 @@ type Case = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly Suggestion[] } | string>;
 };
-const xp = <T,>(cases: T[]): T[] =>
+const xp = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asExpress(c) as T;
     const test = c as Case;
     return {
       ...c,
       code: asExpress(test.code),
-      ...(typeof test.output === 'string' ? { output: asExpress(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asExpress(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -47,7 +49,6 @@ const xp = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
@@ -135,16 +136,16 @@ module.exports = app;
       { code: `try { work(); } catch (err) { socket.end(err); }` },
       // Method is not send/json/end
       { code: `try { work(); } catch (err) { res.write(err.stack); }` },
-      // Bare call / computed property / non-identifier chain root
+      // A bare call names no response object, and a chain root that is not an
+      // identifier names none either. `res['send']` was listed here too, under
+      // the same comment, as though it were the same kind of case — it names
+      // exactly the response method `res.send` names, and is now invalid.
       { code: `try { work(); } catch (err) { send(err); }` },
-      { code: `try { work(); } catch (err) { res['send'](err); }` },
       { code: `try { work(); } catch (err) { foo().send(err); }` },
       // res.end() with no argument
       { code: `try { work(); } catch (err) { res.end(); }` },
       // Serialization wrapper (documented false negative)
       { code: `try { work(); } catch (err) { res.send(serialize(err)); }` },
-      // Computed member on the error (documented false negative)
-      { code: `try { work(); } catch (err) { res.send(err['stack']); }` },
       // Nested member chain — object is not a bare identifier
       { code: `try { work(); } catch (err) { res.send(err.inner.stack); }` },
       // allowInDev: guarded by a NODE_ENV check
@@ -160,6 +161,19 @@ module.exports = app;
       },
     ]),
     invalid: xp([
+      // Both were pinned VALID, the second as a "documented false negative".
+      // `res['send']` is the same response method and `err['stack']` is the
+      // same stack trace; a bundler emits both spellings.
+      {
+        name: 'a response method named through a string subscript',
+        code: `try { work(); } catch (err) { res['send'](err); }`,
+        errors: [{ messageId: 'errorDetailsExposed' }],
+      },
+      {
+        name: 'a stack trace read through a string subscript',
+        code: `try { work(); } catch (err) { res.send(err['stack']); }`,
+        errors: [{ messageId: 'errorDetailsExposed' }],
+      },
       // Benchmark corpus: CWE-209/vulnerable/error-object-in-json.js
       {
         name: 'the caught error serialised into the JSON response',

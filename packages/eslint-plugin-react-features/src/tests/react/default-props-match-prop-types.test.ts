@@ -15,6 +15,18 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('default-props-match-prop-types', defaultPropsMatchPropTypes, {
   valid: [
+    // `PropTypes['number']` resolves to the same validator. A validator named
+    // at RUNTIME resolves to nothing, so the prop's type is unknown and no
+    // mismatch can be asserted either way.
+    {
+      name: 'a validator named at runtime names no PropTypes member',
+      code: `
+        class C extends Component {
+          static propTypes = { count: PropTypes[kind] };
+          static defaultProps = { count: 1 };
+        }
+      `,
+    },
     // Valid - matching types
     {
       name: 'string prop with string default',
@@ -371,4 +383,3 @@ ruleTester.run('default-props-match-prop-types', defaultPropsMatchPropTypes, {
     },
   ],
 });
-

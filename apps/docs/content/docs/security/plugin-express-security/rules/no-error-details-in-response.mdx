@@ -194,13 +194,16 @@ The following patterns are **not detected** due to static analysis limitations:
 res.send(serialize(err));
 ```
 
-### Computed member access
+### A property named at runtime
 
-**Why**: `err['stack']` is not resolved.
+**Why**: a key chosen at runtime names no property, so there is nothing to
+match against the sensitive-field list. A STATIC subscript is resolved and
+reported — `res['send'](err['stack'])` is detected exactly as
+`res.send(err.stack)` is.
 
 ```typescript
 // ❌ NOT DETECTED
-res.send(err['stack']);
+res.send(err[field]);
 ```
 
 ### Renamed bindings
@@ -227,7 +230,7 @@ res.send(failure.stack);
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowMessage` | `boolean` | `true` | Allow err.message in responses |
-| `allowInDev` | `boolean` | `false` | Allow error details inside an if-guard checking NODE_ENV |
+| Option         | Type      | Default | Description                                              |
+| -------------- | --------- | ------- | -------------------------------------------------------- |
+| `allowMessage` | `boolean` | `true`  | Allow err.message in responses                           |
+| `allowInDev`   | `boolean` | `false` | Allow error details inside an if-guard checking NODE_ENV |

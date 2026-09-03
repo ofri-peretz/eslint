@@ -16,12 +16,23 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-permissive-cors', noPermissiveCors, {
   valid: [
-    'const x = 42;',
-    'const flag = true;',
-    'function noop() {}',
-    'const items = [];',
+    {
+      name: 'a number declaration is not a policy object',
+      code: 'const x = 42;',
+    },
+    {
+      name: 'a boolean declaration is not a policy object',
+      code: 'const flag = true;',
+    },
+    {
+      name: 'an empty function declares no policy',
+      code: 'function noop() {}',
+    },
+    { name: 'an empty array declares no policy', code: 'const items = [];' },
     { name: 'a named origin', code: "cors({ origin: 'https://example.com' })" },
-    { code: "res.setHeader('Access-Control-Allow-Origin', 'https://mysite.com')" },
+    {
+      code: "res.setHeader('Access-Control-Allow-Origin', 'https://mysite.com')",
+    },
     { code: "const origin = 'https://safe.com'" },
 
     // An allowlist, a predicate and a callback are all real origin decisions.
@@ -48,7 +59,31 @@ ruleTester.run('no-permissive-cors', noPermissiveCors, {
   ],
 
   invalid: [
-    { name: "origin '*'", code: "cors({ origin: '*' })", errors: [{ messageId: 'violationDetected' }] },
+    {
+      name: "origin '*'",
+      code: "cors({ origin: '*' })",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    /*
+     * The same wildcard, spelled three ways. The rule required an Identifier
+     * key, so it saw only the first — missing not just the computed form a
+     * bundler emits but `{ 'origin': '*' }`, which is ordinary hand-written
+     * JavaScript. Generated from one array: a later refactor that fixes the
+     * quoted spelling and leaves the computed one should not go green.
+     */
+    ...[
+      { label: 'a quoted key', key: "'origin'" },
+      { label: 'a computed string key', key: "['origin']" },
+      {
+        label: 'a computed key beside a computed sibling',
+        key: "['origin']",
+        extra: ", ['credentials']: true",
+      },
+    ].map(({ label, key, extra }) => ({
+      name: `wildcard origin behind ${label}`,
+      code: `cors({ ${key}: '*'${extra ?? ''} })`,
+      errors: [{ messageId: 'violationDetected' }],
+    })),
     {
       code: "res.setHeader('Access-Control-Allow-Origin', '*')",
       errors: [{ messageId: 'violationDetected' }],
@@ -56,7 +91,10 @@ ruleTester.run('no-permissive-cors', noPermissiveCors, {
 
     // `origin: true` reflects the request Origin header — every origin, and
     // unlike `'*'` it still works with credentials. Only `'*'` was caught.
-    { code: 'cors({ origin: true })', errors: [{ messageId: 'violationDetected' }] },
+    {
+      code: 'cors({ origin: true })',
+      errors: [{ messageId: 'violationDetected' }],
+    },
     {
       code: 'cors({ origin: true, credentials: true })',
       errors: [{ messageId: 'violationDetected' }],
@@ -90,7 +128,9 @@ ruleTester.run('no-permissive-cors', noPermissiveCors, {
 ruleTester.run('lock: every way of setting Allow-Origin', noPermissiveCors, {
   valid: [
     // A named origin, by any route.
-    { code: `res.header('Access-Control-Allow-Origin', 'https://app.example.com');` },
+    {
+      code: `res.header('Access-Control-Allow-Origin', 'https://app.example.com');`,
+    },
     // A wildcard on ALLOW-METHODS grants no origin anything.
     { code: `res.setHeader('Access-Control-Allow-Methods', '*');` },
     // Timing-Allow-Origin exposes timing data, not response bodies.
@@ -105,7 +145,10 @@ ruleTester.run('lock: every way of setting Allow-Origin', noPermissiveCors, {
   invalid: [
     { code: `res.header('Access-Control-Allow-Origin', '*');`, errors: 1 },
     { code: `res.set('Access-Control-Allow-Origin', '*');`, errors: 1 },
-    { code: `const O = '*'; res.setHeader('Access-Control-Allow-Origin', O);`, errors: 1 },
+    {
+      code: `const O = '*'; res.setHeader('Access-Control-Allow-Origin', O);`,
+      errors: 1,
+    },
     // Case-insensitive: HTTP/2 requires lowercase on the wire.
     {
       code: `new Response('{}', { headers: { 'access-control-allow-origin': '*' } });`,
@@ -134,7 +177,9 @@ ruleTester.run('lock: reflected vs validated origin', noPermissiveCors, {
     {
       code: `res.setHeader('Access-Control-Allow-Origin', ALLOWED.has(req.headers.origin) ? req.headers.origin : 'null');`,
     },
-    { code: `res.setHeader('Access-Control-Allow-Origin', config.publicOrigin);` },
+    {
+      code: `res.setHeader('Access-Control-Allow-Origin', config.publicOrigin);`,
+    },
   ],
   invalid: [
     {
@@ -158,9 +203,13 @@ ruleTester.run('edge shapes', noPermissiveCors, {
     { code: `res[m]('Access-Control-Allow-Origin', '*');` },
     // An unresolvable binding is not a wildcard.
     { code: `res.setHeader('Access-Control-Allow-Origin', props.origin);` },
-    { code: `function f(o) { res.setHeader('Access-Control-Allow-Origin', o); }` },
+    {
+      code: `function f(o) { res.setHeader('Access-Control-Allow-Origin', o); }`,
+    },
     // A re-assigned binding has no single knowable value.
-    { code: `let o = 'https://a.example'; o = '*'; res.setHeader('Access-Control-Allow-Origin', o);` },
+    {
+      code: `let o = 'https://a.example'; o = '*'; res.setHeader('Access-Control-Allow-Origin', o);`,
+    },
     // A computed key is not a header name.
     { code: `const h = { [name]: '*' };` },
     // A shorthand/identifier key that is not the header.
@@ -170,7 +219,9 @@ ruleTester.run('edge shapes', noPermissiveCors, {
     // `key` with no sibling `value`.
     { code: `const e = { key: 'Access-Control-Allow-Origin' };` },
     // `key` whose sibling value is not a wildcard.
-    { code: `const e = { key: 'Access-Control-Allow-Origin', value: 'https://a.example' };` },
+    {
+      code: `const e = { key: 'Access-Control-Allow-Origin', value: 'https://a.example' };`,
+    },
     // A `key` property outside an object entry shape.
     { code: `const k = ['Access-Control-Allow-Origin'];` },
     // cors() with an unresolvable options argument.
@@ -196,13 +247,22 @@ ruleTester.run('edge shapes', noPermissiveCors, {
       errors: 1,
     },
     // A quoted property key, and a nested constant chain.
-    { code: `const A = '*'; const B = A; res.setHeader('Access-Control-Allow-Origin', B);`, errors: 1 },
+    {
+      code: `const A = '*'; const B = A; res.setHeader('Access-Control-Allow-Origin', B);`,
+      errors: 1,
+    },
     // The header name itself reached through a constant.
-    { code: `const H = 'Access-Control-Allow-Origin'; res.setHeader(H, '*');`, errors: 1 },
+    {
+      code: `const H = 'Access-Control-Allow-Origin'; res.setHeader(H, '*');`,
+      errors: 1,
+    },
     // `origin: true` reflects, which is worse than the wildcard.
     { code: `app.use(cors({ origin: true }));`, errors: 1 },
     // A computed string property spelling `origin`.
-    { code: `res.setHeader('Access-Control-Allow-Origin', req.headers['Origin']);`, errors: 1 },
+    {
+      code: `res.setHeader('Access-Control-Allow-Origin', req.headers['Origin']);`,
+      errors: 1,
+    },
   ],
 });
 
@@ -221,8 +281,14 @@ ruleTester.run('bounded folding', noPermissiveCors, {
     { code: `app.use(cors(makeOptions()));` },
   ],
   invalid: [
-    { code: `const a = '*'; const b = a; res.setHeader('Access-Control-Allow-Origin', b);`, errors: 1 },
-    { code: `const a = { origin: '*' }; const b = a; app.use(cors(b));`, errors: 1 },
+    {
+      code: `const a = '*'; const b = a; res.setHeader('Access-Control-Allow-Origin', b);`,
+      errors: 1,
+    },
+    {
+      code: `const a = { origin: '*' }; const b = a; app.use(cors(b));`,
+      errors: 1,
+    },
   ],
 });
 

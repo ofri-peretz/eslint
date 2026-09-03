@@ -1032,14 +1032,17 @@ describe('structural predicates', () => {
     valid: [
       // Property is not `name`.
       'const c = value.constructor.prototype;',
-      // Computed access.
+      // Not compared — read into a binding. The reason is the READ, not the
+      // bracket: this was labelled "computed access", which stopped being true
+      // when the rule learned to resolve a static subscript.
       'const n = value.constructor["name"];',
       // Inner property is not `constructor`.
       'if (value.proto.name === "Array") { go(); }',
       // Inner is not a MemberExpression at all.
       'if (constructor.name === "Array") { go(); }',
-      // Inner is a COMPUTED member.
-      'if (value["constructor"].name === "Array") { go(); }',
+      // A key chosen at RUNTIME names no property, so the chain cannot be shown
+      // to be `constructor.name` and the rule must abstain.
+      'if (value[which].name === "Array") { go(); }',
       // Not compared at all — passed to a call, or read into a log label.
       'logger.warn(value.constructor.name);',
       'const kind = value.constructor.name;',
@@ -1047,6 +1050,14 @@ describe('structural predicates', () => {
     invalid: [
       {
         code: 'if ("Array" === value.constructor.name) { go(); }',
+        errors: [{ messageId: 'unreliableConstructorCheck' }],
+      },
+      {
+        // Was pinned VALID under "inner is a COMPUTED member". It is the same
+        // brittle type check: `value["constructor"].name` reads exactly what
+        // `value.constructor.name` reads, and breaks across realms identically.
+        name: 'the constructor reached through a string subscript',
+        code: 'if (value["constructor"].name === "Array") { go(); }',
         errors: [{ messageId: 'unreliableConstructorCheck' }],
       },
     ],

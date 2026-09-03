@@ -1,4 +1,5 @@
 {
+  "command": "npx tsx scripts/check-new-rule-cases.ts --update",
   "eslint-plugin-anthropic-security": {
     "no-browser-api-key-exposure": {
       "environment": "universal",

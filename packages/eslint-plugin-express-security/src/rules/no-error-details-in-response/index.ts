@@ -46,6 +46,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 /**
@@ -179,8 +180,9 @@ export const noErrorDetailsInResponse = createRule<RuleOptions, MessageIds>({
     function isResponseSend(node: TSESTree.CallExpression): boolean {
       const callee = node.callee;
       if (callee.type !== AST_NODE_TYPES.MemberExpression) return false;
-      if (callee.property.type !== AST_NODE_TYPES.Identifier) return false;
-      if (!SEND_METHODS.has(callee.property.name)) return false;
+      // `res['send'](err.stack)` writes the same response body.
+      const method = propertyName(callee);
+      if (method === null || !SEND_METHODS.has(method)) return false;
 
       let obj: TSESTree.Node = callee.object;
       while (
@@ -206,15 +208,16 @@ export const noErrorDetailsInResponse = createRule<RuleOptions, MessageIds>({
       }
       if (
         node.type === AST_NODE_TYPES.MemberExpression &&
-        !node.computed &&
         node.object.type === AST_NODE_TYPES.Identifier &&
         isErrorName(node.object.name) &&
-        node.property.type === AST_NODE_TYPES.Identifier
+        // `err['stack']` leaks the same trace `err.stack` leaks.
+        propertyName(node) !== null
       ) {
-        if (node.property.name === 'stack') {
+        const field = propertyName(node);
+        if (field === 'stack') {
           return `\`${node.object.name}.stack\``;
         }
-        if (node.property.name === 'message' && !messageAllowed) {
+        if (field === 'message' && !messageAllowed) {
           return `\`${node.object.name}.message\``;
         }
       }

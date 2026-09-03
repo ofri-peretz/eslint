@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-node-security",
   "version": "5.4.1",
-  "description": "ESLint plugin for Node.js security — detects command injection, path traversal, SSRF, zip slip, and weak crypto (MD5/SHA-1, ECB, static IV) in fs, child_process, vm, and crypto.",
+  "description": "ESLint plugin for Node.js security \u2014 detects command injection, path traversal, SSRF, zip slip, and weak crypto (MD5/SHA-1, ECB, static IV) in fs, child_process, vm, and crypto.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -100,5 +100,21 @@
   "funding": {
     "type": "github",
     "url": "git+https://github.com/ofri-peretz/eslint.git"
+  },
+  "interlace": {
+    "surface": {
+      "kind": "node-core",
+      "modules": [
+        "node:fs",
+        "node:fs/promises",
+        "node:child_process",
+        "node:crypto",
+        "node:vm",
+        "node:dns",
+        "node:http",
+        "node:https",
+        "node:tls"
+      ]
+    }
   }
 }

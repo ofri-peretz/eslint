@@ -14,16 +14,29 @@ export default defineConfig({
   root: __dirname,
   // ponytail: alias devkit to source so vitest-direct runs don't need a pre-built dist
   resolve: {
-    alias: { '@interlace/eslint-devkit': resolve(__dirname, '../eslint-devkit/src/index.ts') },
+    alias: {
+      '@interlace/eslint-devkit': resolve(
+        __dirname,
+        '../eslint-devkit/src/index.ts',
+      ),
+    },
   },
   test: {
+    /*
+     * Vitest's 5s default is tuned for unit tests on an idle machine. These run
+     * under a turbo fan-out of ~47 concurrent tasks, where an I/O-bound suite is
+     * routinely starved and mis-reports contention as failure. A genuine hang
+     * still fails — at 30s instead of 5s.
+     *
+     * `hookTimeout` does NOT inherit `testTimeout`; it stays at 10s unless set,
+     * which fails as "Hook timed out in 10000ms" rather than as a test failure.
+     */
+    testTimeout: 30_000,
+    hookTimeout: 30_000,
     globals: true,
     environment: 'node',
     watch: false,
-    include: [
-      'src/**/*.test.ts',
-      'src/**/*.spec.ts',
-    ],
+    include: ['src/**/*.test.ts', 'src/**/*.spec.ts'],
     // Setting `exclude` replaces vitest's defaults — spread them back in and
     // add build-artifact dirs so stale outputs can never shadow real tests.
     exclude: [
@@ -45,7 +58,12 @@ export default defineConfig({
       enabled: true,
       provider: 'v8',
       // Coverage ratchet — policy target is 100/100/100/100 (docs/QUALITY_STANDARDS.md §2).
-      thresholds: { lines: 100, statements: 100, functions: 100, branches: 100 },
+      thresholds: {
+        lines: 100,
+        statements: 100,
+        functions: 100,
+        branches: 100,
+      },
       reportOnFailure: true,
       reportsDirectory: './coverage',
       include: ['src/**/*.ts'],

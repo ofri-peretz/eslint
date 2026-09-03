@@ -26,6 +26,21 @@ describe('no-improper-sanitization', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - proper sanitization', noImproperSanitization, {
       valid: [
+        // The three abstain paths that widening to static subscripts opened.
+        // `el['innerHTML']` reports; a sink chosen at RUNTIME names no sink, so
+        // there is nothing to match against the DOM vocabulary.
+        {
+          name: 'an assignment sink named at runtime is not a known DOM sink',
+          code: 'function set(el, sink, v) { el[sink] = v; }',
+        },
+        {
+          name: 'a runtime sink with a script literal is still not a known sink',
+          code: 'function set(el, sink) { el[sink] = "<script>alert(1)</script>"; }',
+        },
+        {
+          name: 'a runtime sink does not make an enclosing context dangerous',
+          code: 'function set(el, sink, v) { el[sink] = escapeHtml(v); }',
+        },
         // A hardcoded English sentence with an apostrophe, inside a structured
         // JSON payload. Reported on vercel/example-marketplace-integration
         // three times: `'` is in `dangerousChars`, and every literal nested
@@ -135,6 +150,7 @@ describe('no-improper-sanitization', () => {
           // Hardcoded but genuinely dangerous: the literal IS the vector, so
           // author-controlled is not a defence. Must still report.
           {
+            name: 'literal markup with no user input in it',
             code: `res.send('<script>alert(1)</script>');`,
             errors: [{ messageId: 'unsafeReplaceSanitization' }],
           },
@@ -775,6 +791,7 @@ describe('corpus regressions', () => {
           code: `res.send({ error: "Sorry, can't find that" })`,
         },
         {
+          name: 'a literal angle bracket in a JSON message',
           code: `res.json({ message: 'Done <ok>' })`,
         },
         // A sanitizer reached through a member chain, not a bare identifier.

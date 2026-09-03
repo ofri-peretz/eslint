@@ -33,6 +33,15 @@ describe('no-hardcoded-credentials', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - no hardcoded credentials', noHardcodedCredentials, {
       valid: [
+        // `this['password']` reports — it names the same slot the dotted form
+        // names, and a minifier writes it. A key chosen at RUNTIME names no
+        // slot at all, so there is nothing to match against the credential
+        // vocabulary and the rule must abstain. The pair is the whole point:
+        // widening to static subscripts must not widen to unknowable ones.
+        {
+          name: 'an assignment target keyed at runtime names no credential slot',
+          code: 'function set(k, v) { obj[k] = "SuperSecretPhrase!!"; }',
+        },
         // Both of these were real findings against the pinned corpus, at CVSS 9.8
         // each, and the corpus scan could not report them because its own error
         // handling had been swallowing every result. Neither value is a secret.

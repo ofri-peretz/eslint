@@ -1,5 +1,6 @@
 {
-  "$comment": "High-water mark per CWE on benchmarks/corpus: the most detections the ecosystem has ever achieved, and the fewest safe-fixture false positives. Set from the 2026-08-09 run (pre-sweep) so the gate stays red until every detection traded away for precision is restored. Lowering an entry means we stopped detecting a labelled vulnerability — do that only with a written reason. Regenerate with tsx scripts/recall-gate.ts --update.",
+  "command": "npx tsx scripts/recall-gate.ts --update",
+  "$comment": "High-water mark per CWE on benchmarks/corpus: the most detections the ecosystem has ever achieved, and the fewest safe-fixture false positives. Set from the 2026-08-09 run (pre-sweep) so the gate stays red until every detection traded away for precision is restored. Lowering an entry means we stopped detecting a labelled vulnerability \u2014 do that only with a written reason. Regenerate with tsx scripts/recall-gate.ts --update.",
   "detections": {
     "CWE-020": 2,
     "CWE-022": 2,

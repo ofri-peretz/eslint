@@ -941,9 +941,26 @@ ruleTester.run(
       `analytics.track('evt');`,
       `analytics.track('evt', data);`,
       `analytics.track('evt', { ...props });`,
-      `analytics.track('evt', { ['email']: x });`,
     ],
-    invalid: [],
+    invalid: [
+      /*
+       * This was VALID, asserting that `{ ['email']: x }` sent to analytics
+       * does not report. Nothing about it is safe — it is the same PII in the
+       * same call as `{ email: x }`, which has always reported. The case was
+       * added to reach a branch, in a file named for coverage, and what it
+       * actually pinned was the rule's blindness to computed keys: the
+       * spelling every bundler emits.
+       *
+       * A valid case with no stated claim cannot be told apart from a bug
+       * somebody wrote down. This one froze a false negative for as long as it
+       * existed, and the suite stayed green the whole time.
+       */
+      {
+        name: 'a computed key is still the key, and this is still PII',
+        code: `analytics.track('evt', { ['email']: x });`,
+        errors: [{ messageId: 'violationDetected' }],
+      },
+    ],
   },
 );
 

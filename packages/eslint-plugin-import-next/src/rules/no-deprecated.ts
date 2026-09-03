@@ -9,7 +9,7 @@
  * Forbid imported names marked with @deprecated documentation tag (eslint-plugin-import inspired)
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 /**
@@ -383,14 +383,14 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
       MemberExpression(node: TSESTree.MemberExpression) {
         // No has() pre-check: reportDeprecatedUsage bails out when the
         // object name has no recorded deprecation info.
-        if (
-          node.object.type === 'Identifier' &&
-          node.property.type === 'Identifier'
-        ) {
+        // `obj['prop']` reads the same deprecated export `obj.prop` reads.
+        const member =
+          node.object.type === 'Identifier' ? propertyName(node) : null;
+        if (member !== null) {
           reportDeprecatedUsage(
             node,
-            node.object.name,
-            `${node.object.name}.${node.property.name}`,
+            (node.object as TSESTree.Identifier).name,
+            `${(node.object as TSESTree.Identifier).name}.${member}`,
           );
         }
       },

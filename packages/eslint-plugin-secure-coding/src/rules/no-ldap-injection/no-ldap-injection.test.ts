@@ -60,6 +60,25 @@ describe('no-ldap-injection', () => {
         {
           code: 'const filter = `(uid=${ldap.escape.filterValue(userId)})`;',
         },
+        /*
+         * A key chosen at RUNTIME is not a known request field, and refusing
+         * exactly that is this rule's contract. It was honoured only one level
+         * deep: the caller checked the outermost property, then the chain walk
+         * went straight to the root, so `req[part].id` resolved its own `.id`,
+         * reached `req`, and reported. Nothing here shows `part` names a
+         * request field.
+         *
+         * `req.body['id']` stays reported — a STATIC subscript is a known
+         * field, and that is the distinction being preserved.
+         */
+        {
+          name: 'a runtime-computed segment inside the chain is not a known field',
+          code: "function f(req, part) { client.search('dc=x', { filter: req[part].id }); }",
+        },
+        {
+          name: 'a runtime-computed chain root is not a known field',
+          code: "function f(req, part) { client.search('dc=x', { filter: req[part] }); }",
+        },
         // Safe LDAP libraries
         {
           code: 'client.search(baseDN, filter, options);',
@@ -70,10 +89,12 @@ describe('no-ldap-injection', () => {
         },
         // Non-LDAP operations
         {
+          name: 'a SQL query is not an LDAP search',
           code: 'const result = database.query(sql);',
         },
         // Safe static filters
         {
+          name: 'a fully literal filter',
           code: 'const filter = "(objectClass=person)";',
         },
       ],
@@ -450,29 +471,33 @@ describe('no-ldap-injection', () => {
     // what made `req.headers[field.toLowerCase()]` in expressjs/morgan a CWE-90
     // finding; a bare `query.params.filter` in a file that never declares `query`
     // is not evidence of anything, and is now valid.
-    runLdap('invalid - the request roots, and only the roots', noLdapInjection, {
-      valid: [
-        'client.search(baseDN, query.params.filter, options);',
-        'client.search(baseDN, params.raw.filter, options);',
-        'client.search(baseDN, body.raw.filter, options);',
-      ],
-      invalid: [
-        {
-          code: 'client.search(baseDN, req.query.filter, options);',
-          errors: [{ messageId: 'unescapedLdapInput' }],
-        },
-        {
-          code: 'client.search(baseDN, request.params.filter, options);',
-          errors: [{ messageId: 'unescapedLdapInput' }],
-        },
-        {
-          // Destructured one statement earlier — resolved through the scope, not
-          // guessed from the name.
-          code: 'const { query } = req; client.search(baseDN, query.filter, options);',
-          errors: [{ messageId: 'unescapedLdapInput' }],
-        },
-      ],
-    });
+    runLdap(
+      'invalid - the request roots, and only the roots',
+      noLdapInjection,
+      {
+        valid: [
+          'client.search(baseDN, query.params.filter, options);',
+          'client.search(baseDN, params.raw.filter, options);',
+          'client.search(baseDN, body.raw.filter, options);',
+        ],
+        invalid: [
+          {
+            code: 'client.search(baseDN, req.query.filter, options);',
+            errors: [{ messageId: 'unescapedLdapInput' }],
+          },
+          {
+            code: 'client.search(baseDN, request.params.filter, options);',
+            errors: [{ messageId: 'unescapedLdapInput' }],
+          },
+          {
+            // Destructured one statement earlier — resolved through the scope, not
+            // guessed from the name.
+            code: 'const { query } = req; client.search(baseDN, query.filter, options);',
+            errors: [{ messageId: 'unescapedLdapInput' }],
+          },
+        ],
+      },
+    );
   });
 
   describe('isLdapInputEscaped - validation function call escaping', () => {
@@ -501,6 +526,7 @@ describe('no-ldap-injection', () => {
           // Exercises the `args.length < 2` early-return branch: a real LDAP
           // method call with only a base DN and no filter/options argument.
           {
+            name: 'a search with no filter argument at all',
             code: 'client.search(baseDN);',
           },
         ],
@@ -517,6 +543,7 @@ describe('no-ldap-injection', () => {
         valid: [
           // Exercises the `!node.init` early-return branch.
           {
+            name: 'a declaration with no initialiser',
             code: 'let ldapFilter;',
           },
         ],
@@ -708,18 +735,30 @@ const inputType = \`(\${intentKey})\`;`,
       'const ldapQuery = req.query.filter;',
       // An import of something that is not an LDAP client is not evidence —
       // the shape most web handlers have.
-      "import express from 'express';\nconst ldapQuery = req.query.filter;",
+      {
+        name: 'an import of something that is not an LDAP client is not evidence',
+        code: "import express from 'express';\nconst ldapQuery = req.query.filter;",
+      },
       // A method call that merely shares a name with an LDAP sink.
-      "import express from 'express';\nrouter.bind(baseDN, `(cn=${req.query.name})`);",
+      {
+        name: 'a method call that merely shares a name with an LDAP sink',
+        code: "import express from 'express';\nrouter.bind(baseDN, `(cn=${req.query.name})`);",
+      },
       // A literal that parses as a dangerous filter, in a file that speaks no
       // LDAP: this is a regex, a glob, or a comment more often than a filter.
-      'const pattern = "(uid=*)";',
+      {
+        name: 'a filter-shaped literal in a file that speaks no LDAP',
+        code: 'const pattern = "(uid=*)";',
+      },
       // A zip glob is STILL not an LDAP filter once ldapjs is loaded. This case
       // used to be `invalid`, asserting the false positive as correct behaviour
       // whenever the gate happened to be open — the gate was covering for a
       // predicate that could not tell a glob from a filter. `(${themeFilesPattern})`
       // is a parenthesised alternation, not `(attribute=value)`.
-      "import ldapjs from 'ldapjs';\nconst matchFilePattern = `${inputDirectory}/(${themeFilesPattern})`;",
+      {
+        name: 'a zip glob is still not an LDAP filter once ldapjs is loaded',
+        code: "import ldapjs from 'ldapjs';\nconst matchFilePattern = `${inputDirectory}/(${themeFilesPattern})`;",
+      },
       // Reading a request value into a variable is not itself a vulnerability, and
       // the variable being CALLED `ldapQuery` is not evidence that it is one. The
       // report belongs where the value reaches a filter or a DN.
@@ -777,20 +816,41 @@ describe('option branches', () => {
   const BUILT_IN_ANNOTATION =
     "import ldapjs from 'ldapjs';\n// @safe\nconst filter = `(uid=${req.query.uid})`;";
 
-  ruleTester.run('trustedSanitizers silences a custom escaper', noLdapInjection, {
-    valid: [{ name: 'the value is escaped first', code: SANITIZED, options: [{ trustedSanitizers: ['ldapClean'] }] }],
-    // …and without it, the very same source is reported. `ldapClean` is not in
-    // the devkit's built-in SANITIZATION_FUNCTIONS, and membership there is
-    // exact, so nothing but the option can account for the difference.
-    invalid: [{ code: SANITIZED, errors: [{ messageId: 'unescapedLdapInput' }] }],
-  });
+  ruleTester.run(
+    'trustedSanitizers silences a custom escaper',
+    noLdapInjection,
+    {
+      valid: [
+        {
+          name: 'the value is escaped first',
+          code: SANITIZED,
+          options: [{ trustedSanitizers: ['ldapClean'] }],
+        },
+      ],
+      // …and without it, the very same source is reported. `ldapClean` is not in
+      // the devkit's built-in SANITIZATION_FUNCTIONS, and membership there is
+      // exact, so nothing but the option can account for the difference.
+      invalid: [
+        { code: SANITIZED, errors: [{ messageId: 'unescapedLdapInput' }] },
+      ],
+    },
+  );
 
-  ruleTester.run('trustedAnnotations honours a project marker', noLdapInjection, {
-    valid: [
-      { code: ANNOTATED, options: [{ trustedAnnotations: ['@ldap-reviewed'] }] },
-    ],
-    invalid: [{ code: ANNOTATED, errors: [{ messageId: 'unsafeLdapFilter' }] }],
-  });
+  ruleTester.run(
+    'trustedAnnotations honours a project marker',
+    noLdapInjection,
+    {
+      valid: [
+        {
+          code: ANNOTATED,
+          options: [{ trustedAnnotations: ['@ldap-reviewed'] }],
+        },
+      ],
+      invalid: [
+        { code: ANNOTATED, errors: [{ messageId: 'unsafeLdapFilter' }] },
+      ],
+    },
+  );
 
   ruleTester.run('strictMode ignores the safety checker', noLdapInjection, {
     // `@safe` is a built-in SAFE_ANNOTATION, so this is quiet by default…
@@ -807,7 +867,9 @@ describe('option branches', () => {
 
   ruleTester.run('ldapFunctions redefines the sink set', noLdapInjection, {
     // `lookup` is not an LDAP sink by default, so the interpolation is unseen…
-    valid: ["import ldapjs from 'ldapjs';\nclient.lookup(baseDN, `(cn=${req.query.name})`, options);"],
+    valid: [
+      "import ldapjs from 'ldapjs';\nclient.lookup(baseDN, `(cn=${req.query.name})`, options);",
+    ],
     invalid: [
       // …until the caller names it one.
       {
@@ -822,20 +884,24 @@ describe('option branches', () => {
   // REPLACES the sink set rather than extending it. A consumer who adds one
   // method of their own silently loses all seven defaults — `client.search`,
   // the canonical CWE-90 sink, stops being examined at all.
-  ruleTester.run('ldapFunctions replaces rather than extends', noLdapInjection, {
-    valid: [
-      {
-        code: "import ldapjs from 'ldapjs';\nclient.search(baseDN, `(cn=${req.query.name})`, options);",
-        options: [{ ldapFunctions: ['lookup'] }],
-      },
-    ],
-    invalid: [
-      {
-        code: "import ldapjs from 'ldapjs';\nclient.search(baseDN, `(cn=${req.query.name})`, options);",
-        errors: [{ messageId: 'unsafeLdapFilter' }],
-      },
-    ],
-  });
+  ruleTester.run(
+    'ldapFunctions replaces rather than extends',
+    noLdapInjection,
+    {
+      valid: [
+        {
+          code: "import ldapjs from 'ldapjs';\nclient.search(baseDN, `(cn=${req.query.name})`, options);",
+          options: [{ ldapFunctions: ['lookup'] }],
+        },
+      ],
+      invalid: [
+        {
+          code: "import ldapjs from 'ldapjs';\nclient.search(baseDN, `(cn=${req.query.name})`, options);",
+          errors: [{ messageId: 'unsafeLdapFilter' }],
+        },
+      ],
+    },
+  );
 });
 
 /**
@@ -875,101 +941,113 @@ describe('no-ldap-injection — corpus locks', () => {
     ],
   });
 
-  ruleTester.run('argument 1 is a filter only for the search family', noLdapInjection, {
-    valid: [
-      // `client.bind(dn, password, cb)` — the canonical ldapjs service-account bind.
-      // A bind password is a protocol field with no filter grammar to escape out of.
-      // Reported as CWE-90 before the fix, because `password` was on a list of
-      // "untrusted-looking variable names".
-      [
-        "import ldap from 'ldapjs';",
-        "const client = ldap.createClient({ url: 'ldaps://d' });",
-        "const SERVICE_DN = 'cn=svc,ou=service,dc=example,dc=com';",
-        'const password = process.env.LDAP_BIND_PASSWORD;',
-        'client.bind(SERVICE_DN, password, cb);',
-      ].join('\n'),
-      // `client.add(dn, entry, cb)` — argument 1 is an ATTRIBUTE MAP. Reported before
-      // the fix because the variable name began with "user".
-      [
-        "import ldap from 'ldapjs';",
-        "const client = ldap.createClient({ url: 'ldaps://d' });",
-        "const ONBOARDING_DN = 'cn=pending,ou=onboarding,dc=example,dc=com';",
-        'const userEntry = { cn: req.body.commonName, sn: req.body.surname };',
-        'client.add(ONBOARDING_DN, userEntry, cb);',
-      ].join('\n'),
-    ],
-    invalid: [],
-  });
-
-  ruleTester.run('DN injection, which has no parentheses to look for', noLdapInjection, {
-    valid: [],
-    invalid: [
-      {
-        // A distinguished name contains no `(` or `)`, so the old
-        // `text.includes('(') && text.includes(')')` guard made DN injection
-        // undetectable by construction. `del` was also missing from the sink list
-        // entirely — ldapjs spells delete `del`.
-        code: [
+  ruleTester.run(
+    'argument 1 is a filter only for the search family',
+    noLdapInjection,
+    {
+      valid: [
+        // `client.bind(dn, password, cb)` — the canonical ldapjs service-account bind.
+        // A bind password is a protocol field with no filter grammar to escape out of.
+        // Reported as CWE-90 before the fix, because `password` was on a list of
+        // "untrusted-looking variable names".
+        [
           "import ldap from 'ldapjs';",
           "const client = ldap.createClient({ url: 'ldaps://d' });",
-          "const dn = 'uid=' + req.params.uid + ',ou=people,dc=example,dc=com';",
-          'client.del(dn, cb);',
+          "const SERVICE_DN = 'cn=svc,ou=service,dc=example,dc=com';",
+          'const password = process.env.LDAP_BIND_PASSWORD;',
+          'client.bind(SERVICE_DN, password, cb);',
         ].join('\n'),
-        errors: [{ messageId: 'ldapInjection' }],
-      },
-    ],
-  });
-
-  ruleTester.run('taint decided by evidence, not by spelling', noLdapInjection, {
-    valid: [
-      // A frozen lookup table. Every value is a literal written in this file; the
-      // request only picks WHICH one. Reported before the fix because the printed
-      // text of the initializer contained the substring `req.`.
-      [
-        "import ldap from 'ldapjs';",
-        "const client = ldap.createClient({ url: 'ldaps://d' });",
-        "const FILTERS = Object.freeze({ eng: '(ou=engineering)', sales: '(ou=sales)' });",
-        'const filter = FILTERS[req.params.department];',
-        "client.search('dc=example,dc=com', { filter, scope: 'sub' }, cb);",
-      ].join('\n'),
-      // `add`, `delete` and `search` are also Set, Map and Array methods. The file
-      // imports ldapjs, so the gate is open, and these are still not LDAP calls.
-      [
-        "import ldap from 'ldapjs';",
-        'const seenAttributes = new Set();',
-        'const entryCache = new Map();',
-        'seenAttributes.add(req.body.attributeName, entry);',
-        'entryCache.delete(req.params.dn, entry);',
-      ].join('\n'),
-    ],
-    invalid: [
-      {
-        // The same injection with every identifier renamed to an innocuous word: no
-        // `req`, `query`, `user`, `input`, `filter` or `dn` anywhere. Silent before
-        // the fix — the false-negative direction nobody runs.
-        code: [
+        // `client.add(dn, entry, cb)` — argument 1 is an ATTRIBUTE MAP. Reported before
+        // the fix because the variable name began with "user".
+        [
           "import ldap from 'ldapjs';",
           "const client = ldap.createClient({ url: 'ldaps://d' });",
-          'const criterion = envelope.parsed.needle;',
-          'const spec = `(uid=${criterion})`;',
-          "client.search('dc=example,dc=com', { filter: spec, scope: 'sub' }, onDone);",
+          "const ONBOARDING_DN = 'cn=pending,ou=onboarding,dc=example,dc=com';",
+          'const userEntry = { cn: req.body.commonName, sn: req.body.surname };',
+          'client.add(ONBOARDING_DN, userEntry, cb);',
         ].join('\n'),
-        errors: [{ messageId: 'unsafeLdapFilter' }],
-      },
-      {
-        // A LOCAL function wearing a trusted name, whose body returns its argument
-        // unchanged. The spelling of the callee is not the evidence.
-        code: [
+      ],
+      invalid: [],
+    },
+  );
+
+  ruleTester.run(
+    'DN injection, which has no parentheses to look for',
+    noLdapInjection,
+    {
+      valid: [],
+      invalid: [
+        {
+          // A distinguished name contains no `(` or `)`, so the old
+          // `text.includes('(') && text.includes(')')` guard made DN injection
+          // undetectable by construction. `del` was also missing from the sink list
+          // entirely — ldapjs spells delete `del`.
+          code: [
+            "import ldap from 'ldapjs';",
+            "const client = ldap.createClient({ url: 'ldaps://d' });",
+            "const dn = 'uid=' + req.params.uid + ',ou=people,dc=example,dc=com';",
+            'client.del(dn, cb);',
+          ].join('\n'),
+          errors: [{ messageId: 'ldapInjection' }],
+        },
+      ],
+    },
+  );
+
+  ruleTester.run(
+    'taint decided by evidence, not by spelling',
+    noLdapInjection,
+    {
+      valid: [
+        // A frozen lookup table. Every value is a literal written in this file; the
+        // request only picks WHICH one. Reported before the fix because the printed
+        // text of the initializer contained the substring `req.`.
+        [
           "import ldap from 'ldapjs';",
           "const client = ldap.createClient({ url: 'ldaps://d' });",
-          'function escapeFilterValue(value) { return value; }',
-          'const filter = `(uid=${escapeFilterValue(req.query.uid)})`;',
+          "const FILTERS = Object.freeze({ eng: '(ou=engineering)', sales: '(ou=sales)' });",
+          'const filter = FILTERS[req.params.department];',
           "client.search('dc=example,dc=com', { filter, scope: 'sub' }, cb);",
         ].join('\n'),
-        errors: [{ messageId: 'unsafeLdapFilter' }],
-      },
-    ],
-  });
+        // `add`, `delete` and `search` are also Set, Map and Array methods. The file
+        // imports ldapjs, so the gate is open, and these are still not LDAP calls.
+        [
+          "import ldap from 'ldapjs';",
+          'const seenAttributes = new Set();',
+          'const entryCache = new Map();',
+          'seenAttributes.add(req.body.attributeName, entry);',
+          'entryCache.delete(req.params.dn, entry);',
+        ].join('\n'),
+      ],
+      invalid: [
+        {
+          // The same injection with every identifier renamed to an innocuous word: no
+          // `req`, `query`, `user`, `input`, `filter` or `dn` anywhere. Silent before
+          // the fix — the false-negative direction nobody runs.
+          code: [
+            "import ldap from 'ldapjs';",
+            "const client = ldap.createClient({ url: 'ldaps://d' });",
+            'const criterion = envelope.parsed.needle;',
+            'const spec = `(uid=${criterion})`;',
+            "client.search('dc=example,dc=com', { filter: spec, scope: 'sub' }, onDone);",
+          ].join('\n'),
+          errors: [{ messageId: 'unsafeLdapFilter' }],
+        },
+        {
+          // A LOCAL function wearing a trusted name, whose body returns its argument
+          // unchanged. The spelling of the callee is not the evidence.
+          code: [
+            "import ldap from 'ldapjs';",
+            "const client = ldap.createClient({ url: 'ldaps://d' });",
+            'function escapeFilterValue(value) { return value; }',
+            'const filter = `(uid=${escapeFilterValue(req.query.uid)})`;',
+            "client.search('dc=example,dc=com', { filter, scope: 'sub' }, cb);",
+          ].join('\n'),
+          errors: [{ messageId: 'unsafeLdapFilter' }],
+        },
+      ],
+    },
+  );
 });
 
 /**
@@ -978,194 +1056,214 @@ describe('no-ldap-injection — corpus locks', () => {
  * the request-root walk and the options-object `filter` lookup.
  */
 describe('no-ldap-injection — structural machinery', () => {
-  ruleTester.run('LDAP local collection and receiver resolution', noLdapInjection, {
-    valid: [
-      // A NAMESPACE import and a DESTRUCTURED require both bind LDAP locals; a Set
-      // built in the same file is still a Set.
-      [
-        "import * as ldap from 'ldapjs';",
-        'const bag = new Set();',
-        'bag.add(req.body.x, req.body.y);',
-      ].join('\n'),
-      [
-        "const { createClient } = require('ldapjs');",
-        'const cache = new Map();',
-        'cache.delete(req.params.k, v);',
-      ].join('\n'),
-      // A require of something else binds nothing.
-      [
-        "import ldap from 'ldapjs';",
-        "const util = require('node:util');",
-        'const bag = new Set();',
-        'bag.add(req.body.x, req.body.y);',
-      ].join('\n'),
-      // A receiver that is an object literal, an array literal or a string.
-      "import ldap from 'ldapjs';\nconst o = { add(a, b) {} }; o.add(req.body.x, req.body.y);",
-      "import ldap from 'ldapjs';\n['a'].search(req.body.x, req.body.y);",
-      "import ldap from 'ldapjs';\n'abc'.search(req.body.x, req.body.y);",
-      // A receiver produced by a call that is NOT an LDAP construction.
-      "import ldap from 'ldapjs';\nconst q = makeQueue(); q.add(req.body.x, req.body.y);",
-      "import ldap from 'ldapjs';\nmakeQueue().add(req.body.x, req.body.y);",
-      "import ldap from 'ldapjs';\nnew Queue().add(req.body.x, req.body.y);",
-      // A class field that is NOT an LDAP construction.
-      [
-        "import ldap from 'ldapjs';",
-        'class Svc { store = new Map(); m() { this.store.delete(req.params.dn, v); } }',
-      ].join('\n'),
-      // A `this.x` receiver with no matching field declaration is unresolvable, and a
-      // benign argument keeps it quiet either way.
-      [
-        "import ldap from 'ldapjs';",
-        "class Svc { m() { this.client.search(BASE, { filter: '(cn=admin)' }, cb); } }",
-        "const BASE = 'dc=example,dc=com';",
-      ].join('\n'),
-      // A computed callee is not a method name the rule can read.
-      "import ldap from 'ldapjs';\nconst m = 'search'; client[m](req.body.dn, req.body.f);",
-      // Fewer arguments than the shape needs.
-      "import ldap from 'ldapjs';\nconst client = ldap.createClient({}); client.search();",
-    ],
-    invalid: [
-      // A class field constructed from a NAMED import.
-      {
-        code: [
-          "import { Client } from 'ldapts';",
-          'class Svc {',
-          "  client = new Client({ url: 'ldaps://d' });",
-          '  find(login) {',
-          '    return this.client.search(BASE, { filter: `(uid=${login})` });',
-          '  }',
-          '}',
-          "const BASE = 'dc=example,dc=com';",
+  ruleTester.run(
+    'LDAP local collection and receiver resolution',
+    noLdapInjection,
+    {
+      valid: [
+        // A NAMESPACE import and a DESTRUCTURED require both bind LDAP locals; a Set
+        // built in the same file is still a Set.
+        [
+          "import * as ldap from 'ldapjs';",
+          'const bag = new Set();',
+          'bag.add(req.body.x, req.body.y);',
         ].join('\n'),
-        errors: [{ messageId: 'unsafeLdapFilter' }],
-      },
-      // A class field constructed through a NAMESPACE import member.
-      {
-        code: [
-          "import * as ldapts from 'ldapts';",
-          'class Svc {',
-          "  client = new ldapts.Client({ url: 'ldaps://d' });",
-          '  find(login) {',
-          '    return this.client.search(BASE, { filter: `(uid=${login})` });',
-          '  }',
-          '}',
-          "const BASE = 'dc=example,dc=com';",
-        ].join('\n'),
-        errors: [{ messageId: 'unsafeLdapFilter' }],
-      },
-      // A destructured require binds the factory name directly.
-      {
-        code: [
+        [
           "const { createClient } = require('ldapjs');",
-          'const client = createClient({});',
-          'client.search(BASE, { filter: `(uid=${login})` }, cb);',
+          'const cache = new Map();',
+          'cache.delete(req.params.k, v);',
+        ].join('\n'),
+        // A require of something else binds nothing.
+        [
+          "import ldap from 'ldapjs';",
+          "const util = require('node:util');",
+          'const bag = new Set();',
+          'bag.add(req.body.x, req.body.y);',
+        ].join('\n'),
+        // A receiver that is an object literal, an array literal or a string.
+        "import ldap from 'ldapjs';\nconst o = { add(a, b) {} }; o.add(req.body.x, req.body.y);",
+        {
+          name: 'an array literal receiver is not an LDAP client',
+          code: "import ldap from 'ldapjs';\n['a'].search(req.body.x, req.body.y);",
+        },
+        {
+          name: 'a string receiver is not an LDAP client',
+          code: "import ldap from 'ldapjs';\n'abc'.search(req.body.x, req.body.y);",
+        },
+        // A receiver produced by a call that is NOT an LDAP construction.
+        "import ldap from 'ldapjs';\nconst q = makeQueue(); q.add(req.body.x, req.body.y);",
+        {
+          name: 'a receiver produced by a non-LDAP call',
+          code: "import ldap from 'ldapjs';\nmakeQueue().add(req.body.x, req.body.y);",
+        },
+        {
+          name: 'a receiver produced by a non-LDAP constructor',
+          code: "import ldap from 'ldapjs';\nnew Queue().add(req.body.x, req.body.y);",
+        },
+        // A class field that is NOT an LDAP construction.
+        [
+          "import ldap from 'ldapjs';",
+          'class Svc { store = new Map(); m() { this.store.delete(req.params.dn, v); } }',
+        ].join('\n'),
+        // A `this.x` receiver with no matching field declaration is unresolvable, and a
+        // benign argument keeps it quiet either way.
+        [
+          "import ldap from 'ldapjs';",
+          "class Svc { m() { this.client.search(BASE, { filter: '(cn=admin)' }, cb); } }",
           "const BASE = 'dc=example,dc=com';",
         ].join('\n'),
-        errors: [{ messageId: 'unsafeLdapFilter' }],
-      },
-    ],
-  });
+        // A computed callee is not a method name the rule can read.
+        "import ldap from 'ldapjs';\nconst m = 'search'; client[m](req.body.dn, req.body.f);",
+        // Fewer arguments than the shape needs.
+        "import ldap from 'ldapjs';\nconst client = ldap.createClient({}); client.search();",
+      ],
+      invalid: [
+        // A class field constructed from a NAMED import.
+        {
+          code: [
+            "import { Client } from 'ldapts';",
+            'class Svc {',
+            "  client = new Client({ url: 'ldaps://d' });",
+            '  find(login) {',
+            '    return this.client.search(BASE, { filter: `(uid=${login})` });',
+            '  }',
+            '}',
+            "const BASE = 'dc=example,dc=com';",
+          ].join('\n'),
+          errors: [{ messageId: 'unsafeLdapFilter' }],
+        },
+        // A class field constructed through a NAMESPACE import member.
+        {
+          code: [
+            "import * as ldapts from 'ldapts';",
+            'class Svc {',
+            "  client = new ldapts.Client({ url: 'ldaps://d' });",
+            '  find(login) {',
+            '    return this.client.search(BASE, { filter: `(uid=${login})` });',
+            '  }',
+            '}',
+            "const BASE = 'dc=example,dc=com';",
+          ].join('\n'),
+          errors: [{ messageId: 'unsafeLdapFilter' }],
+        },
+        // A destructured require binds the factory name directly.
+        {
+          code: [
+            "const { createClient } = require('ldapjs');",
+            'const client = createClient({});',
+            'client.search(BASE, { filter: `(uid=${login})` }, cb);',
+            "const BASE = 'dc=example,dc=com';",
+          ].join('\n'),
+          errors: [{ messageId: 'unsafeLdapFilter' }],
+        },
+      ],
+    },
+  );
 
-  ruleTester.run('dynamicParts, staticSkeleton and the filter lookup', noLdapInjection, {
-    valid: [
-      // Numeric concatenation is not a string, so it is not a filter.
-      "import ldap from 'ldapjs';\nconst n = offset + limit; client.del(n, cb);",
-      // A ternary neither branch of which is a string construction.
-      "import ldap from 'ldapjs';\nconst dn = flag ? a : b; client.del(dn, cb);",
-      // An options object with no `filter` property, and a computed key that resolves
-      // to something else.
-      [
-        "import ldap from 'ldapjs';",
-        "const KEY = 'scope';",
-        "client.search(BASE, { scope: 'sub', [KEY]: 'one' }, cb);",
-        "const BASE = 'dc=example,dc=com';",
-      ].join('\n'),
-      // A computed key that cannot be resolved at all, plus a spread.
-      [
-        "import ldap from 'ldapjs';",
-        'client.search(BASE, { ...extra, [dynamicKey]: value }, cb);',
-        "const BASE = 'dc=example,dc=com';",
-      ].join('\n'),
-      // A second argument that is a bare identifier with more than one write.
-      [
-        "import ldap from 'ldapjs';",
-        "let opts = { filter: '(cn=a)' };",
-        "opts = { filter: '(cn=b)' };",
-        'client.search(BASE, opts, cb);',
-        "const BASE = 'dc=example,dc=com';",
-      ].join('\n'),
-      // `filter` written as a STRING-literal key, holding a constant.
-      [
-        "import ldap from 'ldapjs';",
-        "client.search(BASE, { 'filter': '(objectClass=person)' }, cb);",
-        "const BASE = 'dc=example,dc=com';",
-      ].join('\n'),
-      // Cyclic bindings must terminate and claim nothing.
-      "import ldap from 'ldapjs';\nvar a = b; var b = a; client.del(a, cb);",
-      // A request root that is a plain undeclared identifier chain.
-      "import ldap from 'ldapjs';\nclient.del(someGlobal.dn, cb);",
-      // A root declared from something that is not a request.
-      "import ldap from 'ldapjs';\nconst q = makeThing(); client.del(q.dn, cb);",
-      // A root declared with no initializer.
-      "import ldap from 'ldapjs';\nlet q; client.del(q.dn, cb);",
-      // An assignment whose right side is not filter grammar.
-      "import ldap from 'ldapjs';\nlet label; label = 'uid=' + userId;",
-      // A `.length` read is not a DN.
-      "import ldap from 'ldapjs';\nclient.del(entries.length, cb);",
-    ],
-    invalid: [
-      // A ternary whose consequent alone is a filter construction.
-      {
-        code: [
+  ruleTester.run(
+    'dynamicParts, staticSkeleton and the filter lookup',
+    noLdapInjection,
+    {
+      valid: [
+        // Numeric concatenation is not a string, so it is not a filter.
+        "import ldap from 'ldapjs';\nconst n = offset + limit; client.del(n, cb);",
+        // A ternary neither branch of which is a string construction.
+        "import ldap from 'ldapjs';\nconst dn = flag ? a : b; client.del(dn, cb);",
+        // An options object with no `filter` property, and a computed key that resolves
+        // to something else.
+        [
           "import ldap from 'ldapjs';",
-          "const ALL = '(objectClass=person)';",
-          'const filter = flag ? `(cn=${req.query.cn})` : ALL;',
-          'client.search(BASE, { filter }, cb);',
+          "const KEY = 'scope';",
+          "client.search(BASE, { scope: 'sub', [KEY]: 'one' }, cb);",
           "const BASE = 'dc=example,dc=com';",
         ].join('\n'),
-        errors: [{ messageId: 'unsafeLdapFilter' }],
-      },
-      // A ternary whose ALTERNATE alone is a filter construction.
-      {
-        code: [
+        // A computed key that cannot be resolved at all, plus a spread.
+        [
           "import ldap from 'ldapjs';",
-          "const ALL = '(objectClass=person)';",
-          'const filter = flag ? ALL : `(cn=${req.query.cn})`;',
-          'client.search(BASE, { filter }, cb);',
+          'client.search(BASE, { ...extra, [dynamicKey]: value }, cb);',
           "const BASE = 'dc=example,dc=com';",
         ].join('\n'),
-        errors: [{ messageId: 'unsafeLdapFilter' }],
-      },
-      // A ternary DN, reached through the assignment visitor.
-      {
-        code: [
+        // A second argument that is a bare identifier with more than one write.
+        [
           "import ldap from 'ldapjs';",
-          'let filter;',
-          'filter = `(cn=${req.query.cn})`;',
-        ].join('\n'),
-        errors: [{ messageId: 'unsafeLdapFilter' }],
-      },
-      // A `filter` reached through a STRING-literal key.
-      {
-        code: [
-          "import ldap from 'ldapjs';",
-          "client.search(BASE, { 'filter': `(cn=${req.query.cn})` }, cb);",
+          "let opts = { filter: '(cn=a)' };",
+          "opts = { filter: '(cn=b)' };",
+          'client.search(BASE, opts, cb);',
           "const BASE = 'dc=example,dc=com';",
         ].join('\n'),
-        errors: [{ messageId: 'unsafeLdapFilter' }],
-      },
-      // A request root that was destructured out of a destructured request.
-      {
-        code: [
+        // `filter` written as a STRING-literal key, holding a constant.
+        [
           "import ldap from 'ldapjs';",
-          'const q = req.query;',
-          'client.search(BASE, q.filter, cb);',
+          "client.search(BASE, { 'filter': '(objectClass=person)' }, cb);",
           "const BASE = 'dc=example,dc=com';",
         ].join('\n'),
-        errors: [{ messageId: 'unescapedLdapInput' }],
-      },
-    ],
-  });
+        // Cyclic bindings must terminate and claim nothing.
+        "import ldap from 'ldapjs';\nvar a = b; var b = a; client.del(a, cb);",
+        // A request root that is a plain undeclared identifier chain.
+        "import ldap from 'ldapjs';\nclient.del(someGlobal.dn, cb);",
+        // A root declared from something that is not a request.
+        "import ldap from 'ldapjs';\nconst q = makeThing(); client.del(q.dn, cb);",
+        // A root declared with no initializer.
+        "import ldap from 'ldapjs';\nlet q; client.del(q.dn, cb);",
+        // An assignment whose right side is not filter grammar.
+        "import ldap from 'ldapjs';\nlet label; label = 'uid=' + userId;",
+        // A `.length` read is not a DN.
+        "import ldap from 'ldapjs';\nclient.del(entries.length, cb);",
+      ],
+      invalid: [
+        // A ternary whose consequent alone is a filter construction.
+        {
+          code: [
+            "import ldap from 'ldapjs';",
+            "const ALL = '(objectClass=person)';",
+            'const filter = flag ? `(cn=${req.query.cn})` : ALL;',
+            'client.search(BASE, { filter }, cb);',
+            "const BASE = 'dc=example,dc=com';",
+          ].join('\n'),
+          errors: [{ messageId: 'unsafeLdapFilter' }],
+        },
+        // A ternary whose ALTERNATE alone is a filter construction.
+        {
+          code: [
+            "import ldap from 'ldapjs';",
+            "const ALL = '(objectClass=person)';",
+            'const filter = flag ? ALL : `(cn=${req.query.cn})`;',
+            'client.search(BASE, { filter }, cb);',
+            "const BASE = 'dc=example,dc=com';",
+          ].join('\n'),
+          errors: [{ messageId: 'unsafeLdapFilter' }],
+        },
+        // A ternary DN, reached through the assignment visitor.
+        {
+          code: [
+            "import ldap from 'ldapjs';",
+            'let filter;',
+            'filter = `(cn=${req.query.cn})`;',
+          ].join('\n'),
+          errors: [{ messageId: 'unsafeLdapFilter' }],
+        },
+        // A `filter` reached through a STRING-literal key.
+        {
+          code: [
+            "import ldap from 'ldapjs';",
+            "client.search(BASE, { 'filter': `(cn=${req.query.cn})` }, cb);",
+            "const BASE = 'dc=example,dc=com';",
+          ].join('\n'),
+          errors: [{ messageId: 'unsafeLdapFilter' }],
+        },
+        // A request root that was destructured out of a destructured request.
+        {
+          code: [
+            "import ldap from 'ldapjs';",
+            'const q = req.query;',
+            'client.search(BASE, q.filter, cb);',
+            "const BASE = 'dc=example,dc=com';",
+          ].join('\n'),
+          errors: [{ messageId: 'unescapedLdapInput' }],
+        },
+      ],
+    },
+  );
 });
 
 describe('no-ldap-injection — remaining structural arms', () => {
@@ -1252,72 +1350,76 @@ describe('no-ldap-injection — remaining structural arms', () => {
  *   @acme/ldap + the same call                          QUIET (gate closed)
  *   ldapjs   + c.search(event.query.dn, "(uid=jdoe)")   QUIET (not a root)
  */
-ruleTester.run('options: package gate and request roots are configurable', noLdapInjection, {
-  valid: [
-    // ---- the default is unchanged ----------------------------------------
-    // An empty bag still closes the gate on a non-LDAP package and still
-    // declines `event` as a request root.
-    {
-      code: 'import ldap from "@acme/ldap"; const c = ldap.createClient(); export const f = (req) => c.search(req.query.dn, "(uid=jdoe)", cb);',
-      options: [{}],
-    },
-    {
-      code: 'import ldap from "ldapjs"; const c = ldap.createClient(); export const f = (event) => c.search(event.query.dn, "(uid=jdoe)", cb);',
-      options: [{}],
-    },
+ruleTester.run(
+  'options: package gate and request roots are configurable',
+  noLdapInjection,
+  {
+    valid: [
+      // ---- the default is unchanged ----------------------------------------
+      // An empty bag still closes the gate on a non-LDAP package and still
+      // declines `event` as a request root.
+      {
+        code: 'import ldap from "@acme/ldap"; const c = ldap.createClient(); export const f = (req) => c.search(req.query.dn, "(uid=jdoe)", cb);',
+        options: [{}],
+      },
+      {
+        code: 'import ldap from "ldapjs"; const c = ldap.createClient(); export const f = (event) => c.search(event.query.dn, "(uid=jdoe)", cb);',
+        options: [{}],
+      },
 
-    // ---- replacing a list drops the built-in evidence ---------------------
-    // `ldapjs` audited off the gate list: nothing in the file is examined.
-    {
-      code: 'import ldap from "ldapjs"; const c = ldap.createClient(); export const f = (req) => c.search(req.query.dn, "(uid=jdoe)", cb);',
-      options: [{ ldapPackages: ['ldapts'] }],
-    },
-    // A codebase where `req` is an ordinary domain noun and the real request
-    // object is something else.
-    {
-      code: 'import ldap from "ldapjs"; const c = ldap.createClient(); export const f = (req) => c.search(req.query.dn, "(uid=jdoe)", cb);',
-      options: [{ requestRoots: ['httpRequest'] }],
-    },
-    // Extending never removes: a package and a root in neither list stay quiet.
-    {
-      code: 'import ldap from "@other/ldap"; const c = ldap.createClient(); export const f = (req) => c.search(req.query.dn, "(uid=jdoe)", cb);',
-      options: [{ additionalLdapPackages: ['@acme/ldap'] }],
-    },
-  ],
-  invalid: [
-    // ---- the default is unchanged ----------------------------------------
-    // Positive control for the two replacing cases above.
-    {
-      code: 'import ldap from "ldapjs"; const c = ldap.createClient(); export const f = (req) => c.search(req.query.dn, "(uid=jdoe)", cb);',
-      options: [{}],
-      errors: [{ messageId: 'ldapInjection' }],
-    },
+      // ---- replacing a list drops the built-in evidence ---------------------
+      // `ldapjs` audited off the gate list: nothing in the file is examined.
+      {
+        code: 'import ldap from "ldapjs"; const c = ldap.createClient(); export const f = (req) => c.search(req.query.dn, "(uid=jdoe)", cb);',
+        options: [{ ldapPackages: ['ldapts'] }],
+      },
+      // A codebase where `req` is an ordinary domain noun and the real request
+      // object is something else.
+      {
+        code: 'import ldap from "ldapjs"; const c = ldap.createClient(); export const f = (req) => c.search(req.query.dn, "(uid=jdoe)", cb);',
+        options: [{ requestRoots: ['httpRequest'] }],
+      },
+      // Extending never removes: a package and a root in neither list stay quiet.
+      {
+        code: 'import ldap from "@other/ldap"; const c = ldap.createClient(); export const f = (req) => c.search(req.query.dn, "(uid=jdoe)", cb);',
+        options: [{ additionalLdapPackages: ['@acme/ldap'] }],
+      },
+    ],
+    invalid: [
+      // ---- the default is unchanged ----------------------------------------
+      // Positive control for the two replacing cases above.
+      {
+        code: 'import ldap from "ldapjs"; const c = ldap.createClient(); export const f = (req) => c.search(req.query.dn, "(uid=jdoe)", cb);',
+        options: [{}],
+        errors: [{ messageId: 'ldapInjection' }],
+      },
 
-    // ---- extending a list adds coverage -----------------------------------
-    // A house wrapper around ldapjs. Before this option EVERY finding in that
-    // repository was suppressed by the gate, silently.
-    {
-      code: 'import ldap from "@acme/ldap"; const c = ldap.createClient(); export const f = (req) => c.search(req.query.dn, "(uid=jdoe)", cb);',
-      options: [{ additionalLdapPackages: ['@acme/ldap'] }],
-      errors: [{ messageId: 'ldapInjection' }],
-    },
-    // A Lambda handler's request object is `event`, which is on no framework's
-    // convention list.
-    {
-      code: 'import ldap from "ldapjs"; const c = ldap.createClient(); export const f = (event) => c.search(event.query.dn, "(uid=jdoe)", cb);',
-      options: [{ additionalRequestRoots: ['event'] }],
-      errors: [{ messageId: 'ldapInjection' }],
-    },
-    // Full replacement widens as well as narrows.
-    {
-      code: 'import ldap from "@acme/ldap"; const c = ldap.createClient(); export const f = (req) => c.search(req.query.dn, "(uid=jdoe)", cb);',
-      options: [{ ldapPackages: ['@acme/ldap'] }],
-      errors: [{ messageId: 'ldapInjection' }],
-    },
-    {
-      code: 'import ldap from "ldapjs"; const c = ldap.createClient(); export const f = (event) => c.search(event.query.dn, "(uid=jdoe)", cb);',
-      options: [{ requestRoots: ['event'] }],
-      errors: [{ messageId: 'ldapInjection' }],
-    },
-  ],
-});
+      // ---- extending a list adds coverage -----------------------------------
+      // A house wrapper around ldapjs. Before this option EVERY finding in that
+      // repository was suppressed by the gate, silently.
+      {
+        code: 'import ldap from "@acme/ldap"; const c = ldap.createClient(); export const f = (req) => c.search(req.query.dn, "(uid=jdoe)", cb);',
+        options: [{ additionalLdapPackages: ['@acme/ldap'] }],
+        errors: [{ messageId: 'ldapInjection' }],
+      },
+      // A Lambda handler's request object is `event`, which is on no framework's
+      // convention list.
+      {
+        code: 'import ldap from "ldapjs"; const c = ldap.createClient(); export const f = (event) => c.search(event.query.dn, "(uid=jdoe)", cb);',
+        options: [{ additionalRequestRoots: ['event'] }],
+        errors: [{ messageId: 'ldapInjection' }],
+      },
+      // Full replacement widens as well as narrows.
+      {
+        code: 'import ldap from "@acme/ldap"; const c = ldap.createClient(); export const f = (req) => c.search(req.query.dn, "(uid=jdoe)", cb);',
+        options: [{ ldapPackages: ['@acme/ldap'] }],
+        errors: [{ messageId: 'ldapInjection' }],
+      },
+      {
+        code: 'import ldap from "ldapjs"; const c = ldap.createClient(); export const f = (event) => c.search(event.query.dn, "(uid=jdoe)", cb);',
+        options: [{ requestRoots: ['event'] }],
+        errors: [{ messageId: 'ldapInjection' }],
+      },
+    ],
+  },
+);

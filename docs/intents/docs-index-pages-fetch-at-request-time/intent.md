@@ -19,20 +19,20 @@ Three independent 90-day measurements converge on the same pages.
 
 Traffic and bounce (`query-web-stats`, `eslint.interlace.tools`):
 
-| Page | Visitors | Bounce |
-| :--- | ---: | ---: |
-| `/docs/security/plugin-vercel-ai-security` | 191 | 96.6% |
-| `/` | 181 | 59% |
-| `/docs/quality/…/rules/no-unreadable-iife` | 149 | 100% |
-| `/docs/getting-started/concepts` | 96 | 100% |
+| Page                                       | Visitors | Bounce |
+| :----------------------------------------- | -------: | -----: |
+| `/docs/security/plugin-vercel-ai-security` |      191 |  96.6% |
+| `/`                                        |      181 |    59% |
+| `/docs/quality/…/rules/no-unreadable-iife` |      149 |   100% |
+| `/docs/getting-started/concepts`           |       96 |   100% |
 
 LCP p75 (`query-web-vitals`, same window):
 
-| Page | LCP p75 | Band |
-| :--- | ---: | :--- |
-| `/docs/security/plugin-secure-coding/rules` | 7878 ms | poor |
-| `/docs/security/plugin-vercel-ai-security` | 6710 ms | poor |
-| most rule pages | 80–190 ms | good |
+| Page                                        |   LCP p75 | Band |
+| :------------------------------------------ | --------: | :--- |
+| `/docs/security/plugin-secure-coding/rules` |   7878 ms | poor |
+| `/docs/security/plugin-vercel-ai-security`  |   6710 ms | poor |
+| most rule pages                             | 80–190 ms | good |
 
 The top-traffic page is the second-slowest on the site, at 2.7x the "good"
 threshold. Rule pages — static MDX — are 80–190 ms, so this is not site-wide. It

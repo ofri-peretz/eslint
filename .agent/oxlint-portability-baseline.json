@@ -1,4 +1,5 @@
 {
+  "command": "npx tsx scripts/audit-rule-portability.ts --update",
   "recordedAt": "2026-07-18",
   "tolerancePct": 1,
   "totalRules": 405,

@@ -10,7 +10,12 @@
  * @see https://cwe.mitre.org/data/definitions/749.html
  */
 
-import { createRule, formatLLMMessage, MessageIcons, staticString } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  objectKeyName,
+} from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
@@ -48,15 +53,16 @@ const ATS_OPT_OUT_KEYS: string[] = [
   'NSThirdPartyExceptionAllowsInsecureHTTPLoads',
 ];
 
-/** The key a property names, whether written bare or quoted. */
+/** The key a property names, bare, quoted or computed. */
+/*
+ * `objectKeyName` rather than a local equivalent. Every rule that hand-rolled
+ * this got the same detail wrong — bailing on `computed` — so the shared
+ * spelling is the fix, not a corrected copy of it. It returns an Identifier's
+ * name only when the key is NOT computed (in `{ [x]: v }` the key names a
+ * VARIABLE) and any statically-known string otherwise.
+ */
 function propertyKeyName(node: TSESTree.Property): string | null {
-  if (node.computed) return null;
-  if (node.key.type === 'Identifier') return node.key.name;
-  const staticText = staticString(node.key);
-  if (staticText !== null) {
-    return staticText;
-  }
-  return null;
+  return objectKeyName(node);
 }
 
 export interface Options {
@@ -91,7 +97,7 @@ export const noAllowArbitraryLoads = createRule<RuleOptions, MessageIds>({
         severity: 'HIGH',
         fix: 'Remove the opt-out and serve over HTTPS, or scope it to one host with NSExceptionDomains.',
         documentationLink: 'https://cwe.mitre.org/data/definitions/295.html',
-      })
+      }),
     },
     schema: [
       {
@@ -123,7 +129,11 @@ export const noAllowArbitraryLoads = createRule<RuleOptions, MessageIds>({
           node.value.type === 'Literal' &&
           node.value.value === true
         ) {
-          context.report({ node, messageId: 'violationDetected', data: { key } });
+          context.report({
+            node,
+            messageId: 'violationDetected',
+            data: { key },
+          });
         }
       },
     };

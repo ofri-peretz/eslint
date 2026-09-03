@@ -787,7 +787,14 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
             argument.type !== 'SpreadElement' && isRequestValue(argument, seen),
         );
       }
-      if (expression.type !== 'MemberExpression' || expression.computed)
+      // `req.body['x']` reads the same request field `req.body.x` reads, and a
+      // bundler emits the first. Only a key chosen at RUNTIME is refused —
+      // `propertyName` returns null for exactly that, which is the distinction
+      // the bare `expression.computed` test could not make.
+      if (
+        expression.type !== 'MemberExpression' ||
+        propertyName(expression) === null
+      )
         return false;
       return !isStatic(expression) && isUntrustedRequestChain(expression);
     };
@@ -800,7 +807,21 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
      */
     function isUntrustedRequestChain(node: TSESTree.MemberExpression): boolean {
       let current: TSESTree.Node = node;
-      while (current.type === 'MemberExpression') current = current.object;
+      /*
+       * EVERY segment, not just the outermost. The caller checks
+       * `propertyName` on the expression it was handed, then this walked
+       * straight to the root — so `req[part].id` resolved its own `.id`,
+       * reached `req`, and reported. `part` is chosen at runtime and the rule
+       * cannot know it names a request field; refusing exactly that is the
+       * contract, and it was only being honoured one level deep.
+       *
+       * `req.body['x']` still passes: `propertyName` returns `x` for a static
+       * subscript, which is the distinction being kept.
+       */
+      while (current.type === 'MemberExpression') {
+        if (propertyName(current) === null) return false;
+        current = current.object;
+      }
       if (current.type !== 'Identifier') return false;
       if (requestRootSet.has(current.name)) return true;
       // `const { query } = req; … query.filter` — the root was destructured out of a

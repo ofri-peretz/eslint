@@ -62,7 +62,53 @@ export function readBaselineRecord(
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') return {};
     throw error;
   }
-  return (
-    (JSON.parse(raw) as Record<string, Record<string, number>>)[key] ?? {}
+  return (JSON.parse(raw) as Record<string, Record<string, number>>)[key] ?? {};
+}
+
+/**
+ * The DATA entries of a FLAT artefact — one whose records sit at the top level
+ * rather than nested under a key — with metadata skipped.
+ *
+ * `.agent/plugin-rule-manifest.json` keys plugins directly:
+ *
+ *   { "eslint-plugin-node-security": { "no-ssrf": {…} },  ← data
+ *     "command": "npx tsx scripts/check-new-rule-cases.ts --update" }  ← metadata
+ *
+ * When `command` was added — required of every artefact by the
+ * artefacts-name-their-method lock — three readers iterating `Object.entries`
+ * read the string as a plugin and its CHARACTERS as rules, and reported
+ * defects that do not exist:
+ *
+ *     ✗ 48 rule(s) with no case:  command/0  command/1  command/2 …
+ *     ✗ 56 debt entries now covered:  command → n   command → p   command → x
+ *
+ * Both gates went red on a repository that was fine. A metadata field is a
+ * string; a record is an object. That distinction is the whole fix, and it
+ * belongs in one place rather than in every reader — three readers each
+ * needing to remember the same exclusion is how the next one forgets.
+ */
+export function flatEntries<T>(parsed: unknown): Record<string, T> {
+  if (typeof parsed !== 'object' || parsed === null) return {};
+  return Object.fromEntries(
+    Object.entries(parsed as Record<string, unknown>).filter(
+      (pair): pair is [string, T] =>
+        typeof pair[1] === 'object' && pair[1] !== null,
+    ),
   );
+}
+
+/**
+ * `flatEntries` over a file on disk. Separate from the pure form because one
+ * caller reads the manifest out of git (`git show <ref>:<path>`) to compare a
+ * branch against its merge base, and has no file to open.
+ */
+export function readFlatEntries<T>(file: string): Record<string, T> {
+  let raw: string;
+  try {
+    raw = fs.readFileSync(file, 'utf8');
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return {};
+    throw error;
+  }
+  return flatEntries<T>(JSON.parse(raw));
 }

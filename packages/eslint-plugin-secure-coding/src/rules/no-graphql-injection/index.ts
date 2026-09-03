@@ -501,12 +501,12 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
       const parent = current.parent;
       if (parent?.type === AST_NODE_TYPES.TaggedTemplateExpression) {
         const tag = parent.tag;
+        // `apollo['gql']` tags the same template `apollo.gql` tags.
         const tagName =
           tag.type === AST_NODE_TYPES.Identifier
             ? tag.name
-            : tag.type === AST_NODE_TYPES.MemberExpression &&
-                tag.property.type === AST_NODE_TYPES.Identifier
-              ? tag.property.name
+            : tag.type === AST_NODE_TYPES.MemberExpression
+              ? (propertyName(tag) ?? '')
               : '';
         return GRAPHQL_TAG_NAMES.has(tagName.toLowerCase());
       }
