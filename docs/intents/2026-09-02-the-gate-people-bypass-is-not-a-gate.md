@@ -63,8 +63,15 @@ rejected push is discovered later.
 
 - Ten consecutive pushes without a `LEFTHOOK_EXCLUDE`, measured, not
   impressionistic.
-- Every test that spawns a subprocess carries an explicit timeout with its reason
-  written next to it.
+- Every test that spawns a subprocess carries an explicit timeout **budgeted from
+  that subprocess's observed runtime under contention**, with the measurement
+  written next to it. Explicit is not the bar on its own: the flake this intent
+  opens with is a whole-suite walk that takes ~5s idle timing out at 5000ms, and
+  an explicit 5000ms would keep failing and keep the bypass alive. The budget is
+  the observed idle runtime times the contention the CI matrix actually runs at.
+- A regression asserts each such timeout is **not** the framework default, so a
+  test that spawns a subprocess cannot silently inherit a unit-test timeout
+  again.
 - The pre-push path completes inside the foreground limit, so a push can be
   watched rather than backgrounded and discovered.
 - `AI_SDLC.md` records the flake rate, so a return is visible as a number rather

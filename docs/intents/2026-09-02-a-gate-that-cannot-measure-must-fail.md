@@ -44,7 +44,13 @@ five separate gates were doing it anyway.
   files linted, rules inspected, targets scanned — the denominator. `0` inspected
   is a failure regardless of how many offenders it found.
 - **The stamp is part of the artifact.** Anything a gate reads must record the
-  hash of the instrument that produced it, and the reader must refuse a mismatch.
+  hash of the instrument that produced it **and of every input that shaped the
+  measurement** — the config it ran under, the corpus it ran over, the ruleset it
+  applied — and the reader must refuse a mismatch on any of them. Hashing the
+  instrument alone leaves a stale artifact matching a current instrument, which
+  is the same green-while-measuring-nothing this intent exists to stop. This is
+  the two-input contract already written down in
+  [2026-08-30-the-silence-instrument-is-recorded.md](./2026-08-30-the-silence-instrument-is-recorded.md);
   `real-source-inventory.ts` is the reference implementation.
 - Sabotage-verify each: break the input, confirm the gate refuses **by name**.
   This intent is worthless if its own gates can pass while measuring nothing.

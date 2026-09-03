@@ -16,8 +16,8 @@ for — and make a test that would not, visible.
 caught the bug pre-deploy. The test must fail on the unfixed code and pass on the
 fix."_ Nothing checks it, and the shortfall is not occasional.
 
-Writing **one** test file for `no-hardcoded-credentials` on 2026-09-02 produced
-three drafts, each passing, each proving nothing:
+Writing **one** test file for `no-hardcoded-credentials` on 2026-09-02 took four
+drafts. The first three each passed, and each proved nothing:
 
 1. Four `valid` cases used object keys whose names never opened the credential
    gate. All four passed with the fix **removed**.
@@ -58,6 +58,13 @@ because every later decision rests on it.
 - The number of non-discriminating cases is a shrink-only ratchet, baselined
   honestly at whatever it turns out to be. The first honest reading is the point;
   it will not be zero.
-- The three drafts above are in the repo as a worked example, because the useful
-  part is not that they were wrong — it is that each was wrong differently and
-  all three looked right.
+- **The ratchet is keyed per rule, not repository-wide.** A single global number
+  lets a new non-discriminating case be paid for with cleanup somewhere else, so
+  the PR that introduces the blind spot goes green. The baseline is a map from
+  rule to count; an increase for **any** rule fails the gate, and a decrease
+  elsewhere does not offset it.
+- Every case a PR **adds** must discriminate. The ratchet forgives what is
+  already there; it does not forgive new arrivals.
+- The three failed drafts above are in the repo as a worked example, because the
+  useful part is not that they were wrong — it is that each was wrong differently
+  and all three looked right.
