@@ -103,7 +103,7 @@ jobs:
           EXISTING=$(gh issue list --state open --search "$TITLE in:title" \
             --json number --jq '.[0].number // empty')
           BODY=$(printf '%s\n\n[Run](%s)\n' \
-            "The monthly resource-profile refresher failed, so `benchmark-results/resource-profile.{json,md}` (peak RSS + cold start) is now stale." "$RUN_URL")
+            'The monthly resource-profile refresher failed, so `benchmark-results/resource-profile.{json,md}` (peak RSS + cold start) is now stale.' "$RUN_URL")
           if [ -n "$EXISTING" ]; then
             gh issue comment "$EXISTING" --body "$BODY"
           else
