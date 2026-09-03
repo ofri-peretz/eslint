@@ -344,10 +344,7 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
         return undefined;
       }
       if (node.type === 'TemplateLiteral') return 'string';
-      if (
-        node.type === 'MemberExpression' &&
-        propertyName(node) === 'length'
-      ) {
+      if (node.type === 'MemberExpression' && propertyName(node) === 'length') {
         return 'number';
       }
       if (node.type === 'CallExpression' && node.callee.type === 'Identifier') {
@@ -468,14 +465,13 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
        * exception tag — a security finding, though nothing branches on it.
        */
       MemberExpression(node: TSESTree.MemberExpression) {
-        if (node.computed || node.property.type !== 'Identifier') return;
-        if (node.property.name !== 'name') return;
+        // `data.constructor['name']` reads the same brittle type tag
+        // `data.constructor.name` reads, at both levels of the chain.
+        if (propertyName(node) !== 'name') return;
         const inner = node.object;
         if (
           inner.type !== 'MemberExpression' ||
-          inner.computed ||
-          inner.property.type !== 'Identifier' ||
-          inner.property.name !== 'constructor'
+          propertyName(inner) !== 'constructor'
         ) {
           return;
         }

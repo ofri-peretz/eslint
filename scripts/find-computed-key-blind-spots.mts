@@ -177,8 +177,16 @@ function reports(
  * both would have been reported as rule blind spots. The rewrite has to know
  * what is code and what is data, or it manufactures exactly the defect it
  * exists to detect.
+ *
+ * REGEX literals are data too, and cost a second false report before they were
+ * added: `res.redirect(/^https:\/\/a\.example\.com/)` became
+ * `a["example"]` inside the pattern. They need the lookbehind because `/` is
+ * also division — only a slash in operand position can open a regex, and a
+ * conservative miss just means one site is not rewritten, which is the safe
+ * direction for a probe that reports defects.
  */
-const LITERAL = /'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|`(?:\\.|[^`\\])*`/;
+const LITERAL =
+  /'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|`(?:\\.|[^`\\])*`|(?<=[(,=:[!&|?{};]\s*)\/(?:[^/\\\n[]|\\.|\[(?:[^\]\\]|\\.)*\])+\/[gimsuy]*/;
 
 const CALL_SITE =
   /\b([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\.([A-Za-z_$][\w$]*)\(/;
@@ -196,6 +204,37 @@ function rewriteOutsideLiterals(
       ? match // a literal: data, not code
       : render(receiver, name),
   );
+}
+
+/**
+ * Does this case deliberately CONTRAST the two spellings?
+ *
+ * `no-improper-type-validation` owns
+ *
+ *     if (bag["k"] !== null && typeof bag.k === "object") { go(); }
+ *
+ * and it fires precisely BECAUSE the two operands are spelled differently: the
+ * rule cannot prove the subscripted guard covers the dotted use, so it refuses
+ * to treat the value as null-checked. Normalising both to `bag["k"]` makes the
+ * guard match, the rule correctly falls silent, and the probe reads that as a
+ * blind spot — when what actually happened is that the rewrite destroyed the
+ * only thing the case was testing.
+ *
+ * So: a case containing BOTH `x["k"]` and `x.k` for the same member is asking
+ * a question about the difference, and this probe has no business erasing it.
+ * Narrow on purpose — 3% of TP cases contain a static subscript somewhere, and
+ * excluding all of them would throw away the cases that pin the subscripted
+ * spelling as reportable, which are the whole point of the sweep.
+ */
+function contrastsSpellings(code: string): boolean {
+  const subscripts = code.matchAll(
+    /([A-Za-z_$][\w$]*)\s*\[\s*['"]([A-Za-z_$][\w$]*)['"]\s*\]/g,
+  );
+  for (const [, receiver, key] of subscripts) {
+    if (new RegExp(`\\b${receiver}\\s*\\.\\s*${key}\\b`).test(code))
+      return true;
+  }
+  return false;
 }
 
 function toComputed(code: string): string {
@@ -220,6 +259,7 @@ for (const entry of ledger.rules) {
     if (c.kind !== 'TP' || c.code.trim() === '') continue;
     const rewritten = toComputed(c.code);
     if (rewritten === c.code) continue;
+    if (contrastsSpellings(c.code)) continue;
 
     // A case that declares options it cannot parse is not measurable either
     // way; skipping beats probing it under a configuration it never asked for.
