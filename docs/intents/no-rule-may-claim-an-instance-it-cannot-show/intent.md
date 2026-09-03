@@ -3,7 +3,7 @@
 > Stage 1 artifact of the AI-native SDLC. Opened after measuring the real-source
 > inventory against the config it claims to describe.
 
-**Status:** draft · **Opened:** 2026-09-02 · **Owner:** @ofri-peretz
+**Status:** shipped · **Opened:** 2026-09-02 · **Owner:** @ofri-peretz
 
 ---
 
@@ -101,12 +101,26 @@ Three pieces of work are waiting on this number and should not start before it:
 2. `real-source-repos.json` pins 112 repositories chosen before several plugins
    existed. Is the sample still the right question to ask?
 
-## In flight 2026-09-02
+## Shipped 2026-09-02 — and the number was wrong by a factor of three
 
-The scan was dispatched from `main` at 02:54 UTC — run 33709417251, 20 shards.
-It is the first run since the merger learned to refuse a partial shard set and
-to write `withoutMaterial` as a list rather than a count.
+Run 33709417251. 20/20 shards, 113 repositories, 347,301 files.
 
-When it lands it opens a PR with the refreshed inventory, and
-`check:audit-freshness` should stop refusing to attribute it. Until then the
-270-rules-catch-nothing figure stays unquotable.
+|                                | committed artifact |                        this scan |
+| :----------------------------- | -----------------: | -------------------------------: |
+| rules with real-world material |                200 |                          **386** |
+| rules with none                |            **270** |                           **84** |
+| `configHash`                   |           _absent_ | `e0197e67d7f92d24`, matches disk |
+| `reposHash`                    |           _absent_ | `1c7dac70cd86da32`, matches disk |
+
+The 270 was never a fact about the rules. Whole plugins had never been asked a
+single question, and `maintainability/cognitive-complexity` scoring zero across
+345,841 real files was the tell — not possible, and never about the rule.
+
+Both hashes are now present and match, so the artifact says which rule set it
+asked and which repositories it asked about. That was the entire ask.
+
+Delivered as [#835](https://github.com/ofri-peretz/eslint/pull/835). The
+workflow pushed the branch and then failed on
+`Resource not accessible by integration (createPullRequest)` — Actions cannot
+open PRs here. The scan is green; only delivery failed, which is worth fixing
+at the workflow level because it reads as a failed scan.
