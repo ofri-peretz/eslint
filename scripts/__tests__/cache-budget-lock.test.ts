@@ -17,8 +17,9 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { load } from 'js-yaml';
 
 const ROOT = resolve(__dirname, '..', '..');
 const SETUP = readFileSync(
@@ -26,6 +27,29 @@ const SETUP = readFileSync(
   'utf8',
 );
 const TURBO_WORKFLOWS = ['quality.yml', 'quality-full.yml', 'a11y.yml'];
+
+describe('every composite action is parseable YAML', () => {
+  // `lint-workflows.ts` covers `.github/workflows/`, not `.github/actions/`,
+  // and every other check in this file matches strings against the file text —
+  // which a file that YAML cannot parse satisfies just as well as one it can.
+  //
+  // On 2026-09-02 an unquoted `: ` inside a `run:` ("Remote cache: Vercel")
+  // made the whole setup action unparseable. Every job that uses it failed at
+  // once — oxlint, Gate, Validate documentation — while this file's own
+  // assertions stayed green, because grep does not care about YAML.
+  const dir = resolve(ROOT, '.github/actions');
+  const actions = readdirSync(dir)
+    .map((d) => join(dir, d, 'action.yml'))
+    .filter((f) => existsSync(f));
+
+  it('finds composite actions to check', () => {
+    expect(actions.length).toBeGreaterThan(0);
+  });
+
+  it.each(actions)('%s parses', (file) => {
+    expect(() => load(readFileSync(file, 'utf8'))).not.toThrow();
+  });
+});
 
 describe('the Actions cache budget', () => {
   it('does not cache the npm registry directory', () => {
@@ -76,7 +100,6 @@ describe('the credentials reach the jobs that would use them', () => {
   it('names every workflow that enables the remote cache', () => {
     // Guards the list above: a new workflow opting into turbo-remote-cache
     // without the env block would get the fallback silently and forever.
-    const { readdirSync } = require('node:fs') as typeof import('node:fs');
     const dir = join(ROOT, '.github/workflows');
     const opted = readdirSync(dir)
       .filter((f) => f.endsWith('.yml'))

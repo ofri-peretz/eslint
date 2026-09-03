@@ -25,11 +25,11 @@ inputs:
   node-version:
     description: Node version override. Defaults to .nvmrc.
     required: false
-    default: ""
+    default: ''
   install:
     description: Run `npm ci` after restoring caches. Set to "false" to skip (rare).
     required: false
-    default: "true"
+    default: 'true'
   deps:
     description: >-
       Which dependency archive to restore: "full" (everything `npm ci`
@@ -48,26 +48,26 @@ inputs:
       `date-fns`, which four node-lane packages import and which is therefore
       NOT omitted.
     required: false
-    default: "full"
+    default: 'full'
   turbo-cache:
     description: Restore + save the Turborepo task cache. Set to "false" for jobs that don't run turbo.
     required: false
-    default: "true"
+    default: 'true'
   turbo-cache-scope:
     description: >-
       Optional cache-lineage name. Jobs sharing a scope share one cache entry;
       different scopes get independent lineages. Set this for matrix jobs (e.g.
       "test-shard-3") so parallel shards stop racing for a single key.
     required: false
-    default: "shared"
+    default: 'shared'
   playwright-cache:
     description: Restore + save the Playwright browser cache (~/.cache/ms-playwright). Set to "true" for jobs that run Playwright.
     required: false
-    default: "false"
+    default: 'false'
   next-cache:
     description: Restore + save the Next.js incremental build cache (apps/docs/.next/cache). Set to "true" for jobs that build apps/docs.
     required: false
-    default: "false"
+    default: 'false'
   turbo-remote-cache:
     description: >-
       Back Turborepo's REMOTE cache API with GitHub Actions' cache instead of
@@ -85,7 +85,7 @@ inputs:
       Set `turbo-cache: "false"` alongside it: the tarball is redundant once
       this is on, and restoring it costs ~11s for nothing.
     required: false
-    default: "false"
+    default: 'false'
 
 runs:
   using: composite
@@ -290,7 +290,7 @@ runs:
     - name: Turborepo remote cache (Vercel — token present)
       if: inputs.turbo-remote-cache == 'true' && env.TURBO_TOKEN != ''
       shell: bash
-      run: echo "Remote cache: Vercel (TURBO_TEAM=${TURBO_TEAM:-unset})"
+      run: echo "Remote cache = Vercel (TURBO_TEAM=${TURBO_TEAM:-unset})"
 
     - name: Restore Turbo cache (branches — read-only)
       if: inputs.turbo-cache == 'true' && github.ref != 'refs/heads/main'
