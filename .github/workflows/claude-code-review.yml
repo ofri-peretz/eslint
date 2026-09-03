@@ -42,7 +42,74 @@ permissions:
   id-token: write
 
 jobs:
+  # Decide whether this diff is worth a review before spending ~120s and a
+  # slice of the monthly credit on it.
+  #
+  # `review` is the CRITICAL PATH of PR CI. Measured 2026-09-03 over the last
+  # eight merged PRs, it was 88-99% of end-to-end wall clock (median 124s on
+  # success); all ~26 other checks finish inside its shadow. So the only diffs
+  # worth paying that for are the ones a reviewer can actually find something
+  # in.
+  #
+  # Over 60 merged PRs: 83% touched code, 13% were documentation only. Those
+  # 13% pay full price for a reviewer reading prose — and one of them (#821)
+  # was 100 files of it.
+  #
+  # NOT skipped for `.github/`-only diffs, though they are 3% and tempting.
+  # Two CI outages on 2026-09-02 came from exactly that kind of change (an
+  # unquoted colon that made a composite action unparseable, and a formatter
+  # run that broke a lock). A workflow diff is the last place to remove a
+  # reviewer.
+  scope:
+    name: Review scope
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      run: ${{ steps.decide.outputs.run }}
+    steps:
+      - id: decide
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        shell: bash
+        run: |
+          set -uo pipefail
+
+          # No PR number means `merge_group`: the review already ran on the PR,
+          # and re-reviewing the queue's synthetic merge commit would buy
+          # nothing. The job below skips, and a skipped required check
+          # satisfies the queue.
+          if [ -z "${PR:-}" ]; then
+            echo "merge_group — review already ran on the PR"
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Fail OPEN. Every unexpected state here — API error, empty list, a
+          # path shape not anticipated — must end in a review running, never in
+          # one silently skipped. A gate that quietly disables the reviewer it
+          # guards is worse than no gate.
+          files=$(gh -R "$GITHUB_REPOSITORY" pr view "$PR" --json files \
+                    --jq '.files[].path' 2>/dev/null) || files=""
+          if [ -z "$files" ]; then
+            echo "could not list changed files — reviewing to be safe"
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Documentation only: Markdown anywhere, and the docs content tree.
+          # Anything else — including .github/ — is code for this purpose.
+          if printf '%s\n' "$files" | grep -qvE '(\.mdx?$|^docs/|^apps/docs/content/)'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            echo "code in the diff — reviewing"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "documentation only ($(printf '%s\n' "$files" | wc -l) files) — skipping"
+          fi
+          printf '%s\n' "$files" | head -20
+
   review:
+    needs: scope
     # Skip draft PRs -- review once a PR is opened or marked ready for review.
     #
     # Also skip PRs opened by a bot. `claude-code-action` refuses non-human
@@ -58,7 +125,8 @@ jobs:
     # and paying for the review would be spending the monthly credit to read a
     # diff of version numbers.
     if: >-
-      github.event.pull_request.draft == false
+      needs.scope.outputs.run == 'true'
+      && github.event.pull_request.draft == false
       && github.event.pull_request.user.type != 'Bot'
     runs-on: ubuntu-latest
     timeout-minutes: 20

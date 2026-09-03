@@ -68,9 +68,21 @@ const nest = <T,>(cases: T[]): T[] =>
   });
 
 
+/**
+ * Every case here builds a real TypeScript program through `projectService`,
+ * and the first one pays for the whole program. Under the scheduled coverage
+ * run — a turbo fan-out of every package's `test:coverage` with v8
+ * instrumentation on — that first case took longer than the package's 30s
+ * `testTimeout` (codecov.yml run 33717568270, "Test timed out in 30000ms"),
+ * which made the coverage upload fail and filed #817. The syntax-only suites
+ * keep the 30s default; only type-aware cases get this budget.
+ * Locked by ./type-aware-timeout.lock.test.ts.
+ */
+const TYPE_AWARE_CASE_TIMEOUT_MS = 120_000;
+
 RuleTester.afterAll = afterAll;
 RuleTester.describe = describe;
-RuleTester.it = it;
+RuleTester.it = (text, callback) => it(text, callback, TYPE_AWARE_CASE_TIMEOUT_MS);
 
 const ruleTester = new RuleTester({
   languageOptions: {

@@ -150,6 +150,46 @@
       ]
     },
     {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "1.17.0",
+      "date": "2026-09-03T00:16:04-05:00",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "other",
+          "title": "Accessibility rules cite WCAG, not CWE.",
+          "pr": 610
+        },
+        {
+          "kind": "other",
+          "title": "`identical-functions` stops reporting on code nobody edits.",
+          "pr": 609
+        },
+        {
+          "kind": "other",
+          "title": "`no-magic-numbers` stops reading machine-packed output.",
+          "pr": 640
+        },
+        {
+          "kind": "other",
+          "title": "`corpus-scan` can install its targets, and `no-extraneous-dependencies` was",
+          "pr": 633
+        },
+        {
+          "kind": "other",
+          "title": "`corpus-scan --local` now actually measures the local working tree.",
+          "pr": 612
+        },
+        {
+          "kind": "other",
+          "title": "`no-cycle` cites CWE-1047, and CWE-407 gets its real name back.",
+          "pr": 611
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-typeorm-security",
       "short": "eslint-plugin-typeorm-security",
       "version": "0.3.7",
@@ -15591,46 +15631,6 @@
           "kind": "other",
           "title": "TypeScript type exports for all rule options",
           "pr": null
-        }
-      ]
-    },
-    {
-      "package": "@interlace/eslint-devkit",
-      "short": "eslint-devkit",
-      "version": "1.17.0",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "other",
-          "title": "Accessibility rules cite WCAG, not CWE.",
-          "pr": 610
-        },
-        {
-          "kind": "other",
-          "title": "`identical-functions` stops reporting on code nobody edits.",
-          "pr": 609
-        },
-        {
-          "kind": "other",
-          "title": "`no-magic-numbers` stops reading machine-packed output.",
-          "pr": 640
-        },
-        {
-          "kind": "other",
-          "title": "`corpus-scan` can install its targets, and `no-extraneous-dependencies` was",
-          "pr": 633
-        },
-        {
-          "kind": "other",
-          "title": "`corpus-scan --local` now actually measures the local working tree.",
-          "pr": 612
-        },
-        {
-          "kind": "other",
-          "title": "`no-cycle` cites CWE-1047, and CWE-407 gets its real name back.",
-          "pr": 611
         }
       ]
     },

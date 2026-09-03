@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-08-30T20:43:06.389Z",
+  "generatedAt": "2026-09-03T05:51:13.630Z",
   "summary": {
-    "qualityRules": 60,
+    "qualityRules": 61,
     "mapped": 3,
     "coveragePct": 5
   },
@@ -78,6 +78,11 @@
     },
     {
       "ruleId": "conventions/conventions/require-data-testid",
+      "plugin": "conventions",
+      "mappings": []
+    },
+    {
+      "ruleId": "conventions/conventions/utm-malformed-escape.test",
       "plugin": "conventions",
       "mappings": []
     },
