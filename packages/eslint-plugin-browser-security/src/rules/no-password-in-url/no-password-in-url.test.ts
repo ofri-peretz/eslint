@@ -21,7 +21,10 @@ ruleTester.run('no-password-in-url', noPasswordInUrl, {
     'function noop() {}',
     'const items = [];',
     'const obj = {};',
-    { name: 'a URL with no userinfo', code: "const url = 'https://example.com/api'" },
+    {
+      name: 'a URL with no userinfo',
+      code: "const url = 'https://example.com/api'",
+    },
     { code: "fetch('https://api.example.com')" },
 
     // ---- FP lock: the authority ends at the first `/` ---------------------
@@ -29,9 +32,13 @@ ruleTester.run('no-password-in-url', noPasswordInUrl, {
     // `user:password`, because the old pattern had no idea where the
     // authority stopped.
     { code: "const url = 'https://example.com:8080/threads/a@b'" },
-    { code: "const url = 'https://api.example.com:3000/mail?to=jo@example.com'" },
+    {
+      code: "const url = 'https://api.example.com:3000/mail?to=jo@example.com'",
+    },
     { code: "fetch('https://cdn.example.com:443/pkg/@scope/name.js')" },
-    { code: "const doc = 'See https://docs.example.com:8443/guide#step:2 for more'" },
+    {
+      code: "const doc = 'See https://docs.example.com:8443/guide#step:2 for more'",
+    },
 
     // A username with no password is not CWE-521.
     { code: "const url = 'https://token@api.example.com/repo.git'" },
@@ -94,6 +101,15 @@ ruleTester.run('no-password-in-url — adversarial', noPasswordInUrl, {
     "fetch('https://ghp_token:@git.acme-corp.io/repo');",
   ],
   invalid: [
+    // A TAGGED template whose escape has no cooked value: null as of
+    // @typescript-eslint 8.68.0, the raw text under 8.54.0. `check` is wired to
+    // a `TemplateLiteral` visitor, so this quasi reaches `foldUrlText` — read
+    // only `cooked` and the credential ships unreported.
+    {
+      name: 'credentials in a String.raw url whose escape does not cook',
+      code: 'fetch(String.raw`https://reporting:s3cr3t@api.acme-corp.io/v1 \\x`);',
+      errors: [{ messageId: 'violationDetected' }],
+    },
     // A template with no expressions is exactly as static as a string.
     {
       code: 'const API = `https://reporting:s3cr3t@api.acme-corp.io/v1`; fetch(API);',

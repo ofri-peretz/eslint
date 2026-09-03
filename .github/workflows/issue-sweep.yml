@@ -36,11 +36,20 @@ name: Issue Sweep
 # ─────────────────────────────────────────────────────────────────────────────
 
 on:
-  schedule:
-    # Every six hours at :40, clear of the 04:00–05:30 cron cluster where the
-    # cadence checks run — so a sweep reads a backlog those checks have already
-    # finished writing, rather than racing them.
-    - cron: "40 */6 * * *"
+  # The schedule moved to a Claude Code Routine on 2026-09-03 ("ESLint issue
+  # sweep — one PR per backlog", https://claude.ai/code/routines). The Actions
+  # token cannot edit .github/workflows/, so a sweep whose cause lived in a
+  # workflow landed half-done (PR #823: a lock test with no edits to lock).
+  # The Routine runs with credentials that can. Same cadence, same branch,
+  # same one-open-PR guard, so the two cannot race. Manual dispatch stays as
+  # the fallback if the Routine is paused.
+  # schedule:
+  #   - cron: "40 */6 * * *"
+  # The Routine opens the PR; this arms auto-merge on it. Arming stays a
+  # repository action, not a tool the model holds (see the arm job below).
+  pull_request:
+    types: [opened, reopened]
+    branches: [main]
   workflow_dispatch:
     inputs:
       auto_merge:
@@ -57,8 +66,30 @@ permissions:
   contents: read
 
 jobs:
+  # pull_request only. Fires for every PR to main so it can see the sweep
+  # branch, but is a no-op unless the head is chore/issue-sweep.
+  arm:
+    name: Arm auto-merge on a Routine-opened sweep PR
+    if: github.event_name == 'pull_request' && github.head_ref == 'chore/issue-sweep'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Arm auto-merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          gh pr merge "$PR" --repo "$REPO" --squash --auto --delete-branch
+          echo "::notice title=Sweep PR armed::#$PR merges once every required check is green."
+
   triage:
     name: Collect the backlog
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:

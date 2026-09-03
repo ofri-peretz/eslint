@@ -275,7 +275,7 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
         return typeof node.value === 'string' ? node.value : undefined;
       }
       if (node?.type === 'TemplateLiteral' && node.expressions.length === 0) {
-        return node.quasis.map((quasi) => quasi.value.cooked).join('');
+        return node.quasis.map((quasi) => quasi.value.cooked!).join('');
       }
       return undefined;
     };

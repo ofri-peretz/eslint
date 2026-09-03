@@ -184,11 +184,17 @@ export const requireDependencyIntegrity = createRule<RuleOptions, MessageIds>({
      * complete a match by accident — it can only prevent one.
      */
     const renderTemplate = (node: TSESTree.TemplateLiteral): string => {
-      let text = node.quasis[0].value.cooked;
+      // `cooked` is null for an invalid escape as of @typescript-eslint
+      // 8.68.0; 8.54.0 handed back the raw text. This is a bare
+      // `TemplateLiteral` visitor, so a TAGGED template reaches it and a
+      // truncated render would let an unprotected CDN tag through.
+      let text = node.quasis[0].value.cooked ?? node.quasis[0].value.raw;
       for (const [index, expression] of node.expressions.entries()) {
         const resolved = resolveConstantString(context.sourceCode, expression);
         text += resolved === null ? '\u0000' : resolved.value;
-        text += node.quasis[index + 1].value.cooked;
+        text +=
+          node.quasis[index + 1].value.cooked ??
+          node.quasis[index + 1].value.raw;
       }
       return text;
     };

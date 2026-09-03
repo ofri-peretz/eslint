@@ -129,3 +129,81 @@ unblocked by exactly one decision, which is the user's to make: whether `review`
 stays a _required_ context. Dropping it from branch protection (CodeRabbit still
 reviews every PR; it just stops being a merge gate) removes the only blocker,
 and the verdict test flips on its own once `REQUIRED_CHECKS` follows.
+
+---
+
+## Correction, 2026-09-02 — the blocker was not real
+
+The finding above is wrong on its central fact, and it stalled the intent for
+two days on a decision that never needed making.
+
+`review` is **not** CodeRabbit. It is the `review:` job in
+`.github/workflows/claude-code-review.yml`. Measured rather than inferred:
+
+```bash
+$ gh api repos/ofri-peretz/eslint/commits/<sha>/check-runs \
+    --jq '.check_runs[] | select(.name=="review") | .app.slug'
+github-actions
+
+$ gh api repos/ofri-peretz/eslint/commits/<sha>/status \
+    --jq '.statuses[].context'
+CodeRabbit
+```
+
+CodeRabbit is real, and it posts a **status context** named `CodeRabbit` —
+a different name, and one branch protection does not require. Two reviewers
+were collapsed into one because they both sound like "the review".
+
+### Why the lock agreed
+
+`workflowProviding()` searched for a job's `name:` value. The job is declared
+
+```yaml
+jobs:
+  review: # no `name:` — GitHub uses the job id as the check name
+```
+
+so the search found nothing, and "no workflow declares it" was read as
+positive evidence of an app. The lock's own header warns that a lock answering
+a narrower question than its name implies "converts _unverified_ into
+_verified_". It then did precisely that, one level down: it knew the
+classification was load-bearing, wrote a test to defend it, and that test
+carried the same blind spot as the belief it was defending. Absence of a match
+was never evidence of an app; it was evidence about one regex.
+
+`checksProvidedBy()` now resolves a job to its `name:` **or its job id**, which
+is what GitHub does. On that lookup the old classification fails immediately,
+with the remediation the lock already knew how to print.
+
+### What changes
+
+- `review` is reclassified `source: 'workflow'`.
+- `claude-code-review.yml` gains `merge_group:`. Its `if:` reads
+  `github.event.pull_request`, absent on that event, so the job **skips** — and
+  a skipped required check satisfies the queue. This is the wanted behaviour:
+  the review ran on the PR, and re-reviewing the queue's synthetic merge commit
+  would spend the monthly credit re-reading an approved diff.
+- Its `concurrency` group gains a `|| github.ref` fallback. `pull_request.number`
+  is null on `merge_group`, which would collapse every queue entry into one
+  group with `cancel-in-progress: true` and let entries cancel each other — a
+  cancelled required check blocks the queue. This was a real hazard the original
+  step-1 audit did not cover, because it only audited the two `quality*`
+  workflows.
+- The verdict test no longer asserts a hand-written blocker list. It resolves
+  every required check to its workflow and requires the trigger, so the answer
+  is derived from the required set rather than restated alongside it.
+
+**Step 1 is now met for all three required checks.** Steps 3–5 are unblocked,
+and no required check has to be dropped.
+
+### Still open — the trade-off this intent is really about
+
+A queue run executes **all** shards where a PR run executes only affected ones,
+so each individual run costs more. That is the velocity/async trade being made:
+one expensive, correct, asynchronous verification of the state that will
+actually land, in place of ~3.2 cheaper partial verifications of states that
+will not. Measured amplification on 2026-09-02 was **3.2 CI cycles per branch**
+(198 PR-event runs, 8 branches), down from the 7 recorded when this intent
+opened but still >1.
+
+Step 3 is a repository setting and is the user's call to make.
