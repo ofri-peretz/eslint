@@ -40,6 +40,14 @@ concurrency:
   group: a11y-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # Turborepo Remote Cache (Vercel). Free on every plan, and off the 10 GB
+  # Actions cache allowance that node_modules and Next.js compete for.
+  # Absent -> empty -> the setup action falls back to the Actions-backed cache,
+  # which is also what a fork PR gets, since forks receive no secrets.
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+
 permissions:
   contents: read
 
