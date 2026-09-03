@@ -5,6 +5,43 @@ All notable changes to `eslint-plugin-react-features` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 1.7.2
+
+### Patch Changes
+
+- **🐛 Fix** — `export default class extends Component` is still a component
+
+  `require-default-props` keyed components by `node.id.name`, so an anonymous
+  class had no key and was never tracked. A missing `defaultProps` on
+  `export default class extends Component` — among the most common shapes in
+  React — reported nothing at all, as did the same omission on a class
+  expression assigned to a `const`.
+
+  Two existing test cases appeared to cover exactly this and did not: both
+  supplied COMPLETE defaults, so they passed because nothing was missing, while
+  their names attributed the pass to an anonymous-class branch. A reader would
+  have concluded the omission was deliberate.
+
+- **🐛 Fix** — `class A extends React['Component']` is the same base class
+
+  `no-direct-mutation-state` and `react-class-to-hooks` both gated the
+  superclass on `superClass.property.type === 'Identifier'`, so a subscripted
+  `React['Component']` was not recognised as a React component at all — and
+  every rule that follows from "this is a component" went quiet with it. That
+  was 25 of the cases the extended probe found.
+
+  A base class named at runtime still names nothing, and is pinned as such.
+
+- **🐛 Fix** — misspelled members and PropTypes validators read through a string subscript
+
+  `no-typos` checked class properties, methods and member reads on the dotted
+  spelling only, so `class A { ["defaulProps"] = 1 }` and
+  `Component['defaulProps']` carried the same misspelling unreported.
+  `default-props-match-prop-types` resolved `PropTypes['number']` as no
+  validator at all, which silently disabled the whole comparison for that prop.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.2`
+
 ## 1.7.1
 
 ### Patch Changes
