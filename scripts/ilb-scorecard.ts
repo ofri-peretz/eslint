@@ -133,8 +133,16 @@ function latestSummaryOfCorpus(fpCorpus: boolean): WildResult | null {
     const p = path.join(WILD_RESULTS, d, 'summary.json');
     if (!fs.existsSync(p)) continue;
     const data = readJson<WildSummary>(p);
+    /*
+     * An unreadable summary is not a match for ANYTHING. `readJson` returns
+     * null on invalid JSON, and `Boolean(null?.fpCorpusMode)` is `false` —
+     * which is exactly the Wild predicate, so a corrupt file was returned as
+     * the latest Wild run and Wild/Perf/Cov then reported "missing data"
+     * instead of falling through to the newest run that actually parses.
+     */
+    if (data === null) continue;
     // An older run predating the flag is a Wild run; that is what existed then.
-    if (Boolean(data?.fpCorpusMode) !== fpCorpus) continue;
+    if (Boolean(data.fpCorpusMode) !== fpCorpus) continue;
     return { path: p, date: d, data };
   }
   return null;
@@ -353,16 +361,23 @@ function readCoverage(wildData: WildSummary | null): BenchScore {
 function readEdge(_unusedWildData: WildSummary | null): BenchScore {
   // Reads the EDGE corpus, not whatever ILB-Wild happened to load. Passing the
   // Wild summary here is what let an Edge run masquerade as a Wild one.
-  const wildData = latestEdgeSummary()?.data ?? null;
-  if (!wildData) return missing('derived from ILB-Wild');
-  const fp = wildData.repos.filter((r) => r.success && r.fpEdge);
+  const edgeData = latestEdgeSummary()?.data ?? null;
+  /*
+   * The fallback text names EDGE too. The read was switched to the Edge
+   * summary and these strings were left saying "derived from ILB-Wild" and
+   * "latest Wild run" — so when the Edge summary is missing, the scorecard
+   * blamed the Wild corpus for it, which is the same confusion between the
+   * two corpora that this whole change exists to remove.
+   */
+  if (!edgeData) return missing('derived from ILB-Edge');
+  const fp = edgeData.repos.filter((r) => r.success && r.fpEdge);
   if (fp.length === 0) {
     return {
       score: '—',
       detail:
-        'no FP-Edge repos in latest Wild run · run `npm run ilb:wild -- --fp-corpus`',
-      date: wildData.date,
-      source: 'derived from ILB-Wild',
+        'no FP-Edge repos in latest Edge run · run `npm run ilb:wild -- --fp-corpus`',
+      date: edgeData.date,
+      source: 'derived from ILB-Edge',
     };
   }
   const totalFindings = fp.reduce((s, r) => s + r.findings.total, 0);
@@ -370,8 +385,8 @@ function readEdge(_unusedWildData: WildSummary | null): BenchScore {
   return {
     score: `${totalFindings} FP candidates`,
     detail: `${fp.length} adversarial-real repos · ${totalLoc.toLocaleString()} LoC · awaiting triage`,
-    date: wildData.date,
-    source: 'derived from ILB-Wild',
+    date: edgeData.date,
+    source: 'derived from ILB-Edge',
     raw: fp,
   };
 }
@@ -617,12 +632,27 @@ function readMeasuredRuleSet(dir: string): Set<string> {
 function appendHistory(rows: BenchRow[]) {
   const today = new Date().toISOString().split('T')[0];
   const historyPath = path.join(WILD_RESULTS, 'history.ndjson');
+  /*
+   * `source` goes in the row. A history entry used to carry only
+   * `date|bench|score|asOf`, so nothing on it said WHICH corpus produced the
+   * number — and this file has just changed what "ILB-Edge" is derived from.
+   * The four existing ILB-Edge rows were computed by filtering `fpEdge` out of
+   * the WILD summary; every row after this one reads the Edge summary. Same
+   * bench name, two methods, and without provenance a sparkline would draw
+   * them as one series and call the step a regression.
+   *
+   * This does NOT retro-label the four legacy rows — `superseded` exists in
+   * the schema for that, and deciding which historical numbers to withdraw is
+   * a judgement for whoever owns the benchmark, not a side effect of adding a
+   * field. See the reply on this thread in #851.
+   */
   const lines = rows.map((b) =>
     JSON.stringify({
       date: today,
       bench: b.name,
       score: b.score,
       asOf: b.date,
+      source: b.source,
     }),
   );
   fs.mkdirSync(WILD_RESULTS, { recursive: true });
