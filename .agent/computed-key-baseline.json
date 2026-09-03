@@ -19,11 +19,6 @@
     "node-security/no-weak-hash-algorithm",
     "prisma-security/no-raw-identifier-interpolation",
     "react-features/default-props-match-prop-types",
-    "react-features/no-typos",
-    "secure-coding/no-graphql-injection",
-    "secure-coding/no-improper-sanitization",
-    "secure-coding/no-ldap-injection",
-    "secure-coding/no-sql-injection",
-    "secure-coding/no-template-injection"
+    "react-features/no-typos"
   ]
 }

@@ -441,20 +441,21 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
         const right = node.right;
 
         // Check for assignments to potentially dangerous properties
-        if (
-          left.type === 'MemberExpression' &&
-          left.property.type === 'Identifier'
-        ) {
-          const propertyName = left.property.name.toLowerCase();
+        if (left.type === 'MemberExpression') {
+          // Named `sink`, not `propertyName`: a local of that name shadows the
+          // devkit import and the call below would silently resolve to itself.
+          // `element['innerHTML'] = x` assigns the same sink `element.innerHTML`
+          // assigns.
+          const sink = (propertyName(left) ?? '').toLowerCase();
 
           if (
             ['innerhtml', 'outerhtml', 'innertext', 'textcontent'].includes(
-              propertyName,
+              sink,
             )
           ) {
             const encodingContext = needsContextEncoding(node);
 
-            if (encodingContext === 'html' && propertyName === 'innerhtml') {
+            if (encodingContext === 'html' && sink === 'innerhtml') {
               // Check if right side is properly sanitized
               const rightText = sourceCode.getText(right);
 
@@ -512,9 +513,8 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
           const left = (directParent as TSESTree.AssignmentExpression)
             .left as TSESTree.MemberExpression;
           if (
-            left.property.type === 'Identifier' &&
             // @vocabulary WHATWG DOM
-            ['innerHTML', 'outerHTML'].includes(left.property.name)
+            ['innerHTML', 'outerHTML'].includes(propertyName(left) ?? '')
           ) {
             const literalValue = node.value;
             const hasDangerousMarkup =
@@ -540,9 +540,8 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
             const left = current.left;
             if (
               left.type === 'MemberExpression' &&
-              left.property.type === 'Identifier' &&
               // @vocabulary WHATWG DOM
-              ['innerHTML', 'outerHTML'].includes(left.property.name)
+              ['innerHTML', 'outerHTML'].includes(propertyName(left) ?? '')
             ) {
               isInDangerousContext = true;
               break;

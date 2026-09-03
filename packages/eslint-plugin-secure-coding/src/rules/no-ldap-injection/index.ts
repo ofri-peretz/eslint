@@ -787,7 +787,14 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
             argument.type !== 'SpreadElement' && isRequestValue(argument, seen),
         );
       }
-      if (expression.type !== 'MemberExpression' || expression.computed)
+      // `req.body['x']` reads the same request field `req.body.x` reads, and a
+      // bundler emits the first. Only a key chosen at RUNTIME is refused —
+      // `propertyName` returns null for exactly that, which is the distinction
+      // the bare `expression.computed` test could not make.
+      if (
+        expression.type !== 'MemberExpression' ||
+        propertyName(expression) === null
+      )
         return false;
       return !isStatic(expression) && isUntrustedRequestChain(expression);
     };
