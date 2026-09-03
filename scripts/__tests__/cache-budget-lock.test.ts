@@ -85,6 +85,102 @@ describe('exactly one Turborepo remote-cache backend can be active', () => {
   });
 });
 
+describe('the Vercel Remote Cache request budget', () => {
+  /**
+   * Vercel's fair-use cap is on REQUEST RATE, not storage — artifacts expire
+   * after 7 days on their own, so there is no size to manage.
+   *
+   *   Hobby   100 requests / minute
+   *   Pro   10000 requests / minute
+   *
+   * Every job that opts in starts its turbo run at roughly the same moment, and
+   * turbo issues at least one lookup per task plus an upload on a miss.
+   * Measured 2026-09-02: `turbo run build --dry` = 37 tasks, `turbo run test
+   * --dry` = 57, across 7 opted-in jobs.
+   *
+   *   7 x 37  = 259 .. 518 requests   (build-shaped)
+   *   7 x 57  = 399 .. 798 requests   (test-shaped)
+   *
+   * all inside the opening minute. That is 2.6x - 8x over the Hobby cap and
+   * about 5-8% of Pro. A merge-queue run is worse by construction: it executes
+   * ALL shards where a PR run executes only affected ones.
+   *
+   * So the count of opted-in jobs is a quota decision, not a convenience. This
+   * bound makes growing it a deliberate act with the arithmetic in front of
+   * you, rather than a line added to one more workflow.
+   */
+  const BUDGETED_JOBS = 7;
+
+  it('no more jobs opt in than the budget allows', () => {
+    const dir = join(ROOT, '.github/workflows');
+    const optedIn = readdirSync(dir)
+      .filter((f) => f.endsWith('.yml'))
+      .map((f) => readFileSync(join(dir, f), 'utf8'))
+      .reduce(
+        (n, src) =>
+          n + (src.match(/turbo-remote-cache:\s*['"]true['"]/g) ?? []).length,
+        0,
+      );
+
+    expect(
+      optedIn,
+      `${optedIn} jobs enable the remote cache; budget is ${BUDGETED_JOBS}. ` +
+        'Each adds ~37-57 requests to the same opening minute. Raise the ' +
+        'budget deliberately, and check the plan cap before you do.',
+    ).toBeLessThanOrEqual(BUDGETED_JOBS);
+  });
+});
+
+describe('the OIDC exchange degrades instead of failing', () => {
+  const step = SETUP.slice(
+    SETUP.indexOf('Exchange the GitHub OIDC token'),
+    SETUP.indexOf('Turborepo remote cache (GitHub Actions backend'),
+  );
+
+  it('is present', () => {
+    expect(step.length).toBeGreaterThan(0);
+  });
+
+  it('carries continue-on-error', () => {
+    // The single most important line here. The exchange fails in two ORDINARY
+    // states — no OIDC policy on the Vercel team yet, and any fork PR, where
+    // GitHub issues no writable id-token. Without this, wiring OIDC turns every
+    // fork PR red, and a repo that accepts outside contributions cannot take
+    // that. Neither state is a defect; both must fall through to the
+    // Actions-backed cache.
+    expect(step).toMatch(/continue-on-error:\s*true/);
+  });
+
+  it('runs before the backend it feeds', () => {
+    // It exports TURBO_TOKEN, and the two backend steps below branch on it.
+    // Ordered after them, the guards read an empty value and the Vercel path is
+    // permanently unreachable while everything stays green.
+    expect(SETUP.indexOf('Exchange the GitHub OIDC token')).toBeLessThan(
+      SETUP.indexOf('Turborepo remote cache (GitHub Actions backend'),
+    );
+  });
+
+  it('pins the third-party action by SHA', () => {
+    // Same rule as every other third-party action here: a moving tag is the
+    // whole attack, and this one mints a credential.
+    expect(step).toMatch(
+      /uses:\s*vercel\/setup-turborepo-remote-cache-action@[a-f0-9]{40}/,
+    );
+  });
+
+  it('every workflow that opts in can actually mint a token', () => {
+    // `id-token: write` is what makes the exchange possible. Missing it, the
+    // step fails, continue-on-error swallows it, and the repo silently runs on
+    // the fallback forever — configured, green, and doing nothing.
+    for (const file of TURBO_WORKFLOWS) {
+      const src = readFileSync(join(ROOT, '.github/workflows', file), 'utf8');
+      expect(src, `${file} needs id-token: write`).toMatch(
+        /^\s*id-token:\s*write/m,
+      );
+    }
+  });
+});
+
 describe('the credentials reach the jobs that would use them', () => {
   it.each(TURBO_WORKFLOWS)(
     '%s passes TURBO_TOKEN and TURBO_TEAM through to the setup action',
