@@ -87,6 +87,23 @@ pre-commit:
       # baselined. With 700 rules coming, refusing the next one is what scales.
       glob: 'packages/eslint-plugin-*/src/**/*.ts'
       run: npm run --silent check:spellings
+    format-drift:
+      # `CLAUDE.md` listed `Prettier (format check)` among the required checks.
+      # There was no such check — prettier appeared in no workflow and in no
+      # hook, and 3,613 owned source files had drifted with nothing to say so.
+      #
+      # Ratcheted, not enforced retroactively: reformatting 3,613 files rewrites
+      # blame across the repo and conflicts with every branch in flight, and
+      # buys nothing, because those files are not wrong. What harms is a file
+      # that WAS clean becoming unclean, and unrelated reformatting riding
+      # along in somebody's diff. Only that fails.
+      #
+      # STAGED FILES only. A full scan is 76 seconds; on every commit that gets
+      # the hook switched off inside a week, and the question at commit time is
+      # only ever "did I just make one of MY files unclean". The full scan is
+      # the CI job, and it is the only run allowed to shrink the baseline.
+      glob: '*.{ts,tsx,mts,cts,js,mjs,cjs,json,md}'
+      run: npm run --silent check:format-drift -- {staged_files}
     case-registry:
       # Executed evidence, not a stored verdict. Every coverage claim in
       # benchmarks/cases/registry.json is run through the rule that makes it,

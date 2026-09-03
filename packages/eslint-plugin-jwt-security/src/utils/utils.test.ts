@@ -381,14 +381,37 @@ describe('JWT Utils', () => {
       expect(extractAlgorithms(obj)).toEqual(['RS256']);
     });
 
-    it('should skip properties with non-identifier keys', () => {
-      // This also covers line 142 - when key.type !== 'Identifier'
+    /*
+     * This asserted `[]`, and its own comment said why it existed: "this also
+     * covers line 142". A quoted key is not a non-identifier curiosity — it is
+     * `{ 'algorithm': 'RS256' }`, ordinary JavaScript naming the same option as
+     * `{ algorithm: 'RS256' }`. The case reached a branch and, in doing so,
+     * froze the rule's blindness to it as correct behaviour.
+     */
+    it('reads a quoted key, which names the same option', () => {
       const obj = {
         type: 'ObjectExpression',
         properties: [
           {
             type: 'Property',
-            key: { type: 'Literal', value: 'algorithm' }, // Literal key, not Identifier
+            key: { type: 'Literal', value: 'algorithm' },
+            value: mockLiteral('RS256'),
+          },
+        ],
+      } as unknown as TSESTree.ObjectExpression;
+      expect(extractAlgorithms(obj)).toEqual(['RS256']);
+    });
+
+    it('skips a key chosen at runtime, which names nothing readable', () => {
+      // The real non-identifier case: `{ [name]: 'RS256' }`. Nothing here says
+      // what `name` holds, so there is no option to extract.
+      const obj = {
+        type: 'ObjectExpression',
+        properties: [
+          {
+            type: 'Property',
+            computed: true,
+            key: { type: 'Identifier', name: 'name' },
             value: mockLiteral('RS256'),
           },
         ],

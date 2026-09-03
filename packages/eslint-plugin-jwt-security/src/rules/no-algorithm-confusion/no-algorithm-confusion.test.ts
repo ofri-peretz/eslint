@@ -103,6 +103,35 @@ jwt.verify(token, publicKey, { complete: true });`,
 jwt.verify(token, publicKey, { algorithms: ['HS256'] });`,
             errors: [{ messageId: 'algorithmConfusion' }],
           },
+          /*
+           * One option, three spellings. The rule required an Identifier key,
+           * so it saw only the first — missing the computed form a bundler
+           * emits AND the quoted form that is ordinary hand-written JS. The
+           * runtime-computed key stays silent: nothing shows what `x` names,
+           * and that is the one case where refusing to decide is right.
+           */
+          /*
+           * A runtime-computed key SITTING BESIDE the offending option. The
+           * finding comes from `algorithms`; the location loop walks properties
+           * in order and stops at the first match, so the runtime key has to sit
+           * FIRST to be reached at all. It must be skipped rather than throw or
+           * mis-locate the report onto a property that names nothing.
+           */
+          {
+            name: 'a sibling key chosen at runtime does not disturb the report',
+            code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, publicKey, { [extra]: 1, algorithms: ['HS256'] });`,
+            errors: [{ messageId: 'algorithmConfusion' as const }],
+          },
+          ...[
+            { label: 'a quoted key', key: "'algorithms'" },
+            { label: 'a computed key', key: "['algorithms']" },
+          ].map(({ label, key }) => ({
+            name: `algorithm confusion behind ${label}`,
+            code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, publicKey, { ${key}: ['HS256'] });`,
+            errors: [{ messageId: 'algorithmConfusion' as const }],
+          })),
           // HS384 with public key
           {
             code: `import jwt from 'jsonwebtoken';

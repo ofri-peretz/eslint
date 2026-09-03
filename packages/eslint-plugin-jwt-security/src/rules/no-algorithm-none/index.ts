@@ -19,8 +19,9 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   createRule,
   formatLLMMessage,
-  MessageIcons,
   isTestFilePath,
+  MessageIcons,
+  objectKeyName,
 } from '@interlace/eslint-devkit';
 import {
   isVerifyOperation,
@@ -180,11 +181,13 @@ export const noAlgorithmNone = createRule<RuleOptions, MessageIds>({
       optionsNode: TSESTree.ObjectExpression,
     ): void => {
       for (const prop of optionsNode.properties) {
-        if (prop.type !== 'Property' || prop.key.type !== 'Identifier') {
+        if (prop.type !== 'Property') {
           continue;
         }
 
-        const keyName = prop.key.name;
+        // See no-algorithm-confusion: the key may be bare, quoted or computed,
+        // and all three name the same JWT option.
+        const keyName = objectKeyName(prop);
         if (
           keyName !== 'algorithms' &&
           keyName !== 'algorithm' &&

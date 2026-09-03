@@ -25,6 +25,11 @@ describe('no-algorithm-none', () => {
   describe('Valid Code - Secure Algorithms', () => {
     ruleTester.run('valid - secure algorithms', noAlgorithmNone, {
       valid: [
+        {
+          name: 'a runtime-computed option key names nothing this rule can read',
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, key, { [optionName]: ['none'] });`,
+        },
         // RS256 - RSA with SHA-256
         {
           name: 'a real algorithm',
