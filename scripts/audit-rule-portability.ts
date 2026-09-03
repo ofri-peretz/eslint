@@ -453,6 +453,35 @@ async function checkOxlintRuntimeHashes() {
   if (!fs.existsSync(oxlintDist)) {
     return ['oxlint not installed at node_modules/oxlint/dist — run npm ci'];
   }
+  // Before hashing anything: is the oxlint being hashed even ours?
+  //
+  // In a git worktree, Node can resolve a dependency out to a SIBLING checkout
+  // when the local tree is incomplete. On 2026-09-03 this repo's own worktree
+  // resolved oxlint from ../eslint-ci2 at 1.79.0 while package.json pins
+  // ^1.80.0, and the gate dutifully reported hash drift — sending two rounds of
+  // work at pins that were already correct. Every bundle matches at 1.80.0.
+  //
+  // A wrong install and a moved runtime produce the same symptom, so the check
+  // has to distinguish them. This one is cheap and comes first.
+  // realpathSync, not resolve: the path is always in-repo, it is the SYMLINK
+  // TARGET that escapes. This repo's worktree setup deliberately symlinks
+  // node_modules at a sibling checkout, so `node_modules/oxlint` looks local
+  // and resolves to someone else's version.
+  const repoRoot = fs.realpathSync(path.resolve(__dirname, '..'));
+  const realDist = fs.existsSync(oxlintDist)
+    ? fs.realpathSync(oxlintDist)
+    : oxlintDist;
+  if (!realDist.startsWith(repoRoot + path.sep)) {
+    failures.push(
+      `oxlint resolves OUTSIDE this repository — ${realDist}\n` +
+        `      This is a local install problem, not a drift in oxlint. The hashes\n` +
+        `      below are almost certainly fine; your tree is resolving someone\n` +
+        `      else's copy (a sibling git worktree is the usual cause).\n` +
+        `      Fix: run \`npm install\` in ${repoRoot} and re-run.`,
+    );
+    return failures;
+  }
+
   for (const [file, expected] of Object.entries(
     VERIFIED_OXLINT_RUNTIME_HASHES,
   )) {
