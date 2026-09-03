@@ -22,7 +22,7 @@ name: Weekly Corpus Scan
 
 on:
   schedule:
-    - cron: "0 6 * * 1" # 06:00 UTC Monday
+    - cron: '0 6 * * 1' # 06:00 UTC Monday
   workflow_dispatch:
   # Automatic for any PR that changes rule LOGIC, and on demand via the label
   # for anything else.
@@ -78,9 +78,30 @@ jobs:
       - name: Build plugins
         run: npx turbo run build --output-logs=errors-only
 
+      # `--local` on a PR, the published default on the cron.
+      #
+      # The comment above and the `Build plugins` step before it both describe
+      # the LOCAL mode — but the command ran the default, which installs the
+      # plugins from npm and ignores that build entirely. So a PR was measured
+      # against the last RELEASE, and a PR that fixes a false positive could
+      # never turn this green: the finding it removes is still in the published
+      # package. #816 removed two CVSS 9.8 false positives and this gate
+      # reported them as still over budget.
+      #
+      # `--local` is not the weaker check. It still exits 1 when a rule reports
+      # MORE than the published version, which is the regression this gate
+      # exists to catch; it simply stops failing a branch for an improvement it
+      # has not shipped yet. The cron keeps the published default, because
+      # tracking what consumers actually get is a different question and both
+      # are worth asking.
       - name: Scan corpus against the findings budget
         id: scan
-        run: npx tsx scripts/corpus-scan.ts
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            npx tsx scripts/corpus-scan.ts --local
+          else
+            npx tsx scripts/corpus-scan.ts
+          fi
 
       - name: Report
         if: always()
