@@ -62,7 +62,11 @@ import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-import { readBaseline, readBaselineRecord } from './lib/read-baseline.ts';
+import {
+  readBaseline,
+  readBaselineRecord,
+  readFlatEntries,
+} from './lib/read-baseline.ts';
 import { changedRules } from './rule-audit-gate.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -261,12 +265,12 @@ function allRules(): { rule: string; module: string }[] {
   // A rule directory also holds helpers, and a helper is not a rule. The
   // generated manifest is the list of rules each plugin actually exports, so
   // the walk is intersected with it rather than guessed at by filename.
-  const manifest = JSON.parse(
-    fs.readFileSync(
-      path.join(ROOT, '.agent', 'plugin-rule-manifest.json'),
-      'utf8',
-    ),
-  ) as Record<string, Record<string, unknown>>;
+  // `readFlatEntries`, not a raw parse: the manifest carries a `command`
+  // string beside its plugin records, and iterating it as a plugin turns the
+  // command's characters into rules.
+  const manifest = readFlatEntries<Record<string, unknown>>(
+    path.join(ROOT, '.agent', 'plugin-rule-manifest.json'),
+  );
   const exported = new Set<string>();
   for (const [pkg, rules] of Object.entries(manifest)) {
     if (!fs.existsSync(path.join(pkgDir, pkg))) continue; // renamed packages linger in the manifest

@@ -74,7 +74,7 @@
     "typecheck:benchmarks": "tsgo --noEmit -p benchmarks/tsconfig.scripts.json",
     "release": "gh workflow run release.yml --ref main",
     "release:dry-run": "gh workflow run release.yml --ref main -f dry-run=true",
-    "ci:trigger": "gh workflow run ci.yml --ref local-playground-app && echo '✅ Workflow triggered!'",
+    "ci:trigger": "gh workflow run ci.yml --ref local-playground-app && echo '\u2705 Workflow triggered!'",
     "ci:status": "tsx scripts/ci-status.ts",
     "ci": "tsx scripts/ci-status.ts",
     "delete-branches": "bash scripts/delete-branches.sh",
@@ -413,7 +413,13 @@
     "dompurify": "^3.4.13",
     "fast-uri": "^3.1.6",
     "@humanfs/node": "^0.16.8",
-    "qs": "^6.16.0"
+    "qs": "^6.16.0",
+    "csurf": {
+      "cookie": "^0.7.0"
+    },
+    "sequelize": {
+      "uuid": "^11.1.1"
+    }
   },
   "dependencies": {
     "@fumadocs/mdx-remote": "^1.5.1",

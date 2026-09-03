@@ -39,6 +39,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ESLint } from 'eslint';
+import { readFlatEntries } from './lib/read-baseline.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
@@ -176,12 +177,11 @@ const repos =
  */
 function allRules(): string[] {
   const pkgDir = path.join(ROOT, 'packages');
-  const manifest = JSON.parse(
-    fs.readFileSync(
-      path.join(ROOT, '.agent', 'plugin-rule-manifest.json'),
-      'utf8',
-    ),
-  ) as Record<string, Record<string, unknown>>;
+  // See scripts/lib/read-baseline.ts: the manifest's `command` field is
+  // metadata, not a plugin.
+  const manifest = readFlatEntries<Record<string, unknown>>(
+    path.join(ROOT, '.agent', 'plugin-rule-manifest.json'),
+  );
   const onDisk = new Set<string>();
   for (const pkg of fs
     .readdirSync(pkgDir)
