@@ -232,7 +232,9 @@ failure is that together they can hold the pipeline indefinitely with no
 signal, and every existing check answers "did a step fail" rather than "did a
 release come out".
 
-`release-liveness.yml` runs the check every six hours at :05 and on main
-pushes touching `.changeset/**` or `packages/*/package.json`. It gates
-nothing; it files an issue, which is the only thing that would have surfaced
-this.
+`release-liveness.yml` runs the check every six hours at :05 and after every
+completed run of the `Changesets` workflow on a push to main (not on an
+independent `push` trigger of its own — that raced `changesets-pr.yml`'s own
+push-triggered job and produced a false `no-version-pr` finding, issue #849).
+It gates nothing; it files an issue, which is the only thing that would have
+surfaced this.

@@ -24,13 +24,27 @@ on:
     # Every six hours at :05. Earlier than issue-sweep (:40) so a stall it finds
     # is already in the backlog by the time the sweep reads it.
     - cron: "5 */6 * * *"
-  # Also after a merge: a changeset that lands and produces no Version PR is
-  # worth knowing about in minutes, not hours.
-  push:
-    branches: [main]
-    paths:
-      - ".changeset/**"
-      - "packages/*/package.json"
+  # Was `push: {branches: [main], paths: [".changeset/**", "packages/*/package.json"]}`
+  # — the same push event that also triggers changesets-pr.yml's "version" job,
+  # which is the ONE thing that can make a "no Version PR" finding untrue. That
+  # job installs (~60s) before it can push a branch; this workflow's own
+  # checkout + install finished first every time, so the check ran BEFORE the
+  # Version PR existed and reported a stall against a pipeline that was not
+  # stalled.
+  #
+  # Measured, not theorized: issue #849 was filed at 15:14:01Z reporting
+  # "no Version Packages PR is open" for a push whose Version PR (#850) opened
+  # at 15:14:05Z — four seconds later, for that exact same push.
+  #
+  # `workflow_run` fires only once the named workflow's run has fully
+  # completed, so by the time this job starts, changesets-pr.yml has already
+  # had its one chance to open (or fail to open) the Version PR — the race is
+  # gone by construction, not by timing it out. The trade is coarser scope: it
+  # now runs after every push to main rather than only ones touching changeset
+  # paths, because changesets-pr.yml's "version" job itself has no path filter.
+  workflow_run:
+    workflows: ["Changesets"]
+    types: [completed]
   workflow_dispatch:
 
 concurrency:
@@ -43,6 +57,13 @@ permissions:
 jobs:
   check:
     name: Release pipeline is alive
+    # `workflow_run` fires for every completed run of "Changesets", including
+    # its PR-time `required` job (advisory changeset-presence check). Only the
+    # push-triggered `version` job can affect whether a Version PR exists, so
+    # restrict to that — anything else is `schedule` / `workflow_dispatch`.
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -74,15 +95,15 @@ jobs:
         with:
           turbo-cache: "false"
 
-      # On `push`, skip the publish-lag half.
+      # On `workflow_run`, skip the publish-lag half.
       #
-      # This trigger watches `.changeset/**` and `packages/*/package.json`, and
-      # a Version PR merge touches BOTH — it deletes the changesets it consumed
-      # and bumps every version. So the push fires on the release commit
-      # itself, at the one moment npm is legitimately behind main, and every
-      # package reports `unpublished-bump`. That is not a stall; it is a
-      # release in progress. It fired on all three push runs of 2026-09-01 and
-      # produced #791 and #795 against a healthy pipeline.
+      # This trigger follows every push-triggered "Changesets" run, and a
+      # Version PR merge is one of those pushes — it deletes the changesets it
+      # consumed and bumps every version in the same commit. So this fires on
+      # the release commit itself, at the one moment npm is legitimately behind
+      # main, and every package would report `unpublished-bump`. That is not a
+      # stall; it is a release in progress. It fired on all three push runs of
+      # 2026-09-01 and produced #791 and #795 against a healthy pipeline.
       #
       # The changeset half does not race and stays on, which is the reason this
       # trigger exists: a changeset that lands with no Version PR is worth
@@ -94,7 +115,7 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: >-
           node --experimental-strip-types scripts/check-release-liveness.ts
-          ${{ github.event_name == 'push' && '--skip-publish-lag' || '' }}
+          ${{ github.event_name == 'workflow_run' && '--skip-publish-lag' || '' }}
 
       - name: 🚨 Report a stalled release pipeline
         if: failure()
