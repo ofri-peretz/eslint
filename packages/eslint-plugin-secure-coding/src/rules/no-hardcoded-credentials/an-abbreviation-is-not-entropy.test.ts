@@ -120,6 +120,23 @@ ruleTester.run(
         code: `const authSecret = '<rootDir>/K2n8Qv4xRtL9pWmZ3yBc7Hd5Fj1Ns6Ae0Ug';`,
         errors: 1,
       },
+      {
+        // CodeRabbit, on this PR: the abbreviation allowance suppressed a key
+        // that carries no digit at all. `vnd`, `live`, `Bcd` — two of the three
+        // meaningful tokens are waived by length, so `every` passed. The digit
+        // guard above cannot see this one.
+        name: 'a digit-free key shape does not get the abbreviation allowance',
+        code: `const apiKey = 'vnd_live_aBcdEfGhIjKlMnOpQrStUvWxYz';`,
+        errors: 1,
+      },
+      {
+        // CodeRabbit, on this PR: a second slash used to make a path
+        // unambiguous, so an opaque segment rode through behind the template
+        // root that this PR taught the guard to strip.
+        name: 'an opaque segment is a credential even with a second slash after it',
+        code: `const apiKey = '<rootDir>/K2n8Qv4xRtL9pWmZ3yBc7Hd5Fj1Ns6Ae0Ug/default.js';`,
+        errors: 1,
+      },
     ],
   },
 );

@@ -328,9 +328,22 @@ export function isNaturalWordString(value: string): boolean {
   // identifier, and keeps its vowel requirement. `mtls_…` has none;
   // `sk_live_4eC39…` does.
   if (/[0-9]/.test(value)) return false;
-  return meaningful.every(
-    (token) => isPronounceable(token) || token.length <= 4,
-  );
+
+  // The allowance is for the ODD abbreviation inside a phrase, and a digit-free
+  // key shape can still abuse it. `vnd_live_aBcdEfGhIjKlMnOpQrStUvWxYz` splits
+  // into `vnd`, `live`, `Bcd` — two of the three are waived by length alone, so
+  // `every` passed and a key was suppressed with no digit to catch it.
+  //
+  // Two things separate a phrase from a key. In a phrase the waived tokens are
+  // a MINORITY carried by real words: `mtls` is one of four, the rest
+  // dictionary. And a phrase does not shed fragments — camel-case entropy does,
+  // leaving a trail of one- and two-character pieces (`a`, `Ef`, `Gh`, `Ij`, …)
+  // that `meaningful` discards before `every` ever sees them.
+  const waived = meaningful.filter((token) => !isPronounceable(token));
+  if (waived.some((token) => token.length > 4)) return false;
+  if (waived.length * 2 > meaningful.length) return false;
+  if (tokens.filter((token) => token.length < 3).length >= 3) return false;
+  return true;
 }
 
 /**
@@ -450,15 +463,25 @@ function isUrlOrPath(value: string): boolean {
   // is a secret. Route segments are written to be read — they do not mix case
   // AND digits the way a generated key does. Anything with a second slash is
   // unambiguous and keeps the permissive rule.
+  const looksGenerated = (segment: string): boolean =>
+    /[a-z]/.test(segment) && /[A-Z]/.test(segment) && /[0-9]/.test(segment);
+
   if (segments.length === 1) {
-    const segment = segments[0] as string;
-    return !(
-      /[a-z]/.test(segment) &&
-      /[A-Z]/.test(segment) &&
-      /[0-9]/.test(segment)
-    );
+    return !looksGenerated(segments[0] as string);
   }
-  return true;
+
+  // A second slash used to make the path unambiguous on its own. It does not:
+  // `<rootDir>/K2n8Qv4xRtL9pWmZ3yBc7Hd5Fj1Ns6Ae0Ug/default.js` strips to a
+  // two-segment path and rode straight through. A route segment is written to
+  // be read and stays short; 16+ characters mixing all three classes is a
+  // generated token wearing a path.
+  //
+  // The length floor is what keeps hashed build output out of this: a segment
+  // like `main.a3F9x2.js` mixes classes too, and only the run length tells the
+  // two apart.
+  return !segments.some(
+    (segment) => segment.length >= 16 && looksGenerated(segment),
+  );
 }
 
 /**
