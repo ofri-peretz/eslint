@@ -58,7 +58,19 @@ right for `Cipheriv` and exactly wrong for NestJS, whose entire surface is
 capitalised decorators — it scored that plugin "0% of 7" by discarding the 99
 APIs its rules exist to read.
 
-## Control band
+## Constraints
+
+- **No floor may be set against an untrusted denominator.** Doing so repeats
+  the original defect while looking measured, which is worse than the status quo.
+- **The surface spec stays out of the manifest** while the manifest is the
+  artefact under suspicion — a spec inside it could be edited until the
+  measurement agreed with the claim.
+- **An upper bound may be published as an upper bound**, never rounded into an
+  exact figure. Naming an API is necessary to act on it and not sufficient.
+- **Surfaces are pinned to a version.** `node@24`, and the installed version of
+  each npm target; a figure without one describes nothing.
+
+## Success criteria
 
 - **Now:** 10 published figures, 0 derived from a surface; 2 measured
   denominators known wrong.
@@ -66,6 +78,8 @@ APIs its rules exist to read.
   basis; `outOfScope` naming actual APIs rather than carrying a count.
 - **Breach:** a hand-edited coverage percentage, or a floor raised without the
   denominator that justifies it.
+- **Proven by:** editing a percentage in the manifest by hand fails the gate;
+  today it passes, because internal consistency is all that is checked.
 
 ## The gap this exposes, which is the point
 

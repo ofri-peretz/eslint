@@ -61,12 +61,26 @@ as a list — the first inventory it committed would have killed every later
 shard produced a partial inventory that looked complete. It now refuses fewer
 shards than `--expect`.
 
-## Control band
+## Constraints
+
+- **`real-source-scan.mts` must never run on a developer machine.** It clones
+  112 repositories and lints 345,841 files; it runs in CI or not at all.
+- **A partial scan may not produce an inventory.** The merger refuses fewer
+  shards than `--expect`, because a failed shard uploads no artifact and
+  `download-artifact` skips it silently.
+- **Shards that disagree on `configHash` or `reposHash` may not be merged** —
+  they answered different questions.
+- **The existing artifact is not to be deleted.** It is the evidence for this
+  intent; it is superseded by a scan, not tidied away.
+
+## Success criteria
 
 - **Now:** 1 inventory, 0 attribution, 270 rules under an unfalsifiable claim.
 - **Wanted:** an inventory whose `configHash` and `reposHash` match the files on
   disk, and a reachability figure derived from it.
 - **Breach:** any consumer quoting `withoutMaterial` while the hashes disagree.
+- **Proven by:** `check:audit-freshness` exiting 0 on the committed artifact —
+  it exits 1 today, naming the missing `configHash`.
 
 ## What follows from it, and only from it
 

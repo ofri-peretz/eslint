@@ -126,6 +126,6 @@ named as blockers by a separate verdict test.
 
 **Step 1 is therefore not met, and step 3 must not be taken.** The queue is
 unblocked by exactly one decision, which is the user's to make: whether `review`
-stays a *required* context. Dropping it from branch protection (CodeRabbit still
+stays a _required_ context. Dropping it from branch protection (CodeRabbit still
 reviews every PR; it just stops being a merge gate) removes the only blocker,
 and the verdict test flips on its own once `REQUIRED_CHECKS` follows.

@@ -13,7 +13,7 @@
 
 **Every rule enabled in a `recommended` preset has a demonstrated positive
 control** — a snippet, committed, that makes it report. Not a fixture it was
-born with: a check that the rule *can* fire under the configuration a consumer
+born with: a check that the rule _can_ fire under the configuration a consumer
 actually installs.
 
 Scope is the default-on surface only. Opt-in rules are the author's problem;
@@ -37,10 +37,10 @@ Both blind spots are now closed. The rules behind them are not.
 
 ## Measured today (2026-08-25)
 
-| | rules |
-| :--- | ---: |
-| enabled in a `recommended` preset | **327** |
-| with at least one corpus finding — examined | **49** |
+|                                                |   rules |
+| :--------------------------------------------- | ------: |
+| enabled in a `recommended` preset              | **327** |
+| with at least one corpus finding — examined    |  **49** |
 | with **zero** corpus findings — never examined | **278** |
 
 The 49 are the entire evidential basis for the ecosystem's default behaviour.
@@ -48,7 +48,7 @@ Of the eight examined closely this week, **five carried real defects**, two of
 them reporting false on every single finding (`prefer-tag-over-role` 31/31,
 `no-unknown-property` 65/65).
 
-That hit rate is the argument. It was measured on the *examined* population;
+That hit rate is the argument. It was measured on the _examined_ population;
 there is no reason to believe the unexamined 278 are healthier, and one
 concrete reason — `ddd-anemic` — to believe some are worse.
 

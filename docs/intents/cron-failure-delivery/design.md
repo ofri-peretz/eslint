@@ -12,15 +12,15 @@
 Derived from the intent's success criteria. R-numbers are what verification
 cites.
 
-| # | Requirement |
-| :--- | :--- |
-| R1 | Every job in a `schedule:`-triggered workflow is *reachable by* a reporting step on failure — in-job, or via an aggregate job that `needs` it with `if: always()`. |
-| R2 | No reporting condition reads `inputs.*` without a `github.event_name` guard. |
-| R3 | A matrix job with `fail-fast: true` reports from an aggregate job, never from inside the legs. |
-| R4 | A workflow may opt out of alerting only by declaring it, in-file and machine-readable. |
-| R5 | The issue channel itself — composite, token, permissions — is proven live on a cadence, not assumed. |
-| R6 | Each of the five causes in the intent fails a test when reintroduced. |
-| R7 | No new required PR check that spends runner minutes per push. |
+| #   | Requirement                                                                                                                                                        |
+| :-- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R1  | Every job in a `schedule:`-triggered workflow is _reachable by_ a reporting step on failure — in-job, or via an aggregate job that `needs` it with `if: always()`. |
+| R2  | No reporting condition reads `inputs.*` without a `github.event_name` guard.                                                                                       |
+| R3  | A matrix job with `fail-fast: true` reports from an aggregate job, never from inside the legs.                                                                     |
+| R4  | A workflow may opt out of alerting only by declaring it, in-file and machine-readable.                                                                             |
+| R5  | The issue channel itself — composite, token, permissions — is proven live on a cadence, not assumed.                                                               |
+| R6  | Each of the five causes in the intent fails a test when reintroduced.                                                                                              |
+| R7  | No new required PR check that spends runner minutes per push.                                                                                                      |
 
 ## Design
 
@@ -46,7 +46,7 @@ passes on four of the five causes.
 Parses every workflow with a `schedule:` trigger and builds the job graph.
 
 For each workflow it computes the set of jobs that can fail, and the set of
-jobs that report. A job is *covered* when it reports in-step, or when some
+jobs that report. A job is _covered_ when it reports in-step, or when some
 reporting job lists it in `needs` **and** that job's `if:` evaluates on failure
 (`always()`, `failure()`, or a `contains(needs.*.result, 'failure')` form).
 Uncovered jobs fail R1 and are named individually — `oxlint-parity`'s
@@ -59,7 +59,7 @@ Then three targeted rules:
   `inputs.*` is empty on `schedule`, `''` coerces to false, the step never
   runs on the only trigger that matters.
 - **R3** — for a job with `strategy.fail-fast` not `false`, reject a reporting
-  step *inside* that job. Cancelled legs report nothing, and the leg that did
+  step _inside_ that job. Cancelled legs report nothing, and the leg that did
   fail would file one issue per leg if fail-fast were relaxed instead.
 - **R4** — a workflow with no reporting anywhere passes only if it carries
   `# alerting: none — <reason>` near its `schedule:`. Silence becomes a
@@ -81,7 +81,7 @@ job assert-issue      → needs: [fail-on-purpose], if: always()
 ```
 
 If `report-failure` breaks — revoked token, changed permission model, API shift
-— the canary's `assert-issue` job goes red and files through the *same*
+— the canary's `assert-issue` job goes red and files through the _same_
 channel, which is circular by construction. So it also writes a heartbeat to
 the job summary and fails loudly: a canary that cannot report its own death is
 detected by the run's own red status on a workflow whose only job is to be
@@ -98,30 +98,30 @@ per cycle, most of them re-proving the same composite.
 Mechanical once the lock exists, and each is a separate commit so a bisect can
 tell them apart:
 
-| workflow | fix |
-| :--- | :--- |
-| `oxlint-parity` | aggregate reporting job with `needs: [static-audit, runtime-and-parity, deep-parity]`, `if: always()` |
-| `integration-health` | already fixed in #754 — land it |
-| `eslint-version-matrix` | move reporting out of the matrix into an aggregate job |
-| `benchmark` | decide: add reporting, or declare `# alerting: none` with a reason |
-| `resource-profile` | no code change; confirm the next monthly run reports |
-| `peer-health`, `weekly-corpus-scan` | already reporting (#784, #782) — fix the underlying failures |
-| `evals` | diagnose the missing conclusion first; may not belong here |
+| workflow                            | fix                                                                                                   |
+| :---------------------------------- | :---------------------------------------------------------------------------------------------------- |
+| `oxlint-parity`                     | aggregate reporting job with `needs: [static-audit, runtime-and-parity, deep-parity]`, `if: always()` |
+| `integration-health`                | already fixed in #754 — land it                                                                       |
+| `eslint-version-matrix`             | move reporting out of the matrix into an aggregate job                                                |
+| `benchmark`                         | decide: add reporting, or declare `# alerting: none` with a reason                                    |
+| `resource-profile`                  | no code change; confirm the next monthly run reports                                                  |
+| `peer-health`, `weekly-corpus-scan` | already reporting (#784, #782) — fix the underlying failures                                          |
+| `evals`                             | diagnose the missing conclusion first; may not belong here                                            |
 
 ## Verification
 
 The rule from CLAUDE.md: a fix is not done until a check would have caught it,
 and the check is proven to fail on the unfixed state.
 
-| Requirement | Proof |
-| :--- | :--- |
-| R1 | Point the lock at `oxlint-parity` as it stands today → must name `runtime-and-parity` as uncovered. |
-| R2 | Restore the pre-#754 `integration-health` condition → must fail. |
-| R3 | Move `eslint-version-matrix`'s report step back inside the matrix → must fail. |
-| R4 | Delete the reason comment from an opted-out workflow → must fail. |
-| R5 | Revoke the canary's `issues: write` in a scratch branch → `assert-issue` must go red rather than pass quietly. |
-| R6 | All five above, run as a sabotage pass and recorded in the PR body with pass/fail counts. |
-| R7 | The lock runs inside an existing vitest job; no new workflow, no new runner minutes on PRs. |
+| Requirement | Proof                                                                                                          |
+| :---------- | :------------------------------------------------------------------------------------------------------------- |
+| R1          | Point the lock at `oxlint-parity` as it stands today → must name `runtime-and-parity` as uncovered.            |
+| R2          | Restore the pre-#754 `integration-health` condition → must fail.                                               |
+| R3          | Move `eslint-version-matrix`'s report step back inside the matrix → must fail.                                 |
+| R4          | Delete the reason comment from an opted-out workflow → must fail.                                              |
+| R5          | Revoke the canary's `issues: write` in a scratch branch → `assert-issue` must go red rather than pass quietly. |
+| R6          | All five above, run as a sabotage pass and recorded in the PR body with pass/fail counts.                      |
+| R7          | The lock runs inside an existing vitest job; no new workflow, no new runner minutes on PRs.                    |
 
 The one that matters most is R5, because it is the only check on the checker.
 A green lock with a dead token reproduces this intent's own bug one level up.
@@ -157,7 +157,7 @@ failure is still reported per-leg rather than per-cause.
 
 ## Out of scope
 
-- **Fixing why the eight are failing.** This intent makes failure *visible*;
+- **Fixing why the eight are failing.** This intent makes failure _visible_;
   the underlying breakages are their own work, and several (`benchmark`,
   `oxlint-parity`) are likely external-dependency failures belonging to the
   `external-dependency-degradation-policy` intent.

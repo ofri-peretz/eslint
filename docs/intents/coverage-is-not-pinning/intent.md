@@ -55,12 +55,29 @@ This is detectable without judgement: a `name:` containing `L<n>`, `id <n>`, a
 `TRUE`/`FALSE` branch marker, or the word `coverage` is a case that was named
 after the instrument.
 
-## Control band
+## Constraints
+
+- **The coverage floor does not move.** 100% has repeatedly caught real gaps —
+  ten abstain paths opened by widening rules to read `o['k']` were each found
+  within seconds by coverage and nothing else.
+- **No case-per-branch requirement.** The house rule stands: a branch that
+  cannot be reached is deleted, not covered.
+- **Shrink-only, not a one-pass rewrite.** 47 renames across twenty-odd files,
+  each needing a judgement about what the case actually claims, is a change
+  nobody can review.
+- **A rename must not be allowed to preserve a wrong position.** Three of the
+  six cases flipped this quarter were asserting the opposite of what the rule
+  should do; a tidier name would have hidden that.
+
+## Success criteria
 
 - **Now:** 47 branch-named cases · 0 gates distinguishing a claim from an execution.
 - **Wanted:** 0 new branch-named cases; the existing 47 renamed to the position
   they take, or converted to `invalid` where the position was wrong.
 - **Breach:** any new case named after a line, branch id, or coverage arm.
+- **Proven by:** adding a case named `(L42 false arm)` makes `check:rule-cases`
+  exit 1 and name it; renaming one of the 47 without updating the baseline also
+  exits 1.
 
 ## What this is not
 

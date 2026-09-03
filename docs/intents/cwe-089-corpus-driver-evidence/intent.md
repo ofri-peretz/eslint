@@ -13,12 +13,12 @@ All six fixtures in `benchmarks/corpus/CWE-089/{safe,vulnerable}/` call a bare,
 undeclared `db.query(...)` with no driver import. Measured side by side on identical
 files:
 
-| package | fires on `vulnerable/` |
-| :--- | :--- |
-| `eslint-plugin-pg@1.4.14` (frozen, pre-rename) | 3 / 3 |
-| `eslint-plugin-postgresql-security@2.2.1` (shipped) | 0 / 3 |
+| package                                             | fires on `vulnerable/` |
+| :-------------------------------------------------- | :--------------------- |
+| `eslint-plugin-pg@1.4.14` (frozen, pre-rename)      | 3 / 3                  |
+| `eslint-plugin-postgresql-security@2.2.1` (shipped) | 0 / 3                  |
 
-This is **not a plugin regression.** The old rule fired on the *name* `.query`; the
+This is **not a plugin regression.** The old rule fired on the _name_ `.query`; the
 current rule requires evidence the receiver is a pg client, which is the deliberate
 "evidence, not names" hardening the plugin's own doctrine describes. Adding
 `import { Pool } from 'pg'` to a fixture makes 2.2.1 fire correctly — verified.

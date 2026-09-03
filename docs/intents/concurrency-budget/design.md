@@ -24,11 +24,11 @@ compute — is what the clock measures.
 
 The critical path on a full run, from the one clean measurement:
 
-| | |
-|---|---|
-| `Gate` | 13s, before anything else can start |
+|                          |                                       |
+| ------------------------ | ------------------------------------- |
+| `Gate`                   | 13s, before anything else can start   |
 | `Benchmark configs load` | 42s warm; 153s cold, 114s of it build |
-| everything else | starts behind those, in waves |
+| everything else          | starts behind those, in waves         |
 
 ## Design
 
@@ -38,7 +38,7 @@ human decision; the others are mechanical.
 ### 1. Stop re-verifying what was already verified (needs a decision)
 
 The post-merge run exists to catch a PR gate that never ran — a draft merge, an
-`--admin` bypass. That is rare, and paying 4× the target on *every* merge to
+`--admin` bypass. That is rare, and paying 4× the target on _every_ merge to
 cover it is the single largest cost in the budget.
 
 Trigger it only when the PR gate did not report on the merged commit: query the
@@ -54,19 +54,19 @@ confirm it still goes red.
 
 It is one job doing five things, and only one of them needs `dist`:
 
-| step | needs a build? |
-|---|---|
-| Build plugins | — it *is* the build |
-| Load every benchmark config | yes |
-| Severity labels vs CVSS band | yes |
-| Artifact size report | yes |
-| Devkit infra metrics | no |
+| step                         | needs a build?      |
+| ---------------------------- | ------------------- |
+| Build plugins                | — it _is_ the build |
+| Load every benchmark config  | yes                 |
+| Severity labels vs CVSS band | yes                 |
+| Artifact size report         | yes                 |
+| Devkit infra metrics         | no                  |
 
 Splitting the non-build work out does not help while any of it needs `dist`.
 The real lever is that it rebuilds what `Build (1..4)` already built moments
 earlier; jobs cannot share a filesystem, but the turbo remote cache already
-replays most of it (6s warm). So the 42s is mostly its *four checks plus
-setup*, not the build — and `deps: lean` (already landed) takes the setup down.
+replays most of it (6s warm). So the 42s is mostly its _four checks plus
+setup_, not the build — and `deps: lean` (already landed) takes the setup down.
 Re-measure before doing more here.
 
 ### 3. Lean deps for the build lane
@@ -99,7 +99,7 @@ is not done, however green the clock looks.
 ## Rejected alternatives
 
 - **Drop `Quality (Full)` from main pushes entirely.** Meets R1 by abandoning
-  R2. The backstop exists because a PR gate *can* be skipped.
+  R2. The backstop exists because a PR gate _can_ be skipped.
 - **Cut shards further.** Already at 4 node / 3 web; the tests total ~22s of
   execution. There is nothing left there.
 - **More runners.** Not purchasable — the repo is public and minutes are
@@ -110,7 +110,7 @@ is not done, however green the clock looks.
 
 ## Out of scope
 
-- The merge queue — it attacks run *amplification* across PRs, not latency
+- The merge queue — it attacks run _amplification_ across PRs, not latency
   within one, and is blocked separately on the `review` required context
   (`../merge-latency/design.md`).
 - `setup` cost itself. It is ~12–16s even lean; halving it would need a

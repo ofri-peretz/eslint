@@ -17,17 +17,17 @@ Measured on run
 (PR #770, all 10 test shards selected). Wall clock **261s**. Step-level timings
 across the ten shard jobs:
 
-| | total across 10 jobs |
-|---|---|
-| `./.github/actions/setup` | **133s** |
-| `actions/checkout` | **31s** |
-| **actual `Run shard N of 10`** | **43s** |
+|                                | total across 10 jobs |
+| ------------------------------ | -------------------- |
+| `./.github/actions/setup`      | **133s**             |
+| `actions/checkout`             | **31s**              |
+| **actual `Run shard N of 10`** | **43s**              |
 
 Every test in the repository runs in **43 seconds**. Getting to them cost
 **164 seconds** of per-job overhead, paid ten times. Overhead:work is **3.8:1**.
 
 The wall clock is worse than either number, because the jobs did not run
-concurrently. All 18 jobs were *created* at `21:40:13`; they *started* between
+concurrently. All 18 jobs were _created_ at `21:40:13`; they _started_ between
 `21:40:33` and `21:43:39` — a **186-second** spread, in waves of about six:
 
 ```

@@ -62,6 +62,36 @@ Required before this counts as done, per the repository's own rule:
    says the record is stale.
 4. Rename it _and_ update the baseline — green.
 
+## Rejected alternatives
+
+**Check the assertion, not the name.** The obvious idea: decide whether a rule
+_should_ report on a given input, and flag cases that disagree. Rejected because
+that judgement is exactly what the case exists to encode — a linter that could
+recover it would not need the case. The name is the weaker signal and the only
+recoverable one.
+
+**Lower the coverage floor to 95% and drop the branch-chasing cases.** This
+would delete the incentive that produced the 47 names, and it is the change
+several of those cases are arguing for. Rejected: the floor has repeatedly
+caught real defects, ten in a single sweep, and the cases it forces are only
+worthless when nobody states what they claim. Fix the naming, keep the floor.
+
+**Fix all 47 in one pass, start the gate at zero.** Rejected on reviewability:
+each rename is a judgement about what the case asserts, and three of the six
+cases examined this quarter turned out to assert the _wrong_ position. A
+47-file rename would have preserved those three silently, which is the precise
+failure this intent exists to stop.
+
+**A new script, `check:case-names`.** Rejected as a second instrument reading
+the same data. `check:rule-cases` already walks every case and already reads
+`name`; a separate script would drift from it.
+
+## Out of scope
+
+Test names outside `packages/*/src/**/*.test.ts` — the workspace's own
+`scripts/__tests__` locks are named after the thing they lock by design, and
+that is correct for an infrastructure test.
+
 ## What this deliberately does not do
 
 **It does not lower the coverage floor.** 100% has repeatedly caught real gaps:

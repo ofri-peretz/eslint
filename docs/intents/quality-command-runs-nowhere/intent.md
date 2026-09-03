@@ -19,13 +19,13 @@ No workflow invokes `npm run quality`. It is a local convenience command, and
 most of its steps are covered elsewhere — but five are covered nowhere at all,
 neither by a workflow nor by a lock test under `scripts/__tests__/`:
 
-| Command | Runs in CI | Has a lock test |
-| :--- | :---: | :---: |
-| `check-orphan-lockfiles` | no | no |
-| `ilb:flagship:smoke` | no | no |
-| `audit:claims:selftest` | no | no |
-| `sync:root-readme:check` | no | no |
-| `logos:variants:check` | no | no |
+| Command                  | Runs in CI | Has a lock test |
+| :----------------------- | :--------: | :-------------: |
+| `check-orphan-lockfiles` |     no     |       no        |
+| `ilb:flagship:smoke`     |     no     |       no        |
+| `audit:claims:selftest`  |     no     |       no        |
+| `sync:root-readme:check` |     no     |       no        |
+| `logos:variants:check`   |     no     |       no        |
 
 `audit:claims:selftest` is the one that matters. Its script header records why
 the auditor exists:
@@ -40,7 +40,7 @@ between us and another unmeasured marketing number — has no evidence it is not
 vacuously green.
 
 `ilb:flagship:smoke` not running also corrects a claim made elsewhere: the
-CWE-089 corpus does not turn a *PR gate* red. That number lives in a committed
+CWE-089 corpus does not turn a _PR gate_ red. That number lives in a committed
 artifact and the weekly benchmark, so
 `docs/intents/cwe-089-corpus-driver-evidence/` is less urgent than it was
 described as being.
