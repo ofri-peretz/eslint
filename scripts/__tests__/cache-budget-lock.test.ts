@@ -153,6 +153,20 @@ describe('the Vercel Remote Cache request budget', () => {
   const TASKS_PER_JOB = 57;
 
   /**
+   * Requests, not tasks. A task costs a lookup, and on a miss an upload too —
+   * so the worst case is two per task, which is the same all-miss assumption
+   * the 259-798 figure in this repo's audit was derived from.
+   *
+   * The first version of this ceiling divided the plan rate by TASKS_PER_JOB
+   * and was therefore 2x too permissive: it would have allowed one Hobby job
+   * to issue up to 114 requests against a 100/min cap. Caught in review on
+   * #861. The comment above already said "plus an upload on a miss" while the
+   * arithmetic below did not — the prose and the computation disagreed, which
+   * is the failure this file exists to catch elsewhere.
+   */
+  const REQUESTS_PER_JOB = TASKS_PER_JOB * 2;
+
+  /**
    * The plan this repo's Vercel team is on.
    *
    * Deliberately a constant rather than an env lookup: a lock that reads its
@@ -175,16 +189,26 @@ describe('the Vercel Remote Cache request budget', () => {
       ? undefined
       : PLAN_REQUESTS_PER_MINUTE[VERCEL_PLAN];
   const ceiling =
-    cap === undefined ? MEASURED_JOBS : Math.floor(cap / TASKS_PER_JOB);
+    cap === undefined ? MEASURED_JOBS : Math.floor(cap / REQUESTS_PER_JOB);
 
   it('records what each plan would allow', () => {
     // Not decoration. On hobby the ceiling is 1 and this repo is at 7 — so the
     // plan is not a footnote to look up later, it decides whether the current
     // configuration is fine or 7x over. Kept as an executable statement so the
     // arithmetic cannot drift from the comment.
-    expect(Math.floor(PLAN_REQUESTS_PER_MINUTE.hobby / TASKS_PER_JOB)).toBe(1);
+    // Hobby is ZERO, not one: 100 requests/min cannot cover even a single
+    // job's worst case of 114. On the documented request model the remote
+    // cache is not usable on Hobby at this repo's size at all — which is a
+    // sharper statement than "reduce to one job", and the reason the plan has
+    // to be declared before anyone turns it on.
+    expect(Math.floor(PLAN_REQUESTS_PER_MINUTE.hobby / REQUESTS_PER_JOB)).toBe(
+      0,
+    );
+    expect(Math.floor(PLAN_REQUESTS_PER_MINUTE.pro / REQUESTS_PER_JOB)).toBe(
+      87,
+    );
     expect(
-      Math.floor(PLAN_REQUESTS_PER_MINUTE.pro / TASKS_PER_JOB),
+      Math.floor(PLAN_REQUESTS_PER_MINUTE.pro / REQUESTS_PER_JOB),
     ).toBeGreaterThan(MEASURED_JOBS);
   });
 
@@ -207,7 +231,7 @@ describe('the Vercel Remote Cache request budget', () => {
             ' Before turning the remote cache on for real, set VERCEL_PLAN in' +
             ' this file: on hobby the ceiling is 1, not 7, and the cache is' +
             ' only inert today because no TURBO_TOKEN is set.'
-          : ` for ${VERCEL_PLAN} (${cap} requests/min at ~${TASKS_PER_JOB} tasks each).`),
+          : ` for ${VERCEL_PLAN} (${cap} requests/min at ~${REQUESTS_PER_JOB} requests each).`),
     ).toBeLessThanOrEqual(ceiling);
   });
 });
