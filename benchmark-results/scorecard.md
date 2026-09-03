@@ -1,20 +1,20 @@
 # Interlace Bench Scorecard
 
-> Generated: 2026-05-17 · Methodology: [`benchmarks/README.md`](benchmarks/README.md)
+> Generated: 2026-09-03 · Methodology: [`benchmarks/README.md`](benchmarks/README.md)
 
 ## Top-line scorecard
 
 | Bench | Dimension | Score | Trend | Detail | SLO | As of |
 |---|---|---|---|---|---|---|
-| **ILB-CWE-Corpus** | Synthetic CWE accuracy (self-authored) | **F1 100% (rank 1/6)** | `▁▁` | TP 13 · FP 0 · FN 0 · BAS 100% · 6 CWEs | F1 ≥ 80% | 2026-05-03 |
-| **ILB-Arena** | Head-to-head vs competitors | **F1 97.5% (rank 1/18)** | `▁▁▁▁` | TP 40/40 · FP 2 · FN 0 · precision 95.2% · recall 100.0% | Rank ≤ 3 | 2026-05-11 |
-| **ILB-Wild** | Findings on popular OSS | **3.48 findings/kLoC** | `▁▁▁▁` | 1,824,028 LoC across 22/22 repos | — | 2026-05-03 |
-| **ILB-Edge** | FP resilience on adversarial-real code | **3837 FP candidates** | `▁▁▁▁` | 5 adversarial-real repos · 361,376 LoC · awaiting triage | FP rate ≤ 2% | 2026-05-03 |
-| **ILB-Perf** | Lint throughput | **5.4 ms/file (median)** | `▁▁▁▁` | peak RSS 670MB across 22 repos · cold scenario | ≤ 15 ms/file | 2026-05-03 |
-| **ILB-Cov** | Rule activation rate | **19% rules fired** | `▁▁▁▁` | 39/208 rules across 11 plugins on Wild corpus | ≥ 70% | 2026-05-03 |
-| **ILB-AI** | Vuln detection on LLM-generated code | **68% detection** | `▁▁▁▁` | 13/19 LLM-generated functions flagged across 1 model | — | 2026-02-09 |
-| **ILB-LLM-Tokens** | Formatter token cost | **sec/compact -8.7% vs V1** | `▁▁▁▁` | compact: sec -8.7% · qual +6.8% · perf +102.7% · 48 measurements · methodology v1.0 | sec/compact ≤ V1 | 2026-05-03 |
-| **ILB-LLM-Fix** | First-fix accuracy on LLM-consumed lint output | **97.22% macro pass** | `▁▁▁▁` | v1=91.67% · v2-human=100% · v2-agent=100% · models opus · spent $5.1140 · methodology v1.3 | ≥ 80% macro pass | 2026-05-03 |
+| **ILB-CWE-Corpus** | Synthetic CWE accuracy (self-authored) | **F1 100% (rank 1/6)** | `▁▁▁` | TP 70 · FP 0 · FN 0 · BAS 100% · 32 CWEs | F1 ≥ 80% | 2026-08-26 |
+| **ILB-Arena** | Head-to-head vs competitors | **F1 97.5% (rank 1/18)** | `▁▁▁▁▁` | TP 40/40 · FP 2 · FN 0 · precision 95.2% · recall 100.0% | Rank ≤ 3 | 2026-05-11 |
+| **ILB-Wild** | Findings on popular OSS | **3.48 findings/kLoC** | `▁▁▁▁█` | 1,824,028 LoC across 22/22 repos | — | 2026-05-03 |
+| **ILB-Edge** | FP resilience on adversarial-real code | **2710 FP candidates** | `████▁` | 5 adversarial-real repos · 367,740 LoC · awaiting triage | FP rate ≤ 2% | 2026-08-03 |
+| **ILB-Perf** | Lint throughput | **5.4 ms/file (median)** | `▁▁▁▁█` | peak RSS 670MB across 22 repos · cold scenario | ≤ 15 ms/file | 2026-05-03 |
+| **ILB-Cov** | Rule activation rate | **19% rules fired** | `▁▁▁▁█` | 39/208 rules across 11 plugins on Wild corpus | ≥ 70% | 2026-05-03 |
+| **ILB-AI** | Vuln detection on LLM-generated code | **68% detection** | `▁▁▁▁▁` | 13/19 LLM-generated functions flagged across 1 model | — | 2026-02-09 |
+| **ILB-LLM-Tokens** | Formatter token cost | **sec/compact -8.7% vs V1** | `▁▁▁▁▁` | compact: sec -8.7% · qual +6.8% · perf +102.7% · 48 measurements · methodology v1.0 | sec/compact ≤ V1 | 2026-05-03 |
+| **ILB-LLM-Fix** | First-fix accuracy on LLM-consumed lint output | **97.22% macro pass** | `▁▁▁▁▁` | v1=91.67% · v2-human=100% · v2-agent=100% · models opus · spent $5.1140 · methodology v1.3 | ≥ 80% macro pass | 2026-05-03 |
 
 The **Trend** column shows the last ≤ 12 recorded scores per bench (one per recording day). `▁` = lowest in window, `█` = highest. Source: [`benchmark-results/history.ndjson`](history.ndjson).
 
@@ -99,7 +99,7 @@ The **Trend** column shows the last ≤ 12 recorded scores per bench (one per re
 | `secure-coding/detect-object-injection` | 3,484 | 25.4 | 19 | 0E / 28W | A |
 | `secure-coding/no-hardcoded-credentials` | 646 | 14.34 | 19 | 34E / 0W | AJ |
 | `secure-coding/no-insecure-comparison` | 623 | 12.47 | 19 | 0E / 21W | A |
-| `secure-coding/no-unlimited-resource-allocation` | 474 | 30.84 | 19 | 7E / 0W | A |
+| `secure-coding/no-unlimited-resource-allocation` | 474 | 30.84 | 19 | 7E / 0W | AJ |
 | `secure-coding/no-unchecked-loop-condition` | 239 | 31.94 | 19 | 6E / 0W | ⚠️ none |
 | `secure-coding/no-unsafe-deserialization` | 148 | 14.26 | 19 | 3E / 0W | A |
 | `node-security/no-buffer-overread` | 136 | 26.97 | 18 | 4E / 0W | ⚠️ none |
@@ -107,8 +107,8 @@ The **Trend** column shows the last ≤ 12 recorded scores per bench (one per re
 | `secure-coding/no-graphql-injection` | 56 | 32.73 | 19 | 6E / 0W | ⚠️ none |
 | `node-security/lock-file` | 48 | 33.96 | 18 | 1E / 0W | ⚠️ none |
 | `secure-coding/detect-non-literal-regexp` | 47 | 6.39 | 19 | 0E / 1W | A |
-| `node-security/no-arbitrary-file-access` | 47 | 4.1 | 18 | 1E / 0W | A |
-| `secure-coding/no-redos-vulnerable-regex` | 46 | 6.69 | 19 | 1E / 0W | A |
+| `node-security/no-arbitrary-file-access` | 47 | 4.1 | 18 | 1E / 0W | AJ |
+| `secure-coding/no-redos-vulnerable-regex` | 46 | 6.69 | 19 | 1E / 0W | AJ |
 | `secure-coding/no-unsafe-regex-construction` | 38 | 3.84 | 19 | — | A |
 | `lambda-security/no-overly-permissive-iam-policy` | 27 | 4.42 | 4 | — | ⚠️ none |
 
