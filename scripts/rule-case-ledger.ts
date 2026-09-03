@@ -186,13 +186,32 @@ try {
  */
 const CONFIG_FILE = path.join(ROOT, 'eslint.real-source.config.mjs');
 const currentConfigHash = (() => {
+  /*
+   * `crypto` is a DEFAULT import in this file (line ~59), so the bare
+   * `createHash` this used to call was never defined. The ReferenceError went
+   * straight into the catch below, `currentConfigHash` came out null, and the
+   * comparison against `inventory.configHash` could never be true.
+   *
+   * The visible effect was the inventory reporting STALE for ever — including
+   * on a scan generated minutes earlier from this exact config — so the three
+   * lines this gates ("fires on real code", "scanned and never fired", "never
+   * scanned") have never once printed. The metric was not stale; it was
+   * unreachable, and the message named a cause that was not the cause.
+   *
+   * The catch is now narrowed to what it is actually for: the file being
+   * missing. Anything else is a defect in this script and must not be
+   * disguised as an untrustworthy artefact — that is the failure mode this
+   * whole ledger exists to prevent, committed by the ledger itself.
+   */
   try {
-    return createHash('sha256')
+    return crypto
+      .createHash('sha256')
       .update(fs.readFileSync(CONFIG_FILE))
       .digest('hex')
       .slice(0, 16);
-  } catch {
-    return null;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
+    throw error;
   }
 })();
 const inventoryIsCurrent =
