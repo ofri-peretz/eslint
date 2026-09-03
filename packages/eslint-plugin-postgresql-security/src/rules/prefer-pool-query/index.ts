@@ -162,6 +162,9 @@ export const preferPoolQuery: TSESLint.RuleModule<'preferPoolQuery', PreferPoolQ
     docs: {
       description: 'Prefer pool.query() over client.query() for single-shot queries.',
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-postgresql-security/docs/rules/prefer-pool-query.md',
+      // See the sibling rule: the value lived only inside formatLLMMessage,
+      // where the formatter cannot see it.
+      cwe: 'CWE-400',
     },
     messages: {
       preferPoolQuery: formatLLMMessage({
