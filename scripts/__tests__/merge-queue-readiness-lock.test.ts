@@ -45,25 +45,53 @@ const WORKFLOWS = join(ROOT, '.github', 'workflows');
 const REQUIRED_CHECKS = [
   { name: 'oxlint (fast pass)', source: 'workflow' },
   { name: 'Quality (Full) Gate', source: 'workflow' },
-  // CodeRabbit. Verified on PR #770: reported in 1m30s on a `pull_request`
-  // event from run 33337052342, which no workflow in `.github/workflows`
-  // declares.
-  { name: 'review', source: 'app' },
+  // Provided by the `review:` job in `claude-code-review.yml`, which declares
+  // no `name:` — so the check takes the job id. Recorded as CodeRabbit until
+  // 2026-09-02; the live check run's `app.slug` is `github-actions`. CodeRabbit
+  // posts a separate status context named `CodeRabbit`, and branch protection
+  // does not require it.
+  { name: 'review', source: 'workflow' },
 ] as const satisfies readonly { name: string; source: 'workflow' | 'app' }[];
 
 const WORKFLOW_CHECKS = REQUIRED_CHECKS.filter((c) => c.source === 'workflow');
 const APP_CHECKS = REQUIRED_CHECKS.filter((c) => c.source === 'app');
 
-/** The workflow file that declares a job whose `name:` is `check`. */
+/**
+ * Every check name a workflow file can post.
+ *
+ * A job's `name:` when it declares one — and **the job id when it does not**,
+ * which is what GitHub falls back to. Missing that fallback is what let
+ * `review` be recorded as an installed app for two days: the job is declared
+ * `review:` in `claude-code-review.yml` with no `name:`, so a scan for a
+ * `name:` value found nothing and "no workflow declares it" read as proof of
+ * an app. The live API disagreed the whole time — the check run's `app.slug`
+ * is `github-actions`, and CodeRabbit posts a separate *status context* named
+ * `CodeRabbit`, which branch protection does not require.
+ */
+function checksProvidedBy(src: string): string[] {
+  const jobsAt = src.search(/^jobs:/m);
+  if (jobsAt === -1) return [];
+  const body = src.slice(jobsAt);
+
+  const heads: { id: string; idx: number }[] = [];
+  const jobRe = /^ {2}([A-Za-z0-9_-]+):[ \t]*(?:#.*)?$/gm;
+  for (let m = jobRe.exec(body); m !== null; m = jobRe.exec(body))
+    heads.push({ id: m[1], idx: m.index });
+
+  return heads.map(({ id, idx }, i) => {
+    const segment = body.slice(idx, heads[i + 1]?.idx ?? body.length);
+    // A job-level `name:` sits at four spaces; step names carry a `- ` and are
+    // deeper, so they cannot be picked up here.
+    const declared = /^ {4}name:[ \t]*(.+?)[ \t]*$/m.exec(segment);
+    return declared ? declared[1].replace(/^['"]|['"]$/g, '') : id;
+  });
+}
+
+/** The workflow file that provides `check`, by job `name:` or by job id. */
 function workflowProviding(check: string): string | null {
   for (const file of readdirSync(WORKFLOWS).filter((f) => f.endsWith('.yml'))) {
     const src = readFileSync(join(WORKFLOWS, file), 'utf8');
-    // Job names are quoted or bare; match the `name:` value exactly.
-    const re = new RegExp(
-      `^\\s+name:\\s*['"]?${check.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}['"]?\\s*$`,
-      'm',
-    );
-    if (re.test(src)) return file;
+    if (checksProvidedBy(src).includes(check)) return file;
   }
   return null;
 }
@@ -125,13 +153,30 @@ describe('merge queue readiness', () => {
  * its name implies is worse than no lock: it converts "unverified" into
  * "verified".
  */
-describe('the merge queue is not safe to enable yet', () => {
-  it('names every app-provided required check as a blocker', () => {
-    // Not a TODO. This assertion is the record of WHY the queue is off, and it
-    // flips on its own the moment the blocking contexts are gone: drop `review`
-    // from branch protection and from REQUIRED_CHECKS, and this test starts
-    // reporting the queue as safe.
-    const blockers = APP_CHECKS.map((c) => c.name);
-    expect(blockers).toEqual(['review']);
+describe('the merge queue readiness verdict', () => {
+  it('has no app-provided required check left to block on', () => {
+    // Was `['review']` until 2026-09-02, on the belief that CodeRabbit posted
+    // it. The live check run says `app.slug: github-actions`, and the job is
+    // declared `review:` in claude-code-review.yml. The blocker was never real;
+    // the lookup that "proved" it only searched job `name:` fields, and that
+    // job has none. An app-provided required check IS a genuine blocker — this
+    // stays as the assertion that would catch a real one appearing.
+    expect(APP_CHECKS.map((c) => c.name)).toEqual([]);
+  });
+
+  it('every required check is provided by a workflow that triggers on merge_group', () => {
+    // The whole readiness question in one assertion, derived rather than
+    // declared: read the required set, resolve each to its workflow, require
+    // the trigger. Nothing here can be satisfied by an entry in a hand-written
+    // table.
+    const unready = REQUIRED_CHECKS.map(({ name }) => {
+      const file = workflowProviding(name);
+      if (file === null) return `${name}: no workflow provides it`;
+      if (!hasMergeGroupTrigger(file))
+        return `${name}: ${file} has no merge_group: trigger`;
+      return null;
+    }).filter((x): x is string => x !== null);
+
+    expect(unready).toEqual([]);
   });
 });
