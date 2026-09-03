@@ -58,6 +58,24 @@ const VALID_UTM_MEDIUMS = new Set([
 
 const UTM_PARAM_RE = /[?&](utm_source|utm_medium)=([^&#]+)/g;
 
+/**
+ * `decodeURIComponent` throws `URIError` on malformed percent-encoding, and an
+ * exception thrown inside a rule stops ESLint for the whole file rather than
+ * reporting anything.
+ *
+ * The raw fallback in the `TemplateLiteral` visitor is what makes this
+ * reachable: `cooked` is null precisely when the parser could not cook the
+ * text, and raw text is free to carry `%E0%A4%A`. An undecodable value is still
+ * worth checking — it is checked on its literal text instead of crashing.
+ */
+function safeDecode(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
 export const utmTaxonomy = createRule<RuleOptions, MessageIds>({
   name: 'utm-taxonomy',
   meta: {
@@ -101,7 +119,7 @@ export const utmTaxonomy = createRule<RuleOptions, MessageIds>({
       let match: RegExpExecArray | null;
       while ((match = UTM_PARAM_RE.exec(value)) !== null) {
         const [, key, raw] = match;
-        const decoded = decodeURIComponent(raw);
+        const decoded = safeDecode(raw);
         if (key === 'utm_source' && !VALID_UTM_SOURCES.has(decoded)) {
           context.report({
             node,
@@ -132,8 +150,12 @@ export const utmTaxonomy = createRule<RuleOptions, MessageIds>({
       },
       TemplateLiteral(node: TSESTree.TemplateLiteral) {
         for (const quasi of node.quasis) {
-          if (quasi.value.cooked && quasi.value.cooked.includes('utm_')) {
-            checkString(quasi, quasi.value.cooked);
+          // `cooked` is null for an invalid escape as of @typescript-eslint
+          // 8.68.0; 8.54.0 handed back the raw text. This is a bare
+          // `TemplateLiteral` visitor, so a TAGGED template reaches it.
+          const text = quasi.value.cooked ?? quasi.value.raw;
+          if (text.includes('utm_')) {
+            checkString(quasi, text);
           }
         }
       },

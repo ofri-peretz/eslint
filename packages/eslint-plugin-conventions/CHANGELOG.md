@@ -5,6 +5,24 @@ All notable changes to `eslint-plugin-conventions` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.3.1
+
+### Patch Changes
+
+- **🐛 Fix** — utm-taxonomy reads tagged quasis again
+
+  `@typescript-eslint` 8.68.0 changed `TemplateElement.value.cooked`: 8.54.0
+  typed it `string` and emitted the RAW text for an escape it could not cook,
+  8.68.0 types it `string | null` and emits `null`. Both directions were verified
+  against a real 8.54.0 install, not read off a changelog.
+
+  `utm-taxonomy` walks every quasi of every `TemplateLiteral`, tagged ones
+  included, and reports straight off the text. A null `cooked` meant a
+  `String.raw` link with an off-taxonomy `utm_source` stopped being reported at
+  all. It falls back to `raw`, locked by a test that fails without it.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.1`
+
 ## 5.3.0
 
 ### Minor Changes

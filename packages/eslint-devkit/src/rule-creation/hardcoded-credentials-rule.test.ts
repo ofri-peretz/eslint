@@ -211,6 +211,16 @@ describe('createHardcodedCredentialsRule', () => {
           "const fixture = { username: 'alice', password: 'test123' };",
       },
       {
+        // Pairs with the reporting case 'a static template URL passed straight
+        // to the driver': the SAME URL, tagged. `String.raw` nulls `cooked` for
+        // the bad escape, and the quasi's parent is the tagged expression, so
+        // `inConnectionPosition` — not the cooked read — is what keeps this
+        // quiet. `staticStringValue` still falls back to `raw`, so widening
+        // that gate reports rather than silently dropping the credential.
+        name: 'a String.raw URL is out of connection position',
+        code: DRIVER + 'knex(String.raw`postgres://app:s3cret@db/app \\x`);',
+      },
+      {
         name: 'a URL for a scheme this driver does not speak',
         code: DRIVER + "knex({ connection: 'redis://u:p@h/0' });",
       },

@@ -5,6 +5,46 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.3.1
+
+### Patch Changes
+
+- **🐛 Fix** — `no-hardcoded-credentials` stops reporting error codes and build-tool paths
+
+  Two false positives at CWE-798 / CVSS 9.8 / CRITICAL, tagged SOC2 PCI-DSS
+  HIPAA GDPR, both in authentication libraries and both found the first hour the
+  corpus scan could see again:
+
+  - `auth0/express-openid-connect` — `MTLS_INCOMPATIBLE_CLIENT_AUTH:
+'mtls_incompatible_client_auth'`, an error code. Every token but `mtls` is a
+    dictionary word, and the vowel requirement in `isNaturalWordString` made that
+    one abbreviation opaque the whole string. `jwt`, `xhr`, `sql` and `ssh` did
+    the same.
+  - `okta/okta-auth-js` — `const OktaAuth = '<rootDir>/build/cjs/exports/default.js'`,
+    a Jest module map entry. `isUrlOrPath` accepts a scheme or a leading `/`, and
+    a templated root is neither, so the value never reached the path guard.
+
+  Detection is unchanged for real credentials. The abbreviation allowance applies
+  only to values carrying no digits — a key shape keeps the vowel requirement,
+  verified against real Stripe, GitHub, Google and Slack key formats — and only
+  the templated ROOT is stripped, so an opaque segment after one is still
+  reported.
+
+- **🐛 Fix** — template text reads assert instead of concatenating null
+
+  `@typescript-eslint` 8.68.0 changed `TemplateElement.value.cooked`: 8.54.0
+  typed it `string` and emitted the RAW text for an escape it could not cook,
+  8.68.0 types it `string | null` and emits `null`. Both directions were verified
+  against a real 8.54.0 install, not read off a changelog.
+
+  `no-sensitive-data-exposure` and `no-improper-sanitization` join template quasis
+  into the text they match against. Both are handed an argument node, where a
+  tagged template arrives as `TaggedTemplateExpression` and an untagged one with a
+  bad escape is a parse error, so `cooked` cannot be null there — the reads now
+  say so rather than letting `null` fall into a `join`.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.1`
+
 ## 5.3.0
 
 ### Minor Changes

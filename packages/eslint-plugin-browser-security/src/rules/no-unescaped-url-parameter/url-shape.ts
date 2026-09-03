@@ -59,7 +59,11 @@ function collect(
 ): void {
   if (node.type === AST_NODE_TYPES.TemplateLiteral) {
     node.quasis.forEach((quasi, index) => {
-      out.text += quasi.value.cooked;
+      // `cooked` is null only for an invalid escape, which only a TAGGED
+      // template may hold — and `collect` is handed an expression node, so a
+      // tagged template arrives as `TaggedTemplateExpression` and never gets
+      // here. An UNTAGGED template with a bad escape is a parse error.
+      out.text += quasi.value.cooked!;
       const expression = node.expressions[index];
       if (expression !== undefined) {
         out.holes.push({ expression, offset: out.text.length });

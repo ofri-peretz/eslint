@@ -16,10 +16,24 @@ name: Claude Code Review
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
+  # `review` is a REQUIRED check. A merge queue waits for every required check
+  # to report on the `merge_group` event, so without this trigger the job never
+  # runs, the context never arrives, and every queued merge blocks forever with
+  # no error message. The job's own `if:` reads `github.event.pull_request`,
+  # which does not exist on `merge_group`, so it skips — and a skipped required
+  # check satisfies the queue. That is the intended behaviour, not an accident:
+  # the review already ran on the PR, and re-reviewing the queue's synthetic
+  # merge commit would spend the monthly credit to re-read an approved diff.
+  merge_group:
 
 concurrency:
   # One review per PR; cancel an in-flight review when a newer commit lands.
-  group: claude-review-${{ github.event.pull_request.number }}
+  #
+  # `pull_request.number` is null on `merge_group`, which would collapse every
+  # queue entry into one group named `claude-review-` and let them cancel each
+  # other — a cancelled required check blocks the queue. `github.ref` is the
+  # unique `gh-readonly-queue/...` branch, so entries stay independent.
+  group: claude-review-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:

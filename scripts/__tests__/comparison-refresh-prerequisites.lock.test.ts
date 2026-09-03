@@ -1,0 +1,59 @@
+/**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
+ * Lock: name-dependence-probe.mts generates RULE_CASES.json when absent.
+ *
+ * `name-dependence-probe.mts` reads `benchmarks/RULE_CASES.json` on startup.
+ * That file is gitignored (135 k lines — see .gitignore) and never present in
+ * a fresh CI checkout. Without the auto-generation guard, every scheduled run
+ * of `comparison-refresh.yml` crashes with ENOENT in the probe's very first
+ * read, `if: failure()` fires, and the issue reporter files a false alarm —
+ * issue #803, "Comparison artifact refresh is failing", against a workflow
+ * where all the actual refresh steps had completed successfully.
+ *
+ * The fix: the probe checks for the file and runs `npm run rule-cases` when
+ * absent, so it is self-contained whether called from a workflow, a developer's
+ * shell, or a test.
+ *
+ * Sabotage proof:
+ *   - Remove the `existsSync` check → "must check whether RULE_CASES.json
+ *     exists before reading" fails.
+ *   - Remove the `execFileSync` call → "must generate RULE_CASES.json via
+ *     npm run rule-cases when absent" fails.
+ */
+
+import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+const ROOT = resolve(__dirname, '..', '..');
+const PROBE_SOURCE = readFileSync(
+  resolve(ROOT, 'scripts/name-dependence-probe.mts'),
+  'utf-8',
+);
+
+describe('name-dependence-probe handles missing RULE_CASES.json', () => {
+  it('must check whether RULE_CASES.json exists before reading it', () => {
+    expect(
+      PROBE_SOURCE,
+      'The probe must call fs.existsSync(LEDGER) (or equivalent) before ' +
+        'reading the file. Without this check the probe crashes with ENOENT ' +
+        'on every CI run where RULE_CASES.json has not been pre-generated, ' +
+        'causing comparison-refresh.yml to file a false failure issue (#803).',
+    ).toMatch(/existsSync\(LEDGER\)/);
+  });
+
+  it('must generate RULE_CASES.json via npm run rule-cases when absent', () => {
+    expect(
+      PROBE_SOURCE,
+      "The probe must call npm run rule-cases (via execFileSync or similar) " +
+        "when RULE_CASES.json is absent. Without this the probe crashes with " +
+        "ENOENT instead of recovering, and the comparison-refresh workflow " +
+        "reports a failure even when all its actual refresh steps succeeded.",
+    ).toMatch(/['"]rule-cases['"]/);
+  });
+});

@@ -24,7 +24,10 @@ describe('no-arbitrary-token-class', () => {
   ruleTester.run('no-arbitrary-token-class', noArbitraryTokenClass, {
     valid: [
       // Token classes — allowed
-      { name: 'scale tokens', code: `<div className="px-4 py-6 rounded-md" />` },
+      {
+        name: 'scale tokens',
+        code: `<div className="px-4 py-6 rounded-md" />`,
+      },
       // CSS variable reference — allowed
       { code: `<div className="rounded-[var(--snp-radius-300)]" />` },
       // calc() — allowed
@@ -58,11 +61,22 @@ describe('no-arbitrary-token-class', () => {
       // Multiple violations
       {
         code: `<div className="rounded-[12px] px-[18px]" />`,
-        errors: [{ messageId: 'arbitraryClass' }, { messageId: 'arbitraryClass' }],
+        errors: [
+          { messageId: 'arbitraryClass' },
+          { messageId: 'arbitraryClass' },
+        ],
       },
       // cn() with bad arbitrary
       {
         code: `cn("rounded-[12px]")`,
+        errors: [{ messageId: 'arbitraryClass' }],
+      },
+      // Tagged template with an invalid escape: `cooked` is null, so the scan
+      // falls back to `raw`. Without the fallback this quasi is skipped and the
+      // arbitrary class ships unreported.
+      {
+        name: 'a null cooked quasi falls back to raw, so the class is still seen',
+        code: '<div className={tag`\\unicode rounded-[12px]`} />',
         errors: [{ messageId: 'arbitraryClass' }],
       },
     ],

@@ -5,6 +5,49 @@ All notable changes to `eslint-plugin-node-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.4.1
+
+### Patch Changes
+
+- **📚 Docs** — detect-non-literal-fs-filename records why its own `safePattern` looks like a false positive
+
+  `path.resolve(SAFE_DIR, path.basename(userInput))` — the remediation this rule
+  prints — reports when it is probed as a fragment with `SAFE_DIR` declared
+  nowhere. That reads as the rule rejecting its own advice, and the fix it
+  suggests (weakening the `path.basename` sanitiser) is one the rule's header
+  already documents as an edit that looks correct and is not.
+
+  Measured: the report is `containsFreeVariable` firing on the undeclared name,
+  not taint surviving the `resolve` wrapper. The discriminator is a snippet with
+  no taint at all —
+
+  ```js
+  fs.readFileSync(path.resolve(SAFE_DIR, 'notes.txt')); // undeclared SAFE_DIR — still reports
+  ```
+
+  Declare or import `SAFE_DIR` and the remediation is accepted verbatim.
+
+  No behaviour change. The header block gains the entry, and `path-guards.test.ts`
+  pins both directions — two valid cases for the remediation (declared base and
+  imported base) and the literal-second-argument CONTROL above — each
+  mutation-verified to fail when the mechanism it covers is reverted.
+
+- **🐛 Fix** — require-dependency-integrity renders a tagged template whole
+
+  `@typescript-eslint` 8.68.0 changed `TemplateElement.value.cooked`: 8.54.0
+  typed it `string` and emitted the RAW text for an escape it could not cook,
+  8.68.0 types it `string | null` and emits `null`. Both directions were verified
+  against a real 8.54.0 install, not read off a changelog.
+
+  `require-dependency-integrity` visits `TemplateLiteral`, so it sees the quasis of
+  tagged templates, and a null `cooked` truncated the rendered text — an
+  unprotected CDN `<script>` could survive it. Both quasi reads fall back to
+  `raw`. `detect-non-literal-fs-filename` and `const-value` are handed argument
+  nodes instead, where a tagged template arrives as `TaggedTemplateExpression` and
+  an untagged one with a bad escape is a parse error, so they assert.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.1`
+
 ## 5.4.0
 
 ### Minor Changes

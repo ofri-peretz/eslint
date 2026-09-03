@@ -410,7 +410,10 @@ export function isSteerableUrlValue(
 
     case 'TemplateLiteral':
       return (
-        node.quasis[0].value.cooked === '' &&
+        // `raw`, not `cooked`: `cooked` is nullable as of @typescript-eslint
+        // 8.68.0, and `raw` is '' exactly when `cooked` is — an invalid escape,
+        // the only thing that nulls `cooked`, always has non-empty raw text.
+        node.quasis[0].value.raw === '' &&
         node.expressions.length > 0 &&
         isSteerableUrlValue(node.expressions[0], sourceCode, seen)
       );
