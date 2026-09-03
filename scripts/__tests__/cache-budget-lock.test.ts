@@ -85,6 +85,52 @@ describe('exactly one Turborepo remote-cache backend can be active', () => {
   });
 });
 
+describe('the Vercel Remote Cache request budget', () => {
+  /**
+   * Vercel's fair-use cap is on REQUEST RATE, not storage — artifacts expire
+   * after 7 days on their own, so there is no size to manage.
+   *
+   *   Hobby   100 requests / minute
+   *   Pro   10000 requests / minute
+   *
+   * Every job that opts in starts its turbo run at roughly the same moment, and
+   * turbo issues at least one lookup per task plus an upload on a miss.
+   * Measured 2026-09-02: `turbo run build --dry` = 37 tasks, `turbo run test
+   * --dry` = 57, across 7 opted-in jobs.
+   *
+   *   7 x 37  = 259 .. 518 requests   (build-shaped)
+   *   7 x 57  = 399 .. 798 requests   (test-shaped)
+   *
+   * all inside the opening minute. That is 2.6x - 8x over the Hobby cap and
+   * about 5-8% of Pro. A merge-queue run is worse by construction: it executes
+   * ALL shards where a PR run executes only affected ones.
+   *
+   * So the count of opted-in jobs is a quota decision, not a convenience. This
+   * bound makes growing it a deliberate act with the arithmetic in front of
+   * you, rather than a line added to one more workflow.
+   */
+  const BUDGETED_JOBS = 7;
+
+  it('no more jobs opt in than the budget allows', () => {
+    const dir = join(ROOT, '.github/workflows');
+    const optedIn = readdirSync(dir)
+      .filter((f) => f.endsWith('.yml'))
+      .map((f) => readFileSync(join(dir, f), 'utf8'))
+      .reduce(
+        (n, src) =>
+          n + (src.match(/turbo-remote-cache:\s*['"]true['"]/g) ?? []).length,
+        0,
+      );
+
+    expect(
+      optedIn,
+      `${optedIn} jobs enable the remote cache; budget is ${BUDGETED_JOBS}. ` +
+        'Each adds ~37-57 requests to the same opening minute. Raise the ' +
+        'budget deliberately, and check the plan cap before you do.',
+    ).toBeLessThanOrEqual(BUDGETED_JOBS);
+  });
+});
+
 describe('the OIDC exchange degrades instead of failing', () => {
   const step = SETUP.slice(
     SETUP.indexOf('Exchange the GitHub OIDC token'),
