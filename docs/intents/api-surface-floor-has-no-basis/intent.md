@@ -136,3 +136,38 @@ exports anything; `@nestjs/throttler` resolves but not from this entry point.
 The lockfile records every platform for the native packages, so `npm ci` on
 Linux resolves Linux binaries — checked, because a macOS-generated lockfile
 losing Linux bindings is a known failure here.
+
+## 30 of 30 classified — 2026-09-03
+
+`peerDependencies` was the wrong source, and the reason is a real distinction
+it cannot make: a peer is either **the SDK a plugin analyses** or **a library
+the plugin uses**, and nothing separates them. `secure-coding` peers on
+`recheck` — a ReDoS oracle it calls at runtime — so deriving its surface from
+peers read that plugin as "≤100% of 2". `import-next` and `maintainability`
+peer on `typescript` for the same reason.
+
+Every plugin now declares `interlace.surface` in its own package.json, with a
+`kind`:
+
+| kind           | plugins | meaning                                         |
+| :------------- | ------: | :---------------------------------------------- |
+| `npm`          |      19 | the SDK is a package and can be enumerated      |
+| `language`     |       8 | plain JS/TS idiom; there is no external surface |
+| `web-platform` |       2 | the DOM; no package describes it                |
+| `node-core`    |       1 | built-in modules, enumerable from the runtime   |
+
+**"Not applicable" is a measurement, not a gap.** A `language` plugin analyses
+plain JavaScript and no npm package describes that — saying so is a different
+statement from silence, and the absence of that distinction is why twenty
+plugins sat outside the manifest for months with nothing attached to any of
+them.
+
+Three loading defects fixed on the way: `@middy/*` and
+`@modelcontextprotocol/sdk` are ESM-only and were being `require`d, so they
+read as "surface 0" — a second `import()` pass resolves them; the MCP SDK has
+no root export at all and needed its subpaths named; `@nestjs/throttler`
+needed `@nestjs/core` installed beside it.
+
+**29 of 30 enumerable.** `@prisma/client` exports nothing until
+`prisma generate` runs against a schema, so its surface cannot be read from an
+install alone. Recorded in its declaration rather than counted as zero.

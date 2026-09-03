@@ -149,10 +149,31 @@ const NARROW: Record<string, Partial<SurfaceSpec>> = {
   },
 };
 
-/** Peers that are tooling, not a target surface. */
-const NOT_A_SURFACE = /^(eslint|typescript|@typescript-eslint\/)/;
+/**
+ * What each plugin ANALYSES, read from its own `interlace.surface`.
+ *
+ * `peerDependencies` was the first source and it conflates two different
+ * things: the SDK a plugin analyses, and a library the plugin USES.
+ * `secure-coding` peers on `recheck` — a ReDoS oracle it calls at runtime —
+ * so deriving the surface from peers read that plugin as "2 exports" rather
+ * than the generic-JS surface it actually covers. `import-next` and
+ * `maintainability` peer on `typescript` for the same reason.
+ *
+ * Four kinds, and the honest answer for eleven plugins is that no npm package
+ * describes them:
+ *
+ *   npm            19  the SDK is a package and can be enumerated
+ *   language        8  plain JS/TS idiom; there is no external surface
+ *   web-platform    2  the DOM; no package declares it
+ *   node-core       1  built-in modules, enumerable from the runtime
+ *
+ * A `language` plugin is not unmeasured — it is measured and the answer is
+ * "not applicable", which is a different statement and the one that was
+ * missing while twenty plugins sat outside the manifest with no explanation.
+ */
+type Kind = 'npm' | 'node-core' | 'web-platform' | 'language';
 
-const SPECS: SurfaceSpec[] = fs
+const SPECS: (SurfaceSpec & { kind: Kind; note?: string })[] = fs
   .readdirSync(path.join(ROOT, 'packages'))
   .filter((d) => d.startsWith('eslint-plugin-'))
   .sort()
@@ -160,15 +181,24 @@ const SPECS: SurfaceSpec[] = fs
     const pkgPath = path.join(ROOT, 'packages', dir, 'package.json');
     if (!fs.existsSync(pkgPath)) return null;
     const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) as {
-      peerDependencies?: Record<string, string>;
+      interlace?: {
+        surface?: { kind: Kind; modules?: string[]; note?: string };
+      };
     };
-    const peers = Object.keys(pkg.peerDependencies ?? {}).filter(
-      (k) => !NOT_A_SURFACE.test(k),
-    );
-    if (peers.length === 0) return null;
-    return { plugin: dir, modules: peers, ...NARROW[dir] } as SurfaceSpec;
+    const declared = pkg.interlace?.surface;
+    if (declared === undefined) {
+      console.error(`  ! ${dir}: no interlace.surface declared — not measured`);
+      return null;
+    }
+    return {
+      plugin: dir,
+      modules: declared.modules ?? [],
+      kind: declared.kind,
+      note: declared.note,
+      ...NARROW[dir],
+    } as SurfaceSpec & { kind: Kind; note?: string };
   })
-  .filter((s): s is SurfaceSpec => s !== null);
+  .filter((s): s is SurfaceSpec & { kind: Kind; note?: string } => s !== null);
 
 /**
  * Names that are not a misuse surface, whatever module they come from.
@@ -189,12 +219,13 @@ const isOutOfScope = (name: string): boolean =>
  */
 const isClass = (name: string): boolean => /^[A-Z]/.test(name);
 
-function callablesOf(spec: SurfaceSpec): {
+async function callablesOf(spec: SurfaceSpec): Promise<{
   fns: Set<string>;
   classes: Set<string>;
-} {
+}> {
   const fns = new Set<string>();
   const classes = new Set<string>();
+  const esmPending: string[] = [];
 
   const add = (name: string, value: unknown): void => {
     if (typeof value !== 'function' || isOutOfScope(name)) return;
@@ -238,9 +269,13 @@ function callablesOf(spec: SurfaceSpec): {
     try {
       mod = require_(specifier) as Record<string, unknown>;
     } catch {
-      console.error(
-        `  ! ${spec.plugin}: cannot resolve ${specifier} — skipped`,
-      );
+      /*
+       * ESM-only packages — `@middy/*`, `@modelcontextprotocol/sdk` — cannot be
+       * `require`d at all. Without this second pass a plugin whose target is
+       * ESM-only read as "surface: 0", which is indistinguishable from a plugin
+       * with no surface and exactly the confusion this file exists to remove.
+       */
+      esmPending.push(specifier);
       continue;
     }
     for (const key of Object.getOwnPropertyNames(mod)) {
@@ -262,6 +297,23 @@ function callablesOf(spec: SurfaceSpec): {
           }
         }
       }
+    }
+  }
+  for (const specifier of esmPending) {
+    try {
+      const mod = (await import(specifier)) as Record<string, unknown>;
+      const target = (mod['default'] ?? mod) as Record<string, unknown>;
+      for (const key of Object.getOwnPropertyNames(target)) {
+        try {
+          add(key, target[key]);
+        } catch {
+          /* getter that throws */
+        }
+      }
+    } catch {
+      console.error(
+        `  ! ${spec.plugin}: cannot load ${specifier} — not counted`,
+      );
     }
   }
   return { fns, classes };
@@ -305,6 +357,17 @@ console.log(
   '  ----------------------------------  -------------  ----------------------',
 );
 
+/**
+ * Plugins whose surface is not an enumerable module set.
+ *
+ * Reported separately and by name. "Not applicable" is a MEASUREMENT — it says
+ * this plugin analyses plain JS, or the DOM, and no package describes that. It
+ * is a different statement from "unmeasured", and the absence of that
+ * distinction is why twenty plugins sat outside the manifest for months with
+ * no explanation attached to any of them.
+ */
+const notApplicable: { plugin: string; kind: string; note?: string }[] = [];
+
 const rows: {
   plugin: string;
   claim: number;
@@ -314,7 +377,15 @@ const rows: {
 
 for (const spec of SPECS) {
   if (only !== null && spec.plugin !== only) continue;
-  const { fns } = callablesOf(spec);
+  if (spec.kind !== 'npm' && spec.kind !== 'node-core') {
+    notApplicable.push({
+      plugin: spec.plugin,
+      kind: spec.kind,
+      note: spec.note,
+    });
+    continue;
+  }
+  const { fns } = await callablesOf(spec);
   const said = tokensOf(spec.plugin);
   const named = [...fns].filter((a) => said.has(a));
   const unnamed = [...fns].filter((a) => !said.has(a)).sort();
@@ -344,6 +415,23 @@ console.log(
 );
 console.log(
   '  necessary for coverage, not sufficient, hence an upper bound.\n',
+);
+
+if (notApplicable.length > 0) {
+  console.log(
+    `  ${notApplicable.length} plugin(s) have no enumerable module surface:\n`,
+  );
+  for (const n of notApplicable) {
+    console.log(`    ${n.plugin.padEnd(34)} ${n.kind}`);
+  }
+  console.log(
+    '\n  Not applicable is a MEASUREMENT, not a gap: these analyse plain JS/TS or' +
+      '\n  the web platform, and no npm package describes either.\n',
+  );
+}
+
+console.log(
+  `  coverage: ${rows.length + notApplicable.length} of 30 plugins classified\n`,
 );
 
 if (showUncovered) {

@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-modularity",
   "version": "2.5.2",
-  "description": "ESLint plugin for module architecture — enforces DDD value objects and anemic-model checks, naming, REST conventions, and utility isolation.",
+  "description": "ESLint plugin for module architecture \u2014 enforces DDD value objects and anemic-model checks, naming, REST conventions, and utility isolation.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -73,5 +73,11 @@
   "funding": {
     "type": "github",
     "url": "git+https://github.com/ofri-peretz/eslint.git"
+  },
+  "interlace": {
+    "surface": {
+      "kind": "language",
+      "note": "Module boundaries and DDD shape over plain JS/TS. No external SDK."
+    }
   }
 }
