@@ -111,28 +111,18 @@ type SurfaceSpec = {
   only?: string[];
 };
 
-const SPECS: SurfaceSpec[] = [
-  {
-    plugin: 'eslint-plugin-node-security',
-    modules: [
-      'node:fs',
-      'node:fs/promises',
-      'node:child_process',
-      'node:crypto',
-      'node:vm',
-      'node:dns',
-      'node:http',
-      'node:https',
-      'node:tls',
-    ],
-  },
-  {
-    plugin: 'eslint-plugin-postgresql-security',
-    modules: ['pg'],
-    prototypes: true,
-  },
-  {
-    plugin: 'eslint-plugin-mongodb-security',
+/**
+ * Narrowing for the surfaces where the whole package is not the claim.
+ *
+ * Everything else is derived from the plugin's own `peerDependencies`, which is
+ * where each plugin already declares what it targets — a hand-written list of
+ * modules beside that one was a second source of truth that could disagree with
+ * it, and did: it covered 7 of 30 plugins while the peer declarations covered
+ * all of them.
+ */
+const NARROW: Record<string, Partial<SurfaceSpec>> = {
+  'eslint-plugin-postgresql-security': { prototypes: true },
+  'eslint-plugin-mongodb-security': {
     modules: ['mongodb'],
     classRoots: [
       'Collection',
@@ -142,15 +132,9 @@ const SPECS: SurfaceSpec[] = [
       'MongoClient',
     ],
   },
-  { plugin: 'eslint-plugin-jwt-security', modules: ['jsonwebtoken'] },
-  {
-    plugin: 'eslint-plugin-express-security',
-    modules: ['express'],
-    prototypes: true,
-  },
-  {
-    plugin: 'eslint-plugin-vercel-ai-security',
-    modules: ['ai'],
+  'eslint-plugin-express-security': { prototypes: true },
+  'eslint-plugin-nestjs-security': { capitalisedIsSurface: true },
+  'eslint-plugin-vercel-ai-security': {
     only: [
       'generateText',
       'streamText',
@@ -163,12 +147,28 @@ const SPECS: SurfaceSpec[] = [
       'tool',
     ],
   },
-  {
-    plugin: 'eslint-plugin-nestjs-security',
-    modules: ['@nestjs/common'],
-    capitalisedIsSurface: true,
-  },
-];
+};
+
+/** Peers that are tooling, not a target surface. */
+const NOT_A_SURFACE = /^(eslint|typescript|@typescript-eslint\/)/;
+
+const SPECS: SurfaceSpec[] = fs
+  .readdirSync(path.join(ROOT, 'packages'))
+  .filter((d) => d.startsWith('eslint-plugin-'))
+  .sort()
+  .map((dir) => {
+    const pkgPath = path.join(ROOT, 'packages', dir, 'package.json');
+    if (!fs.existsSync(pkgPath)) return null;
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) as {
+      peerDependencies?: Record<string, string>;
+    };
+    const peers = Object.keys(pkg.peerDependencies ?? {}).filter(
+      (k) => !NOT_A_SURFACE.test(k),
+    );
+    if (peers.length === 0) return null;
+    return { plugin: dir, modules: peers, ...NARROW[dir] } as SurfaceSpec;
+  })
+  .filter((s): s is SurfaceSpec => s !== null);
 
 /**
  * Names that are not a misuse surface, whatever module they come from.

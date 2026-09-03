@@ -114,3 +114,25 @@ while the denominator was 47.
 3. `react-a11y` and `browser-security` have no enumerable runtime surface. Is
    TypeScript's `lib.dom.d.ts` the right source, and does that make the web
    platform version a pinned input?
+
+## Deps set 2026-09-03 — 7 plugins measurable becomes 28
+
+The surface spec is no longer hand-written. Every plugin already declares what
+it targets in its own `peerDependencies`, and the measurement now derives from
+that. A separate list beside those declarations was a second source of truth
+that could disagree with them, and did: it covered 7 plugins of 30 while the
+peer declarations cover all of them.
+
+Twenty-two peer targets were declared but never installed, so their surfaces
+could not be enumerated at all. Added as root devDependencies at the ranges the
+peers already ask for: the AI SDKs, every SQL/ORM driver, the AWS and Middy
+Lambda packages, and the JWT middleware.
+
+Four remain uncounted and are named per plugin rather than folded into a
+denominator: `@middy/*` and `@modelcontextprotocol/sdk` are ESM-only and cannot
+be `require`d by the loader; `@prisma/client` needs generation before it
+exports anything; `@nestjs/throttler` resolves but not from this entry point.
+
+The lockfile records every platform for the native packages, so `npm ci` on
+Linux resolves Linux binaries — checked, because a macOS-generated lockfile
+losing Linux bindings is a known failure here.
