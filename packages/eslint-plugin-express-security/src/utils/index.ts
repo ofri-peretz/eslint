@@ -14,7 +14,7 @@
  */
 
 import type { TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, propertyName } from '@interlace/eslint-devkit';
 
 /** Request properties that only exist once a principal has been resolved. */
 const PRINCIPAL_PROPERTIES = new Set([
@@ -69,19 +69,17 @@ export function readsPrincipal(node: TSESTree.Node): boolean {
   walk(node, (child) => {
     if (found) return;
     if (child.type !== AST_NODE_TYPES.MemberExpression) return;
-    if (child.property.type !== AST_NODE_TYPES.Identifier) return;
-    if (!PRINCIPAL_PROPERTIES.has(child.property.name)) return;
+    // `req['user']` reads the same principal `req.user` reads.
+    const principal = propertyName(child);
+    if (principal === null || !PRINCIPAL_PROPERTIES.has(principal)) return;
 
     const { object } = child;
     if (object.type === AST_NODE_TYPES.Identifier) {
       found = PRINCIPAL_RECEIVER.test(object.name);
       return;
     }
-    if (
-      object.type === AST_NODE_TYPES.MemberExpression &&
-      object.property.type === AST_NODE_TYPES.Identifier
-    ) {
-      found = PRINCIPAL_RECEIVER.test(object.property.name);
+    if (object.type === AST_NODE_TYPES.MemberExpression) {
+      found = PRINCIPAL_RECEIVER.test(propertyName(object) as string);
     }
   });
   return found;
@@ -96,8 +94,9 @@ export function isClientRequestMember(node: TSESTree.Node): boolean {
 
   const { object } = node;
   if (object.type !== AST_NODE_TYPES.MemberExpression) return false;
-  if (object.property.type !== AST_NODE_TYPES.Identifier) return false;
-  if (!CLIENT_CONTAINERS.has(object.property.name)) return false;
+  // `req['query'].id` reads the same client container `req.query.id` reads.
+  const container = propertyName(object);
+  if (container === null || !CLIENT_CONTAINERS.has(container)) return false;
 
   const root = object.object;
   if (root.type === AST_NODE_TYPES.Identifier) {

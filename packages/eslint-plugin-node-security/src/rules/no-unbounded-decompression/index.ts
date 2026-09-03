@@ -30,6 +30,7 @@ import {
   createRule,
   AST_NODE_TYPES,
   isTestFilePath,
+  memberPropertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unboundedDecompression';
@@ -154,14 +155,15 @@ export const noUnboundedDecompression = createRule<RuleOptions, MessageIds>({
     function decompressorName(node: TSESTree.CallExpression): string | null {
       const callee = node.callee;
 
+      // `zlib['unzipSync'](body)` inflates the same unbounded input. Resolved
+      // once, before the guard, so the guard tests the binding the body reads.
+      const name = memberPropertyName(callee);
       if (
         callee.type === AST_NODE_TYPES.MemberExpression &&
         callee.object.type === AST_NODE_TYPES.Identifier &&
-        callee.property.type === AST_NODE_TYPES.Identifier &&
-        !callee.computed &&
+        name !== null &&
         namespaceBindings.has(callee.object.name)
       ) {
-        const name = callee.property.name;
         return ASYNC_DECOMPRESSORS.has(name) || SYNC_DECOMPRESSORS.has(name)
           ? name
           : null;
@@ -179,7 +181,9 @@ export const noUnboundedDecompression = createRule<RuleOptions, MessageIds>({
      * expands to exactly what the author put in it. Only unknown input can
      * carry a bomb.
      */
-    function isLiteralPayload(argument: TSESTree.CallExpressionArgument): boolean {
+    function isLiteralPayload(
+      argument: TSESTree.CallExpressionArgument,
+    ): boolean {
       if (argument.type === AST_NODE_TYPES.Literal) return true;
       return (
         argument.type === AST_NODE_TYPES.CallExpression &&

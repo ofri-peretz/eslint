@@ -18,6 +18,7 @@ import {
   MessageIcons,
   resolveModuleBinding,
   unwrapTypeSyntax,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
@@ -33,17 +34,15 @@ import { constInitializerOf } from '../../utils/const-value';
  * on some unrelated object is not a module load and must stay quiet.
  */
 function isLoaderMember(node: TSESTree.MemberExpression): boolean {
-  if (node.computed) return false;
-  if (node.property.type !== AST_NODE_TYPES.Identifier) return false;
-  if (node.property.name !== 'require') return false;
+  // `module['require'](x)` loads the same module.
+  if (propertyName(node) !== 'require') return false;
 
   const { object } = node;
   // module.require(x)
   if (object.type === AST_NODE_TYPES.Identifier) return object.name === 'module';
   // require.main.require(x)
-  if (object.type !== AST_NODE_TYPES.MemberExpression || object.computed) return false;
-  if (object.property.type !== AST_NODE_TYPES.Identifier) return false;
-  if (object.property.name !== 'main') return false;
+  if (object.type !== AST_NODE_TYPES.MemberExpression) return false;
+  if (propertyName(object) !== 'main') return false;
   return object.object.type === AST_NODE_TYPES.Identifier && object.object.name === 'require';
 }
 

@@ -8,12 +8,18 @@
  * ESLint Rule: no-missing-csrf-protection
  * Detects missing CSRF token validation in POST/PUT/DELETE requests
  * CWE-352: Cross-Site Request Forgery (CSRF)
- * 
+ *
  * @see https://cwe.mitre.org/data/definitions/352.html
  * @see https://owasp.org/www-community/attacks/csrf
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  isTestFilePath,
+  namesOneOf,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { createRule, isModuleBinding } from '@interlace/eslint-devkit';
 import { resolveInitializer } from '../../utils/resolve-binding';
 import {
@@ -57,14 +63,12 @@ function asChainedRouteRegistration(
   methods: ReadonlySet<string>,
 ): ExpressRouteRegistration | null {
   const callee = node.callee;
-  if (
-    callee.type !== 'MemberExpression' ||
-    callee.computed ||
-    callee.property.type !== 'Identifier'
-  ) {
+  if (callee.type !== 'MemberExpression') {
     return null;
   }
-  const method = callee.property.name;
+  // `r['post'](h)` registers the same unprotected verb.
+  const method = propertyName(callee);
+  if (method === null) return null;
   if (!methods.has(method.toLowerCase())) return null;
 
   // Walk down the chain of verb calls to whatever sits at its root.
@@ -72,9 +76,7 @@ function asChainedRouteRegistration(
   while (
     receiver.type === 'CallExpression' &&
     receiver.callee.type === 'MemberExpression' &&
-    !receiver.callee.computed &&
-    receiver.callee.property.type === 'Identifier' &&
-    ROUTE_VERBS.has(receiver.callee.property.name)
+    namesOneOf(propertyName(receiver.callee), ROUTE_VERBS)
   ) {
     receiver = receiver.callee.object;
   }
@@ -84,9 +86,8 @@ function asChainedRouteRegistration(
   if (
     receiver.type !== 'CallExpression' ||
     receiver.callee.type !== 'MemberExpression' ||
-    receiver.callee.computed ||
-    receiver.callee.property.type !== 'Identifier' ||
-    receiver.callee.property.name !== 'route'
+    // `r['route']('/x')` opens the same chain.
+    propertyName(receiver.callee) !== 'route'
   ) {
     return null;
   }
@@ -101,13 +102,13 @@ type MessageIds = 'missingCsrfProtection' | 'addCsrfValidation';
 export interface Options {
   /** Allow missing CSRF protection in test files. Default: false */
   allowInTests?: boolean;
-  
+
   /** CSRF middleware patterns to recognize. Default: ['csrf', 'csurf', 'csrfProtection', 'verifyCsrfToken'] */
   csrfMiddlewarePatterns?: string[];
-  
+
   /** HTTP methods that require CSRF protection. Default: ['post', 'put', 'delete', 'patch'] */
   protectedMethods?: string[];
-  
+
   /** Additional safe patterns to ignore. Default: [] */
   ignorePatterns?: string[];
 }
@@ -210,7 +211,7 @@ function suppliesCsrfProtection(
  * Check if a string matches any ignore pattern
  */
 function matchesIgnorePattern(text: string, patterns: string[]): boolean {
-  return patterns.some(pattern => {
+  return patterns.some((pattern) => {
     try {
       const regex = new RegExp(pattern, 'i');
       return regex.test(text);
@@ -228,7 +229,8 @@ export const noMissingCsrfProtection = createRule<RuleOptions, MessageIds>({
     replacedBy: ['@see eslint-plugin-express-security/require-csrf-protection'],
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-missing-csrf-protection.md',
-      description: 'Detects missing CSRF token validation in POST/PUT/DELETE requests',
+      description:
+        'Detects missing CSRF token validation in POST/PUT/DELETE requests',
       cwe: 'CWE-352',
       cvss: 8.8,
     },
@@ -294,7 +296,7 @@ export const noMissingCsrfProtection = createRule<RuleOptions, MessageIds>({
   ],
   create(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}]
+    [options = {}],
   ) {
     const {
       allowInTests = false,
@@ -303,18 +305,22 @@ export const noMissingCsrfProtection = createRule<RuleOptions, MessageIds>({
       ignorePatterns = [],
     } = options as Options;
 
-    const csrfPatterns = csrfMiddlewarePatterns && csrfMiddlewarePatterns.length > 0
-      ? csrfMiddlewarePatterns
-      : DEFAULT_CSRF_MIDDLEWARE_PATTERNS;
+    const csrfPatterns =
+      csrfMiddlewarePatterns && csrfMiddlewarePatterns.length > 0
+        ? csrfMiddlewarePatterns
+        : DEFAULT_CSRF_MIDDLEWARE_PATTERNS;
     // Exact membership, never a substring test — see suppliesCsrfProtection.
     const csrfNames = new Set(csrfPatterns);
 
-    const protectedMethods = customProtectedMethods && customProtectedMethods.length > 0
-      ? customProtectedMethods
-      : DEFAULT_PROTECTED_METHODS;
+    const protectedMethods =
+      customProtectedMethods && customProtectedMethods.length > 0
+        ? customProtectedMethods
+        : DEFAULT_PROTECTED_METHODS;
 
     // Pre-compute Set for O(1) lookups (performance optimization)
-    const protectedMethodsSet = new Set(protectedMethods.map(m => m.toLowerCase()));
+    const protectedMethodsSet = new Set(
+      protectedMethods.map((m) => m.toLowerCase()),
+    );
 
     const filename = context.filename;
     const isTestFile = allowInTests && isTestFilePath(filename);
@@ -354,7 +360,9 @@ export const noMissingCsrfProtection = createRule<RuleOptions, MessageIds>({
         // An array of middleware is a chain too — Express accepts both.
         const candidates =
           arg.type === 'ArrayExpression'
-            ? arg.elements.filter((el): el is TSESTree.Expression => el !== null)
+            ? arg.elements.filter(
+                (el): el is TSESTree.Expression => el !== null,
+              )
             : [arg];
         if (
           candidates.some((candidate) =>
@@ -407,9 +415,8 @@ export const noMissingCsrfProtection = createRule<RuleOptions, MessageIds>({
         if (
           call.type !== 'CallExpression' ||
           call.callee.type !== 'MemberExpression' ||
-          call.callee.computed ||
-          call.callee.property.type !== 'Identifier' ||
-          call.callee.property.name !== 'use'
+          // `app['use'](csrf())` mounts the same protection.
+          propertyName(call.callee) !== 'use'
         ) {
           continue;
         }
@@ -431,4 +438,3 @@ export const noMissingCsrfProtection = createRule<RuleOptions, MessageIds>({
     };
   },
 });
-

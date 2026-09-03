@@ -16,7 +16,7 @@
  */
 
 import type { TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, propertyName } from '@interlace/eslint-devkit';
 import { readsPrincipal } from './index';
 
 /** Middleware whose name says "this request is authenticated". */
@@ -36,13 +36,13 @@ function referenceNames(node: TSESTree.Node): string[] {
   switch (node.type) {
     case AST_NODE_TYPES.Identifier:
       return [node.name];
-    case AST_NODE_TYPES.MemberExpression:
-      return [
-        ...referenceNames(node.object),
-        ...(node.property.type === AST_NODE_TYPES.Identifier
-          ? [node.property.name]
-          : []),
-      ];
+    case AST_NODE_TYPES.MemberExpression: {
+      // A quoted link in the chain names the same member a dotted one does.
+      // Resolved once: the ternary already asks the null question, so the
+      // second call only needed a cast to repeat an answer it had.
+      const link = propertyName(node);
+      return [...referenceNames(node.object), ...(link === null ? [] : [link])];
+    }
     case AST_NODE_TYPES.CallExpression:
       return referenceNames(node.callee);
     default:

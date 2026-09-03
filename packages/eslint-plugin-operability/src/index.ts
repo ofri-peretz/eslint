@@ -46,7 +46,7 @@ withCanonicalDocsUrls('plugin-operability', rules);
 export const plugin = {
   meta: {
     name: 'eslint-plugin-operability',
-    version: '4.0.1',
+    version: '4.1.0',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;

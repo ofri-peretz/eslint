@@ -18,6 +18,7 @@ import {
   compileUserPatterns,
   type PatternTest,
   staticString,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import {
   createModuleEvidence,
@@ -309,7 +310,36 @@ export function isNaturalWordString(value: string): boolean {
     .filter(Boolean);
   const meaningful = tokens.filter((t) => t.length >= 3);
   if (meaningful.length === 0) return false;
-  return meaningful.every(isPronounceable);
+  if (meaningful.every(isPronounceable)) return true;
+
+  // A short vowel-less token is an abbreviation, not entropy — `mtls`, `jwt`,
+  // `xhr`, `sql`, `ssh`. auth0/express-openid-connect declares
+  // `MTLS_INCOMPATIBLE_CLIENT_AUTH: 'mtls_incompatible_client_auth'`, an error
+  // code whose every token but `mtls` is a dictionary word. That one token
+  // failed the vowel test and the value was reported as a CRITICAL CVSS 9.8
+  // hard-coded credential tagged SOC2 / PCI-DSS / HIPAA / GDPR.
+  //
+  // The allowance lives HERE and not in `isPronounceable`, because a token
+  // cannot see enough to be safe. Waiving the vowel per-token accepted `zdp`
+  // inside `vnd_live_7dQ82JmXzKvNbRt4Wy6Lp3Fa` and skipped a real Stripe key —
+  // caught by the true-positive probe before it shipped.
+  //
+  // The whole string decides: a value carrying ANY digit is a key shape, not an
+  // identifier, and keeps its vowel requirement. `mtls_…` has none;
+  // `sk_live_4eC39…` does.
+  if (/[0-9]/.test(value)) return false;
+
+  // The allowance is for the ODD abbreviation inside a phrase, and a digit-free
+  // key shape can still abuse it. `vnd_live_aBcdEfGhIjKlMnOpQrStUvWxYz` splits
+  // into `vnd`, `live`, `Bcd` — two of the three are waived by length alone, so
+  // `every` passed and a key was suppressed with no digit to catch it.
+  //
+  // What separates a phrase from a key is that the waived tokens are a MINORITY
+  // carried by real words: `mtls` is one of four, the rest dictionary, where
+  // `vnd` and `Bcd` are two of three.
+  const waived = meaningful.filter((token) => !isPronounceable(token));
+  if (waived.some((token) => token.length > 4)) return false;
+  return waived.length * 2 <= meaningful.length;
 }
 
 /**
@@ -388,6 +418,28 @@ function isUrlOrPath(value: string): boolean {
   if (/^[A-Za-z][A-Za-z0-9+.-]*:\/\//.test(value)) {
     return !/^[^/]*\/\/[^/@]*:[^/@]*@/.test(value);
   }
+  /*
+   * A substituted root token is still a path root. Jest writes module paths
+   * against `<rootDir>/…`; webpack and Rollup write `[name]/…`. Either way the
+   * leading token is not a path segment this function can parse —
+   *
+   *   const OktaAuth = '<rootDir>/build/cjs/exports/default.js'
+   *
+   * — and the binding is named `OktaAuth`, which opens the credential-context
+   * gate. Without this the value fails the leading-slash test below, clears the
+   * two-character-class test on its slashes, dots and mixed case, and a jest
+   * `moduleNameMapper` entry is reported as a CRITICAL hard-coded credential.
+   * That was one of the two findings in okta/okta-auth-js.
+   *
+   * Only the ROOT token is stripped, and only when the remainder is rooted: the
+   * segment test below still has to pass, so this widens what counts as a path
+   * root without widening what counts as a path.
+   */
+  const rooted = value.replace(
+    /^(?:<[A-Za-z_$][\w$]*>|\[[A-Za-z_$][\w$]*\])(?=\/)/,
+    '',
+  );
+  if (rooted !== value) return isUrlOrPath(rooted);
   if (!value.startsWith('/') || value.startsWith('//')) return false;
 
   // A leading slash alone is not enough. `/` is in the base64 alphabet, so a
@@ -407,15 +459,44 @@ function isUrlOrPath(value: string): boolean {
   // is a secret. Route segments are written to be read — they do not mix case
   // AND digits the way a generated key does. Anything with a second slash is
   // unambiguous and keeps the permissive rule.
+  const looksGenerated = (segment: string): boolean =>
+    /[a-z]/.test(segment) && /[A-Z]/.test(segment) && /[0-9]/.test(segment);
+
   if (segments.length === 1) {
-    const segment = segments[0] as string;
-    return !(
-      /[a-z]/.test(segment) &&
-      /[A-Z]/.test(segment) &&
-      /[0-9]/.test(segment)
-    );
+    return !looksGenerated(segments[0] as string);
   }
-  return true;
+
+  // A second slash used to make the path unambiguous on its own. It does not:
+  // `<rootDir>/K2n8Qv4xRtL9pWmZ3yBc7Hd5Fj1Ns6Ae0Ug/default.js` strips to a
+  // two-segment path and rode straight through. A route segment is written to
+  // be read and stays short; 16+ characters mixing all three classes is a
+  // generated token wearing a path.
+  //
+  // The length floor is what keeps hashed build output out of this: a segment
+  // like `main.a3F9x2.js` mixes classes too, and only the run length tells the
+  // two apart.
+  return !segments.some(
+    (segment) => segment.length >= 16 && looksGenerated(segment),
+  );
+}
+
+/**
+ * Is this value just its own slot's name, respelled?
+ *
+ * `MTLS_INCOMPATIBLE_CLIENT_AUTH: 'mtls_incompatible_client_auth'` is the
+ * error-code idiom every codebase writes, and the key ends in `auth`, which
+ * opens the credential-context gate. The value then clears the two-class test
+ * on its letters and underscores and a CVSS 9.8 finding lands on an enum. That
+ * was one of the two findings in auth0/express-openid-connect.
+ *
+ * A secret is never its own key's name: whoever generated it did not consult
+ * the variable it would be stored in. Comparing with separators and case
+ * stripped covers the SCREAMING_SNAKE, kebab and camel spellings at once.
+ */
+function echoesItsOwnSlotName(value: string, slotName: string): boolean {
+  if (slotName === '') return false;
+  const fold = (text: string): string => text.replace(/[-_.\s]/g, '').toLowerCase();
+  return fold(value) === fold(slotName);
 }
 
 export function isSecretShaped(value: string, minLength: number): boolean {
@@ -786,8 +867,7 @@ function looksLikeCredential(
           confidence: 'structural',
         };
       }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
+    } catch {
       continue;
     }
   }
@@ -1514,8 +1594,7 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
           left.object.type === 'MemberExpression' &&
           left.object.object.type === 'Identifier' &&
           left.object.object.name === 'process' &&
-          left.object.property.type === 'Identifier' &&
-          left.object.property.name === 'env'
+          propertyName(left.object) === 'env'
         ) {
           return; // safe — fallback to process.env value
         }
@@ -1545,6 +1624,22 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
         confidence === 'ambiguous' &&
         !isCredentialContext(node, parent)
       ) {
+        finalIsCredential = false;
+      }
+
+      // An enum member named after itself is a code, not a credential. Gated
+      // to non-structural findings for the same reason placeholders are: a JWT
+      // or an `sk_live_` key keeps its shape whatever it is called.
+      //
+      // Held in a const, not applied once: the context-positive branch below
+      // re-enables a secret-shaped value in a credential-named slot, and an
+      // error code sits in exactly such a slot — suppressing here alone would
+      // have been undone three conditions later.
+      const echoesSlot =
+        confidence !== 'structural' &&
+        parent !== undefined &&
+        echoesItsOwnSlotName(value, slotNameOf(parent));
+      if (echoesSlot) {
         finalIsCredential = false;
       }
 
@@ -1578,6 +1673,7 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       if (
         !finalIsCredential &&
         !isPlaceholder &&
+        !echoesSlot &&
         !compiledIgnorePatterns.some((pattern) => pattern.test(value)) &&
         isSecretShaped(value, detectionOptions.minLength) &&
         isCredentialContext(node, parent)

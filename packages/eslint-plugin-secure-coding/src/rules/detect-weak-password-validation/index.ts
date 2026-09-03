@@ -179,9 +179,8 @@ function measuresPasswordLength(
 
   if (
     access.type !== 'MemberExpression' ||
-    access.computed ||
-    access.property.type !== 'Identifier' ||
-    access.property.name !== 'length'
+    // `password['length'] < 6` is the same weak check.
+    propertyName(access) !== 'length'
   ) {
     return false;
   }
@@ -216,9 +215,10 @@ function namesPassword(
   }
   // A method call on the value: ask about the receiver.
   if (node.type === 'CallExpression') {
+    // `password['trim']()` is the same call on the same receiver, so the
+    // question to ask is still "what does the RECEIVER name?".
     return (
       node.callee.type === 'MemberExpression' &&
-      !node.callee.computed &&
       namesPassword(node.callee.object as TSESTree.Node, words, depth + 1)
     );
   }

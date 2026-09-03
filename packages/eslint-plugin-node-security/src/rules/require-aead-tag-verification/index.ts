@@ -29,6 +29,8 @@ import {
   createRule,
   AST_NODE_TYPES,
   isTestFilePath,
+  memberPropertyName,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'missingAuthTag' | 'missingFinal';
@@ -127,11 +129,9 @@ export const requireAeadTagVerification = createRule<RuleOptions, MessageIds>({
     function isCreateDecipheriv(
       callee: TSESTree.CallExpression['callee'],
     ): boolean {
-      if (
-        callee.type === AST_NODE_TYPES.MemberExpression &&
-        callee.property.type === AST_NODE_TYPES.Identifier
-      ) {
-        return callee.property.name === 'createDecipheriv';
+      if (callee.type === AST_NODE_TYPES.MemberExpression) {
+        // `crypto['createDecipheriv'](…)` opens the same AEAD decipher.
+        return propertyName(callee) === 'createDecipheriv';
       }
       return (
         callee.type === AST_NODE_TYPES.Identifier &&
@@ -173,13 +173,16 @@ export const requireAeadTagVerification = createRule<RuleOptions, MessageIds>({
         // The initialising write — `const decipher = createDecipheriv(…)`.
         if (parent.type === AST_NODE_TYPES.VariableDeclarator) continue;
 
+        // `decipher['final']()` is the same call in the method set. Resolved
+        // once, before the guard, so the set records the name the guard
+        // accepted rather than a cast repeat of it.
+        const method = memberPropertyName(parent);
         if (
           parent.type === AST_NODE_TYPES.MemberExpression &&
           parent.object === identifier &&
-          parent.property.type === AST_NODE_TYPES.Identifier &&
-          !parent.computed
+          method !== null
         ) {
-          methods.add(parent.property.name);
+          methods.add(method);
           continue;
         }
 

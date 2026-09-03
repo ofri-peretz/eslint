@@ -39,7 +39,14 @@
  * reports and `fetch("http://api.acme-corp.io")` drew four. Each now draws one.
  */
 
-import { TSESTree, createRule, formatLLMMessage, MessageIcons, staticString } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  MessageIcons,
+  TSESTree,
+  createRule,
+  formatLLMMessage,
+  objectKeyName,
+} from '@interlace/eslint-devkit';
 import {
   isXmlNamespaceUri,
   isTrustworthyLocalUrl,
@@ -193,12 +200,13 @@ export const noHttpUrls = createRule<RuleOptions, MessageIds>({
           ? name.name
           : `${name.namespace.name}:${name.name.name}`;
       }
-      if (parent.type === 'Property' && parent.value === node && !parent.computed) {
-        if (parent.key.type === 'Identifier') return parent.key.name;
-        const staticText = staticString(parent.key);
-        if (staticText !== null) {
-          return staticText;
-        }
+      if (parent.type === AST_NODE_TYPES.Property && parent.value === node) {
+        // `objectKeyName` rather than reading `key.name` behind `!computed`:
+        // `{ ['href']: v }` declares the same property as `{ href: v }`, and
+        // the hand-rolled form was blind to it. The spellings ratchet caught
+        // this the moment the line moved.
+        const name = objectKeyName(parent);
+        if (name !== null) return name;
       }
       return undefined;
     }
@@ -320,7 +328,11 @@ export const noHttpUrls = createRule<RuleOptions, MessageIds>({
         }
       },
       TemplateElement(node) {
-        const cooked = node.value.cooked;
+        // `cooked` is null for an invalid escape as of @typescript-eslint
+        // 8.68.0; 8.54.0 handed back the raw text. This selector is a bare
+        // `TemplateElement` visitor, so a TAGGED template reaches it and the
+        // host is still written down — dropping the quasi loses a real finding.
+        const cooked = node.value.cooked ?? node.value.raw;
         if (cooked && !hasInterpolatedAuthority(node, cooked)) {
           checkStringValue(node, cooked);
         }

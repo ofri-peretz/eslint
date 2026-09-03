@@ -61,11 +61,18 @@ export function staticString(
     node.expressions.length === 0
   ) {
     // Exactly one quasi, always — a template with nothing to interpolate cannot
-    // be split into more. `cooked` is non-nullable in TSESTree and this parser
-    // never nulls it, so a `?.` or a `?? null` here would be a branch no test
-    // could ever reach, which is worse than no branch at all.
+    // be split into more.
+    //
+    // `cooked` IS nullable, as of @typescript-eslint 8.68.0. It was typed
+    // `string` and emitted the raw text for an escape it could not cook;
+    // 8.68.0 types it `string | null` and emits `null`. The comment that stood
+    // here said the parser never nulls it and a fallback would be unreachable —
+    // true when written, false the moment the parser bumped, and silent either
+    // way because `string | null` is assignable to this function's return type.
+    //
+    // `?? raw` restores exactly what every caller received before the bump.
     const [only] = node.quasis as [TSESTree.TemplateElement];
-    return only.value.cooked;
+    return only.value.cooked ?? only.value.raw;
   }
   return null;
 }
@@ -243,3 +250,58 @@ export function readsRequestShape(
   }
   return false;
 }
+
+/**
+ * Whether a name that may not have resolved is one of a known set.
+ *
+ * `propertyName` returns `string | null` so that "this property is not
+ * statically nameable" — `o[k]`, `` o[`a${b}`] `` — stays visible. Casting
+ * that away with `namesOneOf(propertyName(node), SET)` works, because
+ * `Set.prototype.has(null)` is false, but it spells "the rule abstained" and
+ * "the name is absent from the set" identically, and it lies to the type
+ * system about a value the AST genuinely may not supply.
+ *
+ * Use this where the membership test reads better as one expression, and an
+ * explicit `name !== null && …` where the resolved name is needed afterwards.
+ *
+ * @example
+ * ```ts
+ * if (namesOneOf(propertyName(callee), HTTP_METHODS)) { … }
+ * ```
+ */
+export const namesOneOf = (
+  name: string | null,
+  names: ReadonlySet<string> | readonly string[],
+): boolean =>
+  name !== null &&
+  (Array.isArray(names)
+    ? names.includes(name)
+    : (names as ReadonlySet<string>).has(name));
+
+/**
+ * The property a node reads, or `null` if it does not read one at all.
+ *
+ * `propertyName` takes a `MemberExpression`, so a caller holding an arbitrary
+ * node has to test the type first — and that test is usually already sitting
+ * in a boolean chain the caller cannot restructure:
+ *
+ * a chain the caller cannot split — istanbul counts an `&&` operand as
+ * covered once it is EVALUATED, so a type test that is never false there
+ * looks covered, and promoting it to its own statement exposes an arm no
+ * test reaches. Resolving once, before the chain, leaves the chain intact:
+ * it gets a binding to test, and the body gets a narrowed `string` — no
+ * second call, and no cast standing in for a question already answered.
+ *
+ * @example
+ * ```ts
+ * const method = memberPropertyName(callee);
+ * if (callee.type !== 'MemberExpression' || method === null) return;
+ * method.toLowerCase(); // string
+ * ```
+ */
+export const memberPropertyName = (
+  node: TSESTree.Node | null | undefined,
+): string | null =>
+  node != null && node.type === AST_NODE_TYPES.MemberExpression
+    ? propertyName(node)
+    : null;

@@ -361,9 +361,10 @@ export function isSteerableUrlValue(
       const callee = node.callee;
       if (
         callee.type === 'MemberExpression' &&
-        !callee.computed &&
-        callee.property.type === 'Identifier' &&
-        PARAM_READERS.has(callee.property.name) &&
+        // `params['get']('next')` reads the same parameter `params.get` does.
+        // This file already carries `staticKey` for exactly this; the test
+        // never adopted it.
+        PARAM_READERS.has(staticKey(callee) ?? '') &&
         urlContainerKind(callee.object, sourceCode, seen) === 'params'
       ) {
         return true;
@@ -409,7 +410,10 @@ export function isSteerableUrlValue(
 
     case 'TemplateLiteral':
       return (
-        node.quasis[0].value.cooked === '' &&
+        // `raw`, not `cooked`: `cooked` is nullable as of @typescript-eslint
+        // 8.68.0, and `raw` is '' exactly when `cooked` is — an invalid escape,
+        // the only thing that nulls `cooked`, always has non-empty raw text.
+        node.quasis[0].value.raw === '' &&
         node.expressions.length > 0 &&
         isSteerableUrlValue(node.expressions[0], sourceCode, seen)
       );
@@ -483,9 +487,7 @@ export function isRelativePathGuard(
     if (
       current.type !== 'CallExpression' ||
       current.callee.type !== 'MemberExpression' ||
-      current.callee.computed ||
-      current.callee.property.type !== 'Identifier' ||
-      current.callee.property.name !== 'startsWith'
+      staticKey(current.callee) !== 'startsWith'
     ) {
       return null;
     }

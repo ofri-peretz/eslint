@@ -10,7 +10,7 @@
  * CWE-287: Improper Authentication
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath, propertyName } from '@interlace/eslint-devkit';
 import { analyzeMongoScope } from '../../utils/receiver';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
 
@@ -71,9 +71,8 @@ export const requireAuthMechanism = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        const methodName = node.callee.property.type === AST_NODE_TYPES.Identifier
-          ? node.callee.property.name
-          : null;
+        // `mongoose['connect'](url, opts)` opens the same connection.
+        const methodName = propertyName(node.callee);
 
         if (!methodName || !CONNECTION_METHODS.has(methodName)) {
           return;

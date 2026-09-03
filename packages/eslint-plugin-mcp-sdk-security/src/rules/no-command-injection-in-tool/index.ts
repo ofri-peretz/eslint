@@ -45,6 +45,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { fileUsesMcpSdk } from '../../utils/mcp-evidence';
 
@@ -226,10 +227,8 @@ export const noCommandInjectionInTool = createRule<[], MessageIds>({
         // Collect tool handlers.
         if (
           node.callee.type === 'MemberExpression' &&
-          !node.callee.computed &&
-          node.callee.property.type === 'Identifier' &&
-          (node.callee.property.name === REGISTER_TOOL ||
-            node.callee.property.name === LEGACY_TOOL)
+          (propertyName(node.callee) === REGISTER_TOOL ||
+            propertyName(node.callee) === LEGACY_TOOL)
         ) {
           const handler = node.arguments[node.arguments.length - 1];
           if (handler !== undefined) {

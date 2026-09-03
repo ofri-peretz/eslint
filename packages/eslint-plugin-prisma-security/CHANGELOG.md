@@ -5,6 +5,25 @@ All notable changes to `eslint-plugin-prisma-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 0.3.7
+
+### Patch Changes
+
+- **🐛 Fix** — `db['query'](…)` is the same injection sink as `db.query(…)`
+
+  `createSqlInjectionRule` builds the `no-unsafe-query` rule for all seven SQL
+  driver plugins, and it read the sink's name off `callee.property.name`. One
+  bracket — `conn['query']`, `sql['raw']`, `prisma['$queryRawUnsafe']`,
+  `knex['raw']`, `db['prepare']` — and the interpolated query passed unreported.
+
+  This was a _documented_ limitation: a test pinned it as valid ("known
+  limitation… a false negative") and fourteen rule docs told readers it was one.
+  The test now asserts the report and all fourteen docs are corrected. A method
+  chosen at runtime, `db[verb](…)`, genuinely names no sink and remains the
+  stated limitation.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`
+
 ## 0.3.6
 
 ### Patch Changes

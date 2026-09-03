@@ -20,6 +20,7 @@ import {
   createRule,
   isTestFilePath,
   staticString,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'insecureCookie' | 'addSecureFlags';
@@ -50,7 +51,7 @@ type RuleOptions = [Options?];
  * Case-insensitive because the regex it replaces was, and nothing is gained by
  * newly reporting `{ httponly: true }`.
  */
-function propertyName(
+function cookieOptionKey(
   property: TSESTree.ObjectLiteralElement,
 ): string | undefined {
   if (property.type !== 'Property') return undefined;
@@ -94,7 +95,7 @@ function flagState(
   // Last write wins, exactly as the object literal itself evaluates.
   const property = [...node.properties]
     .reverse()
-    .find((p) => propertyName(p) === name);
+    .find((p) => cookieOptionKey(p) === name);
   if (property === undefined) return hasSpread ? 'unknown' : 'absent';
   const value = (property as TSESTree.Property).value;
   if (value.type !== 'Literal') return 'unknown';
@@ -133,7 +134,7 @@ export function checkCookieOptions(
     ];
     const property = [...node.properties]
       .reverse()
-      .find((p) => propertyName(p) === 'samesite') as
+      .find((p) => cookieOptionKey(p) === 'samesite') as
       TSESTree.Property | undefined;
     if (property === undefined) {
       // Same shorthand/spread reasoning as the boolean flags above.
@@ -249,8 +250,7 @@ export const noInsecureCookieOptions = createRule<RuleOptions, MessageIds>({
         // Check for res.cookie() calls
         if (
           callee.type === 'MemberExpression' &&
-          callee.property.type === 'Identifier' &&
-          callee.property.name === 'cookie'
+          propertyName(callee) === 'cookie'
         ) {
           // res.cookie(name, value, options)
           const optionsArg = node.arguments[2];

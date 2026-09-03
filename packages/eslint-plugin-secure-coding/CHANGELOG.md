@@ -5,6 +5,215 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.3.0
+
+### Minor Changes
+
+- **🐛 Fix** — six rules now see `o['k']` as the same access as `o.k`
+
+  Each of these decided from `property.type === 'Identifier'`, so a string
+  subscript slipped past and the rule went silent on code it reports in the
+  dotted spelling. That is the notation bundlers and code generators emit, so the
+  rules were reliably off on built output — where nobody is reading by eye either.
+
+  - `no-sensitive-data-exposure` — `console['log']('password: 123456')`
+  - `no-improper-sanitization` — `input['replace']('<', '&lt;')`
+  - `no-unlimited-resource-allocation` — `Buffer['alloc'](req.query.size)`,
+    `tar['extract']()`
+  - `no-missing-authentication` — `router['get']('/admin/accounts', h)`
+  - `no-xpath-injection` — `doc['evaluate'](expr)`
+  - `no-format-string-injection` — `util['format'](userInput)`
+
+  A genuinely dynamic `o[m]()` has no statically known method name and is still
+  ignored; every
+  rule gained a case pinning that.
+
+### Patch Changes
+
+- **🐛 Fix** — sanitiser, logger, postMessage and query gates read a subscripted member
+
+  `DOMPurify['sanitize'](html)`, `container['logger'].warn(…)`,
+  `w['postMessage'](data, '*')` and `User['find']({…})` each reach exactly what
+  their dotted spellings reach. Six gates across three plugins compared
+  `property.name` first.
+
+  `no-log-injection` also carried two arms for the same question — an Identifier
+  branch and a `staticString` fallback — where `propertyName` answers both.
+
+  A test had pinned `container['logger']` as an unresolvable receiver; it holds
+  the same logger, and the same unescaped username reaches the same log line.
+
+- **🐛 Fix** — `no-hardcoded-credentials` stops reporting error codes and module paths
+
+  Two CVSS 9.8 findings against the pinned corpus, neither a secret:
+
+  - `MTLS_INCOMPATIBLE_CLIENT_AUTH: 'mtls_incompatible_client_auth'` in
+    auth0/express-openid-connect. The key ends in `auth`, which opens the
+    credential-context gate, and the value then clears the two-character-class
+    test on its underscores. A secret is never its own key's name — whoever
+    generated it did not consult the variable it would be stored in — so a value
+    that folds to its own slot name is now read as the error code it is.
+
+  - `const OktaAuth = '<rootDir>/build/cjs/exports/default.js'` in
+    okta/okta-auth-js, a jest `moduleNameMapper` target. A `<token>` root is a
+    path root; the path check now strips it rather than failing on the missing
+    leading slash.
+
+  Both discriminators are structural relations, not new word vocabulary. A value
+  that merely resembles its key is still judged on its shape.
+
+- **🐛 Fix** — sixteen rules read a member spelled with a string subscript
+
+  `Object['assign'](target, source)` performs the same uncontrolled merge as
+  `Object.assign`, `list["length"]` is the language's `.length`, and
+  `obj['hasOwnProperty'](k)` is the same guard. Sixteen rules compared
+  `property.name` before asking what the property was.
+
+  `no-electron-security-issues` carried its own local `propertyName` that
+  refused any computed key, so `{ ['nodeIntegration']: true }` in a
+  `webPreferences` block was invisible too. It now uses the devkit's
+  `objectKeyName`, which resolves the quoted form.
+
+  Three tests had pinned the miss, one of them a false positive:
+  `list["length"] == 3` was reported as a loose-equality type check while the
+  dotted `list.length == 3` was exempt.
+
+- **🐛 Fix** — `ng['$compile'](tpl)` compiles the same directive template
+
+  `no-directive-injection` named its compile method off `property.name`, so the
+  subscripted spelling of `$compile`, `$interpolate`, `compile` and `template`
+  reached nothing.
+
+- **🐛 Fix** — template compilation and token generation read a subscripted method
+
+  `Handlebars['compile'](userTemplate)` compiles the same attacker-supplied
+  template `Handlebars.compile` does, and a reset token built from
+  `Math['random']()` is exactly as guessable as one built from `Math.random()`.
+
+  Two more tests had pinned the miss. One listed `Handlebars['compile']` beside
+  `Handlebars[methodName]` as though they were the same refusal — the first
+  names `compile`, the second has no statically known method name. The other was titled after the
+  coverage branch it existed to execute, "computed require method access (id 85
+  FALSE)", and asserted that `s['unserialize'](userInput)` was safe.
+
+- **🐛 Fix** — `console['log'](user.email)` logs the same PII as `console.log`
+
+  `no-pii-in-logs` compared `property.name` to its console-method list, so the
+  subscripted spelling wrote PII to the same stream unreported. A method chosen
+  at runtime still names no sink and is still skipped.
+
+- **🐛 Fix** — log levels, deserialisers and fs reads resolve a subscripted method
+
+  `console['log'](…)` writes at the same level, `yaml['load'](req.body.data)`
+  deserialises the same request body, and `fs['readFileSync'](p)` yields the same
+  untrusted bytes. `no-log-injection`, `no-unsafe-deserialization` and
+  `no-weak-password-recovery` compared `property.name` first.
+
+  Two more tests had pinned the miss, one of them named after the coverage branch
+  it existed to execute — "computed callee property (id 9 FALSE)" — asserting
+  that `yaml['load'](req.body.data)` was safe.
+
+- **🐛 Fix** — `parts['join'](' ')` concatenates the same SQL statement
+
+  `no-sql-injection` matched the array join on `property.name`, so fragments
+  carrying a request value were assembled into a query unreported.
+
+- **🐛 Fix** — LDAP, privilege and loop gates resolve a subscripted member
+
+  A member spelled `o['k']` reaches exactly what `o.k` reaches, and these gates
+  compared `property.name` before asking what the property was. They now resolve
+  through the devkit's `propertyName`, which still abstains on the one shape that
+  genuinely cannot be resolved: a key chosen at runtime, whose name is not
+  statically known.
+
+- **🐛 Fix** — three blind spots that lived in a selector, a regex and a substring list
+
+  `doc['evaluate'](q)` never set the module's "this file evaluates XPath" flag,
+  because the visitor selector read `MemberExpression[computed=false] >
+Identifier.property`. `password['trim']().length < 6` lost its receiver.
+  `Date['now']() + salt` matched neither of the literal substrings
+  `'Date.now()'` / `'Math.random()'` — that arm now reuses the rule's own
+  `usesPredictableSource`, so there is one definition rather than two.
+
+- **🐛 Fix** — LDAP escapes and role checks read a subscripted method
+
+  `esc['filterValue'](x)` escapes exactly as `esc.filterValue(x)` does — this one
+  sits in a SUPPRESSION path, so missing it meant reporting code that was
+  already escaped. `guard['isAdmin'](user)` is the same role check, and
+  `this['baseDN']` names the same field.
+
+- **🐛 Fix** — `Object['keys']` and `graphql['execute']` name the same operations
+
+  `detect-object-injection` matched the mass-assignment source on
+  `property.name`, so `for (const k of Object['keys'](req.body))` was not
+  recognised as enumerating caller-supplied keys. `no-graphql-injection` missed
+  both its execute surface and its safe-caller allowlist the same way — the
+  second of those is a suppression path, so missing it reported queries that
+  were already safe.
+
+- **🐛 Fix** — `userService['elevate'](user, level)` is the same privilege operation
+
+  `no-privilege-escalation` resolved the operation name off `property.name`, so a
+  subscripted elevate/promote/grant call was not recognised as one.
+
+- **🐛 Fix** — `client['search'](baseDN, filter)` runs the same LDAP query
+
+  `no-ldap-injection` matched the query method on `property.name`, so a
+  subscripted `search`/`bind`/`modify` carried the interpolated filter
+  unreported.
+
+- **🐛 Fix** — `db['query'](sql)` is the same SQL sink as `db.query(sql)`
+
+  `no-sql-injection` resolved the method name in two branches — a non-computed
+  Identifier, then a string-literal subscript — where `propertyName` answers
+  both. Resolving a key through a BINDING (`db[QUERY]` where `const QUERY =
+'query'`) is what the function is really for, and that arm stays.
+
+- **🐛 Fix** — XPath, password-length, fail-open and regex gates read a subscripted member
+
+  `doc['evaluate'](q)` runs the same query, `password['length'] < 6` is the same
+  weak check, `okta['verifyAccessToken'](t)` inside a catch-returns-granted still
+  fails open, and `res['text']()` is the same untrusted read.
+
+  `RegExp['escape'](s)` is a SUPPRESSION path — missing it meant reporting a
+  pattern that had already been escaped.
+
+- **🐛 Fix** — `Math['random']()` is recognised as the same weak token source
+
+  `no-weak-password-recovery` detects predictable generators by matching SOURCE
+  TEXT, and every pattern was written dotted-only — `/\bMath\s*\.\s*random\s*\(/`.
+  A reset token built from `Math['random']()` is exactly as guessable, and the
+  regex never saw it. The patterns now accept either spelling and still reject a
+  runtime key such as `Math[pick]()`.
+
+- **🧹 Refactor** — injection and privilege checks resolve a property once, not twice
+
+  `SET.has(propertyName(node) as string)` reaches the right answer for the wrong
+  reason. `propertyName` returns `string | null` because `o[k]` names a property
+  the AST cannot read, and that is not the same answer as "named, and not one of
+  these" — the cast collapses both, and `Set.prototype.has(null)` being false is
+  what made it look correct.
+
+  30 sites across 18 files now ask the two questions separately, via
+  `namesOneOf` / `memberPropertyName` from the devkit or an explicit `!== null`.
+
+  No rule behaviour changes: this package's test count and coverage are unchanged.
+
+- **🐛 Fix** — `ipcRenderer['send'](...)` and `app['get'](...)` name the same call
+
+  `no-electron-security-issues` resolved the IPC method off `property.name`, so
+  a subscripted `send`/`invoke`/`handle` crossed the same bridge with the same
+  payload unreported. `no-missing-authentication` resolved a route registration
+  and a middleware reference the same way, so `app['get']('/api/users', h)`
+  registered an unguarded route in silence.
+
+  Both were found by teaching the computed-key probe to honour each case's own
+  options: 1,077 of the ledger's TP cases carry options and had been probed
+  under defaults, so a case that only fires when configured looked like a case
+  that never fired.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`
+
 ## 5.2.2
 
 ### Patch Changes

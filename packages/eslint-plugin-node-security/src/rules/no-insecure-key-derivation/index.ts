@@ -20,8 +20,13 @@ import {
   AST_NODE_TYPES,
   resolveModuleBinding,
   unwrapTypeSyntax,
+  namesOneOf,
+  propertyName,
 } from '@interlace/eslint-devkit';
-import { constInitializerOf, resolveConstantString } from '../../utils/const-value';
+import {
+  constInitializerOf,
+  resolveConstantString,
+} from '../../utils/const-value';
 
 type SourceCode = TSESLint.SourceCode;
 
@@ -36,7 +41,10 @@ type SourceCode = TSESLint.SourceCode;
 const PBKDF2_EXPORTS: ReadonlySet<string> = new Set(['pbkdf2', 'pbkdf2Sync']);
 
 /** Web Crypto's derivation entry points, whose parameters arrive as an object. */
-const SUBTLE_DERIVE_METHODS: ReadonlySet<string> = new Set(['deriveBits', 'deriveKey']);
+const SUBTLE_DERIVE_METHODS: ReadonlySet<string> = new Set([
+  'deriveBits',
+  'deriveKey',
+]);
 
 /** A folded numeric constant, and the node a fixer must rewrite to change it. */
 interface FoldedNumber {
@@ -71,7 +79,9 @@ function foldNumber(
   if (bare !== node) return foldNumber(sourceCode, bare, depth + 1);
 
   if (node.type === AST_NODE_TYPES.Literal) {
-    return typeof node.value === 'number' ? { value: node.value, source: node } : null;
+    return typeof node.value === 'number'
+      ? { value: node.value, source: node }
+      : null;
   }
 
   if (node.type === AST_NODE_TYPES.UnaryExpression && node.operator === '-') {
@@ -84,11 +94,16 @@ function foldNumber(
     const right = foldNumber(sourceCode, node.right, depth + 1);
     if (left === null || right === null) return null;
     switch (node.operator) {
-      case '*': return { value: left.value * right.value, source: node };
-      case '+': return { value: left.value + right.value, source: node };
-      case '-': return { value: left.value - right.value, source: node };
-      case '**': return { value: left.value ** right.value, source: node };
-      default: return null;
+      case '*':
+        return { value: left.value * right.value, source: node };
+      case '+':
+        return { value: left.value + right.value, source: node };
+      case '-':
+        return { value: left.value - right.value, source: node };
+      case '**':
+        return { value: left.value ** right.value, source: node };
+      default:
+        return null;
     }
   }
 
@@ -98,7 +113,11 @@ function foldNumber(
   }
 
   if (node.type === AST_NODE_TYPES.MemberExpression) {
-    const value = objectPropertyValue(sourceCode, node.object, propertyKey(sourceCode, node));
+    const value = objectPropertyValue(
+      sourceCode,
+      node.object,
+      propertyKey(sourceCode, node),
+    );
     return value === null ? null : foldNumber(sourceCode, value, depth + 1);
   }
 
@@ -106,9 +125,15 @@ function foldNumber(
 }
 
 /** The property name a member expression reads, resolving a constant computed key. */
-function propertyKey(sourceCode: SourceCode, node: TSESTree.MemberExpression): string | null {
-  if (node.computed) return resolveConstantString(sourceCode, node.property)?.value ?? null;
-  return node.property.type === AST_NODE_TYPES.Identifier ? node.property.name : null;
+function propertyKey(
+  sourceCode: SourceCode,
+  node: TSESTree.MemberExpression,
+): string | null {
+  if (node.computed)
+    return resolveConstantString(sourceCode, node.property)?.value ?? null;
+  return node.property.type === AST_NODE_TYPES.Identifier
+    ? node.property.name
+    : null;
 }
 
 /**
@@ -130,7 +155,8 @@ function objectPropertyValue(
   }
   if (object.type !== AST_NODE_TYPES.ObjectExpression) return null;
   for (const property of object.properties) {
-    if (property.type !== AST_NODE_TYPES.Property || property.computed) continue;
+    if (property.type !== AST_NODE_TYPES.Property || property.computed)
+      continue;
     // A non-computed object key is an Identifier or a string/number Literal.
     // There is no third spelling, so there is no third arm to guard.
     const name =
@@ -143,7 +169,10 @@ function objectPropertyValue(
 }
 
 /** `util.promisify(...)`, resolved through the module binding rather than the name. */
-function isPromisifyCall(sourceCode: SourceCode, node: TSESTree.Node): node is TSESTree.CallExpression {
+function isPromisifyCall(
+  sourceCode: SourceCode,
+  node: TSESTree.Node,
+): node is TSESTree.CallExpression {
   if (node.type !== AST_NODE_TYPES.CallExpression) return false;
   const binding = resolveModuleBinding(node.callee, sourceCode.getScope(node));
   return binding?.module === 'util' && binding.path.at(-1) === 'promisify';
@@ -163,22 +192,30 @@ function isPromisifyCall(sourceCode: SourceCode, node: TSESTree.Node): node is T
  *
  * The last two were the majority of modern Node code and both were silent.
  */
-function isPbkdf2Callee(sourceCode: SourceCode, callee: TSESTree.Node, depth = 0): boolean {
+function isPbkdf2Callee(
+  sourceCode: SourceCode,
+  callee: TSESTree.Node,
+  depth = 0,
+): boolean {
   if (depth > 4) return false;
 
   if (
     callee.type === AST_NODE_TYPES.MemberExpression &&
-    callee.property.type === AST_NODE_TYPES.Identifier &&
-    PBKDF2_EXPORTS.has(callee.property.name)
+    namesOneOf(propertyName(callee), PBKDF2_EXPORTS)
   ) {
     return true;
   }
-  if (callee.type === AST_NODE_TYPES.Identifier && PBKDF2_EXPORTS.has(callee.name)) return true;
+  if (
+    callee.type === AST_NODE_TYPES.Identifier &&
+    PBKDF2_EXPORTS.has(callee.name)
+  )
+    return true;
 
   // `import { pbkdf2Sync as deriveKeyMaterial }` — the export name survives the
   // rename, and the binding is where it is recorded.
   const binding = resolveModuleBinding(callee, sourceCode.getScope(callee));
-  if (binding !== undefined && PBKDF2_EXPORTS.has(binding.path.at(-1) ?? '')) return true;
+  if (binding !== undefined && PBKDF2_EXPORTS.has(binding.path.at(-1) ?? ''))
+    return true;
 
   if (callee.type === AST_NODE_TYPES.CallExpression) {
     return (
@@ -235,10 +272,12 @@ export const noInsecureKeyDerivation = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Insufficient PBKDF2 iterations',
         cwe: 'CWE-916',
-        description: 'PBKDF2 with {{actual}} iterations is too low. Minimum recommended: {{minimum}} iterations (OWASP 2023).',
+        description:
+          'PBKDF2 with {{actual}} iterations is too low. Minimum recommended: {{minimum}} iterations (OWASP 2023).',
         severity: 'HIGH',
         fix: 'Increase iterations to at least {{minimum}}, or use scrypt/Argon2',
-        documentationLink: 'https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html',
+        documentationLink:
+          'https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html',
       }),
       useMinIterations: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -246,7 +285,8 @@ export const noInsecureKeyDerivation = createRule<RuleOptions, MessageIds>({
         description: 'Use at least {{minimum}} iterations for PBKDF2',
         severity: 'LOW',
         fix: 'crypto.pbkdf2(password, salt, {{minimum}}, keylen, digest)',
-        documentationLink: 'https://nodejs.org/api/crypto.html#cryptopbkdf2password-salt-iterations-keylen-digest-callback',
+        documentationLink:
+          'https://nodejs.org/api/crypto.html#cryptopbkdf2password-salt-iterations-keylen-digest-callback',
       }),
     },
     schema: [
@@ -270,7 +310,7 @@ export const noInsecureKeyDerivation = createRule<RuleOptions, MessageIds>({
   ],
   create(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}]
+    [options = {}],
   ) {
     const { minIterations = DEFAULT_MIN_ITERATIONS } = options as Options;
 
@@ -317,13 +357,15 @@ export const noInsecureKeyDerivation = createRule<RuleOptions, MessageIds>({
       // meant, so only an explicit count is judged here.
       if (
         (node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          node.callee.property.name === 'PBKDF2') ||
-        (node.callee.type === AST_NODE_TYPES.Identifier && node.callee.name === 'PBKDF2')
+          propertyName(node.callee) === 'PBKDF2') ||
+        (node.callee.type === AST_NODE_TYPES.Identifier &&
+          node.callee.name === 'PBKDF2')
       ) {
         const options = node.arguments[2];
         if (options !== undefined) {
-          judgeIterations(objectPropertyValue(sourceCode, options, 'iterations'));
+          judgeIterations(
+            objectPropertyValue(sourceCode, options, 'iterations'),
+          );
         }
         return;
       }
@@ -334,14 +376,14 @@ export const noInsecureKeyDerivation = createRule<RuleOptions, MessageIds>({
       // so the callee alone never identifies the sink.
       if (
         node.callee.type === AST_NODE_TYPES.MemberExpression &&
-        node.callee.property.type === AST_NODE_TYPES.Identifier &&
-        SUBTLE_DERIVE_METHODS.has(node.callee.property.name)
+        namesOneOf(propertyName(node.callee), SUBTLE_DERIVE_METHODS)
       ) {
         const params = node.arguments[0];
         if (params === undefined) return;
         const algorithm = objectPropertyValue(sourceCode, params, 'name');
         if (algorithm === null) return;
-        if (resolveConstantString(sourceCode, algorithm)?.value !== 'PBKDF2') return;
+        if (resolveConstantString(sourceCode, algorithm)?.value !== 'PBKDF2')
+          return;
         judgeIterations(objectPropertyValue(sourceCode, params, 'iterations'));
       }
     }

@@ -15,6 +15,7 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES,
   compileUserPatterns, unwrapTypeSyntax,
   staticString,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import {
   bindingInit,
@@ -217,11 +218,13 @@ const NAMESPACE_NAME = /^(?:[A-Z][A-Z0-9_]*|[A-Z][a-zA-Z0-9]*)$/;
  */
 function isNamedConstant(node: TSESTree.Node): boolean {
   if (node.type !== AST_NODE_TYPES.MemberExpression) return false;
-  // An identifier key under `[]` is a variable, not a property name.
-  if (node.computed) return false;
   if (node.object.type !== AST_NODE_TYPES.Identifier) return false;
-  if (node.property.type !== AST_NODE_TYPES.Identifier) return false;
-  return NAMESPACE_NAME.test(node.object.name) && NAMED_CONSTANT.test(node.property.name);
+  // An identifier key under `[]` is a VARIABLE, not a property name, and
+  // `propertyName` returns null for exactly that — while resolving the quoted
+  // form, which names the constant as plainly as the dotted one.
+  const constant = propertyName(node);
+  if (constant === null) return false;
+  return NAMESPACE_NAME.test(node.object.name) && NAMED_CONSTANT.test(constant);
 }
 
 /**
@@ -458,18 +461,19 @@ function memberPropertyName(node: TSESTree.MemberExpression): string | null {
 
 /** Is this member expression a known false-friend of a secret name? */
 function isNonSecretMember(node: TSESTree.MemberExpression): boolean {
-  const propertyName = memberPropertyName(node);
-  if (propertyName === null) return false;
-  const receivers = NON_SECRET_MEMBERS.get(propertyName.toLowerCase());
+  // Named `member`, not `propertyName`: a local of that name shadows the
+  // imported helper, and the shadow only surfaces once something below tries
+  // to CALL it.
+  const member = memberPropertyName(node);
+  if (member === null) return false;
+  const receivers = NON_SECRET_MEMBERS.get(member.toLowerCase());
   if (!receivers) return false;
   const owner = node.object;
   const ownerName =
     owner.type === AST_NODE_TYPES.Identifier
       ? owner.name
-      : owner.type === AST_NODE_TYPES.MemberExpression &&
-          !owner.computed &&
-          owner.property.type === AST_NODE_TYPES.Identifier
-        ? owner.property.name
+      : owner.type === AST_NODE_TYPES.MemberExpression
+        ? (propertyName(owner) ?? '')
         : '';
   return receivers.has(ownerName.toLowerCase());
 }
@@ -888,9 +892,11 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
         return [leftArg as TSESTree.Node, rightArg as TSESTree.Node];
       }
 
-      if (callee.type !== AST_NODE_TYPES.MemberExpression || callee.computed) return null;
-      if (callee.property.type !== AST_NODE_TYPES.Identifier) return null;
-      const method = callee.property.name;
+      if (callee.type !== AST_NODE_TYPES.MemberExpression) return null;
+      // `presented['localeCompare'](stored)` compares the same two values in
+      // the same non-constant time.
+      const method = propertyName(callee);
+      if (method === null) return null;
 
       // `Buffer.compare(a, b)` — the static form of `buf.equals`.
       if (

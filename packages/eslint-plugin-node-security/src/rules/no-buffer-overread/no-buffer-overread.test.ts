@@ -469,6 +469,11 @@ describe('no-buffer-overread', () => {
         // the argument shape decides rather than the callee's name.
         `const text = readFileSync('/x', 'utf8');
          function h(req) { return text.slice(Number(req.query.start)); }`,
+        {
+          name: 'an immediately invoked factory names no buffer-returning read',
+          code: `const data = (pick())('/x');
+         function h(req) { return data.slice(Number(req.query.start)); }`,
+        },
       ],
       invalid: [
         // Still reported: the index really does trace to the request.

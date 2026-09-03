@@ -112,16 +112,35 @@ ruleTester.run('no-sensitive-data-in-analytics — refusals', noSensitiveDataInA
     "analytics.track('e', { a: { b: { c: { d: { e: { email: x } } } } } });",
     // The client name is right but the method is not a transmission.
     "analytics.reset({ email: user.email });",
-    // A computed method on a real client.
-    "analytics['track']('e', { email: user.email });",
     // A qualified client on a global that is not a window alias.
     "vendor.analytics.track('e', { email: user.email });",
     // A bare function that is not gtag.
     "record('event', { email: user.email });",
     // A spread ARGUMENT is not a payload we can read.
     "analytics.track(...args);",
+    // A client returned from a call names nothing we can check against the
+    // vendor list.
+    {
+      name: 'a client returned from a call names nothing we can check against the',
+      code: "getClient().track('e', { email: user.email });",
+    },
+    // A method chosen at RUNTIME is not provably a transmission — unlike
+    // `analytics['track']`, there is no name here to compare.
+    {
+      name: 'a method chosen at RUNTIME is not provably a transmission — unlike',
+      code: "analytics[verb]('e', { email: user.email });",
+    },
   ],
-  invalid: [],
+  invalid: [
+    // Was pinned here as a refusal, described only as "a computed method on a
+    // real client". The bracket changes the notation, not the destination:
+    // this ships the same email address to the same vendor.
+    {
+      name: 'was pinned here as a refusal, described only as "a computed method on a',
+      code: "analytics['track']('e', { email: user.email });",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+  ],
 });
 
 /**

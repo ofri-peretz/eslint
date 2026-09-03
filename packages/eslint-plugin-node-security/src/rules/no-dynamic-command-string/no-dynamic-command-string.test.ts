@@ -51,7 +51,6 @@ describe('no-dynamic-command-string', () => {
       // Unrelated calls
       { code: `run(\`git clone \${url}\`);` },
       { code: `obj[method](\`git clone \${url}\`);` },
-      { code: `obj['execaCommand'](\`git clone \${url}\`);` },
       { code: `getRunner()(\`git clone \${url}\`);` },
       { code: `execaCommand({ command: cmd });` },
       { code: `exec(\`git clone \${url}\`);` },
@@ -94,6 +93,14 @@ describe('no-dynamic-command-string', () => {
       // (asserted in `invalid` below; kept here as the contrast note)
     ],
     invalid: [
+      // Was pinned as valid next to `obj[method]`, as though the two were the
+      // same refusal. `obj['execaCommand']` names `execaCommand`, which takes
+      // a whole command line and escapes nothing.
+      {
+        name: 'a subscripted execaCommand with an interpolated value',
+        code: `obj['execaCommand'](\`git clone \${url}\`);`,
+        errors: 1,
+      },
       // bash -c with an interpolated command line
       {
         name: 'bash -c with an interpolated string re-enters the shell',

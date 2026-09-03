@@ -9,7 +9,7 @@
  * Enforce consistent style for checking object property existence
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'consistentExistenceCheck';
@@ -119,8 +119,7 @@ export const consistentExistenceIndexCheck = createRule<RuleOptions, MessageIds>
         // (CodeQL: `js/misleading-indentation-after-control-statement`).
         if (
           node.callee.type === 'MemberExpression' &&
-          node.callee.property.type === 'Identifier' &&
-          node.callee.property.name === 'hasOwnProperty' &&
+          propertyName(node.callee) === 'hasOwnProperty' &&
           node.arguments.length === 1 &&
           preferred !== 'hasOwnProperty'
         ) {
@@ -134,12 +133,9 @@ export const consistentExistenceIndexCheck = createRule<RuleOptions, MessageIds>
           node.callee.object.object.type === 'MemberExpression' &&
           node.callee.object.object.object.type === 'Identifier' &&
           node.callee.object.object.object.name === 'Object' &&
-          node.callee.object.object.property.type === 'Identifier' &&
-          node.callee.object.object.property.name === 'prototype' &&
-          node.callee.object.property.type === 'Identifier' &&
-          node.callee.object.property.name === 'hasOwnProperty' &&
-          node.callee.property.type === 'Identifier' &&
-          node.callee.property.name === 'call' &&
+          propertyName(node.callee.object.object) === 'prototype' &&
+          propertyName(node.callee.object) === 'hasOwnProperty' &&
+          propertyName(node.callee) === 'call' &&
           node.arguments.length >= 2 &&
           preferred !== 'hasOwnProperty'
         ) {
@@ -151,8 +147,7 @@ export const consistentExistenceIndexCheck = createRule<RuleOptions, MessageIds>
           node.callee.type === 'MemberExpression' &&
           node.callee.object.type === 'Identifier' &&
           node.callee.object.name === 'Object' &&
-          node.callee.property.type === 'Identifier' &&
-          node.callee.property.name === 'hasOwn' &&
+          propertyName(node.callee) === 'hasOwn' &&
           node.arguments.length === 2 &&
           preferred !== 'Object.hasOwn'
         ) {

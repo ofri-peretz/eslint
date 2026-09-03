@@ -161,7 +161,7 @@ function queryText(node: TSESTree.Node, scope: TSESLint.Scope.Scope): string | n
     return typeof node.value === 'string' ? node.value : null;
   }
   if (node.type === AST_NODE_TYPES.TemplateLiteral) {
-    return node.quasis.map((quasi) => quasi.value.cooked).join(' 1 ');
+    return node.quasis.map((quasi) => quasi.value.cooked!).join(' 1 ');
   }
   if (node.type === AST_NODE_TYPES.ObjectExpression) {
     const text = node.properties.find(

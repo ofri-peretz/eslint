@@ -13,7 +13,13 @@
  * @see https://cwe.mitre.org/data/definitions/95.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, staticString } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  staticString,
+  namesOneOf,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import {
   constInitializerOf,
@@ -564,13 +570,14 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
       }
       if (
         callee.type === 'MemberExpression' &&
-        !callee.computed &&
         callee.object.type === 'Identifier' &&
         GLOBAL_OBJECTS.has(callee.object.name) &&
-        callee.property.type === 'Identifier' &&
-        evalFunctions.has(callee.property.name)
+        namesOneOf(propertyName(callee), evalFunctions)
       ) {
-        return callee.property.name;
+        // The membership test above resolved this name, so the same call is
+        // returned as-is: `string | null` is this resolver's contract, and the
+        // absent case stays a value rather than a cast.
+        return propertyName(callee);
       }
       return null;
     };

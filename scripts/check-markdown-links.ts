@@ -1,9 +1,9 @@
 #!/usr/bin/env tsx
 /**
  * Markdown Link Validator
- * 
+ *
  * Checks all markdown files for broken links (relative, absolute, GitHub, anchors)
- * 
+ *
  * Usage:
  *   npx tsx scripts/check-markdown-links.ts
  */
@@ -43,12 +43,12 @@ function getMarkdownFiles(rootDir = '.'): string[] {
   try {
     result = execSync(
       `find ${rootDir} -name "*.md" -type f ! -path "*/node_modules/*" ! -path "*/.turbo/*" ! -path "*/dist/*" ! -path "*/.git/*" ! -path "*/coverage/*" ! -path "*/.next/*" ! -path "*/.source/*" ! -path "*/test-results/*" ! -path "*/playwright-report/*" ! -path "*/build/*" ! -path "*/.gemini/*" ! -path "*/.cursor/*" ! -path "*/.real-source-cache/*"`,
-      { encoding: 'utf-8', maxBuffer: 64 * 1024 * 1024 }
+      { encoding: 'utf-8', maxBuffer: 64 * 1024 * 1024 },
     );
   } catch (error) {
     console.error(
       `\n⛔ could not list markdown files: ${(error as Error).message.split('\n')[0]}\n` +
-        '   Refusing to report on a list this script failed to build.\n'
+        '   Refusing to report on a list this script failed to build.\n',
     );
     process.exit(1);
   }
@@ -57,17 +57,21 @@ function getMarkdownFiles(rootDir = '.'): string[] {
     .trim()
     .split('\n')
     .filter(Boolean)
-    .map(f => (f.startsWith('./') ? f.slice(2) : f));
+    .map((f) => (f.startsWith('./') ? f.slice(2) : f));
 
   if (files.length === 0) {
-    console.error('\n⛔ found no markdown files at all — that is not a passing state.\n');
+    console.error(
+      '\n⛔ found no markdown files at all — that is not a passing state.\n',
+    );
     process.exit(1);
   }
   return files;
 }
 
 // Extract all links from markdown content
-function extractLinks(content: string): Array<{ text: string; url: string; line: number }> {
+function extractLinks(
+  content: string,
+): Array<{ text: string; url: string; line: number }> {
   const links: Array<{ text: string; url: string; line: number }> = [];
   const lines = content.split('\n');
 
@@ -80,6 +84,23 @@ function extractLinks(content: string): Array<{ text: string; url: string; line:
   const inlineCodeRegex = /`+[^`]*`+/g;
 
   let inFenced = false;
+  /*
+   * Whether a `…` span was left OPEN at the end of the previous line.
+   *
+   * Stripping code spans line by line assumes every span opens and closes on
+   * one line. A span that wraps — and prose wraps at 80 columns constantly —
+   * desynchronises the pairing: on the continuation line the FIRST backtick is
+   * a closer, so the stripper pairs it with the next opener and leaves the
+   * real code exposed. A changeset reading
+   *
+   *     `app['set']('trust proxy',
+   *     true)` trusts every hop, and `router['post']('/x', h)` registers …
+   *
+   * reported `'/x',` as a broken relative link. Everything after a wrapped
+   * span was scanned as prose, so this could equally have HIDDEN a real
+   * broken link — the failure is silent in that direction.
+   */
+  let inInlineCode = false;
   lines.forEach((line, index) => {
     // Fenced code blocks ```…``` or ~~~…~~~: skip every line between fences
     // (including the fence markers themselves). Toggling on a line that
@@ -93,7 +114,22 @@ function extractLinks(content: string): Array<{ text: string; url: string; line:
     // is not a list-item continuation, are code per CommonMark.
     if (/^(    |\t)/.test(line)) return;
 
-    const scannable = line.replace(inlineCodeRegex, '');
+    let scannable = line;
+    if (inInlineCode) {
+      const close = scannable.indexOf('`');
+      // No closer on this line either: the whole line is inside the span.
+      if (close === -1) return;
+      scannable = scannable.slice(close + 1);
+      inInlineCode = false;
+    }
+    scannable = scannable.replace(inlineCodeRegex, '');
+    // A backtick surviving the strip opened a span with no closer on this
+    // line. Everything after it is code until a later line closes it.
+    const open = scannable.indexOf('`');
+    if (open !== -1) {
+      scannable = scannable.slice(0, open);
+      inInlineCode = true;
+    }
 
     let match;
     while ((match = linkRegex.exec(scannable)) !== null) {
@@ -102,9 +138,10 @@ function extractLinks(content: string): Array<{ text: string; url: string; line:
       const text = match[1] ?? match[3];
       const rawUrl = match[2] ?? match[4];
       if (!rawUrl) continue;
-      const url = match[2] !== undefined
-        ? rawUrl
-        : rawUrl.split(' ')[0]!.replace(/^"|"$/g, '');
+      const url =
+        match[2] !== undefined
+          ? rawUrl
+          : rawUrl.split(' ')[0]!.replace(/^"|"$/g, '');
       links.push({ text: text!, url, line: index + 1 });
     }
   });
@@ -130,8 +167,11 @@ function validateGitHubLink(url: string): { valid: boolean; message?: string } {
     return { valid: true };
   }
 
-  const parts = url.replace('https://github.com/', '').split('/').filter(Boolean);
-  
+  const parts = url
+    .replace('https://github.com/', '')
+    .split('/')
+    .filter(Boolean);
+
   // Valid GitHub link patterns:
   // - https://github.com/owner/repo (repo homepage)
   // - https://github.com/owner/repo/issues
@@ -140,43 +180,52 @@ function validateGitHubLink(url: string): { valid: boolean; message?: string } {
   // - https://github.com/owner/repo/blob/branch/path
   // - https://github.com/owner/repo/actions/workflows/... (badges)
   // - https://github.com/owner (user profile)
-  
+
   if (parts.length === 1) {
     // User profile - valid
     return { valid: true };
   }
-  
+
   if (parts.length === 2) {
     // Repo homepage - valid
     return { valid: true };
   }
-  
+
   // Check for blob/tree links (need branch)
   if (parts[2] === 'blob' || parts[2] === 'tree') {
     if (parts.length < 5) {
-      return { valid: false, message: 'GitHub blob/tree link missing branch or path' };
+      return {
+        valid: false,
+        message: 'GitHub blob/tree link missing branch or path',
+      };
     }
     // Check for common issues
     if (url.includes('/blob/docs/') || url.includes('/blob/../')) {
-      return { valid: false, message: 'GitHub link missing branch name (should be /blob/main/)' };
+      return {
+        valid: false,
+        message: 'GitHub link missing branch name (should be /blob/main/)',
+      };
     }
     return { valid: true };
   }
-  
+
   // Other GitHub links (issues, discussions, commit, actions, etc.) - assume valid
   return { valid: true };
 }
 
 // Validate anchor links
-function validateAnchorLink(url: string, fileContent: string): { valid: boolean; message?: string } {
+function validateAnchorLink(
+  url: string,
+  fileContent: string,
+): { valid: boolean; message?: string } {
   if (!url.startsWith('#')) return { valid: true };
 
   const anchor = url.slice(1);
-  
+
   // Use string search instead of regex for safety (prevents ReDoS)
   const lines = fileContent.split('\n');
   const anchorLower = anchor.toLowerCase();
-  
+
   // Check for heading with this anchor. Markdown renderers vary in their
   // slug algorithm; we accept any of three common forms so writers can use
   // either style without breaking the check:
@@ -187,27 +236,24 @@ function validateAnchorLink(url: string, fileContent: string): { valid: boolean;
   //     because the em-dash dropped between two spaces). This is the slug
   //     GitHub's rendered Markdown uses.
   //   - Raw heading text (lowercased) for old/loose anchors
-  const hasHeading = lines.some(line => {
+  const hasHeading = lines.some((line) => {
     const match = line.match(/^#{1,6}\s+(.+)$/);
     if (!match) return false;
     const lower = match[1].toLowerCase();
-    const collapsedSlug = lower
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-');
-    const githubSlug = lower
-      .replace(/[^\w -]/g, '')
-      .replace(/ /g, '-');
+    const collapsedSlug = lower.replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
+    const githubSlug = lower.replace(/[^\w -]/g, '').replace(/ /g, '-');
     return (
       collapsedSlug.includes(anchorLower) ||
       githubSlug.includes(anchorLower) ||
       lower.includes(anchorLower)
     );
   });
-  
+
   // Check for HTML anchors using simple string checks
-  const hasHtmlAnchor = fileContent.includes(`id="${anchor}"`) ||
+  const hasHtmlAnchor =
+    fileContent.includes(`id="${anchor}"`) ||
     fileContent.includes(`id='${anchor}'`);
-  
+
   if (!hasHeading && !hasHtmlAnchor) {
     return { valid: false, message: `Anchor #${anchor} not found in file` };
   }
@@ -218,7 +264,7 @@ function validateAnchorLink(url: string, fileContent: string): { valid: boolean;
 function validateLink(
   link: { text: string; url: string; line: number },
   filePath: string,
-  fileContent: string
+  fileContent: string,
 ): void {
   const { url } = link;
   const baseDir = dirname(filePath);
@@ -248,7 +294,11 @@ function validateLink(
     // The previous `url.includes('github.com')` matched `evil-github.com`
     // and `github.com.attacker.com` (CodeQL: `js/incomplete-url-substring-sanitization`).
     let host = '';
-    try { host = new URL(url).hostname.toLowerCase(); } catch { /* malformed URL */ }
+    try {
+      host = new URL(url).hostname.toLowerCase();
+    } catch {
+      /* malformed URL */
+    }
     if (host === 'github.com' || host.endsWith('.github.com')) {
       const result = validateGitHubLink(url);
       if (!result.valid) {
@@ -327,8 +377,13 @@ function validateLink(
   }
 
   // If anchor is present, validate it in the target file
-  if (anchor && (fileExists(resolvedPath, '.') || fileExists(resolvedPath + '.md', '.'))) {
-    const targetFile = fileExists(resolvedPath, '.') ? resolvedPath : resolvedPath + '.md';
+  if (
+    anchor &&
+    (fileExists(resolvedPath, '.') || fileExists(resolvedPath + '.md', '.'))
+  ) {
+    const targetFile = fileExists(resolvedPath, '.')
+      ? resolvedPath
+      : resolvedPath + '.md';
     try {
       const targetContent = readFileSync(targetFile, 'utf-8');
       const anchorResult = validateAnchorLink('#' + anchor, targetContent);
@@ -408,4 +463,3 @@ function main() {
 }
 
 main();
-

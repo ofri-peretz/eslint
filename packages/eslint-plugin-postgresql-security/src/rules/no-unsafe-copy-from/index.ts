@@ -12,6 +12,7 @@ import {
   MessageIcons,
   isStaticExpression,
   staticString,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { NoUnsafeCopyFromOptions } from '../../types';
 import { fileUsesPostgres } from '../../utils';
@@ -41,12 +42,16 @@ const MAX_RESOLUTION_DEPTH = 4;
 /** The literal text of a string expression, ignoring every interpolated value. */
 function staticText(node: TSESTree.Node): string {
   if (node.type === AST_NODE_TYPES.TemplateLiteral) {
-    // `cooked`, not `raw`: a template written with `\n` escapes has a
+    // `cooked` FIRST, not `raw`: a template written with `\n` escapes has a
     // backslash in its raw text, and reading that made the statement's verb
-    // unreadable on SQL the server sees as perfectly ordinary. TSESTree types
-    // `cooked` as non-nullable and this parser never nulls it, so there is no
-    // fallback branch here to leave untested.
-    return node.quasis.map((q) => q.value.cooked).join('');
+    // unreadable on SQL the server sees as perfectly ordinary.
+    //
+    // But `cooked` is nullable, and the last sentence here used to deny it —
+    // @typescript-eslint 8.68.0 both types it `string | null` and EMITS null
+    // for an escape it cannot cook, where 8.54.0 handed back the raw text. A
+    // bare template with a bad escape is a parse error, so null here means the
+    // `String.raw` unwrap, whose raw text IS what the server sees. Locked.
+    return node.quasis.map((q) => q.value.cooked ?? q.value.raw).join('');
   }
   if (node.type === AST_NODE_TYPES.BinaryExpression && node.operator === '+') {
     return `${staticText(node.left as TSESTree.Node)}${staticText(node.right)}`;
@@ -187,11 +192,9 @@ function isStringRawTag(node: TSESTree.TaggedTemplateExpression): boolean {
   const { tag } = node;
   return (
     tag.type === AST_NODE_TYPES.MemberExpression &&
-    !tag.computed &&
     tag.object.type === AST_NODE_TYPES.Identifier &&
     tag.object.name === 'String' &&
-    tag.property.type === AST_NODE_TYPES.Identifier &&
-    tag.property.name === 'raw'
+    propertyName(tag) === 'raw'
   );
 }
 

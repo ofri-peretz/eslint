@@ -71,7 +71,14 @@ function literalValue(node: TSESTree.Node): string | number | null {
   // A template literal with no expressions is a string spelled with backticks;
   // `const ALGO = \`md5\`` is the same constant as `const ALGO = 'md5'`.
   if (node.type === AST_NODE_TYPES.TemplateLiteral && node.expressions.length === 0) {
-    return node.quasis[0].value.cooked;
+    // The `!` is an argument about REACHABILITY, not a shrug. `cooked` is null
+    // only for an invalid escape, which only a TAGGED template may hold — and
+    // this is handed an expression node, so a tagged template arrives as
+    // `TaggedTemplateExpression` and fails the check above. An UNTAGGED
+    // template with a bad escape is a parse error. If a `TemplateLiteral`
+    // visitor is ever wired into this helper, the `!` becomes wrong and the
+    // read has to fall back to `raw`.
+    return node.quasis[0].value.cooked!;
   }
   return null;
 }

@@ -509,14 +509,22 @@ ruleTester.run('no-unsafe-where (coverage gaps)', noUnsafeWhere, {
 
 ruleTester.run('require-auth-mechanism (coverage gaps)', requireAuthMechanism, {
   valid: xmo([
-    // Computed member access — methodName is null.
-    `mongoose['connect'](uri);`,
+    // A method chosen at RUNTIME names no connect call.
+    `mongoose[open](uri);`,
     // Options argument is not an object literal — not inspected.
     `mongoose.connect(uri, getOptions());`,
     // String-literal 'authMechanism' key is recognized.
     `mongoose.connect(uri, { 'authMechanism': 'SCRAM-SHA-256' });`,
   ]),
   invalid: xmo([
+    // Was pinned as valid — "computed member access, methodName is null".
+    // `mongoose['connect'](uri)` opens the same connection with no
+    // authMechanism.
+    {
+      name: 'a subscripted connect with no authMechanism',
+      code: `mongoose['connect'](uri);`,
+      errors: [{ messageId: 'requireAuthMechanism' }],
+    },
     // Spread-only options — authMechanism cannot be proven present.
     {
       code: `mongoose.connect(uri, { ...opts });`,
@@ -535,8 +543,8 @@ ruleTester.run('require-lean-queries (coverage gaps)', requireLeanQueries, {
     // find() as an argument of a `.lean(...)` call — the chain walk starts at
     // a CallExpression whose callee is a `.lean` member expression.
     `helper.lean(User.find({}));`,
-    // Computed member access — methodName is null.
-    `User['find']({});`,
+    // A method chosen at RUNTIME names no read query.
+    `User[op]({});`,
   ]),
   invalid: [],
 });
@@ -585,8 +593,8 @@ ruleTester.run(
 
 ruleTester.run('require-tls-connection (coverage gaps)', requireTlsConnection, {
   valid: xmo([
-    // Computed member access — methodName is null.
-    `mongoose['connect'](uri);`,
+    // A method chosen at RUNTIME names no connect call.
+    `mongoose[open](uri);`,
     // Zero arguments — nothing to report on.
     `mongoose.connect();`,
     // A quoted key is the same option. This sat in `invalid` below, asserting
@@ -598,6 +606,23 @@ ruleTester.run('require-tls-connection (coverage gaps)', requireTlsConnection, {
     `mongoose.connect(uri, { "ssl": true });`,
   ]),
   invalid: xmo([
+    // Was pinned as valid — "computed member access, methodName is null".
+    // `mongoose['connect'](uri)` opens the same untls'd connection.
+    {
+      name: 'a subscripted connect with no TLS option',
+      code: `mongoose['connect'](uri);`,
+      errors: [
+        {
+          messageId: 'requireTls',
+          suggestions: [
+            {
+              messageId: 'suggestionAddTls',
+              output: `mongoose['connect'](uri, { tls: true });`,
+            },
+          ],
+        },
+      ],
+    },
     // Spread-only options — tls cannot be proven present.
     {
       code: `mongoose.connect(uri, { ...opts });`,

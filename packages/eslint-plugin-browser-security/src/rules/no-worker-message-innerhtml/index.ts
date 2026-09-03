@@ -20,6 +20,8 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  namesOneOf,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'workerInnerhtml';
@@ -59,7 +61,6 @@ export const noWorkerMessageInnerhtml = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://developer.mozilla.org/en-US/docs/Web/API/Worker/message_event',
       }),
-
     },
     schema: [
       {
@@ -89,7 +90,6 @@ export const noWorkerMessageInnerhtml = createRule<RuleOptions, MessageIds>({
 
     return {
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
-
         // Check for innerHTML/outerHTML assignment within handler
         // The resolver is the sole sink condition. A mutable in-handler
         // flag was cleared by any NESTED handler's exit, so sinks after
@@ -98,21 +98,25 @@ export const noWorkerMessageInnerhtml = createRule<RuleOptions, MessageIds>({
 
         if (
           node.left.type === AST_NODE_TYPES.MemberExpression &&
-          node.left.property.type === AST_NODE_TYPES.Identifier &&
-          DANGEROUS_PROPERTIES.has(node.left.property.name)
+          // `el['innerHTML'] = …` and `el['insertAdjacentHTML'](…)` write
+          // the same markup the dotted spellings do.
+          namesOneOf(propertyName(node.left), DANGEROUS_PROPERTIES)
         ) {
           if (payloadSource(node.right) === 'worker') {
             context.report({
               node,
               messageId: 'workerInnerhtml',
-              data: { method: node.left.property.name },
+              // The guard above resolved this name and found it in the set, so the
+              // `null` arm here is unreachable. It stays visible in the type rather
+              // than cast away: an unresolved name and an absent one are different
+              // answers, and only one of them is reachable from here.
+              data: { method: propertyName(node.left) },
             });
           }
         }
       },
 
       CallExpression(node: TSESTree.CallExpression) {
-
         // Check for dangerous method calls within handler
         // The resolver is the sole sink condition. A mutable in-handler
         // flag was cleared by any NESTED handler's exit, so sinks after
@@ -121,15 +125,20 @@ export const noWorkerMessageInnerhtml = createRule<RuleOptions, MessageIds>({
 
         if (
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          DANGEROUS_METHODS.has(node.callee.property.name)
+          // `el['innerHTML'] = …` and `el['insertAdjacentHTML'](…)` write
+          // the same markup the dotted spellings do.
+          namesOneOf(propertyName(node.callee), DANGEROUS_METHODS)
         ) {
           for (const arg of node.arguments) {
             if (payloadSource(arg) === 'worker') {
               context.report({
                 node,
                 messageId: 'workerInnerhtml',
-                data: { method: node.callee.property.name },
+                // The guard above resolved this name and found it in the set, so the
+                // `null` arm here is unreachable. It stays visible in the type rather
+                // than cast away: an unresolved name and an absent one are different
+                // answers, and only one of them is reachable from here.
+                data: { method: propertyName(node.callee) },
               });
               break;
             }

@@ -5,6 +5,79 @@ All notable changes to `@interlace/eslint-devkit` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 1.19.0
+
+### Minor Changes
+
+- **🐛 Fix** — `createPayloadResolver` recognises a handler attached by string subscript
+
+  `ws['onmessage'] = fn` and `window['addEventListener']('message', fn)` attach
+  exactly the handlers their dotted spellings attach. The resolver compared
+  `property.name`, so every rule built on it — the postMessage, WebSocket,
+  Worker and FileReader sink rules across `eslint-plugin-browser-security` —
+  lost the payload entirely and reported nothing.
+
+  A test had pinned this as "the attached property is not a plain name". It is a
+  plain name; it is the name a minifier writes. A property chosen at runtime,
+  `ws[prop] = fn`, has no statically known property name and is now the pinned
+  refusal.
+
+- **✨ Feature** — `namesOneOf` and `memberPropertyName` keep an unresolved name visible
+
+  `propertyName` returns `string | null` so that `o[k]` — a property the AST
+  cannot name — stays distinguishable from a property it can name and rejects.
+  Callers were erasing that with `SET.has(propertyName(node) as string)`, which
+  works only because `Set.prototype.has(null)` is false.
+
+  ```ts
+  namesOneOf(propertyName(callee), HTTP_METHODS); // Set or array, null-safe
+
+  const method = memberPropertyName(callee); // any node, not just a member
+  if (callee.type !== 'MemberExpression' || method === null) return;
+  method.toLowerCase(); // string
+  ```
+
+  `memberPropertyName` exists for the common case where the type test already
+  sits in a boolean chain the caller cannot split: resolving before the chain
+  gives the chain a binding to test and the body a narrowed `string`, without
+  promoting a logical operand to a statement.
+
+- **🐛 Fix** — module-member resolution reads a string subscript
+
+  `isModuleBinding` resolves whether an expression names an export of a known
+  module — the evidence gate behind rules across a dozen plugins. Its member arm
+  refused any computed access, so `child_process['exec']`, `new pg['Pool']()`,
+  `express['Router']()`, `mongoose['connect']()` and
+  `require('fs').promises['readFile']` all resolved to nothing and their rules
+  stood down.
+
+  `propertyName` still abstains on the two shapes that genuinely name no export:
+  a `#private` field and a key chosen at runtime.
+
+- **🐛 Fix** — `db['query'](…)` is the same injection sink as `db.query(…)`
+
+  `createSqlInjectionRule` builds the `no-unsafe-query` rule for all seven SQL
+  driver plugins, and it read the sink's name off `callee.property.name`. One
+  bracket — `conn['query']`, `sql['raw']`, `prisma['$queryRawUnsafe']`,
+  `knex['raw']`, `db['prepare']` — and the interpolated query passed unreported.
+
+  This was a _documented_ limitation: a test pinned it as valid ("known
+  limitation… a false negative") and fourteen rule docs told readers it was one.
+  The test now asserts the report and all fourteen docs are corrected. A method
+  chosen at runtime, `db[verb](…)`, genuinely names no sink and remains the
+  stated limitation.
+
+### Patch Changes
+
+- **🧪 Tests** — pin the shared deciders that resolve `o['k']`
+
+  `isModuleBinding`'s member arm and `createSqlInjectionRule`'s callee
+  resolution both accept a string subscript, and neither was pinned: reverting
+  each to `property.name` left all 1841 devkit tests and all seven SQL plugins
+  green. The sql-injection factory's own valid table pointed at an invalid case
+  that had never been written. Both are now cases that fail on the unfixed
+  resolver.
+
 ## 1.18.2
 
 ### Patch Changes

@@ -9,7 +9,7 @@
  * Prefer ES6 classes over createClass
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'preferEs6Class';
@@ -43,8 +43,7 @@ export const preferEs6Class = createRule<[], MessageIds>({
           node.callee.type === 'MemberExpression' &&
           node.callee.object.type === 'Identifier' &&
           node.callee.object.name === 'React' &&
-          node.callee.property.type === 'Identifier' &&
-          node.callee.property.name === 'createClass'
+          propertyName(node.callee) === 'createClass'
         ) {
           context.report({
             node: node.callee.property,

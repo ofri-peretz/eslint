@@ -19,6 +19,7 @@ import {
   MessageIcons,
   createRule,
   isTestFilePath,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'permissiveCors';
@@ -130,8 +131,7 @@ function isStandaloneCorsCall(node: TSESTree.CallExpression): boolean {
       parent &&
       parent.type === 'CallExpression' &&
       parent.callee.type === 'MemberExpression' &&
-      parent.callee.property.type === 'Identifier' &&
-      parent.callee.property.name === 'use'
+      propertyName(parent.callee) === 'use'
     ) {
       return false;
     }
@@ -149,8 +149,7 @@ function isAppUseCors(node: TSESTree.CallExpression): boolean {
 
   if (
     callee.type === 'MemberExpression' &&
-    callee.property.type === 'Identifier' &&
-    callee.property.name === 'use'
+    propertyName(callee) === 'use'
   ) {
     // Check if first argument is cors() call
     const firstArg = node.arguments[0];

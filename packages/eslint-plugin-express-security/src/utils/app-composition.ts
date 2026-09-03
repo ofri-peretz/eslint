@@ -16,7 +16,7 @@
  */
 
 import type { TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, propertyName } from '@interlace/eslint-devkit';
 import { walk } from './index';
 
 /**
@@ -120,10 +120,11 @@ function isCredentialMember(node: TSESTree.Node): boolean {
   // `req[config.session.name]` is a computed lookup on a *config* object, not
   // a session read. auth0/express-openid-connect writes exactly that, and a
   // property-name match that ignored `computed` read it as cookie evidence.
-  if (node.computed || node.property.type !== AST_NODE_TYPES.Identifier) {
-    return false;
-  }
-  if (!CREDENTIAL_MEMBERS.has(node.property.name)) return false;
+  // `propertyName` keeps that refusal — it returns null for a key computed
+  // from an expression — while also resolving `req['session']`, which names
+  // the same member `req.session` names.
+  const member = propertyName(node);
+  if (member === null || !CREDENTIAL_MEMBERS.has(member)) return false;
   return (
     node.object.type === AST_NODE_TYPES.Identifier &&
     CREDENTIAL_RECEIVER.test(node.object.name)
@@ -181,8 +182,9 @@ export function servesBrowserDocuments(ast: TSESTree.Program): boolean {
     if (node.type !== AST_NODE_TYPES.CallExpression) return;
     const callee = node.callee;
     if (callee.type !== AST_NODE_TYPES.MemberExpression) return;
-    if (callee.property.type !== AST_NODE_TYPES.Identifier) return;
-    const name = callee.property.name;
+    // `app['set']('view engine', 'pug')` configures the same renderer.
+    const name = propertyName(callee);
+    if (name === null) return;
     if (DOCUMENT_RESPONDERS.has(name) || name === 'engine') {
       found = true;
       return;

@@ -20,7 +20,7 @@
  * - Frame-busting protections
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   createSafetyChecker,
@@ -99,9 +99,7 @@ function readsFrameLocation(node: TSESTree.Node, depth = 0): boolean {
   if (depth > 8) return false;
   if (
     node.type === 'MemberExpression' &&
-    !node.computed &&
-    node.property.type === 'Identifier' &&
-    node.property.name === 'location' &&
+    propertyName(node) === 'location' &&
     isFrameRef(node.object)
   ) {
     return true;
@@ -749,8 +747,7 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
           !(node.object.type === 'Identifier' && node.object.name === 'self')
         ) {
           if (
-            node.property.type === 'Identifier' &&
-            (node.property.name === 'location' || node.property.name === 'top')
+            (propertyName(node) === 'location' || propertyName(node) === 'top')
           ) {
             // Check if this is being assigned or compared
             let current: TSESTree.Node | undefined = node;

@@ -9,7 +9,7 @@
  * Require default props
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'requireDefaultProps';
@@ -157,8 +157,7 @@ export const requireDefaultProps = createRule<[Options], MessageIds>({
         return (
           node.superClass.object.type === 'Identifier' &&
           node.superClass.object.name === 'React' &&
-          node.superClass.property.type === 'Identifier' &&
-          (node.superClass.property.name === 'Component' || node.superClass.property.name === 'PureComponent')
+          (propertyName(node.superClass) === 'Component' || propertyName(node.superClass) === 'PureComponent')
         );
       }
 
@@ -170,8 +169,7 @@ export const requireDefaultProps = createRule<[Options], MessageIds>({
       // Check if prop type ends with .isRequired
       if (
         propType.value.type === 'MemberExpression' &&
-        propType.value.property.type === 'Identifier' &&
-        propType.value.property.name === 'isRequired'
+        propertyName(propType.value) === 'isRequired'
       ) {
         return true;
       }

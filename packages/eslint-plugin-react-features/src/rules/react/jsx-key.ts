@@ -9,8 +9,17 @@
  * Detect missing or incorrect React keys (requires deep reconciliation understanding)
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, namesOneOf, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+
+/*
+ * `items['map'](...)` iterates exactly as `items.map(...)` does, and a key is
+ * as missing in one as the other. Every gate below asked
+ * `property.type === 'Identifier'`, so a string subscript slipped past all four
+ * — 36 of this rule's own true-positive cases went silent when rewritten that
+ * way. `propertyName` resolves the dotted and subscript forms and still
+ * returns null for a dynamic `items[m]`, which names no iterator.
+ */
 
 /**
  * @vocabulary `Array.from`, `map` and `React.Children` are ECMAScript and
@@ -137,8 +146,7 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
       // Pattern 1: array.map(), array.forEach(), array.flatMap()
       if (
         callee.type === 'MemberExpression' &&
-        callee.property.type === 'Identifier' &&
-        ITERATOR_METHODS.has(callee.property.name)
+        namesOneOf(propertyName(callee), ITERATOR_METHODS)
       ) {
         return true;
       }
@@ -148,8 +156,7 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
         callee.type === 'MemberExpression' &&
         callee.object.type === 'Identifier' &&
         callee.object.name === 'Array' &&
-        callee.property.type === 'Identifier' &&
-        callee.property.name === 'from' &&
+        propertyName(callee) === 'from' &&
         node.arguments.length >= 2
       ) {
         const mapFn = node.arguments[1];
@@ -189,8 +196,7 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
             grandParent.callee.type === 'MemberExpression' &&
             grandParent.callee.object.type === 'Identifier' &&
             grandParent.callee.object.name === 'Array' &&
-            grandParent.callee.property.type === 'Identifier' &&
-            grandParent.callee.property.name === 'from' &&
+            propertyName(grandParent.callee) === 'from' &&
             grandParent.arguments[1] === parent
           ) {
             return true;
@@ -221,8 +227,7 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
             const callee = grandParent.callee;
             if (
               callee.type === 'MemberExpression' &&
-              callee.property.type === 'Identifier' &&
-              callee.property.name === 'map'
+              propertyName(callee) === 'map'
             ) {
               const obj = callee.object;
               // Children.map()
@@ -234,8 +239,7 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
                 obj.type === 'MemberExpression' &&
                 obj.object.type === 'Identifier' &&
                 obj.object.name === 'React' &&
-                obj.property.type === 'Identifier' &&
-                obj.property.name === 'Children'
+                propertyName(obj) === 'Children'
               ) {
                 return true;
               }

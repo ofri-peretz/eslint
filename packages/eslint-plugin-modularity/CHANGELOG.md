@@ -5,6 +5,23 @@ All notable changes to `eslint-plugin-modularity` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.5.2
+
+### Patch Changes
+
+- **🐛 Fix** — barrel and boundary gates read a subscripted member
+
+  The gate compared `property.name` before asking what the property was.
+
+- **🐛 Fix** — `app['get']('/user', h)` is the same route as `app.get`
+
+  The route gate and the status-code gate compared `property.name` first, so a
+  subscripted registration went unchecked. A test had pinned it as valid on the
+  grounds that "property is not an Identifier"; Express registers it
+  identically.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`
+
 ## 2.5.1
 
 ### Patch Changes

@@ -148,7 +148,7 @@ function statementText(node: TSESTree.Node): string | null {
     return typeof node.value === 'string' ? node.value : null;
   }
   if (node.type === AST_NODE_TYPES.TemplateLiteral) {
-    return node.quasis.map((quasi) => quasi.value.cooked).join(' 1 ');
+    return node.quasis.map((quasi) => quasi.value.cooked!).join(' 1 ');
   }
   if (node.type === AST_NODE_TYPES.ObjectExpression) {
     const text = node.properties.find(

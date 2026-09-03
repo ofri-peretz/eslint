@@ -32,9 +32,11 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
+  AST_NODE_TYPES,
   createRule,
   formatLLMMessage,
   MessageIcons,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { isAttackerSteerableUrl } from '../../utils/url-taint';
 
@@ -186,25 +188,26 @@ const DEFAULT_URL_NAME_WORDS = [
  * `hostname`, `String(raw).toLowerCase()` answers whatever `raw` answers.
  */
 function receiverName(node: TSESTree.Node): string | null {
-  if (node.type === 'Identifier') {
+  if (node.type === AST_NODE_TYPES.Identifier) {
     return node.name;
   }
-  if (node.type === 'MemberExpression') {
-    return !node.computed && node.property.type === 'Identifier'
-      ? node.property.name
-      : null;
+  if (node.type === AST_NODE_TYPES.MemberExpression) {
+    // `url['hostname']` names the same field `url.hostname` does.
+    return propertyName(node);
   }
-  if (node.type !== 'CallExpression') {
+  if (node.type !== AST_NODE_TYPES.CallExpression) {
     return null;
   }
   const callee = node.callee;
-  if (
-    callee.type === 'MemberExpression' &&
-    !callee.computed &&
-    callee.property.type === 'Identifier' &&
-    PASSTHROUGH_METHODS.has(callee.property.name)
-  ) {
-    return receiverName(callee.object);
+  // `raw['toLowerCase']()` answers whatever `raw.toLowerCase()` answers. The
+  // null check is explicit rather than an `as string` cast: `Set.has(null)`
+  // happens to be false, but leaning on that spells "abstained" and "absent
+  // from the set" the same way.
+  if (callee.type === AST_NODE_TYPES.MemberExpression) {
+    const passthrough = propertyName(callee);
+    if (passthrough !== null && PASSTHROUGH_METHODS.has(passthrough)) {
+      return receiverName(callee.object);
+    }
   }
   if (
     callee.type === 'Identifier' &&
@@ -488,14 +491,10 @@ export const noIncompleteUrlSanitization = createRule<RuleOptions, MessageIds>({
     return {
       CallExpression(node: TSESTree.CallExpression) {
         const callee = node.callee;
-        if (
-          callee.type !== 'MemberExpression' ||
-          callee.computed ||
-          callee.property.type !== 'Identifier'
-        ) {
-          return;
-        }
-        const method = callee.property.name;
+        if (callee.type !== 'MemberExpression') return;
+        // `url['includes']('trusted.com')` is the same substring check.
+        const method = propertyName(callee);
+        if (method === null) return;
 
         if (node.arguments.length > 0) {
           checkSubstringHostCheck(node, method, callee.object);

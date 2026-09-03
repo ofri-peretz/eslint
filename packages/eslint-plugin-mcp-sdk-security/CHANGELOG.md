@@ -5,6 +5,24 @@ All notable changes to `eslint-plugin-mcp-sdk-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 0.4.2
+
+### Patch Changes
+
+- **🐛 Fix** — `server['registerTool'](…)` registers the same tool
+
+  `require-tool-input-schema` matched the registration on `property.name`, so a
+  subscripted registerTool skipped the input-schema requirement.
+
+- **🐛 Fix** — `server['registerTool']` registers the same tool as `.registerTool`
+
+  Gates across this plugin compared `property.name` before asking what the
+  property was, so `o['k']` — the notation minifiers and generated clients
+  emit — did not reach them. They now resolve through the devkit's
+  `propertyName` / `objectKeyName`.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`
+
 ## 0.4.1
 
 ### Patch Changes
