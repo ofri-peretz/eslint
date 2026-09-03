@@ -135,7 +135,11 @@ export const requireHttpsOnly = createRule<RuleOptions, MessageIds>({
           // A TemplateLiteral always has at least one quasi — an empty template
           // parses to a single empty element — so index 0 is never undefined
           // and a fallback here would be a branch no fixture can take.
-          return current.quasis[0].value.cooked;
+          // `cooked` is null only for an invalid escape, which only a TAGGED
+          // template may hold — and this walks expression nodes, so a tagged
+          // template arrives as `TaggedTemplateExpression`. An UNTAGGED
+          // template with a bad escape is a parse error.
+          return current.quasis[0].value.cooked!;
         }
         if (current.type === AST_NODE_TYPES.BinaryExpression && current.operator === '+') {
           current = current.left;

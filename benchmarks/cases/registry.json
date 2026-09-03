@@ -4146,11 +4146,67 @@
           "expect": "silent",
           "options": [
             {
-              "wireNames": [
-                "chunk"
-              ]
+              "wireNames": ["chunk"]
             }
           ],
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "false-positive"
+    },
+    {
+      "id": "ILB-0140",
+      "added": "2026-09-02",
+      "title": "An error code containing an abbreviation reported as a credential",
+      "rationale": "auth0/express-openid-connect lib/errors.js:25 declares MTLS_INCOMPATIBLE_CLIENT_AUTH: 'mtls_incompatible_client_auth'. isNaturalWordString requires every 3+ character token to carry a vowel, and 'mtls' does not — nor do jwt, xhr, sql, ssh. One abbreviation among four dictionary words made the whole identifier read as opaque, and an error code was reported at CWE-798 CVSS 9.8 CRITICAL tagged SOC2 PCI-DSS HIPAA GDPR, inside an authentication library. Found 2026-09-01, the first hour the corpus scan could see again after #811.",
+      "cwe": "CWE-798",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "CWE-798",
+          "url": "https://cwe.mitre.org/data/definitions/798.html",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "const codes = Object.freeze({ MTLS_INCOMPATIBLE_CLIENT_AUTH: 'mtls_incompatible_client_auth' });\n",
+      "coverage": [
+        {
+          "rule": "secure-coding/no-hardcoded-credentials",
+          "expect": "silent",
+          "evidence": "npx tsx scripts/case-registry.mts --check"
+        }
+      ],
+      "kind": "false-positive"
+    },
+    {
+      "id": "ILB-0141",
+      "added": "2026-09-02",
+      "title": "A build-tool path template reported as a credential",
+      "rationale": "okta/okta-auth-js jest.cjs.js:15 declares const OktaAuth = '<rootDir>/build/cjs/exports/default.js'. isUrlOrPath accepts a scheme or a leading slash; Jest writes <rootDir>/ and webpack writes [name]/, and the templated root is not a segment it can parse — so the value never reached the path guard and a module map entry was reported at CWE-798 CVSS 9.8 CRITICAL. Only the ROOT token is stripped and the remainder must still pass the segment test, so an opaque segment after a template root is still a credential.",
+      "cwe": "CWE-798",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [
+        {
+          "id": "CWE-798",
+          "url": "https://cwe.mitre.org/data/definitions/798.html",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "const OktaAuth = '<rootDir>/build/cjs/exports/default.js';\n",
+      "coverage": [
+        {
+          "rule": "secure-coding/no-hardcoded-credentials",
+          "expect": "silent",
           "evidence": "npx tsx scripts/case-registry.mts --check"
         }
       ],

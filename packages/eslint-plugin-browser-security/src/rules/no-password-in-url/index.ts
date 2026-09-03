@@ -74,7 +74,11 @@ function foldUrlText(node: TSESTree.Node, depth = 0): string | null {
     case 'TemplateLiteral': {
       let text = '';
       node.quasis.forEach((quasi, index) => {
-        text += quasi.value.cooked;
+        // `cooked` is null for an invalid escape as of @typescript-eslint
+        // 8.68.0; 8.54.0 handed back the raw text. `check` below is wired to a
+        // `TemplateLiteral` visitor, so a TAGGED template reaches this fold and
+        // the credential must stay readable.
+        text += quasi.value.cooked ?? quasi.value.raw;
         if (index < node.expressions.length) {
           text += foldUrlText(node.expressions[index], depth + 1) ?? OPAQUE;
         }

@@ -99,6 +99,10 @@ describe('fileUsesPostgres', () => {
       "const url = 'postgresql://user:pw@host/db';",
       'const url = `postgres://user:pw@host/db`;',
       'const url = `postgresql://${user}@host/db`;',
+      // A TAGGED template whose escape has no cooked value: null as of
+      // @typescript-eslint 8.68.0, the raw text under 8.54.0. Reading only
+      // `cooked` loses the DSN and the whole module gate closes.
+      'const url = String.raw`postgres://user:pw@host/db \\x`;',
     ])('%s → true', (code) => {
       expect(uses(code)).toBe(true);
     });
