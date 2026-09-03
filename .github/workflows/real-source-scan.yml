@@ -92,6 +92,10 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: write
+      # commit-via-pr opens the PR after the push; without this the create
+      # call fails with "Resource not accessible by integration". Locked by
+      # scripts/__tests__/commit-via-pr-permissions.lock.test.ts.
+      pull-requests: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup

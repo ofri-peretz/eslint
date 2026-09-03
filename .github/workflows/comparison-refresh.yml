@@ -31,6 +31,11 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: write # commit the refreshed artifacts
+      # commit-via-pr pushes a branch and then opens the PR. Without this the
+      # push landed and `gh pr create` failed with "Resource not accessible by
+      # integration" (run 33718920771) — eleven refreshed artifacts on a branch
+      # nobody could see. Locked by commit-via-pr-permissions.lock.test.ts.
+      pull-requests: write
       issues: write # open the failure issue
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
