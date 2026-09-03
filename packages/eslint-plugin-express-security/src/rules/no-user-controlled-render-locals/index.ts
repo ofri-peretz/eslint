@@ -42,6 +42,8 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  namesOneOf,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -196,12 +198,13 @@ export const noUserControlledRenderLocals = createRule<RuleOptions, MessageIds>(
        */
       function getWholeSource(node: TSESTree.Node): string | null {
         if (node.type !== AST_NODE_TYPES.MemberExpression) return null;
-        const { object, property } = node;
+        const { object } = node;
         if (object.type !== AST_NODE_TYPES.Identifier) return null;
-        if (property.type !== AST_NODE_TYPES.Identifier) return null;
-        // req[body] reads whatever `body` holds — not the request body.
-        if (node.computed) return null;
-        if (!USER_SOURCE_PROPS.has(property.name)) return null;
+        // `req[body]` reads whatever `body` holds — not the request body —
+        // and `propertyName` returns null for exactly that, while resolving
+        // `req['body']`, which IS the request body.
+        const source = propertyName(node);
+        if (source === null || !USER_SOURCE_PROPS.has(source)) return null;
         // `bodyNeedsDepth: false`: this asks about the WHOLE `req.body`, which
         // is depth 1 and is exactly the object being splatted into template
         // locals. The depth rule exists for ambiguous reads of `.body`; here
@@ -213,7 +216,7 @@ export const noUserControlledRenderLocals = createRule<RuleOptions, MessageIds>(
         ) {
           return null;
         }
-        return `req.${property.name}`;
+        return `req.${source}`;
       }
 
       /** True when the call's callee name is in the allowSanitizers option. */
@@ -222,11 +225,10 @@ export const noUserControlledRenderLocals = createRule<RuleOptions, MessageIds>(
         if (callee.type === AST_NODE_TYPES.Identifier) {
           return sanitizers.has(callee.name);
         }
-        if (
-          callee.type === AST_NODE_TYPES.MemberExpression &&
-          callee.property.type === AST_NODE_TYPES.Identifier
-        ) {
-          return sanitizers.has(callee.property.name);
+        if (callee.type === AST_NODE_TYPES.MemberExpression) {
+          // A suppression path: `esc['clean'](v)` sanitises as `esc.clean(v)`
+          // does, and missing it reports an already-clean value.
+          return namesOneOf(propertyName(callee), sanitizers);
         }
         return false;
       }
@@ -291,8 +293,8 @@ export const noUserControlledRenderLocals = createRule<RuleOptions, MessageIds>(
       function isRenderCall(node: TSESTree.CallExpression): boolean {
         const callee = node.callee;
         if (callee.type !== AST_NODE_TYPES.MemberExpression) return false;
-        if (callee.property.type !== AST_NODE_TYPES.Identifier) return false;
-        if (callee.property.name !== 'render') return false;
+        // `res['render'](view, locals)` renders the same template.
+        if (propertyName(callee) !== 'render') return false;
         const obj = callee.object;
         if (obj.type !== AST_NODE_TYPES.Identifier) return false;
         return isParameter(obj);

@@ -185,10 +185,16 @@ ruleTester.run('edge shapes', noPermissiveCors, {
     { code: `res.setHeader('Access-Control-Allow-Origin', config.origin);` },
     // A computed non-string property is not `origin`.
     { code: `res.setHeader('Access-Control-Allow-Origin', req.headers[k]);` },
-    // `headers` reached computed is not proof of a headers bag.
-    { code: `res.setHeader('Access-Control-Allow-Origin', req['headers'].origin);` },
   ],
   invalid: [
+    // Was pinned as valid under "`headers` reached computed is not proof of a
+    // headers bag". It is exactly as much proof as `req.headers` is, and this
+    // reflects the caller's own Origin — the reflection the rule exists for.
+    {
+      name: 'was pinned as valid under "headers reached computed is not proof of a',
+      code: `res.setHeader('Access-Control-Allow-Origin', req['headers'].origin);`,
+      errors: 1,
+    },
     // A quoted property key, and a nested constant chain.
     { code: `const A = '*'; const B = A; res.setHeader('Access-Control-Allow-Origin', B);`, errors: 1 },
     // The header name itself reached through a constant.

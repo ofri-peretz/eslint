@@ -26,6 +26,13 @@ describe('prefer-code-point', () => {
   describe('charCodeAt detection', () => {
     ruleTester.run('detect charCodeAt usage', preferCodePoint, {
       valid: [
+        // A method chosen at RUNTIME names nothing to recognise — this is the
+        // one spelling `shouldIgnoreCall` exists to let through, and the only
+        // one `propertyName` cannot resolve.
+        {
+          name: 'a runtime-keyed call is ignored',
+          code: 'const code = str[method](0);',
+        },
         // codePointAt usage (preferred)
         {
           name: 'codePointAt',

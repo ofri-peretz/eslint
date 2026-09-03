@@ -29,6 +29,7 @@
 // "Cannot find module '@typescript-eslint/utils'" on a clean install. Types are
 // erased at compile time and stay safe to import from upstream.
 import { AST_NODE_TYPES } from '../ast-node-types';
+import { propertyName } from '../ast/spellings';
 import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
 import { formatLLMMessage, MessageIcons } from '../messaging';
 import { createModuleEvidence } from './module-evidence';
@@ -359,17 +360,14 @@ export function createSqlInjectionRule(
         },
 
         CallExpression(node: TSESTree.CallExpression) {
-          // The name this call is written with: `db.query(…)` -> `query`,
-          // `q(…)` -> `q`. Anything else (computed access, an immediately
-          // invoked expression) is out of reach, as it always was.
-          const isMember =
-            node.callee.type === AST_NODE_TYPES.MemberExpression &&
-            node.callee.property.type === AST_NODE_TYPES.Identifier;
+          // The name this call is written with: `db.query(…)` and
+          // `db['query'](…)` both -> `query`, `q(…)` -> `q`. A method chosen at
+          // RUNTIME (`db[verb](…)`) names nothing and stays out of reach, as
+          // does an immediately invoked expression.
+          const isMember = node.callee.type === AST_NODE_TYPES.MemberExpression;
           const calleeName = isMember
-            ? (
-                (node.callee as TSESTree.MemberExpression)
-                  .property as TSESTree.Identifier
-              ).name
+            ? (propertyName(node.callee as TSESTree.MemberExpression) ??
+              undefined)
             : node.callee.type === AST_NODE_TYPES.Identifier
               ? node.callee.name
               : undefined;

@@ -110,6 +110,16 @@ describe('no-improper-sanitization', () => {
           `res.send('<ul>' + items.length + '</ul>');`,
         ],
         invalid: [
+          {
+            // FN: `input['replace']` sanitizes exactly as `input.replace` does,
+            // and just as improperly. Three gates asked
+            // `property.type === 'Identifier'`, so the subscript form slipped
+            // past all of them — which is the form a bundler emits.
+            // @found computed-key blind-spot probe
+            name: 'FN: an improper replace reached by a string subscript',
+            code: `res.send(input["replace"]('<', '&lt;'));`,
+            errors: [{ messageId: 'incompleteHtmlEscaping' }],
+          },
           // `obj[length]` reads a VARIABLE named length, not the array property,
           // so it carries whatever that variable holds. The `.length` exemption
           // is non-computed only and must never become a way to smuggle an

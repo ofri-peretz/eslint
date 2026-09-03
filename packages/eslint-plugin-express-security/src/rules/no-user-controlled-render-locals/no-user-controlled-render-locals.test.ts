@@ -404,7 +404,6 @@ ruleTester.run(
       { code: `res.render('v', req[body]);` },
       // isRenderCall negatives
       { code: `render('v', req.body);` }, // bare call — callee not a member expression
-      { code: `res['render']('v', req.body);` }, // computed property
       { code: `a.res.render('v', req.body);` }, // object is itself a member expression
       { code: `foo.render('v', req.body);` }, // unknown response name
       // render with no arguments at all
@@ -412,7 +411,6 @@ ruleTester.run(
       // view only — no locals argument
       { code: `res.render('home');` },
       // getWholeSource negatives as the locals argument
-      { code: `res.render('v', req['body']);` }, // computed source property
       { code: `res.render('v', req.session);` }, // non user-source property
       { code: `res.render('v', foo.body);` }, // non-request root
       { code: `res.render('v', a.req.body);` }, // root object not an identifier
@@ -464,6 +462,22 @@ ruleTester.run(
       },
     ]),
     invalid: xp([
+      // Both were pinned as valid, described only as "computed property" and
+      // "computed source property". `res['render']` renders the same template
+      // and `req['body']` is the same request body — the pair beside them,
+      // `res[render]` and `req[body]`, are the genuine refusals and stay valid.
+      {
+        code: `res['render']('v', req.body);`,
+        errors: [
+          { messageId: 'unsafeRenderLocals', data: { source: 'req.body' } },
+        ],
+      },
+      {
+        code: `res.render('v', req['body']);`,
+        errors: [
+          { messageId: 'unsafeRenderLocals', data: { source: 'req.body' } },
+        ],
+      },
       // sanitizer-callee scan: callee is itself a CallExpression → not a sanitizer
       {
         code: `res.render('v', factory()(req.body));`,

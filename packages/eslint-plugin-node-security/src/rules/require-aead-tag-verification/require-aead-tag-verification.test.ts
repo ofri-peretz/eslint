@@ -108,7 +108,7 @@ describe('require-aead-tag-verification', () => {
       // Not a decipher factory at all.
       { code: `const d = crypto.createHash('sha256');` },
       { code: `const d = makeThing('aes-256-gcm');` },
-      { code: `const d = crypto['createDecipheriv']('aes-256-gcm', key, iv);` },
+      { code: `const d = crypto[make]('aes-256-gcm', key, iv);` },
       // Not a plain `const x = call()` binding.
       { code: `const { d } = crypto.createDecipheriv('aes-256-gcm', key, iv);` },
       { code: `let d;` },
@@ -121,6 +121,14 @@ describe('require-aead-tag-verification', () => {
       },
     ],
     invalid: [
+      // Was pinned as valid alongside `crypto.createHash` — things that are
+      // "not a decipher factory at all". `crypto['createDecipheriv']` IS the
+      // decipher factory, and this one never calls setAuthTag either.
+      {
+        name: 'a subscripted createDecipheriv with no setAuthTag',
+        code: `const d = crypto['createDecipheriv']('aes-256-gcm', key, iv);`,
+        errors: 1,
+      },
       // LOCK: benchmarks/corpus/CWE-327/vulnerable/gcm-decrypt-no-authtag.js
       // setAuthTag() is never called, so the tag is never checked at all.
       {

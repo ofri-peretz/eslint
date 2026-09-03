@@ -49,6 +49,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  propertyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'failOpenReturn' | 'failOpenSwallow';
@@ -99,9 +100,9 @@ const FUNCTION_TYPES = new Set<string>([
 
 /** The statically-known property name of a member expression, or null. */
 function memberName(node: TSESTree.MemberExpression): string | null {
-  return !node.computed && node.property.type === AST_NODE_TYPES.Identifier
-    ? node.property.name
-    : null;
+  // `okta['verifyAccessToken'](t)` names the same verifier, so a `catch` that
+  // returns 'granted' around it fails open just the same.
+  return propertyName(node);
 }
 
 /** The statically-known callee name of a call — `f()` or `o.f()` — or null. */

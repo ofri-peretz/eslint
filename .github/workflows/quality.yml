@@ -111,7 +111,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
         with:
-          turbo-cache: "false"
+          turbo-cache: 'false'
       # Three checks that existed and ran only when somebody typed them. Each is
       # deterministic and repo-only, so per docs/DOCS_QUALITY.md it belongs on the
       # PR gate — the cheapest place to fix what it catches.
@@ -244,6 +244,19 @@ jobs:
       # A static read of the test sources, so no build: it belongs here rather
       # than in the corpus job. Shrink-only baseline, 342 rules when added.
       - run: npm run check:rule-cases
+
+      # A rule that reports `o.k` and stays silent on `o["k"]` is not covering
+      # a narrower case — it is blind to the SAME program written the way
+      # bundlers and minifiers write it. This rewrites every firing TP case the
+      # ledger holds into the subscripted spelling and re-runs the rule: any
+      # rule that goes quiet fails here, with the case that proves it.
+      #
+      # The count was 150 rules before 2026-09-02 and is 0 now. Nothing else
+      # holds that line — a rule can regress with every one of its own tests
+      # green, because a test asserting the dotted form still passes. ~5s over
+      # 2,019 cases, and it regenerates the ledger it reads, so it does not
+      # depend on the step above having run.
+      - run: npm run check:computed-keys
 
       # A rule that decides from an identifier NAME must let the consumer
       # replace the vocabulary. The space of names a project might use is

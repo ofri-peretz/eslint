@@ -58,6 +58,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import {
@@ -108,9 +109,10 @@ function isNavigationSink(node: TSESTree.CallExpression): boolean {
   const callee = node.callee;
   if (
     callee.type === 'MemberExpression' &&
-    !callee.computed &&
-    callee.property.type === 'Identifier' &&
-    callee.property.name === 'redirect'
+    // `res['redirect'](url)` redirects exactly where `res.redirect(url)` does.
+    // The sink test required an Identifier property, so an open redirect
+    // written with a subscript went unreported.
+    propertyName(callee) === 'redirect'
   ) {
     return true;
   }
@@ -165,13 +167,9 @@ function isSelfReload(
   sourceCode: TSESLint.SourceCode,
 ): boolean {
   if (!target || target.type !== 'MemberExpression') return false;
-  const property = target.property;
-  const readsHref =
-    (!target.computed &&
-      property.type === 'Identifier' &&
-      property.name === 'href') ||
-    (property.type === 'Literal' && property.value === 'href');
-  if (!readsHref) return false;
+  // `propertyName` resolves the dotted form and a string subscript alike, so
+  // the two-arm test it replaces was the same question asked twice.
+  if (propertyName(target) !== 'href') return false;
 
   // `sinkLocation` is supplied by the caller, which already knows the shape it
   // matched — deriving it here would need an arm for "neither", and that arm is

@@ -5,6 +5,17 @@ All notable changes to `eslint-plugin-modernization` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.1.2
+
+### Patch Changes
+
+- **🐛 Fix** — modernization gates read a subscripted member
+
+  Gates compared `property.name` before asking what the property was, so
+  `o['k']` — the notation minifiers emit — did not reach them.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.0`
+
 ## 3.1.1
 
 ### Patch Changes

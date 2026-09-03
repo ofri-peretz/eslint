@@ -12,13 +12,18 @@
  * @see https://cwe.mitre.org/data/definitions/327.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES, isTestFilePath } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  createRule,
+  AST_NODE_TYPES,
+  isTestFilePath,
+  namesOneOf,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { resolveConstantString } from '../../utils/const-value';
 
-type MessageIds =
-  | 'weakCipherAlgorithm'
-  | 'useAes256Gcm'
-  | 'useChaCha20';
+type MessageIds = 'weakCipherAlgorithm' | 'useAes256Gcm' | 'useChaCha20';
 
 export interface Options {
   /** Additional weak ciphers to detect. Default: [] */
@@ -87,7 +92,7 @@ const WEAK_CIPHER_PATTERNS: WeakCipherPattern[] = [
  */
 function findWeakCipher(
   value: string,
-  additionalPatterns: string[]
+  additionalPatterns: string[],
 ): WeakCipherPattern | null {
   // Check standard patterns
   for (const pattern of WEAK_CIPHER_PATTERNS) {
@@ -128,10 +133,12 @@ export const noWeakCipherAlgorithm = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Weak cipher algorithm',
         cwe: 'CWE-327',
-        description: 'Use of weak cipher algorithm: {{algorithm}}. {{algorithm}} has known vulnerabilities and should not be used.',
+        description:
+          'Use of weak cipher algorithm: {{algorithm}}. {{algorithm}} has known vulnerabilities and should not be used.',
         severity: 'CRITICAL',
         fix: 'Replace with {{replacement}}: crypto.createCipheriv("{{replacement}}", key, iv)',
-        documentationLink: 'https://owasp.org/www-community/vulnerabilities/Weak_Cryptography',
+        documentationLink:
+          'https://owasp.org/www-community/vulnerabilities/Weak_Cryptography',
       }),
       useAes256Gcm: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -139,7 +146,8 @@ export const noWeakCipherAlgorithm = createRule<RuleOptions, MessageIds>({
         description: 'Replace with AES-256-GCM for authenticated encryption',
         severity: 'LOW',
         fix: 'crypto.createCipheriv("aes-256-gcm", key, iv)',
-        documentationLink: 'https://nodejs.org/api/crypto.html#cryptocreatecipherivalgorithm-key-iv-options',
+        documentationLink:
+          'https://nodejs.org/api/crypto.html#cryptocreatecipherivalgorithm-key-iv-options',
       }),
       useChaCha20: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -147,7 +155,8 @@ export const noWeakCipherAlgorithm = createRule<RuleOptions, MessageIds>({
         description: 'Replace with ChaCha20-Poly1305 for modern encryption',
         severity: 'LOW',
         fix: 'crypto.createCipheriv("chacha20-poly1305", key, iv)',
-        documentationLink: 'https://nodejs.org/api/crypto.html#cryptocreatecipherivalgorithm-key-iv-options',
+        documentationLink:
+          'https://nodejs.org/api/crypto.html#cryptocreatecipherivalgorithm-key-iv-options',
       }),
     },
     schema: [
@@ -178,12 +187,10 @@ export const noWeakCipherAlgorithm = createRule<RuleOptions, MessageIds>({
   ],
   create(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}]
+    [options = {}],
   ) {
-    const {
-      additionalWeakCiphers = [],
-      allowInTests = false,
-    } = options as Options;
+    const { additionalWeakCiphers = [], allowInTests = false } =
+      options as Options;
 
     const filename = context.filename;
     const isTestFile = allowInTests && isTestFilePath(filename);
@@ -194,13 +201,17 @@ export const noWeakCipherAlgorithm = createRule<RuleOptions, MessageIds>({
     function checkCallExpression(node: TSESTree.CallExpression) {
       if (isTestFile) return;
 
-      const cipherMethods = new Set(['createCipher', 'createCipheriv', 'createDecipher', 'createDecipheriv']);
+      const cipherMethods = new Set([
+        'createCipher',
+        'createCipheriv',
+        'createDecipher',
+        'createDecipheriv',
+      ]);
 
       // Check for crypto.createCipher*() pattern
       if (
         node.callee.type === AST_NODE_TYPES.MemberExpression &&
-        node.callee.property.type === AST_NODE_TYPES.Identifier &&
-        cipherMethods.has(node.callee.property.name)
+        namesOneOf(propertyName(node.callee), cipherMethods)
       ) {
         checkCipherArgument(node);
       }
@@ -240,11 +251,13 @@ export const noWeakCipherAlgorithm = createRule<RuleOptions, MessageIds>({
         suggest: [
           {
             messageId: 'useAes256Gcm',
-            fix: (fixer: TSESLint.RuleFixer) => fixer.replaceText(target, `"aes-256-gcm"`),
+            fix: (fixer: TSESLint.RuleFixer) =>
+              fixer.replaceText(target, `"aes-256-gcm"`),
           },
           {
             messageId: 'useChaCha20',
-            fix: (fixer: TSESLint.RuleFixer) => fixer.replaceText(target, `"chacha20-poly1305"`),
+            fix: (fixer: TSESLint.RuleFixer) =>
+              fixer.replaceText(target, `"chacha20-poly1305"`),
           },
         ],
       });

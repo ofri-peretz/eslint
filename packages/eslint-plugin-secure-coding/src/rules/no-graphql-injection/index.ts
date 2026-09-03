@@ -26,6 +26,9 @@ import {
   AST_NODE_TYPES,
   createRule,
   staticString,
+  memberPropertyName,
+  namesOneOf,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { resolvedReference } from '../../utils/resolve-reference';
@@ -311,12 +314,15 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
         if (current.type === 'CallExpression') {
           const callee = current.callee;
           // object.method() pattern
+          // A quoted method names the same safe caller. Resolved once, before
+          // the guard, so the key is built from the name the guard accepted.
+          const method = memberPropertyName(callee);
           if (
             callee.type === 'MemberExpression' &&
             callee.object.type === 'Identifier' &&
-            callee.property.type === 'Identifier'
+            method !== null
           ) {
-            const key = `${callee.object.name}.${callee.property.name}`;
+            const key = `${callee.object.name}.${method}`;
             if (safeMemberCallers.has(key)) return true;
           }
           break; // Stop at first enclosing call
@@ -981,10 +987,14 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
         // Check for execute/query methods
         if (
           callee.type === 'MemberExpression' &&
-          callee.property.type === 'Identifier' &&
-          ['execute', 'executeQuery', 'query', 'mutate', 'subscribe'].includes(
-            callee.property.name,
-          )
+          // `graphql['execute'](q, …)` runs the same operation.
+          namesOneOf(propertyName(callee), [
+            'execute',
+            'executeQuery',
+            'query',
+            'mutate',
+            'subscribe',
+          ])
         ) {
           // Check arguments for unvalidated inputs
           for (const arg of node.arguments) {

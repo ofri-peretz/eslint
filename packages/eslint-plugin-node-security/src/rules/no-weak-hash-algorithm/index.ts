@@ -18,6 +18,7 @@ import {
   createRule,
   AST_NODE_TYPES,
   isTestFilePath,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { makeNameTest } from '../../utils/names';
 import { resolveConstantString } from '../../utils/const-value';
@@ -709,9 +710,7 @@ export const noWeakHashAlgorithm = createRule<RuleOptions, MessageIds>({
       }
       return (
         callee.type === AST_NODE_TYPES.MemberExpression &&
-        !callee.computed &&
-        callee.property.type === AST_NODE_TYPES.Identifier &&
-        callee.property.name === 'createHmac'
+        propertyName(callee) === 'createHmac'
       );
     }
 
@@ -724,8 +723,7 @@ export const noWeakHashAlgorithm = createRule<RuleOptions, MessageIds>({
       // Check for crypto.createHash() pattern
       if (
         node.callee.type === AST_NODE_TYPES.MemberExpression &&
-        node.callee.property.type === AST_NODE_TYPES.Identifier &&
-        node.callee.property.name === 'createHash'
+        propertyName(node.callee) === 'createHash'
       ) {
         checkHashArgument(node);
       }

@@ -21,7 +21,7 @@
  * player; widening `.push` beyond `dataLayer` would report every array in
  * every codebase.
  */
-import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, propertyName } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
 /** Analytics clients and the methods on them that transmit. */
@@ -49,17 +49,15 @@ function analyticsClientName(node: TSESTree.Node): string | null {
   if (node.type === AST_NODE_TYPES.Identifier) {
     return ANALYTICS_METHODS.has(node.name) ? node.name : null;
   }
-  if (
-    node.type === AST_NODE_TYPES.MemberExpression &&
-    !node.computed &&
-    node.property.type === AST_NODE_TYPES.Identifier &&
-    ANALYTICS_METHODS.has(node.property.name) &&
+  if (node.type !== AST_NODE_TYPES.MemberExpression) return null;
+  // `window['analytics']` names the same client `window.analytics` does.
+  const client = propertyName(node);
+  return client !== null &&
+    ANALYTICS_METHODS.has(client) &&
     node.object.type === AST_NODE_TYPES.Identifier &&
     GLOBAL_ALIASES.has(node.object.name)
-  ) {
-    return node.property.name;
-  }
-  return null;
+    ? client
+    : null;
 }
 
 /**
@@ -80,16 +78,12 @@ export function isAnalyticsTransmission(
   ) {
     return true;
   }
-  if (
-    callee.type !== AST_NODE_TYPES.MemberExpression ||
-    callee.computed ||
-    callee.property.type !== AST_NODE_TYPES.Identifier
-  ) {
-    return false;
-  }
+  if (callee.type !== AST_NODE_TYPES.MemberExpression) return false;
+  // `analytics['track'](…)` transmits exactly what `analytics.track(…)` does.
+  const method = propertyName(callee);
+  if (method === null) return false;
   const client = analyticsClientName(callee.object);
   if (client === null) return false;
-  const method = callee.property.name;
   if (ANALYTICS_METHODS.get(client)?.has(method) === true) return true;
   return client === 'analytics' && extraAnalyticsMethods.includes(method);
 }

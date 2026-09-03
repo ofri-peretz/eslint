@@ -9,7 +9,7 @@
  * Forbid modules without exports
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'missingExports';
@@ -83,8 +83,7 @@ export const noUnusedModules = createRule<RuleOptions, MessageIds>({
           node.left.type === 'MemberExpression' &&
           node.left.object.type === 'Identifier' &&
           node.left.object.name === 'module' &&
-          node.left.property.type === 'Identifier' &&
-          node.left.property.name === 'exports'
+          propertyName(node.left) === 'exports'
         ) {
           hasExports = true;
         }

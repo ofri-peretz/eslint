@@ -20,6 +20,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
@@ -192,10 +193,11 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
         const calleeName =
           callee.type === 'Identifier'
             ? callee.name
-            : callee.type === 'MemberExpression' &&
-                !callee.computed &&
-                callee.property.type === 'Identifier'
-              ? callee.property.name
+            : callee.type === 'MemberExpression'
+              ? // `fs['readFileSync'](p)` reads the same file `fs.readFileSync(p)`
+                // does. `propertyName` resolves both spellings, and a dynamic
+                // `fs[m]` still yields null, which stays undefined here.
+                (propertyName(callee) ?? undefined)
               : undefined;
         if (calleeName !== name) return false;
         const arg = call.arguments[index];
@@ -310,8 +312,7 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
         init.callee.type === 'MemberExpression' &&
         init.callee.object.type === 'Identifier' &&
         init.callee.object.name === 'path' &&
-        init.callee.property.type === 'Identifier' &&
-        init.callee.property.name === 'basename'
+        propertyName(init.callee) === 'basename'
       ) {
         sanitizedVariables.add(varName);
       }
@@ -322,8 +323,7 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
         init.callee.type === 'MemberExpression' &&
         init.callee.object.type === 'Identifier' &&
         init.callee.object.name === 'path' &&
-        init.callee.property.type === 'Identifier' &&
-        init.callee.property.name === 'join'
+        propertyName(init.callee) === 'join'
       ) {
         // Check if any argument is a sanitized variable
         const hasSanitizedArg = init.arguments.some(
@@ -469,9 +469,8 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
         node.callee.type === 'MemberExpression' &&
         node.callee.object.type === 'Identifier' &&
         node.callee.object.name === 'fs' &&
-        node.callee.property.type === 'Identifier' &&
         [...fsReadMethods, ...fsWriteMethods].includes(
-          node.callee.property.name,
+          propertyName(node.callee) ?? '',
         )
       ) {
         const pathArg = node.arguments[0];

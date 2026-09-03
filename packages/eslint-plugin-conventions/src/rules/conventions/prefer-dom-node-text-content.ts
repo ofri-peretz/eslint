@@ -9,7 +9,7 @@
  * Prefer textContent over innerText for DOM node text access
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'preferDomNodeTextContent';
@@ -81,19 +81,12 @@ export const preferDomNodeTextContent = createRule<RuleOptions, MessageIds>({
     function isInnerTextAccess(node: TSESTree.MemberExpression): boolean {
       // Check if this is accessing .innerText property
       if (
-        node.property.type === 'Identifier' &&
-        node.property.name === 'innerText'
+        propertyName(node) === 'innerText'
       ) {
         return true;
       }
-      // Also check computed property access like element["innerText"]
-      if (
-        node.computed &&
-        node.property.type === 'Literal' &&
-        node.property.value === 'innerText'
-      ) {
-        return true;
-      }
+      // `propertyName` above already resolves `element['innerText']`, so the
+      // separate computed-literal arm this replaces asked the same question.
       return false;
     }
 

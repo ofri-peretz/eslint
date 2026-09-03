@@ -41,7 +41,11 @@
  * under another name. No substring test appears anywhere in this file.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  namesOneOf,
+  propertyName,
+} from '@interlace/eslint-devkit';
 
 import { resolveInitializer } from './resolve-binding';
 
@@ -86,9 +90,8 @@ export interface DynamicCodeSink {
  * disable the CWE-95 detector while leaving it apparently enabled, and one able
  * to add a name would report an ordinary call as remote code execution.
  */
-const DYNAMIC_CODE_NAMES: ReadonlySet<DynamicCodeName> = new Set<DynamicCodeName>(
-  ['eval', 'Function', 'execScript'],
-);
+const DYNAMIC_CODE_NAMES: ReadonlySet<DynamicCodeName> =
+  new Set<DynamicCodeName>(['eval', 'Function', 'execScript']);
 
 /**
  * Names that denote the global object.
@@ -194,8 +197,7 @@ function qualifiedGlobal(
 
 /** The string a computed key literally is — `window['eval']`, never `window[k]`. */
 function literalString(node: TSESTree.Node): string | null {
-  return node.type === AST_NODE_TYPES.Literal &&
-    typeof node.value === 'string'
+  return node.type === AST_NODE_TYPES.Literal && typeof node.value === 'string'
     ? node.value
     : null;
 }
@@ -209,11 +211,11 @@ function literalString(node: TSESTree.Node): string | null {
  * *calls* `x.constructor.constructor`.
  */
 function constructorChain(node: TSESTree.Node): DynamicCodeName | null {
-  const isConstructorAccess = (n: TSESTree.Node): n is TSESTree.MemberExpression =>
+  const isConstructorAccess = (
+    n: TSESTree.Node,
+  ): n is TSESTree.MemberExpression =>
     n.type === AST_NODE_TYPES.MemberExpression &&
-    !n.computed &&
-    n.property.type === AST_NODE_TYPES.Identifier &&
-    n.property.name === 'constructor';
+    propertyName(n) === 'constructor';
   if (!isConstructorAccess(node)) return null;
   return isConstructorAccess(node.object) ? 'Function' : null;
 }
@@ -265,7 +267,8 @@ function aliasedGlobal(
  * injection actually takes.
  */
 function isProvableString(node: TSESTree.Node): boolean {
-  if (node.type === AST_NODE_TYPES.Literal) return typeof node.value === 'string';
+  if (node.type === AST_NODE_TYPES.Literal)
+    return typeof node.value === 'string';
   if (node.type === AST_NODE_TYPES.TemplateLiteral) return true;
   if (node.type === AST_NODE_TYPES.BinaryExpression && node.operator === '+') {
     return (
@@ -290,14 +293,15 @@ function timerName(
   }
   if (
     callee.type === AST_NODE_TYPES.MemberExpression &&
-    !callee.computed &&
     callee.object.type === AST_NODE_TYPES.Identifier &&
     GLOBAL_RECEIVERS.has(callee.object.name) &&
     isUnshadowedGlobal(callee.object, sourceCode) &&
-    callee.property.type === AST_NODE_TYPES.Identifier &&
-    TIMER_NAMES.has(callee.property.name)
+    namesOneOf(propertyName(callee), TIMER_NAMES)
   ) {
-    return callee.property.name;
+    // The membership test above resolved this name; returning the same
+    // call keeps `string | null` — which is exactly this function's
+    // contract — instead of casting the absent case out of sight.
+    return propertyName(callee);
   }
   return null;
 }

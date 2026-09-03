@@ -484,8 +484,7 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
         // SKIP: Length comparisons are safe - they're actually required before timingSafeEqual
         const isLengthComparison = (expr: TSESTree.Expression): boolean => {
           return expr.type === AST_NODE_TYPES.MemberExpression &&
-                 expr.property.type === AST_NODE_TYPES.Identifier &&
-                 expr.property.name === 'length';
+                 propertyName(expr) === 'length';
         };
         
         if (isLengthComparison(node.left) || isLengthComparison(node.right)) {

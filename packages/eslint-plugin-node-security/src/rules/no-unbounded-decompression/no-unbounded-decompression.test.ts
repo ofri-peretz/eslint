@@ -60,8 +60,8 @@ describe('no-unbounded-decompression', () => {
       { code: `const { ...rest } = require('zlib'); rest.gunzip(body, cb);` },
       { code: `const { ['gunzip']: g } = require('zlib'); g(body, cb);` },
       { code: `const { gunzip: { g } } = require('zlib'); g(body, cb);` },
-      // Not a resolvable callee shape.
-      { code: `${REQUIRE}zlib['gunzip'](body, cb);` },
+      // Not a resolvable callee shape: the method is named at runtime.
+      { code: `${REQUIRE}zlib[method](body, cb);` },
       { code: `${REQUIRE}zlib[fn](body, cb);` },
       { code: `${REQUIRE}a.b.gunzip(body, cb);` },
       { code: `${REQUIRE}getZlib().gunzip(body, cb);` },
@@ -92,6 +92,13 @@ describe('no-unbounded-decompression', () => {
         errors: [{ messageId: 'unboundedDecompression' }],
       },
       { code: `${REQUIRE}zlib.gunzipSync(body);`, errors: [{ messageId: 'unboundedDecompression' }] },
+      // Was pinned as valid — "not a resolvable callee shape". `zlib['gunzip']`
+      // names `gunzip` and buffers the same uncapped output.
+      {
+        name: 'a subscripted gunzip is the same uncapped decompression',
+        code: `${REQUIRE}zlib['gunzip'](body, cb);`,
+        errors: [{ messageId: 'unboundedDecompression' }],
+      },
       { code: `${REQUIRE}zlib.inflate(body, cb);`, errors: [{ messageId: 'unboundedDecompression' }] },
       { code: `${REQUIRE}zlib.brotliDecompressSync(body);`, errors: [{ messageId: 'unboundedDecompression' }] },
       // `node:zlib` is the same module.

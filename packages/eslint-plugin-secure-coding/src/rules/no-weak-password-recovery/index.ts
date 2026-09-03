@@ -20,7 +20,7 @@
  * - JSDoc annotations (@secure-recovery, @rate-limited)
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, namesOneOf, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   createSafetyChecker,
@@ -313,15 +313,24 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
      * may well wrap crypto.randomBytes, and this check cannot see inside it.
      * Report evidence of weakness instead of absence of a known-good name.
      */
-    const usesPredictableSource = (
-      callExpression: TSESTree.CallExpression,
-    ): boolean => {
+    const usesPredictableSource = (callExpression: TSESTree.Node): boolean => {
       const text = sourceCode.getText(callExpression);
+      /*
+       * These match SOURCE TEXT, so the blind spot lived in the PATTERN rather
+       * than in a guard: `Math['random']()` is the same weak generator and the
+       * dotted-only form never saw it. Each alternation accepts `.name` or
+       * `['name']` / `["name"]` and nothing else, so a runtime key such as
+       * `Math[pick]()` still does not match. Written out literally rather than
+       * built with `new RegExp` — a rule that assembles its own patterns at
+       * runtime is a shape this repo's rule-audit flags, and rightly.
+       */
       return (
-        /\bMath\s*\.\s*random\s*\(/.test(text) ||
-        /\bDate\s*\.\s*now\s*\(/.test(text) ||
-        /new\s+Date\s*\([^)]*\)\s*\.\s*getTime\s*\(/.test(text) ||
-        /\buuid\s*\.\s*v1\s*\(/.test(text) ||
+        /\bMath\s*(?:\.\s*random|\[\s*['"]random['"]\s*\])\s*\(/.test(text) ||
+        /\bDate\s*(?:\.\s*now|\[\s*['"]now['"]\s*\])\s*\(/.test(text) ||
+        /new\s+Date\s*\([^)]*\)\s*(?:\.\s*getTime|\[\s*['"]getTime['"]\s*\])\s*\(/.test(
+          text,
+        ) ||
+        /\buuid\s*(?:\.\s*v1|\[\s*['"]v1['"]\s*\])\s*\(/.test(text) ||
         /\bv1\s*\(\s*\)/.test(text)
       );
     };
@@ -373,12 +382,13 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
               definition.node.init?.type === 'CallExpression'
             ) {
               const { callee } = definition.node.init;
+              // `Math['random']()` is the same weak generator `Math.random()`
+              // is, and a reset token built from it is just as guessable.
               const calleeName =
                 callee.type === 'Identifier'
                   ? callee.name
-                  : callee.type === 'MemberExpression' &&
-                      callee.property.type === 'Identifier'
-                    ? callee.property.name
+                  : callee.type === 'MemberExpression'
+                    ? propertyName(callee)
                     : null;
               if (
                 calleeName !== null &&
@@ -478,14 +488,15 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
               });
             }
           } else if (node.init.type === 'BinaryExpression') {
-            // Check for predictable patterns
-            const weakPatterns = [
-              'Date.now()',
-              'Math.random()',
-              'timestamp',
-              'new Date()',
-            ];
-            if (weakPatterns.some((pattern) => initText.includes(pattern))) {
+            // `usesPredictableSource` rather than a second list of literal
+            // substrings. The list here read 'Date.now()' and 'Math.random()',
+            // so `Date['now']() + salt` — the same predictable token — matched
+            // neither. That helper already accepts both spellings, and keeping
+            // one definition means the next source added is added once.
+            if (
+              usesPredictableSource(node.init) ||
+              initText.includes('timestamp')
+            ) {
               // FALSE POSITIVE REDUCTION
               if (
                 safetyChecker.isSafe(node, context) ||
@@ -578,9 +589,14 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
             callee.object.type === 'Identifier' &&
             (callee.object.name === 'console' ||
               callee.object.name === 'logger') &&
-            callee.property.type === 'Identifier' &&
             // @vocabulary console API
-            ['log', 'info', 'warn', 'error'].includes(callee.property.name)) ||
+            // `console['log'](resetToken)` logs the same token.
+            namesOneOf(propertyName(callee), [
+              'log',
+              'info',
+              'warn',
+              'error',
+            ])) ||
           (callee.type === 'Identifier' && callee.name === 'logger')
         ) {
           const args = node.arguments;

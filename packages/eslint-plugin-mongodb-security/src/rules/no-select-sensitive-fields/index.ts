@@ -10,7 +10,7 @@
  * CWE-200: Information Exposure
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath, staticString } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath, staticString, propertyName } from '@interlace/eslint-devkit';
 import { analyzeMongoScope } from '../../utils/receiver';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
 
@@ -158,9 +158,8 @@ export const noSelectSensitiveFields = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        const methodName = node.callee.property.type === AST_NODE_TYPES.Identifier
-          ? node.callee.property.name
-          : null;
+        // `User['find']({…})` runs the same query `User.find({…})` runs.
+        const methodName = propertyName(node.callee);
 
         if (!methodName || !QUERY_METHODS.has(methodName)) {
           return;
@@ -186,8 +185,7 @@ export const noSelectSensitiveFields = createRule<RuleOptions, MessageIds>({
         if (
           parent &&
           parent.type === AST_NODE_TYPES.MemberExpression &&
-          parent.property.type === AST_NODE_TYPES.Identifier &&
-          parent.property.name === 'select'
+          propertyName(parent) === 'select'
         ) {
           // Has .select() — check if it explicitly includes sensitive fields
           const selectCall = parent.parent;

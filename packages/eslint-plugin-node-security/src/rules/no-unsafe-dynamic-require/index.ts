@@ -9,7 +9,7 @@
  * Detects dynamic require() calls that could lead to code injection
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { findVariable, makeReadsTaintSource } from '../../utils/provenance';
 import { resolveConstantString } from '../../utils/const-value';
@@ -155,11 +155,9 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
       }
       return (
         node.type === 'MemberExpression' &&
-        !node.computed &&
         node.object.type === 'Identifier' &&
         node.object.name === 'module' &&
-        node.property.type === 'Identifier' &&
-        node.property.name === 'require'
+        propertyName(node) === 'require'
       );
     };
 

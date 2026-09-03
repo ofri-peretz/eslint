@@ -867,6 +867,14 @@ ruleTester.run(
         code: 'const guard = 42; app.get("/api/x", guard, (req, res) => {});',
         errors: [{ messageId: 'missingAuthentication' }],
       },
+      // A middleware picked by a key chosen at RUNTIME names nothing to match
+      // against the auth vocabulary, so the route is reported as unguarded.
+      // `mw['authenticate']` is a name and resolves; `mw[pick]` is not.
+      {
+        name: 'a middleware picked by a runtime key names no guard',
+        code: 'app.get("/api/z", mw[pick], (req, res) => {});',
+        errors: [{ messageId: 'missingAuthentication' }],
+      },
     ],
   },
 );

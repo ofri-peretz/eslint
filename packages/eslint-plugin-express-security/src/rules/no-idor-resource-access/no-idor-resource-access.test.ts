@@ -118,8 +118,14 @@ describe('no-idor-resource-access', () => {
       {
         code: `app.get('/x/:id', (req, res) => Invoice['findById'](req.params.id).then(send));`,
       },
+      // Was pinned as INVALID under "a computed principal read is not
+      // recognised as one (documented FN)". `res['user']` IS that read, so
+      // the lookup is scoped and the finding was a false positive.
       {
-        code: `app.get('/x/:id', (req, res) => Invoice.findById(req['params'].id).then(send));`,
+        code: `app.get('/x/:id', (req, res) => Invoice.findById(req.params.id).then(() => res['user']));`,
+      },
+      {
+        code: `app.get('/x/:id', (req, res) => Invoice.findById(req[bag].id).then(send));`,
       },
       {
         code: `app.get('/x/:id', (req, res) => Invoice.findById().then(send));`,
@@ -136,6 +142,13 @@ describe('no-idor-resource-access', () => {
       },
     ]),
     invalid: xp([
+      // Was pinned as valid with no reason given. `req['params'].id` is the
+      // same client-supplied id `req.params.id` is, looked up unscoped.
+      {
+        name: 'a subscripted params read is the same unscoped lookup',
+        code: `app.get('/x/:id', (req, res) => Invoice.findById(req['params'].id).then(send));`,
+        errors: [{ messageId: 'unscopedResourceLookup' as const }],
+      },
       // The textbook IDOR
       {
         name: 'findById on a path parameter with no ownership predicate',
@@ -173,11 +186,6 @@ describe('no-idor-resource-access', () => {
             return Invoice.deleteOne({ _id: req.params.id });
           }
         `,
-        errors: [{ messageId: 'unscopedResourceLookup' as const }],
-      },
-      // A computed principal read is not recognised as one (documented FN)
-      {
-        code: `app.get('/x/:id', (req, res) => Invoice.findById(req.params.id).then(() => res['user']));`,
         errors: [{ messageId: 'unscopedResourceLookup' as const }],
       },
       // Koa-style request nesting

@@ -13,7 +13,7 @@
  * @see https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath, staticString } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath, staticString, propertyName } from '@interlace/eslint-devkit';
 import { fileIsLambda } from '../../utils/lambda-evidence';
 
 type MessageIds = 'secretsInEnv';
@@ -130,8 +130,7 @@ export const noSecretsInEnv = createRule<RuleOptions, MessageIds>({
           node.left.object.type === AST_NODE_TYPES.MemberExpression &&
           node.left.object.object.type === AST_NODE_TYPES.Identifier &&
           node.left.object.object.name === 'process' &&
-          node.left.object.property.type === AST_NODE_TYPES.Identifier &&
-          node.left.object.property.name === 'env'
+          propertyName(node.left.object) === 'env'
         ) {
           let envVarName = '';
           if (node.left.property.type === AST_NODE_TYPES.Identifier) {

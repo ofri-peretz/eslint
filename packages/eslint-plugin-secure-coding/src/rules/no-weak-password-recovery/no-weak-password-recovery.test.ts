@@ -51,6 +51,13 @@ describe('no-weak-password-recovery', () => {
   describe('Invalid Code - Predictable Tokens', () => {
     ruleTester.run('invalid - predictable token generation', noWeakPasswordRecovery, {
       valid: [
+        // A callee that is neither an identifier nor a member names nothing to
+        // check against the generator list, so this is not a token flow at
+        // all — unlike `const v = nanoid()`, which is, and reports below.
+        {
+          name: 'a callee that is neither an identifier nor a member names nothing to check',
+          code: 'function resetPasswordFlow() { const v = (() => 1)(); mail(v); }',
+        },
         // Generic 'token' variables are now valid (no password recovery context)
         'const token = Math.random().toString(36);',
         'const token = "reset_" + Math.random();',
