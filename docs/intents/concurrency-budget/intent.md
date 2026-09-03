@@ -14,14 +14,14 @@ narrowly-filtered PR. No check is removed and no assertion stops running.
 The previous three intents moved the filtered case and did not move this one.
 Measured across the last twelve `Quality (Full)` runs:
 
-| duration | trigger |
-|---|---|
-| 78s, 81s | PR, narrow diff |
-| 102s | PR, narrow diff |
-| 238s | **push → main** |
-| 260s | PR, wide diff |
-| 337s | dependabot (wide) |
-| 340s | **push → main** |
+| duration | trigger           |
+| -------- | ----------------- |
+| 78s, 81s | PR, narrow diff   |
+| 102s     | PR, narrow diff   |
+| 238s     | **push → main**   |
+| 260s     | PR, wide diff     |
+| 337s     | dependabot (wide) |
+| 340s     | **push → main**   |
 
 ```bash
 gh run list --workflow=quality-full.yml --limit 12 \
@@ -37,7 +37,7 @@ runners. That is the intended backstop; it is also 4× the target.
 
 Two further facts bound what is possible:
 
-1. **Job count drives queueing, and queueing dominates *on PRs*.** On the one
+1. **Job count drives queueing, and queueing dominates _on PRs_.** On the one
    clean measurement (run 33345687707) the job start spread was 25s and the run
    was 86s; on a contended one it was 186s and 261s. Compute barely moved.
 2. **The critical path is no longer the tests.** All tests execute in ~22s.
@@ -51,12 +51,12 @@ Measuring an actual main push (run 33350704383, 340s wall) shows something
 else: the jobs start within 76s of each other, the same as a PR, and then each
 one takes **3–10× longer at identical work**.
 
-| job | PR run | main push |
-|---|---|---|
-| `Unit Tests — node lane (1/4)` | 17s | **172s** |
-| `Benchmark configs load` | 45s | **165s** |
-| `Typecheck` | 45s | **113s** |
-| `Build (1/4)` | 46s | **264s** ← the wall clock |
+| job                            | PR run | main push                 |
+| ------------------------------ | ------ | ------------------------- |
+| `Unit Tests — node lane (1/4)` | 17s    | **172s**                  |
+| `Benchmark configs load`       | 45s    | **165s**                  |
+| `Typecheck`                    | 45s    | **113s**                  |
+| `Build (1/4)`                  | 46s    | **264s** ← the wall clock |
 
 And it is not that main runs more packages. Checked directly on this branch:
 
@@ -73,7 +73,7 @@ branch-scoped. Entries written by PR CI live in the feature branch's scope, and
 a run on `main` cannot read them. The turbo remote cache here is
 `rharkor/caching-for-turbo`, backed by Actions cache, so every post-merge run
 would be structurally cold — which is the only explanation offered so far that
-predicts a *uniform* slowdown across every job rather than a hot spot in one.
+predicts a _uniform_ slowdown across every job rather than a hot spot in one.
 
 **Confirm before acting.** The evidence needed is one line from a main-push
 job's log — `cache hit, replaying logs` versus `cache miss, executing`. The run
@@ -111,7 +111,7 @@ push.
 - **Is a full re-verify on every main push the right shape at all?** Its
   purpose is catching what a skipped PR gate missed. That is rare, and it costs
   4× the target on every merge. A cheaper trigger — run it only when the PR
-  gate did *not* run — may serve the same purpose. This is the decision that
+  gate did _not_ run — may serve the same purpose. This is the decision that
   probably settles the intent, and it is not mine to make alone.
 - Can `Benchmark configs load` consume the Build shards' artifacts instead of
   rebuilding? It duplicates work those jobs already did; they cannot share a

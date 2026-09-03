@@ -9,7 +9,7 @@
  * Validate default props match prop types
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'defaultPropsMatchPropTypes';
@@ -30,7 +30,8 @@ export const defaultPropsMatchPropTypes = createRule<[], MessageIds>({
         description: 'Default prop does not match prop type',
         severity: 'MEDIUM',
         fix: 'Update default prop to match propTypes or update propTypes',
-        documentationLink: 'https://react.dev/learn/components-and-props#default-props',
+        documentationLink:
+          'https://react.dev/learn/components-and-props#default-props',
       }),
     },
   },
@@ -41,7 +42,9 @@ export const defaultPropsMatchPropTypes = createRule<[], MessageIds>({
 
     return {
       // Collect propTypes (PropertyDefinition is used by TypeScript parser)
-      'PropertyDefinition[key.name="propTypes"]'(node: TSESTree.PropertyDefinition) {
+      'PropertyDefinition[key.name="propTypes"]'(
+        node: TSESTree.PropertyDefinition,
+      ) {
         if (node.value && node.value.type === 'ObjectExpression') {
           for (const prop of node.value.properties) {
             if (prop.type === 'Property' && prop.key.type === 'Identifier') {
@@ -52,7 +55,9 @@ export const defaultPropsMatchPropTypes = createRule<[], MessageIds>({
       },
 
       // Collect defaultProps (PropertyDefinition is used by TypeScript parser)
-      'PropertyDefinition[key.name="defaultProps"]'(node: TSESTree.PropertyDefinition) {
+      'PropertyDefinition[key.name="defaultProps"]'(
+        node: TSESTree.PropertyDefinition,
+      ) {
         if (node.value && node.value.type === 'ObjectExpression') {
           for (const prop of node.value.properties) {
             if (prop.type === 'Property' && prop.key.type === 'Identifier') {
@@ -67,14 +72,19 @@ export const defaultPropsMatchPropTypes = createRule<[], MessageIds>({
         for (const [propName, defaultProp] of defaultProps) {
           const propType = propTypes.get(propName);
           // Only check if both values are expressions (not patterns or TSEmptyBodyFunctionExpression)
-          if (propType && 
-              defaultProp.value && 
-              propType.value &&
-              defaultProp.value.type !== 'TSEmptyBodyFunctionExpression' &&
-              propType.value.type !== 'TSEmptyBodyFunctionExpression' &&
-              !isPattern(defaultProp.value) && 
-              !isPattern(propType.value) &&
-              !isCompatibleDefaultValue(defaultProp.value as TSESTree.Expression, propType.value as TSESTree.Expression)) {
+          if (
+            propType &&
+            defaultProp.value &&
+            propType.value &&
+            defaultProp.value.type !== 'TSEmptyBodyFunctionExpression' &&
+            propType.value.type !== 'TSEmptyBodyFunctionExpression' &&
+            !isPattern(defaultProp.value) &&
+            !isPattern(propType.value) &&
+            !isCompatibleDefaultValue(
+              defaultProp.value as TSESTree.Expression,
+              propType.value as TSESTree.Expression,
+            )
+          ) {
             context.report({
               node: defaultProp.key,
               messageId: 'defaultPropsMatchPropTypes',
@@ -93,7 +103,10 @@ export const defaultPropsMatchPropTypes = createRule<[], MessageIds>({
 /**
  * Check if default value is compatible with prop type
  */
-function isCompatibleDefaultValue(defaultValue: TSESTree.Expression, propType: TSESTree.Expression): boolean {
+function isCompatibleDefaultValue(
+  defaultValue: TSESTree.Expression,
+  propType: TSESTree.Expression,
+): boolean {
   // This is a simplified check - in practice, you'd want more comprehensive validation
   // For now, just check if both are literals of the same type
   if (defaultValue.type === 'Literal' && propType.type === 'MemberExpression') {
@@ -119,12 +132,9 @@ function isCompatibleDefaultValue(defaultValue: TSESTree.Expression, propType: T
  * Extract prop type name from PropTypes expression
  */
 function getPropTypeName(node: TSESTree.MemberExpression): string {
-  if (
-    node.object.type === 'Identifier' &&
-    node.object.name === 'PropTypes' &&
-    node.property.type === 'Identifier'
-  ) {
-    return node.property.name;
+  if (node.object.type === 'Identifier' && node.object.name === 'PropTypes') {
+    // `PropTypes['number']` names the same validator `PropTypes.number` names.
+    return propertyName(node) ?? '';
   }
   return '';
 }
@@ -132,6 +142,13 @@ function getPropTypeName(node: TSESTree.MemberExpression): string {
 /**
  * Check if a node is a pattern (not an expression)
  */
-function isPattern(node: TSESTree.Node): node is TSESTree.AssignmentPattern | TSESTree.ArrayPattern | TSESTree.ObjectPattern {
-  return node.type === 'AssignmentPattern' || node.type === 'ArrayPattern' || node.type === 'ObjectPattern';
+function isPattern(
+  node: TSESTree.Node,
+): node is
+  TSESTree.AssignmentPattern | TSESTree.ArrayPattern | TSESTree.ObjectPattern {
+  return (
+    node.type === 'AssignmentPattern' ||
+    node.type === 'ArrayPattern' ||
+    node.type === 'ObjectPattern'
+  );
 }

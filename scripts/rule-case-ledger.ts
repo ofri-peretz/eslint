@@ -58,10 +58,16 @@
 
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-import { readBaseline, readBaselineRecord } from './lib/read-baseline.ts';
+import {
+  readBaseline,
+  readBaselineRecord,
+  readFlatEntries,
+} from './lib/read-baseline.ts';
+import { changedRules } from './rule-audit-gate.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
@@ -75,6 +81,7 @@ const BASELINE = path.join(
 );
 
 const CHECK = process.argv.includes('--check');
+const TOUCHED = process.argv.includes('--touched');
 const UPDATE = process.argv.includes('--update');
 
 type Kind = 'TP' | 'TN' | 'FP' | 'FN' | 'GAP';
@@ -183,13 +190,32 @@ try {
  */
 const CONFIG_FILE = path.join(ROOT, 'eslint.real-source.config.mjs');
 const currentConfigHash = (() => {
+  /*
+   * `crypto` is a DEFAULT import in this file (line ~59), so the bare
+   * `createHash` this used to call was never defined. The ReferenceError went
+   * straight into the catch below, `currentConfigHash` came out null, and the
+   * comparison against `inventory.configHash` could never be true.
+   *
+   * The visible effect was the inventory reporting STALE for ever — including
+   * on a scan generated minutes earlier from this exact config — so the three
+   * lines this gates ("fires on real code", "scanned and never fired", "never
+   * scanned") have never once printed. The metric was not stale; it was
+   * unreachable, and the message named a cause that was not the cause.
+   *
+   * The catch is now narrowed to what it is actually for: the file being
+   * missing. Anything else is a defect in this script and must not be
+   * disguised as an untrustworthy artefact — that is the failure mode this
+   * whole ledger exists to prevent, committed by the ledger itself.
+   */
   try {
-    return createHash('sha256')
+    return crypto
+      .createHash('sha256')
       .update(fs.readFileSync(CONFIG_FILE))
       .digest('hex')
       .slice(0, 16);
-  } catch {
-    return null;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
+    throw error;
   }
 })();
 const inventoryIsCurrent =
@@ -239,12 +265,12 @@ function allRules(): { rule: string; module: string }[] {
   // A rule directory also holds helpers, and a helper is not a rule. The
   // generated manifest is the list of rules each plugin actually exports, so
   // the walk is intersected with it rather than guessed at by filename.
-  const manifest = JSON.parse(
-    fs.readFileSync(
-      path.join(ROOT, '.agent', 'plugin-rule-manifest.json'),
-      'utf8',
-    ),
-  ) as Record<string, Record<string, unknown>>;
+  // `readFlatEntries`, not a raw parse: the manifest carries a `command`
+  // string beside its plugin records, and iterating it as a plugin turns the
+  // command's characters into rules.
+  const manifest = readFlatEntries<Record<string, unknown>>(
+    path.join(ROOT, '.agent', 'plugin-rule-manifest.json'),
+  );
   const exported = new Set<string>();
   for (const [pkg, rules] of Object.entries(manifest)) {
     if (!fs.existsSync(path.join(pkgDir, pkg))) continue; // renamed packages linger in the manifest
@@ -752,7 +778,52 @@ console.log(
 );
 console.log(`  sealed against real code (FP+FN)        ${sealed}`);
 console.log(`  open misses, documented not sealed      ${counts.GAP}`);
+const NAMING_BASELINE = path.join(
+  ROOT,
+  'benchmarks',
+  'budgets',
+  'rule-case-naming-baseline.json',
+);
+
+/**
+ * A case named after the INSTRUMENT rather than the position it takes.
+ *
+ *     name: 'coverage - computed callee property (id 9 FALSE)'
+ *     name: 'computed class members and literal property access (L67/L81/L95 false arms)'
+ *
+ * Both say the same thing: this case exists so a branch executes. Neither says
+ * what the rule is supposed to DO with the input — and every package here is
+ * gated at 100% branch coverage, so that gate was green while 47 such cases
+ * asserted a rule's blind spot as intended behaviour. Six were flipped in one
+ * week; two had been labelled "documented false negative" in the case comment,
+ * and one rule's published DOCUMENTATION repeated the claim to users.
+ *
+ * Coverage proves a branch RAN. It says nothing about what the case CLAIMS
+ * while running it, and the two have been treated as one.
+ *
+ * The NAME is checked rather than the assertion, because deciding whether a
+ * rule should report on an input is exactly the judgement the case exists to
+ * encode — a linter that could recover it would not need the case. The name is
+ * the weaker signal and the only recoverable one. It is also the honest one:
+ * `(id 9 FALSE)` told the truth about its own purpose and nobody looked.
+ *
+ * See docs/intents/coverage-is-not-pinning/.
+ */
+const NAMED_AFTER_THE_INSTRUMENT =
+  /\bL\d+(?:\/L\d+)*\b|\bid \d+ (?:TRUE|FALSE)\b|\b(?:false|true) arms?\b|^coverage[\s\-–—:]/i;
+
+const instrumentNamedByRule: Record<string, number> = {};
+for (const entry of entries) {
+  const n = entry.cases.filter(
+    (c) => c.description && NAMED_AFTER_THE_INSTRUMENT.test(c.description),
+  ).length;
+  if (n > 0) instrumentNamedByRule[entry.rule] = n;
+}
+
 console.log(`  undescribed cases                       ${undescribed}`);
+console.log(
+  `  cases named after a branch              ${Object.values(instrumentNamedByRule).reduce((a, b) => a + b, 0)}`,
+);
 console.log(`  byte-identical duplicate cases          ${duplicates}`);
 console.log(`  rules without a described TP and TN     ${missing.length}`);
 console.log(
@@ -865,6 +936,110 @@ if (CHECK) {
     process.exit(1);
   }
 
+  /*
+   * `--touched`: the debt is charged to the rule being edited.
+   *
+   * The per-rule ratchet holds the line and has no downward force — a rule at
+   * 189 undescribed cases may be edited forever provided it never reaches 190,
+   * and 419 rules carry the debt with no mechanism to reduce it but somebody
+   * deciding to. Nobody decides to; there is always a rule to fix instead.
+   *
+   * So an edit to a rule's source must leave its descriptions better than it
+   * found them. STRICTLY LOWER, not zero: a rule at 189 cannot be cleared in
+   * the change that fixes a bug in it, and demanding that makes the gate
+   * something people route around. One name per edit drains the debt at the
+   * rate the code is actually worked on, which is the only rate available.
+   *
+   * See docs/intents/the-description-ratchet-cannot-reach-the-debt/.
+   */
+  if (TOUCHED) {
+    /*
+     * The baseline as COMMITTED, not as it sits in the working tree.
+     *
+     * `--update` rewrites the baseline to match the current count, so a change
+     * that names a case and updates the baseline in one commit would compare
+     * 196 against 196 and read as a stall — the reduction it just made becomes
+     * invisible to the gate that asked for it. Found immediately: this gate
+     * blocked the commit that introduced it.
+     *
+     * Reading HEAD's copy makes the working tree's improvement visible, which
+     * is the only comparison that answers "did this change make it better".
+     */
+    const committed = (() => {
+      try {
+        return JSON.parse(
+          execFileSync(
+            'git',
+            ['show', `HEAD:${path.relative(ROOT, DESCRIPTION_BASELINE)}`],
+            { cwd: ROOT, encoding: 'utf8' },
+          ),
+        ) as { rules?: Record<string, number> };
+      } catch {
+        return undefined;
+      }
+    })();
+    const baseline =
+      committed?.rules ?? readBaselineRecord(DESCRIPTION_BASELINE, 'rules');
+    const stalled = changedRules()
+      .filter((rule) => (baseline[rule] ?? 0) > 0)
+      .filter((rule) => (undescribedByRule[rule] ?? 0) >= (baseline[rule] ?? 0))
+      .map((rule) => `${rule}  ${undescribedByRule[rule] ?? 0} undescribed`);
+    if (stalled.length > 0) {
+      console.error(
+        `\n  ⛔ ${stalled.length} rule(s) changed without describing a case:`,
+      );
+      for (const line of stalled) console.error(`     ${line}`);
+      console.error(
+        '\n  An edit to a rule must leave its case descriptions better than it' +
+          '\n  found them. Name ONE case after the claim it makes — not all of' +
+          '\n  them — then run `npm run rule-cases -- --update`.',
+      );
+      process.exit(1);
+    }
+    console.log('  touched rules: descriptions did not stall');
+    process.exit(0);
+  }
+
+  const namingBaseline = readBaselineRecord(NAMING_BASELINE, 'rules');
+  const namingRegressed = Object.entries(instrumentNamedByRule)
+    .filter(([rule, n]) => n > (namingBaseline[rule] ?? 0))
+    .map(([rule, n]) => `${rule}  ${namingBaseline[rule] ?? 0} → ${n}`);
+  if (namingRegressed.length > 0) {
+    console.error(
+      `\n  ⛔ ${namingRegressed.length} rule(s) gained a case named after a branch:`,
+    );
+    for (const line of namingRegressed) console.error(`     ${line}`);
+    console.error(
+      '\n  A name like `(L67/L81/L95 false arms)` records which arms ran, not what' +
+        '\n  the rule should do with the input. 100% coverage was green while 47 such' +
+        '\n  cases asserted a blind spot as intended behaviour.' +
+        '\n  Name the case after the claim it makes.',
+    );
+    process.exit(1);
+  }
+
+  /*
+   * And the other direction: an entry LARGER than the truth is slack, and slack
+   * is a regression nobody sees. A rule recorded at 5 that now holds 2 will
+   * accept three new branch-named cases in silence — the file would have
+   * stopped describing the code and started excusing it, which is the failure
+   * every other ratchet here is written to avoid.
+   */
+  const namingStale = Object.entries(namingBaseline)
+    .filter(([rule, n]) => n > (instrumentNamedByRule[rule] ?? 0))
+    .map(([rule, n]) => `${rule}  ${n} → ${instrumentNamedByRule[rule] ?? 0}`);
+  if (namingStale.length > 0) {
+    console.error(
+      `\n  ⛔ ${namingStale.length} naming-baseline entr(ies) no longer describe the code:`,
+    );
+    for (const line of namingStale) console.error(`     ${line}`);
+    console.error(
+      '\n  The count fell and the record did not. Run `npm run rule-cases -- --update`' +
+        '\n  in the same change, so the baseline keeps describing what is there.',
+    );
+    process.exit(1);
+  }
+
   const baseline = readBaseline(BASELINE, 'rules');
   const known = new Set(baseline);
   const regressed = missing.map((e) => e.rule).filter((r) => !known.has(r));
@@ -896,6 +1071,13 @@ if (UPDATE) {
     BASELINE,
     `${JSON.stringify(
       {
+        /*
+         * A GENERATED artefact must emit `command` itself. Hand-adding it once
+         * lasts exactly until the next `--update`, which is how five baselines
+         * silently lost the field and tripped their own lock. See
+         * docs/intents/a-surface-figure-must-name-its-method/.
+         */
+        command: 'npm run rule-cases -- --update',
         note: 'Rules with no described TP case, or no described TN/FP case. Shrink-only.',
         rules: now,
       },
@@ -922,9 +1104,48 @@ if (UPDATE) {
     DESCRIPTION_BASELINE,
     `${JSON.stringify(
       {
+        /*
+         * A GENERATED artefact must emit `command` itself. Hand-adding it once
+         * lasts exactly until the next `--update`, which is how five baselines
+         * silently lost the field and tripped their own lock. See
+         * docs/intents/a-surface-figure-must-name-its-method/.
+         */
+        command: 'npm run rule-cases -- --update',
         note: 'Cases that run without a `name`, per rule. Shrink-only: a rule may never gain one.',
         rules: Object.fromEntries(
           Object.entries(undescribedByRule).sort(([a], [b]) =>
+            a.localeCompare(b),
+          ),
+        ),
+      },
+      null,
+      2,
+    )}\n`,
+  );
+
+  const previousNaming = readBaselineRecord(NAMING_BASELINE, 'rules');
+  const grewNaming = Object.entries(instrumentNamedByRule).filter(
+    ([rule, n]) => n > (previousNaming[rule] ?? 0),
+  );
+  if (Object.keys(previousNaming).length > 0 && grewNaming.length > 0) {
+    console.error(
+      `\n  ⛔ refusing to grow the naming baseline: ${grewNaming
+        .map(([r, n]) => `${r} ${previousNaming[r] ?? 0} → ${n}`)
+        .join(', ')}`,
+    );
+    process.exit(1);
+  }
+  fs.writeFileSync(
+    NAMING_BASELINE,
+    `${JSON.stringify(
+      {
+        command: 'npm run rule-cases -- --update',
+        note:
+          'Cases named after the coverage machinery they execute — `(L67/L81 false arms)`, ' +
+          '`(id 9 FALSE)` — rather than the position they take. Shrink-only: a rule may ' +
+          'never gain one. See docs/intents/coverage-is-not-pinning/.',
+        rules: Object.fromEntries(
+          Object.entries(instrumentNamedByRule).sort(([a], [b]) =>
             a.localeCompare(b),
           ),
         ),
@@ -954,6 +1175,7 @@ if (UPDATE) {
     FLOOR_BASELINE,
     `${JSON.stringify(
       {
+        command: 'npm run rule-cases -- --update',
         note: `Rules holding fewer than ${CASE_FLOOR} classified cases on a side. Shrink-only.`,
         rules: nowThin,
       },

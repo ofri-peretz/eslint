@@ -75,7 +75,7 @@ and compare the three numbers.
 
 - The build matrix (`--matrix 4`) — already at four, already within budget.
 - `setup` cost reduction (its own intent, per the rejected alternative above).
-- The merge queue, which attacks run *amplification* across PRs rather than
+- The merge queue, which attacks run _amplification_ across PRs rather than
   latency within one. Blocked separately on
   [`../merge-latency/design.md`](../merge-latency/design.md).
 
@@ -138,7 +138,7 @@ Separate the two populations:
    full `node_modules`.
 2. Give the plugin shards a **lean** dependency restore — the app tree is not
    in their closure once `docs` is gone.
-3. *Then* reduce the shard count. With the 144s item removed, the remaining
+3. _Then_ reduce the shard count. With the 144s item removed, the remaining
    work is uniform and small, and the LPT floor is no longer set by one package.
 
 Order matters: step 3 alone is unsafe. Every timing in this document is from a
@@ -168,9 +168,9 @@ That number says nothing about four versus ten.
 What is comparable is the per-lane cost, same work, same lane, both warm:
 
 | node lane | test work | checkout+setup | jobs |
-|---|---|---|---|
-| 10 shards | 24s | **141s** | 10 |
-| 4 shards | 13s | **60s** | 4 |
+| --------- | --------- | -------------- | ---- |
+| 10 shards | 24s       | **141s**       | 10   |
+| 4 shards  | 13s       | **60s**        | 4    |
 
 Overhead down 57% for the same suite. The cut is justified on that, not on a
 wall clock taken against a busy account — and the fact that the wall clock was
@@ -192,12 +192,12 @@ Three changes got there, in the order the design required:
 
 ### What the remaining 86s is
 
-| | |
-|---|---|
-| `Gate` | 13s |
-| queue before the last job starts | 25s |
-| `Benchmark configs load` | **42s** — the new critical path |
-| aggregate gate | 3s |
+|                                  |                                 |
+| -------------------------------- | ------------------------------- |
+| `Gate`                           | 13s                             |
+| queue before the last job starts | 25s                             |
+| `Benchmark configs load`         | **42s** — the new critical path |
+| aggregate gate                   | 3s                              |
 
 `Benchmark configs load` could not start until `00:49:40` because ten shards
 were ahead of it. Returning six slots should let it start in the first wave,

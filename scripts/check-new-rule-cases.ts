@@ -39,6 +39,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+import { flatEntries } from './lib/read-baseline.ts';
 
 const ROOT = process.cwd();
 const REGISTRY = path.join(ROOT, 'benchmarks', 'cases', 'registry.json');
@@ -85,7 +86,12 @@ export function ruleIds(manifest: Manifest): Set<string> {
  */
 function manifestAt(ref: string): Manifest | null {
   try {
-    return JSON.parse(git(['show', `${ref}:${MANIFEST}`])) as Manifest;
+    // `flatEntries` drops the manifest's `command` metadata; without it the
+    // string is read as a plugin and its characters as rules (`command/0`,
+    // `command/1`, …), which failed this gate on a healthy repository.
+    return flatEntries<Manifest[string]>(
+      JSON.parse(git(['show', `${ref}:${MANIFEST}`])),
+    );
   } catch {
     return null;
   }

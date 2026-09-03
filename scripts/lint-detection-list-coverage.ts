@@ -50,7 +50,11 @@ import * as path from 'node:path';
 
 const ROOT = path.resolve(__dirname, '..');
 const PACKAGES = path.join(ROOT, 'packages');
-const DEBT_FILE = path.join(ROOT, '.agent', 'detection-list-coverage-debt.json');
+const DEBT_FILE = path.join(
+  ROOT,
+  '.agent',
+  'detection-list-coverage-debt.json',
+);
 
 /**
  * A detection entry is a bare token — a method name, a package name, a route
@@ -137,7 +141,9 @@ function stripLineComment(line: string): string {
 export function extractLists(rawSource: string, file: string): DetectionList[] {
   const source = stripComments(rawSource);
   const out: DetectionList[] = [];
-  for (const m of source.matchAll(/const\s+([A-Z][A-Z0-9_]{2,})\s*(?::[^=]+)?=\s*\[([^\]]*)\]/g)) {
+  for (const m of source.matchAll(
+    /const\s+([A-Z][A-Z0-9_]{2,})\s*(?::[^=]+)?=\s*\[([^\]]*)\]/g,
+  )) {
     const all = [...m[2].matchAll(/'([^']+)'/g)].map((x) => x[1]);
     const tokens = all.filter(isDetectionToken);
     if (tokens.length < MIN_ENTRIES) continue;
@@ -148,7 +154,10 @@ export function extractLists(rawSource: string, file: string): DetectionList[] {
 }
 
 /** Entries of `list` that appear nowhere in `testText`. Case-insensitive. */
-export function uncoveredEntries(list: DetectionList, testText: string): string[] {
+export function uncoveredEntries(
+  list: DetectionList,
+  testText: string,
+): string[] {
   const haystack = testText.toLowerCase();
   return list.entries.filter((e) => !haystack.includes(e.toLowerCase()));
 }
@@ -198,7 +207,8 @@ export function testTextFor(file: string): string {
         readTestsUnder(full);
         continue;
       }
-      if (/\.(test|spec)\.tsx?$/.test(entry.name)) text += fs.readFileSync(full, 'utf8');
+      if (/\.(test|spec)\.tsx?$/.test(entry.name))
+        text += fs.readFileSync(full, 'utf8');
     }
   };
 
@@ -210,14 +220,15 @@ export function testTextFor(file: string): string {
   // Flat rule: `<rule>.test.ts`, `<rule>.coverage.test.ts`, and a `__tests__`
   // sibling holding `<rule>.test.ts`.
   const owns = (name: string) =>
-    new RegExp(`^${base.replaceAll(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\.[^/]*\\.(test|spec)\\.tsx?$|^${base.replaceAll(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\.(test|spec)\\.tsx?$`).test(
-      name,
-    );
+    new RegExp(
+      `^${base.replaceAll(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\.[^/]*\\.(test|spec)\\.tsx?$|^${base.replaceAll(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\.(test|spec)\\.tsx?$`,
+    ).test(name);
   for (const d of [dir, path.join(dir, '__tests__')]) {
     if (!fs.existsSync(d)) continue;
     for (const entry of fs.readdirSync(d, { withFileTypes: true })) {
       if (entry.isDirectory()) continue;
-      if (owns(entry.name)) text += fs.readFileSync(path.join(d, entry.name), 'utf8');
+      if (owns(entry.name))
+        text += fs.readFileSync(path.join(d, entry.name), 'utf8');
     }
   }
 
@@ -227,7 +238,8 @@ export function testTextFor(file: string): string {
   // own basename counts, so a sibling rule's test in the shared tree cannot
   // mark this rule's entries covered.
   let src = dir;
-  while (path.basename(src) !== 'src' && path.dirname(src) !== src) src = path.dirname(src);
+  while (path.basename(src) !== 'src' && path.dirname(src) !== src)
+    src = path.dirname(src);
   if (path.basename(src) === 'src') {
     const readOwnedUnder = (d: string) => {
       if (!fs.existsSync(d)) return;
@@ -265,34 +277,70 @@ function main(): void {
 
   if (update) {
     fs.mkdirSync(path.dirname(DEBT_FILE), { recursive: true });
-    fs.writeFileSync(DEBT_FILE, `${JSON.stringify(current, null, 2)}\n`);
+    /*
+     * `command` first, then the data. The artefacts-name-their-method lock
+     * requires every JSON artefact to say how it was made, and a GENERATED
+     * file that only carries the field because somebody typed it once loses
+     * it on the next `--update`.
+     */
+    fs.writeFileSync(
+      DEBT_FILE,
+      `${JSON.stringify({ command: 'npx tsx scripts/lint-detection-list-coverage.ts --update', ...current }, null, 2)}\n`,
+    );
     const total = Object.values(current).reduce((a, e) => a + e.length, 0);
-    console.log(`Recorded ${total} uncovered entries across ${Object.keys(current).length} tables.`);
+    console.log(
+      `Recorded ${total} uncovered entries across ${Object.keys(current).length} tables.`,
+    );
     return;
   }
 
-  const debt: Record<string, string[]> = fs.existsSync(DEBT_FILE)
+  /*
+   * METADATA sits beside the data in this file — `command`, required by the
+   * artefacts-name-their-method lock — and it is not a detection table.
+   * Reading it as one made the loop below iterate a STRING, so every
+   * character of the command became a "now covered" debt entry:
+   *
+   *     ✗ 56 debt entry/entries are now covered — prune the ledger:
+   *         command → n
+   *         command → p
+   *         command → x
+   *
+   * Only array values are debt. Anything else describes the file.
+   */
+  const debtFile: Record<string, unknown> = fs.existsSync(DEBT_FILE)
     ? JSON.parse(fs.readFileSync(DEBT_FILE, 'utf8'))
     : {};
+  const debt: Record<string, string[]> = Object.fromEntries(
+    Object.entries(debtFile).filter((pair): pair is [string, string[]] =>
+      Array.isArray(pair[1]),
+    ),
+  );
 
   const added: string[] = [];
   const fixed: string[] = [];
   for (const [key, missing] of Object.entries(current)) {
     const known = new Set(debt[key] ?? []);
-    for (const entry of missing) if (!known.has(entry)) added.push(`${key} → ${entry}`);
+    for (const entry of missing)
+      if (!known.has(entry)) added.push(`${key} → ${entry}`);
   }
   for (const [key, known] of Object.entries(debt)) {
     const missing = new Set(current[key] ?? []);
-    for (const entry of known) if (!missing.has(entry)) fixed.push(`${key} → ${entry}`);
+    for (const entry of known)
+      if (!missing.has(entry)) fixed.push(`${key} → ${entry}`);
   }
 
-  const totalUncovered = Object.values(current).reduce((a, e) => a + e.length, 0);
+  const totalUncovered = Object.values(current).reduce(
+    (a, e) => a + e.length,
+    0,
+  );
   console.log(
     `${lists.length} detection tables, ${entryCount} entries, ${totalUncovered} uncovered.`,
   );
 
   if (added.length) {
-    console.error(`\n✗ ${added.length} detection entry/entries no test exercises:\n`);
+    console.error(
+      `\n✗ ${added.length} detection entry/entries no test exercises:\n`,
+    );
     for (const line of added) console.error(`    ${line}`);
     console.error(
       '\n  Add a case that FAILS when the entry is removed from the table.\n' +
@@ -301,9 +349,13 @@ function main(): void {
     );
   }
   if (fixed.length) {
-    console.error(`\n✗ ${fixed.length} debt entry/entries are now covered — prune the ledger:\n`);
+    console.error(
+      `\n✗ ${fixed.length} debt entry/entries are now covered — prune the ledger:\n`,
+    );
     for (const line of fixed) console.error(`    ${line}`);
-    console.error('\n  Run: npm run lint:detection-list-coverage -- --update\n');
+    console.error(
+      '\n  Run: npm run lint:detection-list-coverage -- --update\n',
+    );
   }
   if (added.length || fixed.length) process.exit(1);
   console.log('✅ No new unexercised detection entries.');

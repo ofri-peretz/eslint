@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-mongodb-security",
   "version": "9.1.2",
-  "description": "ESLint plugin for MongoDB and Mongoose security — detects NoSQL operator injection, unsafe queries and regex, hardcoded connection strings, and missing TLS.",
+  "description": "ESLint plugin for MongoDB and Mongoose security \u2014 detects NoSQL operator injection, unsafe queries and regex, hardcoded connection strings, and missing TLS.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -111,5 +111,14 @@
   "funding": {
     "type": "github",
     "url": "git+https://github.com/ofri-peretz/eslint.git"
+  },
+  "interlace": {
+    "surface": {
+      "kind": "npm",
+      "modules": [
+        "mongodb",
+        "mongoose"
+      ]
+    }
   }
 }

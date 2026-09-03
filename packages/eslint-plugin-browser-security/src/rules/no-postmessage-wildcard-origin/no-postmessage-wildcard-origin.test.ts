@@ -25,10 +25,12 @@ ruleTester.run('no-postmessage-wildcard-origin', noPostmessageWildcardOrigin, {
       code: `window.postMessage(data, 'https://example.com');`,
     },
     {
+      name: 'a specific target origin through an iframe handle',
       code: `iframe.contentWindow.postMessage(data, 'https://trusted-domain.com');`,
     },
     // Using variable for origin (we can't statically analyze this)
     {
+      name: 'a target origin held in a binding this file does not set',
       code: `window.postMessage(data, targetOrigin);`,
     },
     // Options object with specific origin
@@ -37,6 +39,7 @@ ruleTester.run('no-postmessage-wildcard-origin', noPostmessageWildcardOrigin, {
     },
     // No origin argument (will fail at runtime but not our concern)
     {
+      name: 'no target origin argument at all',
       code: `window.postMessage(data);`,
     },
     // Test files are allowed by default
@@ -65,7 +68,12 @@ ruleTester.run('no-postmessage-wildcard-origin', noPostmessageWildcardOrigin, {
       errors: [
         {
           messageId: 'wildcardOrigin',
-          suggestions: [{ messageId: 'specifyOrigin', output: `window.postMessage(data, 'https://your-domain.com');` }],
+          suggestions: [
+            {
+              messageId: 'specifyOrigin',
+              output: `window.postMessage(data, 'https://your-domain.com');`,
+            },
+          ],
         },
       ],
     },
@@ -75,7 +83,12 @@ ruleTester.run('no-postmessage-wildcard-origin', noPostmessageWildcardOrigin, {
       errors: [
         {
           messageId: 'wildcardOrigin',
-          suggestions: [{ messageId: 'specifyOrigin', output: `iframe.contentWindow.postMessage(message, 'https://your-domain.com');` }],
+          suggestions: [
+            {
+              messageId: 'specifyOrigin',
+              output: `iframe.contentWindow.postMessage(message, 'https://your-domain.com');`,
+            },
+          ],
         },
       ],
     },
@@ -85,7 +98,12 @@ ruleTester.run('no-postmessage-wildcard-origin', noPostmessageWildcardOrigin, {
       errors: [
         {
           messageId: 'wildcardOrigin',
-          suggestions: [{ messageId: 'specifyOrigin', output: `parent.postMessage({ type: 'ready' }, 'https://your-domain.com');` }],
+          suggestions: [
+            {
+              messageId: 'specifyOrigin',
+              output: `parent.postMessage({ type: 'ready' }, 'https://your-domain.com');`,
+            },
+          ],
         },
       ],
     },
@@ -95,7 +113,12 @@ ruleTester.run('no-postmessage-wildcard-origin', noPostmessageWildcardOrigin, {
       errors: [
         {
           messageId: 'wildcardOrigin',
-          suggestions: [{ messageId: 'specifyOrigin', output: `window.opener.postMessage(result, 'https://your-domain.com');` }],
+          suggestions: [
+            {
+              messageId: 'specifyOrigin',
+              output: `window.opener.postMessage(result, 'https://your-domain.com');`,
+            },
+          ],
         },
       ],
     },
@@ -105,7 +128,12 @@ ruleTester.run('no-postmessage-wildcard-origin', noPostmessageWildcardOrigin, {
       errors: [
         {
           messageId: 'wildcardOrigin',
-          suggestions: [{ messageId: 'specifyOrigin', output: `window.postMessage(data, { targetOrigin: 'https://your-domain.com' });` }],
+          suggestions: [
+            {
+              messageId: 'specifyOrigin',
+              output: `window.postMessage(data, { targetOrigin: 'https://your-domain.com' });`,
+            },
+          ],
         },
       ],
     },
@@ -115,7 +143,12 @@ ruleTester.run('no-postmessage-wildcard-origin', noPostmessageWildcardOrigin, {
       errors: [
         {
           messageId: 'wildcardOrigin',
-          suggestions: [{ messageId: 'specifyOrigin', output: `worker.postMessage(data, 'https://your-domain.com', [transferable]);` }],
+          suggestions: [
+            {
+              messageId: 'specifyOrigin',
+              output: `worker.postMessage(data, 'https://your-domain.com', [transferable]);`,
+            },
+          ],
         },
       ],
     },
@@ -127,7 +160,12 @@ ruleTester.run('no-postmessage-wildcard-origin', noPostmessageWildcardOrigin, {
       errors: [
         {
           messageId: 'wildcardOrigin',
-          suggestions: [{ messageId: 'specifyOrigin', output: `window.postMessage(data, 'https://your-domain.com');` }],
+          suggestions: [
+            {
+              messageId: 'specifyOrigin',
+              output: `window.postMessage(data, 'https://your-domain.com');`,
+            },
+          ],
         },
       ],
     },
@@ -137,7 +175,12 @@ ruleTester.run('no-postmessage-wildcard-origin', noPostmessageWildcardOrigin, {
       errors: [
         {
           messageId: 'wildcardOrigin',
-          suggestions: [{ messageId: 'specifyOrigin', output: `getIframe().contentWindow.postMessage(data, 'https://your-domain.com');` }],
+          suggestions: [
+            {
+              messageId: 'specifyOrigin',
+              output: `getIframe().contentWindow.postMessage(data, 'https://your-domain.com');`,
+            },
+          ],
         },
       ],
     },

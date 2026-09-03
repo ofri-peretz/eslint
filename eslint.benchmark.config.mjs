@@ -1,3 +1,4 @@
+import tsParser from '@typescript-eslint/parser';
 /**
  * ESLint Benchmark Config
  *
@@ -7,34 +8,59 @@
  * Requires tsx: `npx tsx node_modules/.bin/eslint --config eslint.benchmark.config.mjs`
  */
 
-const secureCodingModule = await import('./packages/eslint-plugin-secure-coding/src/index.ts');
-const nodeSecurityModule = await import('./packages/eslint-plugin-node-security/src/index.ts');
-const pgModule = await import('./packages/eslint-plugin-postgresql-security/src/index.ts');
-const expressModule = await import('./packages/eslint-plugin-express-security/src/index.ts');
-const browserModule = await import('./packages/eslint-plugin-browser-security/src/index.ts');
-const jwtModule = await import('./packages/eslint-plugin-jwt-security/src/index.ts');
-const mongodbModule = await import('./packages/eslint-plugin-mongodb-security/src/index.ts');
-const nestjsModule = await import('./packages/eslint-plugin-nestjs-security/src/index.ts');
-const lambdaModule = await import('./packages/eslint-plugin-lambda-security/src/index.ts');
-const vercelAiModule = await import('./packages/eslint-plugin-vercel-ai-security/src/index.ts');
+const secureCodingModule =
+  await import('./packages/eslint-plugin-secure-coding/src/index.ts');
+const nodeSecurityModule =
+  await import('./packages/eslint-plugin-node-security/src/index.ts');
+const pgModule =
+  await import('./packages/eslint-plugin-postgresql-security/src/index.ts');
+const expressModule =
+  await import('./packages/eslint-plugin-express-security/src/index.ts');
+const browserModule =
+  await import('./packages/eslint-plugin-browser-security/src/index.ts');
+const jwtModule =
+  await import('./packages/eslint-plugin-jwt-security/src/index.ts');
+const mongodbModule =
+  await import('./packages/eslint-plugin-mongodb-security/src/index.ts');
+const nestjsModule =
+  await import('./packages/eslint-plugin-nestjs-security/src/index.ts');
+const lambdaModule =
+  await import('./packages/eslint-plugin-lambda-security/src/index.ts');
+const vercelAiModule =
+  await import('./packages/eslint-plugin-vercel-ai-security/src/index.ts');
 // The benchmark scored 234 of 374 rules because these fifteen plugins were
 // never loaded — import-next (55 rules) and react-a11y (37) among them. A rule
 // the harness cannot load has no precision number and never will.
-const importNextModule = await import('./packages/eslint-plugin-import-next/src/index.ts');
-const reactA11yModule = await import('./packages/eslint-plugin-react-a11y/src/index.ts');
-const modularityModule = await import('./packages/eslint-plugin-modularity/src/index.ts');
-const knexSecurityModule = await import('./packages/eslint-plugin-knex-security/src/index.ts');
-const drizzleSecurityModule = await import('./packages/eslint-plugin-drizzle-security/src/index.ts');
-const mcpSdkSecurityModule = await import('./packages/eslint-plugin-mcp-sdk-security/src/index.ts');
-const modernizationModule = await import('./packages/eslint-plugin-modernization/src/index.ts');
-const prismaSecurityModule = await import('./packages/eslint-plugin-prisma-security/src/index.ts');
-const sequelizeSecurityModule = await import('./packages/eslint-plugin-sequelize-security/src/index.ts');
-const typeormSecurityModule = await import('./packages/eslint-plugin-typeorm-security/src/index.ts');
-const anthropicSecurityModule = await import('./packages/eslint-plugin-anthropic-security/src/index.ts');
-const geminiSecurityModule = await import('./packages/eslint-plugin-gemini-security/src/index.ts');
-const mysqlSecurityModule = await import('./packages/eslint-plugin-mysql-security/src/index.ts');
-const openaiSecurityModule = await import('./packages/eslint-plugin-openai-security/src/index.ts');
-const sqliteSecurityModule = await import('./packages/eslint-plugin-sqlite-security/src/index.ts');
+const importNextModule =
+  await import('./packages/eslint-plugin-import-next/src/index.ts');
+const reactA11yModule =
+  await import('./packages/eslint-plugin-react-a11y/src/index.ts');
+const modularityModule =
+  await import('./packages/eslint-plugin-modularity/src/index.ts');
+const knexSecurityModule =
+  await import('./packages/eslint-plugin-knex-security/src/index.ts');
+const drizzleSecurityModule =
+  await import('./packages/eslint-plugin-drizzle-security/src/index.ts');
+const mcpSdkSecurityModule =
+  await import('./packages/eslint-plugin-mcp-sdk-security/src/index.ts');
+const modernizationModule =
+  await import('./packages/eslint-plugin-modernization/src/index.ts');
+const prismaSecurityModule =
+  await import('./packages/eslint-plugin-prisma-security/src/index.ts');
+const sequelizeSecurityModule =
+  await import('./packages/eslint-plugin-sequelize-security/src/index.ts');
+const typeormSecurityModule =
+  await import('./packages/eslint-plugin-typeorm-security/src/index.ts');
+const anthropicSecurityModule =
+  await import('./packages/eslint-plugin-anthropic-security/src/index.ts');
+const geminiSecurityModule =
+  await import('./packages/eslint-plugin-gemini-security/src/index.ts');
+const mysqlSecurityModule =
+  await import('./packages/eslint-plugin-mysql-security/src/index.ts');
+const openaiSecurityModule =
+  await import('./packages/eslint-plugin-openai-security/src/index.ts');
+const sqliteSecurityModule =
+  await import('./packages/eslint-plugin-sqlite-security/src/index.ts');
 
 // Normalize default/named exports
 const normalize = (m) => m.default || m;
@@ -75,7 +101,25 @@ function allRulesError(pluginName, plugin) {
 
 export default [
   {
-    files: ['**/*.js'],
+    /*
+     * `**\/*.js` with no parser was the shape that made the REAL-SOURCE
+     * inventory wrong: 214,855 TypeScript files were walked, handed to ESLint,
+     * and matched by no config block, so `react-a11y` (37 rules) read as "never
+     * fires" when it had never been asked. `eslint.real-source.config.mjs` was
+     * created on 2026-08-26 to fix exactly that — and this file, which scores
+     * DETECTION QUALITY, was left as it was.
+     *
+     * The tell is sitting in the corpus already: fourteen `.tsx` fixtures under
+     * `WCAG-1.1.1/`, cut for the a11y rules, never once linted because no
+     * config block matched them.
+     */
+    files: ['**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}'],
+    languageOptions: {
+      parser: tsParser,
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      parserOptions: { ecmaFeatures: { jsx: true } },
+    },
     plugins: {
       'secure-coding': secureCoding,
       'node-security': nodeSecurity,
@@ -89,11 +133,11 @@ export default [
       'vercel-ai-security': vercelAiSecurity,
       'import-next': importNext,
       'react-a11y': reactA11y,
-      'modularity': modularity,
+      modularity: modularity,
       'knex-security': knexSecurity,
       'drizzle-security': drizzleSecurity,
       'mcp-sdk-security': mcpSdkSecurity,
-      'modernization': modernization,
+      modernization: modernization,
       'prisma-security': prismaSecurity,
       'sequelize-security': sequelizeSecurity,
       'typeorm-security': typeormSecurity,

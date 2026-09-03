@@ -306,8 +306,13 @@ function untrustedSource(
     let root: TSESTree.Node = node;
     const properties: string[] = [];
     while (root.type === AST_NODE_TYPES.MemberExpression) {
-      if (root.property.type === AST_NODE_TYPES.Identifier) {
-        properties.unshift(root.property.name);
+      // `req['body'].template` names the same chain `req.body.template` names.
+      // A segment keyed at runtime names nothing, and is skipped exactly as a
+      // non-Identifier property was — the chain is then judged on what is left,
+      // which is the pre-existing behaviour for that shape.
+      const segment = propertyName(root);
+      if (segment !== null) {
+        properties.unshift(segment);
       }
       root = root.object;
     }

@@ -10,14 +10,19 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  objectKeyName,
+  propertyName,
+} from '@interlace/eslint-devkit';
 
 type MessageIds = 'migrateToHooks' | 'convertToFunction' | 'viewMigrationGuide';
 
 export interface Options {
   /** Ignore PureComponent classes. Default: false */
   ignorePureRenderComponents?: boolean;
-  
+
   /** Allow classes with complex lifecycle patterns. Default: false */
   allowComplexLifecycle?: boolean;
 }
@@ -30,7 +35,8 @@ export const reactClassToHooks = createRule<RuleOptions, MessageIds>({
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/react-class-to-hooks.md',
-      description: 'Suggest migrating React class components to hooks with detailed migration path',
+      description:
+        'Suggest migrating React class components to hooks with detailed migration path',
       cwe: 'CWE-1078',
       cvss: 5,
     },
@@ -90,9 +96,7 @@ export const reactClassToHooks = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     // `options` is always an object here (`|| {}` above), so no second fallback.
-    const {
-allowComplexLifecycle = false
-}: Options = options;
+    const { allowComplexLifecycle = false }: Options = options;
 
     const sourceCode = context.sourceCode;
 
@@ -102,29 +106,28 @@ allowComplexLifecycle = false
     // oxlint-disable-next-line consistent-function-scoping
     const isReactComponent = (node: TSESTree.ClassDeclaration): boolean => {
       if (!node.superClass) return false;
-      
+
       // Check for Identifier (e.g., Component, PureComponent)
-      if (node.superClass.type === 'Identifier') {
+      if (node.superClass.type === AST_NODE_TYPES.Identifier) {
         return (
           node.superClass.name === 'Component' ||
           node.superClass.name === 'PureComponent'
         );
       }
-      
+
       // Check for MemberExpression (e.g., React.Component, React.PureComponent)
-      if (node.superClass.type === 'MemberExpression') {
+      if (node.superClass.type === AST_NODE_TYPES.MemberExpression) {
         if (
-          node.superClass.object.type === 'Identifier' &&
-          node.superClass.object.name === 'React' &&
-          node.superClass.property.type === 'Identifier'
+          node.superClass.object.type === AST_NODE_TYPES.Identifier &&
+          node.superClass.object.name === 'React'
         ) {
-      return (
-            node.superClass.property.name === 'Component' ||
-            node.superClass.property.name === 'PureComponent'
-          );
+          // `class A extends React['Component']` extends the same base class,
+          // and a bundler emits that spelling.
+          const base = propertyName(node.superClass);
+          return base === 'Component' || base === 'PureComponent';
         }
       }
-      
+
       return false;
     };
 
@@ -132,7 +135,9 @@ allowComplexLifecycle = false
      * Analyze lifecycle methods used
      */
     // oxlint-disable-next-line consistent-function-scoping
-    const analyzeLifecycleMethods = (node: TSESTree.ClassDeclaration): {
+    const analyzeLifecycleMethods = (
+      node: TSESTree.ClassDeclaration,
+    ): {
       methods: string[];
       suggestedHooks: string[];
       complexity: 'simple' | 'medium' | 'complex';
@@ -151,8 +156,8 @@ allowComplexLifecycle = false
 
       for (const member of classBody) {
         if (
-          member.type === 'MethodDefinition' &&
-          member.key.type === 'Identifier' &&
+          member.type === AST_NODE_TYPES.MethodDefinition &&
+          member.key.type === AST_NODE_TYPES.Identifier &&
           lifecycleMap[member.key.name]
         ) {
           lifecycleMethods.push(member.key.name);
@@ -181,14 +186,15 @@ allowComplexLifecycle = false
         if (!node.id) return;
 
         const componentName = node.id.name;
-        const { complexity, methods: lifecycleMethods } = analyzeLifecycleMethods(node);
+        const { complexity, methods: lifecycleMethods } =
+          analyzeLifecycleMethods(node);
 
         // Check if component has render() method (fixer doesn't handle it properly)
         const hasRenderMethod = node.body.body.some(
           (member: TSESTree.ClassElement) =>
-            member.type === 'MethodDefinition' &&
-            member.key.type === 'Identifier' &&
-            member.key.name === 'render'
+            // `['render']() {}` declares the same method `render() {}` does.
+            member.type === AST_NODE_TYPES.MethodDefinition &&
+            objectKeyName(member) === 'render',
         );
 
         // Skip if too complex and option is set
@@ -205,30 +211,52 @@ allowComplexLifecycle = false
           },
           // Only provide suggestions for simple components without lifecycle methods or render()
           // The fixer doesn't work properly for components with lifecycle methods or render()
-          ...(complexity === 'simple' && lifecycleMethods.length === 0 && !hasRenderMethod ? {
-            suggest: [
-              {
-                messageId: 'convertToFunction' as const,
-                fix: (fixer: TSESLint.RuleFixer) => {
-                  // Simple auto-fix for basic components
-                  const classText = sourceCode.getText(node);
-                  
-                  // This is a simplified transformation
-                  // Real implementation would need more sophisticated AST manipulation
-                  const funcText = classText
-                    // Match: class Name extends React.Component or class Name extends Component
-                    .replace(/class\s+(\w+)\s+extends\s+(\w+\.)?\w+/, 'function $1(props)')
-                    .replace(/this\.props\./g, 'props.')
-                    .replace(/this\.state\.(\w+)/g, (_: string, name: string) => name);
+          ...(complexity === 'simple' &&
+          lifecycleMethods.length === 0 &&
+          !hasRenderMethod
+            ? {
+                suggest: [
+                  {
+                    messageId: 'convertToFunction' as const,
+                    fix: (fixer: TSESLint.RuleFixer) => {
+                      // Simple auto-fix for basic components
+                      const classText = sourceCode.getText(node);
 
-                  return fixer.replaceText(node, funcText);
-                },
+                      // This is a simplified transformation
+                      // Real implementation would need more sophisticated AST manipulation
+                      const funcText = classText
+                        // Match: class Name extends React.Component or class Name extends Component
+                        /*
+                         * The superclass may be spelled three ways, and this
+                         * consumed only two. `class A extends React['Component']`
+                         * matched as far as `React`, so the suggestion emitted
+                         *
+                         *     function A(props)['Component'] { … }
+                         *
+                         * which does not parse. The rule started accepting the
+                         * computed spelling when it learned that a bundler
+                         * emits it; the fixer was not taught the same thing,
+                         * and a suggestion that produces invalid code is worse
+                         * than no suggestion.
+                         */
+                        .replace(
+                          /class\s+(\w+)\s+extends\s+\w+(?:\s*\.\s*\w+|\s*\[\s*(['"])[^'"]+\2\s*\])?/,
+                          'function $1(props)',
+                        )
+                        .replace(/this\.props\./g, 'props.')
+                        .replace(
+                          /this\.state\.(\w+)/g,
+                          (_: string, name: string) => name,
+                        );
+
+                      return fixer.replaceText(node, funcText);
+                    },
+                  },
+                ],
               }
-            ]
-          } : {}),
+            : {}),
         });
       },
     };
   },
 });
-

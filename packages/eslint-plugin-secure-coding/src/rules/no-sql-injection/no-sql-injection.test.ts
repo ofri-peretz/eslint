@@ -23,6 +23,12 @@ const ruleTester = new RuleTester({
 describe('no-sql-injection', () => {
   ruleTester.run('no-sql-injection', noSqlInjection, {
     valid: [
+      // A chain segment keyed at RUNTIME names nothing, so the chain cannot be
+      // shown to be a request shape. `req['body'].id` resolves and reports.
+      {
+        name: 'a chain segment named at runtime is not a request shape',
+        code: 'const q = `SELECT * FROM t WHERE id = ${req[part].id}`; db.query(q);',
+      },
       // --- an allowlist plus a leaving guard is the correct fix ---------------
       // No driver binds an identifier, so a table or column name cannot be
       // parameterised and an allowlist is what the standard advice prescribes.

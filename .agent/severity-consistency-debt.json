@@ -1,4 +1,5 @@
 {
+  "command": "npx tsx scripts/lint-severity-consistency.ts --update",
   "note": "See scripts/lint-severity-consistency.ts. Ratcheted: entries may be removed by fixing a rule, never added by hand to silence one.",
   "entries": [
     {

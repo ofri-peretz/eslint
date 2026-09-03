@@ -279,12 +279,10 @@ function assignedName(node: TSESTree.Node): string | null {
   ) {
     const target = parent.left;
     if (target.type === AST_NODE_TYPES.Identifier) return target.name;
-    if (
-      target.type === AST_NODE_TYPES.MemberExpression &&
-      !target.computed &&
-      target.property.type === AST_NODE_TYPES.Identifier
-    ) {
-      return target.property.name;
+    if (target.type === AST_NODE_TYPES.MemberExpression) {
+      // `user['password']` names the same field, and the name is the evidence
+      // this rule weighs. A runtime key names nothing to weigh.
+      return propertyName(target);
     }
     return null;
   }
@@ -309,12 +307,8 @@ function assignedName(node: TSESTree.Node): string | null {
 /** The readable name of an expression, for name-based judgements. */
 function expressionName(node: TSESTree.Node): string | null {
   if (node.type === AST_NODE_TYPES.Identifier) return node.name;
-  if (
-    node.type === AST_NODE_TYPES.MemberExpression &&
-    !node.computed &&
-    node.property.type === AST_NODE_TYPES.Identifier
-  ) {
-    return node.property.name;
+  if (node.type === AST_NODE_TYPES.MemberExpression) {
+    return propertyName(node);
   }
   return null;
 }

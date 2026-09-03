@@ -18,13 +18,13 @@ can be said to have shipped.
 
 Five open issues, all filed by crons, all fresh:
 
-| Issue | Watcher | Opened | Comments |
-| :--- | :--- | :--- | ---: |
-| #803 | Comparison artifact refresh | 2026-09-01 | 0 |
-| #802 | resource-profile refresh | 2026-09-01 | 0 |
-| #795 | Release pipeline stalled | 2026-09-01 | 5 |
-| #784 | peer-health snapshot | 2026-08-31 | 0 |
-| #782 | Weekly corpus scan | 2026-08-31 | 0 |
+| Issue | Watcher                     | Opened     | Comments |
+| :---- | :-------------------------- | :--------- | -------: |
+| #803  | Comparison artifact refresh | 2026-09-01 |        0 |
+| #802  | resource-profile refresh    | 2026-09-01 |        0 |
+| #795  | Release pipeline stalled    | 2026-09-01 |        5 |
+| #784  | peer-health snapshot        | 2026-08-31 |        0 |
+| #782  | Weekly corpus scan          | 2026-08-31 |        0 |
 
 Two of them share one cause. `peer-health` (run 33411140440) and
 `resource-profile` (run 33502632167) both die pushing their snapshot:

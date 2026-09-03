@@ -83,6 +83,37 @@ describe('react-class-to-hooks', () => {
             },
           ],
         },
+        /*
+         * The computed spelling, through the SUGGESTION rather than just the
+         * report. The rule learned to recognise `React['Component']` because a
+         * bundler emits it; the fixer's regex still consumed only `React`, so
+         * the suggestion produced
+         *
+         *     function MyComponent(props)['Component'] { }
+         *
+         * which does not parse. A suggestion that emits invalid code is worse
+         * than no suggestion — the reporting side looked correct the whole
+         * time, which is why this asserts the OUTPUT and not just the
+         * messageId.
+         */
+        ...[
+          { label: 'single-quoted', superClass: "React['Component']" },
+          { label: 'double-quoted', superClass: 'React["PureComponent"]' },
+        ].map(({ label, superClass }) => ({
+          name: `a ${label} computed superclass fixes to valid code`,
+          code: `class MyComponent extends ${superClass} { }`,
+          errors: [
+            {
+              messageId: 'migrateToHooks' as const,
+              suggestions: [
+                {
+                  messageId: 'convertToFunction' as const,
+                  output: 'function MyComponent(props) { }',
+                },
+              ],
+            },
+          ],
+        })),
         {
           code: 'class MyComponent extends PureComponent { }',
           errors: [
@@ -294,4 +325,3 @@ describe('react-class-to-hooks', () => {
     });
   });
 });
-
