@@ -247,6 +247,11 @@ if (JSON_OUT) {
 }
 
 if (BACKFILL) {
+  // A push that fails must fail the run. On 2026-09-03 the workflow reported
+  // `+ eslint-devkit@1.17.0 → 3d101b8` and exited green while the tag never
+  // reached origin (the job's checkout has no push credentials), so the
+  // "missing" finding it was dispatched to fix survived its own fix.
+  const pushFailures: string[] = [];
   for (const f of findings) {
     for (const ver of f.missing) {
       const tag = `${f.short}@${ver}`;
@@ -262,8 +267,15 @@ if (BACKFILL) {
         sh('git', ['tag', '-a', tag, '-m', `Backfill release ${tag}`, targetSha]);
         log(`  + ${tag} → ${targetSha.slice(0, 7)}`);
       }
-      shOk('git', ['push', 'origin', tag]);
+      if (!shOk('git', ['push', 'origin', tag])) {
+        pushFailures.push(tag);
+        log(`  ✗ ${tag}: push to origin failed — the tag exists locally only.`);
+      }
     }
+  }
+  if (pushFailures.length > 0) {
+    log(`Backfill incomplete: ${pushFailures.length} tag(s) not pushed: ${pushFailures.join(', ')}`);
+    process.exit(1);
   }
 }
 

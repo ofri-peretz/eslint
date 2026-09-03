@@ -61,6 +61,16 @@ jobs:
       - name: ISO 25010 crosswalk
         run: npm run ilb:iso25010-report
 
+      # The probe regenerates RULE_CASES.json when it is absent, and that ledger
+      # loads every plugin's rules from dist/. A fresh checkout has no dist/,
+      # so without this step the probe dies on
+      # `Cannot find module '@interlace/eslint-devkit/dist/src/index.js'`
+      # (run 33717558041) and the reporter files #803 against a workflow whose
+      # five real refreshes all succeeded. Locked by
+      # scripts/__tests__/comparison-refresh-prerequisites.lock.test.ts.
+      - name: Build the plugin graph (the probe loads rules from dist/)
+        run: npx turbo run build --output-logs=errors-only
+
       # Repo-local and offline: it renames every binding in the suite and re-runs
       # the tests, which is minutes rather than the seconds the artifacts above
       # take. It belongs on a schedule for exactly that reason —
