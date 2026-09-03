@@ -457,6 +457,22 @@ jobs:
       - run: npm run check:benchmark-results-size
 
   # Aggregate gate so branch protection has a single required check to gate on.
+  format-drift:
+    name: Format drift
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
+      - uses: ./.github/actions/setup
+        with:
+          deps: 'lean'
+          turbo-cache: 'false'
+      # Its own job because a full prettier pass is ~76s — too slow to bolt onto
+      # a static-read job, and the pre-commit hook only ever sees staged files.
+      # This is the only run that scans everything, so it is the only one that
+      # can notice a file leaving the baseline.
+      - run: npm run --silent check:format-drift
+
   # Heavy gates (test/build/typecheck/portability) live in quality-full.yml.
   quality-gate:
     name: Quality Gate
@@ -474,6 +490,7 @@ jobs:
         supply-chain,
         recall,
         bench-size,
+        format-drift,
       ]
     if: always()
     steps:
@@ -489,6 +506,7 @@ jobs:
           R_SUPPLY: ${{ needs.supply-chain.result }}
           R_RECALL: ${{ needs.recall.result }}
           R_BENCH_SIZE: ${{ needs.bench-size.result }}
+          R_FORMAT: ${{ needs.format-drift.result }}
         run: |
           set -euo pipefail
           icon() {
@@ -502,7 +520,7 @@ jobs:
           }
 
           all_pass=true
-          for r in "$R_OXLINT" "$R_MARKDOWN" "$R_CHANGELOG" "$R_WORKFLOWS" "$R_TAXONOMY" "$R_PUBLISH" "$R_LOCKFILE" "$R_SUPPLY" "$R_RECALL" "$R_BENCH_SIZE"; do
+          for r in "$R_OXLINT" "$R_MARKDOWN" "$R_CHANGELOG" "$R_WORKFLOWS" "$R_TAXONOMY" "$R_PUBLISH" "$R_LOCKFILE" "$R_SUPPLY" "$R_RECALL" "$R_BENCH_SIZE" "$R_FORMAT"; do
             [ "$r" = "success" ] || all_pass=false
           done
           if $all_pass; then
@@ -526,6 +544,7 @@ jobs:
             echo "| Supply-chain floor  | $(icon "$R_SUPPLY") $R_SUPPLY          | OSV clean + Scorecard checks above floor |"
             echo "| Detection recall    | $(icon "$R_RECALL") $R_RECALL          | no CWE detects less than it used to |"
             echo "| Results size guard  | $(icon "$R_BENCH_SIZE") $R_BENCH_SIZE      | benchmarks/results/ under 20 MiB |"
+            echo "| Format drift        | $(icon "$R_FORMAT") $R_FORMAT          | no file became prettier-unclean |"
             echo ""
             echo "_Heavy gates (build/tests/typecheck/portability) run via \`quality-full.yml\` when this PR is promoted (ready-for-review or \`run-full-ci\` label)._"
             if ! $all_pass; then

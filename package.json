@@ -272,7 +272,8 @@
     "ilb:leaderboard-publish": "tsx scripts/ilb-leaderboard-publish.ts",
     "ilb:federated-aggregate": "tsx scripts/ilb-federated-aggregate.ts",
     "ilb:iso25010-report": "tsx scripts/ilb-iso25010-report.ts",
-    "ilb:mappings-report": "tsx scripts/ilb-mappings-report.ts"
+    "ilb:mappings-report": "tsx scripts/ilb-mappings-report.ts",
+    "check:format-drift": "tsx scripts/check-format-drift.ts"
   },
   "keywords": [
     "eslint",
