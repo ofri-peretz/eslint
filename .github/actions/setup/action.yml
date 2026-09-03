@@ -283,6 +283,28 @@ runs:
     #
     # Exactly one of these runs. Both at once would leave the shim's local
     # TURBO_API pointing at localhost while credentials say Vercel.
+    # Mint a short-lived Turborepo token from the job's GitHub OIDC identity and
+    # export it as TURBO_TOKEN for the steps below. Unlike a PAT this is
+    # team-scoped rather than person-scoped, grants Remote Cache and nothing
+    # else, and expires — so there is no long-lived secret in this repo to leak
+    # or rotate.
+    #
+    # `continue-on-error` is load-bearing, not defensive habit. This step fails
+    # whenever the exchange cannot happen — no OIDC policy configured on the
+    # Vercel team yet, or a fork PR, where GitHub issues no writable id-token at
+    # all. Both are ordinary states, not defects, and both must fall through to
+    # the Actions-backed cache below rather than fail a PR. Without it, adding
+    # this step turns every fork PR red.
+    #
+    # Guarded on TURBO_TEAM because the exchange needs the team slug, and the
+    # workflow supplies it from `vars.TURBO_TEAM`. Unset -> skip -> fallback.
+    - name: Exchange the GitHub OIDC token for a Turborepo cache token
+      if: inputs.turbo-remote-cache == 'true' && env.TURBO_TEAM != '' && env.TURBO_TOKEN == ''
+      continue-on-error: true
+      uses: vercel/setup-turborepo-remote-cache-action@49d7b1b46ba4c9251e1977986bfe18336feabc8f # v1.1.0
+      with:
+        team: ${{ env.TURBO_TEAM }}
+
     - name: Turborepo remote cache (GitHub Actions backend — no token)
       if: inputs.turbo-remote-cache == 'true' && env.TURBO_TOKEN == ''
       uses: rharkor/caching-for-turbo@2238fae6eb9a9936f92356f54cb3660200d105e7 # v2.5.1

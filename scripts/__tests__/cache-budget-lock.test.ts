@@ -85,6 +85,56 @@ describe('exactly one Turborepo remote-cache backend can be active', () => {
   });
 });
 
+describe('the OIDC exchange degrades instead of failing', () => {
+  const step = SETUP.slice(
+    SETUP.indexOf('Exchange the GitHub OIDC token'),
+    SETUP.indexOf('Turborepo remote cache (GitHub Actions backend'),
+  );
+
+  it('is present', () => {
+    expect(step.length).toBeGreaterThan(0);
+  });
+
+  it('carries continue-on-error', () => {
+    // The single most important line here. The exchange fails in two ORDINARY
+    // states — no OIDC policy on the Vercel team yet, and any fork PR, where
+    // GitHub issues no writable id-token. Without this, wiring OIDC turns every
+    // fork PR red, and a repo that accepts outside contributions cannot take
+    // that. Neither state is a defect; both must fall through to the
+    // Actions-backed cache.
+    expect(step).toMatch(/continue-on-error:\s*true/);
+  });
+
+  it('runs before the backend it feeds', () => {
+    // It exports TURBO_TOKEN, and the two backend steps below branch on it.
+    // Ordered after them, the guards read an empty value and the Vercel path is
+    // permanently unreachable while everything stays green.
+    expect(SETUP.indexOf('Exchange the GitHub OIDC token')).toBeLessThan(
+      SETUP.indexOf('Turborepo remote cache (GitHub Actions backend'),
+    );
+  });
+
+  it('pins the third-party action by SHA', () => {
+    // Same rule as every other third-party action here: a moving tag is the
+    // whole attack, and this one mints a credential.
+    expect(step).toMatch(
+      /uses:\s*vercel\/setup-turborepo-remote-cache-action@[a-f0-9]{40}/,
+    );
+  });
+
+  it('every workflow that opts in can actually mint a token', () => {
+    // `id-token: write` is what makes the exchange possible. Missing it, the
+    // step fails, continue-on-error swallows it, and the repo silently runs on
+    // the fallback forever — configured, green, and doing nothing.
+    for (const file of TURBO_WORKFLOWS) {
+      const src = readFileSync(join(ROOT, '.github/workflows', file), 'utf8');
+      expect(src, `${file} needs id-token: write`).toMatch(
+        /^\s*id-token:\s*write/m,
+      );
+    }
+  });
+});
+
 describe('the credentials reach the jobs that would use them', () => {
   it.each(TURBO_WORKFLOWS)(
     '%s passes TURBO_TOKEN and TURBO_TEAM through to the setup action',

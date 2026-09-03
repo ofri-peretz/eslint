@@ -50,6 +50,12 @@ env:
 
 permissions:
   contents: read
+  # For the Turborepo Remote Cache OIDC exchange in ./.github/actions/setup.
+  # The minted token grants Remote Cache access on the Vercel team and nothing
+  # else. Deliberately NOT added to release.yml or supply-chain-attestation.yml
+  # — `infra-metrics-lock` asserts those never enable the remote cache at all,
+  # because a cache write is a path into what we publish.
+  id-token: write
 
 jobs:
   gate:
