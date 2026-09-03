@@ -68,7 +68,9 @@ function currentRules(only?: Set<string>): Record<string, string[]> {
   // Narrow the PLUGIN list too: collectFacts reads and comment-strips every rule
   // in a plugin before anything is filtered, so scoping the rule set alone still
   // pays for the other two plugins.
-  const plugins = only ? [...new Set([...only].map((k) => k.split('/')[0]))] : PLUGINS;
+  const plugins = only
+    ? [...new Set([...only].map((k) => k.split('/')[0]))]
+    : PLUGINS;
   for (const e of buildLedger(plugins, only)) {
     out[`${e.plugin}/${e.rule}`] = e.findings.map((f) => f.id).sort();
   }
@@ -90,24 +92,37 @@ function currentRules(only?: Set<string>): Record<string, string[]> {
  * `importedUtilSources` and could drift from it, and the whole-plugin audit costs
  * milliseconds. Wrong in the safe direction.
  */
-function changedRules(): string[] {
-  const diff = execFileSync('git', ['diff', '--cached', '--name-only', '--diff-filter=ACMR'], {
-    cwd: REPO_ROOT,
-    encoding: 'utf8',
-  });
+export function changedRules(): string[] {
+  const diff = execFileSync(
+    'git',
+    ['diff', '--cached', '--name-only', '--diff-filter=ACMR'],
+    {
+      cwd: REPO_ROOT,
+      encoding: 'utf8',
+    },
+  );
   const hits = new Set<string>();
   const wholePlugins = new Set<string>();
   for (const file of diff.split('\n')) {
-    const rule = /^packages\/eslint-plugin-([^/]+)\/src\/rules\/([^/]+)\//.exec(file);
+    const rule = /^packages\/eslint-plugin-([^/]+)\/src\/rules\/([^/]+)\//.exec(
+      file,
+    );
     if (rule && PLUGINS.includes(rule[1])) hits.add(`${rule[1]}/${rule[2]}`);
     const util = /^packages\/eslint-plugin-([^/]+)\/src\/utils\//.exec(file);
     if (util && PLUGINS.includes(util[1])) wholePlugins.add(util[1]);
   }
   for (const plugin of wholePlugins) {
-    const dir = path.join(REPO_ROOT, 'packages', `eslint-plugin-${plugin}`, 'src', 'rules');
+    const dir = path.join(
+      REPO_ROOT,
+      'packages',
+      `eslint-plugin-${plugin}`,
+      'src',
+      'rules',
+    );
     if (!fs.existsSync(dir)) continue;
     for (const rule of fs.readdirSync(dir)) {
-      if (fs.existsSync(path.join(dir, rule, 'index.ts'))) hits.add(`${plugin}/${rule}`);
+      if (fs.existsSync(path.join(dir, rule, 'index.ts')))
+        hits.add(`${plugin}/${rule}`);
     }
   }
   return [...hits];
@@ -117,11 +132,19 @@ function main(): void {
   const args = new Set(process.argv.slice(2));
 
   if (args.has('--update')) {
-    const baseline: Baseline = { generated: new Date().toISOString().slice(0, 10), rules: currentRules() };
+    const baseline: Baseline = {
+      generated: new Date().toISOString().slice(0, 10),
+      rules: currentRules(),
+    };
     fs.mkdirSync(path.dirname(BASELINE), { recursive: true });
     fs.writeFileSync(BASELINE, JSON.stringify(baseline, null, 2) + '\n');
-    const total = Object.values(baseline.rules).reduce((n, f) => n + f.length, 0);
-    console.log(`Baseline recorded: ${Object.keys(baseline.rules).length} rules, ${total} findings.`);
+    const total = Object.values(baseline.rules).reduce(
+      (n, f) => n + f.length,
+      0,
+    );
+    console.log(
+      `Baseline recorded: ${Object.keys(baseline.rules).length} rules, ${total} findings.`,
+    );
     return;
   }
 
@@ -164,7 +187,9 @@ function main(): void {
       // catalogue is either a fact about its files or a shape that has needed
       // a probe before; neither is acceptable in code written today.
       if (now.length) {
-        regressions.push(`NEW RULE ${name} — must be clean, has: ${now.join(', ')}`);
+        regressions.push(
+          `NEW RULE ${name} — must be clean, has: ${now.join(', ')}`,
+        );
       }
       continue;
     }
@@ -172,16 +197,19 @@ function main(): void {
     const added = countDelta(before, now).added;
     const removed = countDelta(before, now).removed;
     if (added.length) regressions.push(`${name} — gained: ${added.join(', ')}`);
-    if (removed.length) improvements.push(`${name} — fixed: ${removed.join(', ')}`);
+    if (removed.length)
+      improvements.push(`${name} — fixed: ${removed.join(', ')}`);
   }
 
   for (const i of improvements) console.log(`✅ ${i}`);
 
   if (regressions.length) {
-    console.error(`\n⛔ rule-audit ratchet: ${regressions.length} regression(s)\n`);
+    console.error(
+      `\n⛔ rule-audit ratchet: ${regressions.length} regression(s)\n`,
+    );
     for (const r of regressions) console.error(`   ${r}`);
     console.error(
-      '\nEach line is a check in scripts/rule-audit.ts. Read the rule\'s dossier in\n' +
+      "\nEach line is a check in scripts/rule-audit.ts. Read the rule's dossier in\n" +
         'docs/rule-ledger/ for what the check means and — for a SMELL — the probe that\n' +
         'settles it. Probe with:\n' +
         "  npx tsx scripts/probe-rule.mts <plugin>/<rule> '<code>'\n" +
@@ -199,7 +227,10 @@ function main(): void {
 }
 
 /** Multiset delta — a rule gaining a SECOND instance of a check is a regression too. */
-function countDelta(before: string[], now: string[]): { added: string[]; removed: string[] } {
+function countDelta(
+  before: string[],
+  now: string[],
+): { added: string[]; removed: string[] } {
   const tally = (xs: string[]): Map<string, number> => {
     const m = new Map<string, number>();
     for (const x of xs) m.set(x, (m.get(x) ?? 0) + 1);

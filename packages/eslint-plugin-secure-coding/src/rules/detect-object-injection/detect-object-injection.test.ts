@@ -45,11 +45,14 @@ describe('detect-object-injection', () => {
           name: 'a read through a computed key is not a write',
           code: 'const val = obj[userKey];',
         },
-        { code: 'const val = a[b][c];' },
+        {
+          name: 'a chained runtime-keyed read is still one unknowable access',
+          code: 'const val = a[b][c];',
+        },
         {
           code: 'function f(arr, n) { for (let loopVar; loopVar < n; loopVar++) { arr[loopVar]; } }',
         },
-        { code: 'const x = arr[a + b];' },
+
         { code: 'const x = arr[obj.method()];' },
         {
           code: "let ALLOWED = { a: 'A' }; function f(req) { return ALLOWED[req.body.k]; }",

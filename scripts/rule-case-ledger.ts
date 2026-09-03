@@ -58,10 +58,12 @@
 
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { readBaseline, readBaselineRecord } from './lib/read-baseline.ts';
+import { changedRules } from './rule-audit-gate.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
@@ -75,6 +77,7 @@ const BASELINE = path.join(
 );
 
 const CHECK = process.argv.includes('--check');
+const TOUCHED = process.argv.includes('--touched');
 const UPDATE = process.argv.includes('--update');
 
 type Kind = 'TP' | 'TN' | 'FP' | 'FN' | 'GAP';
@@ -908,6 +911,70 @@ if (CHECK) {
         '\n  Name it after the claim it makes, or run --update if a rule genuinely shrank.',
     );
     process.exit(1);
+  }
+
+  /*
+   * `--touched`: the debt is charged to the rule being edited.
+   *
+   * The per-rule ratchet holds the line and has no downward force — a rule at
+   * 189 undescribed cases may be edited forever provided it never reaches 190,
+   * and 419 rules carry the debt with no mechanism to reduce it but somebody
+   * deciding to. Nobody decides to; there is always a rule to fix instead.
+   *
+   * So an edit to a rule's source must leave its descriptions better than it
+   * found them. STRICTLY LOWER, not zero: a rule at 189 cannot be cleared in
+   * the change that fixes a bug in it, and demanding that makes the gate
+   * something people route around. One name per edit drains the debt at the
+   * rate the code is actually worked on, which is the only rate available.
+   *
+   * See docs/intents/the-description-ratchet-cannot-reach-the-debt/.
+   */
+  if (TOUCHED) {
+    /*
+     * The baseline as COMMITTED, not as it sits in the working tree.
+     *
+     * `--update` rewrites the baseline to match the current count, so a change
+     * that names a case and updates the baseline in one commit would compare
+     * 196 against 196 and read as a stall — the reduction it just made becomes
+     * invisible to the gate that asked for it. Found immediately: this gate
+     * blocked the commit that introduced it.
+     *
+     * Reading HEAD's copy makes the working tree's improvement visible, which
+     * is the only comparison that answers "did this change make it better".
+     */
+    const committed = (() => {
+      try {
+        return JSON.parse(
+          execFileSync(
+            'git',
+            ['show', `HEAD:${path.relative(ROOT, DESCRIPTION_BASELINE)}`],
+            { cwd: ROOT, encoding: 'utf8' },
+          ),
+        ) as { rules?: Record<string, number> };
+      } catch {
+        return undefined;
+      }
+    })();
+    const baseline =
+      committed?.rules ?? readBaselineRecord(DESCRIPTION_BASELINE, 'rules');
+    const stalled = changedRules()
+      .filter((rule) => (baseline[rule] ?? 0) > 0)
+      .filter((rule) => (undescribedByRule[rule] ?? 0) >= (baseline[rule] ?? 0))
+      .map((rule) => `${rule}  ${undescribedByRule[rule] ?? 0} undescribed`);
+    if (stalled.length > 0) {
+      console.error(
+        `\n  ⛔ ${stalled.length} rule(s) changed without describing a case:`,
+      );
+      for (const line of stalled) console.error(`     ${line}`);
+      console.error(
+        '\n  An edit to a rule must leave its case descriptions better than it' +
+          '\n  found them. Name ONE case after the claim it makes — not all of' +
+          '\n  them — then run `npm run rule-cases -- --update`.',
+      );
+      process.exit(1);
+    }
+    console.log('  touched rules: descriptions did not stall');
+    process.exit(0);
   }
 
   const namingBaseline = readBaselineRecord(NAMING_BASELINE, 'rules');
