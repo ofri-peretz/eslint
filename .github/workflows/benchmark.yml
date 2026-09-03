@@ -98,6 +98,13 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      # Benchmark configs import plugins by package name, which resolves through
+      # `exports` to dist/. `npm ci` links a workspace; it never compiles one.
+      # Without this the run dies on the first config with
+      # "Cannot find module .../eslint-plugin-secure-coding/dist/src/index.js".
+      - name: Build plugins (dist/ is what the configs load)
+        run: npx turbo run build --filter='eslint-plugin-*' --filter=@interlace/eslint-devkit
+
       - name: Build @interlace/eslint-formatter
         run: npx tsc -p packages/eslint-formatter/tsconfig.lib.json
       - name: Unit + snapshot + ESLint integration tests
@@ -156,6 +163,13 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      # Benchmark configs import plugins by package name, which resolves through
+      # `exports` to dist/. `npm ci` links a workspace; it never compiles one.
+      # Without this the run dies on the first config with
+      # "Cannot find module .../eslint-plugin-secure-coding/dist/src/index.js".
+      - name: Build plugins (dist/ is what the configs load)
+        run: npx turbo run build --filter='eslint-plugin-*' --filter=@interlace/eslint-devkit
+
       - name: Cache the pinned corpus
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
@@ -199,6 +213,13 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      # Benchmark configs import plugins by package name, which resolves through
+      # `exports` to dist/. `npm ci` links a workspace; it never compiles one.
+      # Without this the run dies on the first config with
+      # "Cannot find module .../eslint-plugin-secure-coding/dist/src/index.js".
+      - name: Build plugins (dist/ is what the configs load)
+        run: npx turbo run build --filter='eslint-plugin-*' --filter=@interlace/eslint-devkit
+
       - name: Cache the pinned corpus
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
@@ -280,6 +301,13 @@ jobs:
           cache: npm
 
       - run: npm ci
+      # Benchmark configs import plugins by package name, which resolves through
+      # `exports` to dist/. `npm ci` links a workspace; it never compiles one.
+      # Without this the run dies on the first config with
+      # "Cannot find module .../eslint-plugin-secure-coding/dist/src/index.js".
+      - name: Build plugins (dist/ is what the configs load)
+        run: npx turbo run build --filter='eslint-plugin-*' --filter=@interlace/eslint-devkit
+
 
       # Cache cloned target repos between CI runs to keep things fast.
       - name: Restore .bench-repos cache
