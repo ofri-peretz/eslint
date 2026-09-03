@@ -61,6 +61,41 @@ describe('the Actions cache budget', () => {
   });
 });
 
+describe('only main writes the big caches', () => {
+  /**
+   * `actions/cache` saves whenever its key missed. A key that changes on every
+   * PR therefore writes a fresh entry per PR that nothing can ever look up
+   * again, because the key that produced it cannot recur.
+   *
+   * The Next.js key hashes every source file in apps/docs and packages/ui, so
+   * it changed on essentially every PR: 9 entries, 3.56 GB, the largest single
+   * consumer of a 10 GB allowance measured at 11.98 GB and evicting. Restores
+   * were always coming from main via the restore-keys prefix; the per-PR save
+   * was pure cost.
+   */
+  const bigWriters = ['Next.js build cache', 'Turbo cache'];
+
+  it.each(bigWriters)('%s only SAVES on main', (label) => {
+    const at = SETUP.indexOf(`${label} (main`);
+    expect(at, `no "${label} (main — restore + save)" step`).toBeGreaterThan(
+      -1,
+    );
+    expect(SETUP.slice(at, at + 300)).toMatch(
+      /if:.*github\.ref == 'refs\/heads\/main'/,
+    );
+  });
+
+  it('the branch path restores without saving', () => {
+    // `actions/cache/restore`, not `actions/cache` — the plain action registers
+    // a post-job save, which is the whole cost being removed here.
+    const at = SETUP.indexOf('Restore Next.js build cache (branches');
+    expect(at, 'no branch-scoped Next.js restore step').toBeGreaterThan(-1);
+    const step = SETUP.slice(at, at + 400);
+    expect(step).toMatch(/uses: actions\/cache\/restore@/);
+    expect(step).toMatch(/if:.*github\.ref != 'refs\/heads\/main'/);
+  });
+});
+
 describe('exactly one Turborepo remote-cache backend can be active', () => {
   // Both at once would leave the shim's TURBO_API pointing at a localhost
   // server while the credentials in the environment name Vercel. The failure

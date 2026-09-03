@@ -411,8 +411,30 @@ runs:
     # worth 25s. `scripts/__tests__/tsbuildinfo-cache-pairing-lock.test.ts`
     # fails if either half is ever cached without the other.
 
-    - name: Restore Next.js build cache
-      if: inputs.next-cache == 'true'
+    # Branches RESTORE, only main SAVES — the same split the Turbo cache above
+    # uses, for the same reason.
+    #
+    # The key's second hash covers every source file in apps/docs and
+    # packages/ui, so it changes on essentially every PR. `actions/cache` saves
+    # whenever the key missed, so each PR was writing a fresh ~400 MB entry that
+    # nothing would ever look up again — the key that produced it cannot recur.
+    # Measured 2026-09-03: 9 entries, 3.56 GB, the largest single consumer of a
+    # 10 GB allowance that was sitting at 11.98 GB and evicting.
+    #
+    # Restores are unchanged: the restore-keys prefix already meant a PR was
+    # reading main's entry, not its own. It just stops leaving a copy behind.
+    - name: Restore Next.js build cache (branches — read-only)
+      if: inputs.next-cache == 'true' && github.ref != 'refs/heads/main'
+      uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+      with:
+        path: apps/docs/.next/cache
+        key: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('apps/docs/**/*.[jt]s', 'apps/docs/**/*.[jt]sx', 'apps/docs/**/*.mdx', 'packages/ui/src/**') }}
+        restore-keys: |
+          nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+          nextjs-${{ runner.os }}-
+
+    - name: Next.js build cache (main — restore + save)
+      if: inputs.next-cache == 'true' && github.ref == 'refs/heads/main'
       uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
       with:
         path: apps/docs/.next/cache
