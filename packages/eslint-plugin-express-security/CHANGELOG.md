@@ -5,6 +5,20 @@ All notable changes to `eslint-plugin-express-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.2.3
+
+### Patch Changes
+
+- **🐛 Fix** — `res['send'](err['stack'])` leaks the same trace
+
+  Both halves were gated on `property.name` — the response method and the error
+  field — so a subscripted send of a subscripted stack went unreported. Two
+  tests had pinned it, one as a "documented false negative", and the rule's own
+  documentation told readers `err['stack']` was undetected. The docs now
+  describe what is genuinely out of reach: a property named at runtime.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.2`
+
 ## 3.2.2
 
 ### Patch Changes

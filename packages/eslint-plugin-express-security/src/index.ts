@@ -142,7 +142,7 @@ withCanonicalDocsUrls('plugin-express-security', rules);
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-express-security',
-    version: '3.2.2',
+    version: '3.2.3',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;

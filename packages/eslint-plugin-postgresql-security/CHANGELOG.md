@@ -5,6 +5,19 @@ All notable changes to `eslint-plugin-postgresql-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.3.4
+
+### Patch Changes
+
+- **🐛 Fix** — `no-missing-client-release` and `prefer-pool-query` now expose their CWE at `meta.docs.cwe`, so every formatter renders it.
+
+  Both rules already asserted a CWE — CWE-404 and CWE-400 respectively — but only
+  inside `formatLLMMessage`, which the formatter cannot read. The effect was that
+  an LLM consumer saw the security classification and every other render saw
+  none. No rule logic changes; this is metadata that was present and unreachable.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.2`
+
 ## 2.3.3
 
 ### Patch Changes

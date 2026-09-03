@@ -5,6 +5,54 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.3.2
+
+### Patch Changes
+
+- **🐛 Fix** — five rules read a subscripted member the same as its dotted twin
+
+  - `no-ldap-injection` refused every computed member when deciding whether a
+    value came from the request, so `search(base, req.body['x'])` lost its taint
+    entirely. Only a key chosen at runtime is refused now.
+  - `no-improper-sanitization` gated three separate DOM-sink sites on
+    `property.name`, including the one that decides whether an enclosing context
+    is dangerous.
+  - `no-template-injection` and `no-sql-injection` share a member-chain walker
+    that skipped any non-Identifier segment, so `req['body'].template` read as a
+    shorter chain than it is.
+  - `no-graphql-injection` resolved the template tag the same way, missing
+    ``apollo['gql']`...` ``.
+
+  Every one keeps abstaining on a key chosen at runtime, and each abstain path
+  is now pinned by its own case.
+
+- **🐛 Fix** — `value['constructor'].name` is the same brittle type check
+
+  `no-improper-type-validation` matched both levels of `data.constructor.name`
+  on `property.name`, so the subscripted spelling read as something else
+  entirely. A test had pinned that as intended under "inner is a COMPUTED
+  member" — it reads exactly what the dotted form reads, and breaks across
+  realm boundaries identically.
+
+- **🐛 Fix** — `this['password']` and `req['body']` read the same as their dotted twins
+
+  `no-hardcoded-credentials` resolved an assignment target off `property.name`,
+  so `this['password'] = '…'` assigned the same secret to the same slot
+  unreported. Both the detection and its label-context SUPPRESSION were widened
+  together — widening one alone makes the subscripted spelling report where the
+  dotted one does not.
+
+  `no-privilege-escalation` was blind for a different reason: its user-input
+  patterns match SOURCE TEXT, and `/\breq\.(body|query|params)\b/` cannot see
+  `req['body']`. Its assignment side already resolved a string subscript, so a
+  request value reached an authorisation field through the half that could not
+  see it.
+
+  Found by extending the computed-key probe from calls to member READS, which
+  is how these two were reachable at all — neither appears in a call.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.2`
+
 ## 5.3.1
 
 ### Patch Changes
