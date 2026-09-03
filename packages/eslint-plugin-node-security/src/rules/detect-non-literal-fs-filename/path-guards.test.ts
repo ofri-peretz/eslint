@@ -179,6 +179,27 @@ export function load() { return fs.readFileSync(CONFIG, 'utf8'); }`,
         code: `${P}const T = path.join(__dirname, 'email.html');
 export function template() { return fs.readFileSync(T, 'utf8'); }`,
       },
+      {
+        // The `safePattern` this rule's own message prints, accepted verbatim.
+        // Its INVALID twin below is the whole point of pinning this: strip the
+        // declaration of SAFE_DIR and the same expression reports, which reads
+        // as "the rule rejects its own advice" and is not what happened.
+        name: 'the advertised remediation: resolve(SAFE_DIR, basename(untrusted))',
+        code: `${P}const SAFE_DIR = '/uploads';
+export function read(req) {
+  return fs.readFileSync(path.resolve(SAFE_DIR, path.basename(req.query.f)));
+}`,
+      },
+      {
+        // Same shape with the base IMPORTED rather than declared. A real
+        // codebase spells it this way more often than not, and an import
+        // binding resolves, so `containsFreeVariable` never sees a free name.
+        name: 'the advertised remediation with an imported base',
+        code: `${P}import { SAFE_DIR } from './config';
+export function read(req) {
+  return fs.readFileSync(path.resolve(SAFE_DIR, path.basename(req.query.f)));
+}`,
+      },
     ],
     invalid: [
       {
@@ -299,6 +320,23 @@ export function read(req) {
   const b = req.query.b;
   if (!OK.includes(a)) throw new Error('denied');
   return fs.readFileSync('/s/' + a + b);
+}`,
+        errors: [{ messageId: 'fsPathTraversal' }],
+      },
+      {
+        // DIAGNOSTIC CONTROL for the two remediation cases above, and the one
+        // that settles which mechanism fires. There is NO taint anywhere in
+        // this snippet — the second argument is a literal — and it still
+        // reports. So a report on
+        // `resolve(SAFE_DIR, basename(req.query.f))` with SAFE_DIR undeclared
+        // is `containsFreeVariable` on a name bound nowhere, NOT the
+        // basename()'d value surviving the resolve wrapper. Delete this case
+        // and the next person re-derives it from a fragment and "fixes" the
+        // basename sanitiser, which is documented in index.ts as an edit that
+        // looks correct and is not.
+        name: 'CONTROL: an undeclared base reports on its own, with a LITERAL second argument',
+        code: `${P}export function read() {
+  return fs.readFileSync(path.resolve(SAFE_DIR, 'notes.txt'));
 }`,
         errors: [{ messageId: 'fsPathTraversal' }],
       },
