@@ -125,28 +125,94 @@ describe('the Vercel Remote Cache request budget', () => {
    * Vercel's fair-use cap is on REQUEST RATE, not storage — artifacts expire
    * after 7 days on their own, so there is no size to manage.
    *
-   *   Hobby   100 requests / minute
-   *   Pro   10000 requests / minute
-   *
-   * Every job that opts in starts its turbo run at roughly the same moment, and
+   * Every opted-in job starts its turbo run at roughly the same moment, and
    * turbo issues at least one lookup per task plus an upload on a miss.
    * Measured 2026-09-02: `turbo run build --dry` = 37 tasks, `turbo run test
-   * --dry` = 57, across 7 opted-in jobs.
+   * --dry` = 57. So the safe number of opted-in jobs is
    *
-   *   7 x 37  = 259 .. 518 requests   (build-shaped)
-   *   7 x 57  = 399 .. 798 requests   (test-shaped)
+   *   floor(plan requests-per-minute / worst-case tasks)
    *
-   * all inside the opening minute. That is 2.6x - 8x over the Hobby cap and
-   * about 5-8% of Pro. A merge-queue run is worse by construction: it executes
-   * ALL shards where a PR run executes only affected ones.
+   * and it differs by a factor of a hundred between plans. Which makes the
+   * plan a REQUIRED INPUT, not a footnote: at 7 opted-in jobs this repo sends
+   * 259-798 requests in the opening minute — about 5-8% of Pro's allowance and
+   * 2.6x-8x over Hobby's.
    *
-   * So the count of opted-in jobs is a quota decision, not a convenience. This
-   * bound makes growing it a deliberate act with the arithmetic in front of
-   * you, rather than a line added to one more workflow.
+   * That number was carried as an unknown for a day, which is the actual
+   * defect being fixed here. Declare the plan and the bound follows from it;
+   * leave it undeclared and this fails rather than silently assuming the
+   * generous answer. A merge-queue run is worse again, since it executes ALL
+   * shards where a PR run executes only affected ones.
    */
-  const BUDGETED_JOBS = 7;
+  const PLAN_REQUESTS_PER_MINUTE: Record<string, number> = {
+    hobby: 100,
+    pro: 10_000,
+    enterprise: 10_000,
+  };
 
-  it('no more jobs opt in than the budget allows', () => {
+  /** Worst case measured: `turbo run test --dry`. */
+  const TASKS_PER_JOB = 57;
+
+  /**
+   * Requests, not tasks. A task costs a lookup, and on a miss an upload too —
+   * so the worst case is two per task, which is the same all-miss assumption
+   * the 259-798 figure in this repo's audit was derived from.
+   *
+   * The first version of this ceiling divided the plan rate by TASKS_PER_JOB
+   * and was therefore 2x too permissive: it would have allowed one Hobby job
+   * to issue up to 114 requests against a 100/min cap. Caught in review on
+   * #861. The comment above already said "plus an upload on a miss" while the
+   * arithmetic below did not — the prose and the computation disagreed, which
+   * is the failure this file exists to catch elsewhere.
+   */
+  const REQUESTS_PER_JOB = TASKS_PER_JOB * 2;
+
+  /**
+   * The plan this repo's Vercel team is on.
+   *
+   * Deliberately a constant rather than an env lookup: a lock that reads its
+   * own threshold from the environment passes everywhere and asserts nothing.
+   * Changing plan is a one-line edit here, and the diff is the record of when
+   * the ceiling moved.
+   */
+  const VERCEL_PLAN: keyof typeof PLAN_REQUESTS_PER_MINUTE | 'undeclared' =
+    'undeclared';
+
+  /**
+   * Measured status quo. While the plan is undeclared this is the bound, and
+   * its only job is to stop the count growing silently — every added job is
+   * another ~57 requests into the same opening minute.
+   */
+  const MEASURED_JOBS = 7;
+
+  const cap =
+    VERCEL_PLAN === 'undeclared'
+      ? undefined
+      : PLAN_REQUESTS_PER_MINUTE[VERCEL_PLAN];
+  const ceiling =
+    cap === undefined ? MEASURED_JOBS : Math.floor(cap / REQUESTS_PER_JOB);
+
+  it('records what each plan would allow', () => {
+    // Not decoration. On hobby the ceiling is 1 and this repo is at 7 — so the
+    // plan is not a footnote to look up later, it decides whether the current
+    // configuration is fine or 7x over. Kept as an executable statement so the
+    // arithmetic cannot drift from the comment.
+    // Hobby is ZERO, not one: 100 requests/min cannot cover even a single
+    // job's worst case of 114. On the documented request model the remote
+    // cache is not usable on Hobby at this repo's size at all — which is a
+    // sharper statement than "reduce to one job", and the reason the plan has
+    // to be declared before anyone turns it on.
+    expect(Math.floor(PLAN_REQUESTS_PER_MINUTE.hobby / REQUESTS_PER_JOB)).toBe(
+      0,
+    );
+    expect(Math.floor(PLAN_REQUESTS_PER_MINUTE.pro / REQUESTS_PER_JOB)).toBe(
+      87,
+    );
+    expect(
+      Math.floor(PLAN_REQUESTS_PER_MINUTE.pro / REQUESTS_PER_JOB),
+    ).toBeGreaterThan(MEASURED_JOBS);
+  });
+
+  it('no more jobs opt in than the plan allows', () => {
     const dir = join(ROOT, '.github/workflows');
     const optedIn = readdirSync(dir)
       .filter((f) => f.endsWith('.yml'))
@@ -159,10 +225,14 @@ describe('the Vercel Remote Cache request budget', () => {
 
     expect(
       optedIn,
-      `${optedIn} jobs enable the remote cache; budget is ${BUDGETED_JOBS}. ` +
-        'Each adds ~37-57 requests to the same opening minute. Raise the ' +
-        'budget deliberately, and check the plan cap before you do.',
-    ).toBeLessThanOrEqual(BUDGETED_JOBS);
+      `${optedIn} jobs enable the remote cache; the bound is ${ceiling}` +
+        (cap === undefined
+          ? ' (the measured status quo, because VERCEL_PLAN is undeclared).' +
+            ' Before turning the remote cache on for real, set VERCEL_PLAN in' +
+            ' this file: on hobby the ceiling is 1, not 7, and the cache is' +
+            ' only inert today because no TURBO_TOKEN is set.'
+          : ` for ${VERCEL_PLAN} (${cap} requests/min at ~${REQUESTS_PER_JOB} requests each).`),
+    ).toBeLessThanOrEqual(ceiling);
   });
 });
 
