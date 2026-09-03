@@ -1,4 +1,5 @@
 {
+  "command": "npm run rule-cases -- --update",
   "note": "Rules with no described TP case, or no described TN/FP case. Shrink-only.",
   "rules": [
     "react-features/static-property-placement",

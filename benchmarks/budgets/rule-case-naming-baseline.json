@@ -1,4 +1,5 @@
 {
+  "command": "npm run rule-cases -- --update",
   "note": "Cases named after the coverage machinery they execute — `(L67/L81 false arms)`, `(id 9 FALSE)` — rather than the position they take. Shrink-only: a rule may never gain one. See docs/intents/coverage-is-not-pinning/.",
   "rules": {
     "react-features/checked-requires-onchange-or-readonly": 1,

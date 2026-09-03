@@ -1067,6 +1067,13 @@ if (UPDATE) {
     BASELINE,
     `${JSON.stringify(
       {
+        /*
+         * A GENERATED artefact must emit `command` itself. Hand-adding it once
+         * lasts exactly until the next `--update`, which is how five baselines
+         * silently lost the field and tripped their own lock. See
+         * docs/intents/a-surface-figure-must-name-its-method/.
+         */
+        command: 'npm run rule-cases -- --update',
         note: 'Rules with no described TP case, or no described TN/FP case. Shrink-only.',
         rules: now,
       },
@@ -1093,6 +1100,13 @@ if (UPDATE) {
     DESCRIPTION_BASELINE,
     `${JSON.stringify(
       {
+        /*
+         * A GENERATED artefact must emit `command` itself. Hand-adding it once
+         * lasts exactly until the next `--update`, which is how five baselines
+         * silently lost the field and tripped their own lock. See
+         * docs/intents/a-surface-figure-must-name-its-method/.
+         */
+        command: 'npm run rule-cases -- --update',
         note: 'Cases that run without a `name`, per rule. Shrink-only: a rule may never gain one.',
         rules: Object.fromEntries(
           Object.entries(undescribedByRule).sort(([a], [b]) =>
@@ -1121,6 +1135,7 @@ if (UPDATE) {
     NAMING_BASELINE,
     `${JSON.stringify(
       {
+        command: 'npm run rule-cases -- --update',
         note:
           'Cases named after the coverage machinery they execute — `(L67/L81 false arms)`, ' +
           '`(id 9 FALSE)` — rather than the position they take. Shrink-only: a rule may ' +
@@ -1156,6 +1171,7 @@ if (UPDATE) {
     FLOOR_BASELINE,
     `${JSON.stringify(
       {
+        command: 'npm run rule-cases -- --update',
         note: `Rules holding fewer than ${CASE_FLOOR} classified cases on a side. Shrink-only.`,
         rules: nowThin,
       },

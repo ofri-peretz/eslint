@@ -507,6 +507,11 @@ fs.writeFileSync(
   path.join(ROOT, 'benchmarks', 'budgets', 'name-dependence.json'),
   `${JSON.stringify(
     {
+      /*
+       * Emitted BY the probe. A hand-added `command` survives only until the
+       * next run — see docs/intents/a-surface-figure-must-name-its-method/.
+       */
+      command: 'npx tsx scripts/name-dependence-probe.mts',
       note:
         'Rules whose verdict changed when every local binding was renamed to foo1, foo2, … ' +
         'The rename litmus, mechanised: a rule listed here decided from a NAME. That is only a ' +
