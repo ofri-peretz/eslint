@@ -1423,7 +1423,11 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
         // escape in a TAGGED template, which a `startsWith` argument is not. The
         // `?? ''` fallback that used to sit here was unreachable, and it showed
         // up as the one branch this package could not cover.
-        const last = arg.quasis[arg.quasis.length - 1].value.cooked;
+        // The `!` carries that same argument: `arg` is the ARGUMENT node, so a
+        // tagged template arrives as `TaggedTemplateExpression` and never gets
+        // here. @typescript-eslint 8.68.0 made `cooked` nullable in the types;
+        // it did not make this position reachable.
+        const last = arg.quasis[arg.quasis.length - 1].value.cooked!;
         if (last.endsWith('/') || last.endsWith('\\')) return true;
         // `` `${base}${path.sep}` `` ends with an EXPRESSION, so its trailing
         // quasi is empty — the separator is the last interpolation instead.

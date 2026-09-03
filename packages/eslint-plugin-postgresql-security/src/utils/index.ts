@@ -133,7 +133,7 @@ function isPgConnectionString(node: TSESTree.Node): boolean {
     node.type === AST_NODE_TYPES.Literal && typeof node.value === 'string'
       ? node.value
       : node.type === AST_NODE_TYPES.TemplateLiteral
-        ? node.quasis[0]?.value.cooked
+        ? (node.quasis[0].value.cooked ?? node.quasis[0].value.raw)
         : undefined;
   return (
     value !== undefined &&

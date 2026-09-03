@@ -61,11 +61,18 @@ export function staticString(
     node.expressions.length === 0
   ) {
     // Exactly one quasi, always — a template with nothing to interpolate cannot
-    // be split into more. `cooked` is non-nullable in TSESTree and this parser
-    // never nulls it, so a `?.` or a `?? null` here would be a branch no test
-    // could ever reach, which is worse than no branch at all.
+    // be split into more.
+    //
+    // `cooked` IS nullable, as of @typescript-eslint 8.68.0. It was typed
+    // `string` and emitted the raw text for an escape it could not cook;
+    // 8.68.0 types it `string | null` and emits `null`. The comment that stood
+    // here said the parser never nulls it and a fallback would be unreachable —
+    // true when written, false the moment the parser bumped, and silent either
+    // way because `string | null` is assignable to this function's return type.
+    //
+    // `?? raw` restores exactly what every caller received before the bump.
     const [only] = node.quasis as [TSESTree.TemplateElement];
-    return only.value.cooked;
+    return only.value.cooked ?? only.value.raw;
   }
   return null;
 }

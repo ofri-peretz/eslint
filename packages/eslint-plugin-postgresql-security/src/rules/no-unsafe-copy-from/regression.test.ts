@@ -224,6 +224,14 @@ describe('no-unsafe-copy-from — regression locks', () => {
         code: "client.query(String.raw`COPY t FROM '${p}'`);",
         errors: dynamic,
       },
+      {
+        // @typescript-eslint 8.68.0 nulls `cooked` for an invalid escape;
+        // 8.54.0 handed back the raw text. Dropping the quasi would lose the
+        // COPY and with it the finding.
+        name: 'lock: String.raw with an escape the cooked value cannot hold',
+        code: "client.query(String.raw`COPY t FROM '${p}' \\x`);",
+        errors: dynamic,
+      },
       // The COPY is not the first statement in the string.
       {
         name: 'lock: a COPY inside an explicit transaction',

@@ -182,8 +182,13 @@ function knowableText(node: TSESTree.Node): string | null {
   }
   if (node.type === AST_NODE_TYPES.TemplateLiteral) {
     if (node.expressions.length > 0) return null;
-    // `cooked` is typed non-nullable and this parser never nulls it.
-    return node.quasis[0].value.cooked;
+    // `cooked` IS nullable — an invalid escape cooks to null. That comment used
+    // to say otherwise, and @typescript-eslint 8.68.0 corrected the type AND the
+    // emitted value. A bare template with a bad escape is a parse error, so null
+    // here means the `String.raw` unwrap above, where `raw` is what the server
+    // sees.
+    const [{ value }] = node.quasis;
+    return value.cooked ?? value.raw;
   }
   if (node.type === AST_NODE_TYPES.BinaryExpression && node.operator === '+') {
     const left = knowableText(node.left as TSESTree.Node);

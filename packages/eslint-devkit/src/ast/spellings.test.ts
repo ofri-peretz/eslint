@@ -338,6 +338,42 @@ describe('readsRequestShape', () => {
   });
 });
 
+describe('staticString and an escape the parser cannot cook', () => {
+  // @typescript-eslint 8.68.0 types `TemplateElement.value.cooked` as
+  // `string | null` and emits null for an invalid escape; 8.54.0 typed it
+  // `string` and handed back the raw text. `staticString` read `cooked`
+  // directly under a comment asserting it was never null — correct when
+  // written, wrong after the bump, and silent because `string | null` is
+  // assignable to the return type. This pins the fallback.
+  it('falls back to raw when cooked is null', () => {
+    const quasi = {
+      type: AST_NODE_TYPES.TemplateElement,
+      value: { cooked: null, raw: 'C:\\\\Users' },
+      tail: true,
+    } as unknown as TSESTree.TemplateElement;
+    const node = {
+      type: AST_NODE_TYPES.TemplateLiteral,
+      expressions: [],
+      quasis: [quasi],
+    } as unknown as TSESTree.TemplateLiteral;
+    expect(staticString(node)).toBe('C:\\\\Users');
+  });
+
+  it('still prefers cooked when the parser produced one', () => {
+    const quasi = {
+      type: AST_NODE_TYPES.TemplateElement,
+      value: { cooked: 'BEGIN', raw: 'BEGIN' },
+      tail: true,
+    } as unknown as TSESTree.TemplateElement;
+    const node = {
+      type: AST_NODE_TYPES.TemplateLiteral,
+      expressions: [],
+      quasis: [quasi],
+    } as unknown as TSESTree.TemplateLiteral;
+    expect(staticString(node)).toBe('BEGIN');
+  });
+});
+
 describe('namesOneOf', () => {
   const SET: ReadonlySet<string> = new Set(['createHash', 'createCipheriv']);
   const LIST = ['createHash', 'createCipheriv'] as const;
