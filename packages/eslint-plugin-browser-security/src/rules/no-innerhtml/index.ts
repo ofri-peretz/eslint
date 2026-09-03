@@ -17,6 +17,7 @@ import {
   createPayloadResolver,
   isStaticExpression,
   isTestFilePath,
+  propertyName,
   staticString,
 } from '@interlace/eslint-devkit';
 import {
@@ -102,11 +103,10 @@ function isSanitized(
 ): boolean {
   const names = (callee: TSESTree.Node): string[] => {
     if (callee.type === 'Identifier') return [callee.name];
-    if (
-      callee.type === 'MemberExpression' &&
-      callee.property.type === 'Identifier'
-    ) {
-      const prop = callee.property.name;
+    if (callee.type === 'MemberExpression') {
+      // `doc['write'](x)` calls the same sink `doc.write(x)` calls.
+      const prop = propertyName(callee);
+      if (prop === null) return [];
       const obj =
         callee.object.type === 'Identifier' ? callee.object.name : null;
       return obj ? [`${obj}.${prop}`, prop] : [prop];
@@ -481,11 +481,10 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
       }
       // `window.document.write(...)`, `iframe.contentDocument.write(...)`,
       // `el.ownerDocument.write(...)`
-      if (
-        object.type === 'MemberExpression' &&
-        object.property.type === 'Identifier'
-      ) {
-        return /^(?:content|owner)?[Dd]ocument$/.test(object.property.name);
+      if (object.type === 'MemberExpression') {
+        // `window['document'].write(...)` reaches the same document.
+        const owner = propertyName(object);
+        return owner !== null && /^(?:content|owner)?[Dd]ocument$/.test(owner);
       }
       return false;
     }

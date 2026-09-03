@@ -19,6 +19,8 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-innerhtml', noInnerhtml, {
   valid: [
+    // `doc['write'](x)` reports — it is the same sink. A method named at
+    // RUNTIME names no sink at all, so there is nothing to match.
     // --- `write`/`writeln` are DOM sinks only on a document ----------------
     // The method name alone is one of the most overloaded in JavaScript. 23 of
     // this rule's 73 corpus findings were Node streams — mostly Shopify/cli
@@ -105,6 +107,16 @@ ruleTester.run('no-innerhtml', noInnerhtml, {
     },
   ],
   invalid: [
+    // `names()` decides whether the right-hand call is a TRUSTED SANITIZER.
+    // `lib['sanitize'](x)` resolves and is trusted; a sanitizer named at
+    // RUNTIME resolves to nothing, cannot be shown to be trusted, and so the
+    // assignment is reported — the safe direction when the sanitizer is
+    // unknowable.
+    {
+      name: 'a sanitizer named at runtime cannot be trusted',
+      code: 'el.innerHTML = lib[fn](userInput);',
+      errors: 1,
+    },
     // A document receiver is the real sink, in each spelling.
     {
       name: 'document.write of user input',

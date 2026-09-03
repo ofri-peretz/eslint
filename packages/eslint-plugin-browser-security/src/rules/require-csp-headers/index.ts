@@ -552,15 +552,19 @@ export const requireCspHeaders = createRule<RuleOptions, MessageIds>({
         }
       }
 
-      let object: TSESTree.Node = callee.object;
-      // `this.res.render(…)` / `ctx.res.render(…)` — take the last segment.
-      if (object.type === 'MemberExpression' && !object.computed) {
-        object = object.property;
-      }
-      return (
-        object.type === 'Identifier' &&
-        responseReceivers.has(object.name.toLowerCase())
-      );
+      // `this.res.render(…)` / `ctx.res.render(…)` / `ctx['res'].render(…)` —
+      // take the last segment however it is spelled. Reading only the
+      // non-computed form meant a subscripted receiver never matched the
+      // response list, so the call was judged a template render and the
+      // missing CSP header went unreported.
+      const object: TSESTree.Node = callee.object;
+      const receiver =
+        object.type === AST_NODE_TYPES.Identifier
+          ? object.name
+          : object.type === AST_NODE_TYPES.MemberExpression
+            ? propertyName(object)
+            : null;
+      return receiver !== null && responseReceivers.has(receiver.toLowerCase());
     }
 
     function calleeMethodOf(node: TSESTree.CallExpression): string | null {

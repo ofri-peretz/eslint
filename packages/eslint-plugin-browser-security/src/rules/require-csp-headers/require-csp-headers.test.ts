@@ -15,22 +15,54 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('require-csp-headers', requireCspHeaders, {
   valid: [
+    // `ctx['res'].render(v)` IS a response render and reports. A receiver
+    // segment named at runtime names no receiver, so the call cannot be shown
+    // to emit a response rather than return a string.
+    {
+      name: 'a receiver segment named at runtime is not a known response',
+      code: 'ctx[k].render("index")',
+    },
+    {
+      // Nor is a receiver that is not a name at all — `getCtx()` returns
+      // something this rule cannot identify as a response object.
+      name: 'a receiver returned from a call names no response',
+      code: 'getCtx().render("index")',
+    },
     // JSON responses don't need CSP
-    { name: 'a JSON response needs no CSP', code: "res.send({ data: 'json' })" },
+    {
+      name: 'a JSON response needs no CSP',
+      code: "res.send({ data: 'json' })",
+    },
     { code: "res.json({ status: 'ok' })" },
     // Non-HTML strings
     { code: "res.send('Hello World')" },
-    { code: "const x = 1" },
+    { code: 'const x = 1' },
   ],
 
   invalid: [
     // Sending HTML without CSP
-    { name: 'HTML sent with no Content-Security-Policy', code: "res.send('<html><body>Hello</body></html>')", errors: [{ messageId: 'violationDetected' }] },
-    { code: "res.send('<!DOCTYPE html><html></html>')", errors: [{ messageId: 'violationDetected' }] },
-    { code: "res.send(`<html>${content}</html>`)", errors: [{ messageId: 'violationDetected' }] },
+    {
+      name: 'HTML sent with no Content-Security-Policy',
+      code: "res.send('<html><body>Hello</body></html>')",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      code: "res.send('<!DOCTYPE html><html></html>')",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      code: 'res.send(`<html>${content}</html>`)',
+      errors: [{ messageId: 'violationDetected' }],
+    },
     // Render calls need CSP
-    { code: "res.render('index')", errors: [{ messageId: 'violationDetected' }] },
-    { code: "res.render('template', { data })", errors: [{ messageId: 'violationDetected' }] },
+    {
+      code: "res.render('index')",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      code: "res.render('template', { data })",
+      errors: [{ messageId: 'violationDetected' }],
+    },
   ],
 });
 
@@ -42,30 +74,40 @@ ruleTester.run('require-csp-headers', requireCspHeaders, {
  *
  * Detected from the AST (import / require binding), never from printed source.
  */
-ruleTester.run('lock: helmet in scope suppresses the render reminder', requireCspHeaders, {
-  valid: [
-    { code: "import helmet from 'helmet'; app.use(helmet()); res.render('index');" },
-    { code: "import { contentSecurityPolicy } from 'helmet/index'; app.use(contentSecurityPolicy()); res.render('index');" },
-    { code: "const helmet = require('helmet'); app.use(helmet()); res.render('index');" },
-  ],
-  invalid: [
-    // An unrelated import must not count as helmet.
-    {
-      code: "import express from 'express'; res.render('index');",
-      errors: [{ messageId: 'violationDetected' }],
-    },
-    // Nor an unrelated require, including one whose name merely starts similarly.
-    {
-      code: "const helmetish = require('helmetish'); res.render('index');",
-      errors: [{ messageId: 'violationDetected' }],
-    },
-    // A non-literal require argument cannot be resolved, so it is not evidence.
-    {
-      code: "const mod = require(name); res.render('index');",
-      errors: [{ messageId: 'violationDetected' }],
-    },
-  ],
-});
+ruleTester.run(
+  'lock: helmet in scope suppresses the render reminder',
+  requireCspHeaders,
+  {
+    valid: [
+      {
+        code: "import helmet from 'helmet'; app.use(helmet()); res.render('index');",
+      },
+      {
+        code: "import { contentSecurityPolicy } from 'helmet/index'; app.use(contentSecurityPolicy()); res.render('index');",
+      },
+      {
+        code: "const helmet = require('helmet'); app.use(helmet()); res.render('index');",
+      },
+    ],
+    invalid: [
+      // An unrelated import must not count as helmet.
+      {
+        code: "import express from 'express'; res.render('index');",
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      // Nor an unrelated require, including one whose name merely starts similarly.
+      {
+        code: "const helmetish = require('helmetish'); res.render('index');",
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      // A non-literal require argument cannot be resolved, so it is not evidence.
+      {
+        code: "const mod = require(name); res.render('index');",
+        errors: [{ messageId: 'violationDetected' }],
+      },
+    ],
+  },
+);
 
 /**
  * Regression lock — a CSP that IS established silences the rule.
@@ -76,33 +118,37 @@ ruleTester.run('lock: helmet in scope suppresses the render reminder', requireCs
  * Policy header": the rule reporting its own remediation on the file that had
  * applied it. Every valid case here reported before the fix.
  */
-ruleTester.run('lock: an established CSP silences the rule', requireCspHeaders, {
-  valid: [
-    {
-      code: `app.get('/', (req, res) => { res.setHeader('Content-Security-Policy', "default-src 'self'"); res.send('<html></html>'); });`,
-    },
-    // Set by app-level middleware, DECLARED AFTER the route that relies on it.
-    // A rule that decides at the call site reports on statement order.
-    {
-      code: `app.get('/', (req, res) => res.render('index')); app.use((req, res, next) => { res.setHeader('Content-Security-Policy', "default-src 'self'"); next(); });`,
-    },
-    // Lowercase, as HTTP/2 requires on the wire.
-    {
-      code: `app.get('/', (req, res) => { res.set('content-security-policy', "default-src 'self'"); res.send('<html></html>'); });`,
-    },
-    // A declarative block.
-    {
-      code: `const init = { headers: { 'Content-Security-Policy': "default-src 'self'" } }; res.render('index');`,
-    },
-  ],
-  invalid: [
-    // The counter-control: the same handler with no policy anywhere.
-    {
-      code: `app.get('/', (req, res) => { res.send('<html></html>'); });`,
-      errors: [{ messageId: 'violationDetected' }],
-    },
-  ],
-});
+ruleTester.run(
+  'lock: an established CSP silences the rule',
+  requireCspHeaders,
+  {
+    valid: [
+      {
+        code: `app.get('/', (req, res) => { res.setHeader('Content-Security-Policy', "default-src 'self'"); res.send('<html></html>'); });`,
+      },
+      // Set by app-level middleware, DECLARED AFTER the route that relies on it.
+      // A rule that decides at the call site reports on statement order.
+      {
+        code: `app.get('/', (req, res) => res.render('index')); app.use((req, res, next) => { res.setHeader('Content-Security-Policy', "default-src 'self'"); next(); });`,
+      },
+      // Lowercase, as HTTP/2 requires on the wire.
+      {
+        code: `app.get('/', (req, res) => { res.set('content-security-policy', "default-src 'self'"); res.send('<html></html>'); });`,
+      },
+      // A declarative block.
+      {
+        code: `const init = { headers: { 'Content-Security-Policy': "default-src 'self'" } }; res.render('index');`,
+      },
+    ],
+    invalid: [
+      // The counter-control: the same handler with no policy anywhere.
+      {
+        code: `app.get('/', (req, res) => { res.send('<html></html>'); });`,
+        errors: [{ messageId: 'violationDetected' }],
+      },
+    ],
+  },
+);
 
 /**
  * Regression lock — a document is a document however it is assembled.
@@ -125,7 +171,10 @@ ruleTester.run('lock: emission shapes', requireCspHeaders, {
     { code: `res.end('<!DOCTYPE html><html></html>');`, errors: 1 },
     { code: `res.write('<!DOCTYPE html><html><body>');`, errors: 1 },
     { code: `const EMIT = 'send'; res[EMIT]('<html></html>');`, errors: 1 },
-    { code: `const PAGE = '<!DOCTYPE html><html></html>'; res.send(PAGE);`, errors: 1 },
+    {
+      code: `const PAGE = '<!DOCTYPE html><html></html>'; res.send(PAGE);`,
+      errors: 1,
+    },
     {
       code: `const PAGES = ['<!DOCTYPE html><html>a</html>', '<!DOCTYPE html><html>b</html>']; res.send(PAGES[1]);`,
       errors: 1,
@@ -146,37 +195,44 @@ ruleTester.run('lock: emission shapes', requireCspHeaders, {
  * a doctype settles it. And a single-page app serves its document off disk,
  * with no markup in the file at all.
  */
-ruleTester.run('lock: accumulated and file-served documents', requireCspHeaders, {
-  valid: [
-    // A path that is not a document.
-    { code: `res.sendFile('/var/www/report.pdf');` },
-    // `htmlSanitizer.js` must not read as a document because it contains the
-    // letters "html" — the extension is compared, not searched for.
-    { code: `res.sendFile(path.join(__dirname, 'htmlSanitizer.js'));` },
-    // An unknowable chunk: a rule that cannot prove a document must not
-    // demand a policy for one.
-    { code: `upstream.on('data', (chunk) => { res.write(chunk); });` },
-    // No body at all.
-    { code: `res.statusCode = 204; res.end();` },
-  ],
-  invalid: [
-    {
-      code: `let page = '<!DOCTYPE html><html>'; page += rows(); page += '</html>'; res.send(page);`,
-      errors: 1,
-    },
-    { code: `res.sendFile(path.join(__dirname, 'public', 'index.html'));`, errors: 1 },
-    { code: `res.sendFile('/var/www/index.htm');`, errors: 1 },
-    // The header name in a TODO is not an established policy — it is the
-    // admission that there is none.
-    {
-      code: `app.get('/', (req, res) => {
+ruleTester.run(
+  'lock: accumulated and file-served documents',
+  requireCspHeaders,
+  {
+    valid: [
+      // A path that is not a document.
+      { code: `res.sendFile('/var/www/report.pdf');` },
+      // `htmlSanitizer.js` must not read as a document because it contains the
+      // letters "html" — the extension is compared, not searched for.
+      { code: `res.sendFile(path.join(__dirname, 'htmlSanitizer.js'));` },
+      // An unknowable chunk: a rule that cannot prove a document must not
+      // demand a policy for one.
+      { code: `upstream.on('data', (chunk) => { res.write(chunk); });` },
+      // No body at all.
+      { code: `res.statusCode = 204; res.end();` },
+    ],
+    invalid: [
+      {
+        code: `let page = '<!DOCTYPE html><html>'; page += rows(); page += '</html>'; res.send(page);`,
+        errors: 1,
+      },
+      {
+        code: `res.sendFile(path.join(__dirname, 'public', 'index.html'));`,
+        errors: 1,
+      },
+      { code: `res.sendFile('/var/www/index.htm');`, errors: 1 },
+      // The header name in a TODO is not an established policy — it is the
+      // admission that there is none.
+      {
+        code: `app.get('/', (req, res) => {
         // TODO: add a Content-Security-Policy before this ships.
         res.send('<!DOCTYPE html><html></html>');
       });`,
-      errors: 1,
-    },
-  ],
-});
+        errors: 1,
+      },
+    ],
+  },
+);
 
 /** Edge shapes the folding, the walk and the partition must survive. */
 ruleTester.run('edge shapes', requireCspHeaders, {
@@ -239,7 +295,10 @@ ruleTester.run('edge shapes', requireCspHeaders, {
       errors: 1,
     },
     // A computed method folded from a constant.
-    { code: `const M = 'end'; res[M]('<!DOCTYPE html><html></html>');`, errors: 1 },
+    {
+      code: `const M = 'end'; res[M]('<!DOCTYPE html><html></html>');`,
+      errors: 1,
+    },
   ],
 });
 
@@ -348,9 +407,15 @@ ruleTester.run('folding shapes', requireCspHeaders, {
 /** The nested-table fold, in both directions. */
 ruleTester.run('nested table folding', requireCspHeaders, {
   valid: [
-    { code: `const T = [['<!DOCTYPE html><html></html>']]; res.send(T[0][k]);` },
-    { code: `const T = [['<!DOCTYPE html><html></html>']]; res.send(T[9][0]);` },
-    { code: `const T = [[, '<!DOCTYPE html><html></html>']]; res.send(T[0][0]);` },
+    {
+      code: `const T = [['<!DOCTYPE html><html></html>']]; res.send(T[0][k]);`,
+    },
+    {
+      code: `const T = [['<!DOCTYPE html><html></html>']]; res.send(T[9][0]);`,
+    },
+    {
+      code: `const T = [[, '<!DOCTYPE html><html></html>']]; res.send(T[0][0]);`,
+    },
     { code: `const T = [['<p>fragment</p>']]; res.send(T[0][0]);` },
   ],
   invalid: [],
@@ -360,7 +425,9 @@ ruleTester.run('nested table folding', requireCspHeaders, {
 ruleTester.run('remaining shapes', requireCspHeaders, {
   valid: [
     // A nested table indexed by something unreadable.
-    { code: `const T = [['<!DOCTYPE html><html></html>']]; res.send(T[k][0]);` },
+    {
+      code: `const T = [['<!DOCTYPE html><html></html>']]; res.send(T[k][0]);`,
+    },
     // An imported name is not a local builder.
     { code: `import page from './page'; res.send(page());` },
   ],

@@ -9,9 +9,6 @@
     "(spelling-contrast cases)": "Three rules left this list without a code change: react-class-to-hooks and no-direct-mutation-state were FIXED, while no-improper-type-validation was never blind \u2014 its case deliberately mixes `bag[\"k\"]` with `bag.k`, and the rewrite normalised both, matching a guard the case exists to keep unmatched. The probe now skips a case containing both spellings of the same member."
   },
   "rules": [
-    "browser-security/no-innerhtml",
-    "browser-security/require-blob-url-revocation",
-    "browser-security/require-csp-headers",
     "express-security/no-error-details-in-response",
     "import-next/no-deprecated",
     "lambda-security/no-exposed-error-details",
