@@ -334,16 +334,12 @@ export function isNaturalWordString(value: string): boolean {
   // into `vnd`, `live`, `Bcd` — two of the three are waived by length alone, so
   // `every` passed and a key was suppressed with no digit to catch it.
   //
-  // Two things separate a phrase from a key. In a phrase the waived tokens are
-  // a MINORITY carried by real words: `mtls` is one of four, the rest
-  // dictionary. And a phrase does not shed fragments — camel-case entropy does,
-  // leaving a trail of one- and two-character pieces (`a`, `Ef`, `Gh`, `Ij`, …)
-  // that `meaningful` discards before `every` ever sees them.
+  // What separates a phrase from a key is that the waived tokens are a MINORITY
+  // carried by real words: `mtls` is one of four, the rest dictionary, where
+  // `vnd` and `Bcd` are two of three.
   const waived = meaningful.filter((token) => !isPronounceable(token));
   if (waived.some((token) => token.length > 4)) return false;
-  if (waived.length * 2 > meaningful.length) return false;
-  if (tokens.filter((token) => token.length < 3).length >= 3) return false;
-  return true;
+  return waived.length * 2 <= meaningful.length;
 }
 
 /**
