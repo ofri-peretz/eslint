@@ -470,11 +470,25 @@ async function checkOxlintRuntimeHashes() {
       // Print the OBSERVED hash and the installed version.
       //
       // Without them a refresh needs a local tree resolving the same oxlint CI
-      // installed, and that is not a given: on 2026-09-03 this repo's own
-      // worktree resolved oxlint from a sibling checkout at 1.79.0 while
-      // package.json declares ^1.80.0, so the hashes computable locally were
-      // the wrong ones to pin. The drift was reported for two days with no way
-      // to act on it from the log alone.
+      // installed, and that is not a given.
+      //
+      // Correcting the note this comment shipped with on 2026-09-03: it said
+      // the drift "was reported for two days", implying CI. It was not. CI was
+      // GREEN throughout — `Portability Audit` is SUCCESS wherever it runs.
+      // The drift appeared only in a local pre-push hook, in a worktree that
+      // resolved oxlint from a sibling checkout at 1.79.0 while package.json
+      // pins ^1.80.0.
+      //
+      // Verified the same day by unpacking the exact tarball the lockfile
+      // resolves (oxlint-1.80.0.tgz from the registry): all four bundles hash
+      // IDENTICALLY to the values pinned below. The pins are correct; only a
+      // mismatched local install can make this gate fire.
+      //
+      // Which is precisely why the observed hash and version belong in the
+      // message. Told only "hash drift", a reader assumes the pins are stale
+      // and starts editing them — from whatever version their tree happens to
+      // resolve. Told the version, they see 1.79.0 against a ^1.80.0 pin and
+      // fix their install instead.
       //
       // `plugins.js` / `plugins-dev.js` are the plugin API surface — drift
       // there is the one that can invalidate this audit's blocker assumptions.
