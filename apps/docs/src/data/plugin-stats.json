@@ -5,7 +5,7 @@
       "rules": 46,
       "description": "ESLint plugin for browser security — detects DOM XSS, postMessage abuse, tokens in localStorage, insecure cookies, clickjacking, mixed content, and CSP gaps",
       "category": "security",
-      "version": "2.1.3",
+      "version": "2.1.4",
       "published": true
     },
     {
@@ -13,7 +13,7 @@
       "rules": 42,
       "description": "ESLint plugin for Node.js security — detects command injection, path traversal, SSRF, zip slip, and weak crypto (MD5/SHA-1, ECB, static IV) in fs, child_process, vm, and crypto",
       "category": "security",
-      "version": "5.4.1",
+      "version": "5.4.2",
       "published": true
     },
     {
@@ -21,7 +21,7 @@
       "rules": 33,
       "description": "ESLint plugin for secure coding — detects LDAP, XPath, XXE, GraphQL and template injection, unsafe deserialization, ReDoS, missing authentication, and PII in logs",
       "category": "security",
-      "version": "5.3.1",
+      "version": "5.3.2",
       "published": true
     },
     {
@@ -53,7 +53,7 @@
       "rules": 13,
       "description": "ESLint plugin for the pg PostgreSQL driver — detects SQL injection, unreleased clients, floating queries, unsafe search_path, and insecure SSL",
       "category": "security",
-      "version": "2.3.3",
+      "version": "2.3.4",
       "published": true
     },
     {
@@ -149,7 +149,7 @@
       "rules": 28,
       "description": "ESLint plugin for Express.js security — detects permissive CORS, missing CSRF protection, missing helmet headers, insecure cookies, and GraphQL introspection in production",
       "category": "framework",
-      "version": "3.2.2",
+      "version": "3.2.3",
       "published": true
     },
     {
@@ -157,7 +157,7 @@
       "rules": 14,
       "description": "ESLint plugin for AWS Lambda security — detects overly permissive IAM policies and CORS, unvalidated event bodies, secrets in env vars, and leaked error details",
       "category": "framework",
-      "version": "2.1.2",
+      "version": "2.1.3",
       "published": true
     },
     {
@@ -173,7 +173,7 @@
       "rules": 55,
       "description": "ESLint plugin for imports and module boundaries — drop-in replacement for eslint-plugin-import, 3.1x faster end-to-end, zero-config migration",
       "category": "architecture",
-      "version": "2.7.2",
+      "version": "2.7.3",
       "published": true
     },
     {
@@ -229,7 +229,7 @@
       "rules": 61,
       "description": "ESLint plugin for React — hooks, prop-types, JSX correctness, render performance, and class-to-hooks migration rules for modern React codebases",
       "category": "react",
-      "version": "1.7.1",
+      "version": "1.7.2",
       "published": true
     },
     {
