@@ -5,6 +5,18 @@ All notable changes to `eslint-plugin-lambda-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.1.3
+
+### Patch Changes
+
+- **🐛 Fix** — `error['stack']` exposes the same trace as `error.stack`
+
+  `no-exposed-error-details` matched sensitive error fields on `property.name`,
+  so the subscripted spelling returned a stack trace to the caller unreported.
+  A coverage test had pinned it as a "documented FN".
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.2`
+
 ## 2.1.2
 
 ### Patch Changes

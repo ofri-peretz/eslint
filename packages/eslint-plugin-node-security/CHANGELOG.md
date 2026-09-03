@@ -5,6 +5,20 @@ All notable changes to `eslint-plugin-node-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.4.2
+
+### Patch Changes
+
+- **🐛 Fix** — `md5(user['password'])` weighs the same evidence
+
+  `no-weak-hash-algorithm` decides whether a weak hash is being used on a
+  credential from the name of the value being hashed, and read that name on the
+  dotted spelling only — so a subscripted field carried no evidence and the
+  finding was dropped. A destructuring target still names no single field, and
+  is pinned as such.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.2`
+
 ## 5.4.1
 
 ### Patch Changes

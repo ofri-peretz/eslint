@@ -453,6 +453,35 @@ async function checkOxlintRuntimeHashes() {
   if (!fs.existsSync(oxlintDist)) {
     return ['oxlint not installed at node_modules/oxlint/dist — run npm ci'];
   }
+  // Before hashing anything: is the oxlint being hashed even ours?
+  //
+  // In a git worktree, Node can resolve a dependency out to a SIBLING checkout
+  // when the local tree is incomplete. On 2026-09-03 this repo's own worktree
+  // resolved oxlint from ../eslint-ci2 at 1.79.0 while package.json pins
+  // ^1.80.0, and the gate dutifully reported hash drift — sending two rounds of
+  // work at pins that were already correct. Every bundle matches at 1.80.0.
+  //
+  // A wrong install and a moved runtime produce the same symptom, so the check
+  // has to distinguish them. This one is cheap and comes first.
+  // realpathSync, not resolve: the path is always in-repo, it is the SYMLINK
+  // TARGET that escapes. This repo's worktree setup deliberately symlinks
+  // node_modules at a sibling checkout, so `node_modules/oxlint` looks local
+  // and resolves to someone else's version.
+  const repoRoot = fs.realpathSync(path.resolve(__dirname, '..'));
+  const realDist = fs.existsSync(oxlintDist)
+    ? fs.realpathSync(oxlintDist)
+    : oxlintDist;
+  if (!realDist.startsWith(repoRoot + path.sep)) {
+    failures.push(
+      `oxlint resolves OUTSIDE this repository — ${realDist}\n` +
+        `      This is a local install problem, not a drift in oxlint. The hashes\n` +
+        `      below are almost certainly fine; your tree is resolving someone\n` +
+        `      else's copy (a sibling git worktree is the usual cause).\n` +
+        `      Fix: run \`npm install\` in ${repoRoot} and re-run.`,
+    );
+    return failures;
+  }
+
   for (const [file, expected] of Object.entries(
     VERIFIED_OXLINT_RUNTIME_HASHES,
   )) {
@@ -467,14 +496,67 @@ async function checkOxlintRuntimeHashes() {
       .update(fs.readFileSync(fullPath))
       .digest('hex');
     if (actual !== expected) {
+      // Print the OBSERVED hash and the installed version.
+      //
+      // Without them a refresh needs a local tree resolving the same oxlint CI
+      // installed, and that is not a given.
+      //
+      // Correcting the note this comment shipped with on 2026-09-03: it said
+      // the drift "was reported for two days", implying CI. It was not. CI was
+      // GREEN throughout — `Portability Audit` is SUCCESS wherever it runs.
+      // The drift appeared only in a local pre-push hook, in a worktree that
+      // resolved oxlint from a sibling checkout at 1.79.0 while package.json
+      // pins ^1.80.0.
+      //
+      // Verified the same day by unpacking the exact tarball the lockfile
+      // resolves (oxlint-1.80.0.tgz from the registry): all four bundles hash
+      // IDENTICALLY to the values pinned below. The pins are correct; only a
+      // mismatched local install can make this gate fire.
+      //
+      // Which is precisely why the observed hash and version belong in the
+      // message. Told only "hash drift", a reader assumes the pins are stale
+      // and starts editing them — from whatever version their tree happens to
+      // resolve. Told the version, they see 1.79.0 against a ^1.80.0 pin and
+      // fix their install instead.
+      //
+      // `plugins.js` / `plugins-dev.js` are the plugin API surface — drift
+      // there is the one that can invalidate this audit's blocker assumptions.
+      // `lint.js` / `bindings.js` have historically drifted on version literals
+      // and non-plugin changes, so they are noted separately rather than
+      // treated as equivalent.
+      const surface = file.startsWith('plugins')
+        ? 'PLUGIN API SURFACE'
+        : 'non-plugin bundle';
       failures.push(
-        `${file}: hash drift — runtime file changed since verification. ` +
-          `Re-read apps/oxlint/src-js/plugins/ at the installed tag, confirm the ` +
-          `support matrix still holds, then update VERIFIED_OXLINT_RUNTIME_HASHES.`,
+        `${file}: hash drift (${surface}) on oxlint ${installedOxlintVersion(oxlintDist)}\n` +
+          `      observed: ${actual}\n` +
+          `      expected: ${expected}\n` +
+          `      Run \`npx tsx scripts/verify-oxlint-runtime.ts\` — it probes the API ` +
+          `surfaces the blocker patterns depend on. If every probe passes, the ` +
+          `surface has not moved and the observed hash above can be pinned in ` +
+          `VERIFIED_OXLINT_RUNTIME_HASHES with a note saying what changed.`,
       );
     }
   }
   return failures;
+}
+
+/**
+ * The version of the oxlint actually being hashed, read from the package
+ * beside the file — NOT from package-lock.json.
+ *
+ * They can disagree. On 2026-09-03 this worktree resolved oxlint from a sibling
+ * checkout at 1.79.0 while the lockfile said 1.80.0, so a message sourcing its
+ * version from the lock would have labelled a 1.79.0 hash as 1.80.0 and sent
+ * the reader to diff the wrong tag. Report the version that produced the bytes.
+ */
+function installedOxlintVersion(oxlintDist: string): string {
+  try {
+    const pkg = path.join(path.dirname(oxlintDist), 'package.json');
+    return JSON.parse(fs.readFileSync(pkg, 'utf-8')).version ?? 'unknown';
+  } catch {
+    return 'unknown';
+  }
 }
 
 function readOxlintVersion() {

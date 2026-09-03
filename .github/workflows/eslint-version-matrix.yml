@@ -100,6 +100,22 @@ jobs:
 
       - run: npm ci
 
+      # The arena resolves every plugin by package name, which goes through
+      # `exports` to dist/ — so without this the run dies on the first config
+      # with `Cannot find module '.../eslint-plugin-secure-coding/dist/src/index.js'`
+      # and exits 3. That is what it has done on every scheduled run since
+      # 2026-08-29.
+      #
+      # Before the ESLint swap below, not after: the swap installs eslint 8, 9
+      # or 10 with --no-save, and the plugin build should be the one this repo
+      # normally produces rather than whatever that swap leaves behind. The
+      # build is tsc/tsup and does not read ESLint at build time, so it is
+      # identical across the matrix — which also lets turbo cache it once.
+      #
+      # Same filter quality-full.yml uses, for the same reason.
+      - name: Build plugins (dist/ is what the configs load)
+        run: npx turbo run build --filter='eslint-plugin-*' --filter=@interlace/eslint-devkit
+
       - name: Install ESLint ${{ matrix.eslint }}
         run: |
           set -e
