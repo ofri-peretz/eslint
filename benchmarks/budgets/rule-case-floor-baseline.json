@@ -1,5 +1,4 @@
 {
-  "command": "npm run rule-cases -- --update",
   "note": "Rules holding fewer than 3 classified cases on a side. Shrink-only.",
   "rules": [
     "import-next/no-cycle",

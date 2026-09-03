@@ -566,7 +566,7 @@ describe('require-default-props: React.Component classes and collection guards',
   ruleTester.run('require-default-props', requireDefaultProps, {
     valid: [
       {
-        name: 'React.Component member superclass with defaults (L153-158)',
+        name: 'a member-expression superclass is a component, and its defaults are complete',
         code: `
           class A extends React.Component {
             static propTypes = { a: PropTypes.string };
@@ -575,7 +575,7 @@ describe('require-default-props: React.Component classes and collection guards',
         `,
       },
       {
-        name: 'non-object propTypes/defaultProps values are ignored (L70/L86 false arms)',
+        name: 'propTypes assigned from a binding cannot be enumerated, so no prop is shown missing',
         code: `
           class B extends Component {
             static propTypes = SHARED;
@@ -584,7 +584,18 @@ describe('require-default-props: React.Component classes and collection guards',
         `,
       },
       {
-        name: 'class expression statics have no component name (L72/L88 false arms, L142)',
+        // A class EXPRESSION that is not a React component at all. The
+        // anonymous-class fix added a ClassExpression visitor, and this is its
+        // refusing side: no React superclass, so nothing is tracked.
+        name: 'a class expression that extends nothing React is not a component',
+        code: `
+          const P = class extends SomethingElse {
+            static propTypes = { a: PropTypes.string };
+          };
+        `,
+      },
+      {
+        name: 'an anonymous class expression with complete defaults',
         code: `
           const C = class extends Component {
             static propTypes = { a: PropTypes.string };
@@ -593,7 +604,7 @@ describe('require-default-props: React.Component classes and collection guards',
         `,
       },
       {
-        name: 'anonymous default class id fallback (L140 || null)',
+        name: 'an anonymous default-exported class with complete defaults',
         code: `
           export default class extends Component {
             static propTypes = { a: PropTypes.string };
@@ -648,6 +659,33 @@ describe('require-default-props: React.Component classes and collection guards',
       },
     ],
     invalid: [
+      // An ANONYMOUS component is still a component. Both of these reported
+      // NOTHING until 2026-09-03: the rule keyed components by
+      // `node.id.name`, and neither shape has one. `export default class
+      // extends Component` is among the most common in React.
+      //
+      // Two cases above appeared to cover this and did not — they supplied
+      // COMPLETE defaults, so they passed because nothing was missing, while
+      // their names attributed the pass to an anonymous-class arm. That is
+      // what a case named after coverage machinery costs.
+      {
+        name: 'an anonymous class expression missing a default still reports',
+        code: `
+          const C = class extends Component {
+            static propTypes = { a: PropTypes.string };
+          };
+        `,
+        errors: [{ messageId: 'requireDefaultProps' }],
+      },
+      {
+        name: 'an anonymous default-exported class missing a default still reports',
+        code: `
+          export default class extends Component {
+            static propTypes = { a: PropTypes.string };
+          }
+        `,
+        errors: [{ messageId: 'requireDefaultProps' }],
+      },
       {
         name: 'forbidDefaultForRequired reports default on required prop (L125 true path + no-default lookup arm)',
         options: [{ forbidDefaultForRequired: true }],

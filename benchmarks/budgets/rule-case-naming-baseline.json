@@ -1,6 +1,5 @@
 {
-  "command": "npm run rule-cases -- --update",
-  "note": "Cases named after the coverage machinery they execute \u2014 `(L67/L81 false arms)`, `(id 9 FALSE)` \u2014 rather than the position they take. Shrink-only: a rule may never gain one. See docs/intents/coverage-is-not-pinning/.",
+  "note": "Cases named after the coverage machinery they execute — `(L67/L81 false arms)`, `(id 9 FALSE)` — rather than the position they take. Shrink-only: a rule may never gain one. See docs/intents/coverage-is-not-pinning/.",
   "rules": {
     "react-features/checked-requires-onchange-or-readonly": 1,
     "react-features/default-props-match-prop-types": 2,
@@ -24,7 +23,7 @@
     "react-features/prefer-stateless-function": 6,
     "react-features/prop-types": 4,
     "react-features/react-in-jsx-scope": 1,
-    "react-features/require-default-props": 10,
+    "react-features/require-default-props": 6,
     "react-features/require-optimization": 3,
     "react-features/require-render-return": 5,
     "react-features/sort-comp": 3,
