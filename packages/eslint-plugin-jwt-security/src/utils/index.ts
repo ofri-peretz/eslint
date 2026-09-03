@@ -13,6 +13,7 @@ import type { TSESTree } from '@interlace/eslint-devkit';
 import {
   AST_NODE_TYPES,
   createModuleEvidence,
+  objectKeyName,
   propertyName,
 } from '@interlace/eslint-devkit';
 
@@ -199,7 +200,9 @@ function importEqualsSpecifierOf(
  * `const jwt = require('jsonwebtoken')` are the same load; anything that is not
  * a call to `require` with a string literal is not one at all.
  */
-function requireSpecifierOf(node: TSESTree.Node | null | undefined): string | null {
+function requireSpecifierOf(
+  node: TSESTree.Node | null | undefined,
+): string | null {
   if (node == null) return null;
   // `require('jose').jwtVerify` — the call is the receiver.
   const call =
@@ -296,7 +299,8 @@ function receiverIsForeignImport(node: TSESTree.CallExpression): boolean {
   // Identifier and gave up before ever checking where `sdk` came from — the
   // gate simply did not apply to any call more than one member deep.
   let object: TSESTree.Node = node.callee.object;
-  while (object.type === AST_NODE_TYPES.MemberExpression) object = object.object;
+  while (object.type === AST_NODE_TYPES.MemberExpression)
+    object = object.object;
   if (object.type !== AST_NODE_TYPES.Identifier) return false;
 
   // Reached only after `fileImportsJwtLibrary` returned true, which already
@@ -323,8 +327,12 @@ function receiverIsForeignImport(node: TSESTree.CallExpression): boolean {
 function bindingSourceOf(stmt: TSESTree.Node, name: string): string | null {
   // import argon from 'argon2'  /  import { hash } from 'argon2'
   if (stmt.type === AST_NODE_TYPES.ImportDeclaration) {
-    const binds = (stmt.specifiers ?? []).some((spec) => spec.local?.name === name);
-    return binds && typeof stmt.source.value === 'string' ? stmt.source.value : null;
+    const binds = (stmt.specifiers ?? []).some(
+      (spec) => spec.local?.name === name,
+    );
+    return binds && typeof stmt.source.value === 'string'
+      ? stmt.source.value
+      : null;
   }
   // import argon = require('argon2')
   if (stmt.type === AST_NODE_TYPES.TSImportEqualsDeclaration) {
@@ -462,7 +470,9 @@ function calleeIsForeign(node: TSESTree.CallExpression): boolean {
     // not a module load", so the binding has to be re-asked here.
     if (
       declaration.type === AST_NODE_TYPES.VariableDeclaration &&
-      declaration.declarations.some((declarator) => patternBinds(declarator.id, name))
+      declaration.declarations.some((declarator) =>
+        patternBinds(declarator.id, name),
+      )
     ) {
       return true;
     }
@@ -530,11 +540,21 @@ export function extractAlgorithms(
   const algorithms: string[] = [];
 
   for (const prop of optionsNode.properties) {
-    if (prop.type !== 'Property' || prop.key.type !== 'Identifier') {
+    if (prop.type !== 'Property') {
       continue;
     }
 
-    const keyName = prop.key.name;
+    /*
+     * `objectKeyName`, not `key.name`. Requiring an Identifier key meant this
+     * saw `{ algorithms: [...] }` and missed both `{ 'algorithms': [...] }` —
+     * ordinary hand-written JS — and `{ ['algorithms']: [...] }`, which is what
+     * a bundler emits. Same option, same JWT, three spellings, one read.
+     *
+     * This is the gate. `no-algorithm-confusion` also names the key in its
+     * reporting loop, and fixing only that changed nothing, because the
+     * algorithms never got extracted in the first place.
+     */
+    const keyName = objectKeyName(prop);
     if (
       keyName !== 'algorithms' &&
       keyName !== 'algorithm' &&
@@ -570,9 +590,9 @@ export function hasOption(
 ): boolean {
   return optionsNode.properties.some(
     (prop): prop is TSESTree.Property =>
-      prop.type === 'Property' &&
-      prop.key.type === 'Identifier' &&
-      prop.key.name === optionName,
+      // Same three spellings as extractAlgorithms. `{ ['noTimestamp']: true }`
+      // sets exactly the option `{ noTimestamp: true }` sets.
+      prop.type === 'Property' && objectKeyName(prop) === optionName,
   );
 }
 
@@ -584,11 +604,7 @@ export function getOptionValue(
   optionName: string,
 ): TSESTree.Node | undefined {
   for (const prop of optionsNode.properties) {
-    if (
-      prop.type === 'Property' &&
-      prop.key.type === 'Identifier' &&
-      prop.key.name === optionName
-    ) {
+    if (prop.type === 'Property' && objectKeyName(prop) === optionName) {
       return prop.value;
     }
   }

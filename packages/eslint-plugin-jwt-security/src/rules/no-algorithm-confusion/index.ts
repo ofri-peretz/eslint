@@ -20,6 +20,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  objectKeyName,
 } from '@interlace/eslint-devkit';
 import {
   isVerifyOperation,
@@ -185,9 +186,14 @@ export const noAlgorithmConfusion = createRule<RuleOptions, MessageIds>({
             for (const prop of optionsArg.properties) {
               if (
                 prop.type === 'Property' &&
-                prop.key.type === 'Identifier' &&
                 // @vocabulary JOSE / RFC 7519 header and jsonwebtoken option names
-                ['algorithms', 'algorithm', 'alg'].includes(prop.key.name)
+                // `objectKeyName`, not `key.name`: requiring an Identifier key
+                // missed `{ ['alg']: … }` and `{ 'alg': … }`, which name the
+                // same option and are what a bundler and ordinary hand-written
+                // JS respectively produce.
+                ['algorithms', 'algorithm', 'alg'].includes(
+                  objectKeyName(prop) ?? '',
+                )
               ) {
                 context.report({
                   node: prop.value,

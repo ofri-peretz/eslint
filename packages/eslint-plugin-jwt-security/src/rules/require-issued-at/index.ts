@@ -20,6 +20,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  objectKeyName,
 } from '@interlace/eslint-devkit';
 import { isSignOperation, getOptionsArgument, hasOption } from '../../utils';
 import type { JwtRuleOptions } from '../../types';
@@ -96,9 +97,9 @@ export const requireIssuedAt = createRule<RuleOptions, MessageIds>({
 
       return payloadNode.properties.some(
         (prop) =>
-          prop.type === 'Property' &&
-          prop.key.type === 'Identifier' &&
-          prop.key.name === 'iat',
+          // `{ ['iat']: … }` satisfies this requirement exactly as `{ iat: … }`
+          // does; demanding an Identifier key reported a token that HAS an iat.
+          prop.type === 'Property' && objectKeyName(prop) === 'iat',
       );
     };
 

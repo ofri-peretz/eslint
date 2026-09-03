@@ -17,6 +17,7 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
+  objectKeyName,
 } from '@interlace/eslint-devkit';
 import { isSignOperation, SENSITIVE_PAYLOAD_FIELDS } from '../../utils';
 import type { NoSensitivePayloadOptions } from '../../types';
@@ -110,13 +111,17 @@ export const noSensitivePayload = createRule<RuleOptions, MessageIds>({
         // Check object literal payload
         if (payloadArg.type === 'ObjectExpression') {
           for (const prop of payloadArg.properties) {
-            if (prop.type === 'Property' && prop.key.type === 'Identifier') {
-              const fieldName = prop.key.name.toLowerCase();
-              if (allSensitiveFields.has(fieldName)) {
+            // A computed or quoted key is still the field being put in the
+            // token. `{ ['password']: p }` leaks exactly what `{ password: p }`
+            // leaks.
+            const keyText =
+              prop.type === 'Property' ? objectKeyName(prop) : null;
+            if (keyText !== null) {
+              if (allSensitiveFields.has(keyText.toLowerCase())) {
                 context.report({
                   node: prop,
                   messageId: 'sensitivePayloadField',
-                  data: { fieldName: prop.key.name },
+                  data: { fieldName: keyText },
                 });
               }
             }
