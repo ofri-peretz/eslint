@@ -36,11 +36,15 @@ name: Issue Sweep
 # ─────────────────────────────────────────────────────────────────────────────
 
 on:
-  schedule:
-    # Every six hours at :40, clear of the 04:00–05:30 cron cluster where the
-    # cadence checks run — so a sweep reads a backlog those checks have already
-    # finished writing, rather than racing them.
-    - cron: "40 */6 * * *"
+  # The schedule moved to a Claude Code Routine on 2026-09-03 ("ESLint issue
+  # sweep — one PR per backlog", https://claude.ai/code/routines). The Actions
+  # token cannot edit .github/workflows/, so a sweep whose cause lived in a
+  # workflow landed half-done (PR #823: a lock test with no edits to lock).
+  # The Routine runs with credentials that can. Same cadence, same branch,
+  # same one-open-PR guard, so the two cannot race. Manual dispatch stays as
+  # the fallback if the Routine is paused.
+  # schedule:
+  #   - cron: "40 */6 * * *"
   workflow_dispatch:
     inputs:
       auto_merge:
