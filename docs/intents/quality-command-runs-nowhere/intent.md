@@ -81,3 +81,19 @@ every future contributor who reads the chain and assumes it gates something.
   oversight?
 - Should the `quality` chain be generated from the workflows rather than
   maintained beside them, so the two cannot disagree?
+
+## Re-checked 2026-09-02
+
+**Still open, unchanged.** All five commands remain absent from every workflow
+under `.github/workflows/`:
+
+```
+check-orphan-lockfiles      NOT IN CI
+ilb:flagship:smoke          NOT IN CI
+audit:claims:selftest       NOT IN CI
+sync:root-readme:check      NOT IN CI
+logos:variants:check        NOT IN CI
+```
+
+`audit:claims:selftest` is still the one that matters: an auditor whose own
+self-test never runs is an auditor nobody has checked.

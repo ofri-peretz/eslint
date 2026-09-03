@@ -119,3 +119,19 @@ as health.
   `identical-functions`). Those are the examined population and continue on
   their own track.
 - `ANTHROPIC_API_KEY` for eval layer 2 — a repo secret, needs the owner.
+
+## Re-checked 2026-09-02
+
+**The opening figure cannot be reproduced.** This intent records 327 rules
+enabled in a `recommended` preset on 2026-08-25 and does not say how that was
+counted. Enumerating every plugin's `recommended` config today gives **287**.
+
+Forty rules is too large a gap to be drift, and there is no recorded method to
+check it against — which makes 327 the same kind of number this intent was
+opened to object to. Either the count included the `strict` presets, or it read
+`eslint-config-interlace` rather than the per-plugin configs, or rules have
+been removed. The honest position is that we do not know.
+
+**287 is the figure with a method behind it**, and the method is
+`npm run measure:default-on-rules`. The 327 should be treated as unattributed
+and not quoted again.

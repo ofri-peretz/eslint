@@ -68,3 +68,18 @@ Downstream: `BENCHMARK-RESULTS.md` and every published claim derived from it.
   evidence gating may be measuring a rule we no longer ship.
 - Should the flagship smoke gate stay red until this is settled, or should the row be
   marked known-failing with a link to this intent?
+
+## Re-checked 2026-09-02
+
+**Still open. Verified rather than assumed:** none of the CWE-089 vulnerable
+fixtures imports `pg`.
+
+```
+dynamic-column.js      pg-import=NO
+string-concat.js       pg-import=NO
+template-literal.js    pg-import=NO
+```
+
+The evidence-gated rule therefore cannot fire on any of them, and the flagship
+benchmark scores this corpus at zero for a reason that has nothing to do with
+detection quality.

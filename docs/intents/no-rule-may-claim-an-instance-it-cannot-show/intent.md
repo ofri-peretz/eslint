@@ -100,3 +100,13 @@ Three pieces of work are waiting on this number and should not start before it:
    living in each consumer?
 2. `real-source-repos.json` pins 112 repositories chosen before several plugins
    existed. Is the sample still the right question to ask?
+
+## In flight 2026-09-02
+
+The scan was dispatched from `main` at 02:54 UTC — run 33709417251, 20 shards.
+It is the first run since the merger learned to refuse a partial shard set and
+to write `withoutMaterial` as a list rather than a count.
+
+When it lands it opens a PR with the refreshed inventory, and
+`check:audit-freshness` should stop refusing to attribute it. Until then the
+270-rules-catch-nothing figure stays unquotable.

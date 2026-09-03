@@ -51,3 +51,14 @@ and the `chore/coverage-100` initiative, which owns the underlying coverage work
   the other 19 make?
 - Should a README carry a Codecov badge at all before its component exists — an
   `unknown` badge is arguably worse than none.
+
+## Re-checked 2026-09-02
+
+**The number moved and the intent stayed open.** `codecov.yml` now declares 22
+components against 30 plugins in `packages/`, so the gap is **eight**, not the
+eleven this intent was opened on. Three were closed without the intent being
+touched.
+
+Still worth doing: eight plugins reporting no coverage is eight plugins whose
+gate could break silently. But the headline figure should not be quoted from
+the opening paragraph.
