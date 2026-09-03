@@ -60,15 +60,19 @@ const ruleTester = new RuleTester({
 });
 
 describe('checked-requires-onchange-or-readonly: namespaced attribute name', () => {
-  ruleTester.run('checked-requires-onchange-or-readonly', checkedRequiresOnchangeOrReadonly, {
-    valid: [
-      {
-        name: 'JSXNamespacedName attr yields empty attrName (L66 false arm)',
-        code: '<input xlink:label="x" checked={c} onChange={f} />;',
-      },
-    ],
-    invalid: [],
-  });
+  ruleTester.run(
+    'checked-requires-onchange-or-readonly',
+    checkedRequiresOnchangeOrReadonly,
+    {
+      valid: [
+        {
+          name: 'JSXNamespacedName attr yields empty attrName (L66 false arm)',
+          code: '<input xlink:label="x" checked={c} onChange={f} />;',
+        },
+      ],
+      invalid: [],
+    },
+  );
 });
 
 describe('default-props-match-prop-types: non-literal-comparable prop types', () => {
@@ -386,14 +390,23 @@ describe('no-typos: computed keys and literal member access', () => {
   ruleTester.run('no-typos', noTypos, {
     valid: [
       {
-        name: 'computed class members and literal property access (L67/L81/L95 false arms)',
+        // Only the RUNTIME-keyed forms belong here. `["defaulProps"]` is the
+        // same misspelling `defaulProps` is, and was pinned valid under a name
+        // that described the coverage arms rather than the position taken.
+        name: 'a class member and a property named at runtime cannot be typo-checked',
         code: `
-          class A { ["defaulProps"] = 1; ["componenDidMount"]() {} }
-          const v = obj["defaulProps"];
+          class A { [k] = 1; [m]() {} }
+          const v = obj[p];
         `,
       },
     ],
-    invalid: [],
+    invalid: [
+      {
+        name: 'a misspelling written as a string subscript is still a typo',
+        code: 'const v = obj["defaulProps"];',
+        errors: 1,
+      },
+    ],
   });
 });
 

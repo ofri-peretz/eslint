@@ -9,7 +9,11 @@
  * Catch common typos
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  objectKeyName,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'noTypos';
@@ -64,8 +68,9 @@ export const noTypos = createRule<RuleOptions, MessageIds>({
     return {
       // Check class property names (PropertyDefinition is used by TypeScript parser)
       PropertyDefinition(node: TSESTree.PropertyDefinition) {
-        if (node.key.type === 'Identifier') {
-          const name = node.key.name;
+        // `["defaulProps"] = {}` declares the same misspelt property.
+        const name = objectKeyName(node);
+        if (name !== null) {
           const correction = COMMON_TYPOS.get(name);
           if (correction) {
             context.report({
@@ -78,8 +83,9 @@ export const noTypos = createRule<RuleOptions, MessageIds>({
 
       // Check method names
       MethodDefinition(node: TSESTree.MethodDefinition) {
-        if (node.key.type === 'Identifier') {
-          const name = node.key.name;
+        // `["componenDidMount"]() {}` declares the same misspelt method.
+        const name = objectKeyName(node);
+        if (name !== null) {
           const correction = COMMON_TYPOS.get(name);
           if (correction) {
             context.report({
@@ -92,8 +98,9 @@ export const noTypos = createRule<RuleOptions, MessageIds>({
 
       // Check property access
       MemberExpression(node: TSESTree.MemberExpression) {
-        if (node.property.type === 'Identifier') {
-          const name = node.property.name;
+        // `Component['defaulProps']` misspells the same property.
+        const name = propertyName(node);
+        if (name !== null) {
           const correction = COMMON_TYPOS.get(name);
           if (correction) {
             context.report({
