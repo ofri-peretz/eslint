@@ -154,6 +154,10 @@ export const noMissingClientRelease: TSESLint.RuleModule<
       description:
         'Ensure pg client is released after use to prevent pool exhaustion.',
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-postgresql-security/docs/rules/no-missing-client-release.md',
+      // Already asserted inside `formatLLMMessage` below, which the formatter
+      // cannot read — it only looks at `meta.docs.cwe`. Without it here the
+      // rule reported a CWE to an LLM consumer and none to every other render.
+      cwe: 'CWE-404',
     },
     messages: {
       missingClientRelease: formatLLMMessage({
