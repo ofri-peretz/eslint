@@ -31,6 +31,11 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: write # commit the refreshed artifacts
+      # commit-via-pr pushes a branch and then opens the PR. Without this the
+      # push landed and `gh pr create` failed with "Resource not accessible by
+      # integration" (run 33718920771) — eleven refreshed artifacts on a branch
+      # nobody could see. Locked by commit-via-pr-permissions.lock.test.ts.
+      pull-requests: write
       issues: write # open the failure issue
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -60,6 +65,16 @@ jobs:
 
       - name: ISO 25010 crosswalk
         run: npm run ilb:iso25010-report
+
+      # The probe regenerates RULE_CASES.json when it is absent, and that ledger
+      # loads every plugin's rules from dist/. A fresh checkout has no dist/,
+      # so without this step the probe dies on
+      # `Cannot find module '@interlace/eslint-devkit/dist/src/index.js'`
+      # (run 33717558041) and the reporter files #803 against a workflow whose
+      # five real refreshes all succeeded. Locked by
+      # scripts/__tests__/comparison-refresh-prerequisites.lock.test.ts.
+      - name: Build the plugin graph (the probe loads rules from dist/)
+        run: npx turbo run build --output-logs=errors-only
 
       # Repo-local and offline: it renames every binding in the suite and re-runs
       # the tests, which is minutes rather than the seconds the artifacts above
