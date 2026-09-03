@@ -28,7 +28,10 @@ on:
   schedule:
     # 06:20 UTC daily — before the working day, and clear of the 08:45 codecov
     # cron and the 09:00/09:15 Monday jobs.
-    - cron: '20 6 * * *'
+    # 06:35, not 06:20: `cache-audit` runs `20 */6 * * *`, so it occupies
+    # minute :20 four times a day and the two met every morning. Two
+    # workflows on one minute contend for the same 20 concurrent job slots.
+    - cron: '35 6 * * *'
   workflow_dispatch:
 
 permissions:

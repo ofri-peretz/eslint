@@ -13,7 +13,9 @@ name: Resource Profile (RSS + Cold Start)
 on:
   schedule:
     # 1st of each month, 06:00 UTC.
-    - cron: "0 6 1 * *"
+    # 07:40 on the 1st, not 06:00: `weekly-corpus-scan` holds 06:00 on
+    # Mondays, so these two collided whenever the 1st fell on a Monday.
+    - cron: "40 7 1 * *"
   workflow_dispatch:
     inputs:
       corpus:

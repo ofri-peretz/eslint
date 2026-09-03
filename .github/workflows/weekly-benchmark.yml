@@ -38,7 +38,17 @@ name: Weekly Benchmark (public, transparent)
 
 on:
   schedule:
-    - cron: "0 9 * * 1"
+    # Mon 11:00 UTC. Was 09:00, which is the exact minute `metrics-freshness`
+    # runs — and that one cannot move: it is deliberately placed after the
+    # 08:00 peer-health snapshot so the refresh that run commits is reflected in
+    # the same hour.
+    #
+    # Two workflows starting on the same minute contend for the same 20
+    # concurrent job slots (GitHub Free, no public-repo exemption), and this one
+    # is the heavier of the pair. `benchmark.yml` was already moved off the
+    # 04:00-05:00 cluster for the same reason; this is the last exact collision
+    # in the repo.
+    - cron: "0 11 * * 1"
   workflow_dispatch:
     inputs:
       headline_repo:
