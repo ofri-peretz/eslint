@@ -419,6 +419,12 @@
     },
     "sequelize": {
       "uuid": "^11.1.1"
+    },
+    "posthog-js": {
+      "fflate": "^0.4.9"
+    },
+    "@vitest/ui": {
+      "fflate": "^0.8.3"
     }
   },
   "dependencies": {
