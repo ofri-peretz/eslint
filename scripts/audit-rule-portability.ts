@@ -467,14 +467,53 @@ async function checkOxlintRuntimeHashes() {
       .update(fs.readFileSync(fullPath))
       .digest('hex');
     if (actual !== expected) {
+      // Print the OBSERVED hash and the installed version.
+      //
+      // Without them a refresh needs a local tree resolving the same oxlint CI
+      // installed, and that is not a given: on 2026-09-03 this repo's own
+      // worktree resolved oxlint from a sibling checkout at 1.79.0 while
+      // package.json declares ^1.80.0, so the hashes computable locally were
+      // the wrong ones to pin. The drift was reported for two days with no way
+      // to act on it from the log alone.
+      //
+      // `plugins.js` / `plugins-dev.js` are the plugin API surface — drift
+      // there is the one that can invalidate this audit's blocker assumptions.
+      // `lint.js` / `bindings.js` have historically drifted on version literals
+      // and non-plugin changes, so they are noted separately rather than
+      // treated as equivalent.
+      const surface = file.startsWith('plugins')
+        ? 'PLUGIN API SURFACE'
+        : 'non-plugin bundle';
       failures.push(
-        `${file}: hash drift — runtime file changed since verification. ` +
-          `Re-read apps/oxlint/src-js/plugins/ at the installed tag, confirm the ` +
-          `support matrix still holds, then update VERIFIED_OXLINT_RUNTIME_HASHES.`,
+        `${file}: hash drift (${surface}) on oxlint ${installedOxlintVersion(oxlintDist)}\n` +
+          `      observed: ${actual}\n` +
+          `      expected: ${expected}\n` +
+          `      Run \`npx tsx scripts/verify-oxlint-runtime.ts\` — it probes the API ` +
+          `surfaces the blocker patterns depend on. If every probe passes, the ` +
+          `surface has not moved and the observed hash above can be pinned in ` +
+          `VERIFIED_OXLINT_RUNTIME_HASHES with a note saying what changed.`,
       );
     }
   }
   return failures;
+}
+
+/**
+ * The version of the oxlint actually being hashed, read from the package
+ * beside the file — NOT from package-lock.json.
+ *
+ * They can disagree. On 2026-09-03 this worktree resolved oxlint from a sibling
+ * checkout at 1.79.0 while the lockfile said 1.80.0, so a message sourcing its
+ * version from the lock would have labelled a 1.79.0 hash as 1.80.0 and sent
+ * the reader to diff the wrong tag. Report the version that produced the bytes.
+ */
+function installedOxlintVersion(oxlintDist: string): string {
+  try {
+    const pkg = path.join(path.dirname(oxlintDist), 'package.json');
+    return JSON.parse(fs.readFileSync(pkg, 'utf-8')).version ?? 'unknown';
+  } catch {
+    return 'unknown';
+  }
 }
 
 function readOxlintVersion() {
