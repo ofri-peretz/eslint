@@ -266,8 +266,14 @@ describe('no-unsafe-search-path — regression locks', () => {
         // 8.54.0 handed back the raw text. `String.raw` is exactly the tag
         // whose raw text IS what the server sees, so the statement must still
         // be read rather than dropped.
+        //
+        // The escape sits in the SAME quasi as the statement, before the
+        // expression, deliberately. With it trailing, the first quasi still
+        // cooked to `SET search_path TO ` and the rule matched on cooked text —
+        // the fixture passed without ever reaching the raw fallback it exists
+        // to lock. Raised by CodeRabbit on PR #783.
         name: 'lock: String.raw with an escape the cooked value cannot hold',
-        code: 'client.query(String.raw`SET search_path TO ${s} \\x`);',
+        code: 'client.query(String.raw`SET search_path TO \\x${s}`);',
         errors: error,
       },
       // A call part is raw HERE even though it is the fix for CWE-89: quoting
