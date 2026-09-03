@@ -41,7 +41,9 @@ export default defineConfig({
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
-      ...(process.env.VITEST_DIST ? [] : ['**/no-runtime-optional-peer.test.ts']),
+      ...(process.env.VITEST_DIST
+        ? []
+        : ['**/no-runtime-optional-peer.test.ts']),
     ],
     // Repo-wide floor: pre-push runs 47 turbo tasks concurrently, so I/O-bound
     // tests are routinely starved. Vitest's 5s default is tuned for unit tests on
@@ -78,7 +80,12 @@ export default defineConfig({
       provider: 'v8',
       // Coverage ratchet — policy target is 100/100/100/100 (docs/QUALITY_STANDARDS.md §2).
       // Pinned at the 100% policy target — this branch is the integration target for the test wave.
-      thresholds: { lines: 100, statements: 100, functions: 100, branches: 100 },
+      thresholds: {
+        lines: 100,
+        statements: 100,
+        functions: 100,
+        branches: 100,
+      },
       // json for Codecov, text for console, html for local dev
       reporter: ['json', 'text', 'lcov'],
       reportOnFailure: true,

@@ -3,7 +3,7 @@
 > Stage 1 artifact of the AI-native SDLC. Opened from the link-and-name map, which
 > surfaced eleven packages with no Codecov component behind their badge.
 
-**Status:** review · **Opened:** 2026-08-26 · **Owner:** @ofri-peretz
+**Status:** shipped · **Opened:** 2026-08-26 · **Owner:** @ofri-peretz
 
 ---
 
@@ -54,11 +54,29 @@ and the `chore/coverage-100` initiative, which owns the underlying coverage work
 
 ## Re-checked 2026-09-02
 
-**The number moved and the intent stayed open.** `codecov.yml` now declares 22
-components against 30 plugins in `packages/`, so the gap is **eight**, not the
-eleven this intent was opened on. Three were closed without the intent being
-touched.
+**Still eleven. The opening figure was right.**
 
-Still worth doing: eight plugins reporting no coverage is eight plugins whose
-gate could break silently. But the headline figure should not be quoted from
-the opening paragraph.
+A first pass at this re-check reported eight, by counting 22 declared
+components against 30 plugins and subtracting. That is wrong: three of the 22
+are not plugins at all — `eslint-devkit`, `eslint-formatter`,
+`eslint-formatter-sarif`. Nineteen plugins have a component; eleven do not:
+
+```
+anthropic-security  drizzle-security  gemini-security  knex-security
+mcp-sdk-security    mysql-security    openai-security  prisma-security
+sequelize-security  sqlite-security   typeorm-security
+```
+
+Every one is a driver or SDK plugin — the newest surface, and the least
+covered. Recorded here because the wrong number was committed before it was
+checked: subtracting two totals is not the same as matching two lists, and
+this file exists to object to exactly that.
+
+## Shipped 2026-09-02
+
+All eleven added. `codecov.yml` now declares a component for **30 of 30**
+plugins, each with `project` and `patch` at 100%.
+
+The eleven were every SQL/ORM driver plugin plus the four AI-SDK ones — the
+newest surface and, until now, the least measured. A coverage regression in any
+of them was invisible on the dashboard while the repo-wide number stayed green.

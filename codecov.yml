@@ -213,6 +213,123 @@ component_management:
         - type: patch
           target: 100%
 
+    - component_id: eslint-plugin-anthropic-security
+      name: 'eslint-plugin-anthropic-security'
+      paths:
+        - packages/eslint-plugin-anthropic-security/**
+      statuses:
+        - type: project
+          target: 100%
+        - type: patch
+          target: 100%
+
+    - component_id: eslint-plugin-gemini-security
+      name: 'eslint-plugin-gemini-security'
+      paths:
+        - packages/eslint-plugin-gemini-security/**
+      statuses:
+        - type: project
+          target: 100%
+        - type: patch
+          target: 100%
+
+    - component_id: eslint-plugin-openai-security
+      name: 'eslint-plugin-openai-security'
+      paths:
+        - packages/eslint-plugin-openai-security/**
+      statuses:
+        - type: project
+          target: 100%
+        - type: patch
+          target: 100%
+
+    - component_id: eslint-plugin-mcp-sdk-security
+      name: 'eslint-plugin-mcp-sdk-security'
+      paths:
+        - packages/eslint-plugin-mcp-sdk-security/**
+      statuses:
+        - type: project
+          target: 100%
+        - type: patch
+          target: 100%
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # SQL / ORM Driver Plugins
+    #
+    # The newest surface and, until now, the least measured: every one of these
+    # shipped without a component, so a coverage regression in any of them was
+    # invisible on the dashboard while the repo-wide number stayed green.
+    # ─────────────────────────────────────────────────────────────────────────
+    - component_id: eslint-plugin-drizzle-security
+      name: 'eslint-plugin-drizzle-security'
+      paths:
+        - packages/eslint-plugin-drizzle-security/**
+      statuses:
+        - type: project
+          target: 100%
+        - type: patch
+          target: 100%
+
+    - component_id: eslint-plugin-knex-security
+      name: 'eslint-plugin-knex-security'
+      paths:
+        - packages/eslint-plugin-knex-security/**
+      statuses:
+        - type: project
+          target: 100%
+        - type: patch
+          target: 100%
+
+    - component_id: eslint-plugin-mysql-security
+      name: 'eslint-plugin-mysql-security'
+      paths:
+        - packages/eslint-plugin-mysql-security/**
+      statuses:
+        - type: project
+          target: 100%
+        - type: patch
+          target: 100%
+
+    - component_id: eslint-plugin-prisma-security
+      name: 'eslint-plugin-prisma-security'
+      paths:
+        - packages/eslint-plugin-prisma-security/**
+      statuses:
+        - type: project
+          target: 100%
+        - type: patch
+          target: 100%
+
+    - component_id: eslint-plugin-sequelize-security
+      name: 'eslint-plugin-sequelize-security'
+      paths:
+        - packages/eslint-plugin-sequelize-security/**
+      statuses:
+        - type: project
+          target: 100%
+        - type: patch
+          target: 100%
+
+    - component_id: eslint-plugin-sqlite-security
+      name: 'eslint-plugin-sqlite-security'
+      paths:
+        - packages/eslint-plugin-sqlite-security/**
+      statuses:
+        - type: project
+          target: 100%
+        - type: patch
+          target: 100%
+
+    - component_id: eslint-plugin-typeorm-security
+      name: 'eslint-plugin-typeorm-security'
+      paths:
+        - packages/eslint-plugin-typeorm-security/**
+      statuses:
+        - type: project
+          target: 100%
+        - type: patch
+          target: 100%
+
     # ─────────────────────────────────────────────────────────────────────────
     # Governance & Quality Plugins
     # ─────────────────────────────────────────────────────────────────────────

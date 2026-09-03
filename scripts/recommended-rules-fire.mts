@@ -145,9 +145,18 @@ for (const dir of fs.readdirSync(path.join(ROOT, 'packages')).sort()) {
       continue;
     }
 
-    const cases = (casesByRule.get(`${prefix}/${short}`) ?? []).filter(
-      (c) => c.kind === 'TP' && c.code.trim() !== '',
-    );
+    /*
+     * The LEDGER keys by directory name (`jwt-security/…`), the PRESET by the
+     * published prefix (`jwt/…`). Looking up the published prefix found no
+     * cases for jwt-security or postgresql-security and reported them as
+     * shipping with no true positive at all — a plugin can be well covered and
+     * read as untested because two files spell its name differently.
+     */
+    const cases = (
+      casesByRule.get(`${name}/${short}`) ??
+      casesByRule.get(`${prefix}/${short}`) ??
+      []
+    ).filter((c) => c.kind === 'TP' && c.code.trim() !== '');
     if (cases.length === 0) {
       results.push({ rule: qualified, verdict: 'no case' });
       continue;

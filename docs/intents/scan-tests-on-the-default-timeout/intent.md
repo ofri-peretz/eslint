@@ -3,7 +3,7 @@
 > Stage 1 artifact of the AI-native SDLC. Opened after a scan test blocked four
 > commits and a push on a package none of them touched.
 
-**Status:** draft · **Opened:** 2026-09-01 · **Owner:** @ofri-peretz
+**Status:** shipped · **Opened:** 2026-09-01 · **Owner:** @ofri-peretz
 
 ---
 
@@ -80,3 +80,15 @@ So the two packages that hit the wall were fixed and the other twenty-two were
 left on Vitest's 5s default, which is exactly the shape the intent describes:
 a timeout tuned for unit tests on an idle machine, charged to tests that scan
 the repository while 47 turbo tasks run beside them.
+
+## Shipped 2026-09-02
+
+**34 of 34** package configs now set `testTimeout` and `hookTimeout` to 30s,
+up from 12. Seventeen were patched in one pass; the rest already had it.
+
+`hookTimeout` is set alongside deliberately: it does NOT inherit `testTimeout`
+and stays at Vitest's 10s default otherwise, which fails as "Hook timed out in
+10000ms" rather than as a test failure — a different message for the same
+starvation, and one that reads like a broken test rather than a busy machine.
+
+Full suite green afterwards: 56/56 turbo tasks.
