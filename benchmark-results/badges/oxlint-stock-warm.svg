@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="111" height="20" role="img" aria-label="warm: pending">
-  <title>warm: pending</title>
-  <rect width="46" height="20" fill="#24292f"/>
-  <rect x="46" width="65" height="20" fill="#6e7681"/>
-  <g fill="#ffffff" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11">
-    <text x="23" y="14">warm</text>
-    <text x="78.5" y="14">pending</text>
-  </g>
-</svg>

@@ -1,8 +1,0 @@
-{
-  "knownFalsePositives": [
-    "constant-host-request-is-not-ssrf.js:node-security/no-ssrf",
-    "intentionally-public-endpoints.js:express-security/no-exposed-debug-endpoints",
-    "introspection-is-verification.js:jwt-security/no-decode-without-verify",
-    "math-random-not-crypto.js:node-security/no-math-random-crypto"
-  ]
-}

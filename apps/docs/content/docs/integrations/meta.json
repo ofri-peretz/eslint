@@ -1,8 +1,0 @@
-{
-  "title": "Integrations",
-  "description": "AI agents and editors via the ESLint MCP server",
-  "icon": "Plug",
-  "root": true,
-  "defaultOpen": true,
-  "pages": ["index", "claude-code", "cursor"]
-}

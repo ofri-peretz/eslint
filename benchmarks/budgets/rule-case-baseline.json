@@ -1,7 +1,0 @@
-{
-  "note": "Rules with no described TP case, or no described TN/FP case. Shrink-only.",
-  "rules": [
-    "react-features/static-property-placement",
-    "reliability/no-jsdoc-terminator-in-example"
-  ]
-}

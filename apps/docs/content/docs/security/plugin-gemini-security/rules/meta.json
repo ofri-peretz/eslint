@@ -1,9 +1,0 @@
-{
-  "title": "Rules",
-  "defaultOpen": false,
-  "pages": [
-    "no-disabled-safety-settings",
-    "no-hardcoded-api-key",
-    "no-untrusted-content-in-prompt"
-  ]
-}

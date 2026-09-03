@@ -45,6 +45,11 @@ on:
   # the fallback if the Routine is paused.
   # schedule:
   #   - cron: "40 */6 * * *"
+  # The Routine opens the PR; this arms auto-merge on it. Arming stays a
+  # repository action, not a tool the model holds (see the arm job below).
+  pull_request:
+    types: [opened, reopened]
+    branches: [main]
   workflow_dispatch:
     inputs:
       auto_merge:
@@ -61,8 +66,30 @@ permissions:
   contents: read
 
 jobs:
+  # pull_request only. Fires for every PR to main so it can see the sweep
+  # branch, but is a no-op unless the head is chore/issue-sweep.
+  arm:
+    name: Arm auto-merge on a Routine-opened sweep PR
+    if: github.event_name == 'pull_request' && github.head_ref == 'chore/issue-sweep'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Arm auto-merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          gh pr merge "$PR" --repo "$REPO" --squash --auto --delete-branch
+          echo "::notice title=Sweep PR armed::#$PR merges once every required check is green."
+
   triage:
     name: Collect the backlog
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:

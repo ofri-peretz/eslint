@@ -1,7 +1,0 @@
-{
-  "cwe": "CWE-526",
-  "name": "Cleartext Storage of Sensitive Information in an Environment Variable",
-  "owasp": "A04:2021",
-  "severity": "HIGH",
-  "expectedPlugins": ["eslint-plugin-node-security"]
-}

@@ -1,9 +1,0 @@
-// node-security/no-weak-cipher-algorithm — true negative
-// @origin       rule-tests
-// @generated    scripts/generate-corpus-fixtures.ts
-// @caution      Derived from this rule's OWN RuleTester cases, so it cannot
-//               measure this rule's precision — it passes by construction.
-//               Its value is cross-rule: no OTHER rule may fire on it.
-// This MUST NOT be flagged by node-security/no-weak-cipher-algorithm
-/* eslint node-security/no-weak-cipher-algorithm: ["error", {"allowInTests":true}] */
-crypto.createCipheriv("aes-256-gcm", key, iv);
