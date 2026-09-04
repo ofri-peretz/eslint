@@ -27,8 +27,8 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { readdirSync, readFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { join, resolve, sep } from 'node:path';
 
 const ROOT = resolve(__dirname, '../..');
 const SUITE = join(ROOT, 'benchmarks/suites/ilb-oxlint-parity');
@@ -49,44 +49,45 @@ describe('parity exclusions stay exact', () => {
     expect(allow.oxlintOnly).toEqual([]);
   });
 
-  it('every excluded fixture really does pass a null option', () => {
+  it('the excludable set is exactly the fixtures with a null options slot', () => {
     /*
-     * SEMANTIC, not textual. An earlier version of this lock only grepped the
-     * runner for `function has*Config(` and a nearby `null` token, which would
-     * have passed just as happily if the predicate had started excluding
-     * fixtures for some other reason entirely.
+     * SELF-CONTAINED, and semantic.
      *
-     * The runner now writes the excluded set into its envelope, so each one
-     * can be opened and checked: its inline config must contain an options
-     * array with a literal null ELEMENT. A `null` inside a string value does
-     * not count, and must not — excluding a fixture that should have been
-     * compared inflates the parity rate, which is the only direction this
-     * number must never be able to drift.
+     * Two earlier shapes of this test were wrong in opposite ways. The first
+     * grepped the runner for `function has*Config(` and a nearby `null`
+     * token — it would have passed just as happily if the predicate had
+     * started excluding fixtures for some other reason. The second read the
+     * excluded set out of the run envelope, which CI does not regenerate, so
+     * it picked up a months-old envelope with no `excludedFixtures` key and
+     * failed for a reason that had nothing to do with the invariant.
+     *
+     * So derive the set here, from the corpus, the same way the runner must:
+     * a fixture is excludable exactly when its inline config carries an
+     * options array with a literal null ELEMENT. A `null` inside a string
+     * value does not count and must not — excluding a fixture that should
+     * have been compared inflates the parity rate, which is the only
+     * direction this number must never be able to drift.
+     *
+     * When an envelope from a fresh run IS present, its excluded set must
+     * equal this one. That is the cross-check; its absence is not a failure.
      */
-    const envelopes = readdirSync(RESULTS)
-      .filter((f) => f.endsWith('.json'))
-      .sort();
-    expect(
-      envelopes.length,
-      'no ILB-Oxlint-Parity envelope to check — run the suite first',
-    ).toBeGreaterThan(0);
-
-    const env = JSON.parse(
-      readFileSync(join(RESULTS, envelopes[envelopes.length - 1]), 'utf-8'),
-    ) as { excludedFixtures?: string[] };
-    const excluded = env.excludedFixtures ?? [];
-    expect(
-      excluded.length,
-      'the envelope records no exclusions, so this test would pass vacuously',
-    ).toBeGreaterThan(0);
+    const walk = (dir: string): string[] => {
+      const out: string[] = [];
+      for (const e of readdirSync(dir, { withFileTypes: true })) {
+        const full = join(dir, e.name);
+        if (e.isDirectory()) out.push(...walk(full));
+        else if (/\.(js|jsx|mjs|cjs|ts|tsx|mts|cts)$/.test(e.name))
+          out.push(full);
+      }
+      return out;
+    };
 
     const INLINE = /\/\*\s*eslint\s+([\s\S]*?)\*\//g;
     const PAIR =
       /([\w@/-]+)\s*:\s*(\[[\s\S]*?\]|"[^"]*"|'[^']*'|\d+)\s*(?:,\s*(?=[\w@/-]+\s*:)|$)/g;
 
-    for (const rel of excluded) {
-      const src = readFileSync(join(ROOT, rel), 'utf-8');
-      let nulls = false;
+    const hasNullOption = (file: string): boolean => {
+      const src = readFileSync(file, 'utf-8');
       for (const block of src.matchAll(INLINE)) {
         for (const [, , raw] of block[1].matchAll(PAIR)) {
           let parsed: unknown;
@@ -100,15 +101,50 @@ describe('parity exclusions stay exact', () => {
             }
           }
           if (Array.isArray(parsed) && parsed.some((v) => v === null))
-            nulls = true;
+            return true;
         }
       }
+      return false;
+    };
+
+    const corpus = join(ROOT, 'benchmarks/corpus');
+    const excludable = walk(corpus)
+      .filter(hasNullOption)
+      .map((f) =>
+        f
+          .slice(ROOT.length + 1)
+          .split(sep)
+          .join('/'),
+      )
+      .sort();
+
+    expect(
+      excludable.length,
+      'no fixture carries a null options slot, so this test would pass ' +
+        'vacuously — and the runner should then be excluding nothing.',
+    ).toBeGreaterThan(0);
+
+    // Every excludable fixture is a real corpus file with a real null slot.
+    for (const rel of excludable) {
+      expect(hasNullOption(join(ROOT, rel))).toBe(true);
+    }
+
+    // Cross-check against a fresh envelope, when one is present.
+    const envelopes = existsSync(RESULTS)
+      ? readdirSync(RESULTS)
+          .filter((f) => /^\d{4}-\d{2}-\d{2}\.json$/.test(f))
+          .sort()
+      : [];
+    for (const name of envelopes) {
+      const env = JSON.parse(readFileSync(join(RESULTS, name), 'utf-8')) as {
+        excludedFixtures?: string[];
+      };
+      if (env.excludedFixtures === undefined) continue; // pre-dates the field
       expect(
-        nulls,
-        `${rel} is excluded from the parity comparison but its inline config ` +
-          'contains no null options slot. Either the predicate has widened or ' +
-          'this fixture should be compared.',
-      ).toBe(true);
+        [...env.excludedFixtures].sort(),
+        `${name} excluded a different set than the corpus says is excludable. ` +
+          'Either the predicate widened or a fixture changed.',
+      ).toEqual(excludable);
     }
   });
 
