@@ -1,5 +1,27 @@
 {
-  "_note": "Empty as of 2026-05-09 — fleet is 100% oxlint-compatible after the type-aware-guard refactor and pg variable-tracking refactor. New entries here require a justification line and an introduced date.",
-  "eslintOnly": [],
-  "oxlintOnly": []
+  "_note": "Every entry needs a rulePattern, a reason, and an introduced date. An entry here says a divergence is UNDERSTOOD, not that it is acceptable forever. Two classes are recorded below; both were measured on 2026-09-04 against the full corpus, after the harness stopped dropping jwt/pg findings and stopped counting oxlint's own TS diagnostics.",
+  "eslintOnly": [
+    {
+      "rulePattern": "^import-next/",
+      "introduced": "2026-09-04",
+      "reason": "Multi-module by definition. These resolve specifiers, read package.json dependency lists and walk the import graph across files. oxlint's JS plugin runtime hands a rule one file at a time with no cross-file graph, so a rule that must answer 'does this specifier resolve' or 'is this package a declared dependency' cannot reach the same verdict there. The rules LOAD and RUN under oxlint \u2014 they are compatible \u2014 they are simply not efficient or complete in a per-file runtime, which is the documented trade for this plugin. ESLint remains the runtime of record for import-next."
+    },
+    {
+      "rulePattern": "^(browser-security/no-unencrypted-transmission|node-security/no-ssrf|modularity/enforce-naming)$",
+      "introduced": "2026-09-04",
+      "reason": "Harness, not rule: oxlint does not honour inline `/* eslint <rule>: [\"error\", {...}] */` options. Every fixture here configures its rule through that comment, so ESLint runs it with the stated options and oxlint runs it with the rule's defaults \u2014 and the two reach different verdicts on the same line. Verified directly for node-security/no-ssrf: supplying the same `reportUnresolvedUrls` option through the oxlint config makes the rule fire there on exactly the line ESLint flags. The rules are oxlint-compatible; the fixture's configuration channel is not. Fixing it properly needs per-file options in the generated oxlint config, which one global config cannot express."
+    }
+  ],
+  "oxlintOnly": [
+    {
+      "rulePattern": "^import-next/",
+      "introduced": "2026-09-04",
+      "reason": "The mirror of the eslintOnly entry above. Without the module graph these rules reach a different verdict in both directions \u2014 sometimes silent, sometimes firing where ESLint resolved the specifier and did not."
+    },
+    {
+      "rulePattern": "^modernization/prefer-event-target$",
+      "introduced": "2026-09-04",
+      "reason": "Harness, not rule: oxlint does not honour inline `/* eslint <rule>: [\"error\", {...}] */` options. Every fixture here configures its rule through that comment, so ESLint runs it with the stated options and oxlint runs it with the rule's defaults \u2014 and the two reach different verdicts on the same line. Verified directly for node-security/no-ssrf: supplying the same `reportUnresolvedUrls` option through the oxlint config makes the rule fire there on exactly the line ESLint flags. The rules are oxlint-compatible; the fixture's configuration channel is not. Fixing it properly needs per-file options in the generated oxlint config, which one global config cannot express. Here the direction is reversed: the inline comment PERMITS an EventEmitter import that oxlint, running with defaults, reports."
+    }
+  ]
 }
