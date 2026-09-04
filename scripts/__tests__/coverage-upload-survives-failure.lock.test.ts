@@ -28,52 +28,96 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { parse } from 'yaml';
 
 type Step = { name?: string; id?: string; if?: string; run?: string };
 
-const WORKFLOW = resolve(__dirname, '../../.github/workflows/codecov.yml');
+const ROOT = resolve(__dirname, '../..');
+const WORKFLOW = join(ROOT, '.github/workflows/codecov.yml');
 const doc = parse(readFileSync(WORKFLOW, 'utf-8')) as {
   jobs: Record<string, { steps: Step[] }>;
 };
 const steps = doc.jobs['coverage'].steps;
 
-/** Steps that move coverage data anywhere. */
-const DATA_STEPS = steps.filter((s) =>
-  /Locate coverage|Rewrite lcov|Upload combined|Upload per-package|Upload test results|Upload coverage artifacts/.test(
-    s.name ?? '',
-  ),
-);
+/*
+ * The EXACT set, name by name, with the EXACT condition each one must carry.
+ *
+ * An earlier draft counted the steps (`length >= 5`) and matched `/always\(\)/`
+ * on the condition. Both were too loose to do the job: deleting a step would
+ * have dropped it from the set and left the lock green, and `always() && false`
+ * matches that regex while never running. A lock on a condition has to assert
+ * the condition.
+ *
+ * `!cancelled()` rather than `always()`: these steps must survive a package
+ * FAILING, but a cancelled run has to actually stop. `always()` keeps
+ * uploading after a cancel and publishes whatever partial lcov existed when
+ * the run was killed.
+ */
+const REQUIRED: Record<string, string> = {
+  'Locate coverage + JUnit reports': '!cancelled()',
+  'Rewrite lcov SF paths to repo-root-relative':
+    "!cancelled() && steps.find.outputs.has_lcov == 'true'",
+  'Upload combined coverage to Codecov':
+    "!cancelled() && steps.find.outputs.has_lcov == 'true'",
+  'Upload per-package coverage flags to Codecov':
+    "!cancelled() && steps.find.outputs.has_lcov == 'true'",
+  'Upload test results (Test Analytics)':
+    "!cancelled() && steps.find.outputs.has_junit == 'true'",
+  'Upload coverage artifacts': 'always()',
+};
 
 describe('coverage uploads survive one package failing', () => {
-  it('finds the data steps to check', () => {
-    // A lock that matches nothing passes forever.
-    expect(DATA_STEPS.length).toBeGreaterThanOrEqual(5);
+  it('every named data step is still present', () => {
+    const present = new Set(steps.map((s) => s.name).filter(Boolean));
+    for (const name of Object.keys(REQUIRED)) {
+      expect(
+        present.has(name),
+        `"${name}" is gone from codecov.yml. If it was renamed, rename it here ` +
+          'too — a data step that silently leaves this list stops being checked.',
+      ).toBe(true);
+    }
   });
 
-  it.each(DATA_STEPS.map((s) => s.name!))(
-    '%s runs even after a failure',
-    (name) => {
-      const step = DATA_STEPS.find((s) => s.name === name)!;
-      expect(
-        step.if ?? '',
-        `"${name}" has no always() in its condition, so GitHub skips it the moment ` +
-          'the test step exits non-zero — and one package missing its threshold ' +
-          'uploads nothing for any of them.',
-      ).toMatch(/always\(\)/);
-    },
-  );
+  it.each(Object.entries(REQUIRED))('%s', (name, expected) => {
+    const step = steps.find((s) => s.name === name);
+    expect(step, `"${name}" not found`).toBeDefined();
+    expect(
+      step!.if,
+      `"${name}" must be gated on exactly \`${expected}\`. Anything weaker — a ` +
+        'missing condition, or one that is never true — means a package missing ' +
+        'its threshold uploads nothing for any of the others.',
+    ).toBe(expected);
+  });
 
-  it('still collects coverage in exactly one place', () => {
-    // If coverage ever starts being collected on PRs too, the reasoning above
-    // (and the cost decision in #363) needs revisiting rather than silently
-    // drifting.
-    const runner = steps.find((s) =>
-      /Run tests with coverage/.test(s.name ?? ''),
-    );
-    expect(runner?.run).toContain('turbo run test:coverage');
-    expect(runner?.run).toContain('--continue');
+  it('coverage is collected in exactly one place, across every workflow', () => {
+    /*
+     * Not "the intended runner still exists" — that passes with a second
+     * collector sitting beside it. This counts every step in every workflow
+     * that turns coverage collection ON, and there must be one.
+     *
+     * PR shards deliberately pass `--coverage.enabled=false`; those are the
+     * negative case and must not count.
+     */
+    const collectors: string[] = [];
+    for (const file of readdirSync(join(ROOT, '.github/workflows'))) {
+      if (!/\.ya?ml$/.test(file)) continue;
+      const text = readFileSync(join(ROOT, '.github/workflows', file), 'utf-8');
+      for (const line of text.split('\n')) {
+        if (!/test:coverage|--coverage\.enabled(=|\s+)true/.test(line))
+          continue;
+        if (/--coverage\.enabled=false/.test(line)) continue;
+        if (/^\s*#/.test(line)) continue;
+        collectors.push(`${file}: ${line.trim().slice(0, 80)}`);
+      }
+    }
+    expect(
+      collectors,
+      'Coverage must be collected in exactly one place. A second collector ' +
+        'splits the report and revisits the cost decision in #363 by accident.',
+    ).toHaveLength(1);
+    expect(collectors[0]).toMatch(/^codecov\.yml:/);
+    expect(collectors[0]).toContain('--continue');
   });
 });

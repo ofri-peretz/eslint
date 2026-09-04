@@ -77,8 +77,11 @@ jobs:
         # catch them.
         run: npx turbo run test:coverage $FILTER_ARG --continue
 
-      # `always()` — a package that misses its own threshold must not take the
-      # upload down with it.
+      # `!cancelled()` — a package that misses its own threshold must not take
+      # the upload down with it, but a CANCELLED run must not keep uploading.
+      # `always()` would also run on cancellation, delaying the cancel and
+      # publishing whatever partial lcov happened to exist when the run was
+      # killed. `!cancelled()` is exactly "success or failure, not cancelled".
       #
       # `turbo run --continue` means every OTHER package still produces a
       # complete lcov, but this step had no condition, so GitHub skipped it the
@@ -96,7 +99,7 @@ jobs:
       # regression is not being hidden. The data just stops being collateral.
       - name: Locate coverage + JUnit reports
         id: find
-        if: always()
+        if: '!cancelled()'
         run: |
           set -euo pipefail
           LCOV=$(find packages -path '*/coverage/lcov.info' -type f | sort | head -200)
@@ -109,7 +112,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Rewrite lcov SF paths to repo-root-relative
-        if: always() && steps.find.outputs.has_lcov == 'true'
+        if: "!cancelled() && steps.find.outputs.has_lcov == 'true'"
         run: |
           # Vitest runs per-package so SF: lines are package-relative (e.g. SF:src/rules/foo.ts).
           # Codecov component_management uses repo-root paths (packages/<pkg>/**).
@@ -121,14 +124,14 @@ jobs:
           done
 
       - name: Upload combined coverage to Codecov
-        if: always() && steps.find.outputs.has_lcov == 'true'
+        if: "!cancelled() && steps.find.outputs.has_lcov == 'true'"
         uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
 
       - name: Upload per-package coverage flags to Codecov
-        if: always() && steps.find.outputs.has_lcov == 'true'
+        if: "!cancelled() && steps.find.outputs.has_lcov == 'true'"
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         run: |
@@ -152,7 +155,7 @@ jobs:
           done
 
       - name: Upload test results (Test Analytics)
-        if: always() && steps.find.outputs.has_junit == 'true'
+        if: "!cancelled() && steps.find.outputs.has_junit == 'true'"
         uses: codecov/test-results-action@0fa95f0e1eeaafde2c782583b36b28ad0d8c77d3 # v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
