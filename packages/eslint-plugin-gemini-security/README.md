@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-gemini-security" target="blank"><picture><source media="(prefers-color-scheme: dark)" srcset="https://eslint.interlace.tools/logos/interlace-dark.svg"><img src="https://eslint.interlace.tools/logos/interlace-light.svg" alt="Interlace" height="90" /></picture></a>
+  <a href="https://eslint.interlace.tools/docs/security/plugin-gemini-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-gemini-security" target="blank"><picture><source media="(prefers-color-scheme: dark)" srcset="https://eslint.interlace.tools/logos/interlace-dark.svg"><img src="https://eslint.interlace.tools/logos/interlace-light.svg" alt="Interlace" height="90" /></picture></a>
   &nbsp;&nbsp;
   <a href="https://ai.google.dev" target="_blank"><img src="https://eslint.interlace.tools/logos/gemini.svg" alt="Google Gemini SDK" height="90" /></a>
   &nbsp;&nbsp;
@@ -176,5 +176,5 @@ MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 </p>
 
 <p align="center">
-  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-gemini-security" target="blank"><picture><source media="(prefers-color-scheme: dark)" srcset="https://eslint.interlace.tools/logos/interlace-dark.svg"><img src="https://eslint.interlace.tools/logos/interlace-light.svg" alt="Interlace" height="70" /></picture></a>
+  <a href="https://eslint.interlace.tools/docs/security/plugin-gemini-security?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-gemini-security" target="blank"><picture><source media="(prefers-color-scheme: dark)" srcset="https://eslint.interlace.tools/logos/interlace-dark.svg"><img src="https://eslint.interlace.tools/logos/interlace-light.svg" alt="Interlace" height="70" /></picture></a>
 </p>
