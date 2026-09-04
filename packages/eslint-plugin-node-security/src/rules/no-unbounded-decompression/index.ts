@@ -25,12 +25,13 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
-  formatLLMMessage,
-  MessageIcons,
-  createRule,
   AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
   isTestFilePath,
   memberPropertyName,
+  MessageIcons,
+  objectKeyName,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unboundedDecompression';
@@ -205,11 +206,10 @@ export const noUnboundedDecompression = createRule<RuleOptions, MessageIds>({
       let capped = false;
       for (const property of options_.properties) {
         if (property.type === AST_NODE_TYPES.SpreadElement) return 'unknown';
-        if (property.computed) continue;
-        const named =
-          property.key.type === AST_NODE_TYPES.Identifier
-            ? property.key.name
-            : (property.key as TSESTree.Literal).value;
+        // The `computed` bail went with the ternary: a computed key whose
+        // value is a static string is the same property, and skipping it here
+        // is what made this rule blind to `{ ['maxOutputLength']: n }`.
+        const named = objectKeyName(property);
         if (named === 'maxOutputLength') capped = true;
       }
       return capped ? 'capped' : 'uncapped';

@@ -35,6 +35,7 @@ describe('detect-non-literal-fs-filename', () => {
           code: 'fs.writeFile("./config.json", data, callback);',
         },
         {
+          name: 'a build-time constant path is not user input',
           code: 'fs.stat("/var/log/app.log", callback);',
         },
         {

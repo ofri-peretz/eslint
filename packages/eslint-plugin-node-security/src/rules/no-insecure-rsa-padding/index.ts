@@ -14,12 +14,13 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
-  formatLLMMessage,
-  MessageIcons,
-  createRule,
   AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
   isTestFilePath,
+  MessageIcons,
   namesOneOf,
+  objectKeyName,
   propertyName,
 } from '@interlace/eslint-devkit';
 
@@ -128,8 +129,7 @@ export const noInsecureRsaPadding = createRule<RuleOptions, MessageIds>({
           for (const prop of keyArg.properties) {
             if (
               prop.type === AST_NODE_TYPES.Property &&
-              prop.key.type === AST_NODE_TYPES.Identifier &&
-              prop.key.name === 'padding'
+              objectKeyName(prop) === 'padding'
             ) {
               const paddingText = sourceCode.getText(prop.value);
               if (

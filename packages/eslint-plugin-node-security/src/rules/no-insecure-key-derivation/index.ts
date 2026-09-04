@@ -14,14 +14,15 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
+  AST_NODE_TYPES,
+  createRule,
   formatLLMMessage,
   MessageIcons,
-  createRule,
-  AST_NODE_TYPES,
+  namesOneOf,
+  objectKeyName,
+  propertyName,
   resolveModuleBinding,
   unwrapTypeSyntax,
-  namesOneOf,
-  propertyName,
 } from '@interlace/eslint-devkit';
 import {
   constInitializerOf,
@@ -159,10 +160,7 @@ function objectPropertyValue(
       continue;
     // A non-computed object key is an Identifier or a string/number Literal.
     // There is no third spelling, so there is no third arm to guard.
-    const name =
-      property.key.type === AST_NODE_TYPES.Identifier
-        ? property.key.name
-        : String((property.key as TSESTree.Literal).value);
+    const name = objectKeyName(property);
     if (name === key) return property.value;
   }
   return null;
