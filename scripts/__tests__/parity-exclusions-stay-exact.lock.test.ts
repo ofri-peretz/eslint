@@ -27,11 +27,12 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 const ROOT = resolve(__dirname, '../..');
 const SUITE = join(ROOT, 'benchmarks/suites/ilb-oxlint-parity');
+const RESULTS = join(ROOT, 'benchmarks/results/ilb-oxlint-parity');
 
 describe('parity exclusions stay exact', () => {
   it('the allowlist is empty — no rule is excused', () => {
@@ -48,23 +49,67 @@ describe('parity exclusions stay exact', () => {
     expect(allow.oxlintOnly).toEqual([]);
   });
 
-  it('exactly one exclusion predicate exists, and it tests for null options', () => {
-    const src = readFileSync(join(SUITE, 'run.ts'), 'utf-8');
-
-    // One predicate, named, so a second one cannot appear unnoticed.
-    const predicates = [...src.matchAll(/^function has\w*Config\(/gm)];
+  it('every excluded fixture really does pass a null option', () => {
+    /*
+     * SEMANTIC, not textual. An earlier version of this lock only grepped the
+     * runner for `function has*Config(` and a nearby `null` token, which would
+     * have passed just as happily if the predicate had started excluding
+     * fixtures for some other reason entirely.
+     *
+     * The runner now writes the excluded set into its envelope, so each one
+     * can be opened and checked: its inline config must contain an options
+     * array with a literal null ELEMENT. A `null` inside a string value does
+     * not count, and must not — excluding a fixture that should have been
+     * compared inflates the parity rate, which is the only direction this
+     * number must never be able to drift.
+     */
+    const envelopes = readdirSync(RESULTS)
+      .filter((f) => f.endsWith('.json'))
+      .sort();
     expect(
-      predicates.map((m) => m[0]),
-      'More than one fixture-exclusion predicate now exists in the parity ' +
-        'runner. Every additional one narrows what the parity rate looked at.',
-    ).toHaveLength(1);
+      envelopes.length,
+      'no ILB-Oxlint-Parity envelope to check — run the suite first',
+    ).toBeGreaterThan(0);
 
-    expect(src).toContain('function hasNullOptionConfig(');
-    // It must key on a null inside an options array, not on a rule or a path.
+    const env = JSON.parse(
+      readFileSync(join(RESULTS, envelopes[envelopes.length - 1]), 'utf-8'),
+    ) as { excludedFixtures?: string[] };
+    const excluded = env.excludedFixtures ?? [];
     expect(
-      /hasNullOptionConfig[\s\S]{0,900}?\\bnull\\b/.test(src),
-      'hasNullOptionConfig no longer tests for a null options slot.',
-    ).toBe(true);
+      excluded.length,
+      'the envelope records no exclusions, so this test would pass vacuously',
+    ).toBeGreaterThan(0);
+
+    const INLINE = /\/\*\s*eslint\s+([\s\S]*?)\*\//g;
+    const PAIR =
+      /([\w@/-]+)\s*:\s*(\[[\s\S]*?\]|"[^"]*"|'[^']*'|\d+)\s*(?:,\s*(?=[\w@/-]+\s*:)|$)/g;
+
+    for (const rel of excluded) {
+      const src = readFileSync(join(ROOT, rel), 'utf-8');
+      let nulls = false;
+      for (const block of src.matchAll(INLINE)) {
+        for (const [, , raw] of block[1].matchAll(PAIR)) {
+          let parsed: unknown;
+          try {
+            parsed = JSON.parse(raw);
+          } catch {
+            try {
+              parsed = JSON.parse(raw.replace(/'/g, '"'));
+            } catch {
+              continue;
+            }
+          }
+          if (Array.isArray(parsed) && parsed.some((v) => v === null))
+            nulls = true;
+        }
+      }
+      expect(
+        nulls,
+        `${rel} is excluded from the parity comparison but its inline config ` +
+          'contains no null options slot. Either the predicate has widened or ' +
+          'this fixture should be compared.',
+      ).toBe(true);
+    }
   });
 
   it('the exclusion is applied to BOTH linters', () => {
@@ -73,8 +118,6 @@ describe('parity exclusions stay exact', () => {
      * Dropping the fixtures from one side only would move the parity rate in
      * that linter's favour while looking like a tidy-up.
      */
-    // The definition is an arrow (`const dropNullOptionFixtures = (findings)`)
-    // so it does not match `name(`; these are the CALL sites, one per linter.
     expect(src).toContain('const dropNullOptionFixtures =');
     const calls = [...src.matchAll(/dropNullOptionFixtures\(/g)];
     expect(

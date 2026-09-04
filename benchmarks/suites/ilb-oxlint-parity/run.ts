@@ -195,22 +195,30 @@ function hasNullOptionConfig(file) {
   } catch {
     return false;
   }
-  const re = /\/\*\s*eslint\s+([\s\S]*?)\*\//g;
-  let m;
-  while ((m = re.exec(src)) !== null) {
-    if (/:\s*\[[^\]]*\bnull\b[^\]]*\]/.test(m[1])) {
-      nullOptionFixtures.add(file);
-      return true;
-    }
-  }
-  return false;
+  /*
+   * STRUCTURAL, not textual. This used to regex for `null` inside the config
+   * comment, which would also match a `null` sitting inside a string value —
+   * `{"pattern": "null"}` — and wrongly exclude that fixture. A false
+   * exclusion inflates the parity rate, which is the one direction this whole
+   * measurement must not be able to drift in.
+   *
+   * `inlineRuleConfigs` already JSON-parses each config, so ask it: is any
+   * ELEMENT of an options array a literal null?
+   */
+  void src;
+  const configs = inlineRuleConfigsRaw(file);
+  const hasNull = Object.values(configs).some(
+    (cfg) => Array.isArray(cfg) && cfg.some((v) => v === null),
+  );
+  if (hasNull) nullOptionFixtures.add(file);
+  return hasNull;
 }
 
 /* eslint ... *\/` is read. `eslint-disable`,
  * `eslint-env` and friends are different directives with different semantics,
  * and guessing at them would trade one silent mismatch for another.
  */
-function inlineRuleConfigs(file) {
+function inlineRuleConfigsRaw(file) {
   const src = fs.readFileSync(file, 'utf8');
   const out = {};
   const re = /\/\*\s*eslint\s+([\s\S]*?)\*\//g;
@@ -224,7 +232,19 @@ function inlineRuleConfigs(file) {
     while ((q = pair.exec(body)) !== null) {
       const [, rule, raw] = q;
       try {
-        const parsed = JSON.parse(raw.replace(/'/g, '"'));
+        /*
+         * Strict JSON FIRST. The fallback rewrites `'` to `"` for the
+         * single-quoted style ESLint comments often use, and doing that
+         * unconditionally corrupts any valid JSON string that legitimately
+         * contains an apostrophe (`{"msg": "it's"}`). No corpus fixture does
+         * today; the ordering means none ever can.
+         */
+        let parsed;
+        try {
+          parsed = JSON.parse(raw);
+        } catch {
+          parsed = JSON.parse(raw.replace(/'/g, '"'));
+        }
         /*
          * `["error", null]` appears in the corpus and ESLint accepts it —
          * a null options slot means "no options". oxlint validates options
@@ -237,13 +257,36 @@ function inlineRuleConfigs(file) {
          * so a single fixture took every finding down with it. Drop the empty
          * slots and keep the severity.
          */
-        out[rule] = Array.isArray(parsed)
-          ? parsed.filter((v) => v !== null && v !== undefined)
-          : parsed;
+        out[rule] = parsed;
       } catch {
         // A value we cannot parse is left alone rather than guessed at.
       }
     }
+  }
+  return out;
+}
+
+/**
+ * `inlineRuleConfigsRaw` with the empty option slots removed, ready for oxlint.
+ *
+ * `["error", null]` appears in the corpus and ESLint accepts it — a null slot
+ * means "no options". oxlint validates against the rule's schema and rejects
+ * null outright, which fails the WHOLE run rather than that one rule:
+ *
+ *   Failed to setup JS plugin options: Options validation failed for rule
+ *   'interlace-import-next/enforce-team-boundaries'
+ *
+ * so a single fixture took every finding down with it. The RAW form keeps the
+ * nulls, because `hasNullOptionConfig` needs to see them to exclude the
+ * fixture from both sides.
+ */
+function inlineRuleConfigs(file) {
+  const raw = inlineRuleConfigsRaw(file);
+  const out = {};
+  for (const [rule, cfg] of Object.entries(raw)) {
+    out[rule] = Array.isArray(cfg)
+      ? cfg.filter((v) => v !== null && v !== undefined)
+      : cfg;
   }
   return out;
 }
@@ -706,6 +749,14 @@ function main() {
     parityRate: Number(parityRate.toFixed(4)),
     eslintOnlyAllowlisted: allow.eslintOnlyAllowlisted,
     oxlintOnlyAllowlisted: allow.oxlintOnlyAllowlisted,
+    /*
+     * The exclusions, named. A parity rate is easy to inflate by widening what
+     * it declines to look at, so the excluded set travels WITH the number
+     * rather than living only in a console line nobody diffs.
+     */
+    excludedFixtures: [...nullOptionFixtures]
+      .map((f) => path.relative(REPO_ROOT, f).split(path.sep).join('/'))
+      .sort(),
     eslintOnlyUnexplained: allow.eUnexplained,
     oxlintOnlyUnexplained: allow.oUnexplained,
   };
