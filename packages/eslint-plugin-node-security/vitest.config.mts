@@ -35,7 +35,7 @@ export default defineConfig({
        * `./coverage`, like every other package.
        *
        * This wrote to the REPO ROOT — `../../coverage/packages/…` — and the
-       * upload workflow looks for `packages/*​/coverage/lcov.info`. So
+       * upload workflow looks for `packages/<pkg>/coverage/lcov.info`. So
        * node-security's coverage has never been uploaded to Codecov. Its 99.80%
        * there is a fossil: `carryforward: true` on every flag means Codecov
        * keeps showing the last value it ever received for a flag that stops

@@ -9,8 +9,10 @@
  *
  * `.github/workflows/codecov.yml` finds reports with
  *
- *     find packages -path '*​/coverage/lcov.info'
- *     for lcov in packages/*​/coverage/lcov.info
+ *     find packages -path (star)/coverage/lcov.info
+ *     for lcov in packages/(star)/coverage/lcov.info
+ *
+ * written with (star) because the literal glob would close this comment.
  *
  * so a package whose `reportsDirectory` points anywhere else produces a
  * perfectly good lcov that is never uploaded.
