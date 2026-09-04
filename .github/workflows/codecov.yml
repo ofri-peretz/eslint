@@ -123,12 +123,27 @@ jobs:
             sed -i "s|^SF:|SF:packages/${pkg}/|g" "$lcov"
           done
 
-      - name: Upload combined coverage to Codecov
-        if: "!cancelled() && steps.find.outputs.has_lcov == 'true'"
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v6
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: false
+      # The combined `codecov-action` upload used to sit here, and it was
+      # uploading the SAME lcov files the flag loop below already sends — it
+      # takes no `files:` input, so it auto-discovers
+      # `packages/<pkg>/coverage/lcov.info` and ships every one of them a second
+      # time.
+      #
+      # Codecov then held each line twice. Measured on
+      # `packages/eslint-plugin-secure-coding/src/index.ts`: our lcov reports
+      # `LF:7`, Codecov held 14 lines with 7 hits — an exact 2x, with the
+      # duplicate copy contributing lines and no hit data. Across the package
+      # that is 5,328 lines reported and 10,565 held, which is the whole of its
+      # published 68.54% against a measured 100%.
+      #
+      # It was invisible for most packages because 2N/2N is still 100%. Only
+      # where the second copy lost its hits did the number move, which is why
+      # exactly four components looked wrong and nobody could reproduce them.
+      #
+      # The per-package uploads below are sufficient on their own: they carry
+      # repo-root-relative paths, so `component_management` (which matches on
+      # path, not flag) resolves from them, and each one keeps its own flag for
+      # the per-plugin badge URLs.
 
       - name: Upload per-package coverage flags to Codecov
         if: "!cancelled() && steps.find.outputs.has_lcov == 'true'"
