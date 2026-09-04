@@ -1,5 +1,6 @@
 {
   "recordedAt": "2026-09-04",
+  "command": "npx tsx scripts/profile-test-durations.mts",
   "note": "Seconds per workspace test task, measured serially. Consumed by scripts/ci-test-shard.mts as the bin-packing weight; packages absent here fall back to test-file count.",
   "durations": {
     "@interlace/cwe-analytics-engine": 1,

@@ -119,7 +119,7 @@ function scriptLane(lane: 'node' | 'web', total: number): Set<string> {
       },
     );
     for (const m of out.matchAll(
-      /^ {2}(\S+)(?: \[slice \d+\/\d+\])? {2}\((?:test|test:coverage), ~?\d+ test files\)$/gm,
+      /^ {2}(\S+)(?: \[slice \d+\/\d+\])? {2}\((?:test|test:coverage), ~?\d+s\)$/gm,
     ))
       names.add(m[1]);
   }

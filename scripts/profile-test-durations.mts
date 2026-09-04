@@ -98,6 +98,10 @@ fs.writeFileSync(
     {
       // Recorded so a stale profile is visible rather than silently trusted.
       recordedAt: new Date().toISOString().slice(0, 10),
+      // `artefacts-name-their-method.lock` requires this, and the reason it
+      // gives is exactly right: absent, a typed number comes to read as a
+      // measurement. These ARE measurements — this says how to take them again.
+      command: 'npx tsx scripts/profile-test-durations.mts',
       note:
         'Seconds per workspace test task, measured serially. Consumed by ' +
         'scripts/ci-test-shard.mts as the bin-packing weight; packages absent ' +

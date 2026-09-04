@@ -18,8 +18,16 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import url from 'node:url';
-import { changedFilesSince, warnUnresolvedBase } from './lib/ci-changed-files.mts';
-import { decideAffected, reverseDeps, bucket, manifestDeps } from './lib/ci-shard-affected.mts';
+import {
+  changedFilesSince,
+  warnUnresolvedBase,
+} from './lib/ci-changed-files.mts';
+import {
+  decideAffected,
+  reverseDeps,
+  bucket,
+  manifestDeps,
+} from './lib/ci-shard-affected.mts';
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..');
@@ -61,7 +69,10 @@ type Pkg = {
  */
 const LEAN_TRIMMED = new Set(
   fs
-    .readFileSync(path.join(REPO_ROOT, '.github', 'lean-node-modules.txt'), 'utf8')
+    .readFileSync(
+      path.join(REPO_ROOT, '.github', 'lean-node-modules.txt'),
+      'utf8',
+    )
     .split('\n')
     .map((l) => l.trim())
     .filter((l) => l && !l.startsWith('#')),
@@ -117,7 +128,7 @@ function declaresTrimmed(manifest: {
 const SPLIT_ACROSS_SHARDS: Record<string, number> = { docs: 3 };
 
 /**
- * Cost proxy for balancing: number of test files in the package.
+ * Fallback weight when a package is not in the duration profile. See shardCost.
  *
  * Not wall-clock — that would need a results database and would drift. File
  * count tracks runtime closely enough here (measured 738 files across 33
@@ -134,7 +145,12 @@ const SPLIT_ACROSS_SHARDS: Record<string, number> = { docs: 3 };
 const MEASURED: Record<string, number> = (() => {
   try {
     const raw = fs.readFileSync(
-      path.join(import.meta.dirname, '..', '.agent', 'test-duration-profile.json'),
+      path.join(
+        import.meta.dirname,
+        '..',
+        '.agent',
+        'test-duration-profile.json',
+      ),
       'utf8',
     );
     return JSON.parse(raw).durations ?? {};
@@ -171,7 +187,12 @@ function countTestFiles(dir: string): number {
   const walk = (d: string) => {
     if (!fs.existsSync(d)) return;
     for (const e of fs.readdirSync(d, { withFileTypes: true })) {
-      if (e.name === 'node_modules' || e.name === 'dist' || e.name === 'coverage') continue;
+      if (
+        e.name === 'node_modules' ||
+        e.name === 'dist' ||
+        e.name === 'coverage'
+      )
+        continue;
       const fp = path.join(d, e.name);
       if (e.isDirectory()) walk(fp);
       else if (/\.(test|spec)\.(ts|tsx|mjs|js)$/.test(e.name)) n++;
@@ -191,7 +212,12 @@ const NO_TEST_ALLOWLIST = new Set<string>(['registry']);
 const wantCoverage = process.env.CI_TEST_SHARD_COVERAGE === '1';
 
 /** Every workspace manifest, with the directory it came from. */
-function readWorkspaces(): { dir: string; entry: string; abs: string; pkg: any }[] {
+function readWorkspaces(): {
+  dir: string;
+  entry: string;
+  abs: string;
+  pkg: any;
+}[] {
   const out: { dir: string; entry: string; abs: string; pkg: any }[] = [];
   for (const wsDir of WORKSPACE_DIRS) {
     const abs = path.join(REPO_ROOT, wsDir);
@@ -229,7 +255,7 @@ function laneMap(): Map<string, Lane> {
     all.map((w) => [w.pkg.name, declaresTrimmed(w.pkg) ? 'web' : 'node']),
   );
   const byName = new Map(all.map((w) => [w.pkg.name, w]));
-  for (let changed = true; changed; ) {
+  for (let changed = true; changed;) {
     changed = false;
     for (const w of all) {
       if (lanes.get(w.pkg.name) === 'web') continue;
@@ -265,13 +291,14 @@ function discoverPackages(lane: Lane): { testable: Pkg[]; untested: string[] } {
       // codecov.yml now collects it on a daily cron instead. Set
       // CI_TEST_SHARD_COVERAGE=1 to opt back in (that daily job does).
       // (also consulted above for SPLIT_ACROSS_SHARDS)
-      const task = wantCoverage && pkg.scripts?.['test:coverage']
-        ? 'test:coverage'
-        : pkg.scripts?.test
-          ? 'test'
-          : pkg.scripts?.['test:coverage']
-            ? 'test:coverage'
-            : null;
+      const task =
+        wantCoverage && pkg.scripts?.['test:coverage']
+          ? 'test:coverage'
+          : pkg.scripts?.test
+            ? 'test'
+            : pkg.scripts?.['test:coverage']
+              ? 'test:coverage'
+              : null;
       if (task) {
         const cost = shardCost(pkg.name, path.join(abs, entry));
         const deps = manifestDeps(pkg);
@@ -282,16 +309,18 @@ function discoverPackages(lane: Lane): { testable: Pkg[]; untested: string[] } {
         if (slices > 1) {
           for (let i = 1; i <= slices; i++) {
             testable.push({
-              name: pkg.name, dir, task,
-              cost: Math.ceil(cost / slices), deps,
+              name: pkg.name,
+              dir,
+              task,
+              cost: Math.ceil(cost / slices),
+              deps,
               split: { i, n: slices },
             });
           }
         } else {
           testable.push({ name: pkg.name, dir, task, cost, deps });
         }
-      }
-      else if (!NO_TEST_ALLOWLIST.has(pkg.name)) untested.push(pkg.name);
+      } else if (!NO_TEST_ALLOWLIST.has(pkg.name)) untested.push(pkg.name);
     }
   }
   // Sort by cost desc, name asc as tiebreak. Descending order is what makes the
@@ -348,9 +377,12 @@ function emitMatrix(shardNumbers: number[], heavy = true): void {
 // MODULE_NOT_FOUND in a web test rather than a web package silently never
 // running.
 const laneFlagAt = process.argv.indexOf('--lane');
-const LANE: Lane = laneFlagAt === -1 ? 'node' : (process.argv[laneFlagAt + 1] as Lane);
+const LANE: Lane =
+  laneFlagAt === -1 ? 'node' : (process.argv[laneFlagAt + 1] as Lane);
 if (LANE !== 'node' && LANE !== 'web') {
-  console.error(`--lane must be "node" or "web" (got ${JSON.stringify(process.argv[laneFlagAt + 1])})`);
+  console.error(
+    `--lane must be "node" or "web" (got ${JSON.stringify(process.argv[laneFlagAt + 1])})`,
+  );
   process.exit(2);
 }
 const positional = process.argv
@@ -360,9 +392,16 @@ const positional = process.argv
 const shardIndex = MATRIX_MODE ? 0 : Number(positional[0]);
 const shardTotal = Number(positional[1]);
 
-if (!MATRIX_MODE && (!Number.isInteger(shardIndex) || shardIndex < 1 || shardIndex > shardTotal)) {
-  console.error(`Usage: node scripts/ci-test-shard.mts <shardIndex 1..N> <shardTotal N> [--lane node|web]`);
-  console.error(`   or: node scripts/ci-test-shard.mts --matrix <shardTotal N> [--lane node|web]`);
+if (
+  !MATRIX_MODE &&
+  (!Number.isInteger(shardIndex) || shardIndex < 1 || shardIndex > shardTotal)
+) {
+  console.error(
+    `Usage: node scripts/ci-test-shard.mts <shardIndex 1..N> <shardTotal N> [--lane node|web]`,
+  );
+  console.error(
+    `   or: node scripts/ci-test-shard.mts --matrix <shardTotal N> [--lane node|web]`,
+  );
   process.exit(2);
 }
 if (!Number.isInteger(shardTotal) || shardTotal < 1) {
@@ -370,12 +409,14 @@ if (!Number.isInteger(shardTotal) || shardTotal < 1) {
   process.exit(2);
 }
 
-
 const { testable, untested } = discoverPackages(LANE);
 // Every testable package across BOTH lanes. `decideAffected` judges its `bug`
 // state against this, so a change owned by the other lane reports `none` here
 // instead of failing as an empty affected set.
-const UNIVERSE = [...discoverPackages('node').testable, ...discoverPackages('web').testable];
+const UNIVERSE = [
+  ...discoverPackages('node').testable,
+  ...discoverPackages('web').testable,
+];
 const REVERSE_DEPS = reverseDeps(testable);
 
 // Zero-selection guard. `turbo run test --filter=...[origin/main]` used to
@@ -384,13 +425,19 @@ const REVERSE_DEPS = reverseDeps(testable);
 // passes while verifying nothing is worse than no gate, so an empty universe
 // is a hard failure, not a silent success.
 if (testable.length === 0) {
-  console.error(`::error::No workspace declares a \`test\` or \`test:coverage\` script. Refusing to report success without running any tests.`);
+  console.error(
+    `::error::No workspace declares a \`test\` or \`test:coverage\` script. Refusing to report success without running any tests.`,
+  );
   process.exit(1);
 }
 
 if (untested.length > 0) {
-  console.error(`::error::These workspaces declare no test task and are not allowlisted: ${untested.join(', ')}`);
-  console.error('Add a test script, or add the package to NO_TEST_ALLOWLIST in scripts/ci-test-shard.mts with a reason.');
+  console.error(
+    `::error::These workspaces declare no test task and are not allowlisted: ${untested.join(', ')}`,
+  );
+  console.error(
+    'Add a test script, or add the package to NO_TEST_ALLOWLIST in scripts/ci-test-shard.mts with a reason.',
+  );
   process.exit(1);
 }
 
@@ -420,7 +467,6 @@ let mine = MATRIX_MODE ? [] : shards[shardIndex - 1];
 // Set CI_TEST_SHARD_ALL=1 (main, cron, dispatch) to skip filtering entirely.
 const BASE_REF = process.env.CI_TEST_SHARD_BASE ?? 'origin/main';
 
-
 function changedFiles(): string[] | null {
   const r = changedFilesSince(BASE_REF, REPO_ROOT);
   if (r.ok) return r.changed;
@@ -437,8 +483,12 @@ if (!runAll) {
   const changed = changedFiles();
   const decision = decideAffected(changed, testable, REVERSE_DEPS, UNIVERSE);
   if (decision.mode === 'bug') {
-    console.error(`::error::Files changed under ${decision.dirs.join(', ')} but the affected set is empty.`);
-    console.error('That is a bug in the affected computation, not a fast path. Refusing to report success.');
+    console.error(
+      `::error::Files changed under ${decision.dirs.join(', ')} but the affected set is empty.`,
+    );
+    console.error(
+      'That is a bug in the affected computation, not a fast path. Refusing to report success.',
+    );
     process.exit(1);
   } else if (decision.mode === 'none') {
     if (MATRIX_MODE) {
@@ -451,7 +501,9 @@ if (!runAll) {
       process.exit(0);
     }
     console.log(`Nothing to test: ${decision.why} vs ${BASE_REF}.`);
-    console.log(`Changed files (${changed!.length}): ${changed!.slice(0, 10).join(', ')}${changed!.length > 10 ? ' …' : ''}`);
+    console.log(
+      `Changed files (${changed!.length}): ${changed!.slice(0, 10).join(', ')}${changed!.length > 10 ? ' …' : ''}`,
+    );
     process.exit(0);
   } else if (decision.mode === 'all') {
     filterNote = `all packages (${decision.why})`;
@@ -468,12 +520,17 @@ if (!runAll) {
 
 if (MATRIX_MODE) {
   const live = shards
-    .map((s, i) => ({ shard: i + 1, pkgs: affected ? s.filter((p) => affected!.has(p.name)) : s }))
+    .map((s, i) => ({
+      shard: i + 1,
+      pkgs: affected ? s.filter((p) => affected!.has(p.name)) : s,
+    }))
     .filter((s) => s.pkgs.length > 0);
   for (const s of live) {
     console.log(`  shard ${s.shard}: ${s.pkgs.map((p) => p.name).join(', ')}`);
   }
-  console.log(`Dispatching ${live.length} of ${shardTotal} shards (${filterNote}).`);
+  console.log(
+    `Dispatching ${live.length} of ${shardTotal} shards (${filterNote}).`,
+  );
   emitMatrix(live.map((s) => s.shard));
   process.exit(0);
 }
@@ -482,7 +539,7 @@ const loads = shards.map((s) => s.reduce((n, p) => n + p.cost, 0));
 const bucketed = shards[shardIndex - 1];
 console.log(
   `Shard ${shardIndex}/${shardTotal} — ${bucketed.length} of ${testable.length} packages bucketed, ` +
-    `${loads[shardIndex - 1]} of ${loads.reduce((a, b) => a + b, 0)} test files ` +
+    `${loads[shardIndex - 1]}s of ${loads.reduce((a, b) => a + b, 0)}s ` +
     `(balance: ${Math.min(...loads)}–${Math.max(...loads)}) — running ${filterNote}`,
 );
 for (const p of mine)
@@ -493,7 +550,9 @@ for (const p of mine)
 // An empty *bucket* means shardTotal exceeds what the partition can fill — a
 // job that reports success having tested nothing. Still fatal.
 if (bucketed.length === 0) {
-  console.error(`::error::Shard ${shardIndex}/${shardTotal} was allocated 0 packages out of ${testable.length}. Reduce shardTotal — an empty shard reports success without testing anything.`);
+  console.error(
+    `::error::Shard ${shardIndex}/${shardTotal} was allocated 0 packages out of ${testable.length}. Reduce shardTotal — an empty shard reports success without testing anything.`,
+  );
   process.exit(1);
 }
 
@@ -501,7 +560,9 @@ if (bucketed.length === 0) {
 // shard owns packages, none of which this PR touched. Distinct from the case
 // above, and stated explicitly rather than passing silently.
 if (mine.length === 0) {
-  console.log(`None of this shard's ${bucketed.length} packages were affected by this change — nothing to run.`);
+  console.log(
+    `None of this shard's ${bucketed.length} packages were affected by this change — nothing to run.`,
+  );
   process.exit(0);
 }
 
@@ -541,11 +602,26 @@ for (const task of ['test:coverage', 'test'] as const) {
 
   const invocations: string[][] = [];
   if (whole.length) {
-    invocations.push(['turbo', 'run', task, ...whole.map(spec), '--', '--reporter=dot']);
+    invocations.push([
+      'turbo',
+      'run',
+      task,
+      ...whole.map(spec),
+      '--',
+      '--reporter=dot',
+    ]);
   }
   for (const p of sliced) {
     const { i, n } = p.split as { i: number; n: number };
-    invocations.push(['turbo', 'run', task, spec(p), '--', '--reporter=dot', `--shard=${i}/${n}`]);
+    invocations.push([
+      'turbo',
+      'run',
+      task,
+      spec(p),
+      '--',
+      '--reporter=dot',
+      `--shard=${i}/${n}`,
+    ]);
   }
 
   for (const args of invocations) {
