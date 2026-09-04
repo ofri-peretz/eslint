@@ -71,7 +71,10 @@ export function reverseDeps(pkgs: AffectedPkg[]): Map<string, string[]> {
  * Expanding here instead makes the affected set a closed set, which the
  * bucketer then PARTITIONS. Every package runs on exactly one shard.
  */
-export function expandDependents(seed: Iterable<string>, rev: Map<string, string[]>): Set<string> {
+export function expandDependents(
+  seed: Iterable<string>,
+  rev: Map<string, string[]>,
+): Set<string> {
   const out = new Set(seed);
   const queue = [...out];
   while (queue.length > 0) {
@@ -107,15 +110,20 @@ export function decideAffected(
   rev?: Map<string, string[]>,
   universe?: AffectedPkg[],
 ): Decision {
-  if (changed === null) return { mode: 'all', why: 'no merge-base with the base ref' };
-  if (changed.some((f) => GLOBAL_INPUTS.has(f))) return { mode: 'all', why: 'a global input changed' };
+  if (changed === null)
+    return { mode: 'all', why: 'no merge-base with the base ref' };
+  if (changed.some((f) => GLOBAL_INPUTS.has(f)))
+    return { mode: 'all', why: 'a global input changed' };
 
   const touchedDirs = new Set(
-    changed.map((f) => f.split('/').slice(0, 2).join('/')).filter((d) => /^(packages|apps|tools)\//.test(d)),
+    changed
+      .map((f) => f.split('/').slice(0, 2).join('/'))
+      .filter((d) => /^(packages|apps|tools)\//.test(d)),
   );
   const directly = testable.filter((p) => touchedDirs.has(p.dir));
 
-  if (touchedDirs.size === 0) return { mode: 'none', why: 'no package sources changed' };
+  if (touchedDirs.size === 0)
+    return { mode: 'none', why: 'no package sources changed' };
 
   // `bug` means the change is testable NOWHERE, not merely "not in this lane".
   //
@@ -142,7 +150,9 @@ export function decideAffected(
   const inScope = new Set(testable.map((p) => p.name));
   return {
     mode: 'some',
-    names: new Set([...expandDependents(seed, rev)].filter((n) => inScope.has(n))),
+    names: new Set(
+      [...expandDependents(seed, rev)].filter((n) => inScope.has(n)),
+    ),
   };
 }
 
@@ -155,14 +165,27 @@ export function decideAffected(
  * `react-features` (70) and `devkit` (32) in one bucket and produced a 54s vs
  * 299s split — 5.5x, with three runners idle while one finished.
  *
- * LPT's max bucket cannot go below the largest single item, so on the test side
- * `docs` alone (83 files of 738) binds past N=10 and extra shards only add idle
- * jobs. Build work has no such outlier (no package over 25s), which is why the
- * build side shards effectively at a different N.
+ * LPT's max bucket cannot go below the largest single item. Build work has no
+ * such outlier (no package over 25s), which is why the build side shards
+ * effectively at a different N.
+ *
+ * The test side's outlier is recorded here as `docs` (83 files of 738). That is
+ * a FILE COUNT, and `cost` is now a measured duration (ADR 0007), so the claim
+ * is UNTESTED until a profile exists from somewhere every package can run.
+ *
+ * An attempt to check it on 2026-09-03 concluded docs was 16s and not the
+ * largest. That was wrong, and wrong in an instructive way: the profiler
+ * recorded time-to-FAILURE as though it were a run time, and seven packages —
+ * docs among them — fail in a developer worktree with an incomplete install.
+ * Those numbers described how fast the packages break. The generator now
+ * discards non-zero exits; the question itself is still open.
  *
  * Caller must sort by cost descending — that ordering is what makes LPT work.
  */
-export function bucket<T extends { cost: number }>(items: T[], total: number): T[][] {
+export function bucket<T extends { cost: number }>(
+  items: T[],
+  total: number,
+): T[][] {
   const shards: T[][] = Array.from({ length: total }, () => []);
   const load: number[] = Array.from({ length: total }, () => 0);
   for (const p of items) {

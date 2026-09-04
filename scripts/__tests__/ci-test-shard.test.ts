@@ -70,7 +70,7 @@ function planFor(shard: number, total: number, lane: string): string[] {
   // untested files behind a green check.
   const names = [
     ...out.matchAll(
-      /^ {2}(\S+)(?: \[slice (\d+)\/(\d+)\])? {2}\((?:test|test:coverage), ~?\d+ test files\)$/gm,
+      /^ {2}(\S+)(?: \[slice (\d+)\/(\d+)\])? {2}\((?:test|test:coverage), ~?\d+s\)$/gm,
     ),
   ].map((m) => (m[2] ? `${m[1]}#${m[2]}/${m[3]}` : m[1]));
   // Fail loudly rather than returning [] if the plan format changes — an empty
