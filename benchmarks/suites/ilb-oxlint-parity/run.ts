@@ -150,6 +150,165 @@ function loadPluginRules(shimAbs) {
   return Object.keys(rulesObj);
 }
 
+/*
+ * Inline `/* eslint <rule>: [...] *\/` config, translated into oxlint
+ * `overrides`.
+ *
+ * The corpus fixtures switch their rule on — and hand it options — through an
+ * inline ESLint config comment. ESLint honours those; oxlint's JS plugin
+ * runtime does not, so it ran every rule with defaults and the two linters
+ * answered different questions about the same file. That accounted for most of
+ * the divergence left after the prefix fix, across four plugins.
+ *
+ * oxlint DOES support per-file `overrides` with rule options — verified
+ * directly before writing this. So the options travel; they just have to
+ * travel through the config rather than the comment.
+ *
+ * Deliberately narrow: only `/*
+ * Fixtures configured with a NULL options slot are excluded from BOTH sides.
+ *
+ * `/* eslint <rule>: ["error", null] *\/` comes from `options: [null]` cases in
+ * the rule suites — deliberate synthetic-branch tests that exercise the
+ * `options || {}` fallback. There are 51 of them across the repo.
+ *
+ * ESLint accepts the null through its inline path (its own config validator
+ * rejects the same value: `Value null should be object`). oxlint validates
+ * options against the rule's schema and refuses it — correctly, because null
+ * is not an options object. So the two linters are being asked different
+ * questions, and neither answer is wrong.
+ *
+ * These fixtures measure an ESLint tolerance for an invalid option, not rule
+ * behaviour, so scoring them as parity failures says nothing about whether a
+ * rule works under oxlint. Dropped from BOTH finding sets rather than
+ * allowlisted on one side, because a one-sided exclusion would quietly change
+ * the denominator in oxlint's favour.
+ *
+ * This is the ONLY exclusion of its kind, and it is exact: the file must carry
+ * an inline config whose options array contains a literal null.
+ */
+const nullOptionFixtures = new Set();
+function hasNullOptionConfig(file) {
+  if (nullOptionFixtures.has(file)) return true;
+  let src;
+  try {
+    src = fs.readFileSync(file, 'utf8');
+  } catch {
+    return false;
+  }
+  /*
+   * STRUCTURAL, not textual. This used to regex for `null` inside the config
+   * comment, which would also match a `null` sitting inside a string value —
+   * `{"pattern": "null"}` — and wrongly exclude that fixture. A false
+   * exclusion inflates the parity rate, which is the one direction this whole
+   * measurement must not be able to drift in.
+   *
+   * `inlineRuleConfigs` already JSON-parses each config, so ask it: is any
+   * ELEMENT of an options array a literal null?
+   */
+  void src;
+  const configs = inlineRuleConfigsRaw(file);
+  const hasNull = Object.values(configs).some(
+    (cfg) => Array.isArray(cfg) && cfg.some((v) => v === null),
+  );
+  if (hasNull) nullOptionFixtures.add(file);
+  return hasNull;
+}
+
+/* eslint ... *\/` is read. `eslint-disable`,
+ * `eslint-env` and friends are different directives with different semantics,
+ * and guessing at them would trade one silent mismatch for another.
+ */
+function inlineRuleConfigsRaw(file) {
+  const src = fs.readFileSync(file, 'utf8');
+  const out = {};
+  const re = /\/\*\s*eslint\s+([\s\S]*?)\*\//g;
+  let m;
+  while ((m = re.exec(src)) !== null) {
+    const body = m[1].trim();
+    // `rule-name: <json>` pairs. The rule id may carry a plugin prefix.
+    const pair =
+      /([\w@/-]+)\s*:\s*(\[[\s\S]*?\]|"[^"]*"|'[^']*'|\d+)\s*(?:,\s*(?=[\w@/-]+\s*:)|$)/g;
+    let q;
+    while ((q = pair.exec(body)) !== null) {
+      const [, rule, raw] = q;
+      try {
+        /*
+         * Strict JSON FIRST. The fallback rewrites `'` to `"` for the
+         * single-quoted style ESLint comments often use, and doing that
+         * unconditionally corrupts any valid JSON string that legitimately
+         * contains an apostrophe (`{"msg": "it's"}`). No corpus fixture does
+         * today; the ordering means none ever can.
+         */
+        let parsed;
+        try {
+          parsed = JSON.parse(raw);
+        } catch {
+          parsed = JSON.parse(raw.replace(/'/g, '"'));
+        }
+        /*
+         * `["error", null]` appears in the corpus and ESLint accepts it —
+         * a null options slot means "no options". oxlint validates options
+         * against the rule's schema and rejects null outright, which fails
+         * the WHOLE run rather than that one rule:
+         *
+         *   Failed to setup JS plugin options: Options validation failed
+         *   for rule 'interlace-import-next/enforce-team-boundaries'
+         *
+         * so a single fixture took every finding down with it. Drop the empty
+         * slots and keep the severity.
+         */
+        out[rule] = parsed;
+      } catch {
+        // A value we cannot parse is left alone rather than guessed at.
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * `inlineRuleConfigsRaw` with the empty option slots removed, ready for oxlint.
+ *
+ * `["error", null]` appears in the corpus and ESLint accepts it — a null slot
+ * means "no options". oxlint validates against the rule's schema and rejects
+ * null outright, which fails the WHOLE run rather than that one rule:
+ *
+ *   Failed to setup JS plugin options: Options validation failed for rule
+ *   'interlace-import-next/enforce-team-boundaries'
+ *
+ * so a single fixture took every finding down with it. The RAW form keeps the
+ * nulls, because `hasNullOptionConfig` needs to see them to exclude the
+ * fixture from both sides.
+ */
+function inlineRuleConfigs(file) {
+  const raw = inlineRuleConfigsRaw(file);
+  const out = {};
+  for (const [rule, cfg] of Object.entries(raw)) {
+    out[rule] = Array.isArray(cfg)
+      ? cfg.filter((v) => v !== null && v !== undefined)
+      : cfg;
+  }
+  return out;
+}
+
+/** Every fixture under the corpus, for the override scan. */
+function corpusFiles(root) {
+  if (!fs.existsSync(root)) return [];
+  const stat = fs.statSync(root);
+  if (!stat.isDirectory()) return [root];
+  const out = [];
+  const walk = (dir) => {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) walk(full);
+      else if (/\.(js|jsx|mjs|cjs|ts|tsx|mts|cts)$/.test(e.name))
+        out.push(full);
+    }
+  };
+  walk(root);
+  return out;
+}
+
 function buildOxlintConfig() {
   if (!fs.existsSync(MANIFEST_PATH)) {
     console.error(
@@ -204,6 +363,40 @@ function buildOxlintConfig() {
     },
     jsPlugins,
     rules,
+    /*
+     * One override per fixture that carries an inline config comment, so the
+     * options ESLint reads from the comment reach oxlint through the channel
+     * it does support. Keyed by a path glob relative to the repo root, which
+     * is what oxlint matches on.
+     */
+    overrides: corpusFiles(CORPUS)
+      .map((file) => {
+        const inline = inlineRuleConfigs(file);
+        const entries = Object.entries(inline).filter(([rule]) =>
+          allowedPrefixes.some((prefix) => rule.startsWith(prefix)),
+        );
+        if (entries.length === 0) return null;
+        /*
+         * `**\/` prefix: oxlint resolves an override's `files` globs relative
+         * to the CONFIG FILE, and this config is written into
+         * benchmarks/results/, not the repo root. A repo-root-relative path
+         * matched nothing — the overrides were emitted correctly and applied
+         * to no file, which looks identical to the options not working.
+         */
+        const rel =
+          '**/' + path.relative(REPO_ROOT, file).split(path.sep).join('/');
+        const scoped = {};
+        for (const [rule, cfg] of entries) {
+          const short = rule.slice(0, rule.indexOf('/'));
+          const dir =
+            Object.entries(PUBLISHED_PREFIX).find(
+              ([, pub]) => pub === short,
+            )?.[0] ?? short;
+          scoped[`interlace-${dir}/${rule.slice(rule.indexOf('/') + 1)}`] = cfg;
+        }
+        return { files: [rel], rules: scoped };
+      })
+      .filter(Boolean),
     ignorePatterns: ['node_modules', 'dist'],
   };
 }
@@ -494,6 +687,11 @@ function main() {
   );
 
   console.log('  Running ESLint... ');
+  const dropNullOptionFixtures = (findings) =>
+    findings.filter(
+      (f) => !hasNullOptionConfig(path.resolve(REPO_ROOT, f.file)),
+    );
+
   const eslintFindings = lintEslint(CORPUS, ESLINT_CONFIG);
   console.log(`    ${eslintFindings.length} finding(s)`);
 
@@ -501,7 +699,18 @@ function main() {
   const oxlintFindings = lintOxlint(CORPUS, tmpConfig);
   console.log(`    ${oxlintFindings.length} finding(s)`);
 
-  const d = diff(eslintFindings, oxlintFindings);
+  const d = diff(
+    dropNullOptionFixtures(eslintFindings),
+    dropNullOptionFixtures(oxlintFindings),
+  );
+  const excluded = nullOptionFixtures.size;
+  if (excluded > 0) {
+    console.log(
+      `\n  ${excluded} fixture(s) excluded from BOTH sides: configured with ` +
+        `a null options slot,\n  which ESLint tolerates inline and oxlint's ` +
+        `schema refuses. See hasNullOptionConfig.`,
+    );
+  }
   const allow = applyAllowlist(d);
 
   const total = d.shared + d.eslintOnly.length + d.oxlintOnly.length;
@@ -540,6 +749,14 @@ function main() {
     parityRate: Number(parityRate.toFixed(4)),
     eslintOnlyAllowlisted: allow.eslintOnlyAllowlisted,
     oxlintOnlyAllowlisted: allow.oxlintOnlyAllowlisted,
+    /*
+     * The exclusions, named. A parity rate is easy to inflate by widening what
+     * it declines to look at, so the excluded set travels WITH the number
+     * rather than living only in a console line nobody diffs.
+     */
+    excludedFixtures: [...nullOptionFixtures]
+      .map((f) => path.relative(REPO_ROOT, f).split(path.sep).join('/'))
+      .sort(),
     eslintOnlyUnexplained: allow.eUnexplained,
     oxlintOnlyUnexplained: allow.oUnexplained,
   };
