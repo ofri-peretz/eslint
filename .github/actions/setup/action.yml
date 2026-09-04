@@ -64,6 +64,13 @@ inputs:
     description: Restore + save the Playwright browser cache (~/.cache/ms-playwright). Set to "true" for jobs that run Playwright.
     required: false
     default: "false"
+  tsbuildinfo-cache:
+    description: >-
+      Restore `packages/*/.tsbuildinfo` AND `packages/*/dist` as ONE unit, so
+      `tsgo --build` over the solution can do the incremental work it is
+      configured for. Set "true" for jobs that run `npm run typecheck`.
+    required: false
+    default: "false"
   next-cache:
     description: Restore + save the Next.js incremental build cache (apps/docs/.next/cache). Set to "true" for jobs that build apps/docs.
     required: false
@@ -410,6 +417,46 @@ runs:
     # a job that runs in parallel with the rest of the gate. Correctness is not
     # worth 25s. `scripts/__tests__/tsbuildinfo-cache-pairing-lock.test.ts`
     # fails if either half is ever cached without the other.
+
+    # `.tsbuildinfo` AND `dist`, in ONE cache entry. Never one without the
+    # other — `scripts/__tests__/tsbuildinfo-cache-pairing-lock.test.ts` fails
+    # the build for that, because `tsgo --build` reads the buildinfo, concludes
+    # every project is up to date, and skips emitting the `.d.ts` files
+    # downstream projects reference. The result reads as a type error in a file
+    # nobody touched (ADR 0003).
+    #
+    # ADR 0003 dropped this cache for SIZE and that premise was wrong. Measured
+    # 2026-09-03 across 32 packages:
+    #
+    #   packages/*/dist            9.0 MB
+    #   packages/*/.tsbuildinfo    3.5 MB
+    #   the pair                  12.5 MB   = 0.125% of the 10 GB budget
+    #
+    # The "36.89 GB against a 10 GB budget" in that ADR was turbo's own
+    # append-only LOCAL cache, not dist. Two different caches, one number,
+    # and the wrong one was cited — which cost the whole-graph typecheck its
+    # incremental state and made it run cold at ~62s on every PR.
+    - name: Restore TS incremental state (branches — read-only)
+      if: inputs.tsbuildinfo-cache == 'true' && github.ref != 'refs/heads/main'
+      uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+      with:
+        path: |
+          packages/*/.tsbuildinfo
+          packages/*/dist
+        key: ts-incr-${{ runner.os }}-${{ hashFiles('packages/*/src/**', 'packages/*/tsconfig*.json', 'tsconfig.base.json', 'tsconfig.solution.json') }}
+        restore-keys: |
+          ts-incr-${{ runner.os }}-
+
+    - name: TS incremental state (main — restore + save)
+      if: inputs.tsbuildinfo-cache == 'true' && github.ref == 'refs/heads/main'
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+      with:
+        path: |
+          packages/*/.tsbuildinfo
+          packages/*/dist
+        key: ts-incr-${{ runner.os }}-${{ hashFiles('packages/*/src/**', 'packages/*/tsconfig*.json', 'tsconfig.base.json', 'tsconfig.solution.json') }}
+        restore-keys: |
+          ts-incr-${{ runner.os }}-
 
     # Branches RESTORE, only main SAVES — the same split the Turbo cache above
     # uses, for the same reason.

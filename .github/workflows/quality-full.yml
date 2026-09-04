@@ -660,6 +660,12 @@ jobs:
         with:
           turbo-cache: 'false'
           turbo-remote-cache: 'true'
+          # The whole-graph `tsgo --build` IS incremental — every package sets
+          # tsBuildInfoFile — and until now CI threw that state away on every
+          # run, so it re-checked the entire graph from cold at ~62s. Restores
+          # `.tsbuildinfo` and `dist` as one unit; the pairing lock fails the
+          # build if anyone splits them again.
+          tsbuildinfo-cache: 'true'
       - name: Typecheck (whole-graph tsgo / TS7 native)
         # One `tsgo --build tsconfig.solution.json` over the full plugin graph
         # (+ @interlace/ui). A single whole-graph build is what makes TS7 faster
