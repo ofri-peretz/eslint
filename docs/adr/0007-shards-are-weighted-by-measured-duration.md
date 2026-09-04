@@ -60,10 +60,21 @@ durations:
 |      4 | `[51, 55, 50, 57]` — 1.14x, 15s idle    | `[54, 53, 53, 53]` — 1.02x, 3s idle    |
 |      6 | `[31, 34, 38, 35, 37, 38]` — 1.23x, 15s | `[36, 36, 36, 35, 35, 35]` — 1.03x, 3s |
 
-It also corrected a documented belief. `ci-shard-affected.mts` recorded `docs`
-(83 files of 738) as the item that binds LPT's floor. By duration `docs` is 16s
-and **not** the largest — `eslint-plugin-node-security` is, at 20s. The stated
-ceiling on useful shard count came from the proxy, not from the work.
+A first version of this ADR also claimed the measurement had corrected a
+documented belief — that `docs` was 16s and `eslint-plugin-node-security` at 20s
+was the real binding item, so the recorded shard-count ceiling came from the
+proxy rather than the work.
+
+**That claim is retracted.** The profiler recorded a task's duration on a
+non-zero exit as though it were a successful run, so a failing package
+contributed its time-to-failure. Seven packages fail in a developer worktree
+with an incomplete install — `docs` and `eslint-plugin-node-security` among
+them. Both numbers described how fast those packages break.
+
+The generator now discards non-zero exits (caught in review on #871). What
+remains unknown, honestly, is whether `docs` binds the floor: answering it needs
+a profile taken where every package can actually run, which is CI and not a
+laptop.
 
 ## Rejected
 

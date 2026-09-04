@@ -29,6 +29,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
+/** Mirrors ci-test-shard.mts: the daily codecov job sets this, PR runs do not. */
+const wantCoverage = process.env.CI_TEST_SHARD_COVERAGE === '1';
 const OUT = path.join(ROOT, '.agent', 'test-duration-profile.json');
 
 type Pkg = { name: string; dir: string; task: string };
@@ -47,11 +49,19 @@ function workspaces(): Pkg[] {
       const manifest = path.join(abs, entry, 'package.json');
       if (!fs.existsSync(manifest)) continue;
       const pkg = JSON.parse(fs.readFileSync(manifest, 'utf8'));
-      const task = pkg.scripts?.test
-        ? 'test'
-        : pkg.scripts?.['test:coverage']
+      // Same precedence ci-test-shard.mts uses, and recorded PER TASK: with
+      // CI_TEST_SHARD_COVERAGE=1 the sharder picks `test:coverage`, whose v8
+      // instrumentation roughly doubles the run. One number for both tasks
+      // would have the daily coverage job bin-packing coverage work with
+      // non-coverage weights.
+      const task =
+        wantCoverage && pkg.scripts?.['test:coverage']
           ? 'test:coverage'
-          : null;
+          : pkg.scripts?.test
+            ? 'test'
+            : pkg.scripts?.['test:coverage']
+              ? 'test:coverage'
+              : null;
       if (task && pkg.name)
         out.push({ name: pkg.name, dir: `${base}/${entry}`, task });
     }
@@ -68,7 +78,12 @@ function time(pkg: Pkg): Promise<number> {
     });
     c.stdout.on('data', () => {});
     c.stderr.on('data', () => {});
-    c.on('close', () => resolve(Date.now() - started));
+    // `close` fires on a NONZERO exit too. A failing package exits on its first
+    // broken assertion, so recording that duration writes the time-to-failure
+    // as if it were the time-to-run — and overwrites a good prior measurement
+    // with it. Caught in review on #871, after it had already put a failing
+    // package at the top of this profile.
+    c.on('close', (code) => resolve(code === 0 ? Date.now() - started : -1));
     c.on('error', () => resolve(-1));
   });
 }
@@ -106,7 +121,18 @@ fs.writeFileSync(
         'Seconds per workspace test task, measured serially. Consumed by ' +
         'scripts/ci-test-shard.mts as the bin-packing weight; packages absent ' +
         'here fall back to test-file count.',
-      durations: { ...existing.durations, ...durations },
+      // Keyed by task: `durations` is the PR-shape (`test`) profile,
+      // `durationsCoverage` the one the daily coverage job schedules against.
+      // A single map would silently weigh one mode with the other's numbers.
+      ...(wantCoverage
+        ? {
+            durations: existing.durations,
+            durationsCoverage: { ...existing.durationsCoverage, ...durations },
+          }
+        : {
+            durations: { ...existing.durations, ...durations },
+            durationsCoverage: existing.durationsCoverage,
+          }),
     },
     null,
     2,
