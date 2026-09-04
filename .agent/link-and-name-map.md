@@ -34,7 +34,7 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-express-security` | 3.2.3 | `express-security/` | — | `plugin-express-security` | security | `express` | ✅ | ✅ | ✅ |
 | `eslint-plugin-gemini-security` | 0.3.4 | `gemini-security/` | — | `plugin-gemini-security` | security | `gemini` | ✅ | ✅ | ✅ |
 | `eslint-plugin-import-next` | 2.7.3 | `import-next/` | — | `plugin-import-next` | quality | `—` | ✅ | ✅ | ✅ |
-| `eslint-plugin-jwt-security` | 3.2.0 | `jwt-security/` | `jwt/` | `plugin-jwt-security` | security | `jwt` | ✅ | ✅ | ✅ |
+| `eslint-plugin-jwt-security` | 3.2.1 | `jwt-security/` | `jwt/` | `plugin-jwt-security` | security | `jwt` | ✅ | ✅ | ✅ |
 | `eslint-plugin-knex-security` | 0.4.7 | `knex-security/` | — | `plugin-knex-security` | security | `knex` | ✅ | ✅ | ✅ |
 | `eslint-plugin-lambda-security` | 2.1.3 | `lambda-security/` | — | `plugin-lambda-security` | security | `lambda` | ✅ | ✅ | ✅ |
 | `eslint-plugin-maintainability` | 3.2.2 | `maintainability/` | — | `plugin-maintainability` | quality | `—` | ✅ | ✅ | ✅ |
@@ -44,7 +44,7 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-mongodb-security` | 9.1.2 | `mongodb-security/` | — | `plugin-mongodb-security` | security | `mongodb` | ✅ | ✅ | ✅ |
 | `eslint-plugin-mysql-security` | 0.3.7 | `mysql-security/` | — | `plugin-mysql-security` | security | `mysql` | ✅ | ✅ | ✅ |
 | `eslint-plugin-nestjs-security` | 3.1.2 | `nestjs-security/` | — | `plugin-nestjs-security` | security | `nestjs` | ✅ | ✅ | ✅ |
-| `eslint-plugin-node-security` | 5.4.2 | `node-security/` | — | `plugin-node-security` | security | `node` | ✅ | ✅ | ✅ |
+| `eslint-plugin-node-security` | 5.4.3 | `node-security/` | — | `plugin-node-security` | security | `node` | ✅ | ✅ | ✅ |
 | `eslint-plugin-openai-security` | 0.3.3 | `openai-security/` | — | `plugin-openai-security` | security | `openai` | ✅ | ✅ | ✅ |
 | `eslint-plugin-operability` | 4.1.0 | `operability/` | — | `plugin-operability` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-postgresql-security` | 2.3.4 | `postgresql-security/` | `pg/` | `plugin-postgresql-security` | security | `postgresql` | ✅ | ✅ | ✅ |
