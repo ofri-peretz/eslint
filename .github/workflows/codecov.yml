@@ -123,27 +123,33 @@ jobs:
             sed -i "s|^SF:|SF:packages/${pkg}/|g" "$lcov"
           done
 
-      # The combined `codecov-action` upload used to sit here, and it was
-      # uploading the SAME lcov files the flag loop below already sends — it
-      # takes no `files:` input, so it auto-discovers
-      # `packages/<pkg>/coverage/lcov.info` and ships every one of them a second
-      # time.
+      # The combined `codecov-action` upload used to sit here. It took no
+      # `files:` input, so it auto-discovered the same
+      # `packages/<pkg>/coverage/lcov.info` the loop below already sends. One
+      # upload path is better than two and it is gone for that reason.
       #
-      # Codecov then held each line twice. Measured on
-      # `packages/eslint-plugin-secure-coding/src/index.ts`: our lcov reports
-      # `LF:7`, Codecov held 14 lines with 7 hits — an exact 2x, with the
-      # duplicate copy contributing lines and no hit data. Across the package
-      # that is 5,328 lines reported and 10,565 held, which is the whole of its
-      # published 68.54% against a measured 100%.
+      # It was ALSO offered as the explanation for four components publishing
+      # less than the 100% they measure. That was wrong, and the record is
+      # corrected here rather than left to mislead: removing it changed
+      # nothing. Codecov reprocessed 30d3778a9 and returned byte-identical
+      # totals — 40963/44668 — and secure-coding stayed at 68.54%.
       #
-      # It was invisible for most packages because 2N/2N is still 100%. Only
-      # where the second copy lost its hits did the number move, which is why
-      # exactly four components looked wrong and nobody could reproduce them.
+      # What is established, from the artifact this workflow itself uploaded:
       #
-      # The per-package uploads below are sufficient on their own: they carry
-      # repo-root-relative paths, so `component_management` (which matches on
-      # path, not flag) resolves from them, and each one keeps its own flag for
-      # the per-plugin badge URLs.
+      #   every package's lcov is 100%       27454/27454 across 28 packages
+      #   paths are repo-root-relative       38/38 SF lines correct
+      #   no duplicate SF entries            0
+      #   Codecov holds MORE lines than we send
+      #     secure-coding   we send 5328   it holds 10565   (38 files both)
+      #     jwt-security    we send  498   it holds   529
+      #
+      # Two hypotheses tested and falsified: the duplicate upload (removing it
+      # changed nothing) and lines-plus-branches (5328+6268=11596, not 10565;
+      # 498+497=995, not 529). The discrepancy is inside Codecov's ingestion of
+      # a v8 lcov and needs their session data to settle — not a change here.
+      #
+      # Do not "fix" the four numbers by writing tests. There is nothing
+      # uncovered to cover.
 
       - name: Upload per-package coverage flags to Codecov
         if: "!cancelled() && steps.find.outputs.has_lcov == 'true'"
