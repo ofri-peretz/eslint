@@ -331,6 +331,21 @@ jobs:
       - name: Run scripts/__tests__
         run: npm run --silent test:scripts
 
+      # A lock nobody has broken is a lock nobody has tested.
+      #
+      # Three locks written in a single day were green while asserting nothing
+      # — one matched the comment that explained the flag it guarded, one
+      # matched an unrelated anchor pointing at the same URL. Both survived
+      # every shape-based check, because the assertion was real and simply
+      # matched the wrong thing.
+      #
+      # This breaks each lock's declared subject and requires the lock to go
+      # red. Cheap: only locks that DECLARE a proof are executed, and the
+      # remainder are a shrink-only baseline, so this adds seconds rather than
+      # a full re-run of the suite.
+      - name: Locks fail when their subject breaks
+        run: npm run --silent check:lock-proofs
+
   # Executes every benchmark ESLint config on a built tree. A config that
   # throws is scored as "found nothing" by four suites, so this is the gate
   # between a package rename and a published F1 of 0%. Gated by the diff (see
