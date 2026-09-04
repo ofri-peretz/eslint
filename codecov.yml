@@ -482,9 +482,44 @@ component_management:
 # ═══════════════════════════════════════════════════════════════════════════════
 # IGNORE PATHS
 # ═══════════════════════════════════════════════════════════════════════════════
-# Files that don't contain runtime logic or lack tests
+# Files that don't contain runtime logic or lack tests.
+#
+# ── Everything outside packages/ ───────────────────────────────────────────────
+#
+# Codecov is the CONSUMER-FACING number. It answers "is the code you install
+# tested", so its denominator is the code that ships: packages/. Internal
+# tooling is measured by whether it works, not by a coverage percentage.
+#
+# These paths were never uploaded — the workflow runs `turbo run test:coverage`
+# over packages only — so listing them changes no number. What it changes is
+# that the omission becomes a DECISION rather than an accident. An absent path
+# and a deliberately excluded one look identical in a report; that difference
+# is the whole reason every artefact in this repo carries a `command` field.
+#
+# Measured before deciding, so the trade is on the record:
+#
+#   scripts/      176 source files, 7.95% line coverage
+#   benchmarks/   361
+#   apps/         257
+#   tools/          6
+#
+# scripts/ is the interesting one and the answer is still no. It holds the
+# gates, and this repo has repeatedly shipped wrong numbers because a gate was
+# broken — a swallowed ReferenceError that made an artefact read STALE for
+# months, a lock that passed because it asserted its own prose. But those are
+# caught by scripts/__tests__ (125 files, 2,505 tests), which is a correctness
+# signal, not a percentage. Raising 7.95% to a gate would be a large project
+# for code no consumer ever receives, and it would put a second, louder number
+# next to the one customers actually read.
+#
+# If that calculus changes, the honest move is a SEPARATE Codecov project for
+# tooling, not diluting this one.
 
 ignore:
+  - 'apps/**'
+  - 'scripts/**'
+  - 'benchmarks/**'
+  - 'tools/**'
   - '**/*.test.ts'
   - '**/*.spec.ts'
   - '**/node_modules/**'
