@@ -83,6 +83,27 @@ describe('the duration profile is usable when present', () => {
     }
   });
 
+  it('the GENERATOR emits the regeneration command', () => {
+    // Asserting only the committed artefact would pass while every future
+    // regeneration produced a non-compliant one — the file is regenerated far
+    // more often than it is reviewed. `artefacts-name-their-method.lock` checks
+    // the artefact; this checks the thing that writes it.
+    const gen = readFileSync(
+      resolve(ROOT, 'scripts/profile-test-durations.mts'),
+      'utf8',
+    );
+    expect(gen).toMatch(/command:\s*'[^']*profile-test-durations\.mts'/);
+  });
+
+  it('names its regeneration command when present', () => {
+    if (!existsSync(PROFILE)) return;
+    const p = JSON.parse(readFileSync(PROFILE, 'utf8'));
+    expect(
+      p.command,
+      'no `command` — a typed number reads as a measurement',
+    ).toContain('profile-test-durations');
+  });
+
   it('records when it was measured, so staleness is visible', () => {
     if (!existsSync(PROFILE)) return;
     const p = JSON.parse(readFileSync(PROFILE, 'utf8'));
