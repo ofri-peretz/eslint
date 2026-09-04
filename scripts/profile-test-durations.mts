@@ -102,7 +102,7 @@ fs.writeFileSync(
         'Seconds per workspace test task, measured serially. Consumed by ' +
         'scripts/ci-test-shard.mts as the bin-packing weight; packages absent ' +
         'here fall back to test-file count.',
-      durations: { ...(existing.durations ?? {}), ...durations },
+      durations: { ...existing.durations, ...durations },
     },
     null,
     2,
