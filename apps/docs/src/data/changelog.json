@@ -5,6 +5,36 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "eslint-plugin-jwt-security",
+      "short": "eslint-plugin-jwt-security",
+      "version": "3.2.1",
+      "date": "2026-09-04T12:52:58Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "A computed or quoted option key is still a JWT option.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "5.4.3",
+      "date": "2026-09-04T12:52:55Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "A computed or quoted property key is still the same property.",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-secure-coding",
       "short": "eslint-plugin-secure-coding",
       "version": "5.3.2",
@@ -15862,21 +15892,6 @@
     {
       "package": "eslint-plugin-jwt-security",
       "short": "eslint-plugin-jwt-security",
-      "version": "3.2.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "A computed or quoted option key is still a JWT option.",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-jwt-security",
-      "short": "eslint-plugin-jwt-security",
       "version": "2.2.9",
       "date": null,
       "isApp": false,
@@ -15990,21 +16005,6 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-node-security",
-      "short": "eslint-plugin-node-security",
-      "version": "5.4.3",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "A computed or quoted property key is still the same property.",
           "pr": null
         }
       ]
