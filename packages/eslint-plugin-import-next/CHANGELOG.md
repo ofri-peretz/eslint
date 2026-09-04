@@ -5,6 +5,23 @@ All notable changes to `eslint-plugin-import-next` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.7.4
+
+### Patch Changes
+
+- **🐛 Fix** — The README logo now links to the plugin's own documentation.
+
+  Every plugin README opens with the Interlace logo, and it linked to the
+  site root — so the most obvious thing to click on the npm page dropped
+  the reader on a landing page and left them looking for the plugin they
+  were already reading about. Both the header and footer logos now point
+  at that plugin's docs page.
+
+  The oxlint and ESLint logos still link to oxc.rs and eslint.org, which
+  is where those belong.
+
+  No rule behaviour changes.
+
 ## 2.7.3
 
 ### Patch Changes
