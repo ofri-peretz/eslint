@@ -5,6 +5,25 @@ All notable changes to `eslint-plugin-jwt-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.2.1
+
+### Patch Changes
+
+- **🐛 Fix** — A computed or quoted option key is still a JWT option.
+
+  Five rules required an Identifier property key, so they saw
+  `{ algorithms: ['none'] }` and missed both `{ 'algorithms': ['none'] }` —
+  ordinary hand-written JavaScript — and `{ ['algorithms']: ['none'] }`, which is
+  what a bundler emits. All five read their options through `extractAlgorithms`,
+  `hasOption` and `getOptionValue`, and fixing those three covers the plugin.
+
+  `require-issued-at` was the sharpest case: it demanded an Identifier key for
+  `iat`, so a token that HAS an issued-at claim written `{ ['iat']: now }` was
+  reported as missing one — the rule fired on correct code.
+
+  A key chosen at runtime (`{ [name]: value }`) still names nothing readable and
+  is still skipped.
+
 ## 3.2.0
 
 ### Minor Changes
