@@ -23,6 +23,7 @@
     "node": "24.x"
   },
   "scripts": {
+    "preinstall": "node --experimental-strip-types scripts/guard-borrowed-node-modules.mts",
     "prepare": "[ -d .git ] && lefthook install || true",
     "ci:local": "lefthook run pre-push --all-files --force",
     "lint:triage-sampling": "tsx scripts/lint-triage-sampling.ts",
