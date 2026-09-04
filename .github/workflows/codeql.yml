@@ -134,3 +134,28 @@ jobs:
             a failing scan means the SAST coverage gap widens silently until
             this is fixed.
           token: ${{ github.token }}
+
+  # Without this the jobs above can fail on a schedule with nobody watching:
+  # a red cron produces no PR, no reviewer and no notification, so silence and
+  # success look identical. Tracked as debt in .github/cron-alerting-debt.json.
+  report:
+    name: "\U0001F6A8 Report a scheduled failure"
+    needs: [gate]
+    if: >-
+      always() && github.event_name == 'schedule' &&
+      contains(needs.*.result, 'failure')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/report-failure
+        with:
+          title: "CodeQL scan is failing"
+          body: >-
+            The scheduled CodeQL analysis did not complete, so new security findings in this repo's own source are not being surfaced.
+          token: ${{ github.token }}

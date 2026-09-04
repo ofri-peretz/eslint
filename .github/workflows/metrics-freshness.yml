@@ -69,3 +69,28 @@ jobs:
           else
             gh issue create --title "$title" --body "$body" --label "chore"
           fi
+
+  # Without this the jobs above can fail on a schedule with nobody watching:
+  # a red cron produces no PR, no reviewer and no notification, so silence and
+  # success look identical. Tracked as debt in .github/cron-alerting-debt.json.
+  report:
+    name: "\U0001F6A8 Report a scheduled failure"
+    needs: [check]
+    if: >-
+      always() && github.event_name == 'schedule' &&
+      contains(needs.*.result, 'failure')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/report-failure
+        with:
+          title: "Metrics freshness check is failing"
+          body: >-
+            The freshness check did not complete, so stale cached metrics can now sit on the docs site without anything noticing they stopped updating.
+          token: ${{ github.token }}
