@@ -81,6 +81,35 @@ describe('coverage lands where the uploader looks', () => {
     },
   );
 
+  it.each(
+    CONFIGS.filter((c) => c.pkg.startsWith('eslint-plugin-')).map((c) => c.pkg),
+  )('%s emits lcov and enforces a threshold', (pkg) => {
+    /*
+     * A package with NO vitest config inherits vitest's defaults, whose
+     * coverage reporters do not include lcov. Five plugins were in that state:
+     * `test:coverage` ran, wrote no `coverage/lcov.info`, the upload loop
+     * skipped them every run, and no threshold was enforced either. Codecov
+     * still showed a number for each, because `carryforward: true` served the
+     * last value the flag had ever received.
+     *
+     * Turning carryforward off is what made the gap visible — the components
+     * went blank. Measured for the first time, all five were at 100%, so the
+     * missing config had cost nothing yet. It was one uncovered line away from
+     * costing something silently.
+     */
+    const { text } = CONFIGS.find((c) => c.pkg === pkg)!;
+    expect(
+      text,
+      `${pkg} does not request the lcov reporter. Without it no ` +
+        'coverage/lcov.info is written and the upload loop skips the package.',
+    ).toMatch(/reporter:\s*\[[^\]]*'lcov'/);
+    expect(
+      text,
+      `${pkg} sets no coverage thresholds, so its coverage is measured but ` +
+        'never enforced.',
+    ).toMatch(/thresholds:\s*\{/);
+  });
+
   it('the workflow still reads from packages/*/coverage', () => {
     // If the workflow's glob moves, the assertion above is pinning the wrong
     // location and would pass while every package became invisible.
