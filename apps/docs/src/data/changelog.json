@@ -1,7 +1,7 @@
 {
-  "releaseCount": 611,
+  "releaseCount": 613,
   "packageCount": 34,
-  "entryCount": 1998,
+  "entryCount": 2000,
   "oldestYear": 2024,
   "releases": [
     {
@@ -15862,6 +15862,21 @@
     {
       "package": "eslint-plugin-jwt-security",
       "short": "eslint-plugin-jwt-security",
+      "version": "3.2.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "A computed or quoted option key is still a JWT option.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-jwt-security",
+      "short": "eslint-plugin-jwt-security",
       "version": "2.2.9",
       "date": null,
       "isApp": false,
@@ -15975,6 +15990,21 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "5.4.3",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "A computed or quoted property key is still the same property.",
           "pr": null
         }
       ]
