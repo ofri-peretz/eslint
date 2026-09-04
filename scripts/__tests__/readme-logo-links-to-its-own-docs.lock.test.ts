@@ -68,24 +68,38 @@ describe('a README logo links to its own plugin docs', () => {
     const slug = pkg.slice('eslint-plugin-'.length);
     const expected = `${SITE}/docs/${section}/plugin-${slug}`;
 
-    expect(
-      src,
-      `${pkg}'s README does not link its logo to ${expected}. The logo is the ` +
-        'first thing a reader clicks on npm; pointing it at the site root ' +
-        'makes them go looking for the plugin they are already reading about.',
-    ).toContain(`href="${expected}?`);
+    /*
+     * The LOGO ANCHORS, selected by what they wrap — not "does this URL appear
+     * anywhere in the file".
+     *
+     * Each README already carried an OG-image link to the same docs page, so a
+     * substring check passed whether or not either logo pointed anywhere
+     * useful. The lock would have gone green with both logos still aimed at
+     * the site root, which is the exact failure it exists to catch.
+     */
+    const anchors = [
+      ...src.matchAll(/<a\s+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g),
+    ];
+    const logoAnchors = anchors.filter(([, , inner]) =>
+      inner.includes('alt="Interlace"'),
+    );
 
-    // The bare site root must not come back as the logo target.
     expect(
-      src.includes(`href="${SITE}/?utm_source=`),
-      `${pkg}'s README still links the logo to the site root.`,
-    ).toBe(false);
+      logoAnchors.length,
+      `${pkg}'s README should carry two Interlace logo anchors (header and ` +
+        `footer); found ${logoAnchors.length}.`,
+    ).toBe(2);
 
-    // UTM contract: the campaign names the package.
-    expect(
-      src,
-      `${pkg}'s docs link lost its utm_campaign, so clicks from this README ` +
-        'become indistinguishable from every other referral.',
-    ).toContain(`utm_campaign=${pkg}"`);
+    for (const [, href] of logoAnchors) {
+      expect(
+        href,
+        `${pkg}'s Interlace logo links to ${href} instead of its own docs ` +
+          'page. The logo is the first thing a reader clicks on npm; pointing ' +
+          'it at the site root makes them go looking for the plugin they are ' +
+          'already reading about.',
+      ).toBe(
+        `${expected}?utm_source=github&utm_medium=referral&utm_campaign=${pkg}`,
+      );
+    }
   });
 });
