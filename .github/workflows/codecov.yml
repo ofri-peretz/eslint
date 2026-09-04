@@ -168,10 +168,31 @@ jobs:
             [ -f "$lcov" ] || continue
             pkg=$(basename "$(dirname "$(dirname "$lcov")")")
             echo "→ uploading $pkg …"
+            # `--disable-search` is load-bearing. Without it the CLI treats
+            # `--file` as an ADDITION to whatever it finds by scanning the
+            # working tree, and it found `.tmp-seal-cov/<pkg>__<rule>/
+            # coverage-final.json` — the per-rule snapshots `scripts/
+            # seal-audit.mts` writes, in which exactly one rule is exercised
+            # and every other file reads zero.
+            #
+            # 2,156 of them went up alongside the real lcov on the last run.
+            # Merged into the same commit report they contribute the same
+            # source files again with no hits, so Codecov held 10,565 lines
+            # for secure-coding where we upload 5,328 — the surplus all
+            # missed. On `src/index.ts`: our lcov says 7 lines, all hit;
+            # Codecov said 14 lines, 7 hit, 7 missed. An exact zero-hit
+            # duplicate.
+            #
+            # The four packages seal-audit runs over — secure-coding,
+            # browser-security, node-security, postgresql-security — are
+            # precisely the four that published below the 100% they measure.
+            #
+            # Upload the file we name. Nothing else.
             codecovcli upload-process \
               --token "$CODECOV_TOKEN" \
               --flag "$pkg" \
               --file "$lcov" \
+              --disable-search \
               --name "$pkg" || true
           done
 

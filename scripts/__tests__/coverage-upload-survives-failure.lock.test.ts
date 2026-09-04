@@ -73,6 +73,41 @@ const REQUIRED: Record<string, string> = {
 };
 
 describe('coverage uploads survive one package failing', () => {
+  it('the uploader sends only the file it names', () => {
+    /*
+     * Without `--disable-search` the CLI adds whatever it finds by scanning
+     * the tree to whatever `--file` names. It found 2,156
+     * `.tmp-seal-cov/<pkg>__<rule>/coverage-final.json` snapshots — one rule
+     * exercised, every other file zero — and merged them into the same commit
+     * report, so Codecov held a zero-hit duplicate of every source file.
+     *
+     * The four packages seal-audit covers were exactly the four publishing
+     * below the 100% their lcov reports.
+     */
+    const upload = steps.find((s) =>
+      /codecovcli upload-process/.test(String(s.run ?? '')),
+    );
+    expect(upload, 'no codecovcli upload step found').toBeDefined();
+
+    /*
+     * COMMENT LINES STRIPPED FIRST. The explanation above the command names
+     * the flag, and the comment lives inside the same `run:` block — so a
+     * substring check over the raw script passed with the flag deleted. The
+     * proof caught it: removing the flag left the lock green, which is a lock
+     * asserting that the prose still mentions the flag.
+     */
+    const script = String(upload?.run)
+      .split('\n')
+      .filter((l) => !l.trim().startsWith('#'))
+      .join('\n');
+
+    expect(
+      script,
+      'codecovcli must pass --disable-search, or it uploads every stray ' +
+        'coverage report in the working tree alongside the one it was given.',
+    ).toContain('--disable-search');
+  });
+
   it('no step uploads the same lcov a second time', () => {
     /*
      * A combined `codecov-action` upload used to sit beside the per-package
