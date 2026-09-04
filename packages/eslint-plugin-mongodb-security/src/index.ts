@@ -92,7 +92,7 @@ withCanonicalDocsUrls('plugin-mongodb-security', rules);
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-mongodb-security',
-    version: '9.1.2',
+    version: '9.1.3',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
