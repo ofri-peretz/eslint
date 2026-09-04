@@ -424,29 +424,6 @@ component_management:
         - type: patch
           target: 100%
 
-    - component_id: eslint-formatter
-      name: 'eslint-formatter'
-      paths:
-        - packages/eslint-formatter/**
-      statuses:
-        - type: project
-          target: 100%
-        - type: patch
-          target: 100%
-
-    - component_id: eslint-formatter-sarif
-      name: 'eslint-formatter-sarif'
-      paths:
-        - packages/eslint-formatter-sarif/**
-      statuses:
-        - type: project
-          target: 100%
-        - type: patch
-          target: 100%
-
-    # ─────────────────────────────────────────────────────────────────────────
-    # Utility & Feature Plugins
-    # ─────────────────────────────────────────────────────────────────────────
     - component_id: eslint-plugin-import-next
       name: 'eslint-plugin-import-next'
       paths:
@@ -516,6 +493,16 @@ component_management:
 # tooling, not diluting this one.
 
 ignore:
+  # ── Packages that never reach a consumer ──────────────────────────────────
+  #
+  # `private: true` means npm will refuse to publish it, so no user can install
+  # it and it has no business in a number that answers "is the code you install
+  # tested". Same rule as the tooling trees below, applied inside packages/.
+  #
+  # These three carried 311 of the report's 32,016 lines.
+  - 'packages/ui/**'
+  - 'packages/eslint-formatter/**'
+  - 'packages/eslint-formatter-sarif/**'
   - 'apps/**'
   - 'scripts/**'
   - 'benchmarks/**'

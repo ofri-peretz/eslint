@@ -45,20 +45,22 @@ const config = parse(
   readFileSync(join(ROOT, 'codecov.yml'), 'utf-8'),
 ) as CodecovConfig;
 
-/** Packages that actually publish — `private: true` never reaches a consumer. */
-function publishedPackages(): string[] {
-  return readdirSync(join(ROOT, 'packages'), { withFileTypes: true })
-    .filter((e) => e.isDirectory())
-    .filter((e) => {
-      const pkg = join(ROOT, 'packages', e.name, 'package.json');
-      if (!existsSync(pkg)) return false;
-      const json = JSON.parse(readFileSync(pkg, 'utf-8')) as {
-        private?: boolean;
-      };
-      return json.private !== true;
-    })
-    .map((e) => e.name)
-    .sort();
+/** Every package directory, split by whether npm will publish it. */
+function packagesByVisibility(): { published: string[]; private_: string[] } {
+  const published: string[] = [];
+  const private_: string[] = [];
+  for (const e of readdirSync(join(ROOT, 'packages'), {
+    withFileTypes: true,
+  })) {
+    if (!e.isDirectory()) continue;
+    const pkg = join(ROOT, 'packages', e.name, 'package.json');
+    if (!existsSync(pkg)) continue;
+    const json = JSON.parse(readFileSync(pkg, 'utf-8')) as {
+      private?: boolean;
+    };
+    (json.private === true ? private_ : published).push(e.name);
+  }
+  return { published: published.sort(), private_: private_.sort() };
 }
 
 describe('codecov measures what ships', () => {
@@ -84,7 +86,9 @@ describe('codecov measures what ships', () => {
       'no components are defined, so this test would pass vacuously',
     ).toBeGreaterThan(20);
 
-    const missing = publishedPackages().filter((p) => !components.includes(p));
+    const missing = packagesByVisibility().published.filter(
+      (p) => !components.includes(p),
+    );
     expect(
       missing,
       `Published package(s) with no Codecov component: ${missing.join(', ')}. ` +
@@ -93,5 +97,50 @@ describe('codecov measures what ships', () => {
         'unmeasured. Add a component, or mark the package private if it does ' +
         'not ship.',
     ).toEqual([]);
+  });
+
+  it('no UNPUBLISHED package has a component', () => {
+    /*
+     * The inverse, and it is not symmetry for its own sake.
+     *
+     * `private: true` means npm refuses to publish, so no user can install the
+     * package. Counting it in a number that answers "is the code you install
+     * tested" makes the figure describe something nobody receives. Two
+     * formatters were doing exactly that — 311 of 32,016 lines.
+     *
+     * The failure this guards is quiet: a package flips to private (or is
+     * scaffolded private) and its component keeps reporting, so the published
+     * percentage silently starts averaging in code that ships to no one.
+     */
+    const components = new Set(
+      (config.component_management?.individual_components ?? []).map(
+        (c) => c.component_id,
+      ),
+    );
+    const { private_ } = packagesByVisibility();
+
+    expect(
+      private_.length,
+      'no package is private, so this test would pass vacuously',
+    ).toBeGreaterThan(0);
+
+    const leaked = private_.filter((p) => components.has(p));
+    expect(
+      leaked,
+      `Unpublished package(s) with a Codecov component: ${leaked.join(', ')}. ` +
+        'These never reach a consumer, so they must not sit in the ' +
+        'consumer-facing number. Remove the component, or drop `private: ' +
+        'true` if the package is meant to ship.',
+    ).toEqual([]);
+
+    // And their paths are ignored, so they cannot reach the repo total either.
+    const ignored = config.ignore ?? [];
+    for (const p of private_) {
+      expect(
+        ignored,
+        `packages/${p} is private but not in \`ignore\`, so its lines can ` +
+          'still land in the repository total even with no component.',
+      ).toContain(`packages/${p}/**`);
+    }
   });
 });
