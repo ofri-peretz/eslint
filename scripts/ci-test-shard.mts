@@ -124,6 +124,48 @@ const SPLIT_ACROSS_SHARDS: Record<string, number> = { docs: 3 };
  * packages, and the observed 54s/299s shard split matched their file counts),
  * and it is derivable from the tree with no state to maintain.
  */
+/**
+ * Measured seconds per workspace, from `.agent/test-duration-profile.json`.
+ *
+ * Empty when the profile is missing, which is not an error: every package then
+ * falls back to its test-file count and the bucketing behaves exactly as it did
+ * before this existed.
+ */
+const MEASURED: Record<string, number> = (() => {
+  try {
+    const raw = fs.readFileSync(
+      path.join(import.meta.dirname, '..', '.agent', 'test-duration-profile.json'),
+      'utf8',
+    );
+    return JSON.parse(raw).durations ?? {};
+  } catch {
+    return {};
+  }
+})();
+
+/**
+ * What LPT bin-packs on.
+ *
+ * Measured duration when we have it, test-file count otherwise. File count is a
+ * proxy that drifts — five slow integration tests and twenty fast unit tests
+ * weigh 4:1 the wrong way — and the lanes measured 1.33x-1.83x apart because of
+ * it, which is idle runner time AND wall clock, since a lane ends with its
+ * slowest shard.
+ *
+ * The two units are not interchangeable, so an unprofiled package is converted
+ * rather than mixed in raw: SECONDS_PER_TEST_FILE is the observed repo-wide
+ * average. Mixing "83" (files) with "12" (seconds) in one bin-packer would put
+ * every unprofiled package at the top of the heaviest-first sort and wreck the
+ * layout — a silent regression that still looks like it is balancing.
+ */
+const SECONDS_PER_TEST_FILE = 0.6;
+
+function shardCost(name: string, dir: string): number {
+  const measured = MEASURED[name];
+  if (typeof measured === 'number' && measured > 0) return measured;
+  return Math.max(1, Math.round(countTestFiles(dir) * SECONDS_PER_TEST_FILE));
+}
+
 function countTestFiles(dir: string): number {
   let n = 0;
   const walk = (d: string) => {
@@ -231,7 +273,7 @@ function discoverPackages(lane: Lane): { testable: Pkg[]; untested: string[] } {
             ? 'test:coverage'
             : null;
       if (task) {
-        const cost = countTestFiles(path.join(abs, entry));
+        const cost = shardCost(pkg.name, path.join(abs, entry));
         const deps = manifestDeps(pkg);
         // Splitting hides files from each slice, so per-slice coverage would
         // sit far below the 100% thresholds and fail. The daily codecov job
@@ -445,7 +487,7 @@ console.log(
 );
 for (const p of mine)
   console.log(
-    `  ${p.name}${p.split ? ` [slice ${p.split.i}/${p.split.n}]` : ''}  (${p.task}, ~${p.cost} test files)`,
+    `  ${p.name}${p.split ? ` [slice ${p.split.i}/${p.split.n}]` : ''}  (${p.task}, ~${p.cost}s)`,
   );
 
 // An empty *bucket* means shardTotal exceeds what the partition can fill — a

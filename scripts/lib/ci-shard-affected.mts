@@ -155,10 +155,22 @@ export function decideAffected(
  * `react-features` (70) and `devkit` (32) in one bucket and produced a 54s vs
  * 299s split — 5.5x, with three runners idle while one finished.
  *
- * LPT's max bucket cannot go below the largest single item, so on the test side
- * `docs` alone (83 files of 738) binds past N=10 and extra shards only add idle
- * jobs. Build work has no such outlier (no package over 25s), which is why the
- * build side shards effectively at a different N.
+ * LPT's max bucket cannot go below the largest single item. Build work has no
+ * such outlier (no package over 25s), which is why the build side shards
+ * effectively at a different N.
+ *
+ * The test side's outlier was recorded here as `docs` (83 files of 738), and
+ * measurement on 2026-09-03 says that was the file-count proxy talking:
+ *
+ *   eslint-plugin-node-security  20s
+ *   eslint-plugin-import-next    19s
+ *   docs                         16s
+ *
+ * `docs` has the most FILES and is not the longest. The binding item is
+ * node-security at 20s, so the floor is lower than this comment claimed and the
+ * lane could shard finer than N=10 before hitting it — though at ~36s a shard
+ * for N=6 the queue delay (p50 25s, p90 69s) eats the gain, so "more shards"
+ * still is not free. `cost` is now the measured duration; see ADR 0007.
  *
  * Caller must sort by cost descending — that ordering is what makes LPT work.
  */
