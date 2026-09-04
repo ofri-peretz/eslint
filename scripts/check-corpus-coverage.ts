@@ -122,8 +122,22 @@ const canonical = (rule: string): string => {
  * the harness itself broke, and that has to be loud: treated as "no rules
  * fired" it would mark every rule unmeasured and mass-widen the baseline.
  */
+/*
+ * Every source extension, not just `.js`.
+ *
+ * The corpus holds TypeScript fixtures — `.tsx` WCAG cases, and six files
+ * renamed from `.js` once they turned out to contain `satisfies` and
+ * `import type`. A `**\/*.js` glob cannot see them, so a rule whose only
+ * fixture is a `.ts` file reads as having NO corpus evidence and this gate
+ * fails for a reason that has nothing to do with the rule:
+ *
+ *   ✗ 1 rule(s) have no corpus fixture: import-next/consistent-type-specifier-style
+ *
+ * Same JS-only-glob defect that made the real-source inventory and the
+ * benchmark scorer wrong, in a third place.
+ */
 function rulesWithCorpusEvidence(
-  globs: string[] = ['benchmarks/corpus/**/*.js'],
+  globs: string[] = ['benchmarks/corpus/**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}'],
 ): Set<string> {
   let raw = '';
   try {
@@ -220,8 +234,8 @@ const fired = rulesWithCorpusEvidence();
  * that coordinate.
  */
 const CURATED = [
-  'benchmarks/corpus/CWE-*/**/*.js',
-  'benchmarks/corpus/CVE/**/*.js',
+  'benchmarks/corpus/CWE-*/**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}',
+  'benchmarks/corpus/CVE/**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}',
 ];
 const firedCurated = rulesWithCorpusEvidence(CURATED);
 
