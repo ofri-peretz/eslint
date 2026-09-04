@@ -41,6 +41,30 @@
     "oxlintOnly": 4,
     "parityRate": 0.9891243725599553
   },
+  "90f3e85206897e5c2fdf0e578651ffbb7ce702ee00a3bdc6b23d4d1383d85f19": {
+    "status": "fail",
+    "at": "2026-09-04",
+    "shared": 3547,
+    "eslintOnly": 35,
+    "oxlintOnly": 4,
+    "parityRate": 0.9891243725599553
+  },
+  "ca0a475ff452218a7be9afd49d88d0bb3ae1683127cfcedfff6a98de2fcabc2f": {
+    "status": "pass",
+    "at": "2026-09-04",
+    "shared": 3514,
+    "eslintOnly": 0,
+    "oxlintOnly": 0,
+    "parityRate": 1
+  },
+  "db6419788784eb2960661147785e5814bcc449d8451bb858baefc4e63166e654": {
+    "status": "pass",
+    "at": "2026-09-04",
+    "shared": 9,
+    "eslintOnly": 0,
+    "oxlintOnly": 0,
+    "parityRate": 1
+  },
   "7c6c54a2f294256533bc166b7a6f20eb91e4f0e5b23eefcd980b7df4fb06d02d": {
     "status": "pass",
     "at": "2026-05-14",
