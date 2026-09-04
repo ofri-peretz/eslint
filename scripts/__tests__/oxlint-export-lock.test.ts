@@ -191,8 +191,21 @@ describe('ILB-oxlint-parity plugin lists name only live plugins', () => {
   });
 
   it('package.json --plugins lists contain no dead plugin shorts', () => {
+    /*
+     * ZERO lists is now the expected state, so this no longer floors at one.
+     *
+     * `ilb:oxlint-parity:full` used to pin ten plugin shorts on the command
+     * line, which quietly held parity to ten of twenty-five plugins even after
+     * the runner's own default grew. The pin is gone and the runner's
+     * `PLUGINS_DEFAULT` is the single source of truth.
+     *
+     * Dropping the floor does NOT make this vacuous: the test directly above
+     * asserts the same no-dead-shorts invariant against `PLUGINS_DEFAULT`,
+     * which is non-empty and is where the list actually lives. What is checked
+     * here is that if a script ever re-adds a `--plugins` pin, its names are
+     * real.
+     */
     const listed = readScriptPluginLists();
-    expect(listed.length).toBeGreaterThan(0);
     const dead = [...new Set(listed.filter((s) => !liveShorts.has(s)))];
     expect(
       dead,
