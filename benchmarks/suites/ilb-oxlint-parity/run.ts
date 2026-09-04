@@ -28,8 +28,17 @@ const require = createRequire(import.meta.url);
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '..', '..', '..');
-const RESULTS_DIR = path.join(REPO_ROOT, 'benchmarks', 'results', 'ilb-oxlint-parity');
-const MANIFEST_PATH = path.join(REPO_ROOT, '.agent', 'oxlint-jsplugins-manifest.json');
+const RESULTS_DIR = path.join(
+  REPO_ROOT,
+  'benchmarks',
+  'results',
+  'ilb-oxlint-parity',
+);
+const MANIFEST_PATH = path.join(
+  REPO_ROOT,
+  '.agent',
+  'oxlint-jsplugins-manifest.json',
+);
 const ALLOWLIST_PATH = path.join(HERE, 'allowlist.json');
 const CACHE_PATH = path.join(REPO_ROOT, '.agent', 'oxlint-parity-cache.json');
 
@@ -38,8 +47,23 @@ const ARG = (flag, fallback = null) => {
   return i >= 0 ? process.argv[i + 1] : fallback;
 };
 
-const CORPUS = path.resolve(ARG('--corpus', path.join(REPO_ROOT, 'benchmarks', 'corpus', 'CWE-089')));
-const ESLINT_CONFIG = ARG('--config', path.join(REPO_ROOT, 'eslint.benchmark.config.mjs'));
+/*
+ * The WHOLE corpus, not one CWE directory.
+ *
+ * This defaulted to `benchmarks/corpus/CWE-089`, which holds three findings.
+ * Every cached CI run therefore reported a parity rate computed from three
+ * findings and printed it as a fleet number — the committed cache shows eight
+ * runs, each with `shared: 6`. Measured across the full corpus the same day,
+ * the figure was 80%, and the gap was entirely harness defects nobody could
+ * see at that sample size.
+ */
+const CORPUS = path.resolve(
+  ARG('--corpus', path.join(REPO_ROOT, 'benchmarks', 'corpus')),
+);
+const ESLINT_CONFIG = ARG(
+  '--config',
+  path.join(REPO_ROOT, 'eslint.benchmark.config.mjs'),
+);
 const CI = process.argv.includes('--ci');
 const CACHED = process.argv.includes('--cached');
 const THRESHOLD = Number.parseFloat(ARG('--threshold', '0.95'));
@@ -52,13 +76,65 @@ const THRESHOLD = Number.parseFloat(ARG('--threshold', '0.95'));
 // `crypto` was removed 2026-08-02: eslint-plugin-crypto was consolidated into
 // node-security (PR #167) and its rules are covered under that plugin.
 // Locked by scripts/__tests__/oxlint-export-lock.test.ts.
+/*
+ * The PUBLISHED prefix, where it differs from the package directory.
+ *
+ * The oxlint side registers each shim as `interlace-<dir>` and normalizes back
+ * to `<dir>/<rule>`; ESLint registers the plugin under the name it publishes.
+ * For two plugins those disagree, and the parity run silently punished them
+ * for it: every ESLint `jwt/...` and `pg/...` finding failed the
+ * `allowedPrefixes` filter and never entered the comparison, while oxlint's
+ * `jwt-security/...` and `postgresql-security/...` counterparts had nothing to
+ * match and were counted as oxlint-only. 123 of the 125 reported divergences
+ * were this, not a rule behaving differently under oxlint.
+ */
+const PUBLISHED_PREFIX = {
+  'jwt-security': 'jwt',
+  'postgresql-security': 'pg',
+};
+
+/*
+ * Every plugin the ESLint benchmark config loads.
+ *
+ * This was ten. Parity therefore reported on ten plugins and said nothing
+ * about the other fifteen — while the summary line read as a fleet number.
+ * A parity rate that covers 40% of the fleet and does not say so is the same
+ * failure as a coverage badge fed by a partial upload.
+ */
 const PLUGINS_DEFAULT = [
-  'secure-coding', 'node-security', 'postgresql-security', 'express-security',
-  'browser-security', 'jwt-security', 'mongodb-security', 'nestjs-security',
-  'lambda-security', 'vercel-ai-security',
+  'secure-coding',
+  'node-security',
+  'postgresql-security',
+  'express-security',
+  'browser-security',
+  'jwt-security',
+  'mongodb-security',
+  'nestjs-security',
+  'lambda-security',
+  'vercel-ai-security',
+  'import-next',
+  'react-a11y',
+  'modularity',
+  'knex-security',
+  'drizzle-security',
+  'mcp-sdk-security',
+  'modernization',
+  'prisma-security',
+  'sequelize-security',
+  'typeorm-security',
+  'anthropic-security',
+  'gemini-security',
+  'mysql-security',
+  'openai-security',
+  'sqlite-security',
 ];
 const PLUGINS = (ARG('--plugins', PLUGINS_DEFAULT.join(',')) || '')
-  .split(',').map(s => s.trim()).filter(Boolean);
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+/** The namespaces our plugins publish under — both linters are filtered to these. */
+const allowedPrefixes = PLUGINS.map((p) => `${PUBLISHED_PREFIX[p] ?? p}/`);
 
 // ── Build a parity oxlint config from the manifest ───────────────────
 
@@ -76,7 +152,9 @@ function loadPluginRules(shimAbs) {
 
 function buildOxlintConfig() {
   if (!fs.existsSync(MANIFEST_PATH)) {
-    console.error(`✗ manifest missing: ${path.relative(process.cwd(), MANIFEST_PATH)}`);
+    console.error(
+      `✗ manifest missing: ${path.relative(process.cwd(), MANIFEST_PATH)}`,
+    );
     console.error(`  run: npm run oxlint:shims`);
     process.exit(2);
   }
@@ -136,7 +214,12 @@ function lintEslint(corpus, configPath) {
   const cmd = `npx tsx ./node_modules/eslint/bin/eslint.js --no-error-on-unmatched-pattern --format json --config "${configPath}" "${corpus}"`;
   let raw = '';
   try {
-    raw = execSync(cmd, { cwd: REPO_ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 64 * 1024 * 1024 });
+    raw = execSync(cmd, {
+      cwd: REPO_ROOT,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+      maxBuffer: 64 * 1024 * 1024,
+    });
   } catch (err) {
     raw = err.stdout?.toString() ?? '';
     if (!raw) throw err;
@@ -146,14 +229,19 @@ function lintEslint(corpus, configPath) {
   // The benchmark ESLint config loads every security plugin, but oxlint may
   // only have a subset enabled — without this filter, plugin-set drift
   // produces false `eslintOnly` divergences that aren't really parity issues.
-  const allowedPrefixes = PLUGINS.map(p => `${p}/`);
   const findings = [];
   for (const r of results) {
     const rel = path.relative(REPO_ROOT, r.filePath).split(path.sep).join('/');
     for (const m of r.messages ?? []) {
       if (!m.ruleId) continue; // skip parse errors
-      if (!allowedPrefixes.some(prefix => m.ruleId.startsWith(prefix))) continue;
-      findings.push({ file: rel, rule: m.ruleId, line: m.line ?? 0, column: m.column ?? 0 });
+      if (!allowedPrefixes.some((prefix) => m.ruleId.startsWith(prefix)))
+        continue;
+      findings.push({
+        file: rel,
+        rule: m.ruleId,
+        line: m.line ?? 0,
+        column: m.column ?? 0,
+      });
     }
   }
   return findings;
@@ -163,7 +251,12 @@ function lintOxlint(corpus, configPath) {
   const cmd = `npx oxlint --config "${configPath}" --format json "${corpus}"`;
   let raw = '';
   try {
-    raw = execSync(cmd, { cwd: REPO_ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 64 * 1024 * 1024 });
+    raw = execSync(cmd, {
+      cwd: REPO_ROOT,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+      maxBuffer: 64 * 1024 * 1024,
+    });
   } catch (err) {
     raw = err.stdout?.toString() ?? '';
     if (!raw) throw err;
@@ -171,36 +264,64 @@ function lintOxlint(corpus, configPath) {
   // oxlint --format json emits a single JSON object with `diagnostics[]`.
   // Each diagnostic's rule lives in `code` as `<source>(<rule>)`.
   let parsed;
-  try { parsed = JSON.parse(raw); }
-  catch { return []; }
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return [];
+  }
   const diags = parsed.diagnostics ?? [];
   const findings = [];
   for (const d of diags) {
     const m = (d.code ?? '').match(/^([^(]+)\(([^)]+)\)$/);
     if (!m) continue;
     const [, source, ruleName] = m;
-    // Map oxlint's `interlace-pg` source back to ESLint's `pg/<rule>` namespace.
+    // Map oxlint's `interlace-<dir>` source back to the namespace ESLint
+    // publishes under — `jwt-security` -> `jwt`, `postgresql-security` -> `pg`.
     const ruleId = source.startsWith('interlace-')
-      ? `${source.slice('interlace-'.length)}/${ruleName}`
+      ? `${(() => {
+          const dir = source.slice('interlace-'.length);
+          return PUBLISHED_PREFIX[dir] ?? dir;
+        })()}/${ruleName}`
       : `${source}/${ruleName}`;
+    /*
+     * OUR plugins only, the same filter the ESLint side already applies.
+     *
+     * oxlint emits its own diagnostics alongside the JS plugins'. A corpus
+     * fixture saved as `.js` while containing `satisfies Block[]` drew
+     * `TS/8037` — "type annotations can only be used in TypeScript files" —
+     * which is oxlint telling the truth about the fixture, not a rule of ours
+     * behaving differently. Counting it made a harness observation look like a
+     * parity break.
+     */
+    if (!allowedPrefixes.some((prefix) => ruleId.startsWith(prefix))) continue;
     const filename = d.filename ?? '';
-    const rel = path.relative(REPO_ROOT, path.resolve(REPO_ROOT, filename)).split(path.sep).join('/');
+    const rel = path
+      .relative(REPO_ROOT, path.resolve(REPO_ROOT, filename))
+      .split(path.sep)
+      .join('/');
     const label = (d.labels ?? [])[0]?.span ?? {};
-    findings.push({ file: rel, rule: ruleId, line: label.line ?? 0, column: label.column ?? 0 });
+    findings.push({
+      file: rel,
+      rule: ruleId,
+      line: label.line ?? 0,
+      column: label.column ?? 0,
+    });
   }
   return findings;
 }
 
 // ── Diff + allowlist ──────────────────────────────────────────────────
 
-function key(f) { return `${f.file}::${f.rule}::${f.line}::${f.column}`; }
+function key(f) {
+  return `${f.file}::${f.rule}::${f.line}::${f.column}`;
+}
 
 function diff(eslintFindings, oxlintFindings) {
   const eSet = new Set(eslintFindings.map(key));
   const oSet = new Set(oxlintFindings.map(key));
-  const eslintOnly = eslintFindings.filter(f => !oSet.has(key(f)));
-  const oxlintOnly = oxlintFindings.filter(f => !eSet.has(key(f)));
-  const sharedKeys = [...eSet].filter(k => oSet.has(k));
+  const eslintOnly = eslintFindings.filter((f) => !oSet.has(key(f)));
+  const oxlintOnly = oxlintFindings.filter((f) => !eSet.has(key(f)));
+  const sharedKeys = [...eSet].filter((k) => oSet.has(k));
   return { shared: sharedKeys.length, eslintOnly, oxlintOnly };
 }
 
@@ -209,10 +330,15 @@ function applyAllowlist(diffResult) {
     ? JSON.parse(fs.readFileSync(ALLOWLIST_PATH, 'utf-8'))
     : { eslintOnly: [], oxlintOnly: [] };
 
-  const matches = (entry, finding) => new RegExp(entry.rulePattern).test(finding.rule);
+  const matches = (entry, finding) =>
+    new RegExp(entry.rulePattern).test(finding.rule);
 
-  const eUnexplained = diffResult.eslintOnly.filter(f => !allowlist.eslintOnly.some(e => matches(e, f)));
-  const oUnexplained = diffResult.oxlintOnly.filter(f => !allowlist.oxlintOnly.some(e => matches(e, f)));
+  const eUnexplained = diffResult.eslintOnly.filter(
+    (f) => !allowlist.eslintOnly.some((e) => matches(e, f)),
+  );
+  const oUnexplained = diffResult.oxlintOnly.filter(
+    (f) => !allowlist.oxlintOnly.some((e) => matches(e, f)),
+  );
 
   return {
     eslintOnlyAllowlisted: diffResult.eslintOnly.length - eUnexplained.length,
@@ -236,14 +362,24 @@ function computeCacheKey() {
   const h = crypto.createHash('sha256');
   // Plugin sources
   for (const short of [...PLUGINS].sort()) {
-    const pkgDir = path.join(REPO_ROOT, 'packages', `eslint-plugin-${short}`, 'src');
+    const pkgDir = path.join(
+      REPO_ROOT,
+      'packages',
+      `eslint-plugin-${short}`,
+      'src',
+    );
     if (!fs.existsSync(pkgDir)) continue;
     const walk = (dir: string): string[] => {
       const out: string[] = [];
       for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
         const full = path.join(dir, e.name);
         if (e.isDirectory()) out.push(...walk(full));
-        else if (e.isFile() && e.name.endsWith('.ts') && !/\.(test|spec)\.ts$/.test(e.name)) out.push(full);
+        else if (
+          e.isFile() &&
+          e.name.endsWith('.ts') &&
+          !/\.(test|spec)\.ts$/.test(e.name)
+        )
+          out.push(full);
       }
       return out;
     };
@@ -264,7 +400,8 @@ function computeCacheKey() {
       for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
         const full = path.join(dir, e.name);
         if (e.isDirectory()) out.push(...walk(full));
-        else if (e.isFile() && /\.(js|ts|jsx|tsx)$/.test(e.name)) out.push(full);
+        else if (e.isFile() && /\.(js|ts|jsx|tsx)$/.test(e.name))
+          out.push(full);
       }
       return out;
     };
@@ -282,8 +419,11 @@ function computeCacheKey() {
 
 function readCache() {
   if (!fs.existsSync(CACHE_PATH)) return {};
-  try { return JSON.parse(fs.readFileSync(CACHE_PATH, 'utf-8')); }
-  catch { return {}; }
+  try {
+    return JSON.parse(fs.readFileSync(CACHE_PATH, 'utf-8'));
+  } catch {
+    return {};
+  }
 }
 
 function writeCache(cache: Record<string, unknown>) {
@@ -296,7 +436,9 @@ function writeCache(cache: Record<string, unknown>) {
 function main() {
   fs.mkdirSync(RESULTS_DIR, { recursive: true });
 
-  console.log(`ILB-Oxlint-Parity v1.0 · corpus=${path.relative(REPO_ROOT, CORPUS)}`);
+  console.log(
+    `ILB-Oxlint-Parity v1.0 · corpus=${path.relative(REPO_ROOT, CORPUS)}`,
+  );
   console.log('');
 
   // Cache fast-path: skip the bench if a previous run with the same inputs
@@ -311,11 +453,22 @@ function main() {
       console.log('');
       process.exit(0);
     }
-    console.log(`  cache miss — running bench (key: ${cacheKey.slice(0, 16)}…)`);
+    console.log(
+      `  cache miss — running bench (key: ${cacheKey.slice(0, 16)}…)`,
+    );
     console.log('');
   }
 
-  const distOk = fs.existsSync(path.join(REPO_ROOT, 'packages', 'eslint-plugin-postgresql-security', 'dist', 'src', 'index.js'));
+  const distOk = fs.existsSync(
+    path.join(
+      REPO_ROOT,
+      'packages',
+      'eslint-plugin-postgresql-security',
+      'dist',
+      'src',
+      'index.js',
+    ),
+  );
   if (!distOk) {
     if (CACHED && !CI) {
       // Soft-skip in --cached mode (typically wired into `quality` for local
@@ -335,7 +488,10 @@ function main() {
 
   // Generate the parity oxlint config in a temp location.
   const tmpConfig = path.join(RESULTS_DIR, '.parity.oxlintrc.json');
-  fs.writeFileSync(tmpConfig, JSON.stringify(buildOxlintConfig(), null, 2) + '\n');
+  fs.writeFileSync(
+    tmpConfig,
+    JSON.stringify(buildOxlintConfig(), null, 2) + '\n',
+  );
 
   console.log('  Running ESLint... ');
   const eslintFindings = lintEslint(CORPUS, ESLINT_CONFIG);
@@ -355,7 +511,10 @@ function main() {
   // a hash computed over uncommitted method files looks verifiable but is not,
   // which is the precise failure this receipt exists to prevent. Locally it
   // stays permissive so a work-in-progress run still completes.
-  const prereg = capturePreregistration({ allowDirty: !CI, entrypoint: import.meta.url });
+  const prereg = capturePreregistration({
+    allowDirty: !CI,
+    entrypoint: import.meta.url,
+  });
 
   const envelope = {
     suite: 'ilb-oxlint-parity',
@@ -385,31 +544,44 @@ function main() {
     oxlintOnlyUnexplained: allow.oUnexplained,
   };
 
-  const outPath = path.join(RESULTS_DIR, `${new Date().toISOString().slice(0, 10)}.json`);
+  const outPath = path.join(
+    RESULTS_DIR,
+    `${new Date().toISOString().slice(0, 10)}.json`,
+  );
   fs.writeFileSync(outPath, JSON.stringify(envelope, null, 2) + '\n');
 
   console.log('');
   console.log(`  shared:               ${d.shared}`);
-  console.log(`  eslint-only:          ${d.eslintOnly.length} (${allow.eslintOnlyAllowlisted} allowlisted)`);
-  console.log(`  oxlint-only:          ${d.oxlintOnly.length} (${allow.oxlintOnlyAllowlisted} allowlisted)`);
+  console.log(
+    `  eslint-only:          ${d.eslintOnly.length} (${allow.eslintOnlyAllowlisted} allowlisted)`,
+  );
+  console.log(
+    `  oxlint-only:          ${d.oxlintOnly.length} (${allow.oxlintOnlyAllowlisted} allowlisted)`,
+  );
   console.log(`  parity rate:          ${(parityRate * 100).toFixed(1)}%`);
   console.log(`  envelope:             ${path.relative(REPO_ROOT, outPath)}`);
   console.log('');
 
   if (allow.eUnexplained.length > 0) {
-    console.log('  ✗ Unexplained eslint-only findings (oxlint missed these — not in allowlist):');
+    console.log(
+      '  ✗ Unexplained eslint-only findings (oxlint missed these — not in allowlist):',
+    );
     for (const f of allow.eUnexplained.slice(0, 20)) {
       console.log(`     - ${f.file}:${f.line}  ${f.rule}`);
     }
-    if (allow.eUnexplained.length > 20) console.log(`     ... and ${allow.eUnexplained.length - 20} more`);
+    if (allow.eUnexplained.length > 20)
+      console.log(`     ... and ${allow.eUnexplained.length - 20} more`);
     console.log('');
   }
   if (allow.oUnexplained.length > 0) {
-    console.log('  ✗ Unexplained oxlint-only findings (oxlint over-reported — not in allowlist):');
+    console.log(
+      '  ✗ Unexplained oxlint-only findings (oxlint over-reported — not in allowlist):',
+    );
     for (const f of allow.oUnexplained.slice(0, 20)) {
       console.log(`     - ${f.file}:${f.line}  ${f.rule}`);
     }
-    if (allow.oUnexplained.length > 20) console.log(`     ... and ${allow.oUnexplained.length - 20} more`);
+    if (allow.oUnexplained.length > 20)
+      console.log(`     ... and ${allow.oUnexplained.length - 20} more`);
     console.log('');
   }
 
@@ -432,9 +604,31 @@ function main() {
       oxlintOnly: d.oxlintOnly.length,
       parityRate,
     };
-    // Trim cache to the last 50 entries to keep the file tidy.
-    const entries = Object.entries(cache).sort((a: any, b: any) => (b[1].at ?? '').localeCompare(a[1].at ?? '')).slice(0, 50);
-    writeCache(Object.fromEntries(entries));
+    /*
+     * Trim to the last 50 RUNS, carrying the file's metadata through.
+     *
+     * `.agent/oxlint-parity-cache.json` keys runs by fixture hash, and since
+     * #824 it also carries `command` and `maintainedBy` at the top level —
+     * required of every artefact by the artefacts-name-their-method lock.
+     * Sorting every value by `.at` therefore dereferenced a null and this
+     * script died after printing its result but before writing the cache:
+     *
+     *     TypeError: Cannot read properties of null (reading 'at')
+     *
+     * A run entry is an object with an `at`; anything else describes the file.
+     * Metadata is put back explicitly, or the trim would delete the very
+     * fields that lock requires.
+     */
+    const isRun = (v: unknown): v is { at?: string } =>
+      typeof v === 'object' && v !== null && 'at' in v;
+    const meta = Object.fromEntries(
+      Object.entries(cache).filter(([, v]) => !isRun(v)),
+    );
+    const runs = Object.entries(cache)
+      .filter((e): e is [string, { at?: string }] => isRun(e[1]))
+      .sort((a, b) => (b[1].at ?? '').localeCompare(a[1].at ?? ''))
+      .slice(0, 50);
+    writeCache({ ...meta, ...Object.fromEntries(runs) });
   }
 
   if (CI) {
@@ -443,7 +637,9 @@ function main() {
       process.exit(1);
     }
     if (parityRate < THRESHOLD) {
-      console.log(`  ✗ FAIL — parity rate ${(parityRate * 100).toFixed(1)}% below threshold ${(THRESHOLD * 100).toFixed(0)}%`);
+      console.log(
+        `  ✗ FAIL — parity rate ${(parityRate * 100).toFixed(1)}% below threshold ${(THRESHOLD * 100).toFixed(0)}%`,
+      );
       process.exit(1);
     }
     console.log('  ✅ PASS');
