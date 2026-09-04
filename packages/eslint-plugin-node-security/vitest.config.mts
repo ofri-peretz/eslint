@@ -31,7 +31,19 @@ export default defineConfig({
     reporters: ['default'],
     coverage: {
       enabled: true,
-      reportsDirectory: '../../coverage/packages/eslint-plugin-node-security',
+      /*
+       * `./coverage`, like every other package.
+       *
+       * This wrote to the REPO ROOT — `../../coverage/packages/…` — and the
+       * upload workflow looks for `packages/*​/coverage/lcov.info`. So
+       * node-security's coverage has never been uploaded to Codecov. Its 99.80%
+       * there is a fossil: `carryforward: true` on every flag means Codecov
+       * keeps showing the last value it ever received for a flag that stops
+       * reporting, so the number looked plausible and simply stopped moving.
+       *
+       * The path arrived in a "chore: organize repo" commit, not a decision.
+       */
+      reportsDirectory: './coverage',
       provider: 'v8',
       // Coverage ratchet — policy target is 100/100/100/100 (docs/QUALITY_STANDARDS.md §2).
       // Pinned at the 100% policy target — this branch is the integration target for the test wave.
