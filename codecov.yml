@@ -16,69 +16,87 @@ coverage:
 # ═══════════════════════════════════════════════════════════════════════════════
 # FLAGS — per-plugin uploads (used for badge URLs)
 # Badge URL: https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?flag=<name>
-# carryforward: true — if a plugin isn't in the current run, use last known value
+# carryforward: FALSE - a report shows what this commit actually measured.
+#
+# It was true, as a safety net for runs that did not upload every plugin. That
+# net turned into the problem. Uploads were skipped wholesale whenever a single
+# package missed its threshold (8 of 13 scheduled runs uploaded nothing at all,
+# fixed in #866), and node-security never uploaded at all because it wrote its
+# lcov outside the path the workflow reads (#867). Carryforward kept serving the
+# last value each flag ever sent, so the numbers stayed plausible and stopped
+# moving - node-security sat at a fossilised 99.80% against a measured 100%, and
+# nothing looked broken enough to investigate.
+#
+# It also merges a carried session into the current one, which is the leading
+# explanation for the components publishing less than the 100% their lcov
+# reports: Codecov holds 10,565 lines for secure-coding where we upload 5,328,
+# the surplus all missed, across the same 38 files.
+#
+# Every package now uploads on every run, so there is nothing to carry. A flag
+# that goes missing should read as missing - that gets investigated. A stale
+# number that looks right does not.
 # ═══════════════════════════════════════════════════════════════════════════════
 flags:
   eslint-devkit:
     paths: [packages/eslint-devkit/]
-    carryforward: true
+    carryforward: false
   eslint-plugin-browser-security:
     paths: [packages/eslint-plugin-browser-security/]
-    carryforward: true
+    carryforward: false
   eslint-plugin-conventions:
     paths: [packages/eslint-plugin-conventions/]
-    carryforward: true
+    carryforward: false
   eslint-plugin-express-security:
     paths: [packages/eslint-plugin-express-security/]
-    carryforward: true
+    carryforward: false
   eslint-plugin-import-next:
     paths: [packages/eslint-plugin-import-next/]
-    carryforward: true
+    carryforward: false
   eslint-plugin-jwt-security:
     paths: [packages/eslint-plugin-jwt-security/]
-    carryforward: true
+    carryforward: false
   eslint-plugin-lambda-security:
     paths: [packages/eslint-plugin-lambda-security/]
-    carryforward: true
+    carryforward: false
   eslint-plugin-maintainability:
     paths: [packages/eslint-plugin-maintainability/]
-    carryforward: true
+    carryforward: false
   eslint-plugin-modernization:
     paths: [packages/eslint-plugin-modernization/]
-    carryforward: true
+    carryforward: false
   eslint-plugin-modularity:
     paths: [packages/eslint-plugin-modularity/]
-    carryforward: true
+    carryforward: false
   eslint-plugin-mongodb-security:
     paths: [packages/eslint-plugin-mongodb-security/]
-    carryforward: true
+    carryforward: false
   eslint-plugin-nestjs-security:
     paths: [packages/eslint-plugin-nestjs-security/]
-    carryforward: true
+    carryforward: false
   eslint-plugin-node-security:
     paths: [packages/eslint-plugin-node-security/]
-    carryforward: true
+    carryforward: false
   eslint-plugin-operability:
     paths: [packages/eslint-plugin-operability/]
-    carryforward: true
+    carryforward: false
   eslint-plugin-postgresql-security:
     paths: [packages/eslint-plugin-postgresql-security/]
-    carryforward: true
+    carryforward: false
   eslint-plugin-react-a11y:
     paths: [packages/eslint-plugin-react-a11y/]
-    carryforward: true
+    carryforward: false
   eslint-plugin-react-features:
     paths: [packages/eslint-plugin-react-features/]
-    carryforward: true
+    carryforward: false
   eslint-plugin-reliability:
     paths: [packages/eslint-plugin-reliability/]
-    carryforward: true
+    carryforward: false
   eslint-plugin-secure-coding:
     paths: [packages/eslint-plugin-secure-coding/]
-    carryforward: true
+    carryforward: false
   eslint-plugin-vercel-ai-security:
     paths: [packages/eslint-plugin-vercel-ai-security/]
-    carryforward: true
+    carryforward: false
 
 comment:
   layout: 'header, diff, flags, components'

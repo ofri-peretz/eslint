@@ -32,7 +32,13 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { parse } from 'yaml';
 
-type Step = { name?: string; id?: string; if?: string; run?: string };
+type Step = {
+  name?: string;
+  id?: string;
+  if?: string;
+  run?: string;
+  uses?: string;
+};
 
 const ROOT = resolve(__dirname, '../..');
 const WORKFLOW = join(ROOT, '.github/workflows/codecov.yml');
@@ -59,8 +65,6 @@ const REQUIRED: Record<string, string> = {
   'Locate coverage + JUnit reports': '!cancelled()',
   'Rewrite lcov SF paths to repo-root-relative':
     "!cancelled() && steps.find.outputs.has_lcov == 'true'",
-  'Upload combined coverage to Codecov':
-    "!cancelled() && steps.find.outputs.has_lcov == 'true'",
   'Upload per-package coverage flags to Codecov':
     "!cancelled() && steps.find.outputs.has_lcov == 'true'",
   'Upload test results (Test Analytics)':
@@ -69,6 +73,28 @@ const REQUIRED: Record<string, string> = {
 };
 
 describe('coverage uploads survive one package failing', () => {
+  it('no step uploads the same lcov a second time', () => {
+    /*
+     * A combined `codecov-action` upload used to sit beside the per-package
+     * loop. It takes no `files:` input, so it auto-discovered the very lcovs
+     * the loop already sends and Codecov held every line twice — 2N lines
+     * against N hits wherever the duplicate lost its hit data, which is how
+     * secure-coding published 68.54% while measuring 100%.
+     *
+     * One upload path, not two.
+     */
+    const uploaders = steps.filter(
+      (s) =>
+        /codecov-action/.test(String(s.uses ?? '')) ||
+        /codecovcli upload-process/.test(String(s.run ?? '')),
+    );
+    expect(
+      uploaders.map((s) => s.name),
+      'Exactly one step may send coverage to Codecov. A second one uploads the ' +
+        'same files again and doubles every line count.',
+    ).toHaveLength(1);
+  });
+
   it('every named data step is still present', () => {
     const present = new Set(steps.map((s) => s.name).filter(Boolean));
     for (const name of Object.keys(REQUIRED)) {

@@ -123,12 +123,33 @@ jobs:
             sed -i "s|^SF:|SF:packages/${pkg}/|g" "$lcov"
           done
 
-      - name: Upload combined coverage to Codecov
-        if: "!cancelled() && steps.find.outputs.has_lcov == 'true'"
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v6
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: false
+      # The combined `codecov-action` upload used to sit here. It took no
+      # `files:` input, so it auto-discovered the same
+      # `packages/<pkg>/coverage/lcov.info` the loop below already sends. One
+      # upload path is better than two and it is gone for that reason.
+      #
+      # It was ALSO offered as the explanation for four components publishing
+      # less than the 100% they measure. That was wrong, and the record is
+      # corrected here rather than left to mislead: removing it changed
+      # nothing. Codecov reprocessed 30d3778a9 and returned byte-identical
+      # totals — 40963/44668 — and secure-coding stayed at 68.54%.
+      #
+      # What is established, from the artifact this workflow itself uploaded:
+      #
+      #   every package's lcov is 100%       27454/27454 across 28 packages
+      #   paths are repo-root-relative       38/38 SF lines correct
+      #   no duplicate SF entries            0
+      #   Codecov holds MORE lines than we send
+      #     secure-coding   we send 5328   it holds 10565   (38 files both)
+      #     jwt-security    we send  498   it holds   529
+      #
+      # Two hypotheses tested and falsified: the duplicate upload (removing it
+      # changed nothing) and lines-plus-branches (5328+6268=11596, not 10565;
+      # 498+497=995, not 529). The discrepancy is inside Codecov's ingestion of
+      # a v8 lcov and needs their session data to settle — not a change here.
+      #
+      # Do not "fix" the four numbers by writing tests. There is nothing
+      # uncovered to cover.
 
       - name: Upload per-package coverage flags to Codecov
         if: "!cancelled() && steps.find.outputs.has_lcov == 'true'"
