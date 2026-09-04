@@ -63,7 +63,8 @@ describe('detect-child-process', () => {
           errors: [{ messageId: 'childProcessCommandInjection' }],
         },
         {
-          code: 'child_process.exec("git clone " + repoUrl);',
+          name: 'a command built by concatenating a binding into exec',
+        code: 'child_process.exec("git clone " + repoUrl);',
           options: UNRESOLVED,
           errors: [{ messageId: 'childProcessCommandInjection' }],
         },

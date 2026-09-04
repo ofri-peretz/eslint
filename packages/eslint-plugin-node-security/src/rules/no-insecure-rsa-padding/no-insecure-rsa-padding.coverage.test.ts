@@ -25,6 +25,7 @@ describe('no-insecure-rsa-padding coverage gaps', () => {
     valid: [
       // allowInTests + test filename → listener bails out on PKCS1 padding
       {
+        name: 'RSA_PKCS1_PADDING on a privateDecrypt options object',
         code: 'crypto.privateDecrypt({ key, padding: crypto.constants.RSA_PKCS1_PADDING }, buf);',
         options: [{ allowInTests: true }],
         filename: 'rsa.test.ts',

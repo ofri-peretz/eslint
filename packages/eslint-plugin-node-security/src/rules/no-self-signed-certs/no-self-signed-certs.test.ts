@@ -34,6 +34,7 @@ describe('no-self-signed-certs', () => {
         ] }],
       },
       {
+        name: 'rejectUnauthorized false on a tls.connect',
         code: 'tls.connect({ rejectUnauthorized: false });',
         errors: [{ messageId: 'insecureTls', suggestions: [
           { messageId: 'enableValidation', output: 'tls.connect({ rejectUnauthorized: true });' },

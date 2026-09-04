@@ -40,6 +40,7 @@ describe('no-deprecated-buffer coverage gaps', () => {
       // The factory arm's unfixable path: `Buffer.from(number)` throws, so an
       // argument whose type cannot be established gets a report and no fix.
       {
+        name: 'the deprecated Buffer() constructor with a runtime size',
         code: 'const size = readSize();\nconst page = Buffer(size);',
         output: null,
         errors: [{ messageId: 'deprecatedBufferCall' }],

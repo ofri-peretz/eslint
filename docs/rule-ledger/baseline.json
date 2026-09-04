@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-03",
+  "generated": "2026-09-04",
   "rules": {
     "secure-coding/detect-non-literal-regexp": [
       "duplicate-coverage",

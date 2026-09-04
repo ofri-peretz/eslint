@@ -48,6 +48,7 @@ describe('no-insecure-key-derivation', () => {
         ] }],
       },
       {
+        name: 'pbkdf2 at 10,000 iterations, above the floor',
         code: 'crypto.pbkdf2(password, salt, 10000, 32, "sha256", callback);',
         errors: [{ messageId: 'insufficientIterations', suggestions: [
           { messageId: 'useMinIterations', output: 'crypto.pbkdf2(password, salt, 100000, 32, "sha256", callback);' },

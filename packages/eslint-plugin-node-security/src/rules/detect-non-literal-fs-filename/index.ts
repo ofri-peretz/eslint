@@ -114,6 +114,7 @@ import {
   AST_NODE_TYPES,
   formatLLMMessage,
   namesOneOf,
+  objectKeyName,
   propertyName,
   resolveModuleBinding,
   staticString,
@@ -1809,17 +1810,22 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
         }
         if (node.id.type !== AST_NODE_TYPES.ObjectPattern) return;
         for (const prop of node.id.properties) {
-          if (prop.type !== AST_NODE_TYPES.Property || prop.computed) continue;
+          if (prop.type !== AST_NODE_TYPES.Property) continue;
           if (prop.value.type !== AST_NODE_TYPES.Identifier) continue;
-          // `const { 'readFile': read } = require('fs')` names the same method
-          // as the bare form. The import path already reads the string spelling
-          // (`import { 'readFile' as read }`), so gating it out here would be an
-          // asymmetry, not a narrower gate.
-          const key =
-            prop.key.type === AST_NODE_TYPES.Identifier
-              ? prop.key.name
-              : (staticString(prop.key) ?? undefined);
-          if (key === undefined) continue;
+          /*
+           * `const { 'readFile': read } = require('fs')` names the same method
+           * as the bare form, and so does `const { ['readFile']: read }`. The
+           * import path already reads the string spelling
+           * (`import { 'readFile' as read }`), so gating either out here would
+           * be an asymmetry, not a narrower gate.
+           *
+           * The `prop.computed` bail used to sit on the line above and made the
+           * third spelling unreachable. `objectKeyName` resolves all three and
+           * returns null only for a key chosen at RUNTIME — which is the one
+           * case that genuinely names nothing.
+           */
+          const key = objectKeyName(prop);
+          if (key === null) continue;
           bindFsName(prop.value.name, key);
         }
       },

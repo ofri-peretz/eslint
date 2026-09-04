@@ -102,6 +102,14 @@ describe('fs binding resolution', () => {
         name: 'an array-pattern require binds no fs name',
         code: "const [readFile] = require('fs');\nreadFile(userPath);",
       },
+      {
+        options: [{ reportUnresolvedPaths: true }],
+        // A rest element is not a Property and names no single method. That
+        // check used to be fused with the `computed` bail on one line;
+        // splitting them to let computed keys through left this arm uncovered.
+        name: 'a rest element in a require pattern binds no method name',
+        code: "const { ...rest } = require('fs');\nrest.readFile(userPath);",
+      },
     ],
     invalid: [
       {
@@ -121,6 +129,16 @@ describe('fs binding resolution', () => {
         // Parity with the import path, which already reads the string form.
         name: 'a string-literal destructuring key resolves the same method',
         code: "const { 'readFile': read } = require('fs');\nread(userPath);",
+        errors: [{ messageId: 'fsPathTraversal' }],
+      },
+      {
+        options: [{ reportUnresolvedPaths: true }],
+        // The third spelling of the same destructure, and the one a bundler
+        // emits. `prop.computed` was checked before the key was read, so this
+        // bound nothing and the traversal went unreported — while the bare and
+        // quoted forms directly above both reported.
+        name: 'a computed string destructuring key resolves the same method',
+        code: "const { ['readFile']: read } = require('fs');\nread(userPath);",
         errors: [{ messageId: 'fsPathTraversal' }],
       },
       {

@@ -77,6 +77,7 @@ describe('no-unbounded-decompression', () => {
       { code: `${REQUIRE}zlib.gunzipSync(body, { [key]: 1, maxOutputLength: 1 });` },
       // allowInTests bypass.
       {
+        name: 'gunzip with no maxOutputLength cap',
         code: `${REQUIRE}zlib.gunzip(body, cb);`,
         options: [{ allowInTests: true }],
         filename: 'inflate.test.ts',

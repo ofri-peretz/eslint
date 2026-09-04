@@ -12,11 +12,17 @@
  * @see https://cwe.mitre.org/data/definitions/295.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES, isTestFilePath, propertyName } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  isTestFilePath,
+  MessageIcons,
+  objectKeyName,
+  propertyName,
+} from '@interlace/eslint-devkit';
 
-type MessageIds =
-  | 'insecureTls'
-  | 'enableValidation';
+type MessageIds = 'insecureTls' | 'enableValidation';
 
 export interface Options {
   /** Allow in test/development files. Default: false */
@@ -41,10 +47,12 @@ export const noSelfSignedCerts = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'TLS certificate validation disabled',
         cwe: 'CWE-295',
-        description: 'rejectUnauthorized: false disables TLS certificate validation, enabling man-in-the-middle attacks. Any certificate will be accepted, including self-signed and expired ones.',
+        description:
+          'rejectUnauthorized: false disables TLS certificate validation, enabling man-in-the-middle attacks. Any certificate will be accepted, including self-signed and expired ones.',
         severity: 'CRITICAL',
         fix: 'Remove rejectUnauthorized: false or set it to true',
-        documentationLink: 'https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Security_Cheat_Sheet.html',
+        documentationLink:
+          'https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Security_Cheat_Sheet.html',
       }),
       enableValidation: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -52,7 +60,8 @@ export const noSelfSignedCerts = createRule<RuleOptions, MessageIds>({
         description: 'Enable proper TLS certificate validation',
         severity: 'LOW',
         fix: 'rejectUnauthorized: true (or remove the property)',
-        documentationLink: 'https://nodejs.org/api/tls.html#tlsconnectoptions-callback',
+        documentationLink:
+          'https://nodejs.org/api/tls.html#tlsconnectoptions-callback',
       }),
     },
     schema: [
@@ -76,7 +85,7 @@ export const noSelfSignedCerts = createRule<RuleOptions, MessageIds>({
   ],
   create(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}]
+    [options = {}],
   ) {
     const { allowInTests = false } = options as Options;
 
@@ -88,8 +97,7 @@ export const noSelfSignedCerts = createRule<RuleOptions, MessageIds>({
 
       // Check for rejectUnauthorized: false
       if (
-        node.key.type === AST_NODE_TYPES.Identifier &&
-        node.key.name === 'rejectUnauthorized' &&
+        objectKeyName(node) === 'rejectUnauthorized' &&
         node.value.type === AST_NODE_TYPES.Literal &&
         node.value.value === false
       ) {
