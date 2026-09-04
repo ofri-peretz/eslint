@@ -6,9 +6,13 @@ name: Upload Coverage to Codecov
 # results to Codecov for badges + Test Analytics.
 #
 # Triggers:
-#   • push to main — keeps badges fresh after every merge
-#   • weekly schedule — guards against silent drift (stale Turbo cache)
-#   • workflow_dispatch — on-demand after a coverage-focused branch
+#   • daily schedule (08:45 UTC) — the only automatic run
+#   • workflow_dispatch — on-demand, optionally filtered to one package
+#
+# There is NO push trigger. #363 removed it deliberately when this went from
+# weekly to daily, because a full coverage pass on every merge competes with
+# the PR shards for runner slots. The consequence is real and worth stating:
+# every number on the Codecov badge can be up to 24h behind main.
 # ─────────────────────────────────────────────────────────────────────────────
 
 on:
@@ -22,14 +26,14 @@ on:
   # both offsets, since GitHub cron is UTC and ignores DST. Staggered off the
   # other drift crons (08:15, 09:00, 09:30, 10:00).
   schedule:
-    - cron: "45 8 * * *"
+    - cron: '45 8 * * *'
   workflow_dispatch:
     inputs:
       filter:
-        description: "Turbo filter (e.g. eslint-plugin-postgresql-security). Empty = all packages."
+        description: 'Turbo filter (e.g. eslint-plugin-postgresql-security). Empty = all packages.'
         required: false
         type: string
-        default: ""
+        default: ''
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -39,7 +43,7 @@ permissions:
   contents: read
 
 env:
-  TURBO_TELEMETRY_DISABLED: "1"
+  TURBO_TELEMETRY_DISABLED: '1'
 
 jobs:
   coverage:
@@ -63,7 +67,7 @@ jobs:
           FILTER_ARG: ${{ inputs.filter && format('--filter={0}', inputs.filter) || '' }}
           # This is the one place coverage is collected and thresholds are
           # enforced. PR shards pass --coverage.enabled=false.
-          CI_TEST_SHARD_COVERAGE: "1"
+          CI_TEST_SHARD_COVERAGE: '1'
         # No `|| npx turbo run test` fallback. Every package declares
         # `thresholds: { lines: 100, statements: 100, functions: 100,
         # branches: 100 }`, and a breach makes `test:coverage` exit non-zero —
@@ -73,8 +77,29 @@ jobs:
         # catch them.
         run: npx turbo run test:coverage $FILTER_ARG --continue
 
+      # `!cancelled()` — a package that misses its own threshold must not take
+      # the upload down with it, but a CANCELLED run must not keep uploading.
+      # `always()` would also run on cancellation, delaying the cancel and
+      # publishing whatever partial lcov happened to exist when the run was
+      # killed. `!cancelled()` is exactly "success or failure, not cancelled".
+      #
+      # `turbo run --continue` means every OTHER package still produces a
+      # complete lcov, but this step had no condition, so GitHub skipped it the
+      # moment the test step exited non-zero. Every upload below gates on
+      # `steps.find.outputs.*`, which then never got set — so ONE package
+      # failing uploaded NOTHING, for all 37.
+      #
+      # That is not hypothetical: 8 of the 13 scheduled runs before 2026-09-03
+      # failed this way, almost all of them a single type-aware test in
+      # nestjs-security timing out at 30s under CI contention. A flaky test in
+      # one plugin blanked the coverage report for the whole repository, and
+      # the badge silently kept showing whatever the last green run left behind.
+      #
+      # The job still fails and still opens the scheduled-failure issue — the
+      # regression is not being hidden. The data just stops being collateral.
       - name: Locate coverage + JUnit reports
         id: find
+        if: '!cancelled()'
         run: |
           set -euo pipefail
           LCOV=$(find packages -path '*/coverage/lcov.info' -type f | sort | head -200)
@@ -87,7 +112,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Rewrite lcov SF paths to repo-root-relative
-        if: steps.find.outputs.has_lcov == 'true'
+        if: "!cancelled() && steps.find.outputs.has_lcov == 'true'"
         run: |
           # Vitest runs per-package so SF: lines are package-relative (e.g. SF:src/rules/foo.ts).
           # Codecov component_management uses repo-root paths (packages/<pkg>/**).
@@ -99,14 +124,14 @@ jobs:
           done
 
       - name: Upload combined coverage to Codecov
-        if: steps.find.outputs.has_lcov == 'true'
+        if: "!cancelled() && steps.find.outputs.has_lcov == 'true'"
         uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
 
       - name: Upload per-package coverage flags to Codecov
-        if: steps.find.outputs.has_lcov == 'true'
+        if: "!cancelled() && steps.find.outputs.has_lcov == 'true'"
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         run: |
@@ -130,7 +155,7 @@ jobs:
           done
 
       - name: Upload test results (Test Analytics)
-        if: steps.find.outputs.has_junit == 'true'
+        if: "!cancelled() && steps.find.outputs.has_junit == 'true'"
         uses: codecov/test-results-action@0fa95f0e1eeaafde2c782583b36b28ad0d8c77d3 # v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
