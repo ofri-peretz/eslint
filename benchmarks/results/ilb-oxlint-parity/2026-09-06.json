@@ -1,0 +1,709 @@
+{
+  "suite": "ilb-oxlint-parity",
+  "version": "1.0",
+  "bench": "ILB-Wild",
+  "benchVersion": "0.1",
+  "timestamp": "2026-09-06T19:03:44.424Z",
+  "toolchain": {
+    "node": "22.22.2",
+    "eslint": "10.9.1",
+    "typescript": "6.0.3",
+    "tsCompiler": "tsc-go",
+    "typescriptEslint": "8.68.0",
+    "platform": "linux-x64"
+  },
+  "methodologyCommit": "6d9e64e8ddbd9f0401a55dcc6fd28da3e64662f8",
+  "methodologyHash": "sha256:d76623159010e14a78fa65845c1d41d9d70f2c585e0711e124947babec4c1695",
+  "methodologyPaths": [
+    "benchmarks/suites/ilb-oxlint-parity/run.ts",
+    "benchmarks/lib/methodology.ts",
+    "benchmarks/lib/preregister.ts",
+    "benchmarks/lib/toolchain.ts"
+  ],
+  "runAt": "2026-09-06T19:03:44.427Z",
+  "corpus": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures",
+  "eslintFindings": 10944,
+  "oxlintFindings": 10832,
+  "shared": 10806,
+  "eslintOnly": 112,
+  "oxlintOnly": 0,
+  "parityRate": 0.9897,
+  "eslintOnlyAllowlisted": 0,
+  "oxlintOnlyAllowlisted": 0,
+  "excludedFixtures": [],
+  "eslintOnlyUnexplained": [
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/browser-security/require-postmessage-origin-check__require-postmessage-origin-check/14efd303.js",
+      "rule": "import-next/unambiguous",
+      "line": 2,
+      "column": 11
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/browser-security/require-postmessage-origin-check__require-postmessage-origin-check/14efd303.js",
+      "rule": "import-next/no-unused-modules",
+      "line": 2,
+      "column": 11
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/browser-security/require-postmessage-origin-check__require-postmessage-origin-check/3d26b9c5.js",
+      "rule": "import-next/unambiguous",
+      "line": 2,
+      "column": 11
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/browser-security/require-postmessage-origin-check__require-postmessage-origin-check/3d26b9c5.js",
+      "rule": "import-next/no-unused-modules",
+      "line": 2,
+      "column": 11
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/browser-security/require-postmessage-origin-check__require-postmessage-origin-check/3d26b9c5.js",
+      "rule": "browser-security/require-postmessage-origin-check",
+      "line": 5,
+      "column": 59
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/browser-security/require-postmessage-origin-check__require-postmessage-origin-check/557817aa.js",
+      "rule": "import-next/unambiguous",
+      "line": 2,
+      "column": 11
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/browser-security/require-postmessage-origin-check__require-postmessage-origin-check/557817aa.js",
+      "rule": "import-next/no-unused-modules",
+      "line": 2,
+      "column": 11
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/browser-security/require-postmessage-origin-check__require-postmessage-origin-check/cc21dafe.js",
+      "rule": "import-next/unambiguous",
+      "line": 2,
+      "column": 11
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/browser-security/require-postmessage-origin-check__require-postmessage-origin-check/cc21dafe.js",
+      "rule": "import-next/no-unused-modules",
+      "line": 2,
+      "column": 11
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/browser-security/require-postmessage-origin-check__require-postmessage-origin-check/cc21dafe.js",
+      "rule": "browser-security/require-postmessage-origin-check",
+      "line": 3,
+      "column": 45
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/express-security/require-case-insensitive-path-guard__require-case-insensitive-path-guard/ec5e926a.js",
+      "rule": "import-next/unambiguous",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/express-security/require-case-insensitive-path-guard__require-case-insensitive-path-guard/ec5e926a.js",
+      "rule": "import-next/no-unused-modules",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-missing-validation-pipe__no-missing-validation-pipe/6e93c296.js",
+      "rule": "import-next/unambiguous",
+      "line": 2,
+      "column": 9
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-missing-validation-pipe__no-missing-validation-pipe/6e93c296.js",
+      "rule": "import-next/no-unused-modules",
+      "line": 2,
+      "column": 9
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/1b22ae1d.js",
+      "rule": "import-next/newline-after-import",
+      "line": 2,
+      "column": 9
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/1b22ae1d.js",
+      "rule": "import-next/consistent-type-specifier-style",
+      "line": 2,
+      "column": 9
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/1b22ae1d.js",
+      "rule": "import-next/no-extraneous-dependencies",
+      "line": 2,
+      "column": 50
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/1b22ae1d.js",
+      "rule": "import-next/prefer-default-export",
+      "line": 3,
+      "column": 9
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/1b22ae1d.js",
+      "rule": "import-next/no-named-export",
+      "line": 3,
+      "column": 22
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/27c92f67.js",
+      "rule": "import-next/no-internal-modules",
+      "line": 2,
+      "column": 9
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/27c92f67.js",
+      "rule": "import-next/newline-after-import",
+      "line": 2,
+      "column": 9
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/27c92f67.js",
+      "rule": "import-next/no-extraneous-dependencies",
+      "line": 2,
+      "column": 37
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/27c92f67.js",
+      "rule": "import-next/prefer-default-export",
+      "line": 3,
+      "column": 9
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/27c92f67.js",
+      "rule": "import-next/no-named-export",
+      "line": 3,
+      "column": 22
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/27c92f67.js",
+      "rule": "nestjs-security/no-permissive-cors",
+      "line": 3,
+      "column": 51
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/4109e504.js",
+      "rule": "import-next/newline-after-import",
+      "line": 2,
+      "column": 9
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/4109e504.js",
+      "rule": "import-next/no-extraneous-dependencies",
+      "line": 2,
+      "column": 45
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/4109e504.js",
+      "rule": "import-next/prefer-default-export",
+      "line": 3,
+      "column": 9
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/4109e504.js",
+      "rule": "import-next/no-named-export",
+      "line": 3,
+      "column": 22
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/4109e504.js",
+      "rule": "nestjs-security/no-permissive-cors",
+      "line": 3,
+      "column": 44
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/7ad1973a.js",
+      "rule": "import-next/newline-after-import",
+      "line": 2,
+      "column": 9
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/7ad1973a.js",
+      "rule": "import-next/no-extraneous-dependencies",
+      "line": 2,
+      "column": 37
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/7ad1973a.js",
+      "rule": "import-next/prefer-default-export",
+      "line": 3,
+      "column": 9
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/7ad1973a.js",
+      "rule": "import-next/no-named-export",
+      "line": 3,
+      "column": 22
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/beb99661.js",
+      "rule": "import-next/newline-after-import",
+      "line": 2,
+      "column": 9
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/beb99661.js",
+      "rule": "import-next/no-unused-modules",
+      "line": 2,
+      "column": 9
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/beb99661.js",
+      "rule": "import-next/no-extraneous-dependencies",
+      "line": 2,
+      "column": 37
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/beb99661.js",
+      "rule": "nestjs-security/no-permissive-cors",
+      "line": 3,
+      "column": 44
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/c414ed09.js",
+      "rule": "import-next/newline-after-import",
+      "line": 2,
+      "column": 9
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/c414ed09.js",
+      "rule": "import-next/no-extraneous-dependencies",
+      "line": 2,
+      "column": 37
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/c414ed09.js",
+      "rule": "import-next/prefer-default-export",
+      "line": 3,
+      "column": 9
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/c414ed09.js",
+      "rule": "import-next/no-named-export",
+      "line": 3,
+      "column": 22
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/c414ed09.js",
+      "rule": "nestjs-security/no-permissive-cors",
+      "line": 3,
+      "column": 49
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/ebafdc82.js",
+      "rule": "import-next/newline-after-import",
+      "line": 2,
+      "column": 9
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/ebafdc82.js",
+      "rule": "import-next/no-namespace",
+      "line": 2,
+      "column": 16
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/ebafdc82.js",
+      "rule": "import-next/no-extraneous-dependencies",
+      "line": 2,
+      "column": 33
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/ebafdc82.js",
+      "rule": "import-next/prefer-default-export",
+      "line": 3,
+      "column": 9
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/ebafdc82.js",
+      "rule": "import-next/no-named-export",
+      "line": 3,
+      "column": 22
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/nestjs-security/no-permissive-cors__no-permissive-cors/ebafdc82.js",
+      "rule": "nestjs-security/no-permissive-cors",
+      "line": 3,
+      "column": 58
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/node-security/no-ssrf__no-ssrf/7f07cadf.js",
+      "rule": "secure-coding/no-missing-authentication",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/node-security/no-ssrf__no-ssrf/7f07cadf.js",
+      "rule": "import-next/unambiguous",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/node-security/no-ssrf__no-ssrf/7f07cadf.js",
+      "rule": "import-next/no-unused-modules",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/node-security/no-ssrf__no-ssrf/7f07cadf.js",
+      "rule": "modularity/enforce-rest-conventions",
+      "line": 1,
+      "column": 9
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/node-security/no-ssrf__no-ssrf/7f07cadf.js",
+      "rule": "node-security/no-ssrf",
+      "line": 1,
+      "column": 57
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/node-security/no-ssrf__no-ssrf/f8f4eb30.js",
+      "rule": "import-next/no-nodejs-modules",
+      "line": 1,
+      "column": 19
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/node-security/no-ssrf__no-ssrf/f8f4eb30.js",
+      "rule": "import-next/no-commonjs",
+      "line": 3,
+      "column": 27
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/node-security/no-ssrf__no-ssrf/f8f4eb30.js",
+      "rule": "import-next/no-nodejs-modules",
+      "line": 3,
+      "column": 35
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/node-security/no-ssrf__no-ssrf/f8f4eb30.js",
+      "rule": "import-next/prefer-node-protocol",
+      "line": 3,
+      "column": 35
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/node-security/no-ssrf__no-ssrf/f8f4eb30.js",
+      "rule": "import-next/no-commonjs",
+      "line": 15,
+      "column": 13
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/node-security/no-ssrf__no-ssrf/f8f4eb30.js",
+      "rule": "import-next/no-import-module-exports",
+      "line": 15,
+      "column": 13
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/node-security/no-timing-unsafe-compare__no-timing-unsafe-compare/88b09e6c.js",
+      "rule": "import-next/unambiguous",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/node-security/no-timing-unsafe-compare__no-timing-unsafe-compare/88b09e6c.js",
+      "rule": "import-next/no-unused-modules",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/node-security/no-timing-unsafe-compare__no-timing-unsafe-compare/88b09e6c.js",
+      "rule": "secure-coding/no-insecure-comparison",
+      "line": 1,
+      "column": 63
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/node-security/no-timing-unsafe-compare__no-timing-unsafe-compare/88b09e6c.js",
+      "rule": "node-security/no-timing-unsafe-compare",
+      "line": 1,
+      "column": 63
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/node-security/no-timing-unsafe-compare__no-timing-unsafe-compare/d09b18ab.js",
+      "rule": "import-next/newline-after-import",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/node-security/no-timing-unsafe-compare__no-timing-unsafe-compare/d09b18ab.js",
+      "rule": "import-next/no-unused-modules",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/node-security/no-timing-unsafe-compare__no-timing-unsafe-compare/d09b18ab.js",
+      "rule": "import-next/no-nodejs-modules",
+      "line": 1,
+      "column": 28
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/node-security/no-timing-unsafe-compare__no-timing-unsafe-compare/d09b18ab.js",
+      "rule": "secure-coding/no-insecure-comparison",
+      "line": 3,
+      "column": 5
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/node-security/no-timing-unsafe-compare__no-timing-unsafe-compare/d09b18ab.js",
+      "rule": "node-security/no-timing-unsafe-compare",
+      "line": 3,
+      "column": 5
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/node-security/no-unsafe-buffer-alloc__no-unsafe-buffer-alloc/f6b48cba.js",
+      "rule": "import-next/unambiguous",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/node-security/no-unsafe-buffer-alloc__no-unsafe-buffer-alloc/f6b48cba.js",
+      "rule": "import-next/no-unused-modules",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/node-security/no-unsafe-buffer-alloc__no-unsafe-buffer-alloc/f6b48cba.js",
+      "rule": "node-security/no-unsafe-buffer-alloc",
+      "line": 3,
+      "column": 40
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/detect-non-literal-regexp__constant-object-lookup/0b98b6d9.js",
+      "rule": "import-next/prefer-default-export",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/detect-non-literal-regexp__constant-object-lookup/0b98b6d9.js",
+      "rule": "import-next/no-named-export",
+      "line": 1,
+      "column": 8
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/detect-non-literal-regexp__constant-object-lookup/84cb99c9.js",
+      "rule": "import-next/prefer-default-export",
+      "line": 1,
+      "column": 43
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/detect-non-literal-regexp__constant-object-lookup/84cb99c9.js",
+      "rule": "import-next/no-named-export",
+      "line": 1,
+      "column": 50
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/detect-non-literal-regexp__constant-object-lookup/aef9e23d.js",
+      "rule": "import-next/prefer-default-export",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/detect-non-literal-regexp__constant-object-lookup/aef9e23d.js",
+      "rule": "import-next/no-named-export",
+      "line": 1,
+      "column": 8
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/detect-non-literal-regexp__constant-object-lookup/aef9e23d.js",
+      "rule": "secure-coding/detect-non-literal-regexp",
+      "line": 1,
+      "column": 33
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/detect-non-literal-regexp__constant-object-lookup/aef9e23d.js",
+      "rule": "secure-coding/no-unsafe-regex-construction",
+      "line": 1,
+      "column": 44
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/detect-non-literal-regexp__constant-object-lookup/c4f74e10.js",
+      "rule": "import-next/prefer-default-export",
+      "line": 1,
+      "column": 44
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/detect-non-literal-regexp__constant-object-lookup/c4f74e10.js",
+      "rule": "import-next/no-named-export",
+      "line": 1,
+      "column": 51
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/detect-object-injection__write-path-branches/2ec78293.js",
+      "rule": "import-next/prefer-default-export",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/detect-object-injection__write-path-branches/2ec78293.js",
+      "rule": "import-next/no-named-export",
+      "line": 1,
+      "column": 8
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/no-improper-sanitization__no-improper-sanitization/bd3440a5.js",
+      "rule": "import-next/unambiguous",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/no-improper-sanitization__no-improper-sanitization/bd3440a5.js",
+      "rule": "import-next/no-unused-modules",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/no-improper-sanitization__no-improper-sanitization/bd3440a5.js",
+      "rule": "modernization/prefer-template-literal",
+      "line": 1,
+      "column": 19
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/no-improper-sanitization__no-improper-sanitization/bd3440a5.js",
+      "rule": "secure-coding/no-improper-sanitization",
+      "line": 1,
+      "column": 19
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/no-improper-sanitization__no-improper-sanitization/bd3440a5.js",
+      "rule": "secure-coding/no-improper-sanitization",
+      "line": 1,
+      "column": 44
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/no-sensitive-data-exposure__no-sensitive-data-exposure/f585e8bf.js",
+      "rule": "import-next/unambiguous",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/no-sensitive-data-exposure__no-sensitive-data-exposure/f585e8bf.js",
+      "rule": "import-next/no-unused-modules",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/no-sensitive-data-exposure__no-sensitive-data-exposure/f585e8bf.js",
+      "rule": "secure-coding/no-sensitive-data-exposure",
+      "line": 1,
+      "column": 19
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/no-sql-injection__no-sql-injection/7104ace1.js",
+      "rule": "import-next/prefer-default-export",
+      "line": 1,
+      "column": 15
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/no-sql-injection__no-sql-injection/7104ace1.js",
+      "rule": "import-next/no-named-export",
+      "line": 1,
+      "column": 28
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/no-sql-injection__no-sql-injection/7104ace1.js",
+      "rule": "modernization/prefer-template-literal",
+      "line": 3,
+      "column": 10
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/no-sql-injection__no-sql-injection/b03f2f1d.js",
+      "rule": "import-next/no-commonjs",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/no-sql-injection__no-sql-injection/b03f2f1d.js",
+      "rule": "import-next/unambiguous",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/no-sql-injection__no-sql-injection/b03f2f1d.js",
+      "rule": "import-next/no-unused-modules",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/no-sql-injection__no-sql-injection/b03f2f1d.js",
+      "rule": "pg/no-floating-query",
+      "line": 3,
+      "column": 1
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/no-sql-injection__no-sql-injection/b03f2f1d.js",
+      "rule": "pg/no-unsafe-query",
+      "line": 3,
+      "column": 10
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/no-sql-injection__no-sql-injection/b03f2f1d.js",
+      "rule": "modernization/prefer-template-literal",
+      "line": 3,
+      "column": 10
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/no-template-injection__no-template-injection/2e6525e9.js",
+      "rule": "import-next/unambiguous",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/no-template-injection__no-template-injection/2e6525e9.js",
+      "rule": "import-next/no-unused-modules",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/no-template-injection__no-template-injection/2e6525e9.js",
+      "rule": "secure-coding/no-directive-injection",
+      "line": 1,
+      "column": 20
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/no-template-injection__no-template-injection/2e6525e9.js",
+      "rule": "secure-coding/no-template-injection",
+      "line": 1,
+      "column": 20
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/no-unsafe-deserialization__no-unsafe-deserialization/1c1a7377.js",
+      "rule": "secure-coding/no-unsafe-deserialization",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/no-unsafe-deserialization__no-unsafe-deserialization/1c1a7377.js",
+      "rule": "import-next/unambiguous",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/no-unsafe-deserialization__no-unsafe-deserialization/1c1a7377.js",
+      "rule": "import-next/no-unused-modules",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/no-unsafe-regex-construction__no-unsafe-regex-construction/89d89e49.js",
+      "rule": "import-next/unambiguous",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/no-unsafe-regex-construction__no-unsafe-regex-construction/89d89e49.js",
+      "rule": "import-next/no-unused-modules",
+      "line": 1,
+      "column": 1
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/no-unsafe-regex-construction__no-unsafe-regex-construction/89d89e49.js",
+      "rule": "secure-coding/detect-non-literal-regexp",
+      "line": 1,
+      "column": 12
+    },
+    {
+      "file": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures/secure-coding/no-unsafe-regex-construction__no-unsafe-regex-construction/89d89e49.js",
+      "rule": "secure-coding/no-unsafe-regex-construction",
+      "line": 1,
+      "column": 23
+    }
+  ],
+  "oxlintOnlyUnexplained": []
+}
