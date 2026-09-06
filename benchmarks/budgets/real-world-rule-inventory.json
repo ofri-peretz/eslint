@@ -1,8 +1,7 @@
 {
-  "command": "npx tsx scripts/real-source-scan.mts  # CI only \u2014 never run on a developer machine",
-  "filesLinted": 347301,
-  "filesFailed": 3339,
-  "reposScanned": 113,
+  "filesLinted": 349644,
+  "filesFailed": 2894,
+  "reposScanned": 112,
   "suiteRules": 470,
   "withMaterial": 386,
   "withoutMaterial": [
@@ -93,8 +92,8 @@
   ],
   "rules": {
     "import-next/no-unresolved": {
-      "count": 544495,
-      "repos": 110,
+      "count": 543392,
+      "repos": 109,
       "samples": [
         "eclass__semantic-release-sentry-releases/src/get-error.js:1",
         "mariadb-corporation__mariadb-connector-nodejs/benchmarks/common-bench.js:13",
@@ -104,8 +103,8 @@
       ]
     },
     "import-next/no-internal-modules": {
-      "count": 522172,
-      "repos": 107,
+      "count": 525832,
+      "repos": 106,
       "samples": [
         "aemsites__idfc/blocks/cards-icon/cards-icon.js:1",
         "eclass__semantic-release-sentry-releases/test/verify.test.js:5",
@@ -115,19 +114,19 @@
       ]
     },
     "import-next/no-extraneous-dependencies": {
-      "count": 458909,
-      "repos": 99,
+      "count": 451766,
+      "repos": 94,
       "samples": [
-        "mariadb-corporation__mariadb-connector-nodejs/benchmarks/benchmarks-all.js:3",
-        "payloadcms__payload/.github/actions/triage/src/index.ts:4",
-        "telepat-io__otto/extension/test/background-bootstrap.test.ts:1",
+        "mariadb-corporation__mariadb-connector-nodejs/benchmarks/common-bench.js:13",
+        "payloadcms__payload/app-tanstack/app/_payload.tsx:1",
         "mariadb-corporation__mariadb-connector-nodejs/test/import/esm.mjs:10",
+        "payloadcms__payload/app-tanstack/app/__root.tsx:1",
         "Amsterdam__bmi-dms-upload/.storybook/manager.js:1"
       ]
     },
     "conventions/no-magic-numbers": {
-      "count": 406539,
-      "repos": 110,
+      "count": 412267,
+      "repos": 109,
       "samples": [
         "aemsites__idfc/blocks/anchor-nav/anchor-nav.js:5",
         "eclass__semantic-release-sentry-releases/src/request.js:107",
@@ -137,8 +136,8 @@
       ]
     },
     "import-next/no-named-export": {
-      "count": 398519,
-      "repos": 100,
+      "count": 401304,
+      "repos": 99,
       "samples": [
         "aemsites__idfc/scripts/aem.js:557",
         "mariadb-corporation__mariadb-connector-nodejs/benchmarks/benchs/do_1000_params.js:1",
@@ -148,8 +147,8 @@
       ]
     },
     "import-next/no-relative-parent-imports": {
-      "count": 363170,
-      "repos": 105,
+      "count": 365667,
+      "repos": 104,
       "samples": [
         "aemsites__idfc/blocks/cards-icon/cards-icon.js:1",
         "eclass__semantic-release-sentry-releases/src/errors.js:3",
@@ -159,7 +158,7 @@
       ]
     },
     "import-next/consistent-type-specifier-style": {
-      "count": 219105,
+      "count": 220234,
       "repos": 77,
       "samples": [
         "mariadb-corporation__mariadb-connector-nodejs/types/index.d.ts:13",
@@ -170,8 +169,8 @@
       ]
     },
     "conventions/filename-case": {
-      "count": 193587,
-      "repos": 106,
+      "count": 194699,
+      "repos": 105,
       "samples": [
         "18F__uswds-jekyll/assets/js/private_eye_conf.js:2",
         "mariadb-corporation__mariadb-connector-nodejs/benchmarks/benchs/do_1000_params.js:1",
@@ -181,8 +180,8 @@
       ]
     },
     "import-next/enforce-import-order": {
-      "count": 175986,
-      "repos": 99,
+      "count": 176987,
+      "repos": 98,
       "samples": [
         "mariadb-corporation__mariadb-connector-nodejs/benchmarks/benchmarks-all.js:3",
         "payloadcms__payload/.github/actions/ai-reviewer/src/index.ts:1",
@@ -192,7 +191,7 @@
       ]
     },
     "import-next/no-commonjs": {
-      "count": 132644,
+      "count": 133750,
       "repos": 102,
       "samples": [
         "eclass__semantic-release-sentry-releases/src/errors.js:3",
@@ -203,7 +202,7 @@
       ]
     },
     "import-next/prefer-default-export": {
-      "count": 111064,
+      "count": 111602,
       "repos": 95,
       "samples": [
         "aemsites__idfc/scripts/editor-support-rte.js:60",
@@ -214,8 +213,8 @@
       ]
     },
     "import-next/no-unused-modules": {
-      "count": 91488,
-      "repos": 110,
+      "count": 92544,
+      "repos": 109,
       "samples": [
         "18F__uswds-jekyll/assets/js/private_eye_conf.js:2",
         "aemsites__idfc/.husky/pre-commit.mjs:1",
@@ -225,8 +224,8 @@
       ]
     },
     "maintainability/consistent-function-scoping": {
-      "count": 79858,
-      "repos": 105,
+      "count": 80634,
+      "repos": 104,
       "samples": [
         "aemsites__idfc/blocks/cards/cards.js:876",
         "eclass__semantic-release-sentry-releases/src/errors.js:147",
@@ -236,7 +235,7 @@
       ]
     },
     "react-features/react-render-optimization": {
-      "count": 72062,
+      "count": 72334,
       "repos": 57,
       "samples": [
         "payloadcms__payload/app-tanstack/router.tsx:8",
@@ -247,7 +246,7 @@
       ]
     },
     "react-features/jsx-no-literals": {
-      "count": 66055,
+      "count": 66347,
       "repos": 57,
       "samples": [
         "payloadcms__payload/app-tanstack/router.tsx:9",
@@ -258,7 +257,7 @@
       ]
     },
     "conventions/require-data-testid": {
-      "count": 59258,
+      "count": 59501,
       "repos": 56,
       "samples": [
         "payloadcms__payload/examples/auth/src/app/(app)/_components/RichText/serialize.tsx:82",
@@ -269,8 +268,8 @@
       ]
     },
     "import-next/no-default-export": {
-      "count": 56136,
-      "repos": 99,
+      "count": 56263,
+      "repos": 98,
       "samples": [
         "aemsites__idfc/blocks/anchor-nav/anchor-nav.js:47",
         "mariadb-corporation__mariadb-connector-nodejs/benchmarks/common-bench.js:134",
@@ -280,7 +279,7 @@
       ]
     },
     "react-features/react-no-inline-functions": {
-      "count": 50535,
+      "count": 50758,
       "repos": 57,
       "samples": [
         "payloadcms__payload/examples/auth/src/app/(app)/_components/RenderParams/index.tsx:18",
@@ -291,7 +290,7 @@
       ]
     },
     "react-features/no-this-in-sfc": {
-      "count": 48159,
+      "count": 50683,
       "repos": 86,
       "samples": [
         "aemsites__idfc/blocks/header/header.js:910",
@@ -302,8 +301,8 @@
       ]
     },
     "import-next/no-nodejs-modules": {
-      "count": 42369,
-      "repos": 107,
+      "count": 42738,
+      "repos": 106,
       "samples": [
         "aemsites__idfc/.husky/pre-commit.mjs:1",
         "eclass__semantic-release-sentry-releases/src/parse-commits.js:2",
@@ -313,8 +312,8 @@
       ]
     },
     "maintainability/no-missing-error-context": {
-      "count": 39891,
-      "repos": 98,
+      "count": 40409,
+      "repos": 97,
       "samples": [
         "eclass__semantic-release-sentry-releases/src/verify.js:69",
         "mariadb-corporation__mariadb-connector-nodejs/benchmarks/benchs/select_1000_rows.js:19",
@@ -324,7 +323,7 @@
       ]
     },
     "react-features/require-optimization": {
-      "count": 38031,
+      "count": 38203,
       "repos": 73,
       "samples": [
         "mariadb-corporation__mariadb-connector-nodejs/test/tools/proxy.js:6",
@@ -335,7 +334,7 @@
       ]
     },
     "react-features/no-unnecessary-rerenders": {
-      "count": 32597,
+      "count": 32750,
       "repos": 55,
       "samples": [
         "payloadcms__payload/examples/auth/src/app/(app)/_providers/Auth/index.tsx:167",
@@ -346,8 +345,8 @@
       ]
     },
     "reliability/no-await-in-loop": {
-      "count": 30137,
-      "repos": 88,
+      "count": 30498,
+      "repos": 87,
       "samples": [
         "aemsites__idfc/blocks/header/header.js:1282",
         "eclass__semantic-release-sentry-releases/src/parse-commits.js:30",
@@ -357,8 +356,8 @@
       ]
     },
     "maintainability/cognitive-complexity": {
-      "count": 29794,
-      "repos": 102,
+      "count": 30030,
+      "repos": 101,
       "samples": [
         "aemsites__idfc/blocks/cards/cards.js:537",
         "mariadb-corporation__mariadb-connector-nodejs/benchmarks/common-bench.js:90",
@@ -368,7 +367,7 @@
       ]
     },
     "maintainability/no-unhandled-promise": {
-      "count": 28770,
+      "count": 28957,
       "repos": 99,
       "samples": [
         "aemsites__idfc/blocks/cards/cards.js:263",
@@ -379,7 +378,7 @@
       ]
     },
     "import-next/prefer-node-protocol": {
-      "count": 27221,
+      "count": 27454,
       "repos": 91,
       "samples": [
         "eclass__semantic-release-sentry-releases/src/parse-commits.js:2",
@@ -390,8 +389,8 @@
       ]
     },
     "react-features/hooks-exhaustive-deps": {
-      "count": 26823,
-      "repos": 53,
+      "count": 26448,
+      "repos": 54,
       "samples": [
         "payloadcms__payload/examples/auth/src/app/(app)/_providers/Auth/index.tsx:41",
         "payloadcms__payload/examples/auth/src/app/(app)/account/AccountForm/index.tsx:68",
@@ -401,8 +400,8 @@
       ]
     },
     "import-next/no-namespace": {
-      "count": 25646,
-      "repos": 85,
+      "count": 25769,
+      "repos": 84,
       "samples": [
         "mariadb-corporation__mariadb-connector-nodejs/benchmarks/common-bench.js:10",
         "payloadcms__payload/.github/actions/ai-reviewer/src/index.ts:1",
@@ -412,8 +411,8 @@
       ]
     },
     "react-features/no-namespace": {
-      "count": 25646,
-      "repos": 85,
+      "count": 25769,
+      "repos": 84,
       "samples": [
         "mariadb-corporation__mariadb-connector-nodejs/benchmarks/common-bench.js:10",
         "payloadcms__payload/.github/actions/ai-reviewer/src/index.ts:1",
@@ -423,8 +422,8 @@
       ]
     },
     "modernization/prefer-template-literal": {
-      "count": 22433,
-      "repos": 91,
+      "count": 22557,
+      "repos": 90,
       "samples": [
         "mariadb-corporation__mariadb-connector-nodejs/benchmarks/benchs/insert.js:19",
         "payloadcms__payload/.github/actions/ai-reviewer/src/sanitize.test.ts:17",
@@ -434,8 +433,8 @@
       ]
     },
     "maintainability/identical-functions": {
-      "count": 21929,
-      "repos": 104,
+      "count": 22007,
+      "repos": 103,
       "samples": [
         "aemsites__idfc/blocks/cards/cards.js:204",
         "eclass__semantic-release-sentry-releases/src/errors.js:46",
@@ -445,8 +444,8 @@
       ]
     },
     "reliability/no-missing-error-context": {
-      "count": 21085,
-      "repos": 91,
+      "count": 21341,
+      "repos": 90,
       "samples": [
         "eclass__semantic-release-sentry-releases/src/verify.js:76",
         "mariadb-corporation__mariadb-connector-nodejs/lib/config/connection-options.js:357",
@@ -455,8 +454,19 @@
         "alexispurslane__vessel/e2e/global-setup.ts:77"
       ]
     },
+    "maintainability/nested-complexity-hotspots": {
+      "count": 19442,
+      "repos": 87,
+      "samples": [
+        "aemsites__idfc/blocks/cards/cards.js:972",
+        "eclass__semantic-release-sentry-releases/src/request.js:197",
+        "mariadb-corporation__mariadb-connector-nodejs/lib/cmd/batch-bulk.js:332",
+        "payloadcms__payload/examples/form-builder/src/components/RichText/serialize.tsx:85",
+        "alexispurslane__vessel/src/lib/server/agent/session-events.ts:116"
+      ]
+    },
     "react-a11y/interactive-supports-focus": {
-      "count": 19294,
+      "count": 19338,
       "repos": 44,
       "samples": [
         "payloadcms__payload/examples/live-preview/src/app/(app)/_components/Button/index.tsx:55",
@@ -466,19 +476,8 @@
         "saas-js__saas-ui/apps/compositions/src/examples/checkbox-with-hook-form.tsx:45"
       ]
     },
-    "maintainability/nested-complexity-hotspots": {
-      "count": 19262,
-      "repos": 88,
-      "samples": [
-        "aemsites__idfc/blocks/cards/cards.js:972",
-        "eclass__semantic-release-sentry-releases/src/request.js:197",
-        "mariadb-corporation__mariadb-connector-nodejs/lib/cmd/batch-bulk.js:332",
-        "payloadcms__payload/examples/form-builder/src/components/RichText/serialize.tsx:85",
-        "alexispurslane__vessel/src/lib/server/agent/session-events.ts:116"
-      ]
-    },
     "react-a11y/click-events-have-key-events": {
-      "count": 19172,
+      "count": 19223,
       "repos": 44,
       "samples": [
         "payloadcms__payload/examples/live-preview/src/app/(app)/_components/Button/index.tsx:55",
@@ -489,7 +488,7 @@
       ]
     },
     "conventions/prefer-dependency-version-strategy": {
-      "count": 18994,
+      "count": 19170,
       "repos": 78,
       "samples": [
         "mariadb-corporation__mariadb-connector-nodejs/test/integration/ssl.test.js:624",
@@ -500,7 +499,7 @@
       ]
     },
     "secure-coding/detect-object-injection": {
-      "count": 18678,
+      "count": 18702,
       "repos": 101,
       "samples": [
         "aemsites__idfc/tools/sidekick/plugins/icons/icons.js:30",
@@ -511,7 +510,7 @@
       ]
     },
     "react-features/no-multi-comp": {
-      "count": 17112,
+      "count": 17235,
       "repos": 52,
       "samples": [
         "payloadcms__payload/examples/draft-preview/src/components/AdminBar/index.tsx:21",
@@ -522,7 +521,7 @@
       ]
     },
     "react-features/no-is-prefix-prop": {
-      "count": 15979,
+      "count": 16063,
       "repos": 70,
       "samples": [
         "payloadcms__payload/.github/actions/release-commenter/src/index.ts:215",
@@ -532,19 +531,8 @@
         "Amsterdam__bmi-dms-upload/src/components/customRenderers/AccessibleLabel/AccessibleLabel.tsx:5"
       ]
     },
-    "reliability/no-missing-null-checks": {
-      "count": 15716,
-      "repos": 91,
-      "samples": [
-        "aemsites__idfc/blocks/anchor-nav/anchor-nav.js:8",
-        "mariadb-corporation__mariadb-connector-nodejs/lib/pool.js:532",
-        "payloadcms__payload/.github/actions/ai-reviewer/src/diff.ts:55",
-        "telepat-io__otto/extension/src/commands/linkedin.com/get-posts.ts:262",
-        "alexispurslane__vessel/e2e/mock-llm-server.ts:234"
-      ]
-    },
     "reliability/no-unhandled-promise": {
-      "count": 14997,
+      "count": 15122,
       "repos": 94,
       "samples": [
         "aemsites__idfc/blocks/cards/cards.js:263",
@@ -555,7 +543,7 @@
       ]
     },
     "conventions/no-commented-code": {
-      "count": 14642,
+      "count": 14720,
       "repos": 100,
       "samples": [
         "aemsites__idfc/tools/sidekick/plugins/icons/icons.js:28",
@@ -566,7 +554,7 @@
       ]
     },
     "import-next/newline-after-import": {
-      "count": 14424,
+      "count": 14440,
       "repos": 60,
       "samples": [
         "mariadb-corporation__mariadb-connector-nodejs/benchmarks/common-bench.js:10",
@@ -577,7 +565,7 @@
       ]
     },
     "import-next/dynamic-import-chunkname": {
-      "count": 13515,
+      "count": 13709,
       "repos": 74,
       "samples": [
         "aemsites__idfc/blocks/header/header.js:1282",
@@ -588,7 +576,7 @@
       ]
     },
     "import-next/no-barrel-import": {
-      "count": 12599,
+      "count": 12664,
       "repos": 72,
       "samples": [
         "payloadcms__payload/packages/codemod/src/registry.ts:3",
@@ -598,20 +586,9 @@
         "Amsterdam__bmi-dms-upload/src/utils/buildPath.ts:1"
       ]
     },
-    "conventions/no-console-spaces": {
-      "count": 12139,
-      "repos": 96,
-      "samples": [
-        "aemsites__idfc/scripts/aem.js:614",
-        "mariadb-corporation__mariadb-connector-nodejs/benchmarks/profile-queries.js:13",
-        "payloadcms__payload/packages/create-payload-app/src/utils/copy-recursive-sync.ts:22",
-        "telepat-io__otto/extension/src/runtime/offscreen-client.ts:127",
-        "alexispurslane__vessel/e2e/global-setup.ts:85"
-      ]
-    },
     "import-next/exports-last": {
-      "count": 11954,
-      "repos": 78,
+      "count": 12010,
+      "repos": 77,
       "samples": [
         "mariadb-corporation__mariadb-connector-nodejs/types/index.d.ts:26",
         "payloadcms__payload/examples/draft-preview/src/app/(app)/[slug]/page.tsx:42",
@@ -621,7 +598,7 @@
       ]
     },
     "import-next/no-cycle": {
-      "count": 11415,
+      "count": 11450,
       "repos": 46,
       "samples": [
         "mariadb-corporation__mariadb-connector-nodejs/test/base.js:8",
@@ -632,18 +609,18 @@
       ]
     },
     "react-features/jsx-handler-names": {
-      "count": 9837,
+      "count": 9895,
       "repos": 48,
       "samples": [
         "payloadcms__payload/packages/plugin-seo/src/fields/MetaDescription/MetaDescriptionComponent.tsx:191",
         "payloadcms__payload/examples/localization/src/fields/slug/SlugComponent.tsx:82",
         "paypal__paypal-checkout-components/src/zoid/buttons/container.jsx:121",
-        "Shopify__cli/packages/cli-kit/src/private/node/ui/components/AutocompletePrompt.tsx:189",
+        "Shopify__cli/packages/cli-kit/src/private/node/ui/components/Tasks.test.tsx:359",
         "saas-js__saas-ui/apps/compositions/src/components/setup/color-mode/color-mode.tsx:55"
       ]
     },
     "react-features/no-inline-style": {
-      "count": 9693,
+      "count": 9771,
       "repos": 43,
       "samples": [
         "payloadcms__payload/app-tanstack/router.tsx:8",
@@ -653,8 +630,19 @@
         "Shopify__hydrogen/cookbook/recipes/bundles/ingredients/templates/skeleton/app/components/BundleBadge.tsx:4"
       ]
     },
+    "reliability/no-missing-null-checks": {
+      "count": 9638,
+      "repos": 87,
+      "samples": [
+        "aemsites__idfc/blocks/anchor-nav/anchor-nav.js:8",
+        "mariadb-corporation__mariadb-connector-nodejs/lib/pool.js:597",
+        "payloadcms__payload/.github/actions/ai-reviewer/src/providers/anthropic.ts:63",
+        "telepat-io__otto/extension/src/commands/linkedin.com/get-posts.ts:267",
+        "alexispurslane__vessel/e2e/mock-llm-server.ts:234"
+      ]
+    },
     "import-next/no-unassigned-import": {
-      "count": 9475,
+      "count": 9545,
       "repos": 79,
       "samples": [
         "payloadcms__payload/app/(payload)/layout.tsx:15",
@@ -664,20 +652,9 @@
         "Amsterdam__bmi-dms-upload/tests/jest-setup.ts:1"
       ]
     },
-    "secure-coding/no-insecure-comparison": {
-      "count": 8876,
-      "repos": 88,
-      "samples": [
-        "mariadb-corporation__mariadb-connector-nodejs/benchmarks/common-bench.js:99",
-        "payloadcms__payload/.github/actions/release-commenter/src/index.ts:294",
-        "telepat-io__otto/extension/src/commands/reddit.com/get-chat-messages.ts:159",
-        "mariadb-corporation__mariadb-connector-nodejs/test/integration/pool.test.js:1176",
-        "alexispurslane__vessel/src/lib/server/export/pdf.ts:375"
-      ]
-    },
     "maintainability/no-nested-ternary": {
-      "count": 8867,
-      "repos": 85,
+      "count": 8996,
+      "repos": 84,
       "samples": [
         "mariadb-corporation__mariadb-connector-nodejs/lib/cmd/decoder/text-decoder.js:97",
         "payloadcms__payload/examples/draft-preview/src/components/CMSLink/index.tsx:33",
@@ -686,9 +663,20 @@
         "alexispurslane__vessel/e2e/mock-llm-server.ts:234"
       ]
     },
+    "secure-coding/no-insecure-comparison": {
+      "count": 8917,
+      "repos": 87,
+      "samples": [
+        "mariadb-corporation__mariadb-connector-nodejs/benchmarks/common-bench.js:99",
+        "payloadcms__payload/.github/actions/release-commenter/src/index.ts:294",
+        "telepat-io__otto/extension/src/commands/reddit.com/get-chat-messages.ts:159",
+        "mariadb-corporation__mariadb-connector-nodejs/test/integration/pool.test.js:1176",
+        "alexispurslane__vessel/src/lib/server/export/pdf.ts:375"
+      ]
+    },
     "maintainability/max-parameters": {
-      "count": 8619,
-      "repos": 92,
+      "count": 8656,
+      "repos": 91,
       "samples": [
         "aemsites__idfc/blocks/cards/cards.js:239",
         "eclass__semantic-release-sentry-releases/src/request.js:87",
@@ -698,29 +686,29 @@
       ]
     },
     "import-next/no-relative-packages": {
-      "count": 8521,
+      "count": 8603,
       "repos": 61,
       "samples": [
         "payloadcms__payload/next.config.mjs:3",
         "payloadcms__payload/packages/kv-redis/eslint.config.js:1",
-        "Shopify__cli/packages/app/vite.config.ts:1",
-        "hapijs__hapi/test/types/index.ts:19",
-        "saas-js__saas-ui/apps/website/scripts/generate-registry.ts:5"
+        "Shopify__cli/packages/cli/bin/bundle.js:10",
+        "saas-js__saas-ui/apps/website/scripts/generate-registry.ts:5",
+        "Shopify__cli/packages/app/vite.config.ts:1"
       ]
     },
     "modularity/enforce-rest-conventions": {
-      "count": 6377,
+      "count": 6463,
       "repos": 51,
       "samples": [
-        "payloadcms__payload/test/collections-rest/int.spec.ts:1766",
-        "payloadcms__payload/test/payload-cloud/int.spec.ts:39",
+        "payloadcms__payload/test/collections-rest/int.spec.ts:1822",
+        "payloadcms__payload/test/payload-cloud/int.spec.ts:27",
         "modelcontextprotocol__servers/src/everything/transports/sse.ts:59",
-        "Shopify__cli/packages/app/src/cli/services/local-storage.test.ts:86",
+        "Shopify__cli/packages/cli-kit/src/public/node/graphiql/server.ts:176",
         "nightscout__cgm-remote-monitor/lib/api/experiments/index.js:11"
       ]
     },
     "import-next/no-duplicates": {
-      "count": 6364,
+      "count": 6373,
       "repos": 74,
       "samples": [
         "mariadb-corporation__mariadb-connector-nodejs/lib/cmd/handshake/auth/sha256-password-auth.js:10",
@@ -731,7 +719,7 @@
       ]
     },
     "react-features/require-data-slot": {
-      "count": 6106,
+      "count": 6189,
       "repos": 29,
       "samples": [
         "payloadcms__payload/test/bulk-edit/components/BeforeInputB.tsx:7",
@@ -742,8 +730,8 @@
       ]
     },
     "maintainability/no-lonely-if": {
-      "count": 6082,
-      "repos": 88,
+      "count": 6094,
+      "repos": 87,
       "samples": [
         "aemsites__idfc/blocks/cards-icon/cards-icon.js:31",
         "mariadb-corporation__mariadb-connector-nodejs/benchmarks/common-bench.js:112",
@@ -753,7 +741,7 @@
       ]
     },
     "import-next/group-exports": {
-      "count": 5891,
+      "count": 5925,
       "repos": 56,
       "samples": [
         "payloadcms__payload/packages/payload/src/admin/types.ts:56",
@@ -764,18 +752,18 @@
       ]
     },
     "secure-coding/no-missing-authentication": {
-      "count": 5771,
+      "count": 5819,
       "repos": 50,
       "samples": [
         "payloadcms__payload/examples/custom-server/src/server.ts:13",
         "modelcontextprotocol__servers/src/everything/transports/sse.ts:26",
         "Shopify__cli/packages/app/src/cli/services/dev/extension/server.ts:29",
-        "nightscout__cgm-remote-monitor/lib/api/adminnotifiesapi.js:10",
+        "nightscout__cgm-remote-monitor/lib/api/adminnotifiesapi.js:9",
         "vitemcp__server/src/ViteMCP.routes.test.ts:26"
       ]
     },
     "reliability/no-unsafe-type-narrowing": {
-      "count": 5701,
+      "count": 5746,
       "repos": 59,
       "samples": [
         "payloadcms__payload/examples/draft-preview/src/app/(app)/preview/route.ts:39",
@@ -786,29 +774,51 @@
       ]
     },
     "import-next/no-anonymous-default-export": {
-      "count": 5641,
+      "count": 5615,
       "repos": 65,
       "samples": [
         "payloadcms__payload/examples/localization/src/utilities/canUseDOM.ts:1",
         "payloadcms__payload/examples/multi-tenant/src/app/(app)/page.tsx:1",
         "Amsterdam__bmi-dms-upload/src/components/BulkMetadataForm/BulkMetadataForm.stories.tsx:9",
-        "cloydlau__webgl-fluid/vite.config.ts:4",
+        "cloydlau__webgl-fluid/src/index.js:29",
         "saas-js__saas-ui/apps/website/registry/default/ui/app-shell/app-shell.stories.tsx:9"
       ]
     },
+    "conventions/no-console-spaces": {
+      "count": 5448,
+      "repos": 80,
+      "samples": [
+        "mariadb-corporation__mariadb-connector-nodejs/test/tools/proxy.js:77",
+        "payloadcms__payload/packages/email-nodemailer/src/index.ts:122",
+        "telepat-io__otto/packages/cli/src/index.ts:1227",
+        "mariadb-corporation__mariadb-connector-nodejs/tools/generate-cts.js:45",
+        "modelcontextprotocol__servers/src/everything/index.ts:25"
+      ]
+    },
     "react-features/no-set-state": {
-      "count": 5404,
+      "count": 5430,
       "repos": 31,
       "samples": [
         "saas-js__saas-ui/apps/website/components/theme/theme-provider.tsx:184",
         "cncjs__cncjs/src/app/components/Blink/Blink.jsx:30",
         "cncjs__cncjs/src/app/components/DatePicker/DateTimeRangePickerDropdown/index.jsx:132",
         "comisai__comis/packages/daemon/src/graph/drivers/collaborate-driver.ts:41",
-        "ytsaurus__ytsaurus-ui/packages/ui/src/ui/components/ColumnSelectorModal/ColumnSelectorModal.tsx:56"
+        "ytsaurus__ytsaurus-ui/packages/components/src/components/SchemaDataType/DataType/DataType.tsx:48"
+      ]
+    },
+    "import-next/prefer-modern-api": {
+      "count": 5281,
+      "repos": 46,
+      "samples": [
+        "eclass__semantic-release-sentry-releases/test/verify.test.js:2",
+        "eclass__semantic-release-sentry-releases/test/publish.test.js:3",
+        "eclass__sequelize-paginate/test/index.js:3",
+        "paypal__paypal-checkout-components/test/percy/lib/compile.js:7",
+        "hapijs__hapi/lib/types/server/server.d.ts:4"
       ]
     },
     "maintainability/no-unreadable-iife": {
-      "count": 5235,
+      "count": 5269,
       "repos": 78,
       "samples": [
         "aemsites__idfc/scripts/aem.js:604",
@@ -819,30 +829,19 @@
       ]
     },
     "react-features/jsx-max-depth": {
-      "count": 5186,
+      "count": 5179,
       "repos": 43,
       "samples": [
         "payloadcms__payload/packages/richtext-lexical/src/features/table/client/plugins/TablePlugin/TableGridPopup/index.tsx:152",
         "payloadcms__payload/packages/ui/src/providers/Root/index.tsx:84",
-        "Shopify__cli/packages/cli-kit/src/public/node/graphiql/templates/graphiql.tsx:184",
+        "Shopify__cli/packages/cli-kit/src/public/node/graphiql/templates/unauthorized.tsx:57",
         "saas-js__saas-ui/apps/compositions/src/examples/code-block-with-floating-copy-button.tsx:21",
-        "Shopify__cli/packages/cli-kit/src/public/node/graphiql/templates/unauthorized.tsx:57"
-      ]
-    },
-    "import-next/prefer-modern-api": {
-      "count": 5157,
-      "repos": 46,
-      "samples": [
-        "eclass__semantic-release-sentry-releases/test/verify.test.js:2",
-        "eclass__semantic-release-sentry-releases/test/publish.test.js:3",
-        "eclass__sequelize-paginate/test/index.js:3",
-        "paypal__paypal-checkout-components/test/percy/lib/compile.js:7",
-        "hapijs__hapi/lib/types/route.d.ts:2"
+        "Shopify__cli/packages/cli-kit/src/public/node/graphiql/templates/graphiql.tsx:184"
       ]
     },
     "maintainability/no-silent-errors": {
-      "count": 4985,
-      "repos": 84,
+      "count": 5030,
+      "repos": 82,
       "samples": [
         "aemsites__idfc/blocks/cards/cards.js:532",
         "mariadb-corporation__mariadb-connector-nodejs/benchmarks/benchmarks-all.js:11",
@@ -852,8 +851,8 @@
       ]
     },
     "reliability/no-silent-errors": {
-      "count": 4985,
-      "repos": 84,
+      "count": 5030,
+      "repos": 82,
       "samples": [
         "aemsites__idfc/blocks/cards/cards.js:532",
         "mariadb-corporation__mariadb-connector-nodejs/benchmarks/benchmarks-all.js:11",
@@ -863,7 +862,7 @@
       ]
     },
     "import-next/no-barrel-file": {
-      "count": 4669,
+      "count": 4682,
       "repos": 64,
       "samples": [
         "payloadcms__payload/packages/live-preview/src/index.ts:1",
@@ -874,7 +873,7 @@
       ]
     },
     "reliability/require-network-timeout": {
-      "count": 4648,
+      "count": 4661,
       "repos": 74,
       "samples": [
         "aemsites__idfc/blocks/header/header.js:551",
@@ -885,29 +884,29 @@
       ]
     },
     "react-features/no-raw-color-literal": {
-      "count": 4593,
+      "count": 4635,
       "repos": 45,
       "samples": [
         "payloadcms__payload/examples/whitelabel/src/graphics/Logo/index.tsx:17",
         "payloadcms__payload/packages/admin-bar/src/AdminBar.tsx:87",
-        "saas-js__saas-ui/apps/compositions/src/examples/color-swatch-basic.tsx:6",
         "Shopify__cli/packages/cli-kit/src/public/node/graphiql/templates/unauthorized.tsx:9",
+        "saas-js__saas-ui/apps/compositions/src/examples/color-swatch-basic.tsx:6",
         "saas-js__saas-ui/apps/compositions/src/examples/color-swatch-with-sizes.tsx:8"
       ]
     },
     "modularity/ddd-anemic-domain-model": {
-      "count": 4410,
+      "count": 4478,
       "repos": 25,
       "samples": [
-        "humanprotocol__human-protocol/packages/apps/human-app/server/src/integrations/exchange-oracle/model/exchange-oracle.model.ts:23",
         "humanprotocol__human-protocol/packages/apps/human-app/server/src/modules/email-confirmation/model/email-verification.model.ts:12",
+        "humanprotocol__human-protocol/packages/apps/human-app/server/src/integrations/exchange-oracle/model/exchange-oracle.model.ts:23",
         "comisai__comis/packages/core/src/domain/principal-resolution-error.ts:3",
-        "comisai__comis/packages/agent/src/model/resolve-provider-api-key.ts:49",
-        "sequelize__sequelize/packages/core/test/integration/model/destroy.test.ts:17"
+        "sequelize__sequelize/packages/core/test/integration/model/destroy.test.ts:17",
+        "comisai__comis/packages/agent/src/model/resolve-provider-api-key.ts:49"
       ]
     },
     "react-features/no-unknown-property": {
-      "count": 4142,
+      "count": 4146,
       "repos": 34,
       "samples": [
         "payloadcms__payload/examples/localization/src/components/Media/VideoMedia/index.tsx:35",
@@ -918,8 +917,8 @@
       ]
     },
     "secure-coding/no-improper-type-validation": {
-      "count": 4124,
-      "repos": 88,
+      "count": 4129,
+      "repos": 87,
       "samples": [
         "mariadb-corporation__mariadb-connector-nodejs/lib/cmd/handshake/auth/parsec-auth.js:80",
         "payloadcms__payload/.github/actions/release-commenter/src/index.ts:294",
@@ -929,8 +928,8 @@
       ]
     },
     "operability/no-process-exit": {
-      "count": 4016,
-      "repos": 81,
+      "count": 4057,
+      "repos": 80,
       "samples": [
         "mariadb-corporation__mariadb-connector-nodejs/check-node.js:29",
         "payloadcms__payload/packages/codemod/bin/cli.js:7",
@@ -940,40 +939,40 @@
       ]
     },
     "react-features/jsx-key": {
-      "count": 3888,
+      "count": 3893,
       "repos": 42,
       "samples": [
         "payloadcms__payload/examples/auth/src/app/(app)/_components/RichText/serialize.tsx:22",
         "payloadcms__payload/examples/form-builder/src/components/Blocks/Form/index.tsx:153",
         "Shopify__cli/packages/app/src/cli/services/app-logs/logs-command/ui/components/Logs.tsx:67",
         "saas-js__saas-ui/apps/compositions/src/examples/accordion-basic.tsx:9",
-        "Shopify__cli/packages/cli-kit/src/private/node/ui/components/Table/Table.tsx:49"
+        "Shopify__cli/packages/cli-kit/src/private/node/ui/components/Alert.tsx:60"
       ]
     },
     "import-next/no-mutable-exports": {
-      "count": 3763,
-      "repos": 33,
+      "count": 3761,
+      "repos": 34,
       "samples": [
         "payloadcms__payload/test/safelyRunScript.ts:4",
         "payloadcms__payload/packages/payload-cloud/src/utilities/getStorageClient.ts:8",
-        "saas-js__saas-ui/packages/saas-ui-cli/lib/chunk-JOUOBZXJ.js:1",
         "Shopify__cli/packages/cli-kit/src/public/node/output.ts:220",
+        "saas-js__saas-ui/packages/saas-ui-cli/lib/chunk-JOUOBZXJ.js:1",
         "saas-js__saas-ui/apps/compositions/src/ui/toaster/toaster.tsx:25"
       ]
     },
     "modularity/no-mutable-exports": {
-      "count": 3622,
+      "count": 3618,
       "repos": 26,
       "samples": [
         "payloadcms__payload/test/safelyRunScript.ts:4",
         "payloadcms__payload/packages/payload-cloud/src/utilities/getStorageClient.ts:8",
         "Shopify__cli/packages/cli-kit/src/public/node/output.ts:220",
         "saas-js__saas-ui/apps/compositions/src/ui/toaster/toaster.tsx:25",
-        "withastro__astro/packages/astro/test/fixtures/react-jsx-export/src/components/DeclarationExportTest.jsx:8"
+        "withastro__astro/packages/astro/src/virtual-modules/i18n.ts:261"
       ]
     },
     "modernization/prefer-at": {
-      "count": 3391,
+      "count": 3431,
       "repos": 75,
       "samples": [
         "mariadb-corporation__mariadb-connector-nodejs/lib/connection.js:501",
@@ -984,7 +983,7 @@
       ]
     },
     "conventions/consistent-existence-index-check": {
-      "count": 3281,
+      "count": 3353,
       "repos": 80,
       "samples": [
         "aemsites__idfc/scripts/library-utils.js:22",
@@ -995,7 +994,7 @@
       ]
     },
     "react-features/no-object-type-as-default-prop": {
-      "count": 3100,
+      "count": 3117,
       "repos": 68,
       "samples": [
         "payloadcms__payload/examples/form-builder/src/fields/link.ts:28",
@@ -1006,7 +1005,7 @@
       ]
     },
     "react-a11y/no-missing-aria-labels": {
-      "count": 2670,
+      "count": 2668,
       "repos": 43,
       "samples": [
         "payloadcms__payload/examples/auth/src/app/(app)/_components/Input/index.tsx:31",
@@ -1017,7 +1016,7 @@
       ]
     },
     "react-a11y/control-has-associated-label": {
-      "count": 2619,
+      "count": 2626,
       "repos": 45,
       "samples": [
         "payloadcms__payload/examples/auth/src/app/(app)/_components/Input/index.tsx:31",
@@ -1027,20 +1026,9 @@
         "saas-js__saas-ui/apps/website/app/ui/(landing)/figma/page.tsx:445"
       ]
     },
-    "react-features/void-dom-elements-no-children": {
-      "count": 2423,
-      "repos": 42,
-      "samples": [
-        "payloadcms__payload/examples/auth/src/app/(app)/_components/Header/index.tsx:13",
-        "payloadcms__payload/examples/auth/src/app/(app)/_components/Button/index.tsx:57",
-        "Shopify__cli/packages/cli-kit/src/public/node/graphiql/templates/graphiql.tsx:369",
-        "saas-js__saas-ui/apps/compositions/src/examples/center-with-inline.tsx:6",
-        "Shopify__cli/packages/cli-kit/src/public/node/graphiql/templates/unauthorized.tsx:71"
-      ]
-    },
     "secure-coding/no-unchecked-loop-condition": {
-      "count": 2346,
-      "repos": 81,
+      "count": 2381,
+      "repos": 82,
       "samples": [
         "aemsites__idfc/scripts/aem.js:63",
         "eclass__semantic-release-sentry-releases/src/parse-commits.js:20",
@@ -1050,24 +1038,24 @@
       ]
     },
     "browser-security/no-eval": {
-      "count": 2314,
-      "repos": 34,
+      "count": 2324,
+      "repos": 35,
       "samples": [
         "payloadcms__payload/packages/drizzle/src/utilities/createSchemaGenerator.ts:345",
+        "nightscout__cgm-remote-monitor/lib/plugins/index.js:105",
         "cncjs__cncjs/src/server/lib/evaluate-expression.js:235",
         "comisai__comis/scripts/bench-small-model/scenarios.mjs:68",
-        "nodejs__node/benchmark/buffers/buffer-fill.js:24",
-        "ytsaurus__ytsaurus-ui/packages/ui/src/ui/common/hammer/filter.js:154"
+        "nodejs__node/benchmark/es/eval.js:28"
       ]
     },
     "import-next/no-full-package-import": {
-      "count": 2279,
+      "count": 2275,
       "repos": 25,
       "samples": [
         "cncjs__cncjs/src/app/containers/Settings/About/UpdateStatusContainer.jsx:1",
-        "humanprotocol__human-protocol/packages/apps/dashboard/server/src/common/config/cache-factory.config.ts:3",
-        "cncjs__cncjs/src/app/components/DatePicker/DateTimeRangePickerDropdown/index.jsx:2",
         "humanprotocol__human-protocol/packages/apps/human-app/server/src/modules/governance/governance.service.ts:6",
+        "cncjs__cncjs/src/app/components/DatePicker/DateTimeRangePickerDropdown/index.jsx:2",
+        "humanprotocol__human-protocol/packages/apps/dashboard/server/src/common/config/cache-factory.config.ts:3",
         "immich-app__immich/server/src/decorators.ts:4"
       ]
     },
@@ -1077,46 +1065,57 @@
       "samples": [
         "cncjs__cncjs/src/app/components/Blink/Blink.jsx:5",
         "cncjs__cncjs/src/app/components/DatePicker/DateTimeRangePickerDropdown/index.jsx:49",
-        "ytsaurus__ytsaurus-ui/packages/ui/src/ui/components/Button/Button.tsx:23",
         "ytsaurus__ytsaurus-ui/packages/components/src/internal/Yson/Yson.tsx:42",
+        "ytsaurus__ytsaurus-ui/packages/ui/src/ui/components/Button/Button.tsx:23",
         "spare8__chatbot/components/AppLayout.js:71"
       ]
     },
     "vercel-ai-security/require-max-tokens": {
-      "count": 1785,
+      "count": 1801,
       "repos": 8,
       "samples": [
         "payloadcms__payload/test/evals/scorer/scoreEvidence.ts:21",
         "payloadcms__payload/test/evals/runner/llm.ts:20",
         "novuhq__novu/libs/agent-evals/src/core/judge.ts:14",
         "directus__directus/api/src/ai/chat/controllers/object.post.ts:68",
-        "twentyhq__twenty/packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/services/agent-async-executor.service.ts:377"
+        "twentyhq__twenty/packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/services/agent-async-executor.service.ts:379"
       ]
     },
     "react-features/react-class-to-hooks": {
-      "count": 1505,
-      "repos": 27,
+      "count": 1509,
+      "repos": 28,
       "samples": [
         "saas-js__saas-ui/packages/saas-ui-react/src/components/error-boundary/error-boundary.tsx:21",
         "cncjs__cncjs/src/app/components/Blink/Blink.jsx:4",
         "withastro__astro/packages/integrations/react/test/fixtures/react-component/src/components/Pure.jsx:3",
         "cncjs__cncjs/src/app/components/DatePicker/DateTimeRangePickerDropdown/index.jsx:48",
-        "ytsaurus__ytsaurus-ui/packages/ui/src/ui/components/Button/Button.tsx:22"
+        "ytsaurus__ytsaurus-ui/packages/components/src/components/ClipboardButton/ClipboardButton.tsx:41"
       ]
     },
     "vercel-ai-security/require-request-timeout": {
-      "count": 1475,
+      "count": 1492,
       "repos": 6,
       "samples": [
         "novuhq__novu/libs/agent-evals/src/core/judge.ts:14",
         "directus__directus/api/src/ai/chat/controllers/object.post.ts:68",
-        "twentyhq__twenty/packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/services/agent-async-executor.service.ts:377",
+        "twentyhq__twenty/packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/services/agent-async-executor.service.ts:379",
         "twentyhq__twenty/packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-monitor/services/agent-turn-grader.service.ts:84",
-        "vercel__ai/examples/ai-e2e-next/app/api/chat/azure-code-interpreter-annotation-download/route.ts:44"
+        "vercel__ai/examples/ai-e2e-next/app/api/chat/bedrock-guard-content/route.ts:17"
+      ]
+    },
+    "vercel-ai-security/require-error-handling": {
+      "count": 1479,
+      "repos": 8,
+      "samples": [
+        "novuhq__novu/libs/agent-evals/src/core/judge.ts:14",
+        "continuedev__continue/packages/openai-adapters/src/apis/AiSdk.ts:132",
+        "directus__directus/api/src/ai/chat/controllers/object.post.ts:68",
+        "twentyhq__twenty/packages/twenty-server/src/engine/metadata-modules/ai/ai-chat/services/chat-execution.service.ts:478",
+        "vercel__ai/examples/ai-e2e-next/app/api/chat/anthropic-compaction/route.ts:258"
       ]
     },
     "react-features/no-kind-prop-discriminator": {
-      "count": 1467,
+      "count": 1477,
       "repos": 59,
       "samples": [
         "payloadcms__payload/examples/auth/src/app/(app)/_components/Input/index.tsx:13",
@@ -1126,19 +1125,8 @@
         "alexispurslane__vessel/src/lib/types.ts:291"
       ]
     },
-    "vercel-ai-security/require-error-handling": {
-      "count": 1466,
-      "repos": 8,
-      "samples": [
-        "continuedev__continue/packages/openai-adapters/src/apis/AiSdk.ts:132",
-        "novuhq__novu/libs/agent-evals/src/core/judge.ts:14",
-        "directus__directus/api/src/ai/chat/controllers/object.post.ts:68",
-        "twentyhq__twenty/packages/twenty-server/src/engine/metadata-modules/ai/ai-chat/services/chat-execution.service.ts:480",
-        "vercel__ai/examples/ai-e2e-next/app/api/chat/azure-code-interpreter-annotation-download/route.ts:44"
-      ]
-    },
     "secure-coding/detect-non-literal-regexp": {
-      "count": 1460,
+      "count": 1476,
       "repos": 80,
       "samples": [
         "eclass__semantic-release-sentry-releases/src/request.js:275",
@@ -1149,19 +1137,19 @@
       ]
     },
     "vercel-ai-security/require-audit-logging": {
-      "count": 1407,
+      "count": 1423,
       "repos": 8,
       "samples": [
-        "continuedev__continue/packages/openai-adapters/src/apis/AiSdk.ts:132",
         "novuhq__novu/libs/agent-evals/src/core/judge.ts:14",
+        "continuedev__continue/packages/openai-adapters/src/apis/AiSdk.ts:132",
         "directus__directus/api/src/ai/chat/controllers/object.post.ts:68",
-        "twentyhq__twenty/packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/services/agent-async-executor.service.ts:492",
+        "twentyhq__twenty/packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/services/agent-async-executor.service.ts:496",
         "twentyhq__twenty/packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-monitor/services/agent-turn-grader.service.ts:84"
       ]
     },
     "node-security/no-dynamic-dependency-loading": {
-      "count": 1395,
-      "repos": 71,
+      "count": 1401,
+      "repos": 70,
       "samples": [
         "aemsites__idfc/blocks/header/header.js:1282",
         "mariadb-corporation__mariadb-connector-nodejs/benchmarks/benchmarks-all.js:19",
@@ -1171,62 +1159,29 @@
       ]
     },
     "react-features/prop-types": {
-      "count": 1267,
-      "repos": 27,
+      "count": 1271,
+      "repos": 28,
       "samples": [
         "saas-js__saas-ui/packages/saas-ui-react/src/components/error-boundary/error-boundary.tsx:21",
         "cncjs__cncjs/src/app/containers/Settings/About/CheckForUpdatesContainer.jsx:6",
         "withastro__astro/packages/integrations/react/test/fixtures/react-component/src/components/Pure.jsx:3",
         "cncjs__cncjs/src/app/components/Hoverable/Hoverable.jsx:3",
-        "ytsaurus__ytsaurus-ui/packages/ui/src/ui/components/ColumnSelectorModal/ColumnSelectorModal.tsx:42"
+        "ytsaurus__ytsaurus-ui/packages/components/src/components/ClipboardButton/ClipboardButton.tsx:41"
       ]
     },
     "secure-coding/no-hardcoded-session-tokens": {
-      "count": 1124,
+      "count": 1158,
       "repos": 35,
       "samples": [
         "eclass__semantic-release-sentry-releases/test/verify.test.js:26",
         "payloadcms__payload/test/access-control/getConfig.ts:70",
-        "Shopify__cli/packages/cli-kit/src/public/node/analytics.test.ts:435",
+        "Shopify__cli/packages/cli-kit/src/private/node/session/exchange.test.ts:33",
         "saas-js__saas-ui/packages/saas-ui-registry/test/schema.test.ts:40",
-        "Shopify__cli/packages/cli-kit/src/private/node/session/exchange.test.ts:33"
-      ]
-    },
-    "react-features/no-deprecated": {
-      "count": 1117,
-      "repos": 23,
-      "samples": [
-        "saas-js__saas-ui/packages/saas-ui-react/src/components/error-boundary/error-boundary.tsx:28",
-        "cncjs__cncjs/src/app/components/Modal/index.js:15",
-        "cncjs__cncjs/src/app/components/Forms/Input.jsx:30",
-        "ytsaurus__ytsaurus-ui/packages/ui/src/ui/components/Editor/Editor.js:26",
-        "ytsaurus__ytsaurus-ui/packages/ui/src/ui/components/ColumnSelector/ColumnSelector.js:149"
-      ]
-    },
-    "maintainability/error-message": {
-      "count": 1116,
-      "repos": 53,
-      "samples": [
-        "payloadcms__payload/packages/ui/src/utilities/slugify.ts:43",
-        "payloadcms__payload/packages/payload/src/uploads/stagedUpload.ts:248",
-        "Shopify__cli/packages/app/src/cli/utilities/extensions/theme/host-theme-manager.ts:61",
-        "hapijs__hapi/test/toolkit.js:473",
-        "Shopify__cli/packages/cli-kit/src/private/node/analytics/error-categorizer.test.ts:179"
-      ]
-    },
-    "reliability/error-message": {
-      "count": 1116,
-      "repos": 53,
-      "samples": [
-        "payloadcms__payload/packages/ui/src/utilities/slugify.ts:43",
-        "payloadcms__payload/packages/payload/src/uploads/stagedUpload.ts:248",
-        "Shopify__cli/packages/app/src/cli/utilities/extensions/theme/host-theme-manager.ts:61",
-        "hapijs__hapi/test/toolkit.js:473",
-        "Shopify__cli/packages/cli-kit/src/private/node/analytics/error-categorizer.test.ts:179"
+        "Shopify__cli/packages/cli-kit/src/public/node/analytics.test.ts:435"
       ]
     },
     "import-next/max-dependencies": {
-      "count": 1112,
+      "count": 1120,
       "repos": 48,
       "samples": [
         "payloadcms__payload/examples/localization/src/payload.config.ts:2",
@@ -1236,15 +1191,48 @@
         "nightscout__cgm-remote-monitor/lib/server/app.js:1"
       ]
     },
+    "maintainability/error-message": {
+      "count": 1115,
+      "repos": 53,
+      "samples": [
+        "payloadcms__payload/packages/ui/src/utilities/slugify.ts:43",
+        "payloadcms__payload/packages/payload/src/uploads/stagedUpload.ts:248",
+        "Shopify__cli/packages/cli-kit/src/private/node/analytics/error-categorizer.test.ts:179",
+        "hapijs__hapi/test/handler.js:443",
+        "Shopify__cli/packages/app/src/cli/utilities/extensions/theme/host-theme-manager.ts:61"
+      ]
+    },
+    "reliability/error-message": {
+      "count": 1115,
+      "repos": 53,
+      "samples": [
+        "payloadcms__payload/packages/ui/src/utilities/slugify.ts:43",
+        "payloadcms__payload/packages/payload/src/uploads/stagedUpload.ts:248",
+        "Shopify__cli/packages/cli-kit/src/private/node/analytics/error-categorizer.test.ts:179",
+        "hapijs__hapi/test/handler.js:443",
+        "Shopify__cli/packages/app/src/cli/utilities/extensions/theme/host-theme-manager.ts:61"
+      ]
+    },
+    "react-features/no-deprecated": {
+      "count": 1109,
+      "repos": 23,
+      "samples": [
+        "saas-js__saas-ui/packages/saas-ui-react/src/components/error-boundary/error-boundary.tsx:28",
+        "cncjs__cncjs/src/app/components/Modal/index.js:15",
+        "cncjs__cncjs/src/app/components/Forms/Input.jsx:30",
+        "ytsaurus__ytsaurus-ui/packages/ui/src/ui/components/ColumnSelector/ColumnSelector.js:149",
+        "ytsaurus__ytsaurus-ui/packages/ui/src/ui/components/Editor/Editor.js:26"
+      ]
+    },
     "import-next/prefer-direct-import": {
-      "count": 1057,
+      "count": 1058,
       "repos": 3,
       "samples": [
         "danny-avila__LibreChat/client/src/components/Agents/AgentContact.tsx:2",
         "danny-avila__LibreChat/client/src/Providers/AgentPanelContext.tsx:8",
-        "twentyhq__twenty/packages/twenty-shared/src/logic-function/get-output-schema-mismatch-issues.ts:1",
         "twentyhq__twenty/packages/twenty-shared/src/constants/DefaultRelativeDateFilterValue.ts:1",
-        "n8n-io__n8n/packages/@n8n/client-oauth2/test/client-oauth2.test.ts:11"
+        "twentyhq__twenty/packages/twenty-shared/src/logic-function/get-output-schema-mismatch-issues.ts:1",
+        "n8n-io__n8n/packages/@n8n/client-oauth2/test/code-flow.test.ts:7"
       ]
     },
     "react-features/no-invalid-html-attribute": {
@@ -1255,77 +1243,77 @@
         "paypal__paypal-checkout-components/src/funding/paypal/template.jsx:271",
         "paypal__paypal-checkout-components/src/ui/buttons/spinner.jsx:9",
         "Shopify__hydrogen/packages/hydrogen-react/src/ModelViewer.tsx:165",
-        "humanprotocol__human-protocol/packages/apps/dashboard/client/src/features/leaderboard/ui/Leaderboard.tsx:29"
+        "humanprotocol__human-protocol/packages/apps/dashboard/client/src/widgets/footer/ui/Footer.tsx:47"
       ]
     },
     "node-security/require-secure-credential-storage": {
-      "count": 935,
+      "count": 960,
       "repos": 36,
       "samples": [
         "payloadcms__payload/packages/payload-cloud/src/plugin.spec.ts:64",
         "payloadcms__payload/test/plugin-stripe/config.ts:17",
         "telepat-io__otto/packages/cli/test/client-secret-store.test.ts:28",
-        "Shopify__cli/packages/cli-kit/src/public/node/environment.test.ts:14",
-        "nightscout__cgm-remote-monitor/tests/XX_clean.test.js:14"
+        "nightscout__cgm-remote-monitor/tests/XX_clean.test.js:13",
+        "Shopify__cli/packages/cli-kit/src/public/node/environment.test.ts:14"
       ]
     },
     "modularity/no-external-api-calls-in-utils": {
-      "count": 933,
+      "count": 937,
       "repos": 42,
       "samples": [
         "payloadcms__payload/packages/create-payload-app/src/lib/download-example.ts:39",
         "payloadcms__payload/packages/create-payload-app/src/lib/download-template.ts:39",
         "alexispurslane__vessel/src/lib/server/agent/sandboxed-search-tool.ts:249",
         "alexispurslane__vessel/src/lib/api.ts:58",
-        "nightscout__cgm-remote-monitor/lib/plugins/maker.js:110"
+        "nightscout__cgm-remote-monitor/lib/plugins/pushover.js:79"
       ]
     },
     "import-next/prefer-tree-shakeable-imports": {
-      "count": 898,
+      "count": 897,
       "repos": 20,
       "samples": [
         "cncjs__cncjs/src/app/containers/Settings/UserAccounts/CreateRecord.jsx:1",
-        "humanprotocol__human-protocol/packages/apps/dashboard/server/src/common/config/cache-factory.config.ts:3",
-        "cncjs__cncjs/src/app/containers/Settings/Commands/CreateRecord.jsx:1",
         "humanprotocol__human-protocol/packages/apps/human-app/server/src/modules/governance/governance.service.ts:6",
+        "cncjs__cncjs/src/app/containers/Settings/Commands/CreateRecord.jsx:1",
+        "humanprotocol__human-protocol/packages/apps/dashboard/server/src/common/config/cache-factory.config.ts:3",
         "immich-app__immich/server/src/decorators.ts:4"
       ]
     },
     "import-next/no-dynamic-require": {
-      "count": 883,
-      "repos": 52,
+      "count": 893,
+      "repos": 51,
       "samples": [
         "modelcontextprotocol__servers/src/sequentialthinking/version.ts:21",
         "modelcontextprotocol__servers/src/memory/version.ts:15",
-        "nightscout__cgm-remote-monitor/tests/fixtures/headless.js:34",
-        "Shopify__hydrogen/packages/cli/src/commands/hydrogen/deploy.ts:782",
-        "cncjs__cncjs/src/app/index.jsx:90"
+        "nightscout__cgm-remote-monitor/tests/client-core/openaps-plugin-wiring.test.js:34",
+        "nightscout__cgm-remote-monitor/tests/client-core/loop-plugin-wiring.test.js:50",
+        "Shopify__hydrogen/packages/cli/src/commands/hydrogen/deploy.ts:782"
       ]
     },
     "vercel-ai-security/require-abort-signal": {
-      "count": 873,
+      "count": 887,
       "repos": 5,
       "samples": [
         "novuhq__novu/playground/nextjs/src/app/api/agent-toolkit/chat/route.ts:10",
         "directus__directus/api/src/ai/chat/controllers/object.post.ts:68",
         "n8n-io__n8n/packages/@n8n/agents/src/runtime/__tests__/crash-resume.test.ts:255",
-        "vercel__ai/examples/ai-e2e-next/app/api/chat/azure-code-interpreter-annotation-download/route.ts:44",
-        "vercel__ai/examples/ai-e2e-next/app/api/chat/persistence-metadata/route.ts:14"
+        "vercel__ai/examples/ai-e2e-next/app/api/chat/bedrock-guard-content/route.ts:17",
+        "vercel__ai/examples/ai-e2e-next/app/api/chat/azure-code-interpreter-annotation-download/route.ts:44"
       ]
     },
     "react-a11y/no-autofocus": {
-      "count": 865,
+      "count": 873,
       "repos": 24,
       "samples": [
         "saas-js__saas-ui/apps/website/registry/default/ui/filters/filters.tsx:471",
         "saas-js__saas-ui/apps/compositions/src/ui/filters/filters-value-editors.tsx:23",
         "Shopify__hydrogen/cookbook/recipes/legacy-customer-account-flow/ingredients/templates/skeleton/app/routes/account_.activate.$id.$activationToken.tsx:98",
-        "humanprotocol__human-protocol/packages/apps/staking/src/components/modals/UnstakeModal.tsx:113",
+        "humanprotocol__human-protocol/packages/apps/job-launcher/client/src/components/SearchField/index.tsx:9",
         "Shopify__hydrogen/cookbook/recipes/legacy-customer-account-flow/ingredients/templates/skeleton/app/routes/account_.recover.tsx:77"
       ]
     },
     "conventions/prefer-code-point": {
-      "count": 808,
+      "count": 814,
       "repos": 60,
       "samples": [
         "mariadb-corporation__mariadb-connector-nodejs/lib/io/packet-output-stream.js:365",
@@ -1336,7 +1324,7 @@
       ]
     },
     "react-a11y/no-static-element-interactions": {
-      "count": 799,
+      "count": 801,
       "repos": 35,
       "samples": [
         "payloadcms__payload/packages/richtext-lexical/src/features/table/client/plugins/TableCellResizerPlugin/index.tsx:416",
@@ -1347,8 +1335,8 @@
       ]
     },
     "node-security/detect-eval-with-expression": {
-      "count": 777,
-      "repos": 37,
+      "count": 787,
+      "repos": 38,
       "samples": [
         "payloadcms__payload/packages/payload/src/utilities/dynamicImport.ts:27",
         "cncjs__cncjs/src/server/lib/evaluate-expression.js:235",
@@ -1358,29 +1346,29 @@
       ]
     },
     "node-security/no-dynamic-require": {
-      "count": 753,
-      "repos": 46,
+      "count": 759,
+      "repos": 45,
       "samples": [
         "modelcontextprotocol__servers/src/sequentialthinking/version.ts:21",
         "modelcontextprotocol__servers/src/memory/version.ts:15",
-        "nightscout__cgm-remote-monitor/tests/fixtures/headless.js:34",
+        "nightscout__cgm-remote-monitor/tests/fixtures/benv-shim.js:128",
         "Shopify__hydrogen/packages/cli/src/commands/hydrogen/deploy.ts:783",
         "cncjs__cncjs/src/app/index.jsx:90"
       ]
     },
     "express-security/no-missing-csrf-protection": {
-      "count": 733,
+      "count": 735,
       "repos": 33,
       "samples": [
         "telepat-io__otto/packages/cli/src/mcp/http-server.ts:44",
         "modelcontextprotocol__servers/src/everything/transports/sse.ts:59",
-        "nightscout__cgm-remote-monitor/lib/api/devicestatus/index.js:99",
-        "nightscout__cgm-remote-monitor/lib/api/activity/index.js:95",
-        "humanprotocol__human-protocol/packages/apps/faucet/server/src/index.ts:83"
+        "nightscout__cgm-remote-monitor/lib/api/devicestatus/index.js:175",
+        "nightscout__cgm-remote-monitor/lib/api/activity/index.js:96",
+        "cncjs__cncjs/src/server/app.js:251"
       ]
     },
     "browser-security/no-unescaped-url-parameter": {
-      "count": 707,
+      "count": 714,
       "repos": 46,
       "samples": [
         "payloadcms__payload/packages/create-payload-app/src/lib/examples.ts:6",
@@ -1395,10 +1383,10 @@
       "repos": 27,
       "samples": [
         "payloadcms__payload/packages/ui/src/fields/Text/Input.tsx:74",
-        "payloadcms__payload/test/localization/e2e.spec.ts:340",
+        "payloadcms__payload/test/__helpers/e2e/helpers.ts:254",
         "alexispurslane__vessel/e2e/chat.spec.ts:411",
         "Shopify__cli/packages/e2e/scripts/cleanup-apps.ts:422",
-        "withastro__astro/packages/astro/e2e/astro-component.test.ts:48"
+        "withastro__astro/packages/astro/src/runtime/client/dev-toolbar/apps/audit/rules/a11y.ts:351"
       ]
     },
     "react-features/no-unsafe": {
@@ -1408,24 +1396,24 @@
         "saas-js__saas-ui/packages/saas-ui-react/src/components/error-boundary/error-boundary.tsx:28",
         "cncjs__cncjs/src/app/containers/Workspace/WidgetManager/WidgetManager.jsx:162",
         "cncjs__cncjs/src/app/widgets/Visualizer/Visualizer.jsx:212",
-        "ytsaurus__ytsaurus-ui/packages/ui/src/ui/components/Editor/Editor.js:26",
-        "ytsaurus__ytsaurus-ui/packages/ui/src/ui/components/ColumnSelector/ColumnSelector.js:149"
+        "ytsaurus__ytsaurus-ui/packages/ui/src/ui/components/ColumnSelector/ColumnSelector.js:149",
+        "ytsaurus__ytsaurus-ui/packages/ui/src/ui/components/Editor/Editor.js:26"
       ]
     },
     "mongodb-security/require-schema-validation": {
-      "count": 680,
+      "count": 683,
       "repos": 3,
       "samples": [
         "novuhq__novu/libs/dal/src/repositories/agent-integration/agent-integration.schema.ts:30",
         "novuhq__novu/libs/dal/src/repositories/context/context.schema.ts:7",
-        "danny-avila__LibreChat/packages/data-schemas/src/schema/accessRole.ts:36",
+        "danny-avila__LibreChat/packages/data-schemas/src/schema/aclEntry.ts:48",
         "spare8__chatbot/models/VSFile.js:15",
-        "danny-avila__LibreChat/packages/data-schemas/src/schema/aclEntry.ts:48"
+        "danny-avila__LibreChat/packages/data-schemas/src/schema/accessRole.ts:36"
       ]
     },
     "secure-coding/no-redos-vulnerable-regex": {
-      "count": 659,
-      "repos": 63,
+      "count": 668,
+      "repos": 62,
       "samples": [
         "payloadcms__payload/packages/payload/src/uploads/probeImageSize.ts:204",
         "telepat-io__otto/extension/src/commands/linkedin.com/get-posts.ts:154",
@@ -1434,23 +1422,12 @@
         "Shopify__cli/bin/create-notification-pr.js:134"
       ]
     },
-    "secure-coding/no-graphql-injection": {
-      "count": 643,
-      "repos": 27,
-      "samples": [
-        "mariadb-corporation__mariadb-connector-nodejs/lib/io/packet-output-stream.js:743",
-        "payloadcms__payload/.github/actions/release-commenter/src/index.ts:139",
-        "payloadcms__payload/test/globals/int.spec.ts:223",
-        "Shopify__cli/packages/app/src/cli/utilities/developer-platform-client/app-management-client/graphql/organization_beta_flags.ts:4",
-        "Shopify__hydrogen/packages/hydrogen-react/src/cart-queries.ts:31"
-      ]
-    },
     "browser-security/no-credentials-in-query-params": {
-      "count": 641,
-      "repos": 37,
+      "count": 647,
+      "repos": 38,
       "samples": [
         "payloadcms__payload/packages/plugin-ecommerce/src/react/provider/index.tsx:949",
-        "payloadcms__payload/test/plugin-ecommerce/int.spec.ts:124",
+        "payloadcms__payload/test/plugin-ecommerce/int.spec.ts:106",
         "telepat-io__otto/extension/test/relay-url.test.ts:7",
         "paypal__paypal-checkout-components/src/lib/appSwithResume.test.js:29",
         "paypal__paypal-checkout-components/test/integration/windows/button/index.jsx:164"
@@ -1462,46 +1439,57 @@
       "samples": [
         "cncjs__cncjs/src/app/components/DatePicker/DateTimeRangePicker/index.jsx:13",
         "cncjs__cncjs/src/app/components/DatePicker/DateTimeRangePickerDropdown/index.jsx:50",
-        "ytsaurus__ytsaurus-ui/packages/ui/src/ui/components/Button/Button.tsx:24",
         "ytsaurus__ytsaurus-ui/packages/ui/src/ui/components/ColumnSelector/ColumnSelector.js:127",
+        "ytsaurus__ytsaurus-ui/packages/ui/src/ui/components/Button/Button.tsx:24",
         "storybookjs__storybook/code/renderers/react/template/stories/docgen-components/8428-js-static-prop-types/input.jsx:8"
       ]
     },
+    "secure-coding/no-graphql-injection": {
+      "count": 632,
+      "repos": 27,
+      "samples": [
+        "mariadb-corporation__mariadb-connector-nodejs/lib/io/packet-output-stream.js:743",
+        "payloadcms__payload/.github/actions/release-commenter/src/index.ts:139",
+        "payloadcms__payload/test/globals/int.spec.ts:208",
+        "Shopify__cli/packages/app/src/cli/utilities/developer-platform-client/app-management-client/graphql/organization_beta_flags.ts:4",
+        "Shopify__hydrogen/packages/hydrogen-react/src/cart-queries.ts:31"
+      ]
+    },
     "react-features/sort-comp": {
-      "count": 625,
-      "repos": 24,
+      "count": 627,
+      "repos": 25,
       "samples": [
         "saas-js__saas-ui/packages/saas-ui-react/src/components/error-boundary/error-boundary.tsx:24",
         "cncjs__cncjs/src/app/containers/Settings/MachineProfiles/UpdateRecord.jsx:44",
         "cncjs__cncjs/src/app/components/DatePicker/DateTimeRangePickerDropdown/index.jsx:79",
-        "ytsaurus__ytsaurus-ui/packages/ui/src/ui/components/ColumnSelectorModal/ColumnSelectorModal.tsx:67",
-        "ytsaurus__ytsaurus-ui/packages/components/src/components/ClipboardButton/ClipboardButton.tsx:84"
+        "ytsaurus__ytsaurus-ui/packages/components/src/components/ClipboardButton/ClipboardButton.tsx:84",
+        "ytsaurus__ytsaurus-ui/packages/ui/src/ui/components/ColumnSelectorModal/ColumnSelectorModal.tsx:67"
       ]
     },
     "import-next/no-deprecated": {
-      "count": 600,
-      "repos": 32,
+      "count": 607,
+      "repos": 33,
       "samples": [
         "withastro__astro/packages/astro/src/core/app/node.ts:550",
         "immich-app__immich/server/src/dtos/asset-ids.response.dto.ts:54",
-        "nodejs__node/test/fixtures/wpt/resources/testharness.js:1293",
-        "sequelize__sequelize/packages/core/src/model.d.ts:2333",
-        "ytsaurus__ytsaurus-ui/packages/ui/src/shared/constants/settings.ts:140"
+        "nodejs__node/lib/util.js:595",
+        "sequelize__sequelize/packages/core/src/model-typescript.ts:130",
+        "ytsaurus__ytsaurus-ui/packages/ui/src/ui/common/thor/ypath.ts:48"
       ]
     },
     "react-features/prefer-stateless-function": {
-      "count": 576,
+      "count": 577,
       "repos": 12,
       "samples": [
         "cncjs__cncjs/src/app/components/DatePicker/DateTimeRangePicker/index.jsx:8",
-        "withastro__astro/packages/integrations/react/test/fixtures/react-component/src/components/Pure.jsx:3",
-        "cncjs__cncjs/src/app/components/Forms/Input.jsx:6",
         "withastro__astro/packages/astro/test/fixtures/preact-component/src/components/Class.jsx:3",
-        "ytsaurus__ytsaurus-ui/packages/ui/src/ui/components/Button/Button.tsx:22"
+        "cncjs__cncjs/src/app/components/Forms/Input.jsx:6",
+        "ytsaurus__ytsaurus-ui/packages/components/src/components/ClipboardButton/ClipboardButton.tsx:41",
+        "ytsaurus__ytsaurus-ui/packages/components/src/components/YqlValue/YqlValue.tsx:19"
       ]
     },
     "react-a11y/anchor-is-valid": {
-      "count": 572,
+      "count": 570,
       "repos": 27,
       "samples": [
         "payloadcms__payload/templates/ecommerce/src/components/ui/pagination.tsx:40",
@@ -1512,7 +1500,7 @@
       ]
     },
     "secure-coding/no-hardcoded-credentials": {
-      "count": 568,
+      "count": 561,
       "repos": 41,
       "samples": [
         "payloadcms__payload/packages/create-payload-app/src/lib/select-db.ts:24",
@@ -1523,34 +1511,34 @@
       ]
     },
     "react-a11y/no-keyboard-inaccessible-elements": {
-      "count": 558,
+      "count": 560,
       "repos": 31,
       "samples": [
         "payloadcms__payload/packages/richtext-lexical/src/features/table/client/plugins/TablePlugin/TableGridPopup/index.tsx:154",
         "payloadcms__payload/packages/richtext-lexical/src/features/table/client/plugins/TableActionMenuPlugin/index.tsx:403",
         "Amsterdam__bmi-dms-upload/tests/helpers/createMockComponent.tsx:22",
         "humanprotocol__human-protocol/packages/apps/dashboard/client/src/shared/ui/AbbreviateClipboard/index.tsx:31",
-        "ytsaurus__ytsaurus-ui/packages/ui/src/ui/components/ColumnHeader/ColumnHeader.tsx:148"
+        "ytsaurus__ytsaurus-ui/packages/components/src/components/SchemaDataType/DataType/DataType.tsx:64"
       ]
     },
     "node-security/require-secure-deletion": {
-      "count": 547,
+      "count": 558,
       "repos": 29,
       "samples": [
         "payloadcms__payload/packages/graphql/src/resolvers/auth/login.ts:30",
         "payloadcms__payload/packages/graphql/src/resolvers/auth/refresh.ts:24",
-        "nightscout__cgm-remote-monitor/tests/api.entries.test.js:20",
-        "nightscout__cgm-remote-monitor/lib/authorization/index.js:50",
-        "humanprotocol__human-protocol/packages/sdk/typescript/human-protocol-sdk/test/utils.test.ts:87"
+        "nightscout__cgm-remote-monitor/lib/authorization/index.js:48",
+        "nightscout__cgm-remote-monitor/tests/api.alexa.test.js:16",
+        "withastro__astro/packages/astro/test/env-secret.test.ts:15"
       ]
     },
     "browser-security/no-missing-csrf-protection": {
-      "count": 537,
+      "count": 544,
       "repos": 23,
       "samples": [
         "modelcontextprotocol__servers/src/everything/transports/sse.ts:59",
-        "nightscout__cgm-remote-monitor/lib/api/googlehome/index.js:21",
-        "nightscout__cgm-remote-monitor/lib/api/alexa/index.js:23",
+        "nightscout__cgm-remote-monitor/lib/api/googlehome/index.js:20",
+        "nightscout__cgm-remote-monitor/lib/api/alexa/index.js:21",
         "humanprotocol__human-protocol/packages/apps/faucet/server/src/index.ts:83",
         "continuedev__continue/extensions/cli/src/commands/serve.ts:228"
       ]
@@ -1561,24 +1549,24 @@
       "samples": [
         "mariadb-corporation__mariadb-connector-nodejs/test/integration/auth-plugin.test.js:281",
         "mariadb-corporation__mariadb-connector-nodejs/test/conf.js:23",
+        "hapijs__hapi/test/core.js:644",
         "nightscout__cgm-remote-monitor/tests/fixtures/api3/instance.js:20",
-        "vitemcp__server/src/ViteMCP.https.test.ts:63",
-        "hapijs__hapi/test/core.js:644"
+        "vitemcp__server/src/ViteMCP.https.test.ts:63"
       ]
     },
-    "browser-security/no-innerhtml": {
-      "count": 506,
-      "repos": 42,
+    "conventions/analytics-event-naming": {
+      "count": 515,
+      "repos": 13,
       "samples": [
-        "aemsites__idfc/blocks/cards/cards.js:253",
-        "aemsites__idfc/blocks/cards-testimonial/cards-testimonial.js:479",
-        "payloadcms__payload/packages/richtext-lexical/src/lexical/nodes/index.ts:234",
-        "paypal__paypal-checkout-components/src/ui/saved-payment-methods/template.test.jsx:15",
-        "cncjs__cncjs/src/app/lib/three/WebGL.js:68"
+        "comisai__comis/packages/observability-otel/src/prometheus-surface.ts:76",
+        "nodejs__node/test/parallel/test-diagnostics-channel-module-import-error.js:24",
+        "immich-app__immich/web/src/lib/utils/file-uploader.ts:217",
+        "nodejs__node/test/parallel/test-diagnostics-channel-module-import.js:24",
+        "novuhq__novu/apps/api/src/app/agents/conversation-runtime/conversation/agent-subscriber-adoption.service.ts:114"
       ]
     },
     "browser-security/no-clickjacking": {
-      "count": 506,
+      "count": 511,
       "repos": 44,
       "samples": [
         "payloadcms__payload/examples/draft-preview/src/app/(app)/layout.tsx:1",
@@ -1588,19 +1576,19 @@
         "saas-js__saas-ui/apps/compositions/src/examples/aspect-ratio-with-video.tsx:6"
       ]
     },
-    "conventions/analytics-event-naming": {
-      "count": 503,
-      "repos": 13,
+    "browser-security/no-innerhtml": {
+      "count": 507,
+      "repos": 43,
       "samples": [
-        "payloadcms__payload/test/uuid-v7/int.spec.ts:65",
-        "comisai__comis/packages/observability-otel/src/prometheus-surface.ts:76",
-        "nodejs__node/test/parallel/test-diagnostics-channel-module-import.js:24",
-        "immich-app__immich/web/src/lib/utils/file-uploader.ts:217",
-        "nodejs__node/test/parallel/test-diagnostics-channel-module-import-error.js:24"
+        "aemsites__idfc/blocks/cards/cards.js:253",
+        "aemsites__idfc/blocks/cards-testimonial/cards-testimonial.js:479",
+        "payloadcms__payload/packages/richtext-lexical/src/lexical/nodes/index.ts:234",
+        "paypal__paypal-checkout-components/src/ui/saved-payment-methods/template.test.jsx:15",
+        "nightscout__cgm-remote-monitor/tests/hashauth.modern.test.js:142"
       ]
     },
     "modernization/prefer-event-target": {
-      "count": 467,
+      "count": 476,
       "repos": 37,
       "samples": [
         "mariadb-corporation__mariadb-connector-nodejs/lib/cmd/command.js:12",
@@ -1611,25 +1599,14 @@
       ]
     },
     "react-a11y/label-has-associated-control": {
-      "count": 462,
+      "count": 466,
       "repos": 31,
       "samples": [
         "payloadcms__payload/examples/form-builder/src/components/Blocks/Form/Number/index.tsx:23",
         "payloadcms__payload/examples/form-builder/src/components/Blocks/Form/Country/index.tsx:26",
         "saas-js__saas-ui/packages/saas-ui-tailwind-preset/examples/input.tsx:115",
         "cncjs__cncjs/src/app/containers/Settings/About/CheckForUpdatesContainer.jsx:46",
-        "withastro__astro/packages/astro/test/fixtures/preact-component/src/components/UseId.jsx:9"
-      ]
-    },
-    "secure-coding/no-sensitive-data-exposure": {
-      "count": 459,
-      "repos": 41,
-      "samples": [
-        "payloadcms__payload/packages/email-nodemailer/src/index.ts:125",
-        "telepat-io__otto/packages/cli/src/index.ts:1514",
-        "payloadcms__payload/test/collections-rest/config.ts:336",
-        "telepat-io__otto/packages/cli/src/cli/identity-commands.ts:115",
-        "Shopify__cli/packages/app/src/cli/services/dev/select-app.test.ts:57"
+        "Shopify__hydrogen/templates/skeleton/app/components/CartSummary.tsx:101"
       ]
     },
     "react-features/no-wrapper-sub-component": {
@@ -1643,11 +1620,22 @@
         "saas-js__saas-ui/apps/compositions/src/ui/blockquote/blockquote.tsx:37"
       ]
     },
+    "secure-coding/no-sensitive-data-exposure": {
+      "count": 456,
+      "repos": 42,
+      "samples": [
+        "payloadcms__payload/packages/email-nodemailer/src/index.ts:125",
+        "telepat-io__otto/packages/cli/src/index.ts:1514",
+        "payloadcms__payload/test/collections-rest/config.ts:338",
+        "telepat-io__otto/packages/cli/src/cli/identity-commands.ts:115",
+        "Shopify__cli/packages/app/src/cli/services/dev/select-app.test.ts:57"
+      ]
+    },
     "react-features/no-arbitrary-token-class": {
-      "count": 445,
+      "count": 449,
       "repos": 12,
       "samples": [
-        "payloadcms__payload/templates/website/src/blocks/MediaBlock/Component.tsx:47",
+        "payloadcms__payload/templates/ecommerce/src/blocks/Form/Component.tsx:133",
         "payloadcms__payload/examples/localization/src/components/ui/checkbox.tsx:15",
         "immich-app__immich/server/src/emails/components/futo.layout.tsx:60",
         "immich-app__immich/server/src/emails/components/immich.layout.tsx:48",
@@ -1655,19 +1643,19 @@
       ]
     },
     "conventions/utm-taxonomy": {
-      "count": 443,
-      "repos": 18,
+      "count": 447,
+      "repos": 19,
       "samples": [
         "withastro__astro/packages/astro/test/cache-memory-query.test.ts:27",
         "comisai__comis/test/integration/security/output-guard-canary-e2e.test.ts:194",
         "keystonejs__keystone/docs/app/(site)/enterprise/page-client.tsx:29",
         "novuhq__novu/apps/dashboard/src/components/agents/provider-cards.tsx:571",
-        "shadcn-ui__ui/packages/shadcn/test/fixtures/frameworks/next-app-custom-alias/app/page.tsx:14"
+        "shadcn-ui__ui/apps/v4/components/open-in-v0-cta.tsx:27"
       ]
     },
     "import-next/no-named-as-default-member": {
-      "count": 438,
-      "repos": 36,
+      "count": 437,
+      "repos": 35,
       "samples": [
         "mariadb-corporation__mariadb-connector-nodejs/test/import/tsc/use-callback.ts:7",
         "payloadcms__payload/packages/db-mongodb/src/models/buildSchema.ts:160",
@@ -1677,40 +1665,51 @@
       ]
     },
     "browser-security/no-unencrypted-transmission": {
-      "count": 400,
+      "count": 412,
       "repos": 38,
       "samples": [
         "payloadcms__payload/packages/create-payload-app/src/lib/manage-env-files.spec.ts:134",
-        "payloadcms__payload/test/__helpers/shared/db/mongodb-atlas/run-test-connection.ts:12",
+        "payloadcms__payload/test/__helpers/shared/db/mongodb/run-test-connection.ts:12",
         "telepat-io__otto/extension/test/relay-url.test.ts:18",
         "eclass__sequelize-paginate/test/index.js:14",
-        "Shopify__cli/packages/cli-kit/src/public/node/notifications-system.test.ts:494"
+        "Shopify__cli/packages/app/src/cli/services/webhook/trigger-flags.test.ts:14"
       ]
     },
     "browser-security/no-password-in-url": {
-      "count": 395,
+      "count": 399,
       "repos": 26,
       "samples": [
         "payloadcms__payload/packages/richtext-lexical/src/lexical/utils/url.spec.ts:60",
         "vitemcp__server/src/auth/OAuthProxy.open-redirect.test.ts:560",
         "withastro__astro/packages/internal-helpers/test/path.test.ts:120",
         "comisai__comis/packages/agent/src/memory/benchmark/results-ledger.test.ts:144",
-        "nodejs__node/deps/npm/test/lib/cli/entry.js:79"
+        "nodejs__node/benchmark/common.js:351"
       ]
     },
     "browser-security/no-missing-security-headers": {
-      "count": 392,
+      "count": 396,
       "repos": 51,
       "samples": [
         "payloadcms__payload/examples/remix/website/app/entry.server.tsx:48",
         "payloadcms__payload/packages/next/src/routes/graphql/playground.ts:29",
         "alexispurslane__vessel/src/routes/api/sessions/[id]/workspace/download/+server.ts:94",
-        "Shopify__cli/packages/store/src/cli/services/store/auth/callback.ts:126",
-        "saas-js__saas-ui/packages/saas-ui-cli/lib/impl-RFWKV4NP.js:1"
+        "Shopify__cli/packages/app/src/cli/utilities/app/http-reverse-proxy.ts:77",
+        "nightscout__cgm-remote-monitor/lib/authorization/index.js:36"
+      ]
+    },
+    "node-security/detect-child-process": {
+      "count": 392,
+      "repos": 23,
+      "samples": [
+        "mariadb-corporation__mariadb-connector-nodejs/test/integration/callback-exception.test.js:38",
+        "Shopify__cli/packages/app/src/cli/services/app-doctor-commands.test.ts:197",
+        "hapijs__hapi/test/common.js:12",
+        "withastro__astro/packages/astro/test/units/assets/image-size-malformed.test.ts:24",
+        "withastro__astro/packages/astro/test/units/dev/lockfile.test.ts:228"
       ]
     },
     "node-security/no-unsafe-buffer-alloc": {
-      "count": 386,
+      "count": 390,
       "repos": 20,
       "samples": [
         "mariadb-corporation__mariadb-connector-nodejs/lib/connection.js:2003",
@@ -1726,25 +1725,25 @@
       "samples": [
         "payloadcms__payload/packages/db-mongodb/src/connect.ts:59",
         "payloadcms__payload/packages/db-mongodb/src/deleteMany.ts:28",
-        "nightscout__cgm-remote-monitor/lib/authorization/storage.js:97",
-        "nightscout__cgm-remote-monitor/lib/server/websocket.js:236",
-        "novuhq__novu/libs/dal/src/repositories/base-repository-v2.ts:399"
+        "nightscout__cgm-remote-monitor/lib/authorization/storage.js:100",
+        "novuhq__novu/libs/dal/src/repositories/base-repository-v2.ts:399",
+        "novuhq__novu/libs/dal/src/repositories/base-repository.ts:185"
       ]
     },
-    "node-security/detect-child-process": {
-      "count": 381,
-      "repos": 22,
+    "react-features/no-unescaped-entities": {
+      "count": 382,
+      "repos": 31,
       "samples": [
-        "mariadb-corporation__mariadb-connector-nodejs/test/integration/callback-exception.test.js:38",
-        "hapijs__hapi/test/common.js:12",
-        "withastro__astro/packages/astro/test/units/dev/lockfile.test.ts:228",
-        "withastro__astro/packages/astro/test/units/assets/image-size-malformed.test.ts:24",
-        "comisai__comis/packages/skills/src/tools/builtin/terminal-driver/egress-relay-init.test.ts:188"
+        "payloadcms__payload/templates/ecommerce/src/app/(app)/shop/page.tsx:85",
+        "payloadcms__payload/examples/multi-tenant/src/app/(app)/page.tsx:15",
+        "saas-js__saas-ui/apps/compositions/src/examples/code-size-table.tsx:30",
+        "saas-js__saas-ui/apps/compositions/src/examples/code-variant-table.tsx:30",
+        "withastro__astro/packages/astro/test/fixtures/astro-slots-nested/src/components/react/Parent.jsx:13"
       ]
     },
     "browser-security/no-http-urls": {
-      "count": 379,
-      "repos": 38,
+      "count": 382,
+      "repos": 39,
       "samples": [
         "payloadcms__payload/packages/graphql/src/packages/graphql-type-json/index.ts:55",
         "payloadcms__payload/packages/payload/src/fields/validations.ts:361",
@@ -1754,8 +1753,8 @@
       ]
     },
     "react-a11y/prefer-tag-over-role": {
-      "count": 377,
-      "repos": 28,
+      "count": 380,
+      "repos": 29,
       "samples": [
         "payloadcms__payload/examples/form-builder/src/components/RichText/serialize.tsx:149",
         "payloadcms__payload/packages/ui/src/elements/Locked/index.tsx:37",
@@ -1764,30 +1763,30 @@
         "Shopify__hydrogen/cookbook/recipes/metaobjects/ingredients/templates/skeleton/app/sections/Sections.tsx:20"
       ]
     },
-    "react-features/no-unescaped-entities": {
-      "count": 376,
-      "repos": 31,
-      "samples": [
-        "payloadcms__payload/packages/ui/src/views/Version/RenderFieldsToDiff/fields/Group/index.tsx:39",
-        "payloadcms__payload/examples/multi-tenant/src/app/(app)/page.tsx:15",
-        "saas-js__saas-ui/apps/compositions/src/examples/code-size-table.tsx:30",
-        "saas-js__saas-ui/apps/compositions/src/examples/code-variant-table.tsx:30",
-        "Shopify__hydrogen/packages/hydrogen-react/src/ProductPrice.stories.tsx:13"
-      ]
-    },
     "vercel-ai-security/require-max-steps": {
-      "count": 357,
+      "count": 360,
       "repos": 4,
       "samples": [
-        "continuedev__continue/packages/openai-adapters/src/apis/AiSdk.ts:132",
         "novuhq__novu/playground/nextjs/src/app/api/agent-toolkit/chat/route.ts:10",
+        "continuedev__continue/packages/openai-adapters/src/apis/AiSdk.ts:132",
+        "vercel__ai/examples/ai-e2e-next/app/api/chat/google-image-search/route.ts:14",
         "vercel__ai/examples/ai-e2e-next/app/api/chat/azure-code-interpreter-annotation-download/route.ts:44",
-        "vercel__ai/examples/ai-functions/src/generate-text/amazon-bedrock/anthropic-multiple-tools.ts:7",
         "ghostfolio__ghostfolio/apps/api/src/services/fetch/fetch.service.ts:122"
       ]
     },
+    "typeorm-security/no-unsafe-query": {
+      "count": 359,
+      "repos": 3,
+      "samples": [
+        "langchain-ai__langchainjs/libs/langchain-classic/src/util/sql_utils.ts:204",
+        "langchain-ai__langchainjs/libs/langchain-classic/src/chains/tests/sql_db_chain.int.test.ts:129",
+        "twentyhq__twenty/packages/twenty-server/src/database/commands/upgrade-version-command/1-22/1-22-instance-command-fast-1775758621017-add-workspace-id-to-indirect-entities.ts:22",
+        "twentyhq__twenty/packages/twenty-server/src/database/commands/upgrade-version-command/2-18/2-18-workspace-command-1799200000000-normalize-legacy-index-names.command.ts:98",
+        "FastyBird__smart-panel/apps/backend/src/migrations/1000000000007-AddVirtualDevicesSupport.ts:15"
+      ]
+    },
     "react-features/react-in-jsx-scope": {
-      "count": 347,
+      "count": 348,
       "repos": 14,
       "samples": [
         "humanprotocol__human-protocol/packages/apps/human-app/frontend/src/modules/worker/jobs-discovery/jobs-discovery.page.tsx:13",
@@ -1798,7 +1797,7 @@
       ]
     },
     "react-features/no-danger": {
-      "count": 306,
+      "count": 314,
       "repos": 30,
       "samples": [
         "payloadcms__payload/examples/auth/src/app/(app)/_components/RichText/serialize.tsx:22",
@@ -1809,29 +1808,18 @@
       ]
     },
     "secure-coding/no-unsafe-deserialization": {
-      "count": 304,
+      "count": 307,
       "repos": 27,
       "samples": [
         "cncjs__cncjs/src/server/lib/evaluate-expression.js:235",
         "comisai__comis/test/live/self-driving/scripts/local-config.mjs:125",
-        "nodejs__node/benchmark/buffers/buffer-swap.js:74",
-        "ytsaurus__ytsaurus-ui/packages/ui/src/ui/common/hammer/filter.js:154",
-        "nodejs__node/deps/v8/test/inspector/debugger/async-for-await-of-promise-stack.js:150"
-      ]
-    },
-    "typeorm-security/no-unsafe-query": {
-      "count": 304,
-      "repos": 3,
-      "samples": [
-        "langchain-ai__langchainjs/libs/langchain-classic/src/util/sql_utils.ts:204",
-        "langchain-ai__langchainjs/libs/langchain-classic/src/chains/tests/sql_db_chain.int.test.ts:129",
-        "twentyhq__twenty/packages/twenty-server/src/database/commands/upgrade-version-command/1-22/1-22-instance-command-fast-1775758621017-add-workspace-id-to-indirect-entities.ts:22",
-        "twentyhq__twenty/packages/twenty-server/src/database/commands/upgrade-version-command/2-18/2-18-workspace-command-1799200000000-normalize-legacy-index-names.command.ts:98",
-        "FastyBird__smart-panel/apps/backend/src/modules/devices/services/devices.service.ts:263"
+        "nodejs__node/benchmark/es/eval.js:28",
+        "ytsaurus__ytsaurus-ui/packages/ui/scripts/yaml-cli.js:26",
+        "nodejs__node/benchmark/buffers/buffer-swap.js:74"
       ]
     },
     "node-security/no-toctou-vulnerability": {
-      "count": 300,
+      "count": 303,
       "repos": 44,
       "samples": [
         "payloadcms__payload/examples/localization/src/endpoints/seed/index.ts:53",
@@ -1842,58 +1830,58 @@
       ]
     },
     "react-features/state-in-constructor": {
-      "count": 300,
-      "repos": 16,
+      "count": 303,
+      "repos": 17,
       "samples": [
         "cncjs__cncjs/src/app/components/Blink/Blink.jsx:16",
         "cncjs__cncjs/src/app/components/DatePicker/DateTimeRangePickerDropdown/index.jsx:77",
-        "ytsaurus__ytsaurus-ui/packages/ui/src/ui/components/ColumnSelectorModal/ColumnSelectorModal.tsx:43",
         "ytsaurus__ytsaurus-ui/packages/components/src/components/SchemaDataType/DataType/DataType.tsx:43",
+        "ytsaurus__ytsaurus-ui/packages/components/src/internal/DefaultErrorBoundary/ErrorBoundary.tsx:22",
         "keystonejs__keystone/packages/core/src/admin-ui/components/Errors.tsx:23"
       ]
     },
     "react-a11y/no-noninteractive-element-to-interactive-role": {
-      "count": 281,
-      "repos": 22,
+      "count": 284,
+      "repos": 23,
       "samples": [
         "payloadcms__payload/examples/form-builder/src/components/RichText/serialize.tsx:149",
         "payloadcms__payload/packages/ui/src/elements/Hierarchy/Tree/index.tsx:313",
         "continuedev__continue/gui/src/components/mainInput/Lump/LumpToolbar/BlockSettingsTopToolbar.tsx:76",
         "keystonejs__keystone/packages/core/src/admin-ui/pages/ListPage/Tag.tsx:45",
-        "novuhq__novu/apps/dashboard/src/components/maily/views/for-view.tsx:19"
+        "novuhq__novu/apps/dashboard/src/components/conditions-editor/help-icon.tsx:22"
       ]
     },
     "secure-coding/no-format-string-injection": {
-      "count": 279,
+      "count": 284,
       "repos": 44,
       "samples": [
         "mariadb-corporation__mariadb-connector-nodejs/benchmarks/profile-queries.js:13",
         "payloadcms__payload/packages/email-nodemailer/src/index.ts:124",
         "telepat-io__otto/packages/cli/src/cli/command-flow.ts:100",
-        "payloadcms__payload/test/evals/runCodegenDataset.ts:657",
+        "payloadcms__payload/test/evals/runCodegenDataset.ts:662",
         "alexispurslane__vessel/src/routes/api/sessions/[id]/workspace/+server.ts:73"
       ]
     },
     "secure-coding/require-backend-authorization": {
-      "count": 239,
+      "count": 240,
       "repos": 28,
       "samples": [
         "payloadcms__payload/packages/plugin-import-export/src/components/FormatField/index.tsx:35",
         "telepat-io__otto/extension/src/commands/linkedin.com/get-posts.ts:363",
         "payloadcms__payload/packages/next/src/routes/rest/og/index.tsx:22",
-        "nightscout__cgm-remote-monitor/lib/client/hashauth.js:35",
-        "nightscout__cgm-remote-monitor/lib/client/index.js:1167"
+        "nightscout__cgm-remote-monitor/lib/admin_plugins/daterangedelete.js:325",
+        "nightscout__cgm-remote-monitor/lib/client/index.js:1184"
       ]
     },
     "express-security/no-missing-security-headers": {
       "count": 235,
       "repos": 32,
       "samples": [
-        "nightscout__cgm-remote-monitor/lib/server/pebble.js:161",
-        "nightscout__cgm-remote-monitor/lib/api/activity/index.js:54",
-        "withastro__astro/packages/astro/src/core/preview/vite-plugin-astro-preview.ts:19",
+        "nightscout__cgm-remote-monitor/lib/api/activity/index.js:50",
+        "withastro__astro/packages/astro/src/vite-plugin-dev-status/index.ts:9",
         "Shopify__hydrogen/packages/mini-oxygen/src/node/server.ts:91",
-        "cncjs__cncjs/src/server/app.js:52"
+        "cncjs__cncjs/src/server/app.js:52",
+        "withastro__astro/packages/astro/src/core/preview/vite-plugin-astro-preview.ts:19"
       ]
     },
     "react-features/no-access-state-in-setstate": {
@@ -1902,9 +1890,20 @@
       "samples": [
         "cncjs__cncjs/src/app/widgets/Autolevel/StartProbeModal.jsx:22",
         "cncjs__cncjs/src/app/containers/Header/Header.jsx:101",
-        "ytsaurus__ytsaurus-ui/packages/ui/src/ui/pages/accounts/tabs/general/Editor/content/MediumContent.tsx:43",
         "ytsaurus__ytsaurus-ui/packages/components/src/components/SchemaDataType/DataType/DataType.tsx:48",
-        "continuedev__continue/extensions/cli/src/services/StorageSyncService.ts:208"
+        "ytsaurus__ytsaurus-ui/packages/ui/src/ui/pages/accounts/tabs/general/Editor/content/MediumContent.tsx:43",
+        "novuhq__novu/enterprise/workers/thalamus-observer/src/session-observer.ts:108"
+      ]
+    },
+    "node-security/no-shell-injection": {
+      "count": 225,
+      "repos": 33,
+      "samples": [
+        "payloadcms__payload/scripts/audit-dependencies.mjs:127",
+        "alexispurslane__vessel/lint-rules/similarity-ts-rule.js:137",
+        "Shopify__cli/packages/plugin-cloudflare/src/install-cloudflared.ts:135",
+        "Shopify__hydrogen/.changeset/enforce-calver-ci.js:103",
+        "humanprotocol__human-protocol/scripts/tag-published-packages.mjs:15"
       ]
     },
     "nestjs-security/require-guards": {
@@ -1913,96 +1912,85 @@
       "samples": [
         "amplication__amplication/packages/amplication-build-manager/src/build-logger/build-logger.controller.ts:9",
         "amplication__amplication/packages/amplication-server/src/core/aws-marketplace/aws-marketplace.controller.ts:14",
-        "redis__RedisInsight/redisinsight/api/src/modules/ai/chat/ai-chat.controller.ts:30",
-        "redis__RedisInsight/redisinsight/api/src/modules/analytics/analytics.controller.ts:21"
-      ]
-    },
-    "node-security/no-shell-injection": {
-      "count": 221,
-      "repos": 32,
-      "samples": [
-        "payloadcms__payload/tools/releaser/src/release-ci.ts:118",
-        "payloadcms__payload/scripts/audit-dependencies.mjs:127",
-        "alexispurslane__vessel/lint-rules/similarity-ts-rule.js:137",
-        "Shopify__cli/packages/plugin-cloudflare/src/install-cloudflared.ts:135",
-        "Shopify__hydrogen/.changeset/enforce-calver-ci.js:103"
+        "redis__RedisInsight/redisinsight/api/src/modules/analytics/analytics.controller.ts:21",
+        "redis__RedisInsight/redisinsight/api/src/modules/ai/chat/ai-chat.controller.ts:30"
       ]
     },
     "secure-coding/no-log-injection": {
-      "count": 220,
+      "count": 221,
       "repos": 23,
       "samples": [
         "payloadcms__payload/test/plugin-stripe/webhooks/subscriptionCreatedOrUpdated.ts:14",
         "payloadcms__payload/test/plugin-stripe/webhooks/subscriptionDeleted.ts:14",
         "alexispurslane__vessel/src/routes/api/sessions/[id]/messages/+server.ts:53",
         "Shopify__hydrogen/packages/mini-oxygen/src/worker/index.ts:272",
-        "withastro__astro/packages/astro/src/vite-plugin-astro-server/sec-fetch.ts:76"
+        "withastro__astro/packages/integrations/node/src/middleware.ts:33"
       ]
     },
     "import-next/no-cross-domain-imports": {
-      "count": 208,
+      "count": 209,
       "repos": 9,
       "samples": [
         "Amsterdam__bmi-dms-upload/src/features/bulk/bulk/Bulk.tsx:4",
         "humanprotocol__human-protocol/packages/apps/human-app/server/src/modules/cron-job/spec/cron-job.service.spec.ts:8",
         "strapi__strapi/packages/core/admin/admin/src/features/Auth.tsx:8",
-        "directus__directus/api/src/permissions/modules/validate-access/lib/validate-item-access.test.ts:5",
-        "lobehub__lobe-chat/src/features/AgentTasks/AgentTaskDetail/TaskProperties.tsx:12"
+        "lobehub__lobe-chat/src/features/AgentTasks/AgentTaskDetail/TaskDetailAssignee.tsx:14",
+        "directus__directus/api/src/permissions/modules/validate-access/lib/validate-item-access.test.ts:5"
       ]
     },
     "mongodb-security/require-projection": {
-      "count": 206,
+      "count": 205,
       "repos": 6,
       "samples": [
-        "nightscout__cgm-remote-monitor/lib/authorization/storage.js:84",
-        "nightscout__cgm-remote-monitor/lib/server/websocket.js:237",
+        "nightscout__cgm-remote-monitor/lib/authorization/storage.js:87",
         "novuhq__novu/libs/dal/src/repositories/base-repository-v2.ts:755",
         "novuhq__novu/apps/api/migrations/normalize-message-template-cta-action/normalize-message-cta-action-migration.ts:7",
-        "danny-avila__LibreChat/config/ban-user.js:49"
+        "danny-avila__LibreChat/config/add-balance.js:65",
+        "danny-avila__LibreChat/api/server/services/Schedules/index.js:29"
+      ]
+    },
+    "secure-coding/no-xpath-injection": {
+      "count": 197,
+      "repos": 19,
+      "samples": [
+        "payloadcms__payload/packages/typescript-plugin/src/index.ts:12",
+        "Shopify__hydrogen/packages/cli/src/lib/onboarding/common.ts:637",
+        "nodejs__node/deps/v8/test/debugger/debug/regress/regress-119609.js:37",
+        "ytsaurus__ytsaurus-ui/packages/ui/src/shared/prometheus/utils.ts:11",
+        "nodejs__node/deps/v8/test/debugger/debug/side-effect/debug-evaluate-no-side-effect-async.js:46"
       ]
     },
     "react-a11y/anchor-has-content": {
-      "count": 193,
+      "count": 194,
       "repos": 14,
       "samples": [
         "payloadcms__payload/templates/ecommerce/src/components/ui/pagination.tsx:40",
         "saas-js__saas-ui/apps/website/components/saas-js/stack.section.tsx:13",
         "saas-js__saas-ui/apps/website/app/ui/(landing)/figma/page.tsx:445",
         "keystonejs__keystone/docs/components/SkipLinks.tsx:9",
-        "novuhq__novu/packages/novu/src/commands/connect/templates/web-chat/ts/markdown.tsx:7"
+        "novuhq__novu/apps/dashboard/src/components/agents/web-chat-panel/assistant-ui/elements/markdown-text.tsx:104"
       ]
     },
     "react-features/display-name": {
-      "count": 189,
+      "count": 194,
       "repos": 20,
       "samples": [
         "payloadcms__payload/examples/multi-tenant/src/app/(app)/page.tsx:1",
         "saas-js__saas-ui/apps/compositions/src/ui/page/page.tsx:144",
         "saas-js__saas-ui/apps/website/registry/default/ui/page/page.tsx:144",
         "cncjs__cncjs/src/app/lib/portal.jsx:4",
-        "withastro__astro/examples/container-with-vitest/src/components/Counter.jsx:3"
+        "withastro__astro/packages/astro/e2e/fixtures/hydration-race/src/components/One.jsx:3"
       ]
     },
     "lambda-security/no-error-swallowing": {
-      "count": 189,
-      "repos": 18,
-      "samples": [
-        "payloadcms__payload/packages/storage-s3/src/getFile.ts:59",
-        "nodejs__node/lib/events.js:373",
-        "nodejs__node/deps/undici/src/lib/handler/retry-handler.js:432",
-        "novuhq__novu/libs/application-generic/src/services/scheduler/event-bridge-scheduler.service.ts:229",
-        "continuedev__continue/core/llm/llms/SageMaker.ts:75"
-      ]
-    },
-    "secure-coding/no-xpath-injection": {
       "count": 188,
       "repos": 18,
       "samples": [
-        "payloadcms__payload/packages/typescript-plugin/src/index.ts:12",
-        "Shopify__hydrogen/packages/cli/src/lib/onboarding/common.ts:637",
-        "nodejs__node/deps/v8/test/debugger/debug/side-effect/debug-evaluate-no-side-effect-async.js:46",
-        "ytsaurus__ytsaurus-ui/packages/ui/src/ui/pages/users/UserActions/UserActions.tsx:55",
-        "nodejs__node/deps/v8/test/debugger/debug/regress/regress-119609.js:37"
+        "payloadcms__payload/packages/storage-s3/src/getFile.ts:59",
+        "nodejs__node/lib/internal/event_target.js:879",
+        "nodejs__node/deps/undici/src/lib/handler/retry-handler.js:432",
+        "continuedev__continue/core/llm/llms/SageMaker.ts:75",
+        "novuhq__novu/libs/application-generic/src/services/scheduler/event-bridge-scheduler.service.ts:229"
       ]
     },
     "conventions/no-json-schema-tags": {
@@ -2013,7 +2001,18 @@
         "payloadcms__payload/examples/custom-components/src/payload-types.ts:128",
         "humanprotocol__human-protocol/packages/sdk/typescript/human-protocol-sdk/src/types.ts:6",
         "nodejs__node/deps/undici/src/lib/web/websocket/constants.js:24",
-        "nodejs__node/deps/v8/tools/profile.mjs:346"
+        "danny-avila__LibreChat/api/server/routes/types/assistants.js:4"
+      ]
+    },
+    "sqlite-security/no-unsafe-query": {
+      "count": 182,
+      "repos": 10,
+      "samples": [
+        "comisai__comis/packages/memory/src/delivery-authority.test.ts:127",
+        "nodejs__node/deps/undici/src/lib/cache/sqlite-cache-store.js:146",
+        "comisai__comis/packages/cli/src/doctor/repairs/repair-lcd.ts:310",
+        "nodejs__node/test/parallel/test-sqlite-data-types.js:22",
+        "continuedev__continue/core/indexing/LanceDbIndex.ts:479"
       ]
     },
     "react-features/no-is-mounted": {
@@ -2021,43 +2020,32 @@
       "repos": 15,
       "samples": [
         "saas-js__saas-ui/apps/website/lib/use-update-effect.ts:10",
+        "continuedev__continue/extensions/cli/src/ui/components/SessionSelectorWithLoading.tsx:21",
         "novuhq__novu/apps/dashboard/src/hooks/use-template-store.ts:215",
         "shadcn-ui__ui/apps/v4/app/(app)/(create)/components/v0-button.tsx:16",
-        "continuedev__continue/extensions/cli/src/ui/components/SessionSelectorWithLoading.tsx:21",
         "TryGhost__Ghost/apps/admin/src/settings/advanced/labs/yaml-file-editor-modal.tsx:59"
       ]
     },
     "browser-security/no-tracking-without-consent": {
-      "count": 179,
+      "count": 177,
       "repos": 14,
       "samples": [
         "Shopify__hydrogen/cookbook/recipes/gtm/ingredients/templates/skeleton/app/components/GoogleTagManager.tsx:17",
-        "novuhq__novu/apps/dashboard/src/utils/segment.ts:46",
+        "novuhq__novu/packages/novu/src/commands/connect/analytics/events.ts:68",
         "novuhq__novu/apps/api/src/app/agents/shared/analytics/agent-analytics.ts:14",
         "TryGhost__Ghost/apps/ember-admin/app/services/ajax.js:333",
-        "learningequality__kolibri/python_packages/kolibri-sentry-plugin/kolibri_sentry_plugin/assets/src/module.js:48"
+        "TryGhost__Ghost/koenig/koenig-lexical/src/utils/analytics.ts:9"
       ]
     },
     "browser-security/require-postmessage-origin-check": {
-      "count": 174,
-      "repos": 23,
+      "count": 176,
+      "repos": 25,
       "samples": [
         "Shopify__hydrogen/packages/mini-oxygen/src/worker/logger.ts:19",
         "cncjs__cncjs/src/app/index.jsx:137",
         "immich-app__immich/web/src/service-worker/messaging.ts:10",
         "nodejs__node/test/fixtures/wpt/FileAPI/url/resources/create-helper.js:1",
         "immich-app__immich/web/src/lib/workers/hash-file.ts:45"
-      ]
-    },
-    "sqlite-security/no-unsafe-query": {
-      "count": 174,
-      "repos": 9,
-      "samples": [
-        "comisai__comis/packages/memory/src/delivery-authority.test.ts:127",
-        "nodejs__node/deps/undici/src/lib/cache/sqlite-cache-store.js:146",
-        "comisai__comis/packages/cli/src/doctor/repairs/repair-lcd.ts:310",
-        "nodejs__node/test/parallel/test-sqlite-data-types.js:22",
-        "continuedev__continue/core/indexing/LanceDbIndex.ts:479"
       ]
     },
     "browser-security/no-permissive-cors": {
@@ -2072,36 +2060,58 @@
       ]
     },
     "mongodb-security/no-unbounded-find": {
-      "count": 160,
+      "count": 157,
       "repos": 7,
       "samples": [
         "payloadcms__payload/packages/db-mongodb/src/predefinedMigrations/migrateRelationshipsV2_V3.ts:31",
         "payloadcms__payload/packages/db-mongodb/src/predefinedMigrations/migrateLocalizeStatus.ts:177",
-        "nightscout__cgm-remote-monitor/lib/authorization/storage.js:84",
-        "nightscout__cgm-remote-monitor/lib/server/websocket.js:394",
-        "novuhq__novu/libs/dal/src/repositories/base-repository-v2.ts:373"
+        "nightscout__cgm-remote-monitor/lib/authorization/storage.js:87",
+        "novuhq__novu/libs/dal/src/repositories/base-repository-v2.ts:373",
+        "novuhq__novu/apps/api/migrations/normalize-message-template-cta-action/normalize-message-cta-action-migration.ts:7"
+      ]
+    },
+    "node-security/no-timing-unsafe-compare": {
+      "count": 155,
+      "repos": 30,
+      "samples": [
+        "payloadcms__payload/examples/draft-preview/src/app/(app)/preview/route.ts:23",
+        "telepat-io__otto/packages/relay/src/controller-client-utils.ts:130",
+        "payloadcms__payload/templates/with-vercel-website/src/app/(frontend)/next/preview/route.ts:23",
+        "telepat-io__otto/packages/cli/src/mcp/http-middleware.ts:16",
+        "humanprotocol__human-protocol/packages/subgraph/human-protocol/src/mapping/utils/transaction.ts:97"
       ]
     },
     "import-next/no-named-default": {
-      "count": 153,
+      "count": 154,
       "repos": 20,
       "samples": [
-        "payloadcms__payload/templates/with-vercel-website/src/app/(payload)/admin/importMap.js:24",
+        "payloadcms__payload/templates/website/src/app/(payload)/admin/importMap.js:26",
         "payloadcms__payload/examples/localization/src/app/(payload)/admin/importMap.js:20",
         "withastro__astro/packages/astro/src/core/index.ts:4",
-        "nodejs__node/deps/v8/test/mjsunit/modules-default-name2.mjs:5",
-        "nodejs__node/deps/v8/test/mjsunit/modules-default-name1.mjs:5"
+        "nodejs__node/deps/v8/test/mjsunit/modules-default-name1.mjs:5",
+        "ytsaurus__ytsaurus-ui/packages/ui/src/ui/pages/query-tracker/Plan/NodeDetailsInfo/NodeDetailsInfo.tsx:4"
       ]
     },
     "mongodb-security/require-lean-queries": {
-      "count": 150,
+      "count": 151,
       "repos": 8,
       "samples": [
         "payloadcms__payload/packages/db-mongodb/src/predefinedMigrations/migrateRelationshipsV2_V3.ts:31",
         "payloadcms__payload/packages/db-mongodb/src/findGlobal.ts:40",
-        "nightscout__cgm-remote-monitor/lib/authorization/storage.js:84",
-        "nightscout__cgm-remote-monitor/lib/server/websocket.js:237",
-        "novuhq__novu/libs/dal/src/repositories/base-repository-v2.ts:755"
+        "nightscout__cgm-remote-monitor/lib/authorization/storage.js:87",
+        "novuhq__novu/libs/dal/src/repositories/base-repository-v2.ts:755",
+        "novuhq__novu/libs/dal/src/repositories/base-repository.ts:160"
+      ]
+    },
+    "secure-coding/no-improper-sanitization": {
+      "count": 151,
+      "repos": 28,
+      "samples": [
+        "mariadb-corporation__mariadb-connector-nodejs/tools/generate-mariadb.js:64",
+        "mariadb-corporation__mariadb-connector-nodejs/test/integration/local-infile.test.js:373",
+        "payloadcms__payload/packages/payload/src/utilities/sanitizeUserDataForEmail.ts:50",
+        "withastro__astro/packages/astro/src/content/types-generator.ts:484",
+        "withastro__astro/packages/astro/src/runtime/client/dev-toolbar/ui-library/radio-checkbox.ts:30"
       ]
     },
     "react-features/jsx-no-bind": {
@@ -2112,39 +2122,17 @@
         "ytsaurus__ytsaurus-ui/packages/ui/src/ui/components/ElementsTable/ElementsTable.js:526",
         "okta__okta-auth-js/samples/generated/react-embedded-auth-with-sdk/src/components/Profile/EmailSection.jsx:90",
         "okta__okta-auth-js/samples/generated/react-embedded-auth-with-sdk/src/components/Profile/PhoneSection.jsx:82",
-        "outline__outline/app/editor/index.tsx:1112"
-      ]
-    },
-    "secure-coding/no-improper-sanitization": {
-      "count": 147,
-      "repos": 27,
-      "samples": [
-        "mariadb-corporation__mariadb-connector-nodejs/tools/generate-mariadb.js:64",
-        "mariadb-corporation__mariadb-connector-nodejs/test/integration/local-infile.test.js:373",
-        "payloadcms__payload/packages/payload/src/utilities/sanitizeUserDataForEmail.ts:50",
-        "withastro__astro/packages/astro/src/runtime/client/dev-toolbar/ui-library/radio-checkbox.ts:30",
-        "withastro__astro/packages/astro/src/content/types-generator.ts:484"
-      ]
-    },
-    "node-security/no-timing-unsafe-compare": {
-      "count": 144,
-      "repos": 30,
-      "samples": [
-        "payloadcms__payload/examples/draft-preview/src/app/(app)/preview/route.ts:23",
-        "telepat-io__otto/packages/relay/src/controller-client-utils.ts:130",
-        "payloadcms__payload/templates/ecommerce/src/app/(app)/next/preview/route.ts:23",
-        "telepat-io__otto/packages/cli/src/mcp/http-middleware.ts:16",
-        "withastro__astro/packages/integrations/vercel/src/serverless/entrypoint.ts:21"
+        "outline__outline/app/editor/index.tsx:1115"
       ]
     },
     "secure-coding/no-directive-injection": {
-      "count": 138,
+      "count": 141,
       "repos": 28,
       "samples": [
+        "Shopify__cli/packages/cli-kit/src/public/node/json-schema.ts:42",
+        "vitemcp__server/src/jsonSchemaAdapter.ts:142",
         "Shopify__cli/packages/app/src/cli/services/function/build.ts:122",
         "hapijs__hapi/lib/validation.js:51",
-        "vitemcp__server/src/jsonSchemaAdapter.ts:142",
-        "Shopify__cli/packages/cli-kit/src/public/node/json-schema.ts:42",
         "Shopify__hydrogen/cookbook/recipes/markets/ingredients/templates/skeleton/app/routes/($locale).pages.$handle.tsx:71"
       ]
     },
@@ -2167,18 +2155,7 @@
         "saas-js__saas-ui/examples/tanstack/src/routes/deferred.tsx:43",
         "ytsaurus__ytsaurus-ui/packages/ui/src/ui/components/EditTextWithPreview/EditTextWithPreview.tsx:127",
         "keystonejs__keystone/packages/document-renderer/src/index.tsx:79",
-        "shadcn-ui__ui/apps/v4/registry/new-york-v4/examples/form-tanstack-checkbox.tsx:97"
-      ]
-    },
-    "secure-coding/require-secure-defaults": {
-      "count": 123,
-      "repos": 25,
-      "samples": [
-        "mariadb-corporation__mariadb-connector-nodejs/test/integration/ssl.test.js:313",
-        "payloadcms__payload/test/auth-session/testOAuthProvider.ts:59",
-        "paypal__paypal-checkout-components/test/percy/lib/browser.js:9",
-        "Shopify__hydrogen/e2e/fixtures/cart-utils.ts:118",
-        "Shopify__hydrogen/e2e/fixtures/storefront.ts:1078"
+        "shadcn-ui__ui/apps/v4/registry/new-york-v4/examples/form-tanstack-array.tsx:101"
       ]
     },
     "react-a11y/no-noninteractive-element-interactions": {
@@ -2186,25 +2163,47 @@
       "repos": 21,
       "samples": [
         "payloadcms__payload/packages/ui/src/views/HierarchyList/HierarchyTable/SlotTable.tsx:213",
-        "ytsaurus__ytsaurus-ui/packages/ui/src/ui/components/Suggest/Suggest.tsx:349",
         "ytsaurus__ytsaurus-ui/packages/ui/src/ui/components/ElementsTable/ElementsTableRow.js:120",
+        "ytsaurus__ytsaurus-ui/packages/ui/src/ui/components/Suggest/Suggest.tsx:349",
         "continuedev__continue/gui/src/components/History/HistoryTableRow.tsx:81",
-        "continuedev__continue/gui/src/components/console/ListItem.tsx:35"
+        "novuhq__novu/apps/dashboard/src/components/variable/edit-variable-popover.tsx:205"
+      ]
+    },
+    "secure-coding/require-secure-defaults": {
+      "count": 121,
+      "repos": 25,
+      "samples": [
+        "mariadb-corporation__mariadb-connector-nodejs/test/integration/ssl.test.js:313",
+        "payloadcms__payload/test/auth-session/testOAuthProvider.ts:59",
+        "paypal__paypal-checkout-components/test/percy/lib/browser.js:9",
+        "Shopify__hydrogen/e2e/fixtures/cart-utils.ts:118",
+        "withastro__astro/packages/astro/test/units/sessions/astro-session.test.ts:531"
+      ]
+    },
+    "jwt/no-hardcoded-secret": {
+      "count": 121,
+      "repos": 9,
+      "samples": [
+        "danny-avila__LibreChat/api/server/controllers/AuthController.spec.js:509",
+        "danny-avila__LibreChat/api/server/middleware/__tests__/requireJwtAuth.spec.js:121",
+        "TryGhost__Ghost/ghost/core/test/unit/server/services/members/members-api/services/token-service.test.js:112",
+        "strapi__strapi/packages/plugins/users-permissions/server/src/services/__tests__/jwt.test.js:212",
+        "directus__directus/api/src/utils/is-directus-jwt.test.ts:11"
       ]
     },
     "node-security/no-zip-slip": {
-      "count": 121,
-      "repos": 20,
+      "count": 120,
+      "repos": 19,
       "samples": [
         "telepat-io__otto/packages/cli/src/extension-manager.ts:122",
         "nodejs__node/test/parallel/test-vfs-zip-provider-handle.js:415",
         "nodejs__node/test/parallel/test-vfs-zip-provider-dispose.js:27",
         "novuhq__novu/apps/api/src/app/agents/management/skills/github-skill-bundle.ts:428",
-        "continuedev__continue/binary/utils/ripgrep.js:63"
+        "shadcn-ui__ui/apps/v4/scripts/build-registry.mts:455"
       ]
     },
     "jwt/require-max-age": {
-      "count": 119,
+      "count": 116,
       "repos": 26,
       "samples": [
         "payloadcms__payload/examples/localization/src/app/(frontend)/next/preview/route.ts:54",
@@ -2214,30 +2213,19 @@
         "nightscout__cgm-remote-monitor/lib/server/enclave.js:65"
       ]
     },
-    "jwt/no-hardcoded-secret": {
-      "count": 118,
-      "repos": 10,
-      "samples": [
-        "danny-avila__LibreChat/api/server/controllers/AuthController.spec.js:503",
-        "danny-avila__LibreChat/api/server/middleware/__tests__/requireJwtAuth.spec.js:121",
-        "TryGhost__Ghost/ghost/core/test/unit/server/services/members/members-api/services/token-service.test.js:112",
-        "strapi__strapi/packages/plugins/users-permissions/server/src/services/__tests__/jwt.test.js:212",
-        "directus__directus/api/src/middleware/authenticate.test.ts:115"
-      ]
-    },
     "modernization/no-instanceof-array": {
-      "count": 114,
-      "repos": 24,
+      "count": 113,
+      "repos": 23,
       "samples": [
         "payloadcms__payload/packages/payload/src/uploads/fetchAPI-multipart/utilities.ts:77",
+        "nightscout__cgm-remote-monitor/lib/plugins/mmconnect.js:103",
         "hapijs__hapi/test/request.js:910",
-        "nightscout__cgm-remote-monitor/lib/plugins/mmconnect.js:104",
         "Shopify__hydrogen/packages/hydrogen/src/product/VariantSelector.ts:100",
-        "humanprotocol__human-protocol/packages/apps/reputation-oracle/server/src/database/typeorm/typeorm-logger.service.ts:23"
+        "humanprotocol__human-protocol/packages/apps/fortune/exchange-oracle/server/src/database/typeorm/typeorm-logger.service.ts:22"
       ]
     },
     "operability/require-code-minification": {
-      "count": 111,
+      "count": 112,
       "repos": 22,
       "samples": [
         "payloadcms__payload/packages/db-mongodb/src/init.ts:45",
@@ -2245,17 +2233,6 @@
         "paypal__paypal-checkout-components/webpack.config.dev.js:23",
         "Shopify__cli/packages/app/src/cli/services/extensions/bundle.test.ts:201",
         "Shopify__hydrogen/packages/cli/tsup.config.ts:18"
-      ]
-    },
-    "jwt/require-audience-validation": {
-      "count": 110,
-      "repos": 23,
-      "samples": [
-        "payloadcms__payload/examples/localization/src/app/(frontend)/next/preview/route.ts:54",
-        "payloadcms__payload/packages/payload/src/auth/strategies/jwt.ts:29",
-        "alexispurslane__vessel/src/lib/server/auth/index.ts:163",
-        "nightscout__cgm-remote-monitor/lib/server/enclave.js:65",
-        "vitemcp__server/src/auth/utils/jwks.ts:139"
       ]
     },
     "node-security/no-math-random-crypto": {
@@ -2269,9 +2246,9 @@
         "alexispurslane__vessel/src/lib/utils/code-block.ts:98"
       ]
     },
-    "jwt/require-issuer-validation": {
-      "count": 104,
-      "repos": 21,
+    "jwt/require-audience-validation": {
+      "count": 106,
+      "repos": 22,
       "samples": [
         "payloadcms__payload/examples/localization/src/app/(frontend)/next/preview/route.ts:54",
         "payloadcms__payload/packages/payload/src/auth/strategies/jwt.ts:29",
@@ -2291,6 +2268,17 @@
         "TryGhost__Ghost/apps/portal/src/app.jsx:113"
       ]
     },
+    "jwt/require-issuer-validation": {
+      "count": 100,
+      "repos": 20,
+      "samples": [
+        "payloadcms__payload/examples/localization/src/app/(frontend)/next/preview/route.ts:54",
+        "payloadcms__payload/packages/payload/src/auth/strategies/jwt.ts:29",
+        "alexispurslane__vessel/src/lib/server/auth/index.ts:163",
+        "nightscout__cgm-remote-monitor/lib/server/enclave.js:65",
+        "vitemcp__server/src/auth/utils/jwks.ts:139"
+      ]
+    },
     "react-a11y/alt-text": {
       "count": 100,
       "repos": 22,
@@ -2308,8 +2296,8 @@
       "samples": [
         "saas-js__saas-ui/apps/website/registry/default/ui/data-table/data-table.tsx:418",
         "saas-js__saas-ui/apps/compositions/src/ui/data-table/data-table.tsx:418",
-        "ytsaurus__ytsaurus-ui/packages/ui/src/ui/containers/PathEditor/PathEditor.tsx:413",
         "ytsaurus__ytsaurus-ui/packages/ui/src/ui/pages/navigation/Navigation/NavigationTopRowContent.tsx:306",
+        "ytsaurus__ytsaurus-ui/packages/ui/src/ui/containers/PathEditor/PathEditor.tsx:413",
         "novuhq__novu/apps/dashboard/src/components/onboarding/connect-agent/connect-agent-form.tsx:393"
       ]
     },
@@ -2321,7 +2309,18 @@
         "nodejs__node/benchmark/_test-double-benchmarker.js:10",
         "continuedev__continue/core/context/mcp/MCPConnection.ts:505",
         "novuhq__novu/packages/human/src/api/client.ts:34",
-        "novuhq__novu/playground/nextjs/src/pages/api/send-email-thread.ts:76"
+        "novuhq__novu/packages/novu/src/commands/shared/novu-http.ts:59"
+      ]
+    },
+    "import-next/no-import-module-exports": {
+      "count": 95,
+      "repos": 16,
+      "samples": [
+        "humanprotocol__human-protocol/packages/apps/human-app/server/jest.config.ts:7",
+        "humanprotocol__human-protocol/packages/apps/fortune/exchange-oracle/server/jest.config.ts:5",
+        "novuhq__novu/apps/inbound-mail/src/server/mailUtilities.ts:57",
+        "TryGhost__Ghost/ghost/core/core/server/api/endpoints/automation-action-links.ts:43",
+        "storybookjs__storybook/test-storybooks/server-kitchen-sink/.storybook/main.ts:18"
       ]
     },
     "react-features/checked-requires-onchange-or-readonly": {
@@ -2330,31 +2329,9 @@
       "samples": [
         "payloadcms__payload/examples/form-builder/src/components/Blocks/Form/Checkbox/index.tsx:40",
         "Shopify__hydrogen/cookbook/recipes/subscriptions/ingredients/templates/skeleton/app/routes/account.subscriptions.tsx:135",
-        "withastro__astro/packages/astro/e2e/fixtures/actions-react-19/src/components/Like.tsx:9",
+        "withastro__astro/packages/astro/e2e/fixtures/actions-blog/src/components/PostComment.tsx:41",
         "Shopify__hydrogen/cookbook/recipes/markets/ingredients/templates/skeleton/app/components/CountrySelector.tsx:70",
-        "withastro__astro/packages/astro/e2e/fixtures/actions-blog/src/components/PostComment.tsx:41"
-      ]
-    },
-    "import-next/no-import-module-exports": {
-      "count": 93,
-      "repos": 15,
-      "samples": [
-        "humanprotocol__human-protocol/packages/apps/fortune/exchange-oracle/server/jest.config.ts:5",
-        "humanprotocol__human-protocol/packages/apps/human-app/server/jest.config.ts:7",
-        "novuhq__novu/apps/inbound-mail/src/server/mailUtilities.ts:57",
-        "TryGhost__Ghost/ghost/core/core/server/api/endpoints/gift-links.ts:87",
-        "storybookjs__storybook/test-storybooks/server-kitchen-sink/.storybook/main.ts:18"
-      ]
-    },
-    "jwt/no-weak-secret": {
-      "count": 93,
-      "repos": 9,
-      "samples": [
-        "danny-avila__LibreChat/api/server/controllers/AuthController.spec.js:1551",
-        "strapi__strapi/tests/api/core/admin/admin-legacy-migration.test.api.ts:129",
-        "directus__directus/api/src/middleware/authenticate.test.ts:115",
-        "directus__directus/api/src/utils/is-directus-jwt.test.ts:11",
-        "outline__outline/server/utils/oauth.test.ts:51"
+        "withastro__astro/packages/astro/e2e/fixtures/actions-react-19/src/components/Like.tsx:9"
       ]
     },
     "import-next/no-useless-path-segments": {
@@ -2363,42 +2340,51 @@
       "samples": [
         "payloadcms__payload/packages/payload/src/auth/cookies.ts:1",
         "payloadcms__payload/packages/payload/src/collections/operations/local/duplicate.ts:3",
-        "nightscout__cgm-remote-monitor/lib/authorization/endpoints.js:6",
+        "nightscout__cgm-remote-monitor/lib/authorization/index.js:5",
         "saas-js__saas-ui/apps/website/next-env.d.ts:3",
-        "nightscout__cgm-remote-monitor/lib/authorization/index.js:7"
+        "nightscout__cgm-remote-monitor/lib/authorization/endpoints.js:6"
       ]
     },
     "knex-security/no-unsafe-query": {
-      "count": 91,
+      "count": 90,
       "repos": 3,
       "samples": [
-        "TryGhost__Ghost/ghost/core/core/server/services/email-analytics/lib/queries.ts:419",
         "TryGhost__Ghost/ghost/core/core/server/data/seeders/importers/table-importer.ts:150",
-        "strapi__strapi/packages/core/data-transfer/src/strapi/providers/local-destination/strategies/restore/links.ts:40",
         "strapi__strapi/packages/core/database/src/entity-manager/regular-relations.ts:295",
-        "directus__directus/api/src/database/helpers/fn/dialects/mssql.ts:17"
+        "strapi__strapi/packages/core/data-transfer/src/strapi/providers/local-destination/strategies/restore/links.ts:40",
+        "directus__directus/api/src/database/helpers/fn/dialects/mssql.ts:17",
+        "directus__directus/api/src/database/helpers/fn/types.ts:105"
+      ]
+    },
+    "jwt/no-weak-secret": {
+      "count": 89,
+      "repos": 8,
+      "samples": [
+        "danny-avila__LibreChat/api/server/controllers/AuthController.spec.js:1557",
+        "danny-avila__LibreChat/api/server/services/AuthService.spec.js:427",
+        "strapi__strapi/tests/api/core/admin/admin-legacy-migration.test.api.ts:129",
+        "directus__directus/api/src/utils/is-directus-jwt.test.ts:11",
+        "outline__outline/server/utils/oauth.test.ts:51"
+      ]
+    },
+    "drizzle-security/no-raw-identifier-interpolation": {
+      "count": 88,
+      "repos": 2,
+      "samples": [
+        "payloadcms__payload/packages/drizzle/src/createGlobalVersion.ts:61",
+        "lobehub__lobe-chat/packages/database/src/models/__tests__/verifyRun.test.ts:44",
+        "lobehub__lobe-chat/packages/database/src/models/__tests__/user.test.ts:281"
       ]
     },
     "nestjs-security/require-validation-pipe-whitelist": {
       "count": 88,
       "repos": 6,
       "samples": [
-        "humanprotocol__human-protocol/packages/apps/dashboard/server/src/modules/details/details.controller.ts:32",
         "humanprotocol__human-protocol/packages/apps/fortune/exchange-oracle/server/src/main.ts:38",
-        "novuhq__novu/apps/worker/src/bootstrap.ts:32",
+        "humanprotocol__human-protocol/packages/apps/dashboard/server/src/modules/details/details.controller.ts:32",
         "novuhq__novu/apps/api/src/bootstrap.ts:110",
-        "amplication__amplication/packages/amplication-plugin-api/src/main.ts:30"
-      ]
-    },
-    "jwt/require-algorithm-whitelist": {
-      "count": 85,
-      "repos": 18,
-      "samples": [
-        "payloadcms__payload/examples/localization/src/app/(frontend)/next/preview/route.ts:54",
-        "telepat-io__otto/packages/relay/src/auth/helpers.ts:56",
-        "payloadcms__payload/packages/payload/src/auth/strategies/jwt.ts:29",
-        "nightscout__cgm-remote-monitor/lib/server/enclave.js:65",
-        "vitemcp__server/src/auth/utils/jwks.ts:139"
+        "amplication__amplication/packages/amplication-plugin-api/src/main.ts:30",
+        "twentyhq__twenty/packages/twenty-server/src/engine/core-modules/application/application-oauth/controllers/oauth-registration.controller.ts:57"
       ]
     },
     "node-security/no-dynamic-algorithm-selection": {
@@ -2406,8 +2392,8 @@
       "repos": 7,
       "samples": [
         "nightscout__cgm-remote-monitor/lib/server/enclave.js:33",
+        "nodejs__node/benchmark/crypto/hash-stream-creation.js:53",
         "nodejs__node/benchmark/crypto/aes-gcm-throughput.js:26",
-        "nodejs__node/benchmark/crypto/hash-stream-throughput.js:50",
         "continuedev__continue/extensions/vscode/src/stubs/SecretStorage.ts:47",
         "learningequality__kolibri/packages/kolibri-build/src/webpackBundleTracker.js:124"
       ]
@@ -2420,16 +2406,18 @@
         "continuedev__continue/packages/openai-adapters/src/apis/VertexAI.ts:42",
         "langchain-ai__langchainjs/libs/providers/langchain-openai/src/chat_models/tests/chat_models_stream_events.test.ts:17",
         "langchain-ai__langchainjs/libs/providers/langchain-openai/src/chat_models/tests/chat_models_responses_stream_events.test.ts:14",
-        "lobehub__lobe-chat/packages/model-runtime/src/core/openaiCompatibleFactory/generateObject.test.ts:96"
+        "lobehub__lobe-chat/packages/model-runtime/src/core/openaiCompatibleFactory/index.test.ts:99"
       ]
     },
-    "drizzle-security/no-raw-identifier-interpolation": {
+    "jwt/require-algorithm-whitelist": {
       "count": 83,
-      "repos": 2,
+      "repos": 18,
       "samples": [
-        "payloadcms__payload/packages/drizzle/src/createGlobalVersion.ts:61",
-        "lobehub__lobe-chat/packages/database/src/models/__tests__/verifyRun.test.ts:44",
-        "lobehub__lobe-chat/packages/database/src/models/__tests__/user.test.ts:281"
+        "payloadcms__payload/examples/localization/src/app/(frontend)/next/preview/route.ts:54",
+        "telepat-io__otto/packages/relay/src/auth/helpers.ts:56",
+        "payloadcms__payload/packages/payload/src/auth/strategies/jwt.ts:29",
+        "nightscout__cgm-remote-monitor/lib/server/enclave.js:65",
+        "vitemcp__server/src/auth/utils/jwks.ts:139"
       ]
     },
     "secure-coding/no-unsafe-regex-construction": {
@@ -2451,7 +2439,7 @@
         "continuedev__continue/gui/src/components/OnboardingCard/components/OnboardingProvidersTab.tsx:87",
         "keystonejs__keystone/docs/app/(site)/enterprise/page-client.tsx:135",
         "novuhq__novu/apps/dashboard/src/components/agents/demo-claude-upgrade-panel.tsx:282",
-        "shadcn-ui__ui/apps/v4/examples/radix/empty-demo.tsx:37"
+        "shadcn-ui__ui/apps/v4/examples/radix/empty-card.tsx:34"
       ]
     },
     "browser-security/require-mime-type-validation": {
@@ -2469,11 +2457,22 @@
       "count": 71,
       "repos": 8,
       "samples": [
-        "nightscout__cgm-remote-monitor/lib/api/index.js:54",
+        "nightscout__cgm-remote-monitor/lib/api/index.js:52",
         "continuedev__continue/extensions/cli/src/commands/serve.ts:251",
-        "danny-avila__LibreChat/api/server/routes/__tests__/ldap.spec.js:15",
         "danny-avila__LibreChat/api/server/routes/__tests__/convos-import.spec.js:35",
+        "danny-avila__LibreChat/api/server/routes/__tests__/ldap.spec.js:15",
         "stripe__stripe-terminal-react-native/docs/integration-builder/server.js:40"
+      ]
+    },
+    "browser-security/no-insecure-websocket": {
+      "count": 70,
+      "repos": 14,
+      "samples": [
+        "telepat-io__otto/packages/cli/test/setup-logic.test.ts:40",
+        "telepat-io__otto/packages/cli/test/client-secret-store.test.ts:129",
+        "Shopify__cli/packages/ui-extensions-server-kit/src/ExtensionServerClient/ExtensionServerClient.test.ts:134",
+        "Shopify__cli/packages/ui-extensions-server-kit/src/context/ExtensionServerProvider.test.tsx:140",
+        "Shopify__hydrogen/packages/hydrogen/src/csp/csp.ts:131"
       ]
     },
     "browser-security/require-csp-headers": {
@@ -2481,21 +2480,10 @@
       "repos": 17,
       "samples": [
         "nightscout__cgm-remote-monitor/lib/server/clocks.js:20",
+        "cncjs__cncjs/src/server/lib/middleware/errserver.js:41",
         "cncjs__cncjs/src/server/lib/middleware/errnotfound.js:29",
         "humanprotocol__human-protocol/packages/apps/faucet/server/src/index.ts:195",
-        "cncjs__cncjs/src/server/lib/middleware/errserver.js:41",
         "TryGhost__Ghost/apps/admin/src/settings/growth/embed-signup/embed-signup-preview.tsx:48"
-      ]
-    },
-    "browser-security/no-insecure-websocket": {
-      "count": 69,
-      "repos": 13,
-      "samples": [
-        "telepat-io__otto/packages/cli/test/setup-logic.test.ts:40",
-        "telepat-io__otto/packages/cli/test/client-secret-store.test.ts:129",
-        "Shopify__cli/packages/ui-extensions-server-kit/src/context/ExtensionServerProvider.test.tsx:140",
-        "Shopify__cli/packages/ui-extensions-server-kit/src/ExtensionServerClient/ExtensionServerClient.test.ts:134",
-        "Shopify__hydrogen/packages/hydrogen/src/csp/csp.ts:131"
       ]
     },
     "node-security/no-unbounded-decompression": {
@@ -2505,7 +2493,7 @@
         "mariadb-corporation__mariadb-connector-nodejs/lib/io/compression-input-stream.js:48",
         "Shopify__cli/packages/cli-kit/src/public/node/archiver.integration.test.ts:212",
         "comisai__comis/packages/observability/src/rotation/policy.test.ts:74",
-        "nodejs__node/test/fixtures/snapshot/decompress-gzip-sync.js:10",
+        "nodejs__node/test/addons/zlib-binding/test.js:12",
         "comisai__comis/test/architecture/capability-service-release-assets.test.ts:199"
       ]
     },
@@ -2513,8 +2501,8 @@
       "count": 68,
       "repos": 2,
       "samples": [
-        "nodejs__node/benchmark/crypto/class-construction.js:49",
         "nodejs__node/benchmark/crypto/class-methods.js:56",
+        "nodejs__node/benchmark/crypto/class-construction.js:49",
         "redis__RedisInsight/redisinsight/api/test/helpers/local-db.ts:68"
       ]
     },
@@ -2536,7 +2524,7 @@
         "payloadcms__payload/packages/drizzle/src/postgres/predefinedMigrations/v2-v3/migrateRelationships.ts:59",
         "payloadcms__payload/packages/db-sqlite/src/predefinedMigrations/migrateLocalizeStatus.ts:80",
         "lobehub__lobe-chat/packages/database/src/models/goal.ts:52",
-        "lobehub__lobe-chat/packages/database/src/models/task.ts:198"
+        "lobehub__lobe-chat/packages/database/src/repositories/ftsSearchSyncOutbox/__tests__/index.test.ts:77"
       ]
     },
     "import-next/no-empty-named-blocks": {
@@ -2551,14 +2539,14 @@
       ]
     },
     "lambda-security/no-missing-authorization-check": {
-      "count": 65,
+      "count": 66,
       "repos": 9,
       "samples": [
         "nodejs__node/lib/internal/event_target.js:847",
         "danny-avila__LibreChat/packages/api/src/agents/subagentTaskRouting.ts:1248",
+        "danny-avila__LibreChat/packages/api/src/storage/cloudfront/crud.ts:241",
         "storybookjs__storybook/code/core/src/core-server/utils/get-server-channel.ts:120",
-        "storybookjs__storybook/code/core/src/channels/websocket/index.ts:149",
-        "elastic__kibana/src/platform/plugins/shared/files/server/routes/file_kind/delete.ts:39"
+        "storybookjs__storybook/code/core/src/channels/websocket/index.ts:149"
       ]
     },
     "nestjs-security/no-missing-validation-pipe": {
@@ -2572,6 +2560,17 @@
         "FastyBird__smart-panel/apps/backend/src/modules/config/controllers/config.controller.ts:144"
       ]
     },
+    "node-security/no-data-in-temp-storage": {
+      "count": 63,
+      "repos": 21,
+      "samples": [
+        "mariadb-corporation__mariadb-connector-nodejs/test/integration/auth-plugin.test.js:394",
+        "mariadb-corporation__mariadb-connector-nodejs/test/integration/change-user.test.js:153",
+        "cncjs__cncjs/src/server/controllers/Grbl/__tests__/GrblController.test.js:838",
+        "comisai__comis/test/architecture/fixtures/mode-invariants-positive.ts:32",
+        "comisai__comis/test/architecture/fixtures/mode-invariants-negative.ts:20"
+      ]
+    },
     "browser-security/require-blob-url-revocation": {
       "count": 63,
       "repos": 25,
@@ -2580,7 +2579,7 @@
         "cncjs__cncjs/src/app/containers/Settings/Workspace/Workspace.jsx:115",
         "comisai__comis/packages/web/src/views/chat-console.ts:987",
         "nodejs__node/benchmark/blob/resolveObjectURL.js:14",
-        "danny-avila__LibreChat/client/src/data-provider/Files/queries.ts:110"
+        "danny-avila__LibreChat/client/src/hooks/Files/useFileHandling.ts:637"
       ]
     },
     "anthropic-security/no-hardcoded-api-key": {
@@ -2592,26 +2591,15 @@
         "lobehub__lobe-chat/packages/model-runtime/src/core/anthropicCompatibleFactory/index.test.ts:42"
       ]
     },
-    "node-security/no-data-in-temp-storage": {
-      "count": 62,
-      "repos": 20,
-      "samples": [
-        "mariadb-corporation__mariadb-connector-nodejs/test/integration/auth-plugin.test.js:394",
-        "mariadb-corporation__mariadb-connector-nodejs/test/integration/change-user.test.js:153",
-        "comisai__comis/test/architecture/fixtures/mode-invariants-positive.ts:32",
-        "comisai__comis/test/architecture/fixtures/mode-invariants-negative.ts:20",
-        "continuedev__continue/extensions/cli/src/util/loadMarkdownSkills.test.ts:31"
-      ]
-    },
     "node-security/no-dynamic-command-string": {
-      "count": 62,
-      "repos": 10,
+      "count": 61,
+      "repos": 9,
       "samples": [
         "comisai__comis/packages/cli/src/commands/pm2.ts:159",
-        "nodejs__node/test/parallel/test-stdio-closed.js:33",
+        "nodejs__node/test/parallel/test-openssl-unreadable-config.js:30",
         "comisai__comis/packages/daemon/src/wiring/setup-broker-e2e-linux.test.ts:299",
         "nodejs__node/test/parallel/test-fs-write-sigxfsz.js:23",
-        "danny-avila__LibreChat/packages/api/src/agents/hooks/reaper.spec.ts:11"
+        "storybookjs__storybook/code/core/src/common/utils/command.ts:195"
       ]
     },
     "secure-coding/no-homoglyph-identifiers": {
@@ -2633,7 +2621,7 @@
         "alexispurslane__vessel/e2e/global-setup.ts:16",
         "alexispurslane__vessel/src/lib/server/auth/index.ts:5",
         "cncjs__cncjs/src/server/api/api.users.js:2",
-        "Shopify__hydrogen/cookbook/recipes/multipass/ingredients/templates/skeleton/app/lib/multipass/multipassify.server.ts:1"
+        "humanprotocol__human-protocol/packages/apps/job-launcher/server/test/utils/address.ts:2"
       ]
     },
     "node-security/require-stream-error-handler": {
@@ -2647,24 +2635,13 @@
         "withastro__astro/packages/integrations/sitemap/src/write-sitemap.ts:67"
       ]
     },
-    "node-security/require-storage-encryption": {
-      "count": 55,
-      "repos": 16,
-      "samples": [
-        "payloadcms__payload/tools/scripts/src/build-template-with-local-pkgs.ts:88",
-        "modelcontextprotocol__servers/src/filesystem/__tests__/directory-tree.test.ts:64",
-        "Shopify__cli/packages/app/src/cli/services/app/env/pull.test.ts:54",
-        "comisai__comis/packages/cli/src/commands/auth.test.ts:497",
-        "nodejs__node/test/parallel/test-find-package-json.js:78"
-      ]
-    },
     "react-a11y/img-redundant-alt": {
       "count": 55,
       "repos": 8,
       "samples": [
         "ytsaurus__ytsaurus-ui/packages/ui/src/ui/containers/CellPreviewModal/CellPreviewModal.tsx:126",
+        "shadcn-ui__ui/apps/v4/registry/bases/aria/blocks/login-04/components/login-form.tsx:94",
         "shadcn-ui__ui/apps/v4/registry/bases/aria/blocks/login-02/page.tsx:34",
-        "shadcn-ui__ui/apps/v4/registry/bases/aria/blocks/login-04/components/login-form.tsx:93",
         "danny-avila__LibreChat/client/src/components/Chat/Messages/Content/DialogImage.tsx:367",
         "TryGhost__Ghost/apps/activitypub/src/components/modals/new-note-modal.tsx:424"
       ]
@@ -2680,12 +2657,23 @@
         "cncjs__cncjs/src/app/components/Webcam/Webcam.jsx:227"
       ]
     },
+    "node-security/require-storage-encryption": {
+      "count": 54,
+      "repos": 16,
+      "samples": [
+        "payloadcms__payload/tools/scripts/src/build-template-with-local-pkgs.ts:88",
+        "modelcontextprotocol__servers/src/filesystem/__tests__/directory-tree.test.ts:64",
+        "Shopify__cli/packages/app/src/cli/services/app/env/pull.test.ts:54",
+        "comisai__comis/packages/cli/src/commands/auth.test.ts:497",
+        "comisai__comis/packages/cli/src/commands/secrets.test.ts:272"
+      ]
+    },
     "nestjs-security/no-exposed-private-fields": {
-      "count": 53,
+      "count": 54,
       "repos": 5,
       "samples": [
-        "humanprotocol__human-protocol/packages/apps/fortune/exchange-oracle/server/src/modules/assignment/assignment.dto.ts:160",
         "humanprotocol__human-protocol/packages/apps/human-app/server/src/modules/job-assignment/model/job-assignment.model.ts:57",
+        "humanprotocol__human-protocol/packages/apps/fortune/exchange-oracle/server/src/modules/assignment/assignment.dto.ts:160",
         "novuhq__novu/apps/api/src/app/agents/shared/dtos/configure-sendblue-webhook-response.dto.ts:25",
         "novuhq__novu/apps/api/src/app/agents/shared/dtos/issue-slack-setup-link-response.dto.ts:4",
         "amplication__amplication/packages/amplication-server/src/models/Account.ts:38"
@@ -2699,7 +2687,7 @@
         "continuedev__continue/core/context/providers/PostgresContextProvider.ts:78",
         "keystonejs__keystone/packages/core/src/testing/postgresql.ts:31",
         "langchain-ai__langchainjs/libs/providers/langchain-pgvector/src/vectorstores.ts:682",
-        "lobehub__lobe-chat/scripts/pgSearchCleanup/operations.ts:45"
+        "lobehub__lobe-chat/scripts/backfillWorkspaceKnowledgeBaseVisibility.ts:33"
       ]
     },
     "browser-security/no-incomplete-url-sanitization": {
@@ -2709,18 +2697,18 @@
         "telepat-io__otto/extension/src/commands/google.com/get-search-results.ts:140",
         "alexispurslane__vessel/src/lib/server/agent/sandboxed-search-tool.ts:132",
         "Shopify__hydrogen/docs/shopify-dev/analytics-setup/ts/app/components/Header.tsx:75",
-        "Shopify__hydrogen/docs/shopify-dev/analytics-setup/js/app/components/Header.jsx:62",
-        "withastro__astro/packages/astro/test/units/errors/dev-utils.test.ts:92"
+        "withastro__astro/packages/astro/test/units/errors/dev-utils.test.ts:92",
+        "Shopify__hydrogen/docs/shopify-dev/analytics-setup/js/app/components/Header.jsx:62"
       ]
     },
     "node-security/no-unsafe-dynamic-require": {
       "count": 51,
       "repos": 16,
       "samples": [
-        "payloadcms__payload/test/database/int.spec.ts:3350",
+        "payloadcms__payload/test/database/int.spec.ts:3341",
         "comisai__comis/scripts/token-fixtures/generate.mjs:183",
-        "nodejs__node/test/fixtures/sea.js:6",
-        "ytsaurus__ytsaurus-ui/packages/ui/src/server/utils/index.ts:34",
+        "nodejs__node/deps/v8/tools/test262-results-parser.js:30",
+        "ytsaurus__ytsaurus-ui/packages/custom-ytsaurus-ui.example/scripts/sync-dependencies.ts:36",
         "nodejs__node/benchmark/_test-double-benchmarker.js:13"
       ]
     },
@@ -2729,15 +2717,15 @@
       "repos": 5,
       "samples": [
         "cncjs__cncjs/src/server/app.js:251",
-        "danny-avila__LibreChat/api/server/routes/mcp.js:658",
         "danny-avila__LibreChat/api/server/routes/actions.js:30",
+        "danny-avila__LibreChat/api/server/routes/mcp.js:658",
         "okta__okta-auth-js/samples/generated/express-embedded-auth-with-sdk/web-server/routes/logout.js:19",
         "okta__okta-auth-js/samples/generated/express-embedded-sign-in-widget/web-server/routes/logout.js:19"
       ]
     },
     "secure-coding/no-pii-in-logs": {
-      "count": 45,
-      "repos": 16,
+      "count": 46,
+      "repos": 17,
       "samples": [
         "mariadb-corporation__mariadb-connector-nodejs/types/mariadb-tests.ts:522",
         "mariadb-corporation__mariadb-connector-nodejs/types/mariadb-tests-callback.ts:440",
@@ -2751,41 +2739,30 @@
       "repos": 2,
       "samples": [
         "n8n-io__n8n/packages/@n8n/agents/src/runtime/__tests__/model-factory.test.ts:326",
-        "vercel__ai/examples/next-workflow/workflow/telemetry-agent.ts:293",
-        "vercel__ai/examples/ai-e2e-next/app/live-translate/page.tsx:125"
+        "vercel__ai/examples/ai-e2e-next/app/live-translate/page.tsx:125",
+        "vercel__ai/packages/amazon-bedrock/src/amazon-bedrock-provider.test.ts:128"
       ]
     },
     "react-features/require-render-return": {
       "count": 44,
       "repos": 14,
       "samples": [
-        "withastro__astro/packages/astro/src/runtime/server/render/server-islands.ts:77",
         "withastro__astro/packages/astro/src/runtime/client/dev-toolbar/apps/audit/ui/audit-list-window.ts:408",
+        "withastro__astro/packages/astro/src/runtime/server/render/server-islands.ts:77",
         "immich-app__immich/server/src/repositories/email.repository.ts:140",
-        "nodejs__node/deps/v8/tools/turbolizer/src/views/history-view.ts:98",
-        "ytsaurus__ytsaurus-ui/packages/ui/src/ui/components/TimelineBlock/renderer/AllocationLineRenderer.ts:10"
+        "nodejs__node/deps/v8/tools/profview/profview.js:1676",
+        "nodejs__node/deps/v8/tools/turbolizer/src/views/history-view.ts:98"
       ]
     },
     "react-a11y/role-has-required-aria-props": {
       "count": 43,
       "repos": 10,
       "samples": [
+        "shadcn-ui__ui/apps/v4/app/(app)/examples/playground/components/model-selector.tsx:60",
         "novuhq__novu/apps/dashboard/src/components/primitives/multi-select.tsx:54",
         "shadcn-ui__ui/apps/v4/app/(app)/examples/playground/components/preset-selector.tsx:38",
-        "shadcn-ui__ui/apps/v4/app/(app)/examples/playground/components/model-selector.tsx:60",
         "danny-avila__LibreChat/client/src/components/Chat/Input/Files/Table/Columns.tsx:36",
         "TryGhost__Ghost/apps/admin/src/members/components/bulk-action-modals/import-members/custom-fields/field-picker.tsx:147"
-      ]
-    },
-    "secure-coding/no-unlimited-resource-allocation": {
-      "count": 42,
-      "repos": 17,
-      "samples": [
-        "Shopify__cli/packages/app/src/cli/services/function/binaries.ts:315",
-        "hapijs__hapi/lib/compression.js:18",
-        "nodejs__node/benchmark/streams/iter-throughput-compression.js:45",
-        "immich-app__immich/server/src/middleware/file-upload.interceptor.ts:54",
-        "nodejs__node/benchmark/zlib/createInflate.js:18"
       ]
     },
     "react-a11y/iframe-has-title": {
@@ -2799,26 +2776,37 @@
         "keystonejs__keystone/docs/components/primitives/YouTubeEmbed.tsx:15"
       ]
     },
+    "secure-coding/no-unlimited-resource-allocation": {
+      "count": 41,
+      "repos": 16,
+      "samples": [
+        "Shopify__cli/packages/app/src/cli/services/function/binaries.ts:315",
+        "hapijs__hapi/lib/compression.js:18",
+        "nodejs__node/deps/undici/src/lib/web/fetch/index.js:2290",
+        "immich-app__immich/server/src/middleware/file-upload.interceptor.ts:54",
+        "nodejs__node/benchmark/streams/iter-throughput-compression.js:45"
+      ]
+    },
+    "secure-coding/no-xxe-injection": {
+      "count": 41,
+      "repos": 12,
+      "samples": [
+        "nightscout__cgm-remote-monitor/tests/api3.renderer.test.js:118",
+        "withastro__astro/packages/astro/src/transitions/router.ts:445",
+        "danny-avila__LibreChat/client/src/utils/__tests__/svg.test.ts:300",
+        "danny-avila__LibreChat/client/src/utils/__tests__/mermaid.test.ts:12",
+        "TryGhost__Ghost/e2e/helpers/services/stripe/fake-stripe-server.ts:290"
+      ]
+    },
     "import-next/no-self-import": {
       "count": 40,
       "repos": 4,
       "samples": [
         "nodejs__node/deps/v8/test/debugger/debug/debug-modules-set-variable-value.mjs:329",
-        "sequelize__sequelize/packages/core/src/index.mjs:1",
-        "nodejs__node/deps/v8/test/mjsunit/harmony/modules-skip-10.mjs:5",
         "sequelize__sequelize/packages/core/src/decorators/legacy/index.mjs:1",
-        "moleculerjs__moleculer/index.mjs:1"
-      ]
-    },
-    "secure-coding/no-xxe-injection": {
-      "count": 39,
-      "repos": 12,
-      "samples": [
-        "nightscout__cgm-remote-monitor/tests/api3.renderer.test.js:117",
-        "withastro__astro/packages/astro/src/transitions/router.ts:445",
-        "danny-avila__LibreChat/client/src/utils/diagram/export.ts:60",
-        "danny-avila__LibreChat/client/src/utils/__tests__/mermaid.test.ts:12",
-        "TryGhost__Ghost/e2e/helpers/services/stripe/fake-stripe-server.ts:290"
+        "nodejs__node/deps/v8/test/mjsunit/harmony/modules-skip-13.mjs:5",
+        "sequelize__sequelize/packages/core/src/index.mjs:1",
+        "elastic__kibana/x-pack/solutions/observability/plugins/apm/scripts/create_functional_tests_archive.js:10"
       ]
     },
     "node-security/no-arbitrary-file-access": {
@@ -2832,17 +2820,6 @@
         "comisai__comis/packages/daemon/src/api/memory-handlers.ts:147"
       ]
     },
-    "jwt/no-decode-without-verify": {
-      "count": 39,
-      "repos": 12,
-      "samples": [
-        "humanprotocol__human-protocol/packages/apps/fortune/exchange-oracle/server/src/common/guards/strategy/jwt.http.ts:33",
-        "humanprotocol__human-protocol/packages/apps/human-app/frontend/src/modules/verify-user/components/identity-verification-control.tsx:76",
-        "novuhq__novu/apps/api/src/app/shared/framework/user.decorator.ts:33",
-        "novuhq__novu/apps/webhook/src/shared/framework/user.decorator.ts:22",
-        "danny-avila__LibreChat/api/strategies/appleStrategy.js:19"
-      ]
-    },
     "pg/no-unsafe-query": {
       "count": 38,
       "repos": 7,
@@ -2854,23 +2831,45 @@
         "langchain-ai__langchainjs/libs/providers/langchain-pgvector/src/vectorstores.ts:541"
       ]
     },
+    "jwt/no-decode-without-verify": {
+      "count": 38,
+      "repos": 12,
+      "samples": [
+        "humanprotocol__human-protocol/packages/apps/human-app/frontend/src/modules/verify-user/components/identity-verification-control.tsx:76",
+        "humanprotocol__human-protocol/packages/apps/fortune/exchange-oracle/server/src/common/guards/strategy/jwt.http.ts:33",
+        "novuhq__novu/apps/api/src/app/shared/framework/user.decorator.ts:33",
+        "danny-avila__LibreChat/api/strategies/appleStrategy.js:19",
+        "TryGhost__Ghost/ghost/core/core/server/services/auth/api-key/admin.js:117"
+      ]
+    },
     "browser-security/no-jwt-in-storage": {
-      "count": 36,
-      "repos": 14,
+      "count": 37,
+      "repos": 15,
       "samples": [
         "payloadcms__payload/packages/ui/src/providers/Auth/tabSessionSync/index.ts:235",
         "humanprotocol__human-protocol/packages/apps/human-app/frontend/src/shared/contexts/browser-auth-provider.ts:17",
         "comisai__comis/packages/web/src/app-controller.ts:268",
-        "novuhq__novu/apps/dashboard/src/utils/better-auth/components/sign-up.tsx:118",
-        "novuhq__novu/apps/dashboard/src/utils/better-auth/client.ts:22"
+        "novuhq__novu/apps/dashboard/src/utils/better-auth/client.ts:22",
+        "novuhq__novu/apps/dashboard/src/utils/better-auth/components/sign-up.tsx:118"
+      ]
+    },
+    "react-a11y/heading-has-content": {
+      "count": 35,
+      "repos": 5,
+      "samples": [
+        "payloadcms__payload/examples/localization/src/components/ui/card.tsx:26",
+        "payloadcms__payload/templates/with-vercel-website/src/components/ui/card.tsx:26",
+        "novuhq__novu/apps/dashboard/src/components/agents/web-chat-panel/assistant-ui/elements/markdown-text.tsx:91",
+        "shadcn-ui__ui/apps/v4/mdx-components.tsx:262",
+        "novuhq__novu/apps/dashboard/src/components/ai-elements/prompt-input.tsx:992"
       ]
     },
     "nestjs-security/require-throttler": {
       "count": 35,
       "repos": 5,
       "samples": [
-        "humanprotocol__human-protocol/packages/apps/human-app/server/src/modules/token-refresh/token-refresh.controller.ts:22",
         "humanprotocol__human-protocol/packages/apps/human-app/server/src/modules/email-confirmation/email-confirmation.controller.ts:25",
+        "humanprotocol__human-protocol/packages/apps/human-app/server/src/modules/token-refresh/token-refresh.controller.ts:22",
         "immich-app__immich/server/src/maintenance/maintenance-worker.controller.ts:119",
         "amplication__amplication/packages/amplication-server/src/core/auth/auth.controller.ts:69",
         "amplication__amplication/packages/data-service-generator-catalog/src/auth/auth.controller.ts:11"
@@ -2887,35 +2886,14 @@
         "elastic__kibana/x-pack/platform/plugins/private/canvas/public/components/arg_form/pending_arg_value.js:22"
       ]
     },
-    "jwt/require-expiration": {
-      "count": 33,
-      "repos": 16,
-      "samples": [
-        "nightscout__cgm-remote-monitor/lib/authorization/index.js:298",
-        "immich-app__immich/packages/e2e-auth-server/auth-server.ts:71",
-        "immich-app__immich/server/src/repositories/crypto.repository.ts:63",
-        "novuhq__novu/apps/api/src/app/auth/services/community.auth.service.ts:200",
-        "keystonejs__keystone/examples/custom-session-jwt/keystone.ts:20"
-      ]
-    },
     "node-security/no-deprecated-buffer": {
-      "count": 32,
-      "repos": 2,
+      "count": 33,
+      "repos": 3,
       "samples": [
         "nodejs__node/test/parallel/test-buffer-alloc.js:58",
         "nodejs__node/test/parallel/test-buffer-arraybuffer.js:87",
+        "ytsaurus__ytsaurus-ui/packages/javascript-wrapper/lib/utils/setup.js:137",
         "universal-material__universal-material-web/gulp-tasks/scripts.js:39"
-      ]
-    },
-    "express-security/no-exposed-debug-endpoints": {
-      "count": 31,
-      "repos": 8,
-      "samples": [
-        "nightscout__cgm-remote-monitor/lib/api3/index.js:81",
-        "danny-avila__LibreChat/api/server/experimental.js:459",
-        "spare8__chatbot/server/admin/configRoutes.js:18",
-        "directus__directus/api/src/controllers/server.ts:80",
-        "directus__directus/api/src/app.ts:305"
       ]
     },
     "browser-security/no-missing-cors-check": {
@@ -2929,14 +2907,36 @@
         "comisai__comis/packages/gateway/src/web/rest-api.ts:170"
       ]
     },
+    "jwt/require-expiration": {
+      "count": 30,
+      "repos": 13,
+      "samples": [
+        "immich-app__immich/packages/e2e-auth-server/auth-server.ts:71",
+        "immich-app__immich/server/src/repositories/crypto.repository.ts:63",
+        "novuhq__novu/apps/api/src/app/auth/services/community.auth.service.ts:200",
+        "keystonejs__keystone/examples/custom-session-jwt/keystone.ts:20",
+        "strapi__strapi/packages/plugins/users-permissions/server/src/services/jwt.js:59"
+      ]
+    },
+    "express-security/no-exposed-debug-endpoints": {
+      "count": 29,
+      "repos": 8,
+      "samples": [
+        "nightscout__cgm-remote-monitor/lib/api3/index.js:81",
+        "danny-avila__LibreChat/api/server/experimental.js:576",
+        "danny-avila__LibreChat/api/server/routes/admin/langfuse.js:54",
+        "spare8__chatbot/server/admin/configRoutes.js:18",
+        "directus__directus/api/src/controllers/server.ts:80"
+      ]
+    },
     "secure-coding/no-sql-injection": {
       "count": 28,
       "repos": 6,
       "samples": [
         "mariadb-corporation__mariadb-connector-nodejs/test/integration/big-query.test.js:146",
         "outline__outline/server/migrations/20171225143838-set-admins.js:8",
-        "twentyhq__twenty/packages/twenty-server/src/database/commands/upgrade-version-command/2-38/2-38-workspace-command-1787935130000-normalize-company-domain-names.command.ts:210",
         "twentyhq__twenty/packages/twenty-server/test/integration/graphql/suites/settings-permissions/workspace-update-before-activation.integration-spec.ts:108",
+        "twentyhq__twenty/packages/twenty-server/src/database/commands/upgrade-version-command/2-38/2-38-workspace-command-1787935130000-normalize-company-domain-names.command.ts:210",
         "typeorm__typeorm/test/github-issues/8273/issue-8273.test.ts:20"
       ]
     },
@@ -2948,7 +2948,7 @@
         "modelcontextprotocol__servers/src/everything/transports/sse.ts:11",
         "humanprotocol__human-protocol/packages/apps/faucet/server/src/index.ts:25",
         "continuedev__continue/extensions/vscode/src/activation/proxy.ts:7",
-        "danny-avila__LibreChat/api/server/experimental.js:483"
+        "danny-avila__LibreChat/api/server/experimental.js:600"
       ]
     },
     "browser-security/no-postmessage-wildcard-origin": {
@@ -2959,40 +2959,29 @@
         "continuedev__continue/gui/src/components/StepContainer/StepContainer.tsx:73",
         "shadcn-ui__ui/apps/v4/app/(app)/(create)/hooks/use-iframe-sync.tsx:67",
         "TryGhost__Ghost/apps/admin-x-framework/src/hooks/use-featurebase.ts:182",
-        "storybookjs__storybook/code/addons/mcp/src/tools/preview-stories/preview-stories-app-script.ts:99"
-      ]
-    },
-    "react-a11y/heading-has-content": {
-      "count": 25,
-      "repos": 5,
-      "samples": [
-        "payloadcms__payload/examples/localization/src/components/ui/card.tsx:26",
-        "payloadcms__payload/templates/website/src/components/ui/card.tsx:26",
-        "novuhq__novu/apps/dashboard/src/components/ai-elements/prompt-input.tsx:992",
-        "shadcn-ui__ui/apps/v4/components/page-header.tsx:24",
-        "novuhq__novu/playground/web-chat/src/components/assistant-ui/elements/markdown-text.tsx:88"
-      ]
-    },
-    "express-security/no-sensitive-data-in-query": {
-      "count": 25,
-      "repos": 7,
-      "samples": [
-        "nightscout__cgm-remote-monitor/lib/api/status.js:22",
-        "nightscout__cgm-remote-monitor/lib/authorization/index.js:46",
-        "okta__okta-auth-js/samples/generated/express-embedded-sign-in-widget/web-server/middlewares/oidcConfig.js:4",
-        "okta__okta-auth-js/samples/generated/express-embedded-auth-with-sdk/web-server/middlewares/oidcConfig.js:5",
-        "directus__directus/api/src/controllers/deployment-webhooks.ts:59"
+        "storybookjs__storybook/code/addons/mcp/src/preview.ts:36"
       ]
     },
     "secure-coding/no-weak-password-recovery": {
-      "count": 24,
-      "repos": 7,
+      "count": 26,
+      "repos": 8,
       "samples": [
         "payloadcms__payload/packages/payload/src/auth/operations/forgotPassword.ts:143",
         "humanprotocol__human-protocol/packages/apps/human-app/frontend/src/modules/worker/reset-password/reset-password.page.tsx:26",
         "novuhq__novu/apps/dashboard/src/utils/better-auth/components/reset-password.tsx:10",
         "danny-avila__LibreChat/api/server/middleware/validatePasswordReset.js:8",
-        "strapi__strapi/packages/core/strapi/src/cli/commands/admin/reset-user-password.ts:37"
+        "danny-avila__LibreChat/client/src/components/Auth/ResetPassword.tsx:10"
+      ]
+    },
+    "express-security/no-sensitive-data-in-query": {
+      "count": 23,
+      "repos": 7,
+      "samples": [
+        "nightscout__cgm-remote-monitor/lib/api/status.js:22",
+        "okta__okta-auth-js/samples/generated/express-embedded-sign-in-widget/web-server/middlewares/oidcConfig.js:4",
+        "okta__okta-auth-js/samples/generated/express-embedded-auth-with-sdk/web-server/middlewares/oidcConfig.js:5",
+        "directus__directus/api/src/controllers/deployment-webhooks.ts:59",
+        "synapsecns__sanguine/packages/rest-api/src/routes/bridgeLimitsRoute.ts:134"
       ]
     },
     "react-a11y/aria-role": {
@@ -3025,7 +3014,7 @@
         "twentyhq__twenty/packages/twenty-front-component-renderer/src/__stories__/utils/runFrontComponentSandboxIsolationProbe.ts:60",
         "mui__material-ui/docs/src/modules/utils/codeStylingSolution.js:72",
         "mui__material-ui/docs/data/material/customization/color/ColorTool.js:163",
-        "chakra-ui__chakra-ui/apps/www/app/playground/theme-panel.tsx:131"
+        "vercel__commerce/components/welcome-toast.tsx:15"
       ]
     },
     "react-a11y/no-noninteractive-tabindex": {
@@ -3040,11 +3029,11 @@
       "count": 22,
       "repos": 9,
       "samples": [
-        "nightscout__cgm-remote-monitor/lib/server/app.js:37",
+        "nightscout__cgm-remote-monitor/lib/server/app.js:110",
         "Shopify__hydrogen/packages/mini-oxygen/src/node/server.ts:66",
         "ytsaurus__ytsaurus-ui/packages/ui/src/server/components/oauth.ts:10",
         "novuhq__novu/apps/api/src/app/agents/shared/util/express-to-web-request.ts:11",
-        "okta__okta-auth-js/samples/generated/express-embedded-sign-in-widget/web-server/routes/login.js:63"
+        "TryGhost__Ghost/ghost/core/core/frontend/services/routing/controllers/entry/markdown.ts:23"
       ]
     },
     "react-a11y/mouse-events-have-key-events": {
@@ -3056,6 +3045,17 @@
         "storybookjs__storybook/code/core/src/manager/components/sidebar/SearchResults.tsx:332",
         "TryGhost__Ghost/koenig/koenig-lexical/src/components/ui/LinkInputSearchItem.tsx:6",
         "passbolt__passbolt_styleguide/src/react-extension/components/Common/ActionFeedback/ShareActionFeedback.js:145"
+      ]
+    },
+    "mongodb-security/no-hardcoded-connection-string": {
+      "count": 21,
+      "repos": 7,
+      "samples": [
+        "payloadcms__payload/packages/create-payload-app/src/lib/select-db.ts:19",
+        "danny-avila__LibreChat/packages/api/src/cache/keyvMongo.ts:38",
+        "langchain-ai__langchainjs/examples/src/cache/chat_models/mongodb.ts:9",
+        "elastic__kibana/x-pack/platform/plugins/shared/cases/scripts/cases_generator/kitchen_sink_template.ts:290",
+        "prisma__prisma/examples/mongo-demo/prisma.config.ts:8"
       ]
     },
     "lambda-security/no-unvalidated-event-body": {
@@ -3086,25 +3086,14 @@
         "passbolt__passbolt_styleguide/src/react-extension/components/Administration/DisplayHealthcheckAdministration/DisplayHealthcheckAdministration.test.stories.js:30"
       ]
     },
-    "mongodb-security/no-hardcoded-connection-string": {
-      "count": 20,
-      "repos": 6,
-      "samples": [
-        "payloadcms__payload/packages/create-payload-app/src/lib/select-db.ts:19",
-        "langchain-ai__langchainjs/examples/src/cache/chat_models/mongodb.ts:9",
-        "elastic__kibana/x-pack/platform/plugins/shared/cases/scripts/cases_generator/kitchen_sink_template.ts:290",
-        "prisma__prisma/examples/mongo-demo/prisma.config.ts:8",
-        "prisma__prisma/examples/mongo-blog-leaderboard/prisma.config.ts:8"
-      ]
-    },
     "node-security/no-insecure-key-derivation": {
       "count": 20,
       "repos": 3,
       "samples": [
         "payloadcms__payload/packages/payload/src/auth/strategies/local/authenticate.spec.ts:10",
         "payloadcms__payload/packages/payload/src/auth/strategies/local/authenticate.ts:19",
-        "nodejs__node/test/parallel/test-crypto-domain.js:44",
         "nodejs__node/test/async-hooks/test-crypto-pbkdf2.js:23",
+        "nodejs__node/test/fixtures/wpt/WebCryptoAPI/derive_bits_keys/derive_key_and_encrypt.js:17",
         "elastic__kibana/src/cli/keystore/lib/keystore.js:37"
       ]
     },
@@ -3112,10 +3101,10 @@
       "count": 20,
       "repos": 6,
       "samples": [
-        "Shopify__cli/packages/cli-kit/src/public/node/graphiql/templates/graphiql.tsx:71",
         "Shopify__cli/packages/cli-kit/src/public/node/graphiql/templates/unauthorized.tsx:112",
+        "Shopify__cli/packages/cli-kit/src/public/node/graphiql/templates/graphiql.tsx:71",
         "danny-avila__LibreChat/client/src/utils/artifacts.ts:957",
-        "lobehub__lobe-chat/src/features/Portal/LocalFile/collectHtmlLocalResources.test.ts:62",
+        "lobehub__lobe-chat/src/features/Portal/LocalFile/packWorkspaceHtmlDocument.test.ts:13",
         "lobehub__lobe-chat/packages/artifact-template/src/index.ts:162"
       ]
     },
@@ -3130,28 +3119,30 @@
         "storybookjs__storybook/code/addons/docs/src/blocks/controls/Boolean.tsx:164"
       ]
     },
+    "browser-security/no-client-side-auth-logic": {
+      "count": 20,
+      "repos": 15,
+      "samples": [
+        "nightscout__cgm-remote-monitor/tests/websocket.input-validation.test.js:132",
+        "comisai__comis/packages/orchestrator/src/inbound/dedup-detector.ts:152",
+        "immich-app__immich/server/src/services/shared-link.service.ts:39",
+        "continuedev__continue/manual-testing-sandbox/next-edit/next-edit-10-5-sol.ts:795",
+        "danny-avila__LibreChat/packages/api/src/agents/triggers/outcome.ts:1068"
+      ]
+    },
     "node-security/no-ecb-mode": {
       "count": 20,
       "repos": 3,
       "samples": [
         "nodejs__node/test/parallel/test-crypto-cipheriv-decipheriv.js:251",
-        "nodejs__node/test/parallel/test-crypto-dh.js:80",
+        "nodejs__node/test/parallel/test-crypto-dh.js:81",
         "lobehub__lobe-chat/packages/chat-adapter-wechat/src/api.ts:458",
         "lobehub__lobe-chat/packages/chat-adapter-wechat/src/api.test.ts:187",
         "elastic__kibana/x-pack/solutions/security/packages/ai-security-labs-content/src/utils.ts:20"
       ]
     },
-    "mongodb-security/no-select-sensitive-fields": {
-      "count": 19,
-      "repos": 2,
-      "samples": [
-        "nightscout__cgm-remote-monitor/lib/server/websocket.js:237",
-        "danny-avila__LibreChat/config/reset-password.js:29",
-        "danny-avila__LibreChat/config/create-user.js:100"
-      ]
-    },
     "react-a11y/html-has-lang": {
-      "count": 18,
+      "count": 19,
       "repos": 10,
       "samples": [
         "payloadcms__payload/examples/localization/src/app/(frontend)/[locale]/layout.tsx:45",
@@ -3161,15 +3152,13 @@
         "Shopify__hydrogen/packages/hydrogen/src/seo/seo.example.tsx:7"
       ]
     },
-    "browser-security/no-client-side-auth-logic": {
-      "count": 18,
-      "repos": 13,
+    "mongodb-security/no-select-sensitive-fields": {
+      "count": 19,
+      "repos": 2,
       "samples": [
-        "comisai__comis/packages/orchestrator/src/inbound/dedup-detector.ts:152",
-        "immich-app__immich/server/src/services/shared-link.service.ts:39",
-        "continuedev__continue/manual-testing-sandbox/next-edit/next-edit-10-5-sol.ts:795",
-        "danny-avila__LibreChat/packages/api/src/agents/triggers/outcome.ts:1068",
-        "strapi__strapi/packages/core/admin/admin/src/utils/deviceId.ts:25"
+        "nightscout__cgm-remote-monitor/lib/server/websocket.js:366",
+        "danny-avila__LibreChat/config/create-user.js:100",
+        "danny-avila__LibreChat/config/reset-password.js:29"
       ]
     },
     "vercel-ai-security/no-dynamic-system-prompt": {
@@ -3177,7 +3166,7 @@
       "repos": 3,
       "samples": [
         "novuhq__novu/playground/nextjs/src/app/api/agent-toolkit/chat/route.ts:13",
-        "twentyhq__twenty/packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/services/agent-async-executor.service.ts:378",
+        "twentyhq__twenty/packages/twenty-server/src/engine/metadata-modules/ai/ai-agent-execution/services/agent-async-executor.service.ts:380",
         "vercel__ai/examples/ai-e2e-next/app/api/chat/streaming-tool-calls/route.ts:38",
         "vercel__ai/examples/ai-e2e-next/app/api/use-object-expense-tracker/route.ts:14"
       ]
@@ -3186,8 +3175,8 @@
       "count": 18,
       "repos": 5,
       "samples": [
-        "danny-avila__LibreChat/api/server/routes/roles.js:104",
         "danny-avila__LibreChat/packages/api/src/admin/roles.ts:388",
+        "danny-avila__LibreChat/api/server/routes/roles.js:104",
         "TryGhost__Ghost/ghost/core/core/frontend/apps/private-blogging/lib/middleware.js:125",
         "strapi__strapi/packages/plugins/users-permissions/server/src/controllers/role.js:62",
         "directus__directus/api/src/controllers/versions.ts:267"
@@ -3204,15 +3193,26 @@
         "modelcontextprotocol__typescript-sdk/examples/legacy-routing/server.ts:69"
       ]
     },
+    "nestjs-security/no-permissive-cors": {
+      "count": 17,
+      "repos": 6,
+      "samples": [
+        "humanprotocol__human-protocol/packages/apps/fortune/exchange-oracle/server/src/main.ts:14",
+        "humanprotocol__human-protocol/packages/apps/fortune/recording-oracle/src/main.ts:15",
+        "novuhq__novu/apps/webhook/src/bootstrap.ts:17",
+        "amplication__amplication/packages/amplication-plugin-api/src/main.ts:23",
+        "amplication__amplication/packages/amplication-server/src/main.ts:78"
+      ]
+    },
     "conventions/expiring-todo-comments": {
       "count": 17,
       "repos": 5,
       "samples": [
-        "sequelize__sequelize/packages/core/src/utils/dialect.ts:60",
         "sequelize__sequelize/packages/core/src/model.js:1013",
+        "sequelize__sequelize/packages/core/src/utils/dialect.ts:60",
         "strapi__strapi/packages/plugins/graphql/server/src/services/builders/type.ts:199",
         "aws__aws-toolkit-vscode/packages/core/src/codewhisperer/service/transformByQ/transformFileHandler.ts:334",
-        "redis__RedisInsight/redisinsight/ui/src/pages/home/components/form/DatabaseForm.spec.tsx:164"
+        "redis__RedisInsight/redisinsight/ui/src/components/base/link/link.types.ts:3"
       ]
     },
     "node-security/no-buffer-overread": {
@@ -3220,62 +3220,53 @@
       "repos": 5,
       "samples": [
         "nodejs__node/deps/undici/src/lib/core/socks5-client.js:239",
-        "nodejs__node/test/common/debugger.js:176",
+        "nodejs__node/deps/v8/test/mjsunit/regress/regress-crbug-1041232.js:22",
         "directus__directus/api/src/utils/get-schema.ts:231",
         "FastyBird__smart-panel/apps/backend/src/modules/devices/services/device-connection-state.service.ts:160",
-        "redis__RedisInsight/redisinsight/api/src/modules/bulk-actions/models/runners/simple/abstract.bulk-action.simple.runner.ts:98"
+        "redis__RedisInsight/redisinsight/api/src/modules/bulk-actions/models/bulk-action.spec.ts:625"
+      ]
+    },
+    "browser-security/no-unsafe-inline-csp": {
+      "count": 17,
+      "repos": 7,
+      "samples": [
+        "novuhq__novu/apps/api/src/app/integrations/integrations.controller.ts:647",
+        "danny-avila__LibreChat/packages/api/src/files/documents/html.ts:395",
+        "okta__okta-signin-widget/Gruntfile.js:259",
+        "digital-blueprint__esign-app/rolldown.config.js:126",
+        "elastic__kibana/x-pack/platform/plugins/shared/custom_content/common/constants.ts:10"
       ]
     },
     "drizzle-security/no-unscoped-mutation": {
       "count": 17,
       "repos": 2,
       "samples": [
+        "lobehub__lobe-chat/packages/database/src/models/__tests__/topicSummary.test.ts:20",
         "lobehub__lobe-chat/apps/server/src/services/skill/importer.test.ts:115",
-        "animir__node-rate-limiter-flexible/test/RateLimiterDrizzle/Postgres/RateLimiterDrizzleNonAtomicPostgres.test.js:15",
-        "animir__node-rate-limiter-flexible/test/RateLimiterDrizzle/Postgres/RateLimiterDrizzlePostgres.test.js:15"
-      ]
-    },
-    "nestjs-security/no-permissive-cors": {
-      "count": 16,
-      "repos": 5,
-      "samples": [
-        "humanprotocol__human-protocol/packages/apps/fortune/recording-oracle/src/main.ts:15",
-        "humanprotocol__human-protocol/packages/apps/fortune/exchange-oracle/server/src/main.ts:14",
-        "novuhq__novu/apps/webhook/src/bootstrap.ts:17",
-        "amplication__amplication/packages/amplication-plugin-api/src/main.ts:23",
-        "amplication__amplication/packages/amplication-server/src/main.ts:78"
-      ]
-    },
-    "express-security/require-express-body-parser-limits": {
-      "count": 15,
-      "repos": 5,
-      "samples": [
-        "Shopify__hydrogen/packages/mini-oxygen/src/node/server.ts:309",
-        "novuhq__novu/apps/api/src/app/agents/e2e/helpers/bridge-server.ts:46",
-        "novuhq__novu/apps/api/src/bootstrap.ts:123",
-        "TryGhost__Ghost/ghost/core/core/server/web/comments/routes.js:54",
-        "redis__RedisInsight/redisinsight/api/test/helpers/server.ts:53"
+        "animir__node-rate-limiter-flexible/test/RateLimiterDrizzle/Postgres/RateLimiterDrizzlePostgres.test.js:15",
+        "animir__node-rate-limiter-flexible/test/RateLimiterDrizzle/Postgres/RateLimiterDrizzleNonAtomicPostgres.test.js:15"
       ]
     },
     "react-a11y/lang": {
       "count": 15,
       "repos": 4,
       "samples": [
-        "novuhq__novu/apps/dashboard/src/components/contexts/context-overview.tsx:203",
         "novuhq__novu/apps/dashboard/src/components/translations/translation-drawer/editor-panel.tsx:88",
+        "novuhq__novu/apps/dashboard/src/components/contexts/context-overview.tsx:203",
         "danny-avila__LibreChat/client/src/components/Chat/Messages/Content/Parts/BashCall.tsx:145",
         "outline__outline/app/components/EditableTitle.tsx:150",
-        "elastic__kibana/src/platform/plugins/shared/data_view_management/public/components/field_editor/components/scripting_help/help_flyout.test.tsx:39"
+        "elastic__kibana/x-pack/solutions/search/plugins/enterprise_search/public/applications/applications/components/search_application/connect/search_application_api_integration.tsx:193"
       ]
     },
-    "knex-security/no-unscoped-mutation": {
+    "vercel-ai-security/require-output-validation": {
       "count": 15,
-      "repos": 3,
+      "repos": 4,
       "samples": [
-        "TryGhost__Ghost/ghost/core/core/server/services/gift-links/service.ts:72",
-        "strapi__strapi/packages/core/database/src/migrations/internal-migrations/5.0.0-04-published-at.ts:18",
-        "directus__directus/api/src/database/migrations/20210510A-restructure-relations.ts:12",
-        "directus__directus/api/src/database/helpers/schema/types.ts:124"
+        "novuhq__novu/playground/nextjs/src/app/agent-toolkit/page.tsx:153",
+        "shadcn-ui__ui/packages/helpers/src/ai-sdk/format.test.ts:585",
+        "twentyhq__twenty/packages/twenty-front/src/modules/ai/components/ThinkingStepsDisplay.tsx:276",
+        "vercel__ai/packages/harness-acp/src/v1/acp-v1-harness.ts:1506",
+        "vercel__ai/packages/ai/src/ui/chat.ts:617"
       ]
     },
     "node-security/detect-suspicious-dependencies": {
@@ -3300,9 +3291,20 @@
       "samples": [
         "nightscout__cgm-remote-monitor/lib/api2/notifications-v2.js:20",
         "Shopify__hydrogen/packages/mini-oxygen/src/node/server.ts:244",
-        "novuhq__novu/apps/dashboard/tests/utils/test-bridge-server.ts:68",
         "novuhq__novu/apps/api/e2e/test-bridge-server.ts:67",
-        "vitejs__vite/playground/optimize-missing-deps/server.js:53"
+        "vitejs__vite/playground/ssr-noexternal/server.js:70",
+        "vitejs__vite/playground/css-lightningcss-proxy/server.js:72"
+      ]
+    },
+    "express-security/require-express-body-parser-limits": {
+      "count": 14,
+      "repos": 5,
+      "samples": [
+        "Shopify__hydrogen/packages/mini-oxygen/src/node/server.ts:309",
+        "novuhq__novu/apps/api/src/app/agents/e2e/helpers/bridge-server.ts:46",
+        "novuhq__novu/apps/api/src/bootstrap.ts:123",
+        "TryGhost__Ghost/ghost/core/core/server/web/comments/routes.js:54",
+        "redis__RedisInsight/redisinsight/api/test/helpers/server.ts:53"
       ]
     },
     "secure-coding/no-bidi-characters": {
@@ -3314,12 +3316,20 @@
         "apache__superset/superset-frontend/src/utils/navigationUtils.test.ts:141"
       ]
     },
+    "react-features/void-dom-elements-no-children": {
+      "count": 14,
+      "repos": 1,
+      "samples": [
+        "keystonejs__keystone/packages/fields-document/src/DocumentEditor/code-block.test.tsx:88",
+        "keystonejs__keystone/packages/fields-document/src/DocumentEditor/component-blocks/document-features-normalization.test.tsx:63"
+      ]
+    },
     "secure-coding/no-fail-open-auth": {
       "count": 13,
       "repos": 9,
       "samples": [
         "payloadcms__payload/packages/payload/src/auth/executeAuthStrategies.ts:29",
-        "nightscout__cgm-remote-monitor/lib/authorization/index.js:192",
+        "nightscout__cgm-remote-monitor/lib/authorization/index.js:190",
         "humanprotocol__human-protocol/packages/apps/job-launcher/server/src/common/guards/signature.auth.ts:58",
         "continuedev__continue/manual-testing-sandbox/next-edit/next-edit-10-5-sol.ts:979",
         "TryGhost__Ghost/apps/ember-admin/app/controllers/setup.js:64"
@@ -3329,8 +3339,8 @@
       "count": 13,
       "repos": 3,
       "samples": [
-        "humanprotocol__human-protocol/packages/apps/fortune/recording-oracle/src/main.ts:43",
         "humanprotocol__human-protocol/packages/apps/dashboard/server/src/main.ts:30",
+        "humanprotocol__human-protocol/packages/apps/fortune/recording-oracle/src/main.ts:43",
         "amplication__amplication/packages/amplication-plugin-api/src/main.ts:53",
         "amplication__amplication/packages/amplication-server/src/main.ts:60",
         "nestjs__nest/sample/11-swagger/src/main.ts:16"
@@ -3355,23 +3365,21 @@
         "shadcn-ui__ui/packages/shadcn/test/fixtures/frameworks/vite/src/App.tsx:3"
       ]
     },
-    "vercel-ai-security/require-output-validation": {
+    "knex-security/no-unscoped-mutation": {
       "count": 12,
-      "repos": 4,
+      "repos": 3,
       "samples": [
-        "shadcn-ui__ui/packages/helpers/src/ai-sdk/format.test.ts:585",
-        "novuhq__novu/playground/nextjs/src/app/agent-toolkit/page.tsx:153",
-        "twentyhq__twenty/packages/twenty-front/src/modules/ai/components/ThinkingStepsDisplay.tsx:276",
-        "vercel__ai/packages/harness-deepagents/src/deepagents-harness.ts:756",
-        "vercel__ai/packages/ai/src/ui/chat.ts:617"
+        "TryGhost__Ghost/ghost/core/core/server/services/gift-links/service.ts:72",
+        "strapi__strapi/packages/core/database/src/migrations/internal-migrations/5.0.0-04-published-at.ts:18",
+        "directus__directus/api/src/database/migrations/20210510A-restructure-relations.ts:12",
+        "directus__directus/api/src/database/helpers/schema/types.ts:124"
       ]
     },
     "sequelize-security/no-unsafe-query": {
       "count": 12,
       "repos": 1,
       "samples": [
-        "outline__outline/server/models/Document.ts:1194",
-        "outline__outline/server/queues/tasks/UpdateDocumentsPopularityScoreTask.ts:180"
+        "outline__outline/server/models/Document.ts:1193"
       ]
     },
     "mongodb-security/require-auth-mechanism": {
@@ -3383,6 +3391,17 @@
         "langchain-ai__langchainjs/examples/src/cache/semantic_cache/mongodb_atlas.ts:14",
         "prisma__prisma/examples/retail-store/scripts/reset-db.ts:19",
         "n8n-io__n8n/packages/@n8n/nodes-langchain/nodes/vector_store/VectorStoreMongoDBAtlas/VectorStoreMongoDBAtlas.node.ts:179"
+      ]
+    },
+    "import-next/no-amd": {
+      "count": 11,
+      "repos": 6,
+      "samples": [
+        "nightscout__cgm-remote-monitor/static/colorbrewer/colorbrewer.js:308",
+        "nodejs__node/test/fixtures/wpt/resources/webidl2/lib/webidl2.js:5",
+        "nodejs__node/deps/v8/tools/system-analyzer/log/map.mjs:18",
+        "ytsaurus__ytsaurus-ui/packages/javascript-wrapper/lib/index.js:66",
+        "SpringRoll__SpringRoll/docs/assets/anchor.js:13"
       ]
     },
     "express-security/require-helmet": {
@@ -3404,18 +3423,7 @@
         "n8n-io__n8n/packages/@n8n/agents/src/sdk/agent.ts:1104",
         "vercel__ai/packages/ai/src/prompt/standardize-prompt.ts:109",
         "n8n-io__n8n/packages/@n8n/agents/src/runtime/loop/runtime-context.ts:114",
-        "vercel__ai/packages/harness/src/agent/harness-agent.ts:751"
-      ]
-    },
-    "import-next/no-amd": {
-      "count": 10,
-      "repos": 5,
-      "samples": [
-        "nightscout__cgm-remote-monitor/static/colorbrewer/colorbrewer.js:308",
-        "nodejs__node/deps/v8/tools/system-analyzer/log/map.mjs:18",
-        "SpringRoll__SpringRoll/docs/assets/anchor.js:13",
-        "learningequality__kolibri/packages/kolibri-i18n/src/locale-data/vue-intl/ht.js:5",
-        "learningequality__kolibri/packages/kolibri/utils/internal/polyfills/vue-intl/ht.js:6"
+        "vercel__ai/packages/mcp/src/tool/mcp-client.ts:499"
       ]
     },
     "typeorm-security/require-tls": {
@@ -3424,52 +3432,30 @@
       "samples": [
         "twentyhq__twenty/packages/twenty-server/src/modules/messaging/message-import-manager/drivers/imap/providers/imap-client.provider.ts:107",
         "twentyhq__twenty/packages/twenty-server/src/modules/messaging/message-import-manager/drivers/smtp/providers/smtp-client.provider.ts:62",
-        "redis__RedisInsight/redisinsight/api/src/modules/database/repositories/stack.database.repository.spec.ts:147",
-        "redis__RedisInsight/redisinsight/api/src/modules/database/repositories/stack.databases.repository.ts:137"
-      ]
-    },
-    "jwt/no-sensitive-payload": {
-      "count": 9,
-      "repos": 5,
-      "samples": [
-        "nightscout__cgm-remote-monitor/lib/authorization/index.js:298",
-        "novuhq__novu/apps/api/src/app/auth/services/community.auth.service.ts:205",
-        "outline__outline/server/models/User.ts:721",
-        "twentyhq__twenty/packages/twenty-server/src/engine/core-modules/application/connection-provider/utils/__tests__/extract-email-from-id-token-claims.util.spec.ts:53",
-        "n8n-io__n8n/packages/nodes-base/nodes/Form/test/utils.test.ts:4324"
+        "redis__RedisInsight/redisinsight/api/src/modules/database/repositories/stack.databases.repository.ts:137",
+        "redis__RedisInsight/redisinsight/api/src/modules/database/repositories/stack.database.repository.spec.ts:147"
       ]
     },
     "react-a11y/no-redundant-roles": {
       "count": 9,
       "repos": 6,
       "samples": [
-        "Shopify__hydrogen/cookbook/recipes/markets/ingredients/templates/skeleton/app/components/CountrySelector.tsx:20",
         "withastro__astro/examples/with-nanostores/src/components/CartFlyout.tsx:12",
+        "Shopify__hydrogen/cookbook/recipes/markets/ingredients/templates/skeleton/app/components/CountrySelector.tsx:20",
         "keystonejs__keystone/docs/app/(site)/enterprise/page-client.tsx:126",
         "danny-avila__LibreChat/client/src/components/Agents/Marketplace.tsx:199",
         "danny-avila__LibreChat/client/src/components/Chat/Presentation.tsx:150"
       ]
     },
-    "express-security/no-insecure-cookie-options": {
-      "count": 9,
-      "repos": 5,
+    "express-security/no-permissive-trust-proxy": {
+      "count": 8,
+      "repos": 6,
       "samples": [
-        "ytsaurus__ytsaurus-ui/packages/ui/src/server/components/oauth.ts:97",
-        "danny-avila__LibreChat/packages/api/src/cdn/cloudfront-cookies.ts:521",
-        "dwp__govuk-casa/examples/barebones/plugins/cookie-consent/plugin.js:30",
-        "amplication__amplication/packages/amplication-server/src/core/auth/auth.service.ts:650",
-        "expressjs__express/test/res.append.js:89"
-      ]
-    },
-    "browser-security/no-unsafe-inline-csp": {
-      "count": 9,
-      "repos": 5,
-      "samples": [
-        "novuhq__novu/apps/api/src/app/integrations/integrations.controller.ts:647",
-        "okta__okta-signin-widget/Gruntfile.js:259",
-        "digital-blueprint__esign-app/rolldown.config.js:126",
-        "elastic__kibana/src/platform/plugins/shared/workflows_management/server/api/routes/executions/external_resume_route_helpers.ts:61",
-        "aws__aws-toolkit-vscode/packages/core/src/amazonq/webview/generators/webViewContent.ts:20"
+        "nightscout__cgm-remote-monitor/lib/server/app.js:52",
+        "cncjs__cncjs/src/server/app.js:77",
+        "danny-avila__LibreChat/api/server/middleware/limiters/shareLimiters.spec.js:35",
+        "TryGhost__Ghost/ghost/core/core/shared/express.js:24",
+        "expressjs__express/test/req.ips.js:13"
       ]
     },
     "express-security/no-static-root-exposure": {
@@ -3486,9 +3472,9 @@
       "count": 8,
       "repos": 3,
       "samples": [
-        "ytsaurus__ytsaurus-ui/packages/ui/src/server/controllers/odin-proxy-api.ts:51",
-        "comisai__comis/packages/skills/src/tools/builtin/web-search-jina.ts:56",
         "ytsaurus__ytsaurus-ui/packages/ui/src/server/controllers/availability.ts:35",
+        "comisai__comis/packages/skills/src/tools/builtin/web-search-jina.ts:56",
+        "ytsaurus__ytsaurus-ui/packages/ui/src/server/controllers/odin-proxy-api.ts:51",
         "elastic__kibana/x-pack/solutions/workplaceai/plugins/workplace_ai_app/server/routes/ears/exchange_code.ts:88",
         "elastic__kibana/x-pack/solutions/workplaceai/plugins/workplace_ai_app/server/routes/ears/revoke_token.ts:87"
       ]
@@ -3504,6 +3490,16 @@
         "modelcontextprotocol__typescript-sdk/examples/shared/src/authServer.ts:172"
       ]
     },
+    "express-security/no-insecure-cookie-options": {
+      "count": 8,
+      "repos": 4,
+      "samples": [
+        "ytsaurus__ytsaurus-ui/packages/ui/src/server/components/oauth.ts:97",
+        "dwp__govuk-casa/examples/barebones/plugins/cookie-consent/plugin.js:30",
+        "amplication__amplication/packages/amplication-server/src/core/auth/auth.service.ts:650",
+        "expressjs__express/test/res.append.js:89"
+      ]
+    },
     "node-security/no-weak-hash-algorithm": {
       "count": 8,
       "repos": 4,
@@ -3511,8 +3507,19 @@
         "nodejs__node/lib/internal/tls/wrap.js:1615",
         "novuhq__novu/libs/application-generic/src/utils/buildBridgeEndpointUrl.ts:18",
         "outline__outline/server/models/User.ts:337",
-        "n8n-io__n8n/packages/nodes-base/nodes/Taiga/GenericFunctions.ts:120",
-        "n8n-io__n8n/packages/core/src/encryption/aes-256-cbc.ts:30"
+        "n8n-io__n8n/packages/core/src/encryption/aes-256-cbc.ts:30",
+        "n8n-io__n8n/packages/nodes-base/nodes/Cisco/Webex/GenericFunctions.ts:631"
+      ]
+    },
+    "jwt/no-sensitive-payload": {
+      "count": 8,
+      "repos": 4,
+      "samples": [
+        "novuhq__novu/apps/api/src/app/auth/services/community.auth.service.ts:205",
+        "outline__outline/server/utils/oauth.test.ts:50",
+        "outline__outline/server/models/User.ts:721",
+        "twentyhq__twenty/packages/twenty-server/src/engine/core-modules/application/connection-provider/utils/__tests__/extract-email-from-id-token-claims.util.spec.ts:53",
+        "n8n-io__n8n/packages/testing/playwright/helpers/jwt-helper.ts:58"
       ]
     },
     "express-security/no-client-controlled-authorization": {
@@ -3520,8 +3527,8 @@
       "repos": 3,
       "samples": [
         "directus__directus/api/src/controllers/server.ts:49",
-        "PostHog__context-mill/example-apps/javascript-node/todo.js:103",
-        "nestjs__nest/integration/hello-world/e2e/middleware-fastify.spec.ts:34"
+        "nestjs__nest/integration/hello-world/e2e/middleware-fastify.spec.ts:34",
+        "PostHog__context-mill/example-apps/javascript-node/todo.js:103"
       ]
     },
     "lambda-security/require-timeout-handling": {
@@ -3554,23 +3561,12 @@
         "chakra-ui__chakra-ui/apps/www/scripts/generate-types.ts:24"
       ]
     },
-    "express-security/no-permissive-trust-proxy": {
-      "count": 7,
-      "repos": 5,
-      "samples": [
-        "nightscout__cgm-remote-monitor/lib/server/app.js:28",
-        "cncjs__cncjs/src/server/app.js:77",
-        "TryGhost__Ghost/ghost/core/core/shared/express.js:24",
-        "expressjs__express/test/req.ips.js:13",
-        "expressjs__express/test/req.ip.js:13"
-      ]
-    },
     "node-security/no-insecure-http-parser": {
       "count": 7,
       "repos": 1,
       "samples": [
-        "nodejs__node/test/parallel/test-http-insecure-parser-per-stream.js:15",
-        "nodejs__node/test/parallel/test-http-header-value-relaxed.js:243"
+        "nodejs__node/test/parallel/test-http-header-value-relaxed.js:243",
+        "nodejs__node/test/parallel/test-http-insecure-parser-per-stream.js:15"
       ]
     },
     "react-features/no-direct-mutation-state": {
@@ -3587,8 +3583,8 @@
       "count": 7,
       "repos": 3,
       "samples": [
-        "knex__knex/test/integration2/pool/connection-pool.spec.js:253",
         "knex__knex/lib/dialects/postgres/index.js:163",
+        "knex__knex/test/integration2/pool/connection-pool.spec.js:253",
         "prisma__prisma/packages/3-targets/7-drivers/postgres/test/named-cursor.wire.integration.test.ts:51",
         "n8n-io__n8n/packages/@n8n/typeorm/src/driver/postgres/PostgresDriver.ts:1424"
       ]
@@ -3618,14 +3614,16 @@
       "repos": 2,
       "samples": [
         "Amsterdam__bmi-dms-upload/tests/helpers/createMockComponent.tsx:16",
-        "redis__RedisInsight/redisinsight/ui/src/components/copy-button/CopyButton.tsx:20",
-        "redis__RedisInsight/redisinsight/ui/src/pages/browser/modules/key-details/shared/command-preview/CommandPreview.tsx:18"
+        "redis__RedisInsight/redisinsight/ui/src/pages/browser/modules/key-details/shared/command-preview/CommandPreview.tsx:18",
+        "redis__RedisInsight/redisinsight/ui/src/components/copy-button/CopyButton.tsx:20"
       ]
     },
     "node-security/require-aead-tag-verification": {
       "count": 6,
       "repos": 1,
-      "samples": ["nodejs__node/test/parallel/test-crypto-authenticated.js:176"]
+      "samples": [
+        "nodejs__node/test/parallel/test-crypto-authenticated.js:176"
+      ]
     },
     "mcp-sdk-security/no-tool-description-injection": {
       "count": 6,
@@ -3638,19 +3636,28 @@
         "n8n-io__n8n/packages/@n8n/mcp-browser/src/server.ts:21"
       ]
     },
+    "mongodb-security/no-hardcoded-credentials": {
+      "count": 6,
+      "repos": 1,
+      "samples": [
+        "danny-avila__LibreChat/packages/data-schemas/src/methods/queuedTurn.ts:719",
+        "danny-avila__LibreChat/packages/data-schemas/src/methods/action.ts:11"
+      ]
+    },
     "vercel-ai-security/no-training-data-exposure": {
       "count": 6,
       "repos": 2,
       "samples": [
         "strapi__strapi/packages/core/content-type-builder/admin/src/components/AIChat/hooks/useAIFetch.ts:115",
-        "vercel__ai/packages/gateway/src/gateway-language-model.test.ts:1659",
-        "vercel__ai/examples/ai-functions/src/stream-text/gateway-provider-options-disallow-prompt-training.ts:11"
+        "vercel__ai/examples/ai-functions/src/stream-text/gateway-provider-options-disallow-prompt-training.ts:11",
+        "vercel__ai/packages/gateway/src/gateway-language-model.test.ts:1659"
       ]
     },
     "react-features/no-arrow-function-lifecycle": {
       "count": 6,
       "repos": 1,
       "samples": [
+        "elastic__kibana/x-pack/platform/plugins/private/logstash/public/application/components/pipeline_editor/pipeline_editor.js:68",
         "elastic__kibana/src/platform/plugins/private/input_control_vis/public/components/editor/list_control_editor.tsx:76"
       ]
     },
@@ -3658,7 +3665,6 @@
       "count": 5,
       "repos": 2,
       "samples": [
-        "payloadcms__payload/templates/ecommerce/src/components/forms/CreateAccountForm/index.tsx:64",
         "payloadcms__payload/examples/multi-tenant/src/app/components/Login/client.page.tsx:47",
         "ytsaurus__ytsaurus-ui/packages/ui/src/ui/pages/job/JobActions/JobActions.tsx:76"
       ]
@@ -3694,9 +3700,9 @@
       "count": 5,
       "repos": 3,
       "samples": [
-        "lobehub__lobe-chat/src/store/user/slices/common/action.ts:201",
-        "synapsecns__sanguine/packages/synapse-interface/contexts/SegmentAnalyticsProvider.tsx:34",
         "lobehub__lobe-chat/apps/server/src/services/user/index.ts:39",
+        "synapsecns__sanguine/packages/synapse-interface/contexts/SegmentAnalyticsProvider.tsx:34",
+        "lobehub__lobe-chat/src/store/user/slices/common/action.ts:201",
         "FastyBird__smart-panel/apps/admin/src/modules/auth/router/hooks/profile.hook.ts:12"
       ]
     },
@@ -3705,8 +3711,9 @@
       "repos": 2,
       "samples": [
         "lobehub__lobe-chat/scripts/clerk-to-betterauth/verify.ts:66",
-        "elastic__kibana/x-pack/platform/plugins/shared/security/public/management/users/components/change_password_form/change_password_form.tsx:234",
-        "elastic__kibana/x-pack/platform/plugins/shared/security/public/management/users/edit_user/user_form.tsx:183"
+        "lobehub__lobe-chat/src/routes/(main)/eval/bench/[benchmarkId]/features/BenchmarkHeader/index.tsx:280",
+        "elastic__kibana/x-pack/platform/plugins/shared/security/public/management/users/edit_user/user_form.tsx:183",
+        "elastic__kibana/x-pack/platform/plugins/shared/security/public/management/users/components/change_password_form/change_password_form.tsx:234"
       ]
     },
     "react-features/no-string-refs": {
@@ -3715,15 +3722,6 @@
       "samples": [
         "elastic__kibana/src/platform/plugins/shared/vis_types/timeseries/public/application/visualizations/views/gauge.js:185",
         "elastic__kibana/x-pack/platform/plugins/private/monitoring/public/components/chart/chart_target.js:184"
-      ]
-    },
-    "express-security/no-disabled-helmet-protections": {
-      "count": 4,
-      "repos": 3,
-      "samples": [
-        "nightscout__cgm-remote-monitor/lib/server/app.js:93",
-        "n8n-io__n8n/packages/cli/src/server.ts:396",
-        "ghostfolio__ghostfolio/apps/api/src/main.ts:111"
       ]
     },
     "node-security/no-cryptojs": {
@@ -3752,14 +3750,6 @@
         "prisma__prisma/test/integration/test/namespaced-accessors-e2e.integration.test.ts:190"
       ]
     },
-    "mongodb-security/no-hardcoded-credentials": {
-      "count": 4,
-      "repos": 1,
-      "samples": [
-        "danny-avila__LibreChat/packages/data-schemas/src/methods/insights.ts:392",
-        "danny-avila__LibreChat/packages/data-schemas/src/methods/queuedTurn.ts:719"
-      ]
-    },
     "jwt/require-issued-at": {
       "count": 4,
       "repos": 2,
@@ -3776,6 +3766,15 @@
         "strapi__strapi/packages/core/core/src/services/session-manager.ts:388"
       ]
     },
+    "react-a11y/aria-activedescendant-has-tabindex": {
+      "count": 4,
+      "repos": 3,
+      "samples": [
+        "twentyhq__twenty/packages/twenty-apps/public/call-recorder/src/front-components/components/SettingsSelectControl.tsx:133",
+        "elastic__kibana/src/platform/plugins/shared/kql/public/components/query_string_input/query_string_input.tsx:877",
+        "redis__RedisInsight/redisinsight/ui/src/pages/browser/modules/key-details/components/vector-set-details/similarity-search-form/filter-input-with-suggestions/FilterInputWithSuggestions.tsx:179"
+      ]
+    },
     "react-a11y/no-aria-hidden-on-focusable": {
       "count": 3,
       "repos": 2,
@@ -3788,7 +3787,9 @@
     "node-security/no-insecure-rsa-padding": {
       "count": 3,
       "repos": 1,
-      "samples": ["nodejs__node/test/common/tls.js:56"]
+      "samples": [
+        "nodejs__node/test/common/tls.js:56"
+      ]
     },
     "mysql-security/no-unsafe-query": {
       "count": 3,
@@ -3802,7 +3803,6 @@
       "count": 3,
       "repos": 2,
       "samples": [
-        "novuhq__novu/apps/dashboard/tests/utils/test-bridge-server.ts:65",
         "novuhq__novu/apps/api/e2e/test-bridge-server.ts:64",
         "lobehub__lobe-chat/apps/server/src/router-hono/devtools/handlers/testPush.ts:48"
       ]
@@ -3818,7 +3818,7 @@
       "count": 3,
       "repos": 2,
       "samples": [
-        "danny-avila__LibreChat/api/server/routes/accessPermissions.js:143",
+        "danny-avila__LibreChat/api/server/routes/accessPermissions.js:156",
         "directus__directus/api/src/controllers/users.ts:178",
         "directus__directus/api/src/controllers/extensions.ts:273"
       ]
@@ -3835,25 +3835,16 @@
       "count": 3,
       "repos": 2,
       "samples": [
-        "twentyhq__twenty/packages/twenty-server/src/engine/metadata-modules/ai/ai-chat/services/agent-title-generation.service.ts:48",
+        "twentyhq__twenty/packages/twenty-server/src/engine/metadata-modules/ai/ai-chat/services/agent-title-generation.service.ts:50",
         "nasa__earthdata-search/serverless/src/nlpSearch/handler.js:259"
-      ]
-    },
-    "react-a11y/aria-activedescendant-has-tabindex": {
-      "count": 3,
-      "repos": 3,
-      "samples": [
-        "twentyhq__twenty/packages/twenty-front-component-renderer/src/__stories__/html-tag/grouping/div/div-crossing-attributes.front-component.tsx:11",
-        "elastic__kibana/src/platform/plugins/shared/kql/public/components/query_string_input/query_string_input.tsx:877",
-        "redis__RedisInsight/redisinsight/ui/src/pages/browser/modules/key-details/components/vector-set-details/similarity-search-form/filter-input-with-suggestions/FilterInputWithSuggestions.tsx:179"
       ]
     },
     "react-features/no-redundant-should-component-update": {
       "count": 3,
       "repos": 1,
       "samples": [
-        "elastic__kibana/x-pack/platform/plugins/shared/ml/public/application/explorer/explorer_charts/explorer_chart_distribution.js:725",
-        "elastic__kibana/x-pack/platform/plugins/shared/ml/public/application/explorer/explorer_charts/explorer_chart_single_metric.js:673"
+        "elastic__kibana/x-pack/platform/plugins/shared/ml/public/application/explorer/explorer_charts/explorer_chart_single_metric.js:673",
+        "elastic__kibana/x-pack/platform/plugins/shared/ml/public/application/explorer/explorer_charts/explorer_chart_distribution.js:725"
       ]
     },
     "browser-security/no-sensitive-sessionstorage": {
@@ -3866,7 +3857,17 @@
     "vercel-ai-security/require-tool-schema": {
       "count": 3,
       "repos": 1,
-      "samples": ["vercel__ai/packages/workflow/src/serializable-schema.ts:165"]
+      "samples": [
+        "vercel__ai/packages/workflow/src/serializable-schema.ts:165"
+      ]
+    },
+    "express-security/no-disabled-helmet-protections": {
+      "count": 3,
+      "repos": 2,
+      "samples": [
+        "n8n-io__n8n/packages/cli/src/server.ts:397",
+        "ghostfolio__ghostfolio/apps/api/src/main.ts:111"
+      ]
     },
     "lambda-security/no-exposed-error-details": {
       "count": 3,
@@ -3879,14 +3880,8 @@
     "express-security/no-unsafe-csp-directives": {
       "count": 3,
       "repos": 1,
-      "samples": ["ghostfolio__ghostfolio/apps/api/src/main.ts:106"]
-    },
-    "browser-security/detect-mixed-content": {
-      "count": 2,
-      "repos": 2,
       "samples": [
-        "nodejs__node/test/fixtures/wpt/workers/interfaces/WorkerUtils/importScripts/002.worker.js:6",
-        "elastic__kibana/src/platform/plugins/shared/data_view_field_editor/public/components/preview/field_list/field_list_item.test.tsx:88"
+        "ghostfolio__ghostfolio/apps/api/src/main.ts:106"
       ]
     },
     "import-next/no-named-as-default": {
@@ -3897,12 +3892,12 @@
         "langchain-ai__langchainjs/libs/providers/langchain-openai/src/chat_models/base.ts:1"
       ]
     },
-    "pg/no-unsafe-search-path": {
+    "browser-security/detect-mixed-content": {
       "count": 2,
       "repos": 2,
       "samples": [
-        "keystonejs__keystone/packages/core/src/testing/postgresql.ts:78",
-        "n8n-io__n8n/packages/@n8n/typeorm/src/driver/postgres/PostgresDriver.ts:1059"
+        "nodejs__node/test/fixtures/wpt/workers/interfaces/WorkerUtils/importScripts/002.worker.js:6",
+        "elastic__kibana/src/platform/plugins/shared/data_view_field_editor/public/components/preview/field_list/field_list_item.test.tsx:88"
       ]
     },
     "vercel-ai-security/no-unsafe-output-handling": {
@@ -3913,19 +3908,34 @@
         "vercel__ai/packages/ai/src/ui-message-stream/create-ui-message-stream.test.ts:783"
       ]
     },
+    "pg/no-unsafe-search-path": {
+      "count": 2,
+      "repos": 2,
+      "samples": [
+        "keystonejs__keystone/packages/core/src/testing/postgresql.ts:78",
+        "n8n-io__n8n/packages/@n8n/typeorm/src/driver/postgres/PostgresDriver.ts:1059"
+      ]
+    },
     "mongodb-security/no-unsafe-query": {
       "count": 2,
       "repos": 1,
       "samples": [
-        "danny-avila__LibreChat/api/server/routes/accessPermissions.js:143",
-        "danny-avila__LibreChat/api/server/routes/share.js:706"
+        "danny-avila__LibreChat/api/server/routes/share.js:709",
+        "danny-avila__LibreChat/api/server/routes/accessPermissions.js:156"
       ]
     },
     "express-security/require-query-type-guard": {
       "count": 2,
       "repos": 1,
       "samples": [
-        "TryGhost__Ghost/ghost/core/core/server/services/members/middleware.js:467"
+        "TryGhost__Ghost/ghost/core/core/server/services/members/middleware.js:481"
+      ]
+    },
+    "express-security/no-cors-credentials-wildcard": {
+      "count": 2,
+      "repos": 1,
+      "samples": [
+        "okta__okta-signin-widget/playground/mocks/server.js:73"
       ]
     },
     "knex-security/no-hardcoded-credentials": {
@@ -3933,19 +3943,6 @@
       "repos": 1,
       "samples": [
         "strapi__strapi/packages/core/database/src/__tests__/index.test.ts:69"
-      ]
-    },
-    "express-security/no-cors-credentials-wildcard": {
-      "count": 2,
-      "repos": 1,
-      "samples": ["okta__okta-signin-widget/playground/mocks/server.js:73"]
-    },
-    "browser-security/no-unsafe-eval-csp": {
-      "count": 2,
-      "repos": 2,
-      "samples": [
-        "directus__directus/api/src/app.ts:189",
-        "n8n-io__n8n/packages/@n8n/config/src/configs/content-security-policy.ts:9"
       ]
     },
     "secure-coding/no-ldap-injection": {
@@ -3956,12 +3953,12 @@
         "n8n-io__n8n/packages/cli/src/modules/ldap.ee/helpers.ee.ts:47"
       ]
     },
-    "react-features/jsx-no-script-url": {
+    "browser-security/no-unsafe-eval-csp": {
       "count": 2,
       "repos": 2,
       "samples": [
-        "twentyhq__twenty/packages/twenty-front-component-renderer/src/__stories__/html-tag/grouping/div/div-crossing-attributes.front-component.tsx:18",
-        "boostercloud__booster/website/src/theme/NavbarItem/CustomNavbarItem.tsx:95"
+        "directus__directus/api/src/app.ts:189",
+        "n8n-io__n8n/packages/@n8n/config/src/configs/content-security-policy.ts:9"
       ]
     },
     "secure-coding/no-template-injection": {
@@ -3970,6 +3967,14 @@
       "samples": [
         "twentyhq__twenty/packages/twenty-shared/src/utils/evalFromContext.ts:14",
         "elastic__kibana/x-pack/platform/packages/shared/kbn-evals-suite-significant-events/src/evaluators/discovery/discovery/build_agent_input.ts:22"
+      ]
+    },
+    "react-features/jsx-no-script-url": {
+      "count": 2,
+      "repos": 2,
+      "samples": [
+        "twentyhq__twenty/packages/twenty-front-component-renderer/src/__stories__/html-tag/grouping/div/div-crossing-attributes.front-component.tsx:18",
+        "boostercloud__booster/website/src/theme/NavbarItem/CustomNavbarItem.tsx:95"
       ]
     },
     "prisma-security/no-unscoped-mutation": {
@@ -4015,11 +4020,6 @@
         "Shopify__hydrogen/cookbook/recipes/multipass/ingredients/templates/skeleton/app/lib/multipass/multipassify.server.ts:116"
       ]
     },
-    "browser-security/require-websocket-wss": {
-      "count": 1,
-      "repos": 1,
-      "samples": ["nodejs__node/benchmark/websocket/simple.js:90"]
-    },
     "browser-security/no-filereader-innerhtml": {
       "count": 1,
       "repos": 1,
@@ -4032,6 +4032,13 @@
       "repos": 1,
       "samples": [
         "ytsaurus__ytsaurus-ui/packages/components/src/internal/Yson/Yson.tsx:123"
+      ]
+    },
+    "browser-security/require-websocket-wss": {
+      "count": 1,
+      "repos": 1,
+      "samples": [
+        "nodejs__node/benchmark/websocket/simple.js:90"
       ]
     },
     "react-features/prefer-es6-class": {
@@ -4069,23 +4076,23 @@
         "elastic__kibana/x-pack/platform/packages/shared/kbn-mcp-client/mcp/src/json_schema_validator.integration.test.ts:17"
       ]
     },
-    "react-a11y/no-access-key": {
-      "count": 1,
-      "repos": 1,
-      "samples": [
-        "redis__RedisInsight/redisinsight/ui/src/pages/home/components/cloud-connection/CloudConnectionFormWrapper.tsx:67"
-      ]
-    },
     "browser-security/no-dynamic-service-worker-url": {
       "count": 1,
       "repos": 1,
       "samples": [
         "mui__material-ui/packages-internal/core-docs/src/DocsApp/serviceWorker.ts:63"
       ]
+    },
+    "react-a11y/no-access-key": {
+      "count": 1,
+      "repos": 1,
+      "samples": [
+        "redis__RedisInsight/redisinsight/ui/src/pages/home/components/cloud-connection/CloudConnectionFormWrapper.tsx:67"
+      ]
     }
   },
-  "note": "Which rules fire on real third-party code. Reproduce with `npx tsx scripts/real-source-scan.mts`; the repository list is `benchmarks/real-source-repos.json`. Firing is not catching \u2014 see the header of that script. Inline eslint-disable comments in the scanned source are ignored, and files over 200KB are skipped as generated.",
-  "generated": "2026-09-03",
+  "note": "Which rules fire on real third-party code. Reproduce with `npx tsx scripts/real-source-scan.mts`; the repository list is `benchmarks/real-source-repos.json`. Firing is not catching — see the header of that script. Inline eslint-disable comments in the scanned source are ignored, and files over 200KB are skipped as generated.",
+  "generated": "2026-09-06",
   "configHash": "e0197e67d7f92d24",
   "reposHash": "1c7dac70cd86da32"
 }
