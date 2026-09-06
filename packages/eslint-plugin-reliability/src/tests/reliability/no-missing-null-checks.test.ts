@@ -818,6 +818,16 @@ describe('no-missing-null-checks', () => {
           filename: 'src/utils.ts',
         },
         {
+          name: 'a closure created after the guard reads the same binding',
+          code: 'function f(rows) { const hit = rows.find(r => r.ok); if (!hit) return; const g = () => hit.name; return g; }',
+          filename: 'src/utils.ts',
+        },
+        {
+          name: '`!other || !x` — the arm that names x is enough',
+          code: 'function f(rows, other) { const hit = rows.find(r => r.ok); if (!other || !hit) return; return hit.name; }',
+          filename: 'src/utils.ts',
+        },
+        {
           name: 'switch case consequent is itself a statement list',
           code: 'function f(rows, k) { const hit = rows.find(r => r.ok); switch (k) { case 1: if (!hit) break; hit.name; } }',
           filename: 'src/utils.ts',
@@ -877,6 +887,30 @@ describe('no-missing-null-checks', () => {
           code: 'function f(rows) { const hit = rows.find(r => r.ok); if (!hit) { hit.name; return; } }',
           filename: 'src/utils.ts',
           errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          name: 'an outer guard does not cover a SHADOWING inner binding (block)',
+          code: 'function f(rows) { const hit = rows.find(r => r.ok); if (!hit) return; { let hit; hit.name; } }',
+          filename: 'src/utils.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          name: 'an outer guard does not cover a SHADOWING inner binding (nested function)',
+          code: 'function f(rows) { const hit = rows.find(r => r.ok); if (!hit) return; function g(rows2) { const hit = rows2.find(r => r.ok); return hit.name; } return g; }',
+          filename: 'src/utils.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          name: 'a guard on an undeclared name proves nothing',
+          code: 'function f(rows) { const hit = rows.find(r => r.ok); if (!missing) return; return hit.name; }',
+          filename: 'src/utils.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          name: 'same binding, different member — `if (!a.b)` does not guard `a.c`',
+          code: 'let a; if (!a.b) return; a.c.d;',
+          filename: 'src/utils.ts',
+          errors: [{ messageId: 'missingNullCheck' }, { messageId: 'missingNullCheck' }],
         },
         {
           name: 'a comparison that is not against null is not a null guard',

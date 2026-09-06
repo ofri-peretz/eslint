@@ -71,10 +71,13 @@ call documented to return null on a miss (`find`, `match`, `exec`,
 
 | Guard | Example |
 | ----- | ------- |
-| Optional chaining / nullish coalescing | `hit?.name`, `hit.name ?? ''` |
+| Optional chaining | `hit?.name` |
 | Truthy or `!= null` test enclosing the read | `if (hit) { hit.name }`, `hit && hit.name`, `hit ? hit.name : ''` |
-| Falsy guard that **leaves** before the read | `if (!hit) return; hit.name` — also `throw`, `continue`, `break`, `x == null`, `!x \|\| other` |
+| Falsy guard that **leaves** before the read | `if (!hit) return; hit.name` — also `if (hit == null) throw …; hit.name`, `if (!hit \|\| stale) continue; hit.name` |
 | TypeScript narrowing (type-aware mode) | `if (!page) notFound(); page.data` when `notFound(): never` |
+
+The exiting guard must name the **same binding** as the read: an outer
+`if (!hit) return` says nothing about an inner `let hit` that shadows it.
 
 **Type-aware mode.** When `@typescript-eslint/parser` runs with `projectService`
 (or `project`), the rule asks the checker for the type of the object being
