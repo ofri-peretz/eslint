@@ -43,7 +43,23 @@ describe('no-console-spaces', () => {
           code: 'console.log("hello", "world");',
         },
         {
+          name: 'a plain string with no padding',
           code: 'console.error("error message");',
+        },
+        // Only the edges of the whole argument count. The space before an
+        // interpolation is the separator between two words of one string,
+        // not padding console would add a second copy of.
+        {
+          name: 'a space before an interpolation is interior, not trailing',
+          code: 'console.error(`No workflows dir at ${dir}`);',
+        },
+        {
+          name: 'a space after an interpolation is interior, not leading',
+          code: 'console.log(`${count} files`);',
+        },
+        {
+          name: 'spaces around a middle interpolation are interior',
+          code: 'console.log(`found ${n} in ${dir}`);',
         },
         {
           code: 'console.warn("warning");',

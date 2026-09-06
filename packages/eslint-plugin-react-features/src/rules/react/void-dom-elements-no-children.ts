@@ -95,9 +95,13 @@ export const voidDomElementsNoChildren = createRule<RuleOptions, MessageIds>({
         const openingElement = node.openingElement;
         
         if (openingElement.name.type !== 'JSXIdentifier') return;
-        
-        const elementName = openingElement.name.name.toLowerCase();
-        
+
+        // JSX resolves a capitalized name to a binding, never to a DOM tag, so
+        // `<Link>` from next/link is a component and `link` is the void element.
+        // The former case-insensitive match reported every <Link>, <Img>,
+        // <Input> component that wrapped children.
+        const elementName = openingElement.name.name;
+
         if (!VOID_ELEMENTS.has(elementName)) return;
 
         const hasChildren = hasChildrenProp(openingElement) || 

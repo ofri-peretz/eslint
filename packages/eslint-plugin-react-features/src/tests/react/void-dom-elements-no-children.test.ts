@@ -45,7 +45,15 @@ describe('void-dom-elements-no-children', () => {
       '<span>Text</span>',
       '<p>Paragraph</p>',
       // Custom components (not void elements)
-      '<MyComponent>Content</MyComponent>',
+      { name: 'a custom component is never a DOM element', code: '<MyComponent>Content</MyComponent>' },
+      // A component whose name only differs from a void element by case is a
+      // component, not that element: JSX resolves capitalized names to bindings.
+      {
+        name: "next/link's <Link> is a component, not the void <link>",
+        code: 'import Link from "next/link"; const a = <Link href="/docs">Read the floor</Link>;',
+      },
+      { name: 'a capitalized <Img> component may wrap children', code: '<Img src="x.png">caption</Img>' },
+      { name: 'a capitalized <Input> component may take a children prop', code: '<Input children={label} />' },
     ],
     invalid: [
       {
