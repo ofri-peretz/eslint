@@ -335,6 +335,11 @@ async function runEslint(configPath, targetFile, pluginName) {
       // support policy is not.
       return UNSUPPORTED;
     }
+    // A peer whose CONFIG will not load is broken here in a way the run
+    // cannot characterise — unlike a lint-time throw below, which is one
+    // upstream rule misbehaving on this corpus and is recorded per-plugin.
+    // Nothing distinguishes "broken plugin" from "broken bench" at this
+    // point, so this stays fatal for everyone.
     console.error(
       `\n❌ Config failed to load: ${configPath}\n   ${e.message}\n\nRefusing to score.`,
     );
@@ -791,7 +796,9 @@ async function runBenchmark() {
     }
     const safeCrash = crashMessage(safeRaw);
     if (safeCrash !== null) {
-      console.log(`   ⊘ Not scored — crashed on safe-patterns.js: ${safeCrash}`);
+      console.log(
+        `   ⊘ Not scored — crashed on safe-patterns.js: ${safeCrash}`,
+      );
       results.plugins[plugin.name] = {
         displayName: plugin.displayName,
         crashed: { on: 'safe', message: safeCrash },
