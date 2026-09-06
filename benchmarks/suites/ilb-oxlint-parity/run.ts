@@ -18,7 +18,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { execSync } from 'node:child_process';
+import { execSync, execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { getToolchain } from '../../lib/toolchain.ts';
@@ -441,26 +441,73 @@ function lintEslint(corpus, configPath) {
 }
 
 function lintOxlint(corpus, configPath) {
-  const cmd = `npx oxlint --config "${configPath}" --format json "${corpus}"`;
+  /*
+   * Explicit file list, never a bare directory.
+   *
+   * oxlint's own directory walker is git-aware: a corpus that lives under a
+   * .gitignore'd path (harvested-fixtures/ is — see .gitignore, it is
+   * regenerated, not committed) gets silently pruned to zero files before a
+   * single rule runs. `--no-ignore` does not override this — it only turns
+   * off `.eslintignore`/`--ignore-pattern` handling, not the built-in
+   * git-ignore walk. An explicit file argument bypasses directory traversal
+   * entirely and is linted regardless of .gitignore, which is what makes
+   * this work. Verified empirically: a bare-directory invocation against
+   * harvested-fixtures printed "No files found to lint" and returned
+   * `number_of_files: 0` for the whole corpus; the same files passed
+   * individually were all linted.
+   */
+  const files = corpusFiles(corpus);
+  if (files.length === 0) {
+    // A missing or empty corpus must not read as "oxlint agrees with
+    // nothing" — that is exactly the fabricated-measurement shape this fix
+    // exists to eliminate.
+    throw new Error(`oxlint corpus contains no lintable files: ${corpus}`);
+  }
+
   let raw = '';
   try {
-    raw = execSync(cmd, {
-      cwd: REPO_ROOT,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe'],
-      maxBuffer: 64 * 1024 * 1024,
-    });
+    /*
+     * The oxlint binary directly, never `npx oxlint`.
+     *
+     * `npx` exited 249 with empty stdout AND empty stderr against this
+     * corpus's ~4000-file argv (~600KB, well under the 2MB ARG_MAX) — some
+     * internal limit of npx's own argument handling, not the OS or oxlint.
+     * The installed binary (`node_modules/oxlint/bin/oxlint`, a plain
+     * node-shebang script — no npm resolution step involved) takes the exact
+     * same argv and works. Verified: the direct-binary invocation returned a
+     * normal exit 1 (findings present) with full JSON on stdout; `npx`
+     * failed on the identical argv every time.
+     */
+    raw = execFileSync(
+      path.join(REPO_ROOT, 'node_modules', 'oxlint', 'bin', 'oxlint'),
+      ['--config', configPath, '--format', 'json', ...files],
+      {
+        cwd: REPO_ROOT,
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+        maxBuffer: 64 * 1024 * 1024,
+      },
+    );
   } catch (err) {
     raw = err.stdout?.toString() ?? '';
     if (!raw) throw err;
   }
   // oxlint --format json emits a single JSON object with `diagnostics[]`.
   // Each diagnostic's rule lives in `code` as `<source>(<rule>)`.
+  //
+  // A parse failure here means oxlint printed something other than the JSON
+  // object we asked for (a warning line ahead of it, a crash, a version
+  // mismatch) — that is exactly the shape of the bug this function was
+  // rewritten to fix (see above), so it must not be swallowed into a silent
+  // "0 findings" the way it was before. Surface it.
   let parsed;
   try {
     parsed = JSON.parse(raw);
-  } catch {
-    return [];
+  } catch (err) {
+    throw new Error(
+      `oxlint --format json produced unparseable output (${(err as Error).message}). ` +
+        `First 500 chars:\n${raw.slice(0, 500)}`,
+    );
   }
   const diags = parsed.diagnostics ?? [];
   const findings = [];
