@@ -114,8 +114,8 @@ if (expected) {
   // `emitsDist` comes from the build script itself, so this no longer guesses a
   // directory from the package name — that guess mapped
   // a scoped name onto a same-named directory (a package's dir need not match
-  // its npm name) and demanded a dist from private, build-less packages like
-  // @interlace/eslint-formatter-sarif.
+  // its npm name) and demanded a dist from private, build-less packages (as
+  // @interlace/eslint-formatter-sarif was before it gained a build).
   const missing = expected.filter((e) => e.emitsDist && !checked.includes(e.name)).map((e) => e.name);
   if (missing.length > 0) {
     console.error(

@@ -7,6 +7,11 @@
       "tarball": 100,
       "files": 101
     },
+    "@interlace/eslint-formatter-sarif": {
+      "unpacked": 12,
+      "tarball": 5,
+      "files": 4
+    },
     "eslint-plugin-anthropic-security": {
       "unpacked": 25,
       "tarball": 6,

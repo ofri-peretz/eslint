@@ -1,9 +1,54 @@
 {
-  "releaseCount": 644,
+  "releaseCount": 647,
   "packageCount": 34,
-  "entryCount": 2031,
+  "entryCount": 2034,
   "oldestYear": 2024,
   "releases": [
+    {
+      "package": "eslint-plugin-reliability",
+      "short": "eslint-plugin-reliability",
+      "version": "4.1.4",
+      "date": "2026-09-06T14:28:15Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-missing-null-checks` understands `if (!x) return` and, given types, TypeScript's own narrowing",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-react-features",
+      "short": "eslint-plugin-react-features",
+      "version": "1.7.4",
+      "date": "2026-09-06T14:28:00Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`void-dom-elements-no-children` no longer reports `<Link>`, `<Img>`, `<Input>` and other capitalized components",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-conventions",
+      "short": "eslint-plugin-conventions",
+      "version": "5.3.3",
+      "date": "2026-09-06T14:27:54Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-console-spaces` no longer reports the space beside an interpolation in a template literal",
+          "pr": null
+        }
+      ]
+    },
     {
       "package": "eslint-plugin-import-next",
       "short": "eslint-plugin-import-next",

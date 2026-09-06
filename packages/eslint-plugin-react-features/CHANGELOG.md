@@ -5,6 +5,21 @@ All notable changes to `eslint-plugin-react-features` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 1.7.4
+
+### Patch Changes
+
+- **🐛 Fix** — `void-dom-elements-no-children` no longer reports `<Link>`, `<Img>`, `<Input>` and other capitalized components
+
+  `<Link href="/docs">Read the floor</Link>` from `next/link` was reported as
+  "`<link>` is a void element and cannot have children". The tag-name check
+  lower-cased the JSX name before looking it up, so any component whose name
+  differed from a void element only by case was treated as that element.
+
+  JSX resolves a capitalized name to a binding, never to a DOM tag. Only a
+  lowercase `JSXIdentifier` (`link`, `img`, `br`, …) can be a void DOM element,
+  and that is now the only thing the rule matches.
+
 ## 1.7.3
 
 ### Patch Changes
