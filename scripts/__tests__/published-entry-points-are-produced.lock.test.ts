@@ -122,19 +122,41 @@ describe('a published entry point is produced and shipped', () => {
     ).toEqual([]);
   });
 
-  it('every entry point outside dist/ exists when nothing builds it', () => {
-    const offenders = published
-      .filter(({ pkg }) => typeof pkg.scripts?.build !== 'string')
-      .flatMap(({ dir, pkg }) =>
-        entryPoints(pkg)
-          .filter((p) => !p.startsWith('./dist/'))
-          .filter((p) => !existsSync(join(PACKAGES, dir, p)))
-          .map((p) => `${pkg.name}: ${p}`),
-      );
+  /*
+   * Every published package, built or not.
+   *
+   * This used to skip any package with a `build` script, which let a built
+   * package declare a missing `./src/foo.js` and pass. But it cannot simply
+   * require the file on disk either: .gitignore ignores compiled JS under
+   * every package's src, and the build emits `.js`/`.d.ts` beside their
+   * `.ts` source — `./src/types/index.js` is real in the published tarball
+   * and absent in an unbuilt checkout. Requiring it outright reports 20
+   * packages that ship correctly.
+   *
+   * So: the entry exists, or something on disk compiles to it. A path with
+   * neither is missing in every checkout and every tarball, which is the
+   * case worth failing on.
+   */
+  const compilesTo = (abs: string): boolean =>
+    ['.ts', '.tsx', '.mts', '.cts'].some((ext) =>
+      existsSync(abs.replace(/\.d\.ts$|\.js$|\.mjs$|\.cjs$/, ext)),
+    );
+
+  it('every entry point outside dist/ exists, or has a source that builds it', () => {
+    const offenders = published.flatMap(({ dir, pkg }) =>
+      entryPoints(pkg)
+        .filter((p) => !p.startsWith('./dist/'))
+        .filter((p) => {
+          const abs = join(PACKAGES, dir, p);
+          return !existsSync(abs) && !compilesTo(abs);
+        })
+        .map((p) => `${pkg.name}: ${p}`),
+    );
     expect(
       offenders,
-      'A package with no `build` ships its source as-is, so every entry point ' +
-        'must already be on disk. These are not.',
+      'An entry point outside dist/ must be on disk or have a source the ' +
+        'build compiles to it. These have neither, so they resolve to nothing ' +
+        'for consumers.',
     ).toEqual([]);
   });
 

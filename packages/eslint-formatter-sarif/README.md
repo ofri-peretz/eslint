@@ -57,10 +57,18 @@ The official `@microsoft/eslint-formatter-sarif` works for plain ESLint findings
 
 ## 📦 Compatibility
 
-| Package | Version                            |
-| :------ | :--------------------------------- |
-| ESLint  | `^8.40.0 \|\| ^9.0.0 \|\| ^10.0.0` |
-| Node.js | `>=18.0.0`                         |
+This package needs Node.js `>=18.0.0`. The ESLint you pair it with may need
+more — each major sets its own floor, so the effective requirement is whichever
+is higher:
+
+| ESLint    | Node.js required by that ESLint       |
+| :-------- | :------------------------------------ |
+| `^8.40.0` | `>=16.0.0`                            |
+| `^9.0.0`  | `^18.18.0 \|\| ^20.9.0 \|\| >=21.1.0` |
+| `^10.0.0` | `^20.19.0 \|\| ^22.13.0 \|\| >=24`    |
+
+So ESLint 10 on Node 18 is not a supported combination, even though this
+package itself runs on 18.
 
 See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
 
