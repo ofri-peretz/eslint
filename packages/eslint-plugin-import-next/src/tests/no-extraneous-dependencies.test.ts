@@ -72,11 +72,32 @@ ruleTester.run('no-extraneous-dependencies', noExtraneousDependencies, {
 
     // Builtins
     { 
+        name: 'a bare builtin',
         code: `import fs from 'fs';`,
         options: [{ packageJson: mockPackageJson }]
     },
     { 
+        name: 'a node: builtin',
         code: `import path from 'node:path';`,
+        options: [{ packageJson: mockPackageJson }]
+    },
+    // `node:process` was reported as a missing dependency: the hand-written
+    // builtin list never had `process`, `module`, `worker_threads` or
+    // `perf_hooks`. A `node:`-prefixed specifier is a builtin by definition,
+    // and the bare names come from `builtinModules` rather than a list that rots.
+    {
+        name: 'node:process is a builtin, not a dependency',
+        code: `import process from 'node:process';`,
+        options: [{ packageJson: mockPackageJson }]
+    },
+    {
+        name: 'a bare builtin newer than the old hand-written list',
+        code: `import { isMainThread } from 'worker_threads';`,
+        options: [{ packageJson: mockPackageJson }]
+    },
+    {
+        name: 'a required node: builtin',
+        code: `const { performance } = require('node:perf_hooks');`,
         options: [{ packageJson: mockPackageJson }]
     },
     

@@ -28,6 +28,22 @@ describe('no-unlimited-resource-allocation', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - safe resource allocation', noUnlimitedResourceAllocation, {
       valid: [
+    // A loop bounded by a directory listing. `files` is what `readdirSync`
+    // returned — data the process already holds — so one read per entry
+    // allocates O(what is already on disk in that directory) and nobody can
+    // amplify it. eslint-plugin-secure-coding 3.7.1 reported this exact shape
+    // in scripts/lint-workflows.ts as CWE-770.
+    {
+      name: 'a read per entry of a directory listing is bounded by the listing',
+      code: `
+        const files = fs.readdirSync(WORKFLOWS_DIR).filter((f) => /\\.ya?ml$/.test(f));
+        const parsed = new Map();
+        for (const file of files) {
+          const full = path.join(WORKFLOWS_DIR, file);
+          parsed.set(file, yaml.load(fs.readFileSync(full, 'utf8')));
+        }
+      `,
+    },
     // Each reaches a `propertyName(...) ?? ''` sentinel with a key that cannot
     // be resolved, and each must fail CLOSED: an unnameable property is not a
     // request surface, not a size, and not an fs write.
@@ -56,6 +72,7 @@ describe('no-unlimited-resource-allocation', () => {
           code: 'const buf = Buffer.alloc(1024);',
         },
         {
+          name: 'a size clamped at the allocation is bounded',
           code: 'const limitedBuf = Buffer.alloc(Math.min(userSize, 1024 * 1024));',
         },
         // Safe array allocation

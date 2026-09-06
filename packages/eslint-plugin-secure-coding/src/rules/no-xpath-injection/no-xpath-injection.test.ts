@@ -27,12 +27,28 @@ describe('no-xpath-injection', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - safe XPath operations', noXpathInjection, {
       valid: [
+        // --- a GitHub Actions annotation is not an XPath axis ------------------
+        // `::error file=x::msg` is the Actions runner's command syntax. Two
+        // colons on their own are not an axis — an axis is `axisname::nodetest`
+        // — and nothing here reaches an evaluator. eslint-plugin-secure-coding
+        // 3.7.1 reported both lines of scripts/lint-workflows.ts at CVSS 9.8.
+        {
+          name: 'a workflow annotation with a file is not XPath',
+          code: 'function annotate(level, msg, file) { process.stdout.write(`::${level} file=${file}::${msg}\\n`); }',
+        },
+        {
+          name: 'a workflow annotation without a file is not XPath',
+          code: 'function annotate(level, msg) { process.stdout.write(`::${level}::${msg}\\n`); }',
+        },
     // --- a router wildcard is not a location step -------------------------
     // City-of-Helsinki/haitaton-ui reported CWE-643 at CVSS 9.8 twice on these,
     // in a repository importing no XPath package and containing no XPath at
     // all. `/*` is XPath's abbreviated `child::*` and also React Router's
     // wildcard segment; on its own it is not evidence of either.
-    'const p = `/${lang}/*`;',
+    {
+      name: 'a router wildcard segment is not a location step',
+      code: 'const p = `/${lang}/*`;',
+    },
     'const routes = LOCALES.map((l) => ({ path: `/${l}/*` }));',
     // The wildcard gate is corroboration, not amnesty: a module that imports an
     // XPath package gets the finding, so this one is deliberately NOT valid and
