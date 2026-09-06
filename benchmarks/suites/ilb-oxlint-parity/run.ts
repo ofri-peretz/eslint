@@ -478,9 +478,14 @@ function lintOxlint(corpus, configPath) {
    * from a clean run and is how the gitignore bug above surfaced as a parity
    * number instead of a crash. A harness that cannot fail cannot gate.
    */
+  // oxlint prefixes its JSON with human-readable notices ("No files found to
+  // lint...") on stdout, so parse from the first brace rather than the first
+  // byte — otherwise every such notice reads as "not JSON" and hides the more
+  // specific diagnosis below.
+  const jsonStart = raw.indexOf('{');
   let parsed;
   try {
-    parsed = JSON.parse(raw);
+    parsed = JSON.parse(jsonStart === -1 ? raw : raw.slice(jsonStart));
   } catch {
     throw new Error(
       `oxlint did not emit JSON. It printed:\n${raw.slice(0, 800)}`,
