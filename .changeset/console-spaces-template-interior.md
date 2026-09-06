@@ -2,7 +2,7 @@
 'eslint-plugin-conventions': patch
 ---
 
-**🐛 Fix** — `no-console-spaces` no longer reports the space beside an interpolation in a template literal
+fix: `no-console-spaces` no longer reports the space beside an interpolation in a template literal
 
 ``console.error(`No workflows dir at ${dir}`)`` was reported because the
 quasi before `${dir}` ends with a space. The rule looped over every quasi and
