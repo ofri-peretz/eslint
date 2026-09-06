@@ -2,7 +2,7 @@
 'eslint-plugin-react-features': patch
 ---
 
-**🐛 Fix** — `void-dom-elements-no-children` no longer reports `<Link>`, `<Img>`, `<Input>` and other capitalized components
+fix: `void-dom-elements-no-children` no longer reports `<Link>`, `<Img>`, `<Input>` and other capitalized components
 
 `<Link href="/docs">Read the floor</Link>` from `next/link` was reported as
 "`<link>` is a void element and cannot have children". The tag-name check

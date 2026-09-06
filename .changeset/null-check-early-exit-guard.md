@@ -2,7 +2,7 @@
 'eslint-plugin-reliability': patch
 ---
 
-**🐛 Fix** — `no-missing-null-checks` understands `if (!x) return` and, given types, TypeScript's own narrowing
+fix: `no-missing-null-checks` understands `if (!x) return` and, given types, TypeScript's own narrowing
 
 The shape of every `getOrNotFound` helper reported on its return:
 
