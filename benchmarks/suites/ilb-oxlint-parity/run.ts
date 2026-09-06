@@ -442,23 +442,27 @@ function lintEslint(corpus, configPath) {
 
 function lintOxlint(corpus, configPath) {
   /*
-   * cwd is the CORPUS, not the repo root.
+   * KNOWN BROKEN when the corpus is gitignored — see #906.
    *
-   * oxlint honours .gitignore relative to its cwd, and the harvested corpus is
-   * generated — .gitignore excludes it. Run from the repo root, oxlint reported
-   * "No files found to lint" and 0 diagnostics, while ESLint linted all 3,971
-   * fixtures: parity read 0.0% with 10,944 unexplained eslint-only findings,
-   * which looks exactly like a total parity collapse rather than a harness that
-   * never ran. `--no-ignore` does not lift it; cwd does.
+   * oxlint honours .gitignore, and the harvested corpus is generated, so
+   * .gitignore:146 excludes it. From here oxlint reports "No files found to
+   * lint" and 0 diagnostics while ESLint lints all 3,971 fixtures. Neither
+   * `--no-ignore` nor `--ignore-pattern` lifts it.
    *
-   * Safe for resolution: the config addresses its plugins by absolute path
-   * (see the jsPlugins comment above), so it does not depend on cwd.
+   * Running with cwd inside the corpus does make oxlint see files, but it then
+   * roots itself at benchmarks/ (the nearest package.json) and walks that whole
+   * tree — 4,183 files including benchmarks/rule-corpus and
+   * benchmarks/corpus/by-rule, which ESLint never sees. That trades a visible
+   * failure for a wrong measurement, so it is not done here.
+   *
+   * The fix is to harvest outside the ignored path. Until then the guards below
+   * make this fail loudly instead of scoring 0% parity.
    */
-  const cmd = `npx oxlint --config "${configPath}" --format json .`;
+  const cmd = `npx oxlint --config "${configPath}" --format json "${corpus}"`;
   let raw = '';
   try {
     raw = execSync(cmd, {
-      cwd: corpus,
+      cwd: REPO_ROOT,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
       maxBuffer: 64 * 1024 * 1024,
@@ -513,15 +517,9 @@ function lintOxlint(corpus, configPath) {
      * parity break.
      */
     if (!allowedPrefixes.some((prefix) => ruleId.startsWith(prefix))) continue;
-    /*
-     * Resolve against the CORPUS, which is oxlint's cwd — its filenames come
-     * back relative to that. Resolving them against REPO_ROOT instead produced
-     * paths that no ESLint finding could match: shared dropped to 0 while both
-     * sides were reporting thousands of real findings.
-     */
     const filename = d.filename ?? '';
     const rel = path
-      .relative(REPO_ROOT, path.resolve(corpus, filename))
+      .relative(REPO_ROOT, path.resolve(REPO_ROOT, filename))
       .split(path.sep)
       .join('/');
     const label = (d.labels ?? [])[0]?.span ?? {};
