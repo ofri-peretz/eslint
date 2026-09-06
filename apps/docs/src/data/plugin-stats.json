@@ -181,7 +181,7 @@
       "rules": 15,
       "description": "ESLint plugin for team code conventions — enforces filename case, magic-number bans, commented-out code, expiring TODOs, and deprecated-API usage",
       "category": "quality",
-      "version": "5.3.2",
+      "version": "5.3.3",
       "published": true
     },
     {
@@ -197,7 +197,7 @@
       "rules": 9,
       "description": "ESLint plugin for runtime reliability — enforces error handling, network timeouts, null checks, and safe type narrowing",
       "category": "quality",
-      "version": "4.1.3",
+      "version": "4.1.4",
       "published": true
     },
     {
@@ -229,7 +229,7 @@
       "rules": 61,
       "description": "ESLint plugin for React — hooks, prop-types, JSX correctness, render performance, and class-to-hooks migration rules for modern React codebases",
       "category": "react",
-      "version": "1.7.3",
+      "version": "1.7.4",
       "published": true
     },
     {
