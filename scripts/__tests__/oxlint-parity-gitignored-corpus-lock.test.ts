@@ -79,6 +79,26 @@ function numberOfFiles(raw: string): number {
   return JSON.parse(raw.slice(raw.indexOf('{'))).number_of_files;
 }
 
+/**
+ * Extract a top-level function's body by counting braces, not a lazy regex
+ * that stops at the first unindented `}` — which would silently truncate if
+ * the function were ever reformatted or nested inside something else.
+ */
+function extractFunctionBody(src: string, signature: string): string {
+  const start = src.indexOf(signature);
+  if (start === -1) return '';
+  const braceStart = src.indexOf('{', start);
+  let depth = 0;
+  for (let i = braceStart; i < src.length; i++) {
+    if (src[i] === '{') depth++;
+    else if (src[i] === '}') {
+      depth--;
+      if (depth === 0) return src.slice(start, i + 1);
+    }
+  }
+  return '';
+}
+
 describe('oxlint parity survives a gitignored corpus (issue #906)', () => {
   afterEach(() => {
     rmSync(GITIGNORED_DIR, { recursive: true, force: true });
@@ -145,14 +165,11 @@ describe('oxlint parity survives a gitignored corpus (issue #906)', () => {
 
   it('lintOxlint() builds an explicit file list and calls the oxlint binary directly, never `npx oxlint <corpus-dir>`', () => {
     const src = readFileSync(RUN_TS, 'utf-8');
-    const fnMatch = src.match(
-      /function lintOxlint\(corpus, configPath\) \{[\s\S]*?\n\}/,
+    const fn = extractFunctionBody(
+      src,
+      'function lintOxlint(corpus, configPath) ',
     );
-    expect(
-      fnMatch,
-      'lintOxlint() was not found — did it get renamed?',
-    ).not.toBeNull();
-    const fn = fnMatch![0];
+    expect(fn, 'lintOxlint() was not found — did it get renamed?').not.toBe('');
 
     expect(
       fn,
@@ -178,10 +195,10 @@ describe('oxlint parity survives a gitignored corpus (issue #906)', () => {
 
   it('a malformed oxlint response is surfaced, not swallowed into a false "0 findings"', () => {
     const src = readFileSync(RUN_TS, 'utf-8');
-    const fnMatch = src.match(
-      /function lintOxlint\(corpus, configPath\) \{[\s\S]*?\n\}/,
+    const fn = extractFunctionBody(
+      src,
+      'function lintOxlint(corpus, configPath) ',
     );
-    const fn = fnMatch![0];
     // The exact bug: `JSON.parse(raw)` failed on the "No files found to
     // lint" preamble, the catch block ran `return []`, and that silent
     // empty array was indistinguishable from oxlint legitimately agreeing
