@@ -5,6 +5,21 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "eslint-plugin-import-next",
+      "short": "eslint-plugin-import-next",
+      "version": "2.7.5",
+      "date": "2026-09-06T04:08:26Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`node:` builtins are never dependencies",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-typeorm-security",
       "short": "eslint-plugin-typeorm-security",
       "version": "0.3.8",
@@ -16336,21 +16351,6 @@
           "kind": "feature",
           "title": "`RemoteMarkdown` accepts `tags`, forwarded to the underlying fetch as `next.tags`.",
           "pr": 628
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-import-next",
-      "short": "eslint-plugin-import-next",
-      "version": "2.7.5",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`node:` builtins are never dependencies",
-          "pr": null
         }
       ]
     },
