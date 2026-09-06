@@ -33,7 +33,7 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-drizzle-security` | 0.3.8 | `drizzle-security/` | — | `plugin-drizzle-security` | security | `drizzle` | ✅ | ✅ | ✅ |
 | `eslint-plugin-express-security` | 3.2.4 | `express-security/` | — | `plugin-express-security` | security | `express` | ✅ | ✅ | ✅ |
 | `eslint-plugin-gemini-security` | 0.3.5 | `gemini-security/` | — | `plugin-gemini-security` | security | `gemini` | ✅ | ✅ | ✅ |
-| `eslint-plugin-import-next` | 2.7.4 | `import-next/` | — | `plugin-import-next` | quality | `—` | ✅ | ✅ | ✅ |
+| `eslint-plugin-import-next` | 2.7.5 | `import-next/` | — | `plugin-import-next` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-jwt-security` | 3.2.2 | `jwt-security/` | `jwt/` | `plugin-jwt-security` | security | `jwt` | ✅ | ✅ | ✅ |
 | `eslint-plugin-knex-security` | 0.4.8 | `knex-security/` | — | `plugin-knex-security` | security | `knex` | ✅ | ✅ | ✅ |
 | `eslint-plugin-lambda-security` | 2.1.4 | `lambda-security/` | — | `plugin-lambda-security` | security | `lambda` | ✅ | ✅ | ✅ |
