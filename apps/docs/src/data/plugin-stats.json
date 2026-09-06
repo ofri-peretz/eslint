@@ -173,7 +173,7 @@
       "rules": 55,
       "description": "ESLint plugin for imports and module boundaries — drop-in replacement for eslint-plugin-import, 3.1x faster end-to-end, zero-config migration",
       "category": "architecture",
-      "version": "2.7.4",
+      "version": "2.7.5",
       "published": true
     },
     {
@@ -244,5 +244,5 @@
   "totalRules": 477,
   "totalPlugins": 30,
   "allPluginsCount": 30,
-  "generatedAt": "2026-09-04"
+  "generatedAt": "2026-09-06"
 }
