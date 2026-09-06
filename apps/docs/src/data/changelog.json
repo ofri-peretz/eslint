@@ -1,7 +1,7 @@
 {
-  "releaseCount": 643,
+  "releaseCount": 644,
   "packageCount": 34,
-  "entryCount": 2030,
+  "entryCount": 2031,
   "oldestYear": 2024,
   "releases": [
     {
@@ -16336,6 +16336,21 @@
           "kind": "feature",
           "title": "`RemoteMarkdown` accepts `tags`, forwarded to the underlying fetch as `next.tags`.",
           "pr": 628
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-import-next",
+      "short": "eslint-plugin-import-next",
+      "version": "2.7.5",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`node:` builtins are never dependencies",
+          "pr": null
         }
       ]
     },
