@@ -31,6 +31,8 @@
  *
  * Two things have to agree, so both are asserted here: the directory each
  * package writes to, and the glob the workflow reads from.
+ *
+ * @provenBy {"file":"packages/eslint-plugin-node-security/vitest.config.mts","find":"reportsDirectory: './coverage'","replace":"reportsDirectory: '../../coverage/x'"}
  */
 
 import { describe, expect, it } from 'vitest';
