@@ -113,9 +113,15 @@ export const noConsoleSpaces = createRule<RuleOptions, MessageIds>({
     }
 
     // oxlint-disable-next-line consistent-function-scoping
-    function hasLeadingOrTrailingSpacesInTemplate(text: string): boolean {
-      // For template literals, even whitespace-only quasis should be flagged
-      return /^\s|\s$/.test(text);
+    function templateHasLeadingOrTrailingSpaces(
+      node: TSESTree.TemplateLiteral,
+    ): boolean {
+      // Only the edges of the whole literal are padding. The quasis around an
+      // interpolation (`at ${dir}`) are the interior of one string; checking
+      // every quasi reported every template that put a space beside `${}`.
+      const first = node.quasis[0].value.raw;
+      const last = node.quasis[node.quasis.length - 1].value.raw;
+      return /^\s/.test(first) || /\s$/.test(last);
     }
 
     return {
@@ -146,16 +152,7 @@ export const noConsoleSpaces = createRule<RuleOptions, MessageIds>({
                 });
               }
             } else if (arg.type === 'TemplateLiteral') {
-              // Check template literal quasi values for leading/trailing spaces
-              let hasSpacesInTemplate = false;
-              for (const quasi of arg.quasis) {
-                if (hasLeadingOrTrailingSpacesInTemplate(quasi.value.raw)) {
-                  hasSpacesInTemplate = true;
-                  break;
-                }
-              }
-
-              if (hasSpacesInTemplate) {
+              if (templateHasLeadingOrTrailingSpaces(arg)) {
                 context.report({
                   node: arg,
                   messageId: 'noConsoleSpaces',

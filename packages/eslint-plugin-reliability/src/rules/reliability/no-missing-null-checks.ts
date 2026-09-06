@@ -15,6 +15,12 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   formatLLMMessage,
+  getParserServices,
+  getTypeOfNode,
+  hasParserServices,
+  isAnyType,
+  isNullableType,
+  isUnknownType,
   MessageIcons,
   namesOneOf,
   propertyName,
@@ -183,6 +189,13 @@ function nullabilityEvidence(
       return null;
 
     const declarator = def.node as TSESTree.VariableDeclarator;
+    // `declare const source: Loader` has no initializer BY DEFINITION — the
+    // value lives in another module and the declaration only names its type.
+    // Reading it as "declared, never written" reported every ambient binding.
+    const declaration = (def as { parent?: TSESTree.Node | null }).parent;
+    if (declaration?.type === 'VariableDeclaration' && declaration.declare) {
+      return null;
+    }
     const init = assignedValue(declarator.init);
 
     // `let x;` — nothing has been put in it yet, so reading through it is the
@@ -422,6 +435,171 @@ export function hasNullCheck(
     return true;
   }
 
+  // `if (!obj) return` earlier in the same statement list
+  if (isGuardedByEarlyExit(node, sourceCode)) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * A statement that cannot fall through to the one after it.
+ *
+ * A block counts by its LAST statement: `{ log(); return }` leaves, `{ return;
+ * log() }` is unreachable code that this rule has no business excusing, and
+ * `{}` proves nothing.
+ */
+function endsInExit(stmt: TSESTree.Statement): boolean {
+  switch (stmt.type) {
+    case 'ReturnStatement':
+    case 'ThrowStatement':
+    case 'ContinueStatement':
+    case 'BreakStatement':
+      return true;
+    case 'BlockStatement': {
+      const last = stmt.body[stmt.body.length - 1];
+      return last !== undefined && endsInExit(last);
+    }
+    default:
+      return false;
+  }
+}
+
+/**
+ * The expressions a test proves falsy when it passes: `!x` → x, `x == null` /
+ * `undefined === x` → x, and for `a || b` the union of both arms.
+ *
+ * An `||` guard fires whenever ANY arm does, so every arm's target is a
+ * candidate. An `&&` guard fires only when every arm does, so it is not a guard
+ * on any one of them and yields nothing.
+ */
+function falsyGuardTargets(test: TSESTree.Expression): TSESTree.Expression[] {
+  if (test.type === 'UnaryExpression' && test.operator === '!') {
+    return [test.argument];
+  }
+  if (
+    test.type === 'BinaryExpression' &&
+    (test.operator === '==' || test.operator === '===')
+  ) {
+    const isNil = (e: TSESTree.Expression | TSESTree.PrivateIdentifier) =>
+      (e.type === 'Literal' && e.value === null) ||
+      (e.type === 'Identifier' && e.name === 'undefined');
+    if (isNil(test.right)) return [test.left];
+    if (isNil(test.left)) return [test.right as TSESTree.Expression];
+    return [];
+  }
+  if (test.type === 'LogicalExpression' && test.operator === '||') {
+    return [...falsyGuardTargets(test.left), ...falsyGuardTargets(test.right)];
+  }
+  return [];
+}
+
+/**
+ * The variable a (possibly member) expression is rooted in, resolved through
+ * the scope chain from where the expression sits — or null when the root is not
+ * a declared binding (an implicit global, `this`, a call).
+ */
+function rootBinding(
+  expr: TSESTree.Expression,
+  sourceCode: TSESLint.SourceCode,
+): TSESLint.Scope.Variable | null {
+  let base: TSESTree.Node = expr;
+  while (base.type === 'MemberExpression') base = base.object;
+  const name = (base as { name?: string }).name;
+  for (
+    let s: TSESLint.Scope.Scope | null = sourceCode.getScope(base);
+    s;
+    s = s.upper
+  ) {
+    const variable = s.variables.find((v) => v.name === name);
+    if (variable) return variable;
+  }
+  return null;
+}
+
+/**
+ * Does `guarded` name the same value as `object`?
+ *
+ * Same LEXICAL BINDING first — an outer `if (!hit) return` says nothing about
+ * an inner `let hit` that shadows it, and comparing source text alone would
+ * have let the outer guard excuse the inner read. Then the same spelling, so
+ * that `a.b` is matched by `if (!a.b)` and not by `if (!a.c)`.
+ */
+function guardsSameValue(
+  guarded: TSESTree.Expression,
+  object: TSESTree.Expression,
+  sourceCode: TSESLint.SourceCode,
+): boolean {
+  const binding = rootBinding(guarded, sourceCode);
+  return (
+    binding !== null &&
+    binding === rootBinding(object, sourceCode) &&
+    sourceCode.getText(guarded) === sourceCode.getText(object)
+  );
+}
+
+/** The statements a node is a direct member of, if it is a statement. */
+function statementListOf(
+  node: TSESTree.Node,
+): readonly TSESTree.Statement[] | null {
+  switch (node.type) {
+    case 'Program':
+    case 'BlockStatement':
+      return node.body as TSESTree.Statement[];
+    case 'SwitchCase':
+      return node.consequent;
+    default:
+      return null;
+  }
+}
+
+/**
+ * A falsy guard that LEAVES is a null check for everything after it:
+ *
+ *   const hit = rows.find(r => r.ok)
+ *   if (!hit) return null
+ *   return hit.name                  // hit is non-null here
+ *
+ * `isNullCheckForObject` cannot accept `if (!obj)` — inside that guard the
+ * object IS null. What makes the shape safe is the exit: a preceding sibling
+ * statement whose falsy test names the object and whose consequent ends in
+ * return / throw / continue / break cannot fall through, so nothing after it in
+ * the same statement list runs with the object null.
+ *
+ * Every enclosing statement list is consulted, because a guard covers the
+ * statements after it however deeply they nest. Only PRECEDING siblings count:
+ * a read before the guard is the bug the guard was written for, and a guard
+ * inside a nested block says nothing about the list around it. The guard must
+ * name the SAME BINDING as the read — see guardsSameValue. This is the shape of
+ * every `getOrNotFound` helper, and the rule reported all of them.
+ */
+function isGuardedByEarlyExit(
+  node: TSESTree.MemberExpression,
+  sourceCode: TSESLint.SourceCode,
+): boolean {
+  let child: TSESTree.Node = node;
+  let parent = (child as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+  while (parent) {
+    const list = statementListOf(parent);
+    if (list) {
+      const index = list.indexOf(child as TSESTree.Statement);
+      for (let i = 0; i < index; i++) {
+        const stmt = list[i];
+        if (
+          stmt.type === 'IfStatement' &&
+          endsInExit(stmt.consequent) &&
+          falsyGuardTargets(stmt.test).some((guarded) =>
+            guardsSameValue(guarded, node.object, sourceCode),
+          )
+        ) {
+          return true;
+        }
+      }
+    }
+    child = parent;
+    parent = (child as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+  }
   return false;
 }
 
@@ -507,8 +685,9 @@ function isNullCheckForObject(
     );
   }
 
-  // Unary negation: `if (!obj)` is a FALSY guard — only safe when paired
-  // with early return, which requires control-flow analysis. Skip for now.
+  // Unary negation: `if (!obj)` is a FALSY guard — inside it the object is
+  // null. The safe shape, `if (!obj) return` BEFORE the read, is handled by
+  // isGuardedByEarlyExit.
 
   return false;
 }
@@ -634,6 +813,26 @@ export const noMissingNullChecks = createRule<RuleOptions, MessageIds>({
 
     const sourceCode = context.sourceCode;
 
+    /**
+     * TypeScript's verdict on the dereferenced object, when the parser built a
+     * program. Its control-flow narrowing knows what this file cannot: that
+     * `notFound(): never` ends the request, that an `asserts` call narrows,
+     * that a declared `Page` return has no `undefined` in it.
+     *
+     * Veto-only. A nullable type falls through to the evidence gate, so types
+     * never ADD a finding; `any` and `unknown` say nothing and fall through
+     * too. Without a program this is inert and the syntax-only gate decides.
+     */
+    const services = hasParserServices(context)
+      ? getParserServices(context)
+      : null;
+    function typeSaysNonNullable(objectNode: TSESTree.Expression): boolean {
+      if (!services) return false;
+      const type = getTypeOfNode(objectNode, services);
+      if (isAnyType(type) || isUnknownType(type)) return false;
+      return !isNullableType(type);
+    }
+
     // Track reported MemberExpression nodes to prevent duplicate reports
     // Key format: "start-end" from node.range
     const reportedMemberExpressions = new Set<string>();
@@ -692,10 +891,9 @@ export const noMissingNullChecks = createRule<RuleOptions, MessageIds>({
       // Evidence-based: see nullabilityEvidence. A chain is judged by its BASE
       // — `a.b.c` carries no information about `a.b`, so asking about the
       // intermediate link would be guessing.
-      shouldCheck = baseHasNullabilityEvidence(
-        objectNode,
-        sourceCode.getScope(node),
-      );
+      shouldCheck =
+        baseHasNullabilityEvidence(objectNode, sourceCode.getScope(node)) &&
+        !typeSaysNonNullable(objectNode);
 
       if (shouldCheck && !hasNullCheck(node, sourceCode)) {
         const nodeKey = getMemberExpressionKey(node);
@@ -769,10 +967,11 @@ export const noMissingNullChecks = createRule<RuleOptions, MessageIds>({
         // Evidence-based: see nullabilityEvidence. Only the BASE of a chain is
         // asked, because that is the only link this file can say anything about
         // — `a.b.c` says nothing about `a.b`.
-        shouldCheck = baseHasNullabilityEvidence(
-          objectNode,
-          sourceCode.getScope(memberExpr),
-        );
+        shouldCheck =
+          baseHasNullabilityEvidence(
+            objectNode,
+            sourceCode.getScope(memberExpr),
+          ) && !typeSaysNonNullable(objectNode);
 
         if (shouldCheck && !hasNullCheck(memberExpr, sourceCode)) {
           const nodeKey = getMemberExpressionKey(memberExpr);

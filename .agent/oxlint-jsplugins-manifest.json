@@ -1,7 +1,7 @@
 {
   "command": "npm run oxlint:shims",
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-09-03",
+  "generatedAt": "2026-09-06",
   "totalPlugins": 30,
   "totalRules": 477,
   "oxlintCompatible": 477,
@@ -2713,7 +2713,7 @@
           "name": "reliability/no-missing-null-checks",
           "portability": "compatible",
           "blockers": [],
-          "isTypeAware": false
+          "isTypeAware": true
         },
         {
           "name": "reliability/no-unsafe-type-narrowing",
