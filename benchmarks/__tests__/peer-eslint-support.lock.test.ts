@@ -88,16 +88,40 @@ describe('a failed lint run is never scored as "found nothing"', () => {
     // Comments out first. This block explains the old `return []` in prose,
     // and a lock that reads its subject's commentary asserts nothing about
     // its code — the failure mode that made three locks vacuous this week.
+    // The window has to hold the whole catch, and it grew when the crash
+    // branch landed — at 1600 it stopped just short of `process.exit(3)` and
+    // the lock failed for a reason that had nothing to do with its subject.
+    // Sized to the block's closing brace instead of a guessed byte count.
+    const end = rest.indexOf('\n  }', start);
+    expect(end, 'catch block has no closing brace').toBeGreaterThan(start);
     return rest
-      .slice(start, start + 1600)
+      .slice(start, end)
       .replace(/\/\*[\s\S]*?\*\//g, '')
       .replace(/\/\/.*$/gm, '');
   };
 
-  it('stops the run instead of returning an empty result', () => {
+  it('never returns an empty result, whoever failed', () => {
+    // The property, not the mechanism. `[]` is the thing that scores as
+    // "found nothing" — that is what must never come back from here, and it
+    // is what the 36-run/0-F1 measurement above was made of.
+    expect(runCatch()).not.toMatch(/return\s*\[\s*\]/);
+  });
+
+  it('still stops the run when OUR plugin is the one that failed', () => {
+    // Interlace failing is our bug and must block. This is the half that
+    // stayed fatal when a peer's crash stopped being fatal (#897).
     const body = runCatch();
     expect(body).toContain('process.exit(3)');
-    expect(body).not.toMatch(/return\s*\[\s*\]/);
+    expect(body).toContain('OUR_PLUGIN_NAME');
+  });
+
+  it("records a peer's crash rather than scoring or halting on it", () => {
+    // A peer that DECLARES this ESLint and throws anyway is an upstream
+    // defect. Exiting there is honest about that plugin and dishonest about
+    // the other seventeen: it left the whole matrix unmeasured, so the last
+    // published numbers — the fabricated zeros — stayed the newest ones.
+    const body = runCatch();
+    expect(body).toContain('crash(');
   });
 
   it('still excuses a peer that never claimed the running major', () => {
