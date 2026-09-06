@@ -3,7 +3,7 @@
  * Licensed under the MIT License. Use of this source code is governed by the
  * MIT license that can be found in the LICENSE file.
  *
- * @provenBy {"file":"benchmarks/suites/ilb-oxlint-parity/run.ts","find":"const files = corpusFiles(corpus);\n  if (files.length === 0) return [];","replace":""}
+ * @provenBy {"file":"benchmarks/suites/ilb-oxlint-parity/run.ts","find":"if (files.length === 0) {\n    // A missing or empty corpus must not read as \"oxlint agrees with\n    // nothing\" — that is exactly the fabricated-measurement shape this fix\n    // exists to eliminate.\n    throw new Error(`oxlint corpus contains no lintable files: ${corpus}`);\n  }","replace":"if (files.length === 0) return [];"}
  */
 
 /**
@@ -191,6 +191,14 @@ describe('oxlint parity survives a gitignored corpus (issue #906)', () => {
     ).toMatch(
       /node_modules['"]?\s*,\s*['"]oxlint['"]\s*,\s*['"]bin['"]\s*,\s*['"]oxlint['"]/,
     );
+
+    expect(
+      fn,
+      'a missing or empty corpus must throw, not silently report "0 ' +
+        'findings" — that reads identically to a real (and correct) ' +
+        'measurement of zero divergence, which is the same disguise the ' +
+        'JSON.parse bug wore.',
+    ).toMatch(/if \(files\.length === 0\) \{\s*[\s\S]*?throw new Error/);
   });
 
   it('a malformed oxlint response is surfaced, not swallowed into a false "0 findings"', () => {

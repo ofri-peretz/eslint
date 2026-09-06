@@ -457,7 +457,12 @@ function lintOxlint(corpus, configPath) {
    * individually were all linted.
    */
   const files = corpusFiles(corpus);
-  if (files.length === 0) return [];
+  if (files.length === 0) {
+    // A missing or empty corpus must not read as "oxlint agrees with
+    // nothing" — that is exactly the fabricated-measurement shape this fix
+    // exists to eliminate.
+    throw new Error(`oxlint corpus contains no lintable files: ${corpus}`);
+  }
 
   let raw = '';
   try {
