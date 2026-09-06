@@ -139,8 +139,15 @@ jobs:
           esac
           node -e "console.log('eslint@' + require('eslint/package.json').version)"
 
+      # The swap above installs at the repo ROOT, but benchmarks/package.json
+      # declares its own `eslint` devDependency, so npm may keep a nested copy
+      # that shadows it — and the cell then scores a major it was not asked to
+      # test, silently and greenly. The bench asserts what it actually resolved
+      # against this value and exits 4 on a mismatch.
       - name: Run ILB-Arena
         if: matrix.bench == 'arena'
+        env:
+          ILB_EXPECT_ESLINT_MAJOR: ${{ matrix.eslint == '8.x' && '8' || (matrix.eslint == '10.x' && '10' || '9') }}
         run: npm run ilb:arena
 
       - name: Run ILB-CWE-Corpus
@@ -188,7 +195,7 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/report-failure
         with:
-          title: "ESLint version matrix is failing"
+          title: 'ESLint version matrix is failing'
           body: >-
             At least one ESLint major stopped passing. This matrix is the only check that the plugins work across ESLint 8, 9 and 10, so a break here is a compatibility claim we can no longer make.
           token: ${{ github.token }}
