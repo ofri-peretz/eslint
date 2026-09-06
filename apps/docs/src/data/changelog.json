@@ -1,7 +1,7 @@
 {
-  "releaseCount": 647,
-  "packageCount": 34,
-  "entryCount": 2034,
+  "releaseCount": 648,
+  "packageCount": 35,
+  "entryCount": 2035,
   "oldestYear": 2024,
   "releases": [
     {
@@ -16365,6 +16365,21 @@
         {
           "kind": "other",
           "title": "TypeScript type exports for all rule options",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "@interlace/eslint-formatter-sarif",
+      "short": "eslint-formatter-sarif",
+      "version": "0.2.0",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "publish the SARIF formatter to npm",
           "pr": null
         }
       ]
