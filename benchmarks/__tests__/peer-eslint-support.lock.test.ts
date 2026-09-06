@@ -25,6 +25,12 @@ import {
   peerEslintRange,
 } from '../suites/ilb-arena/peer-support.js';
 
+const ARENA = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '../suites/ilb-arena',
+);
+const RUN_JS = fs.readFileSync(path.join(ARENA, 'run.js'), 'utf-8');
+
 describe('a peer is only excused when it never claimed the major', () => {
   it('reads a declared range through an exports map that hides package.json', () => {
     // eslint-plugin-unicorn omits "./package.json" from `exports`, so
@@ -88,16 +94,40 @@ describe('a failed lint run is never scored as "found nothing"', () => {
     // Comments out first. This block explains the old `return []` in prose,
     // and a lock that reads its subject's commentary asserts nothing about
     // its code — the failure mode that made three locks vacuous this week.
+    // The window has to hold the whole catch, and it grew when the crash
+    // branch landed — at 1600 it stopped just short of `process.exit(3)` and
+    // the lock failed for a reason that had nothing to do with its subject.
+    // Sized to the block's closing brace instead of a guessed byte count.
+    const end = rest.indexOf('\n  }', start);
+    expect(end, 'catch block has no closing brace').toBeGreaterThan(start);
     return rest
-      .slice(start, start + 1600)
+      .slice(start, end)
       .replace(/\/\*[\s\S]*?\*\//g, '')
       .replace(/\/\/.*$/gm, '');
   };
 
-  it('stops the run instead of returning an empty result', () => {
+  it('never returns an empty result, whoever failed', () => {
+    // The property, not the mechanism. `[]` is the thing that scores as
+    // "found nothing" — that is what must never come back from here, and it
+    // is what the 36-run/0-F1 measurement above was made of.
+    expect(runCatch()).not.toMatch(/return\s*\[\s*\]/);
+  });
+
+  it('still stops the run when OUR plugin is the one that failed', () => {
+    // Interlace failing is our bug and must block. This is the half that
+    // stayed fatal when a peer's crash stopped being fatal (#897).
     const body = runCatch();
     expect(body).toContain('process.exit(3)');
-    expect(body).not.toMatch(/return\s*\[\s*\]/);
+    expect(body).toContain('OUR_PLUGIN_NAME');
+  });
+
+  it("records a peer's crash rather than scoring or halting on it", () => {
+    // A peer that DECLARES this ESLint and throws anyway is an upstream
+    // defect. Exiting there is honest about that plugin and dishonest about
+    // the other seventeen: it left the whole matrix unmeasured, so the last
+    // published numbers — the fabricated zeros — stayed the newest ones.
+    const body = runCatch();
+    expect(body).toContain('crash(');
   });
 
   it('still excuses a peer that never claimed the running major', () => {
@@ -180,5 +210,71 @@ describe('the summary tolerates records with no metrics', () => {
       ),
     ).not.toThrow();
     expect(scored).toHaveLength(1);
+  });
+});
+
+/*
+ * The guard that keeps @angular-eslint honest must itself be non-vacuous.
+ *
+ * angular.config.js excludes three rules that need a TypeScript program, by
+ * name, because `requiresTypeChecking` is set on none of them. The exclusion
+ * is only safe while something notices upstream changing the rule set — and
+ * the first version of that check compared `runnable.length` against
+ * `total - NEEDS_TYPE_PROGRAM.size`, which is the same subtraction on both
+ * sides. It cancelled, and a newly-added type-aware rule passed it.
+ */
+describe('the angular type-aware exclusion is guarded by a real check', () => {
+  const ANGULAR = fs.readFileSync(
+    path.join(
+      path.dirname(fileURLToPath(import.meta.url)),
+      '../suites/ilb-arena/configs/angular.config.js',
+    ),
+    'utf-8',
+  );
+
+  it('pins the rule total it was measured against', () => {
+    // Without this, "upstream added a rule" is unobservable here.
+    expect(ANGULAR).toMatch(/MEASURED_RULE_TOTAL\s*=\s*\d+/);
+    expect(ANGULAR).toMatch(/all\.length !== MEASURED_RULE_TOTAL/);
+  });
+
+  it('rejects an entry upstream no longer publishes', () => {
+    // A rename holds the total at 50 while leaving a live type-aware rule on.
+    expect(ANGULAR).toMatch(/stale/);
+    expect(ANGULAR).toContain('!all.includes(rule)');
+  });
+
+  it('never restores the cancelling comparison', () => {
+    expect(ANGULAR).not.toMatch(/length\s*-\s*NEEDS_TYPE_PROGRAM\.size/);
+  });
+
+  it('scores angular for real — no unmeasurable flag anywhere', () => {
+    // The bug in #897 was a fabricated 0/40. Marking the plugin unmeasurable
+    // would hide the same absence behind a different word.
+    expect(ANGULAR).not.toMatch(/unmeasurable/i);
+    expect(RUN_JS).not.toMatch(/angular[\s\S]{0,200}?unmeasurable/i);
+  });
+
+  it('shows why the cancelling comparison could not catch a new rule', () => {
+    // Pure reproduction: upstream ships rule 51, type-aware, unlisted.
+    const listed = new Set(['a', 'b', 'c']);
+    const upstream = [
+      'a',
+      'b',
+      'c',
+      ...Array.from({ length: 48 }, (_, i) => `r${i}`),
+    ];
+    const runnable = upstream.filter((r) => !listed.has(r));
+
+    // Old guard, before rule 51 and after — passes both times.
+    expect(runnable.length).toBe(upstream.length - listed.size);
+    const grown = [...upstream, 'r48'];
+    expect(grown.filter((r) => !listed.has(r)).length).toBe(
+      grown.length - listed.size,
+    );
+
+    // New guard: the total moved, so it throws.
+    expect(upstream.length).toBe(51);
+    expect(grown.length).not.toBe(51);
   });
 });
