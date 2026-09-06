@@ -11,8 +11,8 @@
       "readable_publish_date": "Sep 2",
       "reading_time_minutes": 4,
       "page_views_count": 0,
-      "public_reactions_count": 4,
-      "positive_reactions_count": 4,
+      "public_reactions_count": 5,
+      "positive_reactions_count": 5,
       "comments_count": 0,
       "tag_list": [
         "javascript",
@@ -572,7 +572,7 @@
       "page_views_count": 0,
       "public_reactions_count": 0,
       "positive_reactions_count": 0,
-      "comments_count": 0,
+      "comments_count": 1,
       "tag_list": [
         "security",
         "devsecops",
@@ -1745,6 +1745,6 @@
     }
   ],
   "total": 85,
-  "lastUpdated": "2026-09-04T06:05:02.721Z",
+  "lastUpdated": "2026-09-06T03:52:05.028Z",
   "source": "public"
 }
