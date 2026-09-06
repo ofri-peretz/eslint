@@ -15,6 +15,12 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   formatLLMMessage,
+  getParserServices,
+  getTypeOfNode,
+  hasParserServices,
+  isAnyType,
+  isNullableType,
+  isUnknownType,
   MessageIcons,
   namesOneOf,
   propertyName,
@@ -183,6 +189,13 @@ function nullabilityEvidence(
       return null;
 
     const declarator = def.node as TSESTree.VariableDeclarator;
+    // `declare const source: Loader` has no initializer BY DEFINITION — the
+    // value lives in another module and the declaration only names its type.
+    // Reading it as "declared, never written" reported every ambient binding.
+    const declaration = (def as { parent?: TSESTree.Node | null }).parent;
+    if (declaration?.type === 'VariableDeclaration' && declaration.declare) {
+      return null;
+    }
     const init = assignedValue(declarator.init);
 
     // `let x;` — nothing has been put in it yet, so reading through it is the
@@ -422,6 +435,132 @@ export function hasNullCheck(
     return true;
   }
 
+  // `if (!obj) return` earlier in the same statement list
+  if (isGuardedByEarlyExit(node, sourceCode)) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * A statement that cannot fall through to the one after it.
+ *
+ * A block counts by its LAST statement: `{ log(); return }` leaves, `{ return;
+ * log() }` is unreachable code that this rule has no business excusing, and
+ * `{}` proves nothing.
+ */
+function endsInExit(stmt: TSESTree.Statement): boolean {
+  switch (stmt.type) {
+    case 'ReturnStatement':
+    case 'ThrowStatement':
+    case 'ContinueStatement':
+    case 'BreakStatement':
+      return true;
+    case 'BlockStatement': {
+      const last = stmt.body[stmt.body.length - 1];
+      return last !== undefined && endsInExit(last);
+    }
+    default:
+      return false;
+  }
+}
+
+/**
+ * `!obj`, `obj == null`, `undefined === obj`, or an `||` of those.
+ *
+ * An `||` guard fires whenever ANY arm does, so one arm naming the object is
+ * enough. An `&&` guard fires only when every arm does, so it is not a guard on
+ * the object alone and is deliberately not matched.
+ */
+function isFalsyGuardFor(
+  test: TSESTree.Expression,
+  objectText: string,
+  sourceCode: TSESLint.SourceCode,
+): boolean {
+  if (test.type === 'UnaryExpression' && test.operator === '!') {
+    return sourceCode.getText(test.argument) === objectText;
+  }
+  if (
+    test.type === 'BinaryExpression' &&
+    (test.operator === '==' || test.operator === '===')
+  ) {
+    const left = sourceCode.getText(test.left);
+    const right = sourceCode.getText(test.right);
+    const isNil = (text: string) => text === 'null' || text === 'undefined';
+    return (
+      (left === objectText && isNil(right)) ||
+      (right === objectText && isNil(left))
+    );
+  }
+  if (test.type === 'LogicalExpression' && test.operator === '||') {
+    return (
+      isFalsyGuardFor(test.left, objectText, sourceCode) ||
+      isFalsyGuardFor(test.right, objectText, sourceCode)
+    );
+  }
+  return false;
+}
+
+/** The statements a node is a direct member of, if it is a statement. */
+function statementListOf(
+  node: TSESTree.Node,
+): readonly TSESTree.Statement[] | null {
+  switch (node.type) {
+    case 'Program':
+    case 'BlockStatement':
+      return node.body as TSESTree.Statement[];
+    case 'SwitchCase':
+      return node.consequent;
+    default:
+      return null;
+  }
+}
+
+/**
+ * A falsy guard that LEAVES is a null check for everything after it:
+ *
+ *   const hit = rows.find(r => r.ok)
+ *   if (!hit) return null
+ *   return hit.name                  // hit is non-null here
+ *
+ * `isNullCheckForObject` cannot accept `if (!obj)` — inside that guard the
+ * object IS null. What makes the shape safe is the exit: a preceding sibling
+ * statement whose falsy test names the object and whose consequent ends in
+ * return / throw / continue / break cannot fall through, so nothing after it in
+ * the same statement list runs with the object null.
+ *
+ * Every enclosing statement list is consulted, because a guard covers the
+ * statements after it however deeply they nest. Only PRECEDING siblings count:
+ * a read before the guard is the bug the guard was written for, and a guard
+ * inside a nested block says nothing about the list around it. This is the
+ * shape of every `getOrNotFound` helper, and the rule reported all of them.
+ */
+function isGuardedByEarlyExit(
+  node: TSESTree.MemberExpression,
+  sourceCode: TSESLint.SourceCode,
+): boolean {
+  const objectText = sourceCode.getText(node.object);
+  let child: TSESTree.Node = node;
+  let parent = (child as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+  while (parent) {
+    const list = statementListOf(parent);
+    if (list) {
+      const index = list.indexOf(child as TSESTree.Statement);
+      for (let i = 0; i < index; i++) {
+        const stmt = list[i];
+        if (
+          stmt.type === 'IfStatement' &&
+          endsInExit(stmt.consequent) &&
+          isFalsyGuardFor(stmt.test, objectText, sourceCode)
+        ) {
+          return true;
+        }
+      }
+    }
+    child = parent;
+    parent = (child as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+  }
   return false;
 }
 
@@ -507,8 +646,9 @@ function isNullCheckForObject(
     );
   }
 
-  // Unary negation: `if (!obj)` is a FALSY guard — only safe when paired
-  // with early return, which requires control-flow analysis. Skip for now.
+  // Unary negation: `if (!obj)` is a FALSY guard — inside it the object is
+  // null. The safe shape, `if (!obj) return` BEFORE the read, is handled by
+  // isGuardedByEarlyExit.
 
   return false;
 }
@@ -634,6 +774,26 @@ export const noMissingNullChecks = createRule<RuleOptions, MessageIds>({
 
     const sourceCode = context.sourceCode;
 
+    /**
+     * TypeScript's verdict on the dereferenced object, when the parser built a
+     * program. Its control-flow narrowing knows what this file cannot: that
+     * `notFound(): never` ends the request, that an `asserts` call narrows,
+     * that a declared `Page` return has no `undefined` in it.
+     *
+     * Veto-only. A nullable type falls through to the evidence gate, so types
+     * never ADD a finding; `any` and `unknown` say nothing and fall through
+     * too. Without a program this is inert and the syntax-only gate decides.
+     */
+    const services = hasParserServices(context)
+      ? getParserServices(context)
+      : null;
+    function typeSaysNonNullable(objectNode: TSESTree.Expression): boolean {
+      if (!services) return false;
+      const type = getTypeOfNode(objectNode, services);
+      if (isAnyType(type) || isUnknownType(type)) return false;
+      return !isNullableType(type);
+    }
+
     // Track reported MemberExpression nodes to prevent duplicate reports
     // Key format: "start-end" from node.range
     const reportedMemberExpressions = new Set<string>();
@@ -692,10 +852,9 @@ export const noMissingNullChecks = createRule<RuleOptions, MessageIds>({
       // Evidence-based: see nullabilityEvidence. A chain is judged by its BASE
       // — `a.b.c` carries no information about `a.b`, so asking about the
       // intermediate link would be guessing.
-      shouldCheck = baseHasNullabilityEvidence(
-        objectNode,
-        sourceCode.getScope(node),
-      );
+      shouldCheck =
+        baseHasNullabilityEvidence(objectNode, sourceCode.getScope(node)) &&
+        !typeSaysNonNullable(objectNode);
 
       if (shouldCheck && !hasNullCheck(node, sourceCode)) {
         const nodeKey = getMemberExpressionKey(node);
@@ -769,10 +928,11 @@ export const noMissingNullChecks = createRule<RuleOptions, MessageIds>({
         // Evidence-based: see nullabilityEvidence. Only the BASE of a chain is
         // asked, because that is the only link this file can say anything about
         // — `a.b.c` says nothing about `a.b`.
-        shouldCheck = baseHasNullabilityEvidence(
-          objectNode,
-          sourceCode.getScope(memberExpr),
-        );
+        shouldCheck =
+          baseHasNullabilityEvidence(
+            objectNode,
+            sourceCode.getScope(memberExpr),
+          ) && !typeSaysNonNullable(objectNode);
 
         if (shouldCheck && !hasNullCheck(memberExpr, sourceCode)) {
           const nodeKey = getMemberExpressionKey(memberExpr);

@@ -312,18 +312,42 @@ describe('no-missing-null-checks', () => {
   describe('Retired contract — an unrecognised initializer is not evidence', () => {
     ruleTester.run('valid - no nullability evidence', noMissingNullChecks, {
       valid: [
-        { code: 'async function f() { const r = await getData(); r.field; }', filename: 'src/utils.ts' },
+        {
+          name: 'an awaited call is not evidence of nullability',
+          code: 'async function f() { const r = await getData(); r.field; }',
+          filename: 'src/utils.ts',
+        },
         { code: 'async function f() { const r = await pending; r.field; }', filename: 'src/utils.ts' },
         { code: 'async function f() { const r = await client.get(url); r.field; }', filename: 'src/utils.ts' },
-        { code: 'const v = compute(); v.field;', filename: 'src/utils.ts' },
+        {
+          name: 'an unrecognised call result is not evidence of nullability',
+          code: 'const v = compute(); v.field;',
+          filename: 'src/utils.ts',
+        },
         // Promise.resolve() never returns null. This was pinned as must-report.
         { code: 'const p = Promise.resolve(1); p.field;', filename: 'src/utils.ts' },
         { code: 'function outer() { const conn = connect(); function inner() { conn.close(); } }', filename: 'src/utils.ts' },
         // The corpus shapes that dominated what survived the first cut.
-        { code: 'for (const item of items) { item.name; }', filename: 'src/utils.ts' },
+        {
+          name: 'a for…of head binds its variable — it is not `let x;`',
+          code: 'for (const item of items) { item.name; }',
+          filename: 'src/utils.ts',
+        },
         { code: 'for (const key in obj) { obj[key].name; }', filename: 'src/utils.ts' },
         // Deferred initialisation: written later, so not a read of undefined.
         { code: 'let cfg; if (linked) { cfg = load(); } else { cfg = defaults(); } cfg.file;', filename: 'src/utils.ts' },
+        // An ambient declaration has no initializer BY DEFINITION — the value
+        // is defined elsewhere and `declare` only names its type.
+        {
+          name: 'declare const — an ambient binding has no initializer by definition',
+          code: 'declare const source: { getPage(slug?: string[]): unknown }; source.getPage();',
+          filename: 'src/utils.ts',
+        },
+        {
+          name: 'declare let — same, through the CallExpression-free path',
+          code: 'declare let config: { file: string }; config.file;',
+          filename: 'src/utils.ts',
+        },
       ],
       invalid: [],
     });
@@ -697,6 +721,166 @@ describe('no-missing-null-checks', () => {
         // Null comparison against a DIFFERENT object
         {
           code: 'let obj; if (other !== null) { obj.prop; }',
+          filename: 'src/utils.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+      ],
+    });
+  });
+
+  /**
+   * A falsy guard that LEAVES is a null check for everything after it.
+   *
+   *   const hit = rows.find(r => r.ok)
+   *   if (!hit) return null
+   *   return hit.name              // hit is non-null here
+   *
+   * `isNullCheckForObject` deliberately skips `if (!obj)`: inside the guard
+   * the object is null, so the old note said "only safe when paired with early
+   * return, which requires control-flow analysis". The analysis needed is
+   * narrower than that — a preceding sibling statement whose falsy test names
+   * the object and whose consequent ends in return / throw / continue / break
+   * cannot fall through, so nothing after it in the same statement list runs
+   * with the object null. This is the shape every `getOrNotFound` helper has,
+   * and the rule reported the return on every one of them.
+   */
+  describe('Guard Analysis — falsy guard followed by an early exit', () => {
+    ruleTester.run('valid - early exit guards the statements after it', noMissingNullChecks, {
+      valid: [
+        {
+          name: 'if (!x) return — the shape of every getOrNotFound helper',
+          code: 'function f(rows) { const hit = rows.find(r => r.ok); if (!hit) return null; return hit.name; }',
+          filename: 'src/utils.ts',
+        },
+        {
+          name: 'if (!x) throw',
+          code: 'function f(rows) { const hit = rows.find(r => r.ok); if (!hit) throw new Error("missing"); return hit.name; }',
+          filename: 'src/utils.ts',
+        },
+        {
+          name: 'block consequent whose LAST statement exits',
+          code: 'function f(rows) { const hit = rows.find(r => r.ok); if (!hit) { log("miss"); return; } hit.name; }',
+          filename: 'src/utils.ts',
+        },
+        {
+          name: 'continue inside a loop body',
+          code: 'function f(rows, keys) { for (const k of keys) { const hit = rows.find(r => r.k === k); if (!hit) continue; hit.name; } }',
+          filename: 'src/utils.ts',
+        },
+        {
+          name: 'break inside a loop body',
+          code: 'function f(rows) { while (true) { const hit = rows.find(r => r.ok); if (!hit) break; hit.name; } }',
+          filename: 'src/utils.ts',
+        },
+        {
+          name: '=== undefined is the same falsy guard',
+          code: 'function f(rows) { const hit = rows.find(r => r.ok); if (hit === undefined) return; return hit.name; }',
+          filename: 'src/utils.ts',
+        },
+        {
+          name: '== null, mirrored',
+          code: 'function f(rows) { const hit = rows.find(r => r.ok); if (null == hit) throw new Error(); hit.name; }',
+          filename: 'src/utils.ts',
+        },
+        {
+          name: '`!x || other` — the guard fires whenever x is falsy',
+          code: 'function f(rows, stale) { const hit = rows.find(r => r.ok); if (!hit || stale) return; return hit.name; }',
+          filename: 'src/utils.ts',
+        },
+        {
+          name: '`other || !x` — same, guard on the right',
+          code: 'function f(rows, stale) { const hit = rows.find(r => r.ok); if (stale || hit == null) return; return hit.name; }',
+          filename: 'src/utils.ts',
+        },
+        {
+          name: 'the guard covers statements nested deeper than itself',
+          code: 'function f(rows, c) { const hit = rows.find(r => r.ok); if (!hit) return; if (c) { hit.name; } }',
+          filename: 'src/utils.ts',
+        },
+        {
+          name: 'method call after the guard (CallExpression path)',
+          code: 'function f(rows) { const hit = rows.find(r => r.ok); if (!hit) return; hit.run(); }',
+          filename: 'src/utils.ts',
+        },
+        {
+          name: 'an else branch does not weaken the guard',
+          code: 'function f(rows) { const hit = rows.find(r => r.ok); if (!hit) return; else warm(); return hit.name; }',
+          filename: 'src/utils.ts',
+        },
+        {
+          name: 'module scope — the guard is a preceding sibling in Program.body',
+          code: 'const el = document.getElementById("root"); if (!el) throw new Error("no root"); el.style;',
+          filename: 'src/utils.ts',
+        },
+        {
+          name: 'switch case — break leaves the case',
+          code: 'function f(rows, k) { switch (k) { case 1: { const hit = rows.find(r => r.ok); if (!hit) break; hit.name; } } }',
+          filename: 'src/utils.ts',
+        },
+        {
+          name: 'switch case consequent is itself a statement list',
+          code: 'function f(rows, k) { const hit = rows.find(r => r.ok); switch (k) { case 1: if (!hit) break; hit.name; } }',
+          filename: 'src/utils.ts',
+        },
+      ],
+      invalid: [
+        {
+          name: 'a consequent that does not leave proves nothing',
+          code: 'function f(rows) { const hit = rows.find(r => r.ok); if (!hit) log("miss"); return hit.name; }',
+          filename: 'src/utils.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          name: 'a block whose exit is not last proves nothing',
+          code: 'function f(rows) { const hit = rows.find(r => r.ok); if (!hit) { return; log("dead"); } return hit.name; }',
+          filename: 'src/utils.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          name: 'an empty block proves nothing',
+          code: 'function f(rows) { const hit = rows.find(r => r.ok); if (!hit) {} return hit.name; }',
+          filename: 'src/utils.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          name: 'the read BEFORE the guard is the bug the guard was written for',
+          code: 'function f(rows) { const hit = rows.find(r => r.ok); const n = hit.name; if (!hit) return; return n; }',
+          filename: 'src/utils.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          name: 'a guard inside a nested block does not cover the outer list',
+          code: 'function f(rows, c) { const hit = rows.find(r => r.ok); if (c) { if (!hit) return; } return hit.name; }',
+          filename: 'src/utils.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          name: '`!x && other` leaves only when both hold',
+          code: 'function f(rows, c) { const hit = rows.find(r => r.ok); if (!hit && c) return; return hit.name; }',
+          filename: 'src/utils.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          name: 'a TRUTHY exit guard leaves x null afterwards',
+          code: 'function f(rows) { const hit = rows.find(r => r.ok); if (hit) return; return hit.name; }',
+          filename: 'src/utils.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          name: 'a guard on a different binding',
+          code: 'function f(rows, other) { const hit = rows.find(r => r.ok); if (!other) return; return hit.name; }',
+          filename: 'src/utils.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          name: 'a read inside the guard itself is the dereference of null',
+          code: 'function f(rows) { const hit = rows.find(r => r.ok); if (!hit) { hit.name; return; } }',
+          filename: 'src/utils.ts',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          name: 'a comparison that is not against null is not a null guard',
+          code: 'function f(rows) { const hit = rows.find(r => r.ok); if (hit === 0) return; return hit.name; }',
           filename: 'src/utils.ts',
           errors: [{ messageId: 'missingNullCheck' }],
         },

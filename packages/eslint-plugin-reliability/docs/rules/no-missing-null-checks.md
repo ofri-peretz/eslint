@@ -62,6 +62,29 @@ flowchart TD
 | 🐛 **Maintainability** | [Impact] | [Fix] |
 | ⚡ **Performance**   | [Impact] | [Optimization] |
 
+### What counts as a null check
+
+The rule reports a dereference only when this file carries **evidence** the value
+may be null — `let x;` never written, `= null` / `= undefined`, or a platform
+call documented to return null on a miss (`find`, `match`, `exec`,
+`getElementById`, `querySelector`, …). Any of these guards clears it:
+
+| Guard | Example |
+| ----- | ------- |
+| Optional chaining / nullish coalescing | `hit?.name`, `hit.name ?? ''` |
+| Truthy or `!= null` test enclosing the read | `if (hit) { hit.name }`, `hit && hit.name`, `hit ? hit.name : ''` |
+| Falsy guard that **leaves** before the read | `if (!hit) return; hit.name` — also `throw`, `continue`, `break`, `x == null`, `!x \|\| other` |
+| TypeScript narrowing (type-aware mode) | `if (!page) notFound(); page.data` when `notFound(): never` |
+
+**Type-aware mode.** When `@typescript-eslint/parser` runs with `projectService`
+(or `project`), the rule asks the checker for the type of the object being
+dereferenced. A non-nullable type is a veto — TypeScript's control-flow
+narrowing knows about `never`-returning calls, `asserts` functions and declared
+return types that syntax cannot see. The veto only subtracts: a nullable type
+falls through to the evidence gate above, and `any` / `unknown` carry no
+information, so types never add a finding. Without type information the rule
+behaves identically to the syntax-only description.
+
 ## Configuration
 
 **No configuration options available.**
