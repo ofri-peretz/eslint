@@ -441,11 +441,24 @@ function lintEslint(corpus, configPath) {
 }
 
 function lintOxlint(corpus, configPath) {
-  const cmd = `npx oxlint --config "${configPath}" --format json "${corpus}"`;
+  /*
+   * cwd is the CORPUS, not the repo root.
+   *
+   * oxlint honours .gitignore relative to its cwd, and the harvested corpus is
+   * generated — .gitignore excludes it. Run from the repo root, oxlint reported
+   * "No files found to lint" and 0 diagnostics, while ESLint linted all 3,971
+   * fixtures: parity read 0.0% with 10,944 unexplained eslint-only findings,
+   * which looks exactly like a total parity collapse rather than a harness that
+   * never ran. `--no-ignore` does not lift it; cwd does.
+   *
+   * Safe for resolution: the config addresses its plugins by absolute path
+   * (see the jsPlugins comment above), so it does not depend on cwd.
+   */
+  const cmd = `npx oxlint --config "${configPath}" --format json .`;
   let raw = '';
   try {
     raw = execSync(cmd, {
-      cwd: REPO_ROOT,
+      cwd: corpus,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
       maxBuffer: 64 * 1024 * 1024,
@@ -456,11 +469,24 @@ function lintOxlint(corpus, configPath) {
   }
   // oxlint --format json emits a single JSON object with `diagnostics[]`.
   // Each diagnostic's rule lives in `code` as `<source>(<rule>)`.
+  /*
+   * Returning [] here scored "oxlint found nothing", which is indistinguishable
+   * from a clean run and is how the gitignore bug above surfaced as a parity
+   * number instead of a crash. A harness that cannot fail cannot gate.
+   */
   let parsed;
   try {
     parsed = JSON.parse(raw);
   } catch {
-    return [];
+    throw new Error(
+      `oxlint did not emit JSON. It printed:\n${raw.slice(0, 800)}`,
+    );
+  }
+  if ((parsed.number_of_files ?? 0) === 0) {
+    throw new Error(
+      `oxlint linted 0 files under ${corpus}. Its ignore rules excluded the ` +
+        'whole corpus, so any parity number would be measuring nothing.',
+    );
   }
   const diags = parsed.diagnostics ?? [];
   const findings = [];
