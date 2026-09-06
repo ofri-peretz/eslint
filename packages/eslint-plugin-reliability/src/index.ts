@@ -57,7 +57,7 @@ withCanonicalDocsUrls('plugin-reliability', rules);
 export const plugin = {
   meta: {
     name: 'eslint-plugin-reliability',
-    version: '4.1.3',
+    version: '4.1.4',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
