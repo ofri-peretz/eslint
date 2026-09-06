@@ -1,29 +1,54 @@
 {
   "name": "@interlace/eslint-formatter-sarif",
   "version": "0.1.0",
-  "private": true,
-  "description": "SARIF v2.1.0 formatter for ESLint — emits results consumable by GitHub Advanced Security, Defender, GitLab, and any SAST pipeline (roadmap item 1.2).",
-  "license": "MIT",
+  "description": "SARIF v2.1.0 formatter for ESLint — emits results consumable by GitHub Advanced Security, Defender, GitLab, and any SAST pipeline.",
   "type": "module",
   "main": "./dist/src/index.mjs",
   "exports": {
     ".": "./dist/src/index.mjs"
   },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-formatter-sarif#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
+    "directory": "packages/eslint-formatter-sarif"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/ofri-peretz/eslint"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "src",
-    "README.md"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "keywords": [
     "eslint",
+    "eslint-formatter",
     "sarif",
     "static-analysis",
     "security",
+    "sast",
+    "code-scanning",
     "interlace"
   ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "peerDependencies": {
     "eslint": "^8.40.0 || ^9.0.0 || ^10.0.0"
   },
   "scripts": {
+    "build": "tsx ../../scripts/build-package.ts",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage"
   }

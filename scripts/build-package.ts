@@ -20,6 +20,7 @@
 import { spawnSync } from 'node:child_process';
 import { transformSync } from 'esbuild';
 import {
+  cpSync,
   existsSync,
   mkdirSync,
   copyFileSync,
@@ -55,106 +56,124 @@ if (existsSync(tsBuildInfo)) {
 }
 mkdirSync(distDir, { recursive: true });
 
-// 2. Compile TypeScript. Use `tsc --build` so cross-package project
-//    references resolve correctly (each plugin's tsconfig.lib.json
-//    declares a `references: [{ path: "../eslint-devkit/tsconfig.lib.json" }]`
-//    when it imports from devkit, and tsc --build walks the graph).
-//    tsc --build is incremental and skips already-built upstream projects.
+// 2. Produce dist/src.
+//
+//    Most packages are TypeScript and compile through the tsconfig below. A
+//    package with no tsconfig at all is plain JavaScript that ships as written
+//    (@interlace/eslint-formatter-sarif is a single .mjs): copy src/ minus its
+//    tests and fall through to the same manifest rewrite as everyone else, so
+//    it publishes through the one dist/ contract release.yml understands.
+//    ponytail: a copy, not a bundler — there is nothing to transform.
 const tsconfig = existsSync(resolve(pkgDir, 'tsconfig.lib.json'))
   ? 'tsconfig.lib.json'
-  : 'tsconfig.json';
+  : existsSync(resolve(pkgDir, 'tsconfig.json'))
+    ? 'tsconfig.json'
+    : null;
 
-const tscResult = spawnSync('npx', ['tsc', '--build', tsconfig], {
-  cwd: pkgDir,
-  stdio: 'inherit',
-  shell: process.platform === 'win32',
-});
-
-if (tscResult.status !== 0) {
-  console.error(
-    `build-package(${pkg.name}): tsc failed with status ${tscResult.status}`,
-  );
-  process.exit(tscResult.status ?? 1);
-}
-
-// 2b. Re-emit the JavaScript without comments.
-//
-//     JSDoc is 17% of the emitted .js across this ecosystem — 561 kB that no
-//     consumer ever reads, because nobody opens `node_modules/**/dist/*.js`.
-//     The same comments in the .d.ts ARE read: that is what powers editor
-//     hover docs, so they must survive.
-//
-//     `removeComments` cannot be set on the main build — it strips .d.ts
-//     comments too (verified: devkit's declarations drop 98 kB -> 31 kB and
-//     every hover doc disappears). Nor can the second pass write in place:
-//     these are composite projects, so `--declaration false` is rejected and
-//     tsc clobbers the good .d.ts. So: emit both to a scratch dir, then copy
-//     ONLY the .js back over dist. Same compiler, same input — the output is
-//     byte-identical apart from comments.
-//
-//     Costs ~1.5 s per package on a cold build; turbo caches it.
-//
-//     Note the per-file MIT headers go with the comments. The LICENSE file
-//     still ships at every package root, which is what the licence requires.
-const noCommentsDir = resolve(pkgDir, '.build-nocomments');
-rmSync(noCommentsDir, { recursive: true, force: true });
-const stripResult = spawnSync(
-  'npx',
-  [
-    'tsc',
-    '-p',
-    tsconfig,
-    '--removeComments',
-    // tsconfig.lib.json now sets emitDeclarationOnly (pass 1 wants declarations
-    // only). This pass is the ONLY producer of .js, so it must opt back in.
-    '--emitDeclarationOnly',
-    'false',
-    // Also drops the `//# sourceMappingURL=` pragma, which `--removeComments`
-    // leaves behind (tsc emits it separately). Without this the overlaid .js
-    // would point at maps that step 3b deletes.
-    '--sourceMap',
-    'false',
-    // Inline the TypeScript helpers instead of requiring them from `tslib`.
-    // tslib was a NON-OPTIONAL peer of eslint-devkit, which every plugin then
-    // had to declare as a dependency to satisfy — 27 manifests carrying a
-    // 124 kB package so that 12 `require("tslib")` calls could resolve.
-    // Inlining costs ~9.5 kB of emitted JS in devkit and lets tslib disappear
-    // from every manifest. Only the SHIPPED javascript is re-emitted this way;
-    // the workspace build that typecheck reads is untouched.
-    '--importHelpers',
-    'false',
-    '--outDir',
-    noCommentsDir,
-    '--tsBuildInfoFile',
-    join(noCommentsDir, '.tsbuildinfo'),
-  ],
-  { cwd: pkgDir, stdio: 'inherit', shell: process.platform === 'win32' },
-);
-
-if (stripResult.status === 0) {
-  const copied = overlayJs(noCommentsDir, join(distDir, 'src'));
-  if (copied === 0) {
-    // tsc reported success yet produced no .js to copy back. That is a broken
-    // build pipeline, not a degraded optimisation — failing here is the only
-    // thing that surfaces it, since the gate that would catch commented output
-    // runs in `npm run quality` and the release workflow, not on every build.
-    console.error(
-      `build-package(${pkg.name}): comment-strip pass reported success but emitted no .js.\n` +
-        `  Expected files under ${noCommentsDir}/src matching dist/src.\n` +
-        `  This is a build-pipeline bug — dist would ship commented JS silently.`,
-    );
-    process.exit(1);
-  }
+if (tsconfig === null) {
+  cpSync(resolve(pkgDir, 'src'), join(distDir, 'src'), {
+    recursive: true,
+    filter: (p) => !/\.(test|spec)\.[cm]?js$/.test(p),
+  });
 } else {
-  // The strip pass itself failed (bad tsconfig, tsc crash). That IS just a
-  // degraded optimisation — warn and ship commented JS rather than blocking
-  // every local build. Contrast the `copied === 0` branch above, where tsc
-  // claimed success and produced nothing, which is a real defect.
-  console.error(
-    `build-package(${pkg.name}): comment-strip pass failed (status ${stripResult.status}); shipping commented JS.`,
+  // Compile TypeScript. Use `tsc --build` so cross-package project
+  // references resolve correctly (each plugin's tsconfig.lib.json
+  // declares a `references: [{ path: "../eslint-devkit/tsconfig.lib.json" }]`
+  // when it imports from devkit, and tsc --build walks the graph).
+  // tsc --build is incremental and skips already-built upstream projects.
+
+  const tscResult = spawnSync('npx', ['tsc', '--build', tsconfig], {
+    cwd: pkgDir,
+    stdio: 'inherit',
+    shell: process.platform === 'win32',
+  });
+
+  if (tscResult.status !== 0) {
+    console.error(
+      `build-package(${pkg.name}): tsc failed with status ${tscResult.status}`,
+    );
+    process.exit(tscResult.status ?? 1);
+  }
+
+  // 2b. Re-emit the JavaScript without comments.
+  //
+  //     JSDoc is 17% of the emitted .js across this ecosystem — 561 kB that no
+  //     consumer ever reads, because nobody opens `node_modules/**/dist/*.js`.
+  //     The same comments in the .d.ts ARE read: that is what powers editor
+  //     hover docs, so they must survive.
+  //
+  //     `removeComments` cannot be set on the main build — it strips .d.ts
+  //     comments too (verified: devkit's declarations drop 98 kB -> 31 kB and
+  //     every hover doc disappears). Nor can the second pass write in place:
+  //     these are composite projects, so `--declaration false` is rejected and
+  //     tsc clobbers the good .d.ts. So: emit both to a scratch dir, then copy
+  //     ONLY the .js back over dist. Same compiler, same input — the output is
+  //     byte-identical apart from comments.
+  //
+  //     Costs ~1.5 s per package on a cold build; turbo caches it.
+  //
+  //     Note the per-file MIT headers go with the comments. The LICENSE file
+  //     still ships at every package root, which is what the licence requires.
+  const noCommentsDir = resolve(pkgDir, '.build-nocomments');
+  rmSync(noCommentsDir, { recursive: true, force: true });
+  const stripResult = spawnSync(
+    'npx',
+    [
+      'tsc',
+      '-p',
+      tsconfig,
+      '--removeComments',
+      // tsconfig.lib.json now sets emitDeclarationOnly (pass 1 wants declarations
+      // only). This pass is the ONLY producer of .js, so it must opt back in.
+      '--emitDeclarationOnly',
+      'false',
+      // Also drops the `//# sourceMappingURL=` pragma, which `--removeComments`
+      // leaves behind (tsc emits it separately). Without this the overlaid .js
+      // would point at maps that step 3b deletes.
+      '--sourceMap',
+      'false',
+      // Inline the TypeScript helpers instead of requiring them from `tslib`.
+      // tslib was a NON-OPTIONAL peer of eslint-devkit, which every plugin then
+      // had to declare as a dependency to satisfy — 27 manifests carrying a
+      // 124 kB package so that 12 `require("tslib")` calls could resolve.
+      // Inlining costs ~9.5 kB of emitted JS in devkit and lets tslib disappear
+      // from every manifest. Only the SHIPPED javascript is re-emitted this way;
+      // the workspace build that typecheck reads is untouched.
+      '--importHelpers',
+      'false',
+      '--outDir',
+      noCommentsDir,
+      '--tsBuildInfoFile',
+      join(noCommentsDir, '.tsbuildinfo'),
+    ],
+    { cwd: pkgDir, stdio: 'inherit', shell: process.platform === 'win32' },
   );
+
+  if (stripResult.status === 0) {
+    const copied = overlayJs(noCommentsDir, join(distDir, 'src'));
+    if (copied === 0) {
+      // tsc reported success yet produced no .js to copy back. That is a broken
+      // build pipeline, not a degraded optimisation — failing here is the only
+      // thing that surfaces it, since the gate that would catch commented output
+      // runs in `npm run quality` and the release workflow, not on every build.
+      console.error(
+        `build-package(${pkg.name}): comment-strip pass reported success but emitted no .js.\n` +
+          `  Expected files under ${noCommentsDir}/src matching dist/src.\n` +
+          `  This is a build-pipeline bug — dist would ship commented JS silently.`,
+      );
+      process.exit(1);
+    }
+  } else {
+    // The strip pass itself failed (bad tsconfig, tsc crash). That IS just a
+    // degraded optimisation — warn and ship commented JS rather than blocking
+    // every local build. Contrast the `copied === 0` branch above, where tsc
+    // claimed success and produced nothing, which is a real defect.
+    console.error(
+      `build-package(${pkg.name}): comment-strip pass failed (status ${stripResult.status}); shipping commented JS.`,
+    );
+  }
+  rmSync(noCommentsDir, { recursive: true, force: true });
 }
-rmSync(noCommentsDir, { recursive: true, force: true });
 
 // 3. Copy publish-time assets to the dist root.
 //    package.json gets a path-rewrite pass: source main/types/exports point

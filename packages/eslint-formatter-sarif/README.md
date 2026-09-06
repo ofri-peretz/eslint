@@ -50,10 +50,6 @@ The official `@microsoft/eslint-formatter-sarif` works for plain ESLint findings
 
 [OASIS SARIF v2.1.0](https://docs.oasis-open.org/sarif/sarif/v2.1.0/os/sarif-v2.1.0-os.html)
 
-## Combined with the GitHub Action
-
-For one-line CI integration that handles install + run + upload in one step, use the [Interlace audit action](https://github.com/ofri-peretz/eslint/tree/main/.github/actions/audit) which wraps this formatter automatically.
-
 ## 📦 Compatibility
 
 | Package | Version |
@@ -73,3 +69,7 @@ If the Interlace ESLint ecosystem is useful to you, **[star the repo](https://gi
 
 <!-- INTERLACE:STAR_CTA:END -->
 
+<p align="center">
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-formatter-sarif"><img src="https://eslint.interlace.tools/images/og-formatter-sarif.png" alt="ESLint Interlace" width="100%" /></a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/ofri-peretz/eslint" target="_blank"><img src="https://api.securityscorecards.dev/projects/github.com/ofri-peretz/eslint/badge" alt="OpenSSF Scorecard" /></a>
+</p>

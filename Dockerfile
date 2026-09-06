@@ -23,7 +23,8 @@
 #    `@interlace/cli` plus ten `@interlace/eslint-plugin-*` packages, and NONE
 #    of those names exist on npm: the plugins publish UNSCOPED
 #    (`eslint-plugin-node-security`), `@interlace/cli` was never written, and
-#    `@interlace/eslint-formatter-sarif` is `private: true` in this repo. The
+#    `@interlace/eslint-formatter-sarif` was `private: true` in this repo
+#    at the time (it has shipped since; this image still does not need it). The
 #    first `npm install -g` 404'd every build, and `ENTRYPOINT ["interlace"]`
 #    named a binary that does not exist.
 #
