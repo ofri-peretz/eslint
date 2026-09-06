@@ -35,7 +35,14 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 const ROOT = resolve(__dirname, '../..');
@@ -137,10 +144,60 @@ describe('a published entry point is produced and shipped', () => {
    * neither is missing in every checkout and every tarball, which is the
    * case worth failing on.
    */
-  const compilesTo = (abs: string): boolean =>
-    ['.ts', '.tsx', '.mts', '.cts'].some((ext) =>
-      existsSync(abs.replace(/\.d\.ts$|\.js$|\.mjs$|\.cjs$/, ext)),
-    );
+  /*
+   * Each output extension maps only to the sources tsc actually emits it from.
+   * `.mts` emits `.mjs` and `.cts` emits `.cjs` — accepting them as sources for
+   * a `.js` entry would wave through an entry point that resolves to nothing.
+   * Longest suffix first: `.d.ts` must match before `.ts`.
+   */
+  const EMITTED_FROM: ReadonlyArray<readonly [string, readonly string[]]> = [
+    ['.d.mts', ['.mts']],
+    ['.d.cts', ['.cts']],
+    ['.d.ts', ['.ts', '.tsx']],
+    ['.mjs', ['.mts']],
+    ['.cjs', ['.cts']],
+    ['.js', ['.ts', '.tsx']],
+  ];
+
+  const compilesTo = (abs: string): boolean => {
+    const hit = EMITTED_FROM.find(([out]) => abs.endsWith(out));
+    if (hit === undefined) return false;
+    const [out, sources] = hit;
+    const stem = abs.slice(0, -out.length);
+    return sources.some((ext) => existsSync(stem + ext));
+  };
+
+  it('maps each output extension only to the sources tsc emits it from', () => {
+    // A .mts source emits .mjs, never .js — so it must not satisfy a .js entry.
+    const pairs: ReadonlyArray<readonly [string, string, boolean]> = [
+      ['.js', '.ts', true],
+      ['.js', '.tsx', true],
+      ['.js', '.mts', false],
+      ['.js', '.cts', false],
+      ['.mjs', '.mts', true],
+      ['.mjs', '.ts', false],
+      ['.cjs', '.cts', true],
+      ['.cjs', '.ts', false],
+      ['.d.ts', '.ts', true],
+      ['.d.ts', '.mts', false],
+      ['.d.mts', '.mts', true],
+      ['.d.mts', '.ts', false],
+      ['.d.cts', '.cts', true],
+      ['.d.cts', '.ts', false],
+    ];
+    const tmp = mkdtempSync(join(tmpdir(), 'entrypoint-ext-'));
+    for (const [out, src, accepted] of pairs) {
+      const stem = join(
+        tmp,
+        `${out.replace(/\W/g, '')}_${src.replace(/\W/g, '')}`,
+      );
+      writeFileSync(stem + src, '');
+      expect(
+        compilesTo(stem + out),
+        `${src} as the source for a ${out} entry point`,
+      ).toBe(accepted);
+    }
+  });
 
   it('every entry point outside dist/ exists, or has a source that builds it', () => {
     const offenders = published.flatMap(({ dir, pkg }) =>
