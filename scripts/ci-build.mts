@@ -73,8 +73,8 @@ function workspaces(): BuildPkg[] {
         // Only packages built by scripts/build-package.ts emit a publishable
         // dist/package.json. Apps (`next build`) and private helpers with no
         // build script never do — demanding one from them made the post-build
-        // verification fail on @interlace/eslint-formatter-sarif, which is
-        // private:true with no build script at all.
+        // verification fail on @interlace/eslint-formatter-sarif back when it was
+        // private:true with no build script at all (it builds now).
         emitsDist: typeof pkg.scripts?.build === 'string' && pkg.scripts.build.includes('build-package'),
       });
     }

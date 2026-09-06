@@ -77,7 +77,9 @@ export interface RuleMeta {
 // resolving the workspace package graph.
 // ---------------------------------------------------------------------------
 
-export function loadPluginRegistry(registryPath = PLUGINS_REGISTRY): PluginEntry[] {
+export function loadPluginRegistry(
+  registryPath = PLUGINS_REGISTRY,
+): PluginEntry[] {
   const src = fs.readFileSync(registryPath, 'utf-8');
   const arrayMatch = src.match(/export const PLUGINS:[^=]*=\s*\[([\s\S]*?)\];/);
   if (!arrayMatch) {
@@ -102,10 +104,14 @@ export function loadPluginRegistry(registryPath = PLUGINS_REGISTRY): PluginEntry
 // per .agent/type-awareness-audit.md.
 // ---------------------------------------------------------------------------
 
-export function loadTypeAwarenessMap(tsvPath = TSV_PATH): Map<string, TypeStatus> {
+export function loadTypeAwarenessMap(
+  tsvPath = TSV_PATH,
+): Map<string, TypeStatus> {
   const map = new Map<string, TypeStatus>();
   if (!fs.existsSync(tsvPath)) {
-    console.warn(`  ⚠️  TSV not found at ${tsvPath} — every rule will render as 🟢 (unaware)`);
+    console.warn(
+      `  ⚠️  TSV not found at ${tsvPath} — every rule will render as 🟢 (unaware)`,
+    );
     return map;
   }
   const lines = fs.readFileSync(tsvPath, 'utf-8').split('\n');
@@ -115,7 +121,12 @@ export function loadTypeAwarenessMap(tsvPath = TSV_PATH): Map<string, TypeStatus
     const [plugin, rule, status] = line.split('\t');
     if (!plugin || !rule || !status) continue;
     const normalized = status.trim() as TypeStatus;
-    if (normalized !== 'unaware' && normalized !== 'optional' && normalized !== 'aware') continue;
+    if (
+      normalized !== 'unaware' &&
+      normalized !== 'optional' &&
+      normalized !== 'aware'
+    )
+      continue;
     map.set(`${plugin}/${rule}`, normalized);
   }
   return map;
@@ -164,7 +175,9 @@ export function extractRuleNamesFromIndex(pluginPath: string): string[] {
  * Parse the `configs.recommended.rules` block to learn which rules are on by
  * default and whether they fire as `warn` or `error`.
  */
-export function extractRecommendedMap(pluginPath: string): Map<string, 'warn' | 'error'> {
+export function extractRecommendedMap(
+  pluginPath: string,
+): Map<string, 'warn' | 'error'> {
   const indexPath = path.join(pluginPath, 'src', 'index.ts');
   const recommended = new Map<string, 'warn' | 'error'>();
   if (!fs.existsSync(indexPath)) return recommended;
@@ -172,7 +185,9 @@ export function extractRecommendedMap(pluginPath: string): Map<string, 'warn' | 
 
   // Find `recommended: { ... rules: { <entries> } ... }`. The outer-config
   // object may have multiple fields, so we grab the nested rules object.
-  const recMatch = content.match(/recommended\s*:\s*\{[\s\S]*?rules\s*:\s*\{([\s\S]*?)\n\s*\}/);
+  const recMatch = content.match(
+    /recommended\s*:\s*\{[\s\S]*?rules\s*:\s*\{([\s\S]*?)\n\s*\}/,
+  );
 
   // …or `rules: recommendedRules`, a reference to a const declared above.
   // Without this the lazy `[\s\S]*?` walks past the reference and captures
@@ -186,12 +201,15 @@ export function extractRecommendedMap(pluginPath: string): Map<string, 'warn' | 
     referenced === null
       ? null
       : content.match(
-          new RegExp(`const\\s+${referenced[1]}\\b[^=]*=\\s*\\{([\\s\\S]*?)\\n\\};`),
+          new RegExp(
+            `const\\s+${referenced[1]}\\b[^=]*=\\s*\\{([\\s\\S]*?)\\n\\};`,
+          ),
         );
 
   const block = declared?.[1] ?? recMatch?.[1];
   if (block === undefined) return recommended;
-  const entryPattern = /['"][^'"/]+\/([a-z0-9-]+)['"]\s*:\s*['"](warn|error)['"]/g;
+  const entryPattern =
+    /['"][^'"/]+\/([a-z0-9-]+)['"]\s*:\s*['"](warn|error)['"]/g;
   for (const m of block.matchAll(entryPattern)) {
     recommended.set(m[1], m[2] as 'warn' | 'error');
   }
@@ -293,8 +311,10 @@ export function renderRulesTable(
   pillar: Pillar,
   campaign: string,
 ): string {
-  const header = '| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |';
-  const sep = '| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |';
+  const header =
+    '| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |';
+  const sep =
+    '| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |';
   const lines = [header, sep];
 
   const sorted = [...rules].toSorted((a, b) => a.name.localeCompare(b.name));
@@ -325,12 +345,16 @@ export function renderRulesTable(
 const RULE_TABLE_REGEX =
   /\|\s*Rule\s*\|[^\n]*\n\|[\s:|-]+\|\n(?:\|[^\n]*\|\n?)+/;
 
-export function spliceTable(readme: string, generatedTable: string): { content: string; modified: boolean } {
+export function spliceTable(
+  readme: string,
+  generatedTable: string,
+): { content: string; modified: boolean } {
   const hasStart = readme.includes(RULES_TABLE_START);
   const hasEnd = readme.includes(RULES_TABLE_END);
 
   if (hasStart && hasEnd) {
-    const startIdx = readme.indexOf(RULES_TABLE_START) + RULES_TABLE_START.length;
+    const startIdx =
+      readme.indexOf(RULES_TABLE_START) + RULES_TABLE_START.length;
     const endIdx = readme.indexOf(RULES_TABLE_END);
     if (startIdx >= endIdx) {
       throw new Error('Auto-generated markers are out of order in README');
@@ -347,12 +371,16 @@ export function spliceTable(readme: string, generatedTable: string): { content: 
   // happen to start with `| Rule |`).
   const rulesHeadingIdx = readme.search(/^## Rules\b/m);
   if (rulesHeadingIdx === -1) {
-    throw new Error('Could not locate `## Rules` heading to anchor table search');
+    throw new Error(
+      'Could not locate `## Rules` heading to anchor table search',
+    );
   }
   const rulesSection = readme.slice(rulesHeadingIdx);
   const match = RULE_TABLE_REGEX.exec(rulesSection);
   if (!match) {
-    throw new Error('Could not locate existing rule-data table to wrap with markers');
+    throw new Error(
+      'Could not locate existing rule-data table to wrap with markers',
+    );
   }
   const tableStart = rulesHeadingIdx + match.index;
   const tableEnd = tableStart + match[0].length;
@@ -373,7 +401,6 @@ export interface ProcessOptions {
    *  README lists every other plugin, so filtering targets must not shrink it. */
   registry: PluginEntry[];
 }
-
 
 const ECOSYSTEM_START =
   '<!-- AUTO-GENERATED:ECOSYSTEM_TABLE:START - Do not edit manually -->';
@@ -398,7 +425,10 @@ const ECOSYSTEM_STOP = /^(## |<!-- INTERLACE:STAR_CTA:START)/;
  * Split by pillar because twenty-nine undifferentiated rows is a wall, and the split is
  * the one the docs site already makes.
  */
-export function renderEcosystemTable(entries: PluginEntry[], selfPackage: string): string {
+export function renderEcosystemTable(
+  entries: PluginEntry[],
+  selfPackage: string,
+): string {
   const others = entries
     .filter((e) => e.package !== selfPackage)
     .toSorted((a, b) => a.package.localeCompare(b.package));
@@ -447,13 +477,20 @@ export function renderEcosystemTable(entries: PluginEntry[], selfPackage: string
  * A README with neither markers nor the heading is returned untouched rather than having
  * the section guessed into place.
  */
-export function spliceEcosystem(readme: string, table: string): { content: string; modified: boolean } {
+export function spliceEcosystem(
+  readme: string,
+  table: string,
+): { content: string; modified: boolean } {
   const start = readme.indexOf(ECOSYSTEM_START);
   const end = readme.indexOf(ECOSYSTEM_END);
 
   if (start !== -1 && end !== -1) {
-    if (end < start) throw new Error('ECOSYSTEM_TABLE:END appears before ECOSYSTEM_TABLE:START');
-    const content = readme.slice(0, start) + table + readme.slice(end + ECOSYSTEM_END.length);
+    if (end < start)
+      throw new Error(
+        'ECOSYSTEM_TABLE:END appears before ECOSYSTEM_TABLE:START',
+      );
+    const content =
+      readme.slice(0, start) + table + readme.slice(end + ECOSYSTEM_END.length);
     return { content, modified: content !== readme };
   }
   if (start !== -1 || end !== -1) {
@@ -472,11 +509,17 @@ export function spliceEcosystem(readme: string, table: string): { content: strin
     }
   }
 
-  const content = [...lines.slice(0, headingAt), table, '', ...lines.slice(stopAt)].join('\n');
+  const content = [
+    ...lines.slice(0, headingAt),
+    table,
+    '',
+    ...lines.slice(stopAt),
+  ].join('\n');
   return { content, modified: content !== readme };
 }
 
-const DOCTRINE_START = '<!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manually -->';
+const DOCTRINE_START =
+  '<!-- AUTO-GENERATED:DOCTRINE:START - Do not edit manually -->';
 const DOCTRINE_END = '<!-- AUTO-GENERATED:DOCTRINE:END -->';
 
 /**
@@ -544,7 +587,10 @@ function renderDoctrine(): string {
  * section, rather than guessing where the block belongs — a README with its own
  * structure is not something to rewrite blind.
  */
-export function spliceDoctrine(readme: string): { content: string; modified: boolean } {
+export function spliceDoctrine(readme: string): {
+  content: string;
+  modified: boolean;
+} {
   const block = renderDoctrine();
 
   // A `## Philosophy` section ending where the next `## ` heading begins. The head
@@ -563,7 +609,8 @@ export function spliceDoctrine(readme: string): { content: string; modified: boo
   if (start !== -1 || end !== -1) {
     if (start === -1) throw new Error('DOCTRINE:END without a matching START');
     if (end === -1) throw new Error('DOCTRINE:START without a matching END');
-    if (end < start) throw new Error('DOCTRINE:END appears before DOCTRINE:START');
+    if (end < start)
+      throw new Error('DOCTRINE:END appears before DOCTRINE:START');
     const head = readme.slice(0, start).replace(PHILOSOPHY, '');
     const content = head + block + readme.slice(end + DOCTRINE_END.length);
     return { content, modified: content !== readme };
@@ -583,7 +630,10 @@ export interface ProcessResult {
   error?: string;
 }
 
-export function processPlugin(entry: PluginEntry, opts: ProcessOptions): ProcessResult {
+export function processPlugin(
+  entry: PluginEntry,
+  opts: ProcessOptions,
+): ProcessResult {
   const pluginPath = path.join(PACKAGES_DIR, entry.package);
   const readmePath = path.join(pluginPath, 'README.md');
 
@@ -597,7 +647,12 @@ export function processPlugin(entry: PluginEntry, opts: ProcessOptions): Process
   } catch (e) {
     const code = (e as NodeJS.ErrnoException).code;
     if (code === 'ENOENT') {
-      return { slug: entry.slug, ruleCount: 0, modified: false, skipped: 'README.md or plugin path missing' };
+      return {
+        slug: entry.slug,
+        ruleCount: 0,
+        modified: false,
+        skipped: 'README.md or plugin path missing',
+      };
     }
     throw e;
   }
@@ -624,14 +679,24 @@ export function processPlugin(entry: PluginEntry, opts: ProcessOptions): Process
     if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e;
   }
   if (documentedNames.length === 0) {
-    return { slug: entry.slug, ruleCount: 0, modified: false, skipped: 'no rules in docs/rules' };
+    return {
+      slug: entry.slug,
+      ruleCount: 0,
+      modified: false,
+      skipped: 'no rules in docs/rules',
+    };
   }
   const recommended = extractRecommendedMap(pluginPath);
   const rules = documentedNames.map((n) =>
     extractRuleMetadata(pluginPath, entry.slug, n, recommended, opts.typeMap),
   );
 
-  const table = renderRulesTable(rules, entry.slug, entry.pillar, entry.package);
+  const table = renderRulesTable(
+    rules,
+    entry.slug,
+    entry.pillar,
+    entry.package,
+  );
 
   let result: { content: string; modified: boolean };
   try {
@@ -643,7 +708,8 @@ export function processPlugin(entry: PluginEntry, opts: ProcessOptions): Process
     );
     result = {
       content: withEcosystem.content,
-      modified: result.modified || withDoctrine.modified || withEcosystem.modified,
+      modified:
+        result.modified || withDoctrine.modified || withEcosystem.modified,
     };
   } catch (e) {
     return {
@@ -675,11 +741,35 @@ export function processPlugin(entry: PluginEntry, opts: ProcessOptions): Process
  * `selfPackage` that matches no registry entry is deliberate — nothing is excluded,
  * because devkit is not one of the thirty.
  */
-const NON_PLUGIN_README_TARGETS = ['eslint-devkit'];
+/*
+ * Derived, not listed. This was `['eslint-devkit']`, and the ecosystem-table
+ * lock reads the same set from `!package.json.private` — so the moment a
+ * second non-plugin was published (eslint-formatter-sarif, #900) the lock
+ * demanded a table the generator never wrote, and `npm run sync-readmes` —
+ * the command the failure told you to run — silently changed nothing.
+ *
+ * Same predicate as the lock: published, and not one of the thirty plugins.
+ */
+function nonPluginReadmeTargets(): string[] {
+  return fs
+    .readdirSync(PACKAGES_DIR, { withFileTypes: true })
+    .filter((e) => e.isDirectory() && !e.name.startsWith('eslint-plugin-'))
+    .filter((e) => {
+      const manifest = path.join(PACKAGES_DIR, e.name, 'package.json');
+      const readme = path.join(PACKAGES_DIR, e.name, 'README.md');
+      if (!fs.existsSync(manifest) || !fs.existsSync(readme)) return false;
+      return !JSON.parse(fs.readFileSync(manifest, 'utf-8')).private;
+    })
+    .map((e) => e.name)
+    .sort();
+}
 
-function syncNonPluginReadmes(registry: PluginEntry[], dryRun: boolean): number {
+function syncNonPluginReadmes(
+  registry: PluginEntry[],
+  dryRun: boolean,
+): number {
   let modified = 0;
-  for (const dir of NON_PLUGIN_README_TARGETS) {
+  for (const dir of nonPluginReadmeTargets()) {
     const readmePath = path.join(PACKAGES_DIR, dir, 'README.md');
     let readme: string;
     try {
@@ -709,10 +799,16 @@ function main(): void {
 
   const registry = loadPluginRegistry();
   const typeMap = loadTypeAwarenessMap();
-  const targets = singlePlugin ? registry.filter((p) => p.slug === singlePlugin) : registry;
+  const targets = singlePlugin
+    ? registry.filter((p) => p.slug === singlePlugin)
+    : registry;
 
   if (targets.length === 0) {
-    console.error(singlePlugin ? `No plugin matches slug "${singlePlugin}"` : 'Registry is empty');
+    console.error(
+      singlePlugin
+        ? `No plugin matches slug "${singlePlugin}"`
+        : 'Registry is empty',
+    );
     process.exit(1);
   }
 
@@ -732,14 +828,22 @@ function main(): void {
       skipped++;
       continue;
     }
-    const verb = result.modified ? (dryRun ? 'would update' : 'updated') : 'unchanged';
-    console.log(`${result.modified ? '✓' : '·'} ${entry.slug}: ${result.ruleCount} rules — ${verb}`);
+    const verb = result.modified
+      ? dryRun
+        ? 'would update'
+        : 'updated'
+      : 'unchanged';
+    console.log(
+      `${result.modified ? '✓' : '·'} ${entry.slug}: ${result.ruleCount} rules — ${verb}`,
+    );
     if (result.modified) modified++;
   }
 
   console.log('='.repeat(60));
   if (!singlePlugin) modified += syncNonPluginReadmes(registry, dryRun);
-  console.log(`Processed ${targets.length} — modified ${modified}, skipped ${skipped}, errored ${errored}`);
+  console.log(
+    `Processed ${targets.length} — modified ${modified}, skipped ${skipped}, errored ${errored}`,
+  );
 
   if (errored > 0) process.exit(1);
 }

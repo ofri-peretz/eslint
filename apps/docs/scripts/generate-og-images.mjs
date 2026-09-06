@@ -53,6 +53,12 @@ const EXTRAS = [
     pillar: 'tooling',
     description: 'AST helpers & rule testing',
   },
+  {
+    slug: 'formatter-sarif',
+    package: '@interlace/eslint-formatter-sarif',
+    pillar: 'tooling',
+    description: 'SARIF 2.1.0 output for code scanning',
+  },
 ];
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
