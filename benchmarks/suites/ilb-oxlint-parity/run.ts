@@ -513,9 +513,15 @@ function lintOxlint(corpus, configPath) {
      * parity break.
      */
     if (!allowedPrefixes.some((prefix) => ruleId.startsWith(prefix))) continue;
+    /*
+     * Resolve against the CORPUS, which is oxlint's cwd — its filenames come
+     * back relative to that. Resolving them against REPO_ROOT instead produced
+     * paths that no ESLint finding could match: shared dropped to 0 while both
+     * sides were reporting thousands of real findings.
+     */
     const filename = d.filename ?? '';
     const rel = path
-      .relative(REPO_ROOT, path.resolve(REPO_ROOT, filename))
+      .relative(REPO_ROOT, path.resolve(corpus, filename))
       .split(path.sep)
       .join('/');
     const label = (d.labels ?? [])[0]?.span ?? {};
