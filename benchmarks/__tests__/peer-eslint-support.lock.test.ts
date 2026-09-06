@@ -112,3 +112,73 @@ describe('a failed lint run is never scored as "found nothing"', () => {
     expect(RUN).toMatch(/>=\s*9\)\s*return ESLint/);
   });
 });
+
+/*
+ * The summary must survive records that carry no metrics.
+ *
+ * Every consumer below the table dereferences `data.metrics`. An excluded or
+ * unmeasurable plugin has none, so an unfiltered summary throws
+ * `Cannot read properties of undefined (reading 'f1Score')` — and the throw
+ * lands after the table is printed but BEFORE results are saved, so a run
+ * looks like it worked and silently writes nothing.
+ *
+ * It was invisible because the entrypoint was `.catch(console.error)`: the
+ * error printed and the process still exited 0. Verifying by exit code alone
+ * reported success on a run that produced no output file.
+ */
+describe('the summary tolerates records with no metrics', () => {
+  const RUN = fs.readFileSync(
+    path.join(
+      path.dirname(fileURLToPath(import.meta.url)),
+      '../suites/ilb-arena/run.js',
+    ),
+    'utf-8',
+  );
+
+  it('ranks only scored records', () => {
+    // The sort must not read from every plugin entry.
+    expect(RUN).not.toMatch(
+      /sortedPlugins\s*=\s*Object\.entries\(results\.plugins\)\.sort/,
+    );
+    expect(RUN).toMatch(/const scored = Object\.entries\(results\.plugins\)/);
+    expect(RUN).toMatch(/d\.metrics !== undefined/);
+  });
+
+  it('still names what it did not score', () => {
+    expect(RUN).toContain('Not scored:');
+    expect(RUN).toMatch(/notScored:/);
+  });
+
+  it('fails the process when the run throws', () => {
+    // `.catch(console.error)` exits 0 on any error — a bench that cannot fail
+    // cannot gate, and this is what hid the summary crash.
+    expect(RUN).not.toMatch(/runBenchmark\(\)\.catch\(console\.error\)/);
+    expect(RUN).toMatch(
+      /runBenchmark\(\)\.catch\([\s\S]{0,120}process\.exit\(1\)/,
+    );
+  });
+
+  it('reproduces the crash on an unfiltered sort', () => {
+    const plugins = {
+      good: { displayName: 'Good', metrics: { f1Score: '50.0%' } },
+      excluded: { displayName: 'Excluded' },
+    };
+    expect(() =>
+      Object.entries(plugins).sort(
+        ([, a]: [string, any], [, b]: [string, any]) =>
+          parseFloat(b.metrics.f1Score) - parseFloat(a.metrics.f1Score),
+      ),
+    ).toThrow(/f1Score/);
+
+    const scored = Object.entries(plugins).filter(
+      ([, d]: [string, any]) => d.metrics !== undefined,
+    );
+    expect(() =>
+      scored.sort(
+        ([, a]: [string, any], [, b]: [string, any]) =>
+          parseFloat(b.metrics.f1Score) - parseFloat(a.metrics.f1Score),
+      ),
+    ).not.toThrow();
+    expect(scored).toHaveLength(1);
+  });
+});

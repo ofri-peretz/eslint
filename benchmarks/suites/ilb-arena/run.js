@@ -862,8 +862,22 @@ async function runBenchmark() {
     '|:--------------------------------|:--------|:------|:-------------------|:----|:---|:---|:----------|:-------|:-------|',
   );
 
+  /*
+   * Only scored records reach the table and the leaderboard. A plugin that was
+   * excluded (peer declares no support for this ESLint) or is unmeasurable
+   * (needs a TypeScript program this corpus lacks) carries no `metrics`, and
+   * every consumer below dereferences them. They are reported after the table
+   * instead — absent from the ranking, but never invisible.
+   */
+  const scored = Object.entries(results.plugins).filter(
+    ([, d]) => d.metrics !== undefined,
+  );
+  const notScored = Object.entries(results.plugins).filter(
+    ([, d]) => d.metrics === undefined,
+  );
+
   // Sort by F1 score descending
-  const sortedPlugins = Object.entries(results.plugins).sort(
+  const sortedPlugins = scored.sort(
     ([, a], [, b]) =>
       parseFloat(b.metrics.f1Score) - parseFloat(a.metrics.f1Score),
   );
@@ -882,9 +896,29 @@ async function runBenchmark() {
     );
   }
 
+  // Excluded plugins are named, never silently dropped from the comparison.
+  if (notScored.length > 0) {
+    console.log('\nNot scored:');
+    for (const [, d] of notScored) {
+      const why = d.unmeasurable
+        ? d.unmeasurable
+        : `declares eslint "${d.unsupported?.declaredEslint}", ran ${d.unsupported?.runningEslint}`;
+      console.log(`  ⊘ ${d.displayName} — ${why}`);
+    }
+  }
+
   // Build article-ready summary
   results.summary = {
-    totalPluginsTested: pluginsToTest.length,
+    // Counts the plugins that produced metrics, not the ones we attempted —
+    // `pluginsToTest.length` counted excluded plugins as tested.
+    totalPluginsTested: sortedPlugins.length,
+    notScored: notScored.map(([name, d]) => ({
+      plugin: name,
+      displayName: d.displayName,
+      reason: d.unmeasurable ?? 'unsupported on this ESLint',
+      declaredEslint: d.unsupported?.declaredEslint,
+      runningEslint: d.unsupported?.runningEslint,
+    })),
     securityRelevantPlugins: pluginsToTest.filter(
       (p) => p.securityRelevant !== false,
     ).length,
@@ -931,4 +965,12 @@ function groupByRule(violations) {
 }
 
 // Run if called directly
-runBenchmark().catch(console.error);
+/*
+ * `.catch(console.error)` printed the error and exited 0 — the benchmark
+ * reported success on every failure, including a TypeError in the summary
+ * that skipped saving results entirely. A bench that cannot fail cannot gate.
+ */
+runBenchmark().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
