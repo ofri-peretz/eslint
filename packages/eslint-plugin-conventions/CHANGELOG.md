@@ -5,6 +5,23 @@ All notable changes to `eslint-plugin-conventions` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.3.3
+
+### Patch Changes
+
+- **🐛 Fix** — `no-console-spaces` no longer reports the space beside an interpolation in a template literal
+
+  ``console.error(`No workflows dir at ${dir}`)`` was reported because the
+  quasi before `${dir}` ends with a space. The rule looped over every quasi and
+  reported any that began or ended with whitespace, so every template literal
+  that put a space next to `${…}` was a finding.
+
+  The rule is about leading/trailing whitespace of the whole argument, which
+  console would duplicate when it joins parameters. For a template literal that
+  means only the first quasi's leading whitespace and the last quasi's trailing
+  whitespace. Interior boundaries around interpolations are the body of one
+  string, and are no longer checked.
+
 ## 5.3.2
 
 ### Patch Changes
