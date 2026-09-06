@@ -9,6 +9,7 @@
  * Forbid the use of extraneous packages (eslint-plugin-import inspired)
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
+import { builtinModules } from 'node:module';
 import { createRule, staticString } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { readJsonFileSync, findFileUpward } from '@interlace/eslint-devkit';
@@ -303,67 +304,18 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
         return null;
       }
 
-      // Skip Node.js built-ins
-      const nodeBuiltins = [
-        'assert',
-        'buffer',
-        'child_process',
-        'cluster',
-        'crypto',
-        'dgram',
-        'dns',
-        'domain',
-        'events',
-        'fs',
-        'http',
-        'https',
-        'net',
-        'os',
-        'path',
-        'punycode',
-        'querystring',
-        'readline',
-        'stream',
-        'string_decoder',
-        'timers',
-        'tls',
-        'tty',
-        'url',
-        'util',
-        'v8',
-        'vm',
-        'zlib',
-        'node:assert',
-        'node:buffer',
-        'node:child_process',
-        'node:cluster',
-        'node:crypto',
-        'node:dgram',
-        'node:dns',
-        'node:domain',
-        'node:events',
-        'node:fs',
-        'node:http',
-        'node:https',
-        'node:net',
-        'node:os',
-        'node:path',
-        'node:punycode',
-        'node:querystring',
-        'node:readline',
-        'node:stream',
-        'node:string_decoder',
-        'node:timers',
-        'node:tls',
-        'node:tty',
-        'node:url',
-        'node:util',
-        'node:v8',
-        'node:vm',
-        'node:zlib',
-      ];
-
-      if (nodeBuiltins.includes(importPath)) {
+      // Skip Node.js built-ins.
+      //
+      // This was a hand-written list of 29 names, frozen at roughly Node 8:
+      // no `process`, `module`, `worker_threads`, `perf_hooks`, `async_hooks`
+      // or `test`. `import process from 'node:process'` — the spelling
+      // `unicorn/prefer-node-protocol` demands — was reported as a missing
+      // dependency. A `node:`-prefixed specifier is a builtin by definition,
+      // and the bare names are whatever the running Node says they are.
+      if (
+        importPath.startsWith('node:') ||
+        builtinModules.includes(importPath)
+      ) {
         return null;
       }
 
