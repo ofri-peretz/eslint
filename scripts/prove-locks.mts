@@ -60,18 +60,23 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { readFlag, scopedUpdate } from './lib/prover-args.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
 const LOCK_DIR = path.join(ROOT, 'scripts', '__tests__');
 const BASELINE = path.join(ROOT, '.agent', 'lock-proof-baseline.json');
 
-const arg = (flag: string): string | undefined => {
-  const hit = process.argv.find((a) => a.startsWith(`${flag}=`));
-  return hit?.slice(flag.length + 1);
-};
 const UPDATE = process.argv.includes('--update');
-const ONLY = arg('--file');
+const ONLY = readFlag(process.argv, '--file');
+
+if (scopedUpdate(process.argv)) {
+  console.error(
+    '  \u26d4 --update rewrites the entire baseline and cannot be scoped.\n' +
+      '     Drop --file and run every lock.',
+  );
+  process.exit(1);
+}
 
 type Proof = { file: string; find: string; replace: string };
 type Lock = { rel: string; proofs: Proof[] };
@@ -216,7 +221,18 @@ const added = ONLY === undefined ? now.filter((r) => !known.has(r)) : [];
 const fixed =
   ONLY === undefined ? [...known].filter((r) => !now.includes(r)) : [];
 
-if (UPDATE) {
+if (UPDATE && added.length > 0) {
+  /*
+   * Shrink-only in both modes. Without this, `--update` is the escape hatch
+   * that banks an unproven new lock, and the check that follows accepts it.
+   */
+  console.error(
+    `\n  ⛔ --update refuses to bank ${added.length} new unproven lock(s):\n` +
+      added.map((a) => `     ${a}`).join('\n') +
+      '\n\n  The baseline only shrinks. Declare their @provenBy proofs first.',
+  );
+  process.exit(1);
+} else if (UPDATE) {
   fs.mkdirSync(path.dirname(BASELINE), { recursive: true });
   fs.writeFileSync(
     BASELINE,
