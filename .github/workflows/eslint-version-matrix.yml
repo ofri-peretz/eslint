@@ -116,28 +116,36 @@ jobs:
       - name: Build plugins (dist/ is what the configs load)
         run: npx turbo run build --filter='eslint-plugin-*' --filter=@interlace/eslint-devkit
 
+      # -w @interlace/benchmarks, NOT the repo root. benchmarks/package.json
+      # declares its own `eslint: ^10.9.1`, so a root install leaves
+      # benchmarks/node_modules/eslint in place and the bench keeps resolving
+      # that — every cell silently ran eslint 10 (#891). The root print below
+      # is what made it look right for months: it reports the root copy, which
+      # is not the one the bench imports.
       - name: Install ESLint ${{ matrix.eslint }}
         run: |
           set -e
           case "${{ matrix.eslint }}" in
             "8.x")
-              npm install --no-save eslint@^8
+              npm install --no-save -w @interlace/benchmarks eslint@^8
               ;;
             "9.39")
-              npm install --no-save eslint@9.39.0
+              npm install --no-save -w @interlace/benchmarks eslint@9.39.0
               ;;
             "9.x")
-              npm install --no-save eslint@^9
+              npm install --no-save -w @interlace/benchmarks eslint@^9
               ;;
             "10.x")
-              npm install --no-save eslint@^10
+              npm install --no-save -w @interlace/benchmarks eslint@^10
               ;;
             *)
               echo "::error::Unknown ESLint version selector: ${{ matrix.eslint }}"
               exit 1
               ;;
           esac
-          node -e "console.log('eslint@' + require('eslint/package.json').version)"
+          # Print what the BENCH resolves, not the root — see above.
+          node -e "console.log('bench resolves eslint@' + require('./benchmarks/node_modules/eslint/package.json').version)" \
+            || node -e "console.log('bench resolves eslint@' + require('eslint/package.json').version)"
 
       # The swap above installs at the repo ROOT, but benchmarks/package.json
       # declares its own `eslint` devDependency, so npm may keep a nested copy
