@@ -32,6 +32,7 @@ import path from 'path';
 import { createRequire } from 'module';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { ESLint } from 'eslint';
+import semver from 'semver';
 import {
   NPM_PACKAGE_NAMES,
   OUR_PLUGIN_NAME,
@@ -205,6 +206,18 @@ const ALL_PLUGINS = [
     category: 'Vue.js',
   },
   {
+    /*
+     * Its recommended set includes rules that need a TypeScript program
+     * (@angular-eslint/no-developer-preview throws "requires type
+     * information"), and this corpus is plain .js with no project. The plugin
+     * does not mark those rules `requiresTypeChecking`, so they cannot be
+     * filtered out by metadata.
+     *
+     * This was always true. Until run failures became fatal it surfaced as a
+     * silent 0/40 — a fabricated measurement — on every run, v10 included.
+     * Declared, not scored, until the corpus can give it a program (#897).
+     */
+    unmeasurable: 'needs a TypeScript program; the arena corpus is plain .js',
     name: 'angular',
     displayName: '@angular-eslint/eslint-plugin',
     config: './configs/angular.config.js',
@@ -265,6 +278,29 @@ function getPluginsToTest() {
 // dynamic imports of TS sources resolve, so we can use ESLint's Node API
 // with `overrideConfig: <imported-config>` and get real numbers.
 
+/*
+ * ESLint 8 cannot take a flat config through `new ESLint({overrideConfigFile:
+ * true})` — it rejects it with "'overrideConfigFile' must be a non-empty
+ * string or null". Its flat-config engine lives behind the
+ * `eslint/use-at-your-own-risk` entry point, and comes off `.default`.
+ * v9+ takes flat config on the main export directly.
+ */
+let enginePromise;
+function flatEngine() {
+  enginePromise ??= (async () => {
+    if (semver.major(semver.coerce(ESLint.version)) >= 9) return ESLint;
+    const mod = await import('eslint/use-at-your-own-risk');
+    const { FlatESLint } = mod.default ?? mod;
+    if (typeof FlatESLint !== 'function') {
+      throw new Error(
+        `ESLint ${ESLint.version} exposes no FlatESLint; cannot lint flat configs.`,
+      );
+    }
+    return FlatESLint;
+  })();
+  return enginePromise;
+}
+
 const configCache = new Map();
 
 async function loadConfig(configPath) {
@@ -304,7 +340,8 @@ async function runEslint(configPath, targetFile, pluginName) {
   }
 
   try {
-    const eslint = new ESLint({
+    const Engine = await flatEngine();
+    const eslint = new Engine({
       cwd: __dirname,
       overrideConfigFile: true,
       overrideConfig: config,
@@ -312,10 +349,30 @@ async function runEslint(configPath, targetFile, pluginName) {
     const results = await eslint.lintFiles([absoluteTarget]);
     return results;
   } catch (e) {
+    /*
+     * A run failure used to return [] with a warning. That is the same
+     * vacuity the config-load branch above refuses: [] is indistinguishable
+     * from a plugin that genuinely found nothing, and it scores as such.
+     * Measured on real ESLint 8 before this changed: 36 run failures, all 18
+     * plugins at 0/40 TP and F1 0.0%, exit code 0.
+     *
+     * unicorn is the live example — its rules need ESLint 10's rule-options
+     * semantics and throw "Cannot destructure property 'name' of 'options'"
+     * on v8, which is precisely what its `>=10.4` peer range declares. So the
+     * same exemption the load branch uses applies here: a peer that never
+     * claimed this major is excluded, anything else stops the run.
+     */
+    if (
+      pluginName !== undefined &&
+      pluginName !== OUR_PLUGIN_NAME &&
+      !declaresSupportFor(pluginName, ESLint.version)
+    ) {
+      return UNSUPPORTED;
+    }
     console.error(
-      `  ⚠️  ESLint run failed for ${configPath}: ${e.message?.slice(0, 200)}`,
+      `\n❌ ESLint run failed for ${configPath}\n   ${e.message?.slice(0, 300)}\n\nRefusing to score.`,
     );
-    return [];
+    process.exit(3);
   }
 }
 
@@ -653,6 +710,15 @@ async function runBenchmark() {
     );
     console.log('-'.repeat(70));
 
+    if (plugin.unmeasurable) {
+      console.log(`   ⊘ Not scored — ${plugin.unmeasurable}.`);
+      results.plugins[plugin.name] = {
+        displayName: plugin.displayName,
+        unmeasurable: plugin.unmeasurable,
+      };
+      continue;
+    }
+
     // Run on vulnerable code
     console.log('   Scanning vulnerable.js...');
     const vulnerableRaw = await runEslint(
@@ -684,6 +750,17 @@ async function runBenchmark() {
       FIXTURE_FILES.safe,
       plugin.name,
     );
+    if (safeRaw === UNSUPPORTED) {
+      const range = peerEslintRange(plugin.name);
+      console.log(
+        `   ⊘ Skipped — declares eslint "${range}", running ${ESLint.version}.`,
+      );
+      results.plugins[plugin.name] = {
+        displayName: plugin.displayName,
+        unsupported: { declaredEslint: range, runningEslint: ESLint.version },
+      };
+      continue;
+    }
     const safeViolations = extractViolations(safeRaw);
     const safeByFunction = mapViolationsToFunctions(safeViolations, safeCode);
 
