@@ -75,12 +75,18 @@ describe('a failed lint run is never scored as "found nothing"', () => {
     'utf-8',
   );
 
-  /** The body of runEslint's lint-run catch block. */
+  /*
+   * The catch that decides what a failed lint run means. It lives in
+   * runEslintOuter: runEslint retries a rule needing a TypeScript program
+   * (#897) and rethrows anything else, so the fatal decision sits one level
+   * out. Anchored on the function, not the lintFiles call, which is now
+   * inside the retry loop.
+   */
   const runCatch = (): string => {
-    const at = RUN.indexOf('const results = await eslint.lintFiles(');
+    const at = RUN.indexOf('async function runEslintOuter(');
     expect(
       at,
-      'lintFiles call not found — this lock is pointed at nothing',
+      'runEslintOuter not found — this lock is pointed at nothing',
     ).toBeGreaterThan(-1);
     const rest = RUN.slice(at);
     const start = rest.indexOf('} catch (e) {');

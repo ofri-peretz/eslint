@@ -206,18 +206,6 @@ const ALL_PLUGINS = [
     category: 'Vue.js',
   },
   {
-    /*
-     * Its recommended set includes rules that need a TypeScript program
-     * (@angular-eslint/no-developer-preview throws "requires type
-     * information"), and this corpus is plain .js with no project. The plugin
-     * does not mark those rules `requiresTypeChecking`, so they cannot be
-     * filtered out by metadata.
-     *
-     * This was always true. Until run failures became fatal it surfaced as a
-     * silent 0/40 — a fabricated measurement — on every run, v10 included.
-     * Declared, not scored, until the corpus can give it a program (#897).
-     */
-    unmeasurable: 'needs a TypeScript program; the arena corpus is plain .js',
     name: 'angular',
     displayName: '@angular-eslint/eslint-plugin',
     config: './configs/angular.config.js',
@@ -301,6 +289,26 @@ function flatEngine() {
   return enginePromise;
 }
 
+/** Bound on the drop-and-retry loop; no plugin here has 50 type-aware rules. */
+const MAX_TYPE_AWARE_DROPS = 60;
+
+/** plugin name -> rules dropped because they needed a TypeScript program. */
+const typeAwareDrops = new Map();
+
+/** A copy of a flat config with one rule id removed from every block. */
+function withoutRule(config, ruleId) {
+  const strip = (block) =>
+    block && typeof block === 'object' && block.rules
+      ? {
+          ...block,
+          rules: Object.fromEntries(
+            Object.entries(block.rules).filter(([id]) => id !== ruleId),
+          ),
+        }
+      : block;
+  return Array.isArray(config) ? config.map(strip) : strip(config);
+}
+
 const configCache = new Map();
 
 async function loadConfig(configPath) {
@@ -339,15 +347,50 @@ async function runEslint(configPath, targetFile, pluginName) {
     process.exit(3);
   }
 
+  /*
+   * Some peers ship rules that need a TypeScript program, and this corpus is
+   * plain .js with no project. @angular-eslint is the case that matters: 0 of
+   * its 50 rules set `requiresTypeChecking`, and it exports no configs, so the
+   * type-aware ones cannot be identified from metadata — the plugin was simply
+   * declared unmeasurable and scored nothing on every published run (#897).
+   *
+   * ESLint names the offending rule in the error, so let the lint tell us:
+   * drop that rule, retry, repeat. Bounded by the rule count, converges in as
+   * many passes as there are type-aware rules, and needs no hardcoded list —
+   * a rule that stops requiring types simply starts being measured again.
+   */
+  const dropped = [];
+  let active = config;
+  for (let attempt = 0; attempt <= MAX_TYPE_AWARE_DROPS; attempt++) {
+    try {
+      const Engine = await flatEngine();
+      const eslint = new Engine({
+        cwd: __dirname,
+        overrideConfigFile: true,
+        overrideConfig: active,
+      });
+      const results = await eslint.lintFiles([absoluteTarget]);
+      if (dropped.length > 0) typeAwareDrops.set(pluginName, [...dropped]);
+      return results;
+    } catch (e) {
+      const needsTypes = /requires type information/i.test(e.message ?? '');
+      const named = (e.message ?? '').match(
+        /Error while loading rule '([^']+)'/,
+      );
+      if (!needsTypes || named === null) throw e;
+      dropped.push(named[1]);
+      active = withoutRule(active, named[1]);
+    }
+  }
+  throw new Error(
+    `More than ${MAX_TYPE_AWARE_DROPS} rules in ${configPath} need type information.`,
+  );
+}
+
+/** Re-run wrapper so the catch below still sees a single failure path. */
+async function runEslintOuter(configPath, targetFile, pluginName) {
   try {
-    const Engine = await flatEngine();
-    const eslint = new Engine({
-      cwd: __dirname,
-      overrideConfigFile: true,
-      overrideConfig: config,
-    });
-    const results = await eslint.lintFiles([absoluteTarget]);
-    return results;
+    return await runEslint(configPath, targetFile, pluginName);
   } catch (e) {
     /*
      * A run failure used to return [] with a warning. That is the same
@@ -721,7 +764,7 @@ async function runBenchmark() {
 
     // Run on vulnerable code
     console.log('   Scanning vulnerable.js...');
-    const vulnerableRaw = await runEslint(
+    const vulnerableRaw = await runEslintOuter(
       plugin.config,
       FIXTURE_FILES.vulnerable,
       plugin.name,
@@ -745,7 +788,7 @@ async function runBenchmark() {
 
     // Run on safe code
     console.log('   Scanning safe-patterns.js...');
-    const safeRaw = await runEslint(
+    const safeRaw = await runEslintOuter(
       plugin.config,
       FIXTURE_FILES.safe,
       plugin.name,
@@ -766,6 +809,16 @@ async function runBenchmark() {
 
     // Calculate metrics
     const metrics = calculateMetrics(vulnerableByFunction, safeByFunction);
+
+    const drops = typeAwareDrops.get(plugin.name) ?? [];
+    if (drops.length > 0) {
+      // Say it out loud: a 0 here means "ran and found nothing", and the
+      // reader needs to know which rules could not run at all.
+      console.log(
+        `   ⓘ ${drops.length} rule(s) need a TypeScript program and were ` +
+          `disabled for this corpus: ${drops.join(', ')}`,
+      );
+    }
 
     console.log(`\n   📊 Results:`);
     console.log(
