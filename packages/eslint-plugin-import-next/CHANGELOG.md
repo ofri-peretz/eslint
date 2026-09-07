@@ -5,6 +5,16 @@ All notable changes to `eslint-plugin-import-next` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.7.6
+
+### Patch Changes
+
+- **🐛 Fix** — `no-cross-domain-imports` and `enforce-dependency-direction` no longer crash on a non-string dynamic import
+
+  Both rules cast a dynamic import's `Literal` source `as string` and called `.startsWith` on it. `import(42)` and `import(null)` are valid syntax whose Literal value is a number or null, so both rules threw `TypeError: importPath.startsWith is not a function` — an ESLint crash that takes down linting for the whole file, not a lint error on one line.
+
+  Any file reaching either rule with a non-string dynamic import was affected. The `as string` assertion is why the compiler could not see it; both now check the type and skip.
+
 ## 2.7.5
 
 ### Patch Changes
