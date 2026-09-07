@@ -13230,7 +13230,7 @@
       "version": "0.1.0",
       "date": "2026-05-03T00:00:00Z",
       "isApp": false,
-      "isPrivate": true,
+      "isPrivate": false,
       "entries": [
         {
           "kind": "other",
