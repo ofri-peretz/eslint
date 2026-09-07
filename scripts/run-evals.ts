@@ -132,6 +132,9 @@ function stripCode(text: string): string {
  * every reader's. Judging by local existence made the check pass here and fail there,
  * twice, which is worse than not having it.
  */
+/** Snapshots the weekly benchmark prunes to the 3 most recent per suite. */
+const PRUNED_DIR = /^benchmarks\/results\//;
+
 export function brokenLinks(docs: string[], root = REPO_ROOT): string[] {
   const LINK = /\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
   const broken: string[] = [];
@@ -147,9 +150,28 @@ export function brokenLinks(docs: string[], root = REPO_ROOT): string[] {
       const target = raw.split('#')[0];
       if (!target) continue;
       const abs = path.resolve(path.dirname(path.join(root, doc)), target);
-      const escapes = path.relative(root, abs).startsWith('..');
+      const rel = path.relative(root, abs);
+      const escapes = rel.startsWith('..');
       if (escapes) {
-        broken.push(`${doc} → ${raw} (outside the repository — dangles in a clone)`);
+        broken.push(
+          `${doc} → ${raw} (outside the repository — dangles in a clone)`,
+        );
+      } else if (PRUNED_DIR.test(rel)) {
+        /*
+         * The file may well exist today. `weekly-benchmark.yml` keeps the
+         * three most recent dated snapshots per suite and deletes the rest,
+         * so a link to one is a link with an expiry date — and the week it
+         * expires, the breakage lands in an unrelated automated PR whose
+         * author has no idea why a doc they never touched is now red. That
+         * is what happened to `.agent/flagship-rules.md` and the 2026-05-10
+         * snapshot. Checking existence alone cannot catch it in time; the
+         * durable record is `benchmark-results/history.ndjson`.
+         */
+        broken.push(
+          `${doc} → ${raw} (points into a pruned directory — the weekly ` +
+            `benchmark keeps only 3 snapshots per suite; cite ` +
+            `benchmark-results/history.ndjson instead)`,
+        );
       } else if (!fs.existsSync(abs)) {
         broken.push(`${doc} → ${raw}`);
       }
@@ -193,19 +215,33 @@ function loadCases(): EvalCase[] {
   return entries
     .filter((f) => f.endsWith('.json'))
     .sort()
-    .map((f) => JSON.parse(fs.readFileSync(path.join(CASES_DIR, f), 'utf-8')) as EvalCase);
+    .map(
+      (f) =>
+        JSON.parse(
+          fs.readFileSync(path.join(CASES_DIR, f), 'utf-8'),
+        ) as EvalCase,
+    );
 }
 
-export function grade(output: string, expect: Expectation[]): { ok: boolean; failed: string[] } {
+export function grade(
+  output: string,
+  expect: Expectation[],
+): { ok: boolean; failed: string[] } {
   const failed: string[] = [];
   const hay = output.toLowerCase();
   for (const e of expect) {
     if (e.check === 'output-contains' && !hay.includes(e.value.toLowerCase())) {
       failed.push(`expected output to contain "${e.value}"`);
-    } else if (e.check === 'output-omits' && hay.includes(e.value.toLowerCase())) {
+    } else if (
+      e.check === 'output-omits' &&
+      hay.includes(e.value.toLowerCase())
+    ) {
       failed.push(`expected output NOT to contain "${e.value}"`);
     } else if (e.check === 'shell') {
-      const r = spawnSync('bash', ['-c', e.value], { cwd: REPO_ROOT, encoding: 'utf8' });
+      const r = spawnSync('bash', ['-c', e.value], {
+        cwd: REPO_ROOT,
+        encoding: 'utf8',
+      });
       if (r.status !== 0) failed.push(`shell check failed: ${e.value}`);
     }
   }
@@ -243,7 +279,11 @@ export function evalEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   return out;
 }
 
-function runCase(c: EvalCase): { id: string; status: 'pass' | 'fail' | 'error'; failed: string[] } {
+function runCase(c: EvalCase): {
+  id: string;
+  status: 'pass' | 'fail' | 'error';
+  failed: string[];
+} {
   // On a subscription token these runs draw from the SAME five-hour and weekly
   // allowance as interactive work, shared with Claude chat. The bill is not the risk;
   // being rate-limited mid-task by your own CI is. So every case is bounded twice:
@@ -254,7 +294,12 @@ function runCase(c: EvalCase): { id: string; status: 'pass' | 'fail' | 'error'; 
   //                 which is the point — an eval on a model nobody runs measures the
   //                 wrong configuration. Set `claude-haiku-4-5` when protecting the
   //                 allowance matters more than fidelity to what the team runs.
-  const args = ['-p', c.prompt, '--allowedTools', c.allowedTools ?? 'Read,Grep,Glob'];
+  const args = [
+    '-p',
+    c.prompt,
+    '--allowedTools',
+    c.allowedTools ?? 'Read,Grep,Glob',
+  ];
   args.push('--max-turns', process.env.EVAL_MAX_TURNS ?? '3');
   if (process.env.EVAL_MODEL) args.push('--model', process.env.EVAL_MODEL);
 
@@ -266,7 +311,11 @@ function runCase(c: EvalCase): { id: string; status: 'pass' | 'fail' | 'error'; 
     maxBuffer: 16 * 1024 * 1024,
   });
   if (r.error || typeof r.stdout !== 'string') {
-    return { id: c.id, status: 'error', failed: [String(r.error ?? 'no output')] };
+    return {
+      id: c.id,
+      status: 'error',
+      failed: [String(r.error ?? 'no output')],
+    };
   }
   const { ok, failed } = grade(r.stdout, c.expect);
   return { id: c.id, status: ok ? 'pass' : 'fail', failed };
@@ -321,7 +370,12 @@ function main(): void {
     fs.writeFileSync(
       path.join(RESULTS_DIR, `${stamp}.json`),
       JSON.stringify(
-        { date: stamp, total: caseResults.length, passed, results: caseResults },
+        {
+          date: stamp,
+          total: caseResults.length,
+          passed,
+          results: caseResults,
+        },
         null,
         2,
       ) + '\n',
@@ -329,7 +383,9 @@ function main(): void {
     console.log(`\n  pass rate: ${passed}/${caseResults.length}`);
   }
 
-  console.log(`\n${failures === 0 ? '✅ evals pass' : `💥 ${failures} eval failure(s)`}\n`);
+  console.log(
+    `\n${failures === 0 ? '✅ evals pass' : `💥 ${failures} eval failure(s)`}\n`,
+  );
   if (failures > 0) process.exit(1);
 }
 
