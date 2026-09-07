@@ -21,6 +21,22 @@ export default defineConfig({
 
     environment: 'node',
     watch: false,
+    /*
+     * These files share an exclusive resource on disk, so they cannot run at
+     * the same time.
+     *
+     * `sealed-vs-open-lock` writes a deliberately invalid
+     * `__coherence-probe.test.ts` into eslint-plugin-import-next to prove the
+     * rule-case ledger rejects it. `methodology-lock` shells out to that same
+     * ledger. Run concurrently — vitest's default across files — the ledger
+     * sees the other test's probe and throws, and WHICH of the two fails
+     * depends on scheduling, so it reads as a flake in whichever file lost
+     * the race rather than as the contention it is.
+     *
+     * The suite is 12 files and a few seconds; serialising costs nothing worth
+     * having.
+     */
+    fileParallelism: false,
     include: ['__tests__/**/*.test.ts'],
     // configs-load executes the benchmark configs, which import our plugins by
     // package name and therefore resolve through `exports` into `dist/`. The

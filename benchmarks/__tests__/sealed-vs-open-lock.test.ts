@@ -36,6 +36,16 @@ import { describe, it, expect } from 'vitest';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..');
 const LEDGER = path.join(ROOT, 'benchmarks', 'RULE_CASES.json');
+/** Written by the coherence probe test below; hoisted so the module-scope
+ *  ledger run can clear an orphan before it, not only after. */
+const PROBE = path.join(
+  ROOT,
+  'packages',
+  'eslint-plugin-import-next',
+  'src',
+  'tests',
+  '__coherence-probe.test.ts',
+);
 
 type Case = {
   id: string;
@@ -59,6 +69,19 @@ type Rule = { rule: string; cases: Case[] };
  * Regenerating also lets the artifact leave git: 135,000 lines of derivable
  * JSON were making every PR that touched a rule unreviewable.
  */
+/*
+ * Clear an orphaned probe BEFORE this call, not only before the write further
+ * down.
+ *
+ * The cleanup below it was placed in the test that writes the probe, on the
+ * reasoning that an orphan then self-heals on the next run. It cannot: this
+ * ledger invocation is at MODULE scope, so it runs first, and the ledger
+ * throws on the orphan — before a single line of that cleanup is reached. The
+ * file could never recover from its own leftover, and the error names the
+ * probe rather than the lock that wrote it, several steps from the cause.
+ */
+fs.rmSync(PROBE, { force: true });
+
 execFileSync('npx', ['tsx', 'scripts/rule-case-ledger.ts'], {
   cwd: ROOT,
   encoding: 'utf8',
@@ -106,14 +129,7 @@ describe('a seal and an admission are different rows', () => {
     // The real check: run the extractor over a file that makes the mistake and
     // require it to refuse. A lock that only re-reads the generated JSON would
     // pass identically against an extractor that had stopped checking.
-    const probe = path.join(
-      ROOT,
-      'packages',
-      'eslint-plugin-import-next',
-      'src',
-      'tests',
-      '__coherence-probe.test.ts',
-    );
+    const probe = PROBE;
     // Remove any orphan BEFORE writing, not only after.
     //
     // The `finally` below is not enough: if the process is killed between the
