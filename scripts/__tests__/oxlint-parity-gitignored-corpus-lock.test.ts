@@ -180,17 +180,48 @@ describe('oxlint parity survives a gitignored corpus (issue #906)', () => {
 
     expect(
       fn,
-      'lintOxlint must not shell out via `npx` — it exits 249 on this ' +
+      'lintOxlint must still be the one that decides WHAT is linted, even ' +
+        'though the spawning moved out of it.',
+    ).toContain('runOxlintBatched');
+
+    /*
+     * The invocation itself moved into `runOxlintBatched` when the corpus
+     * outgrew a single argv (9,384 files: the spawn failed with pid 0 and no
+     * stdout, which the catch read as an empty result). Both assertions below
+     * follow it there rather than being dropped — a lock whose subject moves
+     * and is then narrowed to what still passes stops asserting the thing it
+     * was written for.
+     */
+    const invoke = extractFunctionBody(
+      src,
+      'function runOxlintBatched(configPath, files) ',
+    );
+    expect(
+      invoke,
+      'runOxlintBatched() was not found — did the oxlint invocation move again?',
+    ).not.toBe('');
+
+    expect(
+      invoke,
+      'oxlint must not be shelled out via `npx` — it exits 249 on this ' +
         "corpus's argv size with no stdout/stderr. Call the installed " +
         'oxlint binary directly.',
     ).not.toMatch(/execFileSync\(\s*['"]npx['"]/);
 
     expect(
-      fn,
-      'lintOxlint must invoke the installed oxlint binary directly.',
+      invoke,
+      'oxlint must be invoked through the installed binary directly.',
     ).toMatch(
       /node_modules['"]?\s*,\s*['"]oxlint['"]\s*,\s*['"]bin['"]\s*,\s*['"]oxlint['"]/,
     );
+
+    expect(
+      invoke,
+      'a batch that produces no output must throw. It means the spawn never ' +
+        'happened or died before writing — never a batch that legitimately ' +
+        "found nothing, and reading it as one would report ESLint's entire " +
+        'output as an oxlint gap.',
+    ).toMatch(/oxlint produced no output for a batch/);
 
     expect(
       fn,

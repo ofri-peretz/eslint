@@ -316,7 +316,16 @@ export const noCrossDomainImports = createRule<RuleOptions, MessageIds>({
         importPath = node.source.value as string;
       } else if (node.type === 'ImportExpression') {
         if (node.source.type === 'Literal') {
-          importPath = node.source.value as string;
+          /*
+           * A Literal source is not necessarily a string: `import(42)` and
+           * `import(null)` are both syntactically valid and parse to a Literal
+           * whose `value` is a number or null. The `as string` this replaced
+           * asserted otherwise, and the next line called `.startsWith` on it —
+           * a TypeError that crashed ESLint for the whole file, not a lint
+           * error. The cast is the reason the compiler could not see it.
+           */
+          if (typeof node.source.value !== 'string') return;
+          importPath = node.source.value;
         } else {
           return; // Dynamic import, skip
         }
