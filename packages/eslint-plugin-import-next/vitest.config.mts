@@ -27,6 +27,18 @@ export default defineConfig({
     environment: 'node',
     watch: false,
     include: ['src/**/*.test.ts'],
+    /*
+     * `__coherence-probe.test.ts` is written into this package by
+     * `benchmarks/__tests__/sealed-vs-open-lock.test.ts`, which needs a file
+     * the rule-case ledger will reject in order to prove the ledger rejects
+     * it. It is deleted in a `finally`, and any orphan is cleared before the
+     * next write — but a run killed between write and cleanup leaves one
+     * behind, and until someone deletes it by hand THIS package's own test
+     * task fails on it, which takes the whole pre-push gate down for a reason
+     * that has nothing to do with the push. It is deliberately invalid; it is
+     * not a test of this package; it does not belong in this package's run.
+     */
+    exclude: ['**/node_modules/**', '**/__coherence-probe.test.ts'],
     passWithNoTests: false,
     testTimeout: 30000, // Increase timeout for tests that require file system resolution
     // Same rationale as testTimeout above, for setup/teardown: hookTimeout
