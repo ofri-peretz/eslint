@@ -1,7 +1,7 @@
 {
-  "releaseCount": 648,
+  "releaseCount": 650,
   "packageCount": 35,
-  "entryCount": 2035,
+  "entryCount": 2037,
   "oldestYear": 2024,
   "releases": [
     {
@@ -16370,6 +16370,21 @@
       ]
     },
     {
+      "package": "@interlace/eslint-formatter",
+      "short": "eslint-formatter",
+      "version": "0.2.0",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "the formatter is published. `eslint -f @interlace/eslint-formatter` emits ~408 tokens where `stylish` emits ~104,483, at the same measured signal score.",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "@interlace/eslint-formatter-sarif",
       "short": "eslint-formatter-sarif",
       "version": "0.2.0",
@@ -16411,6 +16426,21 @@
           "kind": "feature",
           "title": "`RemoteMarkdown` accepts `tags`, forwarded to the underlying fetch as `next.tags`.",
           "pr": 628
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-import-next",
+      "short": "eslint-plugin-import-next",
+      "version": "2.7.6",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-cross-domain-imports` and `enforce-dependency-direction` no longer crash on a non-string dynamic import",
+          "pr": null
         }
       ]
     },
