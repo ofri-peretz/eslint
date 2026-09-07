@@ -577,6 +577,15 @@ function writeInventory(
   const silent = [...suite].filter((id) => !fired.has(id)).sort();
 
   const inventory = {
+    /*
+     * First key, and not optional. The generated-artefact lock requires every
+     * budget file to name the command that reproduces it — a typed number with
+     * no command reads as a measurement nobody can re-derive. The scan wrote
+     * every other field and dropped this one, so each automated refresh
+     * (#905) landed a file that failed the lock it had to satisfy.
+     */
+    command:
+      'npx tsx scripts/real-source-scan.mts  # CI only — never run on a developer machine',
     filesLinted: linted,
     filesFailed: failed,
     reposScanned,
