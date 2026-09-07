@@ -1,9 +1,24 @@
 {
-  "releaseCount": 650,
+  "releaseCount": 651,
   "packageCount": 35,
-  "entryCount": 2037,
+  "entryCount": 2038,
   "oldestYear": 2024,
   "releases": [
+    {
+      "package": "eslint-plugin-import-next",
+      "short": "eslint-plugin-import-next",
+      "version": "2.7.6",
+      "date": "2026-09-07T23:22:14Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-cross-domain-imports` and `enforce-dependency-direction` no longer crash on a non-string dynamic import",
+          "pr": null
+        }
+      ]
+    },
     {
       "package": "eslint-plugin-reliability",
       "short": "eslint-plugin-reliability",
@@ -16372,6 +16387,21 @@
     {
       "package": "@interlace/eslint-formatter",
       "short": "eslint-formatter",
+      "version": "0.2.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "ship the `./schema.json` the manifest promises",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "@interlace/eslint-formatter",
+      "short": "eslint-formatter",
       "version": "0.2.0",
       "date": null,
       "isApp": false,
@@ -16426,21 +16456,6 @@
           "kind": "feature",
           "title": "`RemoteMarkdown` accepts `tags`, forwarded to the underlying fetch as `next.tags`.",
           "pr": 628
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-import-next",
-      "short": "eslint-plugin-import-next",
-      "version": "2.7.6",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`no-cross-domain-imports` and `enforce-dependency-direction` no longer crash on a non-string dynamic import",
-          "pr": null
         }
       ]
     },
