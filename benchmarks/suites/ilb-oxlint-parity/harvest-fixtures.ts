@@ -52,7 +52,7 @@ const OUT_DIR = path.join(HERE, 'harvested-fixtures');
  * the COOKED value — \\` is already a backtick and \\${ already a dollar-brace —
  * which is exactly the source the test intended to lint.
  */
-function codeBlocks(src, testFile) {
+export function codeBlocks(src, testFile) {
   const sf = ts.createSourceFile(
     testFile,
     src,

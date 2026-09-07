@@ -399,8 +399,11 @@ jobs:
       # `packages/*/src`, which an arena-only change never touches. A lock that
       # never runs on the PRs that can break it is the "green locally, never
       # run by the gate" failure recorded above scripts-tests.
-      - name: ILB-Arena peer-support locks
-        run: npx vitest run --root benchmarks __tests__/peer-eslint-support.lock.test.ts
+      - name: Benchmark harness locks
+        run: >-
+          npx vitest run --root benchmarks
+          __tests__/peer-eslint-support.lock.test.ts
+          __tests__/parity-corpus-integrity.lock.test.ts
       # Same job because it needs the same thing this one already paid for: the
       # built dist/. The contradiction only exists in the RENDERED message, and
       # the score in it is enriched from the rule's CWE — a source-only checker
