@@ -110,7 +110,11 @@ export const METRIC_FLOOR: Record<keyof Metrics, number> = {
   files: 0,
 };
 
-type Baseline = { generated: string; packages: Record<string, Metrics> };
+type Baseline = {
+  command: string;
+  generated: string;
+  packages: Record<string, Metrics>;
+};
 
 /**
  * Pull one metric out of the per-package records so it can go through
@@ -256,6 +260,15 @@ function main(): void {
       process.exit(1);
     }
     const next: Baseline = {
+      /*
+       * First key, and not optional. The generated-artefact lock requires
+       * every machine artefact to name the command that reproduces it — a
+       * typed number nobody can re-derive is not a measurement. `--update`
+       * wrote `generated` and `packages` and dropped this, so every refresh
+       * removed the field and failed the lock it had to satisfy. Same defect
+       * the real-source scan had (#914).
+       */
+      command: 'npx tsx scripts/check-artifact-size.ts --update',
       generated: new Date().toISOString().slice(0, 10),
       packages: Object.fromEntries(Object.entries(current).sort()),
     };

@@ -19,6 +19,7 @@
   "files": [],
   "references": [
     { "path": "./packages/eslint-devkit/tsconfig.lib.json" },
+    { "path": "./packages/eslint-formatter/tsconfig.lib.json" },
     { "path": "./packages/eslint-plugin-browser-security/tsconfig.lib.json" },
     { "path": "./packages/eslint-plugin-conventions/tsconfig.lib.json" },
     { "path": "./packages/eslint-plugin-express-security/tsconfig.lib.json" },
@@ -47,7 +48,9 @@
     { "path": "./packages/eslint-plugin-openai-security/tsconfig.lib.json" },
     { "path": "./packages/eslint-plugin-anthropic-security/tsconfig.lib.json" },
     { "path": "./packages/eslint-plugin-gemini-security/tsconfig.lib.json" },
-    { "path": "./packages/eslint-plugin-postgresql-security/tsconfig.lib.json" },
+    {
+      "path": "./packages/eslint-plugin-postgresql-security/tsconfig.lib.json"
+    },
     { "path": "./packages/eslint-plugin-jwt-security/tsconfig.lib.json" }
   ]
 }

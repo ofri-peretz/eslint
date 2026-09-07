@@ -100,13 +100,21 @@ export function renderHuman(
     const icon = paint(SEVERITY_ICON[rule.severity]!, sevColor);
     const sev = paint(SEVERITY_LABEL[rule.severity]!, sevColor);
     const fixTag = rule.fixable ? paint(' (fixable)', ANSI.dim) : '';
-    const suggestTag = rule.hasSuggestions && !rule.fixable
-      ? paint(' (has suggestions)', ANSI.dim)
-      : '';
+    const suggestTag =
+      rule.hasSuggestions && !rule.fixable
+        ? paint(' (has suggestions)', ANSI.dim)
+        : '';
     const countTag = rule.count > 1 ? paint(` ×${rule.count}`, ANSI.bold) : '';
-    const cweTag = rule.cwe ? paint(` [${rule.cwe}${rule.cvss !== undefined ? ` · CVSS ${rule.cvss.toFixed(1)}` : ''}]`, ANSI.cyan) : '';
+    const cweTag = rule.cwe
+      ? paint(
+          ` [${rule.cwe}${rule.cvss !== undefined ? ` · CVSS ${rule.cvss.toFixed(1)}` : ''}]`,
+          ANSI.cyan,
+        )
+      : '';
 
-    lines.push(`  ${icon} ${paint(rule.ruleId, ANSI.bold)}${countTag} — ${sev}${fixTag}${suggestTag}${cweTag}`);
+    lines.push(
+      `  ${icon} ${paint(rule.ruleId, ANSI.bold)}${countTag} — ${sev}${fixTag}${suggestTag}${cweTag}`,
+    );
 
     // Representative ESLint message (the first non-empty one). The grouper
     // captured this so an LLM/dev can act without opening docs first.
@@ -124,15 +132,21 @@ export function renderHuman(
       lines.push(`    ${paint(where, ANSI.gray)}${node}`);
     }
     if (rule.count > rule.locations.length) {
-      lines.push(`    ${paint(`... and ${rule.count - rule.locations.length} more`, ANSI.gray)}`);
+      lines.push(
+        `    ${paint(`... and ${rule.count - rule.locations.length} more`, ANSI.gray)}`,
+      );
     }
 
     // Surface ESLint manual-fix suggestions when present (max one per rule
     // to keep the human view scannable; full set is in JSON).
     if (rule.hasSuggestions) {
-      const firstWithSuggestions = rule.locations.find(l => l.suggestions && l.suggestions.length > 0);
+      const firstWithSuggestions = rule.locations.find(
+        (l) => l.suggestions && l.suggestions.length > 0,
+      );
       if (firstWithSuggestions?.suggestions?.[0]) {
-        lines.push(`    ${paint('💡 ' + firstWithSuggestions.suggestions[0].desc, ANSI.cyan)}`);
+        lines.push(
+          `    ${paint('💡 ' + firstWithSuggestions.suggestions[0].desc, ANSI.cyan)}`,
+        );
       }
     }
 
@@ -146,12 +160,28 @@ export function renderHuman(
   // Summary
   lines.push(paint('─'.repeat(60), ANSI.gray));
   const parts: string[] = [];
-  if (summary.errorCount > 0) parts.push(paint(`${summary.errorCount} error${summary.errorCount !== 1 ? 's' : ''}`, ANSI.red));
-  if (summary.warningCount > 0) parts.push(paint(`${summary.warningCount} warning${summary.warningCount !== 1 ? 's' : ''}`, ANSI.yellow));
-  lines.push(`  ${parts.join(', ')} across ${summary.filesWithIssues} file${summary.filesWithIssues !== 1 ? 's' : ''} (${summary.uniqueRules} rule${summary.uniqueRules !== 1 ? 's' : ''})`);
+  if (summary.errorCount > 0)
+    parts.push(
+      paint(
+        `${summary.errorCount} error${summary.errorCount !== 1 ? 's' : ''}`,
+        ANSI.red,
+      ),
+    );
+  if (summary.warningCount > 0)
+    parts.push(
+      paint(
+        `${summary.warningCount} warning${summary.warningCount !== 1 ? 's' : ''}`,
+        ANSI.yellow,
+      ),
+    );
+  lines.push(
+    `  ${parts.join(', ')} across ${summary.filesWithIssues} file${summary.filesWithIssues !== 1 ? 's' : ''} (${summary.uniqueRules} rule${summary.uniqueRules !== 1 ? 's' : ''})`,
+  );
 
   if (summary.fixableCount > 0) {
-    lines.push(`  ${paint(`${summary.fixableCount} fixable with --fix`, ANSI.cyan)}`);
+    lines.push(
+      `  ${paint(`${summary.fixableCount} fixable with --fix`, ANSI.cyan)}`,
+    );
   }
 
   const attribution = attributionLine();
@@ -182,6 +212,6 @@ export function renderHuman(
 export function attributionLine(
   env: NodeJS.ProcessEnv = process.env,
 ): string | null {
-  if (env.INTERLACE_NO_ATTRIBUTION === '1') return null;
+  if (env['INTERLACE_NO_ATTRIBUTION'] === '1') return null;
   return 'Interlace ESLint · https://eslint.interlace.tools';
 }
