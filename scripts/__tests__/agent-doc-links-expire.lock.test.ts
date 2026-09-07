@@ -1,3 +1,7 @@
+/**
+ * @provenBy {"file":"scripts/run-evals.ts","find":"const PRUNED_DIR = /^benchmarks\\/results\\//;","replace":"const PRUNED_DIR = /^never-matches-anything$/;"}
+ */
+
 /*
  * An agent document must not cite a file with an expiry date.
  *
