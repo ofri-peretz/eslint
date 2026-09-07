@@ -37,6 +37,8 @@ import {
   NPM_PACKAGE_NAMES,
   OUR_PLUGIN_NAME,
   UNSUPPORTED,
+  crash,
+  crashMessage,
   declaresSupportFor,
   peerEslintRange,
 } from './peer-support.js';
@@ -207,17 +209,17 @@ const ALL_PLUGINS = [
   },
   {
     /*
-     * Its recommended set includes rules that need a TypeScript program
-     * (@angular-eslint/no-developer-preview throws "requires type
-     * information"), and this corpus is plain .js with no project. The plugin
-     * does not mark those rules `requiresTypeChecking`, so they cannot be
-     * filtered out by metadata.
+     * Was declared unmeasurable — "needs a TypeScript program" — on the
+     * strength of one rule's error message. Bisecting all 50 rules against
+     * the corpus showed that 47 run fine and exactly 3 need a program, so the
+     * config excludes those 3 by name and the plugin is scored (#897).
      *
-     * This was always true. Until run failures became fatal it surfaced as a
-     * silent 0/40 — a fabricated measurement — on every run, v10 included.
-     * Declared, not scored, until the corpus can give it a program (#897).
+     * It scores a real 0, and that is a true measurement rather than the
+     * fabricated one it replaces: this corpus is Node/browser security
+     * fixtures, and Angular's rules look for Angular TypeScript. A 0 here
+     * says the corpus contains nothing in its domain — not that the plugin
+     * misses vulnerabilities.
      */
-    unmeasurable: 'needs a TypeScript program; the arena corpus is plain .js',
     name: 'angular',
     displayName: '@angular-eslint/eslint-plugin',
     config: './configs/angular.config.js',
@@ -333,6 +335,11 @@ async function runEslint(configPath, targetFile, pluginName) {
       // support policy is not.
       return UNSUPPORTED;
     }
+    // A peer whose CONFIG will not load is broken here in a way the run
+    // cannot characterise — unlike a lint-time throw below, which is one
+    // upstream rule misbehaving on this corpus and is recorded per-plugin.
+    // Nothing distinguishes "broken plugin" from "broken bench" at this
+    // point, so this stays fatal for everyone.
     console.error(
       `\n❌ Config failed to load: ${configPath}\n   ${e.message}\n\nRefusing to score.`,
     );
@@ -368,6 +375,23 @@ async function runEslint(configPath, targetFile, pluginName) {
       !declaresSupportFor(pluginName, ESLint.version)
     ) {
       return UNSUPPORTED;
+    }
+    /*
+     * A peer that DECLARES this ESLint and throws anyway is an upstream
+     * defect. Exiting here is honest about that one plugin and dishonest
+     * about the other seventeen: it leaves the whole matrix unmeasured, so
+     * the arena publishes nothing and the last published numbers — which
+     * contain the very zeros #891 set out to kill — stay the newest ones.
+     *
+     * unicorn 72.0.0 is the live case. It declares `eslint: ">=10.4"`, we run
+     * 10.7.0, and `unicorn/prefer-string-slice` still throws "'text' must be
+     * a string" on this corpus.
+     *
+     * So: recorded, reported, never scored — and never fatal for someone
+     * else's bug. Our own plugin still stops the run, because that is ours.
+     */
+    if (pluginName !== undefined && pluginName !== OUR_PLUGIN_NAME) {
+      return crash(e.message?.slice(0, 300) ?? 'unknown runtime failure');
     }
     console.error(
       `\n❌ ESLint run failed for ${configPath}\n   ${e.message?.slice(0, 300)}\n\nRefusing to score.`,
@@ -737,6 +761,15 @@ async function runBenchmark() {
       };
       continue;
     }
+    const vulnCrash = crashMessage(vulnerableRaw);
+    if (vulnCrash !== null) {
+      console.log(`   ⊘ Not scored — crashed on vulnerable.js: ${vulnCrash}`);
+      results.plugins[plugin.name] = {
+        displayName: plugin.displayName,
+        crashed: { on: 'vulnerable', message: vulnCrash },
+      };
+      continue;
+    }
     const vulnerableViolations = extractViolations(vulnerableRaw);
     const vulnerableByFunction = mapViolationsToFunctions(
       vulnerableViolations,
@@ -758,6 +791,17 @@ async function runBenchmark() {
       results.plugins[plugin.name] = {
         displayName: plugin.displayName,
         unsupported: { declaredEslint: range, runningEslint: ESLint.version },
+      };
+      continue;
+    }
+    const safeCrash = crashMessage(safeRaw);
+    if (safeCrash !== null) {
+      console.log(
+        `   ⊘ Not scored — crashed on safe-patterns.js: ${safeCrash}`,
+      );
+      results.plugins[plugin.name] = {
+        displayName: plugin.displayName,
+        crashed: { on: 'safe', message: safeCrash },
       };
       continue;
     }
@@ -900,9 +944,15 @@ async function runBenchmark() {
   if (notScored.length > 0) {
     console.log('\nNot scored:');
     for (const [, d] of notScored) {
+      // Three distinct reasons, and they must not borrow each other's
+      // wording. A crash reported as "declares eslint undefined, ran
+      // undefined" reads as a support-policy exclusion, which is somebody
+      // saying they do not run here — the opposite of what happened.
       const why = d.unmeasurable
         ? d.unmeasurable
-        : `declares eslint "${d.unsupported?.declaredEslint}", ran ${d.unsupported?.runningEslint}`;
+        : d.crashed
+          ? `crashed on ${d.crashed.on}.js — ${d.crashed.message}`
+          : `declares eslint "${d.unsupported?.declaredEslint}", ran ${d.unsupported?.runningEslint}`;
       console.log(`  ⊘ ${d.displayName} — ${why}`);
     }
   }
@@ -915,7 +965,12 @@ async function runBenchmark() {
     notScored: notScored.map(([name, d]) => ({
       plugin: name,
       displayName: d.displayName,
-      reason: d.unmeasurable ?? 'unsupported on this ESLint',
+      reason:
+        d.unmeasurable ??
+        (d.crashed
+          ? `crashed at runtime on ${d.crashed.on}.js`
+          : 'unsupported on this ESLint'),
+      ...(d.crashed ? { crashed: d.crashed } : {}),
       declaredEslint: d.unsupported?.declaredEslint,
       runningEslint: d.unsupported?.runningEslint,
     })),

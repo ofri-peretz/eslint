@@ -92,3 +92,28 @@ export function declaresSupportFor(pluginName, eslintVersion) {
 
 /** Sentinel: the peer cannot run here and must be excluded, not scored. */
 export const UNSUPPORTED = Symbol('unsupported-on-this-eslint');
+
+/**
+ * A peer that DECLARES support for this ESLint and throws anyway.
+ *
+ * Distinct from UNSUPPORTED, which is a peer honestly saying it does not run
+ * here. This is an upstream defect, and it is data about that plugin — but it
+ * is not a score. The old code returned `[]`, which scored as "found nothing";
+ * #891 replaced that with `process.exit(3)`, which is honest but means one
+ * peer's bug leaves the whole matrix unmeasured. Neither is right: a crash is
+ * its own state, recorded and reported, never scored, and never fatal for
+ * somebody else's code.
+ *
+ * Our own plugin is exempt — if Interlace cannot run, that is our bug and it
+ * must stop the run.
+ */
+export const CRASHED = Symbol('crashed-at-runtime');
+
+/** Wrap a runtime failure so the caller can tell it from a result array. */
+export const crash = (message) => ({ [CRASHED]: message });
+
+/** The failure message, or null when `value` is a normal result. */
+export const crashMessage = (value) =>
+  value !== null && typeof value === 'object' && CRASHED in value
+    ? value[CRASHED]
+    : null;

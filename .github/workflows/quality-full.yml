@@ -247,7 +247,13 @@ jobs:
           # change in this repo) skipped measurement entirely while the workflow
           # comment claimed feedback was merely "slightly delayed". Source is
           # exactly what moves the number, so source has to open the gate.
-          if echo "$CHANGED" | grep -qE '^(benchmarks/suites/.*\.config\.(js|mjs)|benchmarks/package\.json|benchmarks/__tests__/configs-load\.test\.ts|benchmarks/vitest\.configs-load\.mts|packages/[^/]+/package\.json|packages/[^/]+/src/.*|scripts/(check-artifact-size|devkit-infra-metrics)\.ts|\.agent/(artifact-size-baseline|devkit-infra-baseline)\.json|\.github/workflows/quality-full\.yml)$'; then
+          #
+          # `benchmarks/suites/**` and `benchmarks/__tests__/**` are whole
+          # directories rather than the two filenames that used to be listed.
+          # ILB-Arena's runner and its peer-support module sit beside the
+          # configs and are what the configs are loaded to exercise; a PR
+          # rewriting run.js matched nothing here and this job did not run.
+          if echo "$CHANGED" | grep -qE '^(benchmarks/suites/.*|benchmarks/package\.json|benchmarks/__tests__/.*|benchmarks/vitest\.configs-load\.mts|packages/[^/]+/package\.json|packages/[^/]+/src/.*|scripts/(check-artifact-size|devkit-infra-metrics)\.ts|\.agent/(artifact-size-baseline|devkit-infra-baseline)\.json|\.github/workflows/quality-full\.yml)$'; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           else
             echo "run=false" >> "$GITHUB_OUTPUT"
@@ -387,6 +393,14 @@ jobs:
         run: npx turbo run build --filter='eslint-plugin-*' --filter=@interlace/eslint-devkit
       - name: Load every benchmark config
         run: npm run --silent -w @interlace/benchmarks test:configs-load
+      # The rest of `benchmarks/__tests__` runs on the unit lanes. This one is
+      # pulled forward because it guards the arena, and the lanes are skipped
+      # for exactly the PRs that touch the arena: their gate opens on
+      # `packages/*/src`, which an arena-only change never touches. A lock that
+      # never runs on the PRs that can break it is the "green locally, never
+      # run by the gate" failure recorded above scripts-tests.
+      - name: ILB-Arena peer-support locks
+        run: npx vitest run --root benchmarks __tests__/peer-eslint-support.lock.test.ts
       # Same job because it needs the same thing this one already paid for: the
       # built dist/. The contradiction only exists in the RENDERED message, and
       # the score in it is enriched from the rule's CWE — a source-only checker
