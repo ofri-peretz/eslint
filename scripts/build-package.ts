@@ -24,6 +24,7 @@ import {
   existsSync,
   mkdirSync,
   copyFileSync,
+  statSync,
   readFileSync,
   readdirSync,
   rmSync,
@@ -194,6 +195,25 @@ if (tsconfig === null) {
 //    npm "Versions" tab, and in the changesets-generated release notes.
 //    README.md is kept: it IS the npm package page.
 const assets = ['README.md', 'LICENSE', '.npmignore'];
+
+/*
+ * Plus any root-level file the manifest says it ships.
+ *
+ * The list above is fixed, but the package is published FROM dist/, so a root
+ * asset a package declares — @interlace/eslint-formatter's `schema.json`, which
+ * `exports` maps to `./schema.json` — never reached the tarball. A consumer
+ * importing that subpath got "Cannot find module", and the published-artifact
+ * gate caught it: `"./schema.json" -> schema.json (NOT SHIPPED)`.
+ *
+ * Directories are skipped: `src/` and `dist/` are handled by the build itself,
+ * and copying dist/ into dist/ would recurse.
+ */
+for (const declared of pkg.files ?? []) {
+  const name = String(declared).replace(/\/$/, '');
+  if (name.includes('/') || assets.includes(name)) continue;
+  const src = resolve(pkgDir, name);
+  if (existsSync(src) && statSync(src).isFile()) assets.push(name);
+}
 for (const asset of assets) {
   const src = resolve(pkgDir, asset);
   if (existsSync(src)) {

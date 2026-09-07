@@ -16,6 +16,10 @@
   },
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
   "license": "MIT",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/ofri-peretz/eslint"
+  },
   "homepage": "https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-formatter#readme",
   "repository": {
     "type": "git",
