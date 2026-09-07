@@ -388,7 +388,7 @@ function summarize(allPlugins) {
 // audit's blocker assumptions (sourceCode + scope + fixer + selector + comments
 // + tokens all present). Bumping oxlint past the latest entry must include a
 // re-verification of apps/oxlint/src-js/plugins/ at the new tag.
-const VERIFIED_OXLINT_RANGE = { min: '1.74.0', maxKnown: '1.80.x' };
+const VERIFIED_OXLINT_RANGE = { min: '1.74.0', maxKnown: '1.81.x' };
 
 // Hash-pinned bundles. These are the actual runtime files shipped with oxlint
 // — the bundled output of apps/oxlint/src-js/plugins/ that I read at 1.62.0.
@@ -400,7 +400,23 @@ const VERIFIED_OXLINT_RANGE = { min: '1.74.0', maxKnown: '1.80.x' };
 // source_code,scope,fix,selector}.ts at the new tag, then update both
 // VERIFIED_OXLINT_RANGE and these hashes in the same commit.
 const VERIFIED_OXLINT_RUNTIME_HASHES = {
-  // Re-verified at 1.80.0 (2026-08-30) by `verify-oxlint-runtime.ts`: all 33
+  // Re-verified at 1.81.0 (2026-09-07) by `verify-oxlint-runtime.ts`: all 33
+  // probes pass. Three independent signals agree the plugin surface did not
+  // move:
+  //   1. `plugins.js` and `plugins-dev.js` hash IDENTICALLY to 1.80.0 — the
+  //      two bundles this audit's blocker patterns actually read are
+  //      byte-for-byte unchanged, so their pins below are untouched.
+  //   2. All 33 runtime probes pass on 1.81.0.
+  //   3. A `;`-split diff of 1.80.0 against 1.81.0 on the two bundles that DID
+  //      change shows every differing chunk contains only the version literal:
+  //        lint.js       2 chunks, both `1.80.0` -> `1.81.0`
+  //        bindings.js  54 chunks, all the version inside napi guards
+  //      Nothing else differs, so nothing reaches this audit.
+  //
+  // Kept below: the 1.80.0 note, because `min` records the OLDEST version
+  // still verified.
+  //
+  // Previously re-verified at 1.80.0 (2026-08-30) by `verify-oxlint-runtime.ts`: all 33
   // probes pass. Two independent signals agree that the plugin surface did not
   // move — `plugins.js` and `plugins-dev.js` hash IDENTICALLY to 1.79.0, and a
   // file-level diff of 1.79.0 against 1.80.0 shows those two bundles are
@@ -435,9 +451,9 @@ const VERIFIED_OXLINT_RUNTIME_HASHES = {
     '81e4c275f6200ab4b6aed66ba2836b2a8e68756a8609ced02daf91e226377e2d',
   'plugins-dev.js':
     '69a98c6cc2e63369980ba2b42f8c66935ba76fc177469872d4f5236626f3742a',
-  'lint.js': 'e022b35138b762ff9473ea8779d66bb890b547781c446a9d80b49019ec98b7fa',
+  'lint.js': '4b169ece30423e526d2dc0b585604ae6465cc8d7bfb001dfb16d6c3e1eda5b25',
   'bindings.js':
-    '9568ef77de5d0d4c247087893882cfa2ac00a1c35df59839d3539977ce68a28e',
+    'cfec71bf0a22e772831a1a2915dbbe59590a87facec6585f3402d3beee1c2b57',
 };
 
 async function checkOxlintRuntimeHashes() {
