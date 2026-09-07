@@ -26,6 +26,8 @@
  * integration-health, report-failure) files unlabelled for exactly this
  * reason: an issue-filing step is not the place to depend on repo
  * configuration nothing keeps in sync.
+ *
+ * @provenBy {"file":".github/workflows/metrics-freshness.yml","find":"            gh issue create --title \"$title\" --body \"$body\"","replace":"            gh issue create --title \"$title\" --body \"$body\" --label \"chore\""}
  */
 
 import { describe, it, expect } from 'vitest';
@@ -54,9 +56,12 @@ describe('metrics-freshness issue filing does not depend on a label', () => {
     );
     expect(stepStart).toBeGreaterThan(-1);
     const step = raw.slice(stepStart);
+    // Anchored to the start of the (trimmed) line so an explanatory comment
+    // that merely mentions "gh issue create" in prose can never satisfy this
+    // — only the actual invocation does.
     const createLine = step
       .split('\n')
-      .find((line) => line.includes('gh issue create'));
+      .find((line) => /^\s*gh issue create\b/.test(line));
     expect(createLine).toBeDefined();
     expect(createLine).not.toMatch(/--label/);
   });
