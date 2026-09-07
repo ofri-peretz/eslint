@@ -120,4 +120,55 @@ describe('changeset validity', () => {
     }
     expect(empty).toEqual([]);
   });
+
+  /*
+   * The generator maps a conventional-commit prefix to a badge — `feat:` to
+   * "✨ Feature", `fix:` to "🐛 Fix", and so on per .changeset/README.md. A
+   * changeset that writes the badge itself gets it twice in the CHANGELOG:
+   *
+   *   - **✨ Feature** — **✨ Feature** — the formatter is published.
+   *
+   * #904 fixed three changesets carrying this by hand and added no check, so
+   * the fourth arrived within the week. This is that check.
+   */
+  it('no changeset writes a badge the generator already adds', () => {
+    if (!existsSync(CHANGESET_DIR)) return;
+    /*
+     * Read from the generator, not retyped.
+     *
+     * The hand-written list this replaced was already wrong on both sides:
+     * it carried `🧹 Maintenance`, which the generator never emits, and
+     * omitted the eight it does — Refactor, Build, CI, Tests, Chore, Style,
+     * Revert and Breaking. So a changeset hand-writing `**🧹 Refactor**`
+     * passed the check that exists to catch exactly that, and the list
+     * duplicated the very thing whose duplication is the bug.
+     *
+     * `changelog.cjs` exports these under `__internal` for lock tests. Review
+     * caught this (#932).
+     */
+    const { KIND_BADGES, BREAKING_BADGE } = (
+      require('../../.changeset/changelog.cjs') as {
+        __internal: {
+          KIND_BADGES: Record<string, string>;
+          BREAKING_BADGE: string;
+        };
+      }
+    ).__internal;
+    const BADGES = [...Object.values(KIND_BADGES), BREAKING_BADGE];
+    const offenders: string[] = [];
+    for (const file of readdirSync(CHANGESET_DIR)) {
+      if (!file.endsWith('.md') || file === 'README.md') continue;
+      const source = readFileSync(join(CHANGESET_DIR, file), 'utf8');
+      const body = source.replace(/^---\r?\n[\s\S]*?---/, '');
+      const hit = BADGES.find((b) => body.includes(b));
+      if (hit !== undefined) offenders.push(`${file}: ${hit}`);
+    }
+    expect(
+      offenders,
+      'These changesets write a badge the changelog generator adds, so it ' +
+        'renders twice. Start the summary with the conventional-commit ' +
+        'prefix instead (`feat:`, `fix:`, …) and let the generator supply ' +
+        'the badge — see .changeset/README.md.',
+    ).toEqual([]);
+  });
 });

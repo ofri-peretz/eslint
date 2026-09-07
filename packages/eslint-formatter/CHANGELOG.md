@@ -38,6 +38,12 @@ Latest ILB-Formatter v1.1 numbers (240-cell suite, 6 shapes × 5 scales × 8 for
 
 All four modes score 4 / 4 on the FP/FN-attribution signal contract on every fixture in the suite.
 
+## 0.2.0
+
+### Minor Changes
+
+- **✨ Feature** — the formatter is published. `eslint -f @interlace/eslint-formatter` emits ~408 tokens where `stylish` emits ~104,483, at the same measured signal score.
+
 ## 0.1.0 — 2026-05-03
 
 ### Added
