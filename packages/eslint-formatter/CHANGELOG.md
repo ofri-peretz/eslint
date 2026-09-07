@@ -38,6 +38,16 @@ Latest ILB-Formatter v1.1 numbers (240-cell suite, 6 shapes × 5 scales × 8 for
 
 All four modes score 4 / 4 on the FP/FN-attribution signal contract on every fixture in the suite.
 
+## 0.2.1
+
+### Patch Changes
+
+- **🐛 Fix** — ship the `./schema.json` the manifest promises
+
+  `exports` declared `"./schema.json"` and `files` listed it, but the file did not exist and the build's asset list had never heard of it — so a consumer importing that subpath would have got "Cannot find module". The schema is now written and shipped, and the build derives its copy list from `files` instead of a hardcoded array, so declaring a file is enough.
+
+  Also adds the missing `funding` field.
+
 ## 0.2.0
 
 ### Minor Changes
