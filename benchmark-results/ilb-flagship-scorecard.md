@@ -1,33 +1,33 @@
 # ILB-Flagship Scorecard
 
-> Per-rule × per-repo: latency (cached + uncached), findings, head-to-head overlap, and synthetic-corpus P/R/F1. Generated from `2026-08-31.json`.
+> Per-rule × per-repo: latency (cached + uncached), findings, head-to-head overlap, and synthetic-corpus P/R/F1. Generated from `2026-09-07.json`.
 
-- **Generated**: 2026-08-31T17:03:30.870Z · **Schema**: ilb-flagship/v2
-- **ESLint**: v9.39.4 · **oxlint**: 1.63.0 · **Node**: v24.19.0
+- **Generated**: 2026-09-07T16:28:42.379Z · **Schema**: ilb-flagship/v2
+- **ESLint**: v9.39.4 · **oxlint**: 1.63.0 · **Node**: v24.20.0
 - **OOS root**: `/home/runner/work/eslint/eslint/oos`
 
 ## 1. Latency (cold → warm) and findings count
 
 | Rule | Repo | ⭐ | Tier | Ours cold | Ours warm | Ours findings | Comp cold | Comp warm | Comp findings | oxlint cold | oxlint warm | oxlint findings |
 | :--- | :--- | ---: | :---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `import-next/no-cycle` | next.js | 131K | T1 | 56,582 ms | 895 ms | 10 | 74,704 ms | 961 ms | 0 | 1,276 ms | 1,229 ms | 91 |
-| `pg/no-unsafe-query` | supabase | 78K | T1 | 48,398 ms | 1,731 ms | 0 | — | — | — | — | — | — |
-| `secure-coding/no-hardcoded-credentials` | vercel-ai | 15K | T2 | 9,592 ms | 830 ms | 887 | 11,797 ms | 781 ms | 453 | — | — | — |
-| `secure-coding/no-redos-vulnerable-regex` | lodash | 60K | T1 | 507 ms | 389 ms | 1 | 534 ms | 410 ms | 0 | — | — | — |
-| `mongodb-security/no-unsafe-query` | payload | 35K | T2 | 12,168 ms | 1,028 ms | 248 | — | — | — | — | — | — |
-| `jwt/no-algorithm-none` | supabase | 78K | T1 | 47,451 ms | 1,746 ms | 0 | — | — | — | — | — | — |
-| `browser-security/no-postmessage-wildcard-origin` | next.js | 131K | T1 | 55,832 ms | 898 ms | 2 | — | — | — | — | — | — |
-| `react-features/hooks-exhaustive-deps` | next.js | 131K | T1 | 55,010 ms | 906 ms | 127 | 56,305 ms | 992 ms | 53 | 585 ms | 563 ms | 22 |
-| `react-a11y/alt-text` | shadcn-ui | 100K | T1 | 391 ms | 387 ms | 0 | 14,149 ms | 1,058 ms | 0 | 192 ms | 189 ms | 0 |
-| `vercel-ai-security/no-unsafe-output-handling` | vercel-ai | 15K | T2 | 9,900 ms | 774 ms | 0 | — | — | — | — | — | — |
+| `import-next/no-cycle` | next.js | 131K | T1 | 56,259 ms | 854 ms | 10 | 74,292 ms | 926 ms | 0 | 1,277 ms | 1,260 ms | 91 |
+| `pg/no-unsafe-query` | supabase | 78K | T1 | 47,450 ms | 1,677 ms | 0 | — | — | — | — | — | — |
+| `secure-coding/no-hardcoded-credentials` | vercel-ai | 15K | T2 | 9,452 ms | 801 ms | 891 | 11,718 ms | 743 ms | 454 | — | — | — |
+| `secure-coding/no-redos-vulnerable-regex` | lodash | 60K | T1 | 493 ms | 369 ms | 1 | 515 ms | 405 ms | 0 | — | — | — |
+| `mongodb-security/no-unsafe-query` | payload | 35K | T2 | 11,240 ms | 937 ms | 252 | — | — | — | — | — | — |
+| `jwt/no-algorithm-none` | supabase | 78K | T1 | 46,176 ms | 1,672 ms | 0 | — | — | — | — | — | — |
+| `browser-security/no-postmessage-wildcard-origin` | next.js | 131K | T1 | 54,508 ms | 862 ms | 2 | — | — | — | — | — | — |
+| `react-features/hooks-exhaustive-deps` | next.js | 131K | T1 | 55,088 ms | 874 ms | 127 | 54,726 ms | 918 ms | 53 | 518 ms | 539 ms | 22 |
+| `react-a11y/alt-text` | shadcn-ui | 100K | T1 | 361 ms | 363 ms | 0 | 13,426 ms | 995 ms | 0 | 188 ms | 180 ms | 0 |
+| `vercel-ai-security/no-unsafe-output-handling` | vercel-ai | 15K | T2 | 9,382 ms | 729 ms | 0 | — | — | — | — | — | — |
 
 ## 2. Cache effectiveness (median across rules)
 
 | Stack | Median cold | Median warm | Δ | Cache benefit |
 | :--- | ---: | ---: | ---: | ---: |
-| Ours (ESLint) | 29,810 ms | 897 ms | 28,913 ms | 97% |
-| Peer (ESLint) | 14,149 ms | 961 ms | 13,188 ms | 93% |
-| oxlint native (peer) | 585 ms | 563 ms | 22 ms | 4% |
+| Ours (ESLint) | 28,708 ms | 858 ms | 27,850 ms | 97% |
+| Peer (ESLint) | 13,426 ms | 918 ms | 12,508 ms | 93% |
+| oxlint native (peer) | 518 ms | 539 ms | -21 ms | -4% |
 
 ## 3. Synthetic corpus — true precision / recall / F1
 
@@ -50,7 +50,7 @@ Set ops on `(file, line)` keys between our cold-run findings and the competitor'
 | Rule | Repo | Both | Ours-only | Theirs-only |
 | :--- | :--- | ---: | ---: | ---: |
 | `import-next/no-cycle` | next.js | 0 | 10 | 0 |
-| `secure-coding/no-hardcoded-credentials` | vercel-ai | 42 | 845 | 400 |
+| `secure-coding/no-hardcoded-credentials` | vercel-ai | 42 | 849 | 401 |
 | `secure-coding/no-redos-vulnerable-regex` | lodash | 0 | 1 | 0 |
 | `react-features/hooks-exhaustive-deps` | next.js | 3 | 122 | 28 |
 | `react-a11y/alt-text` | shadcn-ui | 0 | 0 | 0 |
@@ -59,7 +59,7 @@ Set ops on `(file, line)` keys between our cold-run findings and the competitor'
 
 Each row is a finding the competitor caught that ours missed. Triage to determine FN-on-our-side vs FP-on-theirs.
 
-### `secure-coding/no-hardcoded-credentials` on vercel-ai — 400 theirs-only finding(s)
+### `secure-coding/no-hardcoded-credentials` on vercel-ai — 401 theirs-only finding(s)
 
 | File | Line | Message |
 | :--- | ---: | :--- |
@@ -67,7 +67,7 @@ Each row is a finding the competitor caught that ours missed. Triage to determin
 | `apps/docs/components/docs/template-icons.tsx` | 42 | Found a string with entropy 4.08 : "url(#paint1_linear_53_108l7vf6bcgb)" |
 | `apps/docs/components/docs/template-icons.tsx` | 47 | Found a string with entropy 4.28 : "paint0_linear_53_108l7vf6bcgb" |
 | `apps/docs/components/docs/template-icons.tsx` | 60 | Found a string with entropy 4.28 : "paint1_linear_53_108l7vf6bcgb" |
-| `packages/ai/src/agent/tool-loop-agent.test-d.ts` | 24 | Found a string with entropy 4.12 : "ToolLoopAgentOnFinishCallback" |
+| `packages/ai/src/agent/tool-loop-agent.test-d.ts` | 25 | Found a string with entropy 4.12 : "ToolLoopAgentOnFinishCallback" |
 
 ### `react-features/hooks-exhaustive-deps` on next.js — 28 theirs-only finding(s)
 
@@ -77,7 +77,7 @@ Each row is a finding the competitor caught that ours missed. Triage to determin
 | `packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server-legacy.browser.production.js` | 3648 | React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array. |
 | `packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server-legacy.node.development.js` | 10671 | React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array. |
 | `packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server-legacy.node.production.js` | 3696 | React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array. |
-| `packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server.browser.development.js` | 11297 | React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array. |
+| `packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server.browser.development.js` | 11305 | React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array. |
 
 
 ## 6. Where we beat competitors (ours-only samples, top 5 each)
@@ -94,7 +94,7 @@ Each row is a finding ours caught that theirs missed. Triage same way — could 
 | `packages/next/src/server/app-render/console-async-storage.external.ts` | 4 | 🏗️ CWE-407 OWASP:A06-Insecure CVSS:5.3 \| Circular dependency detected \| MEDIUM ·    Fix: Extract shared types to - export type console-async-storage.externalId, console-async-storage-instanceId · - export interface console-async-storage.externalSummary, console-async-storage-instanc |
 | `packages/next/src/server/app-render/dynamic-access-async-storage-instance.ts` | 2 | 🏗️ CWE-407 OWASP:A06-Insecure CVSS:5.3 \| Circular dependency detected \| MEDIUM ·    Fix: Extract shared types to - export type dynamic-access-async-storage-instanceId, dynamic-access-async-storage.externalId · - export interface dynamic-access-async-storage-instanceSummary, dynamic- |
 
-### `secure-coding/no-hardcoded-credentials` on vercel-ai — 845 ours-only finding(s)
+### `secure-coding/no-hardcoded-credentials` on vercel-ai — 849 ours-only finding(s)
 
 | File | Line | Message |
 | :--- | ---: | :--- |
@@ -123,7 +123,7 @@ Each row is a finding ours caught that theirs missed. Triage same way — could 
 
 ## 7. Green-field rule samples (no competitor)
 
-### `mongodb-security/no-unsafe-query` on payload — 248 finding(s) (showing top 5)
+### `mongodb-security/no-unsafe-query` on payload — 252 finding(s) (showing top 5)
 
 | File | Line | Message |
 | :--- | ---: | :--- |

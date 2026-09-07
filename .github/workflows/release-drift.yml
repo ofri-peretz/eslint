@@ -85,7 +85,12 @@ jobs:
           if [ -n "$existing" ]; then
             gh issue comment "$existing" --body "$body"
           else
-            gh issue create --title "$title" --body "$body" --label "release"
+            # No --label: this repo has no "release" label (unlike "perf",
+            # which lighthouse.yml's issue-filing step also passes and which
+            # does exist), so it fails the same way "chore" did in
+            # metrics-freshness.yml (#924) — see
+            # scripts/__tests__/release-drift-issue-label-lock.test.ts.
+            gh issue create --title "$title" --body "$body"
           fi
 
   # Without this the jobs above can fail on a schedule with nobody watching:
