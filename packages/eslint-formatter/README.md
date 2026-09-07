@@ -5,6 +5,11 @@
 [![Install Size](https://badgen.net/packagephobia/install/@interlace/eslint-formatter)](https://packagephobia.com/result?p=@interlace/eslint-formatter)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+<p align="center">
+  <a href="https://eslint.interlace.tools/?utm_source=github&utm_medium=referral&utm_campaign=eslint-formatter"><img src="https://eslint.interlace.tools/images/og-formatter.png" alt="ESLint Interlace" width="100%" /></a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/ofri-peretz/eslint" target="_blank"><img src="https://api.securityscorecards.dev/projects/github.com/ofri-peretz/eslint/badge" alt="OpenSSF Scorecard" /></a>
+</p>
+
 Smart ESLint formatter that groups errors by rule and supports multiple output modes.
 
 Instead of repeating the same violation across 50 files, this formatter emits each rule **once** with a count and representative locations — dramatically reducing output size.
