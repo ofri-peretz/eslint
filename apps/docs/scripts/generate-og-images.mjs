@@ -24,7 +24,13 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -41,12 +47,42 @@ const EXTRAS = [
   // needs MDX pages, TSV type-awareness rows and a DESCRIPTIONS entry each.
   // They still need an OG banner because readme-og-banner-lock requires one
   // for every published package.
-  { slug: 'mcp-sdk-security', package: 'eslint-plugin-mcp-sdk-security', pillar: 'security', description: 'Model Context Protocol SDK' },
-  { slug: 'openai-security', package: 'eslint-plugin-openai-security', pillar: 'security', description: 'OpenAI SDK & Agents SDK' },
-  { slug: 'anthropic-security', package: 'eslint-plugin-anthropic-security', pillar: 'security', description: 'Anthropic SDK & Claude Agent SDK' },
-  { slug: 'gemini-security', package: 'eslint-plugin-gemini-security', pillar: 'security', description: 'Google Gemini SDK safety settings' },
-  { slug: 'postgresql-security', package: 'eslint-plugin-postgresql-security', pillar: 'security', description: 'PostgreSQL queries & connections' },
-  { slug: 'jwt-security', package: 'eslint-plugin-jwt-security', pillar: 'security', description: 'JWT signing & verification' },
+  {
+    slug: 'mcp-sdk-security',
+    package: 'eslint-plugin-mcp-sdk-security',
+    pillar: 'security',
+    description: 'Model Context Protocol SDK',
+  },
+  {
+    slug: 'openai-security',
+    package: 'eslint-plugin-openai-security',
+    pillar: 'security',
+    description: 'OpenAI SDK & Agents SDK',
+  },
+  {
+    slug: 'anthropic-security',
+    package: 'eslint-plugin-anthropic-security',
+    pillar: 'security',
+    description: 'Anthropic SDK & Claude Agent SDK',
+  },
+  {
+    slug: 'gemini-security',
+    package: 'eslint-plugin-gemini-security',
+    pillar: 'security',
+    description: 'Google Gemini SDK safety settings',
+  },
+  {
+    slug: 'postgresql-security',
+    package: 'eslint-plugin-postgresql-security',
+    pillar: 'security',
+    description: 'PostgreSQL queries & connections',
+  },
+  {
+    slug: 'jwt-security',
+    package: 'eslint-plugin-jwt-security',
+    pillar: 'security',
+    description: 'JWT signing & verification',
+  },
   {
     slug: 'devkit',
     package: '@interlace/eslint-devkit',
@@ -58,6 +94,12 @@ const EXTRAS = [
     package: '@interlace/eslint-formatter-sarif',
     pillar: 'tooling',
     description: 'SARIF 2.1.0 output for code scanning',
+  },
+  {
+    slug: 'formatter',
+    package: '@interlace/eslint-formatter',
+    pillar: 'tooling',
+    description: 'Errors grouped by rule, with fix examples',
   },
 ];
 
@@ -93,7 +135,10 @@ const HERO_CAP = 72;
 const ADVANCE = 0.6; // mono glyph advance, in ems — matches render-cover.sh
 
 function esc(s) {
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
 /** Fit the hero string into FIT px, floor 56 / cap 72, mono advance ~0.6em. */
@@ -187,11 +232,20 @@ function findChrome() {
     if (existsSync(c)) return c;
   }
   // PATH lookup fallback (covers Linux CI images and non-default installs).
-  for (const bin of ['google-chrome', 'google-chrome-stable', 'chromium', 'chromium-browser']) {
+  for (const bin of [
+    'google-chrome',
+    'google-chrome-stable',
+    'chromium',
+    'chromium-browser',
+  ]) {
     try {
-      const found = execFileSync(process.platform === 'win32' ? 'where' : 'which', [bin], {
-        stdio: ['ignore', 'pipe', 'ignore'],
-      })
+      const found = execFileSync(
+        process.platform === 'win32' ? 'where' : 'which',
+        [bin],
+        {
+          stdio: ['ignore', 'pipe', 'ignore'],
+        },
+      )
         .toString()
         .trim()
         .split('\n')[0];
@@ -213,7 +267,10 @@ function findChrome() {
  * produces og-image.jpg and every og-<slug>.png, on any OS Chrome runs on.
  */
 function renderSVGToImage(chrome, svg, outImagePath, tmpDir) {
-  const svgPath = path.join(tmpDir, `${path.basename(outImagePath).replace(/\.(png|jpe?g)$/i, '')}.svg`);
+  const svgPath = path.join(
+    tmpDir,
+    `${path.basename(outImagePath).replace(/\.(png|jpe?g)$/i, '')}.svg`,
+  );
   writeFileSync(svgPath, svg, 'utf8');
   execFileSync(
     chrome,
@@ -260,7 +317,12 @@ function main() {
         const isNew = !existsSync(outPath);
         const svg = pluginCardSVG(plugin);
         renderSVGToImage(chrome, svg, outPath, tmpDir);
-        results.plugins.push({ slug: plugin.slug, pkg: plugin.package, path: outPath, isNew });
+        results.plugins.push({
+          slug: plugin.slug,
+          pkg: plugin.package,
+          path: outPath,
+          isNew,
+        });
       }
     }
   } finally {
@@ -272,7 +334,9 @@ function main() {
   if (results.plugins.length) {
     console.log(`plugin cards: ${results.plugins.length}`);
     for (const p of results.plugins) {
-      console.log(`  ${p.isNew ? '[NEW]    ' : '[UPDATED]'} og-${p.slug}.png  (${p.pkg})`);
+      console.log(
+        `  ${p.isNew ? '[NEW]    ' : '[UPDATED]'} og-${p.slug}.png  (${p.pkg})`,
+      );
     }
   }
 }
