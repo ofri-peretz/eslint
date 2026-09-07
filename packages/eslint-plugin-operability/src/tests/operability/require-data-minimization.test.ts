@@ -111,3 +111,45 @@ ruleTester.run('require-data-minimization', requireDataMinimization, {
     },
   ],
 });
+
+/**
+ * A static literal collects nothing. Burgee's compat-oracle `hosts.ts` exports
+ * the metadata of the test suites it grades — `{ name, repo, testDir, testGlob,
+ * imports, runner, target, status, note, … }`, eleven literal fields — and with
+ * `name` in `piiFields` the rule read it as excessive data collection. Data
+ * collection means a value read from SOMEWHERE — a request, a form, a row, an
+ * argument; an object whose every value is a literal, or an array or object of
+ * literals, is configuration. See docs/intents/burgee-false-positives/.
+ */
+const HOSTS =
+  'export const HOSTS = [{ name: "commander", repo: "https://github.com/tj/commander.js", testDir: "tests", testGlob: "*.test.js", imports: [{ upstream: "../index.js", subpath: "", reexportDefault: false }], surfaceFiles: ["typings/index.d.ts"], runner: "node:test", target: "burgee/commander", status: "active", note: "graded by its own suite", preamble: "setup.js" }];';
+const HOST_PII = [{ piiFields: ['name', 'email'] }] as const;
+
+ruleTester.run('require-data-minimization — a static literal collects nothing', requireDataMinimization, {
+  valid: [
+    {
+      name: 'FP: exported test-suite metadata — every value is a literal, nothing is collected',
+      code: HOSTS,
+      options: [...HOST_PII],
+    },
+    {
+      name: 'a static literal whose values are constants declared in the file',
+      code: 'const REPO = "https://github.com/tj/commander.js"; const HOST = { name: "commander", repo: REPO, testDir: "tests", testGlob: "*.test.js", imports: [], surfaceFiles: [], runner: "node:test", target: "burgee/commander", status: "active", note: "n", preamble: "p" };',
+      options: [...HOST_PII],
+    },
+  ],
+  invalid: [
+    {
+      name: 'one collected value among ten literals is still collection',
+      code: 'const profile = { name: "commander", repo: "r", testDir: "t", testGlob: "g", imports: [], surfaceFiles: [], runner: "node:test", target: "x", status: "active", note: "n", email: input.email };',
+      options: [...HOST_PII],
+      errors: 1,
+    },
+    {
+      name: 'a row assembled from a request is collection even beside literal defaults',
+      code: 'const row = { name: req.body.name, email: req.body.email, age: req.body.age, city: req.body.city, zip: req.body.zip, phone: req.body.phone, address: req.body.address, country: "US", state: "CA", company: "x", job: "y" };',
+      options: [...HOST_PII],
+      errors: 1,
+    },
+  ],
+});
