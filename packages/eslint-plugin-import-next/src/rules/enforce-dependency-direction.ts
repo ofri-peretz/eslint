@@ -231,7 +231,12 @@ export const enforceDependencyDirection = createRule<RuleOptions, MessageIds>({
         importPath = node.source.value as string;
       } else if (node.type === 'ImportExpression') {
         if (node.source.type === 'Literal') {
-          importPath = node.source.value as string;
+          // `import(42)` is a Literal with a NUMBER value. Casting it to
+          // string and calling `.startsWith` below threw a TypeError and
+          // crashed ESLint for the file. Same defect as the one fixed in
+          // no-cross-domain-imports; same cast is why neither was caught.
+          if (typeof node.source.value !== 'string') return;
+          importPath = node.source.value;
         } else {
           return; // Dynamic import
         }
