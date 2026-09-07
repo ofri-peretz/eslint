@@ -420,9 +420,10 @@ export function hasNullCheck(
       p.type === 'ConditionalExpression' &&
       (p as TSESTree.ConditionalExpression).consequent === cur
     ) {
+      const test = (p as TSESTree.ConditionalExpression).test;
       if (
-        sourceCode.getText((p as TSESTree.ConditionalExpression).test) ===
-        objectText
+        sourceCode.getText(test) === objectText ||
+        narrowsToObject(test, node.object, sourceCode)
       ) {
         return true;
       }
@@ -635,6 +636,96 @@ function hasExplicitNullCheck(
 }
 
 /**
+ * The root an expression is rooted in — `a.b.c` and `a.b()` both root at `a`.
+ */
+function rootText(
+  expr: TSESTree.Node,
+  sourceCode: TSESLint.SourceCode,
+): string {
+  let base: TSESTree.Node = expr;
+  for (;;) {
+    if (base.type === 'MemberExpression') base = base.object;
+    else if (base.type === 'CallExpression') base = base.callee;
+    else break;
+  }
+  return sourceCode.getText(base);
+}
+
+/**
+ * Does `root` guard `object`? The same value, or a chain that starts with it —
+ * checking `response` protects `response.data.items`, as the truthy branch of
+ * isNullCheckForObject already reads it.
+ */
+function rootGuards(
+  root: string,
+  object: TSESTree.Expression,
+  sourceCode: TSESLint.SourceCode,
+): boolean {
+  const objectText = sourceCode.getText(object);
+  return root === objectText || objectText.startsWith(`${root}.`);
+}
+
+/**
+ * An optional chain rooted at `object`: `found?.[1]`, `hit?.meta`, `x?.f()`.
+ */
+function isOptionalChainRootedAt(
+  expr: TSESTree.Node,
+  object: TSESTree.Expression,
+  sourceCode: TSESLint.SourceCode,
+): boolean {
+  return (
+    expr.type === 'ChainExpression' &&
+    rootGuards(rootText(expr.expression, sourceCode), object, sourceCode)
+  );
+}
+
+/**
+ * Tests that prove `object` is an object WHEN THEY PASS — two forms TypeScript
+ * narrows on that the truthy and `!== null` checks below do not read:
+ *
+ *   'value' in token            `in` throws on null and undefined, so the
+ *                               consequent runs only with an object. Only the
+ *                               RIGHT operand is narrowed; the left is a key.
+ *   found?.[1] !== undefined    an optional chain is non-nullish only when its
+ *   if (found?.[1])             root was — TypeScript narrows `found` here and
+ *                               this file did not, so `found[1]` on the next
+ *                               line reported.
+ *
+ * Both came from burgee, a CLI framework linted without type information,
+ * where `'value' in token ? token.value : undefined` and `if (found?.[1] !==
+ * undefined) … found[1]` were the correct rewrites that "did not satisfy" the
+ * rule. Equality to null/undefined is deliberately NOT here: `found?.[1] ===
+ * undefined` passes when found is null.
+ */
+function narrowsToObject(
+  test: TSESTree.Expression,
+  object: TSESTree.Expression,
+  sourceCode: TSESLint.SourceCode,
+): boolean {
+  if (test.type === 'BinaryExpression' && test.operator === 'in') {
+    return rootGuards(sourceCode.getText(test.right), object, sourceCode);
+  }
+  if (isOptionalChainRootedAt(test, object, sourceCode)) {
+    return true;
+  }
+  if (
+    test.type === 'BinaryExpression' &&
+    (test.operator === '!==' || test.operator === '!=')
+  ) {
+    const isNil = (e: TSESTree.Node): boolean =>
+      (e.type === 'Literal' && e.value === null) ||
+      (e.type === 'Identifier' && e.name === 'undefined');
+    if (isNil(test.right)) {
+      return isOptionalChainRootedAt(test.left, object, sourceCode);
+    }
+    if (isNil(test.left)) {
+      return isOptionalChainRootedAt(test.right, object, sourceCode);
+    }
+  }
+  return false;
+}
+
+/**
  * Check if a test expression is a null check for a specific object
  */
 function isNullCheckForObject(
@@ -643,6 +734,10 @@ function isNullCheckForObject(
   sourceCode: TSESLint.SourceCode,
 ): boolean {
   const objectText = sourceCode.getText(object);
+
+  if (narrowsToObject(test, object, sourceCode)) {
+    return true;
+  }
 
   // Truthy check: `if (obj)` or `if (obj.prop)` — direct truthy guard proves
   // non-null. Also covers nested chains: `if (response) { response.data.items }`
