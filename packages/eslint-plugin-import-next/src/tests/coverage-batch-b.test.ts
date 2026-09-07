@@ -729,6 +729,23 @@ ruleTester.run('no-cross-domain-imports (coverage)', noCrossDomainImports, {
       code: `const m = './x'; const p = import(m);`,
       filename: 'domains/user/service.ts',
     },
+    {
+      /*
+       * `import(42)` is a Literal whose value is a NUMBER. The rule used to
+       * cast every Literal source `as string` and call `.startsWith` on it,
+       * which threw a TypeError and took the whole file down with an ESLint
+       * crash rather than a lint error. Found when the oxlint-parity corpus
+       * stopped truncating harvested fixtures and this one reached the rule.
+       */
+      name: 'dynamic import of a numeric literal does not crash the rule',
+      code: `export async function boot() { return import(42); }`,
+      filename: 'domains/user/service.ts',
+    },
+    {
+      name: 'dynamic import of null does not crash the rule',
+      code: `export async function boot() { return import(null); }`,
+      filename: 'domains/user/service.ts',
+    },
   ],
   invalid: [
     {

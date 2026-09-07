@@ -440,6 +440,76 @@ function lintEslint(corpus, configPath) {
   return findings;
 }
 
+/*
+ * oxlint in argv-sized batches, and the batches' diagnostics concatenated.
+ *
+ * The whole corpus in one argv is what the OS refuses. At ~4,000 files it fit;
+ * once the harvester stopped truncating fixtures the corpus more than doubled
+ * and `execFileSync` came back with `pid: 0`, `status: null`, `signal: null` —
+ * a spawn that never happened. That failure has no stdout, so the catch around
+ * the call read it as an empty result: every oxlint finding vanished at once
+ * and the run would have reported ESLint's entire output as an oxlint gap.
+ *
+ * Batching by BYTES, not by file count, because that is the actual limit and
+ * fixture paths are long. 200KB leaves generous room under the ~1MB per-arg
+ * and ~2MB total limits on macOS and Linux both.
+ */
+const ARGV_BUDGET_BYTES = 200 * 1024;
+
+function runOxlintBatched(configPath, files) {
+  const bin = path.join(REPO_ROOT, 'node_modules', 'oxlint', 'bin', 'oxlint');
+  const batches = [[]];
+  let used = 0;
+  for (const file of files) {
+    const size = Buffer.byteLength(file) + 1;
+    if (used + size > ARGV_BUDGET_BYTES && batches.at(-1).length > 0) {
+      batches.push([]);
+      used = 0;
+    }
+    batches.at(-1).push(file);
+    used += size;
+  }
+
+  const diagnostics = [];
+  for (const batch of batches) {
+    let out = '';
+    try {
+      out = execFileSync(
+        bin,
+        ['--config', configPath, '--format', 'json', ...batch],
+        {
+          cwd: REPO_ROOT,
+          encoding: 'utf8',
+          stdio: ['ignore', 'pipe', 'pipe'],
+          maxBuffer: 64 * 1024 * 1024,
+        },
+      );
+    } catch (err) {
+      // Findings mean exit 1 WITH output. No output means the process never
+      // ran or died before writing — never a batch that legitimately found
+      // nothing, so it must not be swallowed into one.
+      out = err.stdout?.toString() ?? '';
+      if (!out) {
+        throw new Error(
+          `oxlint produced no output for a batch of ${batch.length} file(s) ` +
+            `(status=${err.status}, signal=${err.signal}, pid=${err.pid}): ${err.message}`,
+        );
+      }
+    }
+    let parsedBatch;
+    try {
+      parsedBatch = JSON.parse(out);
+    } catch (err) {
+      throw new Error(
+        `oxlint --format json produced unparseable output (${err.message}). ` +
+          `First 500 chars:\n${out.slice(0, 500)}`,
+      );
+    }
+    diagnostics.push(...(parsedBatch.diagnostics ?? []));
+  }
+  return JSON.stringify({ diagnostics });
+}
+
 function lintOxlint(corpus, configPath) {
   /*
    * Explicit file list, never a bare directory.
@@ -478,16 +548,7 @@ function lintOxlint(corpus, configPath) {
      * normal exit 1 (findings present) with full JSON on stdout; `npx`
      * failed on the identical argv every time.
      */
-    raw = execFileSync(
-      path.join(REPO_ROOT, 'node_modules', 'oxlint', 'bin', 'oxlint'),
-      ['--config', configPath, '--format', 'json', ...files],
-      {
-        cwd: REPO_ROOT,
-        encoding: 'utf8',
-        stdio: ['ignore', 'pipe', 'pipe'],
-        maxBuffer: 64 * 1024 * 1024,
-      },
-    );
+    raw = runOxlintBatched(configPath, files);
   } catch (err) {
     raw = err.stdout?.toString() ?? '';
     if (!raw) throw err;
