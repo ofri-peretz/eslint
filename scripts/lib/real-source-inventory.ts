@@ -32,6 +32,13 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 
 export type Inventory = {
+  /**
+   * The command that reproduces this file. Optional for the same reason
+   * `configHash` is: files written before the scan emitted it do not have one,
+   * and typing it as required would make the reader's cast a lie about them.
+   * The generated-artefact lock requires it on anything committed from now on.
+   */
+  command?: string;
   rules: Record<string, { count: number; repos: number }>;
   withoutMaterial: string[];
   filesLinted: number;
