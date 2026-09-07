@@ -27,6 +27,7 @@ import {
   readFileSync,
   readdirSync,
   rmSync,
+  statSync,
   writeFileSync,
 } from 'node:fs';
 import { resolve, join } from 'node:path';
@@ -193,7 +194,37 @@ if (tsconfig === null) {
 //    it on the package page; the history stays available on GitHub, in the
 //    npm "Versions" tab, and in the changesets-generated release notes.
 //    README.md is kept: it IS the npm package page.
-const assets = ['README.md', 'LICENSE', '.npmignore'];
+//
+//    Beyond those three, every root-level FILE named in the package's own
+//    `files` array is copied. That list was hardcoded to exactly the three
+//    above, which made it a third hand-maintained inventory beside `files`
+//    and `exports` — and the three drifted: @interlace/eslint-formatter
+//    declared `"./schema.json"` in `exports` AND `schema.json` in `files`,
+//    the file existed, and it still never reached the tarball because this
+//    array had not heard of it. The publish gate caught it; a consumer would
+//    otherwise have got "Cannot find module" from a subpath the manifest
+//    promised. Declaring a file in `files` is now enough.
+//
+//    Directory entries are skipped: `src/` and `dist/` are what this script
+//    is producing, and CHANGELOG.md stays excluded for the size reason above
+//    even when a package lists it.
+const EXCLUDED_ASSETS = new Set(['CHANGELOG.md']);
+const declaredFiles: string[] = Array.isArray(pkg.files) ? pkg.files : [];
+const assets = [
+  ...new Set([
+    'README.md',
+    'LICENSE',
+    '.npmignore',
+    ...declaredFiles.filter(
+      (f) =>
+        !f.includes('/') &&
+        !f.includes('*') &&
+        !EXCLUDED_ASSETS.has(f) &&
+        existsSync(resolve(pkgDir, f)) &&
+        statSync(resolve(pkgDir, f)).isFile(),
+    ),
+  ]),
+];
 for (const asset of assets) {
   const src = resolve(pkgDir, asset);
   if (existsSync(src)) {
