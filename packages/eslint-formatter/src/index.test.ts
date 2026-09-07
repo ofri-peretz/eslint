@@ -4,6 +4,8 @@
  * MIT license that can be found in the LICENSE file.
  */
 
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, it, expect } from 'vitest';
 import { groupByRule, computeSummary } from './grouper';
 import { renderHuman } from './renderers/human';
@@ -26,17 +28,24 @@ function makeResult(
     column: number;
     fix?: { range: [number, number]; text: string };
     nodeType?: string | null;
-    suggestions?: Array<{ desc: string; fix: { range: [number, number]; text: string } }>;
+    suggestions?: Array<{
+      desc: string;
+      fix: { range: [number, number]; text: string };
+    }>;
   }>,
 ): LintResult {
-  const errorCount = messages.filter(m => m.severity === 2).length;
-  const warningCount = messages.filter(m => m.severity === 1).length;
-  const fixableErrorCount = messages.filter(m => m.severity === 2 && m.fix).length;
-  const fixableWarningCount = messages.filter(m => m.severity === 1 && m.fix).length;
+  const errorCount = messages.filter((m) => m.severity === 2).length;
+  const warningCount = messages.filter((m) => m.severity === 1).length;
+  const fixableErrorCount = messages.filter(
+    (m) => m.severity === 2 && m.fix,
+  ).length;
+  const fixableWarningCount = messages.filter(
+    (m) => m.severity === 1 && m.fix,
+  ).length;
 
   return {
     filePath,
-    messages: messages.map(m => ({ ...m, nodeType: m.nodeType ?? null })),
+    messages: messages.map((m) => ({ ...m, nodeType: m.nodeType ?? null })),
     errorCount,
     warningCount,
     fixableErrorCount,
@@ -68,16 +77,53 @@ const context: FormatterContext = {
 
 const sampleResults: LintResult[] = [
   makeResult('/project/src/auth/login.ts', [
-    { ruleId: 'no-unused-vars', severity: 1, message: "'x' is not used", line: 5, column: 7 },
-    { ruleId: 'no-unused-vars', severity: 1, message: "'y' is not used", line: 12, column: 3 },
-    { ruleId: '@interlace/pg/no-unsafe-query', severity: 2, message: 'SQL injection detected', line: 23, column: 5 },
+    {
+      ruleId: 'no-unused-vars',
+      severity: 1,
+      message: "'x' is not used",
+      line: 5,
+      column: 7,
+    },
+    {
+      ruleId: 'no-unused-vars',
+      severity: 1,
+      message: "'y' is not used",
+      line: 12,
+      column: 3,
+    },
+    {
+      ruleId: '@interlace/pg/no-unsafe-query',
+      severity: 2,
+      message: 'SQL injection detected',
+      line: 23,
+      column: 5,
+    },
   ]),
   makeResult('/project/src/db/queries.ts', [
-    { ruleId: '@interlace/pg/no-unsafe-query', severity: 2, message: 'SQL injection detected', line: 8, column: 10 },
-    { ruleId: '@interlace/pg/no-unsafe-query', severity: 2, message: 'SQL injection detected', line: 41, column: 10 },
+    {
+      ruleId: '@interlace/pg/no-unsafe-query',
+      severity: 2,
+      message: 'SQL injection detected',
+      line: 8,
+      column: 10,
+    },
+    {
+      ruleId: '@interlace/pg/no-unsafe-query',
+      severity: 2,
+      message: 'SQL injection detected',
+      line: 41,
+      column: 10,
+    },
   ]),
   makeResult('/project/src/utils/helpers.ts', [
-    { ruleId: 'no-unused-vars', severity: 1, message: "'z' is not used", line: 1, column: 1, fix: { range: [0, 10], text: '' } },
+    {
+      ruleId: 'no-unused-vars',
+      severity: 1,
+      message: "'z' is not used",
+      line: 1,
+      column: 1,
+      fix: { range: [0, 10], text: '' },
+    },
   ]),
   // Clean file (no issues)
   makeResult('/project/src/index.ts', []),
@@ -92,8 +138,11 @@ describe('groupByRule', () => {
     const grouped = groupByRule(sampleResults, context);
 
     expect(grouped).toHaveLength(2);
-    const ruleIds = grouped.map(g => g.ruleId).toSorted();
-    expect(ruleIds).toEqual(['@interlace/pg/no-unsafe-query', 'no-unused-vars']);
+    const ruleIds = grouped.map((g) => g.ruleId).toSorted();
+    expect(ruleIds).toEqual([
+      '@interlace/pg/no-unsafe-query',
+      'no-unused-vars',
+    ]);
     expect(grouped[0]!.count).toBe(3);
     expect(grouped[1]!.count).toBe(3);
   });
@@ -105,7 +154,9 @@ describe('groupByRule', () => {
     const reversed = [...sampleResults].toReversed();
     const grouped2 = groupByRule(reversed, context);
 
-    expect(grouped1.map(g => g.ruleId)).toEqual(grouped2.map(g => g.ruleId));
+    expect(grouped1.map((g) => g.ruleId)).toEqual(
+      grouped2.map((g) => g.ruleId),
+    );
   });
 
   it('should sort errors before warnings even when a warning has higher count (severity-first)', () => {
@@ -115,11 +166,23 @@ describe('groupByRule', () => {
     // position [0] where LLMs and humans actually look.
     const payload: LintResult[] = [
       makeResult('/project/src/db.ts', [
-        { ruleId: '@interlace/pg/no-unsafe-query', severity: 2, message: 'SQL injection', line: 23, column: 5 },
+        {
+          ruleId: '@interlace/pg/no-unsafe-query',
+          severity: 2,
+          message: 'SQL injection',
+          line: 23,
+          column: 5,
+        },
       ]),
       ...Array.from({ length: 10 }, (_, i) =>
         makeResult(`/project/src/m${i}.ts`, [
-          { ruleId: 'no-unused-vars', severity: 1, message: 'unused', line: i + 1, column: 1 },
+          {
+            ruleId: 'no-unused-vars',
+            severity: 1,
+            message: 'unused',
+            line: i + 1,
+            column: 1,
+          },
         ]),
       ),
     ];
@@ -133,14 +196,18 @@ describe('groupByRule', () => {
 
   it('should capture the representative ESLint message text', () => {
     const grouped = groupByRule(sampleResults, context);
-    const pgRule = grouped.find(g => g.ruleId === '@interlace/pg/no-unsafe-query');
+    const pgRule = grouped.find(
+      (g) => g.ruleId === '@interlace/pg/no-unsafe-query',
+    );
 
     expect(pgRule!.message).toBe('SQL injection detected');
   });
 
   it('should surface CWE and CVSS from rule meta when present', () => {
     const grouped = groupByRule(sampleResults, context);
-    const pgRule = grouped.find(g => g.ruleId === '@interlace/pg/no-unsafe-query');
+    const pgRule = grouped.find(
+      (g) => g.ruleId === '@interlace/pg/no-unsafe-query',
+    );
 
     expect(pgRule!.cwe).toBe('CWE-089');
     expect(pgRule!.cvss).toBe(9.8);
@@ -155,19 +222,32 @@ describe('groupByRule', () => {
           message: 'Use === instead',
           line: 1,
           column: 1,
-          suggestions: [{ desc: 'Replace == null with === null', fix: { range: [0, 7], text: '=== null' } }],
+          suggestions: [
+            {
+              desc: 'Replace == null with === null',
+              fix: { range: [0, 7], text: '=== null' },
+            },
+          ],
         },
       ]),
     ];
     const grouped = groupByRule(withSuggestion, context);
     expect(grouped[0]!.hasSuggestions).toBe(true);
-    expect(grouped[0]!.locations[0]!.suggestions).toEqual([{ desc: 'Replace == null with === null' }]);
+    expect(grouped[0]!.locations[0]!.suggestions).toEqual([
+      { desc: 'Replace == null with === null' },
+    ]);
   });
 
   it('should respect mode-aware MAX_LOCATIONS cap (json gets a higher cap)', () => {
     const manyResults: LintResult[] = Array.from({ length: 15 }, (_, i) =>
       makeResult(`/project/src/file${i}.ts`, [
-        { ruleId: 'no-console', severity: 1, message: 'no console', line: i + 1, column: 1 },
+        {
+          ruleId: 'no-console',
+          severity: 1,
+          message: 'no console',
+          line: i + 1,
+          column: 1,
+        },
       ]),
     );
     const compactGrouped = groupByRule(manyResults, context, 'compact');
@@ -178,30 +258,44 @@ describe('groupByRule', () => {
 
   it('should use highest severity seen', () => {
     const grouped = groupByRule(sampleResults, context);
-    const pgRule = grouped.find(g => g.ruleId === '@interlace/pg/no-unsafe-query');
+    const pgRule = grouped.find(
+      (g) => g.ruleId === '@interlace/pg/no-unsafe-query',
+    );
 
     expect(pgRule!.severity).toBe('error');
   });
 
   it('should detect fixable status', () => {
     const grouped = groupByRule(sampleResults, context);
-    const unusedRule = grouped.find(g => g.ruleId === 'no-unused-vars');
+    const unusedRule = grouped.find((g) => g.ruleId === 'no-unused-vars');
 
     expect(unusedRule!.fixable).toBe(true); // one location has a fix
   });
 
   it('should enrich with rule metadata', () => {
     const grouped = groupByRule(sampleResults, context);
-    const pgRule = grouped.find(g => g.ruleId === '@interlace/pg/no-unsafe-query');
+    const pgRule = grouped.find(
+      (g) => g.ruleId === '@interlace/pg/no-unsafe-query',
+    );
 
-    expect(pgRule!.description).toBe('Detect SQL injection via string concatenation');
-    expect(pgRule!.docsUrl).toBe('https://interlace.tools/docs/pg/no-unsafe-query');
+    expect(pgRule!.description).toBe(
+      'Detect SQL injection via string concatenation',
+    );
+    expect(pgRule!.docsUrl).toBe(
+      'https://interlace.tools/docs/pg/no-unsafe-query',
+    );
   });
 
   it('should cap locations to default MAX_LOCATIONS (5) when no mode given', () => {
     const manyResults: LintResult[] = Array.from({ length: 10 }, (_, i) =>
       makeResult(`/project/src/file${i}.ts`, [
-        { ruleId: 'no-console', severity: 1, message: 'no console', line: i + 1, column: 1 },
+        {
+          ruleId: 'no-console',
+          severity: 1,
+          message: 'no console',
+          line: i + 1,
+          column: 1,
+        },
       ]),
     );
 
@@ -290,7 +384,16 @@ describe('renderHuman', () => {
     const noMessage: LintResult[] = [
       {
         filePath: '/project/x.ts',
-        messages: [{ ruleId: 'no-unused-vars', severity: 1, message: '', line: 1, column: 1, nodeType: null }],
+        messages: [
+          {
+            ruleId: 'no-unused-vars',
+            severity: 1,
+            message: '',
+            line: 1,
+            column: 1,
+            nodeType: null,
+          },
+        ],
         errorCount: 0,
         warningCount: 1,
         fixableErrorCount: 0,
@@ -312,7 +415,15 @@ describe('renderHuman', () => {
   });
 
   it('should show clean message for no issues', () => {
-    const output = renderHuman([], { totalFiles: 1, filesWithIssues: 0, errorCount: 0, warningCount: 0, fixableCount: 0, uniqueRules: 0, topRules: [] });
+    const output = renderHuman([], {
+      totalFiles: 1,
+      filesWithIssues: 0,
+      errorCount: 0,
+      warningCount: 0,
+      fixableCount: 0,
+      uniqueRules: 0,
+      topRules: [],
+    });
 
     expect(output).toContain('No lint issues found');
   });
@@ -380,7 +491,9 @@ describe('renderJSON', () => {
     const grouped = groupByRule(sampleResults, context);
     const summary = computeSummary(sampleResults, grouped);
     const parsed = JSON.parse(renderJSON(grouped, summary));
-    const pg = parsed.rules.find((r: { id: string }) => r.id === '@interlace/pg/no-unsafe-query');
+    const pg = parsed.rules.find(
+      (r: { id: string }) => r.id === '@interlace/pg/no-unsafe-query',
+    );
 
     expect(pg.msg).toBe('SQL injection detected');
     expect(pg.cwe).toBe('CWE-089');
@@ -441,11 +554,31 @@ describe('snapshot tests (byte-level format stability)', () => {
   // Fixed, minimal input: 1 error rule + 1 warning rule, both with metadata.
   const snapshotResults: LintResult[] = [
     makeResult('/project/src/db.ts', [
-      { ruleId: '@interlace/pg/no-unsafe-query', severity: 2, message: 'SQL injection detected', line: 23, column: 5, nodeType: 'CallExpression' },
+      {
+        ruleId: '@interlace/pg/no-unsafe-query',
+        severity: 2,
+        message: 'SQL injection detected',
+        line: 23,
+        column: 5,
+        nodeType: 'CallExpression',
+      },
     ]),
     makeResult('/project/src/util.ts', [
-      { ruleId: 'no-unused-vars', severity: 1, message: "'x' is not used", line: 5, column: 7, fix: { range: [0, 5], text: '' } },
-      { ruleId: 'no-unused-vars', severity: 1, message: "'y' is not used", line: 12, column: 3 },
+      {
+        ruleId: 'no-unused-vars',
+        severity: 1,
+        message: "'x' is not used",
+        line: 5,
+        column: 7,
+        fix: { range: [0, 5], text: '' },
+      },
+      {
+        ruleId: 'no-unused-vars',
+        severity: 1,
+        message: "'y' is not used",
+        line: 12,
+        column: 3,
+      },
     ]),
   ];
 
@@ -498,7 +631,8 @@ describe('snapshot tests (byte-level format stability)', () => {
     } finally {
       if (prevColor === undefined) delete process.env['NO_COLOR'];
       else process.env['NO_COLOR'] = prevColor;
-      if (prevOptOut === undefined) delete process.env['INTERLACE_NO_ATTRIBUTION'];
+      if (prevOptOut === undefined)
+        delete process.env['INTERLACE_NO_ATTRIBUTION'];
       else process.env['INTERLACE_NO_ATTRIBUTION'] = prevOptOut;
     }
   });
@@ -544,17 +678,42 @@ describe('schema.json conformance (downstream agent contract)', () => {
   // sufficient to catch any drift between the renderer and the published
   // schema. If a renderer change adds/removes a key, this test points
   // straight at the schema file that needs updating.
-  const requiredRuleKeys = ['id', 'sev', 'n', 'fix', 'sugg', 'locs'];
-  const requiredSummaryKeys = ['errors', 'warnings', 'files', 'fixable', 'rules'];
-  const requiredLocKeys = ['f', 'l', 'c'];
-  const optionalRuleKeys = new Set(['desc', 'msg', 'docs', 'cwe', 'cvss']);
-  const optionalLocKeys = new Set(['t', 'sugg']);
+  /*
+   * Read FROM schema.json, not retyped beside it.
+   *
+   * These five lists used to be literals here, which meant a describe block
+   * named "schema.json conformance" never opened schema.json — and passed
+   * while the file did not exist at all, even though `exports` promised it.
+   * The published-artifact gate caught the missing file; nothing would have
+   * caught the two drifting apart once it existed.
+   */
+  const schema = JSON.parse(
+    readFileSync(join(__dirname, '..', 'schema.json'), 'utf8'),
+  ) as {
+    $defs: Record<
+      string,
+      { properties: Record<string, unknown>; required: string[] }
+    >;
+  };
+  const optionalOf = (def: string) =>
+    new Set(
+      Object.keys(schema.$defs[def]!.properties).filter(
+        (k) => !schema.$defs[def]!.required.includes(k) && k !== 'kind',
+      ),
+    );
+  const requiredRuleKeys = schema.$defs['rule']!.required;
+  const requiredSummaryKeys = schema.$defs['summary']!.required;
+  const requiredLocKeys = schema.$defs['loc']!.required;
+  const optionalRuleKeys = optionalOf('rule');
+  const optionalLocKeys = optionalOf('loc');
 
   function assertRule(rule: Record<string, unknown>) {
     for (const k of requiredRuleKeys) expect(rule).toHaveProperty(k);
     for (const k of Object.keys(rule)) {
-      const allowed = requiredRuleKeys.includes(k) || optionalRuleKeys.has(k) || k === 'kind';
-      if (!allowed) throw new Error(`schema.json: rule contains unknown key "${k}"`);
+      const allowed =
+        requiredRuleKeys.includes(k) || optionalRuleKeys.has(k) || k === 'kind';
+      if (!allowed)
+        throw new Error(`schema.json: rule contains unknown key "${k}"`);
     }
     expect(['error', 'warning']).toContain(rule['sev']);
     expect(typeof rule['fix']).toBe('boolean');
@@ -564,7 +723,8 @@ describe('schema.json conformance (downstream agent contract)', () => {
       for (const k of requiredLocKeys) expect(loc).toHaveProperty(k);
       for (const k of Object.keys(loc)) {
         const allowed = requiredLocKeys.includes(k) || optionalLocKeys.has(k);
-        if (!allowed) throw new Error(`schema.json: location contains unknown key "${k}"`);
+        if (!allowed)
+          throw new Error(`schema.json: location contains unknown key "${k}"`);
       }
     }
     if ('cwe' in rule) expect(rule['cwe']).toMatch(/^CWE-[0-9]+$/);
@@ -578,10 +738,15 @@ describe('schema.json conformance (downstream agent contract)', () => {
   it('renderJSON output conforms to schema.json (JsonModeOutput)', () => {
     const grouped = groupByRule(sampleResults, context, 'json');
     const summary = computeSummary(sampleResults, grouped);
-    const parsed = JSON.parse(renderJSON(grouped, summary)) as Record<string, unknown>;
+    const parsed = JSON.parse(renderJSON(grouped, summary)) as Record<
+      string,
+      unknown
+    >;
     expect(Object.keys(parsed)).toEqual(['summary', 'rules']); // summary first by contract
-    for (const k of requiredSummaryKeys) expect(parsed['summary']).toHaveProperty(k);
-    for (const rule of parsed['rules'] as Array<Record<string, unknown>>) assertRule(rule);
+    for (const k of requiredSummaryKeys)
+      expect(parsed['summary']).toHaveProperty(k);
+    for (const rule of parsed['rules'] as Array<Record<string, unknown>>)
+      assertRule(rule);
   });
 
   it('renderNDJSON output conforms to schema.json (one summary line + N rule lines)', () => {
@@ -697,7 +862,9 @@ describe('peerDep compatibility: ESLint v8 / v9 / v10 LintMessage shapes', () =>
     };
     const grouped = groupByRule([v10Result], { cwd: '/repo' }, 'json');
     expect(grouped[0]!.hasSuggestions).toBe(true);
-    expect(grouped[0]!.locations[0]!.suggestions).toEqual([{ desc: "Use '===' instead" }]);
+    expect(grouped[0]!.locations[0]!.suggestions).toEqual([
+      { desc: "Use '===' instead" },
+    ]);
     const summary = computeSummary([v10Result], grouped);
     const json = JSON.parse(renderJSON(grouped, summary));
     expect(json.rules[0].sugg).toBe(true);
@@ -733,24 +900,35 @@ describe('integration: real ESLint -f handshake', { timeout: 30_000 }, () => {
     expect(messages.length).toBeGreaterThan(0);
 
     // Build a LintResult[] the way ESLint's CLI engine would.
-    const errorCount = messages.filter(m => m.severity === 2).length;
-    const warningCount = messages.filter(m => m.severity === 1).length;
-    const fixableErrorCount = messages.filter(m => m.severity === 2 && m.fix).length;
-    const fixableWarningCount = messages.filter(m => m.severity === 1 && m.fix).length;
-    const realResults = [{
-      filePath: '/tmp/integration.js',
-      messages: messages as LintResult['messages'],
-      errorCount,
-      warningCount,
-      fixableErrorCount,
-      fixableWarningCount,
-    }];
+    const errorCount = messages.filter((m) => m.severity === 2).length;
+    const warningCount = messages.filter((m) => m.severity === 1).length;
+    const fixableErrorCount = messages.filter(
+      (m) => m.severity === 2 && m.fix,
+    ).length;
+    const fixableWarningCount = messages.filter(
+      (m) => m.severity === 1 && m.fix,
+    ).length;
+    const realResults = [
+      {
+        filePath: '/tmp/integration.js',
+        messages: messages as LintResult['messages'],
+        errorCount,
+        warningCount,
+        fixableErrorCount,
+        fixableWarningCount,
+      },
+    ];
 
     const grouped = groupByRule(realResults, { cwd: '/tmp' });
     const summary = computeSummary(realResults, grouped);
 
     // Every mode produces non-empty output mentioning the rules.
-    for (const render of [renderHuman, renderCompact, renderJSON, renderNDJSON]) {
+    for (const render of [
+      renderHuman,
+      renderCompact,
+      renderJSON,
+      renderNDJSON,
+    ]) {
       const out = render(grouped, summary);
       expect(out.length).toBeGreaterThan(0);
       expect(out).toContain('no-var');
@@ -760,7 +938,9 @@ describe('integration: real ESLint -f handshake', { timeout: 30_000 }, () => {
     const json = JSON.parse(renderJSON(grouped, summary));
     expect(json.summary).toBeDefined();
     expect(json.rules.length).toBeGreaterThan(0);
-    expect(json.rules.some((r: { id: string }) => r.id === 'no-var')).toBe(true);
+    expect(json.rules.some((r: { id: string }) => r.id === 'no-var')).toBe(
+      true,
+    );
 
     // NDJSON: every line is independently parseable.
     for (const line of renderNDJSON(grouped, summary).trim().split('\n')) {
@@ -813,17 +993,30 @@ describe('token efficiency', () => {
     // Create 20 files each with the same 2 rule violations — simulates real-world repetition
     const manyResults: LintResult[] = Array.from({ length: 20 }, (_, i) =>
       makeResult(`/project/src/module${i}/index.ts`, [
-        { ruleId: 'no-unused-vars', severity: 1, message: "'x' is not used", line: i + 1, column: 1 },
-        { ruleId: '@interlace/pg/no-unsafe-query', severity: 2, message: 'SQL injection detected', line: i + 5, column: 3 },
+        {
+          ruleId: 'no-unused-vars',
+          severity: 1,
+          message: "'x' is not used",
+          line: i + 1,
+          column: 1,
+        },
+        {
+          ruleId: '@interlace/pg/no-unsafe-query',
+          severity: 2,
+          message: 'SQL injection detected',
+          line: i + 5,
+          column: 3,
+        },
       ]),
     );
 
     // Simulate ESLint default stylish output (per-file, every message repeated)
     const ungrouped = manyResults
-      .map(r => {
+      .map((r) => {
         const header = r.filePath;
-        const msgs = r.messages.map(m =>
-          `  ${m.line}:${m.column}  ${m.severity === 2 ? 'error' : 'warning'}  ${m.message}  ${m.ruleId}`
+        const msgs = r.messages.map(
+          (m) =>
+            `  ${m.line}:${m.column}  ${m.severity === 2 ? 'error' : 'warning'}  ${m.message}  ${m.ruleId}`,
         );
         return [header, ...msgs, ''].join('\n');
       })
