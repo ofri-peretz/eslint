@@ -37,6 +37,7 @@ describe('prefer-dependency-version-strategy', () => {
           },
           // Tilde strategy
           {
+            name: 'a tilde range under the tilde strategy',
             code: 'const deps = { "react": "~18.0.0" };',
             options: [{ strategy: 'tilde' }],
           },
@@ -235,5 +236,61 @@ describe('prefer-dependency-version-strategy', () => {
         invalid: [],
       },
     );
+  });
+
+  /**
+   * The ObjectExpression fallback read ANY object literal holding a
+   * version-like string as a dependency map. In burgee a package.json fixture
+   * written by a test — `{ name: 'x', version: '1.0.0', main: 'index.js' }` —
+   * and a vendoring record carrying `version: '1.0.0'` beside a repo URL and a
+   * commit both reported `Dependency "version" should use caret version`, and
+   * the rule was turned off for every test file. A dependency map is keyed by
+   * package name and EVERY value is a version specifier; one value that is not
+   * says the object is something else. See docs/intents/burgee-false-positives/.
+   */
+  describe('an object with a version field is not a dependency map (burgee)', () => {
+    ruleTester.run('mixed object literals', preferDependencyVersionStrategy, {
+      valid: [
+        {
+          name: 'FP: a package.json fixture written by a test',
+          code: 'writeFileSync(join(plain, "package.json"), JSON.stringify({ name: "x", version: "1.0.0", main: "index.js" }));',
+        },
+        {
+          name: 'FP: a record with a version beside a repo, a tag and a count',
+          code: 'const record = (over) => ({ repo: "r", version: "1.0.0", tag: "v1.0.0", commit: "a".repeat(40), vendored: "2026-09-07", files: 1, internalFiles: [], ...over });',
+        },
+        {
+          name: 'a manifest whose dependencies are correct, with its own version field',
+          code: 'const pkg = { name: "x", version: "1.0.0", dependencies: { react: "^18.0.0" } };',
+        },
+      ],
+      invalid: [
+        {
+          name: 'a homogeneous dependency map still reports the odd one out',
+          code: 'const deps = { react: "18.0.0", lodash: "^4.17.21" };',
+          output: 'const deps = { react: "^18.0.0", lodash: "^4.17.21" };',
+          errors: [{ messageId: 'preferStrategy' }],
+        },
+        {
+          name: 'dist-tags and a wildcard are version specifiers too',
+          code: 'const deps = { react: "18.0.0", foo: "latest", bar: "*" };',
+          output: 'const deps = { react: "^18.0.0", foo: "latest", bar: "*" };',
+          errors: [{ messageId: 'preferStrategy' }],
+        },
+        {
+          name: 'the dependencies block INSIDE a manifest still reports, and the manifest itself does not',
+          code: 'const pkg = { name: "x", version: "1.0.0", dependencies: { react: "18.0.0" } };',
+          output:
+            'const pkg = { name: "x", version: "1.0.0", dependencies: { react: "^18.0.0" } };',
+          errors: [{ messageId: 'preferStrategy' }],
+        },
+        {
+          name: 'a map mixing a workspace link with a bare version',
+          code: 'const deps = { app: "workspace:*", react: "18.0.0" };',
+          output: 'const deps = { app: "workspace:*", react: "^18.0.0" };',
+          errors: [{ messageId: 'preferStrategy' }],
+        },
+      ],
+    });
   });
 });
