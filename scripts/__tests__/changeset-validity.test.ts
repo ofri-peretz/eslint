@@ -120,4 +120,41 @@ describe('changeset validity', () => {
     }
     expect(empty).toEqual([]);
   });
+
+  /*
+   * The generator maps a conventional-commit prefix to a badge — `feat:` to
+   * "✨ Feature", `fix:` to "🐛 Fix", and so on per .changeset/README.md. A
+   * changeset that writes the badge itself gets it twice in the CHANGELOG:
+   *
+   *   - **✨ Feature** — **✨ Feature** — the formatter is published.
+   *
+   * #904 fixed three changesets carrying this by hand and added no check, so
+   * the fourth arrived within the week. This is that check.
+   */
+  it('no changeset writes a badge the generator already adds', () => {
+    if (!existsSync(CHANGESET_DIR)) return;
+    const BADGES = [
+      '✨ Feature',
+      '🐛 Fix',
+      '⚡ Performance',
+      '🔒 Security',
+      '📚 Docs',
+      '🧹 Maintenance',
+    ];
+    const offenders: string[] = [];
+    for (const file of readdirSync(CHANGESET_DIR)) {
+      if (!file.endsWith('.md') || file === 'README.md') continue;
+      const source = readFileSync(join(CHANGESET_DIR, file), 'utf8');
+      const body = source.replace(/^---\r?\n[\s\S]*?---/, '');
+      const hit = BADGES.find((b) => body.includes(b));
+      if (hit !== undefined) offenders.push(`${file}: ${hit}`);
+    }
+    expect(
+      offenders,
+      'These changesets write a badge the changelog generator adds, so it ' +
+        'renders twice. Start the summary with the conventional-commit ' +
+        'prefix instead (`feat:`, `fix:`, …) and let the generator supply ' +
+        'the badge — see .changeset/README.md.',
+    ).toEqual([]);
+  });
 });

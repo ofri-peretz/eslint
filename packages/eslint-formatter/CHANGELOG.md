@@ -42,7 +42,7 @@ All four modes score 4 / 4 on the FP/FN-attribution signal contract on every fix
 
 ### Minor Changes
 
-- **✨ Feature** — **✨ Feature** — the formatter is published. `eslint -f @interlace/eslint-formatter` emits ~408 tokens where `stylish` emits ~104,483, at the same measured signal score.
+- **✨ Feature** — the formatter is published. `eslint -f @interlace/eslint-formatter` emits ~408 tokens where `stylish` emits ~104,483, at the same measured signal score.
 
 ## 0.1.0 — 2026-05-03
 
