@@ -67,7 +67,13 @@ jobs:
           if [ -n "$existing" ]; then
             gh issue comment "$existing" --body "$body"
           else
-            gh issue create --title "$title" --body "$body" --label "chore"
+            # No --label: this repo has no "chore" label, and adding one
+            # to this command fails the whole step under the runner's
+            # default `bash -e` when the label does not exist (#924).
+            # Every sibling cadence workflow's issue-filing step is
+            # unlabelled for the same reason — see
+            # scripts/__tests__/metrics-freshness-issue-label-lock.test.ts.
+            gh issue create --title "$title" --body "$body"
           fi
 
   # Without this the jobs above can fail on a schedule with nobody watching:
