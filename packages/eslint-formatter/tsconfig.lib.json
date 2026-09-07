@@ -2,10 +2,23 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "sourceMap": false,
-    "outDir": "../../dist/out-tsc",
+    "composite": true,
+    // Same shape as eslint-devkit, the other published library here: rootDir
+    // pins the emit to ./src so it lands at dist/src/index.js, which is what
+    // `exports` points at. Without it tsc inferred a root above the package
+    // and wrote dist/src/packages/eslint-formatter/src/index.js — every entry
+    // point resolving to nothing. `private: true` hid that until now.
+    "emitDeclarationOnly": true,
+    "rootDir": "./src",
+    "outDir": "./dist/src",
+    "tsBuildInfoFile": "./.tsbuildinfo",
     "declaration": true,
     "types": ["node"]
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["src/**/*.test.ts", "src/**/*.spec.ts"]
+  "exclude": [
+    "src/**/*.test.ts",
+    "src/**/*.spec.ts",
+    "src/**/__benchmarks__/**"
+  ]
 }
