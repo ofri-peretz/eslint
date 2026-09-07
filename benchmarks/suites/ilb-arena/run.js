@@ -70,6 +70,7 @@ const ALL_PLUGINS = [
     lastUpdated: '2023 (maintenance mode)',
     weeklyDownloads: '1.5M+',
     category: 'Security',
+    securityRelevant: true,
   },
   {
     name: 'security-node',
@@ -79,6 +80,7 @@ const ALL_PLUGINS = [
     lastUpdated: '2023',
     weeklyDownloads: '~30K',
     category: 'Security (Node.js)',
+    securityRelevant: true,
   },
   {
     name: 'sonarjs',
@@ -88,6 +90,7 @@ const ALL_PLUGINS = [
     lastUpdated: '2025 (active)',
     weeklyDownloads: '3M+',
     category: 'Security + Quality',
+    securityRelevant: true,
   },
   {
     name: 'microsoft-sdl',
@@ -97,6 +100,7 @@ const ALL_PLUGINS = [
     lastUpdated: '2024 (active)',
     weeklyDownloads: '~100K',
     category: 'Security (SDL)',
+    securityRelevant: true,
   },
   {
     name: 'no-secrets',
@@ -106,6 +110,7 @@ const ALL_PLUGINS = [
     lastUpdated: '2023',
     weeklyDownloads: '~50K',
     category: 'Secret Detection',
+    securityRelevant: true,
   },
   {
     name: 'unicorn',
@@ -178,6 +183,7 @@ const ALL_PLUGINS = [
     lastUpdated: '2023',
     weeklyDownloads: '~500K',
     category: 'DOM XSS',
+    securityRelevant: true,
   },
   {
     name: 'jsdoc',
@@ -187,7 +193,7 @@ const ALL_PLUGINS = [
     lastUpdated: '2025 (active)',
     weeklyDownloads: '3.8M+',
     category: 'Documentation',
-    securityRelevant: false, // Flags functions for missing @param, not security issues
+    // Flags functions for missing @param, not security issues.
   },
   {
     name: 'jest',
@@ -236,6 +242,7 @@ const ALL_PLUGINS = [
     lastUpdated: 'Weekly',
     weeklyDownloads: '~5K',
     category: 'Security (Full Stack)',
+    securityRelevant: true,
   },
 ];
 
@@ -874,7 +881,7 @@ async function runBenchmark() {
       lastUpdated: plugin.lastUpdated,
       weeklyDownloads: plugin.weeklyDownloads,
       category: plugin.category,
-      securityRelevant: plugin.securityRelevant !== false,
+      securityRelevant: plugin.securityRelevant === true,
       vulnerableAnalysis: {
         totalViolations: vulnerableViolations.length,
         uniqueRulesFired: Object.keys(groupByRule(vulnerableViolations)).length,
@@ -975,7 +982,7 @@ async function runBenchmark() {
       runningEslint: d.unsupported?.runningEslint,
     })),
     securityRelevantPlugins: pluginsToTest.filter(
-      (p) => p.securityRelevant !== false,
+      (p) => p.securityRelevant === true,
     ).length,
     leaderboard: sortedPlugins.map(([name, data], idx) => ({
       rank: idx + 1,
