@@ -40,6 +40,9 @@ flags:
   eslint-devkit:
     paths: [packages/eslint-devkit/]
     carryforward: false
+  eslint-formatter:
+    paths: [packages/eslint-formatter/]
+    carryforward: false
   eslint-plugin-browser-security:
     paths: [packages/eslint-plugin-browser-security/]
     carryforward: false
@@ -139,6 +142,16 @@ component_management:
       name: 'eslint-formatter-sarif'
       paths:
         - packages/eslint-formatter-sarif/**
+      statuses:
+        - type: project
+          target: 100%
+        - type: patch
+          target: 100%
+
+    - component_id: eslint-formatter
+      name: 'eslint-formatter'
+      paths:
+        - packages/eslint-formatter/**
       statuses:
         - type: project
           target: 100%
@@ -509,11 +522,10 @@ ignore:
   # it and it has no business in a number that answers "is the code you install
   # tested". Same rule as the tooling trees below, applied inside packages/.
   #
-  # These two carried most of the 311 lines three packages once added to the
-  # report's 32,016. (eslint-formatter-sarif left this list when it started
-  # shipping — it has a component below instead.)
+  # These carried most of the 311 lines three packages once added to the
+  # report's 32,016. Both formatters have since left this list on the same
+  # rule — they ship, so they are measured, not ignored.
   - 'packages/ui/**'
-  - 'packages/eslint-formatter/**'
   - 'apps/**'
   - 'scripts/**'
   - 'benchmarks/**'
