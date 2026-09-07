@@ -28,6 +28,24 @@ describe('enforce-dependency-direction', () => {
       {
         valid: [
           {
+            /*
+             * `import(42)` is a Literal whose value is a NUMBER. The rule cast
+             * every Literal source `as string` and called `.startsWith` on it,
+             * which threw a TypeError and crashed ESLint for the whole file
+             * rather than reporting anything. Found when the oxlint-parity
+             * corpus stopped truncating harvested fixtures and this reached
+             * the rule; the same defect was in no-cross-domain-imports.
+             */
+            name: 'a dynamic import of a numeric literal does not crash',
+            code: `export async function boot() { return import(42); }`,
+            filename: 'application/service.ts',
+          },
+          {
+            name: 'a dynamic import of null does not crash',
+            code: `export async function boot() { return import(null); }`,
+            filename: 'application/service.ts',
+          },
+          {
             name: 'a domain module importing another domain entity',
             code: `
             import { domainEntity } from '../domain/entity';
