@@ -2,7 +2,7 @@
   "command": "npx tsx scripts/check-format-drift.ts --update",
   "note": "Source files we own that are not prettier-clean. SHRINK-ONLY: a file may leave this list, never join it. Prettier is enforced nowhere else in this repository — see the header of scripts/check-format-drift.ts.",
   "recordedAt": "2026-09-03",
-  "count": 3613,
+  "count": 3612,
   "files": [
     ".agent/RULE-REVIEW-BATCHES.md",
     ".agent/TS7_MIGRATION_PLAN.md",
@@ -3455,7 +3455,6 @@
     "scripts/check-release-liveness.ts",
     "scripts/check-scorecard-floor.mjs",
     "scripts/check-source-version-sync.ts",
-    "scripts/check-stale-build-artifacts.ts",
     "scripts/check-utm-links.ts",
     "scripts/check-version-alignment.ts",
     "scripts/check-withdrawn-claims.mjs",

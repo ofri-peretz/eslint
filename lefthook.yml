@@ -14,11 +14,15 @@ pre-commit:
     shim-drift:
       run: perl -e 'alarm 120; exec @ARGV' -- npm run --silent oxlint:shims:check
     stale-build-artifacts:
-      # Fails closed if any .js/.d.ts/.js.map files exist alongside .ts source
-      # in packages/<pkg>/src/. These shadow current .ts at workspace runtime
+      # Two assertions. (1) No .js/.d.ts/.js.map alongside .ts source in
+      # packages/<pkg>/src/ — these shadow current .ts at workspace runtime
       # (node + vitest both prefer .js when package.json#main points at it),
       # which is how the import-next/no-cycle regression hid for weeks before
-      # the 2026-05-16 sweep. See scripts/check-stale-build-artifacts.ts.
+      # the 2026-05-16 sweep. (2) Every relative require() inside
+      # packages/<pkg>/dist/ resolves — assertion (1) alone reported clean in
+      # 0.49s on a devkit dist whose index required a module the build had not
+      # emitted, and the next step below failed 60 tests on it.
+      # See scripts/check-stale-build-artifacts.ts.
       run: npm run --silent check-stale-artifacts
     scope-audit:
       # Validates that every ESLint rule lives in the correct plugin and that
