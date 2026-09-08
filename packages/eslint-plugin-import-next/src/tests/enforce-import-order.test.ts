@@ -80,6 +80,38 @@ const x = 1;
       },
     ],
     invalid: [
+      {
+        /*
+         * A hashbang is not a statement and must survive the fix.
+         *
+         * ESLint models `#!/usr/bin/env node` as a comment, so it came back
+         * from `getCommentsBefore` for the first import and the fixer wrote
+         * the sorted imports over it — producing `'#!' can only be used at
+         * the start of a file`. The file then stopped parsing, which silences
+         * every other rule on it as well. Two scripts in ofri-peretz/blog
+         * were corrupted this way by a single `--fix` (#942).
+         *
+         * The assertion that matters is `output`: it is the FIXED text, so a
+         * fixer that moves the hashbang fails here rather than shipping.
+         */
+        name: 'the fixer never moves an import above a hashbang',
+        code: `#!/usr/bin/env node
+import { helper } from './helper';
+import fs from 'fs';
+`,
+        output: `#!/usr/bin/env node
+import fs from 'fs';
+
+import { helper } from './helper';
+`,
+        errors: [{ messageId: 'importOrder' }],
+        options: [
+          {
+            groups: ['builtin', 'sibling'],
+            newlinesBetween: 'always',
+          },
+        ],
+      },
       // Incorrect group order
       {
         name: 'a relative import before a builtin',

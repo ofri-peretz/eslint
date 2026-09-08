@@ -215,6 +215,18 @@ export const enforceImportOrder = createRule<RuleOptions, MessageIds>({
       return index !== -1 ? index : 999;
     }
 
+    /**
+     * A hashbang, however the parser labels it.
+     *
+     * espree reports type `Shebang`; @typescript-eslint reports a `Line`
+     * comment whose value begins `!`. Both start at byte 0, and only the first
+     * line of a file can be one — so position is the check that holds for
+     * every parser rather than a type name that does not.
+     */
+    function isHashbang(comment: TSESTree.Comment): boolean {
+      return comment.range[0] === 0 && sourceCode.getText().startsWith('#!');
+    }
+
     function getExtendedRange(
       node: TSESTree.ImportDeclaration,
     ): [number, number] {
@@ -225,8 +237,26 @@ export const enforceImportOrder = createRule<RuleOptions, MessageIds>({
       // getCommentsBefore only returns comments strictly between the previous
       // non-comment token and this node, so they always belong to this import —
       // include them all in the range.
-      if (commentsBefore.length > 0) {
-        start = commentsBefore[0].range[0];
+      //
+      // EXCEPT a hashbang. ESLint models `#!/usr/bin/env node` as a comment,
+      // so for the FIRST import of an executable script it comes back here and
+      // the range start lands at byte 0 — and the fixer then writes the sorted
+      // imports OVER the hashbang:
+      //
+      //     import { execFileSync } from "node:child_process";
+      //     #!/usr/bin/env node
+      //
+      // which is a syntax error (`'#!' can only be used at the start of a
+      // file`). The file stops parsing, so every other rule on it silently
+      // reports nothing too. An autofix that emits invalid code is worse than
+      // a wrong report: `--fix` is exactly what people run without reading the
+      // diff. Found corrupting two scripts in ofri-peretz/blog (#942).
+      //
+      // A hashbang is not a statement and cannot be reordered, so it is simply
+      // never part of an import's range.
+      const reorderable = commentsBefore.filter((c) => !isHashbang(c));
+      if (reorderable.length > 0) {
+        start = reorderable[0].range[0];
       }
 
       // Include semicolon if present
@@ -291,31 +321,33 @@ export const enforceImportOrder = createRule<RuleOptions, MessageIds>({
 
         const originalImports = [...imports];
         // oxlint-disable-next-line unicorn/no-array-sort
-        const sortedImports = Array.from(imports).sort((a: typeof imports[0], b: typeof imports[0]) => {
-          const typeA = getImportType(a);
-          const typeB = getImportType(b);
-          const rankA = getGroupRank(typeA);
-          const rankB = getGroupRank(typeB);
+        const sortedImports = Array.from(imports).sort(
+          (a: (typeof imports)[0], b: (typeof imports)[0]) => {
+            const typeA = getImportType(a);
+            const typeB = getImportType(b);
+            const rankA = getGroupRank(typeA);
+            const rankB = getGroupRank(typeB);
 
-          if (rankA !== rankB) {
-            return rankA - rankB;
-          }
+            if (rankA !== rankB) {
+              return rankA - rankB;
+            }
 
-          if (options.alphabetize?.order !== 'ignore') {
-            const sourceA = a.source.value;
-            const sourceB = b.source.value;
+            if (options.alphabetize?.order !== 'ignore') {
+              const sourceA = a.source.value;
+              const sourceB = b.source.value;
 
-            const compareResult = options.alphabetize?.caseInsensitive
-              ? sourceA.toLowerCase().localeCompare(sourceB.toLowerCase())
-              : sourceA.localeCompare(sourceB);
+              const compareResult = options.alphabetize?.caseInsensitive
+                ? sourceA.toLowerCase().localeCompare(sourceB.toLowerCase())
+                : sourceA.localeCompare(sourceB);
 
-            return options.alphabetize?.order === 'asc'
-              ? compareResult
-              : -compareResult;
-          }
+              return options.alphabetize?.order === 'asc'
+                ? compareResult
+                : -compareResult;
+            }
 
-          return 0;
-        });
+            return 0;
+          },
+        );
 
         // Check if order is correct
         let isSorted = true;
