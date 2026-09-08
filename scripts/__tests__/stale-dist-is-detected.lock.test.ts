@@ -19,8 +19,9 @@
  * its source, because the defect was not a missing line — it was a check whose
  * scope excluded the failure. Only running it can tell the difference.
  *
- * @provenBy {"file":"scripts/check-stale-build-artifacts.ts","find":"if (hit || resolves(file, spec)) continue;","replace":"if (true) continue;"}
+ * @provenBy {"file":"scripts/check-stale-build-artifacts.ts","find":"      if (CJS_SUFFIXES.some((s) => present.has(base + s))) continue;","replace":"      continue;"}
  * @provenBy {"file":"scripts/check-stale-build-artifacts.ts","find":"    shadowing.push(file);","replace":""}
+ * @provenBy {"file":"scripts/check-stale-build-artifacts.ts","find":"      if (calls !== undefined && !calls.has(spec)) continue;","replace":""}
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
@@ -95,6 +96,24 @@ describe('stale-build-artifacts', () => {
     });
 
     expect(check(packages).code).toBe(0);
+  });
+
+  it('ignores require() text that is not a call', () => {
+    // The scan is a regex over emitted text, so a string literal or a comment
+    // holding the same characters matches too. It resolves to nothing and is
+    // nobody's bug — a pre-commit hook that fails on it is worse than one
+    // that missed the original defect.
+    const packages = tree('quoted', {
+      'devkit/dist/src/index.js':
+        'const help = \'run require("./types/meta-augmentation") yourself\';\n' +
+        '// require("./gone")\n' +
+        'module.exports = { help };\n',
+      'devkit/src/index.ts': 'export {};\n',
+    });
+
+    const { code, err } = check(packages);
+
+    expect(code, err).toBe(0);
   });
 
   it('still rejects compiled output shadowing .ts in src/', () => {

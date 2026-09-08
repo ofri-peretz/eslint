@@ -13,7 +13,7 @@
  *    import-next/no-cycle regression hid for weeks between b40bc678 and
  *    139b6208.
  *
- * 2. DANGLING — every relative `require()` in `packages/<pkg>/dist/` resolves
+ * 2. DANGLING — every relative `require()` call in `packages/<pkg>/dist/` resolves
  *    to a file that is actually there. Assertion 1 alone let a genuinely
  *    stale dist through in 0.49s: `eslint-devkit/dist/src/index.js` required
  *    `./types/meta-augmentation`, which the last build had not emitted, and
@@ -36,6 +36,8 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import process from 'node:process';
+
+import { parse } from 'acorn';
 
 import { walkFiles } from './lib/walk.js';
 
@@ -68,6 +70,46 @@ const resolves = (from: string, spec: string): boolean => {
   }
 };
 
+/**
+ * Specifiers of `require(<string>)` calls that the parser agrees are calls —
+ * a string literal or a comment holding the same text is not one. Returns
+ * undefined when the file will not parse, which the caller treats as "trust
+ * the regex": this gate fails closed.
+ */
+const requireCallSpecifiers = (src: string): Set<string> | undefined => {
+  let ast;
+  try {
+    ast = parse(src, { ecmaVersion: 'latest', sourceType: 'script' });
+  } catch {
+    return undefined;
+  }
+  const out = new Set<string>();
+  const visit = (node: unknown): void => {
+    if (node === null || typeof node !== 'object') return;
+    if (Array.isArray(node)) {
+      for (const child of node) visit(child);
+      return;
+    }
+    const n = node as Record<string, unknown>;
+    if (n.type === 'CallExpression') {
+      const callee = n.callee as { type?: string; name?: string } | undefined;
+      const args = n.arguments as { type?: string; value?: unknown }[];
+      if (
+        callee?.type === 'Identifier' &&
+        callee.name === 'require' &&
+        args.length === 1 &&
+        args[0].type === 'Literal' &&
+        typeof args[0].value === 'string'
+      ) {
+        out.add(args[0].value);
+      }
+    }
+    for (const key of Object.keys(n)) if (key !== 'type') visit(n[key]);
+  };
+  visit(ast);
+  return out;
+};
+
 let packageDirs: string[];
 try {
   packageDirs = readdirSync(PACKAGES_DIR, { withFileTypes: true })
@@ -96,14 +138,26 @@ for (const pkgDir of packageDirs) {
     if (!file.endsWith('.js')) continue;
     const src = readFileSync(file, 'utf8');
     const dir = dirname(file);
+    // Parsed lazily: on a clean tree nothing reaches the confirmation path,
+    // so no dist file is ever parsed. Calling createRequire for all ~730 of
+    // them cost 4.4s; both confirmations together cost ~0.
+    let calls: Set<string> | undefined;
+    let parsed = false;
     for (const [, , spec] of src.matchAll(RELATIVE_REQUIRE)) {
       const base = resolve(dir, spec);
-      const hit = CJS_SUFFIXES.some((s) => present.has(base + s));
-      // The Set is the fast path and only covers this package's own dist, so
-      // a miss is a suspicion, not a verdict — confirm it against the real
-      // resolver, which also sees specifiers that legitimately escape dist.
-      // Calling createRequire for all ~730 files cost 4.4s; here it is ~0.
-      if (hit || resolves(file, spec)) continue;
+      // The Set covers only this package's own dist, so a miss is a
+      // suspicion, not a verdict — confirm against the real resolver, which
+      // also sees specifiers that legitimately escape dist.
+      if (CJS_SUFFIXES.some((s) => present.has(base + s))) continue;
+      if (resolves(file, spec)) continue;
+      // Second confirmation: the regex also matches `require("./x")` written
+      // inside a string literal or a comment, which resolves to nothing and
+      // is nobody's bug. Only the parser can tell those from a real call.
+      if (!parsed) {
+        calls = requireCallSpecifiers(src);
+        parsed = true;
+      }
+      if (calls !== undefined && !calls.has(spec)) continue;
       dangling.push(`${relative(PACKAGES_DIR, file)} → ${spec}`);
     }
   }
