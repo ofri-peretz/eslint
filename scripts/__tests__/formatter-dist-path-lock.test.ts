@@ -24,6 +24,10 @@
  * resolving it through `require.resolve('@interlace/eslint-formatter')`,
  * so neither a normal typecheck nor a `require`-not-found at import time
  * caught the drift; it only surfaces when the script actually runs.
+ *
+ * @provenBy {"file":"benchmarks/suites/ilb-formatter/runner.ts","find":"'../../../packages/eslint-formatter/dist/src/index.js'","replace":"'../../../dist/out-tsc/packages/eslint-formatter/src/index.js'"}
+ * @provenBy {"file":"scripts/audit-cwe-rendering.ts","find":"'packages/eslint-formatter/dist/src/index.js'","replace":"'dist/out-tsc/packages/eslint-formatter/src/index.js'"}
+ * @provenBy {"file":"packages/eslint-formatter/package.json","find":"\"main\": \"./dist/src/index.js\"","replace":"\"main\": \"./dist/out-tsc/packages/eslint-formatter/src/index.js\""}
  */
 
 import { describe, it, expect } from 'vitest';

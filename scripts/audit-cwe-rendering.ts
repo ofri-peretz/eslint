@@ -44,7 +44,7 @@ const STRICT = process.argv.includes('--strict');
 const require_ = createRequire(import.meta.url);
 
 if (!existsSync(FORMATTER_DIST)) {
-  console.error(`fatal: formatter dist not found at ${relative(REPO_ROOT, FORMATTER_DIST)} — run \`npx tsc -p packages/eslint-formatter/tsconfig.lib.json\` first.`);
+  console.error(`fatal: formatter dist not found at ${relative(REPO_ROOT, FORMATTER_DIST)} — run \`npx turbo run build --filter=@interlace/eslint-formatter\` first.`);
   process.exit(2);
 }
 
