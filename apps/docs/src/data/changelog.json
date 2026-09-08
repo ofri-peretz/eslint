@@ -1,7 +1,7 @@
 {
-  "releaseCount": 655,
+  "releaseCount": 657,
   "packageCount": 35,
-  "entryCount": 2045,
+  "entryCount": 2047,
   "oldestYear": 2024,
   "releases": [
     {
@@ -16535,6 +16535,21 @@
       ]
     },
     {
+      "package": "eslint-plugin-import-next",
+      "short": "eslint-plugin-import-next",
+      "version": "2.7.7",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`order` / `enforce-import-order` no longer writes imports over a hashbang",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-jwt-security",
       "short": "eslint-plugin-jwt-security",
       "version": "2.2.9",
@@ -16775,6 +16790,21 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.3.4",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-hardcoded-credentials` no longer reports CSS as a credential",
           "pr": null
         }
       ]
