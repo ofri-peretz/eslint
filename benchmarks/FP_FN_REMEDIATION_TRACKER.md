@@ -22,7 +22,7 @@ This document is the **active agenda** for false-positive and false-negative wor
 | [`audits/2026-05-03.md`](./audits/2026-05-03.md) | Per-rule misbehaviour ranking, P0/P1/P2 backlog, what landed in the 3 audit iterations | hand-rolled per audit |
 | [`benchmark-results/scorecard.md`](../benchmark-results/scorecard.md) | Top-line F1/precision/recall per bench + plugin-activation table + inter-rater κ | `npm run ilb:scorecard` |
 | [`results/ilb-arena/2026-05-03.json`](./results/ilb-arena/2026-05-03.json) | Per-fixture, per-plugin verdicts on the 18-plugin head-to-head | `npm run ilb:arena` |
-| [`results/ilb-cwe-corpus/2026-05-03.json`](./results/ilb-cwe-corpus/2026-05-03.json) | Per-CWE TP/FP/FN on the synthetic corpus | `npm run ilb:cwe-corpus` |
+| [`results/ilb-cwe-corpus/2026-08-26.json`](./results/ilb-cwe-corpus/2026-08-26.json) | Per-CWE TP/FP/FN on the synthetic corpus | `npm run ilb:cwe-corpus` |
 | [`results/ilb-arena-quality/2026-05-03.json`](./results/ilb-arena-quality/2026-05-03.json) | Per-fixture quality verdicts (FNs in `falseNegatives`, FPs in `cleanAnalysis.byRule`) | `npm run ilb:arena:quality` |
 | [`benchmark-results/2026-05-03/per-repo/*/per-rule.json`](../benchmark-results/2026-05-03/per-repo/) | Per-rule hit counts on 22 real OSS repos (Edge candidates live here) | `npm run ilb:wild` |
 | [`baseline.json`](../benchmark-results/baseline.json) | Regression baseline — `npm run ilb:regression` fails CI on F1 drops or new FPs | `npm run ilb:regression -- --update` |
@@ -626,7 +626,7 @@ jq '.plugins.interlace.summary, .plugins.interlace.safeAnalysis.byFunction, .plu
 
 # CWE-Corpus: every FP by CWE + fixture + rule
 jq '.plugins.interlace.perCwe | to_entries[] | {cwe: .key, fps: [.value.fixtures[] | select(.expectedVulnerable==false and .findings>0) | {file, ruleHits}]}' \
-  benchmarks/results/ilb-cwe-corpus/2026-05-03.json
+  benchmarks/results/ilb-cwe-corpus/2026-08-26.json
 
 # Quality: 29 FPs broken down by rule
 jq '.plugins."interlace-quality".cleanAnalysis.byRule' \

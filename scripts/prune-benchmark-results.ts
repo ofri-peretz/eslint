@@ -17,22 +17,33 @@
  * `latest.json`, `baseline.json`, and subdirectories like `backups/` are
  * left untouched.
  *
+ * A snapshot a tracked document cites is also left untouched, however old.
+ * Retention counts weeks and knows nothing about the claims resting on the
+ * data; a citation is a promise the file resolves. See
+ * `lib/benchmark-citations.ts`.
+ *
  * Usage:
  *   tsx scripts/prune-benchmark-results.ts             # prune (default N=3)
  *   tsx scripts/prune-benchmark-results.ts --dry-run   # preview only
  *   tsx scripts/prune-benchmark-results.ts --keep=5    # custom N
+ *   tsx scripts/prune-benchmark-results.ts --root=DIR  # another checkout
  */
 
 import { readdirSync, statSync, unlinkSync, existsSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const HERE = dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = resolve(HERE, '..');
-const RESULTS_DIR = join(REPO_ROOT, 'benchmarks', 'results');
+import { isCited } from './lib/benchmark-citations';
 
+const HERE = dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
 const DRY_RUN = args.includes('--dry-run');
+
+const rootArg = args.find((a) => a.startsWith('--root='));
+const REPO_ROOT = rootArg
+  ? resolve(rootArg.slice('--root='.length))
+  : resolve(HERE, '..');
+const RESULTS_DIR = join(REPO_ROOT, 'benchmarks', 'results');
 
 const keepArg = args.find((a) => a.startsWith('--keep='));
 const KEEP = keepArg ? parseInt(keepArg.split('=')[1], 10) : 3;
@@ -46,6 +57,7 @@ if (!existsSync(RESULTS_DIR)) {
 
 let deletedCount = 0;
 let deletedBytes = 0;
+let pinnedCount = 0;
 
 for (const suite of readdirSync(RESULTS_DIR, { withFileTypes: true })) {
   if (!suite.isDirectory()) continue;
@@ -66,8 +78,15 @@ for (const suite of readdirSync(RESULTS_DIR, { withFileTypes: true })) {
   for (const file of toDelete) {
     const filePath = join(suiteDir, file);
     const size = statSync(filePath).size;
+    if (isCited(REPO_ROOT, suite.name, file)) {
+      console.log(`  kept ${file} — cited by a tracked document`);
+      pinnedCount++;
+      continue;
+    }
     if (DRY_RUN) {
-      console.log(`  [dry-run] would delete ${file} (${(size / 1024).toFixed(0)} KB)`);
+      console.log(
+        `  [dry-run] would delete ${file} (${(size / 1024).toFixed(0)} KB)`,
+      );
     } else {
       unlinkSync(filePath);
       console.log(`  deleted ${file} (${(size / 1024).toFixed(0)} KB)`);
@@ -79,5 +98,6 @@ for (const suite of readdirSync(RESULTS_DIR, { withFileTypes: true })) {
 
 const prefix = DRY_RUN ? '[dry-run] ' : '';
 console.log(
-  `\n${prefix}Pruned ${deletedCount} files, ${(deletedBytes / (1024 * 1024)).toFixed(1)} MiB freed.`,
+  `\n${prefix}Pruned ${deletedCount} files, ${(deletedBytes / (1024 * 1024)).toFixed(1)} MiB freed.` +
+    (pinnedCount > 0 ? ` Kept ${pinnedCount} cited snapshot(s).` : ''),
 );
