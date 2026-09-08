@@ -35,6 +35,7 @@ describe('no-missing-null-checks', () => {
           code: 'obj?.property;',
         },
         {
+          name: 'optional chaining on every link of a method chain',
           code: 'obj?.property?.method();',
         },
         {
@@ -1123,6 +1124,111 @@ describe('no-missing-null-checks', () => {
       };
       expect(() => check(call)).not.toThrow();
       expect(reportCalls).toBe(1);
+    });
+  });
+
+  /**
+   * Burgee — a CLI framework linted with this rule and NO type information —
+   * turned the rule off over shapes TypeScript accepts as narrowing and this
+   * file did not: `'value' in token ? token.value : …`, `if (found?.[1] !==
+   * undefined) … found[1]`, and the early-return `if (m === null) return` before
+   * `m[1]`. The third was already understood on main (4.1.4) and is pinned here
+   * against the 4.1.3 the consumer ran; the `in` and optional-chain shapes fail
+   * on the unfixed rule. See docs/intents/burgee-false-positives/.
+   */
+  describe('narrowing the consumer wrote and TypeScript accepts (burgee)', () => {
+    ruleTester.run('in-narrowing and optional-chain guards', noMissingNullChecks, {
+      valid: [
+        {
+          name: 'FP: `"k" in x` as a ternary test proves x is an object in the consequent',
+          // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
+          code: 'function f(tokens: any[]) { const token = tokens.find((t) => t.kind === "x"); const value = "value" in token ? token.value : undefined; return value; }',
+        },
+        {
+          name: 'FP: `"k" in x` as an if test guards its consequent',
+          // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
+          code: 'function f(rows: any[]) { const hit = rows.find((r) => r.ok); if ("name" in hit) { return hit.name; } return "x"; }',
+        },
+        {
+          name: 'FP: `x?.[1] !== undefined` proves x non-null for the read that follows',
+          // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
+          code: 'function hint(token: string) { const found = RE.exec(token); if (found?.[1] !== undefined) return "did you mean --" + found[1]; return undefined; }',
+        },
+        {
+          name: 'FP: a truthy optional chain rooted at x guards x',
+          // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
+          code: 'function hint(token: string) { const found = RE.exec(token); if (found?.[1]) return found[1]; return undefined; }',
+        },
+        {
+          name: 'FP: an optional-chain `!= null` test guards a dotted read',
+          // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
+          code: 'function f(rows: any[]) { const hit = rows.find((r) => r.ok); if (hit?.meta != null) return hit.meta.name; return ""; }',
+        },
+        {
+          name: 'an optional chain through a CALL is rooted at x too — `hit?.get() != null`',
+          code: 'function f(rows: any[]) { const hit = rows.find((r) => r.ok); if (hit?.get() != null) return hit.name; return ""; }',
+        },
+        {
+          name: 'the nil literal on the LEFT of `!==` reads the same — `undefined !== found?.[1]`',
+          code: 'function hint(token: string) { const found = RE.exec(token); if (undefined !== found?.[1]) return found[1]; return undefined; }',
+        },
+        {
+          name: '`"k" in x` also guards a chain that STARTS with x — `hit.meta.name`',
+          code: 'function f(rows: any[]) { const hit = rows.find((r) => r.ok); return "meta" in hit ? hit.meta.name : ""; }',
+        },
+        {
+          name: 'FP: an optional-chain `!== undefined` ternary test guards its consequent',
+          // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
+          code: 'function hint(token: string) { const found = RE.exec(token); return found?.[1] !== undefined ? found[1] : undefined; }',
+        },
+        {
+          name: 'FP: `if (m === null) return` before a computed read `m[1]` — reported by 4.1.3, understood since 4.1.4',
+          // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
+          code: 'function firstGroup(pattern: RegExp, line: string): string | undefined { const m = pattern.exec(line); if (m === null) return undefined; const group = m[1]; return group; }',
+        },
+        {
+          name: 'FP: `if (m === null) return` before `m.at(1)`',
+          // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
+          code: 'function f(pattern: RegExp, line: string) { const m = pattern.exec(line); if (m === null) return undefined; return m.at(1); }',
+        },
+        {
+          name: 'FP: the burgee token loop — a for-of variable carries no nullability evidence, and the `in` test narrows it besides',
+          // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
+          code: 'type Token = { kind: string; value?: string };\nfunction splitPositionals(tokens: readonly Token[]) { const positionals: string[] = []; for (const token of tokens) { const { kind } = token; const value = "value" in token ? token.value : undefined; if (kind === "positional" && typeof value === "string") positionals.push(value); } return positionals; }',
+        },
+      ],
+      invalid: [
+        {
+          name: '`in` on a DIFFERENT object says nothing about this one',
+          code: 'function f(rows: any[], other: object) { const hit = rows.find((r) => r.ok); return "name" in other ? hit.name : "x"; }',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          name: 'x on the LEFT of `in` is a key being looked up, not an object being narrowed',
+          code: 'function f(rows: any[], bag: object) { const hit = rows.find((r) => r.ok); return hit in bag ? hit.name : "x"; }',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          name: 'the `in` test narrows the consequent, never the alternate',
+          code: 'function f(rows: any[]) { const hit = rows.find((r) => r.ok); return "name" in hit ? "x" : hit.name; }',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          name: 'an optional chain compared to a value that is not nil proves nothing — `found?.[1] !== 0` passes when found is null',
+          code: 'function hint(token: string) { const found = RE.exec(token); if (found?.[1] !== 0) return found[1]; return undefined; }',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          name: 'an optional chain compared EQUAL to undefined does not prove non-null',
+          code: 'function hint(token: string) { const found = RE.exec(token); if (found?.[1] === undefined) return found[1]; return undefined; }',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        {
+          name: 'an optional chain rooted elsewhere guards nothing here',
+          code: 'function hint(token: string, other: any) { const found = RE.exec(token); if (other?.[1] !== undefined) return found[1]; return undefined; }',
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+      ],
     });
   });
 });

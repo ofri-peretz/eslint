@@ -42,6 +42,7 @@ describe('no-insecure-comparison', () => {
           code: 'const result = a === b ? 1 : 0;',
         },
         {
+          name: 'a nil check compares against nothing secret',
           code: 'if (value !== null && value !== undefined) {}',
         },
         {
@@ -962,5 +963,42 @@ describe('namesIn resolution arms', () => {
         ],
       },
     ],
+  });
+
+  /**
+   * Burgee turned this rule off over `spec.env === undefined`, `fromEnv !==
+   * undefined` and `option.envVar in process.env`, read as "timing-unsafe
+   * secret comparisons because the identifiers contain env". Verified against
+   * main: every one of those is QUIET — `env` is not in the secret vocabulary,
+   * a comparison against `undefined` is exempt, and `in` is not a comparison
+   * this rule reads. Pinned so the shapes stay quiet. What the consumer's file
+   * actually reports is `token === '--'` on a parseArgs lexeme named `token`,
+   * which is the closed vocabulary meeting a word with a second meaning and is
+   * recorded, not fixed, in docs/intents/burgee-false-positives/design.md.
+   */
+  describe('environment lookups are presence checks, not secret comparisons (burgee)', () => {
+    ruleTester.run('env presence', noInsecureComparison, {
+      valid: [
+        {
+          name: 'an option spec asked whether it declares an env var, then the var compared to undefined',
+          code: 'function apply(spec, env, values, name) { const fromEnv = spec.env === undefined ? undefined : env[spec.env]; if (values[name] === undefined && fromEnv !== undefined) { values[name] = fromEnv; } }',
+        },
+        {
+          name: '`in` asks whether a variable is set; it compares nothing',
+          code: 'function has(option) { return option.envVar in process.env; }',
+        },
+        {
+          name: 'a secret-named env var compared to undefined is a presence check',
+          code: 'if (process.env.ANTHROPIC_API_KEY === undefined) { skip(); }',
+        },
+      ],
+      invalid: [
+        {
+          name: 'the same env var compared to a caller-supplied value is the finding',
+          code: 'function check(presented) { return presented === process.env.ANTHROPIC_API_KEY; }',
+          errors: [{ messageId: 'timingUnsafeComparison', suggestions: [{ messageId: 'useTimingSafeEqual', output: 'function check(presented) { return crypto.timingSafeEqual(Buffer.from(presented), Buffer.from(process.env.ANTHROPIC_API_KEY)); }' }] }],
+        },
+      ],
+    });
   });
 });

@@ -22,6 +22,20 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
+/**
+ * Nodes that can sit between a function and the scope it is declared in
+ * without moving it: the declarator and declaration that bind it, and the
+ * TypeScript type operators that only re-describe its type.
+ */
+const BINDING_WRAPPERS: ReadonlySet<string> = new Set([
+  'VariableDeclarator',
+  'VariableDeclaration',
+  'TSAsExpression',
+  'TSSatisfiesExpression',
+  'TSNonNullExpression',
+  'TSTypeAssertion',
+]);
+
 export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
   name: 'consistent-function-scoping',
   meta: {
@@ -111,12 +125,17 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
        * them look as though they captured their own binding. Fixing that walk
        * exposed this: four fixtures whose comment described the bug as the
        * reason they were valid.
+       *
+       * A type operator between the function and its binding is stepped over
+       * too. `const noExit = (() => undefined) as unknown as (code: number) =>
+       * never;` sits at module scope exactly as `const noExit = () =>
+       * undefined;` does — `as`, `satisfies`, `!` and `<T>` change what
+       * TypeScript believes about the value and nothing about where it lives.
+       * Stopping at the assertion made the rule tell a consumer to move an
+       * arrow to the scope it was already in.
        */
       let ancestor: TSESTree.Node | undefined = node.parent;
-      while (
-        ancestor?.type === 'VariableDeclarator' ||
-        ancestor?.type === 'VariableDeclaration'
-      ) {
+      while (ancestor && BINDING_WRAPPERS.has(ancestor.type)) {
         ancestor = ancestor.parent;
       }
       if (

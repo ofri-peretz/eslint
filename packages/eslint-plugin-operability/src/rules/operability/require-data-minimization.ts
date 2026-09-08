@@ -14,10 +14,11 @@ import {
   AST_NODE_TYPES,
   createRule,
   formatLLMMessage,
+  isStaticExpression,
   MessageIcons,
   objectKeyName,
 } from '@interlace/eslint-devkit';
-import type { TSESTree } from '@interlace/eslint-devkit';
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
 
@@ -56,6 +57,34 @@ export interface Options {
 }
 
 type RuleOptions = [Required<Options>];
+
+/**
+ * A value no run-time input reaches: a literal, a constant declared in the
+ * file, or an array or object built only from such values. `isStaticExpression`
+ * answers for the leaves; this adds the two containers it does not walk,
+ * because a configuration literal is mostly containers of literals.
+ */
+function isStaticValue(
+  node: TSESTree.Node,
+  scope: TSESLint.Scope.Scope,
+): boolean {
+  if (node.type === AST_NODE_TYPES.ArrayExpression) {
+    return node.elements.every(
+      (element) =>
+        element !== null &&
+        element.type !== AST_NODE_TYPES.SpreadElement &&
+        isStaticValue(element, scope),
+    );
+  }
+  if (node.type === AST_NODE_TYPES.ObjectExpression) {
+    return node.properties.every(
+      (property) =>
+        property.type === AST_NODE_TYPES.Property &&
+        isStaticValue(property.value, scope),
+    );
+  }
+  return isStaticExpression({ node, scope });
+}
 
 export const requireDataMinimization = createRule<RuleOptions, MessageIds>({
   name: 'require-data-minimization',
@@ -127,7 +156,14 @@ export const requireDataMinimization = createRule<RuleOptions, MessageIds>({
           const name = objectKeyName(p);
           return name !== null && piiFields.has(name);
         });
-        if (carriesPersonalData) report(node);
+        if (!carriesPersonalData) return;
+        // Collection means a value read from SOMEWHERE — a request, a form, a
+        // row, an argument. An object whose every value is a literal, or a
+        // container of literals, collects nothing: it is configuration.
+        // Burgee's exported test-suite metadata — eleven literal fields, one
+        // of them `name` — reported as excessive data collection.
+        if (isStaticValue(node, context.sourceCode.getScope(node))) return;
+        report(node);
       },
     };
   },

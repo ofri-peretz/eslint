@@ -160,10 +160,31 @@ export function hasPromiseEvidence(
 
   if (node.callee.type === 'Identifier') {
     if (promiseReturning.has(node.callee.name)) return true;
-    return isAsyncFunctionNode(resolveBinding(node.callee.name));
+    const bound = resolveBinding(node.callee.name);
+    return isAsyncFunctionNode(bound) || isPromiseReturningAnnotation(bound);
   }
 
   return false;
+}
+
+/**
+ * A parameter's own evidence: `save: () => Promise<void>`. The resolver hands
+ * back the parameter's Identifier, and its annotation is what the file says a
+ * call to it returns. A `(s: string) => void` writer says the opposite, and an
+ * unannotated parameter says nothing — neither is a promise.
+ */
+function isPromiseReturningAnnotation(
+  node: TSESTree.Node | null | undefined,
+): boolean {
+  if (node?.type !== 'Identifier') return false;
+  const annotation = node.typeAnnotation?.typeAnnotation;
+  if (annotation?.type !== 'TSFunctionType') return false;
+  const returned = annotation.returnType?.typeAnnotation;
+  return (
+    returned?.type === 'TSTypeReference' &&
+    returned.typeName.type === 'Identifier' &&
+    returned.typeName.name === 'Promise'
+  );
 }
 
 /**
@@ -427,6 +448,25 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
         if (variable) {
           const def = variable.defs[0];
           if (!def) return null;
+          // A PARAMETER's `def.node` is the function that DECLARES it, not the
+          // parameter — so `write` inside `async function main(write)` resolved
+          // to `main`, inherited its `async`, and every `write(…)` in the body
+          // reported as an unhandled promise. Burgee's `report.ts` drew three
+          // per run on a `write: (s: string) => void`. What the file says about
+          // a parameter is its default and its annotation, so hand back the
+          // parameter itself and let `hasPromiseEvidence` read those.
+          if (def.type === 'Parameter') {
+            const pattern = (
+              def.name as TSESTree.Node & { parent?: TSESTree.Node }
+            ).parent;
+            if (
+              pattern?.type === 'AssignmentPattern' &&
+              pattern.left === def.name
+            ) {
+              return pattern.right;
+            }
+            return def.name;
+          }
           if (def.node.type === 'FunctionDeclaration') return def.node;
           if (def.node.type === 'VariableDeclarator') {
             return (def.node as TSESTree.VariableDeclarator).init ?? null;

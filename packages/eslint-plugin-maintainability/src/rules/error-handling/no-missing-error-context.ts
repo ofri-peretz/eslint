@@ -41,6 +41,24 @@ function hasErrorMessage(node: TSESTree.ThrowStatement): boolean {
     return false;
   }
 
+  // `throw error;` — re-throwing a caught/named identifier. The original
+  // error already carries its own message + stack; demanding context on the
+  // re-throw is an FP. Same for `throw err`, `throw cause`, etc. Excludes
+  // the literal-like `undefined` / `NaN` / `Infinity` identifiers, which
+  // are typed as global constants but carry no diagnostic value.
+  //
+  // Ported from the reliability twin, which had this arm and this one did
+  // not: burgee's `commander-command.ts` re-throws three caught errors and
+  // reported under this plugin only. Same text in both so the twins agree.
+  if (
+    node.argument.type === 'Identifier' &&
+    node.argument.name !== 'undefined' &&
+    node.argument.name !== 'NaN' &&
+    node.argument.name !== 'Infinity'
+  ) {
+    return true;
+  }
+
   // Check if it's a new Error() with message (includes TypeError, ReferenceError, etc.)
   if (
     node.argument.type === 'NewExpression' &&
@@ -48,7 +66,9 @@ function hasErrorMessage(node: TSESTree.ThrowStatement): boolean {
     (node.argument.callee.name === 'Error' ||
       node.argument.callee.name.endsWith('Error'))
   ) {
-    // Check if first argument is a string (message)
+    // Check if first argument is a string (message) OR ANY expression — a
+    // custom error class like `new UserNotFoundError(userId)` builds its
+    // own message internally; the constructor argument IS the context.
     if (node.argument.arguments.length > 0) {
       const firstArg = node.argument.arguments[0];
       const staticText = staticString(firstArg);
@@ -56,6 +76,16 @@ function hasErrorMessage(node: TSESTree.ThrowStatement): boolean {
         return staticText.length > 0;
       }
       if (firstArg.type === 'TemplateLiteral') {
+        return true;
+      }
+      // Non-string argument to a custom *Error class — accept as context.
+      // The rule's purpose is "throws should carry information"; passing an
+      // identifier/object to the error constructor carries information.
+      // `new UsageError(msg, hint)` in burgee is this shape.
+      if (
+        node.argument.callee.name !== 'Error' &&
+        node.argument.callee.name.endsWith('Error')
+      ) {
         return true;
       }
     }
@@ -83,6 +113,18 @@ function hasErrorMessage(node: TSESTree.ThrowStatement): boolean {
 function hasErrorStack(node: TSESTree.ThrowStatement): boolean {
   if (!node.argument) {
     return false;
+  }
+
+  // `throw error;` — caught/named identifier already has a stack from the
+  // place where it was first thrown. Re-throws preserve the stack. Excludes
+  // `undefined` / `NaN` / `Infinity` global-constant identifiers.
+  if (
+    node.argument.type === 'Identifier' &&
+    node.argument.name !== 'undefined' &&
+    node.argument.name !== 'NaN' &&
+    node.argument.name !== 'Infinity'
+  ) {
+    return true;
   }
 
   // Check if it's a new Error() instance

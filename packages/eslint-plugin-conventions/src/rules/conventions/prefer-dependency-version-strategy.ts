@@ -20,6 +20,20 @@ import { createRule } from '@interlace/eslint-devkit';
 
 type VersionStrategy = 'caret' | 'tilde' | 'exact' | 'range' | 'any';
 
+/**
+ * Does this string read as something npm accepts where a version goes?
+ *
+ * Semver and its ranges (`1.2.3`, `^1.2`, `>=1 <2`, `1.0.0 - 2.0.0`, `1.x`),
+ * the `*` and `x` wildcards, the dist-tags npm itself documents, and the
+ * protocol specifiers this rule's options already name. Used only to decide
+ * whether an object literal IS a dependency map; what a value should look like
+ * once it is one is `checkVersion`'s question.
+ *
+ * @vocabulary npm — https://docs.npmjs.com/cli/configuring-npm/package-json#dependencies
+ */
+const VERSION_SPECIFIER =
+  /^(?:[\^~<>=]*\s*\d|[*x]$|latest$|next$|(?:workspace|file|link|npm|git\+[a-z]+|github|https?):)/i;
+
 export interface Options {
   strategy?: VersionStrategy;
   allowWorkspace?: boolean;
@@ -266,22 +280,30 @@ export const preferDependencyVersionStrategy = createRule<
 
       // Also check object literals (for testing and general use)
       ObjectExpression(node: TSESTree.ObjectExpression) {
-        // Only check if it looks like a dependencies object (has string keys and version-like values)
-        const hasVersionLikeValues = node.properties.some(
-          (prop: TSESTree.Property | TSESTree.SpreadElement) => {
-            if (prop.type === 'Property' && prop.value.type === 'Literal') {
-              const value = String(prop.value.value);
-              // Check if value looks like a version (starts with ^, ~, or is a semantic version)
-              return (
-                /^[\^~]?\d+\.\d+\.\d+/.test(value) ||
-                value.startsWith('workspace:')
-              );
-            }
-            return false;
-          },
-        );
+        // A dependency map is keyed by package name and EVERY value is a
+        // version specifier. This used to ask whether ANY value looked like a
+        // version, which made a package.json fixture in a test —
+        // `{ name: 'x', version: '1.0.0', main: 'index.js' }` — and a vendoring
+        // record carrying `version: '1.0.0'` beside a repo URL and a commit
+        // count both report `Dependency "version" should use caret`. One value
+        // that is not a specifier — a name, a path, a date, a number, an array
+        // — says the object is something else. A spread says nothing either
+        // way. The `dependencies` selector above still reads the real map
+        // inside a manifest.
+        let sawSpecifier = false;
+        for (const prop of node.properties) {
+          if (prop.type !== 'Property') continue;
+          if (
+            prop.value.type !== 'Literal' ||
+            typeof prop.value.value !== 'string' ||
+            !VERSION_SPECIFIER.test(prop.value.value)
+          ) {
+            return;
+          }
+          sawSpecifier = true;
+        }
 
-        if (hasVersionLikeValues) {
+        if (sawSpecifier) {
           checkObjectExpression(node);
         }
       },

@@ -35,6 +35,7 @@ describe('consistent-function-scoping', () => {
         },
         // Module-level arrow function
         {
+          name: 'an arrow bound at module scope has nowhere higher to go',
           code: `
             const helper = () => 'value';
           `,
@@ -227,6 +228,81 @@ function helper() {
               return helper();
             }
           `,
+            }],
+          }],
+        },
+      ],
+    });
+  });
+
+  /**
+   * Burgee's `help.test.ts` wrote `const noExit = (() => undefined) as unknown
+   * as (code: number) => never;` at module scope and the rule told it to move
+   * the arrow to module scope. The walk from the function to `Program` stepped
+   * over `VariableDeclarator` and `VariableDeclaration` only, so a type
+   * assertion between the arrow and its binding — `as`, `satisfies`, `!`,
+   * `<T>` — hid the fact that the arrow was already at the top. A type
+   * operator changes what TypeScript believes about a value and nothing about
+   * where it lives. The consumer's other shape, `defineCommand({ run: () =>
+   * 'ok' })`, is the `Property` exemption already on main; it is pinned here
+   * because 3.0.3, the version the consumer ran, reported it.
+   * See docs/intents/burgee-false-positives/.
+   */
+  describe('a type assertion does not move a function off module scope (burgee)', () => {
+    ruleTester.run('asserted module-scope functions', consistentFunctionScoping, {
+      valid: [
+        {
+          name: 'FP: a module-scope arrow cast through `as unknown as T`',
+          // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
+          code: `const noExit = (() => undefined) as unknown as (code: number) => never;`,
+        },
+        {
+          name: 'FP: the same cast on an exported binding',
+          // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
+          code: `export const noExit = (() => undefined) as unknown as (code: number) => never;`,
+        },
+        {
+          name: 'a module-scope arrow checked with `satisfies`',
+          code: `const ok = (() => 'ok') satisfies () => string;`,
+        },
+        {
+          name: 'a module-scope arrow behind a non-null assertion',
+          code: `const ok = (() => 'ok')!;`,
+        },
+        {
+          name: 'a module-scope arrow in the angle-bracket assertion spelling',
+          code: `const ok = <() => string>(() => 'ok');`,
+        },
+        {
+          name: 'a module-scope function EXPRESSION cast the same way',
+          code: `const ok = (function () { return 'ok'; }) as unknown as () => string;`,
+        },
+        {
+          name: 'FP: a trivial callback written inline as a property of an argument object, inside a test body (3.0.3 reported it)',
+          // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
+          code: `it('lists commands', () => { const program = defineProgram({ commands: [defineCommand({ name: 'status', run: () => 'ok' })] }); expect(program).toBeDefined(); });`,
+        },
+      ],
+      invalid: [
+        {
+          name: 'the same cast INSIDE a function still reports — the assertion is not what makes it movable',
+          code: `function outer() { const f = (() => 'ok') as unknown as () => string; return f(); }`,
+          errors: [{
+            messageId: 'inconsistentFunctionScoping',
+            suggestions: [{
+              messageId: 'moveToModuleScope',
+              output: `function outer() { const f = (// TODO: Move this function to module scope - it doesn't capture outer variables\n() => 'ok') as unknown as () => string; return f(); }`,
+            }],
+          }],
+        },
+        {
+          name: 'a satisfies-checked arrow inside a function reports too',
+          code: `function outer() { const f = (() => 'ok') satisfies () => string; return f(); }`,
+          errors: [{
+            messageId: 'inconsistentFunctionScoping',
+            suggestions: [{
+              messageId: 'moveToModuleScope',
+              output: `function outer() { const f = (// TODO: Move this function to module scope - it doesn't capture outer variables\n() => 'ok') satisfies () => string; return f(); }`,
             }],
           }],
         },

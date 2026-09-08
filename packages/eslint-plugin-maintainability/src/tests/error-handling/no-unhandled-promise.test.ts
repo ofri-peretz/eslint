@@ -30,6 +30,7 @@ describe('no-unhandled-promise', () => {
           code: 'fetch(url).then(r => r.json()).catch(e => console.error(e));',
         },
         {
+          name: 'a bare .catch with a handler settles the chain',
           code: 'promise.catch(error => handleError(error));',
         },
         // Await in async function
@@ -132,6 +133,59 @@ describe('no-unhandled-promise', () => {
         {
           code: 'void fetch(url);',
           options: [{ ignoreVoidExpressions: false }],
+          errors: [{ messageId: 'unhandledPromise' }],
+        },
+      ],
+    });
+  });
+
+  /**
+   * A function-typed PARAMETER is not an async function. `resolveBinding`
+   * returned `def.node` for every definition, and for a parameter that node is
+   * the ENCLOSING function — so inside `async function main(write)` every
+   * `write(…)` inherited `main`'s `async` and reported as an unhandled promise.
+   * Burgee's compat-oracle `report.ts` (`write: (s: string) => void`) drew three
+   * per run and turned both twins off for the file. What the file shows about a
+   * parameter is its annotation and its default, and only those count.
+   * See docs/intents/burgee-false-positives/.
+   */
+  describe('a parameter is not the function it belongs to (burgee)', () => {
+    ruleTester.run('parameter callees', noUnhandledPromise, {
+      valid: [
+        {
+          name: 'FP: a void-typed writer parameter called inside an async function',
+          // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
+          code: 'export async function main(argv: string[], write: (s: string) => void): Promise<number> { write("hello"); return 0; }',
+        },
+        {
+          name: 'FP: an untyped parameter called inside an async function says nothing about promises',
+          // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
+          code: 'async function main(write) { write("x"); }',
+        },
+        {
+          name: 'FP: a parameter of an async arrow, called in its body',
+          // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
+          code: 'const run = async (write: (s: string) => void) => { write("x"); };',
+        },
+        {
+          name: 'a function-typed parameter of a non-async function — the control, always quiet',
+          code: 'function main(write: (s: string) => void) { write("x"); }',
+        },
+      ],
+      invalid: [
+        {
+          name: 'a parameter whose annotation returns a Promise is evidence the file shows',
+          code: 'async function main(save: () => Promise<void>) { save(); }',
+          errors: [{ messageId: 'unhandledPromise' }],
+        },
+        {
+          name: 'a parameter defaulted to an async arrow is evidence the file shows',
+          code: 'async function main(save = async () => {}) { save(); }',
+          errors: [{ messageId: 'unhandledPromise' }],
+        },
+        {
+          name: 'a local async function called and forgotten still reports beside a quiet parameter',
+          code: 'async function save() {}\nasync function main(write: (s: string) => void) { write("x"); save(); }',
           errors: [{ messageId: 'unhandledPromise' }],
         },
       ],
