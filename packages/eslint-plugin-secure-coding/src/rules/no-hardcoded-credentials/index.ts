@@ -414,6 +414,44 @@ const CONTEXT_FREE_RANDOM_LENGTH = 32;
  * repeated here would be unreachable, and an unreachable guard reads as a
  * check that runs.
  */
+/**
+ * CSS syntax — a style token, not a secret.
+ *
+ * Reported at CWE-798 / CVSS 9.8 on `pass: "text-[var(--success)]"`, a
+ * Tailwind class map in ofri-peretz/blog's engage app (#943). `pass` is a
+ * credential-shaped key and the value cleared the shape guards, so the name
+ * promoted it — the same "gap in the value guards, not the name gate" as
+ * `mtls_incompatible_client_auth` and `<rootDir>/…`.
+ *
+ * A secret is written to be unreadable. Every marker below is the opposite:
+ * it exists so a human or a stylesheet can read it.
+ *
+ *   var(--success)          a CSS custom-property reference
+ *   --container-prose       a custom-property name
+ *   text-[var(--warning)]   a Tailwind arbitrary value
+ *   bg-[#0a0a0a]            …including a colour literal inside one
+ *
+ * Only ONE call site: Command not found: looksRandom
+Did you mean one of these? is unreachable for these values because
+ * the gate below returns first, and the package is gated at 100% coverage —
+ * which is how the speculative second call was caught.
+ *
+ * Deliberately NOT matching a bare `#0a0a0a`: a six-hex-digit string with no
+ * CSS context around it is exactly the shape of a short key, and this rule's
+ * job is to keep finding those.
+ */
+export function isStyleToken(value: string): boolean {
+  // `var(--x)` / `env(--x)` — a property reference anywhere in the string.
+  if (/\b(?:var|env)\(\s*--[\w-]+/.test(value)) return true;
+  // A custom-property NAME, alone or leading a declaration.
+  if (/^--[a-z][\w-]*$/i.test(value)) return true;
+  // A Tailwind arbitrary value: `utility-[…]`, where the utility is a
+  // hyphenated word run. The bracket is what makes it unambiguous — a
+  // credential does not carry one.
+  if (/^[a-z][\w-]*-\[[^\]]+\]$/i.test(value)) return true;
+  return false;
+}
+
 function isUrlOrPath(value: string): boolean {
   if (/^[A-Za-z][A-Za-z0-9+.-]*:\/\//.test(value)) {
     return !/^[^/]*\/\/[^/@]*:[^/@]*@/.test(value);
@@ -520,6 +558,8 @@ export function isSecretShaped(value: string, minLength: number): boolean {
   // structurally by `looksLikeCredential` and returns before shape is ever
   // consulted, and `isUrlOrPath` rejects a URL carrying userinfo regardless.
   if (isUrlOrPath(value)) return false;
+  // CSS is written to be read; see isStyleToken.
+  if (isStyleToken(value)) return false;
   // Pure word strings are identifiers / i18n keys / message constants.
   if (isNaturalWordString(value)) return false;
   // A credential mixes at least two character classes, or — for single-charset

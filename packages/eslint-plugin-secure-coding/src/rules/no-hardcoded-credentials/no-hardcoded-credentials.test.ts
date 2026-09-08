@@ -74,6 +74,9 @@ describe('no-hardcoded-credentials', () => {
           code: 'const password = process.env.DATABASE_PASSWORD;',
         },
         {
+          // The value is read at runtime, so there is no literal to leak —
+          // which is the shape the rule exists to steer people toward.
+          name: 'a credential-named property fed from the environment',
           code: 'const config = { apiKey: process.env.API_KEY };',
         },
         // Short strings (below minLength)
