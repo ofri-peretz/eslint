@@ -5,6 +5,35 @@ All notable changes to `eslint-plugin-reliability` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 4.1.5
+
+### Patch Changes
+
+- **🐛 Fix** — `no-missing-null-checks` reads `'k' in x` and optional-chain guards as narrowing
+
+  Two shapes TypeScript accepts as narrowing reported as a possible null dereference when the rule ran without type information:
+
+  ```ts
+  const value = 'value' in token ? token.value : undefined; // reported token.value
+  if (found?.[1] !== undefined) return found[1]; // reported found[1]
+  ```
+
+  `in` throws on `null` and `undefined`, so the consequent of an `in` test runs only with an object; an optional chain is non-nullish only when its root was. Both now count as a guard for the object they name, in an `if` test and in a ternary. Equality to `undefined` (`found?.[1] === undefined`), `x` on the left of `in`, a chain rooted at a different object, and the alternate arm of the ternary all still report.
+
+  Reported by a CLI parser that had turned the rule off over exactly these lines.
+
+- **🐛 Fix** — `no-unhandled-promise` no longer treats a function-typed parameter as its enclosing async function
+
+  Inside an `async` function, every call to a parameter reported as an unhandled promise:
+
+  ```ts
+  async function main(argv: string[], write: (s: string) => void) {
+    write('hello'); // reported — write returns void
+  }
+  ```
+
+  The binding resolver returned the definition's node for every kind of definition, and for a parameter that node is the function that declares it — so `write` resolved to `main`, inherited its `async`, and was "evidence" of a promise. A parameter is now evidence only through what the file shows about it: a `() => Promise<…>` annotation or an `async` default still report; a `void`-typed or unannotated parameter does not. Both plugins that ship this rule carry the same fix and the same cases.
+
 ## 4.1.4
 
 ### Patch Changes

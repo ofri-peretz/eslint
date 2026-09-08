@@ -5,6 +5,27 @@ All notable changes to `eslint-plugin-operability` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 4.1.2
+
+### Patch Changes
+
+- **🐛 Fix** — `require-data-minimization` ignores a literal that collects nothing
+
+  With `piiFields` configured, a wide object whose every value is a literal reported as excessive data collection:
+
+  ```ts
+  export const HOSTS = [
+    {
+      name: 'commander',
+      repo: 'https://…',
+      testDir: 'tests',
+      runner: 'node:test' /* … */,
+    },
+  ];
+  ```
+
+  Data collection means a value read from somewhere — a request, a form, a row, an argument. An object whose values are all literals, constants declared in the file, or arrays and objects of those, is configuration and is no longer reported. One collected value among literal defaults keeps the finding.
+
 ## 4.1.1
 
 ### Patch Changes

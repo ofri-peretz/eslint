@@ -5,6 +5,53 @@ All notable changes to `eslint-plugin-maintainability` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.2.4
+
+### Patch Changes
+
+- **🐛 Fix** — `no-missing-error-context` accepts a custom `*Error` argument and a re-throw
+
+  ```ts
+  class UsageError extends Error {
+    constructor(
+      message: string,
+      readonly hint?: string,
+    ) {
+      super(message);
+    }
+  }
+  throw new UsageError(msg, 'pass --x'); // reported: "missing message"
+  try {
+    run();
+  } catch (err) {
+    throw err;
+  } // reported: "missing message"
+  ```
+
+  A class whose name ends in `Error` builds its own message from whatever it is given, so the argument is the context; a re-thrown identifier already carries the message and stack it was thrown with. `eslint-plugin-reliability`'s copy of this rule has accepted both for some time and this one had not — the two had drifted. The arms are now identical in both, and the same test cases sit in both files. `throw new Error(someVar)` and `throw undefined` still report.
+
+- **🐛 Fix** — `consistent-function-scoping` sees through a type assertion to module scope
+
+  An arrow already at module scope was told to move to module scope when a type operator sat between it and its binding:
+
+  ```ts
+  const noExit = (() => undefined) as unknown as (code: number) => never; // reported
+  ```
+
+  The walk from the function up to `Program` stepped over the declarator and declaration only, so `as`, `satisfies`, `!` and `<T>` hid the fact that there was nowhere higher to go. A type operator changes what TypeScript believes about a value and nothing about where it lives; all four are now stepped over. The same cast inside a function still reports.
+
+- **🐛 Fix** — `no-unhandled-promise` no longer treats a function-typed parameter as its enclosing async function
+
+  Inside an `async` function, every call to a parameter reported as an unhandled promise:
+
+  ```ts
+  async function main(argv: string[], write: (s: string) => void) {
+    write('hello'); // reported — write returns void
+  }
+  ```
+
+  The binding resolver returned the definition's node for every kind of definition, and for a parameter that node is the function that declares it — so `write` resolved to `main`, inherited its `async`, and was "evidence" of a promise. A parameter is now evidence only through what the file shows about it: a `() => Promise<…>` annotation or an `async` default still report; a `void`-typed or unannotated parameter does not. Both plugins that ship this rule carry the same fix and the same cases.
+
 ## 3.2.3
 
 ### Patch Changes
