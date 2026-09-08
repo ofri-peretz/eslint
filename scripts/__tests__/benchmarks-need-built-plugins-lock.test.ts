@@ -44,7 +44,8 @@ const WORKFLOWS = resolve(__dirname, '..', '..', '.github/workflows');
  * Scripts that load a benchmark config, or typecheck scripts/benchmarks
  * against workspace packages, and therefore need built plugins.
  */
-const NEEDS_DIST = /npm run (--silent )?(-w \S+ )?(ilb:|bench|typecheck:scripts|typecheck:benchmarks)/;
+const NEEDS_DIST =
+  /npm run (--silent )?(-w \S+ )?(ilb:|bench|typecheck:scripts|typecheck:benchmarks)/;
 
 /** Any step that produces dist/ for the plugin packages. */
 const BUILDS = /turbo run build|npm run build|run: npx turbo build/;
