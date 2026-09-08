@@ -189,9 +189,14 @@ for (const pluginDir of fs.readdirSync(PACKAGES)) {
  */
 const invalid = [];
 let jsxFixtures = 0;
-const parseErrors = (file, src, kind) =>
-  ts.createSourceFile(file, src, ts.ScriptTarget.Latest, false, kind)
-    .parseDiagnostics ?? [];
+// `parseDiagnostics` is a long-stable TypeScript-internal field, not part of
+// the public `SourceFile` type — cast rather than widen the whole file to `any`.
+const parseErrors = (file: string, src: string, kind: ts.ScriptKind) =>
+  (
+    ts.createSourceFile(file, src, ts.ScriptTarget.Latest, false, kind) as ts.SourceFile & {
+      parseDiagnostics?: ts.Diagnostic[];
+    }
+  ).parseDiagnostics ?? [];
 const collect = (dir) => {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, e.name);

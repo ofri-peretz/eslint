@@ -137,7 +137,6 @@ async function main() {
       // in the wild — several of the confirmed false positives do not reproduce
       // under espree at all, so espree would silently under-report.
       languageOptions: {
-        // @ts-expect-error -- Linter accepts a parser object here
         parser: tsParser,
         ecmaVersion: 'latest',
         sourceType: 'commonjs',
