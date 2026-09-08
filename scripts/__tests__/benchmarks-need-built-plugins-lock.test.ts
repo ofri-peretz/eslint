@@ -5,7 +5,8 @@
  */
 
 /**
- * A job that runs a benchmark builds the plugins first.
+ * A job that runs a benchmark, or typechecks `scripts/`, builds the plugins
+ * first.
  *
  * Every benchmark config imports plugins by package name, and that resolves
  * through `exports` to `dist/`. A job that only runs `npm ci` has no `dist/`,
@@ -20,6 +21,17 @@
  * `npm ci` is not enough and never will be: installing a workspace links the
  * package directory, it does not compile it. The distinction is invisible in
  * the workflow file, which is why it belongs in a lock rather than a comment.
+ *
+ * `typecheck:scripts` and `typecheck:benchmarks` hit the identical failure
+ * mode for a different reason: `scripts/tsconfig.json` sets
+ * `moduleResolution: "Bundler"`, which resolves a workspace package's TYPES
+ * through the same `exports` field — so `@interlace/eslint-devkit` and every
+ * `eslint-plugin-*` import needs `dist/src/index.d.ts` just as much as a
+ * benchmark needs the `.js` next to it. `benchmark.yml`'s `typecheck-scripts`
+ * job ran `npm ci` then straight into `npm run typecheck:scripts` with no
+ * build step — every sibling job in the same file builds first — and failed
+ * with ~35 `Cannot find module '@interlace/eslint-devkit'` / `eslint-plugin-*`
+ * errors that had nothing to do with the actual scripts under test.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -28,8 +40,11 @@ import { join, resolve } from 'node:path';
 
 const WORKFLOWS = resolve(__dirname, '..', '..', '.github/workflows');
 
-/** Scripts that load a benchmark config and therefore need built plugins. */
-const NEEDS_DIST = /npm run (--silent )?(-w \S+ )?(ilb:|bench)/;
+/**
+ * Scripts that load a benchmark config, or typecheck scripts/benchmarks
+ * against workspace packages, and therefore need built plugins.
+ */
+const NEEDS_DIST = /npm run (--silent )?(-w \S+ )?(ilb:|bench|typecheck:scripts|typecheck:benchmarks)/;
 
 /** Any step that produces dist/ for the plugin packages. */
 const BUILDS = /turbo run build|npm run build|run: npx turbo build/;

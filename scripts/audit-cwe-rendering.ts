@@ -38,7 +38,7 @@ import { createRequire } from 'node:module';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PACKAGES_DIR = join(REPO_ROOT, 'packages');
-const FORMATTER_DIST = join(REPO_ROOT, 'dist/out-tsc/packages/eslint-formatter/src/index.js');
+const FORMATTER_DIST = join(REPO_ROOT, 'packages/eslint-formatter/dist/src/index.js');
 const STRICT = process.argv.includes('--strict');
 
 const require_ = createRequire(import.meta.url);

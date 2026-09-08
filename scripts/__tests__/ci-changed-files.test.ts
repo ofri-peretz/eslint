@@ -69,7 +69,13 @@ describe('changedFilesSince', () => {
   it('reports failure (never throws) when the base cannot be resolved', () => {
     const r = changedFilesSince('refs/remotes/origin/does-not-exist', repo);
     expect(r.ok).toBe(false);
-    if (r.ok) return;
+    // `if (r.ok) return;` narrows fine under tsc but not under tsgo (the
+    // checker `typecheck:scripts` runs) — verified with an isolated repro:
+    // tsgo loses the literal type of `r.ok` on a bare truthiness check and
+    // falls back to the first union member, so `r.why` reads as missing.
+    // An explicit `=== true` comparison keeps the literal and narrows on
+    // both checkers.
+    if (r.ok === true) return;
     expect(r.why).toMatch(/could not be resolved|no merge-base/);
   });
 });

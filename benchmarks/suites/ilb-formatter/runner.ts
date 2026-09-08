@@ -89,7 +89,7 @@ type RawEslintFormatter = (results: unknown, data?: unknown) => string;
 
 const FORMATTER_DIST = resolve(
   HERE,
-  '../../../dist/out-tsc/packages/eslint-formatter/src/index.js',
+  '../../../packages/eslint-formatter/dist/src/index.js',
 );
 
 interface InterlaceFormatter {
