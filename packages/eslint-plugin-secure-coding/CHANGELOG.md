@@ -5,6 +5,16 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.3.4
+
+### Patch Changes
+
+- **🐛 Fix** — `no-hardcoded-credentials` no longer reports CSS as a credential
+
+  `pass: "text-[var(--success)]"` — a Tailwind class map — reported at CWE-798 / CVSS 9.8. The key is credential-shaped, and the value cleared the shape guards, so the name promoted it.
+
+  A secret is written to be unreadable; `var(--x)`, a custom-property name, and a Tailwind arbitrary value are all written to be read. `isStyleToken` recognises those three shapes and returns before the entropy test. A bare `#0a0a0a` with no CSS context around it still reports — that shape is a short key.
+
 ## 5.3.3
 
 ### Patch Changes
