@@ -253,10 +253,12 @@ function helper() {
       valid: [
         {
           name: 'FP: a module-scope arrow cast through `as unknown as T`',
+          // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
           code: `const noExit = (() => undefined) as unknown as (code: number) => never;`,
         },
         {
           name: 'FP: the same cast on an exported binding',
+          // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
           code: `export const noExit = (() => undefined) as unknown as (code: number) => never;`,
         },
         {
@@ -277,6 +279,7 @@ function helper() {
         },
         {
           name: 'FP: a trivial callback written inline as a property of an argument object, inside a test body (3.0.3 reported it)',
+          // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
           code: `it('lists commands', () => { const program = defineProgram({ commands: [defineCommand({ name: 'status', run: () => 'ok' })] }); expect(program).toBeDefined(); });`,
         },
       ],

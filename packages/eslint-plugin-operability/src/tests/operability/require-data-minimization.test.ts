@@ -129,6 +129,7 @@ ruleTester.run('require-data-minimization — a static literal collects nothing'
   valid: [
     {
       name: 'FP: exported test-suite metadata — every value is a literal, nothing is collected',
+      // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
       code: HOSTS,
       options: [...HOST_PII],
     },

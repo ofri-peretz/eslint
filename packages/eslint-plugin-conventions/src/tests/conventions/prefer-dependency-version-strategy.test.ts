@@ -253,10 +253,12 @@ describe('prefer-dependency-version-strategy', () => {
       valid: [
         {
           name: 'FP: a package.json fixture written by a test',
+          // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
           code: 'writeFileSync(join(plain, "package.json"), JSON.stringify({ name: "x", version: "1.0.0", main: "index.js" }));',
         },
         {
           name: 'FP: a record with a version beside a repo, a tag and a count',
+          // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
           code: 'const record = (over) => ({ repo: "r", version: "1.0.0", tag: "v1.0.0", commit: "a".repeat(40), vendored: "2026-09-07", files: 1, internalFiles: [], ...over });',
         },
         {

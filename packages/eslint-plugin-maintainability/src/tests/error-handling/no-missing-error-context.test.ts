@@ -141,26 +141,31 @@ describe('no-missing-error-context', () => {
         valid: [
           {
             name: 'FP: a subclass whose first parameter is the message, given a literal and a hint',
+            // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
             code: 'class UsageError extends Error { constructor(message: string, readonly hint?: string) { super(message); } }\nfunction g() { throw new UsageError("missing required option", "pass --x"); }',
             filename: 'src/execute.ts',
           },
           {
             name: 'FP: the same subclass given a template message',
+            // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
             code: 'class UsageError extends Error { constructor(message: string, readonly hint?: string) { super(message); } }\nfunction f(name: string) { throw new UsageError(`missing required option --${name}`, `pass --${name} <value>`); }',
             filename: 'src/execute.ts',
           },
           {
             name: 'FP: a custom *Error given a non-literal message — the argument IS the context',
+            // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
             code: 'function g(msg: string) { throw new UsageError(msg, "pass --x"); }',
             filename: 'src/execute.ts',
           },
           {
             name: 'FP: re-throwing a caught error keeps the message and stack it already has',
+            // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
             code: 'try { run(); } catch (err) { if (err.code !== "commander.executeSubCommandAsync") throw err; }',
             filename: 'src/commander-command.ts',
           },
           {
             name: 'FP: a re-throw also satisfies the stack-trace requirement',
+            // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
             code: 'const throwing = (err: CommanderError): void => { throw err; };',
             filename: 'src/commander-command.ts',
             options: [{ requireMessage: true, requireStackTrace: true }],

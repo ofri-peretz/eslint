@@ -1141,22 +1141,27 @@ describe('no-missing-null-checks', () => {
       valid: [
         {
           name: 'FP: `"k" in x` as a ternary test proves x is an object in the consequent',
+          // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
           code: 'function f(tokens: any[]) { const token = tokens.find((t) => t.kind === "x"); const value = "value" in token ? token.value : undefined; return value; }',
         },
         {
           name: 'FP: `"k" in x` as an if test guards its consequent',
+          // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
           code: 'function f(rows: any[]) { const hit = rows.find((r) => r.ok); if ("name" in hit) { return hit.name; } return "x"; }',
         },
         {
           name: 'FP: `x?.[1] !== undefined` proves x non-null for the read that follows',
+          // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
           code: 'function hint(token: string) { const found = RE.exec(token); if (found?.[1] !== undefined) return "did you mean --" + found[1]; return undefined; }',
         },
         {
           name: 'FP: a truthy optional chain rooted at x guards x',
+          // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
           code: 'function hint(token: string) { const found = RE.exec(token); if (found?.[1]) return found[1]; return undefined; }',
         },
         {
           name: 'FP: an optional-chain `!= null` test guards a dotted read',
+          // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
           code: 'function f(rows: any[]) { const hit = rows.find((r) => r.ok); if (hit?.meta != null) return hit.meta.name; return ""; }',
         },
         {
@@ -1173,18 +1178,22 @@ describe('no-missing-null-checks', () => {
         },
         {
           name: 'FP: an optional-chain `!== undefined` ternary test guards its consequent',
+          // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
           code: 'function hint(token: string) { const found = RE.exec(token); return found?.[1] !== undefined ? found[1] : undefined; }',
         },
         {
           name: 'FP: `if (m === null) return` before a computed read `m[1]` — reported by 4.1.3, understood since 4.1.4',
+          // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
           code: 'function firstGroup(pattern: RegExp, line: string): string | undefined { const m = pattern.exec(line); if (m === null) return undefined; const group = m[1]; return group; }',
         },
         {
           name: 'FP: `if (m === null) return` before `m.at(1)`',
+          // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
           code: 'function f(pattern: RegExp, line: string) { const m = pattern.exec(line); if (m === null) return undefined; return m.at(1); }',
         },
         {
           name: 'FP: the burgee token loop — a for-of variable carries no nullability evidence, and the `in` test narrows it besides',
+          // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
           code: 'type Token = { kind: string; value?: string };\nfunction splitPositionals(tokens: readonly Token[]) { const positionals: string[] = []; for (const token of tokens) { const { kind } = token; const value = "value" in token ? token.value : undefined; if (kind === "positional" && typeof value === "string") positionals.push(value); } return positionals; }',
         },
       ],

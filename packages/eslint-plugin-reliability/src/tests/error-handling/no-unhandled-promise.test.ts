@@ -457,14 +457,17 @@ describe('no-unhandled-promise', () => {
       valid: [
         {
           name: 'FP: a void-typed writer parameter called inside an async function',
+          // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
           code: 'export async function main(argv: string[], write: (s: string) => void): Promise<number> { write("hello"); return 0; }',
         },
         {
           name: 'FP: an untyped parameter called inside an async function says nothing about promises',
+          // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
           code: 'async function main(write) { write("x"); }',
         },
         {
           name: 'FP: a parameter of an async arrow, called in its body',
+          // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
           code: 'const run = async (write: (s: string) => void) => { write("x"); };',
         },
         {
