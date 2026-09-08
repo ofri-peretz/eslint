@@ -29,7 +29,8 @@
     "ilb:all": "tsx scripts/run-benchmark.js --all",
     "generate:perf-import": "node scripts/generate-fixtures.js perf-import",
     "generate:juliet": "node scripts/generate-fixtures.js juliet",
-    "generate:all": "node scripts/generate-fixtures.js --all"
+    "generate:all": "node scripts/generate-fixtures.js --all",
+    "stats:check": "tsx lib/stats.selfcheck.ts"
   },
   "keywords": [
     "eslint",

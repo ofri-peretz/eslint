@@ -219,3 +219,77 @@ export function accuracyReport(observations, opts = {}) {
 // Lifted to its own file so strict-tsconfig consumers (apps/docs) can
 // import it without pulling in this whole loosely-typed module.
 export { median } from './median.ts';
+
+// ─── significance ────────────────────────────────────────────────────────
+
+/** Lanczos g=7 log-gamma. ~15 significant figures for x > 0. */
+function gammaLn(x) {
+  const c = [
+    0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+    771.32342877765313, -176.61502916214059, 12.507343278686905,
+    -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7,
+  ];
+  if (x < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * x)) - gammaLn(1 - x);
+  x -= 1;
+  let a = c[0];
+  const t = x + 7.5;
+  for (let i = 1; i < 9; i++) a += c[i] / (x + i);
+  return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+}
+
+/**
+ * Regularized upper incomplete gamma Q(a, x) = Gamma(a, x) / Gamma(a).
+ * Series below x < a+1, continued fraction above — each converges quickly only
+ * on its own side. Capped at 300 iterations; neither needs ~30 in this range.
+ */
+function upperGamma(a, x) {
+  if (x <= 0) return 1;
+  if (x < a + 1) {
+    let ap = a;
+    let sum = 1 / a;
+    let del = sum;
+    for (let n = 0; n < 300; n++) {
+      ap += 1;
+      del *= x / ap;
+      sum += del;
+      if (Math.abs(del) < Math.abs(sum) * 1e-15) break;
+    }
+    return 1 - sum * Math.exp(-x + a * Math.log(x) - gammaLn(a));
+  }
+  const tiny = 1e-300;
+  let b = x + 1 - a;
+  let c = 1 / tiny;
+  let d = 1 / b;
+  let h = d;
+  for (let i = 1; i < 300; i++) {
+    const an = -i * (i - a);
+    b += 2;
+    d = an * d + b;
+    if (Math.abs(d) < tiny) d = tiny;
+    c = b + an / c;
+    if (Math.abs(c) < tiny) c = tiny;
+    d = 1 / d;
+    const del = d * c;
+    h *= del;
+    if (Math.abs(del - 1) < 1e-15) break;
+  }
+  return h * Math.exp(-x + a * Math.log(x) - gammaLn(a));
+}
+
+/**
+ * p-value for a chi-squared statistic — COMPUTED, never looked up.
+ *
+ * Replaces a `criticalValues = {1,2,3}` table whose lookup miss fell back to
+ * the df=2 value (5.991). Any run with 5+ groups (df >= 4) was tested against
+ * a threshold below its own, and 5.991 sits under the true critical value for
+ * every df >= 4, so the error only ever manufactured significance. A table has
+ * a silent edge; a computed tail does not.
+ *
+ * @param {number} chiSq  the test statistic (>= 0)
+ * @param {number} df     degrees of freedom (>= 1)
+ * @returns {number} P(X >= chiSq) under the null
+ */
+export function chiSquaredPValue(chiSq, df) {
+  if (!(chiSq >= 0) || !(df >= 1)) return 1;
+  return upperGamma(df / 2, chiSq / 2);
+}
