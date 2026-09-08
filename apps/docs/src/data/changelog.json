@@ -5,6 +5,81 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "eslint-plugin-maintainability",
+      "short": "eslint-plugin-maintainability",
+      "version": "3.2.4",
+      "date": "2026-09-08T04:27:46Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-missing-error-context` accepts a custom `*Error` argument and a re-throw",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`consistent-function-scoping` sees through a type assertion to module scope",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-unhandled-promise` no longer treats a function-typed parameter as its enclosing async function",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-reliability",
+      "short": "eslint-plugin-reliability",
+      "version": "4.1.5",
+      "date": "2026-09-08T04:27:45Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-missing-null-checks` reads `'k' in x` and optional-chain guards as narrowing",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-unhandled-promise` no longer treats a function-typed parameter as its enclosing async function",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-conventions",
+      "short": "eslint-plugin-conventions",
+      "version": "5.3.4",
+      "date": "2026-09-08T04:27:44Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`prefer-dependency-version-strategy` no longer reads a manifest as a dependency map",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-operability",
+      "short": "eslint-plugin-operability",
+      "version": "4.1.2",
+      "date": "2026-09-08T04:27:42Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`require-data-minimization` ignores a literal that collects nothing",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-import-next",
       "short": "eslint-plugin-import-next",
       "version": "2.7.6",
@@ -16460,21 +16535,6 @@
       ]
     },
     {
-      "package": "eslint-plugin-conventions",
-      "short": "eslint-plugin-conventions",
-      "version": "5.3.4",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`prefer-dependency-version-strategy` no longer reads a manifest as a dependency map",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "eslint-plugin-jwt-security",
       "short": "eslint-plugin-jwt-security",
       "version": "2.2.9",
@@ -16590,46 +16650,6 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-maintainability",
-      "short": "eslint-plugin-maintainability",
-      "version": "3.2.4",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`no-missing-error-context` accepts a custom `*Error` argument and a re-throw",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "`consistent-function-scoping` sees through a type assertion to module scope",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "`no-unhandled-promise` no longer treats a function-typed parameter as its enclosing async function",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-operability",
-      "short": "eslint-plugin-operability",
-      "version": "4.1.2",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`require-data-minimization` ignores a literal that collects nothing",
           "pr": null
         }
       ]
@@ -16755,26 +16775,6 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-reliability",
-      "short": "eslint-plugin-reliability",
-      "version": "4.1.5",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`no-missing-null-checks` reads `'k' in x` and optional-chain guards as narrowing",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "`no-unhandled-promise` no longer treats a function-typed parameter as its enclosing async function",
           "pr": null
         }
       ]
