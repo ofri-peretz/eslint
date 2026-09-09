@@ -14,6 +14,7 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
+  AST_NODE_TYPES,
   formatLLMMessage,
   MessageIcons,
   namesOneOf,
@@ -239,6 +240,143 @@ export function isInsidePromiseCallback(
   }
 
   return false;
+}
+
+/**
+ * `Promise.all([…])` and the other three combinators — calls that take promises and
+ * settle every one they are given. A promise passed to one of these is not floating:
+ * the combinator's own result is the promise to handle, and this rule reports that.
+ *
+ * Named explicitly rather than "any `Promise.*`": `Promise.reject(p)` makes `p` the
+ * REASON of a rejection and never settles it, so treating it as an owner would hide a
+ * genuinely floating promise.
+ */
+const PROMISE_COMBINATORS = ['all', 'allSettled', 'any', 'race'];
+
+function isPromiseCombinatorCall(node: TSESTree.CallExpression): boolean {
+  const { callee } = node;
+  return (
+    callee.type === 'MemberExpression' &&
+    callee.object.type === 'Identifier' &&
+    callee.object.name === 'Promise' &&
+    namesOneOf(propertyName(callee), PROMISE_COMBINATORS)
+  );
+}
+
+/**
+ * Is this expression's VALUE used by something, or is it thrown away?
+ *
+ * A promise floats when nobody holds it. Holding it is not only `await` and
+ * `.catch`: assigning it to a binding, passing it as an argument, storing it on a
+ * property and returning it all hand it to code that can settle it, and none of
+ * those sites is where a `.catch` belongs. Reporting them meant
+ * `Promise.race([work(), work()])` drew three findings for one expression — the
+ * race, and each promise the race consumes.
+ *
+ * The walk passes through the forms that carry a value onward — a member/call
+ * chain, a TS wrapper — and stops at the first parent that either discards it
+ * (an expression statement, a non-final comma operand) or uses it (everything
+ * else). `void x` is a discard: `ignoreVoidExpressions` is the option for that,
+ * and it is off by default.
+ */
+function isValueConsumed(node: TSESTree.Node): boolean {
+  let current: TSESTree.Node = node;
+
+  for (;;) {
+    const parent = (current as TSESTree.Node & { parent?: TSESTree.Node })
+      .parent;
+    if (!parent) return false;
+
+    switch (parent.type) {
+      case 'MemberExpression':
+        // Reading a property off a promise does not settle it: `o[p]` uses it as a
+        // key, `const t = p.then` takes the method and drops the promise. The one
+        // member access that DOES carry it onward is a called `.then`/`.catch`/
+        // `.finally`, and `isPromiseHandled` has already answered for those before
+        // this function is asked — so everything that arrives here is a discard.
+        return false;
+      case 'CallExpression':
+        // The callee is the chain continuing. An ARGUMENT is only in safe hands when
+        // the receiving call settles what it is given — `Promise.race([p, q])` owns
+        // both. `console.log(fetch(url))` does not, and the rule reports the inner
+        // call there on purpose (2026-08-26): otherwise nothing reports it at all.
+        //
+        // The promise has to be INSIDE the iterable, too. `Promise.all(work())` hands
+        // a promise where an iterable belongs: the combinator rejects on that, and a
+        // `.catch` on it handles its own rejection, never `work()`'s. Only a promise
+        // reached through the array literal is owned, which is why the walk must have
+        // passed through one to arrive here.
+        if (parent.callee !== current) {
+          return (
+            current.type === AST_NODE_TYPES.ArrayExpression &&
+            isPromiseCombinatorCall(parent)
+          );
+        }
+        break;
+      case 'ArrayExpression':
+        // The array is the value; where the array goes decides.
+        break;
+      case 'TSAsExpression':
+      case 'TSNonNullExpression':
+        // A cast or an assertion carries the value on unchanged.
+        //
+        // No `ChainExpression` arm: a promise inside one is answered `true` by
+        // `isPromiseHandled` before this function is asked, so the case could
+        // never run. An unreachable arm is a claim no test can check.
+        break;
+      case 'UnaryExpression':
+        // `void p;` discards p. Keep walking to the statement.
+        if (parent.operator !== 'void') return true;
+        break;
+      case 'ExpressionStatement':
+        return false;
+      case 'SequenceExpression':
+        return parent.expressions[parent.expressions.length - 1] === current;
+      default:
+        return true;
+    }
+
+    current = parent as TSESTree.Node;
+  }
+}
+
+/**
+ * `p.then(onFulfilled, onRejected)` — the rejection handler is the second argument.
+ *
+ * Only `.catch` and `.finally` counted as terminating a chain, so the two-argument
+ * form of `.then` (the shape a bin entry uses: `main().then(ok, fail)`) read as
+ * unhandled. A second argument that is `undefined` or `null` is the one-argument
+ * form written out, and does not count.
+ */
+function isThenWithRejectionHandler(node: TSESTree.CallExpression): boolean {
+  if (node.callee.type !== 'MemberExpression') return false;
+  if (propertyName(node.callee) !== 'then') return false;
+  const onRejected = node.arguments[1];
+  if (onRejected === undefined) return false;
+  // Only a CALLABLE second argument handles anything. `Promise.then` ignores a
+  // non-callable `onRejected` and passes the rejection along, so `then(fn, 42)`
+  // and the spelled-out `then(fn, undefined)` are the one-argument form.
+  // `then(fn, handler as Handler)` is the same handler with a cast on it.
+  let candidate: TSESTree.Node = onRejected;
+  while (
+    candidate.type === AST_NODE_TYPES.TSAsExpression ||
+    candidate.type === AST_NODE_TYPES.TSSatisfiesExpression ||
+    candidate.type === AST_NODE_TYPES.TSNonNullExpression ||
+    candidate.type === AST_NODE_TYPES.TSTypeAssertion
+  ) {
+    candidate = candidate.expression;
+  }
+
+  switch (candidate.type) {
+    case AST_NODE_TYPES.ArrowFunctionExpression:
+    case AST_NODE_TYPES.FunctionExpression:
+    case AST_NODE_TYPES.MemberExpression:
+      return true;
+    case AST_NODE_TYPES.Identifier:
+      return candidate.name !== 'undefined';
+    default:
+      return false;
+  }
 }
 
 /**
@@ -556,6 +694,17 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
 
       // Check if it's already handled
       if (isPromiseHandled(node)) {
+        return;
+      }
+
+      // The value goes somewhere — a binding, an argument, a property, the caller.
+      // Whoever receives it is where a `.catch` belongs, not here.
+      if (isValueConsumed(node)) {
+        return;
+      }
+
+      // `p.then(onFulfilled, onRejected)` carries its rejection handler.
+      if (isThenWithRejectionHandler(node)) {
         return;
       }
 
