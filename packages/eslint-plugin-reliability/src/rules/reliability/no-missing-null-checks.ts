@@ -381,54 +381,90 @@ export function hasNullCheck(
   // Short-circuit AND: `obj && obj.prop` — the right side of && runs only
   // when the left side is truthy, so obj is guaranteed non-null here.
   // Walk up one level (CallExpression wraps MemberExpression for `obj && obj.method()`)
-  const immediateParent = parent as TSESTree.Node | undefined;
-  const nodeOrCall =
-    immediateParent?.type === 'CallExpression' &&
-    (immediateParent as TSESTree.CallExpression).callee === node
-      ? immediateParent
-      : (node as TSESTree.Node);
-  const andParent = (nodeOrCall as TSESTree.Node & { parent?: TSESTree.Node })
-    .parent as TSESTree.LogicalExpression | undefined;
-  if (
-    andParent?.type === 'LogicalExpression' &&
-    andParent.operator === '&&' &&
-    andParent.right === nodeOrCall
-  ) {
-    // Exact identity only. `endsWith` had the relation backwards: in
-    // `wrapper.obj && obj.prop` the left text ends with `obj`, but it guards
-    // `wrapper.obj` — a DIFFERENT value — so the finding on `obj` was silently
-    // dropped. A guard covers the expression it tests and the chains that
-    // START with it, never one that merely shares a suffix.
-    //
-    // The test that was supposed to catch this passed for the wrong reason:
-    // under the old deny-list model the single expected error came from
-    // `wrapper.obj` (base `wrapper`, unprovable), not from the suffix trap it
-    // claimed to exercise.
-    const leftText = sourceCode.getText(andParent.left);
-    if (leftText === objectText) return true;
+  // Short-circuit AND: everything in the RIGHT operand of `&&` runs only when the
+  // left operand was truthy. Walking one fixed step up from the access found
+  // `m && m[1]` and missed `m && hasAnyFlag(m[1] as string)` — the same guard with
+  // the access nested inside a call and a type assertion. Walk to the `&&`
+  // instead of guessing how many wrappers sit under it, stopping at a function
+  // boundary because the right operand's guard does not follow a callback into
+  // some later call.
+  {
+    let cur: TSESTree.Node = node;
+    for (let depth = 0; depth < 16; depth++) {
+      const up: TSESTree.Node | undefined = (
+        cur as TSESTree.Node & { parent?: TSESTree.Node }
+      ).parent;
+      if (!up) break;
+      if (
+        up.type === 'FunctionDeclaration' ||
+        up.type === 'FunctionExpression' ||
+        up.type === 'ArrowFunctionExpression'
+      ) {
+        break;
+      }
+      if (
+        up.type === 'LogicalExpression' &&
+        (up as TSESTree.LogicalExpression).operator === '&&' &&
+        (up as TSESTree.LogicalExpression).right === cur
+      ) {
+        // Exact identity, or a chain that starts at the guarded value. `endsWith`
+        // had the relation backwards: in `wrapper.obj && obj.prop` the left text
+        // ends with `obj`, but it guards `wrapper.obj` — a DIFFERENT value.
+        const leftText = sourceCode.getText(
+          (up as TSESTree.LogicalExpression).left,
+        );
+        if (chainStartsWith(leftText, objectText)) return true;
+      }
+      cur = up;
+    }
   }
 
-  // Ternary consequent: `obj ? obj.prop : fallback` — the test being truthy
-  // guarantees obj is non-null before the consequent evaluates.
-  let cur: TSESTree.Node = node;
-  for (let depth = 0; depth < 8; depth++) {
-    const p: TSESTree.Node | undefined = (
-      cur as TSESTree.Node & { parent?: TSESTree.Node }
-    ).parent;
-    if (!p) break;
-    if (
-      p.type === 'ConditionalExpression' &&
-      (p as TSESTree.ConditionalExpression).consequent === cur
-    ) {
-      const test = (p as TSESTree.ConditionalExpression).test;
+  // A ternary guards ONE of its arms, and which one depends on what the test
+  // proves.
+  //
+  //   winner ? winner.value : 0                the CONSEQUENT is safe
+  //   winner === undefined ? 'unset' : winner.value   the ALTERNATE is safe
+  //
+  // Only the consequent was read, so `x === undefined ? … : x.y` — the shape a
+  // formatter writes when the empty case is the short one — reported on the arm
+  // that can only run when x is present. The depth limit is gone with it: the
+  // access can sit inside a template literal inside a call inside the arm, and
+  // counting levels decided whether the guard was found.
+  {
+    let cur: TSESTree.Node = node;
+    for (let depth = 0; depth < 24; depth++) {
+      const p: TSESTree.Node | undefined = (
+        cur as TSESTree.Node & { parent?: TSESTree.Node }
+      ).parent;
+      if (!p) break;
       if (
-        sourceCode.getText(test) === objectText ||
-        narrowsToObject(test, node.object, sourceCode)
+        p.type === 'FunctionDeclaration' ||
+        p.type === 'FunctionExpression' ||
+        p.type === 'ArrowFunctionExpression'
       ) {
-        return true;
+        break;
       }
+      if (p.type === 'ConditionalExpression') {
+        const ternary = p as TSESTree.ConditionalExpression;
+        const test = ternary.test;
+        if (
+          ternary.consequent === cur &&
+          (chainStartsWith(sourceCode.getText(test), objectText) ||
+            isNullCheckForObject(test, node.object, sourceCode))
+        ) {
+          return true;
+        }
+        if (
+          ternary.alternate === cur &&
+          falsyGuardTargets(test).some((target) =>
+            guardsSameValue(target, node.object, sourceCode),
+          )
+        ) {
+          return true;
+        }
+      }
+      cur = p;
     }
-    cur = p;
   }
 
   // Explicit null/truthy check in enclosing if statement
@@ -461,6 +497,16 @@ function endsInExit(stmt: TSESTree.Statement): boolean {
     case 'BlockStatement': {
       const last = stmt.body[stmt.body.length - 1];
       return last !== undefined && endsInExit(last);
+    }
+    case 'TryStatement': {
+      // A try/catch leaves only if EVERY way through it leaves: the block and
+      // the handler both. `try { return run() } catch (e) { throw e }` is a
+      // branch that cannot fall through, and reading only the last statement of
+      // the enclosing block called it fall-through — so the guard before it was
+      // lost. A `finally` that leaves settles it on its own.
+      if (stmt.finalizer !== null && endsInExit(stmt.finalizer)) return true;
+      if (!endsInExit(stmt.block)) return false;
+      return stmt.handler === null || endsInExit(stmt.handler.body);
     }
     default:
       return false;
@@ -536,7 +582,7 @@ function guardsSameValue(
   return (
     binding !== null &&
     binding === rootBinding(object, sourceCode) &&
-    sourceCode.getText(guarded) === sourceCode.getText(object)
+    chainStartsWith(sourceCode.getText(guarded), sourceCode.getText(object))
   );
 }
 
@@ -652,17 +698,32 @@ function rootText(
 }
 
 /**
- * Does `root` guard `object`? The same value, or a chain that starts with it —
+ * Does `guard` cover `objectText`? The same value, or a chain that STARTS with it —
  * checking `response` protects `response.data.items`, as the truthy branch of
  * isNullCheckForObject already reads it.
+ *
+ * A computed link continues the chain exactly as a dotted one does. Reading only
+ * `${guard}.` meant a check on `m` did not cover `m[0]`, so
+ * `m ? m[0].length : 0` reported — every regex match in a parser is written that
+ * way.
  */
+function chainStartsWith(guard: string, objectText: string): boolean {
+  if (guard === objectText) return true;
+  if (!objectText.startsWith(guard)) return false;
+  const rest = objectText.slice(guard.length);
+  // Neither `?.` nor `!` gets an arm: an optional access answers `hasNullCheck`
+  // before the chain is compared, and a non-null assertion is unwrapped before
+  // the object's text is taken. Neither could be matched here, and an arm no
+  // test can reach is a claim, not caution.
+  return rest.startsWith('.') || rest.startsWith('[');
+}
+
 function rootGuards(
   root: string,
   object: TSESTree.Expression,
   sourceCode: TSESLint.SourceCode,
 ): boolean {
-  const objectText = sourceCode.getText(object);
-  return root === objectText || objectText.startsWith(`${root}.`);
+  return chainStartsWith(root, sourceCode.getText(object));
 }
 
 /**

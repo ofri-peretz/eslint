@@ -54,8 +54,8 @@ describe('no-unchecked-loop-condition', () => {
         {
           code: 'while (flag) { doWork(); }',
         },
-        // While true with break (allowed by default)
         {
+          name: 'while (true) whose body breaks — the reference for the for(;;) exemption',
           code: 'while (true) { processData(); if (shouldStop) break; }',
         },
         // Safe recursion with depth limit

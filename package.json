@@ -413,6 +413,7 @@
     "vitest": "^4.1.10"
   },
   "overrides": {
+    "smol-toml": "^1.7.1",
     "html-encoding-sniffer": "^6.0.0",
     "dompurify": "^3.4.13",
     "fast-uri": "^3.1.6",
