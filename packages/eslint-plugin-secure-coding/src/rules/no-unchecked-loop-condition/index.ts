@@ -693,6 +693,70 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
     };
 
     /**
+     * Does this loop body contain a statement that leaves the loop?
+     *
+     * Stricter than `hasBreakStatement`, which counts any `break` anywhere below —
+     * including one belonging to a nested loop or `switch`, which does not end the
+     * outer loop. Nested functions are not descended into: a `return` inside a
+     * callback returns from the callback.
+     *
+     * `return` and `throw` count alongside `break`, because a `for (;;)` that returns
+     * a value is the ordinary spelling of a scanner and it terminates just as surely.
+     */
+    const hasLoopExit = (loopBody: TSESTree.Statement): boolean => {
+      let found = false;
+
+      const walk = (node: TSESTree.Node, insideNestedBreakable: boolean): void => {
+        if (found) return;
+
+        switch (node.type) {
+          case 'FunctionDeclaration':
+          case 'FunctionExpression':
+          case 'ArrowFunctionExpression':
+            // A `return` here belongs to that function, not to this loop.
+            return;
+          case 'BreakStatement':
+            // A labelled break leaves whatever it names, which is at or above this loop.
+            if (!insideNestedBreakable || node.label !== null) found = true;
+            return;
+          case 'ReturnStatement':
+          case 'ThrowStatement':
+            found = true;
+            return;
+          default:
+            break;
+        }
+
+        const breakable =
+          insideNestedBreakable ||
+          node.type === 'ForStatement' ||
+          node.type === 'ForInStatement' ||
+          node.type === 'ForOfStatement' ||
+          node.type === 'WhileStatement' ||
+          node.type === 'DoWhileStatement' ||
+          node.type === 'SwitchStatement';
+
+        for (const key of Object.keys(node)) {
+          if (key === 'parent') continue;
+          const child = (node as unknown as Record<string, unknown>)[key];
+          if (child === null || typeof child !== 'object') continue;
+          if (Array.isArray(child)) {
+            for (const item of child) {
+              if (item !== null && typeof item === 'object' && 'type' in item) {
+                walk(item as TSESTree.Node, breakable);
+              }
+            }
+          } else if ('type' in child) {
+            walk(child as TSESTree.Node, breakable);
+          }
+        }
+      };
+
+      walk(loopBody, false);
+      return found;
+    };
+
+    /**
      * Is this self-call reached unconditionally from the function's body?
      *
      * Walking up from the call to the function that encloses it, nothing may
@@ -1003,6 +1067,12 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
         // Check for for(;;) infinite loops
         if (!node.test && !node.update) {
           if (safetyChecker.isSafe(node, context)) {
+            return;
+          }
+
+          // `for (;;)` is `while (true)` written the other way, so it gets the same
+          // exemption: a body that breaks, returns or throws is not an infinite loop.
+          if (allowWhileTrueWithBreak && hasLoopExit(node.body)) {
             return;
           }
 

@@ -81,6 +81,13 @@ type AnyReport = {
 /* ------------------------------------------------------------------ */
 
 describe('consistent-existence-index-check — standalone-parent matrix', () => {
+  // Every arm of `isStandaloneExpression`, exercised with `preferred: 'Object.hasOwn'`.
+  // The matrix used to run `hasOwnProperty` -> `in`, which is no longer autofixed at
+  // all: those two ask different questions about an inherited key, so the fixer stops
+  // at that boundary. `hasOwnProperty` -> `Object.hasOwn` is the same question in a
+  // shorter spelling, so it still fixes and still reaches every branch here.
+  const OWN = [{ preferred: 'Object.hasOwn' as const }];
+
   ruleTester.run(
     'standalone contexts get a fix',
     consistentExistenceIndexCheck,
@@ -88,61 +95,90 @@ describe('consistent-existence-index-check — standalone-parent matrix', () => 
       valid: [],
       invalid: [
         {
+          name: 'a declarator initialiser',
           code: 'const has = obj.hasOwnProperty("k");',
+          options: OWN,
           errors: [{ messageId: 'consistentExistenceCheck' }],
-          output: 'const has = "k" in obj;',
+          output: 'const has = Object.hasOwn(obj, "k");',
         },
         {
+          name: 'the right-hand side of an assignment',
           code: 'x = obj.hasOwnProperty("k");',
+          options: OWN,
           errors: [{ messageId: 'consistentExistenceCheck' }],
-          output: 'x = "k" in obj;',
+          output: 'x = Object.hasOwn(obj, "k");',
         },
         {
+          name: 'a return argument',
           code: 'function f() { return obj.hasOwnProperty("k"); }',
+          options: OWN,
           errors: [{ messageId: 'consistentExistenceCheck' }],
-          output: 'function f() { return "k" in obj; }',
+          output: 'function f() { return Object.hasOwn(obj, "k"); }',
         },
         {
+          name: 'the concise body of an arrow',
           code: 'const g = () => obj.hasOwnProperty("k");',
+          options: OWN,
           errors: [{ messageId: 'consistentExistenceCheck' }],
-          output: 'const g = () => "k" in obj;',
+          output: 'const g = () => Object.hasOwn(obj, "k");',
         },
         {
+          name: 'an if test',
           code: 'if (obj.hasOwnProperty("k")) {}',
+          options: OWN,
           errors: [{ messageId: 'consistentExistenceCheck' }],
-          output: 'if ("k" in obj) {}',
+          output: 'if (Object.hasOwn(obj, "k")) {}',
         },
         {
+          name: 'a while test',
           code: 'while (obj.hasOwnProperty("k")) {}',
+          options: OWN,
           errors: [{ messageId: 'consistentExistenceCheck' }],
-          output: 'while ("k" in obj) {}',
+          output: 'while (Object.hasOwn(obj, "k")) {}',
         },
         {
+          name: 'a do-while test',
           code: 'do {} while (obj.hasOwnProperty("k"));',
+          options: OWN,
           errors: [{ messageId: 'consistentExistenceCheck' }],
-          output: 'do {} while ("k" in obj);',
+          output: 'do {} while (Object.hasOwn(obj, "k"));',
         },
         {
+          name: 'a for test',
           code: 'for (; obj.hasOwnProperty("k"); ) {}',
+          options: OWN,
           errors: [{ messageId: 'consistentExistenceCheck' }],
-          output: 'for (; "k" in obj; ) {}',
+          output: 'for (; Object.hasOwn(obj, "k"); ) {}',
         },
         {
+          name: 'a ternary test',
           code: 'const t = obj.hasOwnProperty("k") ? 1 : 2;',
+          options: OWN,
           errors: [{ messageId: 'consistentExistenceCheck' }],
-          output: 'const t = "k" in obj ? 1 : 2;',
+          output: 'const t = Object.hasOwn(obj, "k") ? 1 : 2;',
         },
         // Not a standalone expression (unary operand) — reported, but no fix.
         {
+          name: 'a unary operand is not standalone, so no fix',
           code: 'const n = !obj.hasOwnProperty("k");',
+          options: OWN,
           errors: [{ messageId: 'consistentExistenceCheck' }],
           output: null,
         },
         // Object.prototype.hasOwnProperty.call(obj, prop)
         {
+          name: 'Object.prototype.hasOwnProperty.call, shortened to Object.hasOwn',
+          code: 'Object.prototype.hasOwnProperty.call(obj, "k");',
+          options: OWN,
+          errors: [{ messageId: 'consistentExistenceCheck' }],
+          output: 'Object.hasOwn(obj, "k");',
+        },
+        // The same call under the default `preferred: 'in'` — reported, never rewritten.
+        {
+          name: 'the same call under the default `in`, reported and left alone',
           code: 'Object.prototype.hasOwnProperty.call(obj, "k");',
           errors: [{ messageId: 'consistentExistenceCheck' }],
-          output: '"k" in obj;',
+          output: null,
         },
       ],
     },

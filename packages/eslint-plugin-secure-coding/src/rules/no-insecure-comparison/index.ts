@@ -432,9 +432,20 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
             const variable = scope.variables.find((v) => v.name === identifier.name);
             if (!variable) continue;
             const writes = variable.references.filter((ref) => ref.isWrite());
+            // `const { kind } = token` binds `token.kind`, a DIFFERENT value from `token`.
+            // Walking the initializer whole would hand the container's name to every
+            // property pulled off it, which is how an argv token's `kind` and an SGR
+            // token's `code` became secrets. The hop that belongs here is the
+            // destructuring key, taken below — `const { token: t } = session` still
+            // resolves, through `token`, not through `session`.
+            const isDestructured = variable.defs.some(
+              (def) => def.type === 'Variable' && def.node.id.type !== 'Identifier',
+            );
             // More than one write and the value at the comparison is not knowable from
             // any single initializer, so nothing is claimed.
-            if (writes.length === 1 && writes[0].writeExpr) walk(writes[0].writeExpr);
+            if (!isDestructured && writes.length === 1 && writes[0].writeExpr) {
+              walk(writes[0].writeExpr);
+            }
             for (const def of variable.defs) {
               if (def.type !== 'Variable') continue;
               out.push(...destructuringKeys(def.node.id, def.name));
@@ -491,13 +502,17 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
           return; // Length checks are safe and recommended
         }
 
-        // SKIP: comparison against a boolean / null / undefined literal. A timing attack
-        // needs a secret on BOTH sides — you cannot learn a secret by discovering how many
-        // characters of `true` matched. `verifyToken(t).valid === true` is a boolean check
-        // that happens to sit on an identifier the secret-name heuristic likes.
+        // SKIP: comparison against a literal written in the source. A timing attack needs
+        // the attacker to vary one side a character at a time, and a constant in the file
+        // cannot be varied — `verifyToken(t).valid === true` is a boolean check, and
+        // `token === '--'` is a parser reading the option terminator. Comparing a secret
+        // to a hardcoded string IS a finding, but a hardcoded-credential one (CWE-798),
+        // which this rule deliberately does not make — see the split at the top.
         const isNonSecretLiteral = (expr: TSESTree.Expression): boolean =>
-          (expr.type === AST_NODE_TYPES.Literal &&
-            (typeof expr.value === 'boolean' || expr.value === null)) ||
+          expr.type === AST_NODE_TYPES.Literal ||
+          (expr.type === AST_NODE_TYPES.TemplateLiteral && expr.expressions.length === 0) ||
+          (expr.type === AST_NODE_TYPES.UnaryExpression &&
+            expr.argument.type === AST_NODE_TYPES.Literal) ||
           (expr.type === AST_NODE_TYPES.Identifier && expr.name === 'undefined');
 
         if (isNonSecretLiteral(node.left) || isNonSecretLiteral(node.right)) {

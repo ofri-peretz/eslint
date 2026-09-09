@@ -88,13 +88,15 @@ describe('coverage fixtures', () => {
           errors: [{ messageId: 'missingErrorContext', data: { missing: 'message' } }],
         },
         {
-          // Non-Error constructor: no message and no stack trace.
+          // Non-Error constructor: "boom" IS the message — a custom class formats
+          // what it is handed — so only the stack trace is unproven, and it stays
+          // unproven because nothing here says `Foo` extends Error.
           code: 'function f() { throw new Foo("boom"); }',
           options: [{ requireStackTrace: true }],
           errors: [
             {
               messageId: 'missingErrorContext',
-              data: { missing: 'message and stack trace' },
+              data: { missing: 'stack trace' },
             },
           ],
         },

@@ -64,6 +64,13 @@ export const consistentExistenceIndexCheck = createRule<RuleOptions, MessageIds>
     function reportInconsistentCheck(node: TSESTree.Node, currentMethod: string, object: TSESTree.Node, property: TSESTree.Node) {
       let fix: TSESLint.ReportFixFunction | undefined;
 
+      // `in` walks the prototype chain and the three own-property forms do not, so a
+      // rewrite across that boundary answers a different question for an inherited key.
+      // The preference is still reported — it is the user's style to choose — but the
+      // fixer stops at the boundary, because `--fix` must not change what code means.
+      const crossesPrototypeBoundary =
+        (currentMethod === 'in') !== (preferred === 'in');
+
       // Only provide fixes for standalone expressions, not when part of larger expressions
       const parent = node.parent;
       const isStandaloneExpression = !parent ||
@@ -79,12 +86,13 @@ export const consistentExistenceIndexCheck = createRule<RuleOptions, MessageIds>
         (parent.type === 'ConditionalExpression' && parent.test === node);
 
 
-      if (preferred === 'in' && isStandaloneExpression) {
-        fix = function(fixer: TSESLint.RuleFixer) {
-          const objectText = context.sourceCode.getText(object);
-          const propertyText = context.sourceCode.getText(property);
-          return fixer.replaceText(node, `${propertyText} in ${objectText}`);
-        };
+      // No `preferred === 'in'` fixer any more. Reaching one would need the
+      // boundary uncrossed with `in` preferred — that is, an `in` reported while
+      // `in` is what the config asks for, which the visitors never do. Everything
+      // that survives the boundary check wants one of the own-property forms, and
+      // those are interchangeable with each other.
+      if (crossesPrototypeBoundary) {
+        fix = undefined;
       } else if (preferred === 'hasOwnProperty' && isStandaloneExpression) {
         fix = function(fixer: TSESLint.RuleFixer) {
           const objectText = context.sourceCode.getText(object);

@@ -34,13 +34,17 @@ describe('consistent-existence-index-check', () => {
         {
           name: 'hasOwnProperty walks the prototype question the long way',
           code: 'obj.hasOwnProperty("key")',
-          output: '"key" in obj',
+          // Reported, not rewritten: `in` and an own-property check disagree on an
+          // inherited key. See consistent-existence-index-check.own-property.test.ts.
+          output: null,
           errors: [{ messageId: 'consistentExistenceCheck' }],
         },
         // Object.hasOwn should be flagged
         {
           code: 'Object.hasOwn(obj, "key")',
-          output: '"key" in obj',
+          // Reported, not rewritten: `in` and an own-property check disagree on an
+          // inherited key. See consistent-existence-index-check.own-property.test.ts.
+          output: null,
           errors: [{ messageId: 'consistentExistenceCheck' }],
         },
       ],
@@ -60,7 +64,9 @@ describe('consistent-existence-index-check', () => {
         // 'in' operator should be flagged
         {
           code: '"key" in obj',
-          output: 'obj.hasOwnProperty("key")',
+          // Reported, not rewritten: `in` and an own-property check disagree on an
+          // inherited key. See consistent-existence-index-check.own-property.test.ts.
+          output: null,
           options: [{ preferred: 'hasOwnProperty' }],
           errors: [{ messageId: 'consistentExistenceCheck' }],
         },
@@ -88,7 +94,9 @@ describe('consistent-existence-index-check', () => {
         // 'in' operator should be flagged
         {
           code: '"key" in obj',
-          output: 'Object.hasOwn(obj, "key")',
+          // Reported, not rewritten: `in` and an own-property check disagree on an
+          // inherited key. See consistent-existence-index-check.own-property.test.ts.
+          output: null,
           options: [{ preferred: 'Object.hasOwn' }],
           errors: [{ messageId: 'consistentExistenceCheck' }],
         },

@@ -33,6 +33,41 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
+/** The Error constructors the language defines. Their first parameter is the message. */
+const BUILTIN_ERROR_CONSTRUCTORS = new Set([
+  'Error',
+  'TypeError',
+  'RangeError',
+  'SyntaxError',
+  'ReferenceError',
+  'EvalError',
+  'URIError',
+  'AggregateError',
+]);
+
+/**
+ * Can a reader see that this expression is a string?
+ *
+ * A literal or a template is one outright. `a ?? b`, `a || b` and `c ? a : b`
+ * are strings when a branch you can see is — `message ?? \`Expected values to be
+ * strictly equal\`` is the fallback spelled out, and reading only the outermost
+ * node called it "not a string".
+ */
+function isProvablyString(node: TSESTree.Node): boolean {
+  if (node.type === 'TemplateLiteral') return true;
+  if (node.type === 'Literal') return typeof node.value === 'string';
+  if (node.type === 'LogicalExpression') {
+    return isProvablyString(node.left) || isProvablyString(node.right);
+  }
+  if (node.type === 'ConditionalExpression') {
+    return isProvablyString(node.consequent) || isProvablyString(node.alternate);
+  }
+  if (node.type === 'BinaryExpression' && node.operator === '+') {
+    return isProvablyString(node.left) || isProvablyString(node.right);
+  }
+  return false;
+}
+
 /**
  * Check if error has a message
  */
@@ -55,35 +90,36 @@ function hasErrorMessage(node: TSESTree.ThrowStatement): boolean {
     return true;
   }
 
-  // Check if it's a new Error() with message (includes TypeError, ReferenceError, etc.)
-  if (
-    node.argument.type === 'NewExpression' &&
-    node.argument.callee.type === 'Identifier' &&
-    (node.argument.callee.name === 'Error' ||
-      node.argument.callee.name.endsWith('Error'))
-  ) {
-    // Check if first argument is a string (message) OR ANY expression — a
-    // custom error class like `new UserNotFoundError(userId)` builds its
-    // own message internally; the constructor argument IS the context.
-    if (node.argument.arguments.length > 0) {
-      const firstArg = node.argument.arguments[0];
-      const staticText = staticString(firstArg);
-      if (staticText !== null) {
-        return staticText.length > 0;
-      }
-      if (firstArg.type === 'TemplateLiteral') {
-        return true;
-      }
-      // Non-string argument to a custom *Error class — accept as context.
-      // The rule's purpose is "throws should carry information"; passing an
-      // identifier/object to the error constructor carries information.
-      if (
-        node.argument.callee.name !== 'Error' &&
-        node.argument.callee.name.endsWith('Error')
-      ) {
-        return true;
-      }
+  // `throw Error(msg)` and `throw new Error(msg)` build the same object — the spec
+  // makes `new` optional on the Error constructors, and yargs writes it without.
+  // Reading only `NewExpression` meant the callable form had "no message".
+  const constructed =
+    node.argument.type === 'NewExpression' || node.argument.type === 'CallExpression'
+      ? node.argument
+      : null;
+
+  if (constructed !== null && constructed.callee.type === 'Identifier') {
+    if (constructed.arguments.length === 0) {
+      return false;
     }
+    const firstArg = constructed.arguments[0];
+    const staticText = staticString(firstArg);
+    if (staticText !== null) {
+      return staticText.length > 0;
+    }
+    // A CUSTOM error class builds its own message from what it is handed, so the
+    // argument IS the context: `new UsageError(msg, hint)`, `new ActionRequired(spec)`,
+    // `new ExitSignal(code)`. This used to be gated on the name ENDING in "Error",
+    // which said nothing about a class named for what happened rather than for its
+    // base. The built-in constructors keep the stricter reading below.
+    if (!BUILTIN_ERROR_CONSTRUCTORS.has(constructed.callee.name)) {
+      return true;
+    }
+    // For the built-ins the first parameter is the message itself, so it has to be
+    // one: `new Error(someVar)` proves nothing about what `someVar` holds. A
+    // template literal does, and so does `message ?? \`fallback\`` — every branch a
+    // reader can see is a string.
+    return isProvablyString(firstArg);
   }
 
   // Check if it's a string literal
@@ -122,9 +158,10 @@ function hasErrorStack(node: TSESTree.ThrowStatement): boolean {
     return true;
   }
 
-  // Check if it's a new Error() instance
+  // Check if it's an Error instance. `Error(msg)` without `new` is one too.
   if (
-    node.argument.type === 'NewExpression' &&
+    (node.argument.type === 'NewExpression' ||
+      node.argument.type === 'CallExpression') &&
     node.argument.callee.type === 'Identifier'
   ) {
     const calleeName = node.argument.callee.name;
