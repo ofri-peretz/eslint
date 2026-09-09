@@ -44,7 +44,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ESLint } from 'eslint';
 import tsparser from '@typescript-eslint/parser';
-import { cloneRepo, resolveBenchDir, type RepoSpec } from '../../lib/clone-repo.ts';
+import {
+  cloneRepo,
+  resolveBenchDir,
+  type RepoSpec,
+} from '../../lib/clone-repo.ts';
 import { getToolchain } from '../../lib/toolchain.ts';
 import { capturePreregistration } from '../../lib/preregister.ts';
 import { appendHistory } from '../../lib/history.ts';
@@ -116,7 +120,6 @@ const PLUGINS: readonly string[] = [
   'mcp-sdk-security',
 ];
 
-
 const SOURCE_FILE = /\.(js|jsx|mjs|cjs|ts|tsx|mts|cts)$/;
 const SKIP_DIR =
   /^(node_modules|dist|build|coverage|vendor|fixtures|__fixtures__|\.git|\.next|\.nuxt|\.output|\.turbo)$/;
@@ -152,7 +155,10 @@ function sourceFilesIn(root: string, seen: Set<string>): string[] {
         entry.isDirectory() || (entry.isSymbolicLink() && statIsDir(full));
       if (isDir) {
         if (!SKIP_DIR.test(entry.name)) walk(full);
-      } else if (SOURCE_FILE.test(entry.name) && !entry.name.endsWith('.d.ts')) {
+      } else if (
+        SOURCE_FILE.test(entry.name) &&
+        !entry.name.endsWith('.d.ts')
+      ) {
         out.push(full);
       }
     }
@@ -184,8 +190,6 @@ async function main(): Promise<void> {
   const repos = JSON.parse(fs.readFileSync(REPOS_PATH, 'utf8')) as Array<
     RepoSpec & { corpus: string }
   >;
-  log(`\n💸 ILB-Preset-Budget — ${PLUGINS.length} plugins over ${repos.length} repositories\n`);
-
   const override = process.env.ILB_CORPUS_TRUTH_DIR;
   const corpusRoots: CorpusRoot[] = [];
   if (override) {
@@ -206,11 +210,21 @@ async function main(): Promise<void> {
     }
   }
 
+  // Announced after the corpus is resolved, not before: with ILB_CORPUS_TRUTH_DIR set the
+  // manifest count is not what gets linted, and a header that says 107 while three
+  // directories go past is the kind of number this suite exists to refuse.
+  log(
+    `\n💸 ILB-Preset-Budget — ${PLUGINS.length} plugins over ${corpusRoots.length} repositories\n`,
+  );
+
   // Same corpus discipline as ILB-Corpus-Truth: a budget recorded against a
   // corpus nobody else measures is not a budget.
   const pinned = new Map(repos.map((r) => [r.name, r.commit]));
   const drifted = driftedRoots(corpusRoots, pinned);
-  const delta = manifestDelta(corpusRoots, repos.map((r) => r.name));
+  const delta = manifestDelta(
+    corpusRoots,
+    repos.map((r) => r.name),
+  );
   const hash = corpusHash(corpusRoots);
   if (delta.missing.length > 0 || drifted.length > 0) {
     log(
@@ -237,7 +251,9 @@ async function main(): Promise<void> {
   const excluded: string[] = [];
 
   for (const name of PLUGINS) {
-    const mod = await import(`${REPO_ROOT}/packages/eslint-plugin-${name}/src/index.ts`);
+    const mod = await import(
+      `${REPO_ROOT}/packages/eslint-plugin-${name}/src/index.ts`
+    );
     const preset = recommendedRules((mod as { configs?: unknown }).configs);
     const entries = Object.entries(preset);
     if (entries.length === 0) {
@@ -260,7 +276,9 @@ async function main(): Promise<void> {
       ruleOwner.set(id, name);
     }
   }
-  log(`\n⚙️  ${Object.keys(rules).length} recommended rules across ${recommendedCount.size} plugins`);
+  log(
+    `\n⚙️  ${Object.keys(rules).length} recommended rules across ${recommendedCount.size} plugins`,
+  );
   if (excluded.length > 0) {
     log(
       `   ${excluded.length} rules excluded — they resolve module specifiers and the ` +
@@ -274,27 +292,28 @@ async function main(): Promise<void> {
   // the instance, and at this scale that is hundreds of thousands of ASTs. A
   // fresh instance per repository bounds it, and construction is negligible
   // beside linting a repository.
-  const makeEslint = (): ESLint => new ESLint({
-    cwd: override ? path.resolve(override) : resolveBenchDir(REPO_ROOT),
-    ignore: false,
-    overrideConfigFile: true,
-    overrideConfig: {
-      files: ['**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}'],
-      linterOptions: { reportUnusedDisableDirectives: 'off' },
-      languageOptions: {
-        parser: tsparser,
-        parserOptions: {
-          ecmaVersion: 'latest',
-          sourceType: 'module',
-          ecmaFeatures: { jsx: true },
+  const makeEslint = (): ESLint =>
+    new ESLint({
+      cwd: override ? path.resolve(override) : resolveBenchDir(REPO_ROOT),
+      ignore: false,
+      overrideConfigFile: true,
+      overrideConfig: {
+        files: ['**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}'],
+        linterOptions: { reportUnusedDisableDirectives: 'off' },
+        languageOptions: {
+          parser: tsparser,
+          parserOptions: {
+            ecmaVersion: 'latest',
+            sourceType: 'module',
+            ecmaFeatures: { jsx: true },
+          },
         },
+        plugins,
+        // The presets verbatim. Re-deriving severities would measure a config no
+        // user ever installs.
+        rules: rules as never,
       },
-      plugins,
-      // The presets verbatim. Re-deriving severities would measure a config no
-      // user ever installs.
-      rules: rules as never,
-    },
-  });
+    });
 
   const perRepo = new Map<string, Map<string, number>>(); // plugin → repo → findings
   const byRule = new Map<string, number>();
@@ -303,11 +322,35 @@ async function main(): Promise<void> {
   let scanned = 0;
   let errors = 0;
 
-  for (const root of corpusRoots) {
+  /*
+   * A line per repository, with elapsed time.
+   *
+   * Without it this loop prints nothing between "30 plugins over 107 repositories" and the
+   * summary, which is how the scheduled run went 86 minutes in silence and then died on
+   * `timeout-minutes` having written no artifact. A log that stops at repo 61 of 107 says
+   * both that the job is progressing and roughly what it needs; a log that stops after the
+   * header says only that something happened.
+   *
+   * Goes to stderr so `--json` stays a clean document on stdout.
+   */
+  const startedAt = Date.now();
+  const progress = (i: number, name: string, fileCount: number): void => {
+    if (EMIT_JSON) return;
+    const elapsed = Math.round((Date.now() - startedAt) / 1000);
+    const mm = String(Math.floor(elapsed / 60)).padStart(2, '0');
+    const ss = String(elapsed % 60).padStart(2, '0');
+    process.stderr.write(
+      `   [${mm}:${ss}] ${String(i).padStart(3)}/${corpusRoots.length} ${name} (${fileCount} files)\n`,
+    );
+  };
+
+  for (const [index, root] of corpusRoots.entries()) {
     const files = sourceFilesIn(root.dir, new Set());
+    progress(index + 1, root.name, files.length);
     if (files.length === 0) continue;
     const eslint = makeEslint();
-    for (const name of recommendedCount.keys()) perRepo.get(name)!.set(root.name, 0);
+    for (const name of recommendedCount.keys())
+      perRepo.get(name)!.set(root.name, 0);
 
     for (let i = 0; i < files.length; i += 300) {
       let results;
@@ -420,7 +463,11 @@ async function main(): Promise<void> {
         'in the PR body.',
       medians: Object.fromEntries(budgets.map((b) => [b.plugin, b.median])),
     };
-    fs.writeFileSync(BASELINE_PATH, JSON.stringify(baseline, null, 2) + '\n', 'utf8');
+    fs.writeFileSync(
+      BASELINE_PATH,
+      JSON.stringify(baseline, null, 2) + '\n',
+      'utf8',
+    );
     fs.writeFileSync(outPath, JSON.stringify(result, null, 2) + '\n', 'utf8');
     appendHistory(result, outPath);
     log(`\n📌 Baseline recorded: ${path.relative(REPO_ROOT, BASELINE_PATH)}`);
@@ -447,7 +494,9 @@ async function main(): Promise<void> {
   }
 
   const regressions = budgets.filter(
-    (b) => baseline.medians[b.plugin] !== undefined && b.median > baseline.medians[b.plugin],
+    (b) =>
+      baseline.medians[b.plugin] !== undefined &&
+      b.median > baseline.medians[b.plugin],
   );
   result.effectiveness.pluginsOverBudget = regressions.length;
   fs.writeFileSync(outPath, JSON.stringify(result, null, 2) + '\n', 'utf8');
