@@ -29,6 +29,7 @@ import fs from "fs";
 import path from "path";
 import { createInterface } from "readline";
 import { fileURLToPath } from "url";
+import { chiSquaredPValue } from "../../lib/stats.ts";
 import { execSync as _execSync } from "child_process";
 import { GoogleGenAI } from "@google/genai";
 import { PROMPTS, RULE_METADATA, RULE_CATEGORY_MAP } from "./prompts.js";
@@ -206,13 +207,20 @@ function chiSquaredTest(modelData) {
   });
 
   const df = models.length - 1;
-  const criticalValues = { 1: 3.841, 2: 5.991, 3: 7.815, 4: 9.488, 5: 11.07 };
-  const significant = chiSq > (criticalValues[df] || 5.991);
+  // Computed tail, not a lookup. The table this replaced fell back to the df=2
+  // value for any df it lacked, so runs with 5+ models were judged against a
+  // threshold below their own. The error ran one way only: it manufactured
+  // significance, never withheld it.
+  const pValue = chiSquaredPValue(chiSq, df);
+  const significant = pValue < 0.05;
 
   return {
     chiSquared: Math.round(chiSq * 1000) / 1000,
     df,
-    pValue: significant ? "< 0.05" : "> 0.05",
+    // A NUMBER. This was the string "< 0.05"/"> 0.05" rendered from
+    // `significant`, restating the boolean and carrying no evidence of its
+    // own, while the df<2 branch put the number 1 on the same field.
+    pValue: Number(pValue.toPrecision(4)),
     significant,
   };
 }

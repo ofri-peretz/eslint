@@ -47,7 +47,11 @@ export function f1Score(tp, fp, fn) {
   const precision = tp + fp === 0 ? 0 : tp / (tp + fp);
   const recall = tp + fn === 0 ? 0 : tp / (tp + fn);
   if (precision + recall === 0) return { precision, recall, f1: 0 };
-  return { precision, recall, f1: (2 * precision * recall) / (precision + recall) };
+  return {
+    precision,
+    recall,
+    f1: (2 * precision * recall) / (precision + recall),
+  };
 }
 
 /**
@@ -62,7 +66,8 @@ export function weightedF1(observations) {
   let wFp = 0;
   let wFn = 0;
   for (const o of observations) {
-    const w = typeof o.weight === 'number' && Number.isFinite(o.weight) ? o.weight : 1;
+    const w =
+      typeof o.weight === 'number' && Number.isFinite(o.weight) ? o.weight : 1;
     if (o.outcome === 'tp') wTp += w;
     else if (o.outcome === 'fp') wFp += w;
     else if (o.outcome === 'fn') wFn += w;
@@ -92,7 +97,10 @@ export const CVSS_WEIGHT = Object.freeze({
  * @returns {Array<{outcome: string, weight: number}>}
  */
 export function findingsToObservations(findings) {
-  return findings.map((f) => ({ outcome: f.outcome, weight: cvssToWeight(f.cvss) }));
+  return findings.map((f) => ({
+    outcome: f.outcome,
+    weight: cvssToWeight(f.cvss),
+  }));
 }
 
 function cvssToWeight(cvss) {
@@ -139,7 +147,8 @@ export function bootstrapF1CI(observations: any[], opts: any = {}) {
   const N = observations.length;
   for (let r = 0; r < resamples; r++) {
     const sample = new Array(N);
-    for (let i = 0; i < N; i++) sample[i] = observations[Math.floor(rand() * N)];
+    for (let i = 0; i < N; i++)
+      sample[i] = observations[Math.floor(rand() * N)];
     f1s[r] = weightedF1(sample).f1;
   }
   f1s.sort((a, b) => a - b);
@@ -174,7 +183,8 @@ export function wilsonScoreCI(successes, trials, z = 1.96) {
   const p = successes / trials;
   const denom = 1 + (z * z) / trials;
   const center = p + (z * z) / (2 * trials);
-  const margin = z * Math.sqrt((p * (1 - p)) / trials + (z * z) / (4 * trials * trials));
+  const margin =
+    z * Math.sqrt((p * (1 - p)) / trials + (z * z) / (4 * trials * trials));
   return {
     p,
     low: Math.max(0, (center - margin) / denom),
@@ -192,7 +202,8 @@ export function wilsonScoreCI(successes, trials, z = 1.96) {
  */
 export function accuracyReport(observations, opts = {}) {
   const counts = { tp: 0, fp: 0, fn: 0 };
-  for (const o of observations) counts[o.outcome] = (counts[o.outcome] ?? 0) + 1;
+  for (const o of observations)
+    counts[o.outcome] = (counts[o.outcome] ?? 0) + 1;
 
   const plain = f1Score(counts.tp, counts.fp, counts.fn);
   const weighted = weightedF1(observations);
@@ -219,3 +230,87 @@ export function accuracyReport(observations, opts = {}) {
 // Lifted to its own file so strict-tsconfig consumers (apps/docs) can
 // import it without pulling in this whole loosely-typed module.
 export { median } from './median.ts';
+
+// ─── significance ────────────────────────────────────────────────────────
+
+/** Lanczos g=7 log-gamma. ~15 significant figures for x > 0. */
+function gammaLn(x) {
+  const c = [
+    0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+    771.32342877765313, -176.61502916214059, 12.507343278686905,
+    -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7,
+  ];
+  if (x < 0.5)
+    return Math.log(Math.PI / Math.sin(Math.PI * x)) - gammaLn(1 - x);
+  x -= 1;
+  let a = c[0];
+  const t = x + 7.5;
+  for (let i = 1; i < 9; i++) a += c[i] / (x + i);
+  return (
+    0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a)
+  );
+}
+
+/**
+ * Regularized upper incomplete gamma Q(a, x) = Gamma(a, x) / Gamma(a).
+ * Series below x < a+1, continued fraction above — each converges quickly only
+ * on its own side. Capped at 300 iterations; neither needs ~30 in this range.
+ */
+function upperGamma(a, x) {
+  if (x <= 0) return 1;
+  if (x < a + 1) {
+    let ap = a;
+    let sum = 1 / a;
+    let del = sum;
+    for (let n = 0; n < 300; n++) {
+      ap += 1;
+      del *= x / ap;
+      sum += del;
+      if (Math.abs(del) < Math.abs(sum) * 1e-15) break;
+    }
+    return 1 - sum * Math.exp(-x + a * Math.log(x) - gammaLn(a));
+  }
+  const tiny = 1e-300;
+  let b = x + 1 - a;
+  let c = 1 / tiny;
+  let d = 1 / b;
+  let h = d;
+  for (let i = 1; i < 300; i++) {
+    const an = -i * (i - a);
+    b += 2;
+    d = an * d + b;
+    if (Math.abs(d) < tiny) d = tiny;
+    c = b + an / c;
+    if (Math.abs(c) < tiny) c = tiny;
+    d = 1 / d;
+    const del = d * c;
+    h *= del;
+    if (Math.abs(del - 1) < 1e-15) break;
+  }
+  return h * Math.exp(-x + a * Math.log(x) - gammaLn(a));
+}
+
+/**
+ * p-value for a chi-squared statistic — COMPUTED, never looked up.
+ *
+ * Replaces a `criticalValues = {1,2,3}` table whose lookup miss fell back to
+ * the df=2 value (5.991). Any run with 5+ groups (df >= 4) was tested against
+ * a threshold below its own, and 5.991 sits under the true critical value for
+ * every df >= 4, so the error only ever manufactured significance. A table has
+ * a silent edge; a computed tail does not.
+ *
+ * @param {number} chiSq  the test statistic (>= 0)
+ * @param {number} df     degrees of freedom (>= 1)
+ * @returns {number} P(X >= chiSq) under the null
+ */
+export function chiSquaredPValue(chiSq, df) {
+  // `Infinity >= 0` is true, so Infinity walks past a `>= 0` test and reaches the
+  // Lentz continued fraction, where `tiny * Infinity` is Infinity and the final
+  // `Infinity * exp(-Infinity)` is NaN. A NaN p-value compares false against every
+  // threshold, so the verdict would silently become "not significant" for the one
+  // statistic that is most significant. Answer it directly: an infinite statistic
+  // has all its mass in the tail, p = 0.
+  if (chiSq === Infinity) return df >= 1 ? 0 : 1;
+  if (!Number.isFinite(chiSq) || chiSq < 0 || !(df >= 1)) return 1;
+  return upperGamma(df / 2, chiSq / 2);
+}
