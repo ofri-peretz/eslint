@@ -20,7 +20,11 @@ import {
   formatLLMMessage,
   MessageIcons,
 } from '@interlace/eslint-devkit';
-import { isSignOperation, isVerifyOperation, isEnvVariable } from '../../utils';
+import {
+  isSignOperation,
+  isSignatureVerifyOperation,
+  isEnvVariable,
+} from '../../utils';
 import type { NoWeakSecretOptions } from '../../types';
 
 type MessageIds = 'weakSecret' | 'shortSecret' | 'useStrongSecret';
@@ -185,7 +189,7 @@ export const noWeakSecret = createRule<RuleOptions, MessageIds>({
     return {
       CallExpression(node: TSESTree.CallExpression) {
         // Check both sign and verify operations
-        if (!isSignOperation(node) && !isVerifyOperation(node)) {
+        if (!isSignOperation(node) && !isSignatureVerifyOperation(node)) {
           return;
         }
 

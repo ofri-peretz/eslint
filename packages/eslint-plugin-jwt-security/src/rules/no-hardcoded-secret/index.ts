@@ -21,7 +21,11 @@ import {
   MessageIcons,
   staticString,
 } from '@interlace/eslint-devkit';
-import { isSignOperation, isVerifyOperation, isEnvVariable } from '../../utils';
+import {
+  isSignOperation,
+  isSignatureVerifyOperation,
+  isEnvVariable,
+} from '../../utils';
 import type { NoHardcodedSecretOptions } from '../../types';
 
 type MessageIds = 'hardcodedSecret' | 'useEnvVariable';
@@ -106,7 +110,8 @@ export const noHardcodedSecret = createRule<RuleOptions, MessageIds>({
     // A quoted string and a no-substitution template literal are one thing;
     // `staticString` answers for both, which made the separate template arm
     // that used to sit here unreachable.
-    const isHardcodedString = (node: TSESTree.Node): boolean => staticString(node) !== null;
+    const isHardcodedString = (node: TSESTree.Node): boolean =>
+      staticString(node) !== null;
 
     /**
      * Resolve an Identifier node to its initializer (one frame of indirection).
@@ -189,7 +194,7 @@ export const noHardcodedSecret = createRule<RuleOptions, MessageIds>({
     return {
       CallExpression(node: TSESTree.CallExpression) {
         // Check both sign and verify operations
-        if (!isSignOperation(node) && !isVerifyOperation(node)) {
+        if (!isSignOperation(node) && !isSignatureVerifyOperation(node)) {
           return;
         }
 

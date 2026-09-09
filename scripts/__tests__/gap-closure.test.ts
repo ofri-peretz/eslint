@@ -15,10 +15,6 @@ import {
   findPolicyViolations as cveFindPolicyViolations,
 } from '../audit-cve-rule-latency.js';
 
-import {
-  auditManifest,
-  recomputeSummary as apiRecomputeSummary,
-} from '../audit-api-surface.js';
 
 import {
   extractMeasurements,
@@ -143,193 +139,16 @@ describe('audit-cve-rule-latency: findPolicyViolations', () => {
 // audit-api-surface.ts
 // =========================================
 
-describe('audit-api-surface: auditManifest', () => {
-  const make = (overrides: Partial<any> = {}) => ({
-    description: '',
-    method: '',
-    generatedAt: '2026-01-01',
-    target_floor_pct: 60,
-    summary: { aggregateCoverage_pct: 0, pluginsAtOrAboveFloor: 0, pluginsBelowFloor: 0, criticalGaps: [], note: '' },
-    plugins: [
-      {
-        plugin: 'eslint-plugin-test',
-        surface: 'x',
-        surfaceVersion: '1',
-        callableApis_total: 10,
-        callableApis_covered: 7,
-        coverage_pct: 70,
-        ruleCount: 5,
-        uncovered_examples: [],
-        notes: '',
-      },
-    ],
-    ...overrides,
-  });
-
-  it('flags covered > total as an error', () => {
-    const m = make({
-      plugins: [
-        {
-          plugin: 'bad',
-          surface: 'x',
-          surfaceVersion: '1',
-          callableApis_total: 10,
-          callableApis_covered: 11,
-          coverage_pct: 110,
-          ruleCount: 1,
-          uncovered_examples: [],
-          notes: '',
-        },
-      ],
-    });
-    const f = auditManifest(m as any);
-    const errs = f.filter((x) => x.severity === 'error');
-    expect(errs.length).toBeGreaterThanOrEqual(1);
-    expect(errs[0].message).toMatch(/covered.*>.*total/);
-  });
-
-  it('flags coverage_pct disagreeing with computed', () => {
-    const m = make({
-      plugins: [
-        {
-          plugin: 'mismatch',
-          surface: 'x',
-          surfaceVersion: '1',
-          callableApis_total: 10,
-          callableApis_covered: 5,
-          coverage_pct: 80,
-          ruleCount: 1,
-          uncovered_examples: [],
-          notes: '',
-        },
-      ],
-    });
-    const f = auditManifest(m as any);
-    expect(f.some((x) => x.severity === 'error' && /disagrees/.test(x.message))).toBe(true);
-  });
-
-  it('warns when below floor but does not error', () => {
-    const m = make({
-      plugins: [
-        {
-          plugin: 'low',
-          surface: 'x',
-          surfaceVersion: '1',
-          callableApis_total: 10,
-          callableApis_covered: 3,
-          coverage_pct: 30,
-          ruleCount: 1,
-          uncovered_examples: [],
-          notes: '',
-        },
-      ],
-    });
-    const f = auditManifest(m as any);
-    expect(f.some((x) => x.severity === 'warn' && /below.*floor/i.test(x.message))).toBe(true);
-    expect(f.some((x) => x.severity === 'error')).toBe(false);
-  });
-
-  it('passes silently when everything is consistent and at floor', () => {
-    const f = auditManifest(make() as any);
-    expect(f).toEqual([]);
-  });
-
-  // ---- outOfScope: the denominator must stay honest -----------------------
-
-  const withOutOfScope = (outOfScope: unknown[], over: Partial<any> = {}) =>
-    make({
-      plugins: [
-        {
-          plugin: 'eslint-plugin-scoped',
-          surface: 'x',
-          surfaceVersion: '1',
-          callableApis_total: 10,
-          callableApis_covered: 9,
-          coverage_pct: 100,
-          ruleCount: 9,
-          uncovered_examples: [],
-          outOfScope,
-          ...over,
-        },
-      ],
-    });
-
-  it('computes coverage against the in-scope total, not the raw API count', () => {
-    // 9 covered of 10 APIs, but 1 is not a sink → 9/9 = 100%, not 90%.
-    const f = auditManifest(
-      withOutOfScope([
-        { api: 'x.notASink', reason: 'Runs on data returned from the server and never participates in query construction.' },
-      ]) as any,
-    );
-    expect(f).toEqual([]);
-  });
-
-  it('rejects an exclusion with no substantive reason', () => {
-    const f = auditManifest(withOutOfScope([{ api: 'x.bare', reason: 'n/a' }]) as any);
-    expect(f.some((x) => x.severity === 'error' && /substantive reason/.test(x.message))).toBe(true);
-  });
-
-  it('rejects an exclusion argued from rarity rather than threat model', () => {
-    // The gaming path this field exists to block: relabel an unclosed gap as
-    // "niche" and collect a free point.
-    const f = auditManifest(
-      withOutOfScope([
-        { api: 'x.rareSink', reason: 'This API is niche and almost nobody calls it in practice.' },
-      ]) as any,
-    );
-    expect(f.some((x) => x.severity === 'error' && /frequency/.test(x.message))).toBe(true);
-  });
-
-  it('rejects a duplicated exclusion that would deflate the denominator twice', () => {
-    const reason = 'Result-coercion hook that cannot influence statement construction at all.';
-    const f = auditManifest(
-      withOutOfScope(
-        [
-          { api: 'x.dup', reason },
-          { api: 'x.dup', reason },
-        ],
-        { callableApis_covered: 8, coverage_pct: 100 },
-      ) as any,
-    );
-    expect(f.some((x) => x.severity === 'error' && /twice/.test(x.message))).toBe(true);
-  });
-
-  it('errors when covered exceeds the in-scope total', () => {
-    const f = auditManifest(
-      withOutOfScope(
-        [{ api: 'x.notASink', reason: 'Not reachable by attacker-controlled input under this threat model.' }],
-        { callableApis_covered: 10, coverage_pct: 100 },
-      ) as any,
-    );
-    expect(f.some((x) => x.severity === 'error' && /in-scope total/.test(x.message))).toBe(true);
-  });
-
-  it('treats a missing outOfScope as an empty list', () => {
-    const f = auditManifest(make() as any);
-    expect(f).toEqual([]);
-  });
-});
-
-describe('audit-api-surface: recomputeSummary', () => {
-  it('averages coverage across plugins', () => {
-    const m = {
-      description: '',
-      method: '',
-      generatedAt: '',
-      target_floor_pct: 60,
-      summary: { aggregateCoverage_pct: 0, pluginsAtOrAboveFloor: 0, pluginsBelowFloor: 0, criticalGaps: [], note: '' },
-      plugins: [
-        { plugin: 'a', surface: '', surfaceVersion: '', callableApis_total: 10, callableApis_covered: 8, coverage_pct: 80, ruleCount: 1, uncovered_examples: [], notes: '' },
-        { plugin: 'b', surface: '', surfaceVersion: '', callableApis_total: 10, callableApis_covered: 6, coverage_pct: 60, ruleCount: 1, uncovered_examples: [], notes: '' },
-        { plugin: 'c', surface: '', surfaceVersion: '', callableApis_total: 10, callableApis_covered: 4, coverage_pct: 40, ruleCount: 1, uncovered_examples: [], notes: '' },
-      ],
-    };
-    const s = apiRecomputeSummary(m as any);
-    expect(s.aggregateCoverage_pct).toBe(60); // (80+60+40)/3
-    expect(s.pluginsAtOrAboveFloor).toBe(2);
-    expect(s.pluginsBelowFloor).toBe(1);
-  });
-});
+// `auditManifest` and `recomputeSummary` are gone, and with them the tests
+// that lived here. They asserted that a hand-typed `coverage_pct` agreed with
+// a hand-typed `covered / total` — an internal-consistency check that passed
+// on any self-consistent edit, which is how two plugins came to publish 100%
+// while the measurement bounded them at 33%.
+//
+// The counts are now measured. The contract that replaced it — a declared
+// count is rejected outright, an exclusion must name an API the measurement
+// actually counted, and the floor only judges a curated denominator — is
+// locked in `api-surface-coverage-is-measured.lock.test.ts`.
 
 // =========================================
 // check-per-rule-budget.ts

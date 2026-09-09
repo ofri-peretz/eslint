@@ -1,26 +1,42 @@
 #!/usr/bin/env -S npx tsx
 /**
- * audit-api-surface — verify and report API-surface coverage per domain
- * security plugin.
+ * audit-api-surface — report API-surface coverage per plugin, from the surface.
  *
- * Reads `.agent/api-surface-manifest.json` (the hand-maintained per-plugin
- * audit), validates the math (covered ≤ total, percent matches the ratio),
- * checks every plugin meets the `target_floor_pct`, and renders
- * `benchmark-results/api-surface-coverage.md`.
+ * ## What changed, and why it had to
  *
- * Closes the §2 "API-surface coverage" (gap) row in
- * `distribution/EVALUATION_METRICS.md`.
+ * This script used to read `.agent/api-surface-manifest.json` and check that
+ * the numbers in it were internally consistent and above a floor. Every figure
+ * in the published table — including the "100%" beside two plugins — was typed
+ * by a human. The script never read a rule and never read an API surface, so
+ * "drive the table to 100%" was a text edit taking ninety seconds, and the
+ * check could not tell that edit apart from the work.
  *
- * Refresh policy: when a domain plugin gains or loses rules, re-audit
- * its target surface (read the public exports of the target SDK / runtime),
- * update the entry in `.agent/api-surface-manifest.json`, then re-run
- * this script.
+ * The numbers now come from `measure-api-surface.mts`, which enumerates each
+ * plugin's declared surface at the installed version and asks which of those
+ * names appear in the rule sources. The manifest keeps only what a measurement
+ * cannot produce: the prose description of a surface, and the `outOfScope`
+ * judgements with their reasons.
+ *
+ * ## Why every figure is published as an upper bound
+ *
+ * Naming an API is NECESSARY for a rule to act on it and not SUFFICIENT — the
+ * name could sit in a comment. So the measurement bounds coverage from above:
+ * an API that appears nowhere is provably uncovered, and one that appears is
+ * only *possibly* covered. Turning that into an exact figure means probing each
+ * API with a real misuse snippet, which cannot be generated mechanically.
+ *
+ * That asymmetry decides the gate. A plugin whose UPPER bound sits below the
+ * floor is proven below it, and fails. A plugin above the floor has proven
+ * nothing, and is reported as `not proven` — never as a pass. A gate that
+ * announced "pass" on an upper bound would be the original defect wearing a
+ * measurement's clothes.
  *
  * Usage:
  *   npm run audit:api-surface
- *   npm run audit:api-surface -- --strict   # fail if any plugin < floor
+ *   npm run audit:api-surface -- --strict   # fail on any new below-floor plugin
  */
 
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -36,69 +52,103 @@ import {
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '..');
-const MANIFEST_PATH = path.join(REPO_ROOT, '.agent', 'api-surface-manifest.json');
-const MD_PATH = path.join(REPO_ROOT, 'benchmark-results', 'api-surface-coverage.md');
+const MANIFEST_PATH = path.join(
+  REPO_ROOT,
+  '.agent',
+  'api-surface-manifest.json',
+);
+const DEBT_PATH = path.join(REPO_ROOT, '.agent', 'api-surface-floor-debt.json');
+const MD_PATH = path.join(
+  REPO_ROOT,
+  'benchmark-results',
+  'api-surface-coverage.md',
+);
+const MEASURE = path.join(HERE, 'measure-api-surface.mts');
 
 /**
  * An API on the target surface that is deliberately NOT a rule target —
  * because it is not a security sink for this plugin's threat model, not
- * because we haven't got to it yet. These are subtracted from the denominator
- * so `coverage_pct` measures the surface that can actually be attacked.
+ * because we haven't got to it yet.
  *
  * Every entry carries a `reason`. That is the whole safeguard: without it,
- * excluding an API is indistinguishable from hiding a gap, and the metric
- * becomes something you raise by editing JSON. `auditManifest` rejects a
- * missing or hand-wavy reason, so "it's niche" / "rare" can never buy a
- * point — rarity is a prioritisation argument, not a scope argument.
+ * excluding an API is indistinguishable from hiding a gap. `auditSurfaces`
+ * rejects a missing or hand-wavy reason, so "it's niche" / "rare" can never
+ * buy a point — rarity is a prioritisation argument, not a scope argument.
  */
 export interface OutOfScopeApi {
   api: string;
   reason: string;
 }
 
+/** What a human asserts about a plugin. No counts: those are measured. */
 export interface PluginEntry {
   plugin: string;
   surface: string;
   surfaceVersion: string;
-  callableApis_total: number;
-  callableApis_covered: number;
-  coverage_pct: number;
-  ruleCount: number;
-  uncovered_examples: string[];
+  /**
+   * Whether the denominator is the consumer-callable surface, or the raw
+   * module enumeration.
+   *
+   * The floor applies to `curated` only. A raw denominator can be wrong in
+   * either direction — `@aws-sdk/client-lambda` enumerates the Lambda control
+   * plane, which a handler-security plugin has no business covering, and
+   * `better-sqlite3` reads as one callable because it default-exports a class.
+   * Failing a plugin against a number like that, or letting it pass on one,
+   * repeats the defect this audit exists to fix while looking measured.
+   */
+  denominatorTrust: 'curated' | 'raw';
+  denominatorNote: string;
   notes: string;
-  /** Absent is equivalent to `[]` — every API counts until argued otherwise. */
   outOfScope?: OutOfScopeApi[];
 }
 
-/** Denominator for coverage: the security-relevant slice of the surface. */
-export function inScopeTotal(p: PluginEntry): number {
-  return p.callableApis_total - (p.outOfScope?.length ?? 0);
+/** One plugin as `measure-api-surface.mts --json` reports it. */
+export interface Measured {
+  plugin: string;
+  surfaceSize: number;
+  namedCount: number;
+  upperBoundPct: number;
+  surface: string[];
+  uncovered: string[];
 }
+
+export interface NotEnumerable {
+  plugin: string;
+  kind: string;
+  note?: string;
+}
+
+export interface Measurement {
+  measuredAt: string;
+  node: string;
+  measured: Measured[];
+  notEnumerable: NotEnumerable[];
+}
+
+/**
+ * Fields that used to hold a typed number.
+ *
+ * Rejecting the FIELD, rather than checking the value against the measurement,
+ * is deliberate: a value check can be satisfied by editing the value, and the
+ * whole failure being fixed here is that editing the value was indistinguishable
+ * from doing the work. A manifest that cannot express a count cannot publish one.
+ */
+const FORBIDDEN_FIELDS = [
+  'callableApis_total',
+  'callableApis_covered',
+  'coverage_pct',
+  'ruleCount',
+  'uncovered_examples',
+] as const;
 
 /**
  * Reasons that describe how *often* an API is misused, rather than whether
  * misuse is a security problem. A rare sink is a low-priority gap, not an
- * out-of-scope API — letting these through would reintroduce exactly the
- * gaming this field exists to prevent.
+ * out-of-scope API.
  */
-const FREQUENCY_NOT_SCOPE = /\b(niche|rare|rarely|uncommon|low[- ]traffic|low[- ]frequency|infrequent|not common)\b/i;
+const FREQUENCY_NOT_SCOPE =
+  /\b(niche|rare|rarely|uncommon|low[- ]traffic|low[- ]frequency|infrequent|not common)\b/i;
 const MIN_REASON_LENGTH = 20;
-
-interface Manifest {
-  $schema?: string;
-  description: string;
-  method: string;
-  generatedAt: string;
-  target_floor_pct: number;
-  plugins: PluginEntry[];
-  summary: {
-    aggregateCoverage_pct: number;
-    pluginsAtOrAboveFloor: number;
-    pluginsBelowFloor: number;
-    criticalGaps: string[];
-    note: string;
-  };
-}
 
 export interface AuditFinding {
   plugin: string;
@@ -106,10 +156,36 @@ export interface AuditFinding {
   message: string;
 }
 
-export function auditManifest(m: Manifest): AuditFinding[] {
+/** Coverage of the security-relevant slice, bounded from above. */
+export function upperBoundPct(m: Measured, outOfScope: number): number {
+  const denominator = m.surfaceSize - outOfScope;
+  if (denominator <= 0) return 0;
+  return Math.round((m.namedCount / denominator) * 100);
+}
+
+export function auditSurfaces(
+  entries: PluginEntry[],
+  measurement: Measurement,
+  floorPct: number,
+  debt: string[],
+): AuditFinding[] {
   const findings: AuditFinding[] = [];
-  for (const p of m.plugins) {
-    const seenApis = new Set<string>();
+  const byPlugin = new Map(measurement.measured.map((m) => [m.plugin, m]));
+  const notEnumerable = new Set(measurement.notEnumerable.map((n) => n.plugin));
+
+  for (const p of entries) {
+    const raw = p as unknown as Record<string, unknown>;
+    for (const field of FORBIDDEN_FIELDS) {
+      if (raw[field] !== undefined) {
+        findings.push({
+          plugin: p.plugin,
+          severity: 'error',
+          message: `"${field}" is measured, not declared — remove it; a hand-typed count is the defect this audit exists to prevent`,
+        });
+      }
+    }
+
+    const seen = new Set<string>();
     for (const o of p.outOfScope ?? []) {
       const reason = (o.reason ?? '').trim();
       if (reason.length < MIN_REASON_LENGTH) {
@@ -125,104 +201,151 @@ export function auditManifest(m: Manifest): AuditFinding[] {
           message: `outOfScope "${o.api}" is argued from frequency ("${reason}"), not threat model — a rare sink is a low-priority gap, keep it in the denominator`,
         });
       }
-      if (seenApis.has(o.api)) {
+      if (seen.has(o.api)) {
         findings.push({
           plugin: p.plugin,
           severity: 'error',
           message: `outOfScope lists "${o.api}" twice, which would deflate the denominator by 2`,
         });
       }
-      seenApis.add(o.api);
+      seen.add(o.api);
     }
 
-    const denominator = inScopeTotal(p);
-    if (denominator < 0) {
+    const measured = byPlugin.get(p.plugin);
+    if (measured === undefined) {
+      if (!notEnumerable.has(p.plugin)) {
+        findings.push({
+          plugin: p.plugin,
+          severity: 'error',
+          message: `no measurement — the surface could not be enumerated and the plugin is not declared unenumerable`,
+        });
+      }
+      continue;
+    }
+
+    /*
+     * An excluded API that is not on the measured surface deflates the
+     * denominator for free — the same trick as a typed count, one indirection
+     * further out. The measurement reports the whole surface so this is
+     * checkable rather than taken on trust.
+     */
+    const onSurface = new Set(measured.surface);
+    for (const o of p.outOfScope ?? []) {
+      if (!onSurface.has(o.api)) {
+        findings.push({
+          plugin: p.plugin,
+          severity: 'error',
+          message: `outOfScope "${o.api}" is not on the measured surface — excluding a name that was never counted shrinks the denominator for free`,
+        });
+      }
+    }
+
+    if ((p.denominatorNote ?? '').trim().length < MIN_REASON_LENGTH) {
       findings.push({
         plugin: p.plugin,
         severity: 'error',
-        message: `outOfScope (${p.outOfScope?.length ?? 0}) exceeds total (${p.callableApis_total})`,
+        message: `denominatorNote must say what the denominator is and why it can be trusted; "curated" without an argument is just an assertion`,
       });
     }
-    if (p.callableApis_covered > denominator) {
+
+    const bound = upperBoundPct(measured, (p.outOfScope ?? []).length);
+    if (p.denominatorTrust !== 'curated') continue;
+    if (bound < floorPct && !debt.includes(p.plugin)) {
       findings.push({
         plugin: p.plugin,
         severity: 'error',
-        message: `covered (${p.callableApis_covered}) > in-scope total (${denominator})`,
-      });
-    }
-    const computedPct =
-      denominator > 0 ? Math.round((p.callableApis_covered / denominator) * 100) : 0;
-    if (Math.abs(computedPct - p.coverage_pct) > 1) {
-      findings.push({
-        plugin: p.plugin,
-        severity: 'error',
-        message: `coverage_pct (${p.coverage_pct}) disagrees with computed (${computedPct})`,
-      });
-    }
-    if (p.coverage_pct < m.target_floor_pct) {
-      findings.push({
-        plugin: p.plugin,
-        severity: 'warn',
-        message: `coverage ${p.coverage_pct}% below target floor ${m.target_floor_pct}%`,
+        message: `upper bound ${bound}% is below the ${floorPct}% floor and is not in the recorded debt — a plugin may not newly drop below the floor`,
       });
     }
   }
+
+  for (const stale of debt) {
+    const measured = byPlugin.get(stale);
+    if (measured === undefined) continue;
+    const entry = entries.find((e) => e.plugin === stale);
+    if (entry?.denominatorTrust !== 'curated') {
+      findings.push({
+        plugin: stale,
+        severity: 'error',
+        message: `is recorded as below-floor debt but its denominator is raw — a debt against an untrusted number is not a debt`,
+      });
+      continue;
+    }
+    const bound = upperBoundPct(measured, (entry?.outOfScope ?? []).length);
+    if (bound >= floorPct) {
+      findings.push({
+        plugin: stale,
+        severity: 'error',
+        message: `is recorded as below-floor debt but now bounds at ${bound}% — remove it from api-surface-floor-debt.json; the debt list only shrinks`,
+      });
+    }
+  }
+
   return findings;
 }
 
-export function recomputeSummary(m: Manifest): Manifest['summary'] {
-  const totalPlugins = m.plugins.length;
-  if (totalPlugins === 0) {
-    return {
-      aggregateCoverage_pct: 0,
-      pluginsAtOrAboveFloor: 0,
-      pluginsBelowFloor: 0,
-      criticalGaps: [],
-      note: m.summary.note,
-    };
-  }
-  const agg = Math.round(
-    m.plugins.reduce((acc, p) => acc + p.coverage_pct, 0) / totalPlugins,
-  );
-  const atFloor = m.plugins.filter((p) => p.coverage_pct >= m.target_floor_pct).length;
-  const below = totalPlugins - atFloor;
-  const critical = m.plugins
-    .filter((p) => p.coverage_pct <= m.target_floor_pct + 5)
-    .map(
-      (p) =>
-        `${p.plugin} @ ${p.coverage_pct}% — ${p.coverage_pct < m.target_floor_pct ? 'BELOW' : 'at'} the ${m.target_floor_pct}% floor.`,
-    );
-  return {
-    aggregateCoverage_pct: agg,
-    pluginsAtOrAboveFloor: atFloor,
-    pluginsBelowFloor: below,
-    criticalGaps: critical,
-    note: m.summary.note,
-  };
+/** Rule directories on disk — derived, so it cannot drift from the plugin. */
+function ruleCount(plugin: string): number {
+  const dir = path.join(REPO_ROOT, 'packages', plugin, 'src', 'rules');
+  if (!fs.existsSync(dir)) return 0;
+  return fs
+    .readdirSync(dir, { withFileTypes: true })
+    .filter((e) => e.isDirectory()).length;
 }
 
-function renderMarkdown(m: Manifest): string {
-  const total = m.plugins.length;
-  const allPass = m.summary.pluginsBelowFloor === 0;
-  const headline = allPass
-    ? `${m.summary.pluginsAtOrAboveFloor}/${total} plugins at or above the ${m.target_floor_pct}% floor — aggregate **${m.summary.aggregateCoverage_pct}%**.`
-    : `${m.summary.pluginsBelowFloor}/${total} plugins below the ${m.target_floor_pct}% floor — aggregate ${m.summary.aggregateCoverage_pct}%.`;
+interface Manifest {
+  $schema?: string;
+  description: string;
+  method: string;
+  target_floor_pct: number;
+  plugins: PluginEntry[];
+}
 
+function renderMarkdown(
+  m: Manifest,
+  measurement: Measurement,
+  debt: string[],
+): string {
+  const byPlugin = new Map(measurement.measured.map((x) => [x.plugin, x]));
+  const rows = m.plugins
+    .map((p) => ({ entry: p, measured: byPlugin.get(p.plugin) }))
+    .filter(
+      (r): r is { entry: PluginEntry; measured: Measured } =>
+        r.measured !== undefined,
+    );
+
+  /*
+   * Only a curated denominator can be below the floor, because only a curated
+   * denominator means anything. Counting the raw ones here would print a
+   * verdict the gate does not hold — the report and the check disagreeing is
+   * the same defect as a number nobody measured.
+   */
+  const curated = rows.filter((r) => r.entry.denominatorTrust === 'curated');
+  const belowFloor = curated.filter(
+    (r) =>
+      upperBoundPct(r.measured, (r.entry.outOfScope ?? []).length) <
+      m.target_floor_pct,
+  );
+  const newlyBelow = belowFloor.filter((r) => !debt.includes(r.entry.plugin));
   const sections: string[] = [];
 
   sections.push(
     reportHeader({
-      title: 'API-surface coverage per domain security plugin',
-      status: allPass ? 'pass' : 'fail',
-      statusLabel: allPass
-        ? `${m.summary.pluginsAtOrAboveFloor}/${total} at floor`
-        : `${m.summary.pluginsBelowFloor}/${total} below floor`,
-      headlineSentence: headline,
-      headlineMetric: { label: 'aggregate', value: `${m.summary.aggregateCoverage_pct}%` },
-      asOf: m.generatedAt,
+      title: 'API-surface coverage per plugin',
+      status: newlyBelow.length === 0 ? 'pass' : 'fail',
+      statusLabel:
+        newlyBelow.length === 0
+          ? `${belowFloor.length} known below floor, 0 new`
+          : `${newlyBelow.length} newly below floor`,
+      headlineSentence:
+        `Every figure below is an UPPER BOUND, measured from each plugin's declared surface at the installed version. ` +
+        `${belowFloor.length} of ${curated.length} plugin(s) with a curated denominator are proven below the ${m.target_floor_pct}% floor; ` +
+        `the other ${rows.length - curated.length} measured plugin(s) have a raw denominator and are not judged against it.`,
+      headlineMetric: { label: 'measured plugins', value: String(rows.length) },
+      asOf: measurement.measuredAt,
       generatedBy: 'npm run audit:api-surface',
-      sourceFile: '.agent/api-surface-manifest.json',
-      extraMeta: `Floor: every plugin should cover ≥ ${m.target_floor_pct}% of its target API surface.`,
+      sourceFile: 'scripts/measure-api-surface.mts',
+      extraMeta: `Surfaces enumerated on ${measurement.node}. Floor: ${m.target_floor_pct}%.`,
     }),
   );
 
@@ -230,130 +353,184 @@ function renderMarkdown(m: Manifest): string {
   sections.push('');
   sections.push(
     kvSummary([
-      { key: 'Aggregate coverage', value: `${m.summary.aggregateCoverage_pct}%` },
-      { key: 'Plugins at/above floor', value: `${m.summary.pluginsAtOrAboveFloor} / ${total}` },
-      { key: 'Plugins below floor', value: String(m.summary.pluginsBelowFloor) },
-      { key: 'Critical gaps (within 5 pts)', value: String(m.summary.criticalGaps.length) },
+      { key: 'Plugins measured', value: String(rows.length) },
+      {
+        key: 'Denominator curated (floor applies)',
+        value: String(curated.length),
+      },
+      {
+        key: 'Denominator raw (not judged)',
+        value: String(rows.length - curated.length),
+      },
+      {
+        key: 'Not enumerable (measured as such)',
+        value: String(measurement.notEnumerable.length),
+      },
+      { key: 'Proven below floor', value: String(belowFloor.length) },
+      { key: 'Newly below floor', value: String(newlyBelow.length) },
     ]),
   );
   sections.push('');
 
-  if (!allPass) {
-    sections.push(
-      callout(
-        'WARNING',
-        `${m.summary.pluginsBelowFloor} plugin(s) below the ${m.target_floor_pct}% floor. Bring each back above the floor before merging.`,
-      ),
-    );
-  } else if (m.summary.criticalGaps.length > 0) {
-    sections.push(
-      callout(
-        'NOTE',
-        `${m.summary.criticalGaps.length} plugin(s) within 5 points of the floor — listed below.`,
-      ),
-    );
-  }
+  sections.push(
+    callout(
+      'IMPORTANT',
+      'No plugin here is reported as **passing** the floor. Naming an API is necessary for a rule to act on it and not sufficient, so the measurement bounds coverage from above: a bound below the floor is proof of a miss, and a bound above it proves nothing. An exact figure needs a misuse probe per API, which cannot be generated mechanically.',
+    ),
+  );
+  sections.push('');
 
-  sections.push('## Per-plugin coverage');
+  sections.push('## Per-plugin coverage (upper bound)');
   sections.push('');
   sections.push(
     table({
       head: [
         'Plugin',
         'Surface',
-        'Total APIs',
+        'Surface APIs',
+        'Denominator',
         'Out of scope',
         'In scope',
-        'Covered',
-        'Coverage %',
-        'Rule count',
-        'At/above floor?',
+        'Named by a rule',
+        'Coverage (≤)',
+        'Rules',
+        'Below floor?',
       ],
-      align: ['left', 'left', 'right', 'right', 'right', 'right', 'right', 'right', 'center'],
-      rows: m.plugins.map((p) => [
-        `\`${p.plugin}\``,
-        p.surface,
-        p.callableApis_total,
-        p.outOfScope?.length ?? 0,
-        inScopeTotal(p),
-        p.callableApis_covered,
-        `${p.coverage_pct}%`,
-        p.ruleCount,
-        p.coverage_pct >= m.target_floor_pct ? '✅' : '❌',
-      ]),
+      align: [
+        'left',
+        'left',
+        'right',
+        'left',
+        'right',
+        'right',
+        'right',
+        'right',
+        'right',
+        'center',
+      ],
+      rows: rows.map(({ entry, measured }) => {
+        const oos = (entry.outOfScope ?? []).length;
+        const bound = upperBoundPct(measured, oos);
+        return [
+          `\`${entry.plugin}\``,
+          entry.surface,
+          measured.surfaceSize,
+          entry.denominatorTrust,
+          oos,
+          measured.surfaceSize - oos,
+          measured.namedCount,
+          `≤ ${bound}%`,
+          ruleCount(entry.plugin),
+          entry.denominatorTrust !== 'curated'
+            ? 'denominator raw'
+            : bound < m.target_floor_pct
+              ? '❌ below'
+              : 'not proven',
+        ];
+      }),
     }),
   );
   sections.push('');
 
-  if (m.summary.criticalGaps.length > 0) {
-    sections.push('### Critical gaps (within 5 points of the floor)');
+  if (measurement.notEnumerable.length > 0) {
+    sections.push('## Not enumerable — which is a measurement, not a gap');
     sections.push('');
-    for (const g of m.summary.criticalGaps) {
-      sections.push(`- ${g}`);
-    }
+    sections.push(
+      'These plugins analyse plain JavaScript, or the web platform. No npm package describes either surface, so no percentage can honestly be published for them. Saying so is a different statement from silence.',
+    );
+    sections.push('');
+    sections.push(
+      table({
+        head: ['Plugin', 'Surface kind'],
+        align: ['left', 'left'],
+        rows: measurement.notEnumerable.map((n) => [`\`${n.plugin}\``, n.kind]),
+      }),
+    );
     sections.push('');
   }
 
-  const perPluginBody: string[] = [];
-  for (const p of m.plugins) {
-    perPluginBody.push(`### \`${p.plugin}\` (${p.coverage_pct}%)`);
-    perPluginBody.push('');
-    perPluginBody.push(`- **Target surface:** ${p.surface} (${p.surfaceVersion})`);
-    perPluginBody.push(`- **Notes:** ${p.notes}`);
-    if (p.uncovered_examples.length > 0) {
-      perPluginBody.push('- **Uncovered examples:**');
-      for (const e of p.uncovered_examples) {
-        perPluginBody.push(`  - ${e}`);
-      }
+  const body: string[] = [];
+  for (const { entry, measured } of rows) {
+    const oos = (entry.outOfScope ?? []).length;
+    body.push(`### \`${entry.plugin}\` (≤ ${upperBoundPct(measured, oos)}%)`);
+    body.push('');
+    body.push(
+      `- **Target surface:** ${entry.surface} (${entry.surfaceVersion})`,
+    );
+    body.push(`- **Notes:** ${entry.notes}`);
+    if (measured.uncovered.length > 0) {
+      body.push(
+        `- **Named nowhere in the rule sources (${measured.uncovered.length}) — provably uncovered:**`,
+      );
+      body.push(`  - \`${measured.uncovered.join('`, `')}\``);
     }
-    if (p.outOfScope && p.outOfScope.length > 0) {
-      perPluginBody.push('- **Out of scope (excluded from the denominator):**');
-      for (const o of p.outOfScope) {
-        perPluginBody.push(`  - \`${o.api}\` — ${o.reason}`);
-      }
+    if (oos > 0) {
+      body.push('- **Out of scope (excluded from the denominator):**');
+      for (const o of entry.outOfScope ?? [])
+        body.push(`  - \`${o.api}\` — ${o.reason}`);
     }
-    perPluginBody.push('');
+    body.push('');
   }
-  sections.push(collapsible('Per-plugin notes + uncovered examples', perPluginBody.join('\n')));
+  sections.push(
+    collapsible('Per-plugin surface, gaps and exclusions', body.join('\n')),
+  );
   sections.push('');
 
   sections.push(
     howToRead(
-      '- **API-surface coverage** (`distribution/EVALUATION_METRICS.md` §2) — the `Coverage %` column, computed as `Covered / In scope`. Per-plugin floor 60%. Aggregate is informational.\n- **In scope** is `Total APIs` minus the `Out of scope` count: APIs that are not security sinks under this plugin\'s threat model. Each carries a written reason, and the audit rejects reasons that argue from rarity rather than threat model — so an unclosed gap can never be relabelled into a higher score.\n- **Critical gaps** are plugins within 5 points of the floor — fix surface coverage proactively before a new rule pushes them below.\n- **Status badge** is green when every plugin is at/above the floor; red on any miss.',
+      '- **Coverage (≤)** is an upper bound: `Named by a rule / In scope`, where "named" means the API appears somewhere in the plugin\'s rule sources. It cannot be a pass mark — see the note above.\n' +
+        "- **In scope** is the measured surface minus `Out of scope`: APIs that are not security sinks under this plugin's threat model. Each carries a written reason; the audit rejects reasons that argue from rarity rather than threat model, and rejects an exclusion naming an API that is not on the measured surface.\n" +
+        '- **Denominator** is `curated` when the surface has been reviewed down to the API a consumer actually calls, and `raw` when it is still the whole module enumeration. A raw denominator can be wrong in either direction — `@aws-sdk/client-lambda` enumerates the Lambda control plane, and `better-sqlite3` reads as one callable because it default-exports a class — so those plugins publish their bound and are not judged against the floor.\n' +
+        '- **Below floor?** is `❌ below` only for a curated denominator whose *upper* bound misses the floor, which is proof. A curated denominator above the floor reads `not proven`; a raw one reads `denominator raw`.\n' +
+        '- **Rules** counts rule directories on disk.\n' +
+        '- The debt list in `.agent/api-surface-floor-debt.json` records the plugins already below the floor. It only shrinks: a plugin may not newly drop below.',
     ),
   );
 
   return sections.join('\n') + '\n';
 }
 
-function main() {
+function main(): void {
   const strict = process.argv.includes('--strict');
-  const raw = fs.readFileSync(MANIFEST_PATH, 'utf8');
-  const manifest = JSON.parse(raw) as Manifest;
+  const manifest = JSON.parse(
+    fs.readFileSync(MANIFEST_PATH, 'utf8'),
+  ) as Manifest;
+  const debt = (
+    JSON.parse(fs.readFileSync(DEBT_PATH, 'utf8')) as { belowFloor: string[] }
+  ).belowFloor;
 
-  const findings = auditManifest(manifest);
+  const measurement = JSON.parse(
+    execFileSync('npx', ['tsx', MEASURE, '--json'], {
+      cwd: REPO_ROOT,
+      encoding: 'utf-8',
+      maxBuffer: 64 * 1024 * 1024,
+      stdio: ['ignore', 'pipe', 'inherit'],
+    }),
+  ) as Measurement;
+
+  const findings = auditSurfaces(
+    manifest.plugins,
+    measurement,
+    manifest.target_floor_pct,
+    debt,
+  );
   const errors = findings.filter((f) => f.severity === 'error');
-  const warns = findings.filter((f) => f.severity === 'warn');
 
-  manifest.summary = { ...manifest.summary, ...recomputeSummary(manifest) };
-  fs.writeFileSync(MANIFEST_PATH, JSON.stringify(manifest, null, 2) + '\n');
-  fs.writeFileSync(MD_PATH, renderMarkdown(manifest));
+  fs.writeFileSync(MD_PATH, renderMarkdown(manifest, measurement, debt));
 
   // eslint-disable-next-line no-console
   console.log(
-    `Audited ${manifest.plugins.length} plugin(s). Aggregate ${manifest.summary.aggregateCoverage_pct}%, floor ${manifest.target_floor_pct}%.`,
+    `Measured ${measurement.measured.length} plugin(s) on ${measurement.node}; ` +
+      `${measurement.notEnumerable.length} have no enumerable surface. Floor ${manifest.target_floor_pct}%.`,
   );
   for (const f of findings) {
-    const prefix = f.severity === 'error' ? 'ERROR' : 'WARN';
     // eslint-disable-next-line no-console
-    console.error(`  ${prefix} ${f.plugin}: ${f.message}`);
+    console.error(
+      `  ${f.severity === 'error' ? 'ERROR' : 'WARN'} ${f.plugin}: ${f.message}`,
+    );
   }
-  if (errors.length > 0) {
-    process.exit(1);
-  }
-  if (strict && warns.length > 0) {
-    process.exit(1);
-  }
+  if (errors.length > 0) process.exit(1);
+  if (strict && findings.length > 0) process.exit(1);
 }
 
 if (process.argv[1] && process.argv[1].endsWith('audit-api-surface.ts')) {

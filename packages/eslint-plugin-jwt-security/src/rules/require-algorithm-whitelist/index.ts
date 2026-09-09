@@ -21,7 +21,11 @@ import {
   formatLLMMessage,
   MessageIcons,
 } from '@interlace/eslint-devkit';
-import { isVerifyOperation, getOptionsArgument, hasOption } from '../../utils';
+import {
+  isSignatureVerifyOperation,
+  getOptionsArgument,
+  hasOption,
+} from '../../utils';
 import type { RequireAlgorithmWhitelistOptions } from '../../types';
 
 type MessageIds = 'missingAlgorithmWhitelist' | 'addAlgorithmWhitelist';
@@ -102,7 +106,7 @@ export const requireAlgorithmWhitelist = createRule<RuleOptions, MessageIds>({
     return {
       CallExpression(node: TSESTree.CallExpression) {
         // Only check verify operations
-        if (!isVerifyOperation(node)) {
+        if (!isSignatureVerifyOperation(node)) {
           return;
         }
 

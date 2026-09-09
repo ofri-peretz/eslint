@@ -167,7 +167,32 @@ export const JWT_METHODS = {
   // pick a key before verifying is the documented jose flow, and the rule
   // already carries `allowHeaderInspection` for that case.
   DECODE: new Set(['decode', 'jwtDecode', 'decodeJWT', 'decodeJwt']),
+  /**
+   * jose's JWS-level verification, kept apart from VERIFY on purpose.
+   *
+   * `jwtVerify` verifies a signature AND the JWT claims. These three verify a
+   * signature and nothing else: they take a JWS, not a JWT, so `audience`,
+   * `issuer` and `maxTokenAge` are not options they accept. Folding them into
+   * VERIFY would make the claim rules demand an option the API cannot take,
+   * which is a false positive on every correct call.
+   *
+   * What they DO share with `jwtVerify` is `algorithms` — and without it the
+   * token header picks the algorithm, which is the substitution attack this
+   * plugin exists to catch. The measured surface reported all three as named
+   * nowhere in these sources while the plugin published 100% coverage.
+   *
+   * Verified against the installed package:
+   * `Object.keys(require('jose')).filter(k => /Verify$/.test(k))` is
+   * `['compactVerify', 'flattenedVerify', 'generalVerify']`.
+   */
+  JWS_VERIFY: new Set(['compactVerify', 'flattenedVerify', 'generalVerify']),
 } as const;
+
+/** VERIFY ∪ JWS_VERIFY — every call that checks a signature. */
+const SIGNATURE_VERIFY: ReadonlySet<string> = new Set([
+  ...JWT_METHODS.VERIFY,
+  ...JWT_METHODS.JWS_VERIFY,
+]);
 
 /** Package roots whose API these method names belong to. */
 const JWT_LIBRARY_ROOTS: ReadonlySet<string> = new Set(
@@ -651,6 +676,19 @@ export function isSignOperation(node: TSESTree.CallExpression): boolean {
  */
 export function isVerifyOperation(node: TSESTree.CallExpression): boolean {
   return isJwtLibraryCall(node, JWT_METHODS.VERIFY);
+}
+
+/**
+ * Check if this call verifies a signature — a JWT verify, or a jose JWS verify.
+ *
+ * Use this for rules about the KEY and the ALGORITHM, which both kinds accept.
+ * Rules about JWT claims (`audience`, `issuer`, `maxTokenAge`) must keep using
+ * `isVerifyOperation`: a JWS carries no claims and takes no such option.
+ */
+export function isSignatureVerifyOperation(
+  node: TSESTree.CallExpression,
+): boolean {
+  return isJwtLibraryCall(node, SIGNATURE_VERIFY as Set<string>);
 }
 
 /**
