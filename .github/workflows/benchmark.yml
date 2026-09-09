@@ -43,7 +43,7 @@ on:
     # to 8am EDT and lands in working hours.
     # Also moved off the 04:00-05:00 UTC cluster where several other crons
     # already stack and compete for the 20 concurrent job slots.
-    - cron: "0 9 * * 2" # Tue 09:00 UTC = 5:00am EDT / 4:00am EST
+    - cron: '0 9 * * 2' # Tue 09:00 UTC = 5:00am EDT / 4:00am EST
 
 concurrency:
   group: ilb-bench-${{ github.ref }}
@@ -206,7 +206,17 @@ jobs:
     needs: gate
     if: needs.gate.outputs.run == 'true' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    # 300, not 90. At 90 this job was killed mid-lint on every run — 2026-09-09 it started
+    # at 14:01, had the corpus from cache by 14:05, and was terminated at 15:32 with no
+    # result written and no artifact uploaded. It was never queued and never hung; 107
+    # repositories against 278 rules simply needs longer than 90 minutes on a 4-core runner.
+    #
+    # The obvious lever is ESLint 10's `concurrency`, and it does not apply here yet: the
+    # config passes live plugin objects, and multithreaded mode refuses them —
+    # "The option overrideConfig cannot be cloned … use an options module". Moving the
+    # preset config into an options module is the real fix and is worth doing separately;
+    # this only stops the job dying before it can say anything.
+    timeout-minutes: 300
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -318,7 +328,6 @@ jobs:
       - name: Build plugins (dist/ is what the configs load)
         run: npx turbo run build --filter='eslint-plugin-*' --filter=@interlace/eslint-devkit
 
-
       # Cache cloned target repos between CI runs to keep things fast.
       - name: Restore .bench-repos cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
@@ -412,7 +421,16 @@ jobs:
   # on all of them and runs with `if: always()`, so it sees the whole run.
   report:
     name: 🚨 Report a scheduled failure
-    needs: [gate, ilb-formatter, ilb-corpus-truth, ilb-preset-budget, audit-meta, typecheck-scripts, ilb-wild]
+    needs:
+      [
+        gate,
+        ilb-formatter,
+        ilb-corpus-truth,
+        ilb-preset-budget,
+        audit-meta,
+        typecheck-scripts,
+        ilb-wild,
+      ]
     if: >-
       always() && github.event_name == 'schedule' &&
       contains(needs.*.result, 'failure')
@@ -427,7 +445,7 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/report-failure
         with:
-          title: "Scheduled benchmark is failing"
+          title: 'Scheduled benchmark is failing'
           body: >-
             The weekly benchmark run did not complete, so the numbers behind the published comparison are not being refreshed. Until this is fixed the figures on the docs site are older than they appear.
           token: ${{ github.token }}
