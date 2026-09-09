@@ -1,0 +1,9 @@
+{
+  "title": "Rules",
+  "pages": [
+    "no-dynamic-rpc-name",
+    "no-public-storage-bucket",
+    "no-service-role-key-in-client",
+    "require-auth-error-check"
+  ]
+}

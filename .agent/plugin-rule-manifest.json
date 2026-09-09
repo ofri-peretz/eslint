@@ -16,7 +16,7 @@
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "enforcement",
-      "notes": "A system prompt that is not static, in both raw-SDK shapes: the named option and the messages array with role 'system'. A bare identifier counts as static \u2014 the const-above-the-call pattern. Gated by qualified member path, not leaf method, so it cannot collide with vercel-ai-security/no-dynamic-system-prompt, which owns the bare-function form. strict-only pending FP measurement."
+      "notes": "A system prompt that is not static, in both raw-SDK shapes: the named option and the messages array with role 'system'. A bare identifier counts as static — the const-above-the-call pattern. Gated by qualified member path, not leaf method, so it cannot collide with vercel-ai-security/no-dynamic-system-prompt, which owns the bare-function form. strict-only pending FP measurement."
     }
   },
   "eslint-plugin-browser-security": {
@@ -104,19 +104,19 @@
       "environment": "browser",
       "detection": "naming-heuristic",
       "confidence": "review-prompt",
-      "deprecated": "DEPRECATED in browser-security \u2014 moved to express-security; use express-security/no-missing-cors-check"
+      "deprecated": "DEPRECATED in browser-security — moved to express-security; use express-security/no-missing-cors-check"
     },
     "no-missing-csrf-protection": {
       "environment": "browser",
       "detection": "structural-api",
       "confidence": "review-prompt",
-      "deprecated": "DEPRECATED in browser-security \u2014 moved to express-security; use express-security/no-missing-csrf-protection"
+      "deprecated": "DEPRECATED in browser-security — moved to express-security; use express-security/no-missing-csrf-protection"
     },
     "no-missing-security-headers": {
       "environment": "browser",
       "detection": "structural-api",
       "confidence": "review-prompt",
-      "deprecated": "DEPRECATED in browser-security \u2014 moved to express-security; use express-security/no-missing-security-headers"
+      "deprecated": "DEPRECATED in browser-security — moved to express-security; use express-security/no-missing-security-headers"
     },
     "no-password-in-url": {
       "environment": "universal",
@@ -362,7 +362,7 @@
       "environment": "express",
       "detection": "data-flow-lightweight",
       "confidence": "enforcement",
-      "notes": "Tracks req.headers.host / req.get('host') assignments into URL construction and mail sinks within a function \u2014 conservative same-scope flow, not a name match."
+      "notes": "Tracks req.headers.host / req.get('host') assignments into URL construction and mail sinks within a function — conservative same-scope flow, not a name match."
     },
     "no-insecure-cookie-options": {
       "environment": "express",
@@ -373,19 +373,19 @@
       "environment": "express",
       "detection": "structural-api",
       "confidence": "review-prompt",
-      "notes": "Migrated from browser-security \u2014 checks Express/Koa/Fastify server-side patterns"
+      "notes": "Migrated from browser-security — checks Express/Koa/Fastify server-side patterns"
     },
     "no-missing-csrf-protection": {
       "environment": "express",
       "detection": "structural-api",
       "confidence": "review-prompt",
-      "notes": "Migrated from browser-security \u2014 checks Express/Koa/Fastify server-side patterns"
+      "notes": "Migrated from browser-security — checks Express/Koa/Fastify server-side patterns"
     },
     "no-missing-security-headers": {
       "environment": "express",
       "detection": "structural-api",
       "confidence": "review-prompt",
-      "notes": "Migrated from browser-security \u2014 checks Express/Koa/Fastify server-side patterns"
+      "notes": "Migrated from browser-security — checks Express/Koa/Fastify server-side patterns"
     },
     "no-permissive-cors": {
       "environment": "express",
@@ -396,7 +396,7 @@
       "environment": "express",
       "detection": "naming-heuristic",
       "confidence": "review-prompt",
-      "notes": "Token-based matching of sensitive parameter names on req.query reads \u2014 names are the signal, so ships as warn per I3."
+      "notes": "Token-based matching of sensitive parameter names on req.query reads — names are the signal, so ships as warn per I3."
     },
     "no-static-root-exposure": {
       "environment": "express",
@@ -408,7 +408,7 @@
       "environment": "express",
       "detection": "structural-api",
       "confidence": "enforcement",
-      "notes": "Fires on res.redirect(req.query.*) AST shape \u2014 structural, not naming heuristic. Passes litmus test: rename res/req and it still fires."
+      "notes": "Fires on res.redirect(req.query.*) AST shape — structural, not naming heuristic. Passes litmus test: rename res/req and it still fires."
     },
     "no-user-controlled-render-locals": {
       "environment": "express",
@@ -458,7 +458,7 @@
       "environment": "express",
       "detection": "structural-api",
       "confidence": "enforcement",
-      "notes": "Fires on the hsts/strictTransportSecurity option and the helmet.hsts() factory \u2014 disabled, max-age below floor, includeSubDomains false."
+      "notes": "Fires on the hsts/strictTransportSecurity option and the helmet.hsts() factory — disabled, max-age below floor, includeSubDomains false."
     },
     "no-unsafe-csp-directives": {
       "environment": "express",
@@ -470,7 +470,7 @@
       "environment": "express",
       "detection": "structural-api",
       "confidence": "enforcement",
-      "notes": "Fires on app.set('trust proxy', true) / app.enable('trust proxy') \u2014 req.ip becomes client-controlled (CWE-348)."
+      "notes": "Fires on app.set('trust proxy', true) / app.enable('trust proxy') — req.ip becomes client-controlled (CWE-348)."
     },
     "require-route-authentication": {
       "environment": "express",
@@ -488,7 +488,7 @@
       "environment": "express",
       "detection": "naming-heuristic",
       "confidence": "review-prompt",
-      "notes": "\"Handler never reads the principal\" stands in for \"no ownership check\", and the lookup-method list is name-based \u2014 ships as warn per I3."
+      "notes": "\"Handler never reads the principal\" stands in for \"no ownership check\", and the lookup-method list is name-based — ships as warn per I3."
     }
   },
   "eslint-plugin-gemini-security": {
@@ -507,7 +507,7 @@
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "enforcement",
-      "notes": "A system prompt that is not static, in both raw-SDK shapes: the named option and the messages array with role 'system'. A bare identifier counts as static \u2014 the const-above-the-call pattern. Gated by qualified member path, not leaf method, so it cannot collide with vercel-ai-security/no-dynamic-system-prompt, which owns the bare-function form. strict-only pending FP measurement."
+      "notes": "A system prompt that is not static, in both raw-SDK shapes: the named option and the messages array with role 'system'. A bare identifier counts as static — the const-above-the-call pattern. Gated by qualified member path, not leaf method, so it cannot collide with vercel-ai-security/no-dynamic-system-prompt, which owns the bare-function form. strict-only pending FP measurement."
     }
   },
   "eslint-plugin-import-next": {
@@ -755,13 +755,13 @@
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "opt-in",
-      "notes": "Source not found \u2014 manual review required"
+      "notes": "Source not found — manual review required"
     },
     "import-style": {
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "opt-in",
-      "notes": "Source not found \u2014 manual review required"
+      "notes": "Source not found — manual review required"
     }
   },
   "eslint-plugin-jwt-security": {
@@ -970,7 +970,7 @@
       "environment": "mcp",
       "detection": "structural-pattern",
       "confidence": "enforcement",
-      "notes": "A tool handler parameter reaching a child_process sink as the command. Deliberately skips the concatenated/interpolated shape, which node-security/no-shell-injection already reports \u2014 that split is what keeps one line from carrying findings from two plugins."
+      "notes": "A tool handler parameter reaching a child_process sink as the command. Deliberately skips the concatenated/interpolated shape, which node-security/no-shell-injection already reports — that split is what keeps one line from carrying findings from two plugins."
     },
     "no-tool-description-injection": {
       "environment": "mcp",
@@ -1203,7 +1203,7 @@
       "environment": "node",
       "detection": "structural-api",
       "confidence": "opt-in",
-      "deprecated": "Use CI tooling instead \u2014 this checks filesystem for lock file existence, not AST analysis"
+      "deprecated": "Use CI tooling instead — this checks filesystem for lock file existence, not AST analysis"
     },
     "no-arbitrary-file-access": {
       "environment": "node",
@@ -1409,7 +1409,7 @@
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "enforcement",
-      "notes": "A system prompt that is not static, in both raw-SDK shapes: the named option and the messages array with role 'system'. A bare identifier counts as static \u2014 the const-above-the-call pattern. Gated by qualified member path, not leaf method, so it cannot collide with vercel-ai-security/no-dynamic-system-prompt, which owns the bare-function form. strict-only pending FP measurement."
+      "notes": "A system prompt that is not static, in both raw-SDK shapes: the named option and the messages array with role 'system'. A bare identifier counts as static — the const-above-the-call pattern. Gated by qualified member path, not leaf method, so it cannot collide with vercel-ai-security/no-dynamic-system-prompt, which owns the bare-function form. strict-only pending FP measurement."
     }
   },
   "eslint-plugin-operability": {
@@ -1701,13 +1701,13 @@
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "opt-in",
-      "notes": "Source not found \u2014 manual review required"
+      "notes": "Source not found — manual review required"
     },
     "wcag-aa": {
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "opt-in",
-      "notes": "Source not found \u2014 manual review required"
+      "notes": "Source not found — manual review required"
     }
   },
   "eslint-plugin-react-features": {
@@ -2094,7 +2094,7 @@
       "environment": "node",
       "detection": "structural-api",
       "confidence": "opt-in",
-      "deprecated": "Use a dedicated electron-security plugin \u2014 Electron requires framework-specific context"
+      "deprecated": "Use a dedicated electron-security plugin — Electron requires framework-specific context"
     },
     "no-fail-open-auth": {
       "environment": "universal",
@@ -2155,7 +2155,7 @@
       "environment": "express",
       "detection": "naming-heuristic",
       "confidence": "review-prompt",
-      "deprecated": "Use express-security plugin instead \u2014 this rule requires Express route handler context"
+      "deprecated": "Use express-security plugin instead — this rule requires Express route handler context"
     },
     "no-pii-in-logs": {
       "environment": "universal",
@@ -2227,18 +2227,44 @@
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "opt-in",
-      "notes": "Source not found \u2014 manual review required"
+      "notes": "Source not found — manual review required"
     },
     "require-backend-authorization": {
       "environment": "express",
       "detection": "naming-heuristic",
       "confidence": "review-prompt",
-      "deprecated": "Use express-security plugin instead \u2014 this rule requires Express route handler context"
+      "deprecated": "Use express-security plugin instead — this rule requires Express route handler context"
     },
     "require-secure-defaults": {
       "environment": "universal",
       "detection": "structural-pattern",
       "confidence": "opt-in"
+    }
+  },
+  "eslint-plugin-supabase-security": {
+    "no-dynamic-rpc-name": {
+      "environment": "supabase",
+      "detection": "structural-api",
+      "confidence": "enforcement",
+      "notes": "`.rpc()` whose first argument is not a fixed string. Keyed on the call shape, not on what the receiver is named; a template literal with no interpolation counts as fixed, and a spread is unreadable rather than a finding."
+    },
+    "no-public-storage-bucket": {
+      "environment": "supabase",
+      "detection": "structural-api",
+      "confidence": "opt-in",
+      "notes": "`createBucket`/`updateBucket` with a literal `public: true`. Opt-in because a bucket of site assets is legitimately public and the source cannot distinguish that from a bucket of invoices — strict only."
+    },
+    "no-service-role-key-in-client": {
+      "environment": "supabase",
+      "detection": "structural-pattern",
+      "confidence": "enforcement",
+      "notes": "A `SERVICE_ROLE` property read off `process.env`/`import.meta.env` behind a client-inlining prefix, or inside a `\"use client\"` module. Matches the environment variable's name, never a local identifier; abstains on `server-only`, where the read is correct."
+    },
+    "require-auth-error-check": {
+      "environment": "supabase",
+      "detection": "structural-api",
+      "confidence": "enforcement",
+      "notes": "A destructuring of `.auth.getUser()` and siblings that does not bind `error`. These report a forged or expired token by returning it rather than throwing. A computed key counts as bound, since `const k = 'error'` binds it and the node cannot tell."
     }
   },
   "eslint-plugin-vercel-ai-security": {
@@ -2389,7 +2415,7 @@
       "environment": "prisma",
       "detection": "structural-pattern",
       "confidence": "enforcement",
-      "notes": "Instantiates createRawIdentifierRule (@interlace/eslint-devkit). Gates on the value-parameterizing tagged template ($queryRaw / $executeRaw), where no-unsafe-query is silent by design \u2014 its sinks are the raw string APIs."
+      "notes": "Instantiates createRawIdentifierRule (@interlace/eslint-devkit). Gates on the value-parameterizing tagged template ($queryRaw / $executeRaw), where no-unsafe-query is silent by design — its sinks are the raw string APIs."
     },
     "no-mass-assignment": {
       "environment": "prisma",
@@ -2415,7 +2441,7 @@
       "environment": "drizzle",
       "detection": "structural-pattern",
       "confidence": "enforcement",
-      "notes": "Instantiates createRawIdentifierRule (@interlace/eslint-devkit). Gates on the value-parameterizing tagged template (sql``), where no-unsafe-query is silent by design \u2014 its sinks are the raw string APIs."
+      "notes": "Instantiates createRawIdentifierRule (@interlace/eslint-devkit). Gates on the value-parameterizing tagged template (sql``), where no-unsafe-query is silent by design — its sinks are the raw string APIs."
     },
     "no-mass-assignment": {
       "environment": "drizzle",

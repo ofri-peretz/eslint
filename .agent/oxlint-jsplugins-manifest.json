@@ -1,10 +1,10 @@
 {
   "command": "npm run oxlint:shims",
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-09-06",
-  "totalPlugins": 30,
-  "totalRules": 477,
-  "oxlintCompatible": 477,
+  "generatedAt": "2026-09-09",
+  "totalPlugins": 31,
+  "totalRules": 481,
+  "oxlintCompatible": 481,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -2978,6 +2978,39 @@
       "rules": [
         {
           "name": "no-unsafe-query",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-supabase-security",
+      "short": "supabase-security",
+      "shim": "tools/oxlint-plugins/interlace-supabase-security.cjs",
+      "subpath": "eslint-plugin-supabase-security/oxlint",
+      "ruleCount": 4,
+      "rules": [
+        {
+          "name": "no-dynamic-rpc-name",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-public-storage-bucket",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-service-role-key-in-client",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-auth-error-check",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
