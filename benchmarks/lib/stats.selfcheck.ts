@@ -99,6 +99,14 @@ near(
   1e-3,
   'df=5 critical value 11.07 -> p=0.05',
 );
+// df=6 is past every entry the table ever had; the boundary is only covered if
+// it is asserted here.
+near(
+  chiSquaredPValue(12.592, 6),
+  0.05,
+  1e-3,
+  'df=6 critical value 12.592 -> p=0.05',
+);
 
 // ── tail behaviour ───────────────────────────────────────────────────────
 near(chiSquaredPValue(0, 3), 1, 1e-9, 'zero statistic is p=1');
@@ -111,5 +119,16 @@ ok(
   chiSquaredPValue(-1, 2) === 1 && chiSquaredPValue(5, 0) === 1,
   'invalid input is inert, not significant',
 );
+// `Infinity >= 0` is true, so the old guard let it through and the continued
+// fraction returned NaN — which compares false against every threshold, turning
+// the most significant statistic there is into "not significant".
+ok(
+  chiSquaredPValue(Infinity, 4) === 0 &&
+    Number.isNaN(chiSquaredPValue(NaN, 4)) === false,
+  'an infinite statistic is p=0, not NaN',
+);
 
 console.log(`\nself-check passed — ${n} assertions`);
+
+/** How many assertions actually ran. Exported so a test can refuse an empty run. */
+export const assertions = n;

@@ -47,7 +47,11 @@ export function f1Score(tp, fp, fn) {
   const precision = tp + fp === 0 ? 0 : tp / (tp + fp);
   const recall = tp + fn === 0 ? 0 : tp / (tp + fn);
   if (precision + recall === 0) return { precision, recall, f1: 0 };
-  return { precision, recall, f1: (2 * precision * recall) / (precision + recall) };
+  return {
+    precision,
+    recall,
+    f1: (2 * precision * recall) / (precision + recall),
+  };
 }
 
 /**
@@ -62,7 +66,8 @@ export function weightedF1(observations) {
   let wFp = 0;
   let wFn = 0;
   for (const o of observations) {
-    const w = typeof o.weight === 'number' && Number.isFinite(o.weight) ? o.weight : 1;
+    const w =
+      typeof o.weight === 'number' && Number.isFinite(o.weight) ? o.weight : 1;
     if (o.outcome === 'tp') wTp += w;
     else if (o.outcome === 'fp') wFp += w;
     else if (o.outcome === 'fn') wFn += w;
@@ -92,7 +97,10 @@ export const CVSS_WEIGHT = Object.freeze({
  * @returns {Array<{outcome: string, weight: number}>}
  */
 export function findingsToObservations(findings) {
-  return findings.map((f) => ({ outcome: f.outcome, weight: cvssToWeight(f.cvss) }));
+  return findings.map((f) => ({
+    outcome: f.outcome,
+    weight: cvssToWeight(f.cvss),
+  }));
 }
 
 function cvssToWeight(cvss) {
@@ -139,7 +147,8 @@ export function bootstrapF1CI(observations: any[], opts: any = {}) {
   const N = observations.length;
   for (let r = 0; r < resamples; r++) {
     const sample = new Array(N);
-    for (let i = 0; i < N; i++) sample[i] = observations[Math.floor(rand() * N)];
+    for (let i = 0; i < N; i++)
+      sample[i] = observations[Math.floor(rand() * N)];
     f1s[r] = weightedF1(sample).f1;
   }
   f1s.sort((a, b) => a - b);
@@ -174,7 +183,8 @@ export function wilsonScoreCI(successes, trials, z = 1.96) {
   const p = successes / trials;
   const denom = 1 + (z * z) / trials;
   const center = p + (z * z) / (2 * trials);
-  const margin = z * Math.sqrt((p * (1 - p)) / trials + (z * z) / (4 * trials * trials));
+  const margin =
+    z * Math.sqrt((p * (1 - p)) / trials + (z * z) / (4 * trials * trials));
   return {
     p,
     low: Math.max(0, (center - margin) / denom),
@@ -192,7 +202,8 @@ export function wilsonScoreCI(successes, trials, z = 1.96) {
  */
 export function accuracyReport(observations, opts = {}) {
   const counts = { tp: 0, fp: 0, fn: 0 };
-  for (const o of observations) counts[o.outcome] = (counts[o.outcome] ?? 0) + 1;
+  for (const o of observations)
+    counts[o.outcome] = (counts[o.outcome] ?? 0) + 1;
 
   const plain = f1Score(counts.tp, counts.fp, counts.fn);
   const weighted = weightedF1(observations);
@@ -229,12 +240,15 @@ function gammaLn(x) {
     771.32342877765313, -176.61502916214059, 12.507343278686905,
     -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7,
   ];
-  if (x < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * x)) - gammaLn(1 - x);
+  if (x < 0.5)
+    return Math.log(Math.PI / Math.sin(Math.PI * x)) - gammaLn(1 - x);
   x -= 1;
   let a = c[0];
   const t = x + 7.5;
   for (let i = 1; i < 9; i++) a += c[i] / (x + i);
-  return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+  return (
+    0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a)
+  );
 }
 
 /**
@@ -290,6 +304,13 @@ function upperGamma(a, x) {
  * @returns {number} P(X >= chiSq) under the null
  */
 export function chiSquaredPValue(chiSq, df) {
-  if (!(chiSq >= 0) || !(df >= 1)) return 1;
+  // `Infinity >= 0` is true, so Infinity walks past a `>= 0` test and reaches the
+  // Lentz continued fraction, where `tiny * Infinity` is Infinity and the final
+  // `Infinity * exp(-Infinity)` is NaN. A NaN p-value compares false against every
+  // threshold, so the verdict would silently become "not significant" for the one
+  // statistic that is most significant. Answer it directly: an infinite statistic
+  // has all its mass in the tail, p = 0.
+  if (chiSq === Infinity) return df >= 1 ? 0 : 1;
+  if (!Number.isFinite(chiSq) || chiSq < 0 || !(df >= 1)) return 1;
   return upperGamma(df / 2, chiSq / 2);
 }
