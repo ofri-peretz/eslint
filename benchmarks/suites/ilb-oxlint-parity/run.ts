@@ -186,7 +186,7 @@ function loadPluginRules(shimAbs) {
  * This is the ONLY exclusion of its kind, and it is exact: the file must carry
  * an inline config whose options array contains a literal null.
  */
-const nullOptionFixtures = new Set();
+const nullOptionFixtures = new Set<string>();
 function hasNullOptionConfig(file) {
   if (nullOptionFixtures.has(file)) return true;
   let src;

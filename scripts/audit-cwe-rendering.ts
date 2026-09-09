@@ -38,13 +38,13 @@ import { createRequire } from 'node:module';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PACKAGES_DIR = join(REPO_ROOT, 'packages');
-const FORMATTER_DIST = join(REPO_ROOT, 'dist/out-tsc/packages/eslint-formatter/src/index.js');
+const FORMATTER_DIST = join(REPO_ROOT, 'packages/eslint-formatter/dist/src/index.js');
 const STRICT = process.argv.includes('--strict');
 
 const require_ = createRequire(import.meta.url);
 
 if (!existsSync(FORMATTER_DIST)) {
-  console.error(`fatal: formatter dist not found at ${relative(REPO_ROOT, FORMATTER_DIST)} — run \`npx tsc -p packages/eslint-formatter/tsconfig.lib.json\` first.`);
+  console.error(`fatal: formatter dist not found at ${relative(REPO_ROOT, FORMATTER_DIST)} — run \`npx turbo run build --filter=@interlace/eslint-formatter\` first.`);
   process.exit(2);
 }
 

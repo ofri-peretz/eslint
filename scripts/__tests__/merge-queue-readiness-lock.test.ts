@@ -42,16 +42,22 @@ const WORKFLOWS = join(ROOT, '.github', 'workflows');
  * remedies are to drop the context from the required list before enabling the
  * queue, or to leave the queue off.
  */
-const REQUIRED_CHECKS = [
-  { name: 'oxlint (fast pass)', source: 'workflow' },
-  { name: 'Quality (Full) Gate', source: 'workflow' },
-  // Provided by the `review:` job in `claude-code-review.yml`, which declares
-  // no `name:` — so the check takes the job id. Recorded as CodeRabbit until
-  // 2026-09-02; the live check run's `app.slug` is `github-actions`. CodeRabbit
-  // posts a separate status context named `CodeRabbit`, and branch protection
-  // does not require it.
-  { name: 'review', source: 'workflow' },
-] as const satisfies readonly { name: string; source: 'workflow' | 'app' }[];
+// Explicitly typed rather than `as const satisfies ...`: every entry today
+// is `source: 'workflow'`, and `as const` would narrow the field to that one
+// literal — which then makes the `source === 'app'` filter below (kept ready
+// for the day a required check IS app-provided) a compile error, since the
+// two literal types would have no overlap.
+const REQUIRED_CHECKS: readonly { name: string; source: 'workflow' | 'app' }[] =
+  [
+    { name: 'oxlint (fast pass)', source: 'workflow' },
+    { name: 'Quality (Full) Gate', source: 'workflow' },
+    // Provided by the `review:` job in `claude-code-review.yml`, which declares
+    // no `name:` — so the check takes the job id. Recorded as CodeRabbit until
+    // 2026-09-02; the live check run's `app.slug` is `github-actions`. CodeRabbit
+    // posts a separate status context named `CodeRabbit`, and branch protection
+    // does not require it.
+    { name: 'review', source: 'workflow' },
+  ];
 
 const WORKFLOW_CHECKS = REQUIRED_CHECKS.filter((c) => c.source === 'workflow');
 const APP_CHECKS = REQUIRED_CHECKS.filter((c) => c.source === 'app');

@@ -105,8 +105,12 @@ jobs:
       - name: Build plugins (dist/ is what the configs load)
         run: npx turbo run build --filter='eslint-plugin-*' --filter=@interlace/eslint-devkit
 
+      # tsconfig.lib.json is declaration-only (mirrors @interlace/eslint-devkit,
+      # see the comment there) — it never emits the .js the runner and the
+      # CWE-rendering audit require() from dist/src/index.js. That JS comes
+      # from the package's own `build` script, same as every plugin above.
       - name: Build @interlace/eslint-formatter
-        run: npx tsc -p packages/eslint-formatter/tsconfig.lib.json
+        run: npx turbo run build --filter=@interlace/eslint-formatter
       - name: Unit + snapshot + ESLint integration tests
         run: npx vitest run --root packages/eslint-formatter --reporter=default
       - name: Run ILB-Formatter (270 cells, 3 contracts)
@@ -281,6 +285,12 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      # scripts/tsconfig.json resolves workspace packages through `exports`,
+      # which points at dist/ — same reason every other job here builds first.
+      # Without this every `eslint-plugin-*` and `@interlace/eslint-devkit`
+      # import in scripts/ fails with "Cannot find module".
+      - name: Build plugins (dist/ is what scripts/ resolves)
+        run: npx turbo run build --filter='eslint-plugin-*' --filter=@interlace/eslint-devkit
       - name: typecheck:scripts (scripts/tsconfig.json)
         run: npm run typecheck:scripts
       - name: typecheck:benchmarks (benchmarks/tsconfig.scripts.json)

@@ -34,7 +34,8 @@ type FlatConfig = TSESLint.FlatConfig.Config;
 const pluginKeysOf = (config: FlatConfig): readonly string[] =>
   Object.keys(config.plugins ?? {});
 
-const allPluginKeysOf = (configs: readonly FlatConfig[]): readonly string[] =>
+// Mutable return: several callers `.sort()` the result in place.
+const allPluginKeysOf = (configs: readonly FlatConfig[]): string[] =>
   configs.flatMap(pluginKeysOf);
 
 const allRuleEntriesOf = (configs: readonly FlatConfig[]): readonly [string, unknown][] =>
