@@ -124,6 +124,13 @@ describe('consistent-existence-index-check — the `in` boundary is not autofixa
           errors: [{ messageId: 'consistentExistenceCheck' as const }],
         },
         {
+          name: 'a surplus argument is evaluated, so dropping it is not a rewrite this fixer may make',
+          code: 'if (Object.prototype.hasOwnProperty.call(obj, key, sideEffect())) {}',
+          options: [{ preferred: 'Object.hasOwn' as const }],
+          output: null,
+          errors: [{ messageId: 'consistentExistenceCheck' as const }],
+        },
+        {
           name: 'and it holds for a null-prototype object',
           code: 'if (Object.prototype.hasOwnProperty.call(Object.create(null), key)) {}',
           options: [{ preferred: 'Object.hasOwn' as const }],

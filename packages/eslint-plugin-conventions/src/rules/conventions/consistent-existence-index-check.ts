@@ -70,6 +70,7 @@ export const consistentExistenceIndexCheck = createRule<
       currentMethod: string,
       object: TSESTree.Node,
       property: TSESTree.Node,
+      surplusArguments = false,
     ) {
       let fix: TSESLint.ReportFixFunction | undefined;
 
@@ -112,9 +113,14 @@ export const consistentExistenceIndexCheck = createRule<
       // `Object.prototype.hasOwnProperty.call(obj, k)` and `Object.hasOwn(obj, k)`,
       // which ask the same question through the same dispatch. Every other pairing
       // is reported without a fix, so `--fix` can never change a program's meaning.
+      // A SURPLUS argument is evaluated even though the check ignores it:
+      // `Object.prototype.hasOwnProperty.call(obj, key, sideEffect())` runs
+      // `sideEffect()`, and a rewrite that drops the argument drops the effect
+      // with it. Reported, since the preference is unchanged; not rewritten.
       if (
         !crossesPrototypeBoundary &&
         !crossesDispatchBoundary &&
+        !surplusArguments &&
         preferred === 'Object.hasOwn' &&
         isStandaloneExpression
       ) {
@@ -178,6 +184,7 @@ export const consistentExistenceIndexCheck = createRule<
             'Object.prototype.hasOwnProperty.call',
             node.arguments[0],
             node.arguments[1],
+            node.arguments.length > 2,
           );
         }
 

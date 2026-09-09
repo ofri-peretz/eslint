@@ -141,6 +141,11 @@ describe('no-missing-error-context — throw forms (reliability)', () => {
         errors: [{ messageId: 'missingErrorContext' as const }],
       },
       {
+        name: 'an empty fallback leaves the message empty on the branch that needed it',
+        code: "declare const value: unknown; throw new Error((value as string) ?? '');",
+        errors: [{ messageId: 'missingErrorContext' as const }],
+      },
+      {
         name: 'an ordinary function call is not an error construction',
         code: 'declare function fail(c: number): unknown; declare const code: number; throw fail(code);',
         errors: [{ messageId: 'missingErrorContext' as const }],

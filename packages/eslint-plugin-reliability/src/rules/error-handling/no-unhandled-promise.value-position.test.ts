@@ -195,4 +195,20 @@ describe('no-unhandled-promise — value positions (reliability)', () => {
       },
     ],
   });
+
+  ruleTester.run('the promise has to be inside the iterable', rule, {
+    valid: [
+      {
+        name: 'a cast rejection handler is still a handler',
+        code: 'async function work() { return 1; } declare function fail(e: unknown): void; export function f() { work().then(() => 0, fail as (e: unknown) => void); }',
+      },
+    ],
+    // No `invalid` case for `Promise.all(work())`. The guard added here is real —
+    // a promise handed where an iterable belongs is not owned by the combinator —
+    // but it is not observable through this rule's report path: an older skip in
+    // `checkCallExpression` already returns for an inner call that is an ARGUMENT
+    // of an outer call which is itself a promise, and `Promise.all(…)` is one.
+    // Asserting a report there would pin behaviour this change does not produce.
+    invalid: [],
+  });
 });

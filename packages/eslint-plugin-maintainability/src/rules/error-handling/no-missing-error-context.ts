@@ -56,7 +56,11 @@ const BUILTIN_ERROR_CONSTRUCTORS = new Set([
  */
 function isProvablyString(node: TSESTree.Node): boolean {
   if (node.type === 'TemplateLiteral') return true;
-  if (node.type === 'Literal') return typeof node.value === 'string';
+  // A literal proves a string only when there is something IN it. `value ?? ''`
+  // reaches an empty message on the branch that made the fallback necessary.
+  if (node.type === 'Literal') {
+    return typeof node.value === 'string' && node.value.length > 0;
+  }
   if (node.type === 'LogicalExpression') {
     // `&&` evaluates to its RIGHT operand whenever the left is truthy, so a string
     // on the left proves nothing: `'x' && someVar` is `someVar`. `??` and `||` can

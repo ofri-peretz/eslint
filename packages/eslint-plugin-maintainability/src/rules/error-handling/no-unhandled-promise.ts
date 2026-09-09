@@ -14,6 +14,7 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
+  AST_NODE_TYPES,
   formatLLMMessage,
   MessageIcons,
   namesOneOf,
@@ -299,7 +300,18 @@ function isValueConsumed(node: TSESTree.Node): boolean {
         // the receiving call settles what it is given — `Promise.race([p, q])` owns
         // both. `console.log(fetch(url))` does not, and the rule reports the inner
         // call there on purpose (2026-08-26): otherwise nothing reports it at all.
-        if (parent.callee !== current) return isPromiseCombinatorCall(parent);
+        //
+        // The promise has to be INSIDE the iterable, too. `Promise.all(work())` hands
+        // a promise where an iterable belongs: the combinator rejects on that, and a
+        // `.catch` on it handles its own rejection, never `work()`'s. Only a promise
+        // reached through the array literal is owned, which is why the walk must have
+        // passed through one to arrive here.
+        if (parent.callee !== current) {
+          return (
+            current.type === AST_NODE_TYPES.ArrayExpression &&
+            isPromiseCombinatorCall(parent)
+          );
+        }
         break;
       case 'ArrayExpression':
         // The array is the value; where the array goes decides.
@@ -344,14 +356,24 @@ function isThenWithRejectionHandler(node: TSESTree.CallExpression): boolean {
   // Only a CALLABLE second argument handles anything. `Promise.then` ignores a
   // non-callable `onRejected` and passes the rejection along, so `then(fn, 42)`
   // and the spelled-out `then(fn, undefined)` are the one-argument form.
-  switch (onRejected.type) {
-    case 'ArrowFunctionExpression':
-    case 'FunctionExpression':
+  // `then(fn, handler as Handler)` is the same handler with a cast on it.
+  let candidate: TSESTree.Node = onRejected;
+  while (
+    candidate.type === AST_NODE_TYPES.TSAsExpression ||
+    candidate.type === AST_NODE_TYPES.TSSatisfiesExpression ||
+    candidate.type === AST_NODE_TYPES.TSNonNullExpression ||
+    candidate.type === AST_NODE_TYPES.TSTypeAssertion
+  ) {
+    candidate = candidate.expression;
+  }
+
+  switch (candidate.type) {
+    case AST_NODE_TYPES.ArrowFunctionExpression:
+    case AST_NODE_TYPES.FunctionExpression:
+    case AST_NODE_TYPES.MemberExpression:
       return true;
-    case 'Identifier':
-      return onRejected.name !== 'undefined';
-    case 'MemberExpression':
-      return true;
+    case AST_NODE_TYPES.Identifier:
+      return candidate.name !== 'undefined';
     default:
       return false;
   }
