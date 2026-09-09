@@ -73,7 +73,10 @@ describe('consistent-existence-index-check', () => {
         // Object.hasOwn should be flagged
         {
           code: 'Object.hasOwn(obj, "key")',
-          output: 'obj.hasOwnProperty("key")',
+          // Reported, not rewritten: the direct `obj.hasOwnProperty(k)` looks the
+          // method up ON `obj`, so it throws on a null-prototype object and can hit
+          // a shadowing own property. See the own-property test file.
+          output: null,
           options: [{ preferred: 'hasOwnProperty' }],
           errors: [{ messageId: 'consistentExistenceCheck' }],
         },
@@ -103,7 +106,10 @@ describe('consistent-existence-index-check', () => {
         // hasOwnProperty should be flagged
         {
           code: 'obj.hasOwnProperty("key")',
-          output: 'Object.hasOwn(obj, "key")',
+          // Reported, not rewritten: the direct `obj.hasOwnProperty(k)` looks the
+          // method up ON `obj`, so it throws on a null-prototype object and can hit
+          // a shadowing own property. See the own-property test file.
+          output: null,
           options: [{ preferred: 'Object.hasOwn' }],
           errors: [{ messageId: 'consistentExistenceCheck' }],
         },

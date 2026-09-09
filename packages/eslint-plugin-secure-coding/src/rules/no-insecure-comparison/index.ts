@@ -8,12 +8,18 @@
  * ESLint Rule: no-insecure-comparison
  * Detects insecure comparison operators (==, !=) that can lead to type coercion vulnerabilities
  * CWE-697: Incorrect Comparison
- * 
+ *
  * @see https://cwe.mitre.org/data/definitions/697.html
  * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Equality_comparisons_and_sameness
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, formatLLMMessage, MessageIcons, isTestFilePath, propertyName } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  formatLLMMessage,
+  MessageIcons,
+  isTestFilePath,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { createRule, createModuleEvidence } from '@interlace/eslint-devkit';
 
 /**
@@ -52,7 +58,7 @@ type MessageIds =
 export interface Options {
   /** Allow insecure comparison in test files. Default: false */
   allowInTests?: boolean;
-  
+
   /** Additional patterns to ignore. Default: [] */
   ignorePatterns?: string[];
 
@@ -107,7 +113,8 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
     // RULE-QUALITY-PROGRAM.md.
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-insecure-comparison.md',
-      description: 'Detects insecure comparison operators (==, !=) that can lead to type coercion vulnerabilities',
+      description:
+        'Detects insecure comparison operators (==, !=) that can lead to type coercion vulnerabilities',
       cwe: 'CWE-697',
       cvss: 5.3,
     },
@@ -120,7 +127,8 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Insecure Comparison',
         cwe: 'CWE-697',
-        description: 'Insecure comparison operator ({{operator}}) detected - can lead to type coercion vulnerabilities',
+        description:
+          'Insecure comparison operator ({{operator}}) detected - can lead to type coercion vulnerabilities',
         severity: 'HIGH',
         fix: 'Use strict equality ({{strictOperator}}) instead: {{example}} — Not a finding if the comparison is against null, which tests null and undefined together on purpose',
         documentationLink: 'https://cwe.mitre.org/data/definitions/697.html',
@@ -131,7 +139,8 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
         description: 'Use strict equality operator',
         severity: 'LOW',
         fix: 'Replace == with === and != with !== — Not a finding if the comparison is the idiomatic `x == null` nullish test',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Strict_equality',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Strict_equality',
       }),
       /**
        * The timing finding's own suggestion, because reusing `useStrictEquality`
@@ -145,19 +154,23 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
       useTimingSafeEqual: formatLLMMessage({
         icon: MessageIcons.INFO,
         issueName: 'Use A Constant-Time Comparison',
-        description: 'Compare secrets in constant time, not with an operator that short-circuits',
+        description:
+          'Compare secrets in constant time, not with an operator that short-circuits',
         severity: 'LOW',
         fix: 'Rewrite as crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b)) — Not a finding if neither side is a secret the caller can guess one character at a time',
-        documentationLink: 'https://nodejs.org/api/crypto.html#cryptotimingsafeequala-b',
+        documentationLink:
+          'https://nodejs.org/api/crypto.html#cryptotimingsafeequala-b',
       }),
       timingUnsafeComparison: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Timing Attack Risk',
         cwe: 'CWE-208',
-        description: 'Secret comparison with {{operator}} can leak timing information',
+        description:
+          'Secret comparison with {{operator}} can leak timing information',
         severity: 'HIGH',
         fix: 'Use crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b)) — Not a finding if the compared value is public, such as an id or a status',
-        documentationLink: 'https://nodejs.org/api/crypto.html#cryptotimingsafeequala-b',
+        documentationLink:
+          'https://nodejs.org/api/crypto.html#cryptotimingsafeequala-b',
       }),
     },
     schema: [
@@ -208,7 +221,7 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
   ],
   create(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}]
+    [options = {}],
   ) {
     const {
       allowInTests = false,
@@ -235,7 +248,7 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
      */
     // oxlint-disable-next-line consistent-function-scoping
     function matchesIgnorePattern(text: string, patterns: string[]): boolean {
-      return patterns.some(pattern => {
+      return patterns.some((pattern) => {
         try {
           const regex = new RegExp(pattern, 'i');
           return regex.test(text);
@@ -263,8 +276,12 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
      * single-write check is what makes the binding provable — a variable written
      * twice can hold anything by the time the comparison runs.
      */
-    function isStringTyped(node: TSESTree.Node, seen = new Set<string>()): boolean {
-      if (node.type === AST_NODE_TYPES.Literal) return typeof node.value === 'string';
+    function isStringTyped(
+      node: TSESTree.Node,
+      seen = new Set<string>(),
+    ): boolean {
+      if (node.type === AST_NODE_TYPES.Literal)
+        return typeof node.value === 'string';
       if (node.type === AST_NODE_TYPES.TemplateLiteral) return true;
       if (node.type !== AST_NODE_TYPES.Identifier) return false;
       // `var a = b; var b = a;` resolves forever without this — a stack overflow that
@@ -317,11 +334,31 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
       // attack" and swept in `monkey`, `keyword`, `machine`, `author`. A secret
       // is named by a *word*, so match words.
       const secretKeywords = new Set([
-        'secret', 'secrets', 'token', 'tokens', 'password', 'passwd', 'pwd',
-        'apikey', 'api_key', 'secretkey', 'secret_key', 'privatekey', 'private_key',
-        'signature', 'hmac', 'digest', 'checksum', 'nonce', 'otp',
-        'passwordhash', 'password_hash', 'hashedpassword', 'hashed_password',
-        'credential', 'credentials',
+        'secret',
+        'secrets',
+        'token',
+        'tokens',
+        'password',
+        'passwd',
+        'pwd',
+        'apikey',
+        'api_key',
+        'secretkey',
+        'secret_key',
+        'privatekey',
+        'private_key',
+        'signature',
+        'hmac',
+        'digest',
+        'checksum',
+        'nonce',
+        'otp',
+        'passwordhash',
+        'password_hash',
+        'hashedpassword',
+        'hashed_password',
+        'credential',
+        'credentials',
       ]);
 
       /**
@@ -348,7 +385,13 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
         for (let i = 0; i + 1 < parts.length; i += 1) {
           pairs.push(parts[i] + parts[i + 1], `${parts[i]}_${parts[i + 1]}`);
         }
-        return [...parts, ...pairs, parts.join(''), parts.join('_'), name.toLowerCase()];
+        return [
+          ...parts,
+          ...pairs,
+          parts.join(''),
+          parts.join('_'),
+          name.toLowerCase(),
+        ];
       };
 
       /**
@@ -368,13 +411,20 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
 
       /** The key names a destructuring pattern binds `target` under, e.g. `{ token: t }` → 'token'. */
       // oxlint-disable-next-line consistent-function-scoping
-      const destructuringKeys = (pattern: TSESTree.Node, target: TSESTree.Identifier): string[] => {
+      const destructuringKeys = (
+        pattern: TSESTree.Node,
+        target: TSESTree.Identifier,
+      ): string[] => {
         const keys: string[] = [];
         const walkPattern = (n: TSESTree.Node): void => {
           if (n.type === 'ObjectPattern') {
             for (const property of n.properties) {
               if (property.type !== 'Property') continue;
-              if (property.value === target && !property.computed && property.key.type === 'Identifier') {
+              if (
+                property.value === target &&
+                !property.computed &&
+                property.key.type === 'Identifier'
+              ) {
                 keys.push(property.key.name);
               }
               walkPattern(property.value);
@@ -429,7 +479,9 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
             scope;
             scope = scope.upper
           ) {
-            const variable = scope.variables.find((v) => v.name === identifier.name);
+            const variable = scope.variables.find(
+              (v) => v.name === identifier.name,
+            );
             if (!variable) continue;
             const writes = variable.references.filter((ref) => ref.isWrite());
             // `const { kind } = token` binds `token.kind`, a DIFFERENT value from `token`.
@@ -438,12 +490,23 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
             // token's `code` became secrets. The hop that belongs here is the
             // destructuring key, taken below — `const { token: t } = session` still
             // resolves, through `token`, not through `session`.
-            const isDestructured = variable.defs.some(
-              (def) => def.type === 'Variable' && def.node.id.type !== 'Identifier',
+            // OBJECT patterns only. `destructuringKeys` collects the KEY a value was
+            // bound under, which is the replacement hop for an object destructure —
+            // but an array pattern has no key, so excluding it here would drop the
+            // container's name and put nothing back: `const [expected] = tokenCandidates`
+            // would stop resolving `tokenCandidates` and lose the finding.
+            const isObjectDestructured = variable.defs.some(
+              (def) =>
+                def.type === 'Variable' &&
+                def.node.id.type === AST_NODE_TYPES.ObjectPattern,
             );
             // More than one write and the value at the comparison is not knowable from
             // any single initializer, so nothing is claimed.
-            if (!isDestructured && writes.length === 1 && writes[0].writeExpr) {
+            if (
+              !isObjectDestructured &&
+              writes.length === 1 &&
+              writes[0].writeExpr
+            ) {
               walk(writes[0].writeExpr);
             }
             for (const def of variable.defs) {
@@ -489,15 +552,18 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
           .some((segment) => secretKeywords.has(segment));
 
       // Timing-safe comparison for secrets even with strict equality
-      if ((node.operator === '===' || node.operator === '!==') &&
-          (isPotentialSecret(node.left) || isPotentialSecret(node.right))) {
-        
+      if (
+        (node.operator === '===' || node.operator === '!==') &&
+        (isPotentialSecret(node.left) || isPotentialSecret(node.right))
+      ) {
         // SKIP: Length comparisons are safe - they're actually required before timingSafeEqual
         const isLengthComparison = (expr: TSESTree.Expression): boolean => {
-          return expr.type === AST_NODE_TYPES.MemberExpression &&
-                 propertyName(expr) === 'length';
+          return (
+            expr.type === AST_NODE_TYPES.MemberExpression &&
+            propertyName(expr) === 'length'
+          );
         };
-        
+
         if (isLengthComparison(node.left) || isLengthComparison(node.right)) {
           return; // Length checks are safe and recommended
         }
@@ -510,22 +576,23 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
         // which this rule deliberately does not make — see the split at the top.
         const isNonSecretLiteral = (expr: TSESTree.Expression): boolean =>
           expr.type === AST_NODE_TYPES.Literal ||
-          (expr.type === AST_NODE_TYPES.TemplateLiteral && expr.expressions.length === 0) ||
+          (expr.type === AST_NODE_TYPES.TemplateLiteral &&
+            expr.expressions.length === 0) ||
           (expr.type === AST_NODE_TYPES.UnaryExpression &&
             expr.argument.type === AST_NODE_TYPES.Literal) ||
-          (expr.type === AST_NODE_TYPES.Identifier && expr.name === 'undefined');
+          (expr.type === AST_NODE_TYPES.Identifier &&
+            expr.name === 'undefined');
 
         if (isNonSecretLiteral(node.left) || isNonSecretLiteral(node.right)) {
           return;
         }
 
-
         const leftText = sourceCode.getText(node.left);
         const rightText = sourceCode.getText(node.right);
-        
+
         // ... rest of logic uses example ...
         const example = `crypto.timingSafeEqual(Buffer.from(${leftText}), Buffer.from(${rightText}))`;
-        
+
         context.report({
           node,
           messageId: 'timingUnsafeComparison',
@@ -537,7 +604,8 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
           suggest: [
             {
               messageId: 'useTimingSafeEqual',
-              fix: (fixer: TSESLint.RuleFixer) => fixer.replaceText(node, example),
+              fix: (fixer: TSESLint.RuleFixer) =>
+                fixer.replaceText(node, example),
             },
           ],
         });
@@ -547,7 +615,7 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
       // Check for insecure comparison operators
       if (node.operator === '==' || node.operator === '!=') {
         const text = sourceCode.getText(node);
-        
+
         // Check if it matches any ignore pattern
         if (matchesIgnorePattern(text, ignorePatterns)) {
           return;
@@ -623,4 +691,3 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
     };
   },
 });
-

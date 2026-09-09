@@ -110,6 +110,31 @@ describe('no-insecure-comparison — a public value is not a secret', () => {
           ],
         },
         {
+          name: 'an ARRAY destructure keeps resolving its initializer — it binds no key',
+          code: `
+          function check(tokenCandidates, presented) {
+            const [expected] = tokenCandidates;
+            return expected === presented;
+          }
+        `,
+          errors: [
+            {
+              messageId: 'timingUnsafeComparison' as const,
+              suggestions: [
+                {
+                  messageId: 'useTimingSafeEqual' as const,
+                  output: `
+          function check(tokenCandidates, presented) {
+            const [expected] = tokenCandidates;
+            return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(presented));
+          }
+        `,
+                },
+              ],
+            },
+          ],
+        },
+        {
           name: 'a non-destructured hop still carries the name',
           code: `
           function check(config, presented) {

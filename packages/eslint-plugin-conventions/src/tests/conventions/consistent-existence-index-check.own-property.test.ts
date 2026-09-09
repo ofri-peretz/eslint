@@ -7,7 +7,14 @@
  * object the user supplied. A style rule may say it prefers the other form; it may not
  * silently rewrite the program's meaning under `--fix`.
  *
- * The three own-property forms *are* interchangeable with each other, so those fixes stay.
+ * The DIRECT `obj.hasOwnProperty(k)` is not interchangeable with the other two
+ * own-property forms either: it looks the method up ON `obj`, so it throws on a
+ * null-prototype object and calls whatever a shadowing own property points at.
+ * `Object.hasOwn(Object.create(null), k)` rewritten to
+ * `Object.create(null).hasOwnProperty(k)` is a working check turned into a TypeError.
+ *
+ * One conversion survives both boundaries — `Object.prototype.hasOwnProperty.call(obj, k)`
+ * and `Object.hasOwn(obj, k)`, the same question through the same dispatch. That fix stays.
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, afterAll } from 'vitest';
@@ -80,30 +87,47 @@ describe('consistent-existence-index-check — the `in` boundary is not autofixa
   );
 
   ruleTester.run(
-    'own-property to own-property still autofixes',
+    'the direct hasOwnProperty dispatch is also a boundary',
     consistentExistenceIndexCheck,
     {
       valid: [],
       invalid: [
         {
-          name: 'hasOwnProperty -> Object.hasOwn',
+          name: 'hasOwnProperty is not rewritten into Object.hasOwn — it is looked up ON obj',
           code: 'if (obj.hasOwnProperty(key)) {}',
           options: [{ preferred: 'Object.hasOwn' as const }],
-          output: 'if (Object.hasOwn(obj, key)) {}',
+          output: null,
           errors: [{ messageId: 'consistentExistenceCheck' as const }],
         },
         {
-          name: 'Object.prototype.hasOwnProperty.call -> Object.hasOwn',
+          name: 'Object.hasOwn on a null-prototype object is not rewritten into a call that would throw',
+          code: 'if (Object.hasOwn(Object.create(null), key)) {}',
+          options: [{ preferred: 'hasOwnProperty' as const }],
+          output: null,
+          errors: [{ messageId: 'consistentExistenceCheck' as const }],
+        },
+      ],
+    },
+  );
+
+  ruleTester.run(
+    'the one conversion that preserves both',
+    consistentExistenceIndexCheck,
+    {
+      valid: [],
+      invalid: [
+        {
+          name: 'Object.prototype.hasOwnProperty.call -> Object.hasOwn, same question and same dispatch',
           code: 'if (Object.prototype.hasOwnProperty.call(obj, key)) {}',
           options: [{ preferred: 'Object.hasOwn' as const }],
           output: 'if (Object.hasOwn(obj, key)) {}',
           errors: [{ messageId: 'consistentExistenceCheck' as const }],
         },
         {
-          name: 'Object.hasOwn -> hasOwnProperty',
-          code: 'if (Object.hasOwn(obj, key)) {}',
-          options: [{ preferred: 'hasOwnProperty' as const }],
-          output: 'if (obj.hasOwnProperty(key)) {}',
+          name: 'and it holds for a null-prototype object',
+          code: 'if (Object.prototype.hasOwnProperty.call(Object.create(null), key)) {}',
+          options: [{ preferred: 'Object.hasOwn' as const }],
+          output: 'if (Object.hasOwn(Object.create(null), key)) {}',
           errors: [{ messageId: 'consistentExistenceCheck' as const }],
         },
       ],

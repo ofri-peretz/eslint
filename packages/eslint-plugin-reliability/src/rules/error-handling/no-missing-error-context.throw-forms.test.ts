@@ -126,4 +126,30 @@ describe('no-missing-error-context — throw forms (reliability)', () => {
       },
     ],
   });
+
+  ruleTester.run('what the callable form and && actually prove', rule, {
+    valid: [
+      {
+        name: 'a && whose RIGHT side is a string',
+        code: "declare const ok: boolean; throw new Error(ok && 'operation refused');",
+      },
+    ],
+    invalid: [
+      {
+        name: 'a && whose left side is a string proves nothing — the result is the right',
+        code: 'declare const someVar: unknown; throw new Error("x" && (someVar as string));',
+        errors: [{ messageId: 'missingErrorContext' as const }],
+      },
+      {
+        name: 'an ordinary function call is not an error construction',
+        code: 'declare function fail(c: number): unknown; declare const code: number; throw fail(code);',
+        errors: [{ messageId: 'missingErrorContext' as const }],
+      },
+      {
+        name: 'a translation helper is not an error construction either',
+        code: "declare function t(k: string): string; throw t('errors.missing');",
+        errors: [{ messageId: 'missingErrorContext' as const }],
+      },
+    ],
+  });
 });

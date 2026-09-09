@@ -81,11 +81,13 @@ type AnyReport = {
 /* ------------------------------------------------------------------ */
 
 describe('consistent-existence-index-check — standalone-parent matrix', () => {
-  // Every arm of `isStandaloneExpression`, exercised with `preferred: 'Object.hasOwn'`.
-  // The matrix used to run `hasOwnProperty` -> `in`, which is no longer autofixed at
-  // all: those two ask different questions about an inherited key, so the fixer stops
-  // at that boundary. `hasOwnProperty` -> `Object.hasOwn` is the same question in a
-  // shorter spelling, so it still fixes and still reaches every branch here.
+  // Every arm of `isStandaloneExpression`, exercised with the ONE conversion the fixer
+  // still makes: `Object.prototype.hasOwnProperty.call(obj, k)` -> `Object.hasOwn(obj, k)`.
+  //
+  // The matrix used to run `hasOwnProperty` -> `in`, and neither that nor the direct
+  // `obj.hasOwnProperty(k)` is autofixable any more — `in` walks the prototype chain,
+  // and the direct form looks the method up on `obj`, so it throws on a null-prototype
+  // object. Only these two spellings ask the same question through the same dispatch.
   const OWN = [{ preferred: 'Object.hasOwn' as const }];
 
   ruleTester.run(
@@ -96,63 +98,63 @@ describe('consistent-existence-index-check — standalone-parent matrix', () => 
       invalid: [
         {
           name: 'a declarator initialiser',
-          code: 'const has = obj.hasOwnProperty("k");',
+          code: 'const has = Object.prototype.hasOwnProperty.call(obj, "k");',
           options: OWN,
           errors: [{ messageId: 'consistentExistenceCheck' }],
           output: 'const has = Object.hasOwn(obj, "k");',
         },
         {
           name: 'the right-hand side of an assignment',
-          code: 'x = obj.hasOwnProperty("k");',
+          code: 'x = Object.prototype.hasOwnProperty.call(obj, "k");',
           options: OWN,
           errors: [{ messageId: 'consistentExistenceCheck' }],
           output: 'x = Object.hasOwn(obj, "k");',
         },
         {
           name: 'a return argument',
-          code: 'function f() { return obj.hasOwnProperty("k"); }',
+          code: 'function f() { return Object.prototype.hasOwnProperty.call(obj, "k"); }',
           options: OWN,
           errors: [{ messageId: 'consistentExistenceCheck' }],
           output: 'function f() { return Object.hasOwn(obj, "k"); }',
         },
         {
           name: 'the concise body of an arrow',
-          code: 'const g = () => obj.hasOwnProperty("k");',
+          code: 'const g = () => Object.prototype.hasOwnProperty.call(obj, "k");',
           options: OWN,
           errors: [{ messageId: 'consistentExistenceCheck' }],
           output: 'const g = () => Object.hasOwn(obj, "k");',
         },
         {
           name: 'an if test',
-          code: 'if (obj.hasOwnProperty("k")) {}',
+          code: 'if (Object.prototype.hasOwnProperty.call(obj, "k")) {}',
           options: OWN,
           errors: [{ messageId: 'consistentExistenceCheck' }],
           output: 'if (Object.hasOwn(obj, "k")) {}',
         },
         {
           name: 'a while test',
-          code: 'while (obj.hasOwnProperty("k")) {}',
+          code: 'while (Object.prototype.hasOwnProperty.call(obj, "k")) {}',
           options: OWN,
           errors: [{ messageId: 'consistentExistenceCheck' }],
           output: 'while (Object.hasOwn(obj, "k")) {}',
         },
         {
           name: 'a do-while test',
-          code: 'do {} while (obj.hasOwnProperty("k"));',
+          code: 'do {} while (Object.prototype.hasOwnProperty.call(obj, "k"));',
           options: OWN,
           errors: [{ messageId: 'consistentExistenceCheck' }],
           output: 'do {} while (Object.hasOwn(obj, "k"));',
         },
         {
           name: 'a for test',
-          code: 'for (; obj.hasOwnProperty("k"); ) {}',
+          code: 'for (; Object.prototype.hasOwnProperty.call(obj, "k"); ) {}',
           options: OWN,
           errors: [{ messageId: 'consistentExistenceCheck' }],
           output: 'for (; Object.hasOwn(obj, "k"); ) {}',
         },
         {
           name: 'a ternary test',
-          code: 'const t = obj.hasOwnProperty("k") ? 1 : 2;',
+          code: 'const t = Object.prototype.hasOwnProperty.call(obj, "k") ? 1 : 2;',
           options: OWN,
           errors: [{ messageId: 'consistentExistenceCheck' }],
           output: 'const t = Object.hasOwn(obj, "k") ? 1 : 2;',
@@ -160,14 +162,14 @@ describe('consistent-existence-index-check — standalone-parent matrix', () => 
         // Not a standalone expression (unary operand) — reported, but no fix.
         {
           name: 'a unary operand is not standalone, so no fix',
-          code: 'const n = !obj.hasOwnProperty("k");',
+          code: 'const n = !Object.prototype.hasOwnProperty.call(obj, "k");',
           options: OWN,
           errors: [{ messageId: 'consistentExistenceCheck' }],
           output: null,
         },
         // Object.prototype.hasOwnProperty.call(obj, prop)
         {
-          name: 'Object.prototype.hasOwnProperty.call, shortened to Object.hasOwn',
+          name: 'a bare expression statement',
           code: 'Object.prototype.hasOwnProperty.call(obj, "k");',
           options: OWN,
           errors: [{ messageId: 'consistentExistenceCheck' }],
@@ -192,15 +194,39 @@ describe('consistent-existence-index-check — standalone-parent matrix', () => 
 describe('expiring-todo-comments — extracted helpers', () => {
   describe('parseVersionParts', () => {
     it('parses plain and prefixed semver', () => {
-      expect(parseVersionParts('1.2.3')).toEqual({ major: 1, minor: 2, patch: 3 });
-      expect(parseVersionParts('^4.5.6')).toEqual({ major: 4, minor: 5, patch: 6 });
-      expect(parseVersionParts('>=7.8.9')).toEqual({ major: 7, minor: 8, patch: 9 });
+      expect(parseVersionParts('1.2.3')).toEqual({
+        major: 1,
+        minor: 2,
+        patch: 3,
+      });
+      expect(parseVersionParts('^4.5.6')).toEqual({
+        major: 4,
+        minor: 5,
+        patch: 6,
+      });
+      expect(parseVersionParts('>=7.8.9')).toEqual({
+        major: 7,
+        minor: 8,
+        patch: 9,
+      });
     });
 
     it('normalizes wildcards and short versions to zeros', () => {
-      expect(parseVersionParts('24.x')).toEqual({ major: 24, minor: 0, patch: 0 });
-      expect(parseVersionParts('18')).toEqual({ major: 18, minor: 0, patch: 0 });
-      expect(parseVersionParts('not-a-version')).toEqual({ major: 0, minor: 0, patch: 0 });
+      expect(parseVersionParts('24.x')).toEqual({
+        major: 24,
+        minor: 0,
+        patch: 0,
+      });
+      expect(parseVersionParts('18')).toEqual({
+        major: 18,
+        minor: 0,
+        patch: 0,
+      });
+      expect(parseVersionParts('not-a-version')).toEqual({
+        major: 0,
+        minor: 0,
+        patch: 0,
+      });
     });
   });
 
@@ -258,25 +284,43 @@ describe('expiring-todo-comments — extracted helpers', () => {
     const pkg = { engines: { node: '>=18.0.0' } };
 
     it('only supports the node engine', () => {
-      expect(checkEngineVersionCondition(pkg, 'npm', '>=', '9.0.0')).toBe(false);
+      expect(checkEngineVersionCondition(pkg, 'npm', '>=', '9.0.0')).toBe(
+        false,
+      );
     });
 
     it('returns false without engines.node', () => {
-      expect(checkEngineVersionCondition(null, 'node', '>=', '16.0.0')).toBe(false);
-      expect(checkEngineVersionCondition({}, 'node', '>=', '16.0.0')).toBe(false);
+      expect(checkEngineVersionCondition(null, 'node', '>=', '16.0.0')).toBe(
+        false,
+      );
+      expect(checkEngineVersionCondition({}, 'node', '>=', '16.0.0')).toBe(
+        false,
+      );
       expect(
         checkEngineVersionCondition({ engines: {} }, 'node', '>=', '16.0.0'),
       ).toBe(false);
     });
 
     it('evaluates every operator against the normalized engine version', () => {
-      expect(checkEngineVersionCondition(pkg, 'node', '>=', '16.0.0')).toBe(true);
-      expect(checkEngineVersionCondition(pkg, 'node', '>', '18.0.0')).toBe(false);
-      expect(checkEngineVersionCondition(pkg, 'node', '>', '16.0.0')).toBe(true);
-      expect(checkEngineVersionCondition(pkg, 'node', '<', '20.0.0')).toBe(true);
-      expect(checkEngineVersionCondition(pkg, 'node', '<=', '18.0.0')).toBe(true);
+      expect(checkEngineVersionCondition(pkg, 'node', '>=', '16.0.0')).toBe(
+        true,
+      );
+      expect(checkEngineVersionCondition(pkg, 'node', '>', '18.0.0')).toBe(
+        false,
+      );
+      expect(checkEngineVersionCondition(pkg, 'node', '>', '16.0.0')).toBe(
+        true,
+      );
+      expect(checkEngineVersionCondition(pkg, 'node', '<', '20.0.0')).toBe(
+        true,
+      );
+      expect(checkEngineVersionCondition(pkg, 'node', '<=', '18.0.0')).toBe(
+        true,
+      );
       // '=' is not a supported engine operator — falls to the default arm.
-      expect(checkEngineVersionCondition(pkg, 'node', '=', '18.0.0')).toBe(false);
+      expect(checkEngineVersionCondition(pkg, 'node', '=', '18.0.0')).toBe(
+        false,
+      );
     });
 
     it('normalizes wildcard engine versions', () => {
@@ -447,39 +491,45 @@ describe('expiring-todo-comments — extracted helpers', () => {
   });
 
   describe('rule wiring', () => {
-    ruleTester.run('condition handling through the rule', expiringTodoComments, {
-      valid: [
-        // Package version not reached yet — no report.
-        { code: '// TODO [<0.0.1]: wait for the rewrite' },
-      ],
-      invalid: [
-        // Unparseable condition → invalidTodoCondition.
-        {
-          code: '// TODO [not~a~condition]: fix me',
-          errors: [{ messageId: 'invalidTodoCondition' }],
-        },
-        // Two satisfied package-version conditions in one file: the second
-        // check hits the loadPackageJson cache.
-        {
-          code: '// TODO [>=0.0.1]: first\n// FIXME [>=0.0.1]: second',
-          errors: [
-            { messageId: 'expiringTodoComment' },
-            { messageId: 'expiringTodoComment' },
-          ],
-        },
-      ],
-    });
+    ruleTester.run(
+      'condition handling through the rule',
+      expiringTodoComments,
+      {
+        valid: [
+          // Package version not reached yet — no report.
+          { code: '// TODO [<0.0.1]: wait for the rewrite' },
+        ],
+        invalid: [
+          // Unparseable condition → invalidTodoCondition.
+          {
+            code: '// TODO [not~a~condition]: fix me',
+            errors: [{ messageId: 'invalidTodoCondition' }],
+          },
+          // Two satisfied package-version conditions in one file: the second
+          // check hits the loadPackageJson cache.
+          {
+            code: '// TODO [>=0.0.1]: first\n// FIXME [>=0.0.1]: second',
+            errors: [
+              { messageId: 'expiringTodoComment' },
+              { messageId: 'expiringTodoComment' },
+            ],
+          },
+        ],
+      },
+    );
 
     it('ignores comment nodes that are neither Line nor Block', () => {
-      const { listeners, reports, context } = createWithMockContext(
-        expiringTodoComments,
-      );
+      const { listeners, reports, context } =
+        createWithMockContext(expiringTodoComments);
       Object.assign(context.sourceCode, {
         getAllComments: () => [
           {
             type: 'Shebang',
             value: '!/usr/bin/env node TODO [2000-01-01]: expired',
-            loc: { start: { line: 1, column: 0 }, end: { line: 1, column: 10 } },
+            loc: {
+              start: { line: 1, column: 0 },
+              end: { line: 1, column: 10 },
+            },
           },
         ],
       });
@@ -669,7 +719,6 @@ describe('no-console-spaces — template quasis and method-name fallback', () =>
       },
     ],
   });
-
 });
 
 /* ------------------------------------------------------------------ */
@@ -728,7 +777,11 @@ describe('no-magic-numbers — option branches and synthetic contexts', () => {
       if (parent['__linkChild']) parent['right'] = node;
     }
     (result.listeners['Literal'] as Listener)(node);
-    return { ...result, node, typedReports: result.reports as unknown as AnyReport[] };
+    return {
+      ...result,
+      node,
+      typedReports: result.reports as unknown as AnyReport[],
+    };
   }
 
   const strictOptions = [
@@ -751,7 +804,11 @@ describe('no-magic-numbers — option branches and synthetic contexts', () => {
   });
 
   it('flags enum members when ignoreEnums is false', () => {
-    const { typedReports } = runLiteral(42, { type: 'TSEnumMember' }, strictOptions);
+    const { typedReports } = runLiteral(
+      42,
+      { type: 'TSEnumMember' },
+      strictOptions,
+    );
     expect(typedReports).toHaveLength(1);
     expect(typedReports[0].messageId).toBe('noMagicNumber');
   });
@@ -770,11 +827,8 @@ describe('no-magic-numbers — option branches and synthetic contexts', () => {
       runLiteral(42, { type: 'CallExpression' }, strictOptions).typedReports,
     ).toHaveLength(1);
     expect(
-      runLiteral(
-        42,
-        { type: 'BinaryExpression', operator: '+' },
-        strictOptions,
-      ).typedReports,
+      runLiteral(42, { type: 'BinaryExpression', operator: '+' }, strictOptions)
+        .typedReports,
     ).toHaveLength(1);
   });
 
@@ -802,7 +856,9 @@ describe('no-magic-numbers — option branches and synthetic contexts', () => {
   it('names negative constants MAGIC_NEG_<n>', () => {
     const { typedReports } = runLiteral(-5, { type: 'ExpressionStatement' });
     expect(typedReports).toHaveLength(1);
-    expect(typedReports[0].suggest?.[0].data?.['constName']).toBe('MAGIC_NEG_5');
+    expect(typedReports[0].suggest?.[0].data?.['constName']).toBe(
+      'MAGIC_NEG_5',
+    );
   });
 
   it('suggestion fix bails out without a statement ancestor', () => {
@@ -832,13 +888,17 @@ describe('no-magic-numbers — option branches and synthetic contexts', () => {
 /* ------------------------------------------------------------------ */
 
 describe('no-raw-cross-property-href — unparseable URL', () => {
-  jsxRuleTester.run('URL constructor failure is ignored', noRawCrossPropertyHref, {
-    valid: [
-      // Passes the protocol regex but throws in `new URL(...)`.
-      { code: '<a href="http://">broken</a>;' },
-    ],
-    invalid: [],
-  });
+  jsxRuleTester.run(
+    'URL constructor failure is ignored',
+    noRawCrossPropertyHref,
+    {
+      valid: [
+        // Passes the protocol regex but throws in `new URL(...)`.
+        { code: '<a href="http://">broken</a>;' },
+      ],
+      invalid: [],
+    },
+  );
 });
 
 /* ------------------------------------------------------------------ */
@@ -886,43 +946,47 @@ describe('prefer-code-point — ignore rules and callee shapes', () => {
 /* ------------------------------------------------------------------ */
 
 describe('prefer-dependency-version-strategy — protocols, overrides, key shapes', () => {
-  ruleTester.run('skipped specifiers and overrides', preferDependencyVersionStrategy, {
-    valid: [
-      // file:/link: protocols and non-semver specifiers are skipped.
-      {
-        code: 'const deps = { "a": "^1.0.0", "b": "file:../pkg", "c": "link:../pkg2", "d": "latest" };',
-      },
-      // Per-package override to "any" skips that package.
-      {
-        code: 'const deps = { "a": "^1.0.0", "b": "1.9.9" };',
-        options: [{ overrides: { b: 'any' } }],
-      },
-      // Spread elements are skipped by the property scan.
-      { code: 'const deps = { "a": "^1.0.0", ...extra };' },
-      // Computed keys yield no dependency name.
-      { code: 'const deps = { "a": "^1.0.0", [k + "x"]: "2.0.0" };' },
-      // "dependencies" property whose value is not an object is ignored.
-      { code: 'const pkg = { "dependencies": "latest" };' },
-    ],
-    invalid: [
-      // Identifier keys are read via key.name.
-      {
-        code: 'const deps = { react: "18.0.0" };',
-        errors: [{ messageId: 'preferStrategy' }],
-        output: 'const deps = { react: "^18.0.0" };',
-      },
-      // String-keyed "dependencies" fires the dedicated selector listener
-      // (and the generic ObjectExpression listener → two identical reports).
-      {
-        code: 'const pkg = { "dependencies": { "react": "18.2.0" } };',
-        errors: [
-          { messageId: 'preferStrategy' },
-          { messageId: 'preferStrategy' },
-        ],
-        output: 'const pkg = { "dependencies": { "react": "^18.2.0" } };',
-      },
-    ],
-  });
+  ruleTester.run(
+    'skipped specifiers and overrides',
+    preferDependencyVersionStrategy,
+    {
+      valid: [
+        // file:/link: protocols and non-semver specifiers are skipped.
+        {
+          code: 'const deps = { "a": "^1.0.0", "b": "file:../pkg", "c": "link:../pkg2", "d": "latest" };',
+        },
+        // Per-package override to "any" skips that package.
+        {
+          code: 'const deps = { "a": "^1.0.0", "b": "1.9.9" };',
+          options: [{ overrides: { b: 'any' } }],
+        },
+        // Spread elements are skipped by the property scan.
+        { code: 'const deps = { "a": "^1.0.0", ...extra };' },
+        // Computed keys yield no dependency name.
+        { code: 'const deps = { "a": "^1.0.0", [k + "x"]: "2.0.0" };' },
+        // "dependencies" property whose value is not an object is ignored.
+        { code: 'const pkg = { "dependencies": "latest" };' },
+      ],
+      invalid: [
+        // Identifier keys are read via key.name.
+        {
+          code: 'const deps = { react: "18.0.0" };',
+          errors: [{ messageId: 'preferStrategy' }],
+          output: 'const deps = { react: "^18.0.0" };',
+        },
+        // String-keyed "dependencies" fires the dedicated selector listener
+        // (and the generic ObjectExpression listener → two identical reports).
+        {
+          code: 'const pkg = { "dependencies": { "react": "18.2.0" } };',
+          errors: [
+            { messageId: 'preferStrategy' },
+            { messageId: 'preferStrategy' },
+          ],
+          output: 'const pkg = { "dependencies": { "react": "^18.2.0" } };',
+        },
+      ],
+    },
+  );
 
   it('reports an invalid strategy and disables itself (mock context)', () => {
     const { listeners, reports } = createWithMockContext(
@@ -1027,39 +1091,46 @@ describe('prefer-dom-node-text-content — heuristics and fix fallback', () => {
 /* ------------------------------------------------------------------ */
 
 describe('require-data-testid — attribute shapes and name resolution', () => {
-  jsxRuleTester.run('spreads, namespaces, and member names', requireDataTestId, {
-    valid: [
-      // Spread on an interactive anchor: parent owns the testid.
-      { code: '<a {...props} href="/x">y</a>;' },
-      // Namespaced attribute name is skipped while scanning for href/onClick.
-      { code: '<a foo:bar="v" data-testid="ok" href="/x">y</a>;' },
-      // Spread on a handler component: parent owns the testid.
-      { code: '<Comp {...rest} onClick={h}>x</Comp>;' },
-      // Namespaced element names are not resolvable → skipped.
-      { code: '<ns:widget attr="1" />;' },
-      // Expression-container string literal is a stable value.
-      { code: '<button data-testid={"lit"} onClick={h} />;' },
-      // Empty componentPattern disables custom-component checks.
-      { code: '<Widget onClick={h} />;', options: [{ componentPattern: '' }] },
-    ],
-    invalid: [
-      // Member-expression component name resolves to its property.
-      {
-        code: '<Card.Header onClick={h} />;',
-        errors: [{ messageId: 'missingDataTestId' }],
-      },
-      // Namespaced attr is skipped by the handler scan; onClick still counts.
-      {
-        code: '<Comp ns:x="1" onClick={h} />;',
-        errors: [{ messageId: 'missingDataTestId' }],
-      },
-      // Boolean-shorthand data-testid has no stable value.
-      {
-        code: '<button data-testid />;',
-        errors: [{ messageId: 'dynamicDataTestId' }],
-      },
-    ],
-  });
+  jsxRuleTester.run(
+    'spreads, namespaces, and member names',
+    requireDataTestId,
+    {
+      valid: [
+        // Spread on an interactive anchor: parent owns the testid.
+        { code: '<a {...props} href="/x">y</a>;' },
+        // Namespaced attribute name is skipped while scanning for href/onClick.
+        { code: '<a foo:bar="v" data-testid="ok" href="/x">y</a>;' },
+        // Spread on a handler component: parent owns the testid.
+        { code: '<Comp {...rest} onClick={h}>x</Comp>;' },
+        // Namespaced element names are not resolvable → skipped.
+        { code: '<ns:widget attr="1" />;' },
+        // Expression-container string literal is a stable value.
+        { code: '<button data-testid={"lit"} onClick={h} />;' },
+        // Empty componentPattern disables custom-component checks.
+        {
+          code: '<Widget onClick={h} />;',
+          options: [{ componentPattern: '' }],
+        },
+      ],
+      invalid: [
+        // Member-expression component name resolves to its property.
+        {
+          code: '<Card.Header onClick={h} />;',
+          errors: [{ messageId: 'missingDataTestId' }],
+        },
+        // Namespaced attr is skipped by the handler scan; onClick still counts.
+        {
+          code: '<Comp ns:x="1" onClick={h} />;',
+          errors: [{ messageId: 'missingDataTestId' }],
+        },
+        // Boolean-shorthand data-testid has no stable value.
+        {
+          code: '<button data-testid />;',
+          errors: [{ messageId: 'dynamicDataTestId' }],
+        },
+      ],
+    },
+  );
 
   it('applies option fallbacks when the options element is null', () => {
     const { listeners, reports } = createWithMockContext(requireDataTestId, {

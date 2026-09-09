@@ -439,16 +439,23 @@ function isInsidePromiseCallback(node: TSESTree.CallExpression): boolean {
 }
 
 /**
- * `Promise.all([…])` and friends — a call that takes promises and settles them.
- * A promise passed to one of these is not floating: the combinator's own result
- * is the promise to handle, and this rule reports that one.
+ * `Promise.all([…])` and the other three combinators — calls that take promises and
+ * settle every one they are given. A promise passed to one of these is not floating:
+ * the combinator's own result is the promise to handle, and this rule reports that.
+ *
+ * Named explicitly rather than "any `Promise.*`": `Promise.reject(p)` makes `p` the
+ * REASON of a rejection and never settles it, so treating it as an owner would hide a
+ * genuinely floating promise.
  */
+const PROMISE_COMBINATORS = ['all', 'allSettled', 'any', 'race'];
+
 function isPromiseCombinatorCall(node: TSESTree.CallExpression): boolean {
   const { callee } = node;
   return (
     callee.type === 'MemberExpression' &&
     callee.object.type === 'Identifier' &&
-    callee.object.name === 'Promise'
+    callee.object.name === 'Promise' &&
+    namesOneOf(propertyName(callee), PROMISE_COMBINATORS)
   );
 }
 
@@ -531,9 +538,20 @@ function isThenWithRejectionHandler(node: TSESTree.CallExpression): boolean {
   if (propertyName(node.callee) !== 'then') return false;
   const onRejected = node.arguments[1];
   if (onRejected === undefined) return false;
-  if (onRejected.type === 'Identifier' && onRejected.name === 'undefined')
-    return false;
-  return !(onRejected.type === 'Literal' && onRejected.value === null);
+  // Only a CALLABLE second argument handles anything. `Promise.then` ignores a
+  // non-callable `onRejected` and passes the rejection along, so `then(fn, 42)`
+  // and the spelled-out `then(fn, undefined)` are the one-argument form.
+  switch (onRejected.type) {
+    case 'ArrowFunctionExpression':
+    case 'FunctionExpression':
+      return true;
+    case 'Identifier':
+      return onRejected.name !== 'undefined';
+    case 'MemberExpression':
+      return true;
+    default:
+      return false;
+  }
 }
 
 /**

@@ -11,14 +11,15 @@
  * @see https://rules.sonarsource.com/javascript/RSPEC-1128/
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, staticString } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  staticString,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
-  | 'missingErrorContext'
-  | 'addErrorMessage'
-  | 'addErrorStack'
-  | 'useErrorClass';
+  'missingErrorContext' | 'addErrorMessage' | 'addErrorStack' | 'useErrorClass';
 
 export interface Options {
   /** Require error message. Default: true */
@@ -57,10 +58,17 @@ function isProvablyString(node: TSESTree.Node): boolean {
   if (node.type === 'TemplateLiteral') return true;
   if (node.type === 'Literal') return typeof node.value === 'string';
   if (node.type === 'LogicalExpression') {
-    return isProvablyString(node.left) || isProvablyString(node.right);
+    // `&&` evaluates to its RIGHT operand whenever the left is truthy, so a string
+    // on the left proves nothing: `'x' && someVar` is `someVar`. `??` and `||` can
+    // land on either side, so either being a string is enough.
+    return node.operator === '&&'
+      ? isProvablyString(node.right)
+      : isProvablyString(node.left) || isProvablyString(node.right);
   }
   if (node.type === 'ConditionalExpression') {
-    return isProvablyString(node.consequent) || isProvablyString(node.alternate);
+    return (
+      isProvablyString(node.consequent) || isProvablyString(node.alternate)
+    );
   }
   if (node.type === 'BinaryExpression' && node.operator === '+') {
     return isProvablyString(node.left) || isProvablyString(node.right);
@@ -94,11 +102,22 @@ function hasErrorMessage(node: TSESTree.ThrowStatement): boolean {
   // makes `new` optional on the Error constructors, and yargs writes it without.
   // Reading only `NewExpression` meant the callable form had "no message".
   const constructed =
-    node.argument.type === 'NewExpression' || node.argument.type === 'CallExpression'
+    node.argument.type === 'NewExpression' ||
+    node.argument.type === 'CallExpression'
       ? node.argument
       : null;
 
   if (constructed !== null && constructed.callee.type === 'Identifier') {
+    // `new X(…)` says "this is an error class" by construction. A bare CALL says
+    // nothing of the kind — `throw fail(code)`, `throw wrap(err)`, `throw t('key')`
+    // are all ordinary functions — so only the built-in constructors, which really
+    // do work without `new`, take the callable form.
+    if (
+      constructed.type === 'CallExpression' &&
+      !BUILTIN_ERROR_CONSTRUCTORS.has(constructed.callee.name)
+    ) {
+      return false;
+    }
     if (constructed.arguments.length === 0) {
       return false;
     }

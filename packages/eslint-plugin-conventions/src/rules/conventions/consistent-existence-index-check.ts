@@ -21,7 +21,10 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
-export const consistentExistenceIndexCheck = createRule<RuleOptions, MessageIds>({
+export const consistentExistenceIndexCheck = createRule<
+  RuleOptions,
+  MessageIds
+>({
   name: 'consistent-existence-index-check',
   meta: {
     type: 'suggestion',
@@ -38,7 +41,8 @@ export const consistentExistenceIndexCheck = createRule<RuleOptions, MessageIds>
         description: 'Use consistent method for property existence checks',
         severity: 'MEDIUM',
         fix: 'Use "{{preferred}}" instead of "{{current}}" for property checks',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/in',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/in',
       }),
     },
     schema: [
@@ -61,19 +65,38 @@ export const consistentExistenceIndexCheck = createRule<RuleOptions, MessageIds>
     const [options] = context.options;
     const { preferred = 'in' } = options || {};
 
-    function reportInconsistentCheck(node: TSESTree.Node, currentMethod: string, object: TSESTree.Node, property: TSESTree.Node) {
+    function reportInconsistentCheck(
+      node: TSESTree.Node,
+      currentMethod: string,
+      object: TSESTree.Node,
+      property: TSESTree.Node,
+    ) {
       let fix: TSESLint.ReportFixFunction | undefined;
 
-      // `in` walks the prototype chain and the three own-property forms do not, so a
-      // rewrite across that boundary answers a different question for an inherited key.
-      // The preference is still reported — it is the user's style to choose — but the
-      // fixer stops at the boundary, because `--fix` must not change what code means.
+      // TWO boundaries a fixer may not cross, because crossing either changes what
+      // the code does. The preference is still reported on both — which form a
+      // codebase writes is the user's style to pick — and only the fix stops.
+      //
+      // 1. THE PROTOTYPE CHAIN. `in` walks it and the own-property checks do not, so
+      //    a rewrite answers a different question for an inherited key.
       const crossesPrototypeBoundary =
         (currentMethod === 'in') !== (preferred === 'in');
 
+      // 2. THE DISPATCH. `obj.hasOwnProperty(k)` looks the method up ON `obj`:
+      //    it throws on a null-prototype object and calls whatever a shadowing
+      //    `hasOwnProperty` own-property points at. `Object.hasOwn(obj, k)` and
+      //    `Object.prototype.hasOwnProperty.call(obj, k)` never touch `obj`'s own
+      //    lookup, which is exactly why code that handles untrusted objects uses
+      //    them. Rewriting `Object.hasOwn(Object.create(null), k)` into
+      //    `Object.create(null).hasOwnProperty(k)` turns a working check into a
+      //    TypeError. Those last two ARE interchangeable, and remain fixable.
+      const crossesDispatchBoundary =
+        currentMethod === 'hasOwnProperty' || preferred === 'hasOwnProperty';
+
       // Only provide fixes for standalone expressions, not when part of larger expressions
       const parent = node.parent;
-      const isStandaloneExpression = !parent ||
+      const isStandaloneExpression =
+        !parent ||
         parent.type === 'ExpressionStatement' ||
         (parent.type === 'VariableDeclarator' && parent.init === node) ||
         (parent.type === 'AssignmentExpression' && parent.right === node) ||
@@ -85,25 +108,23 @@ export const consistentExistenceIndexCheck = createRule<RuleOptions, MessageIds>
         (parent.type === 'ForStatement' && parent.test === node) ||
         (parent.type === 'ConditionalExpression' && parent.test === node);
 
-
-      // No `preferred === 'in'` fixer any more. Reaching one would need the
-      // boundary uncrossed with `in` preferred — that is, an `in` reported while
-      // `in` is what the config asks for, which the visitors never do. Everything
-      // that survives the boundary check wants one of the own-property forms, and
-      // those are interchangeable with each other.
-      if (crossesPrototypeBoundary) {
-        fix = undefined;
-      } else if (preferred === 'hasOwnProperty' && isStandaloneExpression) {
-        fix = function(fixer: TSESLint.RuleFixer) {
+      // Only one conversion survives both boundaries: between
+      // `Object.prototype.hasOwnProperty.call(obj, k)` and `Object.hasOwn(obj, k)`,
+      // which ask the same question through the same dispatch. Every other pairing
+      // is reported without a fix, so `--fix` can never change a program's meaning.
+      if (
+        !crossesPrototypeBoundary &&
+        !crossesDispatchBoundary &&
+        preferred === 'Object.hasOwn' &&
+        isStandaloneExpression
+      ) {
+        fix = function (fixer: TSESLint.RuleFixer) {
           const objectText = context.sourceCode.getText(object);
           const propertyText = context.sourceCode.getText(property);
-          return fixer.replaceText(node, `${objectText}.hasOwnProperty(${propertyText})`);
-        };
-      } else if (preferred === 'Object.hasOwn' && isStandaloneExpression) {
-        fix = function(fixer: TSESLint.RuleFixer) {
-          const objectText = context.sourceCode.getText(object);
-          const propertyText = context.sourceCode.getText(property);
-          return fixer.replaceText(node, `Object.hasOwn(${objectText}, ${propertyText})`);
+          return fixer.replaceText(
+            node,
+            `Object.hasOwn(${objectText}, ${propertyText})`,
+          );
         };
       }
 
@@ -131,7 +152,12 @@ export const consistentExistenceIndexCheck = createRule<RuleOptions, MessageIds>
           node.arguments.length === 1 &&
           preferred !== 'hasOwnProperty'
         ) {
-          reportInconsistentCheck(node, 'hasOwnProperty', node.callee.object, node.arguments[0]);
+          reportInconsistentCheck(
+            node,
+            'hasOwnProperty',
+            node.callee.object,
+            node.arguments[0],
+          );
         }
 
         // Object.prototype.hasOwnProperty.call(obj, prop)
@@ -147,7 +173,12 @@ export const consistentExistenceIndexCheck = createRule<RuleOptions, MessageIds>
           node.arguments.length >= 2 &&
           preferred !== 'hasOwnProperty'
         ) {
-          reportInconsistentCheck(node, 'Object.prototype.hasOwnProperty.call', node.arguments[0], node.arguments[1]);
+          reportInconsistentCheck(
+            node,
+            'Object.prototype.hasOwnProperty.call',
+            node.arguments[0],
+            node.arguments[1],
+          );
         }
 
         // Object.hasOwn(obj, prop)
@@ -159,7 +190,12 @@ export const consistentExistenceIndexCheck = createRule<RuleOptions, MessageIds>
           node.arguments.length === 2 &&
           preferred !== 'Object.hasOwn'
         ) {
-          reportInconsistentCheck(node, 'Object.hasOwn', node.arguments[0], node.arguments[1]);
+          reportInconsistentCheck(
+            node,
+            'Object.hasOwn',
+            node.arguments[0],
+            node.arguments[1],
+          );
         }
       },
 

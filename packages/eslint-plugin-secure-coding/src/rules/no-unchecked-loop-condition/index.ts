@@ -508,8 +508,7 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
       }
       if (a.type === 'MemberExpression' && b.type === 'MemberExpression') {
         return (
-          propertyName(a) === propertyName(b) &&
-          samePath(a.object, b.object)
+          propertyName(a) === propertyName(b) && samePath(a.object, b.object)
         );
       }
       return false;
@@ -583,9 +582,7 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
           // object's name and ignoring which property was taken from it made
           // those two identical, and reported every
           // `for (let i = 0; i < fields.length; i++)` downstream of a request.
-          if (
-            propertyName(node) === 'length'
-          ) {
+          if (propertyName(node) === 'length') {
             return false;
           }
           // Check object part (e.g., req, request, body, query, params)
@@ -705,8 +702,16 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
      */
     const hasLoopExit = (loopBody: TSESTree.Statement): boolean => {
       let found = false;
+      // Labels DECLARED inside the body. `break L` naming one of these leaves that
+      // inner statement and the loop keeps going — `for (;;) { stop: { break stop; } }`
+      // is still infinite. A label not in this set was declared at or above the loop,
+      // so breaking to it does leave.
+      const innerLabels = new Set<string>();
 
-      const walk = (node: TSESTree.Node, insideNestedBreakable: boolean): void => {
+      const walk = (
+        node: TSESTree.Node,
+        insideNestedBreakable: boolean,
+      ): void => {
         if (found) return;
 
         switch (node.type) {
@@ -716,8 +721,12 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
             // A `return` here belongs to that function, not to this loop.
             return;
           case 'BreakStatement':
-            // A labelled break leaves whatever it names, which is at or above this loop.
-            if (!insideNestedBreakable || node.label !== null) found = true;
+            if (node.label === null) {
+              // An unlabelled break leaves the nearest enclosing loop or switch.
+              if (!insideNestedBreakable) found = true;
+            } else if (!innerLabels.has(node.label.name)) {
+              found = true;
+            }
             return;
           case 'ReturnStatement':
           case 'ThrowStatement':
@@ -726,6 +735,8 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
           default:
             break;
         }
+
+        if (node.type === 'LabeledStatement') innerLabels.add(node.label.name);
 
         const breakable =
           insideNestedBreakable ||

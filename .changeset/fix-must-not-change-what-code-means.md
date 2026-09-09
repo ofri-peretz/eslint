@@ -2,10 +2,16 @@
 'eslint-plugin-conventions': patch
 ---
 
-fix: `consistent-existence-index-check` no longer autofixes across the prototype boundary
+fix: `consistent-existence-index-check` no longer autofixes between checks that are not equivalent
 
-`in` walks the prototype chain; `hasOwnProperty`, `Object.prototype.hasOwnProperty.call` and `Object.hasOwn` do not. The fixer rewrote freely between them, so `--fix` under the default `preferred: 'in'` turned an own-property check into one that answers `true` for an inherited key — the exact rewrite a parser checking a user-supplied object exists to prevent.
+Two boundaries the fixer used to cross, either of which changes what the code does.
 
-The preference is still reported: which form a codebase writes is the user's style to pick. Only the fixer stops, and only at that boundary — the three own-property forms are interchangeable with each other and still autofix between themselves.
+**The prototype chain.** `in` walks it and the own-property checks do not, so under the default `preferred: 'in'` a `--fix` turned an own-property check into one that answers `true` for an inherited key — the exact rewrite a parser reading a user-supplied object exists to prevent.
 
-Four existing cases asserted the cross-boundary output as correct. They now assert the report with the source unchanged.
+**The dispatch.** `obj.hasOwnProperty(k)` looks the method up ON `obj`: it throws on a null-prototype object and calls whatever a shadowing own property points at. Rewriting `Object.hasOwn(Object.create(null), k)` into `Object.create(null).hasOwnProperty(k)` turns a working check into a TypeError.
+
+One conversion survives both and stays fixable: `Object.prototype.hasOwnProperty.call(obj, k)` and `Object.hasOwn(obj, k)` ask the same question through the same dispatch.
+
+The preference is still reported in every case — which form a codebase writes is the user's style to pick. Only the fix stops, so `--fix` can no longer change a program's meaning.
+
+Existing cases that asserted the unsafe rewrites as correct output now assert the report with the source unchanged.

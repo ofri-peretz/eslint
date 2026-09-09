@@ -39,6 +39,10 @@ describe('no-unchecked-loop-condition — for(;;) matches while(true)', () => {
         `,
       },
       {
+        name: 'a labelled break naming a label ABOVE the loop does leave it',
+        code: 'outer: for (;;) { for (const x of xs) { if (x) break outer; } }',
+      },
+      {
         name: 'for (;;) whose body returns',
         code: `
           function next(it) {
@@ -99,6 +103,16 @@ describe('no-unchecked-loop-condition — for(;;) matches while(true)', () => {
       {
         name: 'a return inside a nested declaration belongs to that declaration',
         code: 'for (;;) { function inner() { return 1; } register(inner); }',
+        errors: [{ messageId: 'infiniteLoop' as const }],
+      },
+      {
+        name: 'a labelled break naming a block INSIDE the body does not leave the loop',
+        code: 'for (;;) { stop: { break stop; } tick(); }',
+        errors: [{ messageId: 'infiniteLoop' as const }],
+      },
+      {
+        name: 'a labelled break naming an inner loop does not leave the outer one',
+        code: 'for (;;) { inner: for (const x of xs) { break inner; } tick(); }',
         errors: [{ messageId: 'infiniteLoop' as const }],
       },
       {

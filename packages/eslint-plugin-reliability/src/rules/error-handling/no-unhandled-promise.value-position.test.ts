@@ -152,4 +152,47 @@ describe('no-unhandled-promise — value positions (reliability)', () => {
       },
     ],
   });
+
+  ruleTester.run('what actually owns a promise', rule, {
+    valid: [
+      {
+        name: 'Promise.all settles every promise it is given',
+        code: 'async function work() { return 1; } export function f() { return Promise.all([work(), work()]); }',
+      },
+      {
+        name: 'Promise.allSettled likewise',
+        code: 'async function work() { return 1; } export function f() { return Promise.allSettled([work()]); }',
+      },
+      {
+        name: 'a named rejection handler',
+        code: 'async function work() { return 1; } declare function fail(e: unknown): void; export function f() { work().then(() => 0, fail); }',
+      },
+      {
+        name: 'a rejection handler read off an object',
+        code: 'async function work() { return 1; } declare const h: { fail(e: unknown): void }; export function f() { work().then(() => 0, h.fail); }',
+      },
+    ],
+    invalid: [
+      {
+        // `Promise.reject(work())` on its own is decided by an older rule in this
+        // file — when an inner call is an ARGUMENT and the outer call is itself a
+        // promise, only the outer reports. Wrapping in an array steps around that
+        // rule and asks the question this fix owns: does `reject` settle what it
+        // is handed? It does not — the value becomes the rejection REASON.
+        name: 'Promise.reject does not settle the promises it is handed',
+        code: 'async function work() { return 1; } export function f() { return Promise.reject([work()]); }',
+        errors: [{ messageId: 'unhandledPromise' as const }],
+      },
+      {
+        name: 'a non-callable second argument is ignored by then',
+        code: 'async function work() { return 1; } export function f() { work().then(() => 0, 42); }',
+        errors: [{ messageId: 'unhandledPromise' as const }],
+      },
+      {
+        name: 'a string second argument is ignored by then',
+        code: 'async function work() { return 1; } export function f() { work().then(() => 0, "nope"); }',
+        errors: [{ messageId: 'unhandledPromise' as const }],
+      },
+    ],
+  });
 });
