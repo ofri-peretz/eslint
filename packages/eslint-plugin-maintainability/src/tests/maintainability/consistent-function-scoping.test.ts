@@ -27,6 +27,42 @@ describe('consistent-function-scoping', () => {
       consistentFunctionScoping,
       {
         valid: [
+          {
+            /*
+             * A class BODY rebinds `this` — that is the case in `invalid` below.
+             * A heritage clause does not: `extends this.Base` is evaluated in
+             * the enclosing scope, so the arrow does capture `this` and moving
+             * it to module scope would extend a different object.
+             */
+            name: 'a class heritage clause captures the enclosing this',
+            code: `class Host {
+              m() {
+                const helper = () => class Inner extends this.Base {};
+                return helper();
+              }
+            }`,
+          },
+          {
+            // Same reasoning, other half: a COMPUTED member key is evaluated
+            // with the enclosing `this`, while the body it sits in is not.
+            name: 'a computed class member key captures the enclosing this',
+            code: `class Host {
+              m() {
+                const helper = () => class Inner { [this.key]() {} };
+                return helper();
+              }
+            }`,
+          },
+          {
+            // The control for the parameter fix below: a default VALUE is
+            // evaluated in the enclosing scope and really is a capture.
+            name: 'a parameter default value still counts as a capture',
+            code: `function outer() {
+              const fallback = 1;
+              function inner(v = fallback) { return v; }
+              return inner();
+            }`,
+          },
           /*
            * A destructured binding is still a binding. The scope tracker recorded
            * only `decl.id.type === 'Identifier'`, so every ObjectPattern and
@@ -315,6 +351,74 @@ describe('consistent-function-scoping', () => {
           },
         ],
         invalid: [
+          {
+            /*
+             * `collectReferences` walked the whole parameter pattern, so the
+             * destructured `{ value }` was recorded as a USE of `value`. An
+             * outer binding of the same name then made this look captured and
+             * the report was withheld — for a function that shadows the outer
+             * name and could move to module scope untouched.
+             */
+            name: 'a destructured parameter shadowing an outer name is still movable',
+            code: `function outer() {
+              const value = 1;
+              function inner({ value }) { return value; }
+              return [value, inner];
+            }`,
+            errors: [
+              {
+                messageId: 'inconsistentFunctionScoping',
+                suggestions: [
+                  {
+                    messageId: 'moveToModuleScope',
+                    output: `function outer() {
+              const value = 1;
+              // TODO: Move this function to module scope - it doesn't capture outer variables
+function inner({ value }) { return value; }
+              return [value, inner];
+            }`,
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            /*
+             * The other half of the same walk: a nested `function` — declaration
+             * or expression — rebinds `this` dynamically, so its `this` is not
+             * the arrow's and the arrow stays movable.
+             */
+            name: 'an arrow whose only this belongs to a nested function still reports',
+            // The nested pair read `seed`, the arrow's own parameter, so they
+            // are not movable themselves and only the arrow reports.
+            code: `function outer() {
+              const helper = (seed) => {
+                function decl() { return this ?? seed; }
+                const expr = function () { return this ?? seed; };
+                return [decl, expr];
+              };
+              return helper(1);
+            }`,
+            errors: [
+              {
+                messageId: 'inconsistentFunctionScoping',
+                suggestions: [
+                  {
+                    messageId: 'moveToModuleScope',
+                    output: `function outer() {
+              const helper = // TODO: Move this function to module scope - it doesn't capture outer variables
+(seed) => {
+                function decl() { return this ?? seed; }
+                const expr = function () { return this ?? seed; };
+                return [decl, expr];
+              };
+              return helper(1);
+            }`,
+                  },
+                ],
+              },
+            ],
+          },
           {
             /*
              * A class body rebinds `this`, so the arrow around it does NOT capture

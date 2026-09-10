@@ -282,7 +282,15 @@ export const noInternalModules = createRule<RuleOptions, MessageIds>({
         context.report({
           node,
           messageId: 'internalModuleImport',
-          data: reportData,
+          /*
+           * The message has to name what the FIXER writes, which is the root
+           * import — deliberately, "for safety", see below. `suggestedPath`
+           * stops at `maxDepth`, so with `maxDepth: 1` the report read
+           * `Import from "./src"` and then rewrote the specifier to `'.'`. A
+           * message that describes a different edit than the one applied is
+           * worse than no message.
+           */
+          data: { ...reportData, suggestedPath: rootImport },
           fix(fixer: TSESLint.RuleFixer) {
             // Find the string literal node to replace
             // Autofix always goes to the root package for safety

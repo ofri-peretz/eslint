@@ -176,10 +176,34 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
           const childNode = child as TSESTree.Node;
           if (typeof childNode.type !== 'string') continue;
           if (
-            childNode.type === 'FunctionDeclaration' ||
-            childNode.type === 'FunctionExpression' ||
             childNode.type === 'ClassDeclaration' ||
             childNode.type === 'ClassExpression'
+          ) {
+            /*
+             * A class BODY rebinds `this`, but its heritage clause and any
+             * computed member key are evaluated in the enclosing scope, with
+             * the enclosing `this`. Skipping the whole node lost both, so
+             * `() => class Inner extends this.Base {}` read as capturing
+             * nothing and the rule offered to move it to module scope — where
+             * `this` is a different object.
+             */
+            if (childNode.superClass && capturesThis(childNode.superClass)) {
+              return true;
+            }
+            for (const member of childNode.body.body) {
+              if (
+                'computed' in member &&
+                member.computed &&
+                capturesThis(member.key)
+              ) {
+                return true;
+              }
+            }
+            continue;
+          }
+          if (
+            childNode.type === 'FunctionDeclaration' ||
+            childNode.type === 'FunctionExpression'
           ) {
             continue;
           }
@@ -362,10 +386,26 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
       // Get variables from outer scopes
       const outerVars = getOuterScopeVariables();
 
+      /*
+       * The names this function BINDS — its parameters and its own name.
+       *
+       * `collectReferences(param)` walks the whole pattern, so a destructured
+       * `{ value }` was recorded as a USE of `value`; an outer binding that
+       * happened to share the name then made the function look captured, and a
+       * perfectly movable function went unreported. Every mention of that name
+       * inside the body resolves to the parameter anyway — the outer one is
+       * shadowed, not captured. Default VALUES are unaffected and still count:
+       * `inner(v = fallback)` really does read `fallback` from outside, and
+       * `collectReferences` still records it.
+       */
+      const boundNames = new Set(
+        context.sourceCode.getDeclaredVariables(node).map((v) => v.name),
+      );
+
       // Check if function captures any outer variables
       let capturesOuterVar = false;
       for (const ref of referencedVars) {
-        if (outerVars.has(ref)) {
+        if (!boundNames.has(ref) && outerVars.has(ref)) {
           capturesOuterVar = true;
           break;
         }

@@ -92,6 +92,14 @@ describe('no-unsafe-type-narrowing', () => {
 
     ruleTester.run('options - allowWithComment', noUnsafeTypeNarrowing, {
       valid: [
+        {
+          name: 'a trailing comment annotates the cast on its own line',
+          // Trailing is how an inline annotation is normally spelled; the
+          // escape hatch has to recognise it or it is not an escape hatch.
+          code: `const value = data as unknown as User; // safe - validated above`,
+          filename: 'src/utils.ts',
+          options: [{ allowWithComment: true }],
+        },
         // Allow with "type guard" comment
         {
           code: `// type guard validated
@@ -188,6 +196,19 @@ const value = data as unknown as string;`,
         },
       ],
       invalid: [
+        {
+          name: 'a comment trailing one cast does not whitelist the next',
+          /*
+           * The annotation belongs to line 1. Reading it as "the line above" for
+           * line 2 let one `// safe` disarm two assertions, and the second was
+           * one nobody had looked at.
+           */
+          code: `const a = x as unknown as A; // safe
+const b = y as unknown as B;`,
+          filename: 'src/utils.ts',
+          options: [{ allowWithComment: true }],
+          errors: [{ messageId: 'unsafeTypeNarrowing' }],
+        },
         // allowWithComment = true but no valid comment
         {
           code: `// random comment

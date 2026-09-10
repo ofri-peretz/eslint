@@ -236,9 +236,21 @@ export const enforceImportOrder = createRule<RuleOptions, MessageIds>({
       const text = comment.value.trim();
       // `/// <reference … />` reaches us as a Line comment whose value starts
       // with a third slash.
-      return (
-        /^@ts-(nocheck|check)\b/.test(text) || /^\/\s*<reference\b/.test(text)
-      );
+      if (
+        !/^@ts-(nocheck|check)\b/.test(text) &&
+        !/^\/\s*<reference\b/.test(text)
+      ) {
+        return false;
+      }
+      /*
+       * Position is half the definition. TypeScript honours these only before
+       * the first statement, so lower down the file it is an ordinary comment
+       * that merely looks like a directive. Treating it as one anyway excluded
+       * it from every import's extended range while the replacement range still
+       * spanned it — so a `@ts-nocheck` written between two imports was not
+       * moved, it was DELETED, and the fix left nothing behind to report.
+       */
+      return comment.range[1] <= sourceCode.ast.body[0].range[0];
     }
 
     function getExtendedRange(

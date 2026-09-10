@@ -114,6 +114,23 @@ import { helper } from './helper';
       },
       {
         /*
+         * The other side of that pin. A directive is only a directive BEFORE
+         * the first statement; between two imports it is an ordinary comment
+         * that happens to be shaped like one. Excluding it from every import's
+         * extended range while the replacement range still spanned it meant the
+         * fixer did not move it — it deleted it, and left no report behind.
+         */
+        name: 'a directive-shaped comment between imports travels, it is not deleted',
+        code: `import z from 'zzz';
+// @ts-nocheck
+import a from 'aaa';`,
+        output: `// @ts-nocheck
+import a from 'aaa';
+import z from 'zzz';`,
+        errors: [{ messageId: 'importOrder' }],
+      },
+      {
+        /*
          * `@ts-nocheck` is position-fixed the same way a hashbang is:
          * TypeScript honours it only before the first statement. The fixer
          * treated it as a leading comment of the first import and carried it

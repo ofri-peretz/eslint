@@ -110,8 +110,10 @@ after();`,
         },
         {
           name: 'remove declines to fix a braceless while body',
+          // `after();` rather than a top-level `return`, which is a parse error
+          // under some configurations and would take the case with it.
           code: `while (c) console.log("x");
-return 2;`,
+after();`,
           options: [{ strategy: 'remove' }],
           output: null,
           errors: [{ messageId: 'consoleLogFound' }],
