@@ -16,10 +16,7 @@ import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
-  | 'nestedComplexity'
-  | 'useEarlyReturn'
-  | 'useGuardClauses'
-  | 'extractMethod';
+  'nestedComplexity' | 'useEarlyReturn' | 'useGuardClauses' | 'extractMethod';
 
 export interface Options {
   /** Maximum nesting depth. Default: 4 */
@@ -187,16 +184,28 @@ export const nestedComplexityHotspots = createRule<RuleOptions, MessageIds>({
 
         if (!parent) break;
 
+        // `else if` is a chain link, not a level: ESTree models it as an
+        // IfStatement in the parent's `alternate`, so counting it made a flat
+        // chain climb one level per branch — the rule reported "Nesting depth 6"
+        // on code sitting at indentation level 2, and flagged the very shape its
+        // own fix text ("use early returns, guard clauses") produces. ESLint
+        // core's `max-depth` excludes it the same way, and the sibling rule
+        // cognitive-complexity already carries `// else if doesn't increase
+        // nesting`.
+        const isElseIf =
+          parent.type === 'IfStatement' && parent.alternate === current;
+
         // Count nested control structures above this node
         if (
-          parent.type === 'IfStatement' ||
-          parent.type === 'ForStatement' ||
-          parent.type === 'ForInStatement' ||
-          parent.type === 'ForOfStatement' ||
-          parent.type === 'WhileStatement' ||
-          parent.type === 'DoWhileStatement' ||
-          parent.type === 'SwitchStatement' ||
-          parent.type === 'TryStatement'
+          !isElseIf &&
+          (parent.type === 'IfStatement' ||
+            parent.type === 'ForStatement' ||
+            parent.type === 'ForInStatement' ||
+            parent.type === 'ForOfStatement' ||
+            parent.type === 'WhileStatement' ||
+            parent.type === 'DoWhileStatement' ||
+            parent.type === 'SwitchStatement' ||
+            parent.type === 'TryStatement')
         ) {
           depth++;
         }
