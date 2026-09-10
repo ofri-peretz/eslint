@@ -156,7 +156,9 @@ export const noHardcodedSecret = createRule<RuleOptions, MessageIds>({
       // meant the documented way to hardcode a jose HMAC secret was invisible.
       if (node.type === 'CallExpression') {
         const inner = byteKeyLiteral(node);
-        return inner === null || !isHardcodedStringOrResolvedConst(inner);
+        return (
+          inner === null || !isHardcodedStringOrResolvedConst(inner.literal)
+        );
       }
 
       // await expression (async key loading)
@@ -223,7 +225,7 @@ export const noHardcodedSecret = createRule<RuleOptions, MessageIds>({
          * written directly. The report still points at the whole expression,
          * because that is the thing the author has to replace.
          */
-        const literal = byteKeyLiteral(secretArg) ?? secretArg;
+        const literal = byteKeyLiteral(secretArg)?.literal ?? secretArg;
         if (isHardcodedStringOrResolvedConst(literal)) {
           context.report({
             node: secretArg,

@@ -93,6 +93,31 @@ describe('no-weak-secret measures the literal inside a byte wrapper', () => {
           await compactVerify(jws, new TextEncoder().encode('a-sufficiently-long-and-random-secret-value-32'));
         `,
       },
+      {
+        // 64 hex characters ARE 32 bytes. The floor is a byte count, so the
+        // decode has to be able to clear it as well as fail it.
+        name: 'a 64-character hex key really is 32 bytes',
+        code: `
+          import jwt from 'jsonwebtoken';
+          jwt.sign({ a: 1 }, Buffer.from('00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff', 'hex'));
+        `,
+      },
+      {
+        name: 'a 44-character base64 key is 32 bytes once its padding is dropped',
+        code: `
+          import jwt from 'jsonwebtoken';
+          jwt.sign({ a: 1 }, Buffer.from('AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=', 'base64'));
+        `,
+      },
+      {
+        // An encoding Buffer does not decode is not an excuse to shrink the
+        // count: utf8 and its neighbours are one byte per character at worst.
+        name: 'an unencoded Buffer key is measured as written',
+        code: `
+          import jwt from 'jsonwebtoken';
+          jwt.sign({ a: 1 }, Buffer.from('a-sufficiently-long-and-random-secret-value-32', 'utf8'));
+        `,
+      },
     ],
     invalid: [
       {
@@ -100,6 +125,28 @@ describe('no-weak-secret measures the literal inside a byte wrapper', () => {
         code: `
           import { compactVerify } from 'jose';
           await compactVerify(jws, new TextEncoder().encode('short'));
+        `,
+        errors: [{ messageId: 'shortSecret' }],
+      },
+      {
+        /*
+         * A key's length in the source and its strength are different numbers
+         * the moment an encoding is named. 32 hex characters are 16 bytes —
+         * half the default floor — and counting characters called it long
+         * enough and said nothing.
+         */
+        name: 'a 32-character hex key is 16 bytes and under the floor',
+        code: `
+          import jwt from 'jsonwebtoken';
+          jwt.sign({ a: 1 }, Buffer.from('00112233445566778899aabbccddeeff', 'hex'));
+        `,
+        errors: [{ messageId: 'shortSecret' }],
+      },
+      {
+        name: 'a 32-character base64url key is 24 bytes and under the floor',
+        code: `
+          import jwt from 'jsonwebtoken';
+          jwt.sign({ a: 1 }, Buffer.from('AAECAwQFBgcICQoLDA0ODxAREhMUFRYX', 'base64url'));
         `,
         errors: [{ messageId: 'shortSecret' }],
       },

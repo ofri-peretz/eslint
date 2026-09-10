@@ -160,7 +160,10 @@ const FORBIDDEN_FIELDS = [
  * not appear.
  */
 const COVERAGE_FIGURE_IN_NOTES =
-  /\d+\s*%|\bof \d+\b|\b\d+ (?:APIs?|callables?)\b/i;
+  // `\bof \d+\b` alone also matched ordinary prose — "supports consumers of 3
+  // SDKs" is not a coverage claim, and rejecting it made the audit refuse a
+  // note that stated no figure at all. A ratio needs both of its numbers.
+  /\d+\s*%|\b\d+\s+of\s+\d+\b|\b\d+ (?:APIs?|callables?)\b/i;
 
 /**
  * A `denominatorNote` may cite a surface SIZE — that is the argument.

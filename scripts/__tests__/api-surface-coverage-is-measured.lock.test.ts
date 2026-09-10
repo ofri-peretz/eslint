@@ -106,6 +106,17 @@ describe('prose cannot restate a coverage figure', () => {
     ]);
   });
 
+  it('accepts prose that names a count without claiming coverage', () => {
+    /*
+     * `\bof \d+\b` matched any "of N", so a note saying what the package IS
+     * was rejected as a coverage figure. A ratio needs both of its numbers.
+     */
+    const e = entry({
+      notes: 'Supports consumers of 3 SDKs across the vendor surface.',
+    });
+    expect(errors(auditSurfaces([e], measurement(), FLOOR, []))).toEqual([]);
+  });
+
   it('rejects an "N of M" coverage claim typed into notes', () => {
     const e = entry({
       notes: 'Complete: all 13 of 14 in-scope APIs have a rule.',

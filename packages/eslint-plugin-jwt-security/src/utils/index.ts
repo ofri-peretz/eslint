@@ -662,32 +662,55 @@ export function isWeakSecret(node: TSESTree.Node, minLength = 32): boolean {
  * Only the literal-argument form is unwrapped. `encoder.encode(loadSecret())`
  * wraps a call whose value is not visible here, and stays opaque.
  */
-export function byteKeyLiteral(node: TSESTree.Node): TSESTree.Node | null {
-  if (node.type !== 'CallExpression') return null;
+export interface ByteKeyLiteral {
+  /** The node holding the key material. */
+  literal: TSESTree.Node;
+  /**
+   * The `Buffer.from` encoding argument, when it is a string literal.
+   *
+   * It is the difference between a key's LENGTH and its STRENGTH.
+   * `Buffer.from('00112233445566778899aabbccddeeff', 'hex')` is a 16-byte key
+   * written as 32 characters, so measuring the source string called it 32 and
+   * a key at half the configured floor went unreported.
+   */
+  encoding?: string;
+}
+
+export function byteKeyLiteral(node: TSESTree.Node): ByteKeyLiteral | null {
+  if (node.type !== AST_NODE_TYPES.CallExpression) return null;
   const arg = node.arguments[0];
   if (arg === undefined) return null;
 
   const callee = node.callee;
-  if (callee.type !== 'MemberExpression') return null;
+  if (callee.type !== AST_NODE_TYPES.MemberExpression) return null;
   const method = propertyName(callee);
 
   // new TextEncoder().encode('…')
   if (
     method === 'encode' &&
-    callee.object.type === 'NewExpression' &&
-    callee.object.callee.type === 'Identifier' &&
+    callee.object.type === AST_NODE_TYPES.NewExpression &&
+    callee.object.callee.type === AST_NODE_TYPES.Identifier &&
     callee.object.callee.name === 'TextEncoder'
   ) {
-    return arg;
+    // TextEncoder is UTF-8 only, so it has no encoding to carry.
+    return { literal: arg };
   }
 
-  // Buffer.from('…')
+  // Buffer.from('…', 'hex')
   if (
     method === 'from' &&
-    callee.object.type === 'Identifier' &&
+    callee.object.type === AST_NODE_TYPES.Identifier &&
     callee.object.name === 'Buffer'
   ) {
-    return arg;
+    const encodingArg = node.arguments[1];
+    return {
+      literal: arg,
+      encoding:
+        encodingArg?.type === AST_NODE_TYPES.Literal &&
+        typeof encodingArg.value === 'string'
+          ? encodingArg.value.toLowerCase()
+          : undefined,
+    };
   }
 
   return null;

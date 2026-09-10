@@ -28,5 +28,13 @@ secret was the one shape neither could inspect. `new TextEncoder().encode('…')
 and `Buffer.from('…')` are now unwrapped and the literal inside is judged as if
 it had been written directly.
 
+`no-weak-secret` measures those keys in BYTES, not in source characters. A key's
+length and its strength are different numbers the moment an encoding is named:
+`Buffer.from('00112233445566778899aabbccddeeff', 'hex')` is 32 characters and
+16 bytes, so under the default 32-byte floor it is half strength — and counting
+characters called it long enough and reported nothing. `hex`, `base64` and
+`base64url` are decoded; every other encoding, and an unencoded buffer, is one
+byte per character, which can never overstate the strength.
+
 Deliberately still silent on `encoder.encode(loadSecret())` — the value is not
 visible there, so there is nothing to judge.
