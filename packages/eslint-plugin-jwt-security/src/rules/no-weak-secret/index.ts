@@ -21,6 +21,7 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 import {
+  byteKeyLiteral,
   isSignOperation,
   isSignatureVerifyOperation,
   isEnvVariable,
@@ -139,6 +140,17 @@ export const noWeakSecret = createRule<RuleOptions, MessageIds>({
     const checkSecret = (secretNode: TSESTree.Node): void => {
       // Environment variables are considered safe (configuration)
       if (isEnvVariable(secretNode)) {
+        return;
+      }
+
+      /*
+       * jose takes symmetric keys as bytes, and its documented idiom is
+       * `new TextEncoder().encode(secret)`. A short secret is exactly as weak
+       * wrapped in an encoder as it is bare, so judge the literal inside.
+       */
+      const bytes = byteKeyLiteral(secretNode);
+      if (bytes !== null) {
+        checkSecret(bytes);
         return;
       }
 

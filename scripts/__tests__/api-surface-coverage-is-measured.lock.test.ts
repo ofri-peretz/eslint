@@ -81,6 +81,53 @@ describe('a coverage count cannot be declared', () => {
   });
 });
 
+describe('prose cannot restate a coverage figure', () => {
+  it('rejects a percentage typed into notes', () => {
+    /*
+     * Removing the count FIELDS moved this rather than fixing it: three notes
+     * still carried hand-typed percentages, and the report prints each note
+     * directly under the measured bound — so one plugin's row read "≤ 17%"
+     * with "63% is at the floor" beneath it.
+     */
+    const e = entry({ notes: '63% is at the floor and the coverage is fine.' });
+    expect(errors(auditSurfaces([e], measurement(), FLOOR, []))).toEqual([
+      expect.stringContaining('notes states a figure'),
+    ]);
+  });
+
+  it('rejects an "N of M" coverage claim typed into notes', () => {
+    const e = entry({
+      notes: 'Complete: all 13 of 14 in-scope APIs have a rule.',
+    });
+    expect(errors(auditSurfaces([e], measurement(), FLOOR, []))).toEqual([
+      expect.stringContaining('notes states a figure'),
+    ]);
+  });
+
+  it('still allows a denominatorNote to cite a surface size, which is its argument', () => {
+    // "Reads as 1 callable because better-sqlite3 default-exports a class" IS
+    // the evidence for marking a denominator raw. Stripping the number would
+    // leave an assertion with nothing behind it — the defect, not the fix.
+    const e = entry({
+      denominatorTrust: 'raw',
+      denominatorNote:
+        'Reads as 1 callable because the package default-exports a class.',
+    });
+    expect(errors(auditSurfaces([e], measurement(), FLOOR, []))).toEqual([]);
+  });
+
+  it('still rejects a percentage in a denominatorNote', () => {
+    const e = entry({
+      denominatorTrust: 'raw',
+      denominatorNote:
+        'Roughly 40% of this surface is internal plumbing nobody calls.',
+    });
+    expect(errors(auditSurfaces([e], measurement(), FLOOR, []))).toEqual([
+      expect.stringContaining('denominatorNote states a figure'),
+    ]);
+  });
+});
+
 describe('the denominator cannot be shrunk for free', () => {
   it('rejects an exclusion naming an API that is not on the measured surface', () => {
     // The live defect: postgresql-security excluded `pg.types.setTypeParser`,

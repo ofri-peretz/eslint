@@ -126,11 +126,23 @@ export const requireAlgorithmWhitelist = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        // Options exist but no algorithms property
-        const hasAlgorithms =
-          hasOption(optionsArg, 'algorithms') ||
-          hasOption(optionsArg, 'algorithm') ||
-          hasOption(optionsArg, 'alg');
+        /*
+         * `algorithms`, plural, and nothing else.
+         *
+         * The singular spellings used to count as a whitelist, and no
+         * verification API in this plugin's surface accepts them: jsonwebtoken
+         * `verify`, jose `jwtVerify` / `compactVerify` / `flattenedVerify` /
+         * `generalVerify` and express-jwt all read `algorithms` only.
+         * `algorithm` is a SIGN option, and `alg` is a header claim.
+         *
+         * So `verify(token, key, { alg: 'RS256' })` pins nothing: the library
+         * ignores the property and verifies with whatever the token header
+         * asks for, which is the substitution attack this rule exists to
+         * catch. Accepting the typo silenced the rule at exactly the moment it
+         * mattered, and the author had every reason to believe they were
+         * covered.
+         */
+        const hasAlgorithms = hasOption(optionsArg, 'algorithms');
 
         if (!hasAlgorithms) {
           context.report({

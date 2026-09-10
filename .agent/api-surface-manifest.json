@@ -1,6 +1,6 @@
 {
-  "command": null,
-  "maintainedBy": "hand — every figure typed by a human; `npm run measure:api-surface` reports the measured surface beside it, and docs/intents/api-surface-floor-has-no-basis tracks replacing these",
+  "command": "npm run audit:api-surface",
+  "maintainedBy": "measured — scripts/measure-api-surface.mts enumerates each surface at its installed version and audit-api-surface.ts renders the result. This file holds judgement only: the prose description of a surface, whether its denominator is curated, and the outOfScope exclusions with their reasons. A count here is rejected.",
   "$schema": "../scripts/schemas/api-surface-manifest.schema.json",
   "description": "Per-plugin API-surface coverage. Counts are MEASURED by scripts/measure-api-surface.mts and published as upper bounds; this file holds only what a measurement cannot produce — the prose description of each surface and the outOfScope judgements with their reasons.",
   "method": "scripts/audit-api-surface.ts runs the measurement and renders benchmark-results/api-surface-coverage.md. No count in this file; audit rejects one.",
@@ -92,7 +92,7 @@
       "surfaceVersion": "nestjs@10.x + nestjs@11.x",
       "denominatorTrust": "raw",
       "denominatorNote": "374 callables is the whole framework, including every decorator, utility and error class.",
-      "notes": "63% is at the floor. NestJS coverage is the lightest of the security plugins (6 rules). High-value expansion targets: ExceptionFilter patterns and Microservices transport-layer security."
+      "notes": "The lightest of the security plugins by rule count. High-value expansion targets: ExceptionFilter patterns and Microservices transport-layer security. The denominator is raw, so the floor does not apply and no judgement about being \"at\" it is available."
     },
     {
       "plugin": "eslint-plugin-node-security",
@@ -116,7 +116,7 @@
       "surfaceVersion": "pg@8.x",
       "denominatorTrust": "raw",
       "denominatorNote": "Walks pg prototypes and picks up wire-protocol internals (handleDataRow, sendCopyFromChunk, attachListeners) that no consumer calls.",
-      "notes": "Complete coverage of the query-construction surface: all 13 in-scope APIs have at least one rule. The 14th public API, type-parser registration, is a result-coercion hook rather than a statement-construction sink and is excluded from the denominator with a written reason."
+      "notes": "Covers the query-construction surface. Type-parser registration is a result-coercion hook rather than a statement-construction sink, but it is NOT excluded: the measurement does not list it on the surface, so excluding it would shrink the denominator for free. It stays unclaimed until the surface is curated."
     },
     {
       "plugin": "eslint-plugin-prisma-security",
@@ -164,7 +164,7 @@
       "surfaceVersion": "ai@3.x + @ai-sdk/* providers",
       "denominatorTrust": "curated",
       "denominatorNote": "Curated 2026-09-02 to the generation entry points, from 107 (the whole ai package, including 18 experimental_ entries and every error class).",
-      "notes": "75% on a moving target (the AI SDK ships quickly). 19 rules on 12 APIs reflects that some APIs have multiple distinct misuse patterns we cover separately."
+      "notes": "A moving target — the AI SDK ships quickly, so the surface is re-enumerated at the installed version on every run. Rule count exceeds API count because several APIs carry multiple distinct misuse patterns covered separately."
     }
   ],
   "notEnumerable": [

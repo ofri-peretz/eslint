@@ -647,6 +647,53 @@ export function isWeakSecret(node: TSESTree.Node, minLength = 32): boolean {
 }
 
 /**
+ * The literal inside a byte-key expression, or null.
+ *
+ * jose takes `Uint8Array` for symmetric keys, and its documented idiom is
+ * `new TextEncoder().encode(secret)`. `Buffer.from(secret)` is the Node
+ * equivalent. Both are `CallExpression`s, and both rules that inspect the key
+ * treated any call as a safe source — so the single most common way to hand
+ * jose a hardcoded HMAC secret was the one shape neither rule could see.
+ *
+ * Returns the inner node so the caller can apply its own judgement to it:
+ * `no-hardcoded-secret` asks whether it is a literal, `no-weak-secret` asks
+ * how long it is. Neither has to know about encoders.
+ *
+ * Only the literal-argument form is unwrapped. `encoder.encode(loadSecret())`
+ * wraps a call whose value is not visible here, and stays opaque.
+ */
+export function byteKeyLiteral(node: TSESTree.Node): TSESTree.Node | null {
+  if (node.type !== 'CallExpression') return null;
+  const arg = node.arguments[0];
+  if (arg === undefined) return null;
+
+  const callee = node.callee;
+  if (callee.type !== 'MemberExpression') return null;
+  const method = propertyName(callee);
+
+  // new TextEncoder().encode('…')
+  if (
+    method === 'encode' &&
+    callee.object.type === 'NewExpression' &&
+    callee.object.callee.type === 'Identifier' &&
+    callee.object.callee.name === 'TextEncoder'
+  ) {
+    return arg;
+  }
+
+  // Buffer.from('…')
+  if (
+    method === 'from' &&
+    callee.object.type === 'Identifier' &&
+    callee.object.name === 'Buffer'
+  ) {
+    return arg;
+  }
+
+  return null;
+}
+
+/**
  * Check if a node is an environment variable access (safe pattern)
  */
 export function isEnvVariable(node: TSESTree.Node): boolean {

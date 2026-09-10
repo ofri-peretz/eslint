@@ -146,6 +146,32 @@ const FORBIDDEN_FIELDS = [
  * misuse is a security problem. A rare sink is a low-priority gap, not an
  * out-of-scope API.
  */
+/**
+ * A coverage figure written into prose.
+ *
+ * Removing the count FIELDS moved the problem rather than solving it: three
+ * `notes` still carried hand-typed percentages ("63% is at the floor", "75% on
+ * a moving target"), and `renderMarkdown` prints each note directly beneath
+ * the measured upper bound — so the report showed a measured figure and a
+ * typed one side by side, disagreeing. One of them said 63% while the
+ * measurement said 17%.
+ *
+ * A note is for judgement. The numbers come from the measurement or they do
+ * not appear.
+ */
+const COVERAGE_FIGURE_IN_NOTES =
+  /\d+\s*%|\bof \d+\b|\b\d+ (?:APIs?|callables?)\b/i;
+
+/**
+ * A `denominatorNote` may cite a surface SIZE — that is the argument.
+ *
+ * "Reads as 1 callable because better-sqlite3 default-exports a class" is the
+ * whole reason that denominator is marked raw, and deleting the number would
+ * leave an assertion with no evidence. A PERCENTAGE is different: coverage is
+ * the measurement's to state, never prose's.
+ */
+const PERCENT_IN_PROSE = /\d+\s*%/;
+
 const FREQUENCY_NOT_SCOPE =
   /\b(niche|rare|rarely|uncommon|low[- ]traffic|low[- ]frequency|infrequent|not common)\b/i;
 const MIN_REASON_LENGTH = 20;
@@ -236,6 +262,20 @@ export function auditSurfaces(
           plugin: p.plugin,
           severity: 'error',
           message: `outOfScope "${o.api}" is not on the measured surface — excluding a name that was never counted shrinks the denominator for free`,
+        });
+      }
+    }
+
+    for (const [field, text, pattern] of [
+      ['notes', p.notes, COVERAGE_FIGURE_IN_NOTES],
+      ['denominatorNote', p.denominatorNote, PERCENT_IN_PROSE],
+    ] as const) {
+      const m = pattern.exec(String(text ?? ''));
+      if (m !== null) {
+        findings.push({
+          plugin: p.plugin,
+          severity: 'error',
+          message: `${field} states a figure ("${m[0]}") — the report prints it beside the measured bound, where a typed number and a measured one disagree in public. Describe the judgement; the measurement supplies the numbers`,
         });
       }
     }

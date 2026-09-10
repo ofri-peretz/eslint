@@ -22,6 +22,7 @@ import {
   staticString,
 } from '@interlace/eslint-devkit';
 import {
+  byteKeyLiteral,
   isSignOperation,
   isSignatureVerifyOperation,
   isEnvVariable,
@@ -149,9 +150,13 @@ export const noHardcodedSecret = createRule<RuleOptions, MessageIds>({
         return true;
       }
 
-      // Function call (getSecret(), loadKey(), etc.)
+      // Function call (getSecret(), loadKey(), etc.) — but NOT a call that
+      // just wraps a literal in bytes. `new TextEncoder().encode('secret')` is
+      // how jose is handed a symmetric key, and treating it as a safe source
+      // meant the documented way to hardcode a jose HMAC secret was invisible.
       if (node.type === 'CallExpression') {
-        return true;
+        const inner = byteKeyLiteral(node);
+        return inner === null || !isHardcodedStringOrResolvedConst(inner);
       }
 
       // await expression (async key loading)
@@ -210,8 +215,16 @@ export const noHardcodedSecret = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        // Flag hardcoded strings (also follows single-frame `const X = '...'`).
-        if (isHardcodedStringOrResolvedConst(secretArg)) {
+        /*
+         * Flag hardcoded strings (also follows single-frame `const X = '...'`).
+         *
+         * `byteKeyLiteral` unwraps `new TextEncoder().encode('…')` and
+         * `Buffer.from('…')` so the literal inside is judged the same as one
+         * written directly. The report still points at the whole expression,
+         * because that is the thing the author has to replace.
+         */
+        const literal = byteKeyLiteral(secretArg) ?? secretArg;
+        if (isHardcodedStringOrResolvedConst(literal)) {
           context.report({
             node: secretArg,
             messageId: 'hardcodedSecret',

@@ -47,6 +47,25 @@ describe('require-algorithm-whitelist covers jose JWS verification', () => {
     ],
     invalid: [
       {
+        // jose reads `algorithms`. `algorithm` is a sign option and is ignored
+        // here, so the author pinned nothing while believing they had.
+        name: 'the singular `algorithm` pins nothing and is reported',
+        code: `
+          import { compactVerify } from 'jose';
+          await compactVerify(jws, key, { algorithm: 'ES256' });
+        `,
+        errors: [{ messageId: 'missingAlgorithmWhitelist' }],
+      },
+      {
+        // `alg` is a JWS header claim, not a verify option.
+        name: 'the header-claim spelling `alg` pins nothing and is reported',
+        code: `
+          import { jwtVerify } from 'jose';
+          await jwtVerify(token, key, { alg: 'RS256' });
+        `,
+        errors: [{ messageId: 'missingAlgorithmWhitelist' }],
+      },
+      {
         name: 'compactVerify with no options trusts the header algorithm',
         code: `
           import { compactVerify } from 'jose';
