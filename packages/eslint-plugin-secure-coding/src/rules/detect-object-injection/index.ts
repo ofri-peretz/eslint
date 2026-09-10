@@ -2317,7 +2317,15 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         return;
       }
       const source = iterated.arguments[0];
-      if (source === undefined || !isUntrustedExpression(source)) return;
+      // Same predicate the `for..in` copy loop arms on. It used to be the
+      // narrower `isUntrustedExpression` — request-rooted only — so the copy that
+      // reports as `for (const k in src)` was silent as
+      // `for (const k of Object.keys(src))` whenever `src` was a parameter. The
+      // spelling was deciding the verdict, not the security judgement: an
+      // attacker-supplied object reaches a library's `merge(target, src)` as a
+      // parameter, and `Object.keys` of a JSON.parse'd object contains
+      // `__proto__` because JSON.parse defines it as an own property.
+      if (source === undefined || !isCopyLoopSourceOpaque(source)) return;
 
       // The loop binding. Two spellings, and missing the second left the
       // `Object.entries` form — the more idiomatic one, since it avoids the
@@ -2340,6 +2348,11 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       const body = sourceCode.getText(node.body);
       if (/\b(includes|has|hasOwn|hasOwnProperty|indexOf)\s*\(/.test(body))
         return;
+      // The `for..in` twin also clears a loop that names the polluting keys
+      // itself — `if (k === '__proto__') continue` is the documented guard, and
+      // reporting the fix is how a rule becomes unsatisfiable. Same guard here,
+      // so the two spellings agree on what counts as remediated.
+      if (/__proto__|constructor|prototype/.test(body)) return;
 
       // A computed write keyed by the loop variable, anywhere in the body.
       let reported = false;

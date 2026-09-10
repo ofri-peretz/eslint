@@ -138,8 +138,44 @@ export function tag(o) { o[kShared] = 1; }`,
   for (const { length } of Object.entries(req.body)) { user[length] = 1; }
 }`,
       },
+      {
+        // The documented remediation, and the shape burgee already writes at
+        // packages/burgee/src/yargs/utils.ts:216. Naming the polluting key is
+        // what clears the finding — reporting the fix is how a rule stops being
+        // satisfiable. The `for..in` twin clears the same guard.
+        name: 'a copy loop that skips __proto__ itself is the fix, not a finding',
+        code: `export function merge(target, src) {
+  for (const k of Object.keys(src)) {
+    if (k === '__proto__') continue;
+    target[k] = src[k];
+  }
+}`,
+      },
     ],
     invalid: [
+      {
+        // burgee sweep 2026-09-10. The `for..in` spelling of this loop reports,
+        // because its detector arms on `isCopyLoopSourceOpaque` — a PARAMETER or
+        // a provably request-rooted value. This one armed on the narrower
+        // `isUntrustedExpression`, request-rooted only, so the same copy through
+        // a parameter was silent. `Object.keys` of a JSON.parse'd object DOES
+        // contain `__proto__` (JSON.parse defines it as an own property), and
+        // `target[k] = ...` is a [[Set]] that walks to the setter, so this is the
+        // lodash.merge / deep-extend CVE shape with the spelling changed.
+        name: 'a parameter copied key-by-key through Object.keys, as the for..in twin already reports',
+        code: `export function merge(target, src) {
+  for (const k of Object.keys(src)) { target[k] = src[k]; }
+}`,
+        errors: [{ messageId: 'massAssignment' }],
+      },
+      {
+        name: 'the same copy through a binding hop from the request',
+        code: `export function update(req, user) {
+  const src = req.body;
+  for (const k of Object.keys(src)) { user[k] = src[k]; }
+}`,
+        errors: [{ messageId: 'massAssignment' }],
+      },
       {
         name: 'the canonical shape — every caller key copied onto a target',
         code: `export function update(req, user) {
