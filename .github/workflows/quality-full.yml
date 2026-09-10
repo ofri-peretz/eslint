@@ -732,6 +732,20 @@ jobs:
       always() && (needs.gate.outputs.run == 'true'
       || needs.gate.result == 'failure' || needs.gate.result == 'cancelled')
     steps:
+      # Both reporting steps below are LOCAL actions (`uses: ./...`), and a
+      # local action is read off the workspace — without a checkout the runner
+      # cannot find it. This job had none, so from the day the push trigger
+      # landed until 2026-09-10 every alarm it declared failed with
+      # `Can't find 'action.yml' ... under .github/actions/report-failure`.
+      # main went red at 06:00 on the #964 merge and no issue was ever opened;
+      # the immediate detection this job's own comments describe had never once
+      # reached a human. `scripts/__tests__/local-action-needs-checkout.lock.test.ts`
+      # holds it. ~2s on every run, including the green ones — which is the
+      # price of the alarm being able to sound at all.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
       - name: Render gate report
         env:
           R_GATE: ${{ needs.gate.result }}
@@ -886,7 +900,7 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/report-failure
         with:
-          title: "Scheduled Quality (Full) job is failing"
+          title: 'Scheduled Quality (Full) job is failing'
           body: >-
             A job in the scheduled heavy gate did not complete, so the checks it owns are not running against main on their cadence.
           token: ${{ github.token }}
