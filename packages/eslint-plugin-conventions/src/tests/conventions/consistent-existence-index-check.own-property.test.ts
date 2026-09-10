@@ -131,6 +131,37 @@ describe('consistent-existence-index-check — the `in` boundary is not autofixa
           errors: [{ messageId: 'consistentExistenceCheck' as const }],
         },
         {
+          // burgee sweep 2026-09-10. A SequenceExpression argument carries its own
+          // commas, and `getText()` returns a node WITHOUT the parentheses that
+          // held them together — parens belong to the parent, not the node range.
+          // Splicing that text into a new argument list promotes an inner comma to
+          // an argument separator, so a 2-argument call becomes a 3-argument one.
+          // `Object.hasOwn` takes 2 and ignores the rest: the check silently
+          // answers about the wrong object. `(0, ns.member)` is what TypeScript and
+          // Babel emit to strip a `this` binding, so this text is not hypothetical.
+          name: 'a sequence-expression object is reported, but the arity would change, so it is not rewritten',
+          code: 'if (Object.prototype.hasOwnProperty.call((0, mod.argv), key)) {}',
+          options: [{ preferred: 'Object.hasOwn' as const }],
+          output: null,
+          errors: [{ messageId: 'consistentExistenceCheck' as const }],
+        },
+        {
+          // Same defect through the property argument: the key would become
+          // `norm()`'s return value instead of `key`.
+          name: 'a sequence-expression property is reported, but not rewritten',
+          code: 'if (Object.prototype.hasOwnProperty.call(argv, (norm(), key))) {}',
+          options: [{ preferred: 'Object.hasOwn' as const }],
+          output: null,
+          errors: [{ messageId: 'consistentExistenceCheck' as const }],
+        },
+        {
+          name: 'and a longer sequence, which would splice in two surplus arguments',
+          code: 'if (Object.prototype.hasOwnProperty.call((a, b, c), key)) {}',
+          options: [{ preferred: 'Object.hasOwn' as const }],
+          output: null,
+          errors: [{ messageId: 'consistentExistenceCheck' as const }],
+        },
+        {
           name: 'and it holds for a null-prototype object',
           code: 'if (Object.prototype.hasOwnProperty.call(Object.create(null), key)) {}',
           options: [{ preferred: 'Object.hasOwn' as const }],
