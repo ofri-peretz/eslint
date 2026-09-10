@@ -33,7 +33,7 @@
       "page_views_count": 0,
       "public_reactions_count": 5,
       "positive_reactions_count": 5,
-      "comments_count": 0,
+      "comments_count": 1,
       "tag_list": [
         "security",
         "javascript",
@@ -1745,6 +1745,6 @@
     }
   ],
   "total": 85,
-  "lastUpdated": "2026-09-06T03:52:05.028Z",
+  "lastUpdated": "2026-09-10T00:12:11.106Z",
   "source": "public"
 }
