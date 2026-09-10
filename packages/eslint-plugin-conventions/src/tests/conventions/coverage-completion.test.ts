@@ -177,8 +177,9 @@ describe('consistent-existence-index-check — standalone-parent matrix', () => 
         },
         // The same call under the default `preferred: 'in'` — reported, never rewritten.
         {
-          name: 'the same call under the default `in`, reported and left alone',
+          name: 'the same call with `in` preferred, reported and left alone',
           code: 'Object.prototype.hasOwnProperty.call(obj, "k");',
+          options: [{ preferred: 'in' }],
           errors: [{ messageId: 'consistentExistenceCheck' }],
           output: null,
         },
