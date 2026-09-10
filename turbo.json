@@ -24,7 +24,13 @@
         "LICENSE",
         ".npmignore"
       ],
-      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+      "outputs": [
+        "dist/**",
+        ".tsbuildinfo",
+        "*.tsbuildinfo",
+        ".next/**",
+        "!.next/cache/**"
+      ]
     },
     "docs#test": {
       "dependsOn": ["^build"]
