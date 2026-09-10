@@ -33,8 +33,9 @@ import { ESLint } from 'eslint';
 // Track restoring it; once it has a manifest, add it here.
 // ---------------------------------------------------------------------------
 const PLUGIN_NAMES = [
-  // security (17 of 18 — crypto excluded)
+  // security (18 of 19 — crypto excluded)
   'eslint-plugin-secure-coding',
+  'eslint-plugin-supabase-security',
   'eslint-plugin-node-security',
   'eslint-plugin-browser-security',
   'eslint-plugin-sequelize-security',
