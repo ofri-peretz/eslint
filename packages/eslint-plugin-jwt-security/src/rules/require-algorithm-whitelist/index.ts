@@ -21,7 +21,11 @@ import {
   formatLLMMessage,
   MessageIcons,
 } from '@interlace/eslint-devkit';
-import { isVerifyOperation, getOptionsArgument, hasOption } from '../../utils';
+import {
+  isSignatureVerifyOperation,
+  getOptionsArgument,
+  hasOption,
+} from '../../utils';
 import type { RequireAlgorithmWhitelistOptions } from '../../types';
 
 type MessageIds = 'missingAlgorithmWhitelist' | 'addAlgorithmWhitelist';
@@ -102,7 +106,7 @@ export const requireAlgorithmWhitelist = createRule<RuleOptions, MessageIds>({
     return {
       CallExpression(node: TSESTree.CallExpression) {
         // Only check verify operations
-        if (!isVerifyOperation(node)) {
+        if (!isSignatureVerifyOperation(node)) {
           return;
         }
 
@@ -122,11 +126,23 @@ export const requireAlgorithmWhitelist = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        // Options exist but no algorithms property
-        const hasAlgorithms =
-          hasOption(optionsArg, 'algorithms') ||
-          hasOption(optionsArg, 'algorithm') ||
-          hasOption(optionsArg, 'alg');
+        /*
+         * `algorithms`, plural, and nothing else.
+         *
+         * The singular spellings used to count as a whitelist, and no
+         * verification API in this plugin's surface accepts them: jsonwebtoken
+         * `verify`, jose `jwtVerify` / `compactVerify` / `flattenedVerify` /
+         * `generalVerify` and express-jwt all read `algorithms` only.
+         * `algorithm` is a SIGN option, and `alg` is a header claim.
+         *
+         * So `verify(token, key, { alg: 'RS256' })` pins nothing: the library
+         * ignores the property and verifies with whatever the token header
+         * asks for, which is the substitution attack this rule exists to
+         * catch. Accepting the typo silenced the rule at exactly the moment it
+         * mattered, and the author had every reason to believe they were
+         * covered.
+         */
+        const hasAlgorithms = hasOption(optionsArg, 'algorithms');
 
         if (!hasAlgorithms) {
           context.report({

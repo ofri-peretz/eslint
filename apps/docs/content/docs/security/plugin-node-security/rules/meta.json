@@ -35,6 +35,7 @@
     "no-unsafe-buffer-alloc",
     "no-unsafe-dynamic-require",
     "no-weak-cipher-algorithm",
+    "no-weak-dh-parameters",
     "no-weak-hash-algorithm",
     "no-zip-slip",
     "prefer-native-crypto",

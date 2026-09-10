@@ -20,7 +20,12 @@ import {
   formatLLMMessage,
   MessageIcons,
 } from '@interlace/eslint-devkit';
-import { isSignOperation, isVerifyOperation, isEnvVariable } from '../../utils';
+import {
+  byteKeyLiteral,
+  isSignOperation,
+  isSignatureVerifyOperation,
+  isEnvVariable,
+} from '../../utils';
 import type { NoWeakSecretOptions } from '../../types';
 
 type MessageIds = 'weakSecret' | 'shortSecret' | 'useStrongSecret';
@@ -38,6 +43,28 @@ const WEAK_SECRET_PATTERNS = [
   /^changeme/i,
   /^default/i,
 ];
+
+/**
+ * How many BYTES a key literal actually carries.
+ *
+ * A key's length in the source and its strength are different numbers the
+ * moment an encoding is named: `Buffer.from('00112233445566778899aabbccddeeff',
+ * 'hex')` is 32 characters and 16 bytes. Counting characters called that key
+ * long enough for a 32-byte floor and reported nothing — for a key at half the
+ * configured strength.
+ */
+function decodedByteLength(value: string, encoding?: string): number {
+  if (encoding === 'hex') return Math.floor(value.length / 2);
+  if (encoding === 'base64' || encoding === 'base64url') {
+    return Math.floor((value.replace(/=+$/u, '').length * 3) / 4);
+  }
+  /*
+   * utf8, latin1, ascii and the unencoded default. One byte per character is
+   * the floor for all of them — a multi-byte character only makes the key
+   * longer — so counting characters can never overstate the strength.
+   */
+  return value.length;
+}
 
 export const noWeakSecret = createRule<RuleOptions, MessageIds>({
   name: 'no-weak-secret',
@@ -132,9 +159,23 @@ export const noWeakSecret = createRule<RuleOptions, MessageIds>({
     /**
      * Check the secret argument for weakness
      */
-    const checkSecret = (secretNode: TSESTree.Node): void => {
+    const checkSecret = (
+      secretNode: TSESTree.Node,
+      encoding?: string,
+    ): void => {
       // Environment variables are considered safe (configuration)
       if (isEnvVariable(secretNode)) {
+        return;
+      }
+
+      /*
+       * jose takes symmetric keys as bytes, and its documented idiom is
+       * `new TextEncoder().encode(secret)`. A short secret is exactly as weak
+       * wrapped in an encoder as it is bare, so judge the literal inside.
+       */
+      const bytes = byteKeyLiteral(secretNode);
+      if (bytes !== null) {
+        checkSecret(bytes.literal, bytes.encoding);
         return;
       }
 
@@ -155,7 +196,7 @@ export const noWeakSecret = createRule<RuleOptions, MessageIds>({
         }
 
         // Check for short secrets
-        if (secretValue.length < minSecretLength) {
+        if (decodedByteLength(secretValue, encoding) < minSecretLength) {
           context.report({
             node: secretNode,
             messageId: 'shortSecret',
@@ -185,7 +226,7 @@ export const noWeakSecret = createRule<RuleOptions, MessageIds>({
     return {
       CallExpression(node: TSESTree.CallExpression) {
         // Check both sign and verify operations
-        if (!isSignOperation(node) && !isVerifyOperation(node)) {
+        if (!isSignOperation(node) && !isSignatureVerifyOperation(node)) {
           return;
         }
 

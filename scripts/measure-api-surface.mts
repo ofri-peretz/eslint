@@ -74,6 +74,20 @@ const only = ((): string | null => {
 const showUncovered = process.argv.includes('--uncovered');
 
 /**
+ * Emit the measurement as JSON on stdout instead of the human table.
+ *
+ * `audit-api-surface.ts` consumes this. Publishing a coverage figure that a
+ * human typed is the defect this whole file exists to document, so the gate
+ * has to read the measurement rather than a number beside it — and the two
+ * must come from ONE implementation, or they will disagree and the prettier
+ * of the two will be the one that ships.
+ */
+const asJson = process.argv.includes('--json');
+const say = (line: string): void => {
+  if (!asJson) console.log(line);
+};
+
+/**
  * Where each plugin's surface actually comes from.
  *
  * Kept beside the measurement rather than in the manifest until the numbers
@@ -363,10 +377,10 @@ const claimed = new Map<string, Claim>(
   ).plugins.map((p) => [p.plugin, p]),
 );
 
-console.log(
+say(
   '\n  plugin                              claimed        measured (upper bound)',
 );
-console.log(
+say(
   '  ----------------------------------  -------------  ----------------------',
 );
 
@@ -385,6 +399,8 @@ const rows: {
   plugin: string;
   claim: number;
   measured: number;
+  surfaceSize: number;
+  surface: string[];
   gap: string[];
 }[] = [];
 
@@ -405,7 +421,7 @@ for (const spec of SPECS) {
   const pct = fns.size === 0 ? 0 : Math.round((named.length / fns.size) * 100);
   const c = claimed.get(spec.plugin);
 
-  console.log(
+  say(
     `  ${spec.plugin.padEnd(34)}  ${String(c?.coverage_pct ?? '?').padStart(3)}% of ${String(
       c?.callableApis_total ?? '?',
     ).padStart(
@@ -416,41 +432,63 @@ for (const spec of SPECS) {
     plugin: spec.plugin,
     claim: c?.coverage_pct ?? 0,
     measured: pct,
+    surfaceSize: fns.size,
+    surface: [...fns].sort(),
     gap: unnamed,
   });
 }
 
-console.log(
+say(
   '\n  "claimed" is a hand-typed constant. "measured" enumerates the modules at their',
 );
-console.log(
+say(
   '  installed version and asks which names appear in the rule sources at all —',
 );
-console.log(
-  '  necessary for coverage, not sufficient, hence an upper bound.\n',
-);
+say('  necessary for coverage, not sufficient, hence an upper bound.\n');
 
 if (notApplicable.length > 0) {
-  console.log(
+  say(
     `  ${notApplicable.length} plugin(s) have no enumerable module surface:\n`,
   );
   for (const n of notApplicable) {
-    console.log(`    ${n.plugin.padEnd(34)} ${n.kind}`);
+    say(`    ${n.plugin.padEnd(34)} ${n.kind}`);
   }
-  console.log(
+  say(
     '\n  Not applicable is a MEASUREMENT, not a gap: these analyse plain JS/TS or' +
       '\n  the web platform, and no npm package describes either.\n',
   );
 }
 
-console.log(
+say(
   `  coverage: ${rows.length + notApplicable.length} of 30 plugins classified\n`,
 );
 
 if (showUncovered) {
   for (const r of rows) {
     if (r.gap.length === 0) continue;
-    console.log(`  ${r.plugin} — ${r.gap.length} API(s) named nowhere:`);
-    console.log(`    ${r.gap.join(', ')}\n`);
+    say(`  ${r.plugin} — ${r.gap.length} API(s) named nowhere:`);
+    say(`    ${r.gap.join(', ')}\n`);
   }
+}
+
+if (asJson) {
+  process.stdout.write(
+    JSON.stringify(
+      {
+        measuredAt: new Date().toISOString(),
+        node: process.version,
+        measured: rows.map((r) => ({
+          plugin: r.plugin,
+          surfaceSize: r.surfaceSize,
+          namedCount: r.surfaceSize - r.gap.length,
+          upperBoundPct: r.measured,
+          surface: r.surface,
+          uncovered: r.gap,
+        })),
+        notEnumerable: notApplicable,
+      },
+      null,
+      2,
+    ) + '\n',
+  );
 }

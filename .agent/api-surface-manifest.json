@@ -1,172 +1,212 @@
 {
-  "command": null,
-  "maintainedBy": "hand \u2014 every figure typed by a human; `npm run measure:api-surface` reports the measured surface beside it, and docs/intents/api-surface-floor-has-no-basis tracks replacing these",
+  "command": "npm run audit:api-surface",
+  "maintainedBy": "measured — scripts/measure-api-surface.mts enumerates each surface at its installed version and audit-api-surface.ts renders the result. This file holds judgement only: the prose description of a surface, whether its denominator is curated, and the outOfScope exclusions with their reasons. A count here is rejected.",
   "$schema": "../scripts/schemas/api-surface-manifest.schema.json",
-  "description": "API-surface coverage manifest. For each domain-security plugin, the relevant target SDK / runtime surface and the count of callable APIs that have at least one Interlace rule covering them. Closes the \u00a72 'API-surface coverage' (gap) row in distribution/EVALUATION_METRICS.md. Hand-maintained \u2014 refresh by reading the target package's public exports and counting rule coverage in our plugin's manifest.",
-  "method": "For each target API surface, an entry records: (a) the total count of public callable APIs (functions, classes, methods that take user input), (b) the count covered by at least one rule (i.e. the rule fires on at least one realistic misuse of that API). Coverage is binary per-API; if a rule catches misuse of any sink on `node:fs`, that's 1 covered. The score is covered/total. Targets a \u226560% floor for each domain plugin.",
-  "generatedAt": "2026-05-13",
+  "description": "Per-plugin API-surface coverage. Counts are MEASURED by scripts/measure-api-surface.mts and published as upper bounds; this file holds only what a measurement cannot produce — the prose description of each surface and the outOfScope judgements with their reasons.",
+  "method": "scripts/audit-api-surface.ts runs the measurement and renders benchmark-results/api-surface-coverage.md. No count in this file; audit rejects one.",
   "target_floor_pct": 60,
   "plugins": [
     {
-      "plugin": "eslint-plugin-node-security",
-      "surface": "Node.js core modules \u2014 fs, child_process, crypto, vm, dns, http(s)",
-      "surfaceVersion": "node@24 stable APIs",
-      "callableApis_total": 47,
-      "callableApis_covered": 33,
-      "coverage_pct": 70,
-      "ruleCount": 33,
-      "uncovered_examples": [
-        "node:vm.SourceTextModule \u2014 niche, not in 99% of code paths",
-        "node:dns.lookup variants \u2014 covered by adjacent rules only",
-        "node:http.Agent \u2014 TLS config patterns are covered, agent reuse less so",
-        "node:tls.createSecureContext \u2014 partially covered via require-secure-context"
-      ],
-      "notes": "Coverage focuses on the high-frequency-misuse exports (`fs.readFile`/`writeFile`, `child_process.exec`, `crypto.create*`, `vm.runInThisContext`). The 30% gap is mostly low-traffic APIs where misuse is exceedingly rare."
+      "plugin": "eslint-plugin-anthropic-security",
+      "surface": "@anthropic-ai/sdk, @anthropic-ai/claude-agent-sdk",
+      "surfaceVersion": "installed: @anthropic-ai/sdk@0.123.0, @anthropic-ai/claude-agent-sdk@0.3.260",
+      "denominatorTrust": "raw",
+      "denominatorNote": "Denominator is the raw module enumeration and has not been reviewed against the consumer-callable surface.",
+      "notes": "Threat-model review of this surface is pending; the figure is an upper bound over a raw denominator."
     },
     {
-      "plugin": "eslint-plugin-postgresql-security",
-      "surface": "node-postgres \u2014 pg.Client / pg.Pool / pg.Query callable surface",
-      "surfaceVersion": "pg@8.x",
-      "callableApis_total": 14,
-      "callableApis_covered": 13,
-      "coverage_pct": 100,
-      "ruleCount": 13,
-      "uncovered_examples": [],
-      "outOfScope": [
-        {
-          "api": "pg.types.setTypeParser",
-          "reason": "Registers a result-value coercion function for a Postgres type OID. It runs on data coming back from the database and never participates in statement construction, so it cannot be a SQL-injection sink; parser correctness is a data-integrity concern outside this plugin's threat model."
-        }
-      ],
-      "notes": "Complete coverage of the query-construction surface: all 13 in-scope APIs have at least one rule. The 14th public API, type-parser registration, is a result-coercion hook rather than a statement-construction sink and is excluded from the denominator with a written reason."
-    },
-    {
-      "plugin": "eslint-plugin-mongodb-security",
-      "surface": "mongodb driver \u2014 Collection / Db / cursor query methods",
-      "surfaceVersion": "mongodb@6.x",
-      "callableApis_total": 26,
-      "callableApis_covered": 19,
-      "coverage_pct": 73,
-      "ruleCount": 16,
-      "uncovered_examples": [
-        "Collection.bulkWrite \u2014 covered for find/update operators, not for indexes",
-        "Db.command \u2014 raw command pass-through, low-frequency",
-        "Collection.aggregate \u2014 stage pipeline checks, only the most common stages"
-      ],
-      "notes": "Coverage spans the high-frequency query construction surface (find, update, delete, $where). bulkWrite + aggregate need expanded coverage; both already detected."
-    },
-    {
-      "plugin": "eslint-plugin-jwt-security",
-      "surface": "jsonwebtoken \u2014 sign / verify / decode + jose / fast-jwt analogues",
-      "surfaceVersion": "jsonwebtoken@9.x, jose@5.x",
-      "callableApis_total": 11,
-      "callableApis_covered": 11,
-      "coverage_pct": 100,
-      "ruleCount": 13,
-      "uncovered_examples": [],
-      "notes": "Full coverage of the public sign/verify/decode surface across the three dominant JWT libraries."
+      "plugin": "eslint-plugin-drizzle-security",
+      "surface": "drizzle-orm",
+      "surfaceVersion": "installed: drizzle-orm@0.45.2",
+      "denominatorTrust": "raw",
+      "denominatorNote": "Denominator is the raw module enumeration and has not been reviewed against the consumer-callable surface.",
+      "notes": "Threat-model review of this surface is pending; the figure is an upper bound over a raw denominator."
     },
     {
       "plugin": "eslint-plugin-express-security",
-      "surface": "Express \u2014 router methods, middleware patterns, common response sinks",
+      "surface": "Express — router methods, middleware patterns, common response sinks",
       "surfaceVersion": "express@4.x + express@5.x",
-      "callableApis_total": 22,
-      "callableApis_covered": 14,
-      "coverage_pct": 64,
-      "ruleCount": 10,
-      "uncovered_examples": [
-        "app.engine \u2014 view-engine misconfig (rare)",
-        "res.render \u2014 template-injection sinks (partial)",
-        "app.set('trust proxy') \u2014 IP-handling correctness",
-        "express.Router merge-params \u2014 option misuse"
-      ],
+      "denominatorTrust": "raw",
+      "denominatorNote": "Denominator is the raw module enumeration and has not been reviewed against the consumer-callable surface.",
       "notes": "Coverage spans the high-traffic response sinks and CORS / cookie / CSRF middleware patterns. Template-engine and view-render rules are a known follow-up area."
     },
     {
+      "plugin": "eslint-plugin-gemini-security",
+      "surface": "@google/genai",
+      "surfaceVersion": "installed: @google/genai@2.12.0",
+      "denominatorTrust": "raw",
+      "denominatorNote": "Denominator is the raw module enumeration and has not been reviewed against the consumer-callable surface.",
+      "notes": "Threat-model review of this surface is pending; the figure is an upper bound over a raw denominator."
+    },
+    {
+      "plugin": "eslint-plugin-jwt-security",
+      "surface": "jsonwebtoken — sign / verify / decode + jose / fast-jwt analogues",
+      "surfaceVersion": "jsonwebtoken@9.x, jose@5.x",
+      "denominatorTrust": "curated",
+      "denominatorNote": "The six JWT libraries a consumer actually calls; every one of the 33 names is public API of jsonwebtoken, jose, jwt-decode, express-jwt, jwks-rsa or @nestjs/jwt.",
+      "notes": "Threat-model review of this surface is pending; the figure is an upper bound over a curated denominator."
+    },
+    {
+      "plugin": "eslint-plugin-knex-security",
+      "surface": "knex",
+      "surfaceVersion": "installed: knex@3.3.0",
+      "denominatorTrust": "raw",
+      "denominatorNote": "Reads as 2 callables; knex default-exports a factory and the query-builder surface is not reached.",
+      "notes": "Threat-model review of this surface is pending; the figure is an upper bound over a raw denominator."
+    },
+    {
       "plugin": "eslint-plugin-lambda-security",
-      "surface": "AWS Lambda \u2014 handler signatures, env-var access, callback / context patterns, AWS SDK client misuse",
+      "surface": "AWS Lambda — handler signatures, env-var access, callback / context patterns, AWS SDK client misuse",
       "surfaceVersion": "@aws-sdk/* v3 + Lambda Node runtime",
-      "callableApis_total": 18,
-      "callableApis_covered": 13,
-      "coverage_pct": 72,
-      "ruleCount": 14,
-      "uncovered_examples": [
-        "Lambda extensions API \u2014 niche",
-        "Lambda response streaming \u2014 newer pattern, partial coverage",
-        "context.identity (Cognito JWT) \u2014 covered indirectly via jwt plugin"
-      ],
+      "denominatorTrust": "raw",
+      "denominatorNote": "Enumerates @aws-sdk/client-lambda, which is the Lambda CONTROL PLANE (paginateListFunctions, waitUntilFunctionActive) — deployment tooling, not the handler code this plugin analyses.",
       "notes": "Coverage spans the entry-point patterns (handler shape, env-var leak, secret-in-env), IAM role patterns, and the AWS SDK v3 client construction surface. Response streaming is an emerging surface to expand."
     },
     {
+      "plugin": "eslint-plugin-mcp-sdk-security",
+      "surface": "@modelcontextprotocol/sdk/server/mcp.js, @modelcontextprotocol/sdk/client/index.js",
+      "surfaceVersion": "installed: @modelcontextprotocol/sdk/server/mcp.js, @modelcontextprotocol/sdk/client/index.js",
+      "denominatorTrust": "raw",
+      "denominatorNote": "Reads as 1 callable; the SDK has no root export and its subpaths are only partly reached.",
+      "notes": "Threat-model review of this surface is pending; the figure is an upper bound over a raw denominator."
+    },
+    {
+      "plugin": "eslint-plugin-mongodb-security",
+      "surface": "mongodb driver — Collection / Db / cursor query methods",
+      "surfaceVersion": "mongodb@6.x",
+      "denominatorTrust": "curated",
+      "denominatorNote": "Curated 2026-09-02 to Collection / Db / cursor / client prototypes, from 485 (mongodb and mongoose enumerated whole).",
+      "notes": "Coverage spans the high-frequency query construction surface (find, update, delete, $where). bulkWrite + aggregate need expanded coverage; both already detected."
+    },
+    {
+      "plugin": "eslint-plugin-mysql-security",
+      "surface": "mysql2",
+      "surfaceVersion": "installed: mysql2@3.24.3",
+      "denominatorTrust": "raw",
+      "denominatorNote": "Denominator is the raw module enumeration and has not been reviewed against the consumer-callable surface.",
+      "notes": "Threat-model review of this surface is pending; the figure is an upper bound over a raw denominator."
+    },
+    {
       "plugin": "eslint-plugin-nestjs-security",
-      "surface": "NestJS \u2014 Controllers, Providers, Guards, Decorators, Pipes",
+      "surface": "NestJS — Controllers, Providers, Guards, Decorators, Pipes",
       "surfaceVersion": "nestjs@10.x + nestjs@11.x",
-      "callableApis_total": 16,
-      "callableApis_covered": 10,
-      "coverage_pct": 63,
-      "ruleCount": 6,
-      "uncovered_examples": [
-        "Custom Pipes \u2014 narrowly covered (validation-pipe shape only)",
-        "ExceptionFilters \u2014 minimal coverage",
-        "Interceptors \u2014 coverage of error-leak patterns only",
-        "Microservices transports \u2014 not yet covered (Kafka / NATS / Redis)"
-      ],
-      "notes": "63% is at the floor. NestJS coverage is the lightest of the security plugins (6 rules). High-value expansion targets: ExceptionFilter patterns and Microservices transport-layer security."
+      "denominatorTrust": "raw",
+      "denominatorNote": "374 callables is the whole framework, including every decorator, utility and error class.",
+      "notes": "The lightest of the security plugins by rule count. High-value expansion targets: ExceptionFilter patterns and Microservices transport-layer security. The denominator is raw, so the floor does not apply and no judgement about being \"at\" it is available."
+    },
+    {
+      "plugin": "eslint-plugin-node-security",
+      "surface": "Node.js core modules — fs, child_process, crypto, vm, dns, http(s)",
+      "surfaceVersion": "node@24 stable APIs",
+      "denominatorTrust": "curated",
+      "denominatorNote": "Node core module exports ARE the consumer-callable surface — fs, child_process, crypto, vm, dns, http(s) on node@24, constructors and _-prefixed internals removed. 199 is the denominator this repo already argued for in docs/intents/api-surface-floor-has-no-basis.",
+      "notes": "The gap is real product debt, not a denominator artefact: createPrivateKey, createPublicKey, createSecretKey, createECDH, createDiffieHellman, diffieHellman and checkPrime are named nowhere, in a plugin whose stated surface includes crypto."
+    },
+    {
+      "plugin": "eslint-plugin-openai-security",
+      "surface": "openai, @openai/agents",
+      "surfaceVersion": "installed: openai@7.10.0, @openai/agents@0.17.0",
+      "denominatorTrust": "raw",
+      "denominatorNote": "111 callables enumerates the whole SDK including error classes and pagination helpers.",
+      "notes": "Threat-model review of this surface is pending; the figure is an upper bound over a raw denominator."
+    },
+    {
+      "plugin": "eslint-plugin-postgresql-security",
+      "surface": "node-postgres — pg.Client / pg.Pool / pg.Query callable surface",
+      "surfaceVersion": "pg@8.x",
+      "denominatorTrust": "raw",
+      "denominatorNote": "Walks pg prototypes and picks up wire-protocol internals (handleDataRow, sendCopyFromChunk, attachListeners) that no consumer calls.",
+      "notes": "Covers the query-construction surface. Type-parser registration is a result-coercion hook rather than a statement-construction sink, but it is NOT excluded: the measurement does not list it on the surface, so excluding it would shrink the denominator for free. It stays unclaimed until the surface is curated."
+    },
+    {
+      "plugin": "eslint-plugin-prisma-security",
+      "surface": "@prisma/client",
+      "surfaceVersion": "installed: @prisma/client@7.10.0",
+      "denominatorTrust": "raw",
+      "denominatorNote": "@prisma/client exports nothing until prisma generate runs against a schema.",
+      "notes": "Threat-model review of this surface is pending; the figure is an upper bound over a raw denominator."
+    },
+    {
+      "plugin": "eslint-plugin-react-features",
+      "surface": "react",
+      "surfaceVersion": "installed: react@19.2.4",
+      "denominatorTrust": "raw",
+      "denominatorNote": "Denominator is the raw module enumeration and has not been reviewed against the consumer-callable surface.",
+      "notes": "Threat-model review of this surface is pending; the figure is an upper bound over a raw denominator."
+    },
+    {
+      "plugin": "eslint-plugin-sequelize-security",
+      "surface": "sequelize",
+      "surfaceVersion": "installed: sequelize@6.37.8",
+      "denominatorTrust": "raw",
+      "denominatorNote": "Denominator is the raw module enumeration and has not been reviewed against the consumer-callable surface.",
+      "notes": "Threat-model review of this surface is pending; the figure is an upper bound over a raw denominator."
+    },
+    {
+      "plugin": "eslint-plugin-sqlite-security",
+      "surface": "better-sqlite3, sqlite3",
+      "surfaceVersion": "installed: better-sqlite3@13.0.3, sqlite3@6.0.1",
+      "denominatorTrust": "raw",
+      "denominatorNote": "Reads as 1 callable — better-sqlite3 default-exports a class and the enumeration does not reach it.",
+      "notes": "Threat-model review of this surface is pending; the figure is an upper bound over a raw denominator."
+    },
+    {
+      "plugin": "eslint-plugin-typeorm-security",
+      "surface": "typeorm",
+      "surfaceVersion": "installed: typeorm@1.1.1",
+      "denominatorTrust": "raw",
+      "denominatorNote": "Reads as 1 callable; the enumeration does not reach the DataSource/Repository surface.",
+      "notes": "Threat-model review of this surface is pending; the figure is an upper bound over a raw denominator."
     },
     {
       "plugin": "eslint-plugin-vercel-ai-security",
-      "surface": "Vercel AI SDK \u2014 generateText / streamText / generateObject / tools",
+      "surface": "Vercel AI SDK — generateText / streamText / generateObject / tools",
       "surfaceVersion": "ai@3.x + @ai-sdk/* providers",
-      "callableApis_total": 12,
-      "callableApis_covered": 9,
-      "coverage_pct": 75,
-      "ruleCount": 19,
-      "uncovered_examples": [
-        "useChat / useCompletion hooks \u2014 client-side patterns covered shallowly",
-        "RSC streamUI \u2014 newer; partial",
-        "Multi-step tool-call orchestration \u2014 covered in pieces, not as a unified flow"
-      ],
-      "notes": "75% on a moving target (the AI SDK ships quickly). 19 rules on 12 APIs reflects that some APIs have multiple distinct misuse patterns we cover separately."
-    },
+      "denominatorTrust": "curated",
+      "denominatorNote": "Curated 2026-09-02 to the generation entry points, from 107 (the whole ai package, including 18 experimental_ entries and every error class).",
+      "notes": "A moving target — the AI SDK ships quickly, so the surface is re-enumerated at the installed version on every run. Rule count exceeds API count because several APIs carry multiple distinct misuse patterns covered separately."
+    }
+  ],
+  "notEnumerable": [
     {
       "plugin": "eslint-plugin-browser-security",
-      "surface": "Browser web platform \u2014 DOM sinks, postMessage, storage, fetch, WebSocket, ServiceWorker, IndexedDB",
-      "surfaceVersion": "WHATWG / WHATWG-fetch / W3C as of 2026",
-      "callableApis_total": 58,
-      "callableApis_covered": 41,
-      "coverage_pct": 71,
-      "ruleCount": 45,
-      "uncovered_examples": [
-        "Push API \u2014 niche",
-        "Web Share API \u2014 niche",
-        "WebRTC signaling \u2014 covered for postMessage layer, not RTCPeerConnection sinks",
-        "WebTransport \u2014 newer, not yet covered",
-        "Permissions API \u2014 partial"
-      ],
-      "notes": "71% across a large surface (58 APIs). Coverage prioritizes the high-frequency XSS / CSRF / data-leak sinks. Newer APIs (WebTransport, Compute Pressure) are tracked but uncovered."
+      "kind": "web-platform"
+    },
+    {
+      "plugin": "eslint-plugin-conventions",
+      "kind": "language"
+    },
+    {
+      "plugin": "eslint-plugin-import-next",
+      "kind": "language"
+    },
+    {
+      "plugin": "eslint-plugin-maintainability",
+      "kind": "language"
+    },
+    {
+      "plugin": "eslint-plugin-modernization",
+      "kind": "language"
+    },
+    {
+      "plugin": "eslint-plugin-modularity",
+      "kind": "language"
+    },
+    {
+      "plugin": "eslint-plugin-operability",
+      "kind": "language"
+    },
+    {
+      "plugin": "eslint-plugin-react-a11y",
+      "kind": "web-platform"
+    },
+    {
+      "plugin": "eslint-plugin-reliability",
+      "kind": "language"
     },
     {
       "plugin": "eslint-plugin-secure-coding",
-      "surface": "Generic JS \u2014 eval / Function / regex / serialization / credentials",
-      "surfaceVersion": "ECMAScript 2024",
-      "callableApis_total": 19,
-      "callableApis_covered": 18,
-      "coverage_pct": 95,
-      "ruleCount": 27,
-      "uncovered_examples": [
-        "Worker / SharedWorker \u2014 host-side sinks, partial"
-      ],
-      "notes": "Near-complete coverage of the generic OWASP-Top-10 surface. 27 rules on 19 APIs reflects multiple distinct misuses per API."
+      "kind": "language"
     }
-  ],
-  "summary": {
-    "aggregateCoverage_pct": 78,
-    "pluginsAtOrAboveFloor": 10,
-    "pluginsBelowFloor": 0,
-    "criticalGaps": [
-      "eslint-plugin-express-security @ 64% \u2014 at the 60% floor.",
-      "eslint-plugin-nestjs-security @ 63% \u2014 at the 60% floor."
-    ],
-    "note": "Aggregate coverage is the unweighted mean across all 10 plugins. Per-plugin coverage is the more actionable signal \u2014 a single low-coverage plugin should drive the next investment cycle."
-  }
+  ]
 }

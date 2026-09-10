@@ -1,0 +1,11 @@
+{
+  "command": "npm run audit:api-surface",
+  "description": "Plugins whose MEASURED upper-bound API-surface coverage is below the floor. Shrink-only: a plugin may not newly appear here, and one that climbs above the floor must be removed. Recorded rather than fixed in one change because the numbers only became visible when the audit stopped reading hand-typed counts, and the fix for each is rules, not JSON.",
+  "belowFloor": [
+    "eslint-plugin-jwt-security",
+    "eslint-plugin-mongodb-security",
+    "eslint-plugin-node-security"
+  ],
+  "recordedAt": "2026-09-09",
+  "note": "Three curated surfaces measured below the 60% floor the moment the audit stopped reading hand-typed counts. jwt-security published 100% while compactVerify, flattenedVerify, generalVerify, the JWE decrypt entry points, the jose key-import functions and the jwks-rsa secret providers were named nowhere in its sources."
+}
