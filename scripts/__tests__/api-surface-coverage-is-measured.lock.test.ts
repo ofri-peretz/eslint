@@ -145,6 +145,29 @@ describe('the floor is one-directional and only applies to a trusted denominator
     ).toEqual([expect.stringContaining('denominator is raw')]);
   });
 
+  it('warns rather than errors on a plugin that is below the floor and recorded', () => {
+    /*
+     * The reason `--strict` can mean anything. Every other finding this audit
+     * emits is an error, so before this arm existed `findings.length` and
+     * `errors.length` were always equal and the strict exit could never fire
+     * on its own — a flag that could not change an outcome, in the script
+     * whose whole subject is checks that cannot fail.
+     */
+    const m = measurement({ namedCount: 3, uncovered: ['api3'] }); // 30%
+    const f = auditSurfaces([entry()], m, FLOOR, ['eslint-plugin-demo']);
+    expect(errors(f)).toEqual([]);
+    expect(
+      f.filter((x) => x.severity === 'warn').map((x) => x.message),
+    ).toEqual([
+      expect.stringContaining('recorded debt, and the list only shrinks'),
+    ]);
+  });
+
+  it('says nothing at all about a plugin comfortably above the floor', () => {
+    // So the warn arm above is specific to debt, not to every curated plugin.
+    expect(auditSurfaces([entry()], measurement(), FLOOR, [])).toEqual([]);
+  });
+
   it('makes the debt list shrink-only: a plugin that climbs out must be removed', () => {
     expect(
       errors(

@@ -32,8 +32,8 @@
  * measurement's clothes.
  *
  * Usage:
- *   npm run audit:api-surface
- *   npm run audit:api-surface -- --strict   # fail on any new below-floor plugin
+ *   npm run audit:api-surface               # errors fail; recorded debt warns
+ *   npm run audit:api-surface -- --strict   # recorded debt fails too
  */
 
 import { execFileSync } from 'node:child_process';
@@ -250,6 +250,26 @@ export function auditSurfaces(
 
     const bound = upperBoundPct(measured, (p.outOfScope ?? []).length);
     if (p.denominatorTrust !== 'curated') continue;
+    if (bound < floorPct && debt.includes(p.plugin)) {
+      /*
+       * Recorded debt. The base run accepts it — that is what the debt list is
+       * for — but it says so out loud rather than skipping in silence, and
+       * `--strict` escalates it to a failure.
+       *
+       * Without this the three plugins below the floor produced no output at
+       * all, and `--strict` had nothing to escalate: every other finding here
+       * is an error, so `findings.length === errors.length` always held and
+       * the strict branch could never fire independently. A flag that cannot
+       * change an outcome is the defect this audit exists to remove, one
+       * level up from the manifest.
+       */
+      findings.push({
+        plugin: p.plugin,
+        severity: 'warn',
+        message: `upper bound ${bound}% is below the ${floorPct}% floor — recorded debt, and the list only shrinks`,
+      });
+      continue;
+    }
     if (bound < floorPct && !debt.includes(p.plugin)) {
       findings.push({
         plugin: p.plugin,
@@ -515,6 +535,7 @@ function main(): void {
     debt,
   );
   const errors = findings.filter((f) => f.severity === 'error');
+  const warnings = findings.filter((f) => f.severity === 'warn');
 
   fs.writeFileSync(MD_PATH, renderMarkdown(manifest, measurement, debt));
 
@@ -530,7 +551,9 @@ function main(): void {
     );
   }
   if (errors.length > 0) process.exit(1);
-  if (strict && findings.length > 0) process.exit(1);
+  // `--strict` is the "is the debt gone yet" mode, not the everyday one. CI
+  // runs the base command: accepting recorded debt is the point of recording it.
+  if (strict && warnings.length > 0) process.exit(1);
 }
 
 if (process.argv[1] && process.argv[1].endsWith('audit-api-surface.ts')) {

@@ -50,8 +50,11 @@ jobs:
         with:
           turbo-cache: "false"
 
-      - name: Run API-surface audit (fails if any plugin below 60% floor)
-        run: npm run audit:api-surface:strict
+      - name: Run API-surface audit (fails on a measurement or scope violation)
+        # Deliberately NOT --strict. Strict fails on recorded below-floor debt,
+        # which is exactly what the debt list exists to accept day to day; the
+        # list is shrink-only, so it cannot grow silently.
+        run: npm run audit:api-surface
 
       # The audit script always writes the .md before exiting (pass or
       # fail), so the sticky comment reflects the same state the gate did.
