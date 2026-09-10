@@ -5,6 +5,8 @@
  */
 
 /**
+ * @provenBy {"file":"turbo.json","find":"\"dist/**\", \".tsbuildinfo\", ","replace":"\"dist/**\", "}
+ *
  * A composite project's `dist` and its `.tsbuildinfo` describe each other. Turbo
  * has to restore them together or restore neither.
  *
