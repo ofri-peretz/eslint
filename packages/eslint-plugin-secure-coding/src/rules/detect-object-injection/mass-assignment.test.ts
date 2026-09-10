@@ -169,6 +169,24 @@ export function tag(o) { o[kShared] = 1; }`,
         errors: [{ messageId: 'massAssignment' }],
       },
       {
+        /*
+         * The guard scan read `getText(node.body)`, and source text carries
+         * comments — so writing `/* __proto__ *\/` anywhere in the loop cleared
+         * the finding. An undeclared suppression comment, in the rule whose job
+         * is prototype pollution. The `for..in` twin already reads TOKENS for
+         * exactly this reason and says so in a comment; the `for..of` arm was
+         * written with `getText` and walked into it again.
+         */
+        name: 'a comment naming a protected key does not clear the report',
+        code: `export function merge(target, src) {
+  for (const k of Object.keys(src)) {
+    /* __proto__ */
+    target[k] = src[k];
+  }
+}`,
+        errors: [{ messageId: 'massAssignment' }],
+      },
+      {
         name: 'the same copy through a binding hop from the request',
         code: `export function update(req, user) {
   const src = req.body;

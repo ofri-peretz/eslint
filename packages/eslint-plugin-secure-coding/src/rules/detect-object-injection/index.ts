@@ -785,6 +785,10 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       let current = node;
       while (
         current.type === AST_NODE_TYPES.TSAsExpression ||
+        // `<const>[...]` is the older spelling of `[...] as const`, and it has
+        // to unwrap to the same array or the rule penalises one of the two ways
+        // TypeScript writes the very remediation it recommends.
+        current.type === AST_NODE_TYPES.TSTypeAssertion ||
         current.type === AST_NODE_TYPES.TSSatisfiesExpression
       ) {
         current = current.expression;
@@ -2345,7 +2349,16 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
 
       // An allowlist inside the body is the remediation — naming the edit that
       // clears this finding is what keeps the rule satisfiable.
-      const body = sourceCode.getText(node.body);
+      // TOKENS, not `getText` — the same trap the `for..in` twin documents forty
+      // lines below, walked into again by the arm that taught this rule to read
+      // `for..of`. Source text carries comments, so `/* __proto__ */` written
+      // anywhere in the loop cleared the finding: a suppression comment nobody
+      // declared, in a rule whose whole job is prototype pollution. Joined
+      // without separators so a multi-token guard still reads as one string.
+      const body = sourceCode
+        .getTokens(node.body)
+        .map((token) => token.value)
+        .join('');
       if (/\b(includes|has|hasOwn|hasOwnProperty|indexOf)\s*\(/.test(body))
         return;
       // The `for..in` twin also clears a loop that names the polluting keys

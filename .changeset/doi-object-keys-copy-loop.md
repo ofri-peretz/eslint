@@ -20,4 +20,7 @@ this detector exists for.
 
 **This rule now reports where it did not before.** Naming `__proto__` in the
 loop still clears the finding, the same remediation guard the `for..in` twin
-honours.
+honours — but that guard is read from TOKENS, not source text. Reading the text
+meant a `/* __proto__ */` COMMENT anywhere in the loop cleared the report: an
+undeclared suppression comment in the rule whose subject is prototype
+pollution.
