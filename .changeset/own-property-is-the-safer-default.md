@@ -1,5 +1,5 @@
 ---
-'eslint-plugin-conventions': minor
+'eslint-plugin-conventions': major
 ---
 
 feat!: `consistent-existence-index-check` defaults to `Object.hasOwn`, not `in`
