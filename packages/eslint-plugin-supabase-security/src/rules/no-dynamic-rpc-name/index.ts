@@ -10,6 +10,11 @@
  * PostgREST. When that name is computed, the caller chooses which database
  * function runs — and Supabase projects routinely expose privileged helpers
  * (`delete_user`, `grant_admin`) alongside the intended one.
+ * Reads the call, not the dataflow: a name held in a variable reports even when a
+ * closed allowlist produced it. That is a known cost of staying AST-structural —
+ * the alternative is inferring provenance — and it is written into the fix text
+ * and the rule doc rather than left for a user to discover.
+ *
  * @see https://supabase.com/docs/reference/javascript/rpc
  */
 
@@ -56,7 +61,7 @@ export const noDynamicRpcName = createRule<[], MessageIds>({
           '`.rpc()` receives a computed name, so the caller decides which Postgres function executes rather than the code doing so',
         severity: 'HIGH',
         compliance: ['SOC2', 'ISO27001'],
-        fix: 'Name the function literally — `.rpc("get_user_profile", args)` — or map through an allowlist: const FN = { profile: "get_user_profile" }; const name = FN[kind]; if (!name) throw new Error("unknown");',
+        fix: 'Name the function at the call: `if (kind === "profile") return db.rpc("get_user_profile", args);`. A name held in a variable still reports even when an allowlist produced it — this rule reads the call, not where the value came from. For a reviewed allowlist, disable the line with the reason.',
         documentationLink: 'https://supabase.com/docs/reference/javascript/rpc',
       }),
     },

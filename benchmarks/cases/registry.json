@@ -4211,6 +4211,102 @@
         }
       ],
       "kind": "false-positive"
+    },
+    {
+      "id": "ILB-0142",
+      "added": "2026-09-09",
+      "title": "Supabase service_role key inlined into the browser bundle",
+      "rationale": "`service_role` bypasses Row Level Security entirely — it is a database superuser in a string. A `NEXT_PUBLIC_` prefix exists to inline a value into the client bundle at build time, so the two together publish unrestricted read and write on every table. The line is indistinguishable from any other `createClient` call, which is why review does not catch it.",
+      "cwe": "CWE-798",
+      "severity": {
+        "cvss": 9.8,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import { createClient } from '@supabase/supabase-js';\nexport const db = createClient(url, process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY);",
+      "coverage": [
+        {
+          "rule": "supabase-security/no-service-role-key-in-client",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-supabase-security/src/rules/no-service-role-key-in-client/no-service-role-key-in-client.test.ts"
+        }
+      ],
+      "kind": "defect",
+      "peers": []
+    },
+    {
+      "id": "ILB-0143",
+      "added": "2026-09-09",
+      "title": "Supabase RPC executed under a caller-supplied function name",
+      "rationale": "`.rpc(name)` runs a Postgres function by name over PostgREST. When the name is computed the caller chooses which function executes, and an exposed schema routinely holds privileged helpers beside the intended one. Same shape as a dynamic `require()`: the danger is that the callee is data.",
+      "cwe": "CWE-913",
+      "severity": {
+        "cvss": 8.1,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import { createClient } from '@supabase/supabase-js';\nexport const run = (db, req) => db.rpc(req.query.fn, req.body);",
+      "coverage": [
+        {
+          "rule": "supabase-security/no-dynamic-rpc-name",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-supabase-security/src/rules/no-dynamic-rpc-name/no-dynamic-rpc-name.test.ts"
+        }
+      ],
+      "kind": "defect",
+      "peers": []
+    },
+    {
+      "id": "ILB-0144",
+      "added": "2026-09-09",
+      "title": "Supabase auth failure read as an anonymous request",
+      "rationale": "`getUser()` reports a missing, expired or forged token by RETURNING `error`, not by throwing. Destructuring only `data` makes an authentication failure and an anonymous request indistinguishable, because `user` is null on both paths — so a downstream `if (!user)` guard cannot tell them apart.",
+      "cwe": "CWE-287",
+      "severity": {
+        "cvss": 7.5,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import { createClient } from '@supabase/supabase-js';\nconst { data } = await db.auth.getUser();\nif (!data.user) throw new Error('not signed in');",
+      "coverage": [
+        {
+          "rule": "supabase-security/require-auth-error-check",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-supabase-security/src/rules/require-auth-error-check/require-auth-error-check.test.ts"
+        }
+      ],
+      "kind": "defect",
+      "peers": []
+    },
+    {
+      "id": "ILB-0145",
+      "added": "2026-09-09",
+      "title": "Supabase storage bucket created public",
+      "rationale": "A public bucket serves every object in it to anyone holding the URL: no session, no RLS check, no expiry. It is a decision about the bucket's whole future contents, taken once at creation, long before the file that should not have been public is uploaded. Object names are guessable more often than teams expect.",
+      "cwe": "CWE-732",
+      "severity": {
+        "cvss": 7.5,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import { createClient } from '@supabase/supabase-js';\nawait db.storage.createBucket('user-documents', { public: true });",
+      "coverage": [
+        {
+          "rule": "supabase-security/no-public-storage-bucket",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-supabase-security/src/rules/no-public-storage-bucket/no-public-storage-bucket.test.ts"
+        }
+      ],
+      "kind": "defect",
+      "peers": []
     }
   ]
 }

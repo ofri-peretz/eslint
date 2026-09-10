@@ -49,10 +49,25 @@ import { createClient } from '@supabase/supabase-js';
 
 await db.rpc('get_user_profile', { id });
 
-// Or map through an allowlist, so an unknown key is an error rather than a call.
-const FN = { profile: 'get_user_profile', orders: 'get_user_orders' } as const;
+// Branch to a literal call rather than computing the name.
+if (kind === 'profile') return db.rpc('get_user_profile', { id });
+return db.rpc('get_user_orders', { id });
+```
+
+## Known limitation
+
+The rule reads the **call**, not where the value came from. A name held in a variable reports even when a closed allowlist produced it:
+
+```ts
+const FN = { profile: 'get_user_profile' } as const;
 const fn = FN[kind];
-if (!fn) throw new Error('unknown query');
+await db.rpc(fn, { id }); // still reported
+```
+
+That code is safe, and the report is a false positive. It is the cost of staying AST-structural — the alternative is inferring provenance, which this repo does not do because the inference is wrong often enough to make the rule untrustworthy. For a reviewed allowlist, disable the line and say why:
+
+```ts
+// eslint-disable-next-line supabase-security/no-dynamic-rpc-name -- name comes from the FN allowlist above
 await db.rpc(fn, { id });
 ```
 

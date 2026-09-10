@@ -5,7 +5,7 @@
 > plugin list in this repo has drifted at least once; this one is derived so
 > that when it disagrees with a source file, the source file is what changes.
 
-Covers 30 plugins.
+Covers 31 plugins.
 
 ## The eight identifiers a plugin has
 
@@ -55,8 +55,11 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-secure-coding` | 5.3.5 | `secure-coding/` | — | `plugin-secure-coding` | security | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-sequelize-security` | 0.3.9 | `sequelize-security/` | — | `plugin-sequelize-security` | security | `sequelize` | ✅ | ✅ | ✅ |
 | `eslint-plugin-sqlite-security` | 0.1.11 | `sqlite-security/` | — | `plugin-sqlite-security` | security | `sqlite` | ✅ | ✅ | ✅ |
+| `eslint-plugin-supabase-security` | 0.1.0 | `supabase-security/` | — | `plugin-supabase-security` | security | `—` | ✅ | ✅ | ❌ |
 | `eslint-plugin-typeorm-security` | 0.3.8 | `typeorm-security/` | — | `plugin-typeorm-security` | security | `typeorm` | ✅ | ✅ | ✅ |
 | `eslint-plugin-vercel-ai-security` | 2.1.3 | `vercel-ai-security/` | — | `plugin-vercel-ai-security` | security | `vercel` | ✅ | ✅ | ✅ |
+
+**No codecov component:** `eslint-plugin-supabase-security`
 
 ## URL shapes
 
