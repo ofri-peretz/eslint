@@ -18,6 +18,7 @@
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, expect, afterAll, vi } from 'vitest';
+import ts from 'typescript';
 import type { TSESLint } from '@interlace/eslint-devkit';
 import { createWithMockContext } from '@interlace/eslint-devkit';
 
@@ -228,6 +229,42 @@ describe('default rule — Layer 2 (mock parser services)', () => {
             tsNode === source ? moduleSymbol : undefined,
         }),
       },
+      esTreeNodeToTSNodeMap: { get: (n: unknown) => n },
+    };
+    const { listeners, reports } = createWithParserServices(
+      defaultRule,
+      services,
+    );
+    (
+      listeners.ImportDefaultSpecifier as (n: unknown) => void
+    )(node);
+    expect(reports).toHaveLength(1);
+    expect(reports[0]).toMatchObject({ messageId: 'noDefaultExport' });
+  });
+
+  it('treats an alias whose resolution throws as broken, and still reports when the module lacks a default export', () => {
+    // Same shape as `node:process`/`export =` resolution succeeding, except
+    // `getAliasedSymbol` throws instead of returning a real symbol — proves
+    // the try/catch degrades to "unresolved" (matching named.ts's identical
+    // pattern) rather than leaking the exception or silently treating the
+    // import as valid.
+    const source = { type: 'Literal', value: 'mod' };
+    const node = {
+      type: 'ImportDefaultSpecifier',
+      local: { type: 'Identifier', name: 'x' },
+      parent: { type: 'ImportDeclaration', importKind: 'value', source },
+    };
+    const aliasSymbol = { flags: ts.SymbolFlags.Alias, escapedName: 'x' };
+    const moduleSymbol = { exports: new Map([['named', {}]]) };
+    const checker = {
+      getSymbolAtLocation: (tsNode: unknown) =>
+        tsNode === source ? moduleSymbol : aliasSymbol,
+      getAliasedSymbol: () => {
+        throw new Error('unresolved alias');
+      },
+    };
+    const services = {
+      program: { getTypeChecker: () => checker },
       esTreeNodeToTSNodeMap: { get: (n: unknown) => n },
     };
     const { listeners, reports } = createWithParserServices(

@@ -16,6 +16,7 @@ import { describe, it, expect } from 'vitest';
 import { plugin } from '../index';
 import foo, { bar } from '../files/foo';
 import { foo as noDefaultFoo } from '../files/no-default';
+import Widget from '../files/export-equals';
 import * as typeBarrel from '../types/index';
 
 describe('oxlint sub-export', () => {
@@ -50,6 +51,10 @@ describe('src/files fixture modules', () => {
 
   it('no-default.ts exposes only a named const', () => {
     expect(noDefaultFoo).toBe('bar');
+  });
+
+  it('export-equals.ts exposes a class via `export =` / CJS interop', () => {
+    expect(new Widget().render()).toBe('widget');
   });
 });
 
