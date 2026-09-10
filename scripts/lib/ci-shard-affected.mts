@@ -27,6 +27,34 @@ export const GLOBAL_INPUTS = new Set([
   'scripts/lib/ci-changed-files.mts',
 ]);
 
+/**
+ * Cross-workspace edges the manifests cannot express, because they are
+ * GENERATION edges rather than dependency edges.
+ *
+ * `apps/docs` renders every `packages/<plugin>/docs/rules/<rule>.md` into a
+ * committed `.mdx`, and `rule-docs-sync-drift` (a `docs` test) fails the moment
+ * the two disagree. So `docs` genuinely depends on those `.md` files — but it
+ * declares no plugin in its manifest, and it never will: it reads the files off
+ * disk. `expandDependents` walks manifests, so it can never reach `docs` from a
+ * plugin, and the check that exists to catch stale generated output was not
+ * dispatched on the PR that staled it.
+ *
+ * PR #964 is the worked example. It edited
+ * `packages/eslint-plugin-conventions/docs/rules/consistent-existence-index-check.md`
+ * and did not regenerate the MDX. The web lane reported `0 web shards affected`,
+ * the drift test never ran, the PR merged green — and `main` was red from
+ * 06:00 through three further merges until #969. Nothing was wrong with the
+ * check; it was simply never asked.
+ *
+ * A generator whose output is committed and guarded belongs here. The lock in
+ * `scripts/__tests__/generated-output-is-gated.lock.test.ts` reconstructs #964
+ * and holds each pattern against a path that exists in the tree, so a pattern
+ * cannot rot into matching nothing while still looking like coverage.
+ */
+export const GENERATED_INPUTS: { pattern: RegExp; consumer: string }[] = [
+  { pattern: /^packages\/[^/]+\/docs\/rules\/[^/]+\.md$/, consumer: 'docs' },
+];
+
 /** Minimal shape needed here; both sharders' package types are compatible. */
 export type AffectedPkg = { name: string; dir: string; deps?: string[] };
 
@@ -120,9 +148,19 @@ export function decideAffected(
       .map((f) => f.split('/').slice(0, 2).join('/'))
       .filter((d) => /^(packages|apps|tools)\//.test(d)),
   );
-  const directly = testable.filter((p) => touchedDirs.has(p.dir));
+  // Consumers reached by a generation edge rather than a manifest one. Seeded
+  // BY NAME, before the closure runs, so `expandDependents` still picks up
+  // anything downstream of them. See GENERATED_INPUTS.
+  const generated = new Set(
+    GENERATED_INPUTS.filter((g) => changed.some((f) => g.pattern.test(f))).map(
+      (g) => g.consumer,
+    ),
+  );
+  const isSeed = (p: AffectedPkg) =>
+    touchedDirs.has(p.dir) || generated.has(p.name);
+  const directly = testable.filter(isSeed);
 
-  if (touchedDirs.size === 0)
+  if (touchedDirs.size === 0 && generated.size === 0)
     return { mode: 'none', why: 'no package sources changed' };
 
   // `bug` means the change is testable NOWHERE, not merely "not in this lane".
@@ -136,7 +174,7 @@ export function decideAffected(
   // `universe` is every testable package across all lanes; the anti-#355
   // protection is unchanged when measured against it. Defaults to `testable`,
   // so single-lane callers behave exactly as before.
-  const anywhere = (universe ?? testable).filter((p) => touchedDirs.has(p.dir));
+  const anywhere = (universe ?? testable).filter(isSeed);
   if (anywhere.length === 0) return { mode: 'bug', dirs: [...touchedDirs] };
 
   if (directly.length === 0)
