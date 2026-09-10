@@ -2,17 +2,23 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/ofri-peretz/eslint/scripts/schemas/api-surface-manifest.schema.json",
   "title": "API-Surface Coverage Manifest",
-  "description": "Per-plugin manifest of how much of each target SDK / runtime API surface has at least one Interlace rule covering it. Source of truth for the §2 'API-surface coverage' metric in distribution/EVALUATION_METRICS.md.",
+  "description": "Per-plugin API-surface coverage. Counts are MEASURED by scripts/measure-api-surface.mts and published as upper bounds; this file holds only what a measurement cannot produce \u2014 the prose description of each surface, whether its denominator has been curated to the consumer-callable API, and the outOfScope judgements with their reasons. A count here is rejected by the audit.",
   "type": "object",
-  "required": ["description", "method", "generatedAt", "target_floor_pct", "plugins", "summary"],
+  "required": [
+    "description",
+    "method",
+    "target_floor_pct",
+    "plugins"
+  ],
   "properties": {
-    "$schema": { "type": "string" },
-    "description": { "type": "string" },
-    "method": { "type": "string" },
-    "generatedAt": {
-      "type": "string",
-      "format": "date",
-      "description": "Last hand-audit date. Refresh when a plugin gains or loses rules."
+    "$schema": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "method": {
+      "type": "string"
     },
     "target_floor_pct": {
       "type": "integer",
@@ -22,9 +28,30 @@
     },
     "plugins": {
       "type": "array",
-      "items": { "$ref": "#/$defs/plugin" }
+      "items": {
+        "$ref": "#/$defs/plugin"
+      }
     },
-    "summary": { "$ref": "#/$defs/summary" }
+    "notEnumerable": {
+      "type": "array",
+      "description": "Plugins with no enumerable module surface \u2014 they analyse plain JS/TS or the web platform. Recorded by name because 'not applicable' is a measurement, not silence.",
+      "items": {
+        "type": "object",
+        "required": [
+          "plugin",
+          "kind"
+        ],
+        "properties": {
+          "plugin": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
   },
   "$defs": {
     "plugin": {
@@ -33,11 +60,8 @@
         "plugin",
         "surface",
         "surfaceVersion",
-        "callableApis_total",
-        "callableApis_covered",
-        "coverage_pct",
-        "ruleCount",
-        "uncovered_examples",
+        "denominatorTrust",
+        "denominatorNote",
         "notes"
       ],
       "properties": {
@@ -45,24 +69,25 @@
           "type": "string",
           "pattern": "^eslint-plugin-"
         },
-        "surface": { "type": "string" },
-        "surfaceVersion": { "type": "string" },
-        "callableApis_total": { "type": "integer", "minimum": 0 },
-        "callableApis_covered": { "type": "integer", "minimum": 0 },
-        "coverage_pct": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 100,
-          "description": "Must equal round(callableApis_covered / (callableApis_total - outOfScope.length) * 100) within ±1. The denominator is the security-relevant surface, not the raw API count."
+        "surface": {
+          "type": "string"
+        },
+        "surfaceVersion": {
+          "type": "string"
         },
         "outOfScope": {
           "type": "array",
           "description": "APIs on the target surface that are deliberately not rule targets because they are not security sinks under this plugin's threat model. Subtracted from the coverage denominator. NOT a place to park unclosed gaps: the audit rejects reasons that argue from rarity ('niche', 'rare', 'low-traffic') rather than threat model.",
           "items": {
             "type": "object",
-            "required": ["api", "reason"],
+            "required": [
+              "api",
+              "reason"
+            ],
             "properties": {
-              "api": { "type": "string" },
+              "api": {
+                "type": "string"
+              },
               "reason": {
                 "type": "string",
                 "minLength": 20,
@@ -72,33 +97,21 @@
             "additionalProperties": false
           }
         },
-        "ruleCount": { "type": "integer", "minimum": 0 },
-        "uncovered_examples": {
-          "type": "array",
-          "items": { "type": "string" }
+        "notes": {
+          "type": "string"
         },
-        "notes": { "type": "string" }
-      },
-      "additionalProperties": false
-    },
-    "summary": {
-      "type": "object",
-      "required": [
-        "aggregateCoverage_pct",
-        "pluginsAtOrAboveFloor",
-        "pluginsBelowFloor",
-        "criticalGaps",
-        "note"
-      ],
-      "properties": {
-        "aggregateCoverage_pct": { "type": "integer", "minimum": 0, "maximum": 100 },
-        "pluginsAtOrAboveFloor": { "type": "integer", "minimum": 0 },
-        "pluginsBelowFloor": { "type": "integer", "minimum": 0 },
-        "criticalGaps": {
-          "type": "array",
-          "items": { "type": "string" }
+        "denominatorTrust": {
+          "enum": [
+            "curated",
+            "raw"
+          ],
+          "description": "'curated' means the denominator is the consumer-callable API a rule could act on; the 60% floor applies. 'raw' means it is still the whole module enumeration, which can be wrong in either direction \u2014 @aws-sdk/client-lambda enumerates the Lambda control plane, better-sqlite3 reads as one callable \u2014 and the floor does not apply."
         },
-        "note": { "type": "string" }
+        "denominatorNote": {
+          "type": "string",
+          "minLength": 20,
+          "description": "What the denominator is and why it can be trusted. 'curated' without an argument is an assertion, and the audit rejects it."
+        }
       },
       "additionalProperties": false
     }

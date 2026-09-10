@@ -235,6 +235,7 @@ node-security	require-secure-deletion	unaware
 node-security	no-deprecated-cipher-method	unaware	
 node-security	detect-non-literal-fs-filename	unaware	
 node-security	no-weak-cipher-algorithm	unaware	
+node-security	no-weak-dh-parameters	unaware	
 node-security	detect-suspicious-dependencies	unaware	
 node-security	no-timing-unsafe-compare	unaware	
 node-security	lock-file	unaware	

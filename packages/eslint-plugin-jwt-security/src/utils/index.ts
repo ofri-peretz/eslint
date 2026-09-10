@@ -167,7 +167,32 @@ export const JWT_METHODS = {
   // pick a key before verifying is the documented jose flow, and the rule
   // already carries `allowHeaderInspection` for that case.
   DECODE: new Set(['decode', 'jwtDecode', 'decodeJWT', 'decodeJwt']),
+  /**
+   * jose's JWS-level verification, kept apart from VERIFY on purpose.
+   *
+   * `jwtVerify` verifies a signature AND the JWT claims. These three verify a
+   * signature and nothing else: they take a JWS, not a JWT, so `audience`,
+   * `issuer` and `maxTokenAge` are not options they accept. Folding them into
+   * VERIFY would make the claim rules demand an option the API cannot take,
+   * which is a false positive on every correct call.
+   *
+   * What they DO share with `jwtVerify` is `algorithms` — and without it the
+   * token header picks the algorithm, which is the substitution attack this
+   * plugin exists to catch. The measured surface reported all three as named
+   * nowhere in these sources while the plugin published 100% coverage.
+   *
+   * Verified against the installed package:
+   * `Object.keys(require('jose')).filter(k => /Verify$/.test(k))` is
+   * `['compactVerify', 'flattenedVerify', 'generalVerify']`.
+   */
+  JWS_VERIFY: new Set(['compactVerify', 'flattenedVerify', 'generalVerify']),
 } as const;
+
+/** VERIFY ∪ JWS_VERIFY — every call that checks a signature. */
+const SIGNATURE_VERIFY: ReadonlySet<string> = new Set([
+  ...JWT_METHODS.VERIFY,
+  ...JWT_METHODS.JWS_VERIFY,
+]);
 
 /** Package roots whose API these method names belong to. */
 const JWT_LIBRARY_ROOTS: ReadonlySet<string> = new Set(
@@ -622,6 +647,76 @@ export function isWeakSecret(node: TSESTree.Node, minLength = 32): boolean {
 }
 
 /**
+ * The literal inside a byte-key expression, or null.
+ *
+ * jose takes `Uint8Array` for symmetric keys, and its documented idiom is
+ * `new TextEncoder().encode(secret)`. `Buffer.from(secret)` is the Node
+ * equivalent. Both are `CallExpression`s, and both rules that inspect the key
+ * treated any call as a safe source — so the single most common way to hand
+ * jose a hardcoded HMAC secret was the one shape neither rule could see.
+ *
+ * Returns the inner node so the caller can apply its own judgement to it:
+ * `no-hardcoded-secret` asks whether it is a literal, `no-weak-secret` asks
+ * how long it is. Neither has to know about encoders.
+ *
+ * Only the literal-argument form is unwrapped. `encoder.encode(loadSecret())`
+ * wraps a call whose value is not visible here, and stays opaque.
+ */
+export interface ByteKeyLiteral {
+  /** The node holding the key material. */
+  literal: TSESTree.Node;
+  /**
+   * The `Buffer.from` encoding argument, when it is a string literal.
+   *
+   * It is the difference between a key's LENGTH and its STRENGTH.
+   * `Buffer.from('00112233445566778899aabbccddeeff', 'hex')` is a 16-byte key
+   * written as 32 characters, so measuring the source string called it 32 and
+   * a key at half the configured floor went unreported.
+   */
+  encoding?: string;
+}
+
+export function byteKeyLiteral(node: TSESTree.Node): ByteKeyLiteral | null {
+  if (node.type !== AST_NODE_TYPES.CallExpression) return null;
+  const arg = node.arguments[0];
+  if (arg === undefined) return null;
+
+  const callee = node.callee;
+  if (callee.type !== AST_NODE_TYPES.MemberExpression) return null;
+  const method = propertyName(callee);
+
+  // new TextEncoder().encode('…')
+  if (
+    method === 'encode' &&
+    callee.object.type === AST_NODE_TYPES.NewExpression &&
+    callee.object.callee.type === AST_NODE_TYPES.Identifier &&
+    callee.object.callee.name === 'TextEncoder'
+  ) {
+    // TextEncoder is UTF-8 only, so it has no encoding to carry.
+    return { literal: arg };
+  }
+
+  // Buffer.from('…', 'hex')
+  if (
+    method === 'from' &&
+    callee.object.type === AST_NODE_TYPES.Identifier &&
+    callee.object.name === 'Buffer'
+  ) {
+    const encodingArg = node.arguments[1];
+    return {
+      literal: arg,
+      encoding:
+        encodingArg?.type === AST_NODE_TYPES.Literal &&
+        typeof encodingArg.value === 'string'
+          ? encodingArg.value.toLowerCase()
+          : undefined,
+    };
+  }
+
+  return null;
+}
+
+/**
  * Check if a node is an environment variable access (safe pattern)
  */
 export function isEnvVariable(node: TSESTree.Node): boolean {
@@ -651,6 +746,19 @@ export function isSignOperation(node: TSESTree.CallExpression): boolean {
  */
 export function isVerifyOperation(node: TSESTree.CallExpression): boolean {
   return isJwtLibraryCall(node, JWT_METHODS.VERIFY);
+}
+
+/**
+ * Check if this call verifies a signature — a JWT verify, or a jose JWS verify.
+ *
+ * Use this for rules about the KEY and the ALGORITHM, which both kinds accept.
+ * Rules about JWT claims (`audience`, `issuer`, `maxTokenAge`) must keep using
+ * `isVerifyOperation`: a JWS carries no claims and takes no such option.
+ */
+export function isSignatureVerifyOperation(
+  node: TSESTree.CallExpression,
+): boolean {
+  return isJwtLibraryCall(node, SIGNATURE_VERIFY as Set<string>);
 }
 
 /**

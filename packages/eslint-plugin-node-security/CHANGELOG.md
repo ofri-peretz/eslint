@@ -5,6 +5,40 @@ All notable changes to `eslint-plugin-node-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.5.0
+
+### Minor Changes
+
+- **✨ Feature** — detect Diffie-Hellman and ECDH parameters below a safe strength
+
+  New rule `no-weak-dh-parameters` (CWE-326), error in `recommended`.
+
+  The plugin declares `crypto` as part of its target surface and had no rule that
+  named a single Diffie-Hellman API. `createDiffieHellman`,
+  `createDiffieHellmanGroup`, `getDiffieHellman`, `diffieHellman` and
+  `createECDH` appeared nowhere in its sources while the published API-surface
+  coverage figure said 70% — a figure that turned out to be a hand-typed constant
+  rather than a measurement.
+
+  A _named_ Diffie-Hellman group is a fixed prime, so the expensive part of
+  breaking it is paid once and then every session using that group falls cheaply.
+  That is Logjam (CVE-2015-4000): `modp1` is 768-bit and `modp2` is 1024-bit.
+
+  Reports three argument shapes, each resolved through at most one `const` alias
+  so that naming the parameter does not hide it:
+
+  - `getDiffieHellman(name)` / `createDiffieHellmanGroup(name)` — MODP group
+    below `minPrimeBits` (default 2048)
+  - `createDiffieHellman(bits)` — numeric prime length below the floor
+  - `createECDH(curve)` — a curve with a field size under 224 bits
+
+  Deliberately silent on an unrecognised group name (a future RFC group must not
+  become a finding by being unknown), on the `createDiffieHellman(prime, encoding)`
+  overload (that prime is chosen elsewhere and reading it is not something a
+  structural rule can do), and on a computed name.
+
+  Configurable via `minPrimeBits`, `additionalWeakCurves` and `allowInTests`.
+
 ## 5.4.4
 
 ### Patch Changes

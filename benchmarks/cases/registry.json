@@ -4214,6 +4214,56 @@
     },
     {
       "id": "ILB-0142",
+      "added": "2026-09-10",
+      "title": "Diffie-Hellman key agreement on the 768-bit MODP group",
+      "rationale": "A named MODP group is a fixed prime, and the expensive step of breaking Diffie-Hellman depends on the prime rather than the session. One precomputation therefore reads every session that used the group, which is the Logjam result: `modp1` is 768-bit and fell to an academic budget. The plugin declared crypto as its surface and named no Diffie-Hellman API at all until this rule.",
+      "cwe": "CWE-326",
+      "severity": {
+        "cvss": 5.9,
+        "vector": null,
+        "source": "interlace/devkit CWE table"
+      },
+      "references": [
+        {
+          "id": "CVE-2015-4000",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2015-4000",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "const crypto = require('crypto');\nfunction agreeKey(peerPublicKey) {\n  const dh = crypto.getDiffieHellman('modp1');\n  dh.generateKeys();\n  return dh.computeSecret(peerPublicKey);\n}",
+      "coverage": [
+        {
+          "rule": "node-security/no-weak-dh-parameters",
+          "expect": "report"
+        }
+      ],
+      "kind": "defect"
+    },
+    {
+      "id": "ILB-0143",
+      "added": "2026-09-10",
+      "title": "createDiffieHellman given a prime chosen elsewhere states no strength",
+      "rationale": "The string/Buffer overload of `createDiffieHellman` supplies a prime that was decided somewhere else. Nothing at the call site says how large it is, so a structural rule that reported here would be guessing, and the author would have no edit that satisfies it. Recorded as a case so the silence is measured rather than assumed.",
+      "cwe": "CWE-326",
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "const crypto = require('crypto');\nfunction fromKnownParameters(primeBase64) {\n  return crypto.createDiffieHellman(primeBase64, 'base64');\n}",
+      "coverage": [
+        {
+          "rule": "node-security/no-weak-dh-parameters",
+          "expect": "silent"
+        }
+      ],
+      "kind": "false-positive"
+    },
+    {
+      "id": "ILB-0144",
       "added": "2026-09-09",
       "title": "Supabase service_role key inlined into the browser bundle",
       "rationale": "`service_role` bypasses Row Level Security entirely — it is a database superuser in a string. A `NEXT_PUBLIC_` prefix exists to inline a value into the client bundle at build time, so the two together publish unrestricted read and write on every table. The line is indistinguishable from any other `createClient` call, which is why review does not catch it.",
@@ -4237,7 +4287,7 @@
       "peers": []
     },
     {
-      "id": "ILB-0143",
+      "id": "ILB-0145",
       "added": "2026-09-09",
       "title": "Supabase RPC executed under a caller-supplied function name",
       "rationale": "`.rpc(name)` runs a Postgres function by name over PostgREST. When the name is computed the caller chooses which function executes, and an exposed schema routinely holds privileged helpers beside the intended one. Same shape as a dynamic `require()`: the danger is that the callee is data.",
@@ -4261,7 +4311,7 @@
       "peers": []
     },
     {
-      "id": "ILB-0144",
+      "id": "ILB-0146",
       "added": "2026-09-09",
       "title": "Supabase auth failure read as an anonymous request",
       "rationale": "`getUser()` reports a missing, expired or forged token by RETURNING `error`, not by throwing. Destructuring only `data` makes an authentication failure and an anonymous request indistinguishable, because `user` is null on both paths — so a downstream `if (!user)` guard cannot tell them apart.",
@@ -4285,7 +4335,7 @@
       "peers": []
     },
     {
-      "id": "ILB-0145",
+      "id": "ILB-0147",
       "added": "2026-09-09",
       "title": "Supabase storage bucket created public",
       "rationale": "A public bucket serves every object in it to anyone holding the URL: no session, no RLS check, no expiry. It is a decision about the bucket's whole future contents, taken once at creation, long before the file that should not have been public is uploaded. Object names are guessable more often than teams expect.",

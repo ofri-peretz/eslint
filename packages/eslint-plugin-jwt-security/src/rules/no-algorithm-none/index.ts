@@ -24,7 +24,7 @@ import {
   objectKeyName,
 } from '@interlace/eslint-devkit';
 import {
-  isVerifyOperation,
+  isSignatureVerifyOperation,
   isSignOperation,
   getOptionsArgument,
 } from '../../utils';
@@ -246,7 +246,7 @@ export const noAlgorithmNone = createRule<RuleOptions, MessageIds>({
         // exemptions for it.
 
         // Check both verify and sign operations
-        if (!isVerifyOperation(node) && !isSignOperation(node)) {
+        if (!isSignatureVerifyOperation(node) && !isSignOperation(node)) {
           return;
         }
 

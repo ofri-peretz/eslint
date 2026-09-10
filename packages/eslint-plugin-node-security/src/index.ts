@@ -44,6 +44,7 @@ import { noSha1Hash } from './rules/no-sha1-hash';
 import { noStaticIv } from './rules/no-static-iv';
 import { noTimingUnsafeCompare } from './rules/no-timing-unsafe-compare';
 import { noWeakCipherAlgorithm } from './rules/no-weak-cipher-algorithm';
+import { noWeakDhParameters } from './rules/no-weak-dh-parameters';
 import { noWeakHashAlgorithm } from './rules/no-weak-hash-algorithm';
 import { preferNativeCrypto } from './rules/prefer-native-crypto';
 import { requireAeadTagVerification } from './rules/require-aead-tag-verification';
@@ -99,6 +100,7 @@ export const rules: Record<
   'no-static-iv': noStaticIv,
   'no-timing-unsafe-compare': noTimingUnsafeCompare,
   'no-weak-cipher-algorithm': noWeakCipherAlgorithm,
+  'no-weak-dh-parameters': noWeakDhParameters,
   'no-weak-hash-algorithm': noWeakHashAlgorithm,
   'prefer-native-crypto': preferNativeCrypto,
   'require-aead-tag-verification': requireAeadTagVerification,
@@ -122,7 +124,7 @@ withCanonicalDocsUrls('plugin-node-security', rules);
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-node-security',
-    version: '5.4.4',
+    version: '5.5.0',
   },
   rules,
 };
@@ -219,6 +221,7 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   // Crypto rules in recommended
   'node-security/no-weak-hash-algorithm': 'error',
   'node-security/no-weak-cipher-algorithm': 'error',
+  'node-security/no-weak-dh-parameters': 'error',
   'node-security/no-static-iv': 'error',
   'node-security/no-ecb-mode': 'error',
   'node-security/no-math-random-crypto': 'error',

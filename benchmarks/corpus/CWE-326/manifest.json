@@ -1,0 +1,39 @@
+{
+  "cwe": "CWE-326",
+  "name": "Inadequate Encryption Strength",
+  "owasp": "A02:2021",
+  "severity": "HIGH",
+  "expectedPlugins": [
+    "eslint-plugin-node-security"
+  ],
+  "fixtures": {
+    "vulnerable": [
+      {
+        "file": "dh-modp1-group.js",
+        "description": "crypto.getDiffieHellman('modp1') \u2014 the 768-bit group Logjam broke"
+      },
+      {
+        "file": "dh-generated-512-bit-prime.js",
+        "description": "crypto.createDiffieHellman(512) \u2014 generated prime far below any current floor"
+      },
+      {
+        "file": "ecdh-192-bit-curve.js",
+        "description": "crypto.createECDH('secp192k1') \u2014 curve field size under 224 bits"
+      }
+    ],
+    "safe": [
+      {
+        "file": "dh-modp14-group.js",
+        "description": "crypto.getDiffieHellman('modp14') \u2014 the 2048-bit group"
+      },
+      {
+        "file": "ecdh-p256-curve.js",
+        "description": "crypto.createECDH('prime256v1')"
+      },
+      {
+        "file": "dh-prime-supplied-not-generated.js",
+        "description": "createDiffieHellman(prime, encoding) \u2014 strength is not stated at the call site, so silence is correct"
+      }
+    ]
+  }
+}

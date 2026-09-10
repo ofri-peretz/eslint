@@ -87,8 +87,8 @@ export const consistentExistenceIndexCheck = createRule<
     ) {
       let fix: TSESLint.ReportFixFunction | undefined;
 
-      // TWO boundaries a fixer may not cross, because crossing either changes what
-      // the code does. The preference is still reported on both — which form a
+      // THREE boundaries a fixer may not cross, because crossing any of them changes
+      // what the code does. The preference is still reported on both — which form a
       // codebase writes is the user's style to pick — and only the fix stops.
       //
       // 1. THE PROTOTYPE CHAIN. `in` walks it and the own-property checks do not, so
@@ -106,6 +106,20 @@ export const consistentExistenceIndexCheck = createRule<
       //    TypeError. Those last two ARE interchangeable, and remain fixable.
       const crossesDispatchBoundary =
         currentMethod === 'hasOwnProperty' || preferred === 'hasOwnProperty';
+
+      // 3. THE ARGUMENT LIST. A SequenceExpression carries its own commas, and
+      //    `getText()` returns a node WITHOUT the parentheses that held them
+      //    together — parentheses belong to the parent, not the node's range.
+      //    Splicing that text into a fresh argument list promotes an inner comma
+      //    to an argument SEPARATOR: `call((0, mod.argv), key)` has two arguments,
+      //    but `Object.hasOwn(0, mod.argv, key)` has three. `Object.hasOwn` reads
+      //    the first two and ignores the rest, so the rewritten check asks about
+      //    `0` and silently answers `false`. This is the surplus-argument hazard
+      //    below, manufactured by the fixer itself rather than written by the
+      //    author. Reported, since the preference is unchanged; not rewritten.
+      const spliceWouldChangeArity =
+        object.type === 'SequenceExpression' ||
+        property.type === 'SequenceExpression';
 
       // Only provide fixes for standalone expressions, not when part of larger expressions
       const parent = node.parent;
@@ -133,6 +147,7 @@ export const consistentExistenceIndexCheck = createRule<
       if (
         !crossesPrototypeBoundary &&
         !crossesDispatchBoundary &&
+        !spliceWouldChangeArity &&
         !surplusArguments &&
         preferred === 'Object.hasOwn' &&
         isStandaloneExpression

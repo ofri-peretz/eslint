@@ -1347,6 +1347,11 @@
       "detection": "structural-pattern",
       "confidence": "enforcement"
     },
+    "no-weak-dh-parameters": {
+      "environment": "universal",
+      "detection": "structural-pattern",
+      "confidence": "enforcement"
+    },
     "no-weak-hash-algorithm": {
       "environment": "universal",
       "detection": "structural-pattern",

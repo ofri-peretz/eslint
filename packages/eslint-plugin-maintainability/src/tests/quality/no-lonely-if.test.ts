@@ -39,6 +39,21 @@ describe('no-lonely-if', () => {
         {
           code: 'if (condition1) { doSomething(); } else if (condition2) { doSomethingElse(); }',
         },
+
+        // burgee sweep 2026-09-10, from packages/burgee/src/yargs/usage.ts:86-103,
+        // where a four-statement `else` had three of its `if`s reported. An `if`
+        // that shares its else block with sibling statements is not lonely: it
+        // cannot become `else if` without stranding the siblings, so the rule's
+        // own advice ("Replace with else if") is unfollowable there. ESLint core
+        // and unicorn both gate on the else block holding exactly one statement.
+        {
+          name: 'an if that is the last of two statements in the else block is not lonely',
+          code: 'if (p) { g(); } else { g(); if (q) { h(); } }',
+        },
+        {
+          name: 'an if that is the first of two statements in the else block is not lonely',
+          code: 'if (p) { g(); } else { if (q) { h(); } g(); }',
+        },
       ],
       invalid: [
         // Lonely if in else block
@@ -137,7 +152,6 @@ describe('no-lonely-if', () => {
       ],
     });
   });
-
 
   // Note: The 'allow' option has a bug in isInAllowedContext where 'context' variable
   // shadows the outer context - not testing this feature

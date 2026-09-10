@@ -5,6 +5,60 @@ All notable changes to `eslint-plugin-import-next` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.7.8
+
+### Patch Changes
+
+- **🐛 Fix** — `consistent-type-specifier-style` no longer deletes a default import
+
+  Under `prefer-top-level`, `import yargs, { type Argv } from 'yargs'` was fixed
+  to `import type { Argv } from 'yargs'` — dropping the default binding and
+  leaving `TS2304: Cannot find name 'yargs'` behind a clean lint run.
+
+  The report is gated on the named specifiers alone, all of which are inline
+  types, so the preference genuinely applies; the fixer then rebuilt the statement
+  from those same named specifiers, and a default binding is not among them.
+  Nothing reported afterwards, so `--fix` left a broken file and said nothing.
+
+  The report stays. The rewrite is withheld when the declaration carries a binding
+  the rebuild would not carry over. (Upstream emits two statements instead; that
+  is the fuller fix and a larger change than this defect needs.)
+
+- **🐛 Fix** — `enforce-import-order`'s fixer no longer moves `@ts-nocheck` below an import
+
+  TypeScript honours `@ts-nocheck`, `@ts-check` and `/// <reference />` only before the first
+  statement. The fixer treated them as leading comments of the first import and carried them
+  down with it. The result still parses and still lints clean, so nothing surfaces — type
+  checking is just silently switched back on, or, for `@ts-check` on a `.js` file, silently
+  switched off.
+
+  These directives are now pinned the same way a hashbang already was. Only the directives:
+  an explanatory comment written for a specific import still travels with that import.
+
+- **🐛 Fix** — `default` no longer reports default imports of `export =` / CJS-interop modules
+
+  The rule mapped the import specifier to the TypeScript `ImportClause` container, for which
+  `getSymbolAtLocation` returns `undefined` unconditionally — so the symbol check never did
+  anything and the rule fell back to a `Default`-key lookup that `export =` modules never
+  satisfy. It fired on every default import of a CJS-interop or JSON module, `node:process`
+  included.
+
+  The symbol is now resolved from the specifier's own identifier and unwrapped through
+  `getAliasedSymbol`, matching the sibling `named` rule. Default imports from modules that
+  genuinely have no default export still report.
+
+- **🐛 Fix** — `no-internal-modules` keeps parent traversal, and no longer crashes on a template-literal `require`
+
+  The autofix collapsed every relative specifier to `'.'`, so `../content/docs/x` was
+  repointed at the current file's own directory index — a different module — with no report
+  left behind to show it. The traversal prefix is now preserved (`../..` for `../../a/b`);
+  `./a/b/c` still resolves to `'.'` as before.
+
+  The detector accepts a no-substitution template literal via `staticString`, but all three
+  fixers narrowed on `Literal` and otherwise reached for `.source`, which is `undefined` on a
+  template literal. `fixer.replaceText` then threw and aborted the lint for the entire file —
+  at report time, so `--fix` was not even required.
+
 ## 2.7.7
 
 ### Patch Changes

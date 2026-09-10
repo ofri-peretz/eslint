@@ -86,10 +86,16 @@ export const noLonelyIf = createRule<RuleOptions, MessageIds>({
       // If parent is a BlockStatement, check if that block is an else block
       if (parent?.type === 'BlockStatement') {
         const grandParent = parent.parent;
-        // Check if the block is the alternate (else) of an if statement
+        // Check if the block is the alternate (else) of an if statement, AND that
+        // the `if` is the block's ONLY statement. Sharing the else block with
+        // sibling statements is what makes an `if` not lonely: `else if` holds a
+        // single statement, so collapsing one out of several would strand the
+        // rest. Reporting it emits advice ("Replace with else if") that cannot be
+        // followed. ESLint core and unicorn both gate on the same length check.
         return (
           grandParent?.type === 'IfStatement' &&
-          grandParent.alternate === parent
+          grandParent.alternate === parent &&
+          parent.body.length === 1
         );
       }
 
