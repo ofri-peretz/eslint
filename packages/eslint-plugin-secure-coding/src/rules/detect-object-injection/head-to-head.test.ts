@@ -78,6 +78,24 @@ suite('detect-object-injection, read against its nearest neighbour', () => {
         code: 'const KEYS = Object.freeze(["alpha", "beta"]); const o = {}; for (const k of KEYS) { o[k] = 1; }',
       },
       {
+        // burgee sweep 2026-09-10, from packages/burgee/src/testing-helpers.ts:176.
+        // `as const` is how TypeScript writes a closed key set, and the benchmark
+        // spec lists it beside Object.freeze under E4, "must NOT report". The
+        // resolver reads through `Object.freeze` but demands an ArrayExpression
+        // straight after, and `[...] as const` is a TSAsExpression — so the
+        // stronger spelling reported while the weaker one above stayed silent.
+        name: 'FP: the same allowlist written with as const',
+        code: 'const KEYS = ["alpha", "beta"] as const; const o = {}; for (const k of KEYS) { o[k] = 1; }',
+      },
+      {
+        name: 'FP: as const inside Object.freeze, both wrappers at once',
+        code: 'const KEYS = Object.freeze(["alpha", "beta"] as const); const o = {}; for (const k of KEYS) { o[k] = 1; }',
+      },
+      {
+        name: 'FP: a satisfies-annotated allowlist',
+        code: 'const KEYS = ["alpha", "beta"] satisfies readonly string[]; const o = {}; for (const k of KEYS) { o[k] = 1; }',
+      },
+      {
         // Frozen inline, never named. Same guarantee, one fewer binding.
         name: 'an allowlist frozen inline in the loop head',
         code: 'const o = {}; for (const k of Object.freeze(["alpha", "beta"])) { o[k] = 1; }',
