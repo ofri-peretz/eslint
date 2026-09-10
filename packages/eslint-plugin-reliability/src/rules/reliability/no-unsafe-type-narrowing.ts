@@ -72,8 +72,11 @@ function hasExplanatoryComment(
     /type.?guard/i,
     /validated/i,
     /checked/i,
-    /safe/i,
-    /known/i,
+    // Word-bounded: `unsafe` and `unknown` must not read as permission — `unknown`
+    // is the word most likely to sit next to an `as unknown as T` cast, and
+    // `unsafe` is the opposite of consent.
+    /\bsafe\b/i,
+    /\bknown\b/i,
     /intentional/i,
     /necessary/i,
     /framework/i,
@@ -84,13 +87,33 @@ function hasExplanatoryComment(
     /fixme/i,
   ];
 
-  // Check comments before the assertion (within 1 line)
+  // Check comments before the assertion (within 1 line). The lower bound matters:
+  // without it a comment *below* the assertion yields a negative distance, which
+  // satisfies `<= 1` at any range and disarms the rule for the rest of the file.
   for (const comment of comments) {
-    if (comment.loc && nodeStart.line - comment.loc.end.line <= 1) {
-      const commentText = comment.value.toLowerCase();
-      if (explanatoryPatterns.some((pattern) => pattern.test(commentText))) {
-        return true;
-      }
+    // `loc` is required on TSESTree.Comment; the guard that used to stand here
+    // was a branch no input could take.
+    const distance = nodeStart.line - comment.loc.end.line;
+    if (distance < 0 || distance > 1) continue;
+
+    /*
+     * A comment on the line ABOVE only speaks for this assertion when it owns
+     * that line. `const a = x as unknown as A; // safe` trails a DIFFERENT
+     * statement, and carrying it over suppressed the next line's cast as well:
+     * one annotation disarmed two assertions, the second of which nobody had
+     * looked at. A comment on the assertion's OWN line is kept either way —
+     * trailing is how an inline annotation is normally spelled.
+     */
+    if (distance === 1) {
+      const before = sourceCode.getTokenBefore(comment, {
+        includeComments: true,
+      });
+      if (before && before.loc.end.line === comment.loc.start.line) continue;
+    }
+
+    const commentText = comment.value.toLowerCase();
+    if (explanatoryPatterns.some((pattern) => pattern.test(commentText))) {
+      return true;
     }
   }
 

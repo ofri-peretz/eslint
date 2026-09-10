@@ -33,6 +33,47 @@ describe('nested-complexity-hotspots', () => {
           `,
         },
         {
+          /*
+           * A flat `if / else if` chain is one level of nesting, not one per
+           * link. ESTree models `else if` as an IfStatement in `alternate`, so
+           * walking parents counted each link as another level: the last branch
+           * of this chain reported "Nesting depth 6 exceeds maximum 4" while
+           * sitting at indentation level 2.
+           *
+           * The rule's own fix text is "Use early returns, guard clauses, or
+           * extract methods" — it was flagging the shape that advice produces.
+           * ESLint core's `max-depth` excludes `else if` for the same reason,
+           * and the sibling rule cognitive-complexity already carries the
+           * comment "else if doesn't increase nesting".
+           *
+           * burgee packages/burgee/src/yargs-parser.ts:362
+           */
+          name: 'a flat else-if chain is not nesting',
+          code: `
+            for (const arg of args) {
+              if (arg === '-a') take('a');
+              else if (arg === '-b') take('b');
+              else if (arg === '-c') take('c');
+              else if (arg === '-d') take('d');
+              else if (arg === '--') break;
+              else take('x');
+            }
+          `,
+        },
+        {
+          name: 'a top-level guard chain of returns is not nesting',
+          code: `
+            function classify(x) {
+              if (x < 0) return 'neg';
+              else if (x === 0) return 'zero';
+              else if (x < 10) return 'small';
+              else if (x < 100) return 'medium';
+              else if (x < 1000) return 'large';
+              else return 'huge';
+            }
+          `,
+        },
+        {
           code: `
             if (a) {
               if (b) {
