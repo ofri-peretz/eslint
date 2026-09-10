@@ -5,6 +5,60 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.4.0
+
+### Minor Changes
+
+- **🐛 Fix** — `detect-object-injection` sees a copy loop keyed by `Object.keys`
+
+  `for (const k of Object.keys(src)) target[k] = src[k]` was silent while the
+  `for..in` spelling of the same loop reported. The two detectors were armed on
+  different predicates — the `for..in` one on a parameter **or** a request-rooted
+  source, this one on request-rooted only — so a library's `merge(target, src)`,
+  where the attacker's object arrives as a parameter, went unreported in the
+  spelling modern TypeScript actually uses.
+
+  The exemption's justification is read-shaped: keys off these loops are real
+  property names _on the source_. That says nothing about a write into a
+  different object. `JSON.parse('{"__proto__":…}')` defines `__proto__` as an own
+  enumerable property, so `Object.keys` returns it and `target[k] = …` is a
+  `[[Set]]` that walks to the setter — the lodash.merge / deep-extend CVE class
+  this detector exists for.
+
+  **This rule now reports where it did not before.** Naming `__proto__` in the
+  loop still clears the finding, the same remediation guard the `for..in` twin
+  honours — but that guard is read from TOKENS, not source text. Reading the text
+  meant a `/* __proto__ */` COMMENT anywhere in the loop cleared the report: an
+  undeclared suppression comment in the rule whose subject is prototype
+  pollution.
+
+### Patch Changes
+
+- **🐛 Fix** — `detect-object-injection` accepts an `as const` lookup table
+
+  `const M = ['log', 'warn'] as const; for (const m of M) console[m] = saved[m]`
+  reported, while the same array without `as const` was silent. The resolver read
+  through `Object.freeze(...)` and then required an `ArrayExpression`; `as const`
+  is a `TSAsExpression`, so it bailed — penalising the stronger spelling, since a
+  `readonly` tuple is the one TypeScript refuses to `.push` onto.
+
+  `<const>[...]`, the older spelling of the same assertion, unwraps too.
+
+  The rule's own benchmark spec already listed "a key from a frozen/`as const`
+  lookup table" under must-not-report; there was no fixture for it, which is how
+  the gap survived. Per-element checks are unchanged: a spread, a non-literal
+  element or a self-declared dangerous key reports exactly as before.
+
+- **🐛 Fix** — `detect-object-injection` no longer flags `Object.assign(Object.create(null), source)`
+
+  A prototype-less target has no prototype for a merged-in `__proto__` key to reach, so
+  there is nothing to report — and flagging it was counterproductive, because
+  `Object.create(null)` is the remedy this rule's own docs prescribe. `isPrototypelessObject`
+  now recognises the inlined call as well as the `const o = Object.create(null)` form.
+
+  A tainted target still reports, and `Object.assign(Object.create(proto), source)` with a
+  non-null prototype still reports.
+
 ## 5.3.5
 
 ### Patch Changes
