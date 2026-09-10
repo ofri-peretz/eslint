@@ -9,7 +9,11 @@
  * Disallows console.log with configurable strategies and LLM-optimized output
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { normalizePath, getRelativePath } from '@interlace/eslint-devkit';
 
@@ -306,7 +310,8 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
      * Supports exact matches, directory prefixes, and glob-like patterns.
      */
     const shouldIgnoreFile = (): boolean => {
-      if (ignoreNonProductionPaths && isNonProductionPath(filename)) return true;
+      if (ignoreNonProductionPaths && isNonProductionPath(filename))
+        return true;
       if (ignorePaths.length === 0) return false;
 
       const normalizedPath = normalizePath(filename);
@@ -330,7 +335,10 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
          * that, raw `*` / `?` reach `new RegExp()` and the pattern matching
          * is silently broken.
          */
-        const escaped = normalizedPattern.replace(/[.+^${}()|[\]\\*?]/g, '\\$&');
+        const escaped = normalizedPattern.replace(
+          /[.+^${}()|[\]\\*?]/g,
+          '\\$&',
+        );
         const regexPattern = escaped
           .replace(/\\\*/g, '.*')
           .replace(/\\\?/g, '.');
@@ -410,6 +418,40 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
         const fix = (fixer: TSESLint.RuleFixer) => {
           const statement = findParentStatement(node);
           if (!statement) return null;
+
+          /**
+           * `remove` and `comment` rewrite a whole STATEMENT, so they are only
+           * safe when that statement is the call itself and it sits in a
+           * statement list.
+           *
+           * Neither held in general. `findParentStatement` climbs to the
+           * nearest ExpressionStatement, ReturnStatement *or*
+           * VariableDeclaration, so `return console.log(x)` lost the early
+           * return and `export const o = { m: () => console.log(x), other }`
+           * lost the entire exported object. And when the statement was the
+           * braceless body of an `if`/`else if`/`while`/`for`, removing it left
+           * the branch headless and silently absorbed the following statement
+           * into it — found on burgee packages/burgee/src/yargs/factory.ts:1034,
+           * where the absorbed statement gates the whole help path.
+           *
+           * All of it still parses and still type-checks, so nothing surfaces.
+           * `fixable: 'code'` means "safe to apply unattended", and the docs
+           * tell users to run `--fix` in CI, so the fixer declines instead. The
+           * report is unaffected; only the automatic rewrite is withheld.
+           */
+          if (strategy === 'remove' || strategy === 'comment') {
+            const wrapsCallExactly =
+              statement.type === 'ExpressionStatement' &&
+              statement.expression === node;
+            const parentType = statement.parent?.type;
+            const inStatementList =
+              parentType === 'BlockStatement' ||
+              parentType === 'Program' ||
+              parentType === 'SwitchCase' ||
+              parentType === 'StaticBlock';
+
+            if (!wrapsCallExactly || !inStatementList) return null;
+          }
 
           switch (strategy) {
             case 'remove':

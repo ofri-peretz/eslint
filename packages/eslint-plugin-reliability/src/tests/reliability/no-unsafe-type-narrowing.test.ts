@@ -92,6 +92,14 @@ describe('no-unsafe-type-narrowing', () => {
 
     ruleTester.run('options - allowWithComment', noUnsafeTypeNarrowing, {
       valid: [
+        {
+          name: 'a trailing comment annotates the cast on its own line',
+          // Trailing is how an inline annotation is normally spelled; the
+          // escape hatch has to recognise it or it is not an escape hatch.
+          code: `const value = data as unknown as User; // safe - validated above`,
+          filename: 'src/utils.ts',
+          options: [{ allowWithComment: true }],
+        },
         // Allow with "type guard" comment
         {
           code: `// type guard validated
@@ -115,6 +123,7 @@ const value = input as unknown as Result;`,
         },
         // Allow with "safe" comment
         {
+          name: 'a "safe" comment one line above whitelists the cast',
           code: `// safe - validated above
 const value = data as unknown as User;`,
           filename: 'src/utils.ts',
@@ -122,6 +131,7 @@ const value = data as unknown as User;`,
         },
         // Allow with "known" comment
         {
+          name: 'a "known" comment one line above whitelists the cast',
           code: `// known to be this type
 const value = data as unknown as Config;`,
           filename: 'src/utils.ts',
@@ -129,6 +139,7 @@ const value = data as unknown as Config;`,
         },
         // Allow with "intentional" comment
         {
+          name: 'an "intentional" comment one line above whitelists the cast',
           code: `// intentional double assertion
 const value = data as unknown as string;`,
           filename: 'src/utils.ts',
@@ -185,6 +196,19 @@ const value = data as unknown as string;`,
         },
       ],
       invalid: [
+        {
+          name: 'a comment trailing one cast does not whitelist the next',
+          /*
+           * The annotation belongs to line 1. Reading it as "the line above" for
+           * line 2 let one `// safe` disarm two assertions, and the second was
+           * one nobody had looked at.
+           */
+          code: `const a = x as unknown as A; // safe
+const b = y as unknown as B;`,
+          filename: 'src/utils.ts',
+          options: [{ allowWithComment: true }],
+          errors: [{ messageId: 'unsafeTypeNarrowing' }],
+        },
         // allowWithComment = true but no valid comment
         {
           code: `// random comment
@@ -195,6 +219,7 @@ const value = data as unknown as string;`,
         },
         // allowWithComment = false ignores comments
         {
+          name: 'allowWithComment false ignores an otherwise-valid comment',
           code: `// intentional
 const value = data as unknown as string;`,
           filename: 'src/utils.ts',
@@ -203,6 +228,7 @@ const value = data as unknown as string;`,
         },
         // Comment too far from assertion (more than 1 line away)
         {
+          name: 'a comment more than one line above does not whitelist the cast',
           code: `// intentional
 
 
@@ -213,7 +239,42 @@ const value = data as unknown as string;`,
         },
         // No comment at all with allowWithComment
         {
+          name: 'allowWithComment true still reports an uncommented cast',
           code: `const value = data as unknown as string;`,
+          filename: 'src/utils.ts',
+          options: [{ allowWithComment: true }],
+          errors: [{ messageId: 'unsafeTypeNarrowing' }],
+        },
+        // Comment BELOW the assertion, at any distance, must not whitelist it.
+        // burgee packages/burgee/src/yargs/factory.ts:167-170, disarmed by the
+        // comment at factory.ts:1155 — 988 lines further down the file.
+        {
+          name: 'a comment below the assertion does not whitelist it',
+          code: `const value = data as unknown as string;
+
+
+
+// intentional`,
+          filename: 'src/utils.ts',
+          options: [{ allowWithComment: true }],
+          errors: [{ messageId: 'unsafeTypeNarrowing' }],
+        },
+        // "unknown" contains "known" but grants no permission — and it is the word
+        // most likely to appear next to an `as unknown as T` cast.
+        // burgee packages/burgee/src/yargs/factory.ts:1155
+        {
+          name: '"unknown" in a comment is not the keyword "known"',
+          code: `// version reads 'unknown' when no package.json is above
+const value = data as unknown as string;`,
+          filename: 'src/utils.ts',
+          options: [{ allowWithComment: true }],
+          errors: [{ messageId: 'unsafeTypeNarrowing' }],
+        },
+        // "unsafe" contains "safe" but is the opposite of consent.
+        {
+          name: '"unsafe" in a comment is not the keyword "safe"',
+          code: `// WARNING: this cast is unsafe and must be removed
+const value = data as unknown as string;`,
           filename: 'src/utils.ts',
           options: [{ allowWithComment: true }],
           errors: [{ messageId: 'unsafeTypeNarrowing' }],
@@ -261,14 +322,18 @@ const value = data as unknown as string;`,
     });
   });
   describe('Double assertions through concrete types', () => {
-    ruleTester.run('inner assertion to a concrete type is safe', noUnsafeTypeNarrowing, {
-      valid: [
-        // Double assertion whose inner type is neither unknown nor any —
-        // TSC checks this normally, the rule stays silent
-        { code: 'const y = x as string as number;', filename: 'src/app.ts' },
-      ],
-      invalid: [],
-    });
+    ruleTester.run(
+      'inner assertion to a concrete type is safe',
+      noUnsafeTypeNarrowing,
+      {
+        valid: [
+          // Double assertion whose inner type is neither unknown nor any —
+          // TSC checks this normally, the rule stays silent
+          { code: 'const y = x as string as number;', filename: 'src/app.ts' },
+        ],
+        invalid: [],
+      },
+    );
   });
 
   // ---------------------------------------------------------------------
@@ -277,15 +342,20 @@ const value = data as unknown as string;`,
 
   describe('Layer 2: options null fallback', () => {
     it('does not report a safe assertion when options is null', () => {
-      const { listeners, reports } = createWithMockContext(noUnsafeTypeNarrowing, {
-        options: [null],
-      });
+      const { listeners, reports } = createWithMockContext(
+        noUnsafeTypeNarrowing,
+        {
+          options: [null],
+        },
+      );
       const node = {
         type: 'TSAsExpression',
         expression: { type: 'Identifier', name: 'x' },
         typeAnnotation: { type: 'TSNumberKeyword' },
       } as unknown as TSESTree.TSAsExpression;
-      (listeners['TSAsExpression'] as (n: TSESTree.TSAsExpression) => void)(node);
+      (listeners['TSAsExpression'] as (n: TSESTree.TSAsExpression) => void)(
+        node,
+      );
       expect(reports).toHaveLength(0);
     });
   });
