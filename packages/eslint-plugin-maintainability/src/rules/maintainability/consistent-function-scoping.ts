@@ -19,7 +19,6 @@ export interface Options {
   checkArrowFunctions?: boolean;
 }
 
-
 type RuleOptions = [Options?];
 
 /**
@@ -42,25 +41,30 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-maintainability/docs/rules/consistent-function-scoping.md',
-      description: 'Move function definitions to the highest possible scope to improve readability and performance',
+      description:
+        'Move function definitions to the highest possible scope to improve readability and performance',
     },
     hasSuggestions: true,
     messages: {
       inconsistentFunctionScoping: formatLLMMessage({
         icon: MessageIcons.ARCHITECTURE,
         issueName: 'Inconsistent Function Scoping',
-        description: 'Function can be moved to higher scope as it doesn\'t capture outer variables',
+        description:
+          "Function can be moved to higher scope as it doesn't capture outer variables",
         severity: 'MEDIUM',
         fix: 'Move function declaration to module scope',
-        documentationLink: 'https://github.com/sindresorhus/eslint-plugin-unicorn/blob/main/docs/rules/consistent-function-scoping.md',
+        documentationLink:
+          'https://github.com/sindresorhus/eslint-plugin-unicorn/blob/main/docs/rules/consistent-function-scoping.md',
       }),
       moveToModuleScope: formatLLMMessage({
         icon: MessageIcons.ARCHITECTURE,
         issueName: 'Function Scoping Optimization',
-        description: 'Function does not use variables from its containing scope and can be moved to module level',
+        description:
+          'Function does not use variables from its containing scope and can be moved to module level',
         severity: 'MEDIUM',
         fix: 'Move function outside current scope: extract `function helper() { return "value"; }` to module level before the containing function/class',
-        documentationLink: 'https://github.com/sindresorhus/eslint-plugin-unicorn/blob/main/docs/rules/consistent-function-scoping.md',
+        documentationLink:
+          'https://github.com/sindresorhus/eslint-plugin-unicorn/blob/main/docs/rules/consistent-function-scoping.md',
       }),
     },
     schema: [
@@ -80,9 +84,7 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
 
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
-    const {
-      checkArrowFunctions = true,
-    } = options || {};
+    const { checkArrowFunctions = true } = options || {};
 
     // Track variables declared in each scope
     const scopeStack: Set<string>[] = [new Set()];
@@ -102,6 +104,47 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
       }
     }
 
+    /**
+     * Every name a binding target introduces, destructuring included.
+     *
+     * Only `Identifier` was recorded before, so `const { out } = opts` and
+     * `function f({ out })` bound nothing as far as this rule was concerned. A
+     * nested function that captured `out` then looked as though it captured
+     * nothing, and the report asserted "doesn't capture outer variables" about
+     * code where ESLint's own scope manager resolves the reference to the
+     * enclosing function — with a suggested move that does not compile.
+     */
+    function addBindingToCurrentScope(target: TSESTree.Node) {
+      switch (target.type) {
+        case 'Identifier':
+          addVariableToCurrentScope(target.name);
+          break;
+        case 'ObjectPattern':
+          for (const prop of target.properties) {
+            addBindingToCurrentScope(
+              prop.type === 'RestElement' ? prop.argument : prop.value,
+            );
+          }
+          break;
+        case 'ArrayPattern':
+          for (const element of target.elements) {
+            if (element) addBindingToCurrentScope(element);
+          }
+          break;
+        case 'AssignmentPattern':
+          addBindingToCurrentScope(target.left);
+          break;
+        case 'RestElement':
+          addBindingToCurrentScope(target.argument);
+          break;
+        case 'TSParameterProperty':
+          addBindingToCurrentScope(target.parameter);
+          break;
+        // No default: the six cases above are every BindingName and every
+        // Parameter shape, so a seventh would be a parser change, not a
+        // reachable path.
+      }
+    }
 
     function getOuterScopeVariables(): Set<string> {
       const outerScopes = scopeStack.slice(0, -1);
@@ -114,7 +157,45 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
       return outerVars;
     }
 
-    function analyzeFunction(node: TSESTree.FunctionDeclaration | TSESTree.FunctionExpression | TSESTree.ArrowFunctionExpression) {
+    /**
+     * Does this arrow reference `this`?
+     *
+     * Nested arrows inherit the same `this`, so they count. A nested `function`
+     * / method / class body rebinds it, so its `this` is a different one and
+     * the walk stops there.
+     */
+    function capturesThis(node: TSESTree.Node): boolean {
+      if (node.type === 'ThisExpression') return true;
+
+      for (const key in node) {
+        if (key === 'parent') continue;
+        const value = (node as unknown as Record<string, unknown>)[key];
+        const children = Array.isArray(value) ? value : [value];
+        for (const child of children) {
+          if (!child || typeof child !== 'object') continue;
+          const childNode = child as TSESTree.Node;
+          if (typeof childNode.type !== 'string') continue;
+          if (
+            childNode.type === 'FunctionDeclaration' ||
+            childNode.type === 'FunctionExpression' ||
+            childNode.type === 'ClassDeclaration' ||
+            childNode.type === 'ClassExpression'
+          ) {
+            continue;
+          }
+          if (capturesThis(childNode)) return true;
+        }
+      }
+
+      return false;
+    }
+
+    function analyzeFunction(
+      node:
+        | TSESTree.FunctionDeclaration
+        | TSESTree.FunctionExpression
+        | TSESTree.ArrowFunctionExpression,
+    ) {
       /**
        * Already at the top scope, so there is nowhere to move it.
        *
@@ -153,6 +234,24 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
       // `this` is wrongly flagged.
       const p = node.parent;
       if (p?.type === 'MethodDefinition' || p?.type === 'PropertyDefinition') {
+        return;
+      }
+
+      /**
+       * An arrow captures `this` lexically, so it is bound to the instance for
+       * the same reason the methods above are — moving it to module scope makes
+       * `this` undefined (TS2532 under --strict, a TypeError at runtime).
+       *
+       * The exemption above was positional and so never reached an arrow nested
+       * INSIDE a method: the rule was exactly backwards on the axis it says it
+       * cares about, exempting methods that never touch `this` while reporting
+       * arrows that do.
+       *
+       * Only arrows. A nested `function` declaration's `this` is dynamic, so
+       * hoisting it and keeping `f.call(this)` compiles and runs — that report
+       * is legitimate and stays.
+       */
+      if (node.type === 'ArrowFunctionExpression' && capturesThis(node)) {
         return;
       }
 
@@ -230,7 +329,7 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
             const child = (astNode as unknown as Record<string, unknown>)[key];
             if (child && typeof child === 'object') {
               if (Array.isArray(child)) {
-                child.forEach(item => {
+                child.forEach((item) => {
                   if (item && typeof item === 'object' && 'type' in item) {
                     collectReferences(item, depth + 1);
                   }
@@ -247,7 +346,9 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
 
       // Collect all references in the function body
       if (node.body.type === 'BlockStatement') {
-        node.body.body.forEach((stmt: TSESTree.Statement) => collectReferences(stmt));
+        node.body.body.forEach((stmt: TSESTree.Statement) =>
+          collectReferences(stmt),
+        );
       } else {
         // Arrow function with expression body
         collectReferences(node.body);
@@ -255,9 +356,7 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
 
       // Check function parameters
       node.params.forEach((param: TSESTree.Parameter) => {
-        if (param.type === 'Identifier') {
-          referencedVars.add(param.name);
-        }
+        collectReferences(param);
       });
 
       // Get variables from outer scopes
@@ -275,7 +374,8 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
       // If function doesn't capture any outer variables, it can be moved up
       if (!capturesOuterVar) {
         // Additional check: ensure function name doesn't conflict at module scope
-        const functionName = node.type === 'FunctionDeclaration' ? node.id?.name : undefined;
+        const functionName =
+          node.type === 'FunctionDeclaration' ? node.id?.name : undefined;
         const moduleScope = scopeStack[0];
 
         if (!functionName || !moduleScope.has(functionName)) {
@@ -294,7 +394,10 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
                   // 2. Moving the function declaration33 3
                   // 3. Updating any references
                   // For now, just provide a suggestion
-                  return fixer.insertTextBefore(node, '// TODO: Move this function to module scope - it doesn\'t capture outer variables\n');
+                  return fixer.insertTextBefore(
+                    node,
+                    "// TODO: Move this function to module scope - it doesn't capture outer variables\n",
+                  );
                 },
               },
             ],
@@ -316,9 +419,7 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
         enterScope();
         // Add function parameters to the current scope
         node.params.forEach((param: TSESTree.Parameter) => {
-          if (param.type === 'Identifier') {
-            addVariableToCurrentScope(param.name);
-          }
+          addBindingToCurrentScope(param);
         });
         analyzeFunction(node);
       },
@@ -331,9 +432,7 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
         enterScope();
         // Add function parameters to the current scope
         node.params.forEach((param: TSESTree.Parameter) => {
-          if (param.type === 'Identifier') {
-            addVariableToCurrentScope(param.name);
-          }
+          addBindingToCurrentScope(param);
         });
         // Only check function expressions if they are assigned to variables
         // (not just used as callbacks)
@@ -348,9 +447,7 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
         enterScope();
         // Add function parameters to the current scope
         node.params.forEach((param: TSESTree.Parameter) => {
-          if (param.type === 'Identifier') {
-            addVariableToCurrentScope(param.name);
-          }
+          addBindingToCurrentScope(param);
         });
         if (checkArrowFunctions) {
           analyzeFunction(node);
@@ -364,9 +461,7 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
       VariableDeclaration(node: TSESTree.VariableDeclaration) {
         // Add variables to current scope
         node.declarations.forEach((decl: TSESTree.VariableDeclarator) => {
-          if (decl.id.type === 'Identifier') {
-            addVariableToCurrentScope(decl.id.name);
-          }
+          addBindingToCurrentScope(decl.id);
         });
       },
     };
