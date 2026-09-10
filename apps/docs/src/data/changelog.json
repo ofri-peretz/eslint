@@ -5,6 +5,196 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "eslint-plugin-import-next",
+      "short": "eslint-plugin-import-next",
+      "version": "2.7.8",
+      "date": "2026-09-10T15:53:54Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`consistent-type-specifier-style` no longer deletes a default import",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`enforce-import-order`'s fixer no longer moves `@ts-nocheck` below an import",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`default` no longer reports default imports of `export =` / CJS-interop modules",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-internal-modules` keeps parent traversal, and no longer crashes on a template-literal `require`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-reliability",
+      "short": "eslint-plugin-reliability",
+      "version": "4.1.7",
+      "date": "2026-09-10T15:53:51Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-unsafe-type-narrowing`'s `allowWithComment` no longer disarms the whole file",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "two rules that could not report anything",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.4.0",
+      "date": "2026-09-10T15:53:51Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`detect-object-injection` sees a copy loop keyed by `Object.keys`",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`detect-object-injection` accepts an `as const` lookup table",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`detect-object-injection` no longer flags `Object.assign(Object.create(null), source)`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-jwt-security",
+      "short": "eslint-plugin-jwt-security",
+      "version": "3.3.0",
+      "date": "2026-09-10T15:53:43Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "only `algorithms` counts as an algorithm whitelist, and a byte-wrapped secret is still a secret",
+          "pr": null
+        },
+        {
+          "kind": "feature",
+          "title": "cover jose's JWS-level verify entry points",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-react-features",
+      "short": "eslint-plugin-react-features",
+      "version": "1.7.5",
+      "date": "2026-09-10T15:53:41Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "two rules that could not report anything",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "5.5.0",
+      "date": "2026-09-10T15:53:17Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "detect Diffie-Hellman and ECDH parameters below a safe strength",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-conventions",
+      "short": "eslint-plugin-conventions",
+      "version": "6.0.0",
+      "date": "2026-09-10T15:53:08Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "breaking",
+          "title": "`consistent-existence-index-check` defaults to `Object.hasOwn`, not `in`",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`consistent-existence-index-check` will not splice a sequence expression",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-operability",
+      "short": "eslint-plugin-operability",
+      "version": "4.1.3",
+      "date": "2026-09-10T15:53:02Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-console-log`'s `remove` and `comment` strategies no longer change control flow",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-maintainability",
+      "short": "eslint-plugin-maintainability",
+      "version": "3.2.6",
+      "date": "2026-09-10T15:53:00Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`consistent-function-scoping` sees destructured bindings and `this`",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`nested-complexity-hotspots` no longer counts `else if` as a nesting level",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`identical-functions` stops calling private accessors identical",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-lonely-if` requires the `if` to actually be alone",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-conventions",
       "short": "eslint-plugin-conventions",
       "version": "5.3.5",
@@ -16645,76 +16835,6 @@
       ]
     },
     {
-      "package": "eslint-plugin-conventions",
-      "short": "eslint-plugin-conventions",
-      "version": "6.0.0",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "breaking",
-          "title": "`consistent-existence-index-check` defaults to `Object.hasOwn`, not `in`",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "`consistent-existence-index-check` will not splice a sequence expression",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-import-next",
-      "short": "eslint-plugin-import-next",
-      "version": "2.7.8",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`consistent-type-specifier-style` no longer deletes a default import",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "`enforce-import-order`'s fixer no longer moves `@ts-nocheck` below an import",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "`default` no longer reports default imports of `export =` / CJS-interop modules",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "`no-internal-modules` keeps parent traversal, and no longer crashes on a template-literal `require`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-jwt-security",
-      "short": "eslint-plugin-jwt-security",
-      "version": "3.3.0",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "only `algorithms` counts as an algorithm whitelist, and a byte-wrapped secret is still a secret",
-          "pr": null
-        },
-        {
-          "kind": "feature",
-          "title": "cover jose's JWS-level verify entry points",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "eslint-plugin-jwt-security",
       "short": "eslint-plugin-jwt-security",
       "version": "2.2.9",
@@ -16830,66 +16950,6 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-maintainability",
-      "short": "eslint-plugin-maintainability",
-      "version": "3.2.6",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`consistent-function-scoping` sees destructured bindings and `this`",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "`nested-complexity-hotspots` no longer counts `else if` as a nesting level",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "`identical-functions` stops calling private accessors identical",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "`no-lonely-if` requires the `if` to actually be alone",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-node-security",
-      "short": "eslint-plugin-node-security",
-      "version": "5.5.0",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "feature",
-          "title": "detect Diffie-Hellman and ECDH parameters below a safe strength",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-operability",
-      "short": "eslint-plugin-operability",
-      "version": "4.1.3",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`no-console-log`'s `remove` and `comment` strategies no longer change control flow",
           "pr": null
         }
       ]
@@ -17015,66 +17075,6 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-react-features",
-      "short": "eslint-plugin-react-features",
-      "version": "1.7.5",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "two rules that could not report anything",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-reliability",
-      "short": "eslint-plugin-reliability",
-      "version": "4.1.7",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`no-unsafe-type-narrowing`'s `allowWithComment` no longer disarms the whole file",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "two rules that could not report anything",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-secure-coding",
-      "short": "eslint-plugin-secure-coding",
-      "version": "5.4.0",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`detect-object-injection` sees a copy loop keyed by `Object.keys`",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "`detect-object-injection` accepts an `as const` lookup table",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "`detect-object-injection` no longer flags `Object.assign(Object.create(null), source)`",
           "pr": null
         }
       ]
