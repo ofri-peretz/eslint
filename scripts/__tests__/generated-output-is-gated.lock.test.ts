@@ -5,6 +5,8 @@
  */
 
 /**
+ * @provenBy {"file": "scripts/lib/ci-shard-affected.mts", "find": "  const isSeed = (p: AffectedPkg) =>\n    touchedDirs.has(p.dir) || generated.has(p.name);", "replace": "  const isSeed = (p: AffectedPkg) => touchedDirs.has(p.dir);"}
+ *
  * A committed generated file is only guarded if its gate is DISPATCHED on the
  * PR that stales it.
  *

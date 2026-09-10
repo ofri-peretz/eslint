@@ -5,6 +5,8 @@
  */
 
 /**
+ * @provenBy {"file": ".github/workflows/quality-full.yml", "find": "      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n        with:\n          persist-credentials: false\n\n      - name: Render gate report", "replace": "      - name: Render gate report"}
+ *
  * A local action (`uses: ./...`) is read off the WORKSPACE. Without an
  * `actions/checkout` earlier in the same job the workspace is empty, and the
  * step dies with:
