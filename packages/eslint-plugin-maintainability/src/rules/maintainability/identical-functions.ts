@@ -84,11 +84,46 @@ export function buildGenericName(firstFunctionName: string): string {
  * bracket pattern into the same string.
  */
 const RESERVED_WORDS: ReadonlySet<string> = new Set([
-  'await', 'break', 'case', 'catch', 'class', 'const', 'continue', 'debugger',
-  'default', 'delete', 'do', 'else', 'export', 'extends', 'finally', 'for',
-  'function', 'if', 'import', 'in', 'instanceof', 'let', 'new', 'of', 'return',
-  'super', 'switch', 'this', 'throw', 'try', 'typeof', 'var', 'void', 'while',
-  'with', 'yield', 'true', 'false', 'null', 'undefined',
+  'await',
+  'break',
+  'case',
+  'catch',
+  'class',
+  'const',
+  'continue',
+  'debugger',
+  'default',
+  'delete',
+  'do',
+  'else',
+  'export',
+  'extends',
+  'finally',
+  'for',
+  'function',
+  'if',
+  'import',
+  'in',
+  'instanceof',
+  'let',
+  'new',
+  'of',
+  'return',
+  'super',
+  'switch',
+  'this',
+  'throw',
+  'try',
+  'typeof',
+  'var',
+  'void',
+  'while',
+  'with',
+  'yield',
+  'true',
+  'false',
+  'null',
+  'undefined',
 ]);
 
 /**
@@ -408,20 +443,36 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
         // Property names and object KEYS are kept for the same reason —
         // `.create(x)` is not `.destroy(x)`, and `{ create: id }` is not
         // `{ destroy: id }`. Erasing either is erasing the operation.
+        //
+        // A PRIVATE member name is a member name. `#` is a non-word character,
+        // so `\b` matches right after it and the `\.` alternative alone would
+        // miss `this.#detectLocale`, renaming the field to VAR and collapsing
+        // every private accessor in a class into one "100% identical" group —
+        // while the public spelling stays apart. `#brand in obj` has no dot at
+        // all, hence the second alternative.
         .replace(
-          /(\.\s*)?\b[a-z_$][a-zA-Z0-9_$]*\b(\s*:)?/g,
-          (match, memberPrefix: string | undefined, keySuffix: string | undefined) => {
+          /(\.\s*#?|#)?\b[a-z_$][a-zA-Z0-9_$]*\b(\s*:)?/g,
+          (
+            match,
+            memberPrefix: string | undefined,
+            keySuffix: string | undefined,
+          ) => {
             if (memberPrefix || keySuffix) return match;
             return RESERVED_WORDS.has(match) ? match : 'VAR';
           },
         );
 
-      return text
-        // Every placeholder was written from this same array one step above,
-        // so the index always resolves — a `??` fallback here would be a branch
-        // no input can take.
-        .replace(/\uE000(\d+)\uE000/g, (_match, index: string) => literals[Number(index)] as string)
-        .trim();
+      return (
+        text
+          // Every placeholder was written from this same array one step above,
+          // so the index always resolves — a `??` fallback here would be a branch
+          // no input can take.
+          .replace(
+            /\uE000(\d+)\uE000/g,
+            (_match, index: string) => literals[Number(index)] as string,
+          )
+          .trim()
+      );
     }
 
     /**
