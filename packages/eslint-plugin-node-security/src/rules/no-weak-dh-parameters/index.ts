@@ -171,7 +171,11 @@ export const noWeakDhParameters = createRule<RuleOptions, MessageIds>({
       description:
         'Disallow Diffie-Hellman and ECDH parameters below a safe strength',
       cwe: 'CWE-326',
-      cvss: 7.5,
+      // The devkit's canonical band for CWE-326. A rule does not get to label
+      // its own findings more severe than the CWE it claims — that is what
+      // `Severity labels must agree with the CVSS band they render` enforces,
+      // and it caught this rule asserting HIGH over a 5.9 score.
+      cvss: 5.9,
     },
     hasSuggestions: false,
     messages: {
@@ -181,7 +185,7 @@ export const noWeakDhParameters = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-326',
         description:
           'MODP group {{group}} is {{bits}}-bit, below the {{minimum}}-bit floor. A named group is a fixed prime, so one precomputation breaks every session that used it — this is the Logjam attack.',
-        severity: 'HIGH',
+        severity: 'MEDIUM',
         fix: "Use crypto.getDiffieHellman('modp14') or larger, or prefer ECDH on a modern curve",
         documentationLink: 'https://weakdh.org',
       }),
@@ -191,7 +195,7 @@ export const noWeakDhParameters = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-326',
         description:
           'A {{bits}}-bit Diffie-Hellman prime is below the {{minimum}}-bit floor.',
-        severity: 'HIGH',
+        severity: 'MEDIUM',
         fix: 'crypto.createDiffieHellman({{minimum}})',
         documentationLink:
           'https://nodejs.org/api/crypto.html#cryptocreatediffiehellmanprimelength-generator',
@@ -202,7 +206,7 @@ export const noWeakDhParameters = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-326',
         description:
           'Curve {{curve}} has a field size under 224 bits and does not offer contemporary security margins.',
-        severity: 'HIGH',
+        severity: 'MEDIUM',
         fix: "crypto.createECDH('prime256v1'), or 'secp384r1' for a larger margin",
         documentationLink:
           'https://nodejs.org/api/crypto.html#cryptocreateecdhcurvename',

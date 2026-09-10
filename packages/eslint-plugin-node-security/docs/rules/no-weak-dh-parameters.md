@@ -3,15 +3,15 @@ title: no-weak-dh-parameters
 description: Disallow Diffie-Hellman and ECDH parameters below a safe strength
 tags: ['security', 'cryptography', 'cwe-326', 'nodejs']
 category: security
-severity: high
+severity: medium
 cwe: CWE-326
-owasp: 'A02:2021'
+owasp: 'A04:2025'
 autofix: false
 ---
 
 > **Keywords:** Diffie-Hellman, DH, ECDH, MODP group, Logjam, weak curve, key agreement, CWE-326, security, ESLint rule, LLM-optimized
 > **CWE:** [CWE-326](https://cwe.mitre.org/data/definitions/326.html)
-> **OWASP:** [A02:2021-Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
+> **OWASP:** [A04:2025-Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
 
 <!-- @rule-summary -->
 
@@ -27,7 +27,7 @@ Detects Diffie-Hellman key agreement configured with a modulus or curve too smal
 | Aspect            | Details                                                                          |
 | ----------------- | -------------------------------------------------------------------------------- |
 | **CWE Reference** | [CWE-326](https://cwe.mitre.org/data/definitions/326.html) (Inadequate Strength) |
-| **Severity**      | High (security vulnerability)                                                    |
+| **Severity**      | Medium (security vulnerability)                                                  |
 | **Auto-Fix**      | None — the replacement is a deployment decision                                  |
 | **Category**      | Security                                                                         |
 | **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                          |
@@ -128,7 +128,7 @@ const wider = crypto.createECDH('secp384r1');
 
 | Vulnerability       | CWE | OWASP    | CVSS         | Impact                  |
 | ------------------- | --- | -------- | ------------ | ----------------------- |
-| Inadequate Strength | 326 | A02:2021 | 7.5 High     | Retroactive decryption  |
+| Inadequate Strength | 326 | A04:2025 | 5.9 Medium   | Retroactive decryption  |
 | Broken Crypto       | 327 | A02:2021 | 9.1 Critical | Loss of forward secrecy |
 
 ## Migration Guide
