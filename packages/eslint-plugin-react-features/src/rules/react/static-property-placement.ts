@@ -25,7 +25,13 @@ export interface Options {
 const DEFAULT_GROUPS = [
   {
     name: 'propTypes',
-    properties: ['propTypes', 'defaultProps', 'childContextTypes', 'contextTypes', 'contextType'],
+    properties: [
+      'propTypes',
+      'defaultProps',
+      'childContextTypes',
+      'contextTypes',
+      'contextType',
+    ],
   },
   {
     name: 'lifecycle',
@@ -70,7 +76,8 @@ export const staticPropertyPlacement = createRule<[Options], MessageIds>({
         description: 'Static properties should be grouped together',
         severity: 'LOW',
         fix: 'Group static properties together by category',
-        documentationLink: 'https://react.dev/reference/react/Component#static-properties',
+        documentationLink:
+          'https://react.dev/reference/react/Component#static-properties',
       }),
     },
   },
@@ -92,14 +99,18 @@ export const staticPropertyPlacement = createRule<[Options], MessageIds>({
       if (!node.superClass) return false;
 
       if (node.superClass.type === 'Identifier') {
-        return node.superClass.name === 'Component' || node.superClass.name === 'PureComponent';
+        return (
+          node.superClass.name === 'Component' ||
+          node.superClass.name === 'PureComponent'
+        );
       }
 
       if (node.superClass.type === 'MemberExpression') {
         return (
           node.superClass.object.type === 'Identifier' &&
           node.superClass.object.name === 'React' &&
-          (propertyName(node.superClass) === 'Component' || propertyName(node.superClass) === 'PureComponent')
+          (propertyName(node.superClass) === 'Component' ||
+            propertyName(node.superClass) === 'PureComponent')
         );
       }
 
@@ -108,10 +119,14 @@ export const staticPropertyPlacement = createRule<[Options], MessageIds>({
 
     function checkStaticPropertyPlacement(
       node: TSESTree.ClassDeclaration,
-      groups: NonNullable<Options['propertyGroups']>
+      groups: NonNullable<Options['propertyGroups']>,
     ) {
       const members = node.body.body;
-      const staticProperties: Array<{ name: string; index: number; node: TSESTree.PropertyDefinition | TSESTree.MethodDefinition }> = [];
+      const staticProperties: Array<{
+        name: string;
+        index: number;
+        node: TSESTree.PropertyDefinition | TSESTree.MethodDefinition;
+      }> = [];
 
       // Collect static properties
       for (let i = 0; i < members.length; i++) {
@@ -126,49 +141,74 @@ export const staticPropertyPlacement = createRule<[Options], MessageIds>({
 
       if (staticProperties.length < 2) return;
 
-      // Check if properties are properly grouped
-      for (let i = 1; i < staticProperties.length; i++) {
-        const current = staticProperties[i];
-        const previous = staticProperties[i - 1];
+      // "Grouped together" means CONTIGUOUS. A group is broken when one of its
+      // members appears after something else came between it and the previous
+      // member of the same group — `propTypes`, something else, `defaultProps`.
+      //
+      // The previous implementation asked `!areInSameGroup(current, previous)`,
+      // which is a different and wrong question: two ADJACENT properties from
+      // different groups are exactly what correct grouping looks like. It then
+      // did nothing with the answer — the report had been deleted along with an
+      // unreachable branch beside it, leaving an empty `if` and a rule that
+      // could not fire. Both plugin exports shipped that way.
+      // A member of NO known group never breaks anything: nothing here says it
+      // does not belong with whatever surrounds it, and guessing is how a rule
+      // starts reporting code it cannot read. Only resuming a group after a
+      // member of a DIFFERENT known group is a break we can prove.
+      const seen = new Set<string>();
+      let previousGroup: string | null = null;
 
-        if (!areInSameGroup(current.name, previous.name, groups)) {
-          // `staticProperties` holds every named static member in source
-          // order, so the members strictly between `previous` and `current`
-          // are either non-static or computed-key statics (no name). The
-          // historical implementation walked that gap looking for a named
-          // static property to report — a provably unreachable path (a named
-          // static in the gap would itself already be in `staticProperties`).
-          // That dead branch was deleted rather than coverage-ignored.
+      for (const property of staticProperties) {
+        const group = groupOf(property.name, groups);
+        if (group === null) continue;
+
+        if (seen.has(group) && previousGroup !== group) {
+          context.report({
+            node: property.node,
+            messageId: 'staticPropertyPlacement',
+          });
         }
+        seen.add(group);
+        previousGroup = group;
       }
     }
 
+    /** The name of the group this property belongs to, or null if it is in none. */
     // oxlint-disable-next-line consistent-function-scoping
-    function isStaticProperty(member: TSESTree.ClassBody['body'][0]): member is TSESTree.PropertyDefinition | TSESTree.MethodDefinition {
-      return (
-        // Handle PropertyDefinition and MethodDefinition
-        (member.type === 'PropertyDefinition' || member.type === 'MethodDefinition') &&
-        member.static
-      );
-    }
-
-    // oxlint-disable-next-line consistent-function-scoping
-    function getPropertyName(member: TSESTree.PropertyDefinition | TSESTree.MethodDefinition): string | null {
-      if (member.key.type === 'Identifier') {
-        return member.key.name;
+    function groupOf(
+      name: string,
+      groups: NonNullable<Options['propertyGroups']>,
+    ): string | null {
+      for (const group of groups) {
+        if (group.properties.includes(name)) return group.name;
       }
       return null;
     }
 
     // oxlint-disable-next-line consistent-function-scoping
-    function areInSameGroup(name1: string, name2: string, groups: NonNullable<Options['propertyGroups']>): boolean {
-      for (const group of groups) {
-        if (group.properties.includes(name1) && group.properties.includes(name2)) {
-          return true;
-        }
-      }
-      return false;
+    function isStaticProperty(
+      member: TSESTree.ClassBody['body'][0],
+    ): member is TSESTree.PropertyDefinition | TSESTree.MethodDefinition {
+      return (
+        // Handle PropertyDefinition and MethodDefinition
+        (member.type === 'PropertyDefinition' ||
+          member.type === 'MethodDefinition') &&
+        member.static
+      );
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
+    function getPropertyName(
+      member: TSESTree.PropertyDefinition | TSESTree.MethodDefinition,
+    ): string | null {
+      // `static [propTypes] = {}` is a property whose name is whatever the
+      // VARIABLE `propTypes` holds — not the property `propTypes`. Reading the
+      // identifier through a computed key was the same mistake in miniature as
+      // the one this rule's grouping check made.
+      if (!member.computed && member.key.type === 'Identifier') {
+        return member.key.name;
+      }
+      return null;
+    }
   },
 });
