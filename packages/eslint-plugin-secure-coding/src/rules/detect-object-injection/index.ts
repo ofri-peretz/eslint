@@ -776,6 +776,26 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * call result) stays untrusted — absence of evidence is not evidence of
      * safety, and that asymmetry is deliberate.
      */
+    // `as const` and `satisfies` are type-level annotations that wrap the
+    // initialiser node without changing the value. A resolver that matches an
+    // initialiser against ArrayExpression/ObjectExpression has to step past them
+    // or it judges the canonical TypeScript spelling of a closed set — the very
+    // remediation this rule recommends — less safe than the bare literal.
+    const withoutTypeAnnotation = (node: TSESTree.Node): TSESTree.Node => {
+      let current = node;
+      while (
+        current.type === AST_NODE_TYPES.TSAsExpression ||
+        // `<const>[...]` is the older spelling of `[...] as const`, and it has
+        // to unwrap to the same array or the rule penalises one of the two ways
+        // TypeScript writes the very remediation it recommends.
+        current.type === AST_NODE_TYPES.TSTypeAssertion ||
+        current.type === AST_NODE_TYPES.TSSatisfiesExpression
+      ) {
+        current = current.expression;
+      }
+      return current;
+    };
+
     const isLocallyConstructed = (id: TSESTree.Identifier): boolean => {
       const variable = resolvedReference(sourceCode.getScope(id), id);
       if (!variable || variable.defs.length !== 1) return false;
@@ -790,8 +810,9 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // The initialiser is itself one write, so more than one means reassignment.
       if (variable.references.filter((ref) => ref.isWrite()).length > 1)
         return false;
-      const init = (def.node as TSESTree.VariableDeclarator).init;
-      if (!init) return false;
+      const rawInit = (def.node as TSESTree.VariableDeclarator).init;
+      if (!rawInit) return false;
+      const init = withoutTypeAnnotation(rawInit);
       return (
         init.type === AST_NODE_TYPES.ObjectExpression ||
         init.type === AST_NODE_TYPES.ArrayExpression ||
@@ -1425,7 +1446,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       )
         return false;
 
-      let source: TSESTree.Node = loop.right;
+      let source: TSESTree.Node = withoutTypeAnnotation(loop.right);
       // `Object.freeze([...])` is the same literal with a guarantee attached.
       if (
         source.type === AST_NODE_TYPES.CallExpression &&
@@ -1459,6 +1480,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       ) {
         source = source.arguments[0];
       }
+      source = withoutTypeAnnotation(source);
       if (source.type !== AST_NODE_TYPES.ArrayExpression) return false;
       if (source.elements.length === 0) return false;
       return source.elements.every((element) => {
@@ -2299,7 +2321,15 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         return;
       }
       const source = iterated.arguments[0];
-      if (source === undefined || !isUntrustedExpression(source)) return;
+      // Same predicate the `for..in` copy loop arms on. It used to be the
+      // narrower `isUntrustedExpression` — request-rooted only — so the copy that
+      // reports as `for (const k in src)` was silent as
+      // `for (const k of Object.keys(src))` whenever `src` was a parameter. The
+      // spelling was deciding the verdict, not the security judgement: an
+      // attacker-supplied object reaches a library's `merge(target, src)` as a
+      // parameter, and `Object.keys` of a JSON.parse'd object contains
+      // `__proto__` because JSON.parse defines it as an own property.
+      if (source === undefined || !isCopyLoopSourceOpaque(source)) return;
 
       // The loop binding. Two spellings, and missing the second left the
       // `Object.entries` form — the more idiomatic one, since it avoids the
@@ -2319,9 +2349,23 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
 
       // An allowlist inside the body is the remediation — naming the edit that
       // clears this finding is what keeps the rule satisfiable.
-      const body = sourceCode.getText(node.body);
+      // TOKENS, not `getText` — the same trap the `for..in` twin documents forty
+      // lines below, walked into again by the arm that taught this rule to read
+      // `for..of`. Source text carries comments, so `/* __proto__ */` written
+      // anywhere in the loop cleared the finding: a suppression comment nobody
+      // declared, in a rule whose whole job is prototype pollution. Joined
+      // without separators so a multi-token guard still reads as one string.
+      const body = sourceCode
+        .getTokens(node.body)
+        .map((token) => token.value)
+        .join('');
       if (/\b(includes|has|hasOwn|hasOwnProperty|indexOf)\s*\(/.test(body))
         return;
+      // The `for..in` twin also clears a loop that names the polluting keys
+      // itself — `if (k === '__proto__') continue` is the documented guard, and
+      // reporting the fix is how a rule becomes unsatisfiable. Same guard here,
+      // so the two spellings agree on what counts as remediated.
+      if (/__proto__|constructor|prototype/.test(body)) return;
 
       // A computed write keyed by the loop variable, anywhere in the body.
       let reported = false;

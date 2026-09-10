@@ -37,9 +37,15 @@ import { noLonelyIf } from '../rules/maintainability/no-lonely-if';
 type AnyNode = any;
 
 /** Invoke a visitor listener with a synthetic node. */
-function invoke(listeners: Record<string, unknown>, key: string, node: AnyNode) {
+function invoke(
+  listeners: Record<string, unknown>,
+  key: string,
+  node: AnyNode,
+) {
   const listener = listeners[key] as (n: AnyNode) => void;
-  expect(typeof listener, `listener "${key}" should be a function`).toBe('function');
+  expect(typeof listener, `listener "${key}" should be a function`).toBe(
+    'function',
+  );
   listener(node);
 }
 
@@ -55,7 +61,9 @@ describe('module entry points', () => {
   it('oxlint shim re-exports the exact plugin object from the index barrel', () => {
     expect(oxlintPlugin).toBe(indexPlugin);
     expect(oxlintPlugin).toBe(indexDefault);
-    expect(Object.keys(oxlintPlugin.rules ?? {})).toContain('cognitive-complexity');
+    expect(Object.keys(oxlintPlugin.rules ?? {})).toContain(
+      'cognitive-complexity',
+    );
   });
 
   it('type barrel is type-only: importing it yields no runtime exports', () => {
@@ -87,16 +95,22 @@ describe('no-silent-errors — parser-unreachable catch shapes', () => {
     const { listeners, reports } = createWithMockContext(noSilentErrors, {
       options: [null],
     });
-    invoke(listeners, 'CatchClause', { type: 'CatchClause', body: emptyBlockBody() });
+    invoke(listeners, 'CatchClause', {
+      type: 'CatchClause',
+      body: emptyBlockBody(),
+    });
     expect(reports).toHaveLength(1);
     expect(reportMessageId(reports[0])).toBe('silentError');
     expect((reports[0] as AnyNode).suggest).toHaveLength(3);
   });
 
   it('allowWithComment: a catch clause without a location cannot match comments and reports', () => {
-    const { listeners, reports, context } = createWithMockContext(noSilentErrors, {
-      options: [{ allowWithComment: true }],
-    });
+    const { listeners, reports, context } = createWithMockContext(
+      noSilentErrors,
+      {
+        options: [{ allowWithComment: true }],
+      },
+    );
     // The devkit mock has no getAllComments; attach one with a would-match comment.
     Object.assign(context.sourceCode as unknown as Record<string, unknown>, {
       getAllComments: () => [
@@ -123,7 +137,9 @@ describe('error-message — listener called with a non-constructor node', () => 
 
 describe('consistent-function-scoping — degenerate scope stacks', () => {
   it('ignores variable declarations once every scope has been popped', () => {
-    const { listeners, reports } = createWithMockContext(consistentFunctionScoping);
+    const { listeners, reports } = createWithMockContext(
+      consistentFunctionScoping,
+    );
     // Pop the initial scope so the stack is empty.
     (listeners['Program:exit'] as () => void)();
     invoke(listeners, 'VariableDeclaration', {
@@ -134,7 +150,9 @@ describe('consistent-function-scoping — degenerate scope stacks', () => {
   });
 
   it('suppresses the report when the module scope already has the function name', () => {
-    const { listeners, reports } = createWithMockContext(consistentFunctionScoping);
+    const { listeners, reports } = createWithMockContext(
+      consistentFunctionScoping,
+    );
     // Without a Program node, declarations land in the root scope, which is
     // also the module scope consulted for name conflicts.
     invoke(listeners, 'VariableDeclaration', {
@@ -155,25 +173,37 @@ describe('consistent-function-scoping — degenerate scope stacks', () => {
 describe('no-missing-error-context — throw without an argument (invalid JS, defensive)', () => {
   it('reports a missing message for `throw` with no argument', () => {
     const { listeners, reports } = createWithMockContext(noMissingErrorContext);
-    invoke(listeners, 'ThrowStatement', { type: 'ThrowStatement', argument: null });
+    invoke(listeners, 'ThrowStatement', {
+      type: 'ThrowStatement',
+      argument: null,
+    });
     expect(reports).toHaveLength(1);
     expect(reportMessageId(reports[0])).toBe('missingErrorContext');
     expect(reportData(reports[0]).missing).toBe('message');
   });
 
   it('reports a missing stack trace for `throw` with no argument when only requireStackTrace is on', () => {
-    const { listeners, reports } = createWithMockContext(noMissingErrorContext, {
-      options: [{ requireMessage: false, requireStackTrace: true }],
+    const { listeners, reports } = createWithMockContext(
+      noMissingErrorContext,
+      {
+        options: [{ requireMessage: false, requireStackTrace: true }],
+      },
+    );
+    invoke(listeners, 'ThrowStatement', {
+      type: 'ThrowStatement',
+      argument: null,
     });
-    invoke(listeners, 'ThrowStatement', { type: 'ThrowStatement', argument: null });
     expect(reports).toHaveLength(1);
     expect(reportData(reports[0]).missing).toBe('stack trace');
   });
 
   it('null options entry falls back to defaults: template literal throws stay clean', () => {
-    const { listeners, reports } = createWithMockContext(noMissingErrorContext, {
-      options: [null],
-    });
+    const { listeners, reports } = createWithMockContext(
+      noMissingErrorContext,
+      {
+        options: [null],
+      },
+    );
     invoke(listeners, 'ThrowStatement', {
       type: 'ThrowStatement',
       argument: { type: 'TemplateLiteral', expressions: [], quasis: [] },
@@ -185,14 +215,23 @@ describe('no-missing-error-context — throw without an argument (invalid JS, de
 describe('no-unhandled-promise — helper functions with synthetic AST', () => {
   describe('isPromiseExpression', () => {
     it('is true for CallExpression, false for AwaitExpression and anything else', () => {
-      expect(isPromiseExpression({ type: 'CallExpression' } as AnyNode)).toBe(true);
-      expect(isPromiseExpression({ type: 'AwaitExpression' } as AnyNode)).toBe(false);
-      expect(isPromiseExpression({ type: 'Identifier' } as AnyNode)).toBe(false);
+      expect(isPromiseExpression({ type: 'CallExpression' } as AnyNode)).toBe(
+        true,
+      );
+      expect(isPromiseExpression({ type: 'AwaitExpression' } as AnyNode)).toBe(
+        false,
+      );
+      expect(isPromiseExpression({ type: 'Identifier' } as AnyNode)).toBe(
+        false,
+      );
     });
   });
 
   describe('isInsidePromiseCallback', () => {
-    function arrowInMethodCall(methodName: string, propertyType = 'Identifier') {
+    function arrowInMethodCall(
+      methodName: string,
+      propertyType = 'Identifier',
+    ) {
       const node: AnyNode = { type: 'CallExpression' };
       const arrow: AnyNode = { type: 'ArrowFunctionExpression' };
       const memberCall: AnyNode = {
@@ -215,7 +254,9 @@ describe('no-unhandled-promise — helper functions with synthetic AST', () => {
 
     it('rejects non-promise host methods and computed properties', () => {
       expect(isInsidePromiseCallback(arrowInMethodCall('map'))).toBe(false);
-      expect(isInsidePromiseCallback(arrowInMethodCall('then', 'Literal'))).toBe(false);
+      expect(
+        isInsidePromiseCallback(arrowInMethodCall('then', 'Literal')),
+      ).toBe(false);
     });
 
     it('rejects a function whose parent is not a member call', () => {
@@ -231,7 +272,9 @@ describe('no-unhandled-promise — helper functions with synthetic AST', () => {
     });
 
     it('returns false when there is no parent at all', () => {
-      expect(isInsidePromiseCallback({ type: 'CallExpression' } as AnyNode)).toBe(false);
+      expect(
+        isInsidePromiseCallback({ type: 'CallExpression' } as AnyNode),
+      ).toBe(false);
     });
 
     it('gives up past the max traversal depth', () => {
@@ -356,7 +399,11 @@ describe('no-unhandled-promise — helper functions with synthetic AST', () => {
       // reports the INNER call, because otherwise nothing reports it at all
       // and the rejection is unhandled. The synthetic node exercises the arm
       // where there is no grandparent to inspect.
-      inner['parent'] = { type: 'CallExpression', callee: { type: 'Identifier', name: 'wrap' }, arguments: [inner] };
+      inner['parent'] = {
+        type: 'CallExpression',
+        callee: { type: 'Identifier', name: 'wrap' },
+        arguments: [inner],
+      };
       invoke(listeners, 'CallExpression', inner);
       expect(reports).toHaveLength(1);
     });
@@ -539,16 +586,21 @@ describe('nested-complexity-hotspots — listener wiring by options', () => {
   });
 
   it('null options entry falls back to defaults: listeners active, shallow node clean', () => {
-    const { listeners, reports } = createWithMockContext(nestedComplexityHotspots, {
-      options: [null],
-    });
+    const { listeners, reports } = createWithMockContext(
+      nestedComplexityHotspots,
+      {
+        options: [null],
+      },
+    );
     invoke(listeners, 'IfStatement', { type: 'IfStatement' });
     expect(reports).toEqual([]);
   });
 });
 
 describe('no-lonely-if — suggestion fixer token paths', () => {
-  function reportLonelyIf(tokenAfterElse: { value: string; range: [number, number] } | null) {
+  function reportLonelyIf(
+    tokenAfterElse: { value: string; range: [number, number] } | null,
+  ) {
     const { listeners, reports, context } = createWithMockContext(noLonelyIf);
     const elseToken = { value: 'else', range: [0, 4] as [number, number] };
     Object.assign(context.sourceCode as unknown as Record<string, unknown>, {
@@ -557,9 +609,17 @@ describe('no-lonely-if — suggestion fixer token paths', () => {
     });
 
     const outerIf: AnyNode = { type: 'IfStatement' };
-    const elseBlock: AnyNode = { type: 'BlockStatement', parent: outerIf };
+    const elseBlock: AnyNode = {
+      type: 'BlockStatement',
+      body: [],
+      parent: outerIf,
+    };
     outerIf.alternate = elseBlock;
     const lonely: AnyNode = { type: 'IfStatement', parent: elseBlock };
+    // A real BlockStatement always carries its `body`, and a lonely if is the
+    // sole entry in it. These synthetic nodes exist to drive the fixer's token
+    // paths, so they have to satisfy the predicate that gates the report.
+    elseBlock.body = [lonely];
 
     invoke(listeners, 'IfStatement', lonely);
     expect(reports).toHaveLength(1);
@@ -595,9 +655,15 @@ describe('no-lonely-if — suggestion fixer token paths', () => {
       getTokenAfter: () => null,
     });
     const outerIf: AnyNode = { type: 'IfStatement' };
-    const elseBlock: AnyNode = { type: 'BlockStatement', parent: outerIf };
+    const elseBlock: AnyNode = {
+      type: 'BlockStatement',
+      body: [],
+      parent: outerIf,
+    };
     outerIf.alternate = elseBlock;
-    invoke(listeners, 'IfStatement', { type: 'IfStatement', parent: elseBlock });
+    const lonely: AnyNode = { type: 'IfStatement', parent: elseBlock };
+    elseBlock.body = [lonely];
+    invoke(listeners, 'IfStatement', lonely);
     expect(reports).toHaveLength(1);
     expect((reports[0] as AnyNode).suggest[0].fix(fakeFixer)).toBeNull();
   });

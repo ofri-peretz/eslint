@@ -292,15 +292,18 @@ describe('identical-functions', () => {
  * below by a pair of functions that are obviously NOT duplicates.
  */
 describe('identical-functions — normalisation', () => {
-  ruleTester.run('valid - normalisation keeps what distinguishes', identicalFunctions, {
-    valid: [
-      {
-        // KEYWORDS. `[a-z_$][a-zA-Z0-9_$]*` matches `return`, `throw`, `if`
-        // and `this` too, so both of these normalised to the same string of
-        // `VAR`s and punctuation. Control flow is the only thing left to
-        // compare once bindings are generic; erasing it made every function
-        // with the same bracket shape a duplicate.
-        code: `
+  ruleTester.run(
+    'valid - normalisation keeps what distinguishes',
+    identicalFunctions,
+    {
+      valid: [
+        {
+          // KEYWORDS. `[a-z_$][a-zA-Z0-9_$]*` matches `return`, `throw`, `if`
+          // and `this` too, so both of these normalised to the same string of
+          // `VAR`s and punctuation. Control flow is the only thing left to
+          // compare once bindings are generic; erasing it made every function
+          // with the same bracket shape a duplicate.
+          code: `
           function alpha(a, b) {
             const x = compute(a, b);
             return x;
@@ -310,12 +313,12 @@ describe('identical-functions — normalisation', () => {
             throw x;
           }
         `,
-      },
-      {
-        // COMMENTS ran last, after \s+ had collapsed the body onto one line —
-        // at which point //.* deletes from the first line comment to the END
-        // of the function. Both bodies were compared as their opening lines.
-        code: `
+        },
+        {
+          // COMMENTS ran last, after \s+ had collapsed the body onto one line —
+          // at which point //.* deletes from the first line comment to the END
+          // of the function. Both bodies were compared as their opening lines.
+          code: `
           function alpha(a) {
             const x = 1; // explain alpha
             return first(x);
@@ -325,18 +328,18 @@ describe('identical-functions — normalisation', () => {
             return second(x, x, x);
           }
         `,
-      },
-      {
-        // STRING CONTENTS were renamed too — every lowercase run inside a
-        // literal became `VAR` — so two methods calling different endpoints
-        // normalised to the same text and compared 100% identical. This is the
-        // okta-auth-js authn mixin shape.
-        //
-        // The literals here are far apart on purpose. The near-miss pair
-        // `/api/v1/authn/recovery/password` vs `.../unlock` still reports: with
-        // contents preserved it drops from 100% to exactly 90%, which is the
-        // default threshold rather than a normalisation defect.
-        code: `
+        },
+        {
+          // STRING CONTENTS were renamed too — every lowercase run inside a
+          // literal became `VAR` — so two methods calling different endpoints
+          // normalised to the same text and compared 100% identical. This is the
+          // okta-auth-js authn mixin shape.
+          //
+          // The literals here are far apart on purpose. The near-miss pair
+          // `/api/v1/authn/recovery/password` vs `.../unlock` still reports: with
+          // contents preserved it drops from 100% to exactly 90%, which is the
+          // default threshold rather than a normalisation defect.
+          code: `
           function alpha(opts) {
             const url = "/api/v1/authn/recovery/password";
             return post(url, opts);
@@ -346,15 +349,15 @@ describe('identical-functions — normalisation', () => {
             return post(url, opts);
           }
         `,
-      },
-      {
-        // Property names are part of the call and must survive normalisation.
-        //
-        // The names here are deliberately far apart. `.create` vs `.destroy`
-        // also keeps its names, but those two bodies really ARE ~90% similar
-        // as text, so at the default threshold they report — which is the
-        // threshold doing its job, not the normaliser losing information.
-        code: `
+        },
+        {
+          // Property names are part of the call and must survive normalisation.
+          //
+          // The names here are deliberately far apart. `.create` vs `.destroy`
+          // also keeps its names, but those two bodies really ARE ~90% similar
+          // as text, so at the default threshold they report — which is the
+          // threshold doing its job, not the normaliser losing information.
+          code: `
           function alpha(client, id) {
             const res = client.create(id);
             return res;
@@ -364,12 +367,57 @@ describe('identical-functions — normalisation', () => {
             return res;
           }
         `,
-      },
-      {
-        // A URL inside a string literal. Comment removal matched the `//` and
-        // deleted the rest of the FUNCTION, so any two bodies containing a URL
-        // compared identical. Raised by CodeRabbit on #595.
-        code: `
+        },
+        {
+          // burgee sweep 2026-09-10, from packages/burgee/src/yargs/factory.ts:517,
+          // where 15 accessors over different private fields were reported as one
+          // "100% similar" group.
+          //
+          // A PRIVATE member name is a member name. The guard above keeps `.create`
+          // apart from `.destroy`, but it looks for a literal `.` before the name —
+          // in `this.#detectLocale` the preceding character is `#`, so the guard
+          // misses and every private accessor normalises to `this.#VAR`. The public
+          // twin of this class is already silent; only the `#` spelling collapses.
+          name: 'private field names distinguish two accessors, as public ones do',
+          code: `
+          class Registry {
+            #detectLocale = true;
+            #exitProcess = true;
+            #parserConfig = {};
+            getDetectLocale() {
+              return this.#detectLocale;
+            }
+            getExitProcess() {
+              return this.#exitProcess;
+            }
+            getParserConfiguration() {
+              return this.#parserConfig;
+            }
+          }
+        `,
+        },
+        {
+          // The same erasure hides the operation for private METHODS, which is the
+          // `.create` vs `.destroy` case above wearing a `#`.
+          name: 'a private method call names the operation, so two callers are not duplicates',
+          code: `
+          class Service {
+            check(u) {
+              const res = this.#validateEmail(u);
+              return res;
+            }
+            wipe(u) {
+              const res = this.#deleteEveryOutstandingLedgerEntry(u);
+              return res;
+            }
+          }
+        `,
+        },
+        {
+          // A URL inside a string literal. Comment removal matched the `//` and
+          // deleted the rest of the FUNCTION, so any two bodies containing a URL
+          // compared identical. Raised by CodeRabbit on #595.
+          code: `
           function alpha(a) {
             const u = "https://alpha.example.com/one";
             return get(u, a);
@@ -379,11 +427,11 @@ describe('identical-functions — normalisation', () => {
             return get(u, a);
           }
         `,
-      },
-      {
-        // Unquoted object KEYS were renamed, so `{ create: id }` and
-        // `{ destroy: id }` were one string. A key names the operation.
-        code: `
+        },
+        {
+          // Unquoted object KEYS were renamed, so `{ create: id }` and
+          // `{ destroy: id }` were one string. A key names the operation.
+          code: `
           function alpha(id) {
             const payload = { create: id };
             return send(payload);
@@ -393,12 +441,12 @@ describe('identical-functions — normalisation', () => {
             return send(payload);
           }
         `,
-      },
-      {
-        // Regex literal CONTENTS were renamed like any other identifier, so
-        // `/create/` and `/destroy/` compared identically. Raised by
-        // CodeRabbit on #595.
-        code: `
+        },
+        {
+          // Regex literal CONTENTS were renamed like any other identifier, so
+          // `/create/` and `/destroy/` compared identically. Raised by
+          // CodeRabbit on #595.
+          code: `
           function alpha(s) {
             const re = /create/;
             return re.test(s);
@@ -408,30 +456,30 @@ describe('identical-functions — normalisation', () => {
             return re.test(s);
           }
         `,
-      },
-      {
-        // A template literal is the one literal that spans lines, so a pattern
-        // stopping at \n never protected it — and a `//` in its contents then
-        // ate the rest of the body.
-        code: [
-          'function alpha(a) {',
-          '  const t = `line one',
-          '  https://alpha.example.com/one',
-          '  end`;',
-          '  return send(t, a);',
-          '}',
-          'function beta(a) {',
-          '  const t = `wholly different',
-          '  https://beta.example.org/x/y/z',
-          '  other`;',
-          '  return send(t, a);',
-          '}',
-        ].join('\n'),
-      },
-      {
-        // A generator is a different function too, and `*` is likewise on the
-        // node rather than in the body.
-        code: `
+        },
+        {
+          // A template literal is the one literal that spans lines, so a pattern
+          // stopping at \n never protected it — and a `//` in its contents then
+          // ate the rest of the body.
+          code: [
+            'function alpha(a) {',
+            '  const t = `line one',
+            '  https://alpha.example.com/one',
+            '  end`;',
+            '  return send(t, a);',
+            '}',
+            'function beta(a) {',
+            '  const t = `wholly different',
+            '  https://beta.example.org/x/y/z',
+            '  other`;',
+            '  return send(t, a);',
+            '}',
+          ].join('\n'),
+        },
+        {
+          // A generator is a different function too, and `*` is likewise on the
+          // node rather than in the body.
+          code: `
           function* alpha(a) {
             const x = load(a);
             return x;
@@ -441,11 +489,11 @@ describe('identical-functions — normalisation', () => {
             return x;
           }
         `,
-      },
-      {
-        // `async` is on the NODE, not in `node.body`, so an async function and
-        // its synchronous twin normalised to the same string.
-        code: `
+        },
+        {
+          // `async` is on the NODE, not in `node.body`, so an async function and
+          // its synchronous twin normalised to the same string.
+          code: `
           async function alpha(a) {
             const x = load(a);
             return x;
@@ -455,14 +503,14 @@ describe('identical-functions — normalisation', () => {
             return x;
           }
         `,
-      },
-    ],
-    invalid: [
-      {
-        // FN GUARD: `/` is genuinely ambiguous in JavaScript, so the regex
-        // guard is anchored to positions where a slash cannot be division.
-        // These two are ordinary arithmetic and ARE a renamed copy.
-        code: `
+        },
+      ],
+      invalid: [
+        {
+          // FN GUARD: `/` is genuinely ambiguous in JavaScript, so the regex
+          // guard is anchored to positions where a slash cannot be division.
+          // These two are ordinary arithmetic and ARE a renamed copy.
+          code: `
           function alpha(a, b) {
             const r = a / b / 2;
             return r;
@@ -472,12 +520,12 @@ describe('identical-functions — normalisation', () => {
             return r;
           }
         `,
-        errors: [{ messageId: 'identicalFunctions' }],
-      },
-      {
-        // FN GUARD: renaming BINDINGS is still the point — a copy-paste with
-        // the variables renamed is exactly what this rule exists to catch.
-        code: `
+          errors: [{ messageId: 'identicalFunctions' }],
+        },
+        {
+          // FN GUARD: renaming BINDINGS is still the point — a copy-paste with
+          // the variables renamed is exactly what this rule exists to catch.
+          code: `
           function alpha(input) {
             const parsed = parse(input);
             return parsed;
@@ -487,11 +535,12 @@ describe('identical-functions — normalisation', () => {
             return decoded;
           }
         `,
-        // One report per GROUP, not per member.
-        errors: [{ messageId: 'identicalFunctions' }],
-      },
-    ],
-  });
+          // One report per GROUP, not per member.
+          errors: [{ messageId: 'identicalFunctions' }],
+        },
+      ],
+    },
+  );
 });
 
 /**
@@ -508,42 +557,46 @@ describe('identical-functions — normalisation', () => {
  * that makes them different. Below SHORT_BODY_CHARS the answer has to be exact.
  */
 describe('identical-functions — short bodies need an exact match', () => {
-  ruleTester.run('valid - one load-bearing token is not a duplicate', identicalFunctions, {
-    valid: [
-      {
-        code: 'function a(x) {\n  const t = 5000;\n  return wait(t, x);\n}\nfunction b(x) {\n  const t = 250;\n  return wait(t, x);\n}',
-      },
-      {
-        code: 'function a(x, y) {\n  const r = x + y;\n  return r;\n}\nfunction b(x, y) {\n  const r = x - y;\n  return r;\n}',
-      },
-      {
-        code: 'function a(x) {\n  if (x === 1) { return 1; }\n  return 0;\n}\nfunction b(x) {\n  if (x !== 1) { return 1; }\n  return 0;\n}',
-      },
-      {
-        code: 'function a(s) {\n  const re = /abc/gi;\n  return re.test(s);\n}\nfunction b(s) {\n  const re = /abc/;\n  return re.test(s);\n}',
-      },
-      {
-        code: 'function a(o) {\n  const v = o.a.b;\n  return v;\n}\nfunction b(o) {\n  const v = o.a;\n  return v;\n}',
-      },
-      {
-        code: 'function a(o) {\n  const v = o?.x;\n  return v;\n}\nfunction b(o) {\n  const v = o.x;\n  return v;\n}',
-      },
-    ],
-    invalid: [
-      {
-        // FN GUARD: an exact renamed copy is still a duplicate at any length.
-        name: 'a short body that matches exactly still reports',
-        code: 'function a(input) {\n  const parsed = parse(input);\n  return parsed;\n}\nfunction b(other) {\n  const decoded = parse(other);\n  return decoded;\n}',
-        errors: [{ messageId: 'identicalFunctions' }],
-      },
-      {
-        // FN GUARD: the ratio still applies where it means something.
-        name: 'a long near-duplicate still reports',
-        code:
-          'function a(o) {\n  const one = o.alpha;\n  const two = o.beta;\n  const three = o.gamma;\n  const four = o.delta;\n  const five = o.epsilon;\n  return combine(one, two, three, four, five);\n}\n' +
-          'function b(p) {\n  const one = p.alpha;\n  const two = p.beta;\n  const three = p.gamma;\n  const four = p.delta;\n  const five = p.epsilonX;\n  return combine(one, two, three, four, five);\n}',
-        errors: [{ messageId: 'identicalFunctions' }],
-      },
-    ],
-  });
+  ruleTester.run(
+    'valid - one load-bearing token is not a duplicate',
+    identicalFunctions,
+    {
+      valid: [
+        {
+          code: 'function a(x) {\n  const t = 5000;\n  return wait(t, x);\n}\nfunction b(x) {\n  const t = 250;\n  return wait(t, x);\n}',
+        },
+        {
+          code: 'function a(x, y) {\n  const r = x + y;\n  return r;\n}\nfunction b(x, y) {\n  const r = x - y;\n  return r;\n}',
+        },
+        {
+          code: 'function a(x) {\n  if (x === 1) { return 1; }\n  return 0;\n}\nfunction b(x) {\n  if (x !== 1) { return 1; }\n  return 0;\n}',
+        },
+        {
+          code: 'function a(s) {\n  const re = /abc/gi;\n  return re.test(s);\n}\nfunction b(s) {\n  const re = /abc/;\n  return re.test(s);\n}',
+        },
+        {
+          code: 'function a(o) {\n  const v = o.a.b;\n  return v;\n}\nfunction b(o) {\n  const v = o.a;\n  return v;\n}',
+        },
+        {
+          code: 'function a(o) {\n  const v = o?.x;\n  return v;\n}\nfunction b(o) {\n  const v = o.x;\n  return v;\n}',
+        },
+      ],
+      invalid: [
+        {
+          // FN GUARD: an exact renamed copy is still a duplicate at any length.
+          name: 'a short body that matches exactly still reports',
+          code: 'function a(input) {\n  const parsed = parse(input);\n  return parsed;\n}\nfunction b(other) {\n  const decoded = parse(other);\n  return decoded;\n}',
+          errors: [{ messageId: 'identicalFunctions' }],
+        },
+        {
+          // FN GUARD: the ratio still applies where it means something.
+          name: 'a long near-duplicate still reports',
+          code:
+            'function a(o) {\n  const one = o.alpha;\n  const two = o.beta;\n  const three = o.gamma;\n  const four = o.delta;\n  const five = o.epsilon;\n  return combine(one, two, three, four, five);\n}\n' +
+            'function b(p) {\n  const one = p.alpha;\n  const two = p.beta;\n  const three = p.gamma;\n  const four = p.delta;\n  const five = p.epsilonX;\n  return combine(one, two, three, four, five);\n}',
+          errors: [{ messageId: 'identicalFunctions' }],
+        },
+      ],
+    },
+  );
 });
