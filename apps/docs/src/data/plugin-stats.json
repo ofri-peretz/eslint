@@ -10,7 +10,7 @@
     },
     {
       "name": "eslint-plugin-node-security",
-      "rules": 42,
+      "rules": 43,
       "description": "ESLint plugin for Node.js security — detects command injection, path traversal, SSRF, zip slip, and weak crypto (MD5/SHA-1, ECB, static IV) in fs, child_process, vm, and crypto",
       "category": "security",
       "version": "5.4.4",
@@ -241,7 +241,7 @@
       "published": true
     }
   ],
-  "totalRules": 477,
+  "totalRules": 478,
   "totalPlugins": 30,
   "allPluginsCount": 30,
   "generatedAt": "2026-09-10"

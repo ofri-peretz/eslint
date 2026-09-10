@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-03T05:51:12.509Z",
+  "generatedAt": "2026-09-10T05:15:21.748Z",
   "summary": {
     "distinctCwes": 115,
-    "totalRules": 272,
+    "totalRules": 273,
     "unmappedRules": 8,
     "top25Covered": 20,
     "top25Gaps": 5
@@ -343,7 +343,8 @@
     },
     "CWE-326": {
       "rules": [
-        "jwt-security/no-weak-secret"
+        "jwt-security/no-weak-secret",
+        "node-security/no-weak-dh-parameters"
       ],
       "top25": false,
       "owaspTop10": false

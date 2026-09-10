@@ -34,14 +34,6 @@ jwt.verify(token, secret, { algorithms: ['RS256', 'ES256'] });`,
         },
         {
           code: `import jwt from 'jsonwebtoken';
-jwt.verify(token, secret, { algorithm: 'RS256' });`,
-        },
-        {
-          code: `import jwt from 'jsonwebtoken';
-jwt.verify(token, secret, { alg: 'RS256' });`,
-        },
-        {
-          code: `import jwt from 'jsonwebtoken';
 jwt.sign(payload, secret);`,
         }, // sign not checked
         // Only one argument - edge case
@@ -55,7 +47,34 @@ jwt.verify(token);`,
 jwtVerify(token, key, { algorithms: ['RS256'] });`,
         },
       ],
-      invalid: [],
+      invalid: [
+        /*
+         * These two were `valid` until 2026-09-10, asserting that a misspelled
+         * option counted as pinning the algorithm.
+         *
+         * It does not. Checked against the installed packages:
+         * jsonwebtoken's VerifyOptions declares `algorithms?: Algorithm[]` and
+         * jose's declares `algorithms?: JWSAlgorithm[]`; neither has a singular
+         * `algorithm` on the verify path — that is a SIGN option — and `alg` is
+         * a header claim. Both spellings are silently ignored, so verification
+         * proceeds with whatever algorithm the token itself names.
+         *
+         * The rule was therefore quietest exactly where an author had tried to
+         * do the right thing and mistyped it.
+         */
+        {
+          name: 'the singular `algorithm` is a sign option and pins nothing on verify',
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, secret, { algorithm: 'RS256' });`,
+          errors: [{ messageId: 'missingAlgorithmWhitelist' }],
+        },
+        {
+          name: '`alg` is a header claim, not a verify option',
+          code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, secret, { alg: 'RS256' });`,
+          errors: [{ messageId: 'missingAlgorithmWhitelist' }],
+        },
+      ],
     });
   });
 

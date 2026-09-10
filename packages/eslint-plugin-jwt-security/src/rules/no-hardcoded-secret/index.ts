@@ -21,7 +21,12 @@ import {
   MessageIcons,
   staticString,
 } from '@interlace/eslint-devkit';
-import { isSignOperation, isVerifyOperation, isEnvVariable } from '../../utils';
+import {
+  byteKeyLiteral,
+  isSignOperation,
+  isSignatureVerifyOperation,
+  isEnvVariable,
+} from '../../utils';
 import type { NoHardcodedSecretOptions } from '../../types';
 
 type MessageIds = 'hardcodedSecret' | 'useEnvVariable';
@@ -106,7 +111,8 @@ export const noHardcodedSecret = createRule<RuleOptions, MessageIds>({
     // A quoted string and a no-substitution template literal are one thing;
     // `staticString` answers for both, which made the separate template arm
     // that used to sit here unreachable.
-    const isHardcodedString = (node: TSESTree.Node): boolean => staticString(node) !== null;
+    const isHardcodedString = (node: TSESTree.Node): boolean =>
+      staticString(node) !== null;
 
     /**
      * Resolve an Identifier node to its initializer (one frame of indirection).
@@ -144,9 +150,15 @@ export const noHardcodedSecret = createRule<RuleOptions, MessageIds>({
         return true;
       }
 
-      // Function call (getSecret(), loadKey(), etc.)
+      // Function call (getSecret(), loadKey(), etc.) — but NOT a call that
+      // just wraps a literal in bytes. `new TextEncoder().encode('secret')` is
+      // how jose is handed a symmetric key, and treating it as a safe source
+      // meant the documented way to hardcode a jose HMAC secret was invisible.
       if (node.type === 'CallExpression') {
-        return true;
+        const inner = byteKeyLiteral(node);
+        return (
+          inner === null || !isHardcodedStringOrResolvedConst(inner.literal)
+        );
       }
 
       // await expression (async key loading)
@@ -189,7 +201,7 @@ export const noHardcodedSecret = createRule<RuleOptions, MessageIds>({
     return {
       CallExpression(node: TSESTree.CallExpression) {
         // Check both sign and verify operations
-        if (!isSignOperation(node) && !isVerifyOperation(node)) {
+        if (!isSignOperation(node) && !isSignatureVerifyOperation(node)) {
           return;
         }
 
@@ -205,8 +217,16 @@ export const noHardcodedSecret = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        // Flag hardcoded strings (also follows single-frame `const X = '...'`).
-        if (isHardcodedStringOrResolvedConst(secretArg)) {
+        /*
+         * Flag hardcoded strings (also follows single-frame `const X = '...'`).
+         *
+         * `byteKeyLiteral` unwraps `new TextEncoder().encode('…')` and
+         * `Buffer.from('…')` so the literal inside is judged the same as one
+         * written directly. The report still points at the whole expression,
+         * because that is the thing the author has to replace.
+         */
+        const literal = byteKeyLiteral(secretArg)?.literal ?? secretArg;
+        if (isHardcodedStringOrResolvedConst(literal)) {
           context.report({
             node: secretArg,
             messageId: 'hardcodedSecret',

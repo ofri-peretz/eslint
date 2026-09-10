@@ -23,7 +23,7 @@ import {
   objectKeyName,
 } from '@interlace/eslint-devkit';
 import {
-  isVerifyOperation,
+  isSignatureVerifyOperation,
   getOptionsArgument,
   extractAlgorithms,
 } from '../../utils';
@@ -159,7 +159,7 @@ export const noAlgorithmConfusion = createRule<RuleOptions, MessageIds>({
     return {
       CallExpression(node: TSESTree.CallExpression) {
         // Only check verify operations
-        if (!isVerifyOperation(node)) {
+        if (!isSignatureVerifyOperation(node)) {
           return;
         }
 

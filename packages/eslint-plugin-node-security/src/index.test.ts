@@ -50,6 +50,7 @@ describe('eslint-plugin-node-security plugin interface', () => {
       'no-static-iv',
       'no-timing-unsafe-compare',
       'no-weak-cipher-algorithm',
+      'no-weak-dh-parameters',
       'no-weak-hash-algorithm',
       'prefer-native-crypto',
       'require-aead-tag-verification',
