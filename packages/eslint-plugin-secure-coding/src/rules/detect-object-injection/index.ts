@@ -1018,6 +1018,22 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * or is derived from an array spread/copy pattern
      */
     const isPrototypelessObject = (objectNode: TSESTree.Node): boolean => {
+      // Inline Object.create(null) used directly as the node itself (e.g.
+      // the `target` argument of `Object.assign(Object.create(null), src)`)
+      // rather than through an intermediate variable.
+      if (
+        objectNode.type === AST_NODE_TYPES.CallExpression &&
+        objectNode.callee.type === AST_NODE_TYPES.MemberExpression &&
+        objectNode.callee.object.type === AST_NODE_TYPES.Identifier &&
+        objectNode.callee.object.name === 'Object' &&
+        propertyName(objectNode.callee) === 'create' &&
+        objectNode.arguments.length > 0 &&
+        objectNode.arguments[0].type === AST_NODE_TYPES.Literal &&
+        objectNode.arguments[0].value === null
+      ) {
+        return true;
+      }
+
       if (objectNode.type !== AST_NODE_TYPES.Identifier) {
         return false;
       }
@@ -2201,6 +2217,12 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       if (!objectIsObject || !propIsAssign) return;
       // Object.assign({}, …) — first arg is fresh literal, no taint risk.
       if (node.arguments[0]?.type === AST_NODE_TYPES.ObjectExpression) return;
+      // Object.assign(Object.create(null), …) — the target is
+      // prototype-less (whether inline or via a variable declared with
+      // Object.create(null)), so there is no prototype for a merged-in
+      // `__proto__` key to reach. This is the fix the rule's own docs
+      // prescribe for object injection; it must not be flagged itself.
+      if (node.arguments[0] && isPrototypelessObject(node.arguments[0])) return;
       // Sources are arguments[1...]. Any non-literal source is an
       // assumed taint source. Literals are safe (they're inline data).
       const sources = node.arguments.slice(1);
