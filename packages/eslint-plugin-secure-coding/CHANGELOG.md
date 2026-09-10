@@ -5,6 +5,21 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.3.5
+
+### Patch Changes
+
+- **🐛 Fix** — `no-insecure-comparison` stops reading two public values as secrets
+
+  - **A destructured sibling.** `const { kind } = token` binds `token.kind`, a different value from `token`. The name resolver walked the declarator's initializer whole, so every property pulled off an object named `token` inherited that object's secret-ness — an argv token's `kind`, an SGR token's `code`. The hop that belongs there is the destructuring key, which the resolver already collects, so `const { token: t } = session` still resolves through `token` and not through `session`.
+  - **A literal operand.** A timing attack needs the attacker to vary one side a character at a time, and a constant written in the file cannot be varied: `token === '--'` is a parser reading the option terminator. The skip already existed for `true`, `null` and `undefined`; it now covers every source literal, plus a template literal with no expressions and a negated numeric one. Comparing a secret to a hardcoded string is still a finding — a hardcoded-credential one, which this rule deliberately does not make.
+
+- **🐛 Fix** — `no-unchecked-loop-condition` exempts `for (;;)` with a break, as it does `while (true)`
+
+  `allowWhileTrueWithBreak` is on by default and exempts a `while (true)` whose body breaks. The `for (;;)` branch never consulted it, so the two spellings of one loop got opposite answers — and `for (;;)` is the idiomatic spelling in a scanner or a find-up walk, which is where this showed up.
+
+  The new `hasLoopExit` is stricter than the `hasBreakStatement` the `while` branch uses: it does not descend into nested functions, and an unlabelled `break` belonging to an inner loop or `switch` does not count as leaving the outer loop. A LABELLED break counts only when its label was declared at or above the loop — `for (;;) { stop: { break stop; } tick(); }` leaves the block and keeps looping, so it still reports. `return` and `throw` count alongside `break`, because a `for (;;)` that returns a value terminates just as surely. `for (;;) { tick(); }` still reports.
+
 ## 5.3.4
 
 ### Patch Changes
