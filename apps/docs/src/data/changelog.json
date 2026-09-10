@@ -1,7 +1,7 @@
 {
-  "releaseCount": 657,
+  "releaseCount": 661,
   "packageCount": 35,
-  "entryCount": 2047,
+  "entryCount": 2055,
   "oldestYear": 2024,
   "releases": [
     {
@@ -16565,6 +16565,21 @@
       ]
     },
     {
+      "package": "eslint-plugin-conventions",
+      "short": "eslint-plugin-conventions",
+      "version": "5.3.5",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`consistent-existence-index-check` no longer autofixes between checks that are not equivalent",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-jwt-security",
       "short": "eslint-plugin-jwt-security",
       "version": "2.2.9",
@@ -16680,6 +16695,26 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-maintainability",
+      "short": "eslint-plugin-maintainability",
+      "version": "3.2.5",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-missing-error-context` reads three more shapes of throw",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-unhandled-promise` no longer reports a promise whose value is used",
           "pr": null
         }
       ]
@@ -16805,6 +16840,51 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-reliability",
+      "short": "eslint-plugin-reliability",
+      "version": "4.1.6",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-missing-null-checks` follows four more guards it already meant to follow",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-missing-error-context` reads three more shapes of throw",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-unhandled-promise` no longer reports a promise whose value is used",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.3.5",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-insecure-comparison` stops reading two public values as secrets",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-unchecked-loop-condition` exempts `for (;;)` with a break, as it does `while (true)`",
           "pr": null
         }
       ]
