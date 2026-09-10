@@ -72,8 +72,11 @@ function hasExplanatoryComment(
     /type.?guard/i,
     /validated/i,
     /checked/i,
-    /safe/i,
-    /known/i,
+    // Word-bounded: `unsafe` and `unknown` must not read as permission — `unknown`
+    // is the word most likely to sit next to an `as unknown as T` cast, and
+    // `unsafe` is the opposite of consent.
+    /\bsafe\b/i,
+    /\bknown\b/i,
     /intentional/i,
     /necessary/i,
     /framework/i,
@@ -84,9 +87,15 @@ function hasExplanatoryComment(
     /fixme/i,
   ];
 
-  // Check comments before the assertion (within 1 line)
+  // Check comments before the assertion (within 1 line). The lower bound matters:
+  // without it a comment *below* the assertion yields a negative distance, which
+  // satisfies `<= 1` at any range and disarms the rule for the rest of the file.
   for (const comment of comments) {
-    if (comment.loc && nodeStart.line - comment.loc.end.line <= 1) {
+    if (
+      comment.loc &&
+      nodeStart.line >= comment.loc.end.line &&
+      nodeStart.line - comment.loc.end.line <= 1
+    ) {
       const commentText = comment.value.toLowerCase();
       if (explanatoryPatterns.some((pattern) => pattern.test(commentText))) {
         return true;
