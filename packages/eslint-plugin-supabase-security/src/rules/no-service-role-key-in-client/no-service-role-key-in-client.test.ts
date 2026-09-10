@@ -133,6 +133,53 @@ ruleTester.run('no-service-role-key-in-client', noServiceRoleKeyInClient, {
       `,
       errors: [{ messageId: 'publicPrefix' }],
     },
+    /*
+     * One case per entry in PUBLIC_PREFIXES. Not padding: the taxonomy gate
+     * requires every row of a detection table to have a case that fails when the
+     * row is deleted, because a prefix nothing exercises is a prefix nobody knows
+     * is broken. `PUBLIC_` is last on purpose — every other entry contains it as a
+     * substring, so a case using `PUBLIC_` alone would pass for the wrong reason.
+     */
+    {
+      name: 'the same mistake under Create React App',
+      code: `
+        ${IMPORT}
+        export const db = createClient(url, process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY);
+      `,
+      errors: [{ messageId: 'publicPrefix' }],
+    },
+    {
+      name: 'the same mistake under Gatsby',
+      code: `
+        ${IMPORT}
+        export const db = createClient(url, process.env.GATSBY_SUPABASE_SERVICE_ROLE_KEY);
+      `,
+      errors: [{ messageId: 'publicPrefix' }],
+    },
+    {
+      name: 'the same mistake under Nuxt',
+      code: `
+        ${IMPORT}
+        export const db = createClient(url, process.env.NUXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY);
+      `,
+      errors: [{ messageId: 'publicPrefix' }],
+    },
+    {
+      name: 'the same mistake under Expo',
+      code: `
+        ${IMPORT}
+        export const db = createClient(url, process.env.EXPO_PUBLIC_SUPABASE_SERVICE_ROLE_KEY);
+      `,
+      errors: [{ messageId: 'publicPrefix' }],
+    },
+    {
+      name: 'the same mistake under SvelteKit, whose prefix is bare PUBLIC_',
+      code: `
+        ${IMPORT}
+        export const db = createClient(url, process.env.PUBLIC_SUPABASE_SERVICE_ROLE_KEY);
+      `,
+      errors: [{ messageId: 'publicPrefix' }],
+    },
     {
       name: 'a bracket read is the same read',
       code: `
