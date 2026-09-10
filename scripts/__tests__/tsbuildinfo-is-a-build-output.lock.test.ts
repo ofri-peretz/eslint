@@ -77,17 +77,36 @@ function packageDirs(): string[] {
   return out;
 }
 
-/** The `tsBuildInfoFile` a package names, normalised to a repo-relative-ish path. */
-function declaredBuildInfo(pkgDir: string): string | null {
+/**
+ * Every buildinfo path a package can write, from BOTH tsconfigs.
+ *
+ * Two ways one appears, and reading only the first tsconfig, or only the
+ * explicit setting, misses either:
+ *
+ *   explicit   "tsBuildInfoFile": "./.tsbuildinfo"
+ *   implicit   composite/incremental with no tsBuildInfoFile — tsc writes
+ *              `<tsconfig basename>.tsbuildinfo` beside the config, which is
+ *              how packages/ui/tsconfig.lib.tsbuildinfo exists.
+ */
+function declaredBuildInfos(pkgDir: string): string[] {
+  const paths = new Set<string>();
   for (const name of ['tsconfig.lib.json', 'tsconfig.json']) {
     const path = join(pkgDir, name);
     if (!existsSync(path)) continue;
     const options = readJsonc(path)['compilerOptions'] as
       Record<string, unknown> | undefined;
-    const file = options?.['tsBuildInfoFile'];
-    if (typeof file === 'string') return file.replace(/^\.\//, '');
+    if (options === undefined) continue;
+
+    const file = options['tsBuildInfoFile'];
+    if (typeof file === 'string') {
+      paths.add(file.replace(/^\.\//, ''));
+      continue;
+    }
+    if (options['composite'] === true || options['incremental'] === true) {
+      paths.add(`${name.replace(/\.json$/, '')}.tsbuildinfo`);
+    }
   }
-  return null;
+  return [...paths];
 }
 
 /** Does any output glob cover this package-relative path? */
@@ -96,8 +115,19 @@ function isCovered(path: string, outputs: readonly string[]): boolean {
     if (glob.startsWith('!')) return false;
     if (glob === path) return true;
     // `dist/**` covers `dist/anything`; it does not cover a sibling of `dist`.
-    const prefix = glob.replace(/\/?\*\*$/, '');
-    return glob.endsWith('**') && path.startsWith(`${prefix}/`);
+    if (glob.endsWith('**')) {
+      const prefix = glob.replace(/\/?\*\*$/, '');
+      return path.startsWith(`${prefix}/`);
+    }
+    // `*.tsbuildinfo` covers `tsconfig.lib.tsbuildinfo` and, as every shell
+    // glob does, NOT the dotfile `.tsbuildinfo` — which is why both are listed.
+    if (glob.startsWith('*.')) {
+      const suffix = glob.slice(1);
+      return (
+        path.endsWith(suffix) && !path.startsWith('.') && !path.includes('/')
+      );
+    }
+    return false;
   });
 }
 
@@ -105,10 +135,7 @@ describe('turbo caches a composite project with its buildinfo, or without its di
   it('declares .tsbuildinfo as a build output', () => {
     const outputs = buildOutputs();
     const uncovered = packageDirs()
-      .map((dir) => ({ dir, info: declaredBuildInfo(dir) }))
-      .filter(
-        (entry): entry is { dir: string; info: string } => entry.info !== null,
-      )
+      .flatMap((dir) => declaredBuildInfos(dir).map((info) => ({ dir, info })))
       .filter((entry) => !isCovered(entry.info, outputs))
       .map((entry) => `${entry.dir.slice(ROOT.length + 1)} -> ${entry.info}`);
 
