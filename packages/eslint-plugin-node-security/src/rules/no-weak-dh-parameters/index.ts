@@ -32,7 +32,10 @@ import {
   namesOneOf,
   propertyName,
 } from '@interlace/eslint-devkit';
-import { resolveConstantString } from '../../utils/const-value';
+import {
+  resolveConstant,
+  resolveConstantString,
+} from '../../utils/const-value';
 
 type MessageIds = 'weakModpGroup' | 'weakPrimeLength' | 'weakCurve';
 
@@ -287,18 +290,14 @@ export const noWeakDhParameters = createRule<RuleOptions, MessageIds>({
            * would mean reading the prime, which is not something a structural
            * rule can do.
            */
-          if (
-            firstArg.type !== AST_NODE_TYPES.Literal ||
-            typeof firstArg.value !== 'number'
-          ) {
-            return;
-          }
-          if (firstArg.value >= minPrimeBits) return;
+          const resolved = resolveConstant(context.sourceCode, firstArg);
+          if (resolved === null || typeof resolved.value !== 'number') return;
+          if (resolved.value >= minPrimeBits) return;
           context.report({
             node: firstArg,
             messageId: 'weakPrimeLength',
             data: {
-              bits: String(firstArg.value),
+              bits: String(resolved.value),
               minimum: String(minPrimeBits),
             },
           });

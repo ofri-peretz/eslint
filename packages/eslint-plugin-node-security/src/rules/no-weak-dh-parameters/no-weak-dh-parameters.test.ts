@@ -57,6 +57,14 @@ describe('no-weak-dh-parameters', () => {
                crypto.createDiffieHellman(knownPrime, 'base64');`,
       },
       {
+        name: 'a prime aliased as a string still states no length',
+        // Resolving the alias must not turn the string/Buffer overload into a
+        // length: the value is a prime chosen elsewhere, not a bit count.
+        code: `const crypto = require('crypto');
+               const PRIME = '00ff...';
+               crypto.createDiffieHellman(PRIME, 'hex');`,
+      },
+      {
         name: 'a computed group name is not resolvable and is left alone',
         code: `const crypto = require('crypto');
                crypto.getDiffieHellman(groupFromConfig);`,
@@ -148,6 +156,16 @@ describe('no-weak-dh-parameters', () => {
         name: 'a 1024-bit generated prime is below the default floor',
         code: `const crypto = require('crypto');
                crypto.createDiffieHellman(1024);`,
+        errors: [{ messageId: 'weakPrimeLength' }],
+      },
+      {
+        // The group arm resolves a `const` alias; the length arm read the
+        // argument node directly, so naming the same weak parameter through a
+        // constant hid it from exactly the rule that exists to find it.
+        name: 'a prime length named through a constant is still that length',
+        code: `const crypto = require('crypto');
+               const PRIME_BITS = 512;
+               crypto.createDiffieHellman(PRIME_BITS);`,
         errors: [{ messageId: 'weakPrimeLength' }],
       },
       {

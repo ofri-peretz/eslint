@@ -17,7 +17,8 @@ A _named_ Diffie-Hellman group is a fixed prime, so the expensive part of
 breaking it is paid once and then every session using that group falls cheaply.
 That is Logjam (CVE-2015-4000): `modp1` is 768-bit and `modp2` is 1024-bit.
 
-Reports three literal-argument shapes:
+Reports three argument shapes, each resolved through at most one `const` alias
+so that naming the parameter does not hide it:
 
 - `getDiffieHellman(name)` / `createDiffieHellmanGroup(name)` — MODP group
   below `minPrimeBits` (default 2048)

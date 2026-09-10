@@ -26,24 +26,35 @@ import {
 
 const FLOOR = 60;
 
+/*
+ * `measure-api-surface.mts` emits `namedCount` as `surfaceSize - gap.length`,
+ * so the two fields are one fact written twice and a fixture that sets them
+ * independently describes a measurement the producer cannot emit. Deriving it
+ * here keeps the fixtures honest; an explicit `namedCount` in `over` still
+ * wins, which is what the above-100% case needs.
+ */
 const measurement = (
   over: Partial<Measurement['measured'][0]> = {},
-): Measurement => ({
-  measuredAt: '2026-09-09T00:00:00.000Z',
-  node: 'v24.12.0',
-  measured: [
-    {
-      plugin: 'eslint-plugin-demo',
-      surfaceSize: 10,
-      namedCount: 9,
-      upperBoundPct: 90,
-      surface: Array.from({ length: 10 }, (_, i) => `api${i}`),
-      uncovered: ['api9'],
-      ...over,
-    },
-  ],
-  notEnumerable: [],
-});
+): Measurement => {
+  const surface = Array.from({ length: 10 }, (_, i) => `api${i}`);
+  const uncovered = over.uncovered ?? ['api9'];
+  return {
+    measuredAt: '2026-09-09T00:00:00.000Z',
+    node: 'v24.12.0',
+    measured: [
+      {
+        plugin: 'eslint-plugin-demo',
+        surfaceSize: surface.length,
+        namedCount: surface.length - uncovered.length,
+        upperBoundPct: 90,
+        surface,
+        uncovered,
+        ...over,
+      },
+    ],
+    notEnumerable: [],
+  };
+};
 
 const entry = (over: Partial<PluginEntry> = {}): PluginEntry => ({
   plugin: 'eslint-plugin-demo',
@@ -159,7 +170,9 @@ describe('the denominator cannot be shrunk for free', () => {
 
 describe('the floor is one-directional and only applies to a trusted denominator', () => {
   it('fails a curated plugin whose upper bound is newly below the floor', () => {
-    const m = measurement({ namedCount: 3, uncovered: ['api3'] }); // 3/10 = 30%
+    const m = measurement({
+      uncovered: ['api3', 'api4', 'api5', 'api6', 'api7', 'api8', 'api9'],
+    }); // 3/10 = 30%
     expect(errors(auditSurfaces([entry()], m, FLOOR, []))).toEqual([
       expect.stringContaining(
         'below the 60% floor and is not in the recorded debt',
@@ -167,11 +180,25 @@ describe('the floor is one-directional and only applies to a trusted denominator
     ]);
   });
 
+  it('reports a measured plugin that no manifest entry declares', () => {
+    /*
+     * Deleting a manifest entry used to remove the plugin from the floor
+     * check, from the debt comparison and from the published table at the same
+     * time — one JSON deletion, changed verdict, no finding. Nothing walked
+     * the measurement in this direction until this arm existed.
+     */
+    expect(errors(auditSurfaces([], measurement(), FLOOR, []))).toEqual([
+      expect.stringContaining('no manifest entry'),
+    ]);
+  });
+
   it('does not judge a raw denominator against the floor', () => {
     // @aws-sdk/client-lambda enumerates the Lambda control plane. Failing a
     // handler-security plugin against that number would look measured and be
     // just as wrong as the constant it replaced.
-    const m = measurement({ namedCount: 0, uncovered: ['api0'] });
+    const m = measurement({
+      uncovered: Array.from({ length: 10 }, (_, i) => `api${i}`),
+    });
     const raw = entry({
       denominatorTrust: 'raw',
       denominatorNote:
@@ -181,7 +208,9 @@ describe('the floor is one-directional and only applies to a trusted denominator
   });
 
   it('refuses debt recorded against a raw denominator', () => {
-    const m = measurement({ namedCount: 0, uncovered: ['api0'] });
+    const m = measurement({
+      uncovered: Array.from({ length: 10 }, (_, i) => `api${i}`),
+    });
     const raw = entry({
       denominatorTrust: 'raw',
       denominatorNote:
@@ -200,7 +229,9 @@ describe('the floor is one-directional and only applies to a trusted denominator
      * on its own — a flag that could not change an outcome, in the script
      * whose whole subject is checks that cannot fail.
      */
-    const m = measurement({ namedCount: 3, uncovered: ['api3'] }); // 30%
+    const m = measurement({
+      uncovered: ['api3', 'api4', 'api5', 'api6', 'api7', 'api8', 'api9'],
+    }); // 30%
     const f = auditSurfaces([entry()], m, FLOOR, ['eslint-plugin-demo']);
     expect(errors(f)).toEqual([]);
     expect(
@@ -227,11 +258,30 @@ describe('the floor is one-directional and only applies to a trusted denominator
 describe('upperBoundPct', () => {
   it('measures against the in-scope surface, not the whole surface', () => {
     const m = measurement().measured[0];
-    expect(upperBoundPct(m, 0)).toBe(90);
-    expect(upperBoundPct(m, 1)).toBe(100);
+    expect(upperBoundPct(m, [])).toBe(90);
+    // api9 is the uncovered one: excluding it removes a gap, not a hit.
+    expect(upperBoundPct(m, ['api9'])).toBe(100);
+  });
+
+  it('takes an excluded API out of the numerator as well as the denominator', () => {
+    /*
+     * api0 IS named by a rule. Subtracting a COUNT from the denominator while
+     * leaving `namedCount` whole kept that hit in the numerator and removed
+     * its slot from the denominator — 9/9, a clean 100% for a surface with a
+     * known gap still in it.
+     */
+    expect(upperBoundPct(measurement().measured[0], ['api0'])).toBe(89);
+  });
+
+  it('cannot publish a bound above 100%', () => {
+    // The arithmetic that made this reachable: a fully-named surface with one
+    // name excluded read as 10/9.
+    const m = measurement({ namedCount: 10, uncovered: [] }).measured[0];
+    expect(upperBoundPct(m, ['api0'])).toBe(100);
   });
 
   it('reports 0 rather than dividing by zero when everything is excluded', () => {
-    expect(upperBoundPct(measurement().measured[0], 10)).toBe(0);
+    const m = measurement().measured[0];
+    expect(upperBoundPct(m, m.surface)).toBe(0);
   });
 });

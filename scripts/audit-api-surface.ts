@@ -176,17 +176,44 @@ const FREQUENCY_NOT_SCOPE =
   /\b(niche|rare|rarely|uncommon|low[- ]traffic|low[- ]frequency|infrequent|not common)\b/i;
 const MIN_REASON_LENGTH = 20;
 
+/** The names a manifest entry excludes from its denominator. */
+const excludedNames = (p: PluginEntry): string[] =>
+  (p.outOfScope ?? []).map((o) => o.api);
+
 export interface AuditFinding {
   plugin: string;
   severity: 'error' | 'warn';
   message: string;
 }
 
+/**
+ * The surface a fair reading measures against, and how much of it is named.
+ *
+ * `outOfScope` arrives as NAMES rather than a count for a reason. Subtracting a
+ * count from the denominator while leaving `namedCount` at its whole-surface
+ * value counts an excluded API in the numerator and removes it from the
+ * denominator at the same time — enough to publish a bound above 100%. The
+ * in-scope named count is the in-scope surface minus the in-scope uncovered
+ * names, which cannot exceed it.
+ */
+export function inScopeSurface(
+  m: Measured,
+  outOfScope: readonly string[],
+): { size: number; named: number } {
+  const excluded = new Set(outOfScope);
+  const size = m.surfaceSize - excluded.size;
+  const uncovered = m.uncovered.filter((api) => !excluded.has(api)).length;
+  return { size, named: size - uncovered };
+}
+
 /** Coverage of the security-relevant slice, bounded from above. */
-export function upperBoundPct(m: Measured, outOfScope: number): number {
-  const denominator = m.surfaceSize - outOfScope;
-  if (denominator <= 0) return 0;
-  return Math.round((m.namedCount / denominator) * 100);
+export function upperBoundPct(
+  m: Measured,
+  outOfScope: readonly string[],
+): number {
+  const { size, named } = inScopeSurface(m, outOfScope);
+  if (size <= 0) return 0;
+  return Math.round((named / size) * 100);
 }
 
 export function auditSurfaces(
@@ -198,6 +225,24 @@ export function auditSurfaces(
   const findings: AuditFinding[] = [];
   const byPlugin = new Map(measurement.measured.map((m) => [m.plugin, m]));
   const notEnumerable = new Set(measurement.notEnumerable.map((n) => n.plugin));
+  const declared = new Set(entries.map((e) => e.plugin));
+
+  /*
+   * Nothing else walks the measurement in this direction. `byPlugin` is only
+   * ever read through a manifest entry, and `renderMarkdown` filters rows the
+   * same way — so deleting one manifest entry removes that plugin from the
+   * floor check, from the debt comparison and from the published table
+   * together, with no finding anywhere. One JSON deletion, changed verdict:
+   * the same evasion class as the hand-typed count this audit replaced.
+   */
+  for (const m of measurement.measured) {
+    if (declared.has(m.plugin)) continue;
+    findings.push({
+      plugin: m.plugin,
+      severity: 'error',
+      message: `was measured but has no manifest entry — an unlisted plugin is audited by nothing and appears in no report; add it to api-surface.json`,
+    });
+  }
 
   for (const p of entries) {
     const raw = p as unknown as Record<string, unknown>;
@@ -231,7 +276,7 @@ export function auditSurfaces(
         findings.push({
           plugin: p.plugin,
           severity: 'error',
-          message: `outOfScope lists "${o.api}" twice, which would deflate the denominator by 2`,
+          message: `outOfScope lists "${o.api}" twice — an exclusion is a claim about one name, and a list that disagrees with its own count cannot be reviewed`,
         });
       }
       seen.add(o.api);
@@ -288,7 +333,7 @@ export function auditSurfaces(
       });
     }
 
-    const bound = upperBoundPct(measured, (p.outOfScope ?? []).length);
+    const bound = upperBoundPct(measured, excludedNames(p));
     if (p.denominatorTrust !== 'curated') continue;
     if (bound < floorPct && debt.includes(p.plugin)) {
       /*
@@ -331,7 +376,7 @@ export function auditSurfaces(
       });
       continue;
     }
-    const bound = upperBoundPct(measured, (entry?.outOfScope ?? []).length);
+    const bound = upperBoundPct(measured, entry ? excludedNames(entry) : []);
     if (bound >= floorPct) {
       findings.push({
         plugin: stale,
@@ -383,8 +428,7 @@ function renderMarkdown(
   const curated = rows.filter((r) => r.entry.denominatorTrust === 'curated');
   const belowFloor = curated.filter(
     (r) =>
-      upperBoundPct(r.measured, (r.entry.outOfScope ?? []).length) <
-      m.target_floor_pct,
+      upperBoundPct(r.measured, excludedNames(r.entry)) < m.target_floor_pct,
   );
   const newlyBelow = belowFloor.filter((r) => !debt.includes(r.entry.plugin));
   const sections: string[] = [];
@@ -469,16 +513,17 @@ function renderMarkdown(
         'center',
       ],
       rows: rows.map(({ entry, measured }) => {
-        const oos = (entry.outOfScope ?? []).length;
-        const bound = upperBoundPct(measured, oos);
+        const excluded = excludedNames(entry);
+        const scope = inScopeSurface(measured, excluded);
+        const bound = upperBoundPct(measured, excluded);
         return [
           `\`${entry.plugin}\``,
           entry.surface,
           measured.surfaceSize,
           entry.denominatorTrust,
-          oos,
-          measured.surfaceSize - oos,
-          measured.namedCount,
+          excluded.length,
+          scope.size,
+          scope.named,
           `≤ ${bound}%`,
           ruleCount(entry.plugin),
           entry.denominatorTrust !== 'curated'
@@ -511,7 +556,7 @@ function renderMarkdown(
 
   const body: string[] = [];
   for (const { entry, measured } of rows) {
-    const oos = (entry.outOfScope ?? []).length;
+    const oos = excludedNames(entry);
     body.push(`### \`${entry.plugin}\` (≤ ${upperBoundPct(measured, oos)}%)`);
     body.push('');
     body.push(
@@ -524,7 +569,7 @@ function renderMarkdown(
       );
       body.push(`  - \`${measured.uncovered.join('`, `')}\``);
     }
-    if (oos > 0) {
+    if (oos.length > 0) {
       body.push('- **Out of scope (excluded from the denominator):**');
       for (const o of entry.outOfScope ?? [])
         body.push(`  - \`${o.api}\` — ${o.reason}`);
@@ -564,6 +609,10 @@ function main(): void {
       cwd: REPO_ROOT,
       encoding: 'utf-8',
       maxBuffer: 64 * 1024 * 1024,
+      // The job that runs this has a 10-minute budget. Without a subprocess
+      // timeout a stalled measurement burns all of it and fails as a job
+      // cancellation, which says nothing about which step hung.
+      timeout: 8 * 60 * 1000,
       stdio: ['ignore', 'pipe', 'inherit'],
     }),
   ) as Measurement;
