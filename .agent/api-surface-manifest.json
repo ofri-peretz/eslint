@@ -1,8 +1,8 @@
 {
   "command": "npm run audit:api-surface",
-  "maintainedBy": "measured — scripts/measure-api-surface.mts enumerates each surface at its installed version and audit-api-surface.ts renders the result. This file holds judgement only: the prose description of a surface, whether its denominator is curated, and the outOfScope exclusions with their reasons. A count here is rejected.",
+  "maintainedBy": "measured \u2014 scripts/measure-api-surface.mts enumerates each surface at its installed version and audit-api-surface.ts renders the result. This file holds judgement only: the prose description of a surface, whether its denominator is curated, and the outOfScope exclusions with their reasons. A count here is rejected.",
   "$schema": "../scripts/schemas/api-surface-manifest.schema.json",
-  "description": "Per-plugin API-surface coverage. Counts are MEASURED by scripts/measure-api-surface.mts and published as upper bounds; this file holds only what a measurement cannot produce — the prose description of each surface and the outOfScope judgements with their reasons.",
+  "description": "Per-plugin API-surface coverage. Counts are MEASURED by scripts/measure-api-surface.mts and published as upper bounds; this file holds only what a measurement cannot produce \u2014 the prose description of each surface and the outOfScope judgements with their reasons.",
   "method": "scripts/audit-api-surface.ts runs the measurement and renders benchmark-results/api-surface-coverage.md. No count in this file; audit rejects one.",
   "target_floor_pct": 60,
   "plugins": [
@@ -24,7 +24,7 @@
     },
     {
       "plugin": "eslint-plugin-express-security",
-      "surface": "Express — router methods, middleware patterns, common response sinks",
+      "surface": "Express \u2014 router methods, middleware patterns, common response sinks",
       "surfaceVersion": "express@4.x + express@5.x",
       "denominatorTrust": "raw",
       "denominatorNote": "Denominator is the raw module enumeration and has not been reviewed against the consumer-callable surface.",
@@ -40,7 +40,7 @@
     },
     {
       "plugin": "eslint-plugin-jwt-security",
-      "surface": "jsonwebtoken — sign / verify / decode + jose / fast-jwt analogues",
+      "surface": "jsonwebtoken \u2014 sign / verify / decode + jose / fast-jwt analogues",
       "surfaceVersion": "jsonwebtoken@9.x, jose@5.x",
       "denominatorTrust": "curated",
       "denominatorNote": "The six JWT libraries a consumer actually calls; every one of the 33 names is public API of jsonwebtoken, jose, jwt-decode, express-jwt, jwks-rsa or @nestjs/jwt.",
@@ -56,10 +56,10 @@
     },
     {
       "plugin": "eslint-plugin-lambda-security",
-      "surface": "AWS Lambda — handler signatures, env-var access, callback / context patterns, AWS SDK client misuse",
+      "surface": "AWS Lambda \u2014 handler signatures, env-var access, callback / context patterns, AWS SDK client misuse",
       "surfaceVersion": "@aws-sdk/* v3 + Lambda Node runtime",
       "denominatorTrust": "raw",
-      "denominatorNote": "Enumerates @aws-sdk/client-lambda, which is the Lambda CONTROL PLANE (paginateListFunctions, waitUntilFunctionActive) — deployment tooling, not the handler code this plugin analyses.",
+      "denominatorNote": "Enumerates @aws-sdk/client-lambda, which is the Lambda CONTROL PLANE (paginateListFunctions, waitUntilFunctionActive) \u2014 deployment tooling, not the handler code this plugin analyses.",
       "notes": "Coverage spans the entry-point patterns (handler shape, env-var leak, secret-in-env), IAM role patterns, and the AWS SDK v3 client construction surface. Response streaming is an emerging surface to expand."
     },
     {
@@ -72,7 +72,7 @@
     },
     {
       "plugin": "eslint-plugin-mongodb-security",
-      "surface": "mongodb driver — Collection / Db / cursor query methods",
+      "surface": "mongodb driver \u2014 Collection / Db / cursor query methods",
       "surfaceVersion": "mongodb@6.x",
       "denominatorTrust": "curated",
       "denominatorNote": "Curated 2026-09-02 to Collection / Db / cursor / client prototypes, from 485 (mongodb and mongoose enumerated whole).",
@@ -88,7 +88,7 @@
     },
     {
       "plugin": "eslint-plugin-nestjs-security",
-      "surface": "NestJS — Controllers, Providers, Guards, Decorators, Pipes",
+      "surface": "NestJS \u2014 Controllers, Providers, Guards, Decorators, Pipes",
       "surfaceVersion": "nestjs@10.x + nestjs@11.x",
       "denominatorTrust": "raw",
       "denominatorNote": "374 callables is the whole framework, including every decorator, utility and error class.",
@@ -96,10 +96,10 @@
     },
     {
       "plugin": "eslint-plugin-node-security",
-      "surface": "Node.js core modules — fs, child_process, crypto, vm, dns, http(s)",
+      "surface": "Node.js core modules \u2014 fs, child_process, crypto, vm, dns, http(s)",
       "surfaceVersion": "node@24 stable APIs",
       "denominatorTrust": "curated",
-      "denominatorNote": "Node core module exports ARE the consumer-callable surface — fs, child_process, crypto, vm, dns, http(s) on node@24, constructors and _-prefixed internals removed. 199 is the denominator this repo already argued for in docs/intents/api-surface-floor-has-no-basis.",
+      "denominatorNote": "Node core module exports ARE the consumer-callable surface \u2014 fs, child_process, crypto, vm, dns, http(s) on node@24, constructors and _-prefixed internals removed. 199 is the denominator this repo already argued for in docs/intents/api-surface-floor-has-no-basis.",
       "notes": "The gap is real product debt, not a denominator artefact: createPrivateKey, createPublicKey, createSecretKey, createECDH, createDiffieHellman, diffieHellman and checkPrime are named nowhere, in a plugin whose stated surface includes crypto."
     },
     {
@@ -112,7 +112,7 @@
     },
     {
       "plugin": "eslint-plugin-postgresql-security",
-      "surface": "node-postgres — pg.Client / pg.Pool / pg.Query callable surface",
+      "surface": "node-postgres \u2014 pg.Client / pg.Pool / pg.Query callable surface",
       "surfaceVersion": "pg@8.x",
       "denominatorTrust": "raw",
       "denominatorNote": "Walks pg prototypes and picks up wire-protocol internals (handleDataRow, sendCopyFromChunk, attachListeners) that no consumer calls.",
@@ -143,11 +143,19 @@
       "notes": "Threat-model review of this surface is pending; the figure is an upper bound over a raw denominator."
     },
     {
+      "plugin": "eslint-plugin-supabase-security",
+      "surface": "@supabase/supabase-js",
+      "surfaceVersion": "installed: @supabase/supabase-js@2.115.0",
+      "denominatorTrust": "raw",
+      "denominatorNote": "Denominator is the raw module enumeration and has not been reviewed against the consumer-callable surface.",
+      "notes": "Threat-model review of this surface is pending; the figure is an upper bound over a raw denominator."
+    },
+    {
       "plugin": "eslint-plugin-sqlite-security",
       "surface": "better-sqlite3, sqlite3",
       "surfaceVersion": "installed: better-sqlite3@13.0.3, sqlite3@6.0.1",
       "denominatorTrust": "raw",
-      "denominatorNote": "Reads as 1 callable — better-sqlite3 default-exports a class and the enumeration does not reach it.",
+      "denominatorNote": "Reads as 1 callable \u2014 better-sqlite3 default-exports a class and the enumeration does not reach it.",
       "notes": "Threat-model review of this surface is pending; the figure is an upper bound over a raw denominator."
     },
     {
@@ -160,11 +168,11 @@
     },
     {
       "plugin": "eslint-plugin-vercel-ai-security",
-      "surface": "Vercel AI SDK — generateText / streamText / generateObject / tools",
+      "surface": "Vercel AI SDK \u2014 generateText / streamText / generateObject / tools",
       "surfaceVersion": "ai@3.x + @ai-sdk/* providers",
       "denominatorTrust": "curated",
       "denominatorNote": "Curated 2026-09-02 to the generation entry points, from 107 (the whole ai package, including 18 experimental_ entries and every error class).",
-      "notes": "A moving target — the AI SDK ships quickly, so the surface is re-enumerated at the installed version on every run. Rule count exceeds API count because several APIs carry multiple distinct misuse patterns covered separately."
+      "notes": "A moving target \u2014 the AI SDK ships quickly, so the surface is re-enumerated at the installed version on every run. Rule count exceeds API count because several APIs carry multiple distinct misuse patterns covered separately."
     }
   ],
   "notEnumerable": [
