@@ -1,10 +1,10 @@
 {
   "command": "npm run oxlint:shims",
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-09-06",
+  "generatedAt": "2026-09-10",
   "totalPlugins": 30,
-  "totalRules": 477,
-  "oxlintCompatible": 477,
+  "totalRules": 478,
+  "oxlintCompatible": 478,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -1612,7 +1612,7 @@
       "short": "node-security",
       "shim": "tools/oxlint-plugins/interlace-node-security.cjs",
       "subpath": "eslint-plugin-node-security/oxlint",
-      "ruleCount": 42,
+      "ruleCount": 43,
       "rules": [
         {
           "name": "detect-child-process",
@@ -1808,6 +1808,12 @@
         },
         {
           "name": "no-weak-cipher-algorithm",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-weak-dh-parameters",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
