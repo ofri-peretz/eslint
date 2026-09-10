@@ -227,6 +227,20 @@ export const enforceImportOrder = createRule<RuleOptions, MessageIds>({
       return comment.range[0] === 0 && sourceCode.getText().startsWith('#!');
     }
 
+    /**
+     * A file-level TypeScript directive, which the compiler honours only
+     * before the first statement. Like a hashbang it is position-fixed, so it
+     * can never travel with an import.
+     */
+    function isFileDirective(comment: TSESTree.Comment): boolean {
+      const text = comment.value.trim();
+      // `/// <reference … />` reaches us as a Line comment whose value starts
+      // with a third slash.
+      return (
+        /^@ts-(nocheck|check)\b/.test(text) || /^\/\s*<reference\b/.test(text)
+      );
+    }
+
     function getExtendedRange(
       node: TSESTree.ImportDeclaration,
     ): [number, number] {
@@ -254,7 +268,20 @@ export const enforceImportOrder = createRule<RuleOptions, MessageIds>({
       //
       // A hashbang is not a statement and cannot be reordered, so it is simply
       // never part of an import's range.
-      const reorderable = commentsBefore.filter((c) => !isHashbang(c));
+      //
+      // The same holds for `@ts-nocheck`, `@ts-check` and `/// <reference />`:
+      // TypeScript honours them only before the first statement. Carrying one
+      // down with its import still PARSES, so nothing surfaces — the file just
+      // silently gains (or loses) type checking. Found on burgee
+      // apps/docs/.source/server.ts:1, a generated file whose `@ts-nocheck`
+      // header sits above 11 imports.
+      //
+      // Only the directives are pinned, not every leading comment: an
+      // explanatory comment written for a specific import must still travel
+      // with it, or the fix strands it over the wrong one.
+      const reorderable = commentsBefore.filter(
+        (c) => !isHashbang(c) && !isFileDirective(c),
+      );
       if (reorderable.length > 0) {
         start = reorderable[0].range[0];
       }

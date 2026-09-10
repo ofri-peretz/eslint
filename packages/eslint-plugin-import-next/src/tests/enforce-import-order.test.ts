@@ -112,6 +112,85 @@ import { helper } from './helper';
           },
         ],
       },
+      {
+        /*
+         * `@ts-nocheck` is position-fixed the same way a hashbang is:
+         * TypeScript honours it only before the first statement. The fixer
+         * treated it as a leading comment of the first import and carried it
+         * down with that import, which still PARSES — so nothing surfaces —
+         * while type checking is silently switched back on (or, for
+         * `@ts-check` on a .js file, silently switched off).
+         *
+         * burgee apps/docs/.source/server.ts:1 — a generated file whose
+         * `@ts-nocheck` header sits above 11 imports.
+         */
+        name: 'the fixer never moves an import above a @ts-nocheck pragma',
+        code: `// @ts-nocheck
+import { helper } from './helper';
+import fs from 'fs';
+`,
+        output: `// @ts-nocheck
+import fs from 'fs';
+
+import { helper } from './helper';
+`,
+        errors: [{ messageId: 'importOrder' }],
+        options: [
+          {
+            groups: ['builtin', 'sibling'],
+            newlinesBetween: 'always',
+          },
+        ],
+      },
+      {
+        /*
+         * A triple-slash reference directive is equally position-fixed:
+         * TypeScript stops honouring it after the first statement.
+         */
+        name: 'the fixer never moves an import above a triple-slash reference',
+        code: `/// <reference types="node" />
+import { helper } from './helper';
+import fs from 'fs';
+`,
+        output: `/// <reference types="node" />
+import fs from 'fs';
+
+import { helper } from './helper';
+`,
+        errors: [{ messageId: 'importOrder' }],
+        options: [
+          {
+            groups: ['builtin', 'sibling'],
+            newlinesBetween: 'always',
+          },
+        ],
+      },
+      {
+        /*
+         * A pragma pins, an explanatory comment travels. Only the pragma is
+         * position-fixed; the comment below it belongs to `./helper` and must
+         * move with it, or the fix strands a comment over the wrong import.
+         */
+        name: 'a pragma is pinned while a per-import comment travels with its import',
+        code: `// @ts-nocheck
+// helper must be imported for its side effects
+import { helper } from './helper';
+import fs from 'fs';
+`,
+        output: `// @ts-nocheck
+import fs from 'fs';
+
+// helper must be imported for its side effects
+import { helper } from './helper';
+`,
+        errors: [{ messageId: 'importOrder' }],
+        options: [
+          {
+            groups: ['builtin', 'sibling'],
+            newlinesBetween: 'always',
+          },
+        ],
+      },
       // Incorrect group order
       {
         name: 'a relative import before a builtin',
