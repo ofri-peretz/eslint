@@ -442,6 +442,10 @@ knex-security	no-unsafe-query	unaware
 knex-security	no-unscoped-mutation	unaware	
 knex-security	require-tls	unaware	
 sqlite-security	no-unsafe-query	unaware	
+supabase-security	no-dynamic-rpc-name	unaware	
+supabase-security	no-public-storage-bucket	unaware	
+supabase-security	no-service-role-key-in-client	unaware	
+supabase-security	require-auth-error-check	unaware	
 typeorm-security	no-mass-assignment	unaware	
 typeorm-security	no-hardcoded-credentials	unaware	
 typeorm-security	no-unsafe-query	unaware	

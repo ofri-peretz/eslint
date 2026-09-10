@@ -3,11 +3,21 @@
   "name": "Hardcoded Credentials",
   "owasp": "A07:2021",
   "severity": "HIGH",
-  "expectedPlugins": ["eslint-plugin-secure-coding", "eslint-plugin-node-security"],
+  "expectedPlugins": [
+    "eslint-plugin-secure-coding",
+    "eslint-plugin-node-security",
+    "eslint-plugin-supabase-security"
+  ],
   "fixtures": {
     "vulnerable": [
-      { "file": "api-key-in-source.js", "description": "Live API key literal used as a Bearer token" },
-      { "file": "password-in-config.js", "description": "Database password literal in a config object" },
+      {
+        "file": "api-key-in-source.js",
+        "description": "Live API key literal used as a Bearer token"
+      },
+      {
+        "file": "password-in-config.js",
+        "description": "Database password literal in a config object"
+      },
       {
         "file": "aws-access-key-literal.js",
         "description": "AWS AKIA-prefixed access key id plus 40-char secret literal"
@@ -19,11 +29,25 @@
       {
         "file": "jwt-signing-secret-literal.js",
         "description": "HS256 signing secret plus a JWT-shaped service token literal"
+      },
+      {
+        "file": "supabase-service-role-in-client.ts",
+        "description": "Supabase service_role key behind NEXT_PUBLIC_, which inlines it into the browser bundle — a total Row Level Security bypass"
+      },
+      {
+        "file": "supabase-service-role-in-use-client.ts",
+        "description": "service_role read inside a \"use client\" module, which ships to the browser with it"
       }
     ],
     "safe": [
-      { "file": "env-credentials.js", "description": "Credentials read from process.env" },
-      { "file": "password-label.js", "description": "The word 'password' as UI copy, not a value" },
+      {
+        "file": "env-credentials.js",
+        "description": "Credentials read from process.env"
+      },
+      {
+        "file": "password-label.js",
+        "description": "The word 'password' as UI copy, not a value"
+      },
       {
         "file": "provider-env-credentials.js",
         "description": "Secret-shaped variable NAMES bound to process.env reads (no literal values)"
@@ -31,6 +55,14 @@
       {
         "file": "test-placeholder-values.js",
         "description": "Obvious placeholders ('test-api-key', 'changeme', '<your-secret-here>')"
+      },
+      {
+        "file": "supabase-anon-key-in-client.ts",
+        "description": "The anon key in a client component, which is what it is for"
+      },
+      {
+        "file": "supabase-service-role-server-only.ts",
+        "description": "service_role in a module importing `server-only`, where the build stops the client reaching it"
       }
     ]
   }

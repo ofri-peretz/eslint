@@ -1,19 +1,19 @@
 {
   "command": "npx tsx scripts/check-artifact-size.ts --update",
-  "generated": "2026-09-07",
+  "generated": "2026-09-10",
   "packages": {
     "@interlace/eslint-devkit": {
-      "unpacked": 398,
+      "unpacked": 399,
       "tarball": 105,
       "files": 103
     },
     "@interlace/eslint-formatter": {
-      "unpacked": 51,
-      "tarball": 15,
-      "files": 19
+      "unpacked": 54,
+      "tarball": 16,
+      "files": 20
     },
     "@interlace/eslint-formatter-sarif": {
-      "unpacked": 24,
+      "unpacked": 23,
       "tarball": 7,
       "files": 4
     },
@@ -23,14 +23,14 @@
       "files": 13
     },
     "eslint-plugin-browser-security": {
-      "unpacked": 381,
+      "unpacked": 382,
       "tarball": 88,
       "files": 131
     },
     "eslint-plugin-conventions": {
-      "unpacked": 99,
-      "tarball": 24,
-      "files": 39
+      "unpacked": 86,
+      "tarball": 21,
+      "files": 23
     },
     "eslint-plugin-drizzle-security": {
       "unpacked": 31,
@@ -48,8 +48,8 @@
       "files": 13
     },
     "eslint-plugin-import-next": {
-      "unpacked": 290,
-      "tarball": 57,
+      "unpacked": 291,
+      "tarball": 58,
       "files": 125
     },
     "eslint-plugin-jwt-security": {
@@ -68,9 +68,9 @@
       "files": 39
     },
     "eslint-plugin-maintainability": {
-      "unpacked": 98,
-      "tarball": 23,
-      "files": 33
+      "unpacked": 90,
+      "tarball": 20,
+      "files": 21
     },
     "eslint-plugin-mcp-sdk-security": {
       "unpacked": 48,
@@ -93,12 +93,12 @@
       "files": 45
     },
     "eslint-plugin-mysql-security": {
-      "unpacked": 29,
+      "unpacked": 30,
       "tarball": 8,
       "files": 15
     },
     "eslint-plugin-nestjs-security": {
-      "unpacked": 128,
+      "unpacked": 129,
       "tarball": 32,
       "files": 37
     },
@@ -128,9 +128,9 @@
       "files": 17
     },
     "eslint-plugin-react-a11y": {
-      "unpacked": 151,
-      "tarball": 27,
-      "files": 83
+      "unpacked": 135,
+      "tarball": 24,
+      "files": 46
     },
     "eslint-plugin-react-features": {
       "unpacked": 245,
@@ -138,14 +138,14 @@
       "files": 131
     },
     "eslint-plugin-reliability": {
-      "unpacked": 81,
-      "tarball": 19,
-      "files": 27
+      "unpacked": 79,
+      "tarball": 18,
+      "files": 17
     },
     "eslint-plugin-secure-coding": {
-      "unpacked": 486,
-      "tarball": 111,
-      "files": 81
+      "unpacked": 420,
+      "tarball": 91,
+      "files": 45
     },
     "eslint-plugin-sequelize-security": {
       "unpacked": 33,
@@ -153,9 +153,14 @@
       "files": 17
     },
     "eslint-plugin-sqlite-security": {
-      "unpacked": 25,
+      "unpacked": 26,
       "tarball": 7,
       "files": 11
+    },
+    "eslint-plugin-supabase-security": {
+      "unpacked": 39,
+      "tarball": 9,
+      "files": 12
     },
     "eslint-plugin-typeorm-security": {
       "unpacked": 32,
