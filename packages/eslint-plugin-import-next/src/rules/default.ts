@@ -12,7 +12,7 @@ import {
   hasParserServices,
   getParserServices,
 } from '@interlace/eslint-devkit';
-import { loadTypeScript } from '../utils/typescript-peer';
+import { loadTypeScript, aliasSymbolFlag } from '../utils/typescript-peer';
 
 type MessageIds = 'noDefaultExport';
 
@@ -54,8 +54,35 @@ export const defaultRule = createRule<RuleOptions, MessageIds>({
         )
           return;
 
-        const tsNode = services.esTreeNodeToTSNodeMap.get(node);
-        const symbol = checker?.getSymbolAtLocation?.(tsNode);
+        // `esTreeNodeToTSNodeMap` maps an ESTree `ImportDefaultSpecifier` to
+        // the TS `ImportClause` container node, not to the identifier inside
+        // it, and `checker.getSymbolAtLocation()` unconditionally returns
+        // `undefined` for an `ImportClause` (valid or invalid alike). Map the
+        // specifier's own `local` identifier instead, the same way `named.ts`
+        // resolves `node.imported` for named specifiers.
+        const tsNode = services.esTreeNodeToTSNodeMap.get(node.local);
+        let symbol = checker?.getSymbolAtLocation?.(tsNode);
+
+        // Resolve alias to the binding it actually points at. This is what
+        // lets a default import backed by TS `export =` / CJS interop (e.g.
+        // Node builtins, JSON modules) resolve to a real symbol instead of
+        // being treated as missing.
+        if (symbol && symbol.flags & aliasSymbolFlag()) {
+          try {
+            symbol = checker?.getAliasedSymbol?.(symbol);
+          } catch {
+            // If resolving alias fails, symbol implies broken import
+            symbol = undefined;
+          }
+        }
+
+        // A default import with no matching export still resolves to a
+        // symbol (the local binding), just not a useful one: TS aliases it
+        // to its synthetic "unknown" symbol. Treat that the same as "no
+        // symbol" so the check below still catches a genuine missing default.
+        if (symbol && symbol.escapedName === 'unknown') {
+          symbol = undefined;
+        }
 
         const moduleNode = services.esTreeNodeToTSNodeMap.get(
           node.parent.source,

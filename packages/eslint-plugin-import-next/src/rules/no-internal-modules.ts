@@ -13,9 +13,7 @@ import { createRule, staticString } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds =
-  | 'internalModuleImport'
-  | 'suggestPublicApi'
-  | 'suggestBarrelExport';
+  'internalModuleImport' | 'suggestPublicApi' | 'suggestBarrelExport';
 
 export interface Options {
   /** Maximum allowed depth of module imports (0 = only root, 1 = one level deep, etc.) */
@@ -85,7 +83,16 @@ function getImportDepth(importPath: string): number {
  */
 function getRootImport(importPath: string): string {
   if (importPath.startsWith('./') || importPath.startsWith('../')) {
-    return '.';
+    // Keep the traversal prefix. The root of `../../a/b` is `../..`; collapsing
+    // it to `.` points the import at the current file's OWN directory index,
+    // which is a different module — and the autofix leaves no report behind,
+    // so the swap is silent.
+    const leading: string[] = [];
+    for (const seg of importPath.split('/')) {
+      if (seg !== '..') break;
+      leading.push(seg);
+    }
+    return leading.length > 0 ? leading.join('/') : '.';
   }
 
   if (importPath.startsWith('@')) {
@@ -220,6 +227,20 @@ export const noInternalModules = createRule<RuleOptions, MessageIds>({
       strategy = 'error',
     } = options || {};
 
+    /**
+     * The string-literal node the fixer must rewrite.
+     *
+     * The declaration visitors hand us the declaration, whose specifier lives
+     * on `.source`; the `require()` visitor hands us the argument itself, which
+     * `staticString` also accepts as a no-substitution TemplateLiteral. Reaching
+     * for `.source` on that argument yielded `undefined`, and `fixer.replaceText`
+     * then threw and aborted the lint for the whole file — fix functions run at
+     * report time, so `--fix` was not even required.
+     */
+    function specifierNodeOf(node: TSESTree.Node): TSESTree.Node {
+      return 'source' in node && node.source ? node.source : node;
+    }
+
     function checkImport(importPath: string, node: TSESTree.Node) {
       // Skip if path should be ignored
       if (matchesAnyPattern(importPath, ignorePaths)) {
@@ -261,15 +282,19 @@ export const noInternalModules = createRule<RuleOptions, MessageIds>({
         context.report({
           node,
           messageId: 'internalModuleImport',
-          data: reportData,
+          /*
+           * The message has to name what the FIXER writes, which is the root
+           * import — deliberately, "for safety", see below. `suggestedPath`
+           * stops at `maxDepth`, so with `maxDepth: 1` the report read
+           * `Import from "./src"` and then rewrote the specifier to `'.'`. A
+           * message that describes a different edit than the one applied is
+           * worse than no message.
+           */
+          data: { ...reportData, suggestedPath: rootImport },
           fix(fixer: TSESLint.RuleFixer) {
             // Find the string literal node to replace
             // Autofix always goes to the root package for safety
-            const sourceNode =
-              node.type === 'Literal'
-                ? node
-                : (node as TSESTree.ImportDeclaration).source;
-            return fixer.replaceText(sourceNode, `'${rootImport}'`);
+            return fixer.replaceText(specifierNodeOf(node), `'${rootImport}'`);
           },
         });
       } else if (strategy === 'suggest') {
@@ -282,11 +307,10 @@ export const noInternalModules = createRule<RuleOptions, MessageIds>({
               messageId: 'suggestPublicApi' as const,
               data: { suggestedPath: rootImport },
               fix(fixer: TSESLint.RuleFixer) {
-                const sourceNode =
-                  node.type === 'Literal'
-                    ? node
-                    : (node as TSESTree.ImportDeclaration).source;
-                return fixer.replaceText(sourceNode, `'${rootImport}'`);
+                return fixer.replaceText(
+                  specifierNodeOf(node),
+                  `'${rootImport}'`,
+                );
               },
             },
             // Add barrel export suggestion if different from root
@@ -296,11 +320,10 @@ export const noInternalModules = createRule<RuleOptions, MessageIds>({
                     messageId: 'suggestBarrelExport' as const,
                     data: { suggestedPath: barrelPath },
                     fix(fixer: TSESLint.RuleFixer) {
-                      const sourceNode =
-                        node.type === 'Literal'
-                          ? node
-                          : (node as TSESTree.ImportDeclaration).source;
-                      return fixer.replaceText(sourceNode, `'${barrelPath}'`);
+                      return fixer.replaceText(
+                        specifierNodeOf(node),
+                        `'${barrelPath}'`,
+                      );
                     },
                   },
                 ]

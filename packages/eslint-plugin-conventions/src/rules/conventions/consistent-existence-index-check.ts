@@ -15,7 +15,20 @@ import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 type MessageIds = 'consistentExistenceCheck';
 
 export interface Options {
-  /** Preferred method for checking property existence */
+  /**
+   * Preferred method for checking property existence. Default: `Object.hasOwn`.
+   *
+   * The default used to be `in`, which pointed every codebase at the one form of
+   * the three that answers `true` for an INHERITED key. That is the direction a
+   * prototype-pollution guard is written to avoid, and it is the opposite of where
+   * the language went: `Object.hasOwn` exists because `in` and the `hasOwnProperty`
+   * dances were both wrong answers, and eslint core's `prefer-object-has-own`
+   * points the same way.
+   *
+   * `in` remains available and is the right answer when a chain lookup is what the
+   * code means — a prototype-based lookup table, a `Symbol.hasInstance` check.
+   * It is a choice to make deliberately rather than one to arrive at by default.
+   */
   preferred?: 'in' | 'hasOwnProperty' | 'Object.hasOwn';
 }
 
@@ -52,18 +65,18 @@ export const consistentExistenceIndexCheck = createRule<
           preferred: {
             type: 'string',
             enum: ['in', 'hasOwnProperty', 'Object.hasOwn'],
-            default: 'in',
+            default: 'Object.hasOwn',
           },
         },
         additionalProperties: false,
       },
     ],
   },
-  defaultOptions: [{ preferred: 'in' }],
+  defaultOptions: [{ preferred: 'Object.hasOwn' }],
 
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
-    const { preferred = 'in' } = options || {};
+    const { preferred = 'Object.hasOwn' } = options || {};
 
     function reportInconsistentCheck(
       node: TSESTree.Node,

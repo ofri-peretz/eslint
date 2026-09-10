@@ -25,7 +25,6 @@ import {
 
 type MessageIds = 'jsdocTerminatorInExample' | 'wrapInQuotes';
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-empty-interface -- Rule has no configurable options
 export interface Options {}
 
 type RuleOptions = [Options?];
@@ -96,6 +95,17 @@ export const noJsdocTerminatorInExample = createRule<RuleOptions, MessageIds>({
   name: 'no-jsdoc-terminator-in-example',
   meta: {
     type: 'problem',
+    // DEPRECATED: this rule cannot fire on any parseable file.
+    //
+    // It looks for `*/` inside a JSDoc `@example`. A block comment ends at its
+    // FIRST `*/`, so a comment's value can never contain one — the text after it
+    // is code, not comment. Constructing the case gives a parse error
+    // ("Unterminated regular expression literal"), not a finding.
+    //
+    // The ledger surfaced it as `rules that claim no defect at all`: zero TP and
+    // zero FN cases, because none can exist. `findTerminatorsInExamples` is still
+    // exported and unit-tested directly, which is the only reachable surface.
+    deprecated: true,
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-reliability/docs/rules/no-jsdoc-terminator-in-example.md',
       description:
@@ -116,7 +126,7 @@ export const noJsdocTerminatorInExample = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.INFO,
         issueName: 'Wrap Pattern in Quotes',
         description:
-          "Wrap the `*/` pattern in single quotes to prevent premature JSDoc termination",
+          'Wrap the `*/` pattern in single quotes to prevent premature JSDoc termination',
         severity: 'LOW',
         fix: "Replace `*/` with `'*/'` (single-quoted) inside the @example block",
         documentationLink: 'https://jsdoc.app/tags-example',
@@ -141,10 +151,7 @@ export const noJsdocTerminatorInExample = createRule<RuleOptions, MessageIds>({
           const commentText = comment.value;
 
           // Quick bail-out: no @example or no `*/` inside → nothing to check
-          if (
-            !/@example\b/i.test(commentText) ||
-            !commentText.includes('*/')
-          ) {
+          if (!/@example\b/i.test(commentText) || !commentText.includes('*/')) {
             continue;
           }
 
@@ -154,7 +161,11 @@ export const noJsdocTerminatorInExample = createRule<RuleOptions, MessageIds>({
             // Calculate the absolute position in the source file.
             // comment.range[0] points to the opening `/*`, so the content
             // starts at range[0] + 2.
-            const absoluteStart = (comment as TSESTree.Comment & { range: [number, number] }).range[0] + 2 + offset;
+            const absoluteStart =
+              (comment as TSESTree.Comment & { range: [number, number] })
+                .range[0] +
+              2 +
+              offset;
             const absoluteEnd = absoluteStart + 2; // length of `*/`
 
             context.report({

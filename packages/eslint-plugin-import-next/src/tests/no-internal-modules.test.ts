@@ -96,6 +96,52 @@ describe('no-internal-modules', () => {
           output: "import utils from '.';",
           errors: [{ messageId: 'internalModuleImport' }],
         },
+        {
+          /*
+           * The message names the edit the fixer makes. Every other autofix
+           * case here runs at `maxDepth: 0`, where the suggested path and the
+           * root import are the same string — so the suite could not tell them
+           * apart, and at `maxDepth: 1` the report read `Import from "./src"`
+           * while the fixer wrote `'.'`.
+           */
+          name: 'the autofix message names the root import it actually writes',
+          code: "import x from './src/utils/helper';",
+          options: [{ strategy: 'autofix', maxDepth: 1 }],
+          output: "import x from '.';",
+          errors: [
+            {
+              messageId: 'internalModuleImport',
+              data: {
+                importPath: './src/utils/helper',
+                depth: '3',
+                maxDepth: '1',
+                suggestedPath: '.',
+              },
+            },
+          ],
+        },
+        {
+          /*
+           * A `../` specifier must keep its traversal prefix. Collapsing it to
+           * '.' repoints the import at the CURRENT file's own directory index —
+           * a different module — and the fix leaves no report behind, so the
+           * swap is silent.
+           *
+           * burgee apps/docs/.source/server.ts:2
+           */
+          name: 'autofix keeps the parent traversal of a ../ specifier',
+          code: "import * as m from '../content/docs/x.mdx';",
+          options: [{ strategy: 'autofix', maxDepth: 0 }],
+          output: "import * as m from '..';",
+          errors: [{ messageId: 'internalModuleImport' }],
+        },
+        {
+          name: 'autofix keeps every level of a ../../ specifier',
+          code: "import * as m from '../../a/b';",
+          options: [{ strategy: 'autofix', maxDepth: 0 }],
+          output: "import * as m from '../..';",
+          errors: [{ messageId: 'internalModuleImport' }],
+        },
       ],
     });
   });
@@ -437,6 +483,20 @@ import { Button } from '@company/ui';
         {
           code: "const Button = require('@company/ui/components/Button');",
           options: [{ maxDepth: 1 }],
+          errors: [{ messageId: 'internalModuleImport' }],
+        },
+        {
+          /*
+           * The detector accepts a no-substitution template literal (via
+           * `staticString`), but the fixers reached for `.source` on it and got
+           * `undefined`, throwing out of `fixer.replaceText` and aborting the
+           * lint for the entire file. Fix functions are evaluated at report
+           * time, so plain `verify` crashed too — `--fix` was not required.
+           */
+          name: 'a template-literal require does not crash the autofixer',
+          code: 'const get = require(`lodash/fp/get`);',
+          options: [{ strategy: 'autofix', maxDepth: 0 }],
+          output: "const get = require('lodash');",
           errors: [{ messageId: 'internalModuleImport' }],
         },
       ],

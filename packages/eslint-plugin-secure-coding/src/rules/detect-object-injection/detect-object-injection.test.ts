@@ -1303,6 +1303,34 @@ describe('detect-object-injection', () => {
     );
 
     ruleTester.run(
+      'Object.assign onto an inline Object.create(null) target is safe -- the docs\' own prescribed fix',
+      detectObjectInjection,
+      {
+        valid: [
+          // The rule's own docs (docs/rules/detect-object-injection.md, "Correct"
+          // section) prescribe Object.create(null) as THE fix for object
+          // injection, because a prototype-less object has no __proto__ /
+          // constructor / prototype to pollute. An inline Object.create(null)
+          // passed directly as the Object.assign target must therefore be
+          // treated exactly like a fresh `{}` literal target: safe regardless
+          // of source taint.
+          //
+          // Burgee provenance: packages/burgee/src/yargs-parser.ts:126
+          {
+            name: 'inline Object.create(null) target (burgee: packages/burgee/src/yargs-parser.ts:126)',
+            code: `
+              declare const source: Record<string, unknown>;
+              function mergeOptions() {
+                return Object.assign(Object.create(null), source);
+              }
+            `,
+          },
+        ],
+        invalid: [],
+      },
+    );
+
+    ruleTester.run(
       'Object.assign onto a non-literal target with an untrusted source is flagged',
       detectObjectInjection,
       {

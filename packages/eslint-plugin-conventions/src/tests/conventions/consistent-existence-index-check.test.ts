@@ -21,19 +21,24 @@ const ruleTester = new RuleTester({
 });
 
 describe('consistent-existence-index-check', () => {
-  describe('default (prefer "in")', () => {
+  describe('opting in to "in"', () => {
+    // `in` is no longer the default — it is the one form of the three that answers
+    // `true` for an INHERITED key, which is not where a default should point. These
+    // cases now say so, rather than arriving there by omission.
+    const IN = [{ preferred: 'in' as const }];
+
     ruleTester.run('prefer in operator', consistentExistenceIndexCheck, {
       valid: [
-        // Using 'in' operator (preferred)
-        { name: 'the `in` operator', code: '"key" in obj' },
-        { code: 'if ("prop" in object) {}' },
-        { code: 'const exists = "name" in user;' },
+        { name: 'the `in` operator', code: '"key" in obj', options: IN },
+        { code: 'if ("prop" in object) {}', options: IN },
+        { code: 'const exists = "name" in user;', options: IN },
       ],
       invalid: [
         // hasOwnProperty should be flagged
         {
           name: 'hasOwnProperty walks the prototype question the long way',
           code: 'obj.hasOwnProperty("key")',
+          options: IN,
           // Reported, not rewritten: `in` and an own-property check disagree on an
           // inherited key. See consistent-existence-index-check.own-property.test.ts.
           output: null,
@@ -42,6 +47,7 @@ describe('consistent-existence-index-check', () => {
         // Object.hasOwn should be flagged
         {
           code: 'Object.hasOwn(obj, "key")',
+          options: IN,
           // Reported, not rewritten: `in` and an own-property check disagree on an
           // inherited key. See consistent-existence-index-check.own-property.test.ts.
           output: null,

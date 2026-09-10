@@ -51,10 +51,32 @@ ruleTester.run('default', defaultRule, {
         name: 'Valid default import from file with default export',
         filename: 'src/valid_default.ts'
     },
-    { 
+    {
         code: `import { bar } from './files/foo.ts';`,
         name: 'Valid named import',
          filename: 'src/valid_named.ts'
+    },
+    {
+        // A default import of a module that has no ESM default export, but
+        // resolves via TS `export =` / CJS interop (esModuleInterop). Node's
+        // own builtins are declared this way (@types/node: `declare module
+        // 'node:process' { ... export = process; }`), so `moduleSymbol.exports`
+        // carries `ExportEquals`, never `Default`. We can't exercise a real
+        // `node:process` import here because this suite's RuleTester
+        // `allowDefaultProject` ad-hoc program doesn't resolve @types/node
+        // ambient modules, so this fixture reproduces the identical shape
+        // (`export =`) locally via ./files/export-equals.ts — `tsc --noEmit`
+        // accepts both with zero errors.
+        //
+        // Burgee provenance (all false-positived by the unfixed rule against
+        // real `node:process` imports, verified with a clean `tsc --noEmit`):
+        //   packages/burgee/src/commander-command.ts:15,17,18,19
+        //   packages/flagstaff/src/cursor.ts:19
+        //   packages/flagstaff/src/log-update.ts:21
+        //   packages/flagstaff/src/ora.ts:18
+        code: `import Widget from './files/export-equals.ts';`,
+        name: 'Valid default import of an export= / CJS-interop module',
+        filename: 'src/valid_export_equals_default.ts'
     },
   ],
   

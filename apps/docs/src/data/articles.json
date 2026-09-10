@@ -13,7 +13,7 @@
       "page_views_count": 0,
       "public_reactions_count": 5,
       "positive_reactions_count": 5,
-      "comments_count": 0,
+      "comments_count": 1,
       "tag_list": [
         "javascript",
         "webdev",
@@ -1745,6 +1745,6 @@
     }
   ],
   "total": 85,
-  "lastUpdated": "2026-09-10T00:12:11.106Z",
+  "lastUpdated": "2026-09-10T06:24:02.839Z",
   "source": "public"
 }
