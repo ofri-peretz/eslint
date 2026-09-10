@@ -88,6 +88,81 @@ describe('no-console-log', () => {
       valid: [],
       invalid: [
         {
+          /*
+           * A braceless `else if` body: removing the statement leaves the branch
+           * headless and the NEXT statement is silently absorbed into it. The
+           * output still parses and `tsc --strict` still exits 0, so nothing
+           * surfaces — only the runtime behaviour changes.
+           *
+           * burgee packages/burgee/src/yargs/factory.ts:1034, where the absorbed
+           * statement is `this.#hasOutput = true` — read by a public getter and
+           * gating the whole help/validation path.
+           *
+           * `output: null` asserts the rule declines to fix. The report stays.
+           */
+          name: 'remove declines to fix a braceless else-if body',
+          code: `if (a) b();
+else if (c) console.log("x");
+after();`,
+          options: [{ strategy: 'remove' }],
+          output: null,
+          errors: [{ messageId: 'consoleLogFound' }],
+        },
+        {
+          name: 'remove declines to fix a braceless while body',
+          code: `while (c) console.log("x");
+return 2;`,
+          options: [{ strategy: 'remove' }],
+          output: null,
+          errors: [{ messageId: 'consoleLogFound' }],
+        },
+        {
+          /*
+           * `findParentStatement` walks up to the enclosing ReturnStatement, so
+           * removing it deletes the early return and code below starts running
+           * on a path it never ran on before.
+           */
+          name: 'remove declines to fix a returned console.log',
+          code: `function f(cond) {
+  if (cond) {
+    return console.log("early");
+  }
+  danger();
+}`,
+          options: [{ strategy: 'remove' }],
+          output: null,
+          errors: [{ messageId: 'consoleLogFound' }],
+        },
+        {
+          /*
+           * Here the walk passes the arrow entirely and lands on the enclosing
+           * VariableDeclaration, deleting an exported object and an unrelated
+           * sibling method with it.
+           */
+          name: 'remove declines to fix a console.log inside an arrow body',
+          code: `export const myLogger = {
+  debug: (m) => console.log(m),
+  info: (m) => process.stdout.write(m),
+};`,
+          options: [{ strategy: 'remove' }],
+          output: null,
+          errors: [{ messageId: 'consoleLogFound' }],
+        },
+        {
+          /*
+           * `comment` shares the statement-level replace and so shares the bug —
+           * and it is the phase the docs recommend FIRST, as the least invasive
+           * step.
+           */
+          name: 'comment declines to fix a braceless else-if body',
+          code: `if (a) b();
+else if (c) console.log("x");
+after();`,
+          options: [{ strategy: 'comment' }],
+          output: null,
+          errors: [{ messageId: 'consoleLogFound' }],
+        },
+        {
           code: 'console.log("test");',
           options: [{ strategy: 'remove' }],
           output: '',
