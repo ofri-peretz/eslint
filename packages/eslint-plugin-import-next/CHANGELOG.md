@@ -5,6 +5,49 @@ All notable changes to `eslint-plugin-import-next` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.8.0
+
+### Minor Changes
+
+- **🐛 Fix** — `no-relative-parent-imports` sees a dynamic `import('../x')`
+
+  `import x from '../y'` reported and `require('../y')` reported, but
+  `import('../y')` — the same climb out of the directory — was silent. The
+  `CallExpression` visitor carried a comment claiming otherwise:
+
+  ```
+  // Note: Dynamic imports (import()) are handled by ImportExpression visitor
+  ```
+
+  There was no such visitor. Sibling rules `no-relative-packages` and
+  `no-absolute-path` both implement one, and upstream `eslint-plugin-import`,
+  which this rule's messages link as documentation, registers `ImportExpression`
+  through `moduleVisitor` and does report the dynamic form. Nothing in the docs
+  scopes the rule to static declarations, and `commonjs` is on by default, so
+  "static ESM only" was never the design.
+
+  **This rule now reports where it did not before.** A lazily loaded parent
+  module is a finding, at the same message and severity as its static twin.
+  Computed specifiers — `import(name)` — stay silent, as they already do for
+  `require`.
+
+### Patch Changes
+
+- **🐛 Fix** — `no-extraneous-dependencies` no longer reports `<scheme>:` specifiers as missing packages
+
+  The package name was derived by splitting the specifier on `/` alone, so
+  `fumadocs-mdx:collections/server` yielded the "package" `fumadocs-mdx:collections`
+  — a name npm's grammar forbids, since `:` is outside `[a-z0-9-._~]`. The rule
+  reported it as missing at HIGH and suggested `npm install fumadocs-mdx:collections`,
+  a command that cannot succeed, while the package actually backing it
+  (`fumadocs-mdx`) was declared all along.
+
+  Specifiers carrying a URI scheme are now skipped, the same as the existing `#`
+  and `node:` carve-outs. This covers spec-defined URL specifiers (`data:`,
+  `https:`) and build-tool virtual modules (`virtual:`, `astro:`). They are
+  skipped rather than prefix-mapped: `virtual:pwa-register` belongs to no package,
+  and `astro:content` does not belong to one named `astro`.
+
 ## 2.7.8
 
 ### Patch Changes
