@@ -153,7 +153,15 @@ export const noRelativeParentImports = createRule<RuleOptions, MessageIds>({
           }
         }
 
-        // Note: Dynamic imports (import()) are handled by ImportExpression visitor
+      },
+
+      ImportExpression(node: TSESTree.ImportExpression) {
+        // Dynamic import('../x') climbs out of the directory exactly as the
+        // static and require() forms do.
+        const staticText = staticString(node.source);
+        if (staticText !== null) {
+          checkImport(staticText, node.source);
+        }
       },
 
       TSImportEqualsDeclaration(node: TSESTree.TSImportEqualsDeclaration) {

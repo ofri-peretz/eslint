@@ -228,7 +228,60 @@ describe('filename-case', () => {
           filename: '/src/index.ts',
         },
       ],
-      invalid: [],
+      invalid: [
+        // burgee packages/burgee/vitest.config.ts:1 (and ~10 sibling
+        // vitest.config.ts files, apps/docs/source.config.ts,
+        // apps/docs/next.config.mjs). A multi-dot basename is reported --
+        // correctly, `.` is not a kebab-case character and the docs point at
+        // `ignore` for config files -- but the suggested rename must be a name
+        // the rule itself accepts, or the report can never be cleared.
+        {
+          name: 'a multi-dot basename suggests a name the rule accepts',
+          code: 'const x = 1;',
+          filename: '/packages/burgee/vitest.config.ts',
+          errors: [
+            {
+              messageId: 'filenameCase',
+              data: {
+                current: 'vitest.config.ts',
+                suggested: 'vitest-config.ts',
+                case: 'kebabCase',
+              },
+            },
+          ],
+        },
+        {
+          name: 'a multi-dot basename that is already lowercase still converges',
+          code: 'const x = 1;',
+          filename: '/apps/docs/source.config.ts',
+          errors: [
+            {
+              messageId: 'filenameCase',
+              data: {
+                current: 'source.config.ts',
+                suggested: 'source-config.ts',
+                case: 'kebabCase',
+              },
+            },
+          ],
+        },
+        {
+          name: 'a mixed-case multi-dot basename under camelCase',
+          code: 'const x = 1;',
+          filename: '/src/My.Config.ts',
+          options: [{ case: 'camelCase' }],
+          errors: [
+            {
+              messageId: 'filenameCase',
+              data: {
+                current: 'My.Config.ts',
+                suggested: 'MyConfig.ts',
+                case: 'camelCase',
+              },
+            },
+          ],
+        },
+      ],
     });
   });
 });

@@ -345,6 +345,60 @@ describe('no-weak-hash-algorithm', () => {
           },
         ],
       },
+      // Invalid: RIPEMD-160, the canonical spelling. `crypto.getHashes()`
+      // ships 'ripemd', 'ripemd160', 'rmd160', 'RSA-RIPEMD160' and
+      // 'ripemd160WithRSA'; the pattern was /\bripemd\b/i, which has no word
+      // boundary between 'd' and '1', so it matched only the bare alias while
+      // the rule's own docs use createHash('ripemd160') as the bad example.
+      {
+        name: 'the canonical ripemd160 spelling, which /\\bripemd\\b/ could not match',
+        code: 'crypto.createHash("ripemd160").update(data);',
+        options: UNCLASSIFIED,
+        errors: [
+          {
+            messageId: 'weakHashAlgorithm',
+            suggestions: [
+              {
+                messageId: 'useSha256',
+                output: 'crypto.createHash("sha256").update(data);',
+              },
+              {
+                messageId: 'useSha512',
+                output: 'crypto.createHash("sha512").update(data);',
+              },
+              {
+                messageId: 'useSha3',
+                output: 'crypto.createHash("sha3-256").update(data);',
+              },
+            ],
+          },
+        ],
+      },
+      // Invalid: the OpenSSL short alias for the same digest
+      {
+        name: 'the OpenSSL rmd160 alias for the same digest',
+        code: 'crypto.createHash("rmd160").update(data);',
+        options: UNCLASSIFIED,
+        errors: [
+          {
+            messageId: 'weakHashAlgorithm',
+            suggestions: [
+              {
+                messageId: 'useSha256',
+                output: 'crypto.createHash("sha256").update(data);',
+              },
+              {
+                messageId: 'useSha512',
+                output: 'crypto.createHash("sha512").update(data);',
+              },
+              {
+                messageId: 'useSha3',
+                output: 'crypto.createHash("sha3-256").update(data);',
+              },
+            ],
+          },
+        ],
+      },
       // Invalid: RIPEMD
       {
         code: 'crypto.createHash("ripemd").update(data);',
