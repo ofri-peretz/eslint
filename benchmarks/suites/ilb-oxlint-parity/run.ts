@@ -887,9 +887,19 @@ function main() {
     .basename(CORPUS)
     .replace(/[^a-zA-Z0-9._-]+/g, '-')
     .toLowerCase();
+  // The basename alone is not an identity. `--corpus` is resolved to an
+  // absolute path, and `/a/corpus` and `/b/corpus` share a basename — so on
+  // one day the second run would replace the first envelope, which is the
+  // defect the date-only name had, one level down. The slug stays because it
+  // is what makes the filename readable; the hash is what makes it unique.
+  const corpusIdentity = crypto
+    .createHash('sha256')
+    .update(CORPUS)
+    .digest('hex')
+    .slice(0, 12);
   const outPath = path.join(
     RESULTS_DIR,
-    `${new Date().toISOString().slice(0, 10)}-${corpusSlug}.json`,
+    `${new Date().toISOString().slice(0, 10)}-${corpusSlug}-${corpusIdentity}.json`,
   );
   fs.writeFileSync(outPath, JSON.stringify(envelope, null, 2) + '\n');
 
