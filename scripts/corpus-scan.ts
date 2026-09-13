@@ -328,6 +328,8 @@ const RIG = path.join(WORK, '_rig');
 const NPM_CACHE = path.join(WORK, '_npm-cache');
 
 interface Budget {
+  /** The command that regenerates this file, as every `.agent/*.json` carries. */
+  command?: string;
   /** Human note; ignored by the checker. */
   $comment: string;
   /** ISO date the numbers were last regenerated. */
@@ -943,6 +945,12 @@ function main(): number {
     // it. Found 2026-08-21 when a single `--update` erased eight entries that
     // had taken a day to write.
     const next: Budget = {
+      // Same reasoning as `triage` below, one field over. Every other
+      // `.agent/*.json` baseline opens with the command that regenerates it;
+      // this one did too, and rebuilding the object dropped it. Nothing reads
+      // the key, so its loss failed nothing — it just left the one file whose
+      // refresh command had to be rediscovered by reading this script.
+      ...(budget.command ? { command: budget.command } : {}),
       $comment: budget.$comment,
       generated: new Date().toISOString().slice(0, 10),
       budgets: Object.fromEntries(
