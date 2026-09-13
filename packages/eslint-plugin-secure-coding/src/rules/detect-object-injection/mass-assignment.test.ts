@@ -49,6 +49,38 @@ const ruleTester = new RuleTester({
 describe('detect-object-injection — mass assignment + local-object provenance', () => {
   ruleTester.run('detect-object-injection', detectObjectInjection, {
     valid: [
+      // ── LOCK 2026-09-13: what the callback arm must NOT swallow ───────────
+      // A READ back out of the object being iterated carries the own-key
+      // guarantee (corpus `safe/07-object-keys-foreach.js`); only a WRITE onto a
+      // DIFFERENT object is mass assignment. And the allowlist is the
+      // remediation — reporting it would make the rule unsatisfiable.
+      {
+        name: 'LOCK: forEach read from the iterated object is not mass assignment',
+        code: `export function sum(usage) { let t = 0; Object.keys(usage).forEach((k) => { t += usage[k].n; }); return t; }`,
+      },
+      // Degenerate shapes the callback arm must bail on rather than crash:
+      // no source argument, a callback passed by reference (body not visible
+      // here), and a callback that binds no key.
+      {
+        name: 'Object.keys with no argument, for-of spelling',
+        code: `export function f(dst) { for (const k of Object.keys()) { dst[k] = 1; } }`,
+      },
+      {
+        name: 'Object.keys with no argument has no source to judge',
+        code: `export function f(dst) { Object.keys().forEach((k) => { dst[k] = 1; }); }`,
+      },
+      {
+        name: 'a callback passed by reference is not an inspectable body',
+        code: `export function f(dst, src, cb) { Object.keys(src).forEach(cb); }`,
+      },
+      {
+        name: 'a callback that binds no key cannot key a write',
+        code: `export function f(dst, src) { Object.keys(src).forEach(function () { dst.seen = 1; }); }`,
+      },
+      {
+        name: 'LOCK: an allowlist inside the forEach body is the remediation',
+        code: `const OK = ['a','b']; export function f(dst, src) { Object.keys(src).forEach((k) => { if (OK.includes(k)) dst[k] = src[k]; }); }`,
+      },
       {
         name: 'an allowlist is the remediation, and it clears the finding',
         code: `export function update(req, user) {
@@ -153,6 +185,32 @@ export function tag(o) { o[kShared] = 1; }`,
       },
     ],
     invalid: [
+      // ── LOCK 2026-09-13: the callback spelling of the copy loop ────────────
+      // `checkMassAssignmentLoop` was registered on `ForOfStatement` only, so
+      // `for (const k of Object.keys(src)) dst[k] = src[k]` reported and the
+      // `.forEach` spelling of the identical copy was silent. The rule's own
+      // header defends not modelling `_.merge` by name on the grounds that "the
+      // mechanism still lives in hand-written traversal, which the copy-loop and
+      // path-setter paths already detect" — which was false for this spelling,
+      // including the unguarded recursive deep merge below, the canonical
+      // CWE-1321 primitive. Revert the `checkMassAssignmentCallback` arm and
+      // these three fail.
+      // Surfaced by burgee packages/burgee/src/yargs/utils.ts:98-101 (`objFilter`).
+      {
+        name: 'LOCK: forEach copy onto another object is mass assignment',
+        code: `export function b(target, src) { Object.keys(src).forEach((k) => { target[k] = src[k]; }); }`,
+        errors: [{ messageId: 'massAssignment' }],
+      },
+      {
+        name: 'LOCK: unguarded recursive deep merge in the forEach spelling',
+        code: `export function merge(target, src) { Object.keys(src).forEach((k) => { if (typeof src[k] === 'object') merge(target[k], src[k]); else target[k] = src[k]; }); }`,
+        errors: [{ messageId: 'massAssignment' }],
+      },
+      {
+        name: 'LOCK: the Object.entries destructuring spelling',
+        code: `export function b(target, src) { Object.entries(src).forEach(([k, v]) => { target[k] = v; }); }`,
+        errors: [{ messageId: 'massAssignment' }],
+      },
       {
         // burgee sweep 2026-09-10. The `for..in` spelling of this loop reports,
         // because its detector arms on `isCopyLoopSourceOpaque` — a PARAMETER or

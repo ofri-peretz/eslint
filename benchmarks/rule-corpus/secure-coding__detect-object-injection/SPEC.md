@@ -1,6 +1,6 @@
 # `detect-object-injection` — TP / FP / FN map
 
-> ## 🔒 LOCKED 2026-08-16
+> ## 🔒 LOCKED 2026-08-16 · amended 2026-09-13 (N9: copy loop in the callback spelling)
 >
 > This rule met its contract and was scored head-to-head: **100.0% F1 on the
 > 28-fixture corpus against `eslint-plugin-security`'s 60.0%**, and **13,075 vs
@@ -233,6 +233,52 @@ rule disabled, which costs every finding above.
 - **N5** `delete obj[k]`
 - **N6** ORM mass assignment (B3)
 - **N7** `new obj[k]()` / `obj[k]()` invocation reads
+- **N9** ~~the copy loop in its CALLBACK spelling~~ — **FIXED 2026-09-13.**
+  `checkMassAssignmentLoop` was registered on `ForOfStatement` only, so the two
+  loop spellings reported and the callback spelling did not:
+
+  | spelling | before | after |
+  |---|---|---|
+  | `for (const k in src) dst[k]=src[k]` | reports | reports |
+  | `for (const k of Object.keys(src)) dst[k]=src[k]` | reports | reports |
+  | `Object.keys(src).forEach(k => { dst[k]=src[k] })` | **silent** | reports |
+  | `Object.entries(src).map(([k,v]) => { dst[k]=v })` | **silent** | reports |
+
+  This was not a cosmetic gap. Measured in Node 24 on the recursive form, which
+  was also silent:
+
+  ```
+  mergeOptions({}, JSON.parse('{"__proto__":{"polluted":"yes"}}'))
+  ({}).polluted === 'yes'      // GLOBAL pollution, not one re-parented object
+  ```
+
+  So the unguarded recursive deep merge — the canonical CWE-1321 primitive, and
+  the shape this file's header cites when it declines to model `_.merge` by name
+  ("the mechanism still lives in hand-written traversal, which the copy-loop and
+  path-setter paths already detect") — went unreported in the spelling most
+  application code uses.
+
+  The per-access exemption `isObjectKeysCallbackKey` is NOT the bug and was left
+  alone: it is correct for a READ back out of the object being iterated (`k` is
+  an own enumerable key of that object — fixture `safe/07-object-keys-foreach.js`),
+  and it proves nothing about a WRITE onto a DIFFERENT object. Only the write
+  onto another object is reported.
+
+  Fixture: `vulnerable/04-merge-helper-callback-copy.js`. Corpus stays 14/14
+  vulnerable reporting and 14/14 safe silent. Locked by three `invalid` and two
+  `valid` cases in `mass-assignment.test.ts`, mutation-verified: reverting the
+  `checkMassAssignmentCallback` arm fails 4 tests.
+
+  One pre-existing `valid` fixture moved to `invalid` —
+  `write-path-branches.test.ts`, "an element bound by an array pattern in map"
+  (`Object.entries(src).map(([key,val]) => { dst[key]=val })`). It was a coverage
+  fixture for the ArrayPattern `bindsName` branch and locked this FN while doing
+  so; the comment fifteen lines above it already recorded the opposite security
+  judgement ("If `keys` is `Object.keys(req.body)` then the element IS
+  attacker-chosen, and this is mass assignment"). Its branch coverage is
+  preserved by a read-shaped replacement.
+
+  Surfaced by the burgee corpus: `packages/burgee/src/yargs/utils.ts:98-101`.
 - **N8** `OBJECT_INJECTION_PATTERNS` is matched with
   `new RegExp(p.pattern,'i').test(property)` over **printed source**, so
   `obj[myPrototypeVar]` substring-matches `prototype` — for the risk LABEL, not
