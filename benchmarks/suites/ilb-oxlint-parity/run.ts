@@ -23,6 +23,7 @@ import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { getToolchain } from '../../lib/toolchain.ts';
 import { capturePreregistration } from '../../lib/preregister.ts';
+import { corpusSlug } from '../../lib/corpus-slug.ts';
 
 const require = createRequire(import.meta.url);
 
@@ -883,13 +884,9 @@ function main() {
    * The date prefix stays first so `prune-benchmark-results` still recognises
    * these as dated snapshots.
    */
-  const corpusSlug = path
-    .basename(CORPUS)
-    .replace(/[^a-zA-Z0-9._-]+/g, '-')
-    .toLowerCase();
   const outPath = path.join(
     RESULTS_DIR,
-    `${new Date().toISOString().slice(0, 10)}-${corpusSlug}.json`,
+    `${new Date().toISOString().slice(0, 10)}-${corpusSlug(CORPUS, REPO_ROOT)}.json`,
   );
   fs.writeFileSync(outPath, JSON.stringify(envelope, null, 2) + '\n');
 
