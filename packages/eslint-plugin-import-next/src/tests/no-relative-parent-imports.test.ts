@@ -102,4 +102,47 @@ describe('no-relative-parent-imports', () => {
       ],
     });
   });
+
+  describe('Dynamic import() expressions', () => {
+    ruleTester.run('handle dynamic imports', noRelativeParentImports, {
+      valid: [
+        {
+          name: 'a dynamic sibling import',
+          code: 'const helper = () => import("./helper.js");',
+        },
+        {
+          name: 'a dynamic bare-specifier import',
+          code: 'const lodash = () => import("lodash");',
+        },
+        {
+          name: 'a computed specifier that cannot be read statically',
+          code: 'const load = (name) => import(name);',
+        },
+      ],
+      invalid: [
+        // burgee packages/burgee/src/commander/command.ts:1700 — lazily loaded
+        // completions module; the static ../ imports at :22-26 are reported and
+        // this one, the same climb out of the directory, was not.
+        {
+          name: 'a dynamic import that climbs out of its own directory',
+          code: 'const load = () => import("../completions.js");',
+          errors: [
+            {
+              messageId: 'preferAbsoluteImport',
+            },
+          ],
+        },
+        // burgee packages/burgee/src/yargs/factory.ts:1416
+        {
+          name: 'a dynamic import awaited inside a function',
+          code: 'async function load() { return await import("../../helpers.js"); }',
+          errors: [
+            {
+              messageId: 'preferAbsoluteImport',
+            },
+          ],
+        },
+      ],
+    });
+  });
 });
