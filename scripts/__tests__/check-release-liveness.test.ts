@@ -55,7 +55,7 @@ function stub(name: string, body: string) {
   chmodSync(p, 0o755);
 }
 
-function run(): { out: string; status: number } {
+function run(extraEnv: Record<string, string> = {}): { out: string; status: number } {
   const env = { ...process.env };
   delete env.GIT_DIR;
   delete env.GIT_WORK_TREE;
@@ -68,6 +68,11 @@ function run(): { out: string; status: number } {
       // Stubs first, then the repo-local bin so `tsx` resolves to the pinned
       // version rather than whatever npx would fetch.
       PATH: `${stubs}:${join(REPO_ROOT, 'node_modules', '.bin')}:${env.PATH ?? ''}`,
+      // Zero delay: these tests assert the RETRY COUNT and its findings, not
+      // the wait between attempts. The production delay (15s) exists to ride
+      // out real npm registry propagation lag -- see check-release-liveness.ts.
+      RELEASE_LIVENESS_RETRY_DELAY_MS: '0',
+      ...extraEnv,
     },
   });
 
@@ -163,6 +168,57 @@ describe('an unpublished bump is reported', () => {
     expect(status).toBe(1);
     expect(out).toContain('unpublished-bump');
     expect(out).toContain('1.1.0');
+  });
+});
+
+/**
+ * Lock for #973: a scheduled run landed seconds after `release.yml` finished
+ * publishing `eslint-plugin-maintainability@3.2.6`, read npm before the
+ * registry's own metadata caught up (npm recorded the write at 15:56:08Z; the
+ * check asked around 15:55:20Z), and filed "Release pipeline is stalled"
+ * against a pipeline that had, in fact, just delivered. A single npm query
+ * cannot tell registry propagation lag apart from a real stall -- both look
+ * identical as one snapshot. Only asking again does.
+ */
+describe('registry propagation lag is retried before it becomes a finding', () => {
+  it('does not flag a package that catches up to npm within the retry budget', () => {
+    write('packages/x/package.json', '{"name":"eslint-plugin-x","version":"1.1.0"}');
+    git('add', '-A');
+    git('commit', '-q', '-m', 'chore: version packages');
+
+    // First call (the initial check) still reads the stale version, as npm's
+    // read replicas would for a few seconds after a real publish. By the
+    // second call -- the first retry -- it has propagated.
+    stub(
+      'npm',
+      `case "$*" in
+        *eslint-plugin-x*)
+          n=$(cat "${stubs}/x-calls" 2>/dev/null || echo 0)
+          n=$((n + 1))
+          echo "$n" > "${stubs}/x-calls"
+          if [ "$n" -lt 2 ]; then echo 1.0.0; else echo 1.1.0; fi
+          ;;
+        *) echo 1.0.0 ;;
+      esac`,
+    );
+
+    const { out, status } = run();
+    expect(status).toBe(0);
+    expect(out).not.toContain('unpublished-bump');
+    expect(out).toContain('caught up on retry');
+  });
+
+  it('still flags a package that stays ahead of npm through every retry', () => {
+    write('packages/x/package.json', '{"name":"eslint-plugin-x","version":"1.1.0"}');
+    git('add', '-A');
+    git('commit', '-q', '-m', 'chore: version packages');
+    // Default stub (beforeEach) always answers 1.0.0 -- a genuine stall,
+    // never resolved by asking again.
+
+    const { out, status } = run();
+    expect(status).toBe(1);
+    expect(out).toContain('unpublished-bump');
+    expect(out).not.toContain('caught up on retry');
   });
 });
 
