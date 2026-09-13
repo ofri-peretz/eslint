@@ -90,7 +90,10 @@ const WEAK_HASH_PATTERNS: WeakHashPattern[] = [
     replacement: 'sha256',
   },
   {
-    pattern: /\bripemd\b/i,
+    // Node ships this digest under five names: 'ripemd', 'ripemd160',
+    // 'rmd160', 'RSA-RIPEMD160' and 'ripemd160WithRSA'. /\bripemd\b/ has no
+    // word boundary between 'd' and '1', so it caught only the bare alias.
+    pattern: /\b(?:ripemd(?:160(?:withrsa)?)?|rmd160)\b/i,
     name: 'RIPEMD',
     alternatives: ['SHA-256', 'SHA-512'],
     replacement: 'sha256',

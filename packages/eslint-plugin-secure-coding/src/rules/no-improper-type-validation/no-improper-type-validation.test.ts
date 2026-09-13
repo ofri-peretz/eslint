@@ -910,6 +910,16 @@ describe('structural predicates', () => {
         'if (bag["k"] !== null && typeof bag["k"] === "object") { go(); }',
         // Guard written with the nullish literal on the LEFT.
         'if (null !== payload && typeof payload === "object") { go(); }',
+        // `x instanceof C` is strictly stronger than `x !== null`: OrdinaryHasInstance
+        // returns false for every non-Object value, so the conjunction excludes BOTH
+        // hazards the message names — `null` and arrays alike. Adding a redundant
+        // `payload !== null` to this same condition already silences the rule, so a
+        // verdict that turns on the spelling of a no-op clause is not evidence.
+        // burgee packages/burgee/src/commander/command.ts:538
+        {
+          name: 'instanceof excludes null and arrays, so it is a null guard',
+          code: 'class Option {} if (typeof payload === "object" && payload instanceof Option) { go(); }',
+        },
       ],
       invalid: [
         // Different node TYPES on the two sides: guard does not match the operand.

@@ -149,14 +149,17 @@ export const filenameCase = createRule<RuleOptions, MessageIds>({
     // Convert to different case formats
     // oxlint-disable-next-line consistent-function-scoping
     function toCamelCase(str: string): string {
-      return str.replace(/[-_](.)/g, (_, letter) => letter.toUpperCase());
+      // '.' separates words too: a multi-dot basename such as vitest.config
+      // has to become a single conforming name, or the suggestion is a rename
+      // the rule itself would report again.
+      return str.replace(/[-_.](.)/g, (_, letter) => letter.toUpperCase());
     }
 
     // oxlint-disable-next-line consistent-function-scoping
     function toKebabCase(str: string): string {
       return str
         .replace(/([a-z])([A-Z])/g, '$1-$2')
-        .replace(/[\s_]+/g, '-')
+        .replace(/[\s_.]+/g, '-')
         .toLowerCase();
     }
 
@@ -169,7 +172,7 @@ export const filenameCase = createRule<RuleOptions, MessageIds>({
     function toSnakeCase(str: string): string {
       return str
         .replace(/([a-z])([A-Z])/g, '$1_$2')
-        .replace(/[\s-]+/g, '_')
+        .replace(/[\s\-.]+/g, '_')
         .toLowerCase();
     }
 

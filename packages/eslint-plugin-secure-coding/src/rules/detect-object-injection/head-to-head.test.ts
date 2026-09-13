@@ -79,11 +79,13 @@ suite('detect-object-injection, read against its nearest neighbour', () => {
       },
       {
         // burgee sweep 2026-09-10, from packages/burgee/src/testing-helpers.ts:176.
+        // @found burgee sweep 2026-09-10, testing-helpers.ts:176
         // `as const` is how TypeScript writes a closed key set, and the benchmark
         // spec lists it beside Object.freeze under E4, "must NOT report". The
         // resolver reads through `Object.freeze` but demands an ArrayExpression
         // straight after, and `[...] as const` is a TSAsExpression — so the
         // stronger spelling reported while the weaker one above stayed silent.
+        // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
         name: 'FP: the same allowlist written with as const',
         code: 'const KEYS = ["alpha", "beta"] as const; const o = {}; for (const k of KEYS) { o[k] = 1; }',
       },
@@ -91,14 +93,17 @@ suite('detect-object-injection, read against its nearest neighbour', () => {
         // The older spelling of the same assertion. Fixing `as const` alone left
         // this one reporting, so the rule still penalised one of the two ways
         // TypeScript writes the closed set it recommends.
+        // @found spelling probe
         name: 'FP: the allowlist written with an angle-bracket const assertion',
         code: 'const KEYS = <const>["alpha", "beta"]; const o = {}; for (const k of KEYS) { o[k] = 1; }',
       },
       {
+        // @found reasoned from the as const finding, not seen in real code
         name: 'FP: as const inside Object.freeze, both wrappers at once',
         code: 'const KEYS = Object.freeze(["alpha", "beta"] as const); const o = {}; for (const k of KEYS) { o[k] = 1; }',
       },
       {
+        // @found reasoned from the as const finding, not seen in real code
         name: 'FP: a satisfies-annotated allowlist',
         code: 'const KEYS = ["alpha", "beta"] satisfies readonly string[]; const o = {}; for (const k of KEYS) { o[k] = 1; }',
       },

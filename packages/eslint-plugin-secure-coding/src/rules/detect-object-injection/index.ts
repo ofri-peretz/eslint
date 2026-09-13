@@ -7,6 +7,14 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════
  * 🔒 LOCKED 2026-08-16 — read this whole block before changing anything here.
+ * 🔒 AMENDED 2026-09-13 — the mass-assignment listener was registered on
+ *    `ForOfStatement` only, so `Object.keys(src).forEach(k => dst[k]=src[k])`
+ *    and the recursive deep merge in that spelling were silent while both loop
+ *    spellings reported. Measured: the recursive form achieves GLOBAL prototype
+ *    pollution (`({}).polluted === 'yes'`). Added `checkMassAssignmentCallback`
+ *    and moved the shared tail into `reportMassAssignment` so the spellings
+ *    cannot drift again. SPEC.md N9; fixture vulnerable/04; corpus still 14/14
+ *    and 14/14. The READ exemption (`isObjectKeysCallbackKey`) is unchanged.
  * ═══════════════════════════════════════════════════════════════════════════
  *
  * This rule's behaviour was derived from the SEMANTICS of the weakness, every
@@ -2303,6 +2311,133 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * decides. This reports only the untrusted-source form, which is the shape
      * with an attacker in it.
      */
+    /**
+     * The mass-assignment tail, shared by every spelling of the copy loop.
+     *
+     * `for (const k of Object.keys(src))` reported and
+     * `Object.keys(src).forEach((k) => …)` did not, for the same reason the
+     * `Object.entries` form once escaped: the listener was registered on one
+     * node type. This rule's own header defends not modelling `_.merge` by name
+     * on the grounds that "the mechanism still lives in hand-written traversal,
+     * which the copy-loop and path-setter paths already detect" — a claim that
+     * was false for the callback spelling, including an unguarded recursive deep
+     * merge, the canonical CWE-1321 primitive. Keeping the guard tokens and the
+     * write-walk in ONE place is what stops the two spellings drifting again.
+     *
+     * `bodyNode` is the loop body or the callback body; `reportOn` is the node
+     * whose position the finding carries.
+     */
+    const reportMassAssignment = (
+      source: TSESTree.Node,
+      keyName: string,
+      bodyNode: TSESTree.Node,
+    ): void => {
+      if (!isCopyLoopSourceOpaque(source)) return;
+
+      // An allowlist inside the body is the remediation — naming the edit that
+      // clears this finding is what keeps the rule satisfiable. TOKENS, not
+      // `getText`: source text carries comments, so `/* __proto__ */` written
+      // anywhere in the body would otherwise clear the finding.
+      const body = sourceCode
+        .getTokens(bodyNode)
+        .map((token) => token.value)
+        .join('');
+      if (/\b(includes|has|hasOwn|hasOwnProperty|indexOf)\s*\(/.test(body))
+        return;
+      if (/__proto__|constructor|prototype/.test(body)) return;
+
+      // A computed write keyed by the loop/callback variable, anywhere in the body.
+      let reported = false;
+      const walk = (n: TSESTree.Node): void => {
+        if (reported) return;
+        if (
+          n.type === AST_NODE_TYPES.AssignmentExpression &&
+          n.left.type === AST_NODE_TYPES.MemberExpression &&
+          n.left.computed &&
+          // NOT `propertyName`: the property here is the loop VARIABLE, and
+          // matching it by name is the whole point.
+          n.left.property.type === AST_NODE_TYPES.Identifier &&
+          n.left.property.name === keyName
+        ) {
+          reported = true;
+          context.report({
+            node: n,
+            messageId: 'massAssignment',
+            data: { key: keyName },
+          });
+          return;
+        }
+        for (const key of Object.keys(n)) {
+          const child = (n as unknown as Record<string, unknown>)[key];
+          if (key === 'parent' || child === null || typeof child !== 'object')
+            continue;
+          for (const c of Array.isArray(child) ? child : [child]) {
+            if (c && typeof (c as TSESTree.Node).type === 'string')
+              walk(c as TSESTree.Node);
+          }
+        }
+      };
+      walk(bodyNode);
+    };
+
+    /**
+     * `Object.keys(src).forEach((k) => { target[k] = src[k] })` — the callback
+     * spelling of the copy loop.
+     *
+     * The per-access exemption (`isObjectKeysCallbackKey`) is correct for a READ
+     * back out of the object being iterated: `k` is an own enumerable key of
+     * that object, which is what corpus fixture `safe/07-object-keys-foreach.js`
+     * pins. It proves nothing about a WRITE onto a DIFFERENT object, which is
+     * the mass-assignment weakness (CWE-915) and is what this arm reports.
+     */
+    const checkMassAssignmentCallback = (node: TSESTree.CallExpression) => {
+      // No `isInCodemodContext` guard here: the CallExpression visitor that calls
+      // this already returns on it, so a second check would be unreachable.
+      const callee = node.callee;
+      if (callee.type !== AST_NODE_TYPES.MemberExpression) return;
+      // `propertyName`, not `callee.property.name`: `o['forEach']` and
+      // ``o[`forEach`]`` reach the same method as `o.forEach`, and a copy loop
+      // spelled that way is the same copy loop.
+      const method = propertyName(callee);
+      if (method === null || !ELEMENT_FIRST_ITERATORS.has(method)) return;
+
+      // The receiver must be `Object.keys(src)` / `Object.entries(src)`.
+      const receiver = callee.object;
+      if (
+        receiver.type !== AST_NODE_TYPES.CallExpression ||
+        receiver.callee.type !== AST_NODE_TYPES.MemberExpression ||
+        receiver.callee.object.type !== AST_NODE_TYPES.Identifier ||
+        receiver.callee.object.name !== 'Object' ||
+        // @vocabulary Object statics
+        !namesOneOf(propertyName(receiver.callee), ['keys', 'entries'])
+      ) {
+        return;
+      }
+      const source = receiver.arguments[0];
+      if (source === undefined) return;
+
+      const fn = node.arguments[0];
+      if (
+        fn === undefined ||
+        (fn.type !== AST_NODE_TYPES.ArrowFunctionExpression &&
+          fn.type !== AST_NODE_TYPES.FunctionExpression)
+      ) {
+        return;
+      }
+      // `(k) => …` or the `Object.entries` destructuring `([k, v]) => …`.
+      const first = fn.params[0];
+      const keyName =
+        first?.type === AST_NODE_TYPES.Identifier
+          ? first.name
+          : first?.type === AST_NODE_TYPES.ArrayPattern &&
+              first.elements[0]?.type === AST_NODE_TYPES.Identifier
+            ? first.elements[0].name
+            : null;
+      if (keyName === null) return;
+
+      reportMassAssignment(source, keyName, fn.body);
+    };
+
     const checkMassAssignmentLoop = (node: TSESTree.ForOfStatement) => {
       if (isInCodemodContext) return;
 
@@ -2329,7 +2464,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // attacker-supplied object reaches a library's `merge(target, src)` as a
       // parameter, and `Object.keys` of a JSON.parse'd object contains
       // `__proto__` because JSON.parse defines it as an own property.
-      if (source === undefined || !isCopyLoopSourceOpaque(source)) return;
+      if (source === undefined) return;
 
       // The loop binding. Two spellings, and missing the second left the
       // `Object.entries` form — the more idiomatic one, since it avoids the
@@ -2347,65 +2482,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
             : null;
       if (keyName === null) return;
 
-      // An allowlist inside the body is the remediation — naming the edit that
-      // clears this finding is what keeps the rule satisfiable.
-      // TOKENS, not `getText` — the same trap the `for..in` twin documents forty
-      // lines below, walked into again by the arm that taught this rule to read
-      // `for..of`. Source text carries comments, so `/* __proto__ */` written
-      // anywhere in the loop cleared the finding: a suppression comment nobody
-      // declared, in a rule whose whole job is prototype pollution. Joined
-      // without separators so a multi-token guard still reads as one string.
-      const body = sourceCode
-        .getTokens(node.body)
-        .map((token) => token.value)
-        .join('');
-      if (/\b(includes|has|hasOwn|hasOwnProperty|indexOf)\s*\(/.test(body))
-        return;
-      // The `for..in` twin also clears a loop that names the polluting keys
-      // itself — `if (k === '__proto__') continue` is the documented guard, and
-      // reporting the fix is how a rule becomes unsatisfiable. Same guard here,
-      // so the two spellings agree on what counts as remediated.
-      if (/__proto__|constructor|prototype/.test(body)) return;
-
-      // A computed write keyed by the loop variable, anywhere in the body.
-      let reported = false;
-      const walk = (n: TSESTree.Node): void => {
-        if (reported) return;
-        if (
-          n.type === AST_NODE_TYPES.AssignmentExpression &&
-          n.left.type === AST_NODE_TYPES.MemberExpression &&
-          n.left.computed &&
-          // NOT `propertyName`: the property here is the loop VARIABLE, and
-          // matching it by name is the whole point. `propertyName` resolves a
-          // string subscript and returns null for a dynamic key — exactly
-          // backwards for this test.
-          //
-          // A sweep has now rewritten this line TWICE, stranding the comment
-          // above the wrong code both times; the mass-assignment tests caught
-          // it both times. If you are here from a third sweep, they are the
-          // lock — read them before "fixing" this.
-          n.left.property.type === AST_NODE_TYPES.Identifier &&
-          n.left.property.name === keyName
-        ) {
-          reported = true;
-          context.report({
-            node: n,
-            messageId: 'massAssignment',
-            data: { key: keyName },
-          });
-          return;
-        }
-        for (const key of Object.keys(n)) {
-          const child = (n as unknown as Record<string, unknown>)[key];
-          if (key === 'parent' || child === null || typeof child !== 'object')
-            continue;
-          for (const c of Array.isArray(child) ? child : [child]) {
-            if (c && typeof (c as TSESTree.Node).type === 'string')
-              walk(c as TSESTree.Node);
-          }
-        }
-      };
-      walk(node.body);
+      reportMassAssignment(source, keyName, node.body);
     };
 
     /**
@@ -2580,6 +2657,11 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       },
       CallExpression: (node: TSESTree.CallExpression) => {
         if (isInCodemodContext) return;
+        // The callback spelling of the copy loop. Runs alongside — not instead
+        // of — the Object.assign/spread check: one CallExpression can only be
+        // one of the two shapes, and a duplicate key here would silently drop
+        // whichever arm was declared first.
+        checkMassAssignmentCallback(node);
         return checkObjectAssignSpread(node);
       },
     };
