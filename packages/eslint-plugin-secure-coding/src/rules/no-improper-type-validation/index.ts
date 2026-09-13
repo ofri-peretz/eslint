@@ -290,6 +290,15 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
           return sameExpression(expression.argument, operand) && negated;
         }
         if (expression.type !== 'BinaryExpression') return false;
+        // `x instanceof C` is strictly stronger than `x !== null`, the same reason
+        // a bare truthiness test counts above: OrdinaryHasInstance returns false for
+        // every value that is not an Object, so `null instanceof C` is false (it does
+        // not throw — only a non-callable RIGHT operand throws) and `[] instanceof C`
+        // is false for any C that is not Array. The conjunction therefore excludes
+        // both hazards this message names. Only on the true branch: the negated form
+        // of this guard is `!(x instanceof C)`, a UnaryExpression the arm above owns.
+        if (expression.operator === 'instanceof')
+          return !negated && sameExpression(expression.left, operand);
         const wanted = negated ? ['===', '=='] : ['!==', '!='];
         if (!wanted.includes(expression.operator)) return false;
         if (isNullish(expression.right))

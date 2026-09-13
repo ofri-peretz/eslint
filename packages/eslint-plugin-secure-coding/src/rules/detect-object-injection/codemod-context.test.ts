@@ -61,6 +61,13 @@ describe('detect-object-injection — codemod context', () => {
         code: MASS_ASSIGNMENT,
       },
       {
+        // The callback spelling needs its own case for the same reason the
+        // `for…of` one did: it is a separate visitor with its own guard.
+        name: 'mass-assignment in the callback spelling, in a codemod file',
+        filename: 'scripts/codemod.ts',
+        code: `export function f(target, src) { Object.keys(src).forEach((k) => { target[k] = src[k]; }); }`,
+      },
+      {
         name: 'prototype-copy loop in a file named codemod.ts',
         filename: 'scripts/codemod.ts',
         code: PROTOTYPE_COPY,
@@ -72,6 +79,12 @@ describe('detect-object-injection — codemod context', () => {
       },
     ],
     invalid: [
+      {
+        name: 'CONTROL: the same callback-spelling copy in ordinary source',
+        filename: 'src/users.ts',
+        code: `export function f(target, src) { Object.keys(src).forEach((k) => { target[k] = src[k]; }); }`,
+        errors: [{ messageId: 'massAssignment' }],
+      },
       {
         // CONTROL. Byte-identical to the first valid case; only the path differs.
         // If this stops reporting, the suppression has escaped the codemod
