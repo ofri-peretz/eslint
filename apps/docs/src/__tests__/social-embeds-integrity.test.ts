@@ -1,15 +1,15 @@
 // @vitest-environment node
 /**
  * Social Embeds Integrity Tests
- * 
+ *
  * CRITICAL: These tests validate that all social media embeds (tweets, etc.)
  * referenced in the docs are valid and fetchable at build time.
- * 
+ *
  * This prevents embarrassing "Tweet not found" errors on production like:
  * - Deleted tweets
  * - Suspended accounts
  * - Invalid tweet IDs
- * 
+ *
  * The tests extract tweet IDs from source files and verify they return
  * valid data from the Twitter/X API.
  */
@@ -20,6 +20,7 @@ import { globSync } from 'glob';
 import { join, resolve } from 'path';
 import { getTweet } from 'react-tweet/api';
 import { shouldFailSync } from '../../scripts/sync-tweet-cache';
+import { isRotatingThirdPartyImage } from '../../e2e/lib/rotating-image-hosts';
 
 // ============================================================================
 // Configuration
@@ -43,7 +44,10 @@ const TWEET_PATTERNS = [
 // Utility Functions
 // ============================================================================
 
-function getAllSourceFiles(dir: string, pattern = '**/*.{tsx,jsx,ts,js,mdx}'): string[] {
+function getAllSourceFiles(
+  dir: string,
+  pattern = '**/*.{tsx,jsx,ts,js,mdx}',
+): string[] {
   // glob skips dot-directories by default, matching the old hand-rolled walk.
   return globSync(pattern, {
     cwd: dir,
@@ -55,23 +59,29 @@ function getAllSourceFiles(dir: string, pattern = '**/*.{tsx,jsx,ts,js,mdx}'): s
 
 function extractTweetIds(content: string): { id: string; context: string }[] {
   const tweetIds: { id: string; context: string }[] = [];
-  
+
   for (const pattern of TWEET_PATTERNS) {
     // Reset regex state
     pattern.lastIndex = 0;
-    
+
     let match;
     while ((match = pattern.exec(content)) !== null) {
       const id = match[1];
       // Get some context around the match
       const startIndex = Math.max(0, match.index - 20);
-      const endIndex = Math.min(content.length, match.index + match[0].length + 20);
-      const context = content.slice(startIndex, endIndex).replace(/\s+/g, ' ').trim();
-      
+      const endIndex = Math.min(
+        content.length,
+        match.index + match[0].length + 20,
+      );
+      const context = content
+        .slice(startIndex, endIndex)
+        .replace(/\s+/g, ' ')
+        .trim();
+
       tweetIds.push({ id, context });
     }
   }
-  
+
   return tweetIds;
 }
 
@@ -84,7 +94,9 @@ const DEVTO_CARD_PATTERNS = [
   /<DevToCard\s+[^>]*path=["']([^"']+)["']/g,
 ];
 
-function extractDevToArticlePaths(content: string): { path: string; context: string }[] {
+function extractDevToArticlePaths(
+  content: string,
+): { path: string; context: string }[] {
   const paths: { path: string; context: string }[] = [];
 
   for (const pattern of DEVTO_CARD_PATTERNS) {
@@ -94,8 +106,14 @@ function extractDevToArticlePaths(content: string): { path: string; context: str
     while ((match = pattern.exec(content)) !== null) {
       const path = match[1];
       const startIndex = Math.max(0, match.index - 20);
-      const endIndex = Math.min(content.length, match.index + match[0].length + 20);
-      const context = content.slice(startIndex, endIndex).replace(/\s+/g, ' ').trim();
+      const endIndex = Math.min(
+        content.length,
+        match.index + match[0].length + 20,
+      );
+      const context = content
+        .slice(startIndex, endIndex)
+        .replace(/\s+/g, ' ')
+        .trim();
 
       paths.push({ path, context });
     }
@@ -123,7 +141,12 @@ interface SocialCorpus {
 
 let cached: SocialCorpus | undefined;
 
-function addRef(map: Map<string, Refs>, key: string, file: string, context: string) {
+function addRef(
+  map: Map<string, Refs>,
+  key: string,
+  file: string,
+  context: string,
+) {
   const existing = map.get(key) ?? { files: [], contexts: [] };
   if (!existing.files.includes(file)) {
     existing.files.push(file);
@@ -149,7 +172,11 @@ function corpus(): SocialCorpus {
     ...getAllSourceFiles(CONTENT_ROOT, '**/*.{mdx,md}'),
   ];
 
-  const c: SocialCorpus = { fileCount: files.length, tweets: new Map(), articles: new Map() };
+  const c: SocialCorpus = {
+    fileCount: files.length,
+    tweets: new Map(),
+    articles: new Map(),
+  };
 
   for (const file of files) {
     const content = readFileSync(file, 'utf-8');
@@ -195,7 +222,9 @@ describe('Social Embeds - Tweet Integrity', () => {
       return;
     }
 
-    console.log(`Found ${tweetReferences.size} unique tweet ID(s) across docs:`);
+    console.log(
+      `Found ${tweetReferences.size} unique tweet ID(s) across docs:`,
+    );
     for (const [id, { files }] of tweetReferences) {
       console.log(`  - Tweet ${id}: used in ${files.join(', ')}`);
     }
@@ -212,16 +241,16 @@ describe('Social Embeds - Tweet Integrity', () => {
     }
 
     const brokenTweets: {
-      id: string; 
-      files: string[]; 
-      error: string 
+      id: string;
+      files: string[];
+      error: string;
     }[] = [];
 
     // Validate each tweet ID
     for (const [id, { files }] of tweetReferences) {
       try {
         const tweet = await getTweet(id);
-        
+
         if (!tweet) {
           brokenTweets.push({
             id,
@@ -229,10 +258,13 @@ describe('Social Embeds - Tweet Integrity', () => {
             error: 'Tweet not found (returned undefined)',
           });
         } else {
-          console.log(`✓ Tweet ${id} is valid: "@${tweet.user?.screen_name}" - "${tweet.text?.slice(0, 50)}..."`);
+          console.log(
+            `✓ Tweet ${id} is valid: "@${tweet.user?.screen_name}" - "${tweet.text?.slice(0, 50)}..."`,
+          );
         }
       } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
         brokenTweets.push({
           id,
           files,
@@ -243,9 +275,12 @@ describe('Social Embeds - Tweet Integrity', () => {
 
     // Report failures with clear instructions
     if (brokenTweets.length > 0) {
-      const report = brokenTweets.map(({ id, files, error }) => 
-        `\n  Tweet ID: ${id}\n  Used in: ${files.join(', ')}\n  Error: ${error}`
-      ).join('\n');
+      const report = brokenTweets
+        .map(
+          ({ id, files, error }) =>
+            `\n  Tweet ID: ${id}\n  Used in: ${files.join(', ')}\n  Error: ${error}`,
+        )
+        .join('\n');
 
       expect(brokenTweets).toHaveLength(0);
       console.error(`
@@ -267,7 +302,7 @@ To fix: Update the tweet ID in the file(s) listed above.
 
     expect(
       brokenTweets,
-      `Found ${brokenTweets.length} broken tweet embed(s) that will show "Tweet not found" on production!`
+      `Found ${brokenTweets.length} broken tweet embed(s) that will show "Tweet not found" on production!`,
     ).toHaveLength(0);
   }, 30000); // 30s timeout for network calls
 });
@@ -298,7 +333,7 @@ describe('Social Embeds - Static Validation', () => {
           reason: `Tweet ID too long (${id.length} digits, expected ≤25)`,
         });
       }
-      
+
       // Check it's all digits
       if (!/^\d+$/.test(id)) {
         invalidIds.push({
@@ -308,17 +343,17 @@ describe('Social Embeds - Static Validation', () => {
         });
       }
     }
-    
+
     if (invalidIds.length > 0) {
       console.error('Invalid tweet ID formats found:');
       for (const { id, files, reason } of invalidIds) {
         console.error(`  - "${id}" in ${files.join(', ')}: ${reason}`);
       }
     }
-    
+
     expect(
       invalidIds,
-      `Found ${invalidIds.length} tweet ID(s) with invalid format`
+      `Found ${invalidIds.length} tweet ID(s) with invalid format`,
     ).toHaveLength(0);
   });
 
@@ -335,12 +370,16 @@ describe('Social Embeds - Static Validation', () => {
         });
       }
     }
-    
+
     // This is just a warning, not a failure
     if (duplicates.length > 0) {
-      console.warn('Tweet IDs used in multiple locations (might be intentional):');
+      console.warn(
+        'Tweet IDs used in multiple locations (might be intentional):',
+      );
       for (const { id, count, files } of duplicates) {
-        console.warn(`  - Tweet ${id}: used ${count} times in ${files.join(', ')}`);
+        console.warn(
+          `  - Tweet ${id}: used ${count} times in ${files.join(', ')}`,
+        );
       }
     }
   });
@@ -352,14 +391,16 @@ describe('Social Embeds - Static Validation', () => {
 
 describe('Social Embeds - Cache Validation', () => {
   const CACHE_FILE = join(APP_ROOT, 'src/data/cached-tweets.json');
-  
+
   it('should have cached-tweets.json file', () => {
     expect(existsSync(CACHE_FILE)).toBe(true);
   });
 
   it('should have all embedded tweets cached', () => {
     if (!existsSync(CACHE_FILE)) {
-      throw new Error('Cache file does not exist - run `npm run sync-tweets` first');
+      throw new Error(
+        'Cache file does not exist - run `npm run sync-tweets` first',
+      );
     }
 
     const cache = JSON.parse(readFileSync(CACHE_FILE, 'utf-8'));
@@ -372,7 +413,7 @@ describe('Social Embeds - Cache Validation', () => {
         missingFromCache.push(id);
       }
     }
-    
+
     if (missingFromCache.length > 0) {
       console.error(`
 ╔════════════════════════════════════════════════════════════════════╗
@@ -385,10 +426,10 @@ describe('Social Embeds - Cache Validation', () => {
 ╚════════════════════════════════════════════════════════════════════╝
 `);
     }
-    
+
     expect(
       missingFromCache,
-      `${missingFromCache.length} tweet(s) missing from cache. Run 'npm run sync-tweets'`
+      `${missingFromCache.length} tweet(s) missing from cache. Run 'npm run sync-tweets'`,
     ).toHaveLength(0);
   });
 
@@ -447,7 +488,9 @@ describe('Social Embeds - Cache Validation', () => {
     const missing: { id: string; bindingsPresent: string[] }[] = [];
 
     for (const [id, tweet] of Object.entries(cache.tweets)) {
-      const card = (tweet as { card?: { binding_values?: Record<string, unknown> } }).card;
+      const card = (
+        tweet as { card?: { binding_values?: Record<string, unknown> } }
+      ).card;
       if (!card) continue;
 
       const bv = (card.binding_values ?? {}) as Record<
@@ -480,7 +523,9 @@ describe('Social Embeds - Cache Validation', () => {
 ║  preserve prior bindings on subsequent runs.                       ║
 ╚════════════════════════════════════════════════════════════════════╝`);
       for (const { id, bindingsPresent } of missing) {
-        console.error(`  - Tweet ${id}: bindings present = [${bindingsPresent.join(', ')}]`);
+        console.error(
+          `  - Tweet ${id}: bindings present = [${bindingsPresent.join(', ')}]`,
+        );
       }
     }
 
@@ -508,6 +553,44 @@ describe('sync-tweet-cache exit policy', () => {
     expect(shouldFailSync(0, 5)).toBe(false);
   });
 
+  // The same policy, one layer down. `shouldFailSync` let a rotated card image
+  // pass the SYNC step, and then `deploy-smoke.spec.ts` asserted every rendered
+  // image returns 2xx and failed the DEPLOY on the very same URL — 2026-09-13,
+  // `Pre-deploy smoke` red on a 404 from pbs.twimg.com, production blocked.
+  // Exempting an upstream rotation in one step and wedging on it in the next is
+  // not two policies, it is one policy with a hole.
+  it('does NOT let a rotated tweet card image block a deploy', () => {
+    expect(
+      isRotatingThirdPartyImage(
+        'https://pbs.twimg.com/card_img/2095338007528132613/LdOrxVHs?format=jpg&name=800x419',
+      ),
+    ).toBe(true);
+  });
+
+  it('DOES still block a deploy on a first-party image', () => {
+    expect(
+      isRotatingThirdPartyImage(
+        'https://eslint.interlace.tools/images/og-home.png',
+      ),
+    ).toBe(false);
+    expect(isRotatingThirdPartyImage('/logos/interlace.svg')).toBe(false);
+  });
+
+  it('treats an unparseable URL as ours, so the exemption cannot swallow a bug', () => {
+    expect(isRotatingThirdPartyImage('not a url')).toBe(false);
+    expect(isRotatingThirdPartyImage('')).toBe(false);
+  });
+
+  // A helper nothing calls is not a policy. This pins that the smoke test
+  // actually partitions on it before asserting.
+  it('deploy-smoke.spec.ts uses the exemption rather than asserting on every image', () => {
+    const spec = readFileSync(
+      join(APP_ROOT, 'e2e/deploy-smoke.spec.ts'),
+      'utf-8',
+    );
+    expect(spec).toContain('isRotatingThirdPartyImage');
+  });
+
   it('does NOT fail the build when nothing went wrong', () => {
     expect(shouldFailSync(0, 0)).toBe(false);
   });
@@ -527,7 +610,9 @@ describe('Social Embeds - DEV.to Article Integrity', () => {
     const { articles: articleReferences } = corpus();
 
     if (articleReferences.size > 0) {
-      console.log(`Found ${articleReferences.size} unique DEV.to article(s) across docs:`);
+      console.log(
+        `Found ${articleReferences.size} unique DEV.to article(s) across docs:`,
+      );
       for (const [path, { files }] of articleReferences) {
         console.log(`  - Article "${path}": used in ${files.join(', ')}`);
       }
@@ -545,12 +630,13 @@ describe('Social Embeds - DEV.to Article Integrity', () => {
       return;
     }
 
-    const brokenArticles: { path: string; error: string; files: string[] }[] = [];
+    const brokenArticles: { path: string; error: string; files: string[] }[] =
+      [];
 
     for (const [path, { files }] of articleReferences) {
       try {
         const response = await fetch(`https://dev.to/api/articles/${path}`);
-        
+
         if (!response.ok) {
           brokenArticles.push({
             path,
@@ -561,7 +647,9 @@ describe('Social Embeds - DEV.to Article Integrity', () => {
         }
 
         const article = await response.json();
-        console.log(`✓ Article "${path}" is valid: "${article.title?.slice(0, 50)}..."`);
+        console.log(
+          `✓ Article "${path}" is valid: "${article.title?.slice(0, 50)}..."`,
+        );
       } catch (error) {
         brokenArticles.push({
           path,
@@ -582,7 +670,9 @@ describe('Social Embeds - DEV.to Article Integrity', () => {
         console.error(`║    Error: ${error}`);
         console.error(`║    Used in: ${files.join(', ')}`);
       }
-      console.error(`╚════════════════════════════════════════════════════════════════════╝`);
+      console.error(
+        `╚════════════════════════════════════════════════════════════════════╝`,
+      );
     }
 
     expect(brokenArticles).toHaveLength(0);
@@ -591,7 +681,7 @@ describe('Social Embeds - DEV.to Article Integrity', () => {
 
 describe('Social Embeds - DEV.to Cache Validation', () => {
   const CACHE_FILE = join(APP_ROOT, 'src/data/cached-devto-articles.json');
-  
+
   it('should have cached-devto-articles.json file', () => {
     expect(existsSync(CACHE_FILE)).toBe(true);
   });
@@ -611,7 +701,7 @@ describe('Social Embeds - DEV.to Cache Validation', () => {
         missingFromCache.push(path);
       }
     }
-    
+
     if (missingFromCache.length > 0) {
       console.error(`
 ╔════════════════════════════════════════════════════════════════════╗
@@ -624,10 +714,10 @@ describe('Social Embeds - DEV.to Cache Validation', () => {
 ╚════════════════════════════════════════════════════════════════════╝
 `);
     }
-    
+
     expect(
       missingFromCache,
-      `${missingFromCache.length} article(s) missing from cache`
+      `${missingFromCache.length} article(s) missing from cache`,
     ).toHaveLength(0);
   });
 
@@ -638,31 +728,31 @@ describe('Social Embeds - DEV.to Cache Validation', () => {
 
     const cache = JSON.parse(readFileSync(CACHE_FILE, 'utf-8'));
     const invalidEntries: { path: string; reason: string }[] = [];
-    
+
     for (const [path, article] of Object.entries(cache.articles)) {
       if (!article || typeof article !== 'object') {
         invalidEntries.push({ path, reason: 'Invalid article object' });
         continue;
       }
-      
+
       const articleData = article as Record<string, unknown>;
-      
+
       if (!articleData.title) {
         invalidEntries.push({ path, reason: 'Missing article title' });
       }
-      
+
       if (!articleData.user) {
         invalidEntries.push({ path, reason: 'Missing user data' });
       }
     }
-    
+
     if (invalidEntries.length > 0) {
       console.error('Invalid DEV.to cache entries found:');
       for (const { path, reason } of invalidEntries) {
         console.error(`  - Article "${path}": ${reason}`);
       }
     }
-    
+
     expect(invalidEntries).toHaveLength(0);
   });
 });
