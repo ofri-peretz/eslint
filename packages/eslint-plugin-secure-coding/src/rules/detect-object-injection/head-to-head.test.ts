@@ -79,6 +79,7 @@ suite('detect-object-injection, read against its nearest neighbour', () => {
       },
       {
         // burgee sweep 2026-09-10, from packages/burgee/src/testing-helpers.ts:176.
+        // @found burgee sweep 2026-09-10, testing-helpers.ts:176
         // `as const` is how TypeScript writes a closed key set, and the benchmark
         // spec lists it beside Object.freeze under E4, "must NOT report". The
         // resolver reads through `Object.freeze` but demands an ArrayExpression
@@ -97,12 +98,12 @@ suite('detect-object-injection, read against its nearest neighbour', () => {
         code: 'const KEYS = <const>["alpha", "beta"]; const o = {}; for (const k of KEYS) { o[k] = 1; }',
       },
       {
-        // @found spelling probe
+        // @found reasoned from the as const finding, not seen in real code
         name: 'FP: as const inside Object.freeze, both wrappers at once',
         code: 'const KEYS = Object.freeze(["alpha", "beta"] as const); const o = {}; for (const k of KEYS) { o[k] = 1; }',
       },
       {
-        // @found spelling probe
+        // @found reasoned from the as const finding, not seen in real code
         name: 'FP: a satisfies-annotated allowlist',
         code: 'const KEYS = ["alpha", "beta"] satisfies readonly string[]; const o = {}; for (const k of KEYS) { o[k] = 1; }',
       },

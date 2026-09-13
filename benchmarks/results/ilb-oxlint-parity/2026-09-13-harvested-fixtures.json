@@ -1,0 +1,36 @@
+{
+  "suite": "ilb-oxlint-parity",
+  "version": "1.0",
+  "bench": "ILB-Wild",
+  "benchVersion": "0.1",
+  "timestamp": "2026-09-13T06:29:57.902Z",
+  "toolchain": {
+    "node": "24.12.0",
+    "eslint": "10.9.1",
+    "typescript": "6.0.3",
+    "tsCompiler": "tsc-go",
+    "typescriptEslint": "8.68.0",
+    "platform": "darwin-arm64"
+  },
+  "methodologyCommit": "b503889aea1974a83ee37364d6607271762230e2",
+  "methodologyHash": "sha256:4681e561c7e3fd6f71359f21227012bbe31ac1383d574cd07716942ac9a55a16",
+  "methodologyPaths": [
+    "benchmarks/suites/ilb-oxlint-parity/run.ts",
+    "benchmarks/lib/methodology.ts",
+    "benchmarks/lib/preregister.ts",
+    "benchmarks/lib/toolchain.ts"
+  ],
+  "runAt": "2026-09-13T06:29:57.913Z",
+  "corpus": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures",
+  "eslintFindings": 28388,
+  "oxlintFindings": 28388,
+  "shared": 28328,
+  "eslintOnly": 0,
+  "oxlintOnly": 0,
+  "parityRate": 1,
+  "eslintOnlyAllowlisted": 0,
+  "oxlintOnlyAllowlisted": 0,
+  "excludedFixtures": [],
+  "eslintOnlyUnexplained": [],
+  "oxlintOnlyUnexplained": []
+}
