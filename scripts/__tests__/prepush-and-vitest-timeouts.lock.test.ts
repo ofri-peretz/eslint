@@ -1,5 +1,5 @@
 /**
- * Regression locks for two pre-push flakes that blocked unrelated pushes.
+ * Regression locks for three pre-push flakes that blocked unrelated pushes.
  *
  * 1. `hookTimeout` — PR #324 set `testTimeout: 30_000` across every vitest
  *    config, but `hookTimeout` stayed at Vitest's 10s default. `testTimeout`
@@ -14,7 +14,21 @@
  *    nondeterministically with `ENOTEMPTY` on a dist dir, or with
  *    `shim threw on require` for a different package on every run.
  *
- * Both are invisible to normal CI (which builds once, serially, on a cold
+ * 3. An inline per-test timeout that is LOWER than its config's `testTimeout`.
+ *    Vitest's third argument to `it()` REPLACES the config value rather than
+ *    extending it, so a number written when the default was 5s silently becomes
+ *    a restriction once the config is raised. `apps/docs/tests/mdx-compiler.test.ts`
+ *    carried `}, 15000)` from 2026-01-31 with the comment "Extended timeout for
+ *    heavy module loading"; PR #332 raised that workspace to `testTimeout: 30_000`
+ *    on 2026-08-02, and from that day the comment was false and the single most
+ *    expensive test in the file ran on HALF the budget of every other test.
+ *    It blocked two unrelated pre-commit runs in one session. Measured on 16
+ *    concurrent vitest processes resolving the same MDX/remark graph: 15 of 16
+ *    failed at `Test timed out in 15000ms` (15005-17092ms). Vitest's own advice
+ *    in that message — "pass a timeout value as the last argument" — points the
+ *    reader straight back at the argument that is causing it.
+ *
+ * All three are invisible to normal CI (which builds once, serially, on a cold
  * runner) and only ever bite a developer or agent pushing from a warm tree —
  * so they need structural locks, not a green pipeline.
  */
@@ -22,6 +36,7 @@ import { describe, it, expect } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import * as ts from 'typescript';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -59,6 +74,157 @@ describe('vitest timeout floors', () => {
       'These configs raise testTimeout but leave hookTimeout at Vitest\'s 10s default.\n' +
         'testTimeout does not cover beforeAll/beforeEach/afterEach, so an I/O-bound\n' +
         'hook still dies with "Hook timed out in 10000ms" under the turbo fan-out:\n' +
+        `  ${offenders.join('\n  ')}`,
+    ).toEqual([]);
+  });
+});
+
+describe('inline per-test timeouts only ever raise the budget', () => {
+  /** `testTimeout: 30_000` -> 30000. Undefined when the config does not set one. */
+  function configTimeout(file: string): number | undefined {
+    const m = /testTimeout\s*:\s*([\d_]+)/.exec(fs.readFileSync(file, 'utf-8'));
+    return m ? Number(m[1].replace(/_/g, '')) : undefined;
+  }
+
+  /** Config dirs, longest path first, so the NEAREST config wins for a file. */
+  const governing = configs
+    .map((file) => ({ dir: path.dirname(file), timeout: configTimeout(file) }))
+    .filter((c): c is { dir: string; timeout: number } => c.timeout !== undefined)
+    .sort((a, b) => b.dir.length - a.dir.length);
+
+  /**
+   * Every numeric third argument to an it()/test() call, found on the AST.
+   *
+   * This was a line regex (`/^\s*\}\s*,\s*([\d_]+)\s*\)/`) and it was wrong in
+   * BOTH directions, which is the failure mode this file already warns about
+   * two describes down. It missed a compact single-line test —
+   * `it('x', async () => { ... }, 15000)` — because the `}` is mid-line, so a
+   * future author could write the exact bug this lock exists to catch and slip
+   * past it. And with the anchor dropped to fix that, it starts matching
+   *
+   *     setTimeout(() => {
+   *       ...
+   *     }, 100);
+   *
+   * inside a test body, flagging `100 < 30000` on code that has no per-test
+   * timeout at all. The repo happens to contain no such line today; that is
+   * luck, not safety, and a false positive here blocks an innocent push.
+   *
+   * The AST has no such ambiguity: ask for CallExpressions whose leftmost
+   * callee is `it`/`test` (covering `it.only`, `it.each(...)()`, `test.skip`)
+   * and read argument 2. `typescript` is already a repo dependency.
+   */
+  function findInlineTimeouts(): { file: string; line: number; value: number }[] {
+    const hits: { file: string; line: number; value: number }[] = [];
+
+    /** `it.each([...])` -> `it`; `test.skip` -> `test`; `foo.bar()` -> `foo`. */
+    function leftmostName(node: ts.Expression): string {
+      let cur: ts.Node = node;
+      while (
+        ts.isPropertyAccessExpression(cur) ||
+        ts.isCallExpression(cur) ||
+        ts.isElementAccessExpression(cur)
+      ) {
+        cur = ts.isCallExpression(cur) ? cur.expression : cur.expression;
+      }
+      return ts.isIdentifier(cur) ? cur.text : '';
+    }
+
+    const scan = (file: string) => {
+      const src = ts.createSourceFile(
+        file,
+        fs.readFileSync(file, 'utf-8'),
+        ts.ScriptTarget.Latest,
+        /* setParentNodes */ true,
+        file.endsWith('x') ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
+      );
+      const record = (timeout: ts.NumericLiteral) =>
+        hits.push({
+          file,
+          line: src.getLineAndCharacterOfPosition(timeout.getStart(src)).line + 1,
+          value: Number(timeout.text.replace(/_/g, '')),
+        });
+
+      const visit = (node: ts.Node) => {
+        if (ts.isCallExpression(node) && node.arguments.length >= 2) {
+          const name = leftmostName(node.expression);
+          if (name === 'it' || name === 'test') {
+            // `it(name, fn, 15000)`
+            const third = node.arguments[2];
+            if (third && ts.isNumericLiteral(third)) record(third);
+
+            // `it(name, { timeout: 15000 }, fn)` — Vitest's TestOptions form,
+            // verified honoured on vitest 4.1.11: a probe with `{ timeout: 50 }`
+            // around a 300ms body fails with "Test timed out in 50ms". Reading
+            // only argument 2 misses it entirely, because there argument 2 is
+            // the handler.
+            const second = node.arguments[1];
+            if (second && ts.isObjectLiteralExpression(second)) {
+              for (const prop of second.properties) {
+                if (
+                  ts.isPropertyAssignment(prop) &&
+                  (ts.isIdentifier(prop.name) || ts.isStringLiteral(prop.name)) &&
+                  prop.name.text === 'timeout' &&
+                  ts.isNumericLiteral(prop.initializer)
+                ) {
+                  record(prop.initializer);
+                }
+              }
+            }
+          }
+        }
+        ts.forEachChild(node, visit);
+      };
+      visit(src);
+    };
+
+    const walk = (dir: string) => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        if (entry.name === 'node_modules' || entry.name === 'dist' || entry.name.startsWith('.')) {
+          continue;
+        }
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) walk(full);
+        else if (/\.test\.(m?tsx?)$/.test(entry.name)) scan(full);
+      }
+    };
+    walk(repoRoot);
+    return hits;
+  }
+
+  const inline = findInlineTimeouts();
+
+  // Two vacuity guards. The scan must reach the tree AND still recognise a
+  // timeout argument, or this suite goes green while covering nothing.
+  //
+  // The floor of 10 is deliberately well under the 16 inline timeouts present
+  // when it was written (2026-09-13), so ordinary cleanup does not trip it. If
+  // it DOES fire, the question is which of the two happened: a real drop below
+  // 10 (lower the floor, and say what the count is now) or the walk/AST scan
+  // silently matching nothing (fix the scan). Check with:
+  //   grep -rnE '\}\s*,\s*[0-9_]+\s*\)' --include='*.test.ts*' . | grep -v node_modules
+  it('actually finds the repo inline timeouts', () => {
+    expect(governing.length).toBeGreaterThanOrEqual(20);
+    expect(inline.length).toBeGreaterThanOrEqual(10);
+  });
+
+  it('never lets an inline timeout fall below its config testTimeout', () => {
+    const offenders = inline
+      .map(({ file, line, value }) => {
+        const cfg = governing.find((c) => file.startsWith(c.dir + path.sep));
+        if (!cfg || value >= cfg.timeout) return null;
+        return `${path.relative(repoRoot, file)}:${line} — ${value} < ${cfg.timeout} ` +
+          `(${path.relative(repoRoot, cfg.dir)}/vitest.config)`;
+      })
+      .filter((v): v is string => v !== null);
+
+    expect(
+      offenders,
+      "Vitest's third argument to it()/test() REPLACES testTimeout, it does not\n" +
+        'extend it. These inline values are BELOW their config default, so they\n' +
+        'give the test a smaller budget than every other test in the workspace —\n' +
+        'which is how a number written against an older default silently becomes a\n' +
+        'restriction. Raise it above the config value or delete it:\n' +
         `  ${offenders.join('\n  ')}`,
     ).toEqual([]);
   });
