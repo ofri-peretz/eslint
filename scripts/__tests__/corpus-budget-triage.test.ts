@@ -27,6 +27,7 @@ const SCAN = path.join(ROOT, 'scripts', 'corpus-scan.ts');
 
 describe('corpus budget triage', () => {
   const budget = JSON.parse(readFileSync(BUDGET, 'utf-8')) as {
+    command?: string;
     budgets: Record<string, number>;
     triage?: Record<string, string>;
   };
@@ -44,5 +45,21 @@ describe('corpus budget triage', () => {
     // budgets. Assert the writer still spreads the existing triage in.
     const source = readFileSync(SCAN, 'utf-8');
     expect(source).toContain('budget.triage ? { triage: budget.triage } : {}');
+  });
+
+  // Same defect as `triage`, one field over, found on the 2026-09-13 ratchet.
+  // Fourteen other `.agent/*.json` baselines carry a `command` naming what
+  // regenerates them; this file did too, and `--update` dropped it. Nothing
+  // reads the key, so nothing failed — the convention just quietly left the
+  // one file whose own command had to be rediscovered by reading the script.
+  it('names the command that regenerates it, like every other .agent baseline', () => {
+    expect(budget.command).toBe('npx tsx scripts/corpus-scan.ts --update');
+  });
+
+  it('--update carries `command` forward instead of dropping it', () => {
+    const source = readFileSync(SCAN, 'utf-8');
+    expect(source).toContain(
+      'budget.command ? { command: budget.command } : {}',
+    );
   });
 });
