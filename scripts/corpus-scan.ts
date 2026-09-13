@@ -338,6 +338,21 @@ interface Budget {
   budgets: Record<string, number>;
   /** Why each budget above is allowed. Preserved verbatim across `--update`. */
   triage?: Record<string, string>;
+  /**
+   * Files per target that ESLint could not PARSE, and therefore contributed
+   * zero findings to every rule.
+   *
+   * Recorded because the scan used to drop them in silence. A budget is a claim
+   * about a corpus, and a corpus that quietly shrinks when a file stops parsing
+   * moves every number in this file for a reason no reader can see — the same
+   * shape as the stale rig and the cached `file:` dependency, both of which
+   * were found only after they had corrupted a measurement.
+   *
+   * Most are `flow-typed/*_vx.x.x.js` stubs: Flow syntax in a `.js` file, which
+   * the TypeScript parser rejects. They are not a defect to fix, they are a
+   * quantity to hold still.
+   */
+  unparsed?: Record<string, number>;
 }
 
 /**
@@ -527,8 +542,12 @@ const OUR_PREFIXES = new Set(
   ]),
 );
 
-function scanTarget(dir: string, configPath: string): Map<string, number> {
+function scanTarget(
+  dir: string,
+  configPath: string,
+): { counts: Map<string, number>; unparsed: number } {
   const counts = new Map<string, number>();
+  let unparsed = 0;
   let raw: string;
   try {
     raw = sh(
@@ -552,7 +571,13 @@ function scanTarget(dir: string, configPath: string): Map<string, number> {
     }>;
   }>) {
     for (const message of file.messages) {
-      if (!message.ruleId || message.fatal) continue;
+      // A fatal is a PARSE failure: this file produced no findings for any
+      // rule. Counted rather than skipped — see `Budget.unparsed`.
+      if (message.fatal) {
+        unparsed += 1;
+        continue;
+      }
+      if (!message.ruleId) continue;
       // An inline `eslint-disable react/display-name` in the TARGET's code
       // makes ESLint emit "Definition for rule ... was not found" carrying
       // that rule's id. Counting those attributed react, flowtype and jasmine
@@ -565,7 +590,7 @@ function scanTarget(dir: string, configPath: string): Map<string, number> {
       counts.set(message.ruleId, (counts.get(message.ruleId) ?? 0) + 1);
     }
   }
-  return counts;
+  return { counts, unparsed };
 }
 
 /**
@@ -812,6 +837,7 @@ function main(): number {
   writeFileSync(configPath, buildConfig());
 
   const totals = new Map<string, number>();
+  const unparsedByRepo = new Map<string, number>();
   let scanned = 0;
   // Every target has to be installed for the dependency-dependent rules to mean
   // anything. One bare clone is enough to make the total describe the clone.
@@ -869,9 +895,11 @@ function main(): number {
       }
       if (installTargets) installTargetDependencies(dir, repo);
       if (!existsSync(path.join(dir, 'node_modules'))) targetsInstalled = false;
-      for (const [rule, n] of scanTarget(dir, configPath)) {
+      const scan = scanTarget(dir, configPath);
+      for (const [rule, n] of scan.counts) {
         totals.set(rule, (totals.get(rule) ?? 0) + n);
       }
+      if (scan.unparsed > 0) unparsedByRepo.set(repo, scan.unparsed);
       scanned += 1;
     } catch (error) {
       failed.push(`${repo}: ${String((error as Error).message).slice(0, 200)}`);
@@ -959,6 +987,15 @@ function main(): number {
           .sort(([a], [b]) => a.localeCompare(b)),
       ),
       ...(budget.triage ? { triage: budget.triage } : {}),
+      ...(unparsedByRepo.size > 0
+        ? {
+            unparsed: Object.fromEntries(
+              [...unparsedByRepo.entries()].sort(([a], [b]) =>
+                a.localeCompare(b),
+              ),
+            ),
+          }
+        : {}),
     };
     writeFileSync(BUDGET_FILE, `${JSON.stringify(next, null, 2)}\n`);
     log(
@@ -969,6 +1006,35 @@ function main(): number {
 
   const over: Array<{ rule: string; found: number; allowed: number }> = [];
   const under: Array<{ rule: string; found: number; allowed: number }> = [];
+
+  // The corpus must not shrink in silence. A file that stops parsing reports
+  // nothing for every rule, so an unnoticed rise here lowers budgets that no
+  // rule improved — and a later `--update` would bank the loss as progress.
+  const recordedUnparsed = budget.unparsed ?? {};
+  const unparsedRepos = [
+    ...new Set([...Object.keys(recordedUnparsed), ...unparsedByRepo.keys()]),
+  ].sort();
+  const unparsedRisen: string[] = [];
+  for (const repo of unparsedRepos) {
+    const was = recordedUnparsed[repo] ?? 0;
+    const now = unparsedByRepo.get(repo) ?? 0;
+    if (now > was) unparsedRisen.push(`${repo}: ${was} -> ${now}`);
+    else if (now < was)
+      log(
+        `  \u2b07 ${repo}: ${now} unparsed vs ${was} recorded — fewer files failing to parse, ratchet it`,
+      );
+  }
+  if (unparsedRisen.length > 0) {
+    console.error(
+      '::error::more files failed to PARSE than recorded, so every rule was ' +
+        'measured over a smaller corpus than the budgets describe:',
+    );
+    for (const line of unparsedRisen) console.error(`::error::  ${line}`);
+    console.error(
+      '::error::Fix the parse failure, or re-run with --update if the corpus ' +
+        'genuinely changed — but do not read the resulting lower counts as an improvement.',
+    );
+  }
 
   for (const [rule, found] of totals) {
     // Skipped, not budgeted at zero — see DEPENDENCY_DEPENDENT_RULES.
@@ -1018,12 +1084,14 @@ function main(): number {
     }
   }
 
-  if (over.length > 0) {
-    console.error(
-      local
-        ? `\n${over.length} rule(s) report MORE than the published version does. Either the\nchange regresses them, or the increase is a deliberate detection improvement —\nsay which in the commit, because --local cannot rewrite the budget.`
-        : `\n${over.length} rule(s) over budget. Fix the rule, or run with --update if the increase is a deliberate detection improvement.`,
-    );
+  if (over.length > 0 || unparsedRisen.length > 0) {
+    if (over.length > 0) {
+      console.error(
+        local
+          ? `\n${over.length} rule(s) report MORE than the published version does. Either the\nchange regresses them, or the increase is a deliberate detection improvement —\nsay which in the commit, because --local cannot rewrite the budget.`
+          : `\n${over.length} rule(s) over budget. Fix the rule, or run with --update if the increase is a deliberate detection improvement.`,
+      );
+    }
     return 1;
   }
   return 0;

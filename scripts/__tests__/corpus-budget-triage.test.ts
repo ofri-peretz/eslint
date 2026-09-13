@@ -28,6 +28,7 @@ const SCAN = path.join(ROOT, 'scripts', 'corpus-scan.ts');
 describe('corpus budget triage', () => {
   const budget = JSON.parse(readFileSync(BUDGET, 'utf-8')) as {
     command?: string;
+    unparsed?: Record<string, number>;
     budgets: Record<string, number>;
     triage?: Record<string, string>;
   };
@@ -54,6 +55,35 @@ describe('corpus budget triage', () => {
   // one file whose own command had to be rediscovered by reading the script.
   it('names the command that regenerates it, like every other .agent baseline', () => {
     expect(budget.command).toBe('npx tsx scripts/corpus-scan.ts --update');
+  });
+
+  // `scanTarget` used to `continue` past every `fatal` message, so a file that
+  // failed to PARSE reported nothing for any rule and nothing said so — 138
+  // files across three targets. Every budget was computed over a corpus that
+  // much smaller than it claimed, and a file that stops parsing would lower
+  // counts that no rule improved.
+  it('records how many files failed to parse, per target', () => {
+    expect(budget.unparsed).toBeDefined();
+    expect(Object.keys(budget.unparsed ?? {}).length).toBeGreaterThan(0);
+    for (const [target, n] of Object.entries(budget.unparsed ?? {})) {
+      expect(Number.isInteger(n), `${target} must record an integer`).toBe(
+        true,
+      );
+      expect(n, `${target} must record a positive count`).toBeGreaterThan(0);
+    }
+  });
+
+  it('counts a fatal rather than skipping it', () => {
+    const source = readFileSync(SCAN, 'utf-8');
+    // The regression was `if (!message.ruleId || message.fatal) continue;`.
+    expect(source).not.toMatch(/message\.fatal\)\s*continue/);
+    expect(source).toContain('unparsed += 1');
+  });
+
+  it('fails the gate when more files fail to parse than recorded', () => {
+    const source = readFileSync(SCAN, 'utf-8');
+    expect(source).toContain('unparsedRisen');
+    expect(source).toContain('over.length > 0 || unparsedRisen.length > 0');
   });
 
   it('--update carries `command` forward instead of dropping it', () => {
