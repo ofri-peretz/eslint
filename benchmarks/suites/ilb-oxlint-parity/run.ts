@@ -869,9 +869,27 @@ function main() {
     oxlintOnlyUnexplained: allow.oUnexplained,
   };
 
+  /*
+   * The corpus is part of the identity of a result, not just a field inside it.
+   *
+   * Keyed on the date alone, two runs on one day overwrite each other — and
+   * the two runs worth making are precisely on DIFFERENT corpora: the curated
+   * fixtures and the harvested real-world tree. Running both, as anyone
+   * verifying parity would, silently destroyed the first envelope and left a
+   * file whose name claimed the day's result while holding only the later
+   * corpus. The `corpus` field made it self-describing and did nothing to stop
+   * the loss.
+   *
+   * The date prefix stays first so `prune-benchmark-results` still recognises
+   * these as dated snapshots.
+   */
+  const corpusSlug = path
+    .basename(CORPUS)
+    .replace(/[^a-zA-Z0-9._-]+/g, '-')
+    .toLowerCase();
   const outPath = path.join(
     RESULTS_DIR,
-    `${new Date().toISOString().slice(0, 10)}.json`,
+    `${new Date().toISOString().slice(0, 10)}-${corpusSlug}.json`,
   );
   fs.writeFileSync(outPath, JSON.stringify(envelope, null, 2) + '\n');
 
