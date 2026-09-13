@@ -36,6 +36,7 @@ import { describe, it, expect } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import * as ts from 'typescript';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -91,9 +92,69 @@ describe('inline per-test timeouts only ever raise the budget', () => {
     .filter((c): c is { dir: string; timeout: number } => c.timeout !== undefined)
     .sort((a, b) => b.dir.length - a.dir.length);
 
-  /** Every `}, 60_000);` style third argument to it()/test(), with its file. */
+  /**
+   * Every numeric third argument to an it()/test() call, found on the AST.
+   *
+   * This was a line regex (`/^\s*\}\s*,\s*([\d_]+)\s*\)/`) and it was wrong in
+   * BOTH directions, which is the failure mode this file already warns about
+   * two describes down. It missed a compact single-line test —
+   * `it('x', async () => { ... }, 15000)` — because the `}` is mid-line, so a
+   * future author could write the exact bug this lock exists to catch and slip
+   * past it. And with the anchor dropped to fix that, it starts matching
+   *
+   *     setTimeout(() => {
+   *       ...
+   *     }, 100);
+   *
+   * inside a test body, flagging `100 < 30000` on code that has no per-test
+   * timeout at all. The repo happens to contain no such line today; that is
+   * luck, not safety, and a false positive here blocks an innocent push.
+   *
+   * The AST has no such ambiguity: ask for CallExpressions whose leftmost
+   * callee is `it`/`test` (covering `it.only`, `it.each(...)()`, `test.skip`)
+   * and read argument 2. `typescript` is already a repo dependency.
+   */
   function findInlineTimeouts(): { file: string; line: number; value: number }[] {
     const hits: { file: string; line: number; value: number }[] = [];
+
+    /** `it.each([...])` -> `it`; `test.skip` -> `test`; `foo.bar()` -> `foo`. */
+    function leftmostName(node: ts.Expression): string {
+      let cur: ts.Node = node;
+      while (
+        ts.isPropertyAccessExpression(cur) ||
+        ts.isCallExpression(cur) ||
+        ts.isElementAccessExpression(cur)
+      ) {
+        cur = ts.isCallExpression(cur) ? cur.expression : cur.expression;
+      }
+      return ts.isIdentifier(cur) ? cur.text : '';
+    }
+
+    const scan = (file: string) => {
+      const src = ts.createSourceFile(
+        file,
+        fs.readFileSync(file, 'utf-8'),
+        ts.ScriptTarget.Latest,
+        /* setParentNodes */ true,
+        file.endsWith('x') ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
+      );
+      const visit = (node: ts.Node) => {
+        if (ts.isCallExpression(node) && node.arguments.length >= 3) {
+          const name = leftmostName(node.expression);
+          const timeout = node.arguments[2];
+          if ((name === 'it' || name === 'test') && ts.isNumericLiteral(timeout)) {
+            hits.push({
+              file,
+              line: src.getLineAndCharacterOfPosition(timeout.getStart(src)).line + 1,
+              value: Number(timeout.text.replace(/_/g, '')),
+            });
+          }
+        }
+        ts.forEachChild(node, visit);
+      };
+      visit(src);
+    };
+
     const walk = (dir: string) => {
       for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
         if (entry.name === 'node_modules' || entry.name === 'dist' || entry.name.startsWith('.')) {
@@ -101,14 +162,7 @@ describe('inline per-test timeouts only ever raise the budget', () => {
         }
         const full = path.join(dir, entry.name);
         if (entry.isDirectory()) walk(full);
-        else if (/\.test\.(m?tsx?)$/.test(entry.name)) {
-          fs.readFileSync(full, 'utf-8')
-            .split('\n')
-            .forEach((text, i) => {
-              const m = /^\s*\}\s*,\s*([\d_]+)\s*\)/.exec(text);
-              if (m) hits.push({ file: full, line: i + 1, value: Number(m[1].replace(/_/g, '')) });
-            });
-        }
+        else if (/\.test\.(m?tsx?)$/.test(entry.name)) scan(full);
       }
     };
     walk(repoRoot);
@@ -117,9 +171,15 @@ describe('inline per-test timeouts only ever raise the budget', () => {
 
   const inline = findInlineTimeouts();
 
-  // Two vacuity guards. The scan must reach the tree AND the regex must still
-  // match the repo's formatting — a prettier change that moved the argument onto
-  // its own line would otherwise leave this suite green while covering nothing.
+  // Two vacuity guards. The scan must reach the tree AND still recognise a
+  // timeout argument, or this suite goes green while covering nothing.
+  //
+  // The floor of 10 is deliberately well under the 16 inline timeouts present
+  // when it was written (2026-09-13), so ordinary cleanup does not trip it. If
+  // it DOES fire, the question is which of the two happened: a real drop below
+  // 10 (lower the floor, and say what the count is now) or the walk/AST scan
+  // silently matching nothing (fix the scan). Check with:
+  //   grep -rnE '\}\s*,\s*[0-9_]+\s*\)' --include='*.test.ts*' . | grep -v node_modules
   it('actually finds the repo inline timeouts', () => {
     expect(governing.length).toBeGreaterThanOrEqual(20);
     expect(inline.length).toBeGreaterThanOrEqual(10);
