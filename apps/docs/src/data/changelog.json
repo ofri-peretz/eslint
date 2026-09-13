@@ -1,7 +1,7 @@
 {
-  "releaseCount": 670,
-  "packageCount": 35,
-  "entryCount": 2075,
+  "releaseCount": 672,
+  "packageCount": 36,
+  "entryCount": 2078,
   "oldestYear": 2024,
   "releases": [
     {
@@ -16760,6 +16760,21 @@
       ]
     },
     {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "1.19.3",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "**✨ New** — `eslint-plugin-supabase-security`, four rules for the Supabase client.",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "@interlace/eslint-formatter",
       "short": "eslint-formatter",
       "version": "0.2.1",
@@ -17075,6 +17090,26 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-supabase-security",
+      "short": "eslint-plugin-supabase-security",
+      "version": "0.2.0",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "**✨ New** — `eslint-plugin-supabase-security`, four rules for the Supabase client.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.3`",
           "pr": null
         }
       ]

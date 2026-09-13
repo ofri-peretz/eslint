@@ -101,7 +101,7 @@
       "rules": 4,
       "description": "ESLint plugin for Supabase security — catches the service_role key reaching client code, RPC called with a computed function name, auth results whose error is discarded, and storage buckets created public",
       "category": "security",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "published": true
     },
     {
@@ -252,5 +252,5 @@
   "totalRules": 482,
   "totalPlugins": 31,
   "allPluginsCount": 31,
-  "generatedAt": "2026-09-10"
+  "generatedAt": "2026-09-13"
 }
