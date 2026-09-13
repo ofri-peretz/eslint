@@ -33,7 +33,23 @@ const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..');
 
 /** Workspace globs that can hold testable packages. */
-const WORKSPACE_DIRS = ['packages', 'apps', 'tools'];
+/*
+ * Read off the root manifest, never retyped.
+ *
+ * This was `['packages', 'apps', 'tools']` while `workspaces` has declared a
+ * fourth entry, `benchmarks`, for as long as the benchmarks have existed. It
+ * is a literal directory rather than a `<group>/*` glob, so it matched no
+ * branch of the loop below and `@interlace/benchmarks` — 15 lock files, its
+ * own vitest config — was never discovered, never sharded, and never run by a
+ * PR. The sharder reported "Unit tests SKIPPED — no package sources changed"
+ * on a diff that was nothing but benchmark tests.
+ *
+ * A hardcoded list cannot fail when it drifts; the manifest can't drift from
+ * itself.
+ */
+const WORKSPACE_GLOBS: string[] = JSON.parse(
+  fs.readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf8'),
+).workspaces;
 
 type Pkg = {
   name: string;
@@ -219,18 +235,27 @@ function readWorkspaces(): {
   pkg: any;
 }[] {
   const out: { dir: string; entry: string; abs: string; pkg: any }[] = [];
-  for (const wsDir of WORKSPACE_DIRS) {
-    const abs = path.join(REPO_ROOT, wsDir);
-    if (!fs.existsSync(abs)) continue;
-    for (const entry of fs.readdirSync(abs)) {
-      const manifest = path.join(abs, entry, 'package.json');
-      if (!fs.existsSync(manifest)) continue;
-      out.push({
-        dir: `${wsDir}/${entry}`,
-        entry,
-        abs,
-        pkg: JSON.parse(fs.readFileSync(manifest, 'utf8')),
-      });
+  // `abs` is the PARENT of the workspace, because callers join it with `entry`
+  // to reach the workspace itself. That holds for both glob shapes.
+  const push = (dir: string): void => {
+    const manifest = path.join(REPO_ROOT, dir, 'package.json');
+    if (!fs.existsSync(manifest)) return;
+    out.push({
+      dir,
+      entry: path.basename(dir),
+      abs: path.dirname(path.join(REPO_ROOT, dir)),
+      pkg: JSON.parse(fs.readFileSync(manifest, 'utf8')),
+    });
+  };
+  for (const glob of WORKSPACE_GLOBS) {
+    if (glob.endsWith('/*')) {
+      const wsDir = glob.slice(0, -2);
+      const abs = path.join(REPO_ROOT, wsDir);
+      if (!fs.existsSync(abs)) continue;
+      for (const entry of fs.readdirSync(abs)) push(`${wsDir}/${entry}`);
+    } else {
+      // A workspace declared as a plain directory, like `benchmarks`.
+      push(glob);
     }
   }
   return out;

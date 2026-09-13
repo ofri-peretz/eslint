@@ -13,6 +13,43 @@
  * change to the bucketing or the decision below must be validated against the
  * whole suite, not against the subset the new logic happens to select.
  */
+import fs from 'node:fs';
+import path from 'node:path';
+import url from 'node:url';
+
+/**
+ * The workspace globs, read off the root manifest.
+ *
+ * `workspaces` has two shapes and both matter here: `<group>/*`, where a
+ * changed file belongs to `<group>/<name>`, and a plain directory, which IS
+ * the workspace. Only the first was ever handled — see `touchedDirs` below for
+ * what that cost.
+ *
+ * Read rather than retyped, because a hardcoded copy of this list is exactly
+ * what drifted: three entries were named in two places while the manifest had
+ * four, and nothing could fail on the difference.
+ */
+const WORKSPACE_GLOBS: string[] = JSON.parse(
+  fs.readFileSync(
+    path.join(
+      path.dirname(url.fileURLToPath(import.meta.url)),
+      '../..',
+      'package.json',
+    ),
+    'utf8',
+  ),
+).workspaces;
+
+/** `<group>` of every `<group>/*` glob. */
+const WORKSPACE_GROUPS = new Set(
+  WORKSPACE_GLOBS.filter((g) => g.endsWith('/*')).map((g) => g.slice(0, -2)),
+);
+
+/** Globs that name a workspace directory outright, like `benchmarks`. */
+const WORKSPACE_LITERALS = new Set(
+  WORKSPACE_GLOBS.filter((g) => !g.endsWith('/*')),
+);
+
 export const GLOBAL_INPUTS = new Set([
   'package-lock.json',
   'turbo.json',
@@ -143,10 +180,34 @@ export function decideAffected(
   if (changed.some((f) => GLOBAL_INPUTS.has(f)))
     return { mode: 'all', why: 'a global input changed' };
 
+  /*
+   * A changed file maps to the workspace dir that owns it, in two shapes.
+   *
+   * This was a single shape — `packages|apps|tools` at exactly two segments —
+   * which is three of the four workspace globs. The fourth, `benchmarks`, is a
+   * workspace at depth 1, so every file in it mapped to `benchmarks/__tests__`
+   * or `benchmarks/suites`, matched no group, and left `touchedDirs` empty. A
+   * benchmarks-only PR returned `none` BEFORE the `bug` guard below could see
+   * it, and reported "Unit tests SKIPPED — no package sources changed" while
+   * `@interlace/benchmarks` owns 334 lock assertions. They had never gated a
+   * PR.
+   *
+   * The group shape is kept, and kept broad, because it is what makes the
+   * `bug` guard honest: `packages/not-a-real-package/x.ts` must still resolve
+   * to a touched dir that no package claims, which is the #355 defect state.
+   * Matching only workspace dirs that actually exist would quietly reclassify
+   * that as `none`.
+   */
   const touchedDirs = new Set(
     changed
-      .map((f) => f.split('/').slice(0, 2).join('/'))
-      .filter((d) => /^(packages|apps|tools)\//.test(d)),
+      .map((f) => {
+        const parts = f.split('/');
+        if (WORKSPACE_LITERALS.has(parts[0])) return parts[0];
+        return WORKSPACE_GROUPS.has(parts[0]) && parts.length > 1
+          ? parts.slice(0, 2).join('/')
+          : undefined;
+      })
+      .filter((d) => d !== undefined),
   );
   // Consumers reached by a generation edge rather than a manifest one. Seeded
   // BY NAME, before the closure runs, so `expandDependents` still picks up

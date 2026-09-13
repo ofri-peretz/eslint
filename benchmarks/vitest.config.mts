@@ -44,6 +44,22 @@ export default defineConfig({
     // build, so here it would only ever report a missing dist/ as a broken
     // config. It is pinned to `test:configs-load` and run by the `Benchmark
     // configs load` job, which builds first.
-    exclude: ['__tests__/configs-load.test.ts'],
+    /*
+     * The suites that only mean anything on a BUILT tree. Both load real
+     * plugins through their package entry points, which resolve to `dist/`.
+     *
+     * `real-source-config.lock.test.ts` joined `configs-load` here once this
+     * workspace actually started running in CI. It had been in the default
+     * task all along, passing or erroring on whether the machine happened to
+     * have dists lying around — and `turbo`'s `test` task declares
+     * `dependsOn: []`, so a clean checkout has none. Nobody saw it because
+     * `@interlace/benchmarks` was invisible to the sharder (see
+     * scripts/lib/ci-shard-affected.mts). Both run in the `bench-configs`
+     * job, which builds `eslint-plugin-*` and the devkit first.
+     */
+    exclude: [
+      '__tests__/configs-load.test.ts',
+      '__tests__/real-source-config.lock.test.ts',
+    ],
   },
 });

@@ -22,8 +22,14 @@ import {
 } from '../lib/ci-shard-affected.mts';
 
 const PKGS: AffectedPkg[] = [
-  { name: 'eslint-plugin-jwt-security', dir: 'packages/eslint-plugin-jwt-security' },
-  { name: 'eslint-plugin-postgresql-security', dir: 'packages/eslint-plugin-postgresql-security' },
+  {
+    name: 'eslint-plugin-jwt-security',
+    dir: 'packages/eslint-plugin-jwt-security',
+  },
+  {
+    name: 'eslint-plugin-postgresql-security',
+    dir: 'packages/eslint-plugin-postgresql-security',
+  },
   { name: 'docs', dir: 'apps/docs' },
 ];
 
@@ -49,9 +55,14 @@ describe('decideAffected', () => {
   });
 
   it('selects only the packages whose directories changed', () => {
-    const d = decideAffected(['packages/eslint-plugin-jwt-security/src/index.ts'], PKGS);
+    const d = decideAffected(
+      ['packages/eslint-plugin-jwt-security/src/index.ts'],
+      PKGS,
+    );
     expect(d.mode).toBe('some');
-    expect(d.mode === 'some' && [...d.names]).toEqual(['eslint-plugin-jwt-security']);
+    expect(d.mode === 'some' && [...d.names]).toEqual([
+      'eslint-plugin-jwt-security',
+    ]);
   });
 
   it('selects multiple packages when several change', () => {
@@ -59,7 +70,10 @@ describe('decideAffected', () => {
       ['packages/eslint-plugin-jwt-security/src/a.ts', 'apps/docs/src/b.tsx'],
       PKGS,
     );
-    expect(d.mode === 'some' && [...d.names].sort()).toEqual(['docs', 'eslint-plugin-jwt-security']);
+    expect(d.mode === 'some' && [...d.names].sort()).toEqual([
+      'docs',
+      'eslint-plugin-jwt-security',
+    ]);
   });
 
   it('reports "none" — not a silent pass — when no package changed', () => {
@@ -75,10 +89,32 @@ describe('decideAffected', () => {
     expect(d.mode === 'bug' && d.dirs).toEqual(['packages/brand-new-plugin']);
   });
 
+  it('routes a workspace declared as a plain directory, not only <group>/<name>', () => {
+    /*
+     * `benchmarks` is the one workspace glob that is a directory rather than
+     * `<group>/*`. Every file in it used to map to `benchmarks/__tests__` or
+     * `benchmarks/suites`, match no group, and leave the touched set empty —
+     * so the whole workspace resolved to "nothing to do, pass" and its 334
+     * lock assertions never ran on a PR.
+     */
+    const d = decideAffected(
+      ['benchmarks/__tests__/corpus-slug.lock.test.ts'],
+      [...PKGS, { name: '@interlace/benchmarks', dir: 'benchmarks' }],
+    );
+    expect(d.mode).toBe('some');
+    expect(d.mode === 'some' && [...d.names]).toEqual([
+      '@interlace/benchmarks',
+    ]);
+  });
+
   it('never returns "none" when any package path changed', () => {
     // Property check across every known package plus an unknown one: whatever
     // the outcome, it must not be the "nothing to do, pass" branch.
-    for (const p of [...PKGS.map((p) => p.dir), 'packages/unknown', 'tools/whatever']) {
+    for (const p of [
+      ...PKGS.map((p) => p.dir),
+      'packages/unknown',
+      'tools/whatever',
+    ]) {
       expect(decideAffected([`${p}/src/x.ts`], PKGS).mode).not.toBe('none');
     }
   });
@@ -91,7 +127,10 @@ describe('unit tests never need a build', () => {
     // through node_modules to dist/ — the test then silently requires a build,
     // and the whole parallel-build/test design regresses without any check
     // going red. Fail here instead.
-    const root = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '../..');
+    const root = path.resolve(
+      path.dirname(url.fileURLToPath(import.meta.url)),
+      '../..',
+    );
     const offenders: string[] = [];
     for (const entry of fs.readdirSync(path.join(root, 'packages'))) {
       const dir = path.join(root, 'packages', entry);
@@ -99,12 +138,20 @@ describe('unit tests never need a build', () => {
       const manifest = path.join(dir, 'package.json');
       if (!fs.existsSync(cfg) || !fs.existsSync(manifest)) continue;
       const pkg = JSON.parse(fs.readFileSync(manifest, 'utf8'));
-      const deps = { ...pkg.dependencies, ...pkg.devDependencies, ...pkg.peerDependencies };
+      const deps = {
+        ...pkg.dependencies,
+        ...pkg.devDependencies,
+        ...pkg.peerDependencies,
+      };
       if (!deps['@interlace/eslint-devkit']) continue;
       const src = fs.readFileSync(cfg, 'utf8');
-      if (!/@interlace\/eslint-devkit['"]\s*:\s*resolve\(/.test(src)) offenders.push(entry);
+      if (!/@interlace\/eslint-devkit['"]\s*:\s*resolve\(/.test(src))
+        offenders.push(entry);
     }
-    expect(offenders, `these vitest configs use @interlace/eslint-devkit but do not alias it to source: ${offenders.join(', ')}`).toEqual([]);
+    expect(
+      offenders,
+      `these vitest configs use @interlace/eslint-devkit but do not alias it to source: ${offenders.join(', ')}`,
+    ).toEqual([]);
   });
 });
 
@@ -137,14 +184,23 @@ describe('shards partition the work', () => {
   it('reverseDeps ignores dependencies outside the workspace', () => {
     // `vendor-external` is an npm dep, not a workspace. If it leaked into the
     // graph, an unrelated registry package could drag the whole repo in.
-    expect([...REV.keys()].sort()).toEqual(['devkit', 'meta', 'plugin-a', 'plugin-b']);
+    expect([...REV.keys()].sort()).toEqual([
+      'devkit',
+      'meta',
+      'plugin-a',
+      'plugin-b',
+    ]);
   });
 
   it('expands transitively — a devkit change reaches docs', () => {
     // Two hops: devkit -> plugin-a -> meta -> docs. A shallow (direct-only)
     // expansion would stop at the plugins and silently skip docs.
     expect([...expandDependents(['devkit'], REV)].sort()).toEqual([
-      'devkit', 'docs', 'meta', 'plugin-a', 'plugin-b',
+      'devkit',
+      'docs',
+      'meta',
+      'plugin-a',
+      'plugin-b',
     ]);
     expect(expandDependents(['devkit'], REV).has('unrelated')).toBe(false);
   });
@@ -158,35 +214,65 @@ describe('shards partition the work', () => {
   });
 
   it('decideAffected returns the closure when given the graph', () => {
-    const d = decideAffected(['packages/eslint-devkit/src/index.ts'], GRAPH, REV);
+    const d = decideAffected(
+      ['packages/eslint-devkit/src/index.ts'],
+      GRAPH,
+      REV,
+    );
     expect(d.mode).toBe('some');
     if (d.mode !== 'some') return;
     // Every dependent is present — this is what makes a plain `--filter=<pkg>`
     // safe. Drop the closure and the sharders would under-test.
-    expect([...d.names].sort()).toEqual(['devkit', 'docs', 'meta', 'plugin-a', 'plugin-b']);
+    expect([...d.names].sort()).toEqual([
+      'devkit',
+      'docs',
+      'meta',
+      'plugin-a',
+      'plugin-b',
+    ]);
   });
 
   it('bucketing the closure yields disjoint shards covering it exactly once', () => {
-    const d = decideAffected(['packages/eslint-devkit/src/index.ts'], GRAPH, REV);
+    const d = decideAffected(
+      ['packages/eslint-devkit/src/index.ts'],
+      GRAPH,
+      REV,
+    );
     if (d.mode !== 'some') throw new Error('expected some');
-    const sel = GRAPH.filter((p) => d.names.has(p.name)).map((p) => ({ ...p, cost: 1 }));
+    const sel = GRAPH.filter((p) => d.names.has(p.name)).map((p) => ({
+      ...p,
+      cost: 1,
+    }));
     for (const n of [1, 3, 10]) {
-      const flat = bucket(sel, n).flat().map((p) => p.name);
-      expect(new Set(flat).size, `shardTotal=${n} duplicated a package across shards`).toBe(flat.length);
+      const flat = bucket(sel, n)
+        .flat()
+        .map((p) => p.name);
+      expect(
+        new Set(flat).size,
+        `shardTotal=${n} duplicated a package across shards`,
+      ).toBe(flat.length);
       expect(flat.sort()).toEqual([...d.names].sort());
     }
   });
 
-  it('neither sharder uses turbo\'s `...<pkg>` dependent operator', () => {
+  it("neither sharder uses turbo's `...<pkg>` dependent operator", () => {
     // The direct lock on the bug. `--filter=...<pkg>` inside a per-shard command
     // re-expands dependents on every shard, which is the duplication itself.
     // Dependents belong in the closure above, not in the filter.
     for (const f of ['ci-test-shard.mts', 'ci-build.mts']) {
-      const scriptsDir = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '..');
+      const scriptsDir = path.resolve(
+        path.dirname(url.fileURLToPath(import.meta.url)),
+        '..',
+      );
       const src = fs.readFileSync(path.join(scriptsDir, f), 'utf8');
       const offenders = src
         .split('\n')
-        .filter((l) => /--filter=\$\{?\.\.\.|--filter=\.\.\./.test(l) && !l.trimStart().startsWith('//') && !l.trimStart().startsWith('*'));
+        .filter(
+          (l) =>
+            /--filter=\$\{?\.\.\.|--filter=\.\.\./.test(l) &&
+            !l.trimStart().startsWith('//') &&
+            !l.trimStart().startsWith('*'),
+        );
       expect(
         offenders,
         `${f} builds a turbo filter with the \`...\` dependent operator. That re-expands ` +
@@ -209,7 +295,10 @@ describe('shards partition the work', () => {
  */
 describe('no vitest config may pass with zero tests', () => {
   it('passWithNoTests is never true', () => {
-    const root = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '../..');
+    const root = path.resolve(
+      path.dirname(url.fileURLToPath(import.meta.url)),
+      '../..',
+    );
     const configs: string[] = [];
     for (const ws of ['packages', 'apps', 'tools']) {
       const dir = path.join(root, ws);
@@ -221,9 +310,14 @@ describe('no vitest config may pass with zero tests', () => {
         }
       }
     }
-    expect(configs.length, 'found no vitest configs — this lock would be vacuous').toBeGreaterThan(5);
+    expect(
+      configs.length,
+      'found no vitest configs — this lock would be vacuous',
+    ).toBeGreaterThan(5);
 
-    const offenders = configs.filter((f) => /passWithNoTests:\s*true/.test(fs.readFileSync(f, 'utf8')));
+    const offenders = configs.filter((f) =>
+      /passWithNoTests:\s*true/.test(fs.readFileSync(f, 'utf8')),
+    );
     expect(
       offenders.map((f) => path.relative(root, f)),
       'these configs would report success when their filter matches no test files',
@@ -245,11 +339,17 @@ describe('no vitest config may pass with zero tests', () => {
  * affected set afterwards. Bucketing the affected subset directly is the bug.
  */
 describe('shard assignment does not depend on the affected set', () => {
-  const scriptsDir = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '..');
+  const scriptsDir = path.resolve(
+    path.dirname(url.fileURLToPath(import.meta.url)),
+    '..',
+  );
 
   it('bucket() is called on the full universe, not the filtered selection', () => {
     // ci-build.mts: must bucket `all` (every workspace), then filter by name.
-    const build = fs.readFileSync(path.join(scriptsDir, 'ci-build.mts'), 'utf8');
+    const build = fs.readFileSync(
+      path.join(scriptsDir, 'ci-build.mts'),
+      'utf8',
+    );
     expect(
       /bucket\(\s*ordered\s*,/.test(build) && /\[\.\.\.all\]\.sort/.test(build),
       'ci-build.mts must sort/bucket `all`, not `selected` — bucketing the affected ' +
@@ -263,7 +363,10 @@ describe('shard assignment does not depend on the affected set', () => {
 
     // ci-test-shard.mts: buckets `testable` (all test-bearing packages) before
     // the affected filter is applied to `mine`.
-    const test = fs.readFileSync(path.join(scriptsDir, 'ci-test-shard.mts'), 'utf8');
+    const test = fs.readFileSync(
+      path.join(scriptsDir, 'ci-test-shard.mts'),
+      'utf8',
+    );
     expect(
       /bucket\(testable,\s*shardTotal\)/.test(test),
       'ci-test-shard.mts must bucket `testable` (the full universe) — see above.',
@@ -271,24 +374,48 @@ describe('shard assignment does not depend on the affected set', () => {
   });
 
   it('bucketing is deterministic for a fixed input', () => {
-    const items = Array.from({ length: 20 }, (_, i) => ({ name: `p${i}`, cost: (i * 7) % 13 }));
-    const a = bucket([...items].sort((x, y) => y.cost - x.cost || x.name.localeCompare(y.name)), 4);
-    const b = bucket([...items].sort((x, y) => y.cost - x.cost || x.name.localeCompare(y.name)), 4);
-    expect(a.map((s) => s.map((p) => p.name))).toEqual(b.map((s) => s.map((p) => p.name)));
+    const items = Array.from({ length: 20 }, (_, i) => ({
+      name: `p${i}`,
+      cost: (i * 7) % 13,
+    }));
+    const a = bucket(
+      [...items].sort(
+        (x, y) => y.cost - x.cost || x.name.localeCompare(y.name),
+      ),
+      4,
+    );
+    const b = bucket(
+      [...items].sort(
+        (x, y) => y.cost - x.cost || x.name.localeCompare(y.name),
+      ),
+      4,
+    );
+    expect(a.map((s) => s.map((p) => p.name))).toEqual(
+      b.map((s) => s.map((p) => p.name)),
+    );
   });
 
   it('removing an unaffected package from the SELECTION does not move others', () => {
     // The property the lock above enforces structurally, asserted behaviourally:
     // bucket the full list once, then filter — every survivor keeps its shard.
-    const all = Array.from({ length: 20 }, (_, i) => ({ name: `p${i}`, cost: (i * 7) % 13 }));
-    const ordered = [...all].sort((x, y) => y.cost - x.cost || x.name.localeCompare(y.name));
+    const all = Array.from({ length: 20 }, (_, i) => ({
+      name: `p${i}`,
+      cost: (i * 7) % 13,
+    }));
+    const ordered = [...all].sort(
+      (x, y) => y.cost - x.cost || x.name.localeCompare(y.name),
+    );
     const buckets = bucket(ordered, 4);
-    const shardOf = (n: string) => buckets.findIndex((b) => b.some((p) => p.name === n));
+    const shardOf = (n: string) =>
+      buckets.findIndex((b) => b.some((p) => p.name === n));
 
     const affected = new Set(['p3', 'p11', 'p17']);
     const filtered = buckets.map((b) => b.filter((p) => affected.has(p.name)));
     for (const n of affected) {
-      expect(filtered.findIndex((b) => b.some((p) => p.name === n)), `${n} moved shard`).toBe(shardOf(n));
+      expect(
+        filtered.findIndex((b) => b.some((p) => p.name === n)),
+        `${n} moved shard`,
+      ).toBe(shardOf(n));
     }
   });
 });
@@ -309,7 +436,10 @@ describe('shard assignment does not depend on the affected set', () => {
  */
 describe('emitDeclarationOnly requires a second .js-emitting pass', () => {
   it('every package with emitDeclarationOnly builds via build-package.ts', () => {
-    const root = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '../..');
+    const root = path.resolve(
+      path.dirname(url.fileURLToPath(import.meta.url)),
+      '../..',
+    );
     const pkgsDir = path.join(root, 'packages');
     const offenders: string[] = [];
     let checked = 0;
@@ -318,13 +448,23 @@ describe('emitDeclarationOnly requires a second .js-emitting pass', () => {
       const tsconfig = path.join(pkgsDir, entry, 'tsconfig.lib.json');
       const manifest = path.join(pkgsDir, entry, 'package.json');
       if (!fs.existsSync(tsconfig) || !fs.existsSync(manifest)) continue;
-      if (!/"emitDeclarationOnly"\s*:\s*true/.test(fs.readFileSync(tsconfig, 'utf8'))) continue;
+      if (
+        !/"emitDeclarationOnly"\s*:\s*true/.test(
+          fs.readFileSync(tsconfig, 'utf8'),
+        )
+      )
+        continue;
       checked++;
-      const build = JSON.parse(fs.readFileSync(manifest, 'utf8')).scripts?.build ?? '';
-      if (!build.includes('build-package')) offenders.push(`${entry} (build: ${build || 'none'})`);
+      const build =
+        JSON.parse(fs.readFileSync(manifest, 'utf8')).scripts?.build ?? '';
+      if (!build.includes('build-package'))
+        offenders.push(`${entry} (build: ${build || 'none'})`);
     }
 
-    expect(checked, 'no package sets emitDeclarationOnly — this lock would be vacuous').toBeGreaterThan(5);
+    expect(
+      checked,
+      'no package sets emitDeclarationOnly — this lock would be vacuous',
+    ).toBeGreaterThan(5);
     expect(
       offenders,
       `these packages set emitDeclarationOnly but do not build through ` +
