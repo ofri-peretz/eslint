@@ -16,6 +16,15 @@ ruleTester.run('no-debug-code-in-production', noDebugCodeInProduction, {
   valid: [
     { name: "a string whose value is 'production' is not a debug branch", code: "const mode = 'production'" },
     { code: "logger.info('message')" },
+    // CWE-489 is *Active* Debug Code. A property NAME is not a reference and
+    // activates nothing: it is a key in a severity table that must ship for the
+    // file to compile. Neither position is a binding the rule could ask a user
+    // to remove, and there is no option that suppresses them.
+    // burgee packages/flagstaff/src/cli-table3.ts:271 and :280
+    {
+      name: 'DEBUG as an object-literal key and a member property is not debug code',
+      code: 'const LEVEL = { WARN: 1, INFO: 2, DEBUG: 3 }; const gated = (n) => n >= LEVEL.DEBUG;',
+    },
   ],
 
   invalid: [
