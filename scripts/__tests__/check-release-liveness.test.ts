@@ -42,6 +42,15 @@ function git(...args: string[]) {
   execFileSync('git', args, { cwd: repo, env, stdio: 'pipe' });
 }
 
+/** Commit with an explicit author/committer date, to backdate a version bump. */
+function commitAt(iso: string, message: string) {
+  const env = { ...process.env, GIT_AUTHOR_DATE: iso, GIT_COMMITTER_DATE: iso };
+  delete env.GIT_DIR;
+  delete env.GIT_WORK_TREE;
+  execFileSync('git', ['add', '-A'], { cwd: repo, env, stdio: 'pipe' });
+  execFileSync('git', ['commit', '-q', '-m', message], { cwd: repo, env, stdio: 'pipe' });
+}
+
 function write(rel: string, content: string) {
   const full = join(repo, rel);
   mkdirSync(join(full, '..'), { recursive: true });
@@ -97,8 +106,12 @@ beforeEach(() => {
   stub('npm', 'echo 1.0.0');
   stub('gh', 'echo 0'); // no open Version PR
 
-  git('add', '-A');
-  git('commit', '-q', '-m', 'base');
+  // Backdated: package.json's baseline commit must read as old history, not
+  // a bump that just landed. Otherwise every test that leaves a version
+  // untouched (e.g. registry-ahead) would fall inside the #973 publish grace
+  // period purely because the *file* was last touched by this setup commit a
+  // moment ago, masking findings the grace period was never meant to cover.
+  commitAt('2020-01-01T00:00:00Z', 'base');
 });
 
 afterEach(() => {
@@ -156,13 +169,49 @@ describe('changesets are read from main, not the checkout', () => {
 describe('an unpublished bump is reported', () => {
   it('flags a package whose version on main is ahead of npm', () => {
     write('packages/x/package.json', '{"name":"eslint-plugin-x","version":"1.1.0"}');
-    git('add', '-A');
-    git('commit', '-q', '-m', 'chore: version packages');
+    // Outside the publish-grace window (20m), so this is a genuine stall and
+    // not a release still in flight.
+    commitAt('2020-01-01T00:00:00Z', 'chore: version packages');
 
     const { out, status } = run();
     expect(status).toBe(1);
     expect(out).toContain('unpublished-bump');
     expect(out).toContain('1.1.0');
+  });
+});
+
+/**
+ * Issue #973: the six-hourly cron is not guaranteed to fire on the six-hour
+ * boundary (GitHub documents scheduled triggers as best-effort), and one run
+ * landed ~3h49m late, inside a still-finishing release. A package's publish
+ * job had already exited 0 two minutes earlier, but `npm view <pkg>@latest`
+ * still answered the prior version, and the check filed a stall against a
+ * pipeline that was not stalled -- confirmed minutes later, npm did have the
+ * new version.
+ *
+ * `--skip-publish-lag` only covers the `workflow_run` trigger firing on the
+ * release commit itself; a `schedule` or `workflow_dispatch` run landing
+ * inside someone else's in-flight release was not covered. This locks the
+ * fix: a version bump within the publish grace period is not yet a stall.
+ */
+describe('a very recent bump gets a publish grace period (#973)', () => {
+  it('does not flag a bump that landed seconds ago', () => {
+    write('packages/x/package.json', '{"name":"eslint-plugin-x","version":"1.1.0"}');
+    commitAt(new Date().toISOString(), 'chore: version packages');
+
+    const { out, status } = run();
+    expect(status).toBe(0);
+    expect(out).not.toContain('unpublished-bump');
+    expect(out).toContain('publish grace period');
+  });
+
+  it('still flags the same bump once the grace period has elapsed', () => {
+    write('packages/x/package.json', '{"name":"eslint-plugin-x","version":"1.1.0"}');
+    commitAt('2020-01-01T00:00:00Z', 'chore: version packages');
+
+    const { out, status } = run();
+    expect(status).toBe(1);
+    expect(out).toContain('unpublished-bump');
   });
 });
 

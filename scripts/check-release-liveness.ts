@@ -239,6 +239,55 @@ function compareVersions(a: string, b: string): number {
   return x.pre > y.pre ? 1 : -1;
 }
 
+/**
+ * Minutes a version bump gets before "ahead of npm" counts as a stall.
+ *
+ * Issue #973: the six-hourly cron is not guaranteed to fire on the six-hour
+ * boundary -- GitHub documents scheduled triggers as best-effort and delays
+ * them under load -- and on 2026-09-10 one fired ~3h49m late, landing inside
+ * a live release run. `eslint-plugin-maintainability` had just been bumped to
+ * 3.2.6 on main; its publish job had already exited 0 two minutes earlier,
+ * but `npm view eslint-plugin-maintainability@latest version` still answered
+ * 3.2.5 (confirmed live at 3.2.6 minutes later), and the check filed a stall
+ * against a pipeline that was not stalled.
+ *
+ * `--skip-publish-lag` already handles the one case this file's author had
+ * timed: the `workflow_run` trigger firing on the release commit itself. It
+ * does nothing for a `schedule` or `workflow_dispatch` run that happens to
+ * land inside someone else's still-finishing release -- which is exactly
+ * what #973 was. A grace period keyed off how long ago the bump actually
+ * landed covers every trigger, not just one.
+ *
+ * 20 minutes is roughly double the ~9.5 minutes the #973 release run took
+ * end to end (triage through the last publish job), so a genuine multi-hour
+ * stall is still caught -- just not on the one run unlucky enough to overlap
+ * a release in progress. A missed cycle here is a false alarm avoided, not a
+ * stall hidden: the next six-hourly run re-checks the same package.
+ */
+const PUBLISH_GRACE_MINUTES = 20;
+
+/**
+ * Minutes since `file` last changed at `ref`, or `undefined` when that can't
+ * be determined (no history, unreadable ref) -- treated as "no grace", the
+ * same fail-closed posture as the rest of this file: an unanswerable question
+ * must surface, not silently suppress a real finding.
+ */
+function minutesSinceLastChange(ref: string, file: string): number | undefined {
+  try {
+    const iso = execFileSync('git', ['log', '-1', '--format=%cI', ref, '--', file], {
+      cwd: REPO_ROOT,
+      encoding: 'utf8',
+      timeout: 15_000,
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+    if (!iso) return undefined;
+    const ms = Date.now() - new Date(iso).getTime();
+    return Number.isFinite(ms) ? ms / 60_000 : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 let neverPublished = 0;
 let compared = 0;
 for (const m of SKIP_PUBLISH_LAG ? [] : manifests) {
@@ -290,13 +339,23 @@ for (const m of SKIP_PUBLISH_LAG ? [] : manifests) {
   // main -- which is worth knowing but is not an unpublished bump, and calling
   // it one would be the cry-wolf failure again.
   const ordering = compareVersions(pkg.version, latest);
-  if (ordering > 0)
-    findings.push({
-      kind: 'unpublished-bump',
-      detail:
-        `${pkg.name} is ${pkg.version} on main but ${latest} on npm. ` +
-        'A version bump landed and the publish did not follow.',
-    });
+  if (ordering > 0) {
+    const ageMinutes = minutesSinceLastChange('HEAD', m);
+    if (ageMinutes !== undefined && ageMinutes < PUBLISH_GRACE_MINUTES) {
+      checked.push(
+        `${pkg.name} is ${pkg.version} on main but ${latest} on npm -- bumped ` +
+          `${ageMinutes.toFixed(1)}m ago, within the ${PUBLISH_GRACE_MINUTES}m ` +
+          'publish grace period. Not reported as a stall; re-checked next run.',
+      );
+    } else {
+      findings.push({
+        kind: 'unpublished-bump',
+        detail:
+          `${pkg.name} is ${pkg.version} on main but ${latest} on npm. ` +
+          'A version bump landed and the publish did not follow.',
+      });
+    }
+  }
   else if (ordering < 0)
     findings.push({
       kind: 'registry-ahead',
