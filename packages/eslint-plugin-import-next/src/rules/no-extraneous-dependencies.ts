@@ -319,6 +319,24 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
         return null;
       }
 
+      // Skip any other `<scheme>:` specifier.
+      //
+      // A specifier carrying a URI scheme is not a package path, so splitting it
+      // on `/` derives a name npm's grammar forbids — `:` is outside
+      // [a-z0-9-._~]. `fumadocs-mdx:collections/server` yielded the "package"
+      // `fumadocs-mdx:collections` and a HIGH report telling the user to run
+      // `npm install fumadocs-mdx:collections`, which cannot succeed, while the
+      // package that actually backs it (`fumadocs-mdx`) was declared all along.
+      // This is the same class as the `#` and `node:` cases above, and it covers
+      // both spec-defined URL specifiers (`data:`, `https:`) and build-tool
+      // virtual modules (`virtual:`, `astro:`). Mapping the prefix to a package
+      // would only move the false positive: `virtual:pwa-register` belongs to no
+      // package, and `astro:content` does not belong to one named `astro`.
+      // A bare Windows drive path is not a scheme — require 2+ chars.
+      if (/^[a-zA-Z][a-zA-Z0-9+\-.]+:/.test(importPath)) {
+        return null;
+      }
+
       // Extract package name from scoped packages or regular packages
       const packageName = importPath.startsWith('@')
         ? importPath.split('/').slice(0, 2).join('/')
