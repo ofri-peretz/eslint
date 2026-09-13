@@ -126,15 +126,20 @@ describe('a result envelope cannot be overwritten by a different corpus', () => 
    * The date-keyed filename was fixed by adding the corpus basename, which
    * stops the two runs anyone actually makes — curated fixtures, then the
    * harvested tree — from landing on one name. It does not stop the general
-   * case: `--corpus` is resolved to an absolute path, and `path.basename`
-   * collapses `/a/corpus` and `/b/corpus` to the same slug, so on one day the
-   * second run silently replaces the first envelope again. Same defect the
-   * date-only name had, one level down.
+   * case: `path.basename` collapses `/a/corpus` and `/b/corpus` to the same
+   * slug, so on one day the second run silently replaces the first envelope
+   * again. Same defect the date-only name had, one level down.
+   *
+   * Hashing `CORPUS` closes that, and opens another: `CORPUS` is resolved to
+   * an absolute path, so the digest encodes the checkout and the same corpus
+   * is named differently on a different machine. `corpusSlug` is the answer
+   * to both, and `corpus-slug.lock.test.ts` locks the behaviour rather than
+   * the source text. What is checked here is only that run.ts still routes
+   * the name through it.
    */
-  it('derives part of the filename from the full corpus path, not just its basename', () => {
-    expect(RUN).toMatch(
-      /createHash\(['"]sha256['"]\)[\s\S]{0,80}\.update\(CORPUS\)/,
-    );
+  it('names the envelope through corpusSlug, not an open-coded basename', () => {
+    expect(RUN).toMatch(/corpusSlug\(CORPUS, REPO_ROOT\)/);
+    expect(RUN).not.toMatch(/\.basename\(CORPUS\)/);
   });
 
   it('still leads with the date so prune-benchmark-results recognises the snapshot', () => {
