@@ -120,3 +120,24 @@ describe('oxlint is never asked to lint the corpus in one argv', () => {
     expect(RUN).toMatch(/oxlint produced no output for a batch/);
   });
 });
+
+describe('a result envelope cannot be overwritten by a different corpus', () => {
+  /*
+   * The date-keyed filename was fixed by adding the corpus basename, which
+   * stops the two runs anyone actually makes — curated fixtures, then the
+   * harvested tree — from landing on one name. It does not stop the general
+   * case: `--corpus` is resolved to an absolute path, and `path.basename`
+   * collapses `/a/corpus` and `/b/corpus` to the same slug, so on one day the
+   * second run silently replaces the first envelope again. Same defect the
+   * date-only name had, one level down.
+   */
+  it('derives part of the filename from the full corpus path, not just its basename', () => {
+    expect(RUN).toMatch(
+      /createHash\(['"]sha256['"]\)[\s\S]{0,80}\.update\(CORPUS\)/,
+    );
+  });
+
+  it('still leads with the date so prune-benchmark-results recognises the snapshot', () => {
+    expect(RUN).toMatch(/new Date\(\)\.toISOString\(\)\.slice\(0, 10\)/);
+  });
+});
