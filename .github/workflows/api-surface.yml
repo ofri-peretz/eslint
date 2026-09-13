@@ -37,7 +37,10 @@ permissions:
 
 jobs:
   audit:
-    name: API-surface coverage audit (strict)
+    # Not "(strict)": the step below deliberately runs the base command, so
+    # recorded below-floor debt warns rather than fails. The job name is the
+    # label every PR shows, and it claimed a mode this job does not use.
+    name: API-surface coverage audit
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
