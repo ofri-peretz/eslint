@@ -1,0 +1,29 @@
+{
+  "cwe": "CWE-913",
+  "name": "Improper Control of Dynamically-Managed Code Resources",
+  "owasp": "A03:2021",
+  "severity": "HIGH",
+  "expectedPlugins": ["eslint-plugin-supabase-security"],
+  "fixtures": {
+    "vulnerable": [
+      {
+        "file": "supabase-rpc-dynamic-name.ts",
+        "description": "`.rpc()` handed a request-supplied function name, so the caller picks which Postgres function executes"
+      },
+      {
+        "file": "supabase-rpc-interpolated-name.ts",
+        "description": "`.rpc()` handed an interpolated template, which is the same choice made less visibly"
+      }
+    ],
+    "safe": [
+      {
+        "file": "supabase-rpc-literal-name.ts",
+        "description": "The function name is a literal in the source"
+      },
+      {
+        "file": "supabase-rpc-branched-literal.ts",
+        "description": "Two literal calls behind a branch — the shape the rule's fix text recommends, after the allowlist form was found to report"
+      }
+    ]
+  }
+}

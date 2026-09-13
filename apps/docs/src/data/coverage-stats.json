@@ -93,6 +93,13 @@
         "category": "security"
       },
       {
+        "name": "eslint-plugin-supabase-security",
+        "slug": "supabase-security",
+        "coverage": 85,
+        "status": "production",
+        "category": "security"
+      },
+      {
         "name": "eslint-plugin-typeorm-security",
         "slug": "typeorm-security",
         "coverage": 85,
@@ -214,7 +221,7 @@
     "qualityPlugins": 75
   },
   "meta": {
-    "generatedAt": "2026-08-09T03:05:49.245Z",
+    "generatedAt": "2026-09-10T16:16:46.958Z",
     "source": "estimated",
     "ttl": 14400
   }

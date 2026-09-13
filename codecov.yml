@@ -351,6 +351,16 @@ component_management:
         - type: patch
           target: 100%
 
+    - component_id: eslint-plugin-supabase-security
+      name: 'eslint-plugin-supabase-security'
+      paths:
+        - packages/eslint-plugin-supabase-security/**
+      statuses:
+        - type: project
+          target: 100%
+        - type: patch
+          target: 100%
+
     - component_id: eslint-plugin-sqlite-security
       name: 'eslint-plugin-sqlite-security'
       paths:

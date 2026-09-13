@@ -1,0 +1,92 @@
+---
+title: no-service-role-key-in-client
+description: Keep the Supabase service_role key out of client code
+tags: ['security', 'supabase']
+category: security
+severity: critical
+cwe: CWE-798
+autofix: false
+---
+
+# no-service-role-key-in-client
+
+> Keep the Supabase `service_role` key out of client code.
+
+- **CWE:** [CWE-798 — Use of Hard-coded Credentials](https://cwe.mitre.org/data/definitions/798.html)
+- **OWASP:** A02:2021 — Cryptographic Failures
+- **CVSS:** 9.8 (Critical)
+- **Recommended:** `error`
+
+## Why
+
+Supabase issues two keys. The **anon** key is meant to be public — Row Level Security is what constrains it, and shipping it to the browser is the design. The **service_role** key bypasses RLS entirely: it is a database superuser in a string.
+
+A build that puts `service_role` in the browser bundle hands every visitor unrestricted read and write on every table, regardless of what policies say. It is not an escalation path; it is the end state.
+
+The reason this needs a linter is that the line looks like every other one:
+
+```ts
+const supabase = createClient(url, key);
+```
+
+Nothing at the call site distinguishes the two keys. The difference is one identifier defined elsewhere, and a reviewer scanning a diff for `createClient` sees a call they have approved a hundred times.
+
+## Rule details
+
+The rule fires only in files that import a `@supabase/*` package, and reports two independent shapes:
+
+1. **A service-role variable behind a public prefix.** `NEXT_PUBLIC_`, `VITE_`, `PUBLIC_`, `REACT_APP_`, `GATSBY_`, `NUXT_PUBLIC_`, `EXPO_PUBLIC_`. These prefixes exist to inline a value into the client bundle at build time, so the combination is wrong regardless of where the file sits.
+2. **A service-role variable read in a client component.** A module with a `'use client'` directive ships to the browser, so anything it reads goes with it.
+
+It matches on the property read off `process.env` / `import.meta.env` — never on a variable name. Rename every identifier in the file to `foo` and the rule still fires.
+
+It abstains when the module imports `server-only`: the bundler fails the build if the client reaches such a file, so reading `service_role` there is correct.
+
+## Incorrect
+
+```ts
+import { createClient } from '@supabase/supabase-js';
+
+// The prefix ships this to the browser.
+export const db = createClient(
+  url,
+  process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY,
+);
+```
+
+```ts
+'use client';
+import { createClient } from '@supabase/supabase-js';
+
+// A client component reads it, so the browser gets it.
+export const admin = createClient(url, process.env.SUPABASE_SERVICE_ROLE_KEY);
+```
+
+## Correct
+
+```ts
+'use client';
+import { createClient } from '@supabase/supabase-js';
+
+// The anon key is what RLS is designed to constrain.
+export const db = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+);
+```
+
+```ts
+import 'server-only';
+import { createClient } from '@supabase/supabase-js';
+
+// Unreachable from the client — the build fails if anything imports this.
+export const admin = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+);
+```
+
+## Further reading
+
+- [Supabase — API keys](https://supabase.com/docs/guides/api/api-keys)
+- [Supabase — Row Level Security](https://supabase.com/docs/guides/database/postgres/row-level-security)

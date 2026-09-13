@@ -5,6 +5,69 @@ All notable changes to `eslint-plugin-jwt-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.3.0
+
+### Minor Changes
+
+- **🐛 Fix** — only `algorithms` counts as an algorithm whitelist, and a byte-wrapped secret is still a secret
+
+  Two false negatives, both found in review of the API-surface work.
+
+  **`require-algorithm-whitelist` accepted `algorithm` and `alg`.** Neither exists
+  on the verify path. Checked against the installed packages: `jsonwebtoken`'s
+  `VerifyOptions` declares `algorithms?: Algorithm[]` and `jose`'s declares
+  `algorithms?: JWSAlgorithm[]`; `algorithm` is a _sign_ option and `alg` is a
+  header claim. Both spellings are ignored, so verification proceeds with
+  whatever algorithm the token itself names — the substitution attack this rule
+  exists to catch. The rule was therefore silent in exactly the case where an
+  author had tried to pin the algorithm and mistyped it, which is worse than not
+  having the rule, because it certifies the mistake. Two test cases had locked
+  that behaviour in as correct; they are now invalid cases.
+
+  Expect new findings on `verify(token, key, { algorithm: … })` and
+  `{ alg: … }`. The fix is the plural: `{ algorithms: ['RS256'] }`.
+
+  **`no-hardcoded-secret` and `no-weak-secret` could not see a byte key.** `jose`
+  takes `Uint8Array` for symmetric keys and its documented idiom is
+  `new TextEncoder().encode(secret)`. Both rules classified every call expression
+  as a safe key source, so the most common way to hand `jose` a hardcoded HMAC
+  secret was the one shape neither could inspect. `new TextEncoder().encode('…')`
+  and `Buffer.from('…')` are now unwrapped and the literal inside is judged as if
+  it had been written directly.
+
+  `no-weak-secret` measures those keys in BYTES, not in source characters. A key's
+  length and its strength are different numbers the moment an encoding is named:
+  `Buffer.from('00112233445566778899aabbccddeeff', 'hex')` is 32 characters and
+  16 bytes, so under the default 32-byte floor it is half strength — and counting
+  characters called it long enough and reported nothing. `hex`, `base64` and
+  `base64url` are decoded; every other encoding, and an unencoded buffer, is one
+  byte per character, which can never overstate the strength.
+
+  Deliberately still silent on `encoder.encode(loadSecret())` — the value is not
+  visible there, so there is nothing to judge.
+
+- **✨ Feature** — cover jose's JWS-level verify entry points
+
+  `compactVerify`, `flattenedVerify` and `generalVerify` were not recognised as
+  verification calls. All three verify a signature using whatever algorithm the
+  token header names unless `algorithms` is passed, which is the substitution
+  attack this plugin exists to catch — and the published API-surface coverage
+  figure said 100% while none of the three appeared anywhere in the rule sources,
+  because that figure was a hand-typed constant rather than a measurement.
+
+  They are now seen by the five rules that genuinely apply to a JWS:
+  `require-algorithm-whitelist`, `no-algorithm-confusion`, `no-algorithm-none`,
+  `no-hardcoded-secret` and `no-weak-secret`.
+
+  They are deliberately NOT seen by `require-audience-validation`,
+  `require-issuer-validation` or `require-max-age`. A JWS carries no claims, so
+  those options do not exist on these calls and reporting them would be
+  unfixable by the author.
+
+  Expect new findings on codebases calling jose's low-level verify API without
+  an `algorithms` option. The fix is to pass one: `compactVerify(jws, key, {
+algorithms: ['ES256'] })`.
+
 ## 3.2.2
 
 ### Patch Changes

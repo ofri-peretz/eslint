@@ -1,0 +1,29 @@
+{
+  "cwe": "CWE-732",
+  "name": "Incorrect Permission Assignment for Critical Resource",
+  "owasp": "A01:2021",
+  "severity": "HIGH",
+  "expectedPlugins": ["eslint-plugin-supabase-security"],
+  "fixtures": {
+    "vulnerable": [
+      {
+        "file": "supabase-public-bucket.ts",
+        "description": "`createBucket` with `public: true` — every object served to anyone with the URL"
+      },
+      {
+        "file": "supabase-bucket-made-public.ts",
+        "description": "`updateBucket` flipping an existing bucket public"
+      }
+    ],
+    "safe": [
+      {
+        "file": "supabase-private-bucket.ts",
+        "description": "Private bucket, access handed out per object with a signed URL"
+      },
+      {
+        "file": "supabase-bucket-public-false.ts",
+        "description": "`public: false` alongside another option — the decoy for a rule matching the key rather than its value"
+      }
+    ]
+  }
+}

@@ -21,7 +21,7 @@ const packagesDir = path.join(__dirname, '../../packages');
 const devkitDist = path.join(packagesDir, 'eslint-devkit/dist/src');
 
 const originalResolve = Module._resolveFilename;
-Module._resolveFilename = function(request, parent, isMain, options) {
+Module._resolveFilename = function (request, parent, isMain, options) {
   if (request === '@interlace/eslint-devkit') {
     return path.join(devkitDist, 'index.js');
   }
@@ -31,4 +31,6 @@ Module._resolveFilename = function(request, parent, isMain, options) {
   return originalResolve.apply(this, arguments);
 };
 
-module.exports = require(path.join(packagesDir, 'eslint-plugin-sqlite-security/dist/src/index.js'));
+module.exports = require(
+  path.join(packagesDir, 'eslint-plugin-sqlite-security/dist/src/index.js'),
+);

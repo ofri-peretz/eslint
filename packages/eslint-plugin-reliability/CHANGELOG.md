@@ -5,6 +5,29 @@ All notable changes to `eslint-plugin-reliability` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 4.1.7
+
+### Patch Changes
+
+- **🐛 Fix** — `no-unsafe-type-narrowing`'s `allowWithComment` no longer disarms the whole file
+
+  Two compounding defects. `/known/i` matched inside **unknown** — the word most likely to
+  appear next to an `as unknown as T` cast — and `/safe/i` matched inside **unsafe**, so a
+  comment condemning a cast whitelisted it. Both keywords are now word-bounded, which keeps
+  the intended `// known to be this type` and `// safe - validated above` working.
+
+  Separately, the proximity check had no lower bound: for a comment _below_ the assertion the
+  line distance goes negative, which satisfies `<= 1` at any range. One trailing comment
+  silenced every assertion above it — 988 lines away, in the case that surfaced this.
+
+- **🐛 Fix** — two rules that could not report anything
+
+  **`react-features/static-property-placement` now works.** Its grouping check ended in an empty `if` — the `context.report` had been deleted alongside a genuinely unreachable branch beside it, leaving a condition whose answer nobody used. The rule ships under two export names, so a config that enables every rule of every plugin got it at `error` and never heard from it. Its 21 `valid` cases all passed, and none of them could have failed: a rule with no `context.report` satisfies every valid case ever written for it.
+
+  The question it asked was wrong too. Two **adjacent** static properties from different groups is what correct grouping looks like; the defect is a group **resuming** after another group came between it and its earlier members. That is now what it reports. A static property belonging to no configured group does not break a group — nothing says it does not belong there. `static [propTypes] = {}` is also no longer read as the property `propTypes`; a computed key is whatever the variable holds.
+
+  **`reliability/no-jsdoc-terminator-in-example` is deprecated.** It looks for `*/` inside a JSDoc `@example`, and a block comment ends at its _first_ `*/` — so a comment's value can never contain one. Constructing the case produces a parse error, not a finding. Nothing you can write will make this rule fire, which is why it has no defect cases. Remove it from your config; `findTerminatorsInExamples` remains exported and unit-tested.
+
 ## 4.1.6
 
 ### Patch Changes

@@ -146,6 +146,12 @@ export const PLUGINS: PluginEntry[] = [
     description: 'OpenAI SDK security',
   },
   {
+    slug: 'supabase-security',
+    package: 'eslint-plugin-supabase-security',
+    pillar: 'security',
+    description: 'Supabase security',
+  },
+  {
     slug: 'sqlite-security',
     package: 'eslint-plugin-sqlite-security',
     pillar: 'security',
@@ -232,15 +238,18 @@ export const PLUGINS_BY_SLUG: Record<string, PluginEntry> = Object.fromEntries(
 );
 
 /** Convenience: lookup by package name. */
-export const PLUGINS_BY_PACKAGE: Record<string, PluginEntry> = Object.fromEntries(
-  PLUGINS.map((p) => [p.package, p]),
-);
+export const PLUGINS_BY_PACKAGE: Record<string, PluginEntry> =
+  Object.fromEntries(PLUGINS.map((p) => [p.package, p]));
 
 /** All canonical plugin slugs (sorted). */
-export const PLUGIN_SLUGS: readonly string[] = PLUGINS.map((p) => p.slug).toSorted();
+export const PLUGIN_SLUGS: readonly string[] = PLUGINS.map(
+  (p) => p.slug,
+).toSorted();
 
 /** All canonical package names (sorted). */
-export const PLUGIN_PACKAGES: readonly string[] = PLUGINS.map((p) => p.package).toSorted();
+export const PLUGIN_PACKAGES: readonly string[] = PLUGINS.map(
+  (p) => p.package,
+).toSorted();
 
 /**
  * Plugins under a given pillar.

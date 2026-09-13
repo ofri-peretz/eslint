@@ -5,6 +5,66 @@ All notable changes to `eslint-plugin-maintainability` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.2.6
+
+### Patch Changes
+
+- **🐛 Fix** — `consistent-function-scoping` sees destructured bindings and `this`
+
+  The scope tracker recorded only plain `Identifier` binding targets, so `const { out } = opts`
+  and `function f({ out })` bound nothing as far as the rule was concerned. A nested function
+  capturing one looked as though it captured nothing, and the report asserted "doesn't capture
+  outer variables" about code where ESLint's own scope manager resolves the reference to the
+  enclosing function — with a suggested move that does not compile.
+
+  An arrow also captures `this` lexically. The rule already exempted `MethodDefinition` and
+  `PropertyDefinition` because they are "bound to the instance and cannot be moved to module
+  scope", but that exemption never reached an arrow nested _inside_ a method — so the rule was
+  backwards on the axis it says it cares about. Arrows only: a nested `function` declaration's
+  `this` is dynamic, so hoisting it and calling it with `.call(this)` works, and that report
+  stays.
+
+- **🐛 Fix** — `nested-complexity-hotspots` no longer counts `else if` as a nesting level
+
+  ESTree models `else if` as an `IfStatement` in the parent's `alternate`, and the depth walk
+  counted each link, so a flat chain climbed one level per branch: code sitting at indentation
+  level 2 reported "Nesting depth 6 exceeds maximum 4". The rule was flagging the exact shape
+  its own fix text — "use early returns, guard clauses" — tells you to write.
+
+  ESLint core's `max-depth` excludes `else if` for the same reason, and the sibling rule
+  `cognitive-complexity` already carries `// else if doesn't increase nesting`. Genuine
+  nesting inside an `else if` branch still accumulates and still reports.
+
+- **🐛 Fix** — `identical-functions` stops calling private accessors identical
+
+  `getDetectLocale() { return this.#detectLocale }` and `getExitProcess() { return
+this.#exitProcess }` were reported as "15 duplicates (100% similar)"; the public
+  spelling of the same class was silent.
+
+  The normaliser renames bindings to `VAR` but deliberately keeps member names —
+  `.create(x)` is not `.destroy(x)`. The guard that protects them looked for a
+  literal `.` immediately before the name, and `#` is a non-word character, so
+  every private accessor normalised to `this.#VAR`. The 100% figure came from a
+  string-identity short-circuit, true only because the differing token had been
+  discarded. The suggested remedy was impossible anyway: `#` names are not
+  reflectable, so no generic accessor can replace them.
+
+  The guard now accepts `#` with or without a preceding dot, which also covers
+  `#brand in obj`. On the burgee corpus: 27 reports to 24.
+
+- **🐛 Fix** — `no-lonely-if` requires the `if` to actually be alone
+
+  `isLonelyIf` checked that the parent block is an `else` block and stopped, so
+  an `if` at any position in any multi-statement `else` was reported. With
+  siblings present the rule's own advice — "Replace with else if" — would strand
+  them, so every one of those reports shipped guidance that cannot be followed.
+
+  The rule's docs state the contract four times: "a 'lonely if' occurs when an
+  `if` statement is the **only** statement inside an `else` block". ESLint core's
+  `no-lonely-if` and unicorn's both gate on the `body.length === 1` check this
+  rule was missing. On the burgee corpus: 42 reports to 0, none of which were on
+  an else block holding a sole `if`.
+
 ## 3.2.5
 
 ### Patch Changes

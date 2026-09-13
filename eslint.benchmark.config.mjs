@@ -43,6 +43,8 @@ const drizzleSecurityModule =
   await import('./packages/eslint-plugin-drizzle-security/src/index.ts');
 const mcpSdkSecurityModule =
   await import('./packages/eslint-plugin-mcp-sdk-security/src/index.ts');
+const supabaseSecurityModule =
+  await import('./packages/eslint-plugin-supabase-security/src/index.ts');
 const modernizationModule =
   await import('./packages/eslint-plugin-modernization/src/index.ts');
 const prismaSecurityModule =
@@ -80,6 +82,7 @@ const modularity = normalize(modularityModule);
 const knexSecurity = normalize(knexSecurityModule);
 const drizzleSecurity = normalize(drizzleSecurityModule);
 const mcpSdkSecurity = normalize(mcpSdkSecurityModule);
+const supabaseSecurity = normalize(supabaseSecurityModule);
 const modernization = normalize(modernizationModule);
 const prismaSecurity = normalize(prismaSecurityModule);
 const sequelizeSecurity = normalize(sequelizeSecurityModule);
@@ -137,6 +140,7 @@ export default [
       'knex-security': knexSecurity,
       'drizzle-security': drizzleSecurity,
       'mcp-sdk-security': mcpSdkSecurity,
+      'supabase-security': supabaseSecurity,
       modernization: modernization,
       'prisma-security': prismaSecurity,
       'sequelize-security': sequelizeSecurity,
@@ -164,6 +168,7 @@ export default [
       ...allRulesError('knex-security', knexSecurity),
       ...allRulesError('drizzle-security', drizzleSecurity),
       ...allRulesError('mcp-sdk-security', mcpSdkSecurity),
+      ...allRulesError('supabase-security', supabaseSecurity),
       ...allRulesError('modernization', modernization),
       ...allRulesError('prisma-security', prismaSecurity),
       ...allRulesError('sequelize-security', sequelizeSecurity),

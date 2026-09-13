@@ -1,0 +1,61 @@
+---
+title: no-public-storage-bucket
+description: "Do not create a Supabase storage bucket as public"
+tags: ['security', 'supabase']
+category: security
+severity: high
+cwe: CWE-732
+autofix: false
+type_aware: false
+type_aware_status: unaware
+---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> Do not create a Supabase storage bucket as public.
+
+- **CWE:** [CWE-732 — Incorrect Permission Assignment for Critical Resource](https://cwe.mitre.org/data/definitions/732.html)
+- **OWASP:** A01:2021 — Broken Access Control
+- **CVSS:** 7.5 (High)
+- **Recommended:** off — enabled in `strict`
+
+## Why
+
+A public bucket serves every object in it to anyone with the URL: no session, no RLS check, no expiry. That is a decision about the bucket's whole future contents, taken once, in one argument, at creation — long before anyone uploads the file that should not have been public.
+
+Object names are guessable far more often than teams expect: sequential ids, e-mail addresses, original filenames from a user's disk. "Nobody knows the URL" is not access control.
+
+## Rule details
+
+Fires only in files importing a `@supabase/*` package. Reports `createBucket()` or `updateBucket()` whose options object sets `public: true` as a literal.
+
+Not in `recommended`, on purpose: a bucket of site assets is legitimately public, and this rule cannot tell that from a bucket of invoices. It is in `strict`, where the intent is to review every one.
+
+Abstains on a spread and on a non-literal value — both are unreadable from the call site.
+
+## Incorrect
+
+```ts
+import { createClient } from '@supabase/supabase-js';
+
+await db.storage.createBucket('user-documents', { public: true });
+```
+
+## Correct
+
+```ts
+import { createClient } from '@supabase/supabase-js';
+
+await db.storage.createBucket('user-documents');
+
+// Hand out time-limited access per object instead.
+const { data } = await db.storage
+  .from('user-documents')
+  .createSignedUrl(path, 60);
+```
+
+## Further reading
+
+- [Supabase — Storage access control](https://supabase.com/docs/guides/storage/security/access-control)

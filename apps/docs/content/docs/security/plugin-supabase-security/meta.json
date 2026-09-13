@@ -1,0 +1,6 @@
+{
+  "title": "Plugin: supabase-security",
+  "icon": "Database",
+  "defaultOpen": false,
+  "pages": ["index", "changelog", "rules"]
+}

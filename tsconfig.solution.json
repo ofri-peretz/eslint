@@ -42,6 +42,7 @@
     { "path": "./packages/eslint-plugin-drizzle-security/tsconfig.lib.json" },
     { "path": "./packages/eslint-plugin-knex-security/tsconfig.lib.json" },
     { "path": "./packages/eslint-plugin-sqlite-security/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-supabase-security/tsconfig.lib.json" },
     { "path": "./packages/eslint-plugin-typeorm-security/tsconfig.lib.json" },
     { "path": "./packages/eslint-plugin-vercel-ai-security/tsconfig.lib.json" },
     { "path": "./packages/eslint-plugin-mcp-sdk-security/tsconfig.lib.json" },

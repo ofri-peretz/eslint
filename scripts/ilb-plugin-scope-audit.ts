@@ -59,7 +59,11 @@ const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, '..');
 const PACKAGES_DIR = path.join(ROOT, 'packages');
 const MANIFEST_PATH = path.join(ROOT, '.agent', 'plugin-rule-manifest.json');
-const REPORT_PATH = path.join(ROOT, 'benchmark-results', 'plugin-scope-audit.json');
+const REPORT_PATH = path.join(
+  ROOT,
+  'benchmark-results',
+  'plugin-scope-audit.json',
+);
 
 const GENERATE = process.argv.includes('--generate');
 const PRINT = process.argv.includes('--print');
@@ -82,40 +86,41 @@ const PLUGIN_DEPRECATED_ALIASES: Record<string, string> = {
 };
 
 const PLUGIN_ALLOWED_ENVIRONMENTS: Record<string, string[]> = {
-  'eslint-plugin-secure-coding':     ['universal'],
-  'eslint-plugin-node-security':     ['universal', 'node'],
-  'eslint-plugin-browser-security':  ['universal', 'browser'],
-  'eslint-plugin-express-security':  ['express'],
+  'eslint-plugin-secure-coding': ['universal'],
+  'eslint-plugin-node-security': ['universal', 'node'],
+  'eslint-plugin-browser-security': ['universal', 'browser'],
+  'eslint-plugin-express-security': ['express'],
   // Renamed packages keep their original rule set, namespace and therefore
   // their environment tags. The old names stay until the deprecations age out.
-  'eslint-plugin-jwt-security':        ['jwt'],
+  'eslint-plugin-jwt-security': ['jwt'],
   'eslint-plugin-postgresql-security': ['pg'],
   'eslint-plugin-sequelize-security': ['sequelize'],
-  'eslint-plugin-mysql-security':            ['mysql'],
-  'eslint-plugin-prisma-security':           ['prisma'],
-  'eslint-plugin-drizzle-security':          ['drizzle'],
-  'eslint-plugin-knex-security':             ['knex'],
-  'eslint-plugin-sqlite-security':           ['sqlite'],
-  'eslint-plugin-typeorm-security':          ['typeorm'],
-  'eslint-plugin-mongodb-security':  ['mongodb'],
-  'eslint-plugin-nestjs-security':   ['nestjs'],
-  'eslint-plugin-lambda-security':   ['lambda'],
-  'eslint-plugin-vercel-ai-security':['vercel-ai'],
+  'eslint-plugin-mysql-security': ['mysql'],
+  'eslint-plugin-prisma-security': ['prisma'],
+  'eslint-plugin-drizzle-security': ['drizzle'],
+  'eslint-plugin-knex-security': ['knex'],
+  'eslint-plugin-sqlite-security': ['sqlite'],
+  'eslint-plugin-typeorm-security': ['typeorm'],
+  'eslint-plugin-mongodb-security': ['mongodb'],
+  'eslint-plugin-nestjs-security': ['nestjs'],
+  'eslint-plugin-lambda-security': ['lambda'],
+  'eslint-plugin-vercel-ai-security': ['vercel-ai'],
   // The AI SDK family added in #335. Each gates on its own SDK import, so each
   // gets its own environment rather than defaulting to 'universal' — which is
   // what the table's fallback would otherwise claim about a plugin that cannot
   // fire outside its SDK.
-  'eslint-plugin-mcp-sdk-security':  ['mcp'],
+  'eslint-plugin-mcp-sdk-security': ['mcp'],
+  'eslint-plugin-supabase-security': ['supabase'],
   // Quality plugins — all universal
-  'eslint-plugin-conventions':       ['universal'],
-  'eslint-plugin-maintainability':   ['universal'],
-  'eslint-plugin-reliability':       ['universal'],
-  'eslint-plugin-modernization':     ['universal'],
-  'eslint-plugin-modularity':        ['universal'],
-  'eslint-plugin-operability':       ['universal'],
-  'eslint-plugin-import-next':       ['universal'],
-  'eslint-plugin-react-a11y':        ['universal'],   // React is universal (Next, Vite, Remix…)
-  'eslint-plugin-react-features':    ['universal'],
+  'eslint-plugin-conventions': ['universal'],
+  'eslint-plugin-maintainability': ['universal'],
+  'eslint-plugin-reliability': ['universal'],
+  'eslint-plugin-modernization': ['universal'],
+  'eslint-plugin-modularity': ['universal'],
+  'eslint-plugin-operability': ['universal'],
+  'eslint-plugin-import-next': ['universal'],
+  'eslint-plugin-react-a11y': ['universal'], // React is universal (Next, Vite, Remix…)
+  'eslint-plugin-react-features': ['universal'],
 };
 
 // ── Environment signal patterns ─────────────────────────────────────────────
@@ -262,7 +267,7 @@ const NAMING_HEURISTIC_SIGNALS: RegExp[] = [
   /credentialVariableNames/,
   /sensitiveNames/,
   /isUserInput\w*\s*\([^)]*\.name/,
-  /lower\.includes\(['"]/,  // checking if variable name contains substring
+  /lower\.includes\(['"]/, // checking if variable name contains substring
   /name\.toLowerCase\(\)\.includes/,
 ];
 
@@ -280,9 +285,10 @@ const DATA_FLOW_SIGNALS: RegExp[] = [
 // ── Utility functions ────────────────────────────────────────────────────────
 
 function listPlugins(): string[] {
-  return fs.readdirSync(PACKAGES_DIR)
-    .filter(d => d.startsWith('eslint-plugin-'))
-    .filter(d => fs.statSync(path.join(PACKAGES_DIR, d)).isDirectory());
+  return fs
+    .readdirSync(PACKAGES_DIR)
+    .filter((d) => d.startsWith('eslint-plugin-'))
+    .filter((d) => fs.statSync(path.join(PACKAGES_DIR, d)).isDirectory());
 }
 
 function getRulesFromIndex(pluginDir: string): string[] {
@@ -294,9 +300,10 @@ function getRulesFromIndex(pluginDir: string): string[] {
   // registration to the line scan below, so all of them have to be skipped;
   // skipping only one made the other get audited as a rule that does not exist.
   const pluginKeys = new Set(
-    [pluginDir.replace('eslint-plugin-', ''), PLUGIN_DEPRECATED_ALIASES[pluginDir]].filter(
-      (k): k is string => Boolean(k),
-    ),
+    [
+      pluginDir.replace('eslint-plugin-', ''),
+      PLUGIN_DEPRECATED_ALIASES[pluginDir],
+    ].filter((k): k is string => Boolean(k)),
   );
 
   // Strategy: scan lines that look like `'rule-name': <non-string>` (rule registration)
@@ -312,8 +319,8 @@ function getRulesFromIndex(pluginDir: string): string[] {
     const m = line.match(/^\s+['"]([a-z][a-z0-9-]*)['"]?\s*:\s*[a-zA-Z_$]/);
     if (!m) continue;
     const name = m[1];
-    if (name.includes('/')) continue;         // prefixed config entry
-    if (pluginKeys.has(name)) continue;      // plugin key in a plugins: {} block
+    if (name.includes('/')) continue; // prefixed config entry
+    if (pluginKeys.has(name)) continue; // plugin key in a plugins: {} block
     if (/^(error|warn|off)$/.test(name)) continue; // severity string
     rules.push(name);
   }
@@ -322,11 +329,24 @@ function getRulesFromIndex(pluginDir: string): string[] {
 
 function getRuleSource(pluginDir: string, ruleName: string): string | null {
   // Try one-per-dir layout: src/rules/<rule>/index.ts
-  const onePerDir = path.join(PACKAGES_DIR, pluginDir, 'src', 'rules', ruleName, 'index.ts');
+  const onePerDir = path.join(
+    PACKAGES_DIR,
+    pluginDir,
+    'src',
+    'rules',
+    ruleName,
+    'index.ts',
+  );
   if (fs.existsSync(onePerDir)) return fs.readFileSync(onePerDir, 'utf-8');
 
   // Try flat layout: src/rules/<rule>.ts
-  const flat = path.join(PACKAGES_DIR, pluginDir, 'src', 'rules', `${ruleName}.ts`);
+  const flat = path.join(
+    PACKAGES_DIR,
+    pluginDir,
+    'src',
+    'rules',
+    `${ruleName}.ts`,
+  );
   if (fs.existsSync(flat)) return fs.readFileSync(flat, 'utf-8');
 
   // Try category subdirectory layouts: src/rules/<category>/<rule>.ts
@@ -340,7 +360,10 @@ function getRuleSource(pluginDir: string, ruleName: string): string | null {
   return null;
 }
 
-function getFlagshipSeverity(pluginDir: string, ruleName: string): 'error' | 'warn' | 'off' {
+function getFlagshipSeverity(
+  pluginDir: string,
+  ruleName: string,
+): 'error' | 'warn' | 'off' {
   const indexPath = path.join(PACKAGES_DIR, pluginDir, 'src', 'index.ts');
   if (!fs.existsSync(indexPath)) return 'off';
   const src = fs.readFileSync(indexPath, 'utf-8');
@@ -352,7 +375,9 @@ function getFlagshipSeverity(pluginDir: string, ruleName: string): 'error' | 'wa
   // moment an alias is dropped, silently reclassifying the whole plugin as
   // opt-in rather than failing.
   const prefix = pluginDir.replace('eslint-plugin-', '');
-  const re = new RegExp(`['"]${prefix}/${ruleName}['"]\\s*:\\s*['"]([^'"]+)['"]`);
+  const re = new RegExp(
+    `['"]${prefix}/${ruleName}['"]\\s*:\\s*['"]([^'"]+)['"]`,
+  );
   const m = src.match(re);
   if (!m) return 'off';
   if (m[1] === 'error') return 'error';
@@ -366,9 +391,9 @@ function detectEnvironments(src: string): string[] {
     // Skip patterns that are in string literals used as examples or docs
     // We check for actual usage in code, not in comments or string values
     const cleanSrc = src
-      .replace(/\/\/.*$/gm, '')         // remove line comments
+      .replace(/\/\/.*$/gm, '') // remove line comments
       .replace(/\/\*[\s\S]*?\*\//g, ''); // remove block comments
-    if (patterns.some(p => p.test(cleanSrc))) {
+    if (patterns.some((p) => p.test(cleanSrc))) {
       found.add(env);
     }
   }
@@ -376,14 +401,20 @@ function detectEnvironments(src: string): string[] {
 }
 
 function detectNamingHeuristic(src: string): boolean {
-  return NAMING_HEURISTIC_SIGNALS.some(p => p.test(src));
+  return NAMING_HEURISTIC_SIGNALS.some((p) => p.test(src));
 }
 
 function detectDataFlowLightweight(src: string): boolean {
-  return DATA_FLOW_SIGNALS.some(p => p.test(src));
+  return DATA_FLOW_SIGNALS.some((p) => p.test(src));
 }
 
-function classifyDetection(src: string): 'structural-api' | 'structural-pattern' | 'naming-heuristic' | 'data-flow-lightweight' {
+function classifyDetection(
+  src: string,
+):
+  | 'structural-api'
+  | 'structural-pattern'
+  | 'naming-heuristic'
+  | 'data-flow-lightweight' {
   if (detectNamingHeuristic(src)) return 'naming-heuristic';
   if (detectDataFlowLightweight(src)) return 'data-flow-lightweight';
   // All others are structural — distinguishing api vs pattern is editorial
@@ -391,7 +422,9 @@ function classifyDetection(src: string): 'structural-api' | 'structural-pattern'
   return 'structural-pattern';
 }
 
-function confidenceFromSeverity(sev: 'error' | 'warn' | 'off'): 'enforcement' | 'review-prompt' | 'opt-in' {
+function confidenceFromSeverity(
+  sev: 'error' | 'warn' | 'off',
+): 'enforcement' | 'review-prompt' | 'opt-in' {
   if (sev === 'error') return 'enforcement';
   if (sev === 'warn') return 'review-prompt';
   return 'opt-in';
@@ -399,22 +432,34 @@ function confidenceFromSeverity(sev: 'error' | 'warn' | 'off'): 'enforcement' | 
 
 // ── Manifest generation ──────────────────────────────────────────────────────
 
-function generateManifest(): Record<string, Record<string, {
-  environment: string;
-  detection: string;
-  confidence: string;
-  notes?: string;
-  violation?: string;
-  deprecated?: boolean;
-}>> {
-  const manifest: Record<string, Record<string, {
-    environment: string;
-    detection: string;
-    confidence: string;
-    notes?: string;
-    violation?: string;
-    deprecated?: boolean;
-  }>> = {};
+function generateManifest(): Record<
+  string,
+  Record<
+    string,
+    {
+      environment: string;
+      detection: string;
+      confidence: string;
+      notes?: string;
+      violation?: string;
+      deprecated?: boolean;
+    }
+  >
+> {
+  const manifest: Record<
+    string,
+    Record<
+      string,
+      {
+        environment: string;
+        detection: string;
+        confidence: string;
+        notes?: string;
+        violation?: string;
+        deprecated?: boolean;
+      }
+    >
+  > = {};
 
   for (const pluginDir of listPlugins()) {
     const rules = getRulesFromIndex(pluginDir);
@@ -442,16 +487,19 @@ function generateManifest(): Record<string, Record<string, {
 
       // Primary environment: if the rule only uses one env signal, use it.
       // If it uses multiple, pick the most specific one (non-universal wins).
-      const allowedEnvs = PLUGIN_ALLOWED_ENVIRONMENTS[pluginDir] ?? ['universal'];
+      const allowedEnvs = PLUGIN_ALLOWED_ENVIRONMENTS[pluginDir] ?? [
+        'universal',
+      ];
 
       // Every branch below assigns `environment`, so no seed value is needed
       // (the old `= pluginPrimaryEnv` seed was always overwritten — dead store).
       let environment: string;
-      if (envs.length === 0) environment = allowedEnvs[0]; // default to plugin's first
+      if (envs.length === 0)
+        environment = allowedEnvs[0]; // default to plugin's first
       else if (envs.length === 1) environment = envs[0];
       else {
         // Multiple env signals — use the most specific non-universal one
-        environment = envs.find(e => e !== 'universal') ?? 'universal';
+        environment = envs.find((e) => e !== 'universal') ?? 'universal';
       }
 
       // Check for environment violation
@@ -480,7 +528,9 @@ type Finding = {
   detail: string;
 };
 
-function validateManifest(manifest: ReturnType<typeof generateManifest>): Finding[] {
+function validateManifest(
+  manifest: ReturnType<typeof generateManifest>,
+): Finding[] {
   const findings: Finding[] = [];
 
   for (const pluginDir of listPlugins()) {
@@ -493,22 +543,34 @@ function validateManifest(manifest: ReturnType<typeof generateManifest>): Findin
 
       // I1 — completeness
       if (!entry) {
-        findings.push({ plugin: pluginDir, rule, invariant: 'I1', detail: 'Missing manifest entry' });
+        findings.push({
+          plugin: pluginDir,
+          rule,
+          invariant: 'I1',
+          detail: 'Missing manifest entry',
+        });
         continue;
       }
 
       // I2 — environment alignment (skip deprecated rules — they exist for backwards compat)
       if (!allowedEnvs.includes(entry.environment) && !entry.deprecated) {
         findings.push({
-          plugin: pluginDir, rule, invariant: 'I2',
+          plugin: pluginDir,
+          rule,
+          invariant: 'I2',
           detail: `environment '${entry.environment}' not allowed in ${pluginDir} (allowed: ${allowedEnvs.join(', ')})`,
         });
       }
 
       // I3 — naming-heuristic must be review-prompt or opt-in
-      if (entry.detection === 'naming-heuristic' && entry.confidence === 'enforcement') {
+      if (
+        entry.detection === 'naming-heuristic' &&
+        entry.confidence === 'enforcement'
+      ) {
         findings.push({
-          plugin: pluginDir, rule, invariant: 'I3',
+          plugin: pluginDir,
+          rule,
+          invariant: 'I3',
           detail: `naming-heuristic detection cannot be 'enforcement' severity — demote to 'review-prompt'`,
         });
       }
@@ -517,9 +579,14 @@ function validateManifest(manifest: ReturnType<typeof generateManifest>): Findin
       // Note: data-flow-lightweight (tracking Set of bound names from known API calls) CAN be
       // enforcement if the tracking is conservative and precision is high. Only naming-heuristic
       // (using variable name as a proxy for what data IS) is inherently imprecise.
-      if (entry.confidence === 'enforcement' && entry.detection === 'naming-heuristic') {
+      if (
+        entry.confidence === 'enforcement' &&
+        entry.detection === 'naming-heuristic'
+      ) {
         findings.push({
-          plugin: pluginDir, rule, invariant: 'I4',
+          plugin: pluginDir,
+          rule,
+          invariant: 'I4',
           detail: `enforcement confidence cannot use naming-heuristic detection — variable names are not reliable data-flow proxies`,
         });
       }
@@ -527,7 +594,9 @@ function validateManifest(manifest: ReturnType<typeof generateManifest>): Findin
       // I5 — no explicit violations (skip deprecated rules — migration path is documented)
       if (entry.violation && !entry.deprecated) {
         findings.push({
-          plugin: pluginDir, rule, invariant: 'I5',
+          plugin: pluginDir,
+          rule,
+          invariant: 'I5',
           detail: entry.violation,
         });
       }
@@ -559,7 +628,9 @@ function main() {
         if (entry.violation) violations++;
       }
     }
-    console.log(`   ${total} rules classified · ${violations} auto-detected violations`);
+    console.log(
+      `   ${total} rules classified · ${violations} auto-detected violations`,
+    );
     process.exit(0);
   }
 
@@ -578,7 +649,10 @@ function main() {
    * Read-and-catch rather than `existsSync` + `readFileSync`, to avoid the
    * file-system race CodeQL flags on the check-then-read shape.
    */
-  function isReportUnchanged(filePath: string, next: Record<string, unknown>): boolean {
+  function isReportUnchanged(
+    filePath: string,
+    next: Record<string, unknown>,
+  ): boolean {
     try {
       const existing = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
       const a = { ...existing };
@@ -591,7 +665,6 @@ function main() {
     }
   }
 
-
   // Build report
   const report = {
     generatedAt: new Date().toISOString(),
@@ -602,7 +675,8 @@ function main() {
     },
   };
   for (const f of findings) {
-    report.summary.byInvariant[f.invariant] = (report.summary.byInvariant[f.invariant] ?? 0) + 1;
+    report.summary.byInvariant[f.invariant] =
+      (report.summary.byInvariant[f.invariant] ?? 0) + 1;
   }
 
   // Write report
@@ -615,9 +689,13 @@ function main() {
   }
 
   if (PRINT || findings.length > 0) {
-    console.log('\n══════════════════════════════════════════════════════════════════════');
+    console.log(
+      '\n══════════════════════════════════════════════════════════════════════',
+    );
     console.log('  PLUGIN SCOPE AUDIT');
-    console.log('══════════════════════════════════════════════════════════════════════\n');
+    console.log(
+      '══════════════════════════════════════════════════════════════════════\n',
+    );
     for (const f of findings) {
       const prefix = f.plugin;
       console.log(`  ❌ [${f.invariant}] ${prefix}/${f.rule}`);
@@ -626,7 +704,9 @@ function main() {
     if (findings.length === 0) {
       console.log('  ✅ All invariants satisfied — zero scope violations.');
     }
-    console.log(`\n  ${findings.length} finding(s) · written to benchmark-results/plugin-scope-audit.json\n`);
+    console.log(
+      `\n  ${findings.length} finding(s) · written to benchmark-results/plugin-scope-audit.json\n`,
+    );
   }
 
   if (findings.length > 0) {

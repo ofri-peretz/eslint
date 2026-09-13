@@ -1,0 +1,29 @@
+{
+  "cwe": "CWE-287",
+  "name": "Improper Authentication",
+  "owasp": "A07:2021",
+  "severity": "HIGH",
+  "expectedPlugins": ["eslint-plugin-supabase-security"],
+  "fixtures": {
+    "vulnerable": [
+      {
+        "file": "supabase-auth-error-discarded.ts",
+        "description": "`getUser()` destructured without `error`, so a forged token reads as an anonymous request"
+      },
+      {
+        "file": "supabase-session-error-discarded.ts",
+        "description": "The same omission on `getSession()`"
+      }
+    ],
+    "safe": [
+      {
+        "file": "supabase-auth-error-handled.ts",
+        "description": "`error` bound and thrown"
+      },
+      {
+        "file": "supabase-auth-result-not-destructured.ts",
+        "description": "The result kept whole and its error read off the object — the decoy for a rule keyed on the next line rather than on the binding"
+      }
+    ]
+  }
+}

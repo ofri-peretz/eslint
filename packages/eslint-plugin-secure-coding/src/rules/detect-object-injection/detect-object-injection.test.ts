@@ -1303,7 +1303,7 @@ describe('detect-object-injection', () => {
     );
 
     ruleTester.run(
-      'Object.assign onto an inline Object.create(null) target is safe -- the docs\' own prescribed fix',
+      "Object.assign onto an inline Object.create(null) target is safe -- the docs' own prescribed fix",
       detectObjectInjection,
       {
         valid: [
