@@ -5,6 +5,41 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "1.19.3",
+      "date": "2026-09-13T06:21:10Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "**✨ New** — `eslint-plugin-supabase-security`, four rules for the Supabase client.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-supabase-security",
+      "short": "eslint-plugin-supabase-security",
+      "version": "0.2.0",
+      "date": "2026-09-13T06:20:57Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "**✨ New** — `eslint-plugin-supabase-security`, four rules for the Supabase client.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.3`",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-import-next",
       "short": "eslint-plugin-import-next",
       "version": "2.7.8",
@@ -16760,21 +16795,6 @@
       ]
     },
     {
-      "package": "@interlace/eslint-devkit",
-      "short": "eslint-devkit",
-      "version": "1.19.3",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "**✨ New** — `eslint-plugin-supabase-security`, four rules for the Supabase client.",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "@interlace/eslint-formatter",
       "short": "eslint-formatter",
       "version": "0.2.1",
@@ -17090,26 +17110,6 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-supabase-security",
-      "short": "eslint-plugin-supabase-security",
-      "version": "0.2.0",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "feature",
-          "title": "**✨ New** — `eslint-plugin-supabase-security`, four rules for the Supabase client.",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.3`",
           "pr": null
         }
       ]
