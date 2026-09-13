@@ -84,6 +84,7 @@ suite('detect-object-injection, read against its nearest neighbour', () => {
         // resolver reads through `Object.freeze` but demands an ArrayExpression
         // straight after, and `[...] as const` is a TSAsExpression — so the
         // stronger spelling reported while the weaker one above stayed silent.
+        // @found real-source scan (burgee, ofri-peretz/burgee eslint.config.mjs)
         name: 'FP: the same allowlist written with as const',
         code: 'const KEYS = ["alpha", "beta"] as const; const o = {}; for (const k of KEYS) { o[k] = 1; }',
       },
@@ -91,14 +92,17 @@ suite('detect-object-injection, read against its nearest neighbour', () => {
         // The older spelling of the same assertion. Fixing `as const` alone left
         // this one reporting, so the rule still penalised one of the two ways
         // TypeScript writes the closed set it recommends.
+        // @found spelling probe
         name: 'FP: the allowlist written with an angle-bracket const assertion',
         code: 'const KEYS = <const>["alpha", "beta"]; const o = {}; for (const k of KEYS) { o[k] = 1; }',
       },
       {
+        // @found spelling probe
         name: 'FP: as const inside Object.freeze, both wrappers at once',
         code: 'const KEYS = Object.freeze(["alpha", "beta"] as const); const o = {}; for (const k of KEYS) { o[k] = 1; }',
       },
       {
+        // @found spelling probe
         name: 'FP: a satisfies-annotated allowlist',
         code: 'const KEYS = ["alpha", "beta"] satisfies readonly string[]; const o = {}; for (const k of KEYS) { o[k] = 1; }',
       },
