@@ -55,8 +55,12 @@ ruleTester.run(
       // was wrong; safety depends on where the collection came from, which the
       // rule tracks and I did not.
       {
-        name: 'an element bound by an array pattern in map',
-        code: `export function f(src, dst) { Object.entries(src).map(([key, val]) => { dst[key] = val; }); }`,
+        // The ArrayPattern `bindsName` branch, reached through a READ back out of
+        // the object being iterated. That is the shape corpus fixture
+        // `safe/07-object-keys-foreach.js` pins: `key` is an own enumerable key
+        // of `src`, so the read cannot reach an inherited property.
+        name: 'an element bound by an array pattern in map, read from the iterated object',
+        code: `export function f(src) { let t = 0; Object.entries(src).map(([key]) => { t += src[key]; }); return t; }`,
       },
       // NOT here, deliberately: `forEach((item, i) => { dst[i] = v })`. The rule
       // reports it and should not — a callback's second parameter is a number by
@@ -142,6 +146,21 @@ ruleTester.run(
       },
     ],
     invalid: [
+      {
+        // MOVED FROM `valid` on 2026-09-13. This is the exact shape the comment
+        // fifteen lines above declares IS mass assignment — "If `keys` is
+        // `Object.keys(req.body)` then the element IS attacker-chosen, and this
+        // is mass assignment." It sat in `valid` as a coverage fixture for the
+        // ArrayPattern `bindsName` branch and, in doing so, locked the false
+        // negative: `for (const [k,v] of Object.entries(src)) dst[k]=v` reported
+        // while the `.map`/`.forEach` spelling of the same copy did not.
+        // The branch it was covering is still covered, by the read-shaped case
+        // above. burgee packages/burgee/src/yargs/utils.ts:98-101
+        name: 'a copy onto another object, bound by an array pattern in map',
+        code: `export function f(src, dst) { Object.entries(src).map(([key, val]) => { dst[key] = val; }); }`,
+        errors: [{ messageId: 'massAssignment' }],
+      },
+
       {
         // The declarator has no initialiser, so the numeric-key check cannot prove
         // `i` is a number and falls through to the generic path. The rule reports.

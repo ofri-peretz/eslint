@@ -81,9 +81,26 @@ export const noDebugCodeInProduction = createRule<RuleOptions, MessageIds>({
     }
     return {
       Identifier(node: TSESTree.Identifier) {
-        if (['DEBUG', '__DEV__'].includes(node.name)) {
-          context.report({ node, messageId: 'violationDetected' });
-        }
+        if (!['DEBUG', '__DEV__'].includes(node.name)) return;
+        // CWE-489 is ACTIVE debug code, so only a REFERENCE counts. A non-computed
+        // property NAME is not one: `{ DEBUG: 3 }` and `LEVEL.DEBUG` name a field,
+        // they do not read a debug flag, and a severity table that has to ship for
+        // the file to compile has no compliant rewrite. Computed forms (`o[DEBUG]`,
+        // `{ [DEBUG]: 1 }`) DO read the binding, so they keep reporting.
+        const parent = node.parent;
+        if (
+          parent?.type === AST_NODE_TYPES.MemberExpression &&
+          parent.property === node &&
+          !parent.computed
+        )
+          return;
+        if (
+          parent?.type === AST_NODE_TYPES.Property &&
+          parent.key === node &&
+          !parent.computed
+        )
+          return;
+        context.report({ node, messageId: 'violationDetected' });
       },
       CallExpression(node: TSESTree.CallExpression) {
         if (

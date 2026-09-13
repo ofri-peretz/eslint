@@ -95,6 +95,28 @@ ruleTester.run('no-extraneous-dependencies', noExtraneousDependencies, {
         code: `import { isMainThread } from 'worker_threads';`,
         options: [{ packageJson: mockPackageJson }]
     },
+    // A `<scheme>:` specifier is not a package path. Splitting it on `/` alone
+    // derived the "package name" `fumadocs-mdx:collections`, which npm's own
+    // grammar forbids (`:` is not in [a-z0-9-._~]), so it could never match a
+    // declared dependency — the rule reported a missing package at HIGH and
+    // suggested `npm install fumadocs-mdx:collections`, a command that cannot
+    // succeed. Same class as the `#` and `node:` carve-outs above.
+    // burgee apps/docs/src/lib/source.ts:2
+    {
+        name: 'a build-tool virtual specifier is not a package name',
+        code: `import { docs } from 'fumadocs-mdx:collections/server';`,
+        options: [{ packageJson: { name: 'docs', dependencies: { 'fumadocs-mdx': '^12.0.0' } } }]
+    },
+    {
+        name: 'a spec-defined URL specifier is not a package name',
+        code: `import x from 'data:text/javascript,export default 1';`,
+        options: [{ packageJson: mockPackageJson }]
+    },
+    {
+        name: 'a framework virtual module belonging to no package',
+        code: `import { r } from 'virtual:pwa-register';`,
+        options: [{ packageJson: mockPackageJson }]
+    },
     {
         name: 'a required node: builtin',
         code: `const { performance } = require('node:perf_hooks');`,
