@@ -23,6 +23,7 @@ import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { getToolchain } from '../../lib/toolchain.ts';
 import { capturePreregistration } from '../../lib/preregister.ts';
+import { corpusSlug } from '../../lib/corpus-slug.ts';
 
 const require = createRequire(import.meta.url);
 
@@ -881,25 +882,12 @@ function main() {
    * the loss.
    *
    * The date prefix stays first so `prune-benchmark-results` still recognises
-   * these as dated snapshots.
+   * these as dated snapshots. `corpusSlug` supplies the rest: a repo-relative
+   * name, so the same corpus is named the same way from any checkout.
    */
-  const corpusSlug = path
-    .basename(CORPUS)
-    .replace(/[^a-zA-Z0-9._-]+/g, '-')
-    .toLowerCase();
-  // The basename alone is not an identity. `--corpus` is resolved to an
-  // absolute path, and `/a/corpus` and `/b/corpus` share a basename — so on
-  // one day the second run would replace the first envelope, which is the
-  // defect the date-only name had, one level down. The slug stays because it
-  // is what makes the filename readable; the hash is what makes it unique.
-  const corpusIdentity = crypto
-    .createHash('sha256')
-    .update(CORPUS)
-    .digest('hex')
-    .slice(0, 12);
   const outPath = path.join(
     RESULTS_DIR,
-    `${new Date().toISOString().slice(0, 10)}-${corpusSlug}-${corpusIdentity}.json`,
+    `${new Date().toISOString().slice(0, 10)}-${corpusSlug(CORPUS, REPO_ROOT)}.json`,
   );
   fs.writeFileSync(outPath, JSON.stringify(envelope, null, 2) + '\n');
 
