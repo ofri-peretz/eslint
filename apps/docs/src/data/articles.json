@@ -1,6 +1,26 @@
 {
   "articles": [
     {
+      "id": 4637568,
+      "title": "The 3 Most-Installed ESLint Plugins Went Quiet in 2025",
+      "description": "I measured days-since-release for 18 ESLint plugins. import, react and jsx-a11y have shipped nothing in over a year — and dormant is not the same as dead.",
+      "url": "https://dev.to/ofri-peretz/the-3-most-installed-eslint-plugins-went-quiet-in-2025-23ni",
+      "canonical_url": "https://ofriperetz.dev/articles/eslint-plugin-maintenance-signals",
+      "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fofriperetz.dev%2Fcdn%2Fblog-cover-image%2Feslint-plugin-maintenance-signals.jpg",
+      "published_at": "2026-09-12T08:31:59Z",
+      "readable_publish_date": "Sep 12",
+      "reading_time_minutes": 4,
+      "page_views_count": 0,
+      "public_reactions_count": 1,
+      "positive_reactions_count": 1,
+      "comments_count": 3,
+      "tag_list": [
+        "javascript",
+        "webdev",
+        "opensource"
+      ]
+    },
+    {
       "id": 4556473,
       "title": "ESLint Ships in 459 KB, So My Blog Posts Lint Your Code",
       "description": "ESLint's linter ships in 459 KB with two real security plugins inside it. Here's the esbuild recipe that puts a working linter inside a blog post.",
@@ -1744,7 +1764,7 @@
       ]
     }
   ],
-  "total": 85,
-  "lastUpdated": "2026-09-10T06:24:02.839Z",
+  "total": 86,
+  "lastUpdated": "2026-09-13T06:08:50.669Z",
   "source": "public"
 }
