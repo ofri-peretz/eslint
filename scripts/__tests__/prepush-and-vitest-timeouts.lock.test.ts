@@ -1,5 +1,5 @@
 /**
- * Regression locks for two pre-push flakes that blocked unrelated pushes.
+ * Regression locks for three pre-push flakes that blocked unrelated pushes.
  *
  * 1. `hookTimeout` — PR #324 set `testTimeout: 30_000` across every vitest
  *    config, but `hookTimeout` stayed at Vitest's 10s default. `testTimeout`
@@ -14,7 +14,21 @@
  *    nondeterministically with `ENOTEMPTY` on a dist dir, or with
  *    `shim threw on require` for a different package on every run.
  *
- * Both are invisible to normal CI (which builds once, serially, on a cold
+ * 3. An inline per-test timeout that is LOWER than its config's `testTimeout`.
+ *    Vitest's third argument to `it()` REPLACES the config value rather than
+ *    extending it, so a number written when the default was 5s silently becomes
+ *    a restriction once the config is raised. `apps/docs/tests/mdx-compiler.test.ts`
+ *    carried `}, 15000)` from 2026-01-31 with the comment "Extended timeout for
+ *    heavy module loading"; PR #332 raised that workspace to `testTimeout: 30_000`
+ *    on 2026-08-02, and from that day the comment was false and the single most
+ *    expensive test in the file ran on HALF the budget of every other test.
+ *    It blocked two unrelated pre-commit runs in one session. Measured on 16
+ *    concurrent vitest processes resolving the same MDX/remark graph: 15 of 16
+ *    failed at `Test timed out in 15000ms` (15005-17092ms). Vitest's own advice
+ *    in that message — "pass a timeout value as the last argument" — points the
+ *    reader straight back at the argument that is causing it.
+ *
+ * All three are invisible to normal CI (which builds once, serially, on a cold
  * runner) and only ever bite a developer or agent pushing from a warm tree —
  * so they need structural locks, not a green pipeline.
  */
@@ -59,6 +73,75 @@ describe('vitest timeout floors', () => {
       'These configs raise testTimeout but leave hookTimeout at Vitest\'s 10s default.\n' +
         'testTimeout does not cover beforeAll/beforeEach/afterEach, so an I/O-bound\n' +
         'hook still dies with "Hook timed out in 10000ms" under the turbo fan-out:\n' +
+        `  ${offenders.join('\n  ')}`,
+    ).toEqual([]);
+  });
+});
+
+describe('inline per-test timeouts only ever raise the budget', () => {
+  /** `testTimeout: 30_000` -> 30000. Undefined when the config does not set one. */
+  function configTimeout(file: string): number | undefined {
+    const m = /testTimeout\s*:\s*([\d_]+)/.exec(fs.readFileSync(file, 'utf-8'));
+    return m ? Number(m[1].replace(/_/g, '')) : undefined;
+  }
+
+  /** Config dirs, longest path first, so the NEAREST config wins for a file. */
+  const governing = configs
+    .map((file) => ({ dir: path.dirname(file), timeout: configTimeout(file) }))
+    .filter((c): c is { dir: string; timeout: number } => c.timeout !== undefined)
+    .sort((a, b) => b.dir.length - a.dir.length);
+
+  /** Every `}, 60_000);` style third argument to it()/test(), with its file. */
+  function findInlineTimeouts(): { file: string; line: number; value: number }[] {
+    const hits: { file: string; line: number; value: number }[] = [];
+    const walk = (dir: string) => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        if (entry.name === 'node_modules' || entry.name === 'dist' || entry.name.startsWith('.')) {
+          continue;
+        }
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) walk(full);
+        else if (/\.test\.(m?tsx?)$/.test(entry.name)) {
+          fs.readFileSync(full, 'utf-8')
+            .split('\n')
+            .forEach((text, i) => {
+              const m = /^\s*\}\s*,\s*([\d_]+)\s*\)/.exec(text);
+              if (m) hits.push({ file: full, line: i + 1, value: Number(m[1].replace(/_/g, '')) });
+            });
+        }
+      }
+    };
+    walk(repoRoot);
+    return hits;
+  }
+
+  const inline = findInlineTimeouts();
+
+  // Two vacuity guards. The scan must reach the tree AND the regex must still
+  // match the repo's formatting — a prettier change that moved the argument onto
+  // its own line would otherwise leave this suite green while covering nothing.
+  it('actually finds the repo inline timeouts', () => {
+    expect(governing.length).toBeGreaterThanOrEqual(20);
+    expect(inline.length).toBeGreaterThanOrEqual(10);
+  });
+
+  it('never lets an inline timeout fall below its config testTimeout', () => {
+    const offenders = inline
+      .map(({ file, line, value }) => {
+        const cfg = governing.find((c) => file.startsWith(c.dir + path.sep));
+        if (!cfg || value >= cfg.timeout) return null;
+        return `${path.relative(repoRoot, file)}:${line} — ${value} < ${cfg.timeout} ` +
+          `(${path.relative(repoRoot, cfg.dir)}/vitest.config)`;
+      })
+      .filter((v): v is string => v !== null);
+
+    expect(
+      offenders,
+      "Vitest's third argument to it()/test() REPLACES testTimeout, it does not\n" +
+        'extend it. These inline values are BELOW their config default, so they\n' +
+        'give the test a smaller budget than every other test in the workspace —\n' +
+        'which is how a number written against an older default silently becomes a\n' +
+        'restriction. Raise it above the config value or delete it:\n' +
         `  ${offenders.join('\n  ')}`,
     ).toEqual([]);
   });

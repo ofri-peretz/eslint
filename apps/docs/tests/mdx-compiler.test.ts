@@ -1,14 +1,43 @@
 import { describe, it, expect } from 'vitest';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
 
 /**
  * MDX Compiler Module Tests
- * 
+ *
  * These tests "lock" the MDX compilation behavior to prevent regressions.
  * Critical for AI agent collaboration where behavior consistency is paramount.
- * 
+ *
  * Note: Full integration tests require the actual compiler instance.
  * These tests focus on module structure and exported interface validation.
+ *
+ * ---------------------------------------------------------------------------
+ * Why this import is at FILE SCOPE and not `await import(...)` inside a test
+ * ---------------------------------------------------------------------------
+ * `mdx-compiler` pulls in the whole MDX/remark toolchain — `@fumadocs/mdx-remote`
+ * plus `@/mdx-components`, which itself drags in `fumadocs-ui/mdx`,
+ * `fumadocs-twoslash/ui` and Mermaid. Resolving and transforming that graph
+ * measured 3160ms warm on an idle machine; every OTHER test in this file then
+ * measured 0ms, because they all hit the module cache.
+ *
+ * So when the import lived inside the first test, that one test was billed for
+ * the entire file's module-loading cost — and it was the only test here
+ * carrying an inline timeout override (`}, 15000)`), added 2026-01-31 when
+ * Vitest's default was 5s. PR #332 raised this workspace's `testTimeout` to
+ * 30_000 on 2026-08-02, at which point the override stopped extending anything
+ * and started HALVING the budget of the single most expensive test in the file.
+ * Under the parallel `turbo run test` fan-out it blew that 15s cap and failed
+ * as a bare timeout, twice in one session, blocking unrelated pre-commit runs.
+ *
+ * Hoisting moves the load into the file's collection phase, where no per-test
+ * timeout applies, so these assertions measure the module's exports instead of
+ * how loaded the machine is. Locked by
+ * `scripts/__tests__/prepush-and-vitest-timeouts.lock.test.ts`, which fails on
+ * any inline timeout that is LOWER than its config's `testTimeout`.
  */
+import * as mdxModule from '../src/lib/mdx-compiler';
+
+const { compileRemoteMDX, compileRemoteMarkdown, getFallbackContent } = mdxModule;
 
 describe('MDX Compiler Module', () => {
   // ===========================================================================
@@ -16,17 +45,14 @@ describe('MDX Compiler Module', () => {
   // ===========================================================================
   describe('Module Exports', () => {
     it('should export compileRemoteMDX function', async () => {
-      const mdxModule = await import('../src/lib/mdx-compiler');
       expect(typeof mdxModule.compileRemoteMDX).toBe('function');
-    }, 15000); // Extended timeout for heavy module loading
+    });
 
     it('should export compileRemoteMarkdown function', async () => {
-      const mdxModule = await import('../src/lib/mdx-compiler');
       expect(typeof mdxModule.compileRemoteMarkdown).toBe('function');
     });
 
     it('should export getFallbackContent function', async () => {
-      const mdxModule = await import('../src/lib/mdx-compiler');
       expect(typeof mdxModule.getFallbackContent).toBe('function');
     });
   });
@@ -36,8 +62,6 @@ describe('MDX Compiler Module', () => {
   // ===========================================================================
   describe('CompiledContent Interface', () => {
     it('should have correct shape from getFallbackContent', async () => {
-      const { getFallbackContent } = await import('../src/lib/mdx-compiler');
-      
       const result = getFallbackContent('Test Title', 'Test Description');
       
       // Lock the interface structure
@@ -47,8 +71,6 @@ describe('MDX Compiler Module', () => {
     });
 
     it('should return Body as a component', async () => {
-      const { getFallbackContent } = await import('../src/lib/mdx-compiler');
-      
       const result = getFallbackContent('Test', 'Test');
       
       // Body should be a function (React component)
@@ -56,16 +78,12 @@ describe('MDX Compiler Module', () => {
     });
 
     it('should return toc as an array', async () => {
-      const { getFallbackContent } = await import('../src/lib/mdx-compiler');
-      
       const result = getFallbackContent('Test', 'Test');
       
       expect(Array.isArray(result.toc)).toBe(true);
     });
 
     it('should return frontmatter with title and description', async () => {
-      const { getFallbackContent } = await import('../src/lib/mdx-compiler');
-      
       const result = getFallbackContent('My Title', 'My Description');
       
       expect(result.frontmatter.title).toBe('My Title');
@@ -73,8 +91,6 @@ describe('MDX Compiler Module', () => {
     });
 
     it('should return empty toc from getFallbackContent', async () => {
-      const { getFallbackContent } = await import('../src/lib/mdx-compiler');
-      
       const result = getFallbackContent('Test', 'Test');
       
       expect(result.toc).toHaveLength(0);
@@ -86,8 +102,6 @@ describe('MDX Compiler Module', () => {
   // ===========================================================================
   describe('getFallbackContent Behavior', () => {
     it('should handle empty strings', async () => {
-      const { getFallbackContent } = await import('../src/lib/mdx-compiler');
-      
       const result = getFallbackContent('', '');
       
       expect(result.frontmatter.title).toBe('');
@@ -95,8 +109,6 @@ describe('MDX Compiler Module', () => {
     });
 
     it('should handle special characters in title', async () => {
-      const { getFallbackContent } = await import('../src/lib/mdx-compiler');
-      
       const title = 'Test <script>alert("xss")</script> Title';
       const result = getFallbackContent(title, 'Desc');
       
@@ -105,8 +117,6 @@ describe('MDX Compiler Module', () => {
     });
 
     it('should handle unicode characters', async () => {
-      const { getFallbackContent } = await import('../src/lib/mdx-compiler');
-      
       const title = '日本語タイトル 🚀';
       const result = getFallbackContent(title, 'Description');
       
@@ -114,8 +124,6 @@ describe('MDX Compiler Module', () => {
     });
 
     it('should handle very long strings', async () => {
-      const { getFallbackContent } = await import('../src/lib/mdx-compiler');
-      
       const longTitle = 'A'.repeat(10000);
       const result = getFallbackContent(longTitle, 'Desc');
       
@@ -129,23 +137,17 @@ describe('MDX Compiler Module', () => {
   // ===========================================================================
   describe('Function Signatures', () => {
     it('compileRemoteMDX should accept string source', async () => {
-      const { compileRemoteMDX } = await import('../src/lib/mdx-compiler');
-      
       // Verify function exists and accepts string
       expect(compileRemoteMDX).toBeDefined();
       expect(compileRemoteMDX.length).toBeGreaterThanOrEqual(1);
     });
 
     it('compileRemoteMarkdown should accept string source', async () => {
-      const { compileRemoteMarkdown } = await import('../src/lib/mdx-compiler');
-      
       expect(compileRemoteMarkdown).toBeDefined();
       expect(compileRemoteMarkdown.length).toBeGreaterThanOrEqual(1);
     });
 
     it('getFallbackContent should accept title and description', async () => {
-      const { getFallbackContent } = await import('../src/lib/mdx-compiler');
-      
       expect(getFallbackContent).toBeDefined();
       expect(getFallbackContent.length).toBe(2);
     });
@@ -158,9 +160,6 @@ describe('MDX Compiler Module', () => {
     it('should use createCompiler (not deprecated compileMDX)', async () => {
       // This test verifies the implementation uses the new API
       // by checking the module source structure
-      const fs = await import('fs/promises');
-      const path = await import('path');
-      
       const modulePath = path.resolve(
         path.resolve(__dirname, '..'),
         'src/lib/mdx-compiler.tsx'
@@ -176,9 +175,6 @@ describe('MDX Compiler Module', () => {
     });
 
     it('should create compiler instance per compile call (supports dynamic remark plugins)', async () => {
-      const fs = await import('fs/promises');
-      const path = await import('path');
-
       const modulePath = path.resolve(
         path.resolve(__dirname, '..'),
         'src/lib/mdx-compiler.tsx'
@@ -196,8 +192,6 @@ describe('MDX Compiler Module', () => {
   // ===========================================================================
   describe('Error Handling Expectations', () => {
     it('compileRemoteMDX should return Promise', async () => {
-      const { compileRemoteMDX } = await import('../src/lib/mdx-compiler');
-      
       // Call with empty string - should still return a promise
       const result = compileRemoteMDX('');
       
@@ -205,8 +199,6 @@ describe('MDX Compiler Module', () => {
     });
 
     it('compileRemoteMarkdown should return Promise', async () => {
-      const { compileRemoteMarkdown } = await import('../src/lib/mdx-compiler');
-      
       const result = compileRemoteMarkdown('');
       
       expect(result).toBeInstanceOf(Promise);
