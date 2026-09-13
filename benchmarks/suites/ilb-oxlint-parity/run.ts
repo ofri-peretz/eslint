@@ -882,7 +882,8 @@ function main() {
    * the loss.
    *
    * The date prefix stays first so `prune-benchmark-results` still recognises
-   * these as dated snapshots.
+   * these as dated snapshots. `corpusSlug` supplies the rest: a repo-relative
+   * name, so the same corpus is named the same way from any checkout.
    */
   const outPath = path.join(
     RESULTS_DIR,
