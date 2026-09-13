@@ -138,16 +138,39 @@ describe('inline per-test timeouts only ever raise the budget', () => {
         /* setParentNodes */ true,
         file.endsWith('x') ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
       );
+      const record = (timeout: ts.NumericLiteral) =>
+        hits.push({
+          file,
+          line: src.getLineAndCharacterOfPosition(timeout.getStart(src)).line + 1,
+          value: Number(timeout.text.replace(/_/g, '')),
+        });
+
       const visit = (node: ts.Node) => {
-        if (ts.isCallExpression(node) && node.arguments.length >= 3) {
+        if (ts.isCallExpression(node) && node.arguments.length >= 2) {
           const name = leftmostName(node.expression);
-          const timeout = node.arguments[2];
-          if ((name === 'it' || name === 'test') && ts.isNumericLiteral(timeout)) {
-            hits.push({
-              file,
-              line: src.getLineAndCharacterOfPosition(timeout.getStart(src)).line + 1,
-              value: Number(timeout.text.replace(/_/g, '')),
-            });
+          if (name === 'it' || name === 'test') {
+            // `it(name, fn, 15000)`
+            const third = node.arguments[2];
+            if (third && ts.isNumericLiteral(third)) record(third);
+
+            // `it(name, { timeout: 15000 }, fn)` — Vitest's TestOptions form,
+            // verified honoured on vitest 4.1.11: a probe with `{ timeout: 50 }`
+            // around a 300ms body fails with "Test timed out in 50ms". Reading
+            // only argument 2 misses it entirely, because there argument 2 is
+            // the handler.
+            const second = node.arguments[1];
+            if (second && ts.isObjectLiteralExpression(second)) {
+              for (const prop of second.properties) {
+                if (
+                  ts.isPropertyAssignment(prop) &&
+                  (ts.isIdentifier(prop.name) || ts.isStringLiteral(prop.name)) &&
+                  prop.name.text === 'timeout' &&
+                  ts.isNumericLiteral(prop.initializer)
+                ) {
+                  record(prop.initializer);
+                }
+              }
+            }
           }
         }
         ts.forEachChild(node, visit);
