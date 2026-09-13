@@ -1,3 +1,5 @@
+import { resolve } from 'node:path';
+
 import { defineConfig } from 'vitest/config';
 
 /**
@@ -8,6 +10,22 @@ import { defineConfig } from 'vitest/config';
  * picked up as test files.
  */
 export default defineConfig({
+  /*
+   * ponytail: alias devkit to source, as the security plugins do, so this lane needs no
+   * pre-built dist. `plugin-prefix-identity` imports each plugin's `src/index.ts`, which
+   * imports `@interlace/eslint-devkit` by name — unbuilt, every one of its 62 cases dies on
+   * "Failed to resolve entry for package". The alternative is a per-package `^build` in
+   * turbo.json, which `turbo-cache-inputs-lock` exists to keep rare: it would serialise this
+   * shard behind compiling 34 plugins.
+   */
+  resolve: {
+    alias: {
+      '@interlace/eslint-devkit': resolve(
+        __dirname,
+        '../packages/eslint-devkit/src/index.ts',
+      ),
+    },
+  },
   test: {
     // Repo-wide floor: pre-push runs 47 turbo tasks concurrently, so I/O-bound
     // tests are routinely starved. Vitest's 5s default is tuned for unit tests on
