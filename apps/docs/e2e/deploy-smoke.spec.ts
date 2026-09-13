@@ -20,9 +20,10 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { isRotatingThirdPartyImage } from './lib/rotating-image-hosts';
 
 const REQUIRED_HOMEPAGE_TITLES = [
-  'Secure your code',         // hero headline (split across two spans)
+  'Secure your code', // hero headline (split across two spans)
   'See it in action',
   'What it catches',
   'Trusted by developers',
@@ -45,7 +46,9 @@ test.describe('Deploy smoke: homepage', () => {
         missing.push(title);
       }
     }
-    expect(missing, `Missing homepage sections: ${missing.join(', ')}`).toEqual([]);
+    expect(missing, `Missing homepage sections: ${missing.join(', ')}`).toEqual(
+      [],
+    );
   });
 
   test('every rendered image returns 2xx', async ({ page }) => {
@@ -66,7 +69,10 @@ test.describe('Deploy smoke: homepage', () => {
 
     const urls = await page.$$eval('img', (imgs) =>
       imgs
-        .map((i) => (i as HTMLImageElement).currentSrc || (i as HTMLImageElement).src)
+        .map(
+          (i) =>
+            (i as HTMLImageElement).currentSrc || (i as HTMLImageElement).src,
+        )
         .filter(Boolean),
     );
     const unique = [...new Set(urls)].filter(
@@ -83,13 +89,31 @@ test.describe('Deploy smoke: homepage', () => {
       }
     }
 
+    // An upstream rotation is not a broken build. `sync-tweet-cache.ts` already
+    // decided this for the sync step — see `shouldFailSync` and the 2026-07-04
+    // regression — and asserting on every image here re-created the same wedge
+    // one layer down: on 2026-09-13 a single rotated pbs.twimg.com card image
+    // failed this test and blocked production, while the step that owns that
+    // URL had deliberately let it pass.
+    const rotated = failures.filter((f) => isRotatingThirdPartyImage(f.url));
+    const ours = failures.filter((f) => !isRotatingThirdPartyImage(f.url));
+
+    if (rotated.length > 0) {
+      console.warn(
+        `Advisory — ${rotated.length} rotated third-party image(s), not blocking:\n` +
+          rotated.map((f) => `  [${f.status}] ${f.url}`).join('\n'),
+      );
+    }
+
     expect(
-      failures,
-      `Broken image URLs:\n${failures.map((f) => `  [${f.status}] ${f.url}`).join('\n')}`,
+      ours,
+      `Broken image URLs:\n${ours.map((f) => `  [${f.status}] ${f.url}`).join('\n')}`,
     ).toEqual([]);
   });
 
-  test('every required section renders at mobile viewport (390px)', async ({ page }) => {
+  test('every required section renders at mobile viewport (390px)', async ({
+    page,
+  }) => {
     await page.setViewportSize(MOBILE_VIEWPORT);
     await page.goto('/');
     await page.waitForLoadState('networkidle');
@@ -137,12 +161,20 @@ test.describe('Deploy smoke: wide viewport (1728px)', () => {
         return {
           horizontalScroll: doc.scrollWidth > doc.clientWidth,
           article: a ? { x: a.x, w: a.width } : null,
-          toc: t ? { x: t.x, w: t.width, visible: t.width > 0 && t.height > 0 } : null,
+          toc: t
+            ? { x: t.x, w: t.width, visible: t.width > 0 && t.height > 0 }
+            : null,
         };
       });
 
-      expect(layout.horizontalScroll, 'page scrolls horizontally at 1728px').toBe(false);
-      expect(layout.article, 'article missing from #main-content').not.toBeNull();
+      expect(
+        layout.horizontalScroll,
+        'page scrolls horizontally at 1728px',
+      ).toBe(false);
+      expect(
+        layout.article,
+        'article missing from #main-content',
+      ).not.toBeNull();
       // Every WIDE_PAGES entry is a docs page with headings, so the TOC element
       // must exist. Without this, a fumadocs upgrade that renames #nd-toc would
       // skip the overlap assertion silently — a green gate guarding nothing,
