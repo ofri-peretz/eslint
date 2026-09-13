@@ -1,6 +1,26 @@
 {
   "articles": [
     {
+      "id": 4642775,
+      "title": "Your ESLint Plugin Installs 205 Packages. 69 Are ESLint.",
+      "description": "I measured the install tree of 11 ESLint plugins. Direct dependency counts predict almost nothing, and every raw number hides the same 69-package baseline.",
+      "url": "https://dev.to/ofri-peretz/your-eslint-plugin-installs-205-packages-69-are-eslint-g1a",
+      "canonical_url": "https://ofriperetz.dev/articles/eslint-plugin-dependency-weight",
+      "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fofriperetz.dev%2Fcdn%2Fblog-cover-image%2Feslint-plugin-dependency-weight.jpg",
+      "published_at": "2026-09-13T08:48:55Z",
+      "readable_publish_date": "Sep 13",
+      "reading_time_minutes": 4,
+      "page_views_count": 0,
+      "public_reactions_count": 1,
+      "positive_reactions_count": 1,
+      "comments_count": 1,
+      "tag_list": [
+        "javascript",
+        "webdev",
+        "node"
+      ]
+    },
+    {
       "id": 4637568,
       "title": "The 3 Most-Installed ESLint Plugins Went Quiet in 2025",
       "description": "I measured days-since-release for 18 ESLint plugins. import, react and jsx-a11y have shipped nothing in over a year — and dormant is not the same as dead.",
@@ -1567,8 +1587,8 @@
       "readable_publish_date": "Dec 31 '25",
       "reading_time_minutes": 22,
       "page_views_count": 0,
-      "public_reactions_count": 0,
-      "positive_reactions_count": 0,
+      "public_reactions_count": 1,
+      "positive_reactions_count": 1,
       "comments_count": 0,
       "tag_list": [
         "security",
@@ -1764,7 +1784,7 @@
       ]
     }
   ],
-  "total": 86,
-  "lastUpdated": "2026-09-13T06:08:50.669Z",
+  "total": 87,
+  "lastUpdated": "2026-09-13T19:33:31.551Z",
   "source": "public"
 }
