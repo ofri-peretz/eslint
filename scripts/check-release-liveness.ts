@@ -239,8 +239,47 @@ function compareVersions(a: string, b: string): number {
   return x.pre > y.pre ? 1 : -1;
 }
 
+/**
+ * `npm publish` returning success is not the same moment `npm view
+ * <pkg>@latest` starts answering with it -- the registry's own metadata for a
+ * package records a write time measurably after the publishing job's step
+ * completed. Measured on #973: `eslint-plugin-maintainability`'s "Publish"
+ * step finished at 15:53:12Z; the release-liveness cron queried npm around
+ * 15:55:20Z and still read the prior version; npm's own `time` field for
+ * 3.2.6 is 15:56:08Z. Under a minute of read-after-write lag, reported as a
+ * permanent stall because the check asked exactly once.
+ *
+ * So a package that reads AHEAD gets a few short, cheap retries before that
+ * becomes a finding -- long enough to ride out registry propagation, far too
+ * short to mask a real stall (which is still ahead six hours, or a full
+ * workflow_run cycle, later). `registry-ahead` (main BEHIND npm) is a
+ * different condition -- a hotfix or a revert, not a race -- and is not
+ * retried.
+ *
+ * Delay is overridable so tests can make retries instant without changing
+ * what they prove.
+ */
+const PUBLISH_LAG_RETRIES = 2;
+const PUBLISH_LAG_RETRY_DELAY_MS = Number(
+  process.env.RELEASE_LIVENESS_RETRY_DELAY_MS ?? 15_000,
+);
+
+function sleepSync(ms: number): void {
+  if (ms <= 0) return;
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+function npmLatestVersion(name: string): string {
+  return execFileSync('npm', ['view', `${name}@latest`, 'version'], {
+    encoding: 'utf8',
+    timeout: 30_000,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  }).trim();
+}
+
 let neverPublished = 0;
 let compared = 0;
+let lagResolved = 0;
 for (const m of SKIP_PUBLISH_LAG ? [] : manifests) {
   const pkg = JSON.parse(fs.readFileSync(m, 'utf8')) as {
     name?: string;
@@ -250,11 +289,7 @@ for (const m of SKIP_PUBLISH_LAG ? [] : manifests) {
   if (!pkg.name || !pkg.version || pkg.private) continue;
   let latest: string;
   try {
-    latest = execFileSync('npm', ['view', `${pkg.name}@latest`, 'version'], {
-      encoding: 'utf8',
-      timeout: 30_000,
-      stdio: ['ignore', 'pipe', 'pipe'],
-    }).trim();
+    latest = npmLatestVersion(pkg.name);
   } catch (err) {
     // A 404 is the documented first-release path -- release.yml prints
     // "🆕 first release" and publishes. Anything else (registry down, network,
@@ -289,7 +324,19 @@ for (const m of SKIP_PUBLISH_LAG ? [] : manifests) {
   // something main does not -- a hotfix published out-of-band, or a revert on
   // main -- which is worth knowing but is not an unpublished bump, and calling
   // it one would be the cry-wolf failure again.
-  const ordering = compareVersions(pkg.version, latest);
+  let ordering = compareVersions(pkg.version, latest);
+  if (ordering > 0) {
+    for (let attempt = 0; attempt < PUBLISH_LAG_RETRIES && ordering > 0; attempt++) {
+      sleepSync(PUBLISH_LAG_RETRY_DELAY_MS);
+      try {
+        latest = npmLatestVersion(pkg.name);
+      } catch {
+        break; // the first call already answered; a retry failing is not new information
+      }
+      ordering = compareVersions(pkg.version, latest);
+    }
+    if (ordering <= 0) lagResolved++;
+  }
   if (ordering > 0)
     findings.push({
       kind: 'unpublished-bump',
@@ -314,6 +361,9 @@ checked.push(
     : `${compared} published package version(s) compared against npm` +
     (neverPublished > 0
       ? `; ${neverPublished} never published (first release pending)`
+      : '') +
+    (lagResolved > 0
+      ? `; ${lagResolved} looked ahead of npm and caught up on retry (registry propagation lag)`
       : ''),
 );
 
