@@ -95,3 +95,25 @@ describe('fetchWeeklyDownloads', () => {
     expect(r.error).toContain('downloads');
   });
 });
+
+describe('fetchWeeklyDownloads retry policy', () => {
+  it('does not retry a permanent 4xx', async () => {
+    // Second queued response would succeed; reaching it means we retried
+    // something that will never change its answer.
+    stubFetch({ status: 403 }, { status: 200, body: { downloads: 999 } });
+    const r = await fetchWeeklyDownloads('eslint-plugin-forbidden');
+    expect(r.downloads).toBeNull();
+    expect(r.error).toContain('403');
+  });
+
+  it('retries 429 and 408, which do recover', async () => {
+    for (const status of [429, 408]) {
+      stubFetch({ status }, { status: 200, body: { downloads: 12 } });
+      const r = await fetchWeeklyDownloads('eslint-plugin-rate-limited');
+      expect(r, `HTTP ${status} should be retried`).toEqual({
+        downloads: 12,
+        error: null,
+      });
+    }
+  });
+});
