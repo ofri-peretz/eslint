@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-04",
+  "generated": "2026-09-14",
   "rules": {
     "secure-coding/detect-non-literal-regexp": [
       "duplicate-coverage",
@@ -177,6 +177,7 @@
     "node-security/no-weak-cipher-algorithm": [
       "unconfigurable-vocabulary"
     ],
+    "node-security/no-weak-dh-parameters": [],
     "node-security/no-weak-hash-algorithm": [
       "unconfigurable-vocabulary"
     ],
