@@ -26,17 +26,17 @@ describe('no-console-spaces', () => {
   describe('console method detection', () => {
     ruleTester.run('detect console method spacing issues', noConsoleSpaces, {
       valid: [
-    // A dynamic method names nothing, so it is neither a console method to
-    // check nor a name to report. Both `propertyName(...) ?? ''` sentinels are
-    // reached only this way.
-    {
-      name: 'a dynamic console method names nothing to check',
-      code: 'console[m](" x ");',
-    },
-    {
-      name: 'a dynamic method on another receiver names nothing',
-      code: 'foo[m](" x ");',
-    },
+        // A dynamic method names nothing, so it is neither a console method to
+        // check nor a name to report. Both `propertyName(...) ?? ''` sentinels are
+        // reached only this way.
+        {
+          name: 'a dynamic console method names nothing to check',
+          code: 'console[m](" x ");',
+        },
+        {
+          name: 'a dynamic method on another receiver names nothing',
+          code: 'foo[m](" x ");',
+        },
         // Normal console calls without spaces
         {
           name: 'separate arguments, which console spaces for you',
@@ -107,6 +107,40 @@ describe('no-console-spaces', () => {
           name: 'a trailing space console already adds',
           code: 'console.log("hello ");',
           output: "console.log('hello');",
+          errors: [
+            {
+              messageId: 'noConsoleSpaces',
+            },
+          ],
+        },
+        // The fixer re-emits the COOKED value inside single quotes, so anything
+        // needing an escape has to be re-escaped or the output stops parsing
+        // (or silently changes value). burgee survives only because none of its
+        // five rewritten sites happen to contain an apostrophe.
+        {
+          name: 'an apostrophe is re-escaped so the fixed line still parses',
+          code: `console.log("it's here ");`,
+          output: `console.log('it\\'s here');`,
+          errors: [
+            {
+              messageId: 'noConsoleSpaces',
+            },
+          ],
+        },
+        {
+          name: 'an interior newline is re-escaped so the fixed line still parses',
+          code: `console.log("a\\nb ");`,
+          output: `console.log('a\\nb');`,
+          errors: [
+            {
+              messageId: 'noConsoleSpaces',
+            },
+          ],
+        },
+        {
+          name: 'a backslash is re-escaped so the fixed string keeps its value',
+          code: String.raw`console.log('a\\b ');`,
+          output: String.raw`console.log('a\\b');`,
           errors: [
             {
               messageId: 'noConsoleSpaces',

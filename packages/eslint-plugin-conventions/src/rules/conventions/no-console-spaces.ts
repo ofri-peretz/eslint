@@ -27,6 +27,28 @@ type MessageIds = 'noConsoleSpaces';
 
 type RuleOptions = [];
 
+/**
+ * Serialise a cooked string value back into a single-quoted literal.
+ *
+ * The fixer re-emits `staticString()`'s COOKED value, in which escapes are
+ * already resolved. Splicing that straight between quotes breaks the moment the
+ * value contains a quote or a line terminator — `"it's here "` became
+ * `'it's here'`, which does not parse — and silently rewrites the value when it
+ * contains a backslash. Re-escaping is what makes the emitted literal denote the
+ * same string it came from. Single quotes are kept because that is the quote
+ * style this rule has always produced.
+ */
+function toSingleQuoted(value: string): string {
+  const escaped = value
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+  return `'${escaped}'`;
+}
+
 export const noConsoleSpaces = createRule<RuleOptions, MessageIds>({
   name: 'no-console-spaces',
   meta: {
@@ -146,8 +168,10 @@ export const noConsoleSpaces = createRule<RuleOptions, MessageIds>({
                     arg: staticText,
                   },
                   fix(fixer: TSESLint.RuleFixer) {
-                    const trimmed = staticText.trim();
-                    return fixer.replaceText(arg, `'${trimmed}'`);
+                    return fixer.replaceText(
+                      arg,
+                      toSingleQuoted(staticText.trim()),
+                    );
                   },
                 });
               }
