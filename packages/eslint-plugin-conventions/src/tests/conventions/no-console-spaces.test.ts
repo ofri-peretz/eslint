@@ -138,6 +138,41 @@ describe('no-console-spaces', () => {
           ],
         },
         {
+          // The three escape paths in `toSingleQuoted` that nothing locked.
+          // Deleting `.replace(/\r/g, ...)` and the two line-separator
+          // replacements left the whole suite green while the fixer emitted
+          // an unterminated string literal for each — verified by performing
+          // exactly that mutation. CodeRabbit on #1037.
+          name: 'a carriage return is re-escaped so the fixed line still parses',
+          code: 'console.log("a\\rb ");',
+          output: "console.log('a\\rb');",
+          errors: [
+            {
+              messageId: 'noConsoleSpaces',
+            },
+          ],
+        },
+        {
+          name: 'U+2028 is re-escaped — it is a line terminator, not a space',
+          code: 'console.log("a\\u2028b ");',
+          output: "console.log('a\\u2028b');",
+          errors: [
+            {
+              messageId: 'noConsoleSpaces',
+            },
+          ],
+        },
+        {
+          name: 'U+2029 is re-escaped — it is a line terminator, not a space',
+          code: 'console.log("a\\u2029b ");',
+          output: "console.log('a\\u2029b');",
+          errors: [
+            {
+              messageId: 'noConsoleSpaces',
+            },
+          ],
+        },
+        {
           name: 'a backslash is re-escaped so the fixed string keeps its value',
           code: String.raw`console.log('a\\b ');`,
           output: String.raw`console.log('a\\b');`,

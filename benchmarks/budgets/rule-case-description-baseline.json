@@ -383,7 +383,7 @@
     "secure-coding/no-hardcoded-credentials": 159,
     "secure-coding/no-hardcoded-session-tokens": 10,
     "secure-coding/no-improper-sanitization": 106,
-    "secure-coding/no-improper-type-validation": 123,
+    "secure-coding/no-improper-type-validation": 122,
     "secure-coding/no-insecure-comparison": 87,
     "secure-coding/no-ldap-injection": 84,
     "secure-coding/no-missing-authentication": 88,

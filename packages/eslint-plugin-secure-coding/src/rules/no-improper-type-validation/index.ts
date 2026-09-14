@@ -20,7 +20,11 @@
  * - JSDoc annotations (@validated, @type-checked)
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, propertyName } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   createSafetyChecker,
@@ -105,10 +109,10 @@ type RuleOptions = [Options?];
 function unwrapTypeOnly(node: TSESTree.Node): TSESTree.Node {
   let current = node;
   while (
-    current.type === 'TSAsExpression' ||
-    current.type === 'TSSatisfiesExpression' ||
-    current.type === 'TSTypeAssertion' ||
-    current.type === 'TSNonNullExpression'
+    current.type === AST_NODE_TYPES.TSAsExpression ||
+    current.type === AST_NODE_TYPES.TSSatisfiesExpression ||
+    current.type === AST_NODE_TYPES.TSTypeAssertion ||
+    current.type === AST_NODE_TYPES.TSNonNullExpression
   ) {
     current = current.expression;
   }

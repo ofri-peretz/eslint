@@ -43,6 +43,10 @@ describe('no-improper-type-validation', () => {
           code: 'if (Number.isNaN(Number(value))) { /* handle NaN */ }',
         },
         {
+          // The robust type check, and the one idiom this rule must never
+          // flag: `Object.prototype.toString.call` is immune to the
+          // cross-realm and `typeof null` traps the rule exists to catch.
+          name: 'Object.prototype.toString.call is the robust check, not a defect',
           code: 'if (Object.prototype.toString.call(value) === "[object Array]") { /* process */ }',
         },
         // Strict equality for types
