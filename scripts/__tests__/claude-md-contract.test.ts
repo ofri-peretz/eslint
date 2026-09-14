@@ -39,7 +39,15 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 const ROOT = resolve(__dirname, '..', '..');
-const DOC = readFileSync(join(ROOT, 'CLAUDE.md'), 'utf8');
+// CLAUDE.md is the always-on context and now carries only the rules; the PR procedure it used
+// to state lives in the ship-a-pr skill, loaded on demand. This contract is about the facts the
+// agent-facing docs assert, not about which file asserts them, so it reads both as one corpus.
+const DOC = [
+  join(ROOT, 'CLAUDE.md'),
+  join(ROOT, '.claude', 'skills', 'ship-a-pr', 'SKILL.md'),
+]
+  .map((f) => readFileSync(f, 'utf8'))
+  .join('\n');
 const SCRIPTS: Record<string, string> = JSON.parse(
   readFileSync(join(ROOT, 'package.json'), 'utf8'),
 ).scripts;
@@ -62,7 +70,7 @@ function documentedChecks(): string[] {
   const from = DOC.indexOf('Branch protection requires exactly two contexts');
   expect(
     from,
-    'CLAUDE.md no longer states which contexts branch protection requires',
+    'Neither CLAUDE.md nor ship-a-pr/SKILL.md states which contexts branch protection requires',
   ).toBeGreaterThan(-1);
   const block = /```text\n([\s\S]*?)```/.exec(DOC.slice(from));
   expect(
