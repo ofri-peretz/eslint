@@ -37,7 +37,7 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-jwt-security` | 3.3.0 | `jwt-security/` | `jwt/` | `plugin-jwt-security` | security | `jwt` | ✅ | ✅ | ✅ |
 | `eslint-plugin-knex-security` | 0.4.8 | `knex-security/` | — | `plugin-knex-security` | security | `knex` | ✅ | ✅ | ✅ |
 | `eslint-plugin-lambda-security` | 2.1.4 | `lambda-security/` | — | `plugin-lambda-security` | security | `lambda` | ✅ | ✅ | ✅ |
-| `eslint-plugin-maintainability` | 3.2.7 | `maintainability/` | — | `plugin-maintainability` | quality | `—` | ✅ | ✅ | ✅ |
+| `eslint-plugin-maintainability` | 3.2.8 | `maintainability/` | — | `plugin-maintainability` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-mcp-sdk-security` | 0.4.3 | `mcp-sdk-security/` | — | `plugin-mcp-sdk-security` | security | `mcp` | ✅ | ✅ | ✅ |
 | `eslint-plugin-modernization` | 3.1.3 | `modernization/` | — | `plugin-modernization` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-modularity` | 2.5.3 | `modularity/` | — | `plugin-modularity` | quality | `—` | ✅ | ✅ | ✅ |

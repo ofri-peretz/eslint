@@ -5,6 +5,12 @@ All notable changes to `eslint-plugin-maintainability` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.2.8
+
+### Patch Changes
+
+- **🐛 Fix** — `consistent-function-scoping` no longer reports a function that captures a sibling function declared in the same scope. Hoisting makes the sibling reachable from the outer scope, so the inner function cannot be moved there without breaking the reference — the rule was recommending a move that does not compile.
+
 ## 3.2.7
 
 ### Patch Changes
