@@ -1,7 +1,7 @@
 {
-  "releaseCount": 677,
+  "releaseCount": 681,
   "packageCount": 36,
-  "entryCount": 2085,
+  "entryCount": 2092,
   "oldestYear": 2024,
   "releases": [
     {
@@ -16955,6 +16955,31 @@
       ]
     },
     {
+      "package": "eslint-plugin-import-next",
+      "short": "eslint-plugin-import-next",
+      "version": "2.8.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`extensions` checks `export … from` and `export * from`",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-unused-modules`'s `allowImportOnly` exempts only modules that import",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`consistent-type-specifier-style` stops rebuilding away parts of the import",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-jwt-security",
       "short": "eslint-plugin-jwt-security",
       "version": "2.2.9",
@@ -17070,6 +17095,21 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-maintainability",
+      "short": "eslint-plugin-maintainability",
+      "version": "3.2.7",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-silent-errors`'s `allowWithComment` no longer disarms the rest of the file",
           "pr": null
         }
       ]
@@ -17195,6 +17235,41 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-reliability",
+      "short": "eslint-plugin-reliability",
+      "version": "4.1.8",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-silent-errors`'s `allowWithComment` no longer disarms the rest of the file",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.4.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`detect-non-literal-regexp` resolves a spread of a constant array",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`detect-object-injection` honours `Object.create(null)` reached through a property",
           "pr": null
         }
       ]
