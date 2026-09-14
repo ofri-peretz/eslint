@@ -364,6 +364,44 @@ describe('no-silent-errors', () => {
           options: [{ allowWithComment: true }],
           errors: [{ messageId: 'silentError' }],
         },
+
+        // burgee sweep: packages/burgee/src/yargs/factory.ts:1154 and :1378, disarmed
+        // by an unrelated comment further down the file. The proximity check had no
+        // lower bound, so for a comment BELOW the catch the distance is negative, which
+        // satisfies `<= 2` at any range — one stray `// TODO` silenced every empty catch
+        // above it. Same defect the sibling `no-unsafe-type-narrowing` already fixed.
+        {
+          name: 'a comment far BELOW the catch does not explain it',
+          code: `
+            try {
+              doSomething();
+            } catch (error) {
+            }
+
+            const a = 1;
+            const b = 2;
+            const c = 3;
+
+            // legacy: kept for the old parser
+            const d = a + b + c;
+          `,
+          filename: 'src/utils.ts',
+          options: [{ allowWithComment: true }],
+          errors: [{ messageId: 'silentError' }],
+        },
+        {
+          name: 'and it does not disarm several catches at once',
+          code: `
+            try { doSomething(); } catch (error) {}
+            try { doSomething(); } catch (error) {}
+
+            // TODO: revisit this unrelated helper
+            const x = 1;
+          `,
+          filename: 'src/utils.ts',
+          options: [{ allowWithComment: true }],
+          errors: [{ messageId: 'silentError' }, { messageId: 'silentError' }],
+        },
       ],
     });
   });
