@@ -1,7 +1,7 @@
 {
-  "releaseCount": 683,
+  "releaseCount": 684,
   "packageCount": 36,
-  "entryCount": 2094,
+  "entryCount": 2095,
   "oldestYear": 2024,
   "releases": [
     {
@@ -17300,6 +17300,21 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.4.4",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "perf",
+          "title": "`detect-object-injection` resolves the holder through the scope index",
           "pr": null
         }
       ]
