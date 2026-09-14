@@ -78,13 +78,14 @@ export const consistentTypeSpecifierStyle = createRule<RuleOptions, MessageIds>(
        */
       // oxlint-disable-next-line consistent-function-scoping
       function getSpecifierText(spec: TSESTree.ImportSpecifier): string {
-        const imported =
-          spec.imported.type === 'Identifier'
-            ? spec.imported.name
-            : spec.imported.value;
+        // Read the original source text rather than `imported.value`: a string-literal
+        // imported name (`import type { 'a-b' as AB }`) carries its quotes in the source
+        // and loses them through `.value`, which rebuilt as `{ type a-b as AB }` — output
+        // that no longer parses.
+        const imported = sourceCode.getText(spec.imported);
         const local = spec.local.name;
 
-        if (imported === local) {
+        if (spec.imported.type === 'Identifier' && spec.imported.name === local) {
           return imported;
         }
         return `${imported} as ${local}`;
@@ -93,6 +94,13 @@ export const consistentTypeSpecifierStyle = createRule<RuleOptions, MessageIds>(
       return {
         ImportDeclaration(node: TSESTree.ImportDeclaration) {
           const isTypeImport = node.importKind === 'type';
+
+          // An import attribute (`with { type: 'json' }`) is not a specifier, so a
+          // rebuild from `namedSpecifiers` drops it — the same hazard
+          // `rebuildWouldDropABinding` already guards below. Losing the attribute is a
+          // semantic change (TS1543, and ERR_IMPORT_ATTRIBUTE_MISSING at runtime), so
+          // the preference still holds and only the rewrite stops.
+          const rebuildWouldDropAnAttribute = (node.attributes?.length ?? 0) > 0;
 
           if (style === 'prefer-inline') {
             // If using top-level type import with named specifiers, suggest inline
@@ -111,23 +119,25 @@ export const consistentTypeSpecifierStyle = createRule<RuleOptions, MessageIds>(
                       .map((s: TSESTree.ImportSpecifier) => s.local.name)
                       .join(', '),
                   },
-                  fix(fixer: TSESLint.RuleFixer) {
-                    // Build the new import statement using AST
-                    // Convert: import type { Foo, Bar } from 'x'
-                    // To: import { type Foo, type Bar } from 'x'
+                  fix: rebuildWouldDropAnAttribute
+                    ? undefined
+                    : function (fixer: TSESLint.RuleFixer) {
+                        // Build the new import statement using AST
+                        // Convert: import type { Foo, Bar } from 'x'
+                        // To: import { type Foo, type Bar } from 'x'
 
-                    const specifiersText = namedSpecifiers
-                      .map(
-                        (spec: TSESTree.ImportSpecifier) =>
-                          `type ${getSpecifierText(spec)}`,
-                      )
-                      .join(', ');
+                        const specifiersText = namedSpecifiers
+                          .map(
+                            (spec: TSESTree.ImportSpecifier) =>
+                              `type ${getSpecifierText(spec)}`,
+                          )
+                          .join(', ');
 
-                    const sourceText = sourceCode.getText(node.source);
-                    const newImport = `import { ${specifiersText} } from ${sourceText};`;
+                        const sourceText = sourceCode.getText(node.source);
+                        const newImport = `import { ${specifiersText} } from ${sourceText};`;
 
-                    return fixer.replaceText(node, newImport);
-                  },
+                        return fixer.replaceText(node, newImport);
+                      },
                 });
               }
             }
@@ -150,7 +160,8 @@ export const consistentTypeSpecifierStyle = createRule<RuleOptions, MessageIds>(
             // undefined reference. The preference still holds, so the report stays; only
             // the rewrite stops.
             const rebuildWouldDropABinding =
-              node.specifiers.length !== namedSpecifiers.length;
+              node.specifiers.length !== namedSpecifiers.length ||
+              rebuildWouldDropAnAttribute;
 
             // If all named imports are type imports, suggest top-level
             if (

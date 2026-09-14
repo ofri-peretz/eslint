@@ -95,11 +95,19 @@ ruleTester.run(
 );
 
 describe('consistent-type-specifier-style — Layer 2 (string import names)', () => {
+  // This probe used to assert `import { type str-name as alias } from 'mod';` — the
+  // imported name without its quotes, which is a parse error. The fixer now reads the
+  // specifier's own source text, so the mock's flat `getText` is made node-aware here
+  // to keep the probe faithful to what a real SourceCode would return.
   it('builds the inline fix from a string-literal imported name', () => {
-    const { listeners, reports } = createWithMockContext(
+    const { listeners, reports, context } = createWithMockContext(
       consistentTypeSpecifierStyle,
       { options: ['prefer-inline'], sourceText: `'mod'` },
     );
+    Object.assign(context.sourceCode, {
+      getText: (n: { type: string; value?: unknown }) =>
+        n.type === 'Literal' ? `'${String(n.value)}'` : '',
+    });
     const node = {
       type: 'ImportDeclaration',
       importKind: 'type',
@@ -123,7 +131,7 @@ describe('consistent-type-specifier-style — Layer 2 (string import names)', ()
       replaceText: (_n: unknown, text: string) => ({ text }),
     } as unknown as TSESLint.RuleFixer;
     expect(report.fix(fixer)).toMatchObject({
-      text: `import { type str-name as alias } from 'mod';`,
+      text: `import { type 'str-name' as alias } from 'mod';`,
     });
   });
 });

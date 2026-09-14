@@ -110,6 +110,46 @@ ruleTester.run(
         errors: [{ messageId: 'preferTopLevel' }],
         output: null,
       },
+
+      // burgee sweep: surfaced alongside the 13 findings on
+      // packages/burgee/src/commander/help.ts:4. Same fixer, two more things it
+      // rebuilt away.
+      //
+      // A string-literal imported name was read through `imported.value`, which drops
+      // the quotes, so `--fix` emitted `{ type a-b as AB }` — output that no longer
+      // parses. Read the original source text instead.
+      {
+        name: 'a string-literal imported name keeps its quotes through the rewrite',
+        code: `import type { 'a-b' as AB } from 'foo';`,
+        errors: [{ messageId: 'preferInline' }],
+        output: `import { type 'a-b' as AB } from 'foo';`,
+      },
+      {
+        name: 'and in the prefer-top-level direction',
+        code: `import { type 'a-b' as AB } from 'foo';`,
+        options: ['prefer-top-level'],
+        errors: [{ messageId: 'preferTopLevel' }],
+        output: `import type { 'a-b' as AB } from 'foo';`,
+      },
+
+      // An import attribute is not a specifier, so rebuilding from `namedSpecifiers`
+      // dropped it silently — the same hazard the default-binding case above already
+      // guards. Losing `with { type: 'x' }` is a semantic change (TS1543 at compile
+      // time, ERR_IMPORT_ATTRIBUTE_MISSING at runtime), so the preference is still
+      // reported and only the rewrite stops.
+      {
+        name: 'an import attribute is reported, but rewriting it would delete the attribute',
+        code: `import type { A } from './m.js' with { type: 'x' };`,
+        errors: [{ messageId: 'preferInline' }],
+        output: null,
+      },
+      {
+        name: 'and in the prefer-top-level direction',
+        code: `import { type A } from './m.js' with { type: 'x' };`,
+        options: ['prefer-top-level'],
+        errors: [{ messageId: 'preferTopLevel' }],
+        output: null,
+      },
     ],
   },
 );
