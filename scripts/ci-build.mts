@@ -25,62 +25,26 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import url from 'node:url';
-import { changedFilesSince, warnUnresolvedBase } from './lib/ci-changed-files.mts';
-import { decideAffected, reverseDeps, bucket, manifestDeps, type AffectedPkg } from './lib/ci-shard-affected.mts';
+import {
+  changedFilesSince,
+  warnUnresolvedBase,
+} from './lib/ci-changed-files.mts';
+import {
+  decideAffected,
+  reverseDeps,
+  bucket,
+} from './lib/ci-shard-affected.mts';
+import { workspaces, type BuildPkg } from './lib/ci-build-workspaces.mts';
 
-const REPO_ROOT = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '..');
+const REPO_ROOT = path.resolve(
+  path.dirname(url.fileURLToPath(import.meta.url)),
+  '..',
+);
 const BASE_REF = process.env.CI_TEST_SHARD_BASE ?? 'origin/main';
 
-type BuildPkg = AffectedPkg & { cost: number; emitsDist: boolean };
-
-/**
- * Cost proxy for build balancing: source files under src/. Same reasoning as
- * the test sharder's test-file count — derivable from the tree, no state to
- * maintain, and it tracks compile time closely enough (measured: 20 plugin
- * builds = 268s CPU, no package over 25s).
- */
-function countSourceFiles(dir: string): number {
-  let n = 0;
-  const walk = (d: string) => {
-    if (!fs.existsSync(d)) return;
-    for (const e of fs.readdirSync(d, { withFileTypes: true })) {
-      if (e.name === 'node_modules' || e.name === 'dist' || e.name === 'coverage') continue;
-      const fp = path.join(d, e.name);
-      if (e.isDirectory()) walk(fp);
-      else if (/\.(ts|tsx|mts|cts)$/.test(e.name) && !/\.(test|spec)\./.test(e.name)) n++;
-    }
-  };
-  walk(dir);
-  return n;
-}
-
-function workspaces(): BuildPkg[] {
-  const out: BuildPkg[] = [];
-  for (const wsDir of ['packages', 'apps', 'tools']) {
-    const abs = path.join(REPO_ROOT, wsDir);
-    if (!fs.existsSync(abs)) continue;
-    for (const entry of fs.readdirSync(abs)) {
-      const manifest = path.join(abs, entry, 'package.json');
-      if (!fs.existsSync(manifest)) continue;
-      const pkg = JSON.parse(fs.readFileSync(manifest, 'utf8'));
-      // Every workspace, not just testable ones: `registry` has no test task
-      // but still has to build.
-      if (pkg.name) out.push({
-        name: pkg.name,
-        dir: `${wsDir}/${entry}`,
-        deps: manifestDeps(pkg),
-        cost: countSourceFiles(path.join(abs, entry)),
-        // Only packages built by scripts/build-package.ts emit a publishable
-        // dist/package.json. Apps (`next build`) and private helpers with no
-        // build script never do — demanding one from them made the post-build
-        // verification fail on @interlace/eslint-formatter-sarif back when it was
-        // private:true with no build script at all (it builds now).
-        emitsDist: typeof pkg.scripts?.build === 'string' && pkg.scripts.build.includes('build-package'),
-      });
-    }
-  }
-  return out;
-}
+// `workspaces()`, its cost proxy and the workspace-dir list live in
+// ./lib/ci-build-workspaces.mts so a test can reach them; this module decides
+// and runs a build at import time, so vitest cannot import it.
 
 function changedFiles(): string[] | null {
   const r = changedFilesSince(BASE_REF, REPO_ROOT);
@@ -89,9 +53,11 @@ function changedFiles(): string[] | null {
   return null;
 }
 
-const all = workspaces();
+const all = workspaces(REPO_ROOT);
 if (all.length === 0) {
-  console.error('::error::No workspaces discovered — refusing to report a successful build of nothing.');
+  console.error(
+    '::error::No workspaces discovered — refusing to report a successful build of nothing.',
+  );
   process.exit(1);
 }
 
@@ -107,7 +73,11 @@ const MATRIX_MODE = process.argv[2] === '--matrix';
 function writeBuiltPackages(pkgs: BuildPkg[]): void {
   fs.writeFileSync(
     path.join(REPO_ROOT, '.ci-built-packages.json'),
-    JSON.stringify(pkgs.map((p) => ({ name: p.name, dir: p.dir, emitsDist: p.emitsDist })), null, 2),
+    JSON.stringify(
+      pkgs.map((p) => ({ name: p.name, dir: p.dir, emitsDist: p.emitsDist })),
+      null,
+      2,
+    ),
   );
 }
 
@@ -134,8 +104,12 @@ if (process.env.CI_TEST_SHARD_ALL !== '1') {
   // is computed ONCE here rather than re-expanded per shard.
   const decision = decideAffected(changedFiles(), all, REVERSE_DEPS);
   if (decision.mode === 'bug') {
-    console.error(`::error::Files changed under ${decision.dirs.join(', ')} but no workspace resolved.`);
-    console.error('That is a bug in the affected computation, not a fast path. Refusing to report success.');
+    console.error(
+      `::error::Files changed under ${decision.dirs.join(', ')} but no workspace resolved.`,
+    );
+    console.error(
+      'That is a bug in the affected computation, not a fast path. Refusing to report success.',
+    );
     process.exit(1);
   }
   if (decision.mode === 'none') {
@@ -184,13 +158,21 @@ if (MATRIX_MODE) {
     console.error('Usage: node scripts/ci-build.mts --matrix <shardTotal>');
     process.exit(2);
   }
-  const ordered = [...all].sort((a, b) => b.cost - a.cost || a.name.localeCompare(b.name));
+  const ordered = [...all].sort(
+    (a, b) => b.cost - a.cost || a.name.localeCompare(b.name),
+  );
   const buckets = bucket(ordered, total);
   const selectedNames = new Set(selected.map((p) => p.name));
   const live = buckets
-    .map((b, i) => ({ shard: i + 1, pkgs: b.filter((p) => selectedNames.has(p.name)) }))
+    .map((b, i) => ({
+      shard: i + 1,
+      pkgs: b.filter((p) => selectedNames.has(p.name)),
+    }))
     .filter((s) => s.pkgs.length > 0);
-  for (const s of live) console.log(`  build shard ${s.shard}: ${s.pkgs.map((p) => p.name).join(', ')}`);
+  for (const s of live)
+    console.log(
+      `  build shard ${s.shard}: ${s.pkgs.map((p) => p.name).join(', ')}`,
+    );
   console.log(`Dispatching ${live.length} of ${total} build shards (${note}).`);
   emitBuildMatrix(live.map((s) => s.shard));
   process.exit(0);
@@ -230,7 +212,9 @@ if (sharded) {
   // shard 3 on the next — its cached output would sit in a lineage the next
   // run never restores, and every build would miss. Bucketing the whole list
   // keeps `package -> shard` a pure function of the repo.
-  const ordered = [...all].sort((a, b) => b.cost - a.cost || a.name.localeCompare(b.name));
+  const ordered = [...all].sort(
+    (a, b) => b.cost - a.cost || a.name.localeCompare(b.name),
+  );
   const buckets = bucket(ordered, shardTotal);
   const selectedNames = new Set(selected.map((p) => p.name));
   mine = buckets[shardIndex - 1].filter((p) => selectedNames.has(p.name));
