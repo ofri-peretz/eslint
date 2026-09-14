@@ -5,7 +5,7 @@
  */
 
 /**
- * @provenBy {"file": ".github/workflows/quality-full.yml", "find": "\n          && !contains(needs.*.result, 'cancelled')", "replace": ""}
+ * @provenBy {"file": ".github/workflows/quality-full.yml", "find": "failure() && github.event_name == 'push'\n          && !contains(needs.*.result, 'cancelled')", "replace": "failure() && github.event_name == 'push'"}
  *
  * A failure alarm must not fire for a run that was merely superseded.
  *
