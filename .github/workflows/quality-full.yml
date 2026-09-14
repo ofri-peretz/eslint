@@ -850,7 +850,9 @@ jobs:
 
       # A red cron notifies nobody by default. See .github/actions/report-failure.
       - name: 🚨 Report a scheduled failure
-        if: failure() && github.event_name == 'schedule'
+        if: >-
+          failure() && github.event_name == 'schedule'
+          && !contains(needs.*.result, 'cancelled')
         uses: ./.github/actions/report-failure
         with:
           title: 'Scheduled full quality gate is failing'
@@ -867,8 +869,18 @@ jobs:
       # and is actionable now; a schedule failure means main has been broken for
       # up to a week and nobody noticed. Sharing one issue would let the second
       # hide inside the first.
+      # `!contains(needs.*.result, 'cancelled')` — a shard cancelled by
+      # `cancel-in-progress` means a newer push superseded this run, and that
+      # newer run is the authority on main's health. #993 was filed for exactly
+      # this: the release merge's `Build (4/4)` was cancelled when the next
+      # merge landed, `check()` read cancelled as a fail (rightly — that sha was
+      # never proven green), and the alarm announced a broken main while the run
+      # for main's actual head was green. An alarm that cries wolf on every
+      # back-to-back merge is one people learn to close unread.
       - name: 🚨 Report a broken main
-        if: failure() && github.event_name == 'push'
+        if: >-
+          failure() && github.event_name == 'push'
+          && !contains(needs.*.result, 'cancelled')
         uses: ./.github/actions/report-failure
         with:
           title: 'main is red — the full quality gate failed after a merge'
