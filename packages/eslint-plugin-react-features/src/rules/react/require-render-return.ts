@@ -56,7 +56,9 @@ export const requireRenderReturn = createRule<[], MessageIds>({
       },
     };
 
-    function hasReturnStatement(node: TSESTree.Statement | TSESTree.BlockStatement): boolean {
+    function hasReturnStatement(
+      node: TSESTree.Statement | TSESTree.BlockStatement,
+    ): boolean {
       // Handle BlockStatement
       if (node.type === 'BlockStatement') {
         for (const statement of node.body) {
@@ -66,7 +68,7 @@ export const requireRenderReturn = createRule<[], MessageIds>({
         }
         return false;
       }
-      
+
       // Handle single statement
       return checkStatement(node);
     }
@@ -76,12 +78,17 @@ export const requireRenderReturn = createRule<[], MessageIds>({
         return true;
       }
 
-      // Check nested blocks (if statements, etc.)
+      // An `if` only guarantees a return when EVERY path through it returns:
+      // there must be an `else`, and both branches must return. A returning
+      // consequent alone still falls through when the test is false, which is
+      // the shape the docs print as incorrect. A caller that returns after the
+      // `if` is still covered, because hasReturnStatement scans the whole block.
       if (statement.type === 'IfStatement') {
-        if (hasReturnStatement(statement.consequent) ||
-            (statement.alternate && hasReturnStatement(statement.alternate))) {
-          return true;
-        }
+        return (
+          statement.alternate != null &&
+          hasReturnStatement(statement.consequent) &&
+          hasReturnStatement(statement.alternate)
+        );
       }
 
       if (statement.type === 'BlockStatement') {

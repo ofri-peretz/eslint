@@ -200,6 +200,38 @@ ruleTester.run('require-render-return', requireRenderReturn, {
       `,
       errors: [{ messageId: 'requireRenderReturn' }],
     },
+    // The rule's own docs print this shape under "### ❌ Incorrect"
+    // (docs/rules/require-render-return.md:53-60), paired with a "### ✅ Correct"
+    // block of the same class that differs only by a trailing `return null;`.
+    // An `if` with no `else` falls through and renders nothing.
+    {
+      name: 'render returning only inside an if with no else falls through and must report',
+      code: `
+        class AnotherComponent extends React.Component {
+          render() {
+            if (this.props.show) {
+              return <div>Content</div>;
+            }
+            // Missing return for else case
+          }
+        }
+      `,
+      errors: [{ messageId: 'requireRenderReturn' }],
+    },
+    {
+      name: 'render with an if/else where only the consequent returns must report',
+      code: `
+        class MyComponent extends Component {
+          render() {
+            if (this.props.ok) {
+              return <div>OK</div>;
+            } else {
+              this.log();
+            }
+          }
+        }
+      `,
+      errors: [{ messageId: 'requireRenderReturn' }],
+    },
   ],
 });
-

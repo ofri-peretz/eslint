@@ -736,10 +736,6 @@ describe('require-render-return: statement shapes', () => {
   ruleTester.run('require-render-return', requireRenderReturn, {
     valid: [
       {
-        name: 'return inside single-statement if consequent (L61 false, L71)',
-        code: 'class A extends Component { render() { if (x) return null; } }',
-      },
-      {
         name: 'return inside nested block (L87-88)',
         code: 'class B extends Component { render() { { return null; } } }',
       },
@@ -753,6 +749,15 @@ describe('require-render-return: statement shapes', () => {
       },
     ],
     invalid: [
+      // Moved from `valid`: this pinned the false negative rather than intended
+      // behaviour. A single-statement `if` consequent with no `else` and no
+      // trailing return falls through and renders nothing, which the rule's
+      // docs print under "### ❌ Incorrect".
+      {
+        name: 'single-statement if consequent with no else still falls through and must report',
+        code: 'class A extends Component { render() { if (x) return null; } }',
+        errors: [{ messageId: 'requireRenderReturn' }],
+      },
       {
         name: 'if without returns in either branch (L81/L82 operand arms)',
         code: 'class D extends Component { render() { if (x) y(); else { z(); } } }',
