@@ -105,6 +105,34 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
     }
 
     /**
+     * Register the sibling `function` declarations of a statement list.
+     *
+     * `scopeStack` was fed only by the `VariableDeclaration` visitor and by
+     * function params, so a helper written `function helper() {}` bound nothing
+     * as far as this rule was concerned, while the same helper written
+     * `const helper = () => {}` was tracked. A neighbour that called it then
+     * looked as though it captured nothing, and the report asserted "doesn't
+     * capture outer variables" about code where ESLint's own scope manager
+     * resolves the reference to the enclosing function — with a suggested move
+     * that does not compile.
+     *
+     * Registered on scope ENTRY rather than on visit, because function
+     * declarations hoist: a sibling declared further down the body is already
+     * callable above it.
+     *
+     * A function's own name lands here too, which is harmless — `boundNames` in
+     * `analyzeFunction` is built from `getDeclaredVariables(node)` and already
+     * contains it, so self-recursion still does not read as a capture.
+     */
+    function hoistFunctionDeclarations(body: TSESTree.Statement[]) {
+      for (const statement of body) {
+        if (statement.type === 'FunctionDeclaration' && statement.id) {
+          addVariableToCurrentScope(statement.id.name);
+        }
+      }
+    }
+
+    /**
      * Every name a binding target introduces, destructuring included.
      *
      * Only `Identifier` was recorded before, so `const { out } = opts` and
@@ -448,6 +476,14 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
 
     return {
       Program() {
+        /*
+         * Deliberately NOT hoisting here. Module scope is the destination the
+         * report suggests moving to, so a helper that only reaches module-level
+         * bindings really is movable and should still be reported. Registering
+         * module-level `function` declarations silenced exactly such a case
+         * (burgee packages/burgee/src/yargs/usage.ts:247, an arrow whose only
+         * outer reference is the module-level `getText`).
+         */
         enterScope();
       },
 
@@ -461,6 +497,7 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
         node.params.forEach((param: TSESTree.Parameter) => {
           addBindingToCurrentScope(param);
         });
+        hoistFunctionDeclarations(node.body.body);
         analyzeFunction(node);
       },
 
@@ -474,6 +511,7 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
         node.params.forEach((param: TSESTree.Parameter) => {
           addBindingToCurrentScope(param);
         });
+        hoistFunctionDeclarations(node.body.body);
         // Only check function expressions if they are assigned to variables
         // (not just used as callbacks)
         analyzeFunction(node);
