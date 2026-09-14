@@ -1443,6 +1443,23 @@ describe('detect-object-injection', () => {
             `,
             errors: [{ messageId: 'objectInjection' }],
           },
+          // A holder declared without an initializer says nothing about its shape —
+          // what it is assigned later is not read here.
+          {
+            name: 'a holder declared without an initializer is not resolved',
+            code: `
+              declare const keys: string[];
+              function parse() {
+                let flags: any;
+                flags = { bools: Object.create(null) };
+                keys.forEach((key) => {
+                  flags.bools[key] = true;
+                });
+                return flags;
+              }
+            `,
+            errors: [{ messageId: 'objectInjection' }],
+          },
           // A holder key decided at runtime names no property the AST can read.
           {
             name: 'a runtime-decided key on the holder is not resolved',
