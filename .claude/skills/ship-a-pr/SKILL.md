@@ -86,11 +86,13 @@ PR=<#>
 # pending, and the loop never terminates. It reads as a slow CI run, so the
 # usual response is to wait longer. Both jq expressions below read the same
 # three fields in the same order for exactly this reason.
-until [ "$(gh -R ofri-peretz/eslint pr view "$PR" \
+# `gh pr checks --watch` above is how you wait. This is the same question asked ONCE, for a
+# script that needs the number rather than a blocking wait. Do not wrap it in `until ... sleep`:
+# that is the hand-rolled loop this skill forbids, and 193 of them were killed by the harness.
+gh -R ofri-peretz/eslint pr view "$PR" \
   --json statusCheckRollup \
-  --jq '[.statusCheckRollup[]? | select((.conclusion // .state // .status // "") as $s | $s == "IN_PROGRESS" or $s == "PENDING" or $s == "QUEUED" or $s == "")] | length')" = "0" ]; do
-  sleep 20
-done
+  --jq '[.statusCheckRollup[]? | select((.conclusion // .state // .status // "") as $s | $s == "IN_PROGRESS" or $s == "PENDING" or $s == "QUEUED" or $s == "")] | length'
+# 0 means nothing is pending.
 
 # 2. Validation gate — refuse to merge unless EVERY required check is SUCCESS.
 #
