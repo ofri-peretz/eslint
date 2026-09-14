@@ -97,14 +97,52 @@ describe('identifierWords', () => {
     expect(identifierWords('HTTPSConnection')).toEqual(['https', 'connection']);
   });
 
+  it('does not split an acronym that runs to the end of the identifier', () => {
+    // Covers the case where an upper/upper transition is the LAST character
+    // pair — there is no character after it for the acronym-boundary check
+    // to look at, so the bounds check itself must short-circuit correctly.
+    expect(identifierWords('parseHTML')).toEqual(['parse', 'html']);
+  });
+
   it('separates digit runs so sha1 and sha256 are addressable', () => {
     expect(identifierWords('sha1Hash')).toEqual(['sha', '1', 'hash']);
     expect(identifierWords('md5')).toEqual(['md', '5']);
   });
 
+  it('separates a digit run from a LOWERCASE letter that follows it', () => {
+    // 'sha1Hash' above covers digit -> UPPERCASE letter, but that shape is
+    // also caught by the lower/digit-followed-by-upper boundary, so it never
+    // independently exercises the digit -> letter boundary's true branch.
+    // Only a digit followed by a lowercase letter isolates it.
+    expect(identifierWords('oauth2client')).toEqual(['oauth', '2', 'client']);
+  });
+
   it('returns nothing for an empty or separator-only name', () => {
     expect(identifierWords('')).toEqual([]);
     expect(identifierWords('__')).toEqual([]);
+  });
+
+  it('scales linearly, not quadratically, on a pathological identifier', () => {
+    // Regression lock for CodeQL alert #1331 (js/polynomial-redos): the old
+    // `/([A-Z]+)([A-Z][a-z])/g` replace backtracked the `[A-Z]+` group one
+    // character at a time from every start position when the trailing
+    // `[A-Z][a-z]` never matched — e.g. an all-caps run with no lowercase
+    // anywhere. That made an 8x longer input take ~64x as long (quadratic);
+    // a linear scan takes ~8x as long. The 20x threshold sits well above the
+    // linear case and well below the quadratic one, so this fails fast on
+    // the unfixed code (milliseconds, not a hung test run) instead of
+    // reproducing a multi-second DoS.
+    const time = (n: number): number => {
+      const input = 'A'.repeat(n);
+      const start = performance.now();
+      identifierWords(input);
+      return performance.now() - start;
+    };
+
+    const small = time(4000);
+    const large = time(32000); // 8x the input length
+
+    expect(large).toBeLessThan(Math.max(small * 20, 50));
   });
 });
 
