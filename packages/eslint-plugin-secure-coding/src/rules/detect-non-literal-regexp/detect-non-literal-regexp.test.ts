@@ -353,6 +353,13 @@ describe('detect-non-literal-regexp', () => {
         // deeply-nested constant reported. Routing through devkit's isStaticExpression
         // removed the cutoff — nesting depth was never evidence of attacker control.
         { code: 'const r = new RegExp("a" + ("b" + ("c" + ("d" + ("e" + ("f" + ("g" + "h")))))));' },
+        // burgee sweep: packages/linegauge/src/style.ts:77,78. A spread of a constant
+        // array is no less resolvable than the array itself — `[...ARR]` can no more
+        // change than `ARR.join()` can, and the rule already accepts the latter. The
+        // guard bailed on seeing any SpreadElement, so the two spellings of one value
+        // got opposite verdicts.
+        { code: 'const A = ["x", "y"]; const C = [...A].join(""); const r = new RegExp(`[${C}]`);' },
+        { code: 'const A = ["x"]; const r = new RegExp([...A, "y"].join("|"));' },
       ],
       invalid: [
         // Unresolvable provenance still reports: a parameter could be anything.
@@ -380,9 +387,17 @@ describe('detect-non-literal-regexp', () => {
           code: 'const N = 2; const r = new RegExp(String(N - 1));',
           errors: [{ messageId: 'runtimeDecidedPattern' }],
         },
-        // A spread element hides its contents.
+        // A spread element hides its contents when the spread ARGUMENT is itself
+        // unresolvable — `rest` is a parameter, so the array's contents are not
+        // knowable from this file.
         {
           code: 'function f(rest) { const A = ["x", ...rest]; return new RegExp(A.join("|")); }',
+          errors: [{ messageId: 'runtimeDecidedPattern' }],
+        },
+        // A Set's contents are reachable through .add/.delete, which this file does not
+        // model, so `new Set(…)` is not build-time constant — spread or not.
+        {
+          code: 'const S = new Set(["x"]); const C = [...S].join(""); const r = new RegExp(`[${C}]`);',
           errors: [{ messageId: 'runtimeDecidedPattern' }],
         },
         // A hole in an array literal resolves to undefined, not a constant.
