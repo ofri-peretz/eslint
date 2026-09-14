@@ -26,17 +26,17 @@ describe('no-console-spaces', () => {
   describe('console method detection', () => {
     ruleTester.run('detect console method spacing issues', noConsoleSpaces, {
       valid: [
-    // A dynamic method names nothing, so it is neither a console method to
-    // check nor a name to report. Both `propertyName(...) ?? ''` sentinels are
-    // reached only this way.
-    {
-      name: 'a dynamic console method names nothing to check',
-      code: 'console[m](" x ");',
-    },
-    {
-      name: 'a dynamic method on another receiver names nothing',
-      code: 'foo[m](" x ");',
-    },
+        // A dynamic method names nothing, so it is neither a console method to
+        // check nor a name to report. Both `propertyName(...) ?? ''` sentinels are
+        // reached only this way.
+        {
+          name: 'a dynamic console method names nothing to check',
+          code: 'console[m](" x ");',
+        },
+        {
+          name: 'a dynamic method on another receiver names nothing',
+          code: 'foo[m](" x ");',
+        },
         // Normal console calls without spaces
         {
           name: 'separate arguments, which console spaces for you',
@@ -426,6 +426,46 @@ describe('no-console-spaces', () => {
         {
           code: 'console.log(" \\t\\n hello \\n\\t ");',
           output: "console.log('hello');",
+          errors: [
+            {
+              messageId: 'noConsoleSpaces',
+            },
+          ],
+        },
+        // The fixer re-quotes the trimmed value, so every character that is
+        // special inside a single-quoted literal has to survive the rewrite.
+        // Burgee's CLI scripts carry all three shapes (apostrophes in prose,
+        // interior newlines in banners, Windows paths); before this was
+        // escaped the fixer emitted source that did not parse.
+        // From burgee scripts/control-bands.ts:445 (shape: single-argument
+        // console.warn carrying prose).
+        {
+          name: 'an apostrophe in the trimmed value stays escaped, so the fix still parses',
+          code: 'console.log("  it\'s fine  ");',
+          output: "console.log('it\\'s fine');",
+          errors: [
+            {
+              messageId: 'noConsoleSpaces',
+            },
+          ],
+        },
+        // From burgee scripts/run-evals.ts:268 (shape: banner string with an
+        // interior line break).
+        {
+          name: 'an interior newline is re-emitted as an escape, not a raw line break',
+          code: 'console.log("  line1\\nline2  ");',
+          output: "console.log('line1\\nline2');",
+          errors: [
+            {
+              messageId: 'noConsoleSpaces',
+            },
+          ],
+        },
+        // From burgee scripts/brand.mts:515 (shape: path-bearing log line).
+        {
+          name: 'a backslash is re-escaped, so the fixed string keeps its value',
+          code: 'console.log("  C:\\\\path  ");',
+          output: "console.log('C:\\\\path');",
           errors: [
             {
               messageId: 'noConsoleSpaces',
