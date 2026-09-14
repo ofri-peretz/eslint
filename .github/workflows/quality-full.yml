@@ -712,7 +712,7 @@ jobs:
       - uses: ./.github/actions/setup
         with:
           turbo-cache: 'false'
-      - run: npm run audit:portability
+      - run: npm run audit:portability:ci
 
   # Aggregate gate so a single PR check status surfaces the heavy-half result.
   quality-full-gate:
