@@ -150,6 +150,27 @@ ruleTester.run(
         errors: [{ messageId: 'preferTopLevel' }],
         output: null,
       },
+      // The deprecated `assert { ... }` spelling of the same thing. The guard
+      // reads `node.attributes`, and the question raised on #997 was whether a
+      // legacy assertion lands only on the deprecated `node.assertions` and so
+      // slips past it. Measured against this parser, it does not: `assert {}`
+      // populates BOTH arrays, so one check covers both spellings. Pinned in
+      // both directions anyway, because that is a parser behaviour we consume
+      // rather than one we control — if it ever diverges, these fail instead of
+      // an autofix quietly deleting an assertion.
+      {
+        name: 'the deprecated assert spelling is guarded too, not just `with`',
+        code: `import type { A } from './m.js' assert { type: 'x' };`,
+        errors: [{ messageId: 'preferInline' }],
+        output: null,
+      },
+      {
+        name: 'and the deprecated spelling in the prefer-top-level direction',
+        code: `import { type A } from './m.js' assert { type: 'x' };`,
+        options: ['prefer-top-level'],
+        errors: [{ messageId: 'preferTopLevel' }],
+        output: null,
+      },
     ],
   },
 );
