@@ -240,6 +240,17 @@ export async function fetchWeeklyDownloads(
         return { downloads: null, error: null };
       } else {
         lastFailure = `HTTP ${r.status}`;
+        // A permanent client error will answer the same way next time, so a
+        // retry only buys a wasted request and 500ms. 408 and 429 are the two
+        // 4xx that genuinely recover.
+        if (
+          r.status >= 400 &&
+          r.status < 500 &&
+          r.status !== 408 &&
+          r.status !== 429
+        ) {
+          break;
+        }
       }
     } catch (e) {
       lastFailure = (e as Error).message;
