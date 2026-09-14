@@ -41,6 +41,31 @@ interface LoopContext {
 
 type RuleOptions = [Options?];
 
+const LOOP_NODE_TYPES = new Set<string>([
+  'ForStatement',
+  'ForInStatement',
+  'ForOfStatement',
+  'WhileStatement',
+  'DoWhileStatement',
+]);
+
+/**
+ * The slot of a loop header evaluated exactly once, before iteration begins.
+ * An await there costs 1x latency rather than Nx, so it is not that loop's
+ * sequential cost. Every other header slot — a `for` test/update, a `while`
+ * test, a for-of binding default — re-runs per iteration and stays in scope.
+ * Loops with no once-evaluated slot return null.
+ */
+function onceEvaluatedSlot(loop: TSESTree.Node): string | null {
+  if (loop.type === 'ForOfStatement' || loop.type === 'ForInStatement') {
+    return 'right';
+  }
+  if (loop.type === 'ForStatement') {
+    return 'init';
+  }
+  return null;
+}
+
 export const noAwaitInLoop = createRule<RuleOptions, MessageIds>({
   name: 'no-await-in-loop',
   meta: {
@@ -58,7 +83,8 @@ export const noAwaitInLoop = createRule<RuleOptions, MessageIds>({
         description: 'Await in loop forces sequential execution',
         severity: 'MEDIUM',
         fix: 'Consider Promise.all() for concurrent execution or extract async logic',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function',
       }),
       suggestPromiseAll: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -66,7 +92,8 @@ export const noAwaitInLoop = createRule<RuleOptions, MessageIds>({
         description: 'Concurrent execution of independent operations',
         severity: 'LOW',
         fix: 'Promise.all(items.map(async (item) => await process(item)))',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all',
       }),
       suggestConcurrent: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -74,7 +101,8 @@ export const noAwaitInLoop = createRule<RuleOptions, MessageIds>({
         description: 'Concurrent execution with error handling',
         severity: 'LOW',
         fix: 'Promise.allSettled(items.map(async (item) => await process(item)))',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/allSettled',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/allSettled',
       }),
       considerSequential: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -82,7 +110,8 @@ export const noAwaitInLoop = createRule<RuleOptions, MessageIds>({
         description: 'Operations require sequential execution',
         severity: 'LOW',
         fix: 'Add concurrency control or extract to async function',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function',
       }),
       asyncLoopPattern: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -114,7 +143,9 @@ export const noAwaitInLoop = createRule<RuleOptions, MessageIds>({
       },
     ],
   },
-  defaultOptions: [{ allowForOf: false, allowWhile: false, checkConcurrency: true }],
+  defaultOptions: [
+    { allowForOf: false, allowWhile: false, checkConcurrency: true },
+  ],
 
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
@@ -122,8 +153,10 @@ export const noAwaitInLoop = createRule<RuleOptions, MessageIds>({
 
     function analyzeLoop(node: TSESTree.Node, loopType: string) {
       // Skip allowed loop types
-      if ((loopType === 'ForOfStatement' && allowForOf) ||
-          (loopType === 'WhileStatement' && allowWhile)) {
+      if (
+        (loopType === 'ForOfStatement' && allowForOf) ||
+        (loopType === 'WhileStatement' && allowWhile)
+      ) {
         return;
       }
 
@@ -131,35 +164,67 @@ export const noAwaitInLoop = createRule<RuleOptions, MessageIds>({
       const awaitExpressions: TSESTree.AwaitExpression[] = [];
 
       // Properties to skip to avoid circular references
-      const skipProperties = new Set(['parent', 'tokens', 'comments', 'loc', 'range']);
+      const skipProperties = new Set([
+        'parent',
+        'tokens',
+        'comments',
+        'loc',
+        'range',
+      ]);
 
-      function findAwaits(currentNode: TSESTree.Node) {
+      function findAwaits(currentNode: TSESTree.Node, isLoopRoot = false) {
         if (currentNode.type === 'AwaitExpression') {
           awaitExpressions.push(currentNode);
         }
 
         // Don't traverse into nested functions (different scope)
-        if (currentNode.type !== 'FunctionDeclaration' &&
-            currentNode.type !== 'FunctionExpression' &&
-            currentNode.type !== 'ArrowFunctionExpression') {
-          for (const key in currentNode) {
-            if (skipProperties.has(key)) continue;
-            
-            const child = (currentNode as unknown as Record<string, unknown>)[key];
-            if (Array.isArray(child)) {
-              child.forEach(item => {
-                if (item && typeof item === 'object' && 'type' in item) {
-                  findAwaits(item as TSESTree.Node);
-                }
-              });
-            } else if (child && typeof child === 'object' && 'type' in child) {
-              findAwaits(child as TSESTree.Node);
-            }
+        if (
+          currentNode.type === 'FunctionDeclaration' ||
+          currentNode.type === 'FunctionExpression' ||
+          currentNode.type === 'ArrowFunctionExpression'
+        ) {
+          return;
+        }
+
+        // A nested loop reports its own awaits, so stop here rather than
+        // claiming them too. The exception is that loop's once-evaluated head,
+        // which re-runs on every iteration of THIS loop and so is our cost.
+        if (!isLoopRoot && LOOP_NODE_TYPES.has(currentNode.type)) {
+          const slot = onceEvaluatedSlot(currentNode);
+          const head = slot
+            ? (currentNode as unknown as Record<string, unknown>)[slot]
+            : undefined;
+          if (head && typeof head === 'object' && 'type' in head) {
+            findAwaits(head as TSESTree.Node);
+          }
+          return;
+        }
+
+        // Our own head slot evaluates once, before iteration begins, so an
+        // await there costs 1x and not Nx. It belongs to the enclosing loop,
+        // which collects it through the branch above.
+        const skipSlot = isLoopRoot ? onceEvaluatedSlot(currentNode) : null;
+
+        for (const key in currentNode) {
+          if (skipProperties.has(key)) continue;
+          if (skipSlot !== null && key === skipSlot) continue;
+
+          const child = (currentNode as unknown as Record<string, unknown>)[
+            key
+          ];
+          if (Array.isArray(child)) {
+            child.forEach((item) => {
+              if (item && typeof item === 'object' && 'type' in item) {
+                findAwaits(item as TSESTree.Node);
+              }
+            });
+          } else if (child && typeof child === 'object' && 'type' in child) {
+            findAwaits(child as TSESTree.Node);
           }
         }
       }
 
-      findAwaits(node);
+      findAwaits(node, true);
 
       if (awaitExpressions.length > 0) {
         // Analyze the loop context to determine the best suggestion
@@ -180,7 +245,10 @@ export const noAwaitInLoop = createRule<RuleOptions, MessageIds>({
       }
     }
 
-    function analyzeLoopContext(node: TSESTree.Node, loopType: string): LoopContext {
+    function analyzeLoopContext(
+      node: TSESTree.Node,
+      loopType: string,
+    ): LoopContext {
       const loopCtx: LoopContext = {
         loopType,
         operationCount: 1,
@@ -193,30 +261,42 @@ export const noAwaitInLoop = createRule<RuleOptions, MessageIds>({
       };
 
       // Properties to skip to avoid circular references
-      const skipProps = new Set(['parent', 'tokens', 'comments', 'loc', 'range']);
+      const skipProps = new Set([
+        'parent',
+        'tokens',
+        'comments',
+        'loc',
+        'range',
+      ]);
 
       // Analyze what operations are being performed in the loop
       function analyzeOperations(currentNode: TSESTree.Node) {
         if (currentNode.type === 'CallExpression') {
           if (currentNode.callee.type === 'Identifier') {
             loopCtx.operations.push(currentNode.callee.name);
-          } else if (currentNode.callee.type === 'MemberExpression' &&
-                     currentNode.callee.property.type === 'Identifier') {
+          } else if (
+            currentNode.callee.type === 'MemberExpression' &&
+            currentNode.callee.property.type === 'Identifier'
+          ) {
             loopCtx.operations.push(currentNode.callee.property.name);
           }
         }
 
         // Check for dependencies between iterations
-        if (currentNode.type === 'AssignmentExpression' ||
-            currentNode.type === 'UpdateExpression') {
+        if (
+          currentNode.type === 'AssignmentExpression' ||
+          currentNode.type === 'UpdateExpression'
+        ) {
           loopCtx.hasDependencies = true;
         }
 
         // Check for side effects that might require sequential execution
-        if (currentNode.type === 'CallExpression' &&
-            (loopCtx.operations.includes('push') ||
-             loopCtx.operations.includes('splice') ||
-             loopCtx.operations.includes('delete'))) {
+        if (
+          currentNode.type === 'CallExpression' &&
+          (loopCtx.operations.includes('push') ||
+            loopCtx.operations.includes('splice') ||
+            loopCtx.operations.includes('delete'))
+        ) {
           loopCtx.hasSideEffects = true;
         }
 
@@ -228,10 +308,12 @@ export const noAwaitInLoop = createRule<RuleOptions, MessageIds>({
         // Recursively analyze
         for (const key in currentNode) {
           if (skipProps.has(key)) continue;
-          
-          const child = (currentNode as unknown as Record<string, unknown>)[key];
+
+          const child = (currentNode as unknown as Record<string, unknown>)[
+            key
+          ];
           if (Array.isArray(child)) {
-            child.forEach(item => {
+            child.forEach((item) => {
               if (item && typeof item === 'object' && 'type' in item) {
                 analyzeOperations(item as TSESTree.Node);
               }
