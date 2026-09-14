@@ -1048,37 +1048,29 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * or is derived from an array spread/copy pattern
      */
     /**
-     * The initializer a bare `const`/`let` name was declared with, found by walking the
-     * enclosing blocks. Returns undefined when the name is not a simple local binding.
+     * The initializer a bare `const`/`let` name was declared with, or undefined when the
+     * name is not a simple local binding with exactly one declaration.
+     *
+     * Resolved through the scope index rather than by rescanning the enclosing blocks.
+     * The block walk this replaces re-read every statement of the enclosing scope on
+     * every access, so N accesses in one scope cost O(N·S) — the exact shape
+     * `resolve-reference` exists to kill, and the reason the other eight lookups in this
+     * rule already go through it.
      */
     const findInitializer = (
       nameNode: TSESTree.Node,
     ): TSESTree.Expression | undefined => {
       if (nameNode.type !== AST_NODE_TYPES.Identifier) return undefined;
-      const varName = nameNode.name;
 
-      let current: TSESTree.Node | undefined = nameNode;
-      while (current) {
-        if (
-          current.type === AST_NODE_TYPES.BlockStatement ||
-          current.type === AST_NODE_TYPES.Program
-        ) {
-          for (const stmt of current.body) {
-            if (stmt.type !== AST_NODE_TYPES.VariableDeclaration) continue;
-            for (const decl of stmt.declarations) {
-              if (
-                decl.id.type === AST_NODE_TYPES.Identifier &&
-                decl.id.name === varName &&
-                decl.init
-              ) {
-                return decl.init;
-              }
-            }
-          }
-        }
-        current = current.parent;
-      }
-      return undefined;
+      const variable = resolvedReference(
+        sourceCode.getScope(nameNode),
+        nameNode,
+      );
+      if (!variable || variable.defs.length !== 1) return undefined;
+
+      const def = variable.defs[0];
+      if (def.type !== 'Variable') return undefined;
+      return def.node.init ?? undefined;
     };
 
     const isPrototypelessObject = (objectNode: TSESTree.Node): boolean => {
