@@ -149,6 +149,7 @@ import {
   staticString,
   namesOneOf,
   propertyName,
+  objectKeyName,
 } from '@interlace/eslint-devkit';
 import {
   formatLLMMessage,
@@ -1102,21 +1103,19 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // safety property is about the TARGET — no prototype to pollute — and does not
       // depend on how the target is spelled, so resolve the holder and read the
       // initializer of the property being written through.
-      if (
-        objectNode.type === AST_NODE_TYPES.MemberExpression &&
-        !objectNode.computed &&
-        objectNode.property.type === AST_NODE_TYPES.Identifier
-      ) {
+      if (objectNode.type === AST_NODE_TYPES.MemberExpression) {
+        // `propertyName` / `objectKeyName` resolve every spelling that reaches the same
+        // property, so `flags['bools']` and `{ ['bools']: … }` are matched alongside the
+        // dotted forms. A key decided at runtime comes back null and is not matched.
+        const key = propertyName(objectNode);
+        if (key === null) return false;
+
         const holderInit = findInitializer(objectNode.object);
         if (holderInit?.type !== AST_NODE_TYPES.ObjectExpression) return false;
 
-        const key = objectNode.property.name;
         const match = holderInit.properties.find(
           (prop): prop is TSESTree.Property =>
-            prop.type === AST_NODE_TYPES.Property &&
-            !prop.computed &&
-            prop.key.type === AST_NODE_TYPES.Identifier &&
-            prop.key.name === key,
+            prop.type === AST_NODE_TYPES.Property && objectKeyName(prop) === key,
         );
         return match !== undefined && isPrototypelessObject(match.value);
       }

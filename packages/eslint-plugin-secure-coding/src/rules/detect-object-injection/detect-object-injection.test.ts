@@ -1346,6 +1346,48 @@ describe('detect-object-injection', () => {
               }
             `,
           },
+          // Every spelling that reaches the same property resolves the same way:
+          // `propertyName` and `objectKeyName` see through a computed read and a quoted
+          // or computed key, so the exemption cannot acquire a blind spot here.
+          {
+            name: 'a computed read of the null-prototype property',
+            code: `
+              declare const keys: string[];
+              function parse() {
+                const flags: any = { bools: Object.create(null) };
+                keys.forEach((key) => {
+                  flags['bools'][key] = true;
+                });
+                return flags;
+              }
+            `,
+          },
+          {
+            name: 'a quoted key on the holder',
+            code: `
+              declare const keys: string[];
+              function parse() {
+                const flags: any = { 'bools': Object.create(null) };
+                keys.forEach((key) => {
+                  flags.bools[key] = true;
+                });
+                return flags;
+              }
+            `,
+          },
+          {
+            name: 'a computed static key on the holder',
+            code: `
+              declare const keys: string[];
+              function parse() {
+                const flags: any = { ['bools']: Object.create(null) };
+                keys.forEach((key) => {
+                  flags.bools[key] = true;
+                });
+                return flags;
+              }
+            `,
+          },
           // A holder assembled with a spread still resolves the property that is
           // written through: the spread is not a Property node, and the `bools` entry
           // beside it is what the write targets.
@@ -1401,9 +1443,9 @@ describe('detect-object-injection', () => {
             `,
             errors: [{ messageId: 'objectInjection' }],
           },
-          // A computed holder key is not statically matched.
+          // A holder key decided at runtime names no property the AST can read.
           {
-            name: 'a computed key on the holder is not resolved',
+            name: 'a runtime-decided key on the holder is not resolved',
             code: `
               declare const keys: string[];
               declare const dyn: string;
@@ -1417,15 +1459,16 @@ describe('detect-object-injection', () => {
             `,
             errors: [{ messageId: 'objectInjection' }],
           },
-          // A quoted holder key is a Literal, not an Identifier.
+          // Likewise a runtime-decided read.
           {
-            name: 'a string-literal key on the holder is not resolved',
+            name: 'a runtime-decided read of the holder is not resolved',
             code: `
               declare const keys: string[];
+              declare const which: string;
               function parse() {
-                const flags: any = { 'bools': Object.create(null) };
+                const flags: any = { bools: Object.create(null) };
                 keys.forEach((key) => {
-                  flags.bools[key] = true;
+                  flags[which][key] = true;
                 });
                 return flags;
               }
