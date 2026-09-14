@@ -1,8 +1,10 @@
 import { defineConfig } from 'vitest/config';
 
 /**
- * The one suite the default `test` task excludes, because it only means
- * anything on a BUILT tree. See the header of `__tests__/configs-load.test.ts`.
+ * The suites the default `test` task excludes, because they only mean
+ * anything on a BUILT tree: they load real plugins through package entry
+ * points that resolve to `dist/`. See the header of
+ * `__tests__/configs-load.test.ts`.
  *
  * Standalone, NOT `mergeConfig(base, ...)`. mergeConfig concatenates arrays
  * rather than replacing them, so a base `exclude` survives every attempt to
@@ -25,6 +27,9 @@ export default defineConfig({
     hookTimeout: 30_000,
     environment: 'node',
     watch: false,
-    include: ['__tests__/configs-load.test.ts'],
+    include: [
+      '__tests__/configs-load.test.ts',
+      '__tests__/real-source-config.lock.test.ts',
+    ],
   },
 });

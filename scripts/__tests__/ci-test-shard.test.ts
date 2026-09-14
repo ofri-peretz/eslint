@@ -91,6 +91,31 @@ function planFor(shard: number, total: number, lane: string): string[] {
  */
 const SPLIT_ACROSS_SHARDS: Record<string, number> = { docs: 3 };
 
+/**
+ * Every workspace directory, expanded from the root manifest's `workspaces`.
+ *
+ * Two shapes: `<group>/*` (expand the children) and a plain directory, which
+ * is the workspace itself. Reading the manifest is the whole point — see the
+ * comment in the coverage assertion below.
+ */
+function workspaceDirs(): string[] {
+  const globs: string[] = JSON.parse(
+    fs.readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf8'),
+  ).workspaces;
+  const out: string[] = [];
+  for (const glob of globs) {
+    if (!glob.endsWith('/*')) {
+      out.push(glob);
+      continue;
+    }
+    const wsDir = glob.slice(0, -2);
+    const abs = path.join(REPO_ROOT, wsDir);
+    if (!fs.existsSync(abs)) continue;
+    for (const entry of fs.readdirSync(abs)) out.push(`${wsDir}/${entry}`);
+  }
+  return out;
+}
+
 describe('shard partitioning', () => {
   const shards = LANES.flatMap(({ lane, total }) =>
     Array.from({ length: total }, (_, i) => planFor(i + 1, total, lane)),
@@ -103,12 +128,21 @@ describe('shard partitioning', () => {
   });
 
   it('covers every workspace that declares a test task', () => {
+    /*
+     * The workspace list comes off the root manifest, not a literal
+     * ['packages','apps','tools'].
+     *
+     * That literal is what this assertion USED to iterate — the same wrong
+     * list the script itself held — so the two agreed with each other and
+     * disagreed with `package.json`, which also declares `benchmarks`. A lock
+     * that mirrors the implementation's assumption instead of the source of
+     * truth cannot catch the drift between them: `@interlace/benchmarks` was
+     * absent from both sides and this test passed for as long as it existed.
+     */
     const expected: string[] = [];
-    for (const wsDir of ['packages', 'apps', 'tools']) {
-      const abs = path.join(REPO_ROOT, wsDir);
-      if (!fs.existsSync(abs)) continue;
-      for (const entry of fs.readdirSync(abs)) {
-        const manifest = path.join(abs, entry, 'package.json');
+    for (const dir of workspaceDirs()) {
+      const manifest = path.join(REPO_ROOT, dir, 'package.json');
+      {
         if (!fs.existsSync(manifest)) continue;
         const pkg = JSON.parse(fs.readFileSync(manifest, 'utf8'));
         if (pkg.scripts?.['test:coverage'] || pkg.scripts?.test) {

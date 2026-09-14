@@ -162,6 +162,24 @@ describe.skipIf(!indexExists)('corpus index: generated artifact', () => {
     const dead = index.repos
       .filter((r: { path: string }) => !fs.existsSync(r.path))
       .map((r: { name: string }) => r.name);
+    /*
+     * `path` is an absolute path to a clone on the machine that built the index, so a
+     * runner that has never cloned the corpus fails all 161 at once. That is the corpus
+     * being absent, not the corpus having rotted, and the two need different answers:
+     * none present means there is nothing here to check, some missing is the rot this
+     * test exists for. Said out loud, because a check that quietly stops checking is the
+     * failure mode this file was written against.
+     */
+    if (dead.length === index.repos.length) {
+      expect(
+        index.repos.length,
+        'an empty index cannot vouch for anything',
+      ).toBeGreaterThan(0);
+      console.log(
+        `corpus not on this machine (${dead.length} entries) — path rot unchecked here`,
+      );
+      return;
+    }
     expect(dead).toEqual([]);
   });
 
