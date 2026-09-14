@@ -1081,6 +1081,93 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       return undefined;
     };
 
+    /**
+     * Whether the file ever REPLACES `<holder>.<key>`, or the holder binding itself.
+     *
+     * The holder exemption reads the object literal the holder was *created* with. That
+     * says what the property was at creation and nothing about what it is at the write —
+     * so `flags.bools = {}` after `const flags = { bools: Object.create(null) }` left an
+     * attacker-controlled key landing in a prototype-bearing object with the rule silent.
+     * A false negative in the rule whose whole subject is prototype pollution (#998).
+     *
+     * Matched on the assignment TARGET's shape, which is what makes this affordable — no
+     * flow analysis, and no misfire on the write under test. Two forms withdraw it:
+     *
+     *   flags = …           the holder binding is rebound (covers the `{ ...flags }` rebuild)
+     *   flags.bools = …     the property is replaced
+     *
+     * and one deliberately does NOT, because it is the access being judged rather than a
+     * replacement of the map:
+     *
+     *   flags.bools[k] = …  a write THROUGH the property
+     *
+     * That distinction is the whole reason a naive "is this path ever written" scan had to
+     * be reverted: it counted the indexed write as a replacement and withdrew the
+     * exemption from five correctly-exempt cases.
+     */
+    const holderPropertyIsReplaced = (
+      holder: TSESTree.Identifier,
+      key: string,
+    ): boolean => {
+      const root = context.sourceCode.ast;
+      let replaced = false;
+
+      const targetsReplacement = (target: TSESTree.Node): boolean => {
+        // `flags = …` — the whole holder is rebound.
+        if (
+          target.type === AST_NODE_TYPES.Identifier &&
+          target.name === holder.name
+        ) {
+          return true;
+        }
+        // `flags.bools = …` — the property is replaced. `propertyName` resolves the
+        // dotted, quoted and static-computed spellings alike; a runtime key is null and
+        // is not a replacement of THIS property.
+        return (
+          target.type === AST_NODE_TYPES.MemberExpression &&
+          target.object.type === AST_NODE_TYPES.Identifier &&
+          target.object.name === holder.name &&
+          propertyName(target) === key
+        );
+      };
+
+      const visit = (node: TSESTree.Node): void => {
+        if (replaced) return;
+        if (
+          node.type === AST_NODE_TYPES.AssignmentExpression &&
+          targetsReplacement(node.left)
+        ) {
+          // Every operator, not just `=`. `flags.bools ??= {}` and `||=` install a
+          // prototype-bearing object exactly as plainly.
+          replaced = true;
+          return;
+        }
+        if (
+          node.type === AST_NODE_TYPES.UnaryExpression &&
+          node.operator === 'delete' &&
+          targetsReplacement(node.argument)
+        ) {
+          replaced = true;
+          return;
+        }
+        for (const key_ of Object.keys(node)) {
+          if (key_ === 'parent') continue;
+          const child = (node as unknown as Record<string, unknown>)[key_];
+          if (Array.isArray(child)) {
+            for (const c of child) {
+              if (c && typeof c === 'object' && 'type' in c)
+                visit(c as TSESTree.Node);
+            }
+          } else if (child && typeof child === 'object' && 'type' in child) {
+            visit(child as TSESTree.Node);
+          }
+        }
+      };
+
+      visit(root);
+      return replaced;
+    };
+
     const isPrototypelessObject = (objectNode: TSESTree.Node): boolean => {
       // Inline Object.create(null) used directly as the node itself (e.g.
       // the `target` argument of `Object.assign(Object.create(null), src)`)
@@ -1118,7 +1205,18 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
             prop.type === AST_NODE_TYPES.Property &&
             objectKeyName(prop) === key,
         );
-        return match !== undefined && isPrototypelessObject(match.value);
+        if (match === undefined || !isPrototypelessObject(match.value))
+          return false;
+
+        // The initializer says what the property was CREATED as, not what it IS here.
+        // Withdraw the exemption if anything replaces it, or rebinds the holder (#998).
+        if (
+          objectNode.object.type === AST_NODE_TYPES.Identifier &&
+          holderPropertyIsReplaced(objectNode.object, key)
+        ) {
+          return false;
+        }
+        return true;
       }
 
       if (objectNode.type !== AST_NODE_TYPES.Identifier) {
