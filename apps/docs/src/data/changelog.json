@@ -5,6 +5,21 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "eslint-plugin-maintainability",
+      "short": "eslint-plugin-maintainability",
+      "version": "3.2.8",
+      "date": "2026-09-14T09:41:30Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`consistent-function-scoping` no longer reports a function that captures a sibling function declared in the same scope. Hoisting makes the sibling reachable from the outer scope, so the inner function cannot be moved there without breaking the reference — the rule was recommending a move that does not compile.",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-secure-coding",
       "short": "eslint-plugin-secure-coding",
       "version": "5.4.4",
@@ -17190,21 +17205,6 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-maintainability",
-      "short": "eslint-plugin-maintainability",
-      "version": "3.2.8",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`consistent-function-scoping` no longer reports a function that captures a sibling function declared in the same scope. Hoisting makes the sibling reachable from the outer scope, so the inner function cannot be moved there without breaking the reference — the rule was recommending a move that does not compile.",
           "pr": null
         }
       ]
