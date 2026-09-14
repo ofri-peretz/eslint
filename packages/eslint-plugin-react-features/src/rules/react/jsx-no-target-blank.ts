@@ -7,12 +7,16 @@
 /**
  * ESLint Rule: jsx-no-target-blank
  * Enforce rel="noopener noreferrer" on anchor tags with target="_blank"
- * 
+ *
  * Security: Prevents reverse tabnabbing attacks (CWE-1022)
  * @see https://github.com/jsx-eslint/eslint-plugin-react/blob/master/docs/rules/jsx-no-target-blank.md
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, staticString } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  staticString,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'noTargetBlank' | 'noRelWithoutNoopener';
@@ -43,10 +47,12 @@ export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Unsafe target="_blank"',
         cwe: 'CWE-1022',
-        description: 'Using target="_blank" without rel="noopener noreferrer" is a security risk',
+        description:
+          'Using target="_blank" without rel="noopener noreferrer" is a security risk',
         severity: 'HIGH',
         fix: 'Add rel="noopener noreferrer" to prevent reverse tabnabbing',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-react/blob/master/docs/rules/jsx-no-target-blank.md',
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-react/blob/master/docs/rules/jsx-no-target-blank.md',
       }),
       noRelWithoutNoopener: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -55,7 +61,8 @@ export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
         description: 'rel attribute is missing "noopener" value',
         severity: 'MEDIUM',
         fix: 'Add "noopener" to the rel attribute',
-        documentationLink: 'https://github.com/jsx-eslint/eslint-plugin-react/blob/master/docs/rules/jsx-no-target-blank.md',
+        documentationLink:
+          'https://github.com/jsx-eslint/eslint-plugin-react/blob/master/docs/rules/jsx-no-target-blank.md',
       }),
     },
     schema: [
@@ -63,10 +70,10 @@ export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
         type: 'object',
         properties: {
           allowReferrer: { type: 'boolean', default: false },
-          enforceDynamicLinks: { 
+          enforceDynamicLinks: {
             type: 'string',
-            enum: ['always', 'never'], 
-            default: 'always' 
+            enum: ['always', 'never'],
+            default: 'always',
           },
           warnOnSpreadAttributes: { type: 'boolean', default: false },
           links: { type: 'boolean', default: true },
@@ -77,14 +84,17 @@ export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
-    const { 
-      allowReferrer = false, 
+  create(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    [options = {} as Options],
+  ) {
+    const {
+      allowReferrer = false,
       enforceDynamicLinks = 'always',
       warnOnSpreadAttributes = false,
       links = true,
       forms = false,
-    } = options ?? {} as Options;
+    } = options ?? ({} as Options);
 
     const elementsToCheck: string[] = [];
     if (links) elementsToCheck.push('a');
@@ -95,13 +105,26 @@ export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
         (attr): attr is TSESTree.JSXAttribute =>
           attr.type === 'JSXAttribute' &&
           attr.name.type === 'JSXIdentifier' &&
-          attr.name.name === 'target'
+          attr.name.name === 'target',
       );
 
       if (!targetAttr || !targetAttr.value) return false;
 
-      if (targetAttr.value.type === 'Literal') {
-        return targetAttr.value.value === '_blank';
+      /*
+       * `target={"_self"}` names the same value as `target="_self"`, which is
+       * in the valid set. `staticString` folds `Literal` and zero-expression
+       * `TemplateLiteral` but does not unwrap a `JSXExpressionContainer`, so
+       * the container is opened before folding and both spellings take the
+       * same path. Only a target that is still not statically known after
+       * that is "dynamic" and falls through to the fail-closed branch below.
+       */
+      const targetValue =
+        targetAttr.value.type === 'JSXExpressionContainer'
+          ? targetAttr.value.expression
+          : targetAttr.value;
+      const staticTarget = staticString(targetValue);
+      if (staticTarget !== null) {
+        return staticTarget === '_blank';
       }
 
       // Dynamic value - check enforceDynamicLinks option
@@ -117,7 +140,7 @@ export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
         (attr): attr is TSESTree.JSXAttribute =>
           attr.type === 'JSXAttribute' &&
           attr.name.type === 'JSXIdentifier' &&
-          attr.name.name === 'href'
+          attr.name.name === 'href',
       );
 
       if (!hrefAttr || !hrefAttr.value) return false;
@@ -133,19 +156,21 @@ export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
       return enforceDynamicLinks === 'always';
     }
 
-    function getRelAttribute(node: TSESTree.JSXOpeningElement): TSESTree.JSXAttribute | undefined {
+    function getRelAttribute(
+      node: TSESTree.JSXOpeningElement,
+    ): TSESTree.JSXAttribute | undefined {
       return node.attributes.find(
         (attr): attr is TSESTree.JSXAttribute =>
           attr.type === 'JSXAttribute' &&
           attr.name.type === 'JSXIdentifier' &&
-          attr.name.name === 'rel'
+          attr.name.name === 'rel',
       );
     }
 
     // oxlint-disable-next-line consistent-function-scoping
     function hasNoopener(relAttr: TSESTree.JSXAttribute): boolean {
       if (!relAttr.value) return false;
-      
+
       const staticText2 = staticString(relAttr.value);
       if (staticText2 !== null) {
         const relValues = staticText2.toLowerCase().split(/\s+/);
@@ -158,7 +183,7 @@ export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
     // oxlint-disable-next-line consistent-function-scoping
     function hasNoreferrer(relAttr: TSESTree.JSXAttribute): boolean {
       if (!relAttr.value) return false;
-      
+
       const staticText3 = staticString(relAttr.value);
       if (staticText3 !== null) {
         const relValues = staticText3.toLowerCase().split(/\s+/);
@@ -170,12 +195,15 @@ export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
 
     // oxlint-disable-next-line consistent-function-scoping
     function hasSpreadAttribute(node: TSESTree.JSXOpeningElement): boolean {
-      return node.attributes.some(attr => attr.type === 'JSXSpreadAttribute');
+      return node.attributes.some((attr) => attr.type === 'JSXSpreadAttribute');
     }
 
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
-        if (node.name.type !== 'JSXIdentifier' || !elementsToCheck.includes(node.name.name)) {
+        if (
+          node.name.type !== 'JSXIdentifier' ||
+          !elementsToCheck.includes(node.name.name)
+        ) {
           return;
         }
 
@@ -215,14 +243,16 @@ export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
             if (relAttr && relAttr.value && relAttr.value.type === 'Literal') {
               // Add noopener noreferrer to existing rel
               const currentRel = String(staticString(relAttr.value));
-              const newRel = allowReferrer 
+              const newRel = allowReferrer
                 ? `${currentRel} noopener`.trim()
                 : `${currentRel} noopener noreferrer`.trim();
               return fixer.replaceText(relAttr.value, `"${newRel}"`);
             } else if (!relAttr) {
               // Add rel attribute
               const lastAttr = node.attributes[node.attributes.length - 1];
-              const relValue = allowReferrer ? 'noopener' : 'noopener noreferrer';
+              const relValue = allowReferrer
+                ? 'noopener'
+                : 'noopener noreferrer';
               if (lastAttr) {
                 return fixer.insertTextAfter(lastAttr, ` rel="${relValue}"`);
               }

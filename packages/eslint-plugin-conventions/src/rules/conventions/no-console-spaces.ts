@@ -104,6 +104,30 @@ export const noConsoleSpaces = createRule<RuleOptions, MessageIds>({
       return propertyName(node.callee as TSESTree.MemberExpression);
     }
 
+    /**
+     * Re-quote a trimmed string as a single-quoted literal.
+     *
+     * The fixer rebuilds the argument from the *cooked* value, so every
+     * character that the original source expressed as an escape arrives here
+     * as itself. Splicing that raw value between quotes emitted source that
+     * did not parse — an apostrophe closed the literal early, an interior
+     * newline left it unterminated — and a lone backslash silently changed
+     * the string's value (`C:\\path` became `C:path`). Escape the three
+     * classes that matter inside `'...'`: the escape character, the quote,
+     * and the line terminators.
+     */
+    // oxlint-disable-next-line consistent-function-scoping
+    function quoteSingle(text: string): string {
+      const escaped = text
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/\n/g, '\\n')
+        .replace(/\r/g, '\\r')
+        .replace(/\u2028/g, '\\u2028')
+        .replace(/\u2029/g, '\\u2029');
+      return `'${escaped}'`;
+    }
+
     // oxlint-disable-next-line consistent-function-scoping
     function hasLeadingOrTrailingSpaces(text: string): boolean {
       // Check if string starts or ends with whitespace, but not if it's only whitespace
@@ -147,7 +171,7 @@ export const noConsoleSpaces = createRule<RuleOptions, MessageIds>({
                   },
                   fix(fixer: TSESLint.RuleFixer) {
                     const trimmed = staticText.trim();
-                    return fixer.replaceText(arg, `'${trimmed}'`);
+                    return fixer.replaceText(arg, quoteSingle(trimmed));
                   },
                 });
               }
