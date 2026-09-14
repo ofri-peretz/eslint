@@ -62,8 +62,8 @@
       "note": "AST + SDK shape; tier=fast."
     }
   },
-  "lastValidated": "2026-05-09",
-  "source": "benchmark-results/ilb-flagship-scorecard.md (ESLint 9.39.4 + oxlint 1.63.0 + Node 24.13.0)",
+  "lastValidated": "2026-09-07",
+  "source": "benchmarks/results/ilb-flagship/2026-09-07.json (ESLint 9.39.4 + oxlint 1.63.0 + Node 24.20.0)",
   "process": {
     "addRule": "Add the rule to `rules` with sensible p50 / p95 from the latest ILB-Flagship run. p50 \u2264 p50_default_ms and p95 \u2264 p95_default_ms unless documented in the rule's `note`.",
     "increaseBudget": "Allowed only if (a) the rule's correctness genuinely improved (write a note pointing at the change), or (b) the increase has been approved in PR review with a justification.",
