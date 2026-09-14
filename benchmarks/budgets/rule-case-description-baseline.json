@@ -241,7 +241,7 @@
     "node-security/no-math-random-crypto": 105,
     "node-security/no-self-signed-certs": 16,
     "node-security/no-sha1-hash": 9,
-    "node-security/no-shell-injection": 67,
+    "node-security/no-shell-injection": 66,
     "node-security/no-ssrf": 60,
     "node-security/no-static-iv": 74,
     "node-security/no-timing-unsafe-compare": 189,
