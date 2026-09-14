@@ -26,7 +26,10 @@ describe('jsx-no-target-blank', () => {
   ruleTester.run('jsx-no-target-blank', jsxNoTargetBlank, {
     valid: [
       // No target="_blank"
-      { name: 'no target=_blank to protect', code: '<a href="https://example.com">Link</a>' },
+      {
+        name: 'no target=_blank to protect',
+        code: '<a href="https://example.com">Link</a>',
+      },
       // With rel="noopener"
       '<a href="https://example.com" target="_blank" rel="noopener">Link</a>',
       // With rel="noreferrer"
@@ -40,27 +43,64 @@ describe('jsx-no-target-blank', () => {
       '<a href="/page" target="_blank">Link</a>',
       // Same-origin URLs
       '<a href="#hash" target="_blank">Link</a>',
+      /*
+       * A braced string literal is the same value as the bare-string spelling
+       * two lines up. `staticString` folds only `Literal` and zero-expression
+       * `TemplateLiteral`, and it is handed `JSXAttribute.value`, so a
+       * `JSXExpressionContainer` has to be unwrapped before it can be folded —
+       * otherwise a provably-`_self` link is reported as tabnabbing and the
+       * fixer splices `rel="noopener noreferrer"` into it, which also
+       * suppresses the Referer header on same-tab navigation.
+       *
+       * A genuinely unknowable target (`target={blank}`) must keep reporting
+       * under the fail-closed `enforceDynamicLinks: 'always'` default; that is
+       * locked in coverage-gaps-2.test.ts.
+       */
+      {
+        name: 'a braced literal _self target is the same value as the bare-string spelling',
+        code: '<a href="https://example.com" target={"_self"}>Link</a>',
+      },
+      {
+        name: 'a braced template-literal _self target folds the same way',
+        code: '<a href="https://example.com" target={`_self`}>Link</a>',
+      },
     ],
     invalid: [
       {
+        /*
+         * The other half of folding the braced spelling: unwrapping the
+         * container must not become a way to smuggle a real _blank past the
+         * rule. Same value as the bare-string case below, same verdict.
+         */
+        name: 'a braced literal _blank target still reports and still fixes',
+        code: '<a href="https://example.com" target={"_blank"}>Link</a>',
+        output:
+          '<a href="https://example.com" target={"_blank"} rel="noopener noreferrer">Link</a>',
+        errors: [{ messageId: 'noTargetBlank' }],
+      },
+      {
         name: 'target=_blank with no rel — the opened page gets window.opener',
         code: '<a href="https://example.com" target="_blank">Link</a>',
-        output: '<a href="https://example.com" target="_blank" rel="noopener noreferrer">Link</a>',
+        output:
+          '<a href="https://example.com" target="_blank" rel="noopener noreferrer">Link</a>',
         errors: [{ messageId: 'noTargetBlank' }],
       },
       {
         code: '<a href="https://example.com" target="_blank" rel="nofollow">Link</a>',
-        output: '<a href="https://example.com" target="_blank" rel="nofollow noopener noreferrer">Link</a>',
+        output:
+          '<a href="https://example.com" target="_blank" rel="nofollow noopener noreferrer">Link</a>',
         errors: [{ messageId: 'noRelWithoutNoopener' }],
       },
       {
         code: '<a href="http://example.com" target="_blank">Link</a>',
-        output: '<a href="http://example.com" target="_blank" rel="noopener noreferrer">Link</a>',
+        output:
+          '<a href="http://example.com" target="_blank" rel="noopener noreferrer">Link</a>',
         errors: [{ messageId: 'noTargetBlank' }],
       },
       {
         code: '<a href="//example.com" target="_blank">Link</a>',
-        output: '<a href="//example.com" target="_blank" rel="noopener noreferrer">Link</a>',
+        output:
+          '<a href="//example.com" target="_blank" rel="noopener noreferrer">Link</a>',
         errors: [{ messageId: 'noTargetBlank' }],
       },
     ],
