@@ -45,6 +45,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isModuleBinding,
+  objectKeyName,
   propertyName,
 } from '@interlace/eslint-devkit';
 
@@ -68,6 +69,59 @@ type RuleOptions = [Options?];
 
 /** Shell-execution functions from child_process that run the first arg as a shell command. */
 const SHELL_EXEC_FUNCTIONS = new Set(['exec', 'execSync']);
+
+/**
+ * The spawn family runs its first argument as a program, NOT through a shell —
+ * unless `shell` is set, which hands the whole string to `/bin/sh` and makes
+ * these the same CWE-78 sink `exec` is. Node warns about this itself (DEP0190:
+ * args under `shell: true` are concatenated, not escaped).
+ *
+ * Membership here is not on its own enough to report: `hasTruthyShellOption`
+ * must also hold. Without a shell an interpolated program name is CWE-114, a
+ * different weakness owned by `detect-child-process`, and reporting it here as
+ * CWE-78 is the false positive this rule already paid for once.
+ *
+ * @protocol-constant The four `child_process` entry points that accept a
+ * `shell` option. This is Node's published API surface, not a vocabulary: the
+ * names are fixed by the module and nothing in a consumer's domain adds to
+ * them. Letting a consumer shorten the set would blind the rule to a
+ * shell-executed command in exactly the spelling they removed, which is the
+ * CWE-78 case the rule exists for.
+ */
+const SHELL_OPTION_FUNCTIONS = new Set([
+  'spawn',
+  'spawnSync',
+  'execFile',
+  'execFileSync',
+]);
+
+/**
+ * Does a call carry an options object whose `shell` is statically truthy?
+ *
+ * Every argument is scanned rather than a fixed index, because the options
+ * object sits at a different position depending on whether an args array and/or
+ * a callback is present (`execFile(cmd, args, opts, cb)`). The key is read with
+ * `objectKeyName` so `{ 'shell': true }` and `{ ['shell']: true }` count too.
+ * A non-literal value (`{ shell: useShell }`) is not statically truthy and is
+ * left alone rather than guessed at.
+ */
+function hasTruthyShellOption(node: TSESTree.CallExpression): boolean {
+  for (const arg of node.arguments) {
+    if (arg.type !== AST_NODE_TYPES.ObjectExpression) continue;
+    for (const prop of arg.properties) {
+      if (prop.type !== AST_NODE_TYPES.Property) continue;
+      if (objectKeyName(prop) !== 'shell') continue;
+      const { value } = prop;
+      if (value.type !== AST_NODE_TYPES.Literal) return false;
+      // `shell: true`, or a shell named by path such as `shell: '/bin/bash'`.
+      return (
+        value.value === true ||
+        (typeof value.value === 'string' && value.value.length > 0)
+      );
+    }
+  }
+  return false;
+}
 
 function isStringConcatOrTemplate(node: TSESTree.Node): boolean {
   if (
@@ -162,7 +216,14 @@ export const noShellInjection = createRule<RuleOptions, MessageIds>({
           fnName = propertyName(callee);
         }
 
-        if (!fnName || !SHELL_EXEC_FUNCTIONS.has(fnName)) return;
+        if (!fnName) return;
+
+        // `exec`/`execSync` are always a shell. The spawn family is a shell
+        // only when it is asked to be — see SHELL_OPTION_FUNCTIONS.
+        const runsAShell =
+          SHELL_EXEC_FUNCTIONS.has(fnName) ||
+          (SHELL_OPTION_FUNCTIONS.has(fnName) && hasTruthyShellOption(node));
+        if (!runsAShell) return;
 
         // The name `exec` is not evidence that this is child_process.
         //

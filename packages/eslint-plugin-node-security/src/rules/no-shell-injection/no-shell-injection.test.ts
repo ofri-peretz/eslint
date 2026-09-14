@@ -71,6 +71,35 @@ describe('no-shell-injection', () => {
         {
           code: "import { exec, execSync, spawn, spawnSync, execFile, execFileSync } from 'node:child_process';\nspawnSync('git', ['pull', '--rebase']);",
         },
+        // Without a shell there is no shell to inject into: an interpolated
+        // program name is CWE-114, which detect-child-process owns. Reporting
+        // it here as CWE-78 is the regression this plugin already paid for.
+        {
+          name: 'spawn with an interpolated command but no shell option stays silent',
+          code: "import { spawn } from 'node:child_process';\nspawn(`tar -xzf ${archivePath}`);",
+        },
+        {
+          name: 'spawn with shell explicitly false stays silent',
+          code: "import { spawn } from 'node:child_process';\nspawn(`tar -xzf ${archivePath}`, { shell: false });",
+        },
+        // A non-literal shell value is not statically truthy; stay silent
+        // rather than guess.
+        {
+          name: 'spawn with a non-literal shell value stays silent',
+          code: "import { spawn } from 'node:child_process';\nspawn(`tar -xzf ${archivePath}`, { shell: useShell });",
+        },
+        // The argv form keeps its arguments out of the command string, so the
+        // existing shape gate must keep it silent even with a shell.
+        {
+          name: 'spawn argv form with shell true stays silent here',
+          code: "import { spawn } from 'node:child_process';\nspawn('npm', ['install', packageName], { shell: true });",
+        },
+        // Module evidence still governs: a local helper named spawn is not
+        // child_process.
+        {
+          name: 'a local spawn helper with shell true is not child_process',
+          code: 'function spawn(cmd, opts) {}\nspawn(`tar -xzf ${archivePath}`, { shell: true });',
+        },
       ],
       invalid: [],
     });
@@ -364,6 +393,60 @@ ruleTester.run(
       },
       {
         code: 'import { exec } from "node:child_process"; exec(`git clone ${req.query.url}`);',
+        errors: [{ messageId: 'shellInjection' }],
+      },
+      // `{ shell: true }` routes the command string through /bin/sh, so the
+      // spawn family becomes the same CWE-78 sink as exec. The rule's own docs
+      // print this shape under "Examples of incorrect code" —
+      // docs/rules/no-shell-injection.md:43-45 — and list the fix at :76.
+      {
+        name: 'spawn with shell true runs the interpolated string through a shell',
+        code: "import { spawn } from 'node:child_process';\nspawn(`tar -xzf ${archivePath}`, { shell: true });",
+        errors: [{ messageId: 'shellInjection' }],
+      },
+      {
+        name: 'spawnSync with shell true runs the interpolated string through a shell',
+        code: "import { spawnSync } from 'node:child_process';\nspawnSync(`tar -xzf ${archivePath}`, { shell: true });",
+        errors: [{ messageId: 'shellInjection' }],
+      },
+      {
+        name: 'execFile with shell true runs the interpolated string through a shell',
+        code: "import { execFile } from 'node:child_process';\nexecFile(`tar -xzf ${archivePath}`, { shell: true });",
+        errors: [{ messageId: 'shellInjection' }],
+      },
+      {
+        name: 'execFileSync with shell true runs the interpolated string through a shell',
+        code: "import { execFileSync } from 'node:child_process';\nexecFileSync(`tar -xzf ${archivePath}`, { shell: true });",
+        errors: [{ messageId: 'shellInjection' }],
+      },
+      // A shell named by path is still a shell.
+      {
+        name: 'a string shell path is still a shell',
+        code: "import { spawn } from 'node:child_process';\nspawn('tar -xzf ' + archivePath, { shell: '/bin/bash' });",
+        errors: [{ messageId: 'shellInjection' }],
+      },
+      // The option key must be read as a key, not as an identifier spelling.
+      {
+        name: 'a quoted shell key is still the shell option',
+        code: "import { spawn } from 'node:child_process';\nspawn(`tar -xzf ${archivePath}`, { 'shell': true });",
+        errors: [{ messageId: 'shellInjection' }],
+      },
+      // execFile puts its options after an args array, so the options object
+      // is not at a fixed index.
+      {
+        name: 'execFile options after an args array are still found',
+        code: "import { execFile } from 'node:child_process';\nexecFile(`tar -xzf ${archivePath}`, [], { shell: true });",
+        errors: [{ messageId: 'shellInjection' }],
+      },
+      // shell is found past unrelated options and past a spread.
+      {
+        name: 'shell is found alongside other options',
+        code: "import { spawn } from 'node:child_process';\nspawn(`tar -xzf ${archivePath}`, { cwd: '/tmp', shell: true });",
+        errors: [{ messageId: 'shellInjection' }],
+      },
+      {
+        name: 'shell is found after a spread in the options object',
+        code: "import { spawn } from 'node:child_process';\nspawn(`tar -xzf ${archivePath}`, { ...baseOpts, shell: true });",
         errors: [{ messageId: 'shellInjection' }],
       },
     ],
