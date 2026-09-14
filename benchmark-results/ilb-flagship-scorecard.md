@@ -1,8 +1,8 @@
 # ILB-Flagship Scorecard
 
-> Per-rule × per-repo: latency (cached + uncached), findings, head-to-head overlap, and synthetic-corpus P/R/F1. Generated from `2026-09-07.json`.
+> Per-rule × per-repo: latency (cached + uncached), findings, head-to-head overlap, and synthetic-corpus P/R/F1. Generated from `2026-09-14.json`.
 
-- **Generated**: 2026-09-07T16:28:42.379Z · **Schema**: ilb-flagship/v2
+- **Generated**: 2026-09-14T17:00:32.413Z · **Schema**: ilb-flagship/v2
 - **ESLint**: v9.39.4 · **oxlint**: 1.63.0 · **Node**: v24.20.0
 - **OOS root**: `/home/runner/work/eslint/eslint/oos`
 
@@ -10,24 +10,24 @@
 
 | Rule | Repo | ⭐ | Tier | Ours cold | Ours warm | Ours findings | Comp cold | Comp warm | Comp findings | oxlint cold | oxlint warm | oxlint findings |
 | :--- | :--- | ---: | :---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `import-next/no-cycle` | next.js | 131K | T1 | 56,259 ms | 854 ms | 10 | 74,292 ms | 926 ms | 0 | 1,277 ms | 1,260 ms | 91 |
-| `pg/no-unsafe-query` | supabase | 78K | T1 | 47,450 ms | 1,677 ms | 0 | — | — | — | — | — | — |
-| `secure-coding/no-hardcoded-credentials` | vercel-ai | 15K | T2 | 9,452 ms | 801 ms | 891 | 11,718 ms | 743 ms | 454 | — | — | — |
-| `secure-coding/no-redos-vulnerable-regex` | lodash | 60K | T1 | 493 ms | 369 ms | 1 | 515 ms | 405 ms | 0 | — | — | — |
-| `mongodb-security/no-unsafe-query` | payload | 35K | T2 | 11,240 ms | 937 ms | 252 | — | — | — | — | — | — |
-| `jwt/no-algorithm-none` | supabase | 78K | T1 | 46,176 ms | 1,672 ms | 0 | — | — | — | — | — | — |
-| `browser-security/no-postmessage-wildcard-origin` | next.js | 131K | T1 | 54,508 ms | 862 ms | 2 | — | — | — | — | — | — |
-| `react-features/hooks-exhaustive-deps` | next.js | 131K | T1 | 55,088 ms | 874 ms | 127 | 54,726 ms | 918 ms | 53 | 518 ms | 539 ms | 22 |
-| `react-a11y/alt-text` | shadcn-ui | 100K | T1 | 361 ms | 363 ms | 0 | 13,426 ms | 995 ms | 0 | 188 ms | 180 ms | 0 |
-| `vercel-ai-security/no-unsafe-output-handling` | vercel-ai | 15K | T2 | 9,382 ms | 729 ms | 0 | — | — | — | — | — | — |
+| `import-next/no-cycle` | next.js | 131K | T1 | 48,510 ms | 708 ms | 10 | 64,047 ms | 746 ms | 0 | 1,028 ms | 994 ms | 91 |
+| `pg/no-unsafe-query` | supabase | 78K | T1 | 39,624 ms | 1,330 ms | 0 | — | — | — | — | — | — |
+| `secure-coding/no-hardcoded-credentials` | vercel-ai | 15K | T2 | 7,824 ms | 649 ms | 903 | 9,633 ms | 601 ms | 460 | — | — | — |
+| `secure-coding/no-redos-vulnerable-regex` | lodash | 60K | T1 | 377 ms | 304 ms | 1 | 406 ms | 321 ms | 0 | — | — | — |
+| `mongodb-security/no-unsafe-query` | payload | 35K | T2 | 9,083 ms | 747 ms | 252 | — | — | — | — | — | — |
+| `jwt/no-algorithm-none` | supabase | 78K | T1 | 38,536 ms | 1,354 ms | 0 | — | — | — | — | — | — |
+| `browser-security/no-postmessage-wildcard-origin` | next.js | 131K | T1 | 45,999 ms | 708 ms | 2 | — | — | — | — | — | — |
+| `react-features/hooks-exhaustive-deps` | next.js | 131K | T1 | 47,584 ms | 712 ms | 149 | 47,042 ms | 741 ms | 53 | 432 ms | 425 ms | 22 |
+| `react-a11y/alt-text` | shadcn-ui | 100K | T1 | 293 ms | 293 ms | 0 | 10,982 ms | 798 ms | 0 | 144 ms | 146 ms | 0 |
+| `vercel-ai-security/no-unsafe-output-handling` | vercel-ai | 15K | T2 | 8,079 ms | 598 ms | 0 | — | — | — | — | — | — |
 
 ## 2. Cache effectiveness (median across rules)
 
 | Stack | Median cold | Median warm | Δ | Cache benefit |
 | :--- | ---: | ---: | ---: | ---: |
-| Ours (ESLint) | 28,708 ms | 858 ms | 27,850 ms | 97% |
-| Peer (ESLint) | 13,426 ms | 918 ms | 12,508 ms | 93% |
-| oxlint native (peer) | 518 ms | 539 ms | -21 ms | -4% |
+| Ours (ESLint) | 23,810 ms | 708 ms | 23,102 ms | 97% |
+| Peer (ESLint) | 10,982 ms | 741 ms | 10,241 ms | 93% |
+| oxlint native (peer) | 432 ms | 425 ms | 7 ms | 2% |
 
 ## 3. Synthetic corpus — true precision / recall / F1
 
@@ -36,8 +36,8 @@ Labeled fixtures from `benchmarks/corpus/CWE-NNN/{vulnerable,safe}`. Tiny — 3 
 | Rule | CWE | Stack | Precision | Recall | F1 | TP | FP | FN | TN |
 | :--- | :--- | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | `pg/no-unsafe-query` | CWE-089 | ours | — | 0% | — | 0 | 0 | 3 | 3 |
-| `secure-coding/no-hardcoded-credentials` | CWE-798 | ours | 83% | 100% | 0.91 | 5 | 1 | 0 | 3 |
-| `secure-coding/no-hardcoded-credentials` | CWE-798 | competitor | 100% | 80% | 0.89 | 4 | 0 | 1 | 4 |
+| `secure-coding/no-hardcoded-credentials` | CWE-798 | ours | 83% | 71% | 0.77 | 5 | 1 | 2 | 5 |
+| `secure-coding/no-hardcoded-credentials` | CWE-798 | competitor | 100% | 57% | 0.73 | 4 | 0 | 3 | 6 |
 
 ## 4. OSS findings overlap — both / ours-only / theirs-only
 
@@ -50,16 +50,16 @@ Set ops on `(file, line)` keys between our cold-run findings and the competitor'
 | Rule | Repo | Both | Ours-only | Theirs-only |
 | :--- | :--- | ---: | ---: | ---: |
 | `import-next/no-cycle` | next.js | 0 | 10 | 0 |
-| `secure-coding/no-hardcoded-credentials` | vercel-ai | 42 | 849 | 401 |
+| `secure-coding/no-hardcoded-credentials` | vercel-ai | 44 | 859 | 404 |
 | `secure-coding/no-redos-vulnerable-regex` | lodash | 0 | 1 | 0 |
-| `react-features/hooks-exhaustive-deps` | next.js | 3 | 122 | 28 |
+| `react-features/hooks-exhaustive-deps` | next.js | 3 | 141 | 28 |
 | `react-a11y/alt-text` | shadcn-ui | 0 | 0 | 0 |
 
 ## 5. Where competitors beat us (theirs-only samples, top 5 each)
 
 Each row is a finding the competitor caught that ours missed. Triage to determine FN-on-our-side vs FP-on-theirs.
 
-### `secure-coding/no-hardcoded-credentials` on vercel-ai — 401 theirs-only finding(s)
+### `secure-coding/no-hardcoded-credentials` on vercel-ai — 404 theirs-only finding(s)
 
 | File | Line | Message |
 | :--- | ---: | :--- |
@@ -94,7 +94,7 @@ Each row is a finding ours caught that theirs missed. Triage same way — could 
 | `packages/next/src/server/app-render/console-async-storage.external.ts` | 4 | 🏗️ CWE-407 OWASP:A06-Insecure CVSS:5.3 \| Circular dependency detected \| MEDIUM ·    Fix: Extract shared types to - export type console-async-storage.externalId, console-async-storage-instanceId · - export interface console-async-storage.externalSummary, console-async-storage-instanc |
 | `packages/next/src/server/app-render/dynamic-access-async-storage-instance.ts` | 2 | 🏗️ CWE-407 OWASP:A06-Insecure CVSS:5.3 \| Circular dependency detected \| MEDIUM ·    Fix: Extract shared types to - export type dynamic-access-async-storage-instanceId, dynamic-access-async-storage.externalId · - export interface dynamic-access-async-storage-instanceSummary, dynamic- |
 
-### `secure-coding/no-hardcoded-credentials` on vercel-ai — 849 ours-only finding(s)
+### `secure-coding/no-hardcoded-credentials` on vercel-ai — 859 ours-only finding(s)
 
 | File | Line | Message |
 | :--- | ---: | :--- |
@@ -110,15 +110,15 @@ Each row is a finding ours caught that theirs missed. Triage same way — could 
 | :--- | ---: | :--- |
 | `lib/main/build-doc.js` | 65 | 🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 \| Nested Repetition: Quantifiers nested within groups with quantifiers \| CRITICAL ·    Fix: Flatten nested quantifiers \| https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS |
 
-### `react-features/hooks-exhaustive-deps` on next.js — 122 ours-only finding(s)
+### `react-features/hooks-exhaustive-deps` on next.js — 141 ours-only finding(s)
 
 | File | Line | Message |
 | :--- | ---: | :--- |
-| `apps/bundle-analyzer/app/page.tsx` | 115 | ⚠️ React Hook useEffect has missing dependencies: e, getRootSourceIndex \| HIGH ·    Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback \| https://react.dev/reference/react/useEffect#specifying-reactive-dependencies |
-| `apps/bundle-analyzer/app/page.tsx` | 123 | ⚠️ React Hook useMemo has missing dependencies: computeActiveEntries, computeModuleDepthMap \| HIGH ·    Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback \| https://react.dev/reference/react/useEffect#specifying-reactive-dependencies |
-| `apps/bundle-analyzer/app/page.tsx` | 145 | ⚠️ React Hook useMemo has missing dependencies: sourceIndex \| HIGH ·    Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback \| https://react.dev/reference/react/useEffect#specifying-reactive-dependencies |
-| `apps/bundle-analyzer/components/file-search.tsx` | 36 | ⚠️ React Hook useEffect has missing dependencies: e \| HIGH ·    Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback \| https://react.dev/reference/react/useEffect#specifying-reactive-dependencies |
-| `apps/bundle-analyzer/components/import-chain.tsx` | 316 | ⚠️ React Hook useMemo has missing dependencies: getModuleIndicesFromSourceIndex, moduleIndex, splitIdent, path, depth, selectedIndex, totalCount, index, async, traced, isFinite, getSourceIndexFromModuleIndex, isAsync, isTraced, a, b, info \| HIGH ·    Fix: Add missing dependencies t |
+| `apps/bundle-analyzer/app/page.tsx` | 188 | ⚠️ React Hook useEffect has unnecessary dependency: comparisonSnapshot \| MEDIUM ·    Fix: Remove the unnecessary dependency from the array - it never changes or is not used in the effect \| https://react.dev/reference/react/useEffect#removing-unnecessary-dependencies |
+| `apps/bundle-analyzer/app/page.tsx` | 209 | ⚠️ React Hook useEffect has missing dependencies: e, getRootSourceIndex \| HIGH ·    Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback \| https://react.dev/reference/react/useEffect#specifying-reactive-dependencies |
+| `apps/bundle-analyzer/app/page.tsx` | 217 | ⚠️ React Hook useMemo has missing dependencies: computeActiveEntries, computeModuleDepthMap \| HIGH ·    Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback \| https://react.dev/reference/react/useEffect#specifying-reactive-dependencies |
+| `apps/bundle-analyzer/app/page.tsx` | 229 | ⚠️ React Hook useMemo has missing dependencies: computeActiveEntries, computeModuleDepthMap \| HIGH ·    Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback \| https://react.dev/reference/react/useEffect#specifying-reactive-dependencies |
+| `apps/bundle-analyzer/app/page.tsx` | 251 | ⚠️ React Hook useMemo has missing dependencies: sourceIndex \| HIGH ·    Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback \| https://react.dev/reference/react/useEffect#specifying-reactive-dependencies |
 
 
 ## 7. Green-field rule samples (no competitor)
