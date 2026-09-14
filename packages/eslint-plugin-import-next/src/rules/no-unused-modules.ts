@@ -66,8 +66,12 @@ export const noUnusedModules = createRule<RuleOptions, MessageIds>({
     const { allowImportOnly = false } = options || {};
 
     let hasExports = false;
+    let hasImports = false;
 
     return {
+      ImportDeclaration() {
+        hasImports = true;
+      },
       ExportNamedDeclaration() {
         hasExports = true;
       },
@@ -97,7 +101,11 @@ export const noUnusedModules = createRule<RuleOptions, MessageIds>({
         }
       },
       'Program:exit'() {
-        if (!hasExports && !allowImportOnly) {
+        // `allowImportOnly` exempts a module that imports but exports nothing. It is
+        // not a rule-level off switch: a module with no imports at all does not "only
+        // contain imports", so it is still reported.
+        const importOnly = allowImportOnly && hasImports;
+        if (!hasExports && !importOnly) {
           context.report({
             node: context.sourceCode.ast,
             messageId: 'missingExports',
