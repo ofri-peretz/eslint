@@ -1,6 +1,6 @@
 {
   "schema": "ilb-headline-site/v1",
-  "generatedAt": "2026-09-07T16:28:41.466Z",
+  "generatedAt": "2026-09-14T17:00:31.678Z",
   "repo": "shadcn-ui",
   "glob": "apps/**/*.{js,jsx,ts,tsx,mjs,cjs}",
   "repeat": 5,
@@ -21,21 +21,21 @@
     {
       "key": "ours",
       "label": "Interlace (ESLint)",
-      "coldMs": 1898.6076620000003,
-      "warmMs": 959.0160239999968,
-      "coldMin": 1889.2210090000008,
-      "coldMax": 1907.9279149999993,
-      "findings": 706,
+      "coldMs": 1554.171918,
+      "warmMs": 789.2614879999965,
+      "coldMin": 1543.5236020000002,
+      "coldMax": 1561.486687999999,
+      "findings": 700,
       "files": 3411,
       "ok": true
     },
     {
       "key": "competitor",
       "label": "Community plugins (ESLint)",
-      "coldMs": 3620.109858,
-      "warmMs": 1071.2530889999907,
-      "coldMin": 3591.040406,
-      "coldMax": 3651.313592999999,
+      "coldMs": 3033.7520729999997,
+      "warmMs": 862.1195129999978,
+      "coldMin": 2998.347182999998,
+      "coldMax": 3063.0626389999998,
       "findings": 18,
       "files": 3411,
       "ok": true
@@ -43,10 +43,10 @@
     {
       "key": "oxlintNative",
       "label": "oxlint (native)",
-      "coldMs": 1152.8220819999988,
-      "warmMs": 1142.3379140000034,
-      "coldMin": 1138.5579419999995,
-      "coldMax": 1182.135252,
+      "coldMs": 907.0055520000024,
+      "warmMs": 899.2581079999945,
+      "coldMin": 894.9199549999976,
+      "coldMax": 910.6230200000064,
       "findings": 43739,
       "files": 3417,
       "ok": true
