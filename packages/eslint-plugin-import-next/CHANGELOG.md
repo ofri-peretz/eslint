@@ -5,6 +5,46 @@ All notable changes to `eslint-plugin-import-next` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.8.1
+
+### Patch Changes
+
+- **🐛 Fix** — `extensions` checks `export … from` and `export * from`
+
+  The rule registered only an `ImportDeclaration` visitor, so the same specifier string got
+  opposite verdicts one line apart: `import { Argument } from './argument.js'` reported,
+  `export { Argument } from './argument.js'` stayed silent. For a rule whose contract is
+  "ensure consistent use of file extensions", `--fix` left the file less consistent than it
+  found it.
+
+  Both export-from forms now route through the same check. Sibling rules in this package
+  (`no-unresolved`, `no-internal-modules`) already treated "imports" as meaning module
+  specifiers rather than the `ImportDeclaration` node type.
+
+- **🐛 Fix** — `no-unused-modules`'s `allowImportOnly` exempts only modules that import
+
+  The option is documented — in its schema, its JSDoc, and the generated docs — as "Allow
+  modules that only contain imports", but the implementation read it as a plain
+  `if (!hasExports && !allowImportOnly)`. Every export-less module was exempted, imports or
+  not, which made the option a rule-level off switch rather than the narrow exemption its
+  name and description promise.
+
+  Imports are now tracked, so the exemption needs one. A module with no imports at all does
+  not "only contain imports" under any reading, and still reports.
+
+- **🐛 Fix** — `consistent-type-specifier-style` stops rebuilding away parts of the import
+
+  Two losses from the same whole-statement rebuild.
+
+  A string-literal imported name was read through `imported.value`, which drops the quotes:
+  `import type { 'a-b' as AB }` was rewritten to `import { type a-b as AB }`, output that no
+  longer parses. The specifier's own source text is read instead.
+
+  An import attribute is not a specifier, so rebuilding from `namedSpecifiers` deleted it —
+  `with { type: 'json' }` silently gone, which is `TS1543` at compile time and
+  `ERR_IMPORT_ATTRIBUTE_MISSING` at runtime. The preference still reports; only the rewrite
+  stops, the same guard the default-binding case already had.
+
 ## 2.8.0
 
 ### Minor Changes
