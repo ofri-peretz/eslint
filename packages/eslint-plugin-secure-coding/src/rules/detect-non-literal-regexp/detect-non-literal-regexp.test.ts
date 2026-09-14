@@ -358,8 +358,14 @@ describe('detect-non-literal-regexp', () => {
         // change than `ARR.join()` can, and the rule already accepts the latter. The
         // guard bailed on seeing any SpreadElement, so the two spellings of one value
         // got opposite verdicts.
-        { code: 'const A = ["x", "y"]; const C = [...A].join(""); const r = new RegExp(`[${C}]`);' },
-        { code: 'const A = ["x"]; const r = new RegExp([...A, "y"].join("|"));' },
+        {
+          name: 'a spread of a constant array is as resolvable as the array itself',
+          code: 'const A = ["x", "y"]; const C = [...A].join(""); const r = new RegExp(`[${C}]`);',
+        },
+        {
+          name: 'a spread beside a literal element',
+          code: 'const A = ["x"]; const r = new RegExp([...A, "y"].join("|"));',
+        },
       ],
       invalid: [
         // Unresolvable provenance still reports: a parameter could be anything.
@@ -397,6 +403,7 @@ describe('detect-non-literal-regexp', () => {
         // A Set's contents are reachable through .add/.delete, which this file does not
         // model, so `new Set(…)` is not build-time constant — spread or not.
         {
+          name: 'a spread of a Set stays unresolved -- .add/.delete are not modelled',
           code: 'const S = new Set(["x"]); const C = [...S].join(""); const r = new RegExp(`[${C}]`);',
           errors: [{ messageId: 'runtimeDecidedPattern' }],
         },

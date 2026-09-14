@@ -1115,7 +1115,8 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
 
         const match = holderInit.properties.find(
           (prop): prop is TSESTree.Property =>
-            prop.type === AST_NODE_TYPES.Property && objectKeyName(prop) === key,
+            prop.type === AST_NODE_TYPES.Property &&
+            objectKeyName(prop) === key,
         );
         return match !== undefined && isPrototypelessObject(match.value);
       }
