@@ -5,6 +5,21 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "1.19.4",
+      "date": "2026-09-14T04:06:07Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "security",
+          "title": "`identifierWords` no longer backtracks quadratically (CWE-1333)",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-reliability",
       "short": "eslint-plugin-reliability",
       "version": "4.1.8",
@@ -16980,21 +16995,6 @@
         {
           "kind": "other",
           "title": "TypeScript type exports for all rule options",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "@interlace/eslint-devkit",
-      "short": "eslint-devkit",
-      "version": "1.19.4",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "security",
-          "title": "`identifierWords` no longer backtracks quadratically (CWE-1333)",
           "pr": null
         }
       ]
