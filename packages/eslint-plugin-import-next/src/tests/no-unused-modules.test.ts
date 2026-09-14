@@ -60,5 +60,16 @@ ruleTester.run('no-unused-modules', noUnusedModules, {
       code: `const foo = 1;`,
       errors: [{ messageId: 'missingExports' }],
     },
+
+    // burgee sweep: packages/flagstaff/src/cli.ts:18 surfaced this. `allowImportOnly`
+    // is documented as "Allow modules that only contain imports", but it exempted every
+    // export-less module — imports or not — making it a rule-level kill switch. A module
+    // with zero imports does not "only contain imports" under any reading of the option.
+    {
+      name: 'allowImportOnly does not exempt a module that contains no imports',
+      code: `const x = 1;\nconsole.log(x);`,
+      options: [{ allowImportOnly: true }],
+      errors: [{ messageId: 'missingExports' }],
+    },
   ],
 });

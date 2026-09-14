@@ -5,6 +5,34 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.4.2
+
+### Patch Changes
+
+- **🐛 Fix** — `detect-non-literal-regexp` resolves a spread of a constant array
+
+  The rule accepts "constant-preserving methods over a constant array", so `ARR.join('|')`
+  is silent — but the array walk bailed on sight of any `SpreadElement`, so `[...ARR].join('|')`
+  reported. A spread of a constant is no less resolvable than the constant itself.
+
+  The spread's argument now has to prove itself like any other element, so the two spellings
+  of one value agree. `[...rest]` over a parameter still reports, and so does
+  `[...new Set([…])]` — a Set's contents are reachable through `.add`/`.delete`, which this
+  file does not model.
+
+- **🐛 Fix** — `detect-object-injection` honours `Object.create(null)` reached through a property
+
+  The `Object.create(null)` exemption resolved a bare binding but bailed the moment the
+  null-prototype map was held as a property of another object. `const flags = { bools:
+Object.create(null) }` then reported `flags.bools[key] = true` at CVSS 9.8 — eight times in
+  one burgee file — while the identical `safeObj[key] = value` one scope away stayed silent.
+
+  The safety property `SPEC.md` G1 states is about the _target_ ("target is
+  `Object.create(null)`"), with no qualification about how the target is spelled. The holder
+  is now resolved and the written property's initializer read. Everything the resolution
+  cannot read — a private name, a non-literal holder, a computed or quoted key, a plain `{}`
+  — still reports, each pinned by its own fixture.
+
 ## 5.4.1
 
 ### Patch Changes
