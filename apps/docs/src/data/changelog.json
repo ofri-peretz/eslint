@@ -1,7 +1,7 @@
 {
-  "releaseCount": 681,
+  "releaseCount": 682,
   "packageCount": 36,
-  "entryCount": 2092,
+  "entryCount": 2093,
   "oldestYear": 2024,
   "releases": [
     {
@@ -16980,6 +16980,21 @@
         {
           "kind": "other",
           "title": "TypeScript type exports for all rule options",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "1.19.4",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "security",
+          "title": "`identifierWords` no longer backtracks quadratically (CWE-1333)",
           "pr": null
         }
       ]
