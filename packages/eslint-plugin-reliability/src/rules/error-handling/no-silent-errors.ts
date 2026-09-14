@@ -89,13 +89,19 @@ function hasExplanatoryComment(
     /fixme/i,
   ];
 
-  // Check comments before the catch clause (within 2 lines)
+  // Check comments before the catch clause (within 2 lines). The lower bound matters:
+  // without it a comment *below* the catch yields a negative distance, which satisfies
+  // `<= 2` at any range and disarms the rule for the rest of the file. Distance 0 is
+  // kept — that is a comment trailing the catch's own line.
   for (const comment of comments) {
-    if (comment.loc && catchStart.line - comment.loc.end.line <= 2) {
-      const commentText = comment.value.toLowerCase();
-      if (explanatoryPatterns.some((pattern) => pattern.test(commentText))) {
-        return true;
-      }
+    // `loc` is required on TSESTree.Comment; the guard that used to stand here was a
+    // branch no input could take.
+    const distance = catchStart.line - comment.loc.end.line;
+    if (distance < 0 || distance > 2) continue;
+
+    const commentText = comment.value.toLowerCase();
+    if (explanatoryPatterns.some((pattern) => pattern.test(commentText))) {
+      return true;
     }
   }
 
