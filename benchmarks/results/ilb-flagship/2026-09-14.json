@@ -1,54 +1,125 @@
 {
   "schema": "ilb-flagship/v2",
-  "runAt": "2026-08-25T13:10:20.552Z",
+  "runAt": "2026-09-14T17:00:32.413Z",
   "workspace": "/home/runner/work/eslint/eslint/benchmarks/suites/ilb-flagship/workspace",
   "oosDir": "/home/runner/work/eslint/eslint/oos",
   "eslintVersion": "v9.39.4",
   "oxlintVersion": "Version: 1.63.0",
-  "nodeVersion": "v24.19.0",
+  "nodeVersion": "v24.20.0",
   "results": [
     {
       "rule": "import-next/no-cycle",
       "repo": "next.js",
-      "repoHead": "362b1efe",
+      "repoHead": "b421cade",
       "starsK": 131,
       "tier": "T1",
       "runs": {
         "oursEslint": {
           "cold": {
-            "ms": 62616,
-            "msMin": 61030,
-            "msMax": 64196,
+            "ms": 48510,
+            "msMin": 47416,
+            "msMax": 49513,
             "repeats": 5,
             "exitCode": 1,
-            "filesProcessed": 3169,
-            "findingsCount": 0,
-            "findings": []
+            "filesProcessed": 3202,
+            "findingsCount": 10,
+            "findings": [
+              {
+                "file": "packages/next/src/client/with-router.tsx",
+                "line": 7,
+                "column": 1,
+                "ruleId": "import-next/no-cycle",
+                "message": "🏗️ CWE-407 OWASP:A06-Insecure CVSS:5.3 | Circular dependency detected | MEDIUM\n   Fix: Extract shared types to - export type with-routerId, routerId\n- export interface with-routerSummary, routerSummary file | https://en.wikipedia.org/wiki/Dependency_inversion_principle"
+              },
+              {
+                "file": "packages/next/src/client/with-router.tsx",
+                "line": 8,
+                "column": 1,
+                "ruleId": "import-next/no-cycle",
+                "message": "🏗️ CWE-407 OWASP:A06-Insecure CVSS:5.3 | Circular dependency detected | MEDIUM\n   Fix: Extract shared types to - export type with-routerId, routerId\n- export interface with-routerSummary, routerSummary file | https://en.wikipedia.org/wiki/Dependency_inversion_principle"
+              },
+              {
+                "file": "packages/next/src/server/app-render/console-async-storage-instance.ts",
+                "line": 2,
+                "column": 1,
+                "ruleId": "import-next/no-cycle",
+                "message": "🏗️ CWE-407 OWASP:A06-Insecure CVSS:5.3 | Circular dependency detected | MEDIUM\n   Fix: Extract shared types to - export type console-async-storage-instanceId, console-async-storage.externalId\n- export interface console-async-storage-instanceSummary, console-async-storage.externa"
+              },
+              {
+                "file": "packages/next/src/server/app-render/console-async-storage.external.ts",
+                "line": 4,
+                "column": 1,
+                "ruleId": "import-next/no-cycle",
+                "message": "🏗️ CWE-407 OWASP:A06-Insecure CVSS:5.3 | Circular dependency detected | MEDIUM\n   Fix: Extract shared types to - export type console-async-storage.externalId, console-async-storage-instanceId\n- export interface console-async-storage.externalSummary, console-async-storage-instanc"
+              },
+              {
+                "file": "packages/next/src/server/app-render/dynamic-access-async-storage-instance.ts",
+                "line": 2,
+                "column": 1,
+                "ruleId": "import-next/no-cycle",
+                "message": "🏗️ CWE-407 OWASP:A06-Insecure CVSS:5.3 | Circular dependency detected | MEDIUM\n   Fix: Extract shared types to - export type dynamic-access-async-storage-instanceId, dynamic-access-async-storage.externalId\n- export interface dynamic-access-async-storage-instanceSummary, dynamic-"
+              },
+              {
+                "file": "packages/next/src/server/app-render/dynamic-access-async-storage.external.ts",
+                "line": 4,
+                "column": 1,
+                "ruleId": "import-next/no-cycle",
+                "message": "🏗️ CWE-407 OWASP:A06-Insecure CVSS:5.3 | Circular dependency detected | MEDIUM\n   Fix: Extract shared types to - export type dynamic-access-async-storage.externalId, dynamic-access-async-storage-instanceId\n- export interface dynamic-access-async-storage.externalSummary, dynamic-"
+              },
+              {
+                "file": "packages/next/src/server/app-render/work-unit-async-storage-instance.ts",
+                "line": 2,
+                "column": 1,
+                "ruleId": "import-next/no-cycle",
+                "message": "🏗️ CWE-407 OWASP:A06-Insecure CVSS:5.3 | Circular dependency detected | MEDIUM\n   Fix: Extract shared types to - export type work-unit-async-storage-instanceId, work-unit-async-storage.externalId\n- export interface work-unit-async-storage-instanceSummary, work-unit-async-storage"
+              },
+              {
+                "file": "packages/next/src/server/app-render/work-unit-async-storage.external.ts",
+                "line": 12,
+                "column": 1,
+                "ruleId": "import-next/no-cycle",
+                "message": "🏗️ CWE-407 OWASP:A06-Insecure CVSS:5.3 | Circular dependency detected | MEDIUM\n   Fix: Extract shared types to - export type work-unit-async-storage.externalId, work-unit-async-storage-instanceId\n- export interface work-unit-async-storage.externalSummary, work-unit-async-storage"
+              },
+              {
+                "file": "packages/next/src/server/lib/router-utils/root-params-type-utils.ts",
+                "line": 3,
+                "column": 1,
+                "ruleId": "import-next/no-cycle",
+                "message": "🏗️ CWE-407 OWASP:A06-Insecure CVSS:5.3 | Circular dependency detected | MEDIUM\n   Fix: Extract shared types to - export type root-params-type-utilsId, route-types-utilsId\n- export interface root-params-type-utilsSummary, route-types-utilsSummary file | https://en.wikipedia.org/w"
+              },
+              {
+                "file": "packages/next/src/server/lib/router-utils/route-types-utils.ts",
+                "line": 27,
+                "column": 1,
+                "ruleId": "import-next/no-cycle",
+                "message": "🏗️ CWE-407 OWASP:A06-Insecure CVSS:5.3 | Circular dependency detected | MEDIUM\n   Fix: Extract shared types to - export type route-types-utilsId, root-params-type-utilsId\n- export interface route-types-utilsSummary, root-params-type-utilsSummary file | https://en.wikipedia.org/w"
+              }
+            ]
           },
           "warm": {
-            "ms": 914,
-            "msMin": 900,
-            "msMax": 916,
+            "ms": 708,
+            "msMin": 695,
+            "msMax": 713,
             "repeats": 5,
             "exitCode": 1,
-            "findingsCount": 0
+            "findingsCount": 10
           }
         },
         "competitorEslint": {
           "cold": {
-            "ms": 78396,
-            "msMin": 77576,
-            "msMax": 79759,
+            "ms": 64047,
+            "msMin": 62357,
+            "msMax": 68911,
             "repeats": 5,
             "exitCode": 1,
-            "filesProcessed": 3169,
+            "filesProcessed": 3202,
             "findingsCount": 0,
             "findings": []
           },
           "warm": {
-            "ms": 962,
-            "msMin": 950,
-            "msMax": 978,
+            "ms": 746,
+            "msMin": 741,
+            "msMax": 749,
             "repeats": 5,
             "exitCode": 1,
             "findingsCount": 0
@@ -56,9 +127,9 @@
         },
         "oxlintNative": {
           "cold": {
-            "ms": 1328,
-            "msMin": 1315,
-            "msMax": 1335,
+            "ms": 1028,
+            "msMin": 1018,
+            "msMax": 1049,
             "repeats": 5,
             "findingsCount": 91,
             "findings": [
@@ -70,9 +141,9 @@
                 "message": "Dependency cycle detected"
               },
               {
-                "file": "packages/next/src/next-devtools/dev-overlay/container/runtime-error/error-cause.tsx",
+                "file": "packages/next/src/next-devtools/dev-overlay/hooks/use-active-runtime-error.ts",
                 "line": 5,
-                "column": 38,
+                "column": 52,
                 "ruleId": "import(no-cycle)",
                 "message": "Dependency cycle detected"
               },
@@ -84,23 +155,72 @@
                 "message": "Dependency cycle detected"
               },
               {
-                "file": "packages/next/src/client/components/router-reducer/fetch-server-response.ts",
-                "line": 46,
-                "column": 41,
+                "file": "packages/next/src/next-devtools/dev-overlay/container/runtime-error/error-cause.tsx",
+                "line": 5,
+                "column": 38,
                 "ruleId": "import(no-cycle)",
                 "message": "Dependency cycle detected"
               },
               {
-                "file": "packages/next/src/client/components/router-reducer/fetch-server-response.ts",
-                "line": 45,
+                "file": "packages/next/src/build/webpack/config/index.ts",
+                "line": 7,
+                "column": 24,
+                "ruleId": "import(no-cycle)",
+                "message": "Dependency cycle detected"
+              },
+              {
+                "file": "packages/next/src/build/webpack/config/blocks/images/index.ts",
+                "line": 3,
+                "column": 38,
+                "ruleId": "import(no-cycle)",
+                "message": "Dependency cycle detected"
+              },
+              {
+                "file": "packages/next/src/build/webpack-config.ts",
+                "line": 83,
                 "column": 8,
                 "ruleId": "import(no-cycle)",
                 "message": "Dependency cycle detected"
               },
               {
-                "file": "packages/next/src/client/components/router-reducer/fetch-server-response.ts",
-                "line": 11,
-                "column": 23,
+                "file": "packages/next/src/build/webpack-config.ts",
+                "line": 74,
+                "column": 59,
+                "ruleId": "import(no-cycle)",
+                "message": "Dependency cycle detected"
+              },
+              {
+                "file": "packages/next/src/build/webpack-config.ts",
+                "line": 38,
+                "column": 36,
+                "ruleId": "import(no-cycle)",
+                "message": "Dependency cycle detected"
+              },
+              {
+                "file": "packages/next/src/build/create-compiler-aliases.ts",
+                "line": 18,
+                "column": 43,
+                "ruleId": "import(no-cycle)",
+                "message": "Dependency cycle detected"
+              },
+              {
+                "file": "packages/next/src/build/handle-externals.ts",
+                "line": 12,
+                "column": 8,
+                "ruleId": "import(no-cycle)",
+                "message": "Dependency cycle detected"
+              },
+              {
+                "file": "packages/next/src/client/components/app-router-instance.ts",
+                "line": 25,
+                "column": 52,
+                "ruleId": "import(no-cycle)",
+                "message": "Dependency cycle detected"
+              },
+              {
+                "file": "packages/next/src/client/components/app-router-instance.ts",
+                "line": 26,
+                "column": 31,
                 "ruleId": "import(no-cycle)",
                 "message": "Dependency cycle detected"
               },
@@ -122,6 +242,27 @@
                 "file": "packages/next/src/client/components/segment-cache/decode-server-response.ts",
                 "line": 52,
                 "column": 8,
+                "ruleId": "import(no-cycle)",
+                "message": "Dependency cycle detected"
+              },
+              {
+                "file": "packages/next/src/client/components/router-reducer/fetch-server-response.ts",
+                "line": 46,
+                "column": 41,
+                "ruleId": "import(no-cycle)",
+                "message": "Dependency cycle detected"
+              },
+              {
+                "file": "packages/next/src/client/components/router-reducer/fetch-server-response.ts",
+                "line": 45,
+                "column": 8,
+                "ruleId": "import(no-cycle)",
+                "message": "Dependency cycle detected"
+              },
+              {
+                "file": "packages/next/src/client/components/router-reducer/fetch-server-response.ts",
+                "line": 11,
+                "column": 23,
                 "ruleId": "import(no-cycle)",
                 "message": "Dependency cycle detected"
               },
@@ -168,23 +309,72 @@
                 "message": "Dependency cycle detected"
               },
               {
-                "file": "packages/next/src/next-devtools/dev-overlay/hooks/use-active-runtime-error.ts",
-                "line": 5,
-                "column": 52,
+                "file": "packages/next/src/client/components/navigator.ts",
+                "line": 33,
+                "column": 8,
                 "ruleId": "import(no-cycle)",
                 "message": "Dependency cycle detected"
               },
               {
-                "file": "packages/next/src/client/router.ts",
-                "line": 130,
-                "column": 39,
+                "file": "packages/next/src/client/components/app-router-state.ts",
+                "line": 35,
+                "column": 45,
                 "ruleId": "import(no-cycle)",
                 "message": "Dependency cycle detected"
               },
               {
-                "file": "packages/next/src/client/with-router.tsx",
+                "file": "packages/next/src/client/components/app-router-state.ts",
+                "line": 15,
+                "column": 8,
+                "ruleId": "import(no-cycle)",
+                "message": "Dependency cycle detected"
+              },
+              {
+                "file": "packages/next/src/client/components/app-router-state.ts",
                 "line": 7,
-                "column": 33,
+                "column": 37,
+                "ruleId": "import(no-cycle)",
+                "message": "Dependency cycle detected"
+              },
+              {
+                "file": "packages/next/src/client/components/app-router-state.ts",
+                "line": 43,
+                "column": 8,
+                "ruleId": "import(no-cycle)",
+                "message": "Dependency cycle detected"
+              },
+              {
+                "file": "packages/next/src/client/components/app-router-state.ts",
+                "line": 26,
+                "column": 8,
+                "ruleId": "import(no-cycle)",
+                "message": "Dependency cycle detected"
+              },
+              {
+                "file": "packages/next/src/client/components/app-router-state.ts",
+                "line": 48,
+                "column": 8,
+                "ruleId": "import(no-cycle)",
+                "message": "Dependency cycle detected"
+              },
+              {
+                "file": "packages/next/src/client/components/app-router-state.ts",
+                "line": 27,
+                "column": 36,
+                "ruleId": "import(no-cycle)",
+                "message": "Dependency cycle detected"
+              },
+              {
+                "file": "packages/next/src/client/components/app-router-state.ts",
+                "line": 33,
+                "column": 38,
+                "ruleId": "import(no-cycle)",
+                "message": "Dependency cycle detected"
+              },
+              {
+                "file": "packages/next/src/client/components/prefetch.ts",
+                "line": 5,
+                "column": 42,
                 "ruleId": "import(no-cycle)",
                 "message": "Dependency cycle detected"
               },
@@ -199,34 +389,6 @@
                 "file": "packages/next/src/client/components/segment-cache/bfcache.ts",
                 "line": 30,
                 "column": 8,
-                "ruleId": "import(no-cycle)",
-                "message": "Dependency cycle detected"
-              },
-              {
-                "file": "packages/next/src/client/components/segment-cache/vary-path.ts",
-                "line": 8,
-                "column": 45,
-                "ruleId": "import(no-cycle)",
-                "message": "Dependency cycle detected"
-              },
-              {
-                "file": "packages/next/src/client/components/app-router-instance.ts",
-                "line": 25,
-                "column": 52,
-                "ruleId": "import(no-cycle)",
-                "message": "Dependency cycle detected"
-              },
-              {
-                "file": "packages/next/src/client/components/app-router-instance.ts",
-                "line": 26,
-                "column": 31,
-                "ruleId": "import(no-cycle)",
-                "message": "Dependency cycle detected"
-              },
-              {
-                "file": "packages/next/src/client/components/prefetch.ts",
-                "line": 5,
-                "column": 42,
                 "ruleId": "import(no-cycle)",
                 "message": "Dependency cycle detected"
               },
@@ -252,16 +414,9 @@
                 "message": "Dependency cycle detected"
               },
               {
-                "file": "packages/next/src/client/components/segment-cache/cache-map.ts",
-                "line": 2,
-                "column": 54,
-                "ruleId": "import(no-cycle)",
-                "message": "Dependency cycle detected"
-              },
-              {
-                "file": "packages/next/src/client/components/segment-cache/fetch.ts",
-                "line": 1,
-                "column": 33,
+                "file": "packages/next/src/client/components/links.ts",
+                "line": 15,
+                "column": 8,
                 "ruleId": "import(no-cycle)",
                 "message": "Dependency cycle detected"
               },
@@ -336,65 +491,37 @@
                 "message": "Dependency cycle detected"
               },
               {
-                "file": "packages/next/src/client/components/segment-cache/scheduler.ts",
-                "line": 31,
-                "column": 8,
+                "file": "packages/next/src/client/dev/hot-reloader/app/hot-reloader-app.tsx",
+                "line": 19,
+                "column": 34,
                 "ruleId": "import(no-cycle)",
                 "message": "Dependency cycle detected"
               },
               {
-                "file": "packages/next/src/client/components/segment-cache/scheduler.ts",
-                "line": 52,
-                "column": 25,
-                "ruleId": "import(no-cycle)",
-                "message": "Dependency cycle detected"
-              },
-              {
-                "file": "packages/next/src/client/components/segment-cache/lru.ts",
-                "line": 1,
-                "column": 32,
-                "ruleId": "import(no-cycle)",
-                "message": "Dependency cycle detected"
-              },
-              {
-                "file": "packages/next/src/client/components/segment-cache/lru.ts",
-                "line": 3,
+                "file": "packages/next/src/client/router.ts",
+                "line": 130,
                 "column": 39,
                 "ruleId": "import(no-cycle)",
                 "message": "Dependency cycle detected"
               },
               {
-                "file": "packages/next/src/client/components/links.ts",
-                "line": 15,
-                "column": 8,
+                "file": "packages/next/src/client/components/segment-cache/vary-path.ts",
+                "line": 8,
+                "column": 45,
                 "ruleId": "import(no-cycle)",
                 "message": "Dependency cycle detected"
               },
               {
-                "file": "packages/next/src/client/components/segment-cache/navigation-testing-lock.ts",
-                "line": 30,
-                "column": 47,
+                "file": "packages/next/src/client/components/segment-cache/cache-map.ts",
+                "line": 2,
+                "column": 54,
                 "ruleId": "import(no-cycle)",
                 "message": "Dependency cycle detected"
               },
               {
-                "file": "packages/next/src/client/components/segment-cache/navigation-testing-lock.ts",
-                "line": 28,
-                "column": 42,
-                "ruleId": "import(no-cycle)",
-                "message": "Dependency cycle detected"
-              },
-              {
-                "file": "packages/next/src/client/components/navigator.ts",
-                "line": 33,
-                "column": 8,
-                "ruleId": "import(no-cycle)",
-                "message": "Dependency cycle detected"
-              },
-              {
-                "file": "packages/next/src/client/components/sequential-router-queue.ts",
-                "line": 28,
-                "column": 42,
+                "file": "packages/next/src/client/components/segment-cache/fetch.ts",
+                "line": 1,
+                "column": 33,
                 "ruleId": "import(no-cycle)",
                 "message": "Dependency cycle detected"
               },
@@ -420,65 +547,23 @@
                 "message": "Dependency cycle detected"
               },
               {
-                "file": "packages/next/src/client/components/app-router-state.ts",
-                "line": 35,
-                "column": 45,
+                "file": "packages/next/src/client/components/sequential-router-queue.ts",
+                "line": 28,
+                "column": 42,
                 "ruleId": "import(no-cycle)",
                 "message": "Dependency cycle detected"
               },
               {
-                "file": "packages/next/src/client/components/app-router-state.ts",
-                "line": 15,
+                "file": "packages/next/src/client/components/segment-cache/scheduler.ts",
+                "line": 31,
                 "column": 8,
                 "ruleId": "import(no-cycle)",
                 "message": "Dependency cycle detected"
               },
               {
-                "file": "packages/next/src/client/components/app-router-state.ts",
-                "line": 7,
-                "column": 37,
-                "ruleId": "import(no-cycle)",
-                "message": "Dependency cycle detected"
-              },
-              {
-                "file": "packages/next/src/client/components/app-router-state.ts",
-                "line": 43,
-                "column": 8,
-                "ruleId": "import(no-cycle)",
-                "message": "Dependency cycle detected"
-              },
-              {
-                "file": "packages/next/src/client/components/app-router-state.ts",
-                "line": 26,
-                "column": 8,
-                "ruleId": "import(no-cycle)",
-                "message": "Dependency cycle detected"
-              },
-              {
-                "file": "packages/next/src/client/components/app-router-state.ts",
-                "line": 48,
-                "column": 8,
-                "ruleId": "import(no-cycle)",
-                "message": "Dependency cycle detected"
-              },
-              {
-                "file": "packages/next/src/client/components/app-router-state.ts",
-                "line": 27,
-                "column": 36,
-                "ruleId": "import(no-cycle)",
-                "message": "Dependency cycle detected"
-              },
-              {
-                "file": "packages/next/src/client/components/app-router-state.ts",
-                "line": 33,
-                "column": 38,
-                "ruleId": "import(no-cycle)",
-                "message": "Dependency cycle detected"
-              },
-              {
-                "file": "packages/next/src/client/dev/hot-reloader/app/hot-reloader-app.tsx",
-                "line": 20,
-                "column": 34,
+                "file": "packages/next/src/client/components/segment-cache/scheduler.ts",
+                "line": 52,
+                "column": 25,
                 "ruleId": "import(no-cycle)",
                 "message": "Dependency cycle detected"
               },
@@ -490,51 +575,37 @@
                 "message": "Dependency cycle detected"
               },
               {
-                "file": "packages/next/src/build/handle-externals.ts",
-                "line": 12,
-                "column": 8,
+                "file": "packages/next/src/client/components/segment-cache/lru.ts",
+                "line": 1,
+                "column": 32,
                 "ruleId": "import(no-cycle)",
                 "message": "Dependency cycle detected"
               },
               {
-                "file": "packages/next/src/build/webpack-config.ts",
-                "line": 83,
-                "column": 8,
-                "ruleId": "import(no-cycle)",
-                "message": "Dependency cycle detected"
-              },
-              {
-                "file": "packages/next/src/build/webpack-config.ts",
-                "line": 74,
-                "column": 59,
-                "ruleId": "import(no-cycle)",
-                "message": "Dependency cycle detected"
-              },
-              {
-                "file": "packages/next/src/build/webpack-config.ts",
-                "line": 38,
-                "column": 36,
-                "ruleId": "import(no-cycle)",
-                "message": "Dependency cycle detected"
-              },
-              {
-                "file": "packages/next/src/build/webpack/config/index.ts",
-                "line": 7,
-                "column": 24,
-                "ruleId": "import(no-cycle)",
-                "message": "Dependency cycle detected"
-              },
-              {
-                "file": "packages/next/src/build/create-compiler-aliases.ts",
-                "line": 18,
-                "column": 43,
-                "ruleId": "import(no-cycle)",
-                "message": "Dependency cycle detected"
-              },
-              {
-                "file": "packages/next/src/build/webpack/config/blocks/images/index.ts",
+                "file": "packages/next/src/client/components/segment-cache/lru.ts",
                 "line": 3,
-                "column": 38,
+                "column": 39,
+                "ruleId": "import(no-cycle)",
+                "message": "Dependency cycle detected"
+              },
+              {
+                "file": "packages/next/src/client/with-router.tsx",
+                "line": 7,
+                "column": 33,
+                "ruleId": "import(no-cycle)",
+                "message": "Dependency cycle detected"
+              },
+              {
+                "file": "packages/next/src/client/components/segment-cache/navigation-testing-lock.ts",
+                "line": 30,
+                "column": 47,
+                "ruleId": "import(no-cycle)",
+                "message": "Dependency cycle detected"
+              },
+              {
+                "file": "packages/next/src/client/components/segment-cache/navigation-testing-lock.ts",
+                "line": 28,
+                "column": 42,
                 "ruleId": "import(no-cycle)",
                 "message": "Dependency cycle detected"
               },
@@ -581,27 +652,6 @@
                 "message": "Dependency cycle detected"
               },
               {
-                "file": "packages/next/src/next-devtools/dev-overlay/menu/dev-overlay-menu.tsx",
-                "line": 14,
-                "column": 35,
-                "ruleId": "import(no-cycle)",
-                "message": "Dependency cycle detected"
-              },
-              {
-                "file": "packages/next/src/next-devtools/dev-overlay/menu/dev-overlay-menu.tsx",
-                "line": 13,
-                "column": 36,
-                "ruleId": "import(no-cycle)",
-                "message": "Dependency cycle detected"
-              },
-              {
-                "file": "packages/next/src/next-devtools/dev-overlay/menu/dev-overlay-menu.tsx",
-                "line": 16,
-                "column": 33,
-                "ruleId": "import(no-cycle)",
-                "message": "Dependency cycle detected"
-              },
-              {
                 "file": "packages/next/src/next-devtools/dev-overlay/menu/panel-router.tsx",
                 "line": 30,
                 "column": 44,
@@ -630,9 +680,37 @@
                 "message": "Dependency cycle detected"
               },
               {
+                "file": "packages/next/src/next-devtools/dev-overlay/menu/dev-overlay-menu.tsx",
+                "line": 14,
+                "column": 35,
+                "ruleId": "import(no-cycle)",
+                "message": "Dependency cycle detected"
+              },
+              {
+                "file": "packages/next/src/next-devtools/dev-overlay/menu/dev-overlay-menu.tsx",
+                "line": 13,
+                "column": 36,
+                "ruleId": "import(no-cycle)",
+                "message": "Dependency cycle detected"
+              },
+              {
+                "file": "packages/next/src/next-devtools/dev-overlay/menu/dev-overlay-menu.tsx",
+                "line": 16,
+                "column": 33,
+                "ruleId": "import(no-cycle)",
+                "message": "Dependency cycle detected"
+              },
+              {
                 "file": "packages/next/src/next-devtools/dev-overlay/components/overview/segment-explorer.tsx",
                 "line": 17,
                 "column": 35,
+                "ruleId": "import(no-cycle)",
+                "message": "Dependency cycle detected"
+              },
+              {
+                "file": "packages/next/src/next-devtools/dev-overlay/components/overview/segment-suggestion.tsx",
+                "line": 2,
+                "column": 26,
                 "ruleId": "import(no-cycle)",
                 "message": "Dependency cycle detected"
               },
@@ -658,13 +736,6 @@
                 "message": "Dependency cycle detected"
               },
               {
-                "file": "packages/next/src/next-devtools/dev-overlay/components/overview/segment-suggestion.tsx",
-                "line": 2,
-                "column": 26,
-                "ruleId": "import(no-cycle)",
-                "message": "Dependency cycle detected"
-              },
-              {
                 "file": "packages/devlow-bench/src/index.ts",
                 "line": 106,
                 "column": 8,
@@ -674,6 +745,13 @@
               {
                 "file": "packages/devlow-bench/src/index.ts",
                 "line": 107,
+                "column": 30,
+                "ruleId": "import(no-cycle)",
+                "message": "Dependency cycle detected"
+              },
+              {
+                "file": "packages/devlow-bench/src/describe.ts",
+                "line": 8,
                 "column": 30,
                 "ruleId": "import(no-cycle)",
                 "message": "Dependency cycle detected"
@@ -691,20 +769,13 @@
                 "column": 8,
                 "ruleId": "import(no-cycle)",
                 "message": "Dependency cycle detected"
-              },
-              {
-                "file": "packages/devlow-bench/src/describe.ts",
-                "line": 8,
-                "column": 30,
-                "ruleId": "import(no-cycle)",
-                "message": "Dependency cycle detected"
               }
             ]
           },
           "warm": {
-            "ms": 1367,
-            "msMin": 1342,
-            "msMax": 1386,
+            "ms": 994,
+            "msMin": 980,
+            "msMax": 1028,
             "repeats": 5,
             "findingsCount": 91
           }
@@ -713,12 +784,48 @@
       "overlap": {
         "counts": {
           "both": 0,
-          "oursOnly": 0,
+          "oursOnly": 10,
           "theirsOnly": 0
         },
         "samples": {
           "both": [],
-          "oursOnly": [],
+          "oursOnly": [
+            {
+              "file": "packages/next/src/client/with-router.tsx",
+              "line": 7,
+              "column": 1,
+              "ruleId": "import-next/no-cycle",
+              "message": "🏗️ CWE-407 OWASP:A06-Insecure CVSS:5.3 | Circular dependency detected | MEDIUM\n   Fix: Extract shared types to - export type with-routerId, routerId\n- export interface with-routerSummary, routerSummary file | https://en.wikipedia.org/wiki/Dependency_inversion_principle"
+            },
+            {
+              "file": "packages/next/src/client/with-router.tsx",
+              "line": 8,
+              "column": 1,
+              "ruleId": "import-next/no-cycle",
+              "message": "🏗️ CWE-407 OWASP:A06-Insecure CVSS:5.3 | Circular dependency detected | MEDIUM\n   Fix: Extract shared types to - export type with-routerId, routerId\n- export interface with-routerSummary, routerSummary file | https://en.wikipedia.org/wiki/Dependency_inversion_principle"
+            },
+            {
+              "file": "packages/next/src/server/app-render/console-async-storage-instance.ts",
+              "line": 2,
+              "column": 1,
+              "ruleId": "import-next/no-cycle",
+              "message": "🏗️ CWE-407 OWASP:A06-Insecure CVSS:5.3 | Circular dependency detected | MEDIUM\n   Fix: Extract shared types to - export type console-async-storage-instanceId, console-async-storage.externalId\n- export interface console-async-storage-instanceSummary, console-async-storage.externa"
+            },
+            {
+              "file": "packages/next/src/server/app-render/console-async-storage.external.ts",
+              "line": 4,
+              "column": 1,
+              "ruleId": "import-next/no-cycle",
+              "message": "🏗️ CWE-407 OWASP:A06-Insecure CVSS:5.3 | Circular dependency detected | MEDIUM\n   Fix: Extract shared types to - export type console-async-storage.externalId, console-async-storage-instanceId\n- export interface console-async-storage.externalSummary, console-async-storage-instanc"
+            },
+            {
+              "file": "packages/next/src/server/app-render/dynamic-access-async-storage-instance.ts",
+              "line": 2,
+              "column": 1,
+              "ruleId": "import-next/no-cycle",
+              "message": "🏗️ CWE-407 OWASP:A06-Insecure CVSS:5.3 | Circular dependency detected | MEDIUM\n   Fix: Extract shared types to - export type dynamic-access-async-storage-instanceId, dynamic-access-async-storage.externalId\n- export interface dynamic-access-async-storage-instanceSummary, dynamic-"
+            }
+          ],
           "theirsOnly": []
         }
       },
@@ -727,25 +834,25 @@
     {
       "rule": "pg/no-unsafe-query",
       "repo": "supabase",
-      "repoHead": "b108c406",
+      "repoHead": "d439ba57",
       "starsK": 78,
       "tier": "T1",
       "runs": {
         "oursEslint": {
           "cold": {
-            "ms": 47189,
-            "msMin": 46592,
-            "msMax": 54432,
+            "ms": 39624,
+            "msMin": 39292,
+            "msMax": 39803,
             "repeats": 5,
             "exitCode": 1,
-            "filesProcessed": 6653,
+            "filesProcessed": 6814,
             "findingsCount": 0,
             "findings": []
           },
           "warm": {
-            "ms": 1718,
-            "msMin": 1705,
-            "msMax": 1738,
+            "ms": 1330,
+            "msMin": 1324,
+            "msMax": 1357,
             "repeats": 5,
             "exitCode": 1,
             "findingsCount": 0
@@ -761,15 +868,15 @@
             "vulnerable": [
               {
                 "file": "dynamic-column.js",
-                "findings": 1
+                "findings": 0
               },
               {
                 "file": "string-concat.js",
-                "findings": 1
+                "findings": 0
               },
               {
                 "file": "template-literal.js",
-                "findings": 1
+                "findings": 0
               }
             ],
             "safe": [
@@ -788,14 +895,14 @@
             ]
           },
           "confusion": {
-            "tp": 3,
+            "tp": 0,
             "fp": 0,
-            "fn": 0,
+            "fn": 3,
             "tn": 3
           },
-          "precision": 1,
-          "recall": 1,
-          "f1": 1
+          "precision": null,
+          "recall": 0,
+          "f1": null
         },
         "competitor": null
       }
@@ -803,19 +910,19 @@
     {
       "rule": "secure-coding/no-hardcoded-credentials",
       "repo": "vercel-ai",
-      "repoHead": "e21bde7",
+      "repoHead": "6c6c221",
       "starsK": 15,
       "tier": "T2",
       "runs": {
         "oursEslint": {
           "cold": {
-            "ms": 9872,
-            "msMin": 9372,
-            "msMax": 9938,
+            "ms": 7824,
+            "msMin": 7784,
+            "msMax": 7976,
             "repeats": 5,
             "exitCode": 1,
-            "filesProcessed": 2428,
-            "findingsCount": 880,
+            "filesProcessed": 2519,
+            "findingsCount": 903,
             "findings": [
               {
                 "file": "apps/docs/components/recipes/guides.tsx",
@@ -945,36 +1052,64 @@
               },
               {
                 "file": "packages/amazon-bedrock/src/amazon-bedrock-embedding-model.ts",
-                "line": 178,
+                "line": 185,
                 "column": 25,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
+                "file": "packages/amazon-bedrock/src/amazon-bedrock-provider.ts",
+                "line": 300,
+                "column": 9,
+                "ruleId": "secure-coding/no-hardcoded-credentials",
+                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.SERVICE_ENDPOINT_URL_ENVIRONMENT_VARIABLE_NAME or secret management service | https://cwe.mitre.org/data/definitions/798.ht"
+              },
+              {
+                "file": "packages/amazon-bedrock/src/amazon-bedrock-provider.ts",
+                "line": 315,
+                "column": 9,
+                "ruleId": "secure-coding/no-hardcoded-credentials",
+                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.SERVICE_ENDPOINT_URL_ENVIRONMENT_VARIABLE_NAME or secret management service | https://cwe.mitre.org/data/definitions/798.ht"
+              },
+              {
                 "file": "packages/amazon-bedrock/src/anthropic/amazon-bedrock-anthropic-provider.ts",
-                "line": 295,
+                "line": 253,
+                "column": 9,
+                "ruleId": "secure-coding/no-hardcoded-credentials",
+                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.SERVICE_ENDPOINT_URL_ENVIRONMENT_VARIABLE_NAME or secret management service | https://cwe.mitre.org/data/definitions/798.ht"
+              },
+              {
+                "file": "packages/amazon-bedrock/src/anthropic/amazon-bedrock-anthropic-provider.ts",
+                "line": 299,
                 "column": 33,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
-                "file": "packages/anthropic/src/anthropic-api.ts",
-                "line": 296,
-                "column": 15,
+                "file": "packages/amazon-bedrock/src/resolve-amazon-bedrock-base-url.ts",
+                "line": 25,
+                "column": 7,
+                "ruleId": "secure-coding/no-hardcoded-credentials",
+                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
+              },
+              {
+                "file": "packages/amazon-bedrock/src/resolve-amazon-bedrock-base-url.ts",
+                "line": 26,
+                "column": 7,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/anthropic/src/anthropic-api.ts",
-                "line": 304,
-                "column": 9,
+                "line": 300,
+                "column": 15,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/anthropic/src/anthropic-api.ts",
                 "line": 308,
-                "column": 15,
+                "column": 9,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
@@ -994,161 +1129,203 @@
               },
               {
                 "file": "packages/anthropic/src/anthropic-api.ts",
-                "line": 324,
+                "line": 320,
                 "column": 15,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/anthropic/src/anthropic-api.ts",
-                "line": 350,
+                "line": 328,
                 "column": 15,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/anthropic/src/anthropic-api.ts",
-                "line": 836,
+                "line": 354,
+                "column": 15,
+                "ruleId": "secure-coding/no-hardcoded-credentials",
+                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
+              },
+              {
+                "file": "packages/anthropic/src/anthropic-api.ts",
+                "line": 881,
                 "column": 33,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/anthropic/src/anthropic-api.ts",
-                "line": 859,
+                "line": 904,
                 "column": 33,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/anthropic/src/anthropic-api.ts",
-                "line": 866,
+                "line": 911,
                 "column": 29,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/anthropic/src/anthropic-api.ts",
-                "line": 870,
+                "line": 915,
                 "column": 33,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/anthropic/src/anthropic-api.ts",
-                "line": 874,
+                "line": 919,
                 "column": 33,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/anthropic/src/anthropic-api.ts",
-                "line": 882,
+                "line": 927,
                 "column": 33,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/anthropic/src/anthropic-api.ts",
-                "line": 887,
+                "line": 932,
                 "column": 19,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/anthropic/src/anthropic-api.ts",
-                "line": 1199,
+                "line": 1249,
                 "column": 33,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/anthropic/src/anthropic-api.ts",
-                "line": 1222,
+                "line": 1272,
                 "column": 33,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/anthropic/src/anthropic-api.ts",
-                "line": 1229,
+                "line": 1279,
                 "column": 29,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/anthropic/src/anthropic-api.ts",
-                "line": 1233,
+                "line": 1283,
                 "column": 33,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/anthropic/src/anthropic-api.ts",
-                "line": 1237,
+                "line": 1287,
                 "column": 33,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/anthropic/src/anthropic-api.ts",
-                "line": 1245,
+                "line": 1295,
                 "column": 33,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/anthropic/src/anthropic-api.ts",
-                "line": 1250,
+                "line": 1300,
                 "column": 19,
+                "ruleId": "secure-coding/no-hardcoded-credentials",
+                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
+              },
+              {
+                "file": "packages/anthropic/src/anthropic-batch.ts",
+                "line": 118,
+                "column": 3,
+                "ruleId": "secure-coding/no-hardcoded-credentials",
+                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
+              },
+              {
+                "file": "packages/anthropic/src/anthropic-batch.ts",
+                "line": 965,
+                "column": 37,
+                "ruleId": "secure-coding/no-hardcoded-credentials",
+                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
+              },
+              {
+                "file": "packages/anthropic/src/anthropic-batch.ts",
+                "line": 977,
+                "column": 12,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/anthropic/src/anthropic-language-model.ts",
-                "line": 1321,
+                "line": 853,
+                "column": 17,
+                "ruleId": "secure-coding/no-hardcoded-credentials",
+                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
+              },
+              {
+                "file": "packages/anthropic/src/anthropic-language-model.ts",
+                "line": 857,
+                "column": 17,
+                "ruleId": "secure-coding/no-hardcoded-credentials",
+                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
+              },
+              {
+                "file": "packages/anthropic/src/anthropic-language-model.ts",
+                "line": 1408,
                 "column": 44,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/anthropic/src/anthropic-language-model.ts",
-                "line": 1328,
+                "line": 1415,
                 "column": 23,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.TYPE or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/anthropic/src/anthropic-language-model.ts",
-                "line": 1338,
+                "line": 1425,
                 "column": 14,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/anthropic/src/anthropic-language-model.ts",
-                "line": 1624,
+                "line": 1715,
                 "column": 9,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/anthropic/src/anthropic-language-model.ts",
-                "line": 2036,
+                "line": 2131,
                 "column": 43,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/anthropic/src/anthropic-language-model.ts",
-                "line": 2045,
+                "line": 2140,
                 "column": 31,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.TYPE or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/anthropic/src/anthropic-language-model.ts",
-                "line": 2056,
+                "line": 2151,
                 "column": 22,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
@@ -1169,49 +1346,63 @@
               },
               {
                 "file": "packages/anthropic/src/convert-to-anthropic-prompt.ts",
-                "line": 203,
+                "line": 242,
                 "column": 21,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/anthropic/src/convert-to-anthropic-prompt.ts",
-                "line": 205,
-                "column": 23,
-                "ruleId": "secure-coding/no-hardcoded-credentials",
-                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
-              },
-              {
-                "file": "packages/anthropic/src/convert-to-anthropic-prompt.ts",
-                "line": 906,
-                "column": 44,
-                "ruleId": "secure-coding/no-hardcoded-credentials",
-                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
-              },
-              {
-                "file": "packages/anthropic/src/convert-to-anthropic-prompt.ts",
-                "line": 911,
-                "column": 33,
-                "ruleId": "secure-coding/no-hardcoded-credentials",
-                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
-              },
-              {
-                "file": "packages/anthropic/src/convert-to-anthropic-prompt.ts",
-                "line": 922,
-                "column": 33,
-                "ruleId": "secure-coding/no-hardcoded-credentials",
-                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
-              },
-              {
-                "file": "packages/anthropic/src/convert-to-anthropic-prompt.ts",
-                "line": 1025,
+                "line": 255,
                 "column": 25,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/anthropic/src/convert-to-anthropic-prompt.ts",
-                "line": 1047,
+                "line": 258,
+                "column": 25,
+                "ruleId": "secure-coding/no-hardcoded-credentials",
+                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
+              },
+              {
+                "file": "packages/anthropic/src/convert-to-anthropic-prompt.ts",
+                "line": 261,
+                "column": 25,
+                "ruleId": "secure-coding/no-hardcoded-credentials",
+                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
+              },
+              {
+                "file": "packages/anthropic/src/convert-to-anthropic-prompt.ts",
+                "line": 963,
+                "column": 44,
+                "ruleId": "secure-coding/no-hardcoded-credentials",
+                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
+              },
+              {
+                "file": "packages/anthropic/src/convert-to-anthropic-prompt.ts",
+                "line": 968,
+                "column": 33,
+                "ruleId": "secure-coding/no-hardcoded-credentials",
+                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
+              },
+              {
+                "file": "packages/anthropic/src/convert-to-anthropic-prompt.ts",
+                "line": 979,
+                "column": 33,
+                "ruleId": "secure-coding/no-hardcoded-credentials",
+                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
+              },
+              {
+                "file": "packages/anthropic/src/convert-to-anthropic-prompt.ts",
+                "line": 1082,
+                "column": 25,
+                "ruleId": "secure-coding/no-hardcoded-credentials",
+                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
+              },
+              {
+                "file": "packages/anthropic/src/convert-to-anthropic-prompt.ts",
+                "line": 1104,
                 "column": 31,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.TYPE or secret management service | https://cwe.mitre.org/data/definitions/798.html"
@@ -1386,14 +1577,14 @@
               },
               {
                 "file": "packages/bytedance/src/bytedance-video-model.ts",
-                "line": 371,
+                "line": 377,
                 "column": 15,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.NAME or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/bytedance/src/bytedance-video-model.ts",
-                "line": 413,
+                "line": 420,
                 "column": 17,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.NAME or secret management service | https://cwe.mitre.org/data/definitions/798.html"
@@ -1519,7 +1710,7 @@
               },
               {
                 "file": "packages/gateway/src/gateway-image-model.ts",
-                "line": 138,
+                "line": 141,
                 "column": 7,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
@@ -1575,36 +1766,29 @@
               },
               {
                 "file": "packages/google/src/google-batch.ts",
-                "line": 277,
-                "column": 11,
+                "line": 329,
+                "column": 9,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/google/src/google-batch.ts",
-                "line": 278,
-                "column": 11,
-                "ruleId": "secure-coding/no-hardcoded-credentials",
-                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
-              },
-              {
-                "file": "packages/google/src/google-files.ts",
-                "line": 87,
+                "line": 330,
                 "column": 9,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/google/src/google-files.ts",
-                "line": 88,
+                "line": 90,
                 "column": 9,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
-                "file": "packages/google/src/google-language-model-options.ts",
-                "line": 42,
-                "column": 5,
+                "file": "packages/google/src/google-files.ts",
+                "line": 91,
+                "column": 9,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
@@ -1617,21 +1801,28 @@
               },
               {
                 "file": "packages/google/src/google-language-model-options.ts",
-                "line": 106,
+                "line": 44,
+                "column": 5,
+                "ruleId": "secure-coding/no-hardcoded-credentials",
+                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
+              },
+              {
+                "file": "packages/google/src/google-language-model-options.ts",
+                "line": 107,
                 "column": 15,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/google/src/google-language-model-options.ts",
-                "line": 119,
+                "line": 120,
                 "column": 11,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/google/src/google-language-model.ts",
-                "line": 219,
+                "line": 239,
                 "column": 15,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
@@ -1679,6 +1870,20 @@
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
+                "file": "packages/harness-acp/src/acp-harness.ts",
+                "line": 52,
+                "column": 61,
+                "ruleId": "secure-coding/no-hardcoded-credentials",
+                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Secret key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
+              },
+              {
+                "file": "packages/harness-acp/src/v1/bridge/host-tool-mcp-definition.ts",
+                "line": 46,
+                "column": 17,
+                "ruleId": "secure-coding/no-hardcoded-credentials",
+                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.NAME or secret management service | https://cwe.mitre.org/data/definitions/798.html"
+              },
+              {
                 "file": "packages/harness-acp/src/v1/bridge/host-tool-mcp.ts",
                 "line": 19,
                 "column": 9,
@@ -1686,11 +1891,11 @@
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.NAME or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
-                "file": "packages/harness-acp/src/v1/bridge/index.ts",
-                "line": 527,
-                "column": 17,
+                "file": "packages/harness-claude-code/src/claude-code-subscription.ts",
+                "line": 27,
+                "column": 26,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
-                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.NAME or secret management service | https://cwe.mitre.org/data/definitions/798.html"
+                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.CLAUDE_CLIENT_ID or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/harness-deepagents/src/bridge/tool-filtering.ts",
@@ -1701,17 +1906,66 @@
               },
               {
                 "file": "packages/harness-deepagents/src/deepagents-bootstrap.ts",
-                "line": 18,
+                "line": 21,
                 "column": 3,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Secret key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.RIPGREP_SHA256_X64 or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/harness-deepagents/src/deepagents-bootstrap.ts",
-                "line": 20,
+                "line": 23,
                 "column": 3,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Secret key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.RIPGREP_SHA256_ARM or secret management service | https://cwe.mitre.org/data/definitions/798.html"
+              },
+              {
+                "file": "packages/harness-fx/src/fx-subscription.ts",
+                "line": 23,
+                "column": 23,
+                "ruleId": "secure-coding/no-hardcoded-credentials",
+                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.XAI_CLIENT_ID or secret management service | https://cwe.mitre.org/data/definitions/798.html"
+              },
+              {
+                "file": "packages/harness-grok-build/src/grok-build-subscription.ts",
+                "line": 13,
+                "column": 23,
+                "ruleId": "secure-coding/no-hardcoded-credentials",
+                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.XAI_CLIENT_ID or secret management service | https://cwe.mitre.org/data/definitions/798.html"
+              },
+              {
+                "file": "packages/harness-opencode/src/opencode-auth.ts",
+                "line": 13,
+                "column": 3,
+                "ruleId": "secure-coding/no-hardcoded-credentials",
+                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.OPENCODE_SUBSCRIPTION_ACCESS_TOKEN_ENVIRONMENT_VARIABLE or secret management service | https://cwe.mitre.org/data/definitio"
+              },
+              {
+                "file": "packages/harness-opencode/src/opencode-subscription.ts",
+                "line": 27,
+                "column": 23,
+                "ruleId": "secure-coding/no-hardcoded-credentials",
+                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.XAI_CLIENT_ID or secret management service | https://cwe.mitre.org/data/definitions/798.html"
+              },
+              {
+                "file": "packages/harness-opencode/src/opencode-subscription.ts",
+                "line": 29,
+                "column": 3,
+                "ruleId": "secure-coding/no-hardcoded-credentials",
+                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Secret key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.GITLAB_CLIENT_ID or secret management service | https://cwe.mitre.org/data/definitions/798.html"
+              },
+              {
+                "file": "packages/harness-pi/src/pi-auth.ts",
+                "line": 55,
+                "column": 13,
+                "ruleId": "secure-coding/no-hardcoded-credentials",
+                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
+              },
+              {
+                "file": "packages/harness-pi/src/pi-auth.ts",
+                "line": 61,
+                "column": 10,
+                "ruleId": "secure-coding/no-hardcoded-credentials",
+                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/harness/src/bridge/harness-bridge-capability-unsupported-error.ts",
@@ -6699,24 +6953,38 @@
               },
               {
                 "file": "packages/minimax/src/minimax-video-model.ts",
-                "line": 519,
+                "line": 726,
+                "column": 19,
+                "ruleId": "secure-coding/no-hardcoded-credentials",
+                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.NAME or secret management service | https://cwe.mitre.org/data/definitions/798.html"
+              },
+              {
+                "file": "packages/minimax/src/minimax-video-model.ts",
+                "line": 737,
+                "column": 19,
+                "ruleId": "secure-coding/no-hardcoded-credentials",
+                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.NAME or secret management service | https://cwe.mitre.org/data/definitions/798.html"
+              },
+              {
+                "file": "packages/minimax/src/minimax-video-model.ts",
+                "line": 770,
                 "column": 17,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.NAME or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
-                "file": "packages/minimax/src/minimax-video-model.ts",
-                "line": 605,
-                "column": 19,
+                "file": "packages/moonshotai/src/moonshotai-chat-options.test-d.ts",
+                "line": 90,
+                "column": 10,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
-                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.NAME or secret management service | https://cwe.mitre.org/data/definitions/798.html"
+                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Secret key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
-                "file": "packages/minimax/src/minimax-video-model.ts",
-                "line": 612,
-                "column": 19,
+                "file": "packages/moonshotai/src/moonshotai-chat-options.test-d.ts",
+                "line": 110,
+                "column": 10,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
-                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.NAME or secret management service | https://cwe.mitre.org/data/definitions/798.html"
+                "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Secret key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/open-responses/src/open-responses-language-model-options.test-d.ts",
@@ -6748,14 +7016,14 @@
               },
               {
                 "file": "packages/openai/src/responses/openai-responses-language-model-options.ts",
-                "line": 76,
+                "line": 77,
                 "column": 3,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
               },
               {
                 "file": "packages/openai/src/responses/openai-responses-language-model-options.ts",
-                "line": 78,
+                "line": 79,
                 "column": 3,
                 "ruleId": "secure-coding/no-hardcoded-credentials",
                 "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
@@ -6980,23 +7248,23 @@
             ]
           },
           "warm": {
-            "ms": 852,
-            "msMin": 832,
-            "msMax": 888,
+            "ms": 649,
+            "msMin": 645,
+            "msMax": 655,
             "repeats": 5,
             "exitCode": 1,
-            "findingsCount": 880
+            "findingsCount": 903
           }
         },
         "competitorEslint": {
           "cold": {
-            "ms": 11950,
-            "msMin": 11643,
-            "msMax": 12177,
+            "ms": 9633,
+            "msMin": 9584,
+            "msMax": 9831,
             "repeats": 5,
             "exitCode": 1,
-            "filesProcessed": 2428,
-            "findingsCount": 451,
+            "filesProcessed": 2519,
+            "findingsCount": 460,
             "findings": [
               {
                 "file": "apps/docs/components/docs/template-icons.tsx",
@@ -7028,31 +7296,24 @@
               },
               {
                 "file": "packages/ai/src/agent/tool-loop-agent.test-d.ts",
-                "line": 24,
+                "line": 25,
                 "column": 8,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.13 : \"StreamTextOnFinishCallback\""
               },
               {
                 "file": "packages/ai/src/agent/tool-loop-agent.test-d.ts",
-                "line": 24,
+                "line": 25,
                 "column": 8,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.12 : \"ToolLoopAgentOnFinishCallback\""
               },
               {
                 "file": "packages/ai/src/agent/tool-loop-agent.test-d.ts",
-                "line": 38,
+                "line": 39,
                 "column": 8,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.12 : \"ToolLoopAgentOnFinishCallback\""
-              },
-              {
-                "file": "packages/ai/src/batch/batch-types.test-d.ts",
-                "line": 126,
-                "column": 37,
-                "ruleId": "no-secrets/no-secrets",
-                "message": "Found a string with entropy 4.05 : \"experimental_doGetBatchResults\""
               },
               {
                 "file": "packages/ai/src/error/invalid-tool-approval-signature-error.ts",
@@ -7063,14 +7324,14 @@
               },
               {
                 "file": "packages/ai/src/generate-text/stream-language-model-call.ts",
-                "line": 261,
+                "line": 265,
                 "column": 3,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.01 : \"LanguageModelV4Prompt\""
               },
               {
                 "file": "packages/ai/src/generate-text/stream-language-model-call.ts",
-                "line": 263,
+                "line": 267,
                 "column": 3,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.01 : \"LanguageModelV4Prompt\""
@@ -7091,7 +7352,7 @@
               },
               {
                 "file": "packages/ai/src/ui-message-stream/handle-ui-message-stream-finish.ts",
-                "line": 179,
+                "line": 216,
                 "column": 7,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.04 : \"https://developer.mozilla.org/en-US/docs/Web/API/TransformStream#browser_compatibility\""
@@ -7133,14 +7394,14 @@
               },
               {
                 "file": "packages/ai/src/ui/ui-messages.ts",
-                "line": 573,
+                "line": 604,
                 "column": 1,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.01 : \"`isDynamicToolUIPart`\""
               },
               {
                 "file": "packages/ai/src/util/retry-with-exponential-backoff.ts",
-                "line": 59,
+                "line": 60,
                 "column": 1,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.31 : \"`retryWithExponentialBackoffRespectingRetryHeaders`\""
@@ -7168,10 +7429,17 @@
               },
               {
                 "file": "packages/amazon-bedrock/src/amazon-bedrock-embedding-model.ts",
-                "line": 96,
+                "line": 102,
                 "column": 5,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.02 : \"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_InvokeModel.html\""
+              },
+              {
+                "file": "packages/amazon-bedrock/src/amazon-bedrock-provider.ts",
+                "line": 315,
+                "column": 9,
+                "ruleId": "no-secrets/no-secrets",
+                "message": "Found a string with entropy 4.01 : \"AWS_ENDPOINT_URL_BEDROCK_AGENT_RUNTIME\""
               },
               {
                 "file": "packages/amazon-bedrock/src/anthropic/index.ts",
@@ -7196,21 +7464,21 @@
               },
               {
                 "file": "packages/amazon-bedrock/src/index.ts",
-                "line": 7,
+                "line": 10,
                 "column": 3,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.43 : \"`AmazonBedrockLanguageModelChatOptions`\""
               },
               {
                 "file": "packages/amazon-bedrock/src/index.ts",
-                "line": 9,
+                "line": 12,
                 "column": 3,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.43 : \"`AmazonBedrockLanguageModelChatOptions`\""
               },
               {
                 "file": "packages/amazon-bedrock/src/index.ts",
-                "line": 24,
+                "line": 27,
                 "column": 3,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.26 : \"`AmazonBedrockRerankingModelOptions`\""
@@ -7223,22 +7491,29 @@
                 "message": "Found a string with entropy 4.29 : \"`tooluse_bpe71yCfRu2b5i-nKGDr5g`,\n\""
               },
               {
+                "file": "packages/amazon-bedrock/src/resolve-amazon-bedrock-base-url.ts",
+                "line": 26,
+                "column": 7,
+                "ruleId": "no-secrets/no-secrets",
+                "message": "Found a string with entropy 4.01 : \"AWS_ENDPOINT_URL_BEDROCK_AGENT_RUNTIME\""
+              },
+              {
                 "file": "packages/anthropic/src/anthropic-language-model.ts",
-                "line": 426,
+                "line": 468,
                 "column": 9,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.04 : \"anthropic.web_fetch_20250910\""
               },
               {
                 "file": "packages/anthropic/src/anthropic-language-model.ts",
-                "line": 428,
+                "line": 470,
                 "column": 9,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.09 : \"anthropic.tool_search_regex_20251119\""
               },
               {
                 "file": "packages/anthropic/src/anthropic-language-model.ts",
-                "line": 429,
+                "line": 471,
                 "column": 9,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.1 : \"anthropic.tool_search_bm25_20251119\""
@@ -7581,21 +7856,21 @@
               },
               {
                 "file": "packages/google/src/google-language-model-options.ts",
-                "line": 98,
+                "line": 99,
                 "column": 15,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.05 : \"HARM_CATEGORY_UNSPECIFIED\""
               },
               {
                 "file": "packages/google/src/google-language-model-options.ts",
-                "line": 106,
+                "line": 107,
                 "column": 15,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.12 : \"HARM_BLOCK_THRESHOLD_UNSPECIFIED\""
               },
               {
                 "file": "packages/google/src/google-language-model-options.ts",
-                "line": 119,
+                "line": 120,
                 "column": 11,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.12 : \"HARM_BLOCK_THRESHOLD_UNSPECIFIED\""
@@ -7609,56 +7884,56 @@
               },
               {
                 "file": "packages/google/src/index.ts",
-                "line": 65,
+                "line": 71,
                 "column": 3,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.24 : \"`Experimental_GoogleSpeechTranslationModel`\""
               },
               {
                 "file": "packages/google/src/index.ts",
-                "line": 70,
+                "line": 76,
                 "column": 3,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.34 : \"`Experimental_GoogleSpeechTranslationModelConfig`\""
               },
               {
                 "file": "packages/google/src/index.ts",
-                "line": 75,
+                "line": 81,
                 "column": 3,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.31 : \"`Experimental_GoogleSpeechTranslationModelId`\""
               },
               {
                 "file": "packages/google/src/index.ts",
-                "line": 78,
+                "line": 84,
                 "column": 3,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.28 : \"`Experimental_GoogleSpeechTranslationModelOptions`\""
               },
               {
                 "file": "packages/google/src/interactions/build-google-interactions-stream-transform.ts",
-                "line": 113,
+                "line": 122,
                 "column": 1,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.23 : \"`TransformStream<ParseResult<GoogleInteractionsEvent>,\""
               },
               {
                 "file": "packages/google/src/interactions/convert-to-google-interactions-input.ts",
-                "line": 37,
+                "line": 38,
                 "column": 1,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.09 : \"`LanguageModelV4Prompt`\""
               },
               {
                 "file": "packages/google/src/interactions/convert-to-google-interactions-input.ts",
-                "line": 233,
+                "line": 272,
                 "column": 1,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.02 : \"`LanguageModelV4FilePart`\""
               },
               {
                 "file": "packages/google/src/interactions/google-interactions-language-model.ts",
-                "line": 672,
+                "line": 683,
                 "column": 3,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.2 : \"`buildGoogleInteractionsStreamTransform`\""
@@ -7700,70 +7975,84 @@
               },
               {
                 "file": "packages/harness-acp/src/v1/implementation.ts",
-                "line": 262,
+                "line": 270,
                 "column": 10,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.23 : \"pipefail\n\nACP_IMPLEMENTATION_DIR=\"$(cd\""
               },
               {
                 "file": "packages/harness-acp/src/v1/implementation.ts",
-                "line": 262,
+                "line": 270,
                 "column": 10,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.39 : \"pwd)\"\nACP_INSTALL_HOME=\"$ACP_IMPLEMENTATION_DIR/home\"\nexport\""
               },
               {
                 "file": "packages/harness-acp/src/v1/implementation.ts",
-                "line": 262,
+                "line": 270,
                 "column": 10,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.28 : \"HOME=\"$ACP_INSTALL_HOME\"\nexport\""
               },
               {
                 "file": "packages/harness-acp/src/v1/implementation.ts",
-                "line": 262,
+                "line": 270,
                 "column": 10,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.17 : \"PATH=\"$ACP_INSTALL_HOME/.local/bin:$PATH\"\n\nmkdir\""
               },
               {
                 "file": "packages/harness-acp/src/v1/implementation.ts",
-                "line": 262,
+                "line": 270,
                 "column": 10,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.07 : \"\"$ACP_INSTALL_HOME/.local/bin\"\ncd\""
               },
               {
                 "file": "packages/harness-claude-code/src/claude-code-bootstrap.ts",
-                "line": 5,
+                "line": 8,
                 "column": 1,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.19 : \"`sandboxSession.defaultWorkingDirectory`\""
               },
               {
                 "file": "packages/harness-codex/src/codex-bootstrap.ts",
-                "line": 5,
+                "line": 8,
                 "column": 1,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.13 : \"`sandboxSession.defaultWorkingDirectory`\n\""
               },
               {
+                "file": "packages/harness-codex/src/codex-subscription.ts",
+                "line": 435,
+                "column": 18,
+                "ruleId": "no-secrets/no-secrets",
+                "message": "Found a string with entropy 4.03 : \"System.Runtime.InteropServices.ComTypes.FILETIME\""
+              },
+              {
+                "file": "packages/harness-codex/src/codex-subscription.ts",
+                "line": 470,
+                "column": 22,
+                "ruleId": "no-secrets/no-secrets",
+                "message": "Found a string with entropy 4.31 : \"[CodexCredentialManager]::Write($env:AI_SDK_CODEX_CREDENTIAL_TARGET,\""
+              },
+              {
                 "file": "packages/harness-pi/src/pi-workspace-mirror.ts",
-                "line": 176,
+                "line": 192,
                 "column": 5,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.09 : \"pi_config_sources+=(\"$child\")\""
               },
               {
                 "file": "packages/harness-pi/src/pi-workspace-mirror.ts",
-                "line": 177,
+                "line": 193,
                 "column": 5,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.16 : \"pi_config_relatives+=(\"$relative/$child_name\")\""
               },
               {
                 "file": "packages/harness/src/agent/harness-agent-session.ts",
-                "line": 341,
+                "line": 396,
                 "column": 3,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.05 : \"`HarnessCapabilityUnsupportedError`\""
@@ -7797,22 +8086,43 @@
                 "message": "Found a string with entropy 4.11 : \"AI_HarnessSandboxAuthenticationError\""
               },
               {
+                "file": "packages/harness/src/utils/native-subscription/windows-credential-manager.ts",
+                "line": 6,
+                "column": 33,
+                "ruleId": "no-secrets/no-secrets",
+                "message": "Found a string with entropy 4.03 : \"System.Runtime.InteropServices.ComTypes.FILETIME\""
+              },
+              {
+                "file": "packages/harness/src/utils/native-subscription/windows-credential-manager.ts",
+                "line": 46,
+                "column": 9,
+                "ruleId": "no-secrets/no-secrets",
+                "message": "Found a string with entropy 4.04 : \"$env:AI_SDK_WINDOWS_CREDENTIAL_MANAGER_SOURCE;\""
+              },
+              {
+                "file": "packages/harness/src/utils/native-subscription/windows-credential-manager.ts",
+                "line": 46,
+                "column": 9,
+                "ruleId": "no-secrets/no-secrets",
+                "message": "Found a string with entropy 4.21 : \"[AISDKCredentialManager]::Read($env:AI_SDK_WINDOWS_CREDENTIAL_MANAGER_TARGET);\""
+              },
+              {
                 "file": "packages/harness/src/v1/harness-v1-bridge-protocol.ts",
-                "line": 102,
+                "line": 105,
                 "column": 1,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.05 : \"`reasoningEffort`/`webSearch`/`skills`/`resumeThreadId`\""
               },
               {
                 "file": "packages/harness/src/v1/harness-v1-bridge-protocol.ts",
-                "line": 102,
+                "line": 105,
                 "column": 1,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4 : \"`HarnessV1DebugConfig`\""
               },
               {
                 "file": "packages/harness/src/v1/harness-v1-builtin-tool.ts",
-                "line": 4,
+                "line": 5,
                 "column": 1,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.09 : \"`HarnessV1BuiltinToolName`\""
@@ -7854,7 +8164,7 @@
               },
               {
                 "file": "packages/harness/src/v1/harness-v1-stream-part.ts",
-                "line": 14,
+                "line": 15,
                 "column": 1,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.09 : \"`LanguageModelV4ToolApprovalRequest`,\n\""
@@ -9821,7 +10131,7 @@
               },
               {
                 "file": "packages/minimax/src/minimax-video-model.ts",
-                "line": 188,
+                "line": 248,
                 "column": 5,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.14 : \"`convertImageModelFileToDataUri`\""
@@ -9835,10 +10145,17 @@
               },
               {
                 "file": "packages/moonshotai/src/index.ts",
-                "line": 9,
+                "line": 12,
                 "column": 3,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.05 : \"`MoonshotAILanguageModelOptions`\""
+              },
+              {
+                "file": "packages/moonshotai/src/moonshotai-chat-options.test-d.ts",
+                "line": 110,
+                "column": 10,
+                "ruleId": "no-secrets/no-secrets",
+                "message": "Found a string with entropy 4.09 : \"MoonshotAISystemMessageProviderOptions\""
               },
               {
                 "file": "packages/openai-compatible/src/index.ts",
@@ -9891,7 +10208,7 @@
               },
               {
                 "file": "packages/openai/src/responses/openai-responses-language-model.ts",
-                "line": 2474,
+                "line": 2614,
                 "column": 15,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.01 : \"isResponseOutputItemAddedReasoningChunk\""
@@ -9939,6 +10256,13 @@
                 "message": "Found a string with entropy 4.05 : \"`ProdiaImageModelOptions`\""
               },
               {
+                "file": "packages/provider-utils/src/embedding-model-capabilities.ts",
+                "line": 8,
+                "column": 3,
+                "ruleId": "no-secrets/no-secrets",
+                "message": "Found a string with entropy 4.08 : \"vercel.ai.embeddingModel.maxInputBytesPerCall\""
+              },
+              {
                 "file": "packages/provider-utils/src/generate-id.ts",
                 "line": 3,
                 "column": 1,
@@ -9958,6 +10282,13 @@
                 "column": 1,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.07 : \"https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/MIME_types/Common_types\n\""
+              },
+              {
+                "file": "packages/provider-utils/src/response-handler.ts",
+                "line": 330,
+                "column": 1,
+                "ruleId": "no-secrets/no-secrets",
+                "message": "Found a string with entropy 4.04 : \"`ReadableStream<Uint8Array>`\""
               },
               {
                 "file": "packages/provider-utils/src/secure-json-parse.ts",
@@ -10108,35 +10439,35 @@
               },
               {
                 "file": "packages/workflow/src/workflow-agent.ts",
-                "line": 63,
+                "line": 76,
                 "column": 1,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.16 : \"`WorkflowAgentOnStepEndCallback`.\n\""
               },
               {
                 "file": "packages/workflow/src/workflow-agent.ts",
-                "line": 63,
+                "line": 76,
                 "column": 1,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.33 : \"`WorkflowAgentOnStepEndCallback`\""
               },
               {
                 "file": "packages/workflow/src/workflow-agent.ts",
-                "line": 278,
+                "line": 310,
                 "column": 3,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.01 : \"LanguageModelV4Prompt\""
               },
               {
                 "file": "packages/workflow/src/workflow-agent.ts",
-                "line": 678,
+                "line": 738,
                 "column": 1,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.18 : \"`WorkflowAgentOnEndCallback`\""
               },
               {
                 "file": "packages/workflow/src/workflow-agent.ts",
-                "line": 1740,
+                "line": 1905,
                 "column": 7,
                 "ruleId": "no-secrets/no-secrets",
                 "message": "Found a string with entropy 4.08 : \"`convertToLanguageModelPrompt`\""
@@ -10158,20 +10489,20 @@
             ]
           },
           "warm": {
-            "ms": 768,
-            "msMin": 749,
-            "msMax": 784,
+            "ms": 601,
+            "msMin": 590,
+            "msMax": 610,
             "repeats": 5,
             "exitCode": 1,
-            "findingsCount": 451
+            "findingsCount": 460
           }
         }
       },
       "overlap": {
         "counts": {
-          "both": 41,
-          "oursOnly": 839,
-          "theirsOnly": 399
+          "both": 44,
+          "oursOnly": 859,
+          "theirsOnly": 404
         },
         "samples": {
           "both": [
@@ -10181,6 +10512,20 @@
               "column": 14,
               "ruleId": "secure-coding/no-hardcoded-credentials",
               "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.NAME or secret management service | https://cwe.mitre.org/data/definitions/798.html"
+            },
+            {
+              "file": "packages/amazon-bedrock/src/amazon-bedrock-provider.ts",
+              "line": 315,
+              "column": 9,
+              "ruleId": "secure-coding/no-hardcoded-credentials",
+              "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.SERVICE_ENDPOINT_URL_ENVIRONMENT_VARIABLE_NAME or secret management service | https://cwe.mitre.org/data/definitions/798.ht"
+            },
+            {
+              "file": "packages/amazon-bedrock/src/resolve-amazon-bedrock-base-url.ts",
+              "line": 26,
+              "column": 7,
+              "ruleId": "secure-coding/no-hardcoded-credentials",
+              "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
             },
             {
               "file": "packages/deepseek/src/chat/deepseek-chat-language-model-options.test-d.ts",
@@ -10195,20 +10540,6 @@
               "column": 5,
               "ruleId": "secure-coding/no-hardcoded-credentials",
               "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Secret key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.ALPHABET or secret management service | https://cwe.mitre.org/data/definitions/798.html"
-            },
-            {
-              "file": "packages/google/src/google-language-model-options.ts",
-              "line": 106,
-              "column": 15,
-              "ruleId": "secure-coding/no-hardcoded-credentials",
-              "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
-            },
-            {
-              "file": "packages/google/src/google-language-model-options.ts",
-              "line": 119,
-              "column": 11,
-              "ruleId": "secure-coding/no-hardcoded-credentials",
-              "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html"
             }
           ],
           "oursOnly": [
@@ -10279,7 +10610,7 @@
             },
             {
               "file": "packages/ai/src/agent/tool-loop-agent.test-d.ts",
-              "line": 24,
+              "line": 25,
               "column": 8,
               "ruleId": "no-secrets/no-secrets",
               "message": "Found a string with entropy 4.12 : \"ToolLoopAgentOnFinishCallback\""
@@ -10312,6 +10643,14 @@
               {
                 "file": "password-in-config.js",
                 "findings": 1
+              },
+              {
+                "file": "supabase-service-role-in-client.ts",
+                "findings": 0
+              },
+              {
+                "file": "supabase-service-role-in-use-client.ts",
+                "findings": 0
               }
             ],
             "safe": [
@@ -10328,6 +10667,14 @@
                 "findings": 0
               },
               {
+                "file": "supabase-anon-key-in-client.ts",
+                "findings": 0
+              },
+              {
+                "file": "supabase-service-role-server-only.ts",
+                "findings": 0
+              },
+              {
                 "file": "test-placeholder-values.js",
                 "findings": 0
               }
@@ -10336,12 +10683,12 @@
           "confusion": {
             "tp": 5,
             "fp": 1,
-            "fn": 0,
-            "tn": 3
+            "fn": 2,
+            "tn": 5
           },
           "precision": 0.8333333333333334,
-          "recall": 1,
-          "f1": 0.9090909090909091
+          "recall": 0.7142857142857143,
+          "f1": 0.7692307692307692
         },
         "competitor": {
           "corpus": "/home/runner/work/eslint/eslint/benchmarks/corpus/CWE-798",
@@ -10366,6 +10713,14 @@
               {
                 "file": "password-in-config.js",
                 "findings": 0
+              },
+              {
+                "file": "supabase-service-role-in-client.ts",
+                "findings": 0
+              },
+              {
+                "file": "supabase-service-role-in-use-client.ts",
+                "findings": 0
               }
             ],
             "safe": [
@@ -10382,6 +10737,14 @@
                 "findings": 0
               },
               {
+                "file": "supabase-anon-key-in-client.ts",
+                "findings": 0
+              },
+              {
+                "file": "supabase-service-role-server-only.ts",
+                "findings": 0
+              },
+              {
                 "file": "test-placeholder-values.js",
                 "findings": 0
               }
@@ -10390,27 +10753,27 @@
           "confusion": {
             "tp": 4,
             "fp": 0,
-            "fn": 1,
-            "tn": 4
+            "fn": 3,
+            "tn": 6
           },
           "precision": 1,
-          "recall": 0.8,
-          "f1": 0.888888888888889
+          "recall": 0.5714285714285714,
+          "f1": 0.7272727272727273
         }
       }
     },
     {
       "rule": "secure-coding/no-redos-vulnerable-regex",
       "repo": "lodash",
-      "repoHead": "a666ba5",
+      "repoHead": "2b5e6f7",
       "starsK": 60,
       "tier": "T1",
       "runs": {
         "oursEslint": {
           "cold": {
-            "ms": 520,
-            "msMin": 516,
-            "msMax": 527,
+            "ms": 377,
+            "msMin": 374,
+            "msMax": 383,
             "repeats": 5,
             "exitCode": 1,
             "filesProcessed": 12,
@@ -10426,9 +10789,9 @@
             ]
           },
           "warm": {
-            "ms": 406,
-            "msMin": 398,
-            "msMax": 428,
+            "ms": 304,
+            "msMin": 295,
+            "msMax": 306,
             "repeats": 5,
             "exitCode": 1,
             "findingsCount": 1
@@ -10436,9 +10799,9 @@
         },
         "competitorEslint": {
           "cold": {
-            "ms": 539,
-            "msMin": 536,
-            "msMax": 606,
+            "ms": 406,
+            "msMin": 403,
+            "msMax": 442,
             "repeats": 5,
             "exitCode": 0,
             "filesProcessed": 12,
@@ -10446,9 +10809,9 @@
             "findings": []
           },
           "warm": {
-            "ms": 434,
-            "msMin": 418,
-            "msMax": 444,
+            "ms": 321,
+            "msMin": 317,
+            "msMax": 330,
             "repeats": 5,
             "exitCode": 0,
             "findingsCount": 0
@@ -10480,19 +10843,19 @@
     {
       "rule": "mongodb-security/no-unsafe-query",
       "repo": "payload",
-      "repoHead": "05007e8",
+      "repoHead": "877ec0a",
       "starsK": 35,
       "tier": "T2",
       "runs": {
         "oursEslint": {
           "cold": {
-            "ms": 12023,
-            "msMin": 11917,
-            "msMax": 12393,
+            "ms": 9083,
+            "msMin": 8976,
+            "msMax": 9197,
             "repeats": 5,
             "exitCode": 1,
-            "filesProcessed": 3446,
-            "findingsCount": 246,
+            "filesProcessed": 3508,
+            "findingsCount": 252,
             "findings": [
               {
                 "file": "packages/db-mongodb/src/predefinedMigrations/migrateLocalizeStatus.ts",
@@ -10971,6 +11334,13 @@
                 "message": "🔒 CWE-943 OWASP:A03-Injection CVSS:9.8 | User input \"req\" is used directly in MongoDB query. Attackers can inject operators like { $ne: null } to bypass authentication. | CRITICAL\n   Fix: Wrap user input with explicit $eq operator: { field: { $eq: sanitize(value) } } | https://o"
               },
               {
+                "file": "packages/payload/src/cli/commands/collections/findDocuments.ts",
+                "line": 34,
+                "column": 13,
+                "ruleId": "mongodb-security/no-unsafe-query",
+                "message": "🔒 CWE-943 OWASP:A03-Injection CVSS:9.8 | User input \"collection\" is used directly in MongoDB query. Attackers can inject operators like { $ne: null } to bypass authentication. | CRITICAL\n   Fix: Wrap user input with explicit $eq operator: { field: { $eq: sanitize(value) } } | ht"
+              },
+              {
                 "file": "packages/payload/src/collections/dataloader.ts",
                 "line": 114,
                 "column": 9,
@@ -11035,28 +11405,35 @@
               },
               {
                 "file": "packages/payload/src/collections/operations/delete.ts",
-                "line": 144,
+                "line": 151,
                 "column": 7,
                 "ruleId": "mongodb-security/no-unsafe-query",
                 "message": "🔒 CWE-943 OWASP:A03-Injection CVSS:9.8 | User input \"req\" is used directly in MongoDB query. Attackers can inject operators like { $ne: null } to bypass authentication. | CRITICAL\n   Fix: Wrap user input with explicit $eq operator: { field: { $eq: sanitize(value) } } | https://o"
               },
               {
                 "file": "packages/payload/src/collections/operations/delete.ts",
-                "line": 145,
+                "line": 152,
                 "column": 7,
                 "ruleId": "mongodb-security/no-unsafe-query",
                 "message": "🔒 CWE-943 OWASP:A03-Injection CVSS:9.8 | User input \"select\" is used directly in MongoDB query. Attackers can inject operators like { $ne: null } to bypass authentication. | CRITICAL\n   Fix: Wrap user input with explicit $eq operator: { field: { $eq: sanitize(value) } } | https:"
               },
               {
                 "file": "packages/payload/src/collections/operations/delete.ts",
-                "line": 146,
+                "line": 153,
                 "column": 7,
                 "ruleId": "mongodb-security/no-unsafe-query",
                 "message": "🔒 CWE-943 OWASP:A03-Injection CVSS:9.8 | User input \"fullWhere\" is used directly in MongoDB query. Attackers can inject operators like { $ne: null } to bypass authentication. | CRITICAL\n   Fix: Wrap user input with explicit $eq operator: { field: { $eq: sanitize(value) } } | htt"
               },
               {
                 "file": "packages/payload/src/collections/operations/delete.ts",
-                "line": 229,
+                "line": 290,
+                "column": 11,
+                "ruleId": "mongodb-security/no-unsafe-query",
+                "message": "🔒 CWE-943 OWASP:A03-Injection CVSS:9.8 | User input \"req\" is used directly in MongoDB query. Attackers can inject operators like { $ne: null } to bypass authentication. | CRITICAL\n   Fix: Wrap user input with explicit $eq operator: { field: { $eq: sanitize(value) } } | https://o"
+              },
+              {
+                "file": "packages/payload/src/collections/operations/delete.ts",
+                "line": 405,
                 "column": 11,
                 "ruleId": "mongodb-security/no-unsafe-query",
                 "message": "🔒 CWE-943 OWASP:A03-Injection CVSS:9.8 | User input \"req\" is used directly in MongoDB query. Attackers can inject operators like { $ne: null } to bypass authentication. | CRITICAL\n   Fix: Wrap user input with explicit $eq operator: { field: { $eq: sanitize(value) } } | https://o"
@@ -11315,21 +11692,21 @@
               },
               {
                 "file": "packages/payload/src/fields/validations.ts",
-                "line": 709,
+                "line": 713,
                 "column": 13,
                 "ruleId": "mongodb-security/no-unsafe-query",
                 "message": "🔒 CWE-943 OWASP:A03-Injection CVSS:9.8 | User input \"collection\" is used directly in MongoDB query. Attackers can inject operators like { $ne: null } to bypass authentication. | CRITICAL\n   Fix: Wrap user input with explicit $eq operator: { field: { $eq: sanitize(value) } } | ht"
               },
               {
                 "file": "packages/payload/src/fields/validations.ts",
-                "line": 713,
+                "line": 717,
                 "column": 13,
                 "ruleId": "mongodb-security/no-unsafe-query",
                 "message": "🔒 CWE-943 OWASP:A03-Injection CVSS:9.8 | User input \"req\" is used directly in MongoDB query. Attackers can inject operators like { $ne: null } to bypass authentication. | CRITICAL\n   Fix: Wrap user input with explicit $eq operator: { field: { $eq: sanitize(value) } } | https://o"
               },
               {
                 "file": "packages/payload/src/fields/validations.ts",
-                "line": 714,
+                "line": 718,
                 "column": 13,
                 "ruleId": "mongodb-security/no-unsafe-query",
                 "message": "🔒 CWE-943 OWASP:A03-Injection CVSS:9.8 | User input \"findWhere\" is used directly in MongoDB query. Attackers can inject operators like { $ne: null } to bypass authentication. | CRITICAL\n   Fix: Wrap user input with explicit $eq operator: { field: { $eq: sanitize(value) } } | htt"
@@ -11608,22 +11985,50 @@
                 "message": "🔒 CWE-943 OWASP:A03-Injection CVSS:9.8 | User input \"lockedDocumentQuery\" is used directly in MongoDB query. Attackers can inject operators like { $ne: null } to bypass authentication. | CRITICAL\n   Fix: Wrap user input with explicit $eq operator: { field: { $eq: sanitize(value)"
               },
               {
+                "file": "packages/payload/src/utilities/checkDocumentLockStatus.ts",
+                "line": 153,
+                "column": 5,
+                "ruleId": "mongodb-security/no-unsafe-query",
+                "message": "🔒 CWE-943 OWASP:A03-Injection CVSS:9.8 | User input \"lockedDocumentsCollectionSlug\" is used directly in MongoDB query. Attackers can inject operators like { $ne: null } to bypass authentication. | CRITICAL\n   Fix: Wrap user input with explicit $eq operator: { field: { $eq: sanit"
+              },
+              {
+                "file": "packages/payload/src/utilities/checkDocumentLockStatus.ts",
+                "line": 207,
+                "column": 5,
+                "ruleId": "mongodb-security/no-unsafe-query",
+                "message": "🔒 CWE-943 OWASP:A03-Injection CVSS:9.8 | User input \"lockedDocumentsCollectionSlug\" is used directly in MongoDB query. Attackers can inject operators like { $ne: null } to bypass authentication. | CRITICAL\n   Fix: Wrap user input with explicit $eq operator: { field: { $eq: sanit"
+              },
+              {
                 "file": "packages/payload/src/utilities/fieldValueExists.ts",
-                "line": 39,
+                "line": 46,
                 "column": 5,
                 "ruleId": "mongodb-security/no-unsafe-query",
                 "message": "🔒 CWE-943 OWASP:A03-Injection CVSS:9.8 | User input \"collection\" is used directly in MongoDB query. Attackers can inject operators like { $ne: null } to bypass authentication. | CRITICAL\n   Fix: Wrap user input with explicit $eq operator: { field: { $eq: sanitize(value) } } | ht"
               },
               {
+                "file": "packages/payload/src/utilities/fieldValueExists.ts",
+                "line": 52,
+                "column": 5,
+                "ruleId": "mongodb-security/no-unsafe-query",
+                "message": "🔒 CWE-943 OWASP:A03-Injection CVSS:9.8 | User input \"overrideAccess\" is used directly in MongoDB query. Attackers can inject operators like { $ne: null } to bypass authentication. | CRITICAL\n   Fix: Wrap user input with explicit $eq operator: { field: { $eq: sanitize(value) } } "
+              },
+              {
+                "file": "packages/payload/src/utilities/fieldValueExists.ts",
+                "line": 54,
+                "column": 5,
+                "ruleId": "mongodb-security/no-unsafe-query",
+                "message": "🔒 CWE-943 OWASP:A03-Injection CVSS:9.8 | User input \"queryReq\" is used directly in MongoDB query. Attackers can inject operators like { $ne: null } to bypass authentication. | CRITICAL\n   Fix: Wrap user input with explicit $eq operator: { field: { $eq: sanitize(value) } } | http"
+              },
+              {
                 "file": "packages/payload/src/versions/deleteScheduledPublishJobs.ts",
-                "line": 21,
+                "line": 26,
                 "column": 7,
                 "ruleId": "mongodb-security/no-unsafe-query",
                 "message": "🔒 CWE-943 OWASP:A03-Injection CVSS:9.8 | User input \"jobsCollectionSlug\" is used directly in MongoDB query. Attackers can inject operators like { $ne: null } to bypass authentication. | CRITICAL\n   Fix: Wrap user input with explicit $eq operator: { field: { $eq: sanitize(value) "
               },
               {
                 "file": "packages/payload/src/versions/deleteScheduledPublishJobs.ts",
-                "line": 22,
+                "line": 27,
                 "column": 7,
                 "ruleId": "mongodb-security/no-unsafe-query",
                 "message": "🔒 CWE-943 OWASP:A03-Injection CVSS:9.8 | User input \"req\" is used directly in MongoDB query. Attackers can inject operators like { $ne: null } to bypass authentication. | CRITICAL\n   Fix: Wrap user input with explicit $eq operator: { field: { $eq: sanitize(value) } } | https://o"
@@ -12219,12 +12624,12 @@
             ]
           },
           "warm": {
-            "ms": 975,
-            "msMin": 951,
-            "msMax": 998,
+            "ms": 747,
+            "msMin": 741,
+            "msMax": 764,
             "repeats": 5,
             "exitCode": 1,
-            "findingsCount": 246
+            "findingsCount": 252
           }
         }
       },
@@ -12234,25 +12639,25 @@
     {
       "rule": "jwt/no-algorithm-none",
       "repo": "supabase",
-      "repoHead": "b108c406",
+      "repoHead": "d439ba57",
       "starsK": 78,
       "tier": "T1",
       "runs": {
         "oursEslint": {
           "cold": {
-            "ms": 43670,
-            "msMin": 42567,
-            "msMax": 44458,
+            "ms": 38536,
+            "msMin": 37930,
+            "msMax": 39054,
             "repeats": 5,
             "exitCode": 1,
-            "filesProcessed": 6653,
+            "filesProcessed": 6814,
             "findingsCount": 0,
             "findings": []
           },
           "warm": {
-            "ms": 1767,
-            "msMin": 1707,
-            "msMax": 1935,
+            "ms": 1354,
+            "msMin": 1319,
+            "msMax": 1379,
             "repeats": 5,
             "exitCode": 1,
             "findingsCount": 0
@@ -12265,18 +12670,18 @@
     {
       "rule": "browser-security/no-postmessage-wildcard-origin",
       "repo": "next.js",
-      "repoHead": "362b1efe",
+      "repoHead": "b421cade",
       "starsK": 131,
       "tier": "T1",
       "runs": {
         "oursEslint": {
           "cold": {
-            "ms": 55918,
-            "msMin": 54734,
-            "msMax": 57308,
+            "ms": 45999,
+            "msMin": 45361,
+            "msMax": 46515,
             "repeats": 5,
             "exitCode": 1,
-            "filesProcessed": 3169,
+            "filesProcessed": 3202,
             "findingsCount": 2,
             "findings": [
               {
@@ -12296,9 +12701,9 @@
             ]
           },
           "warm": {
-            "ms": 887,
-            "msMin": 879,
-            "msMax": 922,
+            "ms": 708,
+            "msMin": 691,
+            "msMax": 718,
             "repeats": 5,
             "exitCode": 1,
             "findingsCount": 2
@@ -12311,40 +12716,131 @@
     {
       "rule": "react-features/hooks-exhaustive-deps",
       "repo": "next.js",
-      "repoHead": "362b1efe",
+      "repoHead": "b421cade",
       "starsK": 131,
       "tier": "T1",
       "runs": {
         "oursEslint": {
           "cold": {
-            "ms": 54639,
-            "msMin": 53922,
-            "msMax": 55642,
+            "ms": 47584,
+            "msMin": 47425,
+            "msMax": 48896,
             "repeats": 5,
             "exitCode": 1,
-            "filesProcessed": 3169,
-            "findingsCount": 127,
+            "filesProcessed": 3202,
+            "findingsCount": 149,
             "findings": [
               {
                 "file": "apps/bundle-analyzer/app/page.tsx",
-                "line": 115,
+                "line": 188,
+                "column": 6,
+                "ruleId": "react-features/hooks-exhaustive-deps",
+                "message": "⚠️ React Hook useEffect has unnecessary dependency: selectedRoute | MEDIUM\n   Fix: Remove the unnecessary dependency from the array - it never changes or is not used in the effect | https://react.dev/reference/react/useEffect#removing-unnecessary-dependencies"
+              },
+              {
+                "file": "apps/bundle-analyzer/app/page.tsx",
+                "line": 188,
+                "column": 6,
+                "ruleId": "react-features/hooks-exhaustive-deps",
+                "message": "⚠️ React Hook useEffect has unnecessary dependency: baselineSnapshot | MEDIUM\n   Fix: Remove the unnecessary dependency from the array - it never changes or is not used in the effect | https://react.dev/reference/react/useEffect#removing-unnecessary-dependencies"
+              },
+              {
+                "file": "apps/bundle-analyzer/app/page.tsx",
+                "line": 188,
+                "column": 6,
+                "ruleId": "react-features/hooks-exhaustive-deps",
+                "message": "⚠️ React Hook useEffect has unnecessary dependency: comparisonSnapshot | MEDIUM\n   Fix: Remove the unnecessary dependency from the array - it never changes or is not used in the effect | https://react.dev/reference/react/useEffect#removing-unnecessary-dependencies"
+              },
+              {
+                "file": "apps/bundle-analyzer/app/page.tsx",
+                "line": 209,
                 "column": 6,
                 "ruleId": "react-features/hooks-exhaustive-deps",
                 "message": "⚠️ React Hook useEffect has missing dependencies: e, getRootSourceIndex | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
               },
               {
                 "file": "apps/bundle-analyzer/app/page.tsx",
-                "line": 123,
+                "line": 217,
                 "column": 6,
                 "ruleId": "react-features/hooks-exhaustive-deps",
                 "message": "⚠️ React Hook useMemo has missing dependencies: computeActiveEntries, computeModuleDepthMap | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
               },
               {
                 "file": "apps/bundle-analyzer/app/page.tsx",
-                "line": 145,
+                "line": 229,
+                "column": 6,
+                "ruleId": "react-features/hooks-exhaustive-deps",
+                "message": "⚠️ React Hook useMemo has missing dependencies: computeActiveEntries, computeModuleDepthMap | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
+              },
+              {
+                "file": "apps/bundle-analyzer/app/page.tsx",
+                "line": 251,
                 "column": 6,
                 "ruleId": "react-features/hooks-exhaustive-deps",
                 "message": "⚠️ React Hook useMemo has missing dependencies: sourceIndex | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
+              },
+              {
+                "file": "apps/bundle-analyzer/app/page.tsx",
+                "line": 271,
+                "column": 6,
+                "ruleId": "react-features/hooks-exhaustive-deps",
+                "message": "⚠️ React Hook useMemo has missing dependencies: side, sourceIndex | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
+              },
+              {
+                "file": "apps/bundle-analyzer/app/page.tsx",
+                "line": 305,
+                "column": 6,
+                "ruleId": "react-features/hooks-exhaustive-deps",
+                "message": "⚠️ React Hook useMemo has missing dependencies: diffSources, filterSource, side, index | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
+              },
+              {
+                "file": "apps/bundle-analyzer/app/page.tsx",
+                "line": 317,
+                "column": 6,
+                "ruleId": "react-features/hooks-exhaustive-deps",
+                "message": "⚠️ React Hook useMemo has missing dependencies: diffSources, index | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
+              },
+              {
+                "file": "apps/bundle-analyzer/app/page.tsx",
+                "line": 343,
+                "column": 6,
+                "ruleId": "react-features/hooks-exhaustive-deps",
+                "message": "⚠️ React Hook useMemo has missing dependencies: diffRoutesWithSizes | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
+              },
+              {
+                "file": "apps/bundle-analyzer/components/diff-table.tsx",
+                "line": 130,
+                "column": 6,
+                "ruleId": "react-features/hooks-exhaustive-deps",
+                "message": "⚠️ React Hook useMemo has missing dependencies: sortByImpact, summary, sortRows | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
+              },
+              {
+                "file": "apps/bundle-analyzer/components/diff-table.tsx",
+                "line": 154,
+                "column": 6,
+                "ruleId": "react-features/hooks-exhaustive-deps",
+                "message": "⚠️ React Hook useMemo has missing dependencies: row | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
+              },
+              {
+                "file": "apps/bundle-analyzer/components/diff-table.tsx",
+                "line": 163,
+                "column": 5,
+                "ruleId": "react-features/hooks-exhaustive-deps",
+                "message": "⚠️ React Hook useMemo has missing dependencies: buildRenderItems | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
+              },
+              {
+                "file": "apps/bundle-analyzer/components/diff-treemap.tsx",
+                "line": 118,
+                "column": 6,
+                "ruleId": "react-features/hooks-exhaustive-deps",
+                "message": "⚠️ React Hook useMemo has missing dependencies: node, colorForRow | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
+              },
+              {
+                "file": "apps/bundle-analyzer/components/diff-treemap.tsx",
+                "line": 130,
+                "column": 6,
+                "ruleId": "react-features/hooks-exhaustive-deps",
+                "message": "⚠️ React Hook useMemo has missing dependencies: node, formatDelta, delta | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
               },
               {
                 "file": "apps/bundle-analyzer/components/file-search.tsx",
@@ -12355,38 +12851,73 @@
               },
               {
                 "file": "apps/bundle-analyzer/components/import-chain.tsx",
-                "line": 316,
+                "line": 335,
                 "column": 6,
                 "ruleId": "react-features/hooks-exhaustive-deps",
-                "message": "⚠️ React Hook useMemo has missing dependencies: getModuleIndicesFromSourceIndex, moduleIndex, splitIdent, path, depth, selectedIndex, totalCount, index, async, traced, isFinite, getSourceIndexFromModuleIndex, isAsync, isTraced, a, b, info | HIGH\n   Fix: Add missing dependencies t"
+                "message": "⚠️ React Hook useMemo has missing dependencies: buildImportChain | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
               },
               {
                 "file": "apps/bundle-analyzer/components/route-typeahead.tsx",
-                "line": 59,
+                "line": 77,
                 "column": 6,
                 "ruleId": "react-features/hooks-exhaustive-deps",
                 "message": "⚠️ React Hook useEffect has missing dependencies: e | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
               },
               {
+                "file": "apps/bundle-analyzer/components/route-typeahead.tsx",
+                "line": 104,
+                "column": 6,
+                "ruleId": "react-features/hooks-exhaustive-deps",
+                "message": "⚠️ React Hook useMemo has missing dependencies: sortByImpact, name, row | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
+              },
+              {
+                "file": "apps/bundle-analyzer/components/route-typeahead.tsx",
+                "line": 111,
+                "column": 6,
+                "ruleId": "react-features/hooks-exhaustive-deps",
+                "message": "⚠️ React Hook useMemo has missing dependencies: r | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
+              },
+              {
+                "file": "apps/bundle-analyzer/components/sidebar.tsx",
+                "line": 253,
+                "column": 6,
+                "ruleId": "react-features/hooks-exhaustive-deps",
+                "message": "⚠️ React Hook useMemo has missing dependencies: r | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
+              },
+              {
                 "file": "apps/bundle-analyzer/components/treemap-visualizer.tsx",
-                "line": 813,
+                "line": 839,
                 "column": 6,
                 "ruleId": "react-features/hooks-exhaustive-deps",
                 "message": "⚠️ React Hook useEffect has missing dependencies: dimensions, cssWidth, cssHeight, canvasWidth, canvasHeight | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactiv"
               },
               {
                 "file": "apps/bundle-analyzer/components/treemap-visualizer.tsx",
-                "line": 843,
+                "line": 869,
                 "column": 6,
                 "ruleId": "react-features/hooks-exhaustive-deps",
                 "message": "⚠️ React Hook useMemo has missing dependencies: computeTreemapLayoutFromAnalyze, x, y, width, dimensions, height, wrapLayoutWithAncestorsUsingIndices | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/ref"
               },
               {
                 "file": "apps/bundle-analyzer/components/treemap-visualizer.tsx",
-                "line": 877,
+                "line": 905,
                 "column": 6,
                 "ruleId": "react-features/hooks-exhaustive-deps",
                 "message": "⚠️ React Hook useLayoutEffect has missing dependencies: dimensions, drawTreemap | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
+              },
+              {
+                "file": "apps/bundle-analyzer/lib/use-route-totals.ts",
+                "line": 78,
+                "column": 6,
+                "ruleId": "react-features/hooks-exhaustive-deps",
+                "message": "⚠️ React Hook useEffect has missing dependencies: isLoading, prev, fetchStrict, analyzeDataUrl, route, totalsFromAnalyzeData, const, results | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/re"
+              },
+              {
+                "file": "apps/bundle-analyzer/lib/use-sidebar-resize.ts",
+                "line": 31,
+                "column": 6,
+                "ruleId": "react-features/hooks-exhaustive-deps",
+                "message": "⚠️ React Hook useEffect has missing dependencies: event | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
               },
               {
                 "file": "packages/next/src/client/app-dir/form.tsx",
@@ -12529,8 +13060,22 @@
                 "message": "⚠️ React Hook useMemo has missing dependencies: promisesWithDebugInfo, asyncState, isThenable | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
               },
               {
+                "file": "packages/next/src/client/dev/hot-reloader/app/hot-reloader-app.tsx",
+                "line": 625,
+                "column": 8,
+                "ruleId": "react-features/hooks-exhaustive-deps",
+                "message": "⚠️ React Hook useEffect has missing dependencies: require | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
+              },
+              {
+                "file": "packages/next/src/client/dev/hot-reloader/app/hot-reloader-app.tsx",
+                "line": 625,
+                "column": 8,
+                "ruleId": "react-features/hooks-exhaustive-deps",
+                "message": "⚠️ React Hook useEffect has unnecessary dependency: pathname | MEDIUM\n   Fix: Remove the unnecessary dependency from the array - it never changes or is not used in the effect | https://react.dev/reference/react/useEffect#removing-unnecessary-dependencies"
+              },
+              {
                 "file": "packages/next/src/client/dev/hot-reloader/app/web-socket.ts",
-                "line": 239,
+                "line": 250,
                 "column": 6,
                 "ruleId": "react-features/hooks-exhaustive-deps",
                 "message": "⚠️ React Hook useEffect has missing dependencies: process, event, appDirRoute | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
@@ -12649,24 +13194,31 @@
               },
               {
                 "file": "packages/next/src/client/web-vitals.ts",
-                "line": 22,
+                "line": 20,
                 "column": 6,
                 "ruleId": "react-features/hooks-exhaustive-deps",
-                "message": "⚠️ React Hook useEffect has missing dependencies: onCLS, onFID, onLCP, onINP, onFCP, onTTFB | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
+                "message": "⚠️ React Hook useEffect has missing dependencies: onCLS, reportSoftNavs, onLCP, onINP, onFCP, onTTFB | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-depend"
               },
               {
                 "file": "packages/next/src/next-devtools/dev-overlay.browser.tsx",
-                "line": 280,
+                "line": 349,
                 "column": 6,
                 "ruleId": "react-features/hooks-exhaustive-deps",
                 "message": "⚠️ React Hook useEffect has missing dependencies: currentOverlayState | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
               },
               {
                 "file": "packages/next/src/next-devtools/dev-overlay.browser.tsx",
-                "line": 294,
+                "line": 363,
                 "column": 6,
                 "ruleId": "react-features/hooks-exhaustive-deps",
                 "message": "⚠️ React Hook useLayoutEffect has missing dependencies: state | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
+              },
+              {
+                "file": "packages/next/src/next-devtools/dev-overlay.browser.tsx",
+                "line": 420,
+                "column": 6,
+                "ruleId": "react-features/hooks-exhaustive-deps",
+                "message": "⚠️ React Hook useEffect has missing dependencies: serializeRuntimeErrorState, runtimeErrorStateListeners | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-de"
               },
               {
                 "file": "packages/next/src/next-devtools/dev-overlay/components/code-frame/code-frame.tsx",
@@ -12754,14 +13306,14 @@
               },
               {
                 "file": "packages/next/src/next-devtools/dev-overlay/components/errors/dev-tools-indicator/draggable.tsx",
-                "line": 209,
+                "line": 216,
                 "column": 6,
                 "ruleId": "react-features/hooks-exhaustive-deps",
-                "message": "⚠️ React Hook useCallback has missing dependencies: ref, machine, state, cleanup, velocities | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
+                "message": "⚠️ React Hook useCallback has missing dependencies: machine, ref, state, cleanup, velocities | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
               },
               {
                 "file": "packages/next/src/next-devtools/dev-overlay/components/errors/dev-tools-indicator/draggable.tsx",
-                "line": 215,
+                "line": 222,
                 "column": 6,
                 "ruleId": "react-features/hooks-exhaustive-deps",
                 "message": "⚠️ React Hook useLayoutEffect has missing dependencies: options | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
@@ -13062,14 +13614,21 @@
               },
               {
                 "file": "packages/next/src/next-devtools/dev-overlay/container/runtime-error/render-error.tsx",
-                "line": 77,
+                "line": 98,
                 "column": 6,
                 "ruleId": "react-features/hooks-exhaustive-deps",
-                "message": "⚠️ React Hook useEffect has missing dependencies: getErrorByType, m | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
+                "message": "⚠️ React Hook useMemo has missing dependencies: type | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
               },
               {
                 "file": "packages/next/src/next-devtools/dev-overlay/container/runtime-error/render-error.tsx",
-                "line": 82,
+                "line": 114,
+                "column": 6,
+                "ruleId": "react-features/hooks-exhaustive-deps",
+                "message": "⚠️ React Hook useEffect has missing dependencies: getErrorByType, m, event | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
+              },
+              {
+                "file": "packages/next/src/next-devtools/dev-overlay/container/runtime-error/render-error.tsx",
+                "line": 119,
                 "column": 5,
                 "ruleId": "react-features/hooks-exhaustive-deps",
                 "message": "⚠️ React Hook useMemo has missing dependencies: isInstantNavigationError, e | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
@@ -13153,7 +13712,7 @@
               },
               {
                 "file": "packages/next/src/next-devtools/userspace/app/errors/use-error-handler.ts",
-                "line": 84,
+                "line": 105,
                 "column": 6,
                 "ruleId": "react-features/hooks-exhaustive-deps",
                 "message": "⚠️ React Hook useEffect has missing dependencies: errorQueue, rejectionQueue, errorHandlers, rejectionHandlers | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-react"
@@ -13217,34 +13776,34 @@
             ]
           },
           "warm": {
-            "ms": 906,
-            "msMin": 889,
-            "msMax": 915,
+            "ms": 712,
+            "msMin": 708,
+            "msMax": 717,
             "repeats": 5,
             "exitCode": 1,
-            "findingsCount": 127
+            "findingsCount": 149
           }
         },
         "competitorEslint": {
           "cold": {
-            "ms": 57296,
-            "msMin": 56348,
-            "msMax": 58412,
+            "ms": 47042,
+            "msMin": 45874,
+            "msMax": 47915,
             "repeats": 5,
             "exitCode": 1,
-            "filesProcessed": 3169,
+            "filesProcessed": 3202,
             "findingsCount": 53,
             "findings": [
               {
                 "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server-legacy.browser.development.js",
-                "line": 10667,
+                "line": 10671,
                 "column": 14,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
               },
               {
                 "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server-legacy.browser.development.js",
-                "line": 10667,
+                "line": 10671,
                 "column": 14,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array."
@@ -13265,14 +13824,14 @@
               },
               {
                 "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server-legacy.node.development.js",
-                "line": 10667,
+                "line": 10671,
                 "column": 14,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
               },
               {
                 "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server-legacy.node.development.js",
-                "line": 10667,
+                "line": 10671,
                 "column": 14,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array."
@@ -13293,112 +13852,112 @@
               },
               {
                 "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server.browser.development.js",
-                "line": 11290,
+                "line": 11305,
                 "column": 14,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
               },
               {
                 "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server.browser.development.js",
-                "line": 11290,
+                "line": 11305,
                 "column": 14,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array."
               },
               {
                 "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server.browser.production.js",
-                "line": 4083,
+                "line": 4091,
                 "column": 10,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
               },
               {
                 "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server.browser.production.js",
-                "line": 4083,
+                "line": 4091,
                 "column": 10,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array."
               },
               {
                 "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server.bun.production.js",
-                "line": 3707,
+                "line": 3713,
                 "column": 10,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
               },
               {
                 "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server.bun.production.js",
-                "line": 3707,
+                "line": 3713,
                 "column": 10,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array."
               },
               {
                 "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server.edge.development.js",
-                "line": 11315,
+                "line": 11330,
                 "column": 14,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
               },
               {
                 "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server.edge.development.js",
-                "line": 11315,
+                "line": 11330,
                 "column": 14,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array."
               },
               {
                 "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server.edge.production.js",
-                "line": 4127,
+                "line": 4135,
                 "column": 10,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
               },
               {
                 "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server.edge.production.js",
-                "line": 4127,
+                "line": 4135,
                 "column": 10,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array."
               },
               {
                 "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server.node.development.js",
-                "line": 11279,
+                "line": 11294,
                 "column": 14,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
               },
               {
                 "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server.node.development.js",
-                "line": 11279,
+                "line": 11294,
                 "column": 14,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array."
               },
               {
                 "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server.node.production.js",
-                "line": 4015,
+                "line": 4023,
                 "column": 10,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
               },
               {
                 "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server.node.production.js",
-                "line": 4015,
+                "line": 4023,
                 "column": 10,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array."
               },
               {
                 "file": "packages/next/src/compiled/react-dom/cjs/react-dom-server-legacy.browser.development.js",
-                "line": 10280,
+                "line": 10284,
                 "column": 14,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
               },
               {
                 "file": "packages/next/src/compiled/react-dom/cjs/react-dom-server-legacy.browser.development.js",
-                "line": 10280,
+                "line": 10284,
                 "column": 14,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array."
@@ -13419,14 +13978,14 @@
               },
               {
                 "file": "packages/next/src/compiled/react-dom/cjs/react-dom-server-legacy.node.development.js",
-                "line": 10280,
+                "line": 10284,
                 "column": 14,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
               },
               {
                 "file": "packages/next/src/compiled/react-dom/cjs/react-dom-server-legacy.node.development.js",
-                "line": 10280,
+                "line": 10284,
                 "column": 14,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array."
@@ -13447,98 +14006,98 @@
               },
               {
                 "file": "packages/next/src/compiled/react-dom/cjs/react-dom-server.browser.development.js",
-                "line": 10841,
+                "line": 10856,
                 "column": 14,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
               },
               {
                 "file": "packages/next/src/compiled/react-dom/cjs/react-dom-server.browser.development.js",
-                "line": 10841,
+                "line": 10856,
                 "column": 14,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array."
               },
               {
                 "file": "packages/next/src/compiled/react-dom/cjs/react-dom-server.browser.production.js",
-                "line": 3866,
+                "line": 3874,
                 "column": 10,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
               },
               {
                 "file": "packages/next/src/compiled/react-dom/cjs/react-dom-server.browser.production.js",
-                "line": 3866,
+                "line": 3874,
                 "column": 10,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array."
               },
               {
                 "file": "packages/next/src/compiled/react-dom/cjs/react-dom-server.bun.production.js",
-                "line": 3513,
+                "line": 3519,
                 "column": 10,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
               },
               {
                 "file": "packages/next/src/compiled/react-dom/cjs/react-dom-server.bun.production.js",
-                "line": 3513,
+                "line": 3519,
                 "column": 10,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array."
               },
               {
                 "file": "packages/next/src/compiled/react-dom/cjs/react-dom-server.edge.development.js",
-                "line": 10860,
+                "line": 10875,
                 "column": 14,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
               },
               {
                 "file": "packages/next/src/compiled/react-dom/cjs/react-dom-server.edge.development.js",
-                "line": 10860,
+                "line": 10875,
                 "column": 14,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array."
               },
               {
                 "file": "packages/next/src/compiled/react-dom/cjs/react-dom-server.edge.production.js",
-                "line": 3904,
+                "line": 3912,
                 "column": 10,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
               },
               {
                 "file": "packages/next/src/compiled/react-dom/cjs/react-dom-server.edge.production.js",
-                "line": 3904,
+                "line": 3912,
                 "column": 10,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array."
               },
               {
                 "file": "packages/next/src/compiled/react-dom/cjs/react-dom-server.node.development.js",
-                "line": 10838,
+                "line": 10853,
                 "column": 14,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
               },
               {
                 "file": "packages/next/src/compiled/react-dom/cjs/react-dom-server.node.development.js",
-                "line": 10838,
+                "line": 10853,
                 "column": 14,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array."
               },
               {
                 "file": "packages/next/src/compiled/react-dom/cjs/react-dom-server.node.production.js",
-                "line": 3807,
+                "line": 3815,
                 "column": 10,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
               },
               {
                 "file": "packages/next/src/compiled/react-dom/cjs/react-dom-server.node.production.js",
-                "line": 3807,
+                "line": 3815,
                 "column": 10,
                 "ruleId": "react-hooks/exhaustive-deps",
                 "message": "React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array."
@@ -13587,7 +14146,7 @@
               },
               {
                 "file": "packages/next/src/next-devtools/dev-overlay/container/runtime-error/render-error.tsx",
-                "line": 75,
+                "line": 106,
                 "column": 5,
                 "ruleId": "react-hooks/set-state-in-effect",
                 "message": "Definition for rule 'react-hooks/set-state-in-effect' was not found."
@@ -13609,9 +14168,9 @@
             ]
           },
           "warm": {
-            "ms": 945,
-            "msMin": 939,
-            "msMax": 972,
+            "ms": 741,
+            "msMin": 731,
+            "msMax": 751,
             "repeats": 5,
             "exitCode": 1,
             "findingsCount": 53
@@ -13619,64 +14178,36 @@
         },
         "oxlintNative": {
           "cold": {
-            "ms": 529,
-            "msMin": 524,
-            "msMax": 573,
+            "ms": 432,
+            "msMin": 419,
+            "msMax": 468,
             "repeats": 5,
             "findingsCount": 22,
             "findings": [
               {
-                "file": "packages/next/src/compiled/react-dom/cjs/react-dom-server.node.production.js",
-                "line": 3807,
+                "file": "packages/next/src/compiled/react-dom/cjs/react-dom-server.browser.production.js",
+                "line": 3874,
                 "column": 10,
                 "ruleId": "react-hooks(exhaustive-deps)",
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
               },
               {
-                "file": "packages/next/src/compiled/react-dom/cjs/react-dom-server.node.development.js",
-                "line": 10838,
+                "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server.browser.development.js",
+                "line": 11305,
                 "column": 14,
-                "ruleId": "react-hooks(exhaustive-deps)",
-                "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
-              },
-              {
-                "file": "packages/next/src/compiled/react-dom/cjs/react-dom-server.browser.development.js",
-                "line": 10841,
-                "column": 14,
-                "ruleId": "react-hooks(exhaustive-deps)",
-                "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
-              },
-              {
-                "file": "packages/next/src/compiled/react-dom/cjs/react-dom-server.edge.production.js",
-                "line": 3904,
-                "column": 10,
                 "ruleId": "react-hooks(exhaustive-deps)",
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
               },
               {
                 "file": "packages/next/src/compiled/react-dom/cjs/react-dom-server.bun.production.js",
-                "line": 3513,
+                "line": 3519,
                 "column": 10,
                 "ruleId": "react-hooks(exhaustive-deps)",
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
               },
               {
-                "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server.node.production.js",
-                "line": 4015,
-                "column": 10,
-                "ruleId": "react-hooks(exhaustive-deps)",
-                "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
-              },
-              {
-                "file": "packages/next/src/compiled/react-dom/cjs/react-dom-server.browser.production.js",
-                "line": 3866,
-                "column": 10,
-                "ruleId": "react-hooks(exhaustive-deps)",
-                "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
-              },
-              {
-                "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server.node.development.js",
-                "line": 11279,
+                "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server.edge.development.js",
+                "line": 11330,
                 "column": 14,
                 "ruleId": "react-hooks(exhaustive-deps)",
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
@@ -13689,29 +14220,57 @@
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
               },
               {
-                "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server.browser.development.js",
-                "line": 11290,
+                "file": "packages/next/src/compiled/react-dom/cjs/react-dom-server-legacy.browser.development.js",
+                "line": 10284,
+                "column": 14,
+                "ruleId": "react-hooks(exhaustive-deps)",
+                "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
+              },
+              {
+                "file": "packages/next/src/compiled/react-dom/cjs/react-dom-server-legacy.node.development.js",
+                "line": 10284,
                 "column": 14,
                 "ruleId": "react-hooks(exhaustive-deps)",
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
               },
               {
                 "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server.edge.production.js",
-                "line": 4127,
+                "line": 4135,
+                "column": 10,
+                "ruleId": "react-hooks(exhaustive-deps)",
+                "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
+              },
+              {
+                "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server.browser.production.js",
+                "line": 4091,
+                "column": 10,
+                "ruleId": "react-hooks(exhaustive-deps)",
+                "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
+              },
+              {
+                "file": "packages/next/src/compiled/react-dom/cjs/react-dom-server.node.development.js",
+                "line": 10853,
+                "column": 14,
+                "ruleId": "react-hooks(exhaustive-deps)",
+                "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
+              },
+              {
+                "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server.node.production.js",
+                "line": 4023,
                 "column": 10,
                 "ruleId": "react-hooks(exhaustive-deps)",
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
               },
               {
                 "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server.bun.production.js",
-                "line": 3707,
+                "line": 3713,
                 "column": 10,
                 "ruleId": "react-hooks(exhaustive-deps)",
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
               },
               {
-                "file": "packages/next/src/compiled/react-dom/cjs/react-dom-server-legacy.node.development.js",
-                "line": 10280,
+                "file": "packages/next/src/compiled/react-dom/cjs/react-dom-server.browser.development.js",
+                "line": 10856,
                 "column": 14,
                 "ruleId": "react-hooks(exhaustive-deps)",
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
@@ -13725,14 +14284,14 @@
               },
               {
                 "file": "packages/next/src/compiled/react-dom/cjs/react-dom-server.edge.development.js",
-                "line": 10860,
+                "line": 10875,
                 "column": 14,
                 "ruleId": "react-hooks(exhaustive-deps)",
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
               },
               {
-                "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server.browser.production.js",
-                "line": 4083,
+                "file": "packages/next/src/compiled/react-dom/cjs/react-dom-server.edge.production.js",
+                "line": 3912,
                 "column": 10,
                 "ruleId": "react-hooks(exhaustive-deps)",
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
@@ -13745,15 +14304,15 @@
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
               },
               {
-                "file": "packages/next/src/compiled/react-dom/cjs/react-dom-server-legacy.browser.development.js",
-                "line": 10280,
-                "column": 14,
+                "file": "packages/next/src/compiled/react-dom/cjs/react-dom-server.node.production.js",
+                "line": 3815,
+                "column": 10,
                 "ruleId": "react-hooks(exhaustive-deps)",
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
               },
               {
-                "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server-legacy.node.development.js",
-                "line": 10667,
+                "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server-legacy.browser.development.js",
+                "line": 10671,
                 "column": 14,
                 "ruleId": "react-hooks(exhaustive-deps)",
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
@@ -13766,15 +14325,15 @@
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
               },
               {
-                "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server.edge.development.js",
-                "line": 11315,
+                "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server-legacy.node.development.js",
+                "line": 10671,
                 "column": 14,
                 "ruleId": "react-hooks(exhaustive-deps)",
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
               },
               {
-                "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server-legacy.browser.development.js",
-                "line": 10667,
+                "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server.node.development.js",
+                "line": 11294,
                 "column": 14,
                 "ruleId": "react-hooks(exhaustive-deps)",
                 "message": "React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies."
@@ -13782,9 +14341,9 @@
             ]
           },
           "warm": {
-            "ms": 532,
-            "msMin": 516,
-            "msMax": 551,
+            "ms": 425,
+            "msMin": 415,
+            "msMax": 501,
             "repeats": 5,
             "findingsCount": 22
           }
@@ -13793,7 +14352,7 @@
       "overlap": {
         "counts": {
           "both": 3,
-          "oursOnly": 122,
+          "oursOnly": 141,
           "theirsOnly": 28
         },
         "samples": {
@@ -13823,44 +14382,44 @@
           "oursOnly": [
             {
               "file": "apps/bundle-analyzer/app/page.tsx",
-              "line": 115,
+              "line": 188,
+              "column": 6,
+              "ruleId": "react-features/hooks-exhaustive-deps",
+              "message": "⚠️ React Hook useEffect has unnecessary dependency: comparisonSnapshot | MEDIUM\n   Fix: Remove the unnecessary dependency from the array - it never changes or is not used in the effect | https://react.dev/reference/react/useEffect#removing-unnecessary-dependencies"
+            },
+            {
+              "file": "apps/bundle-analyzer/app/page.tsx",
+              "line": 209,
               "column": 6,
               "ruleId": "react-features/hooks-exhaustive-deps",
               "message": "⚠️ React Hook useEffect has missing dependencies: e, getRootSourceIndex | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
             },
             {
               "file": "apps/bundle-analyzer/app/page.tsx",
-              "line": 123,
+              "line": 217,
               "column": 6,
               "ruleId": "react-features/hooks-exhaustive-deps",
               "message": "⚠️ React Hook useMemo has missing dependencies: computeActiveEntries, computeModuleDepthMap | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
             },
             {
               "file": "apps/bundle-analyzer/app/page.tsx",
-              "line": 145,
+              "line": 229,
+              "column": 6,
+              "ruleId": "react-features/hooks-exhaustive-deps",
+              "message": "⚠️ React Hook useMemo has missing dependencies: computeActiveEntries, computeModuleDepthMap | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
+            },
+            {
+              "file": "apps/bundle-analyzer/app/page.tsx",
+              "line": 251,
               "column": 6,
               "ruleId": "react-features/hooks-exhaustive-deps",
               "message": "⚠️ React Hook useMemo has missing dependencies: sourceIndex | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
-            },
-            {
-              "file": "apps/bundle-analyzer/components/file-search.tsx",
-              "line": 36,
-              "column": 6,
-              "ruleId": "react-features/hooks-exhaustive-deps",
-              "message": "⚠️ React Hook useEffect has missing dependencies: e | HIGH\n   Fix: Add missing dependencies to the dependency array or memoize values with useMemo/useCallback | https://react.dev/reference/react/useEffect#specifying-reactive-dependencies"
-            },
-            {
-              "file": "apps/bundle-analyzer/components/import-chain.tsx",
-              "line": 316,
-              "column": 6,
-              "ruleId": "react-features/hooks-exhaustive-deps",
-              "message": "⚠️ React Hook useMemo has missing dependencies: getModuleIndicesFromSourceIndex, moduleIndex, splitIdent, path, depth, selectedIndex, totalCount, index, async, traced, isFinite, getSourceIndexFromModuleIndex, isAsync, isTraced, a, b, info | HIGH\n   Fix: Add missing dependencies t"
             }
           ],
           "theirsOnly": [
             {
               "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server-legacy.browser.development.js",
-              "line": 10667,
+              "line": 10671,
               "column": 14,
               "ruleId": "react-hooks/exhaustive-deps",
               "message": "React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array."
@@ -13874,7 +14433,7 @@
             },
             {
               "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server-legacy.node.development.js",
-              "line": 10667,
+              "line": 10671,
               "column": 14,
               "ruleId": "react-hooks/exhaustive-deps",
               "message": "React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array."
@@ -13888,7 +14447,7 @@
             },
             {
               "file": "packages/next/src/compiled/react-dom-experimental/cjs/react-dom-server.browser.development.js",
-              "line": 11290,
+              "line": 11305,
               "column": 14,
               "ruleId": "react-hooks/exhaustive-deps",
               "message": "React Hook useMemo has a missing dependency: 'callback'. Either include it or remove the dependency array."
@@ -13901,15 +14460,15 @@
     {
       "rule": "react-a11y/alt-text",
       "repo": "shadcn-ui",
-      "repoHead": "ee628d7",
+      "repoHead": "2b3e6d4",
       "starsK": 100,
       "tier": "T1",
       "runs": {
         "oursEslint": {
           "cold": {
-            "ms": 387,
-            "msMin": 374,
-            "msMax": 392,
+            "ms": 293,
+            "msMin": 291,
+            "msMax": 297,
             "repeats": 5,
             "exitCode": 2,
             "filesProcessed": 0,
@@ -13917,9 +14476,9 @@
             "findings": []
           },
           "warm": {
-            "ms": 381,
-            "msMin": 380,
-            "msMax": 388,
+            "ms": 293,
+            "msMin": 287,
+            "msMax": 301,
             "repeats": 5,
             "exitCode": 2,
             "findingsCount": 0
@@ -13927,19 +14486,19 @@
         },
         "competitorEslint": {
           "cold": {
-            "ms": 14204,
-            "msMin": 13511,
-            "msMax": 14240,
+            "ms": 10982,
+            "msMin": 10889,
+            "msMax": 11103,
             "repeats": 5,
             "exitCode": 1,
-            "filesProcessed": 3611,
+            "filesProcessed": 3624,
             "findingsCount": 0,
             "findings": []
           },
           "warm": {
-            "ms": 1086,
-            "msMin": 1075,
-            "msMax": 1108,
+            "ms": 798,
+            "msMin": 794,
+            "msMax": 808,
             "repeats": 5,
             "exitCode": 1,
             "findingsCount": 0
@@ -13947,17 +14506,17 @@
         },
         "oxlintNative": {
           "cold": {
-            "ms": 188,
-            "msMin": 180,
-            "msMax": 195,
+            "ms": 144,
+            "msMin": 140,
+            "msMax": 153,
             "repeats": 5,
             "findingsCount": 0,
             "findings": []
           },
           "warm": {
-            "ms": 188,
-            "msMin": 179,
-            "msMax": 204,
+            "ms": 146,
+            "msMin": 131,
+            "msMax": 150,
             "repeats": 5,
             "findingsCount": 0
           }
@@ -13980,25 +14539,25 @@
     {
       "rule": "vercel-ai-security/no-unsafe-output-handling",
       "repo": "vercel-ai",
-      "repoHead": "e21bde7",
+      "repoHead": "6c6c221",
       "starsK": 15,
       "tier": "T2",
       "runs": {
         "oursEslint": {
           "cold": {
-            "ms": 10092,
-            "msMin": 9867,
-            "msMax": 10350,
+            "ms": 8079,
+            "msMin": 7997,
+            "msMax": 8121,
             "repeats": 5,
             "exitCode": 1,
-            "filesProcessed": 2428,
+            "filesProcessed": 2519,
             "findingsCount": 0,
             "findings": []
           },
           "warm": {
-            "ms": 807,
-            "msMin": 785,
-            "msMax": 830,
+            "ms": 598,
+            "msMin": 582,
+            "msMax": 611,
             "repeats": 5,
             "exitCode": 1,
             "findingsCount": 0
