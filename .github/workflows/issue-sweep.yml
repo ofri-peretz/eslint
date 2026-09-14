@@ -53,7 +53,7 @@ on:
   workflow_dispatch:
     inputs:
       auto_merge:
-        description: "Arm auto-merge on the sweep PR"
+        description: 'Arm auto-merge on the sweep PR'
         type: boolean
         required: false
         default: true
@@ -70,7 +70,17 @@ jobs:
   # branch, but is a no-op unless the head is chore/issue-sweep.
   arm:
     name: Arm auto-merge on a Routine-opened sweep PR
-    if: github.event_name == 'pull_request' && github.head_ref == 'chore/issue-sweep'
+    # Two Routines open sweep PRs, not one. The issue sweep uses a fixed
+    # `chore/issue-sweep`; the burgee FP/FN sweep opens
+    # `chore/fp-fn-sweep-<UTC-timestamp>`, a fresh branch per run so two sweeps
+    # can never collide. An exact-match arm only ever covered the first, so
+    # every FP/FN sweep PR had to be armed by hand — and one that nobody armed
+    # just sat green and unmerged, which is the backlog this workflow exists to
+    # drain, one level up.
+    if: >-
+      github.event_name == 'pull_request' &&
+      (github.head_ref == 'chore/issue-sweep' ||
+      startsWith(github.head_ref, 'chore/fp-fn-sweep-'))
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -209,7 +219,7 @@ jobs:
       - uses: ./.github/actions/setup
         if: steps.token.outputs.present == 'true'
         with:
-          turbo-cache: "false"
+          turbo-cache: 'false'
 
       - name: Sweep the backlog
         if: steps.token.outputs.present == 'true'
@@ -314,7 +324,7 @@ jobs:
       - name: 🚨 Report
         uses: ./.github/actions/report-failure
         with:
-          title: "Scheduled issue sweep is failing"
+          title: 'Scheduled issue sweep is failing'
           body: |
             The scheduled issue sweep failed, so the issue backlog is no longer
             being drained automatically.
