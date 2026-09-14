@@ -45,7 +45,12 @@ import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 const ROOT = resolve(__dirname, '..', '..');
-const DOC = readFileSync(join(ROOT, 'CLAUDE.md'), 'utf8');
+// The merge procedure moved out of CLAUDE.md (always-on context) into the ship-a-pr skill
+// (loaded on demand). The lock follows the procedure - it protects the jq, not the filename.
+const DOC = readFileSync(
+  join(ROOT, '.claude', 'skills', 'ship-a-pr', 'SKILL.md'),
+  'utf8',
+);
 
 /**
  * The jq expression from the documented step, by the `--jq '…'` that follows
@@ -57,7 +62,10 @@ function documentedJq(step: 'wait' | 'validate'): string {
       ? '# 1. Wait until every required check has a terminal state.'
       : '# 2. Validation gate';
   const from = DOC.indexOf(anchor);
-  expect(from, `CLAUDE.md no longer contains "${anchor}"`).toBeGreaterThan(-1);
+  expect(
+    from,
+    `ship-a-pr/SKILL.md no longer contains "${anchor}"`,
+  ).toBeGreaterThan(-1);
 
   const match = /--jq '([^']+)'/.exec(DOC.slice(from, from + 1200));
   expect(match, `no --jq expression after "${anchor}"`).not.toBeNull();
