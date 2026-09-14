@@ -149,6 +149,7 @@ import {
   staticString,
   namesOneOf,
   propertyName,
+  objectKeyName,
 } from '@interlace/eslint-devkit';
 import {
   formatLLMMessage,
@@ -1046,6 +1047,40 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * Check if the object is a prototype-less object (Object.create(null))
      * or is derived from an array spread/copy pattern
      */
+    /**
+     * The initializer a bare `const`/`let` name was declared with, found by walking the
+     * enclosing blocks. Returns undefined when the name is not a simple local binding.
+     */
+    const findInitializer = (
+      nameNode: TSESTree.Node,
+    ): TSESTree.Expression | undefined => {
+      if (nameNode.type !== AST_NODE_TYPES.Identifier) return undefined;
+      const varName = nameNode.name;
+
+      let current: TSESTree.Node | undefined = nameNode;
+      while (current) {
+        if (
+          current.type === AST_NODE_TYPES.BlockStatement ||
+          current.type === AST_NODE_TYPES.Program
+        ) {
+          for (const stmt of current.body) {
+            if (stmt.type !== AST_NODE_TYPES.VariableDeclaration) continue;
+            for (const decl of stmt.declarations) {
+              if (
+                decl.id.type === AST_NODE_TYPES.Identifier &&
+                decl.id.name === varName &&
+                decl.init
+              ) {
+                return decl.init;
+              }
+            }
+          }
+        }
+        current = current.parent;
+      }
+      return undefined;
+    };
+
     const isPrototypelessObject = (objectNode: TSESTree.Node): boolean => {
       // Inline Object.create(null) used directly as the node itself (e.g.
       // the `target` argument of `Object.assign(Object.create(null), src)`)
@@ -1061,6 +1096,29 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         objectNode.arguments[0].value === null
       ) {
         return true;
+      }
+
+      // A null-prototype map is as often held as a property of a holder object
+      // (`const flags = { bools: Object.create(null) }`) as bound to a bare name. The
+      // safety property is about the TARGET — no prototype to pollute — and does not
+      // depend on how the target is spelled, so resolve the holder and read the
+      // initializer of the property being written through.
+      if (objectNode.type === AST_NODE_TYPES.MemberExpression) {
+        // `propertyName` / `objectKeyName` resolve every spelling that reaches the same
+        // property, so `flags['bools']` and `{ ['bools']: … }` are matched alongside the
+        // dotted forms. A key decided at runtime comes back null and is not matched.
+        const key = propertyName(objectNode);
+        if (key === null) return false;
+
+        const holderInit = findInitializer(objectNode.object);
+        if (holderInit?.type !== AST_NODE_TYPES.ObjectExpression) return false;
+
+        const match = holderInit.properties.find(
+          (prop): prop is TSESTree.Property =>
+            prop.type === AST_NODE_TYPES.Property &&
+            objectKeyName(prop) === key,
+        );
+        return match !== undefined && isPrototypelessObject(match.value);
       }
 
       if (objectNode.type !== AST_NODE_TYPES.Identifier) {

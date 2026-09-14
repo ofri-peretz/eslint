@@ -92,37 +92,54 @@ export const extensions = createRule<Options, MessageIds>({
       scss: 'always',
     };
 
+    /**
+     * A module specifier carries the same extension either way it is written, so
+     * `export … from` and `export * from` are checked exactly like an import. Visiting
+     * only `ImportDeclaration` reported one and stayed silent on the other for the same
+     * string, which left a file less consistent after `--fix` than before it.
+     */
+    function checkSource(source: TSESTree.StringLiteral | null): void {
+      if (!source) return; // `export { foo };` re-exports nothing
+      const value = source.value;
+      if (!value.startsWith('.')) return; // Only check relative imports
+
+      const ext = path.extname(value).slice(1); // remove dot
+      const expected = pattern[ext] || defaultBehavior;
+
+      if (ext && expected === 'never') {
+        context.report({
+          node: source,
+          messageId: 'unexpectedExtension',
+          fix(fixer: TSESLint.RuleFixer) {
+            return fixer.replaceText(
+              source,
+              `'${value.slice(0, -ext.length - 1)}'`,
+            );
+          },
+        });
+      } else if (!ext) {
+        // Hard to know what the extension *should* be without checking file system
+        // But if default is 'always', we might flag it.
+        // For now, let's assume if it's missing and we expect 'always', it's a problem.
+        if (defaultBehavior === 'always') {
+          context.report({
+            node: source,
+            messageId: 'missingExtension',
+            // Can't fix without knowing extension
+          });
+        }
+      }
+    }
+
     return {
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        const source = node.source.value;
-        if (!source.startsWith('.')) return; // Only check relative imports
-
-        const ext = path.extname(source).slice(1); // remove dot
-        const expected = pattern[ext] || defaultBehavior;
-
-        if (ext && expected === 'never') {
-          context.report({
-            node: node.source,
-            messageId: 'unexpectedExtension',
-            fix(fixer: TSESLint.RuleFixer) {
-              return fixer.replaceText(
-                node.source,
-                `'${source.slice(0, -ext.length - 1)}'`,
-              );
-            },
-          });
-        } else if (!ext) {
-          // Hard to know what the extension *should* be without checking file system
-          // But if default is 'always', we might flag it.
-          // For now, let's assume if it's missing and we expect 'always', it's a problem.
-          if (defaultBehavior === 'always') {
-            context.report({
-              node: node.source,
-              messageId: 'missingExtension',
-              // Can't fix without knowing extension
-            });
-          }
-        }
+        checkSource(node.source);
+      },
+      ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
+        checkSource(node.source);
+      },
+      ExportAllDeclaration(node: TSESTree.ExportAllDeclaration) {
+        checkSource(node.source);
       },
     };
   },

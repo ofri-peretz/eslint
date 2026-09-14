@@ -259,12 +259,17 @@ function isBuildTimeConstant(
         isBuildTimeConstant(node.right, sourceCode, depth + 1)
       );
     case 'ArrayExpression':
-      return node.elements.every(
-        (element) =>
-          element !== null &&
-          element.type !== 'SpreadElement' &&
-          isBuildTimeConstant(element, sourceCode, depth + 1),
-      );
+      // A spread is constant exactly when what it spreads is: `[...CONST]` can no more
+      // change than `CONST` can, and the rule already accepts `CONST.join()`. Bailing on
+      // sight of a SpreadElement gave the two spellings of one value opposite verdicts.
+      // The argument still has to prove itself, so `[...rest]` over a parameter — and
+      // `[...new Set(…)]`, whose contents are reachable through .add/.delete — report.
+      return node.elements.every((element) => {
+        if (element === null) return false;
+        const value =
+          element.type === 'SpreadElement' ? element.argument : element;
+        return isBuildTimeConstant(value, sourceCode, depth + 1);
+      });
     case 'CallExpression':
       return (
         node.callee.type === 'MemberExpression' &&

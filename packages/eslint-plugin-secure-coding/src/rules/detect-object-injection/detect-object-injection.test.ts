@@ -1325,8 +1325,188 @@ describe('detect-object-injection', () => {
               }
             `,
           },
+
+          // burgee sweep: packages/burgee/src/yargs-parser.ts:184,188,192,196,200,204,
+          // 226,508 -- eight CVSS 9.8 findings from one shape. The exemption resolved a
+          // bare binding but bailed on a MemberExpression receiver, so the SAME
+          // Object.create(null) map reported when it was reached as a property of a
+          // holder object. The safety property is identical either way: a null-prototype
+          // target has no prototype to pollute. SPEC.md G1 states this of the *target*,
+          // with no qualification about how the target is spelled.
+          {
+            name: 'a null-prototype map reached through a property (burgee: packages/burgee/src/yargs-parser.ts:188)',
+            code: `
+              declare const keys: string[];
+              function parse() {
+                const flags: any = { bools: Object.create(null) };
+                keys.forEach((key) => {
+                  flags.bools[key] = true;
+                });
+                return flags;
+              }
+            `,
+          },
+          // Every spelling that reaches the same property resolves the same way:
+          // `propertyName` and `objectKeyName` see through a computed read and a quoted
+          // or computed key, so the exemption cannot acquire a blind spot here.
+          {
+            name: 'a computed read of the null-prototype property',
+            code: `
+              declare const keys: string[];
+              function parse() {
+                const flags: any = { bools: Object.create(null) };
+                keys.forEach((key) => {
+                  flags['bools'][key] = true;
+                });
+                return flags;
+              }
+            `,
+          },
+          {
+            name: 'a quoted key on the holder',
+            code: `
+              declare const keys: string[];
+              function parse() {
+                const flags: any = { 'bools': Object.create(null) };
+                keys.forEach((key) => {
+                  flags.bools[key] = true;
+                });
+                return flags;
+              }
+            `,
+          },
+          {
+            name: 'a computed static key on the holder',
+            code: `
+              declare const keys: string[];
+              function parse() {
+                const flags: any = { ['bools']: Object.create(null) };
+                keys.forEach((key) => {
+                  flags.bools[key] = true;
+                });
+                return flags;
+              }
+            `,
+          },
+          // A holder assembled with a spread still resolves the property that is
+          // written through: the spread is not a Property node, and the `bools` entry
+          // beside it is what the write targets.
+          {
+            name: 'a null-prototype property on a holder assembled with a spread',
+            code: `
+              declare const keys: string[];
+              function parse(base: object) {
+                const flags: any = { ...base, bools: Object.create(null) };
+                keys.forEach((key) => {
+                  flags.bools[key] = true;
+                });
+                return flags;
+              }
+            `,
+          },
         ],
-        invalid: [],
+        invalid: [
+          // The exemption resolves a holder written as an object literal with a plain
+          // identifier key. Everything it cannot read that way stays reported — these
+          // pin each way the resolution declines, so loosening any of them is a
+          // deliberate change rather than a silent one.
+
+          // A private name is not an Identifier property.
+          {
+            name: 'a private-name receiver is not resolved, so the write still reports',
+            code: `
+              declare const keys: string[];
+              class Store {
+                #map = Object.create(null);
+                fill(): void {
+                  keys.forEach((key) => {
+                    this.#map[key] = true;
+                  });
+                }
+              }
+            `,
+            errors: [{ messageId: 'objectInjection' }],
+          },
+          // The holder is not an object literal, so its shape is unknown here.
+          {
+            name: 'a holder that is not an object literal is not resolved',
+            code: `
+              declare const keys: string[];
+              declare function makeFlags(): any;
+              function parse() {
+                const flags: any = makeFlags();
+                keys.forEach((key) => {
+                  flags.bools[key] = true;
+                });
+                return flags;
+              }
+            `,
+            errors: [{ messageId: 'objectInjection' }],
+          },
+          // A holder key decided at runtime names no property the AST can read.
+          {
+            name: 'a runtime-decided key on the holder is not resolved',
+            code: `
+              declare const keys: string[];
+              declare const dyn: string;
+              function parse() {
+                const flags: any = { [dyn]: Object.create(null) };
+                keys.forEach((key) => {
+                  flags.bools[key] = true;
+                });
+                return flags;
+              }
+            `,
+            errors: [{ messageId: 'objectInjection' }],
+          },
+          // Likewise a runtime-decided read.
+          {
+            name: 'a runtime-decided read of the holder is not resolved',
+            code: `
+              declare const keys: string[];
+              declare const which: string;
+              function parse() {
+                const flags: any = { bools: Object.create(null) };
+                keys.forEach((key) => {
+                  flags[which][key] = true;
+                });
+                return flags;
+              }
+            `,
+            errors: [{ messageId: 'objectInjection' }],
+          },
+          // The holder has no property of that name at all.
+          {
+            name: 'a holder without the written property is not resolved',
+            code: `
+              declare const keys: string[];
+              function parse() {
+                const flags: any = { other: Object.create(null) };
+                keys.forEach((key) => {
+                  flags.bools[key] = true;
+                });
+                return flags;
+              }
+            `,
+            errors: [{ messageId: 'objectInjection' }],
+          },
+          // CONTROL: the property resolves, but to a plain `{}` — which HAS a
+          // prototype, so the exemption must not apply.
+          {
+            name: 'a plain-object property on the holder still reports',
+            code: `
+              declare const keys: string[];
+              function parse() {
+                const flags: any = { bools: {} };
+                keys.forEach((key) => {
+                  flags.bools[key] = true;
+                });
+                return flags;
+              }
+            `,
+            errors: [{ messageId: 'objectInjection' }],
+          },
+        ],
       },
     );
 
