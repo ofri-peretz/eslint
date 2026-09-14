@@ -1,9 +1,24 @@
 {
-  "releaseCount": 684,
+  "releaseCount": 685,
   "packageCount": 36,
-  "entryCount": 2095,
+  "entryCount": 2096,
   "oldestYear": 2024,
   "releases": [
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.4.4",
+      "date": "2026-09-14T05:15:01Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "perf",
+          "title": "`detect-object-injection` resolves the holder through the scope index",
+          "pr": null
+        }
+      ]
+    },
     {
       "package": "eslint-plugin-secure-coding",
       "short": "eslint-plugin-secure-coding",
@@ -17180,6 +17195,21 @@
       ]
     },
     {
+      "package": "eslint-plugin-maintainability",
+      "short": "eslint-plugin-maintainability",
+      "version": "3.2.8",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`consistent-function-scoping` no longer reports a function that captures a sibling function declared in the same scope. Hoisting makes the sibling reachable from the outer scope, so the inner function cannot be moved there without breaking the reference — the rule was recommending a move that does not compile.",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-postgresql-security",
       "short": "eslint-plugin-postgresql-security",
       "version": "1.4.9",
@@ -17300,21 +17330,6 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-secure-coding",
-      "short": "eslint-plugin-secure-coding",
-      "version": "5.4.4",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "perf",
-          "title": "`detect-object-injection` resolves the holder through the scope index",
           "pr": null
         }
       ]
