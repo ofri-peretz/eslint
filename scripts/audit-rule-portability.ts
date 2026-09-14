@@ -388,7 +388,7 @@ function summarize(allPlugins) {
 // audit's blocker assumptions (sourceCode + scope + fixer + selector + comments
 // + tokens all present). Bumping oxlint past the latest entry must include a
 // re-verification of apps/oxlint/src-js/plugins/ at the new tag.
-const VERIFIED_OXLINT_RANGE = { min: '1.74.0', maxKnown: '1.81.x' };
+const VERIFIED_OXLINT_RANGE = { min: '1.74.0', maxKnown: '1.82.x' };
 
 // Hash-pinned bundles. These are the actual runtime files shipped with oxlint
 // — the bundled output of apps/oxlint/src-js/plugins/ that I read at 1.62.0.
@@ -400,7 +400,34 @@ const VERIFIED_OXLINT_RANGE = { min: '1.74.0', maxKnown: '1.81.x' };
 // source_code,scope,fix,selector}.ts at the new tag, then update both
 // VERIFIED_OXLINT_RANGE and these hashes in the same commit.
 const VERIFIED_OXLINT_RUNTIME_HASHES = {
-  // Re-verified at 1.81.0 (2026-09-07) by `verify-oxlint-runtime.ts`: all 33
+  // Re-verified at 1.82.0 (2026-09-14) by `verify-oxlint-runtime.ts`: all 33
+  // probes pass. This is the first bump where `plugins-dev.js` itself moved,
+  // so the `;`-split diff mattered more than usual. What changed:
+  //   1. `plugins.js` — the production plugin API surface, and the bundle this
+  //      audit's blocker patterns actually read — is BYTE-IDENTICAL to 1.81.0.
+  //      Its pin below is untouched.
+  //   2. rolldown now hoists its shared prelude into a new `rolldown-runtime.js`
+  //      rather than inlining it per bundle. That single change accounts for
+  //      every differing chunk in `lint.js` (55 of 57) and 4 of the 6 in
+  //      `plugins-dev.js`: an `import { … } from "./rolldown-runtime.js"` in,
+  //      the `__create`/`__copyProps`/`__toESM` definitions out. Bundler
+  //      layout, no API.
+  //   3. The one real chunk in `plugins-dev.js` is a De Morgan rewrite inside
+  //      `isSerializable`: `!(typeof prop != "object" || !prop) && …` became
+  //      `typeof prop == "object" && prop && …`. Those are the same predicate.
+  //   4. `bindings.js` — 60 chunks, 54 the version literal inside napi guards,
+  //      the rest hoisting `readFileSync` into the top destructure and dropping
+  //      a dead `new URL(".", import.meta.url).pathname`.
+  //
+  // `rolldown-runtime.js` is PINNED BELOW, new in this bump. Without it the
+  // hash set would have quietly stopped covering the prelude that bundle 2
+  // moved out of `plugins-dev.js` — the gate would still be four green hashes
+  // while measuring less than it did at 1.81.0.
+  //
+  // Kept below: the 1.81.0 note, because `min` records the OLDEST version
+  // still verified.
+  //
+  // Previously re-verified at 1.81.0 (2026-09-07) by `verify-oxlint-runtime.ts`: all 33
   // probes pass. Three independent signals agree the plugin surface did not
   // move:
   //   1. `plugins.js` and `plugins-dev.js` hash IDENTICALLY to 1.80.0 — the
@@ -450,10 +477,12 @@ const VERIFIED_OXLINT_RUNTIME_HASHES = {
   'plugins.js':
     '81e4c275f6200ab4b6aed66ba2836b2a8e68756a8609ced02daf91e226377e2d',
   'plugins-dev.js':
-    '69a98c6cc2e63369980ba2b42f8c66935ba76fc177469872d4f5236626f3742a',
-  'lint.js': '4b169ece30423e526d2dc0b585604ae6465cc8d7bfb001dfb16d6c3e1eda5b25',
+    '9160dbc594c8f9fa6e624cc358cb2093dc19281c5233168f0352203fc11b5c16',
+  'lint.js': '1df3522ab96862436a66c9b33cb1252e0a87ff383d63756fc458d96409dd5c3e',
   'bindings.js':
-    'cfec71bf0a22e772831a1a2915dbbe59590a87facec6585f3402d3beee1c2b57',
+    'e527e0448f9bfa5abac4fcdca1041bed89c2743c0ae6e189dce6b2f5b99664ac',
+  'rolldown-runtime.js':
+    '5fc650d7f3c5b72629da633623bf7bc72fd972051fe82268c703b2681f26eb51',
 };
 
 async function checkOxlintRuntimeHashes() {
