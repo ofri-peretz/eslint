@@ -33,11 +33,11 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-drizzle-security` | 0.3.8 | `drizzle-security/` | — | `plugin-drizzle-security` | security | `drizzle` | ✅ | ✅ | ✅ |
 | `eslint-plugin-express-security` | 3.2.4 | `express-security/` | — | `plugin-express-security` | security | `express` | ✅ | ✅ | ✅ |
 | `eslint-plugin-gemini-security` | 0.3.5 | `gemini-security/` | — | `plugin-gemini-security` | security | `gemini` | ✅ | ✅ | ✅ |
-| `eslint-plugin-import-next` | 2.8.0 | `import-next/` | — | `plugin-import-next` | quality | `—` | ✅ | ✅ | ✅ |
+| `eslint-plugin-import-next` | 2.8.1 | `import-next/` | — | `plugin-import-next` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-jwt-security` | 3.3.0 | `jwt-security/` | `jwt/` | `plugin-jwt-security` | security | `jwt` | ✅ | ✅ | ✅ |
 | `eslint-plugin-knex-security` | 0.4.8 | `knex-security/` | — | `plugin-knex-security` | security | `knex` | ✅ | ✅ | ✅ |
 | `eslint-plugin-lambda-security` | 2.1.4 | `lambda-security/` | — | `plugin-lambda-security` | security | `lambda` | ✅ | ✅ | ✅ |
-| `eslint-plugin-maintainability` | 3.2.6 | `maintainability/` | — | `plugin-maintainability` | quality | `—` | ✅ | ✅ | ✅ |
+| `eslint-plugin-maintainability` | 3.2.7 | `maintainability/` | — | `plugin-maintainability` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-mcp-sdk-security` | 0.4.3 | `mcp-sdk-security/` | — | `plugin-mcp-sdk-security` | security | `mcp` | ✅ | ✅ | ✅ |
 | `eslint-plugin-modernization` | 3.1.3 | `modernization/` | — | `plugin-modernization` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-modularity` | 2.5.3 | `modularity/` | — | `plugin-modularity` | quality | `—` | ✅ | ✅ | ✅ |
@@ -51,8 +51,8 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-prisma-security` | 0.3.8 | `prisma-security/` | — | `plugin-prisma-security` | security | `prisma` | ✅ | ✅ | ✅ |
 | `eslint-plugin-react-a11y` | 2.5.2 | `react-a11y/` | — | `plugin-react-a11y` | quality | `react` | ✅ | ✅ | ✅ |
 | `eslint-plugin-react-features` | 1.7.5 | `react-features/` | — | `plugin-react-features` | quality | `react` | ✅ | ✅ | ✅ |
-| `eslint-plugin-reliability` | 4.1.7 | `reliability/` | — | `plugin-reliability` | quality | `—` | ✅ | ✅ | ✅ |
-| `eslint-plugin-secure-coding` | 5.4.1 | `secure-coding/` | — | `plugin-secure-coding` | security | `—` | ✅ | ✅ | ✅ |
+| `eslint-plugin-reliability` | 4.1.8 | `reliability/` | — | `plugin-reliability` | quality | `—` | ✅ | ✅ | ✅ |
+| `eslint-plugin-secure-coding` | 5.4.2 | `secure-coding/` | — | `plugin-secure-coding` | security | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-sequelize-security` | 0.3.9 | `sequelize-security/` | — | `plugin-sequelize-security` | security | `sequelize` | ✅ | ✅ | ✅ |
 | `eslint-plugin-sqlite-security` | 0.1.11 | `sqlite-security/` | — | `plugin-sqlite-security` | security | `sqlite` | ✅ | ✅ | ✅ |
 | `eslint-plugin-supabase-security` | 0.2.0 | `supabase-security/` | — | `plugin-supabase-security` | security | `—` | ✅ | ✅ | ✅ |
