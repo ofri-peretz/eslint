@@ -23,9 +23,21 @@ on:
   # badge, to fall. A vulnerability introduced by a merge is now caught within
   # 24 hours rather than ~208 seconds.
   #
-  # To revert, restore:
-  #   push:
-  #     branches: [main]
+  # RESTORED 2026-09-14, closing #764. The tracker existed because the accepted
+  # cost had quietly doubled: removing `pull_request` on 2026-08-30 traded ~212s
+  # for nothing (it gated no merge), but removing this one on 2026-08-31 traded
+  # ~208s for a 24-HOUR detection window, since nothing then analysed a given
+  # merge until the next nightly run. The compensating control the first
+  # decision named — analysis on every commit landing on main — was the thing
+  # the second decision removed.
+  #
+  # Cost of restoring, stated plainly: CodeQL is again the longest job on a main
+  # push (~208s vs 109s for the whole quality gate). It runs AFTER the merge, so
+  # it delays no one's PR, and Actions minutes are free on a public repo. The
+  # thing it buys back is Scorecard's SAST ratio (25/30 commits analysed before
+  # the removal) and a vulnerability being found in minutes rather than a day.
+  push:
+    branches: [main]
   workflow_dispatch:
   schedule:
     # NIGHTLY, 03:17 UTC. Was weekly; a full scan is ~212s and this repo is
