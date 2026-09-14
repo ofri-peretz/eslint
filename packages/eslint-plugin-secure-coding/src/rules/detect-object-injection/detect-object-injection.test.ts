@@ -1855,3 +1855,48 @@ ruleTester.run(
     ],
   },
 );
+
+describe('detect-object-injection — the holder property is replaced (#998)', () => {
+  // The holder-property exemption reads the INITIALIZER. That says what the
+  // property was created as, not what it is at the indexed write. A later
+  // `flags.bools = {}` or a `{ ...flags, bools: {} }` rebuild swaps in an
+  // ordinary object, and honouring the declaration then suppressed a real
+  // finding on a prototype-BEARING target — a false negative in the rule whose
+  // subject is prototype pollution.
+  //
+  // All three were silent before the fix; A must stay silent after it.
+  ruleTester.run('holder property replacement', detectObjectInjection, {
+    valid: [
+      {
+        name: 'CONTROL: declared null-prototype and never replaced — still exempt',
+        code: `const flags: any = { bools: Object.create(null) };
+export function f(req: any) { const k = req.query.k; flags.bools[k] = 1; }`,
+      },
+    ],
+    invalid: [
+      {
+        name: 'the property is reassigned to a plain object before the write',
+        code: `const flags: any = { bools: Object.create(null) };
+flags.bools = {};
+export function f(req: any) { const k = req.query.k; flags.bools[k] = 1; }`,
+        errors: 1,
+      },
+      {
+        // A nested holder (`outer.inner.bools`) is not a bare local binding, so
+        // `findInitializer` cannot resolve it, the exemption never applies, and
+        // the finding stands.
+        name: 'a holder reached through another property gets no exemption',
+        code: `const outer: any = { inner: { bools: Object.create(null) } };
+export function f(req: any) { const k = req.query.k; outer.inner.bools[k] = 1; }`,
+        errors: 1,
+      },
+      {
+        name: 'the whole holder is rebuilt with a spread that replaces the property',
+        code: `let flags: any = { bools: Object.create(null) };
+flags = { ...flags, bools: {} };
+export function f(req: any) { const k = req.query.k; flags.bools[k] = 1; }`,
+        errors: 1,
+      },
+    ],
+  });
+});
