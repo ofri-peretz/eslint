@@ -152,8 +152,24 @@ console.log('');
 // 5. With --update, auto-bump the runtime hashes.
 if (UPDATE) {
   const oxlintDist = path.join(ROOT, 'node_modules', 'oxlint', 'dist');
+  let auditSrc = fs.readFileSync(AUDIT_PATH, 'utf-8');
+
+  // Which bundles to re-hash comes from what the audit ALREADY pins, not from a
+  // list kept here. A hard-coded list silently narrows coverage: oxlint 1.82.0
+  // hoisted its rolldown prelude into a new `rolldown-runtime.js`, that file was
+  // pinned in the audit, and a four-name list here would have deleted the pin on
+  // the next `--update` — leaving a green gate checking less than it used to.
+  // The pinned set is curated (dist also ships cli.js, workspace.js and friends
+  // this audit deliberately ignores), so it is read, never guessed.
+  const pinnedBlock = auditSrc.match(/const VERIFIED_OXLINT_RUNTIME_HASHES = \{[\s\S]*?\n\};/)?.[0];
+  const pinned = [...(pinnedBlock ?? '').matchAll(/'([\w.-]+\.js)':/g)].map(m => m[1]!);
+  if (pinned.length === 0) {
+    console.error('✗ could not read any pinned bundle names out of VERIFIED_OXLINT_RUNTIME_HASHES.');
+    process.exit(2);
+  }
+
   const hashes: Record<string, string> = {};
-  for (const f of ['plugins.js', 'plugins-dev.js', 'lint.js', 'bindings.js']) {
+  for (const f of pinned) {
     const full = path.join(oxlintDist, f);
     if (!fs.existsSync(full)) {
       console.error(`✗ expected runtime file missing: ${f}`);
@@ -162,9 +178,20 @@ if (UPDATE) {
     hashes[f] = crypto.createHash('sha256').update(fs.readFileSync(full)).digest('hex');
   }
 
-  let auditSrc = fs.readFileSync(AUDIT_PATH, 'utf-8');
+  // Carry the comment body over verbatim. Those notes are the verification
+  // record — which bundles moved at which version, and why none of it reached
+  // the audit — and `min` is only meaningful alongside them. Regenerating the
+  // block from scratch deleted all of it, so every real bump had to be repaired
+  // by hand afterwards. The hash entries sit at the end of the block, so keeping
+  // every non-entry line in order and re-emitting the entries beneath them
+  // reproduces the file's own shape.
+  const keptComments = (pinnedBlock ?? '')
+    .split('\n')
+    .slice(1, -1)
+    .filter(line => !/^\s*'[\w.-]+\.js':/.test(line) && !/^\s*'[0-9a-f]{64}',\s*$/.test(line));
   const newBlock = [
     'const VERIFIED_OXLINT_RUNTIME_HASHES = {',
+    ...keptComments,
     ...Object.entries(hashes).map(([f, h]) => `  '${f}':${' '.repeat(Math.max(1, 14 - f.length - 4))}'${h}',`),
     '};',
   ].join('\n');
@@ -178,9 +205,12 @@ if (UPDATE) {
   // Also bump the version-string range to match the installed major.minor.
   const major = installedVersion.split('.').slice(0, 2).join('.');
   if (major && major !== '?') {
+    // `min` is the OLDEST version still verified, so it stays put — only the
+    // ceiling moves. Rewriting it to the installed version discarded every
+    // earlier verification the field exists to record.
     auditSrc = auditSrc.replace(
-      /const VERIFIED_OXLINT_RANGE = \{ min: '[\d.]+', maxKnown: '[\d.x]+' \};/,
-      `const VERIFIED_OXLINT_RANGE = { min: '${installedVersion}', maxKnown: '${major}.x' };`,
+      /const VERIFIED_OXLINT_RANGE = \{ min: '([\d.]+)', maxKnown: '[\d.x]+' \};/,
+      (_m, min: string) => `const VERIFIED_OXLINT_RANGE = { min: '${min}', maxKnown: '${major}.x' };`,
     );
   }
 
