@@ -5,6 +5,91 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "eslint-plugin-operability",
+      "short": "eslint-plugin-operability",
+      "version": "4.1.4",
+      "date": "2026-09-13T19:50:18Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-debug-code-in-production` no longer reports `DEBUG` in property positions",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-conventions",
+      "short": "eslint-plugin-conventions",
+      "version": "6.0.1",
+      "date": "2026-09-13T19:50:10Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`filename-case` stops prescribing a rename it would reject",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "5.6.0",
+      "date": "2026-09-13T19:49:52Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-weak-hash-algorithm` sees `ripemd160`, not just `ripemd`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-import-next",
+      "short": "eslint-plugin-import-next",
+      "version": "2.8.0",
+      "date": "2026-09-13T19:49:27Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-relative-parent-imports` sees a dynamic `import('../x')`",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-extraneous-dependencies` no longer reports `<scheme>:` specifiers as missing packages",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.4.1",
+      "date": "2026-09-13T19:49:12Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-improper-type-validation` credits `instanceof` as a null guard",
+          "pr": null
+        },
+        {
+          "kind": "security",
+          "title": "`detect-object-injection` missed the copy loop in its callback spelling",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "@interlace/eslint-formatter-sarif",
       "short": "eslint-formatter-sarif",
       "version": "0.2.0",
@@ -16870,41 +16955,6 @@
       ]
     },
     {
-      "package": "eslint-plugin-conventions",
-      "short": "eslint-plugin-conventions",
-      "version": "6.0.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`filename-case` stops prescribing a rename it would reject",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-import-next",
-      "short": "eslint-plugin-import-next",
-      "version": "2.8.0",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`no-relative-parent-imports` sees a dynamic `import('../x')`",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "`no-extraneous-dependencies` no longer reports `<scheme>:` specifiers as missing packages",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "eslint-plugin-jwt-security",
       "short": "eslint-plugin-jwt-security",
       "version": "2.2.9",
@@ -17020,36 +17070,6 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-node-security",
-      "short": "eslint-plugin-node-security",
-      "version": "5.6.0",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`no-weak-hash-algorithm` sees `ripemd160`, not just `ripemd`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-operability",
-      "short": "eslint-plugin-operability",
-      "version": "4.1.4",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`no-debug-code-in-production` no longer reports `DEBUG` in property positions",
           "pr": null
         }
       ]
@@ -17175,26 +17195,6 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-secure-coding",
-      "short": "eslint-plugin-secure-coding",
-      "version": "5.4.1",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`no-improper-type-validation` credits `instanceof` as a null guard",
-          "pr": null
-        },
-        {
-          "kind": "security",
-          "title": "`detect-object-injection` missed the copy loop in its callback spelling",
           "pr": null
         }
       ]
