@@ -9,7 +9,7 @@
  * Disallow functions that are declared in a scope which does not capture any variables from the outer scope
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'inconsistentFunctionScoping' | 'moveToModuleScope';
@@ -126,7 +126,10 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
      */
     function hoistFunctionDeclarations(body: TSESTree.Statement[]) {
       for (const statement of body) {
-        if (statement.type === 'FunctionDeclaration' && statement.id) {
+        if (
+          statement.type === AST_NODE_TYPES.FunctionDeclaration &&
+          statement.id
+        ) {
           addVariableToCurrentScope(statement.id.name);
         }
       }
