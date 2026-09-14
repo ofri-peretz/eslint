@@ -34,6 +34,26 @@ describe('no-shell-injection', () => {
   describe('Valid - Safe Patterns', () => {
     ruleTester.run('valid - literal strings are safe', noShellInjection, {
       valid: [
+        // The two halves of the template-literal shell fix that must STAY
+        // silent. Accepting backticks as a static shell path is only correct
+        // if it does not also swallow the cases where there is no shell: an
+        // empty template names none, and an interpolated one is not static.
+        {
+          // The whole point of passing argv as an array: with no shell, node
+          // execs the binary directly and the element is one opaque argument.
+          // Inspecting args elements unconditionally would turn the SAFE
+          // spelling into a false positive, which is worse than the FN it fixes.
+          name: 'a dynamic args element without a shell is real argv, not injection',
+          code: "import { spawn } from 'node:child_process';\nspawn('git', [`clone ${userRepo}`]);",
+        },
+        {
+          name: 'an empty template-literal shell is not a shell',
+          code: "import { execFile } from 'node:child_process';\nexecFile(`ls ${userInput}`, { shell: `` });",
+        },
+        {
+          name: 'a dynamic template-literal shell is not statically truthy',
+          code: "import { execFile } from 'node:child_process';\nexecFile(`ls ${userInput}`, { shell: `${sh}` });",
+        },
         // Literal string — no injection surface
         {
           name: 'a literal command',
@@ -374,7 +394,15 @@ ruleTester.run(
   noShellInjection,
   {
     valid: [
-      'const db = require("better-sqlite3")("app.db"); db.exec(`CREATE TABLE ${tenant}_events (id INT)`);',
+      {
+        // The regression this rule's `requireModuleEvidence` option exists for:
+        // `.exec` is not evidence of child_process, and reporting it here
+        // published CVSS 9.8 "Shell command injection" on a SQLite DDL
+        // statement. Named here because the claim is the whole reason the
+        // option defaults on.
+        name: 'better-sqlite3 db.exec is not a shell, even with interpolation',
+        code: 'const db = require("better-sqlite3")("app.db"); db.exec(`CREATE TABLE ${tenant}_events (id INT)`);',
+      },
       'import { exec } from "./lib/logger-shell"; exec(`audit: user ${userId}`);',
     ],
     invalid: [
@@ -447,6 +475,25 @@ ruleTester.run(
       {
         name: 'shell is found after a spread in the options object',
         code: "import { spawn } from 'node:child_process';\nspawn(`tar -xzf ${archivePath}`, { ...baseOpts, shell: true });",
+        errors: [{ messageId: 'shellInjection' }],
+      },
+      // A shell named by a BACKTICK path is as static as a quoted one, and
+      // node accepts either. Reading only `Literal` as static meant the
+      // backtick form scored as "not statically truthy" and suppressed the
+      // report entirely — a false negative on the exact CWE-78 this rule is
+      // for. Reported by CodeRabbit on #1037 and reproduced before the fix.
+      {
+        // With shell:true node joins argv into ONE shell string, unescaped, so
+        // a metacharacter in an element executes. The rule read only
+        // `arguments[0]`, so this — the shape people reach for *believing* the
+        // array makes it safe — went unreported. CodeRabbit on #1037.
+        name: 'a dynamic args element under a shell is an injection',
+        code: "import { spawn } from 'node:child_process';\nspawn('git', [`clone ${userRepo}`], { shell: true });",
+        errors: [{ messageId: 'shellInjection' }],
+      },
+      {
+        name: 'a shell path written as a template literal still counts',
+        code: "import { execFile } from 'node:child_process';\nexecFile(`ls ${userInput}`, { shell: `/bin/bash` });",
         errors: [{ messageId: 'shellInjection' }],
       },
     ],
