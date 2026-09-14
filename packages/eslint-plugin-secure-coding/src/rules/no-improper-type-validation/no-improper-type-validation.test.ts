@@ -903,7 +903,10 @@ describe('structural predicates', () => {
     {
       valid: [
         // Member chain, both sides identical — recursion through object AND property.
-        'if (req.body.profile !== null && typeof req.body.profile === "object") { go(); }',
+        {
+          name: 'a guard on a member chain matches the same chain in the typeof',
+          code: 'if (req.body.profile !== null && typeof req.body.profile === "object") { go(); }',
+        },
         // `this` receiver.
         'class A { m() { if (this.payload != null && typeof this.payload === "object") { go(); } } }',
         // Computed member with an identical literal key — the Literal arm.
@@ -919,6 +922,40 @@ describe('structural predicates', () => {
         {
           name: 'instanceof excludes null and arrays, so it is a null guard',
           code: 'class Option {} if (typeof payload === "object" && payload instanceof Option) { go(); }',
+        },
+        // `as`, `<T>` and `!` are type-only: they erase, so both spellings emit
+        // byte-identical JavaScript. A guard recognised without the cast has to
+        // stay recognised with it, or the verdict turns on the spelling of a
+        // no-op clause — which this file rejects as evidence just above. These
+        // are the docs' own ✅ Correct example (docs/rules/
+        // no-improper-type-validation.md:88-91) wearing a cast.
+        {
+          name: 'an as-cast on the guard operand does not erase the null guard',
+          code: 'if ((payload as object) !== null && typeof payload === "object") { go(); }',
+        },
+        {
+          name: 'an as-cast on the typeof operand does not erase the null guard',
+          code: 'if (payload !== null && typeof (payload as object) === "object") { go(); }',
+        },
+        {
+          name: 'a non-null assertion on the guard operand does not erase the null guard',
+          code: 'if (payload! !== null && typeof payload === "object") { go(); }',
+        },
+        {
+          name: 'a chained cast on the guard operand does not erase the null guard',
+          code: 'if ((payload as any as object) !== null && typeof payload === "object") { go(); }',
+        },
+        {
+          name: 'an angle-bracket cast on the guard operand does not erase the null guard',
+          code: 'if (<object>payload !== null && typeof payload === "object") { go(); }',
+        },
+        {
+          name: 'a satisfies expression on the guard operand does not erase the null guard',
+          code: 'if ((payload satisfies object) !== null && typeof payload === "object") { go(); }',
+        },
+        {
+          name: 'a cast inside a member chain does not erase the null guard',
+          code: 'if ((req as any).body !== null && typeof req.body === "object") { go(); }',
         },
       ],
       invalid: [
