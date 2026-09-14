@@ -52,7 +52,7 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-react-a11y` | 2.5.2 | `react-a11y/` | — | `plugin-react-a11y` | quality | `react` | ✅ | ✅ | ✅ |
 | `eslint-plugin-react-features` | 1.7.5 | `react-features/` | — | `plugin-react-features` | quality | `react` | ✅ | ✅ | ✅ |
 | `eslint-plugin-reliability` | 4.1.8 | `reliability/` | — | `plugin-reliability` | quality | `—` | ✅ | ✅ | ✅ |
-| `eslint-plugin-secure-coding` | 5.4.2 | `secure-coding/` | — | `plugin-secure-coding` | security | `—` | ✅ | ✅ | ✅ |
+| `eslint-plugin-secure-coding` | 5.4.3 | `secure-coding/` | — | `plugin-secure-coding` | security | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-sequelize-security` | 0.3.9 | `sequelize-security/` | — | `plugin-sequelize-security` | security | `sequelize` | ✅ | ✅ | ✅ |
 | `eslint-plugin-sqlite-security` | 0.1.11 | `sqlite-security/` | — | `plugin-sqlite-security` | security | `sqlite` | ✅ | ✅ | ✅ |
 | `eslint-plugin-supabase-security` | 0.2.0 | `supabase-security/` | — | `plugin-supabase-security` | security | `—` | ✅ | ✅ | ✅ |

@@ -85,7 +85,7 @@ scan a day that ratio falls, and the OpenSSF Scorecard score falls with it. A
 vulnerability introduced by a merge is now found within 24 hours instead of
 ~208 seconds.
 
-The README's CodeQL badge is a *different* signal and is not what drops: it
+The README's CodeQL badge is a _different_ signal and is not what drops: it
 reports the latest run's pass/fail, so it stays green on a passing daily scan
 and simply reflects an older commit. Conflating the two would send the next
 reader looking for a red badge that never appears.
@@ -94,3 +94,38 @@ That trade was the maintainer's call, made explicitly. It is one line to
 revert — restore `push: branches: [main]` in `codeql.yml` — and this amendment
 exists so the next person reading a dropped SAST score knows why it dropped
 rather than treating it as drift.
+
+---
+
+## Reverted, 2026-09-14 — the post-merge scan is back
+
+`push: branches: [main]` is restored in `codeql.yml`, closing #764.
+
+What this ADR argued for and what the repo ended up with were two different
+things, and the gap is the whole reason the tracker stayed open. Dropping
+`pull_request` (2026-08-30) cost ~212s of runner contention and bought back a
+check that gated nothing — a clean trade, and the one this ADR's title
+describes. Dropping `push` the next day was a different decision wearing the
+same justification: it removed the compensating control this document named,
+and moved the accepted detection window from ~208 seconds to 24 hours.
+
+So the title is now true again. CodeQL runs **post-merge, not per-PR**:
+
+| trigger              | state         |
+| -------------------- | ------------- |
+| `pull_request`       | still removed |
+| `push: [main]`       | **restored**  |
+| nightly `17 3 * * *` | kept          |
+| `workflow_dispatch`  | kept          |
+
+The cost of restoring, stated as plainly as the cost of removing was: CodeQL is
+again the longest job on a main push, ~208s against 109s for the entire quality
+gate. It runs after the merge, so it delays nobody's PR, and Actions minutes are
+free on a public repo — the contention is for concurrent slots, not budget.
+
+What it buys back: Scorecard's SAST ratio (25 of 30 commits analysed before the
+removal) and a merge-introduced vulnerability surfacing in minutes rather than
+within a day.
+
+The per-PR half of the decision stands. Nothing here argues for putting CodeQL
+back on `pull_request`.

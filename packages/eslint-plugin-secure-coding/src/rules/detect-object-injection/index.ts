@@ -1110,7 +1110,85 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
             prop.type === AST_NODE_TYPES.Property &&
             objectKeyName(prop) === key,
         );
-        return match !== undefined && isPrototypelessObject(match.value);
+        if (match === undefined || !isPrototypelessObject(match.value)) {
+          return false;
+        }
+
+        // The initializer says what the property was CREATED as, not what it
+        // IS at the indexed write. `flags.bools = {}` — or a `flags = {
+        // ...flags, bools: {} }` rebuild — swaps in an ordinary object, and
+        // honouring the declaration then suppresses a real finding on a
+        // prototype-BEARING target. A false negative, in the rule whose whole
+        // subject is prototype pollution.
+        //
+        // Proving which value reaches the write needs flow analysis this rule
+        // does not have, so the answer is conservative: if the holder binding
+        // or that exact property is assigned anywhere, the exemption is
+        // withdrawn. The write being judged is `holder.key[computed]`, whose
+        // own `propertyName` is the computed key rather than `key`, so it
+        // never matches itself.
+        // `findInitializer` resolves a bare local binding and nothing else, so
+        // it having returned an ObjectExpression above already established that
+        // the holder is an Identifier. A re-check here would be unreachable.
+        const holderName = (objectNode.object as TSESTree.Identifier).name;
+
+        let replaced = false;
+        // No visited-set: with `parent` skipped below, what is left is a tree,
+        // so nothing is reachable twice and a guard would be dead code.
+        const seek = (node: TSESTree.Node | null | undefined): void => {
+          if (replaced || node === null || node === undefined) return;
+
+          if (node.type === AST_NODE_TYPES.AssignmentExpression) {
+            const left = node.left;
+            if (
+              left.type === AST_NODE_TYPES.Identifier &&
+              left.name === holderName
+            ) {
+              replaced = true;
+              return;
+            }
+            if (
+              left.type === AST_NODE_TYPES.MemberExpression &&
+              left.object.type === AST_NODE_TYPES.Identifier &&
+              left.object.name === holderName &&
+              propertyName(left) === key
+            ) {
+              replaced = true;
+              return;
+            }
+          }
+
+          for (const [childKey, value] of Object.entries(
+            node as unknown as Record<string, unknown>,
+          )) {
+            // `parent` points back up the tree. Following it is a cycle, not a
+            // traversal, and it blows the stack before finding anything.
+            if (childKey === 'parent') continue;
+            if (Array.isArray(value)) {
+              for (const item of value) {
+                if (
+                  item !== null &&
+                  typeof item === 'object' &&
+                  'type' in item
+                ) {
+                  seek(item as TSESTree.Node);
+                }
+              }
+            } else if (
+              value !== null &&
+              typeof value === 'object' &&
+              'type' in (value as object)
+            ) {
+              seek(value as TSESTree.Node);
+            }
+          }
+        };
+
+        let root: TSESTree.Node = objectNode;
+        while (root.parent) root = root.parent;
+        seek(root);
+
+        return !replaced;
       }
 
       if (objectNode.type !== AST_NODE_TYPES.Identifier) {

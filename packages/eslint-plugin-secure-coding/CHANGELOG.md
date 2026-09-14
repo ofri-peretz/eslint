@@ -5,6 +5,12 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.4.3
+
+### Patch Changes
+
+- **🐛 Fix** — `detect-object-injection` no longer exempts a holder property that has been replaced. The exemption read the object literal the holder was _created_ with, so `flags.bools = {}` after `const flags = { bools: Object.create(null) }` left an attacker-controlled key landing in a prototype-bearing object with the rule silent — a false negative in the rule whose whole subject is prototype pollution. A write _through_ the property is still exempt; only a replacement of the property, or a rebinding of the holder, withdraws it.
+
 ## 5.4.2
 
 ### Patch Changes
