@@ -197,16 +197,60 @@ function safeExec(cmd: string, args: string[]): { ok: boolean; out: string; err:
  * We avoid `npm view` for downloads because the registry doesn't expose
  * download counts in `npm view`. Using fetch keeps the dep set zero.
  */
-async function fetchWeeklyDownloads(pkg: string): Promise<number | null> {
-  try {
-    const url = `https://api.npmjs.org/downloads/point/last-week/${encodeURIComponent(pkg)}`;
-    const r = await fetch(url);
-    if (!r.ok) return null;
-    const j = (await r.json()) as { downloads?: number };
-    return typeof j.downloads === 'number' ? j.downloads : null;
-  } catch {
-    return null;
+/**
+ * Weekly downloads, with a FETCH FAILURE distinguished from a genuine absence.
+ *
+ * This used to return `null` on every path — non-2xx, network throw, missing
+ * field — and the caller assigned it without recording anything. So "npm did
+ * not answer" and "this package has no downloads" were written identically,
+ * and the entry still counted toward `successfulFetches`, the number the
+ * markdown report leads with.
+ *
+ * That is not hypothetical. On 2026-09-14 the snapshot wrote
+ * `eslint-plugin-typeorm-security: weeklyDownloads 584 -> null` while
+ * `successfulFetches` went 47 -> 48 — every entry "successful" — and the
+ * package was serving 74 weekly downloads from the live API the whole time.
+ * A published metric for one of our own packages silently became blank and
+ * the summary said the harvest was clean.
+ *
+ * A 404 is the registry answering "I don't know this package", which is
+ * absence and reported as such. Anything else is the registry failing to
+ * answer, which is an error the caller surfaces. The retry is there because
+ * this API 5xx's under load often enough that a single miss would otherwise
+ * be published as data.
+ */
+export async function fetchWeeklyDownloads(
+  pkg: string,
+): Promise<{ downloads: number | null; error: string | null }> {
+  const url = `https://api.npmjs.org/downloads/point/last-week/${encodeURIComponent(pkg)}`;
+  let lastFailure = 'unknown';
+
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const r = await fetch(url);
+      if (r.ok) {
+        const j = (await r.json()) as { downloads?: number };
+        // A package with genuinely no downloads reports 0, not a missing
+        // field. A missing field means the API could not answer.
+        if (typeof j.downloads === 'number') {
+          return { downloads: j.downloads, error: null };
+        }
+        lastFailure = 'response carried no `downloads` field';
+      } else if (r.status === 404) {
+        return { downloads: null, error: null };
+      } else {
+        lastFailure = `HTTP ${r.status}`;
+      }
+    } catch (e) {
+      lastFailure = (e as Error).message;
+    }
+    if (attempt < 2) await new Promise((res) => setTimeout(res, 500));
   }
+
+  return {
+    downloads: null,
+    error: `weekly downloads unavailable for ${pkg}: ${lastFailure}`,
+  };
 }
 
 /**
@@ -259,7 +303,9 @@ async function fetchNpm(peer: Peer): Promise<{ info: NpmInfo; errors: string[] }
   let daysSinceLastRelease: number | null = null;
   let license: string | null = null;
 
-  weeklyDownloads = await fetchWeeklyDownloads(peer.npm);
+  const downloadsResult = await fetchWeeklyDownloads(peer.npm);
+  weeklyDownloads = downloadsResult.downloads;
+  if (downloadsResult.error) errors.push(downloadsResult.error);
 
   const r = safeExec('npm', ['view', peer.npm, 'version', 'license', 'time', '--json']);
   if (!r.ok) {
