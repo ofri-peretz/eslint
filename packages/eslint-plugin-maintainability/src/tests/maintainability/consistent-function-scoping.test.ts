@@ -64,6 +64,49 @@ describe('consistent-function-scoping', () => {
             }`,
           },
           /*
+           * A sibling function declaration is a binding too. `scopeStack` was fed
+           * only by the `VariableDeclaration` visitor and by function params, so a
+           * `function` declared next door bound nothing as far as this rule was
+           * concerned — while the same helper written `const helper = () => …` was
+           * tracked. Identical semantics, opposite verdicts, decided purely by
+           * declaration syntax.
+           *
+           * The report then asserted "doesn't capture outer variables" about code
+           * where ESLint's own scope manager resolves the reference to the enclosing
+           * function, and the suggested move does not compile (TS2304: Cannot find
+           * name 'hasAnyFlag') — nor can `hasAnyFlag` follow it out, since it reads
+           * `flags`. Upstream eslint-plugin-unicorn, which the report links to,
+           * deliberately exempts this shape.
+           *
+           * burgee packages/burgee/src/yargs-parser.ts:728
+           */
+          {
+            name: 'a nested function capturing a sibling function declaration',
+            code: `function parse(flags) {
+              function hasAnyFlag(key) {
+                return Object.keys(flags).some((k) => k === key);
+              }
+              function hasFlagsMatching(arg, ...patterns) {
+                const toCheck = [].concat(...patterns);
+                return toCheck.some((p) => {
+                  const match = p.exec(arg);
+                  return match && hasAnyFlag(match[1]);
+                });
+              }
+              return hasFlagsMatching;
+            }`,
+          },
+          {
+            // Function declarations hoist, so the capture holds even when the
+            // sibling is declared after the function that calls it.
+            name: 'a nested function capturing a hoisted sibling declared later',
+            code: `function parse(flags) {
+              function first(key) { return second(key); }
+              function second(key) { return Object.keys(flags).includes(key); }
+              return first;
+            }`,
+          },
+          /*
            * A destructured binding is still a binding. The scope tracker recorded
            * only `decl.id.type === 'Identifier'`, so every ObjectPattern and
            * ArrayPattern was invisible and a nested function that captured one
