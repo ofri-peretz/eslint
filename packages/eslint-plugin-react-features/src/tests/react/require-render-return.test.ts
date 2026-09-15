@@ -15,6 +15,47 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('require-render-return', requireRenderReturn, {
   valid: [
+    // A switch guarantees a return only when no path escapes it. Before the
+    // path-sensitive rewrite these three were indistinguishable from the
+    // invalid shapes below: the check asked only "does any clause return?".
+    {
+      name: 'a switch whose every clause returns, with a default, is complete',
+      code: `class C extends React.Component {
+      render() {
+        switch (this.props.k) {
+          case 1: return <A/>;
+          default: return <B/>;
+        }
+      }
+    }`,
+    },
+    // Fallthrough — an empty clause inherits the returning clause below it.
+    // A clause is NOT required to carry a return of its own.
+    {
+      name: 'an empty clause falls through and inherits the clause below it',
+      code: `class C extends React.Component {
+      render() {
+        switch (this.props.k) {
+          case 1:
+          case 2: return <A/>;
+          default: return <B/>;
+        }
+      }
+    }`,
+    },
+    // A clause may return through if/else rather than a bare ReturnStatement.
+    {
+      name: 'a clause may return through if/else, not only a bare return',
+      code: `class C extends React.Component {
+      render() {
+        switch (this.props.k) {
+          case 1:
+            if (x) { return <A/>; } else { return <B/>; }
+          default: return <C/>;
+        }
+      }
+    }`,
+    },
     // Valid - render with return statement
     {
       name: 'render with simple return',
@@ -145,6 +186,45 @@ ruleTester.run('require-render-return', requireRenderReturn, {
     },
   ],
   invalid: [
+    {
+      // No `default` — an unmatched selector falls straight out and render()
+      // returns undefined.
+      name: 'a switch with no default lets an unmatched selector escape',
+      code: `class C extends React.Component {
+        render() {
+          switch (this.props.k) {
+            case 1: return <A/>;
+          }
+        }
+      }`,
+      errors: [{ messageId: 'requireRenderReturn' }],
+    },
+    {
+      // A clause exits via `break` without returning.
+      name: 'a clause that breaks without returning leaves render() empty',
+      code: `class C extends React.Component {
+        render() {
+          switch (this.props.k) {
+            case 1: break;
+            default: return <A/>;
+          }
+        }
+      }`,
+      errors: [{ messageId: 'requireRenderReturn' }],
+    },
+    {
+      // The `default` itself breaks out.
+      name: 'a default that breaks without returning leaves render() empty',
+      code: `class C extends React.Component {
+        render() {
+          switch (this.props.k) {
+            case 1: return <A/>;
+            default: break;
+          }
+        }
+      }`,
+      errors: [{ messageId: 'requireRenderReturn' }],
+    },
     // Invalid - render without return
     {
       name: 'render without any return',
@@ -200,6 +280,38 @@ ruleTester.run('require-render-return', requireRenderReturn, {
       `,
       errors: [{ messageId: 'requireRenderReturn' }],
     },
+    // The rule's own docs print this shape under "### ❌ Incorrect"
+    // (docs/rules/require-render-return.md:53-60), paired with a "### ✅ Correct"
+    // block of the same class that differs only by a trailing `return null;`.
+    // An `if` with no `else` falls through and renders nothing.
+    {
+      name: 'render returning only inside an if with no else falls through and must report',
+      code: `
+        class AnotherComponent extends React.Component {
+          render() {
+            if (this.props.show) {
+              return <div>Content</div>;
+            }
+            // Missing return for else case
+          }
+        }
+      `,
+      errors: [{ messageId: 'requireRenderReturn' }],
+    },
+    {
+      name: 'render with an if/else where only the consequent returns must report',
+      code: `
+        class MyComponent extends Component {
+          render() {
+            if (this.props.ok) {
+              return <div>OK</div>;
+            } else {
+              this.log();
+            }
+          }
+        }
+      `,
+      errors: [{ messageId: 'requireRenderReturn' }],
+    },
   ],
 });
-

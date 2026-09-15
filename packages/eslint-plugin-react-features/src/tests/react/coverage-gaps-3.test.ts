@@ -736,23 +736,34 @@ describe('require-render-return: statement shapes', () => {
   ruleTester.run('require-render-return', requireRenderReturn, {
     valid: [
       {
-        name: 'return inside single-statement if consequent (L61 false, L71)',
-        code: 'class A extends Component { render() { if (x) return null; } }',
-      },
-      {
         name: 'return inside nested block (L87-88)',
         code: 'class B extends Component { render() { { return null; } } }',
       },
+    ],
+    invalid: [
+      // Moved from `valid` for the same reason as the `if` case below: it
+      // pinned the false negative, not intended behaviour. `case 1` calls
+      // `log()` and then `break`s, so `x === 1` leaves render() returning
+      // undefined. It was written to reach a coverage line in the old
+      // any-clause-returns check, and that check is what made it pass.
       {
-        name: 'return inside switch case (L94 both arms)',
+        name: 'a switch clause that breaks without returning must report',
         code: `
           class C extends Component {
             render() { switch (x) { case 1: log(); break; default: return null; } }
           }
         `,
+        errors: [{ messageId: 'requireRenderReturn' }],
       },
-    ],
-    invalid: [
+      // Moved from `valid`: this pinned the false negative rather than intended
+      // behaviour. A single-statement `if` consequent with no `else` and no
+      // trailing return falls through and renders nothing, which the rule's
+      // docs print under "### ❌ Incorrect".
+      {
+        name: 'single-statement if consequent with no else still falls through and must report',
+        code: 'class A extends Component { render() { if (x) return null; } }',
+        errors: [{ messageId: 'requireRenderReturn' }],
+      },
       {
         name: 'if without returns in either branch (L81/L82 operand arms)',
         code: 'class D extends Component { render() { if (x) y(); else { z(); } } }',
