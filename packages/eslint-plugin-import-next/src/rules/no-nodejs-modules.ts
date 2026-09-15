@@ -207,13 +207,16 @@ export const noNodejsModules = createRule<RuleOptions, MessageIds>({
       }
 
       // `allow` is matched against every spelling of the same builtin — the
-      // specifier as written, the `node:`-stripped name, and the base — so
-      // `allow: ['fs']` covers `node:fs/promises` too. Allowing a builtin but
-      // not its subpaths would be backwards from any intent.
+      // specifier as written, the `node:`-stripped name, the base, and the
+      // base's `node:` form — so `allow: ['fs']` and `allow: ['node:fs']` each
+      // cover `node:fs/promises`. Allowing a builtin but not its subpaths would
+      // be backwards from any intent, and so would honouring one spelling of
+      // the allow entry but not the other.
       return (
         !allowedBuiltins.has(moduleName) &&
         !allowedBuiltins.has(bare) &&
-        !allowedBuiltins.has(base)
+        !allowedBuiltins.has(base) &&
+        !allowedBuiltins.has(`node:${base}`)
       );
     }
 

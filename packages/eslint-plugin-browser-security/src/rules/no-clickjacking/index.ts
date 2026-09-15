@@ -606,6 +606,19 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
     };
 
     /**
+     * Methods that actually SET a response header. `res.setHeader(...)` and
+     * `res.header(...)` are Express/Node; `headers.set/append` is the Fetch
+     * `Headers` API; `setRequestHeader` is XHR.
+     */
+    const HEADER_SETTERS = new Set([
+      'setheader',
+      'setrequestheader',
+      'header',
+      'set',
+      'append',
+    ]);
+
+    /**
      * Is this string literal the VALUE of an X-Frame-Options header?
      *
      * Three spellings carry one meaning, and the rule must read all three or
@@ -635,13 +648,28 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
         return false;
       }
 
+      // A CALL IS A HEADER SLOT ONLY WHEN IT IS A HEADER SETTER, AND ONLY IN
+      // THE VALUE POSITION. Accepting any call carrying `'x-frame-options'` in
+      // some other argument meant `logger.warn('x-frame-options', 'deny')` and
+      // `expect(headers['x-frame-options']).toBe('deny')` each declared frame
+      // protection and silenced the rule for the WHOLE FILE. A log line must
+      // not be able to disarm a security rule.
+      //
+      // Two conditions, both required: the callee is a known header setter,
+      // and the header NAME is the argument immediately before this one -
+      // `setHeader(name, value)`. Position alone does not do it; a logger call
+      // has the same shape.
       if (parent.type === 'CallExpression') {
-        return parent.arguments.some(
-          (argument) =>
-            argument !== node &&
-            argument.type === 'Literal' &&
-            typeof argument.value === 'string' &&
-            argument.value.toLowerCase() === 'x-frame-options',
+        if (parent.callee.type !== 'MemberExpression') return false;
+        if (!HEADER_SETTERS.has(propertyName(parent.callee)?.toLowerCase() ?? ''))
+          return false;
+        const index = parent.arguments.indexOf(node);
+        if (index < 1) return false;
+        const name = parent.arguments[index - 1];
+        return (
+          name.type === 'Literal' &&
+          typeof name.value === 'string' &&
+          name.value.toLowerCase() === 'x-frame-options'
         );
       }
 

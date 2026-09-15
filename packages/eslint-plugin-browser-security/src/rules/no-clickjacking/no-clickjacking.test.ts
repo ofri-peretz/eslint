@@ -452,6 +452,10 @@ ruleTester.run('a declared protection must actually protect', noClickjacking, {
       name: 'setHeader with a protective value still silences the rule',
       code: `export default function Root() { res.setHeader('X-Frame-Options', 'DENY'); return <html><body /></html>; }`,
     },
+    {
+      name: 'the Fetch Headers API spelling is a header slot too',
+      code: `export default function Root() { headers.set('X-Frame-Options', 'DENY'); return <html><body /></html>; }`,
+    },
   ],
   invalid: [
     // The docs' own ❌ Incorrect example, verbatim.
@@ -463,6 +467,46 @@ ruleTester.run('a declared protection must actually protect', noClickjacking, {
     {
       name: 'setHeader with ALLOWALL is not frame protection',
       code: `export default function Root() { res.setHeader('X-Frame-Options', 'ALLOWALL'); return <html><body /></html>; }`,
+      errors: [{ messageId: 'missingFrameBusting' }],
+    },
+    // Review of this PR: the CallExpression branch accepted ANY call carrying
+    // 'x-frame-options' in some other argument, so a log line or a test
+    // assertion declared frame protection and silenced the whole file. A
+    // security rule that a `console`/`logger` call can disarm is worse than
+    // one that never read the call at all.
+    {
+      name: 'a logger call naming the header does not declare frame protection',
+      code: `export default function Root() { logger.warn('x-frame-options', 'deny'); return <html><body /></html>; }`,
+      errors: [{ messageId: 'missingFrameBusting' }],
+    },
+    {
+      name: 'a test assertion naming the header does not declare frame protection',
+      code: `export default function Root() { expect(headers['x-frame-options']).toBe('deny'); return <html><body /></html>; }`,
+      errors: [{ messageId: 'missingFrameBusting' }],
+    },
+    // Right callee, wrong position: the header NAME must be the argument
+    // before the value, or `setHeader('deny', 'x-frame-options')` reads as a
+    // declaration of the thing it actually inverts.
+    {
+      name: 'a header setter with the name and value transposed is not frame protection',
+      code: `export default function Root() { res.setHeader('deny', 'x-frame-options'); return <html><body /></html>; }`,
+      errors: [{ messageId: 'missingFrameBusting' }],
+    },
+    // The remaining ways a call can fail to be a header slot. Each of these
+    // silenced the rule before the callee gate existed.
+    {
+      name: 'a bare function call is not a header setter',
+      code: `export default function Root() { setFrameOptions('x-frame-options', 'deny'); return <html><body /></html>; }`,
+      errors: [{ messageId: 'missingFrameBusting' }],
+    },
+    {
+      name: 'a computed callee is not a provable header setter',
+      code: `const fn = 'setHeader';\nexport default function Root() { res[fn]('x-frame-options', 'deny'); return <html><body /></html>; }`,
+      errors: [{ messageId: 'missingFrameBusting' }],
+    },
+    {
+      name: 'a header name held in a variable is not provable frame protection',
+      code: `const name = 'X-Frame-Options';\nexport default function Root() { res.setHeader(name, 'deny'); return <html><body /></html>; }`,
       errors: [{ messageId: 'missingFrameBusting' }],
     },
     // A key the rule cannot read is not a header it can credit. `objectKeyName`
@@ -487,28 +531,30 @@ ruleTester.run('a declared protection must actually protect', noClickjacking, {
 
 ruleTester.run('lock: trustedSources is an origin allowlist', noClickjacking, {
   valid: [
-    // Same-origin relative src, under the default trustedSources.
-    { code: '<iframe src="/embed/checkout" />' },
-    // An explicitly allowlisted origin, with a path.
     {
+      name: 'a same-origin relative src, under the default trustedSources',
+      code: '<iframe src="/embed/checkout" />',
+    },
+    {
+      name: 'an explicitly allowlisted origin, with a path',
       code: '<iframe src="https://trusted.com/embed/checkout" />',
       options: [{ trustedSources: ['https://trusted.com'] }],
     },
   ],
   invalid: [
-    // The word `self` inside a foreign URL is not the `self` origin.
     {
+      name: 'the word `self` inside a foreign URL is not the `self` origin',
       code: '<iframe src="https://evil.example/self" />',
       errors: [{ messageId: 'unsafeIframeUsage' }],
     },
-    // Nor is an allowlisted origin echoed in a query string.
     {
+      name: 'nor is an allowlisted origin echoed in a query string',
       code: '<iframe src="https://evil.example/?next=https://trusted.com" />',
       options: [{ trustedSources: ['https://trusted.com'] }],
       errors: [{ messageId: 'unsafeIframeUsage' }],
     },
-    // Protocol-relative is absolute, so it is not "self".
     {
+      name: 'a protocol-relative src is absolute, so it is not "self"',
       code: '<iframe src="//evil.example/widget" />',
       errors: [{ messageId: 'unsafeIframeUsage' }],
     },

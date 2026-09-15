@@ -218,7 +218,9 @@ const make = pickMethod();
 const cipher = crypto[make]('aes-256-cbc', pwd);
 ```
 
-**Mitigation**: Search for all createCipher occurrences.
+**Mitigation**: Grep for both deprecated names — `createCipher` and
+`createDecipher` — and review every dynamic `crypto[...]` call, since the
+subscript above can resolve to either.
 
 A STATIC subscript is detected — `crypto['createCipher'](...)` reports exactly as
 `crypto.createCipher(...)` does, and the suggestion re-quotes the replacement.

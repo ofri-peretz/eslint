@@ -33,21 +33,25 @@ describe('no-nodejs-modules', () => {
           filename: '/src/utils/helpers.js',
         },
         {
+          name: 'a third-party package is not a builtin',
           code: 'import { Component } from "react";',
           filename: '/src/components/Button.js',
         },
         {
+          name: 'a package whose name resembles no builtin',
           code: 'import lodash from "lodash";',
           filename: '/src/utils/helpers.js',
         },
         // Allowed builtins
         {
+          name: 'a builtin named in `allow`',
           code: 'import fs from "fs";',
           filename: '/src/utils/helpers.js',
           options: [{ allow: ['fs'] }],
         },
         // No imports
         {
+          name: 'a file that imports nothing',
           code: 'console.log("hello");',
           filename: '/src/utils/helpers.js',
         },
@@ -215,6 +219,23 @@ describe('no-nodejs-modules', () => {
           code: 'const crypto = require("crypto");',
           filename: '/src/security/utils.js',
           options: [{ allow: ['crypto'] }],
+        },
+        // Review of this PR: `allow` is matched against every spelling of the
+        // builtin, so it must also accept every spelling of the allow ENTRY.
+        // `allow: ['fs']` already covered `node:fs/promises`; `allow:
+        // ['node:fs']` did not, which reads as an arbitrary distinction to
+        // anyone who writes the prefixed form.
+        {
+          name: 'a subpath under a builtin allowed by its `node:` spelling',
+          code: 'import promises from "node:fs/promises";',
+          filename: '/src/utils/helpers.js',
+          options: [{ allow: ['node:fs'] }],
+        },
+        {
+          name: 'a subpath under a builtin allowed by its bare spelling',
+          code: 'import promises from "node:fs/promises";',
+          filename: '/src/utils/helpers.js',
+          options: [{ allow: ['fs'] }],
         },
       ],
       invalid: [
