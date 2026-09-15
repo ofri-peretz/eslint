@@ -20,7 +20,11 @@
  * - JSDoc annotations (@validated, @type-checked)
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, propertyName } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   createSafetyChecker,
@@ -92,6 +96,28 @@ export interface Options extends SecurityRuleOptions {
 }
 
 type RuleOptions = [Options?];
+
+/**
+ * Strip the type-only wrappers TypeScript erases at compile time.
+ *
+ * `x as T`, `x satisfies T`, `<T>x` and `x!` all emit exactly `x`, so two
+ * conditions that differ only by one of them are the same program. Comparing
+ * such nodes by `type` made a null guard invisible the moment it wore a cast,
+ * and the rule then reported code carrying the guard its own message asks for.
+ * Applied recursively, since casts chain (`x as any as T`).
+ */
+function unwrapTypeOnly(node: TSESTree.Node): TSESTree.Node {
+  let current = node;
+  while (
+    current.type === AST_NODE_TYPES.TSAsExpression ||
+    current.type === AST_NODE_TYPES.TSSatisfiesExpression ||
+    current.type === AST_NODE_TYPES.TSTypeAssertion ||
+    current.type === AST_NODE_TYPES.TSNonNullExpression
+  ) {
+    current = current.expression;
+  }
+  return current;
+}
 
 export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
   name: 'no-improper-type-validation',
@@ -231,6 +257,12 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
      * neighbouring null test on the operand's spelling alone.
      */
     const sameExpression = (a: TSESTree.Node, b: TSESTree.Node): boolean => {
+      // `as`, `satisfies`, `<T>x` and `x!` are type-only: they erase, so the
+      // two spellings denote the same runtime read. Comparing them by node type
+      // made a guard stop counting the moment anyone wrote a cast, which is the
+      // spelling-sensitivity this predicate replaced text matching to avoid.
+      a = unwrapTypeOnly(a);
+      b = unwrapTypeOnly(b);
       if (a.type !== b.type) return false;
       if (a.type === 'Identifier' && b.type === 'Identifier')
         return a.name === b.name;
