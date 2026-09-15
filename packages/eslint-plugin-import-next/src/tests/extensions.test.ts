@@ -38,6 +38,24 @@ describe('extensions', () => {
         code: 'const foo = 1;\nexport { foo };',
         options: [{ pattern: { js: 'never' } }],
       },
+      // `import(expr)` takes any expression. A template or a variable carries no
+      // specifier the rule can read or rewrite, so it is left alone — the same guard
+      // the sibling resolution rules use.
+      {
+        name: 'a dynamic import of a template literal',
+        code: 'const m = await import(`./${name}.js`);',
+        options: [{ pattern: { js: 'never' } }],
+      },
+      {
+        name: 'a dynamic import of a variable specifier',
+        code: 'const m = await import(specifier);',
+        options: [{ pattern: { js: 'never' } }],
+      },
+      {
+        name: 'a dynamic import of a bare package name',
+        code: "const m = await import('node:path');",
+        options: [{ pattern: { js: 'never' } }],
+      },
     ],
     invalid: [
       {
@@ -75,6 +93,26 @@ describe('extensions', () => {
       {
         name: 'a missing extension on an export-from when the style requires one',
         code: "export { foo } from './data';",
+        options: [{ pattern: { json: 'always' }, default: 'always' }],
+        errors: [{ messageId: 'missingExtension' }],
+      },
+
+      // burgee sweep: packages/burgee/src/cli.ts:25 vs :172. The same defect one node
+      // type over — `await import('./dev.js')` sits below static imports of the same
+      // shape that the rule does report, so after --fix the static form reads './dev'
+      // and the dynamic form still reads './dev.js'. Sibling rules in this package
+      // (no-unresolved, no-internal-modules, no-useless-path-segments) already visit
+      // ImportExpression.
+      {
+        name: 'an explicit .js extension on a dynamic import',
+        code: "const m = await import('./foo.js');",
+        output: "const m = await import('./foo');",
+        options: [{ pattern: { js: 'never' } }],
+        errors: [{ messageId: 'unexpectedExtension' }],
+      },
+      {
+        name: 'a missing extension on a dynamic import when the style requires one',
+        code: "const m = await import('./data');",
         options: [{ pattern: { json: 'always' }, default: 'always' }],
         errors: [{ messageId: 'missingExtension' }],
       },

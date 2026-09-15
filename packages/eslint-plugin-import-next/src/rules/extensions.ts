@@ -94,9 +94,10 @@ export const extensions = createRule<Options, MessageIds>({
 
     /**
      * A module specifier carries the same extension either way it is written, so
-     * `export … from` and `export * from` are checked exactly like an import. Visiting
-     * only `ImportDeclaration` reported one and stayed silent on the other for the same
-     * string, which left a file less consistent after `--fix` than before it.
+     * `export … from`, `export * from` and `import(…)` are checked exactly like an
+     * import. Visiting only `ImportDeclaration` reported one and stayed silent on the
+     * other for the same string, which left a file less consistent after `--fix` than
+     * before it.
      */
     function checkSource(source: TSESTree.StringLiteral | null): void {
       if (!source) return; // `export { foo };` re-exports nothing
@@ -140,6 +141,15 @@ export const extensions = createRule<Options, MessageIds>({
       },
       ExportAllDeclaration(node: TSESTree.ExportAllDeclaration) {
         checkSource(node.source);
+      },
+      ImportExpression(node: TSESTree.ImportExpression) {
+        // `import(expr)` accepts any expression. Only a string literal carries a
+        // specifier the rule can read or rewrite; a template or a variable is left
+        // alone, the same guard the sibling resolution rules use.
+        const source = node.source;
+        if (source.type !== 'Literal' || typeof source.value !== 'string')
+          return;
+        checkSource(source as TSESTree.StringLiteral);
       },
     };
   },
