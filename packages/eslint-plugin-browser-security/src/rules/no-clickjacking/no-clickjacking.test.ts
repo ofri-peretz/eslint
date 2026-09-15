@@ -374,33 +374,40 @@ ruleTester.run('lock: declared frame protection silences the rule', noClickjacki
   valid: [
     // CSP in a string constant next to the shell.
     {
+      name: 'a CSP frame-ancestors in a string constant beside the shell',
       code: `const csp = "default-src 'self'; frame-ancestors 'none'";\nexport default function Root() { return <html><head><meta httpEquiv="Content-Security-Policy" content={csp} /></head><body /></html>; }`,
     },
     // CSP written straight into the meta tag.
     {
+      name: 'a CSP written straight into the meta tag',
       code: `export default function Root() { return <html><head><meta httpEquiv="Content-Security-Policy" content="frame-ancestors 'self'" /></head><body /></html>; }`,
     },
     // A template literal builds the policy.
     {
+      name: 'a template literal builds the policy',
       code: 'export default function Root() { const csp = `default-src \'self\'; frame-ancestors \'none\'`; return <html><body>{csp}</body></html>; }',
     },
     // X-Frame-Options instead of CSP.
     {
+      name: 'X-Frame-Options DENY instead of a CSP',
       code: `export default function Root() { const h = { "X-Frame-Options": "DENY" }; return <html><body>{JSON.stringify(h)}</body></html>; }`,
     },
     // Frame-busting JavaScript, the original remediation.
     {
+      name: 'frame-busting JavaScript, the original remediation',
       code: 'export default function Root() { if (top !== self) { top.location = self.location; } return <html><body /></html>; }',
     },
   ],
   invalid: [
     // `frame-ancestors *` allows every framer — that is not protection.
     {
+      name: 'frame-ancestors * allows every framer, so it is not protection',
       code: `export default function Root() { return <html><head><meta httpEquiv="Content-Security-Policy" content="frame-ancestors *" /></head><body /></html>; }`,
       errors: [{ messageId: 'missingFrameBusting' }],
     },
     // A CSP with no frame-ancestors directive at all.
     {
+      name: 'a CSP carrying no frame-ancestors directive at all',
       code: `export default function Root() { return <html><head><meta httpEquiv="Content-Security-Policy" content="default-src 'self'" /></head><body /></html>; }`,
       errors: [{ messageId: 'missingFrameBusting' }],
     },
@@ -413,6 +420,71 @@ ruleTester.run('lock: declared frame protection silences the rule', noClickjacki
  * `source.includes(trusted)` made it trivially bypassable: the default
  * `['self', 'same-origin']` trusted `https://evil.example/self`.
  */
+/**
+ * FP/FN sweep 2026-09-15 against the burgee corpus.
+ *
+ * `declaresFrameProtection` ran over every string in the file and, when it
+ * matched, suppressed the file's report entirely. Two of its three branches
+ * read no directive at all: `/^\s*(deny|sameorigin)\s*$/` matched a standalone
+ * word with no header context, and `text.includes('x-frame-options')` matched
+ * the header's NAME while discarding its VALUE — which is where the security
+ * decision lives. So the docs' own ❌ Incorrect example,
+ * `res.setHeader('X-Frame-Options', 'ALLOWALL')`, did not merely go unreported:
+ * it bought silence for the whole file.
+ *
+ * None of this is declared. The rule's Known False Negatives section lists only
+ * "Values from Variables", "Wrapper Functions" and "Dynamic Invocation" — and
+ * the first is the MIRROR of the bare-word case, declaring that a dangerous
+ * value hidden in a variable goes UNDETECTED, not that a harmless one counts as
+ * a defence.
+ */
+ruleTester.run('a declared protection must actually protect', noClickjacking, {
+  valid: [
+    {
+      name: 'X-Frame-Options: DENY as a header pair still silences the rule',
+      code: `export default function Root() { const h = { "X-Frame-Options": "DENY" }; return <html><body>{JSON.stringify(h)}</body></html>; }`,
+    },
+    {
+      name: 'the Next.js headers() pair shape is understood',
+      code: `export function headers() { return [{ key: 'X-Frame-Options', value: 'SAMEORIGIN' }]; }\nexport default function Root() { return <html><body /></html>; }`,
+    },
+    {
+      name: 'setHeader with a protective value still silences the rule',
+      code: `export default function Root() { res.setHeader('X-Frame-Options', 'DENY'); return <html><body /></html>; }`,
+    },
+  ],
+  invalid: [
+    // The docs' own ❌ Incorrect example, verbatim.
+    {
+      name: 'X-Frame-Options ALLOWALL is not frame protection',
+      code: `export function headers() { return [{ key: 'X-Frame-Options', value: 'ALLOWALL' }]; }\nexport default function Root() { return <html><body /></html>; }`,
+      errors: [{ messageId: 'missingFrameBusting' }],
+    },
+    {
+      name: 'setHeader with ALLOWALL is not frame protection',
+      code: `export default function Root() { res.setHeader('X-Frame-Options', 'ALLOWALL'); return <html><body /></html>; }`,
+      errors: [{ messageId: 'missingFrameBusting' }],
+    },
+    // A key the rule cannot read is not a header it can credit. `objectKeyName`
+    // returns null for a dynamic computed key, and "prove it or report" is the
+    // right default for a security rule — the docs already declare this class
+    // ("Values from Variables: values stored in variables are not traced").
+    {
+      name: 'a dynamically computed header key is not provable frame protection',
+      code: `const hdr = 'X-Frame-Options';\nexport default function Root() { const h = { [hdr]: 'DENY' }; return <html><body>{JSON.stringify(h)}</body></html>; }`,
+      errors: [{ messageId: 'missingFrameBusting' }],
+    },
+    // burgee apps/docs/src/app/layout.tsx:15-31 is the file this rule already
+    // reports on; an unrelated 'deny' constant anywhere in it would have
+    // silenced that report.
+    {
+      name: 'a bare deny constant in an unrelated slot is not frame protection',
+      code: `const COOKIE_POLICY = 'deny';\nexport const metadata = { other: { 'x-cookies': COOKIE_POLICY } };\nexport default function Root() { return <html><body /></html>; }`,
+      errors: [{ messageId: 'missingFrameBusting' }],
+    },
+  ],
+});
+
 ruleTester.run('lock: trustedSources is an origin allowlist', noClickjacking, {
   valid: [
     // Same-origin relative src, under the default trustedSources.
