@@ -417,4 +417,67 @@ describe('no-nodejs-modules', () => {
       ],
     });
   });
+  describe('the builtin set is whatever Node says it is', () => {
+    // FP/FN sweep 2026-09-15 against the burgee corpus.
+    //
+    // `NODEJS_BUILTINS` was a hand-written literal set covering 31 of the 72
+    // names in Node 24's `module.builtinModules`, and `isNodejsBuiltin` did an
+    // exact match plus a `node:` strip with no subpath step. So a SUBPATH
+    // builtin fell through even when its base was already in the set, and 11
+    // top-level builtins the sibling `prefer-node-protocol` already knows were
+    // missed outright. The same package had already diagnosed and fixed this
+    // exact defect class in `no-extraneous-dependencies` ("This was a
+    // hand-written list of 29 names, frozen at roughly Node 8"), resolving via
+    // `builtinModules` from `node:module`.
+    ruleTester.run('subpath and modern builtins', noNodejsModules, {
+      valid: [
+        {
+          name: 'a scoped package that merely looks like a subpath is not a builtin',
+          code: 'import x from "@scope/fs/promises";',
+          filename: '/src/a.ts',
+        },
+        {
+          name: 'allowing a builtin also allows its subpaths',
+          code: 'import fsp from "node:fs/promises";',
+          options: [{ allow: ['fs'] }],
+          filename: '/src/a.ts',
+        },
+      ],
+      invalid: [
+        // burgee packages/seniority/src/cosmiconfig.ts:39 — four consecutive
+        // `node:` imports, of which only this one was silent. Lines 38, 40 and
+        // 41 (`node:fs`, `node:os`, `node:path`) all reported.
+        {
+          name: 'node:fs/promises is a builtin even though fs/promises is not in the literal set',
+          code: 'import fsp from "node:fs/promises";',
+          filename: '/src/a.ts',
+          errors: [{ messageId: 'nodejsBuiltinImport' }],
+        },
+        {
+          name: 'a bare subpath builtin is a builtin',
+          code: 'import { setTimeout } from "timers/promises";',
+          filename: '/src/a.ts',
+          errors: [{ messageId: 'nodejsBuiltinImport' }],
+        },
+        {
+          name: 'worker_threads stabilised in Node 12 and was missing from the set',
+          code: 'import { Worker } from "node:worker_threads";',
+          filename: '/src/a.ts',
+          errors: [{ messageId: 'nodejsBuiltinImport' }],
+        },
+        {
+          name: 'a missing builtin is still caught through require()',
+          code: 'const dc = require("node:diagnostics_channel");',
+          filename: '/src/a.ts',
+          errors: [{ messageId: 'nodejsBuiltinRequire' }],
+        },
+        {
+          name: 'a missing builtin is still caught through dynamic import()',
+          code: 'const t = import("node:timers/promises");',
+          filename: '/src/a.ts',
+          errors: [{ messageId: 'nodejsBuiltinDynamic' }],
+        },
+      ],
+    });
+  });
 });
