@@ -46,6 +46,23 @@ describe('cognitive-complexity', () => {
           `,
           options: [{ maxComplexity: 15 }],
         },
+        // burgee packages/burgee/src/yargs/utils.ts:111 — `levenshtein` scored 17/15 on a
+        // four-operand `&&` in its inner loop. The docs' Complexity Factors table charges
+        // logical operators "+1 | && , || (sequence breaks)": a run of one operator costs
+        // one point and a *break* in the run starts the next. Charging every
+        // LogicalExpression node instead made `a && b && c && d` cost 3 where the table
+        // says 1, inflating every &&-heavy function against an unchanged Sonar-default
+        // threshold of 15.
+        {
+          name: 'a homogeneous && run costs one point, not one per operator',
+          code: 'function f(a, b, c, d) { if (a && b && c && d) { return 1; } return 0; }',
+          options: [{ maxComplexity: 2 }],
+        },
+        {
+          name: 'a homogeneous ?? run costs one point, not one per operator',
+          code: 'function f(a, b, c, d) { return a ?? b ?? c ?? d; }',
+          options: [{ maxComplexity: 1 }],
+        },
       ],
       invalid: [],
     });
@@ -95,7 +112,14 @@ describe('cognitive-complexity', () => {
               return null;
             }
           `,
-          options: [{ maxComplexity: 2 }],
+          // Threshold lowered 2 -> 1 with the logical-sequence fix. This fixture asserts
+          // no number; it only needed the function to report at all, and it reported
+          // solely because `data && data.value && ...` was charged 2 for one `&&`
+          // sequence instead of 1. Scored per the docs it is 2 (one `if` + one
+          // sequence), so the threshold moves to keep the fixture exercising what it
+          // was written for — suggestions on a reporting function — rather than
+          // depending on the over-charge.
+          options: [{ maxComplexity: 1 }],
           errors: [
             {
               messageId: 'highCognitiveComplexity',

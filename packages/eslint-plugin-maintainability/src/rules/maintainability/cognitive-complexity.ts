@@ -223,15 +223,27 @@ export const cognitiveComplexity = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        // Logical operators (short-circuiting)
+        // Logical operators (short-circuiting). The docs charge these "+1 | && , ||
+        // (sequence breaks)": a run of one operator costs a single point and only a
+        // *break* in the run starts the next. `a && b && c` parses left-associative as
+        // `(a && b) && c`, so charging every node cost one point per operator and
+        // inflated every &&-heavy function against an unchanged threshold. Charge only
+        // the node that starts a sequence — the one whose parent is not the same
+        // operator — which leaves `a && b || c` at 2, as two sequences should be.
         if (n.type === 'LogicalExpression') {
           if (
             n.operator === '&&' ||
             n.operator === '||' ||
             n.operator === '??'
           ) {
-            complexity += 1;
-            breakdown.logicalOperators++;
+            const parent = n.parent;
+            const continuesSequence =
+              parent?.type === 'LogicalExpression' &&
+              parent.operator === n.operator;
+            if (!continuesSequence) {
+              complexity += 1;
+              breakdown.logicalOperators++;
+            }
           }
         }
 
