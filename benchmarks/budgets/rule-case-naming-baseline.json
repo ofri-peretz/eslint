@@ -26,7 +26,7 @@
     "react-features/react-in-jsx-scope": 1,
     "react-features/require-default-props": 6,
     "react-features/require-optimization": 3,
-    "react-features/require-render-return": 4,
+    "react-features/require-render-return": 3,
     "react-features/sort-comp": 3,
     "react-features/state-in-constructor": 4,
     "react-features/void-dom-elements-no-children": 1
