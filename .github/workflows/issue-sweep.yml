@@ -89,7 +89,22 @@ jobs:
     steps:
       - name: Arm auto-merge
         env:
-          GH_TOKEN: ${{ github.token }}
+          # The token that ARMS auto-merge is the one GitHub credits with the
+          # eventual merge, so it decides whether main's push pipeline runs.
+          #
+          # Armed with `github.token`, the merge lands as `github-actions[bot]`
+          # and GitHub suppresses every `push:` trigger on main — deliberately,
+          # to stop workflows recursing. Measured on 2026-09-14: #1036, merged
+          # by `ofri-peretz`, produced 13 workflow runs; #1039 and #1040, both
+          # merged by `app/github-actions` after this step armed them, produced
+          # THREE each, all `schedule` — no push runs at all. Changesets never
+          # ran, no Version PR opened, and `lucky-pugs-shout.md` sat queued
+          # until the release-liveness check filed #1041.
+          #
+          # This is the same trap `changesets-pr.yml` documents at length and
+          # already avoids; the sweep simply never got the same treatment.
+          # `github.token` stays last, so this cannot be worse than today.
+          GH_TOKEN: ${{ secrets.RELEASE_BOT_PAT || secrets.AGENTS_REPO_PAT || github.token }}
           REPO: ${{ github.repository }}
           PR: ${{ github.event.pull_request.number }}
         run: |
