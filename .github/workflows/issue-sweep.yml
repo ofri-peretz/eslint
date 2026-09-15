@@ -89,7 +89,20 @@ jobs:
     steps:
       - name: Arm auto-merge
         env:
-          GH_TOKEN: ${{ github.token }}
+          # A merge performed with the bare default token is invisible to the
+          # rest of CI: GitHub does not fire new workflow runs for git/API
+          # operations authenticated as GITHUB_TOKEN. `changesets-pr.yml`
+          # already carries the writeup for the same failure on the Version
+          # PR's own push (measured on #600 — 0 checks, ever). It recurred
+          # here in a different bot action: arming auto-merge with
+          # `github.token` meant the eventual squash-merge push landed as
+          # github-actions[bot] and triggered nothing repo-wide — not
+          # Changesets, not Quality, not CodeQL — for the two PRs this armed
+          # on 2026-09-14. That silently stalled the release pipeline (#1041):
+          # a changeset landed on main with no push event to open a Version
+          # PR for it. Same PAT-fallback chain as changesets-pr.yml so the
+          # merge push is attributed to a real actor and triggers CI normally.
+          GH_TOKEN: ${{ secrets.RELEASE_BOT_PAT || secrets.AGENTS_REPO_PAT || github.token }}
           REPO: ${{ github.repository }}
           PR: ${{ github.event.pull_request.number }}
         run: |
@@ -283,7 +296,12 @@ jobs:
           steps.token.outputs.present == 'true'
           && (github.event_name == 'schedule' || inputs.auto_merge)
         env:
-          GH_TOKEN: ${{ github.token }}
+          # Same PAT-fallback chain as the `arm` job above and as
+          # changesets-pr.yml, and for the identical reason: a merge armed
+          # with the bare default token triggers no downstream workflow when
+          # it completes. See the `arm` job's `Arm auto-merge` step for the
+          # measured failure (#1041).
+          GH_TOKEN: ${{ secrets.RELEASE_BOT_PAT || secrets.AGENTS_REPO_PAT || github.token }}
           REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
