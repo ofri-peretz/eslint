@@ -226,7 +226,17 @@ ignoreInTests = true, minSize = 5
         if (shouldBeMemoized(value, minSize)) {
           let expressionText = '';
           try {
-            expressionText = sourceCode.getText(value).substring(0, 50);
+            // Collapse whitespace BEFORE truncating. The text is interpolated into a
+            // message whose first line is `[Icon] | [Description] | [SEVERITY]`, so a
+            // raw multi-line prop broke line 1 down to the bare token `\u26a1 {` and
+            // stranded the severity marker and the `Fix:` line several lines below.
+            // Collapsing first also spends the 50-character budget on the expression
+            // instead of on indentation.
+            expressionText = sourceCode
+              .getText(value)
+              .replace(/\s+/g, ' ')
+              .trim()
+              .substring(0, 50);
           } catch {
             expressionText = 'expression';
           }
