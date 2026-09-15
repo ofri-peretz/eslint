@@ -46,6 +46,30 @@ describe('prefer-template-literal', () => {
         errors: [{ messageId: 'preferTemplateLiteral' }],
         output: 'const msg = `${prefix} ${value}`;',
       },
+      {
+        // A parenthesised `+` on the right is its own expression, not more of
+        // the concat chain. Flattening it changes the value: at i=0 the old
+        // fix turned "row 1" into "row 01".
+        name: 'a parenthesised addition on the right survives the rewrite intact',
+        code: 'const label = "row " + (i + 1);',
+        errors: [{ messageId: 'preferTemplateLiteral' }],
+        output: 'const label = `row ${i + 1}`;',
+      },
+      {
+        // Same shape with both operands dynamic — the sum must stay a sum.
+        name: 'a parenthesised sum of two variables stays one placeholder',
+        code: 'const t = "sum: " + (a + b);',
+        errors: [{ messageId: 'preferTemplateLiteral' }],
+        output: 'const t = `sum: ${a + b}`;',
+      },
+      {
+        // The left-associative chain is genuinely one concatenation, so it
+        // still flattens — `"a" + b + c` is `("a" + b) + c`, all string.
+        name: 'an unparenthesised left-associative chain still flattens',
+        code: 'const s = "n" + a + b;',
+        errors: [{ messageId: 'preferTemplateLiteral' }],
+        output: 'const s = `n${a}${b}`;',
+      },
     ],
   });
 });
