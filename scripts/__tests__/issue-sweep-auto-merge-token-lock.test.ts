@@ -28,6 +28,8 @@
  *
  * Run from the repo root:
  *   npx vitest run scripts/__tests__/issue-sweep-auto-merge-token-lock.test.ts
+ *
+ * @provenBy {"file": ".github/workflows/issue-sweep.yml", "find": "GH_TOKEN: ${{ secrets.RELEASE_BOT_PAT || secrets.AGENTS_REPO_PAT || github.token }}\n          REPO: ${{ github.repository }}\n          PR: ${{ github.event.pull_request.number }}", "replace": "GH_TOKEN: ${{ github.token }}\n          REPO: ${{ github.repository }}\n          PR: ${{ github.event.pull_request.number }}"}
  */
 
 import { describe, it, expect } from 'vitest';
