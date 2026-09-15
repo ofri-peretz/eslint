@@ -1,9 +1,114 @@
 {
-  "releaseCount": 685,
+  "releaseCount": 691,
   "packageCount": 36,
-  "entryCount": 2096,
+  "entryCount": 2105,
   "oldestYear": 2024,
   "releases": [
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.4.5",
+      "date": "2026-09-15T07:02:32Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-improper-type-validation` no longer loses a null guard to a type-only cast. `as`, `satisfies`, `<T>x` and `x!` erase at compile time, so `(payload as object) !== null && typeof payload === 'object'` is the same program as the un-cast form the rule already accepts — and is the docs' own ✅ Correct example. Comparing guard operands by node type made the verdict turn on the spelling of a no-op.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-maintainability",
+      "short": "eslint-plugin-maintainability",
+      "version": "3.2.9",
+      "date": "2026-09-15T07:02:24Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "FP/FN sweep against the burgee corpus — three confirmed rule defects.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-react-features",
+      "short": "eslint-plugin-react-features",
+      "version": "1.7.6",
+      "date": "2026-09-15T07:02:22Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`require-render-return` now requires every path through an `if` to return, rather than any path. A `render()` whose only `return` sits in an `if` with no `else` falls through and renders nothing — the shape the rule's own docs print under \"❌ Incorrect\" — and was silently accepted. `if`/`else` where both branches return, and a trailing return after the `if`, remain valid.",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "FP/FN sweep against the burgee corpus — three confirmed rule defects.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-conventions",
+      "short": "eslint-plugin-conventions",
+      "version": "6.0.2",
+      "date": "2026-09-15T07:02:21Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-console-spaces` now re-escapes the string it emits. The fixer spliced the cooked value between single quotes, so `console.log(\"it's here \")` was rewritten to `console.log('it's here')`, which does not parse; an interior newline produced an unterminated literal, and a backslash silently changed the string's runtime value. ESLint writes that output to disk rather than rolling it back.",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "FP/FN sweep against the burgee corpus — three confirmed rule defects.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "5.6.1",
+      "date": "2026-09-15T07:02:20Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-shell-injection` now reports `spawn`/`spawnSync`/`execFile`/`execFileSync` when a truthy `shell` option routes an interpolated command string through `/bin/sh`. The rule matched only `exec`/`execSync`, so the shape its own docs print as incorrect — ``spawn(`tar -xzf ${archivePath}`, { shell: true })`` — went unreported by every rule in the plugin. Without a `shell` option these functions stay silent, since an interpolated program name is CWE-114 and belongs to `detect-child-process`.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-reliability",
+      "short": "eslint-plugin-reliability",
+      "version": "4.1.9",
+      "date": "2026-09-15T07:02:19Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-await-in-loop` no longer reports an await in a loop header slot that is evaluated once (`for...of`/`for...in` iterable, `for` init), and no longer reports one await once per enclosing loop. `for (const p of await Promise.all(xs.map(f)))` costs 1x latency, not Nx, and is the `Promise.all` remedy the rule prescribes. Per-iteration header slots — a `for` test/update, a `while`/`do-while` test, a for-of binding default — stay reported, and a once-evaluated head inside an outer loop is attributed to that outer loop.",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "FP/FN sweep against the burgee corpus — three confirmed rule defects.",
+          "pr": null
+        }
+      ]
+    },
     {
       "package": "eslint-plugin-maintainability",
       "short": "eslint-plugin-maintainability",

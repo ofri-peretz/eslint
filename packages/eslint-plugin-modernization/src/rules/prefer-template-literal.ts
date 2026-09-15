@@ -89,10 +89,24 @@ export const preferTemplateLiteral = createRule<RuleOptions, MessageIds>({
     /**
      * Collect the "parts" of a + chain into an array of nodes.
      * `"a" + b + "c"` → [Literal("a"), Identifier(b), Literal("c")]
+     *
+     * `+` is left-associative, so a nested `+` on the LEFT is the same concat
+     * chain and flattens. One on the RIGHT only got there by parentheses, and
+     * it evaluates on its own before the concat does — so it is a single part
+     * unless it is itself string-producing. Flattening it splits one addition
+     * into two placeholders and changes the value: `"row " + (i + 1)` became
+     * `` `row ${i}${1}` ``, which prints "row 01" where the source printed
+     * "row 1". Arithmetic reaches the template intact instead.
      */
     function collectParts(node: TSESTree.Node): TSESTree.Node[] {
       if (node.type === 'BinaryExpression' && node.operator === '+') {
-        return [...collectParts(node.left), ...collectParts(node.right)];
+        const right =
+          node.right.type === 'BinaryExpression' &&
+          node.right.operator === '+' &&
+          !isStringExpression(node.right)
+            ? [node.right as TSESTree.Node]
+            : collectParts(node.right);
+        return [...collectParts(node.left), ...right];
       }
       return [node];
     }

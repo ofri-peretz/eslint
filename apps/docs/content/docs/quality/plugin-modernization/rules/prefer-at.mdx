@@ -19,7 +19,7 @@ Prefer using `Array.at()` for accessing elements, especially with negative indic
 | Aspect         | Details                                                              |
 | -------------- | -------------------------------------------------------------------- |
 | **Severity**   | Warning (modern JavaScript)                                          |
-| **Auto-Fix**   | ✅ Yes (converts to .at())                                           |
+| **Auto-Fix**   | ✅ Partial (`array.length - <literal>` only; the variable-offset and `array[-n]` forms report without a fix) |
 | **Category**   | Modernization |
 | **ESLint MCP** | ✅ Optimized for ESLint MCP integration                              |
 | **Best For**   | ES2022+ codebases, cleaner array access                              |
@@ -60,12 +60,28 @@ const last = array.at(-1);
 // Second to last
 const secondLast = array.at(-2);
 
-// Dynamic negative access
+// Dynamic negative access — equivalent only while `offset` is a positive
+// integer, so this one is reported but never rewritten for you. At
+// `offset === 0` the bracket form reads past the end (undefined) while
+// `.at(-0)` reads the FIRST element, because -0 normalises to 0.
 const item = array.at(-offset);
 
 // Also works with strings
 const lastChar = string.at(-1);
 ```
+
+> **Not auto-fixed.** Two of the reported shapes are left for you to edit,
+> because the rewrite is not equivalent in general:
+>
+> - `array[array.length - n]` with a variable `n` — see above.
+> - `array[-1]` — on an array this is a plain property read that is always
+>   `undefined`, whereas `array.at(-1)` is the last element. The rule also
+>   cannot prove the object is an array: on a `Record<number, string>` holding
+>   a `-1` key the bracket form reads a real value, and on that object (or on
+>   `arguments`) `.at` does not exist at all.
+>
+> Both still report — `array[-1]` is almost always a mistake — but naming the
+> mistake is as far as a semantics-preserving fixer can go.
 
 ## Configuration Examples
 

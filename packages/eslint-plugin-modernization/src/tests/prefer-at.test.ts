@@ -61,10 +61,18 @@ describe('prefer-at', () => {
     ruleTester.run('prefer .at() for variable offset', preferAt, {
       valid: [],
       invalid: [
-        // array[array.length - n] where n is a variable
+        // array[array.length - n] where n is a variable.
+        //
+        // This case previously asserted `output: 'const item = array.at(-offset);'`.
+        // That assertion pinned the defect rather than the intent: the two
+        // forms diverge at `offset === 0` (undefined vs. the FIRST element,
+        // since -0 normalises to 0) and for any negative offset, and nothing
+        // in scope proves offset is a positive integer. The report is right;
+        // the rewrite was not safe to apply unattended.
         {
+          name: 'a variable offset is reported but not rewritten — it is only equivalent for positive integers',
           code: 'const item = array[array.length - offset];',
-          output: 'const item = array.at(-offset);',
+          output: null,
           errors: [{ messageId: 'preferAtMethod' }],
         },
       ],
@@ -80,16 +88,23 @@ describe('prefer-at', () => {
         { code: 'const item = array.foo;' },
       ],
       invalid: [
-        // array[-1] -> array.at(-1)
+        // These two cases previously asserted the rewrite to `.at(-n)`. That
+        // assertion pinned the defect: on an array `array[-1]` is a plain
+        // property read that is always undefined, while `array.at(-1)` is the
+        // last element — so `--fix` turned dead code into live code. The rule
+        // also cannot prove the object is an array, so on a Record holding a
+        // '-1' key, or on `arguments`, the rewrite replaced working code with
+        // a TypeError. Reported, not rewritten.
         {
+          name: 'a negative literal index is reported but not rewritten — .at(-1) is not what arr[-1] means',
           code: 'const last = array[-1];',
-          output: 'const last = array.at(-1);',
+          output: null,
           errors: [{ messageId: 'useAtForNegativeIndex' }],
         },
-        // array[-3] -> array.at(-3)
         {
+          name: 'the same holds for any negative literal index',
           code: 'const item = array[-3];',
-          output: 'const item = array.at(-3);',
+          output: null,
           errors: [{ messageId: 'useAtForNegativeIndex' }],
         },
       ],

@@ -56,7 +56,9 @@ export const requireRenderReturn = createRule<[], MessageIds>({
       },
     };
 
-    function hasReturnStatement(node: TSESTree.Statement | TSESTree.BlockStatement): boolean {
+    function hasReturnStatement(
+      node: TSESTree.Statement | TSESTree.BlockStatement,
+    ): boolean {
       // Handle BlockStatement
       if (node.type === 'BlockStatement') {
         for (const statement of node.body) {
@@ -66,7 +68,7 @@ export const requireRenderReturn = createRule<[], MessageIds>({
         }
         return false;
       }
-      
+
       // Handle single statement
       return checkStatement(node);
     }
@@ -76,26 +78,64 @@ export const requireRenderReturn = createRule<[], MessageIds>({
         return true;
       }
 
-      // Check nested blocks (if statements, etc.)
+      // An `if` only guarantees a return when EVERY path through it returns:
+      // there must be an `else`, and both branches must return. A returning
+      // consequent alone still falls through when the test is false, which is
+      // the shape the docs print as incorrect. A caller that returns after the
+      // `if` is still covered, because hasReturnStatement scans the whole block.
       if (statement.type === 'IfStatement') {
-        if (hasReturnStatement(statement.consequent) ||
-            (statement.alternate && hasReturnStatement(statement.alternate))) {
-          return true;
-        }
+        return (
+          statement.alternate != null &&
+          hasReturnStatement(statement.consequent) &&
+          hasReturnStatement(statement.alternate)
+        );
       }
 
       if (statement.type === 'BlockStatement') {
         return hasReturnStatement(statement);
       }
 
+      // A switch guarantees a return only when NO path escapes it.
+      //
+      // This used to answer "does any clause contain a return?", which is a
+      // different question: `switch (k) { case 1: return <A/>; }` satisfied it
+      // while an unmatched `k` fell straight out and left render() returning
+      // undefined — the defect this rule exists to catch, hidden by the shape
+      // of the check rather than absent.
+      //
+      // Two conditions, walked from the last clause upward:
+      //
+      //   1. A `default` must exist, or an unmatched selector escapes.
+      //   2. Every clause must end in a return — its own, or one it falls
+      //      through into. An EMPTY consequent is deliberate fallthrough and
+      //      inherits the clause below it. A consequent ending in `break`
+      //      exits without returning. Anything else falls through too.
+      //
+      // Clause bodies are judged by `checkStatement`, so an `if`/`else` that
+      // returns on both arms counts — a clause is not required to hold a bare
+      // `ReturnStatement` of its own.
       if (statement.type === 'SwitchStatement') {
-        for (const switchCase of statement.cases) {
-          for (const caseStatement of switchCase.consequent) {
-            if (caseStatement.type === 'ReturnStatement') {
-              return true;
-            }
-          }
+        if (!statement.cases.some((switchCase) => switchCase.test === null)) {
+          return false;
         }
+
+        // Falling past the last clause escapes the switch, so start there.
+        let covered = false;
+        for (let i = statement.cases.length - 1; i >= 0; i--) {
+          const { consequent } = statement.cases[i]!;
+          if (
+            consequent.some((caseStatement) => checkStatement(caseStatement))
+          ) {
+            covered = true;
+          } else if (
+            consequent[consequent.length - 1]?.type === 'BreakStatement'
+          ) {
+            covered = false;
+          }
+          // Otherwise the clause falls through and inherits `covered`.
+          if (!covered) return false;
+        }
+        return true;
       }
 
       return false;

@@ -11,9 +11,9 @@
       "readable_publish_date": "Sep 13",
       "reading_time_minutes": 4,
       "page_views_count": 0,
-      "public_reactions_count": 1,
-      "positive_reactions_count": 1,
-      "comments_count": 1,
+      "public_reactions_count": 4,
+      "positive_reactions_count": 4,
+      "comments_count": 2,
       "tag_list": [
         "javascript",
         "webdev",
@@ -1785,6 +1785,6 @@
     }
   ],
   "total": 87,
-  "lastUpdated": "2026-09-13T19:33:31.551Z",
+  "lastUpdated": "2026-09-15T06:58:10.279Z",
   "source": "public"
 }

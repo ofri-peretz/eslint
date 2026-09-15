@@ -42,6 +42,33 @@ describe('identical-functions', () => {
           `,
           options: [{ minLines: 3 }],
         },
+        {
+          // burgee packages/burgee/src/yargs/middleware.ts:90 — an outer
+          // function whose body is essentially one call taking an inline
+          // callback. The two "duplicates" are the function and the callback
+          // inside it: one implementation seen twice, not two to DRY out.
+          // There is nothing to extract, because lifting the callback out of
+          // its own parent removes no code.
+          name: 'a function and a closure nested inside it are one implementation, not a duplicate pair',
+          code: `
+            function summarize(rows, out) {
+              rows.forEach((row) => {
+                const doubled = row * 2;
+                const tripled = row * 3;
+                const squared = row * row;
+                if (doubled > tripled) {
+                  out.push('doubled ' + doubled);
+                } else if (tripled > squared) {
+                  out.push('tripled ' + tripled);
+                } else if (squared > doubled) {
+                  out.push('squared ' + squared);
+                } else {
+                  out.push('equal ' + row);
+                }
+              });
+            }
+          `,
+        },
       ],
       invalid: [],
     });

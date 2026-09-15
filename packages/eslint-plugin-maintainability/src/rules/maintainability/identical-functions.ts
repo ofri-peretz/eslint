@@ -476,6 +476,23 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
     }
 
     /**
+     * Does `outer` lexically contain `inner`?
+     *
+     * Both nodes come from the same source file, so range containment answers
+     * it without walking parents. Only ever called on two distinct entries of
+     * `functions`, so there is no self-comparison to rule out.
+     */
+    function encloses(outer: TSESTree.Node, inner: TSESTree.Node): boolean {
+      // A synthetic node can reach this rule with no range at all. Containment
+      // is then unknowable, and guessing "nested" would silently drop a real
+      // duplicate pair — so an unranged node encloses nothing.
+      const o = outer.range;
+      const i = inner.range;
+      if (!o || !i) return false;
+      return o[0] <= i[0] && i[1] <= o[1];
+    }
+
+    /**
      * Find groups of similar functions
      */
     function findDuplicationGroups(): DuplicationGroup[] {
@@ -497,6 +514,17 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
             functions[i].isAsync !== functions[j].isAsync ||
             functions[i].isGenerator !== functions[j].isGenerator
           ) {
+            continue;
+          }
+
+          // Inclusion is not duplication. A function whose body is largely one
+          // call taking an inline callback shares almost all its text with that
+          // callback, so the pair clears the threshold by construction — but
+          // they are one implementation, and "extract to a reusable function"
+          // is impossible advice: lifting a closure out of its own parent
+          // removes no code. A triple-nested `forEach` was being reported as
+          // "3 duplicates" of itself.
+          if (encloses(functions[i].node, functions[j].node) || encloses(functions[j].node, functions[i].node)) {
             continue;
           }
 
