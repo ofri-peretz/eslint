@@ -5,6 +5,13 @@ All notable changes to `eslint-plugin-modernization` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.1.4
+
+### Patch Changes
+
+- **🐛 Fix** — `prefer-at` no longer autofixes the two rewrites that are not equivalent. `array[-1]` is a plain property read that always yields `undefined`, while `array.at(-1)` yields the last element, so `--fix` turned dead code into live code; and the rule never establishes that the object is an array, so on a `Record<number, string>` holding a `-1` key, or on `arguments`, the same rewrite replaced working code with a `TypeError`. `array[array.length - n]` with a variable `n` diverges too: at `n === 0` the source reads past the end while `.at(-0)` reads the FIRST element. Both cases still report; only the unattended edit is gone. The `array.length - <positive literal>` fix is unchanged.
+- **🐛 Fix** — `prefer-template-literal` no longer destroys a parenthesised addition while rewriting a concat chain. `+` is left-associative, so a nested `+` on the left is the same chain and flattens, but one on the right is its own expression — `"row " + (i + 1)` was rewritten to `` `row ${i}${1}` ``, printing "row 01" where the source printed "row 1", and `"sum: " + (a + b)` lost the sum entirely. Arithmetic that is not itself string-producing now reaches the template as a single placeholder.
+
 ## 3.1.3
 
 ### Patch Changes
