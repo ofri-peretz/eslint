@@ -5,7 +5,7 @@
     "anthropic-security/no-hardcoded-api-key": 19,
     "browser-security/detect-mixed-content": 70,
     "browser-security/no-allow-arbitrary-loads": 18,
-    "browser-security/no-clickjacking": 159,
+    "browser-security/no-clickjacking": 152,
     "browser-security/no-client-side-auth-logic": 49,
     "browser-security/no-cookie-auth-tokens": 40,
     "browser-security/no-credentials-in-query-params": 36,

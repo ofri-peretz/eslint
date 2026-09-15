@@ -174,7 +174,16 @@ export const consistentExistenceIndexCheck = createRule<
         if (
           node.callee.type === 'MemberExpression' &&
           propertyName(node.callee) === 'hasOwnProperty' &&
-          node.arguments.length === 1 &&
+          // ARITY IS NOT A DETECTION BOUNDARY. The documented hazard here is
+          // DISPATCH — the method is looked up ON `obj`, so it throws on a
+          // null-prototype object and calls whatever a shadowing own property
+          // points at — and that is independent of what follows the key. The
+          // native method ignores surplus arguments, so `obj.hasOwnProperty(k, x)`
+          // asks exactly the question `obj.hasOwnProperty(k)` asks. This used to
+          // require `=== 1`, which silenced the identical hazard and disagreed
+          // with the `.call` sibling below, whose docs entry uses the same
+          // one-key notation but is implemented as `>= 2`.
+          node.arguments.length >= 1 &&
           preferred !== 'hasOwnProperty'
         ) {
           reportInconsistentCheck(
@@ -182,6 +191,7 @@ export const consistentExistenceIndexCheck = createRule<
             'hasOwnProperty',
             node.callee.object,
             node.arguments[0],
+            node.arguments.length > 1,
           );
         }
 
@@ -213,7 +223,11 @@ export const consistentExistenceIndexCheck = createRule<
           node.callee.object.type === 'Identifier' &&
           node.callee.object.name === 'Object' &&
           propertyName(node.callee) === 'hasOwn' &&
-          node.arguments.length === 2 &&
+          // Same gate, same reasoning as the direct form above: `Object.hasOwn`
+          // reads its first two arguments and ignores the rest, so a surplus
+          // argument leaves the question unchanged. It is still EVALUATED, so it
+          // is passed on as `surplusArguments` and the fix stays withheld.
+          node.arguments.length >= 2 &&
           preferred !== 'Object.hasOwn'
         ) {
           reportInconsistentCheck(
@@ -221,13 +235,26 @@ export const consistentExistenceIndexCheck = createRule<
             'Object.hasOwn',
             node.arguments[0],
             node.arguments[1],
+            node.arguments.length > 2,
           );
         }
       },
 
       // Check for 'in' operator usage
       BinaryExpression(node: TSESTree.BinaryExpression) {
-        if (node.operator === 'in' && preferred !== 'in') {
+        // A PRIVATE-NAME BRAND CHECK IS NOT ONE OF THE FOUR SPELLINGS. `#field in
+        // obj` asks whether `obj` was constructed with this class's field — it
+        // does not walk the prototype chain, cannot answer `true` for an
+        // inherited key, and cannot be reached by prototype pollution, so every
+        // rationale the docs give for steering `in` toward an own-property check
+        // is false for it. There is also nothing to steer it to:
+        // `Object.hasOwn(obj, #field)` is a SyntaxError, so the message named a
+        // fix that cannot be written in the language.
+        if (
+          node.operator === 'in' &&
+          node.left.type !== 'PrivateIdentifier' &&
+          preferred !== 'in'
+        ) {
           reportInconsistentCheck(node, 'in', node.right, node.left);
         }
       },
