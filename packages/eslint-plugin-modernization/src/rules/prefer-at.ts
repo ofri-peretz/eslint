@@ -163,14 +163,16 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
           propertyName(node.property.left) === 'length' &&
           node.property.right.type === 'Identifier'
         ) {
-          const varName = node.property.right.name;
-          
+          // Reported, not rewritten. `arr[arr.length - n]` and `arr.at(-n)`
+          // agree only while `n` is a positive integer, and nothing here
+          // proves that: at `n === 0` the source reads one past the end
+          // (undefined) while `.at(-0)` reads the FIRST element, because -0
+          // normalises to 0. A negative `n` diverges too. An autofix has to
+          // preserve semantics, so this one states the case and leaves the
+          // edit to the reader.
           context.report({
             node,
             messageId: 'preferAtMethod',
-            fix(fixer: TSESLint.RuleFixer) {
-              return fixer.replaceText(node, `${arrayName}.at(-${varName})`);
-            },
           });
           return;
         }
@@ -183,14 +185,19 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
           typeof node.property.argument.value === 'number' &&
           node.property.argument.value > 0
         ) {
-          const offset = node.property.argument.value;
-          
+          // Reported, not rewritten — this rewrite INVERTS the value. On an
+          // array `arr[-1]` is a plain property read that always yields
+          // undefined, while `arr.at(-1)` yields the last element, so the fix
+          // turned dead code into live code. Worse, nothing here proves the
+          // object is an array: on a `Record<number, string>` holding a `-1`
+          // key the source reads a real value, and on that object (or on
+          // `arguments`) `.at` does not exist at all, so the rewrite replaces
+          // working code with a TypeError. The report stands — `arr[-1]` is
+          // almost always a mistake — but naming the mistake is as far as a
+          // semantics-preserving fixer can go.
           context.report({
             node,
             messageId: 'useAtForNegativeIndex',
-            fix(fixer: TSESLint.RuleFixer) {
-              return fixer.replaceText(node, `${arrayName}.at(-${offset})`);
-            },
           });
         }
       },
