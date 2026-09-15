@@ -5,6 +5,12 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.4.5
+
+### Patch Changes
+
+- **🐛 Fix** — `no-improper-type-validation` no longer loses a null guard to a type-only cast. `as`, `satisfies`, `<T>x` and `x!` erase at compile time, so `(payload as object) !== null && typeof payload === 'object'` is the same program as the un-cast form the rule already accepts — and is the docs' own ✅ Correct example. Comparing guard operands by node type made the verdict turn on the spelling of a no-op.
+
 ## 5.4.4
 
 ### Patch Changes

@@ -5,6 +5,25 @@ All notable changes to `eslint-plugin-reliability` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 4.1.9
+
+### Patch Changes
+
+- **🐛 Fix** — `no-await-in-loop` no longer reports an await in a loop header slot that is evaluated once (`for...of`/`for...in` iterable, `for` init), and no longer reports one await once per enclosing loop. `for (const p of await Promise.all(xs.map(f)))` costs 1x latency, not Nx, and is the `Promise.all` remedy the rule prescribes. Per-iteration header slots — a `for` test/update, a `while`/`do-while` test, a for-of binding default — stay reported, and a once-evaluated head inside an outer loop is attributed to that outer loop.
+- **🐛 Fix** — FP/FN sweep against the burgee corpus — three confirmed rule defects.
+
+  - `no-silent-errors` (maintainability + reliability): `allowWithComment` only examined
+    comments above the `catch` keyword, so the canonical placement — the explanation
+    inside the block — could not satisfy it. The above-the-catch window is kept and a
+    range-scoped scan of the block is added beside it.
+  - `consistent-existence-index-check` (conventions): an undocumented parent-type
+    allowlist withheld the one autofix the docs promise whenever the call was nested
+    (under `!`, inside `&&`, as an argument, array element, or conditional branch).
+    Recovers 14 withheld autofixes on the corpus.
+  - `no-unnecessary-rerenders` (react-features): a multi-line prop was interpolated raw
+    into the message, breaking the documented first line down to the bare token `⚡ {`.
+    Whitespace is now collapsed before truncation.
+
 ## 4.1.8
 
 ### Patch Changes

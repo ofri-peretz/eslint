@@ -5,6 +5,12 @@ All notable changes to `eslint-plugin-node-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.6.1
+
+### Patch Changes
+
+- **🐛 Fix** — `no-shell-injection` now reports `spawn`/`spawnSync`/`execFile`/`execFileSync` when a truthy `shell` option routes an interpolated command string through `/bin/sh`. The rule matched only `exec`/`execSync`, so the shape its own docs print as incorrect — ``spawn(`tar -xzf ${archivePath}`, { shell: true })`` — went unreported by every rule in the plugin. Without a `shell` option these functions stay silent, since an interpolated program name is CWE-114 and belongs to `detect-child-process`.
+
 ## 5.6.0
 
 ### Minor Changes

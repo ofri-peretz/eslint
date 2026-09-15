@@ -5,6 +5,28 @@ All notable changes to `eslint-plugin-react-features` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 1.7.6
+
+### Patch Changes
+
+- **🐛 Fix** — `require-render-return` now requires every path through an `if` to return, rather than any path. A `render()` whose only `return` sits in an `if` with no `else` falls through and renders nothing — the shape the rule's own docs print under "❌ Incorrect" — and was silently accepted. `if`/`else` where both branches return, and a trailing return after the `if`, remain valid.
+
+  `switch` is now judged the same way. The check asked only whether _any_ clause contained a `return`, so `switch (k) { case 1: return <A/>; }` passed while an unmatched `k` fell straight out and rendered nothing, and a clause ending in `break` did the same. A `switch` now counts as returning only when a `default` exists and every clause ends in a return — its own, or one it falls through into. Empty fallthrough clauses and clauses returning via `if`/`else` remain valid; no clause is required to carry a bare `return` of its own.
+
+- **🐛 Fix** — FP/FN sweep against the burgee corpus — three confirmed rule defects.
+
+  - `no-silent-errors` (maintainability + reliability): `allowWithComment` only examined
+    comments above the `catch` keyword, so the canonical placement — the explanation
+    inside the block — could not satisfy it. The above-the-catch window is kept and a
+    range-scoped scan of the block is added beside it.
+  - `consistent-existence-index-check` (conventions): an undocumented parent-type
+    allowlist withheld the one autofix the docs promise whenever the call was nested
+    (under `!`, inside `&&`, as an argument, array element, or conditional branch).
+    Recovers 14 withheld autofixes on the corpus.
+  - `no-unnecessary-rerenders` (react-features): a multi-line prop was interpolated raw
+    into the message, breaking the documented first line down to the bare token `⚡ {`.
+    Whitespace is now collapsed before truncation.
+
 ## 1.7.5
 
 ### Patch Changes
