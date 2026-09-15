@@ -80,9 +80,15 @@ type AnyReport = {
 /* consistent-existence-index-check                                    */
 /* ------------------------------------------------------------------ */
 
-describe('consistent-existence-index-check — standalone-parent matrix', () => {
-  // Every arm of `isStandaloneExpression`, exercised with the ONE conversion the fixer
-  // still makes: `Object.prototype.hasOwnProperty.call(obj, k)` -> `Object.hasOwn(obj, k)`.
+describe('consistent-existence-index-check — parent-context matrix', () => {
+  // A range of parent contexts, exercised with the ONE conversion the fixer still makes:
+  // `Object.prototype.hasOwnProperty.call(obj, k)` -> `Object.hasOwn(obj, k)`.
+  //
+  // This matrix used to enumerate the arms of an `isStandaloneExpression` allowlist that
+  // gated the fixer on the parent node type. That gate is gone: both spellings are
+  // CallExpressions at the same precedence tier, so the parent has no bearing on whether
+  // the in-place swap is safe. The unary case below pinned that gate and now expects the
+  // fix, like every other context here.
   //
   // The matrix used to run `hasOwnProperty` -> `in`, and neither that nor the direct
   // `obj.hasOwnProperty(k)` is autofixable any more — `in` walks the prototype chain,
@@ -159,13 +165,13 @@ describe('consistent-existence-index-check — standalone-parent matrix', () => 
           errors: [{ messageId: 'consistentExistenceCheck' }],
           output: 'const t = Object.hasOwn(obj, "k") ? 1 : 2;',
         },
-        // Not a standalone expression (unary operand) — reported, but no fix.
+        // A unary operand: the swap is safe here for the same reason it is safe bare.
         {
-          name: 'a unary operand is not standalone, so no fix',
+          name: 'a unary operand is rewritten, like the bare call it negates',
           code: 'const n = !Object.prototype.hasOwnProperty.call(obj, "k");',
           options: OWN,
           errors: [{ messageId: 'consistentExistenceCheck' }],
-          output: null,
+          output: 'const n = !Object.hasOwn(obj, "k");',
         },
         // Object.prototype.hasOwnProperty.call(obj, prop)
         {

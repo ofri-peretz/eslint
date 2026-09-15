@@ -172,3 +172,73 @@ describe('consistent-existence-index-check — the `in` boundary is not autofixa
     },
   );
 });
+
+/**
+ * The one safe conversion stays safe in a nested position.
+ *
+ * `Object.prototype.hasOwnProperty.call(obj, k)` and `Object.hasOwn(obj, k)` are both
+ * CallExpressions at the same precedence tier, both led by the token `Object`. Swapping
+ * one for the other in place cannot introduce a precedence, parenthesization or ASI
+ * hazard, so the parent node the call happens to sit under has no bearing on whether the
+ * rewrite is safe. The three real boundaries — the prototype chain, the dispatch site and
+ * a sequence-expression argument that would splice in surplus arguments — are the ones
+ * asserted above, and they are unaffected by position.
+ *
+ * A parent-type allowlist previously gated the fix, so every one of these was reported
+ * with no fix offered while the identical call in a bare `if (...)` test was rewritten.
+ */
+describe('consistent-existence-index-check — the safe conversion survives nesting', () => {
+  ruleTester.run(
+    'own-property check in a nested position',
+    consistentExistenceIndexCheck,
+    {
+      valid: [],
+      invalid: [
+        {
+          // burgee packages/burgee/src/yargs/validation.ts:99
+          // `if (!Object.prototype.hasOwnProperty.call(argv, key) || ...)`
+          name: 'a negated call is rewritten, like the bare call it negates',
+          code: 'if (!Object.prototype.hasOwnProperty.call(argv, key)) {}',
+          options: [{ preferred: 'Object.hasOwn' as const }],
+          output: 'if (!Object.hasOwn(argv, key)) {}',
+          errors: [{ messageId: 'consistentExistenceCheck' as const }],
+        },
+        {
+          // burgee packages/burgee/src/yargs/command.ts:398-399, two operands of one `&&`
+          name: 'both operands of a logical expression are rewritten',
+          code: 'if (Object.prototype.hasOwnProperty.call(argv, key) && Object.prototype.hasOwnProperty.call(parsed, key)) {}',
+          options: [{ preferred: 'Object.hasOwn' as const }],
+          output:
+            'if (Object.hasOwn(argv, key) && Object.hasOwn(parsed, key)) {}',
+          errors: [
+            { messageId: 'consistentExistenceCheck' as const },
+            { messageId: 'consistentExistenceCheck' as const },
+          ],
+        },
+        {
+          name: 'a call passed as an argument is rewritten',
+          code: 'assert(Object.prototype.hasOwnProperty.call(argv, key));',
+          options: [{ preferred: 'Object.hasOwn' as const }],
+          output: 'assert(Object.hasOwn(argv, key));',
+          errors: [{ messageId: 'consistentExistenceCheck' as const }],
+        },
+        {
+          name: 'an array element is rewritten',
+          code: 'const flags = [Object.prototype.hasOwnProperty.call(argv, key)];',
+          options: [{ preferred: 'Object.hasOwn' as const }],
+          output: 'const flags = [Object.hasOwn(argv, key)];',
+          errors: [{ messageId: 'consistentExistenceCheck' as const }],
+        },
+        {
+          // The allowlist admitted a ConditionalExpression `test` but not its branches,
+          // which are identically safe.
+          name: 'a conditional branch is rewritten, as its test already was',
+          code: 'const has = flag ? Object.prototype.hasOwnProperty.call(argv, key) : false;',
+          options: [{ preferred: 'Object.hasOwn' as const }],
+          output: 'const has = flag ? Object.hasOwn(argv, key) : false;',
+          errors: [{ messageId: 'consistentExistenceCheck' as const }],
+        },
+      ],
+    },
+  );
+});

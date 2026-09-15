@@ -121,21 +121,6 @@ export const consistentExistenceIndexCheck = createRule<
         object.type === 'SequenceExpression' ||
         property.type === 'SequenceExpression';
 
-      // Only provide fixes for standalone expressions, not when part of larger expressions
-      const parent = node.parent;
-      const isStandaloneExpression =
-        !parent ||
-        parent.type === 'ExpressionStatement' ||
-        (parent.type === 'VariableDeclarator' && parent.init === node) ||
-        (parent.type === 'AssignmentExpression' && parent.right === node) ||
-        (parent.type === 'ReturnStatement' && parent.argument === node) ||
-        (parent.type === 'ArrowFunctionExpression' && parent.body === node) ||
-        (parent.type === 'IfStatement' && parent.test === node) ||
-        (parent.type === 'WhileStatement' && parent.test === node) ||
-        (parent.type === 'DoWhileStatement' && parent.test === node) ||
-        (parent.type === 'ForStatement' && parent.test === node) ||
-        (parent.type === 'ConditionalExpression' && parent.test === node);
-
       // Only one conversion survives both boundaries: between
       // `Object.prototype.hasOwnProperty.call(obj, k)` and `Object.hasOwn(obj, k)`,
       // which ask the same question through the same dispatch. Every other pairing
@@ -144,13 +129,19 @@ export const consistentExistenceIndexCheck = createRule<
       // `Object.prototype.hasOwnProperty.call(obj, key, sideEffect())` runs
       // `sideEffect()`, and a rewrite that drops the argument drops the effect
       // with it. Reported, since the preference is unchanged; not rewritten.
+      //
+      // The POSITION of the call is not a boundary. Both forms are CallExpressions at
+      // the same precedence tier, led by the same `Object` token, so replacing one with
+      // the other in place cannot introduce a precedence, parenthesization or ASI
+      // hazard. A parent-type allowlist used to gate the fix here, which left the
+      // identical call rewritten inside `if (...)` but only reported under a `!`, inside
+      // an `&&`, as a call argument, as an array element or in a conditional branch.
       if (
         !crossesPrototypeBoundary &&
         !crossesDispatchBoundary &&
         !spliceWouldChangeArity &&
         !surplusArguments &&
-        preferred === 'Object.hasOwn' &&
-        isStandaloneExpression
+        preferred === 'Object.hasOwn'
       ) {
         fix = function (fixer: TSESLint.RuleFixer) {
           const objectText = context.sourceCode.getText(object);
