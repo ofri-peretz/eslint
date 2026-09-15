@@ -105,6 +105,19 @@ function hasExplanatoryComment(
     }
   }
 
+  // The window above cannot reach a comment written INSIDE the catch body: that always
+  // yields a negative distance, which the guard skips. Since `isEmptyCatchBlock` counts
+  // statements only, a body holding nothing but the explanation is exactly what this
+  // option exists to allow, so it has to be looked at. `getCommentsInside` is scoped to
+  // this block's range, so it cannot reopen the leak the `distance < 0` guard closed —
+  // a stray comment far below disarming every catch above it.
+  for (const comment of sourceCode.getCommentsInside(catchClause.body)) {
+    const commentText = comment.value.toLowerCase();
+    if (explanatoryPatterns.some((pattern) => pattern.test(commentText))) {
+      return true;
+    }
+  }
+
   return false;
 }
 

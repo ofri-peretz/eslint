@@ -139,3 +139,44 @@ describe('no-unnecessary-rerenders', () => {
   });
 });
 
+/**
+ * The reported expression is interpolated into the devkit's message format, whose first
+ * line is `[Icon] ... | [Description] | [SEVERITY]` and whose second is `   Fix: ... | [link]`
+ * (see packages/eslint-devkit/src/messaging/formatters.ts). A multi-line prop — the common
+ * case for an object big enough to trip `minSize` — used to be interpolated raw, which
+ * broke line 1 down to the bare token `\u26a1 {` and pushed `| MEDIUM` and the `Fix:` line
+ * into the middle of the message. Any first-line-only consumer (ESLint's own `unix` and
+ * `compact` formatters, an editor gutter preview) then showed only `\u26a1 {`.
+ */
+describe('no-unnecessary-rerenders — message stays on the documented two lines', () => {
+  ruleTester.run('multi-line prop keeps the format', noUnnecessaryRerenders, {
+    valid: [],
+    invalid: [
+      {
+        // burgee apps/docs/src/app/opengraph-image.tsx:15 — a multi-line style object
+        // passed as a JSX prop.
+        name: 'a multi-line object prop collapses to one line, severity stays on line 1',
+        code: [
+          'const a = (',
+          '  <Component data={{',
+          "    width: '100%',",
+          "    height: '100%',",
+          "    display: 'flex',",
+          "    alignItems: 'center',",
+          "    justifyContent: 'center',",
+          '  }} />',
+          ');',
+        ].join('\n'),
+        filename: 'component.tsx',
+        options: [{ minSize: 5, ignoreInTests: false }],
+        errors: [
+          {
+            message:
+              "\u26a1 { width: '100%', height: '100%', display: 'flex',  causes unnecessary re-renders | MEDIUM\n" +
+              "   Fix: Use useMemo or useCallback to memoize { width: '100%', height: '100%', display: 'flex',  | https://react.dev/reference/react/useMemo",
+          },
+        ],
+      },
+    ],
+  });
+});

@@ -79,6 +79,17 @@ function getImportDepth(importPath: string): number {
 }
 
 /**
+ * Node subpath imports (`#foo`, `#/lib/x`) are resolved through the package's
+ * own `imports` map, never through `node_modules`. There is no "root package"
+ * to fall back to: the bare `#` cannot match a pattern key like `#/*`, and it
+ * cannot name a package either, so Node throws ERR_PACKAGE_IMPORT_NOT_DEFINED
+ * on it. Depth is still worth reporting; rewriting the specifier is not.
+ */
+function isSubpathImport(importPath: string): boolean {
+  return importPath.startsWith('#');
+}
+
+/**
  * Get the root/base import path
  */
 function getRootImport(importPath: string): string {
@@ -277,6 +288,18 @@ export const noInternalModules = createRule<RuleOptions, MessageIds>({
         maxDepth: String(maxDepth),
         suggestedPath,
       };
+
+      // A subpath import has no rewritable root (see `isSubpathImport`), so the
+      // fixing strategies degrade to a plain report rather than emitting an
+      // edit that cannot resolve.
+      if (isSubpathImport(importPath)) {
+        context.report({
+          node,
+          messageId: 'internalModuleImport',
+          data: reportData,
+        });
+        return;
+      }
 
       if (strategy === 'autofix') {
         context.report({

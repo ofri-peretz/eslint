@@ -505,3 +505,68 @@ describe('no-silent-errors', () => {
     });
   });
 });
+
+/**
+ * `allowWithComment` has to see the comment where people actually write it.
+ *
+ * `isEmptyCatchBlock` filters STATEMENTS, so a catch whose body holds only a comment is
+ * classified empty and reportable — the rule is built to meet this placement. But the
+ * lookup scanned only a
+ * two-line window ABOVE the `catch` keyword: `catchStart.line - comment.loc.end.line`, with
+ * anything negative skipped. A comment inside the body is always negative, so the option
+ * was unsatisfiable for the one spelling it exists to serve. The window itself is kept —
+ * it closes a real leak, where a stray comment far below disarmed every catch above it —
+ * and an inside-the-block scan is added beside it. `getCommentsInside` is range-scoped to
+ * this block, so it cannot reopen that leak. Same shape as the sibling
+ * lambda-security/no-error-swallowing.
+ */
+describe('no-silent-errors — allowWithComment sees a comment inside the catch', () => {
+  ruleTester.run('in-body explanatory comment', noSilentErrors, {
+    valid: [
+      {
+        // burgee packages/burgee/src/yargs/factory.ts:1023
+        name: 'a line comment inside the catch body satisfies allowWithComment',
+        code: [
+          'try { delete argv["--"]; } catch {',
+          '  // a frozen argv keeps its "--"; yargs ignores the failure',
+          '}',
+        ].join('\n'),
+        options: [{ allowWithComment: true }],
+      },
+      {
+        // On its own line, so the above-the-catch window cannot reach it: a same-line
+        // trailing comment yields distance 0 and was already accepted.
+        name: 'a block comment on its own line inside the catch body also satisfies it',
+        code: [
+          'try { risky(); } catch {',
+          '  /* intentional: nothing to do here */',
+          '}',
+        ].join('\n'),
+        options: [{ allowWithComment: true }],
+      },
+      {
+        name: 'the existing above-the-catch placement still works',
+        code: [
+          'try { risky(); }',
+          '// intentional: ignored by design',
+          'catch {}',
+        ].join('\n'),
+        options: [{ allowWithComment: true }],
+      },
+    ],
+    invalid: [
+      {
+        name: 'an unexplained in-body comment does not satisfy it',
+        code: 'try { risky(); } catch { /* handle later */ }',
+        options: [{ allowWithComment: true }],
+        errors: [{ messageId: 'silentError' }],
+      },
+      {
+        name: 'and an in-body comment does nothing when the option is off',
+        code: 'try { risky(); } catch { /* intentional: ignored by design */ }',
+        options: [{ allowWithComment: false }],
+        errors: [{ messageId: 'silentError' }],
+      },
+    ],
+  });
+});

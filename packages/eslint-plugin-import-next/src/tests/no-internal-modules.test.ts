@@ -529,4 +529,42 @@ import { Button } from '@company/ui';
       ],
     });
   });
+
+  /*
+   * Node subpath imports (`#…`, declared by package.json `imports`) are not
+   * package names. `getRootImport` reaches them through its regular-package
+   * branch, so the root it computes is the bare `#` — which cannot match a
+   * pattern key like `#/*` and can never name a package either, so Node
+   * throws ERR_PACKAGE_IMPORT_NOT_DEFINED on it. Reporting the depth is in
+   * contract; rewriting the specifier to something that cannot resolve is the
+   * same silent-swap defect already sealed for `../` traversal above.
+   *
+   * From burgee apps/docs/src/app/(home)/layout.tsx:1, whose package.json
+   * declares `"imports": { "#/*": "./src/*" }`.
+   */
+  describe('Node subpath imports', () => {
+    ruleTester.run(
+      'subpath imports are reported but never rewritten',
+      noInternalModules,
+      {
+        valid: [],
+        invalid: [
+          {
+            name: 'a subpath import over maxDepth reports without an autofix',
+            code: "import { baseOptions } from '#/lib/layout-shared';",
+            options: [{ maxDepth: 1, strategy: 'autofix' }],
+            output: null,
+            errors: [{ messageId: 'internalModuleImport' }],
+          },
+          {
+            name: 'a subpath import over maxDepth offers no root-import suggestion',
+            code: "import { baseOptions } from '#/lib/layout-shared';",
+            options: [{ maxDepth: 1, strategy: 'suggest' }],
+            output: null,
+            errors: [{ messageId: 'internalModuleImport', suggestions: [] }],
+          },
+        ],
+      },
+    );
+  });
 });

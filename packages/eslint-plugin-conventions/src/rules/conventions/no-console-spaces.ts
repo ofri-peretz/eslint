@@ -27,28 +27,6 @@ type MessageIds = 'noConsoleSpaces';
 
 type RuleOptions = [];
 
-/**
- * Serialise a cooked string value back into a single-quoted literal.
- *
- * The fixer re-emits `staticString()`'s COOKED value, in which escapes are
- * already resolved. Splicing that straight between quotes breaks the moment the
- * value contains a quote or a line terminator — `"it's here "` became
- * `'it's here'`, which does not parse — and silently rewrites the value when it
- * contains a backslash. Re-escaping is what makes the emitted literal denote the
- * same string it came from. Single quotes are kept because that is the quote
- * style this rule has always produced.
- */
-function toSingleQuoted(value: string): string {
-  const escaped = value
-    .replace(/\\/g, '\\\\')
-    .replace(/'/g, "\\'")
-    .replace(/\n/g, '\\n')
-    .replace(/\r/g, '\\r')
-    .replace(/\u2028/g, '\\u2028')
-    .replace(/\u2029/g, '\\u2029');
-  return `'${escaped}'`;
-}
-
 export const noConsoleSpaces = createRule<RuleOptions, MessageIds>({
   name: 'no-console-spaces',
   meta: {
@@ -126,6 +104,30 @@ export const noConsoleSpaces = createRule<RuleOptions, MessageIds>({
       return propertyName(node.callee as TSESTree.MemberExpression);
     }
 
+    /**
+     * Re-quote a trimmed string as a single-quoted literal.
+     *
+     * The fixer rebuilds the argument from the *cooked* value, so every
+     * character that the original source expressed as an escape arrives here
+     * as itself. Splicing that raw value between quotes emitted source that
+     * did not parse — an apostrophe closed the literal early, an interior
+     * newline left it unterminated — and a lone backslash silently changed
+     * the string's value (`C:\\path` became `C:path`). Escape the three
+     * classes that matter inside `'...'`: the escape character, the quote,
+     * and the line terminators.
+     */
+    // oxlint-disable-next-line consistent-function-scoping
+    function quoteSingle(text: string): string {
+      const escaped = text
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/\n/g, '\\n')
+        .replace(/\r/g, '\\r')
+        .replace(/\u2028/g, '\\u2028')
+        .replace(/\u2029/g, '\\u2029');
+      return `'${escaped}'`;
+    }
+
     // oxlint-disable-next-line consistent-function-scoping
     function hasLeadingOrTrailingSpaces(text: string): boolean {
       // Check if string starts or ends with whitespace, but not if it's only whitespace
@@ -168,10 +170,8 @@ export const noConsoleSpaces = createRule<RuleOptions, MessageIds>({
                     arg: staticText,
                   },
                   fix(fixer: TSESLint.RuleFixer) {
-                    return fixer.replaceText(
-                      arg,
-                      toSingleQuoted(staticText.trim()),
-                    );
+                    const trimmed = staticText.trim();
+                    return fixer.replaceText(arg, quoteSingle(trimmed));
                   },
                 });
               }
