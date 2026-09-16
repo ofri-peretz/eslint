@@ -41,9 +41,9 @@ describe('no-dynamic-require', () => {
         // Non-require calls
         'const data = fetch("/api/data");',
         'const result = import("./module");',
-      
+
         // Static string require
-        'const fs = require(\'fs\');',
+        "const fs = require('fs');",
         // Unrelated code
         'const x = 1;',
         // Safe function
@@ -159,26 +159,112 @@ describe('no-dynamic-require', () => {
         },
         // Template literal in require
         {
+          name: 'an interpolated specifier is steerable by whatever fills the hole',
           code: 'const mod = require(`./plugins/${name}`);',
           errors: [{ messageId: 'dynamicRequire' }],
         },
         // Concatenation in require
         {
+          name: 'a concatenated specifier is steerable by its non-literal half',
           code: 'const mod = require("./handlers/" + handler);',
           errors: [{ messageId: 'dynamicRequire' }],
         },
         // Function call in require
         {
+          name: 'a call result as the specifier cannot be resolved in this file',
           code: 'const mod = require(getModulePath());',
           errors: [{ messageId: 'dynamicRequire' }],
         },
         // Member expression in require
         {
+          name: 'a property read as the specifier cannot be resolved in this file',
           code: 'const mod = require(config.pluginPath);',
           errors: [{ messageId: 'dynamicRequire' }],
         },
       ],
     });
   });
-});
 
+  /**
+   * The loader is whatever Node hands you, not the six letters `require`.
+   *
+   * The callee test was `callee.name === 'require'` and nothing else, so the
+   * spelling a modern ESM file actually uses — a binding from
+   * `module.createRequire()` — loaded an attacker-steerable specifier in
+   * silence. burgee packages/burgee/src/yargs-parser.ts:882 is exactly this:
+   * a `require` hook built from `createRequire(import.meta.url)` whose path
+   * comes from `--<configKey> <path>` on argv (traced at :548-560).
+   *
+   * The sibling `no-dynamic-dependency-loading` already resolves these; the
+   * divergence was an oversight, not a division of labour. `module.require`
+   * fell through BOTH rules.
+   */
+  describe('Loaders that are not spelled `require`', () => {
+    ruleTester.run('aliased and member loaders', noDynamicRequire, {
+      valid: [
+        {
+          name: 'a createRequire alias with a literal specifier is still static',
+          code: `import { createRequire } from 'node:module';
+const nodeRequire = createRequire(import.meta.url);
+const pkg = nodeRequire('./package.json');`,
+        },
+        {
+          name: 'a call that merely looks like a loader is not one',
+          code: 'const load = makeLoader(); const mod = load(userPath);',
+        },
+        {
+          name: 'a member call whose property is not require is not a loader',
+          code: 'const mod = bundler.load(userPath);',
+        },
+        {
+          name: 'require-named property on an unrelated receiver is not a loader',
+          code: 'const mod = bundler.require(userPath);',
+        },
+        {
+          name: 'a deeper member chain that is not require.main is not a loader',
+          code: 'const mod = a.b.require(userPath);',
+        },
+        {
+          name: 'a call-result receiver is not the module object',
+          code: 'const mod = getModule().require(userPath);',
+        },
+        {
+          name: 'a non-identifier callee is not a loader',
+          code: 'const mod = loaders[0](userPath);',
+        },
+        {
+          name: 'a const bound to something that is not a call is not a loader',
+          code: 'const nodeRequire = notALoader; const mod = nodeRequire(userPath);',
+        },
+        {
+          name: 'a const bound to a call that is not createRequire is not a loader',
+          code: 'const nodeRequire = makeLoader(); const mod = nodeRequire(userPath);',
+        },
+      ],
+      invalid: [
+        {
+          name: 'a createRequire alias loading a steerable specifier reports',
+          code: `import { createRequire } from 'node:module';
+const nodeRequire = createRequire(import.meta.url);
+const mod = nodeRequire(process.argv[2]);`,
+          errors: [{ messageId: 'dynamicRequire' }],
+        },
+        {
+          name: 'module.require with a steerable specifier reports',
+          code: 'const mod = module.require(userPath);',
+          errors: [{ messageId: 'dynamicRequire' }],
+        },
+        {
+          name: 'require.main.require with a steerable specifier reports',
+          code: 'const mod = require.main.require(userPath);',
+          errors: [{ messageId: 'dynamicRequire' }],
+        },
+        {
+          name: 'the sequence-expression idiom for hiding a specifier reports',
+          code: 'const mod = (0, require)(userPath);',
+          errors: [{ messageId: 'dynamicRequire' }],
+        },
+      ],
+    });
+  });
+});

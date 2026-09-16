@@ -56,6 +56,20 @@ ruleTester.run('detect-object-injection — guards, on the write path', detectOb
       code: `export function f(o, key, v) { if (Object.prototype.hasOwnProperty.call(o, key)) { o[key] = v; } }`,
     },
     {
+      // A module-owned `const` allowlist is the non-free spelling of the same
+      // thing, and must clear the write just as a free binding does.
+      name: 'a const allowlist declared in-file may guard a write to another object',
+      code: `const ALLOW = { a: 1 }; export function f(user, k, v) { if (Object.hasOwn(ALLOW, k)) { user[k] = v; } }`,
+    },
+    {
+      // burgee packages/seniority/src/cosmiconfig-util.ts:89 shape, inverted:
+      // a MODULE-OWNED allowlist may legitimately guard a write to a different
+      // object, because the allowlist itself is not caller-supplied. This is
+      // the case a same-object-only fix would wrongly turn into a finding.
+      name: 'a module-owned allowlist may guard a write to a DIFFERENT object',
+      code: `export function f(user, k, v) { if (Object.hasOwn(SCHEMA, k)) { user[k] = v; } }`,
+    },
+    {
       name: 'a key from a const allowlist, written',
       code: `const ALLOWED = { a: 'a', b: 'b' }; export function f(req, o, v) { const k = ALLOWED[req.body.k]; if (k) { o[k] = v; } }`,
     },
@@ -115,6 +129,43 @@ ruleTester.run('detect-object-injection — guards, on the write path', detectOb
     {
       name: 'CONTROL: hasOwn naming a DIFFERENT key does not guard',
       code: `export function f(o, key, other, v) { if (Object.hasOwn(o, other)) { o[key] = v; } }`,
+      errors: 1,
+    },
+    {
+      // The guarded object is not an identifier at all, so nothing can be
+      // resolved about it and it cannot be shown to be the written one.
+      name: 'a member-expression guard object cannot clear a write to another object',
+      code: `export function f(cache, t, k, v) { if (Object.hasOwn(cache.inner, k)) { t[k] = v; } }`,
+      errors: 1,
+    },
+    {
+      // A `let` allowlist can be reassigned, so it is not module-owned in the
+      // sense that matters; only `const` pins the binding to its initialiser.
+      name: 'a let allowlist does not clear a write to another object',
+      code: `let ALLOW = { a: 1 }; export function f(user, k, v) { if (Object.hasOwn(ALLOW, k)) { user[k] = v; } }`,
+      errors: 1,
+    },
+    {
+      // A re-declared binding has more than one definition, so it cannot be
+      // pinned to a single initialiser either.
+      name: 'a re-declared allowlist does not clear a write to another object',
+      code: `var ALLOW = { a: 1 }; var ALLOW = other; export function f(user, k, v) { if (Object.hasOwn(ALLOW, k)) { user[k] = v; } }`,
+      errors: 1,
+    },
+    {
+      // burgee packages/burgee/src/yargs/y18n.ts:89 — `hasOwnProperty.call(obj, key)`
+      // guards the SOURCE while the write lands on `table`. The guard proves
+      // nothing about the written object: with `obj` from
+      // JSON.parse('{"__proto__": ...}'), `__proto__` IS an own property, the
+      // guard passes, and `table[key] = ...` reparents `table`.
+      name: 'a hasOwn guard on one object does not clear a write to ANOTHER',
+      code: `export function w(a, b, k, v) { if (Object.hasOwn(a, k)) { b[k] = v; } }`,
+      errors: 1,
+    },
+    {
+      // Same defect in the merge spelling that burgee actually ships.
+      name: 'hasOwnProperty.call guarding the SOURCE does not clear a write to the TARGET',
+      code: `export function m(t, s, k) { if (Object.prototype.hasOwnProperty.call(s, k)) { t[k] = s[k]; } }`,
       errors: 1,
     },
     {

@@ -184,6 +184,18 @@ const fileUsesAstTooling = createModuleEvidence({
   scopes: ['@typescript-eslint'],
 });
 
+/**
+ * The property names a copy loop can guard against by comparing the key to a
+ * string literal. Kept as names, not as a pattern over source text, so that
+ * `Object.prototype.hasOwnProperty` and `Object['prototype']` — accessors, not
+ * guards — cannot be mistaken for one.
+ */
+const DANGEROUS_GUARD_NAMES = new Set([
+  '__proto__',
+  'constructor',
+  'prototype',
+]);
+
 type MessageIds = 'objectInjection' | 'globalPrototypeWrite' | 'massAssignment';
 
 /**
@@ -477,6 +489,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     const hasPrecedingValidation = (
       propertyNode: TSESTree.Node,
       node: TSESTree.Node,
+      writtenObject: TSESTree.Node,
     ): boolean => {
       // Only check for identifier keys (obj[key] where key is a variable)
       if (propertyNode.type !== AST_NODE_TYPES.Identifier) {
@@ -499,6 +512,52 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         // `hasValidation` below — see the comment there.
       };
 
+      /**
+       * A `hasOwn` guard is only sound for the object it NAMES.
+       *
+       * `Object.hasOwn(src, k)` proves `k` is an own DATA property of `src`,
+       * so `src[k] = v` cannot reach the `__proto__` setter. It proves nothing
+       * about a DIFFERENT object: `dst[k] = v` with `k === '__proto__'` still
+       * reparents `dst`, and in the recursive merge spelling it walks into
+       * `Object.prototype` and pollutes every object in the process.
+       *
+       * The matcher checked the KEY argument and never the object, so a guard
+       * naming any object at all — even a literal `{}` — cleared the write.
+       * The two `valid` fixtures above say "on the SAME identifier"; that was
+       * always the intent, it simply was not enforced.
+       *
+       * Cross-object guards are not all wrong, though: a module-owned
+       * allowlist (`if (Object.hasOwn(SCHEMA, k)) user[k] = v`) is sound,
+       * because the allowlist is not caller-supplied. So the object must be
+       * the written one, or provably not attacker-controlled.
+       */
+      const isModuleOwnedAllowlist = (objectNode: TSESTree.Node): boolean => {
+        if (objectNode.type !== AST_NODE_TYPES.Identifier) return false;
+        const variable = resolvedReference(
+          sourceCode.getScope(objectNode),
+          objectNode,
+        );
+        // A free binding is module- or host-owned, never a caller's argument.
+        if (!variable) return true;
+        // Exactly one definition, and it must be a `const` declaration. A
+        // parameter is the caller-supplied case this guards against; a `let`
+        // or a re-declared binding cannot be pinned to its initialiser.
+        if (variable.defs.length !== 1) return false;
+        const def = variable.defs[0];
+        return def.type === 'Variable' && def.parent?.kind === 'const';
+      };
+
+      const guardCoversWrittenObject = (
+        guardObject: TSESTree.Node,
+      ): boolean => {
+        if (
+          sourceCode.getText(guardObject) === sourceCode.getText(writtenObject)
+        ) {
+          return true;
+        }
+        return isModuleOwnedAllowlist(guardObject);
+      };
+
       const isHasOwnPropertyCall = (testNode: TSESTree.Node): boolean => {
         // Pattern: Object.prototype.hasOwnProperty.call(obj, key) OR obj.hasOwnProperty(key) OR Object.hasOwn(obj, key)
         if (testNode.type !== AST_NODE_TYPES.CallExpression) return false;
@@ -513,7 +572,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
           args[1].type === AST_NODE_TYPES.Identifier &&
           args[1].name === keyName
         ) {
-          return true;
+          return guardCoversWrittenObject(args[0]);
         }
 
         // obj.hasOwnProperty(key) OR Object.hasOwn(obj, key)
@@ -522,12 +581,16 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
           (propertyName(callee) === 'hasOwnProperty' ||
             propertyName(callee) === 'hasOwn')
         ) {
-          const keyArg = propertyName(callee) === 'hasOwn' ? args[1] : args[0];
+          const isHasOwn = propertyName(callee) === 'hasOwn';
+          const keyArg = isHasOwn ? args[1] : args[0];
+          // `Object.hasOwn(obj, key)` names the object in args[0];
+          // `obj.hasOwnProperty(key)` names it as the callee's own object.
+          const guardObject = isHasOwn ? args[0] : callee.object;
           if (
             keyArg?.type === AST_NODE_TYPES.Identifier &&
             keyArg.name === keyName
           ) {
-            return true;
+            return guardCoversWrittenObject(guardObject);
           }
         }
         return false;
@@ -1434,7 +1497,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       }
 
       // Skip if the key has been validated (e.g., includes() or hasOwnProperty check)
-      if (hasPrecedingValidation(propertyNode, node)) {
+      if (hasPrecedingValidation(propertyNode, node, node.left.object)) {
         return false;
       }
 
@@ -1510,7 +1573,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       }
 
       // Skip if the key has been validated (e.g., includes() or hasOwnProperty check)
-      if (hasPrecedingValidation(propertyNode, node)) {
+      if (hasPrecedingValidation(propertyNode, node, node.object)) {
         return false;
       }
 
@@ -2706,15 +2769,35 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // Joined without separators so multi-token guards still read as one string
       // (`Object` `.` `keys` -> `Object.keys`). String literals deliberately stay in:
       // `if (k === '__proto__') continue` is the documented guard and it IS a string.
-      const bodyText = context.sourceCode
-        .getTokens(node.body)
-        .map((token) => token.value)
-        .join('');
+      const bodyTokens = context.sourceCode.getTokens(node.body);
+      const bodyText = bodyTokens.map((token) => token.value).join('');
+
+      // A dangerous-key guard is `k === '__proto__'` — the property name is a
+      // STRING there. As a bare identifier the same word is an accessor:
+      // `Object.prototype.hasOwnProperty.call(...)` contains `prototype`, and
+      // matching it as text let the long spelling of a hasOwn guard clear the
+      // loop through a token belonging to the accessor rather than to any
+      // guard. Testing the token TYPE also survives `Object['prototype']`,
+      // which a text match on the joined tokens would not.
+      const hasDangerousKeyGuard = bodyTokens.some(
+        (token) =>
+          token.type === 'String' &&
+          DANGEROUS_GUARD_NAMES.has(token.value.slice(1, -1)),
+      );
       // A guarded loop is the documented fix; do not report the fix.
+      //
+      // `hasOwnProperty` and `hasOwn` are deliberately NOT in this list. A token
+      // scan cannot see WHICH object a guard names, and a hasOwn guard is only
+      // sound for the object it names: `if (Object.hasOwn(src, k)) dst[k] = ...`
+      // proves nothing about `dst`, and in the recursive spelling walks into
+      // `Object.prototype`. Matching the token anywhere in the body cleared the
+      // write regardless of both object and key. Those two guards are now
+      // decided at the write site by `hasPrecedingValidation`, which compares
+      // the guarded object against the written one. The remaining tokens are
+      // guard styles whose soundness does not depend on an object identity.
       if (
-        /hasOwnProperty|hasOwn|__proto__|constructor|prototype|includes\(|allowlist|whitelist|Object\.keys/.test(
-          bodyText,
-        )
+        hasDangerousKeyGuard ||
+        /includes\(|allowlist|whitelist|Object\.keys/.test(bodyText)
       ) {
         return;
       }
@@ -2751,6 +2834,12 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         (open) => open.keyName === propertyName && !open.reported,
       );
       if (!loop) return false;
+      // A hasOwn/hasOwnProperty guard clears this write only when it names the
+      // object being written (or a module-owned allowlist). This is what the
+      // token scan above can no longer decide on its own.
+      if (hasPrecedingValidation(node.left.property, node, node.left.object)) {
+        return false;
+      }
       loop.reported = true;
       context.report({
         node,

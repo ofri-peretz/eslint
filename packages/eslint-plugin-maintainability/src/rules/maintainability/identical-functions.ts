@@ -456,23 +456,59 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
             match,
             memberPrefix: string | undefined,
             keySuffix: string | undefined,
+            offset: number,
+            whole: string,
           ) => {
-            if (memberPrefix || keySuffix) return match;
-            return RESERVED_WORDS.has(match) ? match : 'VAR';
+            if (memberPrefix) return match;
+            // A trailing `:` was taken to mean "object key" and suppressed the
+            // rename. Three other things end in a colon: a ternary's
+            // consequent (`flag ? alpha : fallback`) and a TypeScript type
+            // annotation (`const value: string = ...`) — and in a TS-first
+            // plugin the annotation case meant every annotated declaration
+            // escaped renaming, blunting detection across typed code. A key is
+            // distinguished by what comes BEFORE it: an object literal key can
+            // only follow `{` or `,`.
+            if (keySuffix !== undefined) {
+              const before = whole.slice(0, offset).trimEnd();
+              const previous = before.at(-1);
+              if (previous === '{' || previous === ',') return match;
+            }
+            const name =
+              keySuffix === undefined
+                ? match
+                : match.slice(0, -keySuffix.length);
+            const renamed = RESERVED_WORDS.has(name) ? name : 'VAR';
+            return keySuffix === undefined ? renamed : `${renamed}${keySuffix}`;
           },
         );
 
-      return (
-        text
+      // Restore until no placeholder remains, because they NEST. The template
+      // pass runs first and does not know it is inside a quoted string, so
+      // `'use `read` on the port'` stashes the backticked span as placeholder
+      // 0, and the quote pass then stashes the whole string — placeholder and
+      // all — as placeholder 1. `String.replace` does not rescan inserted
+      // text, so a single pass left the inner placeholder unexpanded and the
+      // distinguishing words `read`/`write` never came back: two bodies
+      // differing only inside the quotes compared 100% identical. That is the
+      // exact failure this stashing exists to prevent, arriving through a
+      // different door.
+      //
+      // The bound is the number of stashed literals: each pass expands at
+      // least one, and a literal can only contain a placeholder written before
+      // it, so nesting cannot exceed the stash depth.
+      let restored = text;
+      for (let pass = 0; pass <= literals.length; pass++) {
+        if (!restored.includes('\uE000')) break;
+        restored = restored.replace(
+          /\uE000(\d+)\uE000/g,
           // Every placeholder was written from this same array one step above,
-          // so the index always resolves — a `??` fallback here would be a branch
-          // no input can take.
-          .replace(
-            /\uE000(\d+)\uE000/g,
-            (_match, index: string) => literals[Number(index)] as string,
-          )
-          .trim()
-      );
+          // so the index always resolves — a `??` fallback here would be a
+          // branch no input can take.
+          (_match, index: string) => literals[Number(index)] as string,
+        );
+      }
+
+      return restored.trim();
     }
 
     /**
@@ -524,7 +560,10 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
           // is impossible advice: lifting a closure out of its own parent
           // removes no code. A triple-nested `forEach` was being reported as
           // "3 duplicates" of itself.
-          if (encloses(functions[i].node, functions[j].node) || encloses(functions[j].node, functions[i].node)) {
+          if (
+            encloses(functions[i].node, functions[j].node) ||
+            encloses(functions[j].node, functions[i].node)
+          ) {
             continue;
           }
 

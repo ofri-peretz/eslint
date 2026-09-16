@@ -19,7 +19,7 @@
     "maintainability/identical-functions": 258,
     "maintainability/max-parameters": 74,
     "modernization/no-instanceof-array": 1,
-    "modernization/prefer-at": 14,
+    "modernization/prefer-at": 18,
     "modernization/prefer-event-target": 17,
     "modernization/prefer-template-literal": 185,
     "modularity/enforce-rest-conventions": 6,
