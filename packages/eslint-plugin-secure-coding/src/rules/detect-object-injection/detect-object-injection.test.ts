@@ -1640,8 +1640,6 @@ describe('prototype-polluting copy loop', () => {
     valid: [
       // Source is a module-local object, not a parameter — the benign majority case.
       `const src = { a: 1 }; const out = {}; for (const k in src) { out[k] = src[k]; }`,
-      // Guarded with hasOwnProperty — that guard IS the documented fix.
-      `function m(t, s) { for (const k in s) { if (Object.prototype.hasOwnProperty.call(s, k)) { t[k] = s[k]; } } }`,
       // Iterating a call result: not an Identifier, so the source cannot be proven — abstain.
       `function m(t, s) { for (const k in getSource()) { t.x = k; } }`,
       // Loop that never assigns through the key.
@@ -1660,6 +1658,16 @@ describe('prototype-polluting copy loop', () => {
       // The canonical merge helper.
       {
         code: `function merge(t, s) { for (const k in s) { t[k] = s[k]; } return t; }`,
+        errors: 1,
+      },
+      // Was pinned VALID with the comment "Guarded with hasOwnProperty — that
+      // guard IS the documented fix." It is not the fix for THIS write: the
+      // guard names `s`, the write lands on `t`. Verified in node — an own
+      // `__proto__` on `s` passes the guard and reparents `t`; recursively, it
+      // reaches Object.prototype. The fixture pinned the bug, not the contract.
+      {
+        name: 'a hasOwnProperty guard on the SOURCE does not make a write to the TARGET safe',
+        code: `function m(t, s) { for (const k in s) { if (Object.prototype.hasOwnProperty.call(s, k)) { t[k] = s[k]; } } }`,
         errors: 1,
       },
       // Nested inside a conditional still reports exactly once.

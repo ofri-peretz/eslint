@@ -127,10 +127,6 @@ suite('detect-object-injection, read against its nearest neighbour', () => {
         name: 'a copy loop over a module-local object',
         code: 'const cfg = { a: 1 }; const out = {}; for (const k in cfg) { out[k] = cfg[k]; }',
       },
-      {
-        name: 'a merge helper guarded by Object.hasOwn',
-        code: 'function merge(dst, src) { for (const k in src) { if (Object.hasOwn(src, k)) dst[k] = src[k]; } }',
-      },
     ],
     invalid: [
       {
@@ -144,6 +140,19 @@ suite('detect-object-injection, read against its nearest neighbour', () => {
       {
         name: 'the merge helper behind every deep-extend CVE',
         code: 'function merge(dst, src) { for (const k in src) { dst[k] = src[k]; } return dst; }',
+        errors: 1,
+      },
+      {
+        // Was pinned VALID as 'a merge helper guarded by Object.hasOwn', on the
+        // rationale that the guard IS the documented fix. The rationale was
+        // reasoned, not run: `Object.hasOwn(src, k)` proves `k` is an own
+        // property of SRC, and says nothing about DST. Verified in node — with
+        // `src = JSON.parse('{"__proto__": {...}}')`, `__proto__` IS an own
+        // property, so the guard PASSES and `dst[k] = ...` reparents `dst`.
+        // In the recursive spelling it walks into `Object.prototype` and
+        // pollutes every object in the process. The fixture pinned the bug.
+        name: 'a hasOwn guard on the SOURCE does not make a write to the TARGET safe',
+        code: 'function merge(dst, src) { for (const k in src) { if (Object.hasOwn(src, k)) dst[k] = src[k]; } }',
         errors: 1,
       },
       {
