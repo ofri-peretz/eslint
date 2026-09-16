@@ -232,7 +232,7 @@
     "node-security/no-dynamic-algorithm-selection": 28,
     "node-security/no-dynamic-command-string": 80,
     "node-security/no-dynamic-dependency-loading": 42,
-    "node-security/no-dynamic-require": 33,
+    "node-security/no-dynamic-require": 29,
     "node-security/no-ecb-mode": 17,
     "node-security/no-env-injection": 38,
     "node-security/no-insecure-http-parser": 20,
