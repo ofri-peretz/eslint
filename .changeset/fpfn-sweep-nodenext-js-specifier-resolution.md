@@ -1,5 +1,5 @@
 ---
-'eslint-devkit': patch
+'@interlace/eslint-devkit': patch
 ---
 
 fix: resolve NodeNext `.js` specifiers to their TypeScript source
