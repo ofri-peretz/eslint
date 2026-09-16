@@ -5,6 +5,13 @@ All notable changes to `eslint-plugin-maintainability` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.2.10
+
+### Patch Changes
+
+- **🐛 Fix** — `cognitive-complexity` charges a homogeneous run of logical operators once, not once per operator. The docs' Complexity Factors table scores logical operators "+1 | `&&`, `||` (sequence breaks)" — a run costs one point and only a break in the run starts the next — but every `LogicalExpression` node was charged, so `a && b && c && d` cost 3 where the table says 1. That inflated every `&&`-heavy function against an unchanged Sonar-default threshold of 15. Mixed runs such as `a && b || c` still cost 2, as two sequences should.
+- **🐛 Fix** — `identical-functions` no longer groups a function with a closure nested inside it. An outer function whose body is largely one call taking an inline callback shares almost all its text with that callback, so the pair cleared the similarity threshold by construction — but they are one implementation, and "extract to a reusable function" is impossible advice, because lifting a closure out of its own parent removes no code. A triple-nested `forEach` was reported as "3 duplicates" of itself. Removes 6 of burgee's 24 findings for this rule.
+
 ## 3.2.9
 
 ### Patch Changes

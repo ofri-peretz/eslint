@@ -5,6 +5,13 @@ All notable changes to `eslint-plugin-import-next` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.8.2
+
+### Patch Changes
+
+- **🐛 Fix** — `extensions` now checks the specifier of a dynamic `import()`. The rule visited `ImportDeclaration`, `ExportNamedDeclaration` and `ExportAllDeclaration` but not `ImportExpression`, so the identical specifier string was reported on a static import and silent on an `await import(...)` in the same file — leaving the file less consistent after `--fix` than before it, the exact defect the export-from forms were added to remove. A non-literal specifier (template or variable) is still left alone. Surfaces 6 previously-missed findings in the burgee corpus.
+- **🐛 Fix** — `consistent-type-specifier-style` no longer emits a `Fix:` instruction that drops `type` from every specifier but the first. The `type` marker sat outside the `{{name}}` interpolation while the data bound a comma-joined list, so an import of more than one name rendered as `import { type A, B }` — following it demotes every later specifier to a value import, which under `verbatimModuleSyntax` is emitted verbatim and throws at runtime. The autofix was already correct; only the emitted guidance disagreed with it.
+
 ## 2.8.1
 
 ### Patch Changes
