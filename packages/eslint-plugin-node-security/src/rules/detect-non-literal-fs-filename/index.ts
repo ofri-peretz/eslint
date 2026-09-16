@@ -118,6 +118,7 @@ import {
   propertyName,
   resolveModuleBinding,
   staticString,
+  unwrapTypeSyntax,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
@@ -895,8 +896,18 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
     };
 
     /** Does this expression read from something outside the program? */
-    const readsTaintSource = (node: TSESTree.Node, depth = 0): boolean => {
+    const readsTaintSource = (rawNode: TSESTree.Node, depth = 0): boolean => {
       if (depth > 6) return false;
+      // `as string`, `!`, `satisfies`, `<T>x` — syntax, not a value change.
+      // This switch dispatched on `node.type` and fell through to
+      // `default: return false` for every TS wrapper, so the dialect TypeScript
+      // FORCES on `process.env.X` (`string | undefined` under strict) silenced
+      // the rule entirely: `'/etc/app/' + (process.env.NAME as string)` went
+      // quiet while the docs' own worked example, the same line without the
+      // cast, is annotated "reported". `unwrapTypeSyntax` is the devkit helper
+      // written for exactly this class and already wired into the shared
+      // `makeReadsTaintSource`; this rule rolls its own walker and was missed.
+      const node = unwrapTypeSyntax(rawNode);
       switch (node.type) {
         case AST_NODE_TYPES.Identifier: {
           if (taintRoots.has(node.name)) {

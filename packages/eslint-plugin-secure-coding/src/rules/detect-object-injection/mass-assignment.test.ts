@@ -82,6 +82,31 @@ describe('detect-object-injection — mass assignment + local-object provenance'
         code: `const OK = ['a','b']; export function f(dst, src) { Object.keys(src).forEach((k) => { if (OK.includes(k)) dst[k] = src[k]; }); }`,
       },
       {
+        // The membership test spelled as an operator rather than a call. The
+        // key-bound guard walk has to read `in` too, or the fix for the
+        // unrelated-token FN would turn this remediation into a report.
+        name: 'a `key in schema` membership test guards the key',
+        code: `export function update(req, user, schema) {
+  for (const k of Object.keys(req.body)) {
+    if (!(k in schema)) continue;
+    user[k] = req.body[k];
+  }
+}`,
+      },
+      {
+        // Yoda spelling of the documented `__proto__` rejection. Which SIDE
+        // carries the literal is a choice the author makes and a linter should
+        // not care about; reading only one side would make the guard's
+        // effectiveness depend on where it was typed.
+        name: 'the __proto__ rejection guards with the literal on the left too',
+        code: `export function copy(target, source) {
+  for (const key in source) {
+    if ('__proto__' === key) continue;
+    target[key] = source[key];
+  }
+}`,
+      },
+      {
         name: 'an allowlist is the remediation, and it clears the finding',
         code: `export function update(req, user) {
   const ASSIGNABLE = ['name', 'email'];
@@ -277,6 +302,42 @@ export function tag(o) { o[kShared] = 1; }`,
   }
 }`,
         errors: [{ messageId: 'massAssignment' }],
+      },
+      // ── FN sealed 2026-09-16, from the burgee FP/FN sweep ─────────────────
+      // The suppression was a substring scan over the body's joined tokens, so
+      // it asked whether a guard SPELLING appeared anywhere in the body — never
+      // which key it tested, nor which object, nor whether it related to the
+      // loop at all. One unrelated `.includes(` bought silence on the shape
+      // this rule's own header calls the canonical CWE-1321 primitive.
+      //
+      // The write path already held the opposite contract, pinned in
+      // `guards-on-the-write-path.test.ts` as "hasOwn naming a DIFFERENT key
+      // does not guard". The copy-loop arms were looser still: they accepted a
+      // guard naming no key at all.
+      //
+      // Surfaced by burgee packages/seniority/src/dotenv.ts:85 and
+      // packages/burgee/src/yargs/validation.ts:101 — copy loops whose only
+      // guard-shaped call names a different object than the one written.
+      {
+        name: 'FN: an includes() that does not name the key is not a guard',
+        code: `const LEVELS = ['debug'];
+export function merge(target, source) {
+  for (const key of Object.keys(source)) {
+    if (LEVELS.includes(process.env.LOG_LEVEL)) log('merging');
+    target[key] = source[key];
+  }
+}`,
+        errors: [{ messageId: 'massAssignment' }],
+      },
+      {
+        name: 'FN: naming Object.keys of an unrelated object is not a guard',
+        code: `export function copy(target, source) {
+  for (const key in source) {
+    count(Object.keys(source).length);
+    target[key] = source[key];
+  }
+}`,
+        errors: [{ messageId: 'objectInjection' }],
       },
       {
         // `for (k of …)` with no declaration — the binding assigns to an outer

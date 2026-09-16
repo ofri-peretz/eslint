@@ -21,6 +21,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   propertyName,
+  unwrapTypeSyntax,
 } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
@@ -114,8 +115,16 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
      *
      * `depth` stops `const a = b; const b = a;` recursing forever.
      */
-    function readsUserInput(node: TSESTree.Node, depth = 0): boolean {
+    function readsUserInput(rawNode: TSESTree.Node, depth = 0): boolean {
       if (depth > 6) return false;
+      // `as string`, `!`, `satisfies`, `<T>x` — syntax, not a value change.
+      // This switch fell through to `default: return false` for every TS
+      // wrapper, so `fs.readFileSync('/data/' + (req.query.f as string))` — and
+      // even the bare `fs.readFileSync(req.query.f as string)`, this rule's own
+      // ❌ Incorrect shape — went silent, while the identical line without the
+      // cast reports. Assertions are erased at compile time; the runtime is
+      // byte-identical.
+      const node = unwrapTypeSyntax(rawNode);
       switch (node.type) {
         case 'Identifier': {
           if (userInputSources.has(node.name.toLowerCase())) return true;

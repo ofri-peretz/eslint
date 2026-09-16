@@ -181,6 +181,37 @@ export const preferDependencyVersionStrategy = createRule<
       let expectedVersion = version;
       let needsFix = false;
 
+      /**
+       * Is this specifier a RANGE rather than a prefixed version?
+       *
+       * The same predicate the `range` branch below already uses, lifted so the
+       * other three strategies can decline instead of rewriting.
+       *
+       * `<2.0.0` is an exclusive upper bound, not a version with a prefix: its
+       * `2.0.0` is the major the author pinned AWAY from. The caret branch
+       * stripped it as if it were `^` or `~` and emitted `^2.0.0`, whose
+       * resolved set — `>=2.0.0 <3.0.0` — is DISJOINT from the original's.
+       * Unattended `--fix` therefore installed the excluded major. Every other
+       * transition this rule performs pivots on the same base version and stays
+       * satisfiable; this was the only one that inverted the constraint.
+       *
+       * It was also never a considered policy: the `/^[\^~<>=]?\d+/` gate above
+       * admits exactly ONE operator character, so `>=1.0.0 <2.0.0` — the
+       * canonical range in this rule's own docs table — falls out of the rule
+       * entirely while its one-character cousins were rewritten. And
+       * `1.0.0 - 2.0.0` autofixed to `^1.0.0 - 2.0.0`, which
+       * `semver.validRange` rejects outright.
+       */
+      const isRangeSpecifier =
+        version.includes('||') ||
+        version.includes('>') ||
+        version.includes('<') ||
+        version.includes(' - ');
+
+      // A range is already a range; only the `range` strategy has anything to
+      // say about it, and what it says is "compliant".
+      if (isRangeSpecifier && packageStrategy !== 'range') return;
+
       // Determine expected format based on strategy (package override or default)
       // First, extract the base version (remove any existing prefix)
       const baseVersion = version.replace(/^[\^~<>=]+/, '');

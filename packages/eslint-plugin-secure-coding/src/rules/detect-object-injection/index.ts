@@ -299,6 +299,133 @@ const OBJECT_INJECTION_PATTERNS: ObjectInjectionPattern[] = [
   },
 ];
 
+/**
+ * Callees that can express "is this key allowed?" — the copy-loop remediation.
+ *
+ * `call` is here for `Object.prototype.hasOwnProperty.call(obj, k)`, whose own
+ * property name is `call` and whose key sits in the second argument.
+ *
+ * @protocol-constant Every entry is a method the language or its built-ins
+ * define: `includes` / `indexOf` on Array and String, `has` on Set and Map,
+ * `hasOwn` on Object, `hasOwnProperty` on Object.prototype, and `call` on
+ * Function.prototype. A project cannot rename them, so exact membership here is
+ * not a name test standing in for evidence — it is the membership test itself.
+ * This set only ever SUPPRESSES, and a consumer given control of it could only
+ * widen the suppression, which is precisely the false negative this list was
+ * narrowed to close.
+ */
+const KEY_GUARD_CALLEES = new Set([
+  'includes',
+  'has',
+  'hasOwn',
+  'hasOwnProperty',
+  'indexOf',
+  'call',
+]);
+
+/**
+ * The three keys that reach `Object.prototype`.
+ *
+ * @protocol-constant `__proto__`, `constructor` and `prototype` are fixed by
+ * the language — they are the entire reachable surface of CWE-1321, and no
+ * consumer's domain vocabulary can add to or rename them. Making this tunable
+ * would let a project remove the key whose rejection is the documented fix.
+ */
+const POLLUTION_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+/** Every child node, arrays flattened, `parent` skipped. */
+const childNodes = (n: TSESTree.Node): TSESTree.Node[] => {
+  const out: TSESTree.Node[] = [];
+  for (const key of Object.keys(n)) {
+    if (key === 'parent') continue;
+    const child = (n as unknown as Record<string, unknown>)[key];
+    for (const item of Array.isArray(child) ? child : [child]) {
+      if (item && typeof item === 'object' && 'type' in item) {
+        out.push(item as TSESTree.Node);
+      }
+    }
+  }
+  return out;
+};
+
+/** Does `n` read the loop variable anywhere inside it? */
+const mentionsKey = (n: TSESTree.Node, keyName: string): boolean => {
+  if (n.type === AST_NODE_TYPES.Identifier) return n.name === keyName;
+  return childNodes(n).some((child) => mentionsKey(child, keyName));
+};
+
+/**
+ * Does this body guard THE KEY the loop is about to write?
+ *
+ * Both copy-loop arms used to answer this by joining the body's tokens and
+ * running a substring regex over the result. That scan asked whether a guard
+ * SPELLING appears anywhere in the body — never which key it tests, nor which
+ * object, nor whether it relates to the loop at all. So an unrelated
+ * `LEVELS.includes(process.env.LOG_LEVEL)`, or a log line that merely names
+ * `constructor`, silenced the canonical CWE-1321 primitive — measured, against
+ * byte-identical reporting controls.
+ *
+ * The rule already holds the opposite contract on the write path, pinned as an
+ * invalid case in `guards-on-the-write-path.test.ts`: "hasOwn naming a DIFFERENT
+ * key does not guard". The copy-loop arms were looser still — they accepted a
+ * guard naming no key at all. This walks for a guard BOUND to `keyName`, which
+ * is what both messages promise ("the body checks each key against an
+ * allowlist"; "__proto__ / constructor / prototype are rejected first").
+ *
+ * AST, not tokens — which also keeps a `__proto__` written inside a COMMENT from
+ * clearing the finding, the false negative the token scan was introduced to fix.
+ */
+const bodyGuardsKey = (bodyNode: TSESTree.Node, keyName: string): boolean => {
+  let guarded = false;
+  const walk = (n: TSESTree.Node): void => {
+    if (guarded) return;
+
+    // `ALLOWED.includes(k)`, `set.has(k)`, `Object.hasOwn(o, k)`,
+    // `Object.prototype.hasOwnProperty.call(o, k)`, `keys.indexOf(k)`.
+    if (
+      n.type === AST_NODE_TYPES.CallExpression &&
+      n.callee.type === AST_NODE_TYPES.MemberExpression &&
+      KEY_GUARD_CALLEES.has(propertyName(n.callee) ?? '') &&
+      n.arguments.some((argument) => mentionsKey(argument, keyName))
+    ) {
+      guarded = true;
+      return;
+    }
+
+    // `k in schema` — the membership test spelled as an operator.
+    if (
+      n.type === AST_NODE_TYPES.BinaryExpression &&
+      n.operator === 'in' &&
+      mentionsKey(n.left, keyName)
+    ) {
+      guarded = true;
+      return;
+    }
+
+    // `k === '__proto__'` in either order. `staticString` so the
+    // no-substitution template literal spelling counts too.
+    if (
+      n.type === AST_NODE_TYPES.BinaryExpression &&
+      ['===', '!==', '==', '!='].includes(n.operator)
+    ) {
+      const compared = staticString(n.left) ?? staticString(n.right);
+      const other = staticString(n.left) === null ? n.left : n.right;
+      if (
+        compared !== null &&
+        POLLUTION_KEYS.has(compared) &&
+        mentionsKey(other, keyName)
+      ) {
+        guarded = true;
+        return;
+      }
+    }
+
+    for (const child of childNodes(n)) walk(child);
+  };
+  walk(bodyNode);
+  return guarded;
+};
+
 export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
   name: 'detect-object-injection',
   meta: {
@@ -2463,16 +2590,9 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       if (!isCopyLoopSourceOpaque(source)) return;
 
       // An allowlist inside the body is the remediation — naming the edit that
-      // clears this finding is what keeps the rule satisfiable. TOKENS, not
-      // `getText`: source text carries comments, so `/* __proto__ */` written
-      // anywhere in the body would otherwise clear the finding.
-      const body = sourceCode
-        .getTokens(bodyNode)
-        .map((token) => token.value)
-        .join('');
-      if (/\b(includes|has|hasOwn|hasOwnProperty|indexOf)\s*\(/.test(body))
-        return;
-      if (/__proto__|constructor|prototype/.test(body)) return;
+      // clears this finding is what keeps the rule satisfiable. The guard has to
+      // be ON THE KEY, though: see `bodyGuardsKey`.
+      if (bodyGuardsKey(bodyNode, keyName)) return;
 
       // A computed write keyed by the loop/callback variable, anywhere in the body.
       let reported = false;
@@ -2700,24 +2820,10 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // which is what keeps the benign majority quiet.
       if (!isCopyLoopSourceOpaque(node.right)) return;
 
-      // TOKENS, not `getText`. Raw source text carries the comments with it, so an
-      // ordinary `/* copy each prototype key */` inside the loop silenced the finding
-      // entirely — a false negative anyone could trip by documenting their own code.
-      // Joined without separators so multi-token guards still read as one string
-      // (`Object` `.` `keys` -> `Object.keys`). String literals deliberately stay in:
-      // `if (k === '__proto__') continue` is the documented guard and it IS a string.
-      const bodyText = context.sourceCode
-        .getTokens(node.body)
-        .map((token) => token.value)
-        .join('');
-      // A guarded loop is the documented fix; do not report the fix.
-      if (
-        /hasOwnProperty|hasOwn|__proto__|constructor|prototype|includes\(|allowlist|whitelist|Object\.keys/.test(
-          bodyText,
-        )
-      ) {
-        return;
-      }
+      // A guarded loop is the documented fix; do not report the fix. The guard
+      // must name THE KEY — `bodyGuardsKey` says why a body-wide token scan
+      // could not tell a guard from a log line that happened to spell one.
+      if (bodyGuardsKey(node.body, keyName)) return;
 
       // Arm the loop and let ESLint's own traversal find the assignment. The previous
       // version recursively walked the whole body here, and ESLint then walked it AGAIN
