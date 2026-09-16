@@ -68,6 +68,7 @@ describe('detect-object-injection', () => {
           code: "var A = { a: 'A' }; var A = other; function f(req) { return A[req.body.k]; }",
         },
         {
+          name: 'a returned reader closure keyed by its own parameter is not a write',
           code: 'export function build(store) { const read = (key) => store[key]; return read; }',
         },
         {
