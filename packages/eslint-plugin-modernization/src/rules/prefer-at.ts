@@ -12,7 +12,8 @@ import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
 import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
-type MessageIds = 'preferAtMethod' | 'useAtForLastElement' | 'useAtForNegativeIndex';
+type MessageIds =
+  'preferAtMethod' | 'useAtForLastElement' | 'useAtForNegativeIndex';
 
 export interface Options {
   /** Check for last element access patterns */
@@ -72,7 +73,8 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
         description: 'Use .at() method for clearer array element access',
         severity: 'MEDIUM',
         fix: 'Replace array[array.length - n] with array.at(-n)',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/at',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/at',
       }),
       useAtForLastElement: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -80,7 +82,8 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
         description: 'Use array.at(-1) for last element',
         severity: 'LOW',
         fix: 'array.at(-1) instead of array[array.length - 1]',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/at',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/at',
       }),
       useAtForNegativeIndex: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -88,7 +91,8 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
         description: 'Use array.at() for negative index',
         severity: 'LOW',
         fix: 'array.at(index) for clearer negative index access',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/at',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/at',
       }),
     },
     schema: [
@@ -108,7 +112,19 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       MemberExpression(node: TSESTree.MemberExpression) {
-        if (!node.computed || node.object.type !== 'Identifier') {
+        if (!node.computed) {
+          return;
+        }
+        // The receiver used to have to be a bare Identifier, which made
+        // `c.path[c.path.length - 1]` and `this.rows[this.rows.length - 1]`
+        // invisible — the common shape in class-based and node-tree code. The
+        // `.length` half of this expression was already generalised to read
+        // `o['length']`; this is the receiver half of the same generalisation.
+        if (
+          node.object.type !== 'Identifier' &&
+          node.object.type !== 'MemberExpression' &&
+          node.object.type !== 'ThisExpression'
+        ) {
           return;
         }
 
@@ -126,29 +142,60 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        const arrayName = node.object.name;
+        // Receivers are compared by SOURCE TEXT, so the receiver and the
+        // `.length` receiver still have to name the same object.
+        const arrayName = context.sourceCode.getText(node.object);
+
+        /**
+         * May the receiver be re-spelled by the fixer?
+         *
+         * `.at(-1)` writes the receiver once where the source wrote it twice,
+         * so the rewrite is only safe when re-spelling it is free. Plain
+         * identifiers, `this`, and dot access qualify. A call does not: moving
+         * `get()` changes when it runs. A computed segment does not either,
+         * since `a[i]` and a later `a[i]` are only the same element while `i`
+         * is unchanged, which nothing here proves.
+         *
+         * Matching the file's existing discipline: where a fix cannot be made
+         * to preserve semantics, the rule states the case and leaves the edit
+         * to the reader rather than going silent.
+         */
+        const isRewritableReceiver = (receiver: TSESTree.Node): boolean => {
+          if (receiver.type === 'Identifier') return true;
+          if (receiver.type === 'ThisExpression') return true;
+          if (receiver.type !== 'MemberExpression') return false;
+          if (receiver.computed) return false;
+          return isRewritableReceiver(receiver.object);
+        };
 
         // Check for array[array.length - n] pattern (any numeric literal n)
         if (
           node.property.type === 'BinaryExpression' &&
           node.property.operator === '-' &&
           node.property.left.type === 'MemberExpression' &&
-          node.property.left.object.type === 'Identifier' &&
-          node.property.left.object.name === arrayName &&
+          context.sourceCode.getText(node.property.left.object) === arrayName &&
           propertyName(node.property.left) === 'length' &&
           node.property.right.type === 'Literal' &&
           typeof node.property.right.value === 'number' &&
           node.property.right.value > 0
         ) {
           const offset = node.property.right.value;
-          const messageId = offset === 1 ? 'useAtForLastElement' : 'preferAtMethod';
-          
+          const messageId =
+            offset === 1 ? 'useAtForLastElement' : 'preferAtMethod';
+
           context.report({
             node,
             messageId,
-            fix(fixer: TSESLint.RuleFixer) {
-              return fixer.replaceText(node, `${arrayName}.at(-${offset})`);
-            },
+            ...(isRewritableReceiver(node.object)
+              ? {
+                  fix(fixer: TSESLint.RuleFixer) {
+                    return fixer.replaceText(
+                      node,
+                      `${arrayName}.at(-${offset})`,
+                    );
+                  },
+                }
+              : {}),
           });
           return;
         }
@@ -158,8 +205,7 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
           node.property.type === 'BinaryExpression' &&
           node.property.operator === '-' &&
           node.property.left.type === 'MemberExpression' &&
-          node.property.left.object.type === 'Identifier' &&
-          node.property.left.object.name === arrayName &&
+          context.sourceCode.getText(node.property.left.object) === arrayName &&
           propertyName(node.property.left) === 'length' &&
           node.property.right.type === 'Identifier'
         ) {
