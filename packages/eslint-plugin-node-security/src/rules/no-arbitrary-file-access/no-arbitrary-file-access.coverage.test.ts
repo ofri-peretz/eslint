@@ -30,12 +30,12 @@ describe('no-arbitrary-file-access coverage gaps', () => {
     // would pass for the wrong reason — provenance unresolved — and the guard
     // they exist to exercise would never run.
     valid: [
-    // A dynamic fs method names nothing, so it is neither a read nor a write
-    // this rule knows — the sentinel must fail closed.
-    {
-      name: 'a dynamic fs method is neither a read nor a write',
-      code: "const fs = require('fs'); function f(m, req) { return fs[m](req.query.p); }",
-    },
+      // A dynamic fs method names nothing, so it is neither a read nor a write
+      // this rule knows — the sentinel must fail closed.
+      {
+        name: 'a dynamic fs method is neither a read nor a write',
+        code: "const fs = require('fs'); function f(m, req) { return fs[m](req.query.p); }",
+      },
       // Declarator without initializer → tracking guard returns early
       { code: "let pending;\nfs.readFileSync('/etc/hosts');" },
       // Guard validates once; the second fs call hits the validated cache
@@ -127,6 +127,23 @@ describe('no-arbitrary-file-access coverage gaps', () => {
           '}',
           'f(req.query.p, other, base);',
         ].join('\n'),
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      // ── FN sealed 2026-09-16, from the burgee FP/FN sweep ───────────────
+      // `readsUserInput` dispatched on `node.type` and fell through to
+      // `default: return false` for every TS type wrapper, so a cast anywhere
+      // on the tainted operand blanked the rule — including on the bare
+      // whole-value form, which is this rule's own ❌ Incorrect shape.
+      // Assertions are erased at compile time; the runtime is byte-identical
+      // to the controls above.
+      {
+        name: 'FN: `as string` on the request value still reports',
+        code: `export function h(req: any) { return fs.readFileSync('/data/' + (req.query.f as string)); }`,
+        errors: [{ messageId: 'violationDetected' }],
+      },
+      {
+        name: 'FN: a cast on the whole path value still reports',
+        code: `export function h(req: any) { return fs.readFileSync(req.query.f as string); }`,
         errors: [{ messageId: 'violationDetected' }],
       },
     ],

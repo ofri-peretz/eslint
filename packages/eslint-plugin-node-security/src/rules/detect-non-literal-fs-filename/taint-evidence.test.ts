@@ -264,6 +264,40 @@ import path from 'path';
 export const read = () => fs.readFileSync(path.join('/safe', process.argv[2]), 'utf8');`,
         errors: 1,
       },
+      // ── FN sealed 2026-09-16, from the burgee FP/FN sweep ─────────────────
+      // `readsTaintSource` dispatched on `node.type` with `default: return
+      // false`, and had no arm for any TS wrapper. So a type assertion on the
+      // tainted operand blanked the rule — in every composition form the docs
+      // name (`+`, template, `path.join`), and for `as` / `!` / `satisfies` /
+      // `<T>x` alike. The dialect matters: `process.env.X` is `string |
+      // undefined` under `strict`, so `as string` is what TypeScript FORCES
+      // here, not a security review. The docs' own worked example is this line
+      // without the cast, annotated "reported — a prefix to escape".
+      //
+      // No burgee line carries a cast on an fs path argument today, so these
+      // are the minimized shapes rather than a corpus quote; burgee does write
+      // the spelling at fs-shaped arguments (packages/burgee/src/yargs/
+      // factory.ts:1153, `readFileSync(pkgJsonPath as string, 'utf8')`, silent
+      // for an unrelated reason — the receiver is burgee's own shim).
+      {
+        name: 'FN: `as string` on the taint source does not undo the composition',
+        code: `import fs from 'fs';
+export const read = () => fs.readFileSync('/etc/app/' + (process.env.NAME as string));`,
+        errors: 1,
+      },
+      {
+        name: 'FN: a non-null assertion on the taint source still reports',
+        code: `import fs from 'fs';
+export const read = () => fs.readFileSync('/etc/app/' + process.env.NAME!);`,
+        errors: 1,
+      },
+      {
+        name: 'FN: a cast inside path.join still reports',
+        code: `import fs from 'fs';
+import path from 'path';
+export const read = () => fs.writeFileSync(path.join('/tmp', process.argv[2] as string), 'x');`,
+        errors: 1,
+      },
       {
         // CONTROL — one request-derived part anywhere defeats the exemption.
         name: 'CONTROL: an argv base with a REQUEST segment still reports',
