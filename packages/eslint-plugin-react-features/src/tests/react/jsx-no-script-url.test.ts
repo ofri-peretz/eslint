@@ -26,7 +26,10 @@ describe('jsx-no-script-url', () => {
   ruleTester.run('jsx-no-script-url', jsxNoScriptUrl, {
     valid: [
       // Normal URLs
-      { name: 'an ordinary href', code: '<a href="https://example.com">Link</a>' },
+      {
+        name: 'an ordinary href',
+        code: '<a href="https://example.com">Link</a>',
+      },
       '<a href="http://example.com">Link</a>',
       '<a href="/page">Link</a>',
       '<a href="#section">Link</a>',
@@ -51,6 +54,7 @@ describe('jsx-no-script-url', () => {
         errors: [{ messageId: 'noScriptUrl' }],
       },
       {
+        name: 'the scheme test is case-insensitive',
         code: '<a href="JAVASCRIPT:void(0)">Link</a>',
         errors: [{ messageId: 'noScriptUrl' }],
       },
@@ -60,6 +64,24 @@ describe('jsx-no-script-url', () => {
       },
       {
         code: '<a href="  javascript:void(0)">Link</a>',
+        errors: [{ messageId: 'noScriptUrl' }],
+      },
+      // ── FN sealed 2026-09-16, from the burgee FP/FN sweep ───────────────
+      // `/^\s*javascript:/i` stripped whitespace only BEFORE the scheme. The
+      // URL parser removes leading C0 controls and space, then strips every
+      // ASCII tab/LF/CR from anywhere in the input — so both of these resolve
+      // to `javascript:alert(1)`, verified in Chrome and in Node's WHATWG
+      // `URL`, identical to the plain payload three cases above. Built from
+      // char codes because the payload is invisible in source, which is the
+      // whole point of the evasion.
+      {
+        name: 'FN: a tab inside the scheme is still a javascript: URL',
+        code: `<a href="java${String.fromCharCode(9)}script:alert(1)">Link</a>`,
+        errors: [{ messageId: 'noScriptUrl' }],
+      },
+      {
+        name: 'FN: a leading C0 control still resolves to javascript:',
+        code: `<a href="${String.fromCharCode(1)}javascript:alert(1)">Link</a>`,
         errors: [{ messageId: 'noScriptUrl' }],
       },
     ],
