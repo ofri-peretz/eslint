@@ -142,38 +142,40 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        // Receivers are compared by SOURCE TEXT, so the receiver and the
-        // `.length` receiver still have to name the same object.
-        const arrayName = context.sourceCode.getText(node.object);
-
         /**
-         * May the receiver be re-spelled by the fixer?
+         * Render a receiver as a canonical key path, or null if any segment is
+         * dynamic.
          *
-         * `.at(-1)` writes the receiver once where the source wrote it twice,
-         * so the rewrite is only safe when re-spelling it is free. Plain
-         * identifiers, `this`, and dot access qualify. A call does not: moving
-         * `get()` changes when it runs. A computed segment does not either,
-         * since `a[i]` and a later `a[i]` are only the same element while `i`
-         * is unchanged, which nothing here proves.
-         *
-         * Matching the file's existing discipline: where a fix cannot be made
-         * to preserve semantics, the rule states the case and leaves the edit
-         * to the reader rather than going silent.
+         * Comparing raw source text looked equivalent and was not: it made
+         * `c["path"][c.path["length"] - 1]` — the same object written two ways
+         * — compare unequal, so the rule went silent on a string subscript.
+         * `propertyName()` reads `o.k` and `o['k']` identically, which is what
+         * the receiver comparison needs.
          */
-        const isRewritableReceiver = (receiver: TSESTree.Node): boolean => {
-          if (receiver.type === 'Identifier') return true;
-          if (receiver.type === 'ThisExpression') return true;
-          if (receiver.type !== 'MemberExpression') return false;
-          if (receiver.computed) return false;
-          return isRewritableReceiver(receiver.object);
+        const receiverPath = (receiver: TSESTree.Node): string | null => {
+          if (receiver.type === 'Identifier') return receiver.name;
+          if (receiver.type === 'ThisExpression') return 'this';
+          if (receiver.type !== 'MemberExpression') return null;
+          const base = receiverPath(receiver.object);
+          if (base === null) return null;
+          const key = propertyName(receiver);
+          return key === null ? null : `${base}.${key}`;
         };
+
+        const arrayName = receiverPath(node.object);
+        if (arrayName === null) {
+          return;
+        }
+        // `.at()` is written where the source wrote the receiver, so the
+        // rewrite must use the ORIGINAL spelling, not the canonical path.
+        const receiverText = context.sourceCode.getText(node.object);
 
         // Check for array[array.length - n] pattern (any numeric literal n)
         if (
           node.property.type === 'BinaryExpression' &&
           node.property.operator === '-' &&
           node.property.left.type === 'MemberExpression' &&
-          context.sourceCode.getText(node.property.left.object) === arrayName &&
+          receiverPath(node.property.left.object) === arrayName &&
           propertyName(node.property.left) === 'length' &&
           node.property.right.type === 'Literal' &&
           typeof node.property.right.value === 'number' &&
@@ -186,16 +188,14 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
           context.report({
             node,
             messageId,
-            ...(isRewritableReceiver(node.object)
-              ? {
-                  fix(fixer: TSESLint.RuleFixer) {
-                    return fixer.replaceText(
-                      node,
-                      `${arrayName}.at(-${offset})`,
-                    );
-                  },
-                }
-              : {}),
+            // Every receiver that reaches here rendered to a canonical path,
+            // so it is built only from identifiers, `this` and static property
+            // names — re-spelling it once cannot move a call or re-evaluate a
+            // dynamic index. The rewrite uses the ORIGINAL spelling, not the
+            // canonical path, so `c["path"]` stays as the author wrote it.
+            fix(fixer: TSESLint.RuleFixer) {
+              return fixer.replaceText(node, `${receiverText}.at(-${offset})`);
+            },
           });
           return;
         }
@@ -205,7 +205,7 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
           node.property.type === 'BinaryExpression' &&
           node.property.operator === '-' &&
           node.property.left.type === 'MemberExpression' &&
-          context.sourceCode.getText(node.property.left.object) === arrayName &&
+          receiverPath(node.property.left.object) === arrayName &&
           propertyName(node.property.left) === 'length' &&
           node.property.right.type === 'Identifier'
         ) {

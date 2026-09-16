@@ -140,8 +140,30 @@ describe('prefer-at', () => {
           name: 'a call as the whole receiver is out of scope — it is a new value each time',
           code: 'const x = getArr()[getArr().length - 1];',
         },
+        {
+          // Narrowed from `invalid` while fixing the computed-key blind spot:
+          // two calls need not return the same object, so the two halves
+          // cannot be shown to name one receiver. Silence is the sound answer.
+          name: 'a call inside the receiver cannot be proven to name one object',
+          code: 'const last = get().rows[get().rows.length - 1];',
+        },
+        {
+          // Same narrowing: `a[i]` and a later `a[i]` are the same element only
+          // while `i` is unchanged, which nothing here proves.
+          name: 'a computed segment in the receiver cannot be proven stable',
+          code: 'const last = a[i].path[a[i].path.length - 1];',
+        },
       ],
       invalid: [
+        {
+          // The computed-key blind spot itself: the same object written two
+          // ways must still match, so the receiver comparison canonicalises
+          // through propertyName() rather than comparing source text.
+          name: 'a string-subscript receiver matches its dotted twin',
+          code: 'const last = c["path"][c.path["length"] - 1];',
+          output: 'const last = c["path"].at(-1);',
+          errors: [{ messageId: 'useAtForLastElement' }],
+        },
         {
           name: 'a dotted receiver is rewritten like a bare identifier',
           code: 'const last = c.path[c.path.length - 1];',
@@ -152,18 +174,6 @@ describe('prefer-at', () => {
           name: 'a this-rooted receiver is rewritten too',
           code: 'const last = this.rows[this.rows.length - 1];',
           output: 'const last = this.rows.at(-1);',
-          errors: [{ messageId: 'useAtForLastElement' }],
-        },
-        {
-          name: 'a receiver containing a call is reported but not rewritten',
-          code: 'const last = get().rows[get().rows.length - 1];',
-          output: null,
-          errors: [{ messageId: 'useAtForLastElement' }],
-        },
-        {
-          name: 'a computed segment in the receiver is reported but not rewritten',
-          code: 'const last = a[i].path[a[i].path.length - 1];',
-          output: null,
           errors: [{ messageId: 'useAtForLastElement' }],
         },
         {

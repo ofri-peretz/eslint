@@ -184,6 +184,18 @@ const fileUsesAstTooling = createModuleEvidence({
   scopes: ['@typescript-eslint'],
 });
 
+/**
+ * The property names a copy loop can guard against by comparing the key to a
+ * string literal. Kept as names, not as a pattern over source text, so that
+ * `Object.prototype.hasOwnProperty` and `Object['prototype']` — accessors, not
+ * guards — cannot be mistaken for one.
+ */
+const DANGEROUS_GUARD_NAMES = new Set([
+  '__proto__',
+  'constructor',
+  'prototype',
+]);
+
 type MessageIds = 'objectInjection' | 'globalPrototypeWrite' | 'massAssignment';
 
 /**
@@ -2757,17 +2769,21 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // Joined without separators so multi-token guards still read as one string
       // (`Object` `.` `keys` -> `Object.keys`). String literals deliberately stay in:
       // `if (k === '__proto__') continue` is the documented guard and it IS a string.
-      const bodyText = context.sourceCode
-        .getTokens(node.body)
-        .map((token) => token.value)
-        .join('')
-        // `Object.prototype.hasOwnProperty.call(...)` contains the literal
-        // token `prototype`, which the guard scan below would otherwise read as
-        // a `k === 'prototype'` guard. Spelling the guard the long way then
-        // cleared the loop through a token that belongs to the accessor, not to
-        // any guard. Drop the accessor before scanning; the hasOwn guards it
-        // spells are decided at the write site instead.
-        .replace(/Object\.prototype\.hasOwnProperty/g, '');
+      const bodyTokens = context.sourceCode.getTokens(node.body);
+      const bodyText = bodyTokens.map((token) => token.value).join('');
+
+      // A dangerous-key guard is `k === '__proto__'` — the property name is a
+      // STRING there. As a bare identifier the same word is an accessor:
+      // `Object.prototype.hasOwnProperty.call(...)` contains `prototype`, and
+      // matching it as text let the long spelling of a hasOwn guard clear the
+      // loop through a token belonging to the accessor rather than to any
+      // guard. Testing the token TYPE also survives `Object['prototype']`,
+      // which a text match on the joined tokens would not.
+      const hasDangerousKeyGuard = bodyTokens.some(
+        (token) =>
+          token.type === 'String' &&
+          DANGEROUS_GUARD_NAMES.has(token.value.slice(1, -1)),
+      );
       // A guarded loop is the documented fix; do not report the fix.
       //
       // `hasOwnProperty` and `hasOwn` are deliberately NOT in this list. A token
@@ -2780,9 +2796,8 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // the guarded object against the written one. The remaining tokens are
       // guard styles whose soundness does not depend on an object identity.
       if (
-        /__proto__|constructor|prototype|includes\(|allowlist|whitelist|Object\.keys/.test(
-          bodyText,
-        )
+        hasDangerousKeyGuard ||
+        /includes\(|allowlist|whitelist|Object\.keys/.test(bodyText)
       ) {
         return;
       }

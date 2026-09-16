@@ -1638,8 +1638,17 @@ describe('detect-object-injection', () => {
 describe('prototype-polluting copy loop', () => {
   ruleTester.run('copy-loop', detectObjectInjection, {
     valid: [
-      // Source is a module-local object, not a parameter — the benign majority case.
-      `const src = { a: 1 }; const out = {}; for (const k in src) { out[k] = src[k]; }`,
+      {
+        name: 'a copy loop whose source is a module-local object is the benign majority case',
+        code: `const src = { a: 1 }; const out = {}; for (const k in src) { out[k] = src[k]; }`,
+      },
+      {
+        // Guards are recognised by the key being a STRING, so the computed
+        // spelling of the accessor cannot be mistaken for a guard — and a real
+        // string guard still clears the loop however the access is written.
+        name: 'a dangerous-key guard clears the loop written with a string subscript',
+        code: `function m(t, s) { for (const k in s) { if (k === '__proto__') continue; t[k] = s[k]; } }`,
+      },
       // Iterating a call result: not an Identifier, so the source cannot be proven — abstain.
       `function m(t, s) { for (const k in getSource()) { t.x = k; } }`,
       // Loop that never assigns through the key.
