@@ -75,11 +75,13 @@ describe('jsx-no-script-url', () => {
       // char codes because the payload is invisible in source, which is the
       // whole point of the evasion.
       {
+        // @found spec diff (WHATWG URL)
         name: 'FN: a tab inside the scheme is still a javascript: URL',
         code: `<a href="java${String.fromCharCode(9)}script:alert(1)">Link</a>`,
         errors: [{ messageId: 'noScriptUrl' }],
       },
       {
+        // @found spec diff (WHATWG URL)
         name: 'FN: a leading C0 control still resolves to javascript:',
         code: `<a href="${String.fromCharCode(1)}javascript:alert(1)">Link</a>`,
         errors: [{ messageId: 'noScriptUrl' }],

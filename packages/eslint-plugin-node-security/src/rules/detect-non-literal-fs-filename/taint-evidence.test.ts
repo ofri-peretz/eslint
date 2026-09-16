@@ -280,18 +280,21 @@ export const read = () => fs.readFileSync(path.join('/safe', process.argv[2]), '
       // factory.ts:1153, `readFileSync(pkgJsonPath as string, 'utf8')`, silent
       // for an unrelated reason — the receiver is burgee's own shim).
       {
+        // @found rule review
         name: 'FN: `as string` on the taint source does not undo the composition',
         code: `import fs from 'fs';
 export const read = () => fs.readFileSync('/etc/app/' + (process.env.NAME as string));`,
         errors: 1,
       },
       {
+        // @found rule review
         name: 'FN: a non-null assertion on the taint source still reports',
         code: `import fs from 'fs';
 export const read = () => fs.readFileSync('/etc/app/' + process.env.NAME!);`,
         errors: 1,
       },
       {
+        // @found rule review
         name: 'FN: a cast inside path.join still reports',
         code: `import fs from 'fs';
 import path from 'path';

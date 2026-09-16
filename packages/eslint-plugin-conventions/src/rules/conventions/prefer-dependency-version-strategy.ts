@@ -15,7 +15,11 @@
  */
 
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import {
+  formatLLMMessage,
+  MessageIcons,
+  objectKeyName,
+} from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type VersionStrategy = 'caret' | 'tilde' | 'exact' | 'range' | 'any';
@@ -33,6 +37,61 @@ type VersionStrategy = 'caret' | 'tilde' | 'exact' | 'range' | 'any';
  */
 const VERSION_SPECIFIER =
   /^(?:[\^~<>=]*\s*\d|[*x]$|latest$|next$|(?:workspace|file|link|npm|git\+[a-z]+|github|https?):)/i;
+
+/**
+ * Manifest fields that are ABOUT the package rather than things it depends on.
+ *
+ * The guard below asked only whether every VALUE was a version specifier,
+ * which passes vacuously as soon as no disqualifying sibling is left:
+ * `{ name: 'x', version: '1.0.0', main: 'index.js' }` is exempt, but narrow it
+ * to `{ version: '1.0.0' }` and the same field reports — and the autofix
+ * rewrites a manifest's own version to `^1.0.0`, which is not publishable.
+ * A dependency map is keyed by PACKAGE NAME; these keys never are.
+ *
+ * @vocabulary npm — https://docs.npmjs.com/cli/configuring-npm/package-json
+ */
+const MANIFEST_FIELDS: ReadonlySet<string> = new Set([
+  'name',
+  'version',
+  'description',
+  'main',
+  'module',
+  'types',
+  'typings',
+  'license',
+  'author',
+  'homepage',
+  'repository',
+  'keywords',
+  'files',
+  'type',
+  'private',
+  'man',
+  'sideEffects',
+  'publishConfig',
+]);
+
+/**
+ * Blocks whose VALUE is keyed by something other than a package name.
+ *
+ * `dist-tags` is the sharp one: npm keys it by TAG (`latest`, `next`) and each
+ * value is the single exact version that tag resolves to, so a caret there is
+ * not a thing npm accepts. `dependencies`, `devDependencies` and
+ * `peerDependencies` are deliberately absent — those ARE dependency maps, and
+ * the selector above reads them.
+ *
+ * @vocabulary npm — https://docs.npmjs.com/cli/commands/npm-dist-tag
+ */
+const NON_DEPENDENCY_BLOCKS: ReadonlySet<string> = new Set([
+  'dist-tags',
+  'versions',
+  'engines',
+  'scripts',
+  'exports',
+  'imports',
+  'bin',
+  'browser',
+]);
 
 export interface Options {
   strategy?: VersionStrategy;
@@ -321,9 +380,24 @@ export const preferDependencyVersionStrategy = createRule<
         // — says the object is something else. A spread says nothing either
         // way. The `dependencies` selector above still reads the real map
         // inside a manifest.
+        // What this object is sitting IN can disqualify it outright: the
+        // values under `dist-tags` are every one of them version-shaped, so
+        // no amount of looking at values alone will ever reject it.
+        const parent = node.parent;
+        if (
+          parent?.type === 'Property' &&
+          NON_DEPENDENCY_BLOCKS.has(objectKeyName(parent) ?? '')
+        ) {
+          return;
+        }
+
         let sawSpecifier = false;
         for (const prop of node.properties) {
           if (prop.type !== 'Property') continue;
+          // A key that names a manifest field is not a package name, and one
+          // is enough to say the object is a manifest rather than a map of
+          // dependencies — however few siblings it has left.
+          if (MANIFEST_FIELDS.has(objectKeyName(prop) ?? '')) return;
           if (
             prop.value.type !== 'Literal' ||
             typeof prop.value.value !== 'string' ||

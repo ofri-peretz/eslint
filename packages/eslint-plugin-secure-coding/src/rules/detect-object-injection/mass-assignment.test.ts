@@ -210,6 +210,29 @@ export function tag(o) { o[kShared] = 1; }`,
       },
     ],
     invalid: [
+      // ── FN sealed 2026-09-16, from the burgee FP/FN sweep ─────────────────
+      // A one-key denylist is sound for the SHALLOW copy above — `__proto__`
+      // is the only string key whose [[Set]] escapes the receiver, so
+      // `target['constructor'] = v` merely shadows. It is NOT sound once the
+      // body RECURSES: the escape is through the READ, `target['constructor']`
+      // walking the chain to Object, then `Object['prototype']`, then a plain
+      // own-property write on Object.prototype. Verified in Node —
+      // `merge({}, JSON.parse('{"constructor":{"prototype":{"pwn":1}}}'))`
+      // sets `({}).pwn === 1`. The rule's own fix string prescribes all three
+      // keys; it accepted any one of them as proof.
+      // @source burgee packages/burgee/src/yargs/utils.ts:220
+      {
+        // @found real-source scan (burgee)
+        name: 'FN: a RECURSIVE merge skipping only __proto__ still reaches Object.prototype',
+        code: `export function merge(target, source) {
+  for (const key of Object.keys(source)) {
+    if (key === '__proto__') continue;
+    if (source[key] && typeof source[key] === 'object') merge(target[key], source[key]);
+    else target[key] = source[key];
+  }
+}`,
+        errors: [{ messageId: 'massAssignment' }],
+      },
       // ── LOCK 2026-09-13: the callback spelling of the copy loop ────────────
       // `checkMassAssignmentLoop` was registered on `ForOfStatement` only, so
       // `for (const k of Object.keys(src)) dst[k] = src[k]` reported and the
@@ -319,6 +342,7 @@ export function tag(o) { o[kShared] = 1; }`,
       // packages/burgee/src/yargs/validation.ts:101 — copy loops whose only
       // guard-shaped call names a different object than the one written.
       {
+        // @found real-source scan (burgee)
         name: 'FN: an includes() that does not name the key is not a guard',
         code: `const LEVELS = ['debug'];
 export function merge(target, source) {
@@ -330,6 +354,7 @@ export function merge(target, source) {
         errors: [{ messageId: 'massAssignment' }],
       },
       {
+        // @found real-source scan (burgee)
         name: 'FN: naming Object.keys of an unrelated object is not a guard',
         code: `export function copy(target, source) {
   for (const key in source) {

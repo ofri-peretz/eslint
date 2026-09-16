@@ -377,8 +377,38 @@ const mentionsKey = (n: TSESTree.Node, keyName: string): boolean => {
  */
 const bodyGuardsKey = (bodyNode: TSESTree.Node, keyName: string): boolean => {
   let guarded = false;
+  /**
+   * Which pollution keys the body actually names, and whether it hands a
+   * key-computed READ onward to a call.
+   *
+   * A one-key denylist is sound for a SHALLOW copy: `__proto__` is the only
+   * string key whose [[Set]] escapes the receiver, so `target['constructor']`
+   * = v merely shadows with an own property. It stops being sound the moment
+   * the body recurses, because the escape is then through the READ —
+   * `target['constructor']` walks the chain to the `Object` function, then
+   * `Object['prototype']`, and the write that follows lands on the global
+   * prototype. A `__proto__`-only comparison never sees that path. The rule's
+   * own remediation string prescribes all three keys; this stops it accepting
+   * any one of them as proof of the other two.
+   */
+  const pollutionKeysNamed = new Set<string>();
+  let passesKeyedReadOnward = false;
   const walk = (n: TSESTree.Node): void => {
     if (guarded) return;
+
+    // `merge(target[key], source[key])` — a computed read travelling into a
+    // call is the traversal a name-denylist cannot reason about.
+    if (
+      n.type === AST_NODE_TYPES.CallExpression &&
+      n.arguments.some(
+        (argument) =>
+          argument.type === AST_NODE_TYPES.MemberExpression &&
+          argument.computed &&
+          mentionsKey(argument.property, keyName),
+      )
+    ) {
+      passesKeyedReadOnward = true;
+    }
 
     // `ALLOWED.includes(k)`, `set.has(k)`, `Object.hasOwn(o, k)`,
     // `Object.prototype.hasOwnProperty.call(o, k)`, `keys.indexOf(k)`.
@@ -415,15 +445,24 @@ const bodyGuardsKey = (bodyNode: TSESTree.Node, keyName: string): boolean => {
         POLLUTION_KEYS.has(compared) &&
         mentionsKey(other, keyName)
       ) {
-        guarded = true;
-        return;
+        // Recorded rather than credited here: whether naming this key is
+        // enough depends on what the rest of the body does with it, which
+        // is only known once the walk finishes.
+        pollutionKeysNamed.add(compared);
       }
     }
 
     for (const child of childNodes(n)) walk(child);
   };
   walk(bodyNode);
-  return guarded;
+  if (guarded) return true;
+  if (pollutionKeysNamed.size === 0) return false;
+  // Naming one polluting key is proof enough for a body that only writes.
+  // A body that carries a computed read onward has to name every key that
+  // can escape, which is what the documented fix already spells.
+  return (
+    !passesKeyedReadOnward || pollutionKeysNamed.size === POLLUTION_KEYS.size
+  );
 };
 
 export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
