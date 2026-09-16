@@ -137,11 +137,13 @@ describe('no-arbitrary-file-access coverage gaps', () => {
       // Assertions are erased at compile time; the runtime is byte-identical
       // to the controls above.
       {
+        // @found rule review
         name: 'FN: `as string` on the request value still reports',
         code: `export function h(req: any) { return fs.readFileSync('/data/' + (req.query.f as string)); }`,
         errors: [{ messageId: 'violationDetected' }],
       },
       {
+        // @found rule review
         name: 'FN: a cast on the whole path value still reports',
         code: `export function h(req: any) { return fs.readFileSync(req.query.f as string); }`,
         errors: [{ messageId: 'violationDetected' }],
