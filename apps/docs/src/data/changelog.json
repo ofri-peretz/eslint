@@ -1,7 +1,7 @@
 {
-  "releaseCount": 691,
+  "releaseCount": 694,
   "packageCount": 36,
-  "entryCount": 2105,
+  "entryCount": 2111,
   "oldestYear": 2024,
   "releases": [
     {
@@ -17195,6 +17195,26 @@
       ]
     },
     {
+      "package": "eslint-plugin-import-next",
+      "short": "eslint-plugin-import-next",
+      "version": "2.8.2",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`extensions` now checks the specifier of a dynamic `import()`. The rule visited `ImportDeclaration`, `ExportNamedDeclaration` and `ExportAllDeclaration` but not `ImportExpression`, so the identical specifier string was reported on a static import and silent on an `await import(...)` in the same file — leaving the file less consistent after `--fix` than before it, the exact defect the export-from forms were added to remove. A non-literal specifier (template or variable) is still left alone. Surfaces 6 previously-missed findings in the burgee corpus.",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`consistent-type-specifier-style` no longer emits a `Fix:` instruction that drops `type` from every specifier but the first. The `type` marker sat outside the `{{name}}` interpolation while the data bound a comma-joined list, so an import of more than one name rendered as `import { type A, B }` — following it demotes every later specifier to a value import, which under `verbatimModuleSyntax` is emitted verbatim and throws at runtime. The autofix was already correct; only the emitted guidance disagreed with it.",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-jwt-security",
       "short": "eslint-plugin-jwt-security",
       "version": "2.2.9",
@@ -17310,6 +17330,46 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-maintainability",
+      "short": "eslint-plugin-maintainability",
+      "version": "3.2.10",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`cognitive-complexity` charges a homogeneous run of logical operators once, not once per operator. The docs' Complexity Factors table scores logical operators \"+1 | `&&`, `||` (sequence breaks)\" — a run costs one point and only a break in the run starts the next — but every `LogicalExpression` node was charged, so `a && b && c && d` cost 3 where the table says 1. That inflated every `&&`-heavy function against an unchanged Sonar-default threshold of 15. Mixed runs such as `a && b || c` still cost 2, as two sequences should.",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`identical-functions` no longer groups a function with a closure nested inside it. An outer function whose body is largely one call taking an inline callback shares almost all its text with that callback, so the pair cleared the similarity threshold by construction — but they are one implementation, and \"extract to a reusable function\" is impossible advice, because lifting a closure out of its own parent removes no code. A triple-nested `forEach` was reported as \"3 duplicates\" of itself. Removes 6 of burgee's 24 findings for this rule.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-modernization",
+      "short": "eslint-plugin-modernization",
+      "version": "3.1.4",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`prefer-at` no longer autofixes the two rewrites that are not equivalent. `array[-1]` is a plain property read that always yields `undefined`, while `array.at(-1)` yields the last element, so `--fix` turned dead code into live code; and the rule never establishes that the object is an array, so on a `Record<number, string>` holding a `-1` key, or on `arguments`, the same rewrite replaced working code with a `TypeError`. `array[array.length - n]` with a variable `n` diverges too: at `n === 0` the source reads past the end while `.at(-0)` reads the FIRST element. Both cases still report; only the unattended edit is gone. The `array.length - <positive literal>` fix is unchanged.",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`prefer-template-literal` no longer destroys a parenthesised addition while rewriting a concat chain. `+` is left-associative, so a nested `+` on the left is the same chain and flattens, but one on the right is its own expression — `\"row \" + (i + 1)` was rewritten to `` `row ${i}${1}` ``, printing \"row 01\" where the source printed \"row 1\", and `\"sum: \" + (a + b)` lost the sum entirely. Arithmetic that is not itself string-producing now reaches the template as a single placeholder.",
           "pr": null
         }
       ]
