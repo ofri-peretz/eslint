@@ -48,6 +48,7 @@ describe('prefer-dependency-version-strategy', () => {
           },
           // Workspace protocol (if allowed)
           {
+            name: 'a workspace: protocol carries no version to caret',
             code: 'const deps = { "package": "workspace:*" };',
             options: [{ strategy: 'caret', allowWorkspace: true }],
           },
@@ -294,5 +295,50 @@ describe('prefer-dependency-version-strategy', () => {
         },
       ],
     });
+  });
+
+  // ── FP sealed 2026-09-16, from the burgee FP/FN sweep ───────────────────
+  // Under the default `caret` strategy the fixer stripped a RANGE OPERATOR as
+  // if it were a prefix. `<2.0.0` became `^2.0.0`, and the two are disjoint:
+  // `semver.intersects('<2.0.0', '^2.0.0') === false`. An unattended `--fix`
+  // installed the major the author had pinned away from. `1.0.0 - 2.0.0`
+  // became `^1.0.0 - 2.0.0`, which `semver.validRange` rejects outright.
+  //
+  // It was never a policy either — the `/^[\^~<>=]?\d+/` gate admits one
+  // operator character, so `>=1.0.0 <2.0.0` (this rule's own documented
+  // example of a range) was already exempt while its one-character cousins
+  // were rewritten.
+  describe('range specifiers are not caret-able', () => {
+    ruleTester.run(
+      'prefer-dependency-version-strategy',
+      preferDependencyVersionStrategy,
+      {
+        valid: [
+          {
+            name: 'FP: an exclusive upper bound is not rewritten to a caret',
+            code: 'export const pkg = { dependencies: { legacy: "<2.0.0" } };',
+          },
+          {
+            name: 'FP: a lower bound is not rewritten to a caret',
+            code: 'export const pkg = { dependencies: { legacy: ">1.0.0" } };',
+          },
+          {
+            name: 'FP: a hyphen range is not rewritten into an invalid range',
+            code: 'export const pkg = { dependencies: { legacy: "1.0.0 - 2.0.0" } };',
+          },
+        ],
+        invalid: [
+          {
+            // CONTROL — a plain version is still caret-ed. The fix must not
+            // turn into "stop reporting anything with a digit in it".
+            name: 'CONTROL: a bare version is still rewritten to a caret',
+            code: 'export const pkg = { dependencies: { react: "18.0.0" } };',
+            output:
+              'export const pkg = { dependencies: { react: "^18.0.0" } };',
+            errors: [{ messageId: 'preferStrategy' }],
+          },
+        ],
+      },
+    );
   });
 });
