@@ -120,7 +120,7 @@ export const extensions = createRule<Options, MessageIds>({
   // than merging into it.
   create(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options]: Options,
+    [options]: Readonly<Options>,
   ) {
     // `defaultOptions` supplies both fields and `applyDefault` merges onto a
     // clone of it, so neither can arrive undefined — a `??` fallback here would
