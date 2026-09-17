@@ -36,14 +36,15 @@ export interface Options {
   packageJsonPath?: string;
   /** Direct package.json content for testing */
   packageJson?: PackageJson;
-  /** Dependency resolution strategy: 'strict', 'workspace', 'monorepo' */
+  /**
+   * Dependency resolution strategy. 'workspace' and 'monorepo' are aliases; see the
+   * schema description for exactly what they allow.
+   */
   resolutionStrategy?: 'strict' | 'workspace' | 'monorepo';
   /** Allow packages matching patterns */
   allowPatterns?: string[];
   /** Ignore specific packages (don't report as missing) */
   ignore?: string[];
-  /** Custom package.json detection logic */
-  customPackageJsonDetection?: boolean;
 }
 
 type RuleOptions = [Options?];
@@ -159,7 +160,7 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
             enum: ['strict', 'workspace', 'monorepo'],
             default: 'strict',
             description:
-              'Dependency resolution strategy: strict (exact match), workspace (allow workspace packages), monorepo (cross-package resolution).',
+              "Dependency resolution strategy. 'strict' allows only packages declared in the nearest package.json. 'workspace' and 'monorepo' are aliases of each other: they additionally allow the literal '@workspace/' and '@company/' scopes, and do NOT read workspace-root or sibling manifests; for real monorepo scopes use allowPatterns.",
           },
           allowPatterns: {
             type: 'array',
@@ -200,6 +201,7 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
       packageJson,
       resolutionStrategy = 'strict',
       allowPatterns = [],
+      ignore = [],
     } = options || {};
 
     const filename = context.filename;
@@ -347,7 +349,10 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
 
     // oxlint-disable-next-line consistent-function-scoping
     function isWorkspacePackage(packageName: string): boolean {
-      // For testing purposes, consider packages with @workspace/ or @company/ as workspace packages
+      // Two literal scopes, not real workspace resolution: nothing here reads the
+      // workspace-root manifest, expands a `workspaces` glob or looks at a sibling
+      // package. The schema description says so; `allowPatterns` is the escape hatch
+      // for real monorepo scopes.
       return (
         packageName.startsWith('@workspace/') ||
         packageName.startsWith('@company/')
@@ -371,6 +376,13 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
       });
 
       if (isAllowedByPattern) {
+        return;
+      }
+
+      // `ignore` is an exact-name allowlist, the blunt sibling of `allowPatterns`.
+      // It is published in the schema and the generated docs, so it has to do
+      // something; before this it was never read.
+      if (ignore.includes(packageName)) {
         return;
       }
 
