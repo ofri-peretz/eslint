@@ -209,16 +209,23 @@ crypto.createDecipheriv('aes-256-cbc', key, iv); // ✅ After
 
 ## Known False Negatives
 
-### Aliased Methods
+### Runtime-chosen method names
 
-**Why**: Method aliases not tracked.
+**Why**: A key computed at runtime resolves to no name to match.
 
 ```typescript
 // ❌ NOT DETECTED
-const cipher = crypto['createCipher']('aes-256-cbc', pwd);
+const make = pickMethod();
+const cipher = crypto[make]('aes-256-cbc', pwd);
 ```
 
-**Mitigation**: Search for all createCipher occurrences.
+**Mitigation**: Grep for both deprecated names — `createCipher` and
+`createDecipher` — and review every dynamic `crypto[...]` call, since the
+subscript above can resolve to either.
+
+A STATIC subscript is detected — `crypto['createCipher'](...)` reports exactly as
+`crypto.createCipher(...)` does, and the suggestion re-quotes the replacement.
+This section previously claimed otherwise.
 
 ## Further Reading
 
