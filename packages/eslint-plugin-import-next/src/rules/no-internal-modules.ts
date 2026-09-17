@@ -120,8 +120,12 @@ function getRootImport(importPath: string): string {
 function getImportAtDepth(importPath: string, maxDepth: number): string {
   if (importPath.startsWith('./') || importPath.startsWith('../')) {
     if (maxDepth === 0) return '.';
-    const prefix = importPath.startsWith('../') ? '../' : './';
-    const parts = importPath.replace(/^\.\.?\//, '').split('/');
+    // Take the WHOLE traversal prefix, not just the first hop. Stripping a single
+    // `../` and re-prefixing one left every additional `..` sitting in `parts`,
+    // where the slice consumed it as though it were a real path segment: both
+    // '../../a/b/c.js' and '../../../a/b/c.js' answered '../..'.
+    const prefix = /^(?:\.\.?\/)+/.exec(importPath)?.[0] ?? './';
+    const parts = importPath.slice(prefix.length).split('/');
     return prefix + parts.slice(0, maxDepth).join('/');
   }
 
