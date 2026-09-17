@@ -19,6 +19,21 @@ const ruleTester = new RuleTester({
 describe('extensions', () => {
   ruleTester.run('extensions', extensions, {
     valid: [
+      // A dot in a filename is not an extension. `path.extname` cannot tell the two
+      // apart, so `config`, `v2`, `setup` and `d` all read as extensions and the
+      // fixer strips them — rewriting the specifier to a DIFFERENT module. burgee
+      // surfaces this shape at packages/*/vitest.config.ts:5, which imports
+      // '../../vitest-coverage.config.js'.
+      {
+        name: 'a dotted but extensionless specifier is not an extension',
+        code: "import cfg from './source.config';",
+      },
+      {
+        name: 'a versioned filename is not an extension',
+        code: "import v from './schema.v2';",
+      },
+      // Same file, one config over: an unknown token is only left alone while the
+      // user has not claimed it. Listing it in `pattern` opts back in.
       {
         name: 'no extension',
         code: "import foo from './foo';",
@@ -115,6 +130,42 @@ describe('extensions', () => {
         code: "const m = await import('./data');",
         options: [{ pattern: { json: 'always' }, default: 'always' }],
         errors: [{ messageId: 'missingExtension' }],
+      },
+
+      // A specifier whose name still carries a dot after the extension comes off is
+      // a compound name, not a clean strip: `./types.d.ts` -> `./types.d` -> `./types`
+      // across --fix passes, and `./a.min.js` -> `./a`. Both name a different module
+      // than the source did. Report, but refuse the rewrite.
+      {
+        name: 'a compound .d.ts name is reported without a fix',
+        code: "import x from './types.d.ts';",
+        output: null,
+        options: [{ pattern: { ts: 'never' } }],
+        errors: [{ messageId: 'unexpectedExtension' }],
+      },
+      {
+        name: 'a compound .min.js name is reported without a fix',
+        code: "import x from './a.min.js';",
+        output: null,
+        options: [{ pattern: { js: 'never' } }],
+        errors: [{ messageId: 'unexpectedExtension' }],
+      },
+      // The fixer hardcoded single quotes and never escaped, so a double-quoted
+      // specifier containing an apostrophe fixed to unparseable output, and every
+      // double-quoted specifier was silently reflowed to single quotes.
+      {
+        name: 'a double-quoted specifier keeps its quote style through the fix',
+        code: 'import x from "./utils.js";',
+        output: 'import x from "./utils";',
+        options: [{ pattern: { js: 'never' } }],
+        errors: [{ messageId: 'unexpectedExtension' }],
+      },
+      {
+        name: 'an apostrophe in the path survives the fix',
+        code: 'import x from "./o\'s-utils.js";',
+        output: 'import x from "./o\'s-utils";',
+        options: [{ pattern: { js: 'never' } }],
+        errors: [{ messageId: 'unexpectedExtension' }],
       },
     ],
   });

@@ -19,6 +19,40 @@ type Options = [
 
 type RuleOptions = Options;
 
+/**
+ * Extensions this rule is willing to call an extension. Anything outside this set
+ * — and outside the user's own `pattern` — is treated as part of the filename, so
+ * `./source.config` and `./schema.v2` are left alone rather than truncated.
+ */
+const KNOWN_EXTENSIONS = new Set([
+  'js',
+  'jsx',
+  'mjs',
+  'cjs',
+  'ts',
+  'tsx',
+  'mts',
+  'cts',
+  'json',
+  'css',
+  'scss',
+  'sass',
+  'less',
+  'svg',
+  'png',
+  'jpg',
+  'jpeg',
+  'gif',
+  'webp',
+  'avif',
+  'woff',
+  'woff2',
+  'vue',
+  'svelte',
+  'wasm',
+  'node',
+]);
+
 export const extensions = createRule<Options, MessageIds>({
   name: 'extensions',
   meta: {
@@ -105,18 +139,40 @@ export const extensions = createRule<Options, MessageIds>({
       if (!value.startsWith('.')) return; // Only check relative imports
 
       const ext = path.extname(value).slice(1); // remove dot
+
+      // `path.extname` answers with whatever follows the last dot, so a filename
+      // that merely CONTAINS one — `source.config`, `schema.v2`, `types.d` —
+      // reads as an extension and the fixer strips it, naming a different module.
+      // A token only counts as an extension when something claims it: the user's
+      // own `pattern`, or the set of extensions this rule ships defaults for.
+      if (ext && !(ext in pattern) && !KNOWN_EXTENSIONS.has(ext)) return;
+
       const expected = pattern[ext] || defaultBehavior;
 
       if (ext && expected === 'never') {
+        // Removing a real extension can still leave a compound name behind
+        // (`./types.d.ts` -> `./types.d`, `./a.min.js` -> `./a.min`). `--fix` runs
+        // to a fixed point, so the next pass strips again and lands on `./types`
+        // or `./a`. Report the inconsistency; refuse to guess the rewrite.
+        const stripped = value.slice(0, -ext.length - 1);
+        const leavesCompoundName = path.extname(stripped) !== '';
+
         context.report({
           node: source,
           messageId: 'unexpectedExtension',
-          fix(fixer: TSESLint.RuleFixer) {
-            return fixer.replaceText(
-              source,
-              `'${value.slice(0, -ext.length - 1)}'`,
-            );
-          },
+          fix: leavesCompoundName
+            ? undefined
+            : (fixer: TSESLint.RuleFixer) => {
+                // Rewrite the raw token, not a freshly quoted string: hardcoding
+                // `'...'` reflowed every double-quoted specifier and produced
+                // unparseable output for a path containing an apostrophe.
+                const raw = source.raw;
+                const quote = raw[0];
+                return fixer.replaceText(
+                  source,
+                  `${quote}${raw.slice(1, -1 - ext.length - 1)}${quote}`,
+                );
+              },
         });
       } else if (!ext) {
         // Hard to know what the extension *should* be without checking file system
