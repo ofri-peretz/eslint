@@ -54,7 +54,7 @@ This rule aims to prevent issues related to extraneous-dependencies.
           "monorepo"
         ],
         "default": "strict",
-        "description": "Dependency resolution strategy: strict (exact match), workspace (allow workspace packages), monorepo (cross-package resolution)."
+        "description": "Dependency resolution strategy. 'strict' allows only packages declared in the nearest package.json. 'workspace' and 'monorepo' are aliases of each other: they additionally allow the literal '@workspace/' and '@company/' scopes, and do NOT read workspace-root or sibling manifests; for real monorepo scopes use allowPatterns."
       },
       "allowPatterns": {
         "type": "array",
