@@ -175,6 +175,17 @@ describe('extensions', () => {
         options: [{ pattern: { js: 'never' } }],
         errors: [{ messageId: 'unexpectedExtension' }],
       },
+      // `ext` is measured on the DECODED `source.value` but the rewrite slices the
+      // RAW token, so an escape anywhere in the extension makes the arithmetic
+      // overrun: './utils\u002ejs' fixed to '"./utils\u002"', which is not a
+      // valid escape and does not parse. Report, but refuse the rewrite.
+      {
+        name: 'an escaped dot in the extension is reported without a fix',
+        code: 'import x from "./utils\\u002ejs";',
+        output: null,
+        options: [{ pattern: { js: 'never' } }],
+        errors: [{ messageId: 'unexpectedExtension' }],
+      },
       {
         name: 'an apostrophe in the path survives the fix',
         code: 'import x from "./o\'s-utils.js";',

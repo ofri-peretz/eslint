@@ -171,9 +171,16 @@ export const extensions = createRule<Options, MessageIds>({
                 // unparseable output for a path containing an apostrophe.
                 const raw = source.raw;
                 const quote = raw[0];
+                // `ext` was measured on the DECODED value; `raw` may spell the
+                // same characters with escapes, so the lengths are not
+                // interchangeable. Only rewrite when the raw token literally
+                // ends in `.<ext><quote>` — otherwise the slice overruns into an
+                // escape and emits source that does not parse.
+                const suffix = `.${ext}${quote}`;
+                if (!raw.endsWith(suffix)) return null;
                 return fixer.replaceText(
                   source,
-                  `${quote}${raw.slice(1, -1 - ext.length - 1)}${quote}`,
+                  `${raw.slice(0, -suffix.length)}${quote}`,
                 );
               },
         });
