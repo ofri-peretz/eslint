@@ -1,6 +1,26 @@
 {
   "articles": [
     {
+      "id": 4674104,
+      "title": "My Benchmark Judged Five Models Against a Threshold Built for Three",
+      "description": "Every degree of freedom the table did not know about borrowed the df=2 threshold. It fired once, got the right answer, and nobody noticed for four months.",
+      "url": "https://dev.to/ofri-peretz/my-benchmark-judged-five-models-against-a-threshold-built-for-three-a0l",
+      "canonical_url": "https://ofriperetz.dev/articles/significance-from-a-lookup-table",
+      "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fofriperetz.dev%2Fcdn%2Fblog-cover-image%2Fsignificance-from-a-lookup-table.jpg%3Fv%3Db2",
+      "published_at": "2026-09-17T08:25:12Z",
+      "readable_publish_date": "Sep 17",
+      "reading_time_minutes": 4,
+      "page_views_count": 0,
+      "public_reactions_count": 1,
+      "positive_reactions_count": 1,
+      "comments_count": 0,
+      "tag_list": [
+        "javascript",
+        "testing",
+        "benchmarking"
+      ]
+    },
+    {
       "id": 4642775,
       "title": "Your ESLint Plugin Installs 205 Packages. 69 Are ESLint.",
       "description": "I measured the install tree of 11 ESLint plugins. Direct dependency counts predict almost nothing, and every raw number hides the same 69-package baseline.",
@@ -1784,7 +1804,7 @@
       ]
     }
   ],
-  "total": 87,
-  "lastUpdated": "2026-09-15T06:58:10.279Z",
+  "total": 88,
+  "lastUpdated": "2026-09-17T12:18:27.332Z",
   "source": "public"
 }
