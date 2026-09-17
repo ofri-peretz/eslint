@@ -124,7 +124,9 @@ function getImportAtDepth(importPath: string, maxDepth: number): string {
     // `../` and re-prefixing one left every additional `..` sitting in `parts`,
     // where the slice consumed it as though it were a real path segment: both
     // '../../a/b/c.js' and '../../../a/b/c.js' answered '../..'.
-    const prefix = /^(?:\.\.?\/)+/.exec(importPath)?.[0] ?? './';
+    // The enclosing check already established a './' or '../' start, so this
+    // always matches — a fallback here would be an unreachable branch.
+    const [prefix] = /^(?:\.\.?\/)+/.exec(importPath) as RegExpExecArray;
     const parts = importPath.slice(prefix.length).split('/');
     return prefix + parts.slice(0, maxDepth).join('/');
   }

@@ -122,8 +122,10 @@ export const extensions = createRule<Options, MessageIds>({
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     [options]: Options,
   ) {
-    const defaultBehavior = options.default ?? 'never';
-    const pattern: Record<string, 'always' | 'never'> = options.pattern ?? {};
+    // `defaultOptions` supplies both fields and `applyDefault` merges onto a
+    // clone of it, so neither can arrive undefined — a `??` fallback here would
+    // be a branch no input can reach.
+    const { default: defaultBehavior, pattern } = options as Required<Options[0]>;
 
     /**
      * A module specifier carries the same extension either way it is written, so
