@@ -54,6 +54,7 @@ ruleTester.run('no-weak-cipher-algorithm', noWeakCipherAlgorithm, {
       ]}],
     },
     {
+      name: 'DES uppercase — the algorithm name is matched case-insensitively',
       code: `const cipher = crypto.createCipheriv('DES', key, iv);`,
       errors: [{ messageId: 'weakCipherAlgorithm', suggestions: [
         { messageId: 'useAes256Gcm', output: `const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);` },
@@ -62,6 +63,7 @@ ruleTester.run('no-weak-cipher-algorithm', noWeakCipherAlgorithm, {
     },
     // 3DES / Triple DES
     {
+      name: 'des-ede3 is graded 3DES, not DES — the (?!-ede) lookahead keeps the two arms apart',
       code: `const cipher = crypto.createCipheriv('des-ede3', key, iv);`,
       errors: [{ messageId: 'weakCipherAlgorithm', suggestions: [
         { messageId: 'useAes256Gcm', output: `const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);` },
@@ -69,7 +71,39 @@ ruleTester.run('no-weak-cipher-algorithm', noWeakCipherAlgorithm, {
       ]}],
     },
     {
+      name: '3des is reported even though Node rejects the spelling, so the arm stays wide',
       code: `const cipher = crypto.createCipheriv('3des', key, iv);`,
+      errors: [{ messageId: 'weakCipherAlgorithm', suggestions: [
+        { messageId: 'useAes256Gcm', output: `const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);` },
+        { messageId: 'useChaCha20', output: `const cipher = crypto.createCipheriv("chacha20-poly1305", key, iv);` },
+      ]}],
+    },
+    // `des3` is the spelling Node ACTUALLY accepts: it is in `crypto.getCiphers()`
+    // and `createCipheriv('des3', …)` encrypts. The two spellings pinned above
+    // (`3des`, `tripledes`) are NOT in `getCiphers()` and throw
+    // ERR_CRYPTO_UNKNOWN_CIPHER, so the rule was reporting only the spellings that
+    // cannot be a vulnerability while staying silent on the one that can.
+    // Surfaced by the burgee FP/FN sweep 2026-09-17 (docs-grounded; burgee itself
+    // has no createCipheriv call site).
+    {
+      name: 'des3 — the Triple-DES alias Node actually accepts — is reported',
+      code: `const cipher = crypto.createCipheriv('des3', key, iv);`,
+      errors: [{ messageId: 'weakCipherAlgorithm', suggestions: [
+        { messageId: 'useAes256Gcm', output: `const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);` },
+        { messageId: 'useChaCha20', output: `const cipher = crypto.createCipheriv("chacha20-poly1305", key, iv);` },
+      ]}],
+    },
+    {
+      name: 'DES3 uppercase is reported',
+      code: `const cipher = crypto.createCipheriv('DES3', key, iv);`,
+      errors: [{ messageId: 'weakCipherAlgorithm', suggestions: [
+        { messageId: 'useAes256Gcm', output: `const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);` },
+        { messageId: 'useChaCha20', output: `const cipher = crypto.createCipheriv("chacha20-poly1305", key, iv);` },
+      ]}],
+    },
+    {
+      name: 'des3-wrap, also a real Node Triple-DES cipher, is reported',
+      code: `const cipher = crypto.createCipheriv('des3-wrap', key, iv);`,
       errors: [{ messageId: 'weakCipherAlgorithm', suggestions: [
         { messageId: 'useAes256Gcm', output: `const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);` },
         { messageId: 'useChaCha20', output: `const cipher = crypto.createCipheriv("chacha20-poly1305", key, iv);` },
@@ -140,6 +174,7 @@ ruleTester.run('no-weak-cipher-algorithm', noWeakCipherAlgorithm, {
     },
     // Additional weak ciphers option
     {
+      name: 'cast5 is outside the declared family list and is not reported',
       code: `const cipher = crypto.createCipheriv('cast5', key, iv);`,
       options: [{ additionalWeakCiphers: ['cast5'] }],
       errors: [{ messageId: 'weakCipherAlgorithm', suggestions: [
@@ -170,6 +205,7 @@ ruleTester.run('no-weak-cipher-algorithm — algorithm held in a const', noWeakC
   ],
   invalid: [
     {
+      name: 'a const-held algorithm name is resolved, so the docs mitigation still reports',
       code: `const CIPHER_ALGORITHM = 'des-ede3-cbc';\ncrypto.createCipheriv(CIPHER_ALGORITHM, key, iv);`,
       errors: [{ messageId: 'weakCipherAlgorithm', suggestions: [
         { messageId: 'useAes256Gcm', output: `const CIPHER_ALGORITHM = "aes-256-gcm";\ncrypto.createCipheriv(CIPHER_ALGORITHM, key, iv);` },

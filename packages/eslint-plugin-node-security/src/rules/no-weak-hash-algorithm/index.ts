@@ -72,7 +72,11 @@ interface WeakHashPattern {
 
 const WEAK_HASH_PATTERNS: WeakHashPattern[] = [
   {
-    pattern: /\bmd5\b/i,
+    // Node also ships this digest as 'md5WithRSAEncryption' (and 'RSA-MD5',
+    // which the hyphen already made reachable). '5'->'W' is word-char to
+    // word-char, so /\bmd5\b/ could not see the suffixed alias even though it
+    // digests byte-identically to bare md5. Same defect class as RIPEMD below.
+    pattern: /\bmd5(?:withrsaencryption)?\b/i,
     name: 'MD5',
     alternatives: ['SHA-256', 'SHA-512', 'SHA-3'],
     replacement: 'sha256',
@@ -84,7 +88,9 @@ const WEAK_HASH_PATTERNS: WeakHashPattern[] = [
     replacement: 'sha256',
   },
   {
-    pattern: /\bsha1\b/i,
+    // As MD5 above: 'sha1WithRSAEncryption' is a real `crypto.getHashes()`
+    // name digesting byte-identically to bare sha1.
+    pattern: /\bsha1(?:withrsaencryption)?\b/i,
     name: 'SHA-1',
     alternatives: ['SHA-256', 'SHA-512', 'SHA-3'],
     replacement: 'sha256',
