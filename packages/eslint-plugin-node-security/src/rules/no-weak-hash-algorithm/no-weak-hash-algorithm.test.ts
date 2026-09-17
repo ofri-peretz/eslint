@@ -236,6 +236,7 @@ describe('no-weak-hash-algorithm', () => {
       },
       // Invalid: MD5
       {
+        name: 'md5 is reported — the baseline weak digest',
         code: 'crypto.createHash("md5").update(data);',
         options: UNCLASSIFIED,
         errors: [
@@ -260,6 +261,7 @@ describe('no-weak-hash-algorithm', () => {
       },
       // Invalid: SHA-1
       {
+        name: 'sha1 is reported — collision-broken since SHAttered',
         code: 'crypto.createHash("sha1").update(data);',
         options: UNCLASSIFIED,
         errors: [
@@ -284,6 +286,7 @@ describe('no-weak-hash-algorithm', () => {
       },
       // Invalid: MD4
       {
+        name: 'md4 is reported',
         code: 'crypto.createHash("md4").update(data);',
         options: UNCLASSIFIED,
         errors: [
@@ -308,6 +311,7 @@ describe('no-weak-hash-algorithm', () => {
       },
       // Invalid: Case insensitive
       {
+        name: 'MD5 uppercase — the algorithm name is matched case-insensitively',
         code: 'crypto.createHash("MD5").update(data);',
         options: UNCLASSIFIED,
         errors: [
@@ -374,6 +378,65 @@ describe('no-weak-hash-algorithm', () => {
           },
         ],
       },
+      // The same word-boundary defect the RIPEMD entry above already fixed, left
+      // unfixed for the two most common weak digests. `crypto.getHashes()` ships
+      // 'md5WithRSAEncryption' and 'sha1WithRSAEncryption', and both return output
+      // byte-identical to bare md5/sha1 — verified on Node 24:
+      //   createHash('md5WithRSAEncryption').update('x').digest('hex')
+      //     === createHash('md5').update('x').digest('hex')
+      // /\bmd5\b/ cannot reach them because '5'->'W' is word-char to word-char.
+      // Note 'RSA-MD5' already reported: the hyphen supplies the boundary, so the
+      // rule was inconsistent with itself. Surfaced by the burgee FP/FN sweep
+      // 2026-09-17 (docs-grounded; burgee has no such call site).
+      {
+        name: 'md5WithRSAEncryption, which digests byte-identically to md5',
+        code: 'crypto.createHash("md5WithRSAEncryption").update(data);',
+        options: UNCLASSIFIED,
+        errors: [
+          {
+            messageId: 'weakHashAlgorithm',
+            suggestions: [
+              {
+                messageId: 'useSha256',
+                output: 'crypto.createHash("sha256").update(data);',
+              },
+              {
+                messageId: 'useSha512',
+                output: 'crypto.createHash("sha512").update(data);',
+              },
+              {
+                messageId: 'useSha3',
+                output: 'crypto.createHash("sha3-256").update(data);',
+              },
+            ],
+          },
+        ],
+      },
+      // The SHA-1 half of the same alias gap.
+      {
+        name: 'sha1WithRSAEncryption, which digests byte-identically to sha1',
+        code: 'crypto.createHash("sha1WithRSAEncryption").update(data);',
+        options: UNCLASSIFIED,
+        errors: [
+          {
+            messageId: 'weakHashAlgorithm',
+            suggestions: [
+              {
+                messageId: 'useSha256',
+                output: 'crypto.createHash("sha256").update(data);',
+              },
+              {
+                messageId: 'useSha512',
+                output: 'crypto.createHash("sha512").update(data);',
+              },
+              {
+                messageId: 'useSha3',
+                output: 'crypto.createHash("sha3-256").update(data);',
+              },
+            ],
+          },
+        ],
+      },
       // Invalid: the OpenSSL short alias for the same digest
       {
         name: 'the OpenSSL rmd160 alias for the same digest',
@@ -401,6 +464,7 @@ describe('no-weak-hash-algorithm', () => {
       },
       // Invalid: RIPEMD
       {
+        name: 'the bare ripemd alias',
         code: 'crypto.createHash("ripemd").update(data);',
         options: UNCLASSIFIED,
         errors: [
@@ -460,6 +524,7 @@ describe('no-weak-hash-algorithm', () => {
       },
       // Invalid: Additional weak algorithms option
       {
+        name: 'whirlpool is not in the declared weak set and is not reported',
         code: 'crypto.createHash("whirlpool").update(data);',
         options: [
           {
