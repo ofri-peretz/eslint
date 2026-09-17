@@ -98,6 +98,18 @@ export function createWithMockContext(
       (opts.ast as { comments?: unknown[] } | undefined)?.comments ?? [],
     getFirstToken: () =>
       (opts.ast as { tokens?: unknown[] } | undefined)?.tokens?.[0] ?? null,
+    // Third time this mock has been short of the real shape; same resolution as
+    // `getAllComments` and `lines` above. `no-commented-code` asks whether live
+    // source sits between two comments, which is a token-stream question — a
+    // rule cannot answer it from comments alone. A synthetic AST carries no
+    // tokens, so the honest answer there is "nothing after", i.e. null.
+    getTokenAfter: (node: { range?: readonly [number, number] }) => {
+      const tokens =
+        (opts.ast as { tokens?: { range: readonly [number, number] }[] })
+          ?.tokens ?? [];
+      const end = node?.range?.[1] ?? 0;
+      return tokens.find((token) => token.range[0] >= end) ?? null;
+    },
   };
   const context = {
     id: 'mock-rule',
