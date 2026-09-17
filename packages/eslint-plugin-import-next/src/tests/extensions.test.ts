@@ -24,6 +24,21 @@ describe('extensions', () => {
       // fixer strips them — rewriting the specifier to a DIFFERENT module. burgee
       // surfaces this shape at packages/*/vitest.config.ts:5, which imports
       // '../../vitest-coverage.config.js'.
+      // The rule declares `defaultOptions` with svg/png/jpg at 'always', but read
+      // its options from `context.options` (raw) instead of the merged options the
+      // factory supplies, so that block never applied and a hardcoded in-`create`
+      // table won instead. Stripping an asset extension breaks the import outright.
+      {
+        name: 'an asset extension is kept under the shipped defaults',
+        code: "import logo from './logo.svg';",
+      },
+      // Same cause, second symptom: a partial `pattern` replaced the whole default
+      // table rather than merging into it, so json fell through to `default`.
+      {
+        name: 'a partial pattern does not discard the default table',
+        code: "import data from './data.json';",
+        options: [{ pattern: { vue: 'always' } }],
+      },
       {
         name: 'a dotted but extensionless specifier is not an extension',
         code: "import cfg from './source.config';",

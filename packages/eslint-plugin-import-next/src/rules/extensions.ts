@@ -113,18 +113,17 @@ export const extensions = createRule<Options, MessageIds>({
       },
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const [options = {} as Options[0]] = context.options;
+  // `createRule` passes the user's options already merged over `defaultOptions`
+  // as the SECOND argument. Reading `context.options` instead took the raw user
+  // options, so the `defaultOptions` block above was dead — a second, hardcoded
+  // table decided the defaults, and a partial `pattern` replaced the table rather
+  // than merging into it.
+  create(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    [options]: Options,
+  ) {
     const defaultBehavior = options.default ?? 'never';
-    const pattern: Record<string, 'always' | 'never'> = options.pattern ?? {
-      js: 'never',
-      ts: 'never',
-      tsx: 'never',
-      jsx: 'never',
-      json: 'always',
-      css: 'always',
-      scss: 'always',
-    };
+    const pattern: Record<string, 'always' | 'never'> = options.pattern ?? {};
 
     /**
      * A module specifier carries the same extension either way it is written, so
