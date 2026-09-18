@@ -208,6 +208,53 @@ export function tag(o) { o[kShared] = 1; }`,
   }
 }`,
       },
+      // ── FP budget for the 2026-09-17 object-leg sweep ─────────────────────
+      // The object leg below must credit the two guards the rule docs bless,
+      // and it must keep crediting them once the body RECURSES — an allowlist
+      // is re-applied at every level, and a `hasOwnProperty` test on the object
+      // being written is the form the docs' ✅ section spells. Both verified in
+      // Node 24 against `JSON.parse('{"constructor":{"prototype":{"polluted":
+      // "yes"}}}')`: neither pollutes. Without these, the fix for the
+      // caller-supplied-guard FN could pay for itself in false positives on the
+      // documented remediation.
+      {
+        // @provenance 2026-09-17 caller-supplied-guard sweep; executed control
+        name: 'a hasOwnProperty guard on the SAME object being written covers even a recursive merge',
+        code: `export function merge(target, source) {
+  for (const key of Object.keys(source)) {
+    if (!Object.prototype.hasOwnProperty.call(target, key)) {
+      target[key] = source[key];
+      continue;
+    }
+    merge(target[key], source[key]);
+  }
+}`,
+      },
+      {
+        // @provenance 2026-09-17 caller-supplied-guard sweep; executed control
+        name: 'a module-owned allowlist is not caller-supplied and guards a recursive merge',
+        code: `const ASSIGNABLE = ['profile', 'name'];
+export function merge(target, source) {
+  for (const key of Object.keys(source)) {
+    if (!ASSIGNABLE.includes(key)) continue;
+    if (source[key] && typeof source[key] === 'object') merge(target[key], source[key]);
+    else target[key] = source[key];
+  }
+}`,
+      },
+      {
+        // The tested object is a MemberExpression, not an identifier this file
+        // can resolve to a binding — so the object leg cannot vouch for it, and
+        // the SHALLOW copy falls back to the standard the rule already held.
+        // @provenance 2026-09-17 caller-supplied-guard sweep
+        name: 'a membership test on a nested schema still guards a shallow copy',
+        code: `export function update(req, user, opts) {
+  for (const k of Object.keys(req.body)) {
+    if (!(k in opts.schema)) continue;
+    user[k] = req.body[k];
+  }
+}`,
+      },
     ],
     invalid: [
       // ── FN sealed 2026-09-16, from the burgee FP/FN sweep ─────────────────
@@ -228,6 +275,60 @@ export function tag(o) { o[kShared] = 1; }`,
   for (const key of Object.keys(source)) {
     if (key === '__proto__') continue;
     if (source[key] && typeof source[key] === 'object') merge(target[key], source[key]);
+    else target[key] = source[key];
+  }
+}`,
+        errors: [{ messageId: 'massAssignment' }],
+      },
+      // ── FN sealed 2026-09-17, caller-supplied-guard sweep ─────────────────
+      // `bodyGuardsKey` credited ANY membership call whose arguments mentioned
+      // the key — never WHICH OBJECT it tested, which its own docstring already
+      // named as the open leg. So a guard on an unrelated, caller-supplied
+      // parameter silenced the recursive merge SPEC.md §1.A1 lists as a TRUE
+      // POSITIVE that must be detected.
+      //
+      // Executed in Node v24 — this prints `yes`, an OWN property on
+      // Object.prototype:
+      //   merge({}, JSON.parse('{"constructor":{"prototype":{"polluted":"yes"}}}'), {});
+      //   ({}).polluted  // 'yes'
+      // Measured at HEAD: 0 findings. The byte-identical control with only the
+      // guard line deleted: 1 (`massAssignment`). The guard names `seen`; the
+      // write lands on `target`.
+      {
+        // @provenance 2026-09-17 caller-supplied-guard sweep; executed repro
+        name: 'FN: a hasOwnProperty guard on a caller-supplied `seen` does not cover the `target` it writes',
+        code: `export function merge(target, source, seen) {
+  for (const key of Object.keys(source)) {
+    if (Object.prototype.hasOwnProperty.call(seen, key)) continue;
+    const value = source[key];
+    if (value && typeof value === 'object') merge(target[key], value, seen);
+    else target[key] = value;
+  }
+}`,
+        errors: [{ messageId: 'massAssignment' }],
+      },
+      {
+        // @provenance 2026-09-17 caller-supplied-guard sweep; executed repro
+        name: 'FN: Object.hasOwn on a caller-supplied parameter is the same non-guard in the modern spelling',
+        code: `export function merge(target, source, seen) {
+  for (const key of Object.keys(source)) {
+    if (Object.hasOwn(seen, key)) continue;
+    if (source[key] && typeof source[key] === 'object') merge(target[key], source[key], seen);
+    else target[key] = source[key];
+  }
+}`,
+        errors: [{ messageId: 'massAssignment' }],
+      },
+      {
+        // A visited-Set is cycle bookkeeping, not an allowlist: it never
+        // restricts WHICH keys are copied, and `__proto__` / `constructor` are
+        // never in it on the first visit.
+        // @provenance 2026-09-17 caller-supplied-guard sweep; executed repro
+        name: 'FN: a visited-Set membership test on a caller-supplied set is bookkeeping, not a key guard',
+        code: `export function merge(target, source, visitedSet) {
+  for (const key of Object.keys(source)) {
+    if (visitedSet.has(key)) continue;
+    if (source[key] && typeof source[key] === 'object') merge(target[key], source[key], visitedSet);
     else target[key] = source[key];
   }
 }`,
