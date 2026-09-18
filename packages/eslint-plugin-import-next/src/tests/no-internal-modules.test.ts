@@ -76,7 +76,19 @@ describe('no-internal-modules', () => {
 
   describe('Strategy: autofix', () => {
     ruleTester.run('autofix strategy', noInternalModules, {
-      valid: [],
+      valid: [
+        {
+          /*
+           * The specifier the autofix writes must be a fixpoint: at
+           * `maxDepth` it no longer violates the rule, so `--fix` converges in
+           * one pass instead of walking the specifier further down on each
+           * pass until nothing but `'.'` is left.
+           */
+          name: 'the ./ barrel the autofix writes is itself clean under the same options',
+          code: "import { Command } from './commander';",
+          options: [{ strategy: 'autofix', maxDepth: 1 }],
+        },
+      ],
       invalid: [
         {
           code: "import get from 'lodash/get';",
@@ -103,11 +115,17 @@ describe('no-internal-modules', () => {
            * root import are the same string — so the suite could not tell them
            * apart, and at `maxDepth: 1` the report read `Import from "./src"`
            * while the fixer wrote `'.'`.
+           *
+           * CORRECTED: this case asserts message/fixer AGREEMENT, and it used
+           * to record that agreement at the WRONG string — `'.'`, the
+           * importing file's own directory. The claim it makes is unchanged;
+           * the string both sides now agree on is `./src`, the barrel that
+           * owns the target.
            */
-          name: 'the autofix message names the root import it actually writes',
+          name: 'the autofix message names the specifier it actually writes',
           code: "import x from './src/utils/helper';",
           options: [{ strategy: 'autofix', maxDepth: 1 }],
-          output: "import x from '.';",
+          output: "import x from './src';",
           errors: [
             {
               messageId: 'internalModuleImport',
@@ -115,10 +133,74 @@ describe('no-internal-modules', () => {
                 importPath: './src/utils/helper',
                 depth: '3',
                 maxDepth: '1',
-                suggestedPath: '.',
+                suggestedPath: './src',
               },
             },
           ],
+        },
+        {
+          /*
+           * The owner of `./commander/command.js` is the barrel `./commander`,
+           * not `.` — the IMPORTING file's own directory, a different module.
+           * `.` resolves to `src/index.ts`, which does not export `Command`,
+           * and the autofix leaves no report behind, so the breakage is
+           * silent. This is the same standard the rule already applies to
+           * packages (`lodash/get` -> `lodash`) and to `../` traversal.
+           *
+           * Measured on burgee-style `pkg/src/commander.ts`.
+           */
+          name: 'autofix rewrites a ./ deep specifier to the barrel that owns it, never to the own directory of the importing file',
+          code: "import { Command } from './commander/command.js';",
+          options: [{ strategy: 'autofix', maxDepth: 1 }],
+          output: "import { Command } from './commander';",
+          errors: [
+            {
+              messageId: 'internalModuleImport',
+              data: {
+                importPath: './commander/command.js',
+                depth: '2',
+                maxDepth: '1',
+                suggestedPath: './commander',
+              },
+            },
+          ],
+        },
+        {
+          /*
+           * Three distinct modules must stay three distinct specifiers. The
+           * collapse to a single `'.'` is not merely unresolvable, it is
+           * lossy: no later pass can recover which module each line meant.
+           */
+          name: 'autofix keeps sibling ./ deep specifiers distinct instead of collapsing them onto one specifier',
+          code: [
+            "import { Command } from './commander/command.js';",
+            "import { Option } from './parser/option.js';",
+            "export { Help } from './help/help.js';",
+          ].join('\n'),
+          options: [{ strategy: 'autofix', maxDepth: 1 }],
+          output: [
+            "import { Command } from './commander';",
+            "import { Option } from './parser';",
+            "export { Help } from './help';",
+          ].join('\n'),
+          errors: [
+            { messageId: 'internalModuleImport' },
+            { messageId: 'internalModuleImport' },
+            { messageId: 'internalModuleImport' },
+          ],
+        },
+        {
+          /*
+           * Regression guard for the traversal branch of `getRootImport`,
+           * which was already correct before the `./` branch was fixed: a
+           * deep `../` specifier keeps its prefix rather than collapsing onto
+           * the importing file's own directory.
+           */
+          name: 'autofix still keeps the ../ traversal prefix of a deep parent specifier at maxDepth 1',
+          code: "import cfg from '../config/app/dev.js';",
+          options: [{ strategy: 'autofix', maxDepth: 1 }],
+          output: "import cfg from '..';",
+          errors: [{ messageId: 'internalModuleImport' }],
         },
         {
           /*
@@ -166,6 +248,58 @@ describe('no-internal-modules', () => {
           ],
         },
         {
+          /*
+           * `suggest` applies the identical edit through a suggestion instead
+           * of a fix, so it carries the identical hazard: the offered
+           * specifier must name the barrel that owns the target, not `.`.
+           */
+          name: 'the suggested rewrite of a ./ deep specifier names the owning barrel, not the own directory of the importing file',
+          code: "import { Command } from './commander/command.js';",
+          options: [{ strategy: 'suggest', maxDepth: 1 }],
+          errors: [
+            {
+              messageId: 'internalModuleImport',
+              suggestions: [
+                {
+                  messageId: 'suggestPublicApi',
+                  output: "import { Command } from './commander';",
+                },
+              ],
+            },
+          ],
+        },
+        {
+          /*
+           * Regression guard: the traversal branch is unchanged by the `./`
+           * fix — a `../` specifier still keeps its prefix in suggestions.
+           */
+          name: 'the suggested rewrite of a ../ deep specifier still keeps its traversal prefix',
+          code: "import cfg from '../config/app/dev.js';",
+          options: [{ strategy: 'suggest', maxDepth: 1 }],
+          errors: [
+            {
+              messageId: 'internalModuleImport',
+              suggestions: [
+                {
+                  messageId: 'suggestPublicApi',
+                  output: "import cfg from '..';",
+                },
+                {
+                  messageId: 'suggestBarrelExport',
+                  output: "import cfg from '../config/app';",
+                },
+              ],
+            },
+          ],
+        },
+        {
+          /*
+           * CORRECTED alongside the autofix branch: the public-API suggestion
+           * used to offer `'.'` for a `./` specifier. Both offers now name a
+           * real owner — `./utils` at `maxDepth`, and the immediate barrel
+           * `./utils/helpers` — and they stay distinct from each other.
+           */
+          name: 'a ./ deep specifier is offered both its maxDepth entry point and its immediate barrel',
           code: "import { util } from './utils/helpers/format';",
           options: [{ strategy: 'suggest', maxDepth: 1 }],
           errors: [
@@ -174,7 +308,7 @@ describe('no-internal-modules', () => {
               suggestions: [
                 {
                   messageId: 'suggestPublicApi',
-                  output: "import { util } from '.';",
+                  output: "import { util } from './utils';",
                 },
                 {
                   messageId: 'suggestBarrelExport',
