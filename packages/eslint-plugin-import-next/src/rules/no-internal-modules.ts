@@ -282,6 +282,24 @@ export const noInternalModules = createRule<RuleOptions, MessageIds>({
           ? getImportAtDepth(importPath, Math.max(0, depth - 1))
           : rootImport;
 
+      /**
+       * The specifier the fixing strategies actually WRITE.
+       *
+       * A `./a/b` specifier is owned by the barrel directory `suggestedPath`
+       * names (`./commander`), not by the root `.` — which is the IMPORTING
+       * file's OWN directory index, a different module. Collapsing to `.`
+       * also merges every deep sibling onto one specifier, and the fix leaves
+       * no report behind, so the swap is silent. This is the same standard
+       * the rule already applies to packages and to `../` traversal.
+       *
+       * Everything else keeps the root, unchanged: `../..` already carries
+       * its traversal prefix (see `getRootImport`), and the package paradigm
+       * is `lodash/get` -> `lodash`, `@company/ui/x/Button` -> `@company/ui`.
+       */
+      const fixTarget = importPath.startsWith('./')
+        ? suggestedPath
+        : rootImport;
+
       const reportData = {
         importPath,
         depth: String(depth),
@@ -306,18 +324,15 @@ export const noInternalModules = createRule<RuleOptions, MessageIds>({
           node,
           messageId: 'internalModuleImport',
           /*
-           * The message has to name what the FIXER writes, which is the root
-           * import — deliberately, "for safety", see below. `suggestedPath`
-           * stops at `maxDepth`, so with `maxDepth: 1` the report read
-           * `Import from "./src"` and then rewrote the specifier to `'.'`. A
-           * message that describes a different edit than the one applied is
-           * worse than no message.
+           * The message has to name what the FIXER writes. A message that
+           * describes a different edit than the one applied is worse than no
+           * message: with `maxDepth: 1` the report read `Import from "./src"`
+           * while the fixer rewrote the specifier to `'.'`.
            */
-          data: { ...reportData, suggestedPath: rootImport },
+          data: { ...reportData, suggestedPath: fixTarget },
           fix(fixer: TSESLint.RuleFixer) {
             // Find the string literal node to replace
-            // Autofix always goes to the root package for safety
-            return fixer.replaceText(specifierNodeOf(node), `'${rootImport}'`);
+            return fixer.replaceText(specifierNodeOf(node), `'${fixTarget}'`);
           },
         });
       } else if (strategy === 'suggest') {
@@ -328,16 +343,16 @@ export const noInternalModules = createRule<RuleOptions, MessageIds>({
           suggest: [
             {
               messageId: 'suggestPublicApi' as const,
-              data: { suggestedPath: rootImport },
+              data: { suggestedPath: fixTarget },
               fix(fixer: TSESLint.RuleFixer) {
                 return fixer.replaceText(
                   specifierNodeOf(node),
-                  `'${rootImport}'`,
+                  `'${fixTarget}'`,
                 );
               },
             },
-            // Add barrel export suggestion if different from root
-            ...(barrelPath !== rootImport && barrelPath !== suggestedPath
+            // Add barrel export suggestion if different from what is offered
+            ...(barrelPath !== fixTarget && barrelPath !== suggestedPath
               ? [
                   {
                     messageId: 'suggestBarrelExport' as const,

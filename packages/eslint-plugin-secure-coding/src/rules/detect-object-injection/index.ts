@@ -15,6 +15,22 @@
  *    and moved the shared tail into `reportMassAssignment` so the spellings
  *    cannot drift again. SPEC.md N9; fixture vulnerable/04; corpus still 14/14
  *    and 14/14. The READ exemption (`isObjectKeysCallbackKey`) is unchanged.
+ * 🔒 AMENDED 2026-09-17 — `bodyGuardsKey` credited any membership call whose
+ *    arguments named the key, never WHICH OBJECT it tested — the leg its own
+ *    docstring already listed as open. Measured in Node v24: a recursive merge
+ *    guarded by `hasOwnProperty.call(seen, key)` — `seen` a THIRD, caller-
+ *    supplied parameter — sets an OWN property on `Object.prototype`
+ *    (`({}).polluted === 'yes'`) and reported 0, while the byte-identical
+ *    control with only the guard line deleted reported 1. SPEC.md §1.A1 lists
+ *    that merge verbatim as a true positive. A membership guard is now credited
+ *    outright only when it covers the object the body WRITES or a binding this
+ *    module owns (`isModuleOwnedAllowlist`, on the same scope resolution
+ *    `isCopyLoopSourceOpaque` uses); anything else — the iterated source,
+ *    another parameter — is held to the recursion standard the denylist arm
+ *    already holds, which the membership arm used to `return` past. Fixtures in
+ *    `mass-assignment.test.ts`; the FP budget (`ALLOWED.includes(k)`,
+ *    `Object.hasOwn(SCHEMA, k)`, `!(k in schema)`, `!Object.hasOwn(source, k)`)
+ *    is unchanged and now pinned recursively too.
  * ═══════════════════════════════════════════════════════════════════════════
  *
  * This rule's behaviour was derived from the SEMANTICS of the weakness, every
@@ -374,9 +390,66 @@ const mentionsKey = (n: TSESTree.Node, keyName: string): boolean => {
  *
  * AST, not tokens — which also keeps a `__proto__` written inside a COMMENT from
  * clearing the finding, the false negative the token scan was introduced to fix.
+ *
+ * ── 2026-09-17: the OBJECT leg, which the paragraph above already named ─────
+ *
+ * The key leg was closed and the object leg was left open: a membership call
+ * was credited for naming the key, whatever object it tested. Executed in Node
+ * v24, this sets an OWN property on `Object.prototype` and reported NOTHING —
+ * byte-identical control with only the guard line deleted reported 1:
+ *
+ *   function merge(target, source, seen) {
+ *     for (const key of Object.keys(source)) {
+ *       if (Object.prototype.hasOwnProperty.call(seen, key)) continue;
+ *       const value = source[key];
+ *       if (value && typeof value === 'object') merge(target[key], value, seen);
+ *       else target[key] = value;
+ *     }
+ *   }
+ *   merge({}, JSON.parse('{"constructor":{"prototype":{"polluted":"yes"}}}'), {});
+ *   ({}).polluted  // 'yes'
+ *
+ * `seen` is neither the object written nor an allowlist — it is a THIRD thing
+ * the caller hands in, and SPEC.md §1.A1 lists this recursive merge verbatim as
+ * a true positive that must be detected. So a membership guard is now credited
+ * outright only when it covers:
+ *
+ *   (a) an object the body WRITES through the key — `hasOwnProperty.call(target,
+ *       key)`, the form the rule docs' ✅ section blesses. Measured: safe, even
+ *       when the body recurses.
+ *   (b) a binding this file owns rather than one the caller supplies — a module
+ *       constant or a local `const` allowlist. `ALLOWED.includes(key)` restricts
+ *       WHICH keys are copied at every level of a traversal, which is the
+ *       documented remediation and must not become a finding.
+ *
+ * Anything else — the iterated source, another parameter — is held to exactly
+ * the standard the denylist arm already holds: sound for a SHALLOW copy, not
+ * sound once the body hands a keyed read onward. That is the second half of
+ * this defect: the membership arm used to `return` before the recursion check
+ * below ever ran, so a `key === '__proto__'` denylist correctly reported on a
+ * recursive body while a membership guard did not.
+ *
+ * Pre-existing valid cases pin the shallow half and must stay quiet:
+ * `if (!Object.hasOwn(source, k)) continue` (copy-loop-source, head-to-head)
+ * and `if (!(k in schema)) continue` (mass-assignment) both name a PARAMETER.
  */
-const bodyGuardsKey = (bodyNode: TSESTree.Node, keyName: string): boolean => {
-  let guarded = false;
+const bodyGuardsKey = (
+  bodyNode: TSESTree.Node,
+  keyName: string,
+  isModuleOwnedAllowlist: (node: TSESTree.Node) => boolean,
+): boolean => {
+  /**
+   * The object leg's evidence.
+   *
+   * `membershipGuard` is the old `guarded` flag, demoted from a verdict to an
+   * observation — it no longer short-circuits the walk, because what a
+   * membership guard is worth depends on whether the body recurses, and that is
+   * only known once the whole body has been read.
+   */
+  let membershipGuard = false;
+  let guardCoversModuleOwned = false;
+  const guardedObjectNames = new Set<string>();
+  const writtenObjectNames = new Set<string>();
   /**
    * Which pollution keys the body actually names, and whether it hands a
    * key-computed READ onward to a call.
@@ -393,8 +466,35 @@ const bodyGuardsKey = (bodyNode: TSESTree.Node, keyName: string): boolean => {
    */
   const pollutionKeysNamed = new Set<string>();
   let passesKeyedReadOnward = false;
+
+  /** Record which object a key-bound membership test actually interrogates. */
+  const creditGuardedObject = (tested: TSESTree.Node): void => {
+    membershipGuard = true;
+    // A tested object this file cannot reduce to a binding — `k in opts.schema`
+    // — carries no provenance to check, so it falls through to the shallow/
+    // recursive standard below rather than being credited or disbelieved.
+    if (tested.type !== AST_NODE_TYPES.Identifier) return;
+    guardedObjectNames.add(tested.name);
+    if (isModuleOwnedAllowlist(tested)) guardCoversModuleOwned = true;
+  };
+
   const walk = (n: TSESTree.Node): void => {
-    if (guarded) return;
+    // `target[key] = value` — the object the loop writes THROUGH the key, which
+    // is what a guard has to cover to be a guard on THIS write.
+    //
+    // Compared by NAME rather than through `propertyName`, the one deliberate
+    // exception this file already carries in `reportMassAssignment`: the
+    // property here IS the loop variable, and matching it is matching a binding
+    // rather than reading a computed key.
+    if (
+      n.type === AST_NODE_TYPES.AssignmentExpression &&
+      n.left.type === AST_NODE_TYPES.MemberExpression &&
+      n.left.computed &&
+      mentionsKey(n.left.property, keyName) &&
+      n.left.object.type === AST_NODE_TYPES.Identifier
+    ) {
+      writtenObjectNames.add(n.left.object.name);
+    }
 
     // `merge(target[key], source[key])` — a computed read travelling into a
     // call is the traversal a name-denylist cannot reason about.
@@ -418,8 +518,19 @@ const bodyGuardsKey = (bodyNode: TSESTree.Node, keyName: string): boolean => {
       KEY_GUARD_CALLEES.has(propertyName(n.callee) ?? '') &&
       n.arguments.some((argument) => mentionsKey(argument, keyName))
     ) {
-      guarded = true;
-      return;
+      // `Object.hasOwn(o, k)` and `Object.prototype.hasOwnProperty.call(o, k)`
+      // put the tested object in the FIRST ARGUMENT; every other spelling in
+      // `KEY_GUARD_CALLEES` invokes the test ON that object. `slice(0, 1)`
+      // rather than `[0]`, so a zero-argument spelling cannot introduce an
+      // `undefined` to branch on — the condition above already proved an
+      // argument naming the key exists.
+      const tested: TSESTree.Node[] = namesOneOf(propertyName(n.callee), [
+        'hasOwn',
+        'call',
+      ])
+        ? n.arguments.slice(0, 1)
+        : [n.callee.object];
+      for (const object of tested) creditGuardedObject(object);
     }
 
     // `k in schema` — the membership test spelled as an operator.
@@ -428,8 +539,7 @@ const bodyGuardsKey = (bodyNode: TSESTree.Node, keyName: string): boolean => {
       n.operator === 'in' &&
       mentionsKey(n.left, keyName)
     ) {
-      guarded = true;
-      return;
+      creditGuardedObject(n.right);
     }
 
     // `k === '__proto__'` in either order. `staticString` so the
@@ -455,11 +565,21 @@ const bodyGuardsKey = (bodyNode: TSESTree.Node, keyName: string): boolean => {
     for (const child of childNodes(n)) walk(child);
   };
   walk(bodyNode);
-  if (guarded) return true;
-  if (pollutionKeysNamed.size === 0) return false;
-  // Naming one polluting key is proof enough for a body that only writes.
-  // A body that carries a computed read onward has to name every key that
-  // can escape, which is what the documented fix already spells.
+
+  // The object leg. A guard on the object being written, or on a binding this
+  // file owns, is credited whatever the body goes on to do — both were executed
+  // against `{"constructor":{"prototype":{…}}}` and neither pollutes.
+  const guardCoversWrittenObject = [...guardedObjectNames].some((name) =>
+    writtenObjectNames.has(name),
+  );
+  if (guardCoversWrittenObject || guardCoversModuleOwned) return true;
+
+  if (!membershipGuard && pollutionKeysNamed.size === 0) return false;
+  // Naming one polluting key is proof enough for a body that only writes, and
+  // so is a membership test on something this file cannot vouch for. A body
+  // that carries a computed read onward has to name every key that can escape,
+  // which is what the documented fix already spells — and which a membership
+  // guard on a caller-supplied object never does.
   return (
     !passesKeyedReadOnward || pollutionKeysNamed.size === POLLUTION_KEYS.size
   );
@@ -2631,7 +2751,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // An allowlist inside the body is the remediation — naming the edit that
       // clears this finding is what keeps the rule satisfiable. The guard has to
       // be ON THE KEY, though: see `bodyGuardsKey`.
-      if (bodyGuardsKey(bodyNode, keyName)) return;
+      if (bodyGuardsKey(bodyNode, keyName, isModuleOwnedAllowlist)) return;
 
       // A computed write keyed by the loop/callback variable, anywhere in the body.
       let reported = false;
@@ -2773,6 +2893,35 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     };
 
     /**
+     * Is this binding one the CALLER hands in?
+     *
+     * The scope resolution `isCopyLoopSourceOpaque` has always done for the
+     * iterated object, extracted so the guard check below asks the identical
+     * question of the object a membership test interrogates. One predicate, so
+     * "the file cannot see what a caller passes" cannot come to mean two
+     * different things in the same rule.
+     */
+    const isCallerSuppliedBinding = (node: TSESTree.Node): boolean => {
+      if (node.type !== AST_NODE_TYPES.Identifier) return false;
+      const variable = resolvedReference(sourceCode.getScope(node), node);
+      return variable?.defs.some((def) => def.type === 'Parameter') ?? false;
+    };
+
+    /**
+     * Is this guard object an allowlist the MODULE owns?
+     *
+     * A module constant, a local `const`, or a free binding this file never
+     * declares — anything whose contents the caller cannot choose. That is what
+     * makes `ALLOWED.includes(key)` and `Object.hasOwn(SCHEMA, key)` the
+     * documented remediation: they restrict WHICH keys are copied, at every
+     * level of a traversal. A parameter restricts nothing the caller does not
+     * agree to, which is why `hasOwnProperty.call(seen, key)` reached
+     * `Object.prototype` with the rule silent.
+     */
+    const isModuleOwnedAllowlist = (node: TSESTree.Node): boolean =>
+      !isCallerSuppliedBinding(node);
+
+    /**
      * Is the object a `for…in` copy loop iterates something this file cannot
      * vouch for?
      *
@@ -2794,11 +2943,11 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      */
     const isCopyLoopSourceOpaque = (source: TSESTree.Node): boolean => {
       if (isUntrustedExpression(source)) return true;
+      if (isCallerSuppliedBinding(source)) return true;
       if (source.type !== AST_NODE_TYPES.Identifier) return false;
 
       const variable = resolvedReference(sourceCode.getScope(source), source);
       if (!variable) return false;
-      if (variable.defs.some((def) => def.type === 'Parameter')) return true;
 
       // The binding hop. More than one write means the declaration no longer
       // tells you what the loop iterates — the same trap that silenced a real
@@ -2862,7 +3011,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // A guarded loop is the documented fix; do not report the fix. The guard
       // must name THE KEY — `bodyGuardsKey` says why a body-wide token scan
       // could not tell a guard from a log line that happened to spell one.
-      if (bodyGuardsKey(node.body, keyName)) return;
+      if (bodyGuardsKey(node.body, keyName, isModuleOwnedAllowlist)) return;
 
       // Arm the loop and let ESLint's own traversal find the assignment. The previous
       // version recursively walked the whole body here, and ESLint then walked it AGAIN

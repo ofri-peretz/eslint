@@ -464,8 +464,41 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
               );
 
             case 'comment': {
-              const text = sourceCode.getText(statement);
-              return fixer.replaceText(statement, `// ${text}`);
+              /**
+               * A `//` comment ends at the newline, so prefixing the STATEMENT
+               * commented only its FIRST physical line and left the rest of it
+               * behind as loose source — `Expression expected.`, emitted by an
+               * unattended `--fix` (`fixable: 'code'`, `hasSuggestions: false`).
+               *
+               * That is not an exotic input: Prettier — this repo's own
+               * formatter — wraps any `console.log` wider than the print width
+               * across several lines. So comment EVERY physical line the
+               * statement spans.
+               *
+               * Which is sound only while nothing FOLLOWS the statement on its
+               * last line. A one-line `case 1: console.log(x); break;` or
+               * `if (r) { console.log(x); }` would lose the `break;` or the
+               * closing brace to the same comment, so there the fixer declines.
+               * The report is unaffected; only the rewrite is withheld.
+               */
+              const end = statement.loc.end;
+              const afterStatement = sourceCode.lines[end.line - 1].slice(
+                end.column,
+              );
+              if (afterStatement.trim() !== '') return null;
+
+              const commented = sourceCode
+                .getText(statement)
+                .split('\n')
+                .map((physicalLine, index) =>
+                  index === 0
+                    ? `// ${physicalLine}`
+                    : /** Keep the `// ` after the line's own indentation. */
+                      physicalLine.replace(/^[ \t]*/, '$&// '),
+                )
+                .join('\n');
+
+              return fixer.replaceText(statement, commented);
             }
 
             case 'warn':

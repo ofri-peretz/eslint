@@ -238,6 +238,82 @@ function test() {
             },
           ],
         },
+        {
+          /*
+           * A `//` comment ends at the newline, so prefixing the STATEMENT
+           * commented only its FIRST physical line and left the arguments
+           * behind as loose source — `Expression expected.`, emitted by an
+           * unattended `--fix` (`fixable: 'code'`, `hasSuggestions: false`).
+           *
+           * This is the shape Prettier — this repo's own formatter — produces
+           * for any `console.log` wider than the print width, so it is the
+           * common case, not an exotic one.
+           */
+          name: 'comment comments every physical line of a Prettier-wrapped console.log',
+          code: `function handle(requestId, userId, traceId) {
+  console.log(
+    'Processing incoming request',
+    requestId,
+    userId,
+    traceId,
+    Date.now(),
+  );
+  return requestId;
+}`,
+          options: [{ strategy: 'comment' }],
+          output: `function handle(requestId, userId, traceId) {
+  // console.log(
+    // 'Processing incoming request',
+    // requestId,
+    // userId,
+    // traceId,
+    // Date.now(),
+  // );
+  return requestId;
+}`,
+          errors: [
+            {
+              messageId: 'consoleLogFound',
+            },
+          ],
+        },
+        {
+          /*
+           * The statement shares its physical line with the code that FOLLOWS
+           * it, so a `//` anywhere on that line swallows `break;` too and the
+           * case falls through. Commenting cannot be made sound here, so the
+           * fixer declines — the report itself is unaffected.
+           */
+          name: 'comment declines when following code shares the statement line',
+          code: `switch (k) {
+  case 1: console.log("a"); break;
+  default: done();
+}`,
+          options: [{ strategy: 'comment' }],
+          output: null,
+          errors: [
+            {
+              messageId: 'consoleLogFound',
+            },
+          ],
+        },
+        {
+          /*
+           * The same lexical hazard with a closing brace rather than a sibling
+           * statement: commenting the line takes the `}` with it and the file
+           * stops parsing.
+           */
+          name: 'comment declines when a closing brace shares the statement line',
+          code: `if (ready) { console.log("x"); }
+after();`,
+          options: [{ strategy: 'comment' }],
+          output: null,
+          errors: [
+            {
+              messageId: 'consoleLogFound',
+            },
+          ],
+        },
       ],
     });
   });
