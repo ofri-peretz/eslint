@@ -29,6 +29,21 @@ describe('consistent-function-scoping', () => {
         valid: [
           {
             /*
+             * Control for the module-const case below: a helper capturing a
+             * binding local to the enclosing FUNCTION is a genuine closure and
+             * must stay silent. burgee packages/flagstaff/src/table.ts:147 is
+             * exactly this shape — `plain` is local to `tableComponent()`.
+             */
+            name: 'a helper capturing an enclosing function local is not movable',
+            code: `function outerFn(seed) {
+  const local = seed * 2;
+  const helper = (v) => v + local;
+  return helper(1);
+}`,
+          },
+
+          {
+            /*
              * A class BODY rebinds `this` — that is the case in `invalid` below.
              * A heritage clause does not: `extends this.Base` is evaluated in
              * the enclosing scope, so the arrow does capture `this` and moving
@@ -394,6 +409,45 @@ describe('consistent-function-scoping', () => {
           },
         ],
         invalid: [
+          {
+            /*
+             * burgee packages/roundel/src/theme.ts:98 — `step` reaches only the
+             * module-level `SRGB_MAX`, which is equally in scope at module
+             * level, so moving it out compiles and runs unchanged.
+             *
+             * The Program() visitor deliberately does not register module-level
+             * `function` declarations, precisely so a helper reaching only
+             * module bindings stays reportable. Module-level `const` was
+             * registered anyway by the VariableDeclaration visitor, so the same
+             * helper was reported or suppressed purely by how the module
+             * binding happened to be spelled.
+             */
+            name: 'a helper capturing only a module-level const is still movable',
+            code: `const SRGB_MAX = 255;
+function ansi256(r) {
+  const step = (v) => Math.round(v / SRGB_MAX);
+  return step(r);
+}`,
+            errors: [
+              {
+                messageId: 'inconsistentFunctionScoping',
+                suggestions: [
+                  {
+                    messageId: 'moveToModuleScope',
+                    // The suggestion anchors on the arrow, so the TODO lands
+                    // after `const step =`. Cosmetic and pre-existing; pinned
+                    // here as the behaviour actually is.
+                    output: `const SRGB_MAX = 255;
+function ansi256(r) {
+  const step = // TODO: Move this function to module scope - it doesn't capture outer variables
+(v) => Math.round(v / SRGB_MAX);
+  return step(r);
+}`,
+                  },
+                ],
+              },
+            ],
+          },
           {
             /*
              * `collectReferences` walked the whole parameter pattern, so the
