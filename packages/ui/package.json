@@ -263,9 +263,9 @@
   "dependencies": {
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "lucide-react": "^1.37.0",
-    "motion": "^13.2.0",
-    "tailwind-merge": "^3.4.0"
+    "lucide-react": "^1.47.0",
+    "motion": "^13.4.0",
+    "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",
