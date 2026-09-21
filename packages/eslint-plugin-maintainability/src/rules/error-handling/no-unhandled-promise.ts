@@ -154,7 +154,19 @@ export function hasPromiseEvidence(
     // `x.then(…)` and `x["then"](…)` are the same protocol; the second form
     // appears in minified and generated code, and reading only the Identifier
     // spelling meant the rule saw a promise in one and not the other.
-    if (propertyName(node.callee) === 'then') return true;
+    const member = propertyName(node.callee);
+    if (member === 'then') return true;
+    // `.finally` and `.catch` are chain LINKS, not evidence in themselves: the
+    // promise is whatever they were called on. Without this recursion
+    // `apiCall().then(f).finally(g)` had no evidence — the object is a
+    // CallExpression, not an Identifier — so the documented ❌ chain went
+    // silent the moment a `.finally` was appended to it.
+    if (
+      (member === 'finally' || member === 'catch') &&
+      object.type === 'CallExpression'
+    ) {
+      return hasPromiseEvidence(object, promiseReturning, resolveBinding);
+    }
     // `axios.get(url)` — the RECEIVER is the configured name, not the method.
     return object.type === 'Identifier' && promiseReturning.has(object.name);
   }
@@ -377,6 +389,33 @@ function isThenWithRejectionHandler(node: TSESTree.CallExpression): boolean {
     default:
       return false;
   }
+}
+
+/**
+ * Does anything DOWNSTREAM of this call actually handle a rejection?
+ *
+ * Walks `callee.object` through the chain-transparent links — `.then` and
+ * `.finally` — looking for a `.catch` or a two-argument `.then`. Neither
+ * transparent link handles a rejection on its own, so `p.then(f).finally(g)`
+ * answers false while `p.catch(h).finally(g)` answers true.
+ *
+ * This exists so `.finally` can stop being treated as a terminator without
+ * turning every `.finally` into a report: the question is not "is there a
+ * `.finally`" but "is there a handler anywhere under it".
+ */
+function chainHasRejectionHandler(node: TSESTree.CallExpression): boolean {
+  let current: TSESTree.Node = node;
+  while (
+    current.type === 'CallExpression' &&
+    current.callee.type === 'MemberExpression'
+  ) {
+    const member = propertyName(current.callee);
+    if (member === 'catch') return true;
+    if (isThenWithRejectionHandler(current)) return true;
+    if (member !== 'then' && member !== 'finally') return false;
+    current = current.callee.object;
+  }
+  return false;
 }
 
 /**
@@ -643,7 +682,11 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
       ) {
         const methodName = node.callee.property.name;
         /**
-         * `.catch` and `.finally` terminate a chain; `.then` does not.
+         * `.catch` terminates a chain; `.then` and `.finally` do not.
+         * `.finally` does not handle a rejection —
+         * `Promise.reject(e).finally(f)` runs `f` and rejects with the same
+         * `e` — so treating it as a terminator silenced the documented ❌
+         * chain outright. It is chain-TRANSPARENT instead.
          *
          * This used to include `then`, which meant `fetch(url).then(r => r.json())`
          * returned here before `isPromiseHandled` could look for a `.catch`
@@ -651,7 +694,9 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
          * catch, while reporting `require("./tree.svg")`. Both directions
          * wrong, from the same block.
          */
-        if (methodName === 'catch' || methodName === 'finally') {
+        if (methodName === 'finally' && !chainHasRejectionHandler(node)) {
+          // Nothing downstream handles the rejection — fall through and report.
+        } else if (methodName === 'catch' || methodName === 'finally') {
           // Check if the callback is empty or meaningless
           if (
             node.arguments.length > 0 &&

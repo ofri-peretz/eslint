@@ -61,6 +61,32 @@ describe('no-unhandled-promise', () => {
     });
   });
 
+  describe('.finally is chain-transparent, not a terminator', () => {
+    ruleTester.run(
+      'valid - a handler under a .finally still handles',
+      noUnhandledPromise,
+      {
+        valid: [
+          {
+            name: 'a .catch followed by .finally is still handled',
+            code: `
+            async function apiCall() {}
+            apiCall().then(processData).catch(onError).finally(cleanup);
+          `,
+          },
+          {
+            name: 'a two-argument .then under a .finally is still handled',
+            code: `
+            async function apiCall() {}
+            apiCall().then(processData, onError).finally(cleanup);
+          `,
+          },
+        ],
+        invalid: [],
+      },
+    );
+  });
+
   describe('Invalid Code - Unhandled Promises', () => {
     ruleTester.run('invalid - unhandled promises', noUnhandledPromise, {
       valid: [],
@@ -68,6 +94,32 @@ describe('no-unhandled-promise', () => {
         {
           name: 'a floating fetch — rejection goes nowhere',
           code: 'fetch(url);',
+          errors: [{ messageId: 'unhandledPromise' }],
+        },
+        {
+          /**
+           * Walks PAST a `.finally` onto a member call that is not a chain
+           * link (`api.load`), which ends the downstream search: there is no
+           * handler under it, so the chain reports.
+           */
+          name: 'a .finally over a non-chain member call still reports',
+          code: 'api.load().finally(cleanup);',
+          options: [{ promiseReturning: ['fetch', 'api'] }],
+          errors: [{ messageId: 'unhandledPromise' }],
+        },
+        {
+          /**
+           * `.finally` does not handle a rejection —
+           * `Promise.reject(e).finally(f)` runs `f` and then rejects with the
+           * same `e`, verified on Node 24. Treating it as a chain TERMINATOR
+           * let a one-token edit silence a HIGH-severity check. This plugin
+           * ships its own fork of the rule and carried the identical defect.
+           */
+          name: 'appending .finally does not handle the chain',
+          code: `
+            async function apiCall() {}
+            apiCall().then(processData).then(saveToDatabase).finally(cleanup);
+          `,
           errors: [{ messageId: 'unhandledPromise' }],
         },
         {
