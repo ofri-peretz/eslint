@@ -78,6 +78,23 @@ suite('detect-object-injection, read against its nearest neighbour', () => {
         code: 'const KEYS = Object.freeze(["alpha", "beta"]); const o = {}; for (const k of KEYS) { o[k] = 1; }',
       },
       {
+        // burgee sweep 2026-09-20, packages/burgee/src/yargs/factory.ts:1592.
+        // The proof is a property of the ARRAY — every value `k` can take is
+        // spelled in the file — not of the loop construct. Accepting only the
+        // for-of spelling reported the callback spelling of identical code.
+        name: 'FP: the same allowlist iterated with .forEach instead of for-of',
+        code: 'const KEYS = ["alpha", "beta"]; const o = {}; const s = {}; KEYS.forEach((k) => { o[k] = s[k]; });',
+      },
+      {
+        // burgee sweep 2026-09-20, packages/burgee/src/yargs/factory.ts:1595.
+        name: 'FP: the as const allowlist iterated with .map',
+        code: 'const KEYS = ["alpha", "beta"] as const; const o = {}; KEYS.map((k) => o[k]);',
+      },
+      {
+        name: 'FP: the .forEach spelling with a function expression callback',
+        code: 'const KEYS = ["alpha", "beta"]; const o = {}; KEYS.forEach(function (k) { o[k] = 1; });',
+      },
+      {
         // burgee sweep 2026-09-10, from packages/burgee/src/testing-helpers.ts:176.
         // @found burgee sweep 2026-09-10, testing-helpers.ts:176
         // `as const` is how TypeScript writes a closed key set, and the benchmark
@@ -133,6 +150,55 @@ suite('detect-object-injection, read against its nearest neighbour', () => {
       },
     ],
     invalid: [
+      /*
+       * Guards on the .forEach allowlist exemption. Each one admits a key the
+       * file does not spell out, so each must keep reporting.
+       */
+      {
+        name: 'a forEach allowlist bound with let, which can be reassigned',
+        code: 'let KEYS = ["alpha"]; const o = {}; const s = {}; KEYS.forEach((k) => { o[k] = s[k]; });',
+        errors: 1,
+      },
+      {
+        name: 'a forEach allowlist that itself lists __proto__',
+        code: 'const KEYS = ["alpha", "__proto__"]; const o = {}; const s = {}; KEYS.forEach((k) => { o[k] = s[k]; });',
+        errors: 1,
+      },
+      {
+        name: 'a forEach allowlist with a hole, which yields undefined',
+        code: 'const KEYS = ["alpha", , "beta"]; const o = {}; const s = {}; KEYS.forEach((k) => { o[k] = s[k]; });',
+        errors: 1,
+      },
+      {
+        name: 'a forEach list arriving as a parameter is not written out in the file',
+        code: 'function f(KEYS, o, s) { KEYS.forEach((k) => { o[k] = s[k]; }); }',
+        errors: 1,
+      },
+      {
+        name: 'a concat receiver can carry elements from outside the file',
+        code: 'const KEYS = ["alpha"]; function f(o, s, x) { KEYS.concat(x).forEach((k) => { o[k] = s[k]; }); }',
+        errors: 1,
+      },
+      {
+        name: 'reduce binds the accumulator at parameter 0, not an element',
+        code: 'const KEYS = ["alpha"]; function f(o, s) { KEYS.reduce((acc, k) => { o[k] = s[k]; return acc; }, 0); }',
+        errors: 1,
+      },
+      {
+        name: 'the second callback parameter is an index, not an element',
+        code: 'const KEYS = ["alpha"]; function f(o, s) { KEYS.forEach((k, i) => { o[i] = s[k]; }); }',
+        errors: 1,
+      },
+      {
+        name: 'a forEach allowlist whose contents come from a call',
+        code: 'const KEYS = mk(); const o = {}; const s = {}; KEYS.forEach((k) => { o[k] = s[k]; });',
+        errors: 1,
+      },
+      {
+        name: 'a member-chain receiver is not a resolvable const list',
+        code: 'const c = { KEYS: ["alpha"] }; const o = {}; const s = {}; c.KEYS.forEach((k) => { o[k] = s[k]; });',
+        errors: 1,
+      },
       {
         // The neighbour rule is silent here: `req.query.p` is a
         // MemberExpression, and it only looks at `Identifier` keys. This is
