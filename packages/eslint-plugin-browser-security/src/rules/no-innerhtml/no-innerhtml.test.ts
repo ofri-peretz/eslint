@@ -120,6 +120,15 @@ ruleTester.run('no-innerhtml', noInnerhtml, {
     },
   ],
   invalid: [
+    // The AwaitExpression unwrapping added for #1056 must not become a blanket
+    // "awaited value is trusted" — only an awaited TRUSTED CALL is. Direct
+    // AwaitExpression path (not the Identifier-by-the-time-it's-checked path
+    // the `let markup = await fetch(...)` case below exercises).
+    {
+      name: 'awaited non-sanitizer is still reported',
+      code: 'element.innerHTML = await userInput;',
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
     // `names()` decides whether the right-hand call is a TRUSTED SANITIZER.
     // `lib['sanitize'](x)` resolves and is trusted; a sanitizer named at
     // RUNTIME resolves to nothing, cannot be shown to be trusted, and so the
@@ -410,6 +419,14 @@ ruleTester.run('no-innerhtml-edge-paths', noInnerhtml, {
     // fake-sanitiser evasion; the corpus fixture uses an arrow.
     {
       code: 'function escapeHtml(s) { return s; } el.innerHTML = escapeHtml(user.bio);',
+      errors: [{ messageId: 'dangerousInnerHTML' }],
+    },
+    // The same evasion, awaited. #1056's AwaitExpression unwrapping recurses
+    // into the same CallExpression branch, so isLocallyDeclaredFunction still
+    // has to fire post-unwrap — this pins that it does.
+    {
+      name: 'awaited locally-declared function wearing a trusted name is still reported',
+      code: 'function escapeHtml(s) { return s; } el.innerHTML = await escapeHtml(user.bio);',
       errors: [{ messageId: 'dangerousInnerHTML' }],
     },
     // An identifier with no resolvable write is unresolved provenance, not a
