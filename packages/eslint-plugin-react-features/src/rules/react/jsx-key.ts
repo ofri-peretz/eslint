@@ -9,7 +9,12 @@
  * Detect missing or incorrect React keys (requires deep reconciliation understanding)
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, namesOneOf, propertyName } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  namesOneOf,
+  objectKeyName,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 /*
@@ -37,6 +42,31 @@ export interface Options {
 }
 
 type RuleOptions = [Options?];
+
+/**
+ * The key expression to suggest for a callback parameter, or `null` when the
+ * file binds no identifier a key could be built from.
+ *
+ * `(item) => …`        -> `item.id`, the parameter's own `id` property.
+ * `({ id }) => …`      -> `id`, which the pattern already binds. Read through
+ *                         `objectKeyName` so `{ 'id': x }` and `{ ['id']: x }`
+ *                         are the same property, and a computed key that is
+ *                         not statically nameable is not mistaken for one.
+ * anything else        -> `null`, and the caller withholds the suggestion.
+ */
+const keyExpressionForParam = (param: TSESTree.Node): string | null => {
+  if (param.type === 'Identifier') return `${param.name}.id`;
+  if (param.type === 'ObjectPattern') {
+    for (const prop of param.properties) {
+      if (prop.type !== 'Property') continue;
+      if (objectKeyName(prop) !== 'id') continue;
+      // The bound local, which is what the suggestion has to name: `{ id }`
+      // binds `id`, `{ id: rowId }` binds `rowId`.
+      if (prop.value.type === 'Identifier') return prop.value.name;
+    }
+  }
+  return null;
+};
 
 export const jsxKey = createRule<RuleOptions, MessageIds>({
   name: 'jsx-key',
@@ -401,7 +431,9 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
      * - Array.from(items, (item, index) => ...) -> 'item'
      * - Children.map(children, child => ...) -> 'child'
      */
-    function getIteratorCallbackParamName(node: TSESTree.JSXElement): string {
+    function getIteratorKeyExpression(
+      node: TSESTree.JSXElement,
+    ): string | null {
       let current: TSESTree.Node = node;
 
       while (current.parent) {
@@ -412,22 +444,20 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
         if (
           parent.type === 'ArrowFunctionExpression' &&
           parent.params.length > 0 &&
-          parent.params[0].type === 'Identifier' &&
           grandParent &&
           isIteratorCall(grandParent)
         ) {
-          return parent.params[0].name;
+          return keyExpressionForParam(parent.params[0]);
         }
 
         // Check function expression - isIteratorCall already handles Array.from
         if (
           parent.type === 'FunctionExpression' &&
           parent.params.length > 0 &&
-          parent.params[0].type === 'Identifier' &&
           grandParent &&
           isIteratorCall(grandParent)
         ) {
-          return parent.params[0].name;
+          return keyExpressionForParam(parent.params[0]);
         }
 
         // Check block statement -> return -> function
@@ -437,11 +467,10 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
             if (
               (funcParent.type === 'ArrowFunctionExpression' ||
                 funcParent.type === 'FunctionExpression') &&
-              funcParent.params.length > 0 &&
-              funcParent.params[0].type === 'Identifier'
+              funcParent.params.length > 0
             ) {
               if (funcParent.parent && isIteratorCall(funcParent.parent)) {
-                return funcParent.params[0].name;
+                return keyExpressionForParam(funcParent.params[0]);
               }
               break;
             }
@@ -456,8 +485,9 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
         current = parent;
       }
 
-      // Default fallback
-      return 'item';
+      // No callback parameter was reachable, so there is no identifier this
+      // file binds that a key could be built from.
+      return null;
     }
 
     function checkJSXElementInIteration(node: TSESTree.JSXElement) {
@@ -477,24 +507,37 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
       );
 
       if (!keyProp) {
-        // Get the actual callback parameter name for the fix
-        const paramName = getIteratorCallbackParamName(node);
+        /*
+         * A suggestion is applied to the user's source verbatim, so it may
+         * only name an identifier this file actually binds. When no key
+         * expression can be derived the report still stands on its own and
+         * the suggestion is withheld — emitting `key={item.id}` against a
+         * destructured callback either throws `ReferenceError` or, inside a
+         * nested map, silently captures an unrelated outer `item` and pins a
+         * constant key on every row, which is the defect this rule exists to
+         * prevent.
+         */
+        const keyExpression = getIteratorKeyExpression(node);
 
         // Missing key - this is the primary issue
         context.report({
           node: node.openingElement,
           messageId: 'missingKey',
-          suggest: [
-            {
-              messageId: 'suggestKey' as const,
-              fix(fixer: TSESLint.RuleFixer) {
-                return fixer.insertTextAfter(
-                  node.openingElement.name,
-                  ` key={${paramName}.id}`,
-                );
-              },
-            },
-          ],
+          ...(keyExpression === null
+            ? {}
+            : {
+                suggest: [
+                  {
+                    messageId: 'suggestKey' as const,
+                    fix(fixer: TSESLint.RuleFixer) {
+                      return fixer.insertTextAfter(
+                        node.openingElement.name,
+                        ` key={${keyExpression}}`,
+                      );
+                    },
+                  },
+                ],
+              }),
         });
         return;
       }

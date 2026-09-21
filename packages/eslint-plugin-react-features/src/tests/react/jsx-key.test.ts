@@ -875,8 +875,18 @@ describe('jsx-key', () => {
         },
       ],
       invalid: [
-        // Destructured param without key - uses fallback 'item' in suggestion
+        /*
+         * CORRECTED 2026-09-20. This case previously pinned the emitted
+         * output as `key={item.id}` with the rationale "since param is
+         * destructured, fallback is 'item'" — a fixture justified by the
+         * implementation's fallback rather than by behaviour anyone would
+         * defend. `item` is bound nowhere here, so accepting the suggestion
+         * threw `ReferenceError` at render. The pattern already binds `id`,
+         * which is the key the data actually carries.
+         * @found burgee FP/FN sweep 2026-09-20
+         */
         {
+          name: 'FN: a destructured callback suggests the identifier the pattern binds',
           code: `items.map(({ id, name }) => <div>{name}</div>)`,
           errors: [
             {
@@ -884,12 +894,58 @@ describe('jsx-key', () => {
               suggestions: [
                 {
                   messageId: 'suggestKey',
-                  // Since param is destructured, fallback is 'item'
-                  output: `items.map(({ id, name }) => <div key={item.id}>{name}</div>)`,
+                  output: `items.map(({ id, name }) => <div key={id}>{name}</div>)`,
                 },
               ],
             },
           ],
+        },
+        {
+          name: 'FN: a renamed destructured id suggests the local it binds, not the property',
+          code: `items.map(({ id: rowId, name }) => <div>{name}</div>)`,
+          errors: [
+            {
+              messageId: 'missingKey',
+              suggestions: [
+                {
+                  messageId: 'suggestKey',
+                  output: `items.map(({ id: rowId, name }) => <div key={rowId}>{name}</div>)`,
+                },
+              ],
+            },
+          ],
+        },
+        {
+          /*
+           * Nothing in the file binds a key here, so the report stands alone
+           * rather than offering an edit that names an unbound identifier.
+           * Under the old fallback this emitted `key={item.id}`; nested in an
+           * outer `.map(item => …)` that resolves silently and pins one
+           * constant key on every row.
+           */
+          name: 'FN: no suggestion is offered when no key expression can be derived',
+          code: `items.map(({ name }) => <div>{name}</div>)`,
+          errors: [{ messageId: 'missingKey', suggestions: [] }],
+        },
+        {
+          name: 'FN: an array-pattern callback derives no key and offers no suggestion',
+          code: `items.map(([a, b]) => <div>{a}</div>)`,
+          errors: [{ messageId: 'missingKey', suggestions: [] }],
+        },
+        {
+          // A rest element is not a Property, so it carries no key to read.
+          name: 'a rest element in the pattern is skipped when looking for id',
+          code: `items.map(({ ...rest }) => <div>{rest.name}</div>)`,
+          errors: [{ messageId: 'missingKey', suggestions: [] }],
+        },
+        {
+          /*
+           * `id` is destructured further rather than bound to a name, so
+           * there is no single identifier the suggestion could reference.
+           */
+          name: 'an id destructured further binds no identifier to suggest',
+          code: `items.map(({ id: { raw } }) => <div>{raw}</div>)`,
+          errors: [{ messageId: 'missingKey', suggestions: [] }],
         },
       ],
     });
