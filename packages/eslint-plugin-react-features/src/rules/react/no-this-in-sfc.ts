@@ -36,34 +36,57 @@ export const noThisInSfc = createRule<[], MessageIds>({
   },
   defaultOptions: [],
   create(context: TSESLint.RuleContext<MessageIds, []>) {
-    let inClassContext = false;
+    // A depth, not a flag: a class nested inside a class must not clear the
+    // enclosing one on exit, or valid `this` in the outer class reports.
+    let classDepth = 0;
+
+    /**
+     * A function that declares an explicit TS `this` parameter has named its
+     * own receiver in its signature, so `this` there is a declared contract
+     * rather than a component mistake — `function (this: unknown, ...args)`
+     * forwarding through `fn.apply(this, args)` is the canonical shape.
+     */
+    const hasDeclaredThisParam = (node: TSESTree.Node): boolean => {
+      for (let cur: TSESTree.Node | undefined = node; cur; cur = cur.parent) {
+        if (
+          cur.type === 'FunctionDeclaration' ||
+          cur.type === 'FunctionExpression' ||
+          cur.type === 'ArrowFunctionExpression'
+        ) {
+          // An arrow has no receiver of its own; keep climbing to the function
+          // whose `this` it closes over.
+          if (cur.type === 'ArrowFunctionExpression') continue;
+          const [first] = cur.params;
+          return first?.type === 'Identifier' && first.name === 'this';
+        }
+      }
+      return false;
+    };
 
     return {
-      // Track class context
       ClassDeclaration() {
-        inClassContext = true;
+        classDepth += 1;
       },
 
       'ClassDeclaration:exit'() {
-        inClassContext = false;
+        classDepth -= 1;
       },
 
       ClassExpression() {
-        inClassContext = true;
+        classDepth += 1;
       },
 
       'ClassExpression:exit'() {
-        inClassContext = false;
-      },
-
-      // Track method context within classes
-      MethodDefinition() {
-        // Already in class context, this is allowed
+        classDepth -= 1;
       },
 
       ThisExpression(node: TSESTree.ThisExpression) {
         // Allow 'this' in class contexts
-        if (inClassContext) {
+        if (classDepth > 0) {
+          return;
+        }
+
+        if (hasDeclaredThisParam(node)) {
           return;
         }
 
