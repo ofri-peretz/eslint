@@ -65,11 +65,24 @@ ruleTester.run('no-innerhtml', noInnerhtml, {
     },
     // Sanitized with DOMPurify
     {
+      name: 'DOMPurify.sanitize is a trusted sanitiser',
       code: `element.innerHTML = DOMPurify.sanitize(userInput);`,
     },
     // Sanitized with custom sanitizer
     {
       code: `element.innerHTML = sanitize(userInput);`,
+    },
+    // Sanitized with an async sanitiser wrapper, awaited at the call site.
+    // #1056: `sanitize` is on the default allowlist, but the value being
+    // judged was the AwaitExpression, not the CallExpression it wraps, so it
+    // fell through every branch to `false`.
+    {
+      name: 'awaited custom sanitiser is still a trusted sanitiser',
+      code: `element.innerHTML = await sanitize(userInput);`,
+    },
+    {
+      name: 'awaited DOMPurify.sanitize is still a trusted sanitiser',
+      code: `element.innerHTML = await DOMPurify.sanitize(userInput);`,
     },
     // Test file with allowInTests
     {
