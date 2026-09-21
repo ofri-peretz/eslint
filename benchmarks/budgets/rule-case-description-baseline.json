@@ -389,7 +389,7 @@
     "secure-coding/no-missing-authentication": 88,
     "secure-coding/no-pii-in-logs": 48,
     "secure-coding/no-privilege-escalation": 89,
-    "secure-coding/no-redos-vulnerable-regex": 58,
+    "secure-coding/no-redos-vulnerable-regex": 55,
     "secure-coding/no-sensitive-data-exposure": 89,
     "secure-coding/no-sql-injection": 88,
     "secure-coding/no-template-injection": 19,

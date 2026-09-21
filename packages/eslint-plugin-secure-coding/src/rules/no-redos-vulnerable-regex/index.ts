@@ -6,7 +6,7 @@
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════
- * 🔒 LOCKED 2026-08-17 — read this whole block before changing anything here.
+ * 🔒 LOCKED 2026-09-21 — read this whole block before changing anything here.
  * ═══════════════════════════════════════════════════════════════════════════
  *
  * ReDoS is a claim about RUNTIME, so every claim here was TIMED in Node 24 with
@@ -68,6 +68,23 @@
  *     pattern contains `?`, `*` and `?` — quantifier characters counted, not
  *     quantifier nesting. Measured at 7% precision.
  *
+ *     `isProvablyCatastrophic` is not that, and the distinction is the whole
+ *     argument for it: it decides on the PARSED pattern by intersecting
+ *     character sets, so for `(A|B)+` with single-class branches "some string
+ *     matches both" is answered exactly rather than estimated. It declines —
+ *     silently — on every shape it cannot decide. The boundary is pinned in
+ *     both directions: `(\w|\d)+` at 1,927 ms reports because `\d ⊆ \w`, and
+ *     `(?:\p{Nd}|\p{Lu})+` at 0.0 ms stays silent because the two are disjoint.
+ *
+ *   ✗ "The alternation is right there in the source, so the rule can see it."
+ *     Only if it survives to the parser. A `${…}` interpolation is replaced by
+ *     ONE placeholder character before analysis, so an alternation assembled
+ *     into a constant — burgee's `INVISIBLE_CLASSES.join('|')`, a 9,395 ms
+ *     pattern — collapses to `^(?:\uE000)+$` and has nothing left to
+ *     intersect. Pinned as a `GAP:` case. Closing it means resolving an
+ *     interpolated constant back to its value, which is a separate capability
+ *     with its own false-positive surface, not a tweak to this function.
+ *
  * ── WHAT LEGITIMATELY REOPENS THIS FILE ────────────────────────────────────
  *
  *   1. A JS engine change to backtracking behaviour (V8 adding a memoising or
@@ -93,7 +110,9 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES, formatLLMMessage, MessageIcons, propertyName } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
-import { RegExpParser } from '@eslint-community/regexpp';
+import { RegExpParser, visitRegExpAST } from '@eslint-community/regexpp';
+import type { Node as RegExpNode, Quantifier as RegExpQuantifier } from '@eslint-community/regexpp/ast';
+import { JS } from 'refa';
 import { analyse } from 'scslre';
 import { asDirectConstruction, isRegExpConstructor } from '../../utils/regexp-intrinsic';
 import { confirmsRedos, worstBacktrackingDegree } from '../../utils/redos-oracle';
@@ -124,6 +143,7 @@ const COMPLEMENTARY_CLASS_PROBES = [
 }));
 
 const REGEXPP_PARSER = new RegExpParser();
+type RegExpAst = ReturnType<RegExpParser['parsePattern']>;
 
 /**
  * Stand-in for a `${…}` interpolation inside a template-literal pattern.
@@ -431,16 +451,79 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
      * most ReDoS write-ups and still passes the NFA analyser is the reason this
      * function exists.
      */
-    function isProvablyCatastrophic(pattern: string): boolean {
-      // `(x|x)` with byte-identical branches, under a `*`/`+`.
+    function isProvablyCatastrophic(
+      ast: RegExpAst,
+      flags: string
+    ): boolean {
+      // Decided on the PARSED pattern, by set intersection — not by matching
+      // the source text.
       //
-      // The `(?:` alternative is not cosmetic. `[^()|]+` happily matches `?:`,
-      // so on `(?:a|a)+` the first branch captured as `?:a` and the identity
-      // test compared it against `a` — the pinned `(a|a)*` case, silent purely
-      // because it was written non-capturing. Consuming the `?:` before the
-      // branch keeps the comparison on the alternatives themselves.
-      const m = /\((?:\?:)?([^()|]+)\|([^()|]+)\)[+*]/.exec(pattern);
-      return m !== null && m[1] === m[2];
+      // The previous spelling was `/\((?:\?:)?([^()|]+)\|([^()|]+)\)[+*]/` plus
+      // a byte-identity test, which implemented only half of the contract above
+      // ("Identical — OR OVERLAPPING — alternatives"). It missed every case
+      // where the branches overlap without being identical: `(\w|\d)+` is
+      // 1,927 ms because `\d` is a subset of `\w`, and burgee's
+      // `(?:\p{Default_Ignorable_Code_Point}|…|\p{Format}|…)+` is 9,395 ms
+      // because a variation selector belongs to two of its six branches.
+      // Reading the text also forced the `?:` special case, which the AST makes
+      // unnecessary — a non-capturing group is just a Group node.
+      //
+      // This is NOT the character-level heuristic the header above rejects at
+      // 7% precision. It is a decision procedure: for `(A|B)+` where A and B
+      // are each a single character class, "some string matches both" is
+      // exactly "the two character sets intersect", and refa computes that
+      // intersection exactly, Unicode property escapes included. The precision
+      // boundary is pinned both ways — `(a|b)+` and `(?:\p{Nd}|\p{Lu})+` are
+      // disjoint and stay silent.
+      //
+      // Deliberately narrow, and silent when it cannot decide:
+      //   - only alternatives that are exactly ONE character-ish element, so
+      //     `(ab|cd)*` (a concatenation) is skipped rather than guessed at;
+      //   - only unbounded repetition (`max === Infinity`), so the bounded
+      //     `(a+){5}` family the suite pins as valid at 2.6 ms is untouched;
+      //   - a class refa cannot model (a `v`-flag string set such as
+      //     `[\q{abc}]`) throws, and a throw means skip, not report.
+      const unicode = flags.includes('u') || flags.includes('v');
+
+      const charSetOf = (alt: { elements: readonly RegExpNode[] }) => {
+        if (alt.elements.length !== 1) return null;
+        const el = alt.elements[0];
+        if (
+          el.type !== 'Character' &&
+          el.type !== 'CharacterSet' &&
+          el.type !== 'CharacterClass'
+        ) {
+          return null;
+        }
+        try {
+          return JS.parseCharSet(el as never, { unicode });
+        } catch {
+          return null;
+        }
+      };
+
+      let catastrophic = false;
+      visitRegExpAST(ast as never, {
+        onQuantifierEnter(quantifier: RegExpQuantifier) {
+          if (catastrophic) return;
+          if (quantifier.max !== Infinity) return;
+          const { element } = quantifier;
+          if (element.type !== 'Group' && element.type !== 'CapturingGroup') {
+            return;
+          }
+          const sets = element.alternatives.map(charSetOf);
+          if (sets.some((s) => s === null)) return;
+          for (let i = 0; i < sets.length && !catastrophic; i++) {
+            for (let j = i + 1; j < sets.length; j++) {
+              if (!sets[i]!.isDisjointWith(sets[j]!)) {
+                catastrophic = true;
+                break;
+              }
+            }
+          }
+        },
+      });
+      return catastrophic;
     }
 
     function checkWithScslre(
@@ -520,7 +603,7 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
         // pattern by its least-severe path would understate it.
         // scslre cleared it, but it was TIMED as catastrophic — report anyway.
         // `^(a|a)*$` is 8,581 ms and returns zero reports from the analyser.
-        if (result.reports.length === 0 && isProvablyCatastrophic(pattern)) {
+        if (result.reports.length === 0 && isProvablyCatastrophic(ast, flags)) {
           if (!confirmsRedos(pattern, flags)) return;
           context.report({
             node,
