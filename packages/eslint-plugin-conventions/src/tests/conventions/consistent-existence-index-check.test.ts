@@ -42,7 +42,7 @@ describe('consistent-existence-index-check', () => {
           // Reported, not rewritten: `in` and an own-property check disagree on an
           // inherited key. See consistent-existence-index-check.own-property.test.ts.
           output: null,
-          errors: [{ messageId: 'consistentExistenceCheck' }],
+          errors: [{ messageId: 'nonEquivalentExistenceCheck' }],
         },
         // Object.hasOwn should be flagged
         {
@@ -51,7 +51,7 @@ describe('consistent-existence-index-check', () => {
           // Reported, not rewritten: `in` and an own-property check disagree on an
           // inherited key. See consistent-existence-index-check.own-property.test.ts.
           output: null,
-          errors: [{ messageId: 'consistentExistenceCheck' }],
+          errors: [{ messageId: 'nonEquivalentExistenceCheck' }],
         },
       ],
     });
@@ -74,7 +74,7 @@ describe('consistent-existence-index-check', () => {
           // inherited key. See consistent-existence-index-check.own-property.test.ts.
           output: null,
           options: [{ preferred: 'hasOwnProperty' }],
-          errors: [{ messageId: 'consistentExistenceCheck' }],
+          errors: [{ messageId: 'nonEquivalentExistenceCheck' }],
         },
         // Object.hasOwn should be flagged
         {
@@ -84,7 +84,7 @@ describe('consistent-existence-index-check', () => {
           // a shadowing own property. See the own-property test file.
           output: null,
           options: [{ preferred: 'hasOwnProperty' }],
-          errors: [{ messageId: 'consistentExistenceCheck' }],
+          errors: [{ messageId: 'nonEquivalentExistenceCheck' }],
         },
       ],
     });
@@ -107,7 +107,7 @@ describe('consistent-existence-index-check', () => {
           // inherited key. See consistent-existence-index-check.own-property.test.ts.
           output: null,
           options: [{ preferred: 'Object.hasOwn' }],
-          errors: [{ messageId: 'consistentExistenceCheck' }],
+          errors: [{ messageId: 'nonEquivalentExistenceCheck' }],
         },
         // hasOwnProperty should be flagged
         {
@@ -117,7 +117,7 @@ describe('consistent-existence-index-check', () => {
           // a shadowing own property. See the own-property test file.
           output: null,
           options: [{ preferred: 'Object.hasOwn' }],
-          errors: [{ messageId: 'consistentExistenceCheck' }],
+          errors: [{ messageId: 'nonEquivalentExistenceCheck' }],
         },
       ],
     });

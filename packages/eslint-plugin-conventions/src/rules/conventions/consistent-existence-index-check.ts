@@ -12,7 +12,7 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
-type MessageIds = 'consistentExistenceCheck';
+type MessageIds = 'consistentExistenceCheck' | 'nonEquivalentExistenceCheck';
 
 export interface Options {
   /**
@@ -54,6 +54,31 @@ export const consistentExistenceIndexCheck = createRule<
         description: 'Use consistent method for property existence checks',
         severity: 'MEDIUM',
         fix: 'Use "{{preferred}}" instead of "{{current}}" for property checks',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/in',
+      }),
+      // The same report, on a site the fixer deliberately refuses to rewrite.
+      //
+      // Withholding the fix was only half the job. Every report used to carry the
+      // message above, whose `Fix:` line is an imperative to perform the exact
+      // rewrite the rule just declined to make. Following it breaks the program in
+      // both directions: `Object.hasOwn` is declared
+      // `hasOwn(o: object, v: PropertyKey): boolean` and is NOT a type predicate, so
+      // rewriting `'on' in target` loses the narrowing `in` performed and the
+      // following `target.on(...)` becomes TS2339; and at runtime `'on' in emitter` is
+      // `true` while `Object.hasOwn(emitter, 'on')` is `false`, because `on` lives on
+      // the prototype.
+      //
+      // So the `Fix:` here names what actually DIFFERS between the two forms and asks
+      // for a hand edit. Everything else about the report is identical — the decision
+      // to report is unchanged, because which form a codebase writes is still the
+      // user's style to pick.
+      nonEquivalentExistenceCheck: formatLLMMessage({
+        icon: MessageIcons.WARNING,
+        issueName: 'Inconsistent Property Check',
+        description: 'Use consistent method for property existence checks',
+        severity: 'MEDIUM',
+        fix: 'Change this site by hand: "{{current}}" and "{{preferred}}" disagree on {{disagreement}}',
         documentationLink:
           'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/in',
       }),
@@ -153,12 +178,30 @@ export const consistentExistenceIndexCheck = createRule<
         };
       }
 
+      // The SAME three boundaries also decide which message is emitted, because a
+      // boundary is exactly the reason the mechanical instruction would be wrong. Named
+      // most-fundamental first: the prototype chain changes which KEYS answer yes, the
+      // dispatch changes whether the call runs at all, the argument list changes what it
+      // is handed. `preferred !== 'Object.hasOwn'` is deliberately NOT one of these —
+      // that arm of the fix gate is "no fixer written for this target", where the
+      // rewrite is still safe and the ordinary instruction is still the right one.
+      const disagreement = crossesPrototypeBoundary
+        ? 'an inherited key'
+        : crossesDispatchBoundary
+          ? 'method dispatch on the object'
+          : spliceWouldChangeArity || surplusArguments
+            ? 'the argument list'
+            : undefined;
+
       context.report({
         node,
-        messageId: 'consistentExistenceCheck',
+        messageId: disagreement
+          ? 'nonEquivalentExistenceCheck'
+          : 'consistentExistenceCheck',
         data: {
           current: currentMethod,
           preferred,
+          ...(disagreement === undefined ? {} : { disagreement }),
         },
         fix,
       });

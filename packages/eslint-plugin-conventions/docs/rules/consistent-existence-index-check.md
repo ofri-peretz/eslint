@@ -80,6 +80,26 @@ what the code does:
   disagree on an inherited key.
 - `obj.hasOwnProperty(key)` looks the method up on `obj`: it throws on a
   null-prototype object and calls whatever a shadowing own property points at.
+- a surplus or sequence-expression argument would change the argument list the
+  call is handed.
+
+Those reports also carry a **different message**, because the ordinary one
+("Use `<preferred>` instead of `<current>`") is an instruction to perform exactly
+the rewrite the rule just declined to make. Following it breaks working code:
+`Object.hasOwn` is declared `hasOwn(o: object, v: PropertyKey): boolean` and is
+not a type predicate, so rewriting `'on' in target` loses the narrowing `in`
+performed and the following `target.on(...)` stops typechecking; and at runtime
+`'on' in emitter` is `true` while `Object.hasOwn(emitter, 'on')` is `false`,
+because `on` lives on the prototype.
+
+So a non-rewritable site reads:
+
+```text
+Fix: Change this site by hand: "in" and "Object.hasOwn" disagree on an inherited key
+```
+
+naming what actually differs — `an inherited key`, `method dispatch on the
+object`, or `the argument list` — instead of ordering the rewrite.
 
 ### Options
 
