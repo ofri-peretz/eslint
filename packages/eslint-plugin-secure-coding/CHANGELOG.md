@@ -5,6 +5,39 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.4.6
+
+### Patch Changes
+
+- **🐛 Fix** — `detect-object-injection` copy-loop guards must now name the key
+
+  `detect-object-injection` no longer treats a guard-shaped token that has nothing to do with the loop key as a guard. Both copy-loop arms decided "is this body guarded?" by joining the body's tokens and running a substring regex over the result, so the scan asked whether a guard SPELLING appeared anywhere — never which key it tested, nor which object, nor whether it related to the loop at all. An unrelated `LEVELS.includes(process.env.LOG_LEVEL)`, or a log line that merely named `constructor`, silenced the canonical CWE-1321 primitive: measured in Node 24, the recursive spelling of the silenced body pollutes `Object.prototype` globally. The suppression now requires a guard BOUND to the key — `ALLOWED.includes(k)`, `set.has(k)`, `Object.hasOwn(o, k)`, `Object.prototype.hasOwnProperty.call(o, k)`, `k in schema`, or `k === '__proto__'` — which is what both messages already promised. This is the contract the write path has held all along ("hasOwn naming a DIFFERENT key does not guard"); the copy-loop arms were looser still, accepting a guard that named no key at all. Guards that do name the key are unaffected, and the AST walk keeps a `__proto__` written inside a COMMENT from clearing the finding, which is why the token scan existed in the first place.
+
+- **🐛 Fix** — `detect-object-injection` no longer accepts a lone `__proto__` check as proof for a recursive merge
+
+  A one-key denylist is sound for a SHALLOW copy — `__proto__` is the only string
+  key whose `[[Set]]` escapes the receiver, so `target['constructor'] = v` merely
+  shadows with an own property. It stops being sound the moment the body
+  recurses, because the escape is then through the READ:
+  `target['constructor']` walks the prototype chain to the `Object` function,
+  then `Object['prototype']`, and the write that follows lands on the global
+  prototype. `bodyGuardsKey` credited any single member of `POLLUTION_KEYS` and
+  returned before walking the rest of the body, so a recursive merge guarding
+  only `__proto__` was silent.
+
+  Measured in Node 24: `merge({}, JSON.parse('{"constructor":{"prototype":{"pwn":1}}}'))`
+  sets `({}).pwn === 1` — global prototype pollution the rule did not report. The
+  rule's own remediation string already prescribes all three keys; it just
+  accepted any one of them as proof of the other two.
+
+  A body that only writes still needs one key, so the documented shallow-copy fix
+  is unchanged. A body that carries a key-computed read onward into a call must
+  now name every key that can escape.
+
+  Found by the burgee FP/FN sweep at `packages/burgee/src/yargs/utils.ts:220`.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.5`
+
 ## 5.4.5
 
 ### Patch Changes
