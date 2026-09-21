@@ -16,8 +16,19 @@ import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-de
 type MessageIds = 'isPrefix' | 'renameSuggestion';
 type RuleOptions = [];
 
-const stripIsPrefix = (name: string): string =>
-  name.slice(2, 3).toLowerCase() + name.slice(3);
+const stripIsPrefix = (name: string): string => {
+  const rest = name.slice(2);
+  // A leading run of capitals is an acronym, not a word boundary, so lowering
+  // only its first character yields a name nobody would write: `isTTY` -> `tTY`.
+  // Lower the whole run — except a trailing capital that starts the next word,
+  // which has to survive: `isURLPath` -> `urlPath`, not `urlpath`.
+  // The caller has already matched /^is[A-Z]/, so the run is never empty —
+  // measured by subtraction rather than a match that cannot fail, so there is
+  // no unreachable "no capitals" arm to carry.
+  const run = rest.length - rest.replace(/^[A-Z]+/, '').length;
+  const lower = run > 1 && run < rest.length ? run - 1 : run;
+  return rest.slice(0, lower).toLowerCase() + rest.slice(lower);
+};
 
 export const noIsPrefixProp = createRule<RuleOptions, MessageIds>({
   name: 'no-is-prefix-prop',
