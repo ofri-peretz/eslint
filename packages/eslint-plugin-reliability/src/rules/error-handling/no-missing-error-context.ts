@@ -286,8 +286,21 @@ export const noMissingErrorContext = createRule<RuleOptions, MessageIds>({
     }: Options = options || {};
 
     const filename = context.filename;
+    // `ignoreInTests` is documented ecosystem-wide as "Skip this rule in
+    // `*.test.*` / `*.spec.*` files" — a glob with nothing to say about the
+    // extension. The alternation here was `ts|tsx|js|jsx`, which quietly
+    // dropped the option on `.mts`/`.cts`/`.mjs`/`.cjs`: `c.test.mts` reported
+    // where `c.test.ts` did not, for the same source. `[cm]?` restores the
+    // documented contract, and matches the `[cm]?[jt]sx?` tail of the devkit's
+    // own `TEST_BASENAME`.
+    //
+    // Deliberately NOT the devkit's `isTestFilePath`: that helper also treats
+    // `fixture|mock|e2e-spec|stories|story` basenames and whole test
+    // DIRECTORIES as exempt, which would silence this rule on `.stories.ts`
+    // and on every file under `__tests__/`. That is a far larger behaviour
+    // change than the extension defect being fixed here.
     const isTestFile =
-      ignoreInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+      ignoreInTests && /\.(test|spec)\.[cm]?[jt]sx?$/.test(filename);
 
     if (isTestFile) {
       return {};
