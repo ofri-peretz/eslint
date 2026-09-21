@@ -575,13 +575,15 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
      *
      * Read off string values rather than identifiers — a CSP is data, and the
      * directive it contains is the evidence, not the name of the variable it
-     * is stored in.
+     * is stored in. For the same reason the header NAME is not evidence: only
+     * a protecting VALUE is, so `ALLOWALL` and `ALLOW-FROM` are not protection
+     * any more than `frame-ancestors *` is.
      */
     const declaresFrameProtection = (value: string): boolean => {
       const text = value.toLowerCase();
       const ancestors = /frame-ancestors\s+([^;]+)/.exec(text);
       if (ancestors && ancestors[1].trim() !== '*') return true;
-      return /^\s*(deny|sameorigin)\s*$/.test(text) || text.includes('x-frame-options');
+      return /^\s*(deny|sameorigin)\s*$/.test(text);
     };
 
     /**
