@@ -3,7 +3,8 @@
 '@interlace/eslint-devkit': patch
 ---
 
-Three fixes, all found by sweeping the plugins over a real NodeNext ESM codebase.
+fix(import-next): extensions stops breaking ESM builds, and no-cycle stops
+reporting inline type-only edges.
 
 `extensions` no longer strips an extension the module resolver proves is
 load-bearing. Under `moduleResolution: NodeNext` its `--fix` turned a clean

@@ -2,8 +2,8 @@
 'eslint-plugin-node-security': patch
 ---
 
-`detect-non-literal-fs-filename` now resolves `const` path bindings through
-scope instead of by name.
+fix(node-security): detect-non-literal-fs-filename resolves const path bindings
+through scope, not by name.
 
 The binding table was a file-wide `Map` keyed on the bare identifier, so the
 last `const` of a given name in the file won everywhere. Two consequences, both

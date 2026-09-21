@@ -2,8 +2,8 @@
 'eslint-plugin-conventions': patch
 ---
 
-`consistent-existence-index-check` no longer tells you to perform a rewrite it
-refuses to perform.
+fix(conventions): consistent-existence-index-check no longer instructs a rewrite
+it refuses to perform.
 
 On a site where converting between the four existence checks would change what
 the code does, the rule correctly withholds its autofix — and then emitted
