@@ -158,6 +158,64 @@ const TYPE_IMPORT_REGEX = /import\s+type\s/;
 const EXPORT_FROM_REGEX = /export\s+\{[\s\S]*?\}\s+from\s+['"]([^'"]+)['"]/g;
 
 /**
+ * An import whose ONLY clause is braces — no default, no namespace binding.
+ *
+ * Anchored at `import` so a value binding outside the braces disqualifies the
+ * statement before its contents are read: `import Thing, { type B }` has a
+ * runtime binding and must keep its edge.
+ */
+const BRACED_CLAUSE_ONLY = /^import\s+\{([^}]*)\}\s+from\s+['"]/;
+
+/**
+ * The inline type modifier on ONE binding.
+ *
+ * `type` must be followed by whitespace, so `typeFoo` is a value. And the token
+ * after it must not be `as`: TypeScript reads `{ type as T }` as importing the
+ * binding NAMED `type` under the name `T`, which is a value. `{ type as as T }`
+ * is genuinely an inline type of a binding named `as`, and it is rejected here
+ * too — every ambiguity resolves toward keeping the edge.
+ */
+const INLINE_TYPE_BINDING = /^type\s+(?!as(?:\s|$))/;
+
+/**
+ * Does this import statement bind nothing but TYPES via the inline modifier?
+ *
+ * The test here used to be `/^import\s+type[\s{]/` alone, which sees only the
+ * top-level form. `import { type Fields } from './a.js'` therefore never set
+ * `typeOnly`, the edge survived the type filters in `computeSCCsFromFile` and
+ * `findShortestCyclePath`, and `no-cycle` — whose own report site IS
+ * inline-aware (`spec.importKind === 'type'`) — gave the same edge two different
+ * verdicts depending on which end of it was being linted. That
+ * self-inconsistency is what this closes; it is resolved in the direction the
+ * report site already chose.
+ *
+ * Upstream `eslint-plugin-import` folds the same distinction in at both of its
+ * sites: `lib/rules/no-cycle.js:91-98`
+ * (`specifiers.every(({ importKind }) => importKind === 'type')`) and
+ * `lib/exportMap/captureDependency.js:43-57` (`specifiersOnlyImportingTypes`).
+ *
+ * It does NOT say the module is never loaded. Under `verbatimModuleSyntax` the
+ * inline form is legal and the statement is PRESERVED — `import { type Fields }
+ * from './cap.js'` emits `import {} from './cap.js'`, a real runtime edge. The
+ * empty-brace case is left as a value edge for exactly that reason.
+ *
+ * ANY value binding keeps the edge, because a missed runtime cycle is a shipped
+ * initialization bug while a reported one is an argument.
+ */
+function importsOnlyInlineTypes(statement: string): boolean {
+  const clause = BRACED_CLAUSE_ONLY.exec(statement);
+  if (!clause) return false; // side-effect, default or namespace import
+  const bindings = clause[1]
+    .split(',')
+    .map((binding) => binding.trim())
+    .filter(Boolean);
+  // `import {} from './a'` binds nothing, yet the statement survives emit and
+  // the module still executes — a runtime edge, not an erased one.
+  if (!bindings.length) return false;
+  return bindings.every((binding) => INLINE_TYPE_BINDING.test(binding));
+}
+
+/**
  * Default extensions for import resolution.
  * Module-level constant to avoid allocating a new array per resolve call.
  */
@@ -667,11 +725,14 @@ export function getFileImports(
     };
 
     // Match ES6 static imports using pre-compiled regex.
-    // Detect `import type { ... }` by checking if the full match starts with
-    // "import type" — these edges are erased at compile time and must not
-    // participate in the SCC graph (they cannot cause runtime cycles).
+    // Two spellings carry no runtime binding: the top-level `import type { … }`,
+    // and a clause whose every binding wears the inline modifier. Both must be
+    // recognised here or the same edge gets two different verdicts — see
+    // `importsOnlyInlineTypes`.
     while ((match = IMPORT_REGEX.exec(content)) !== null) {
-      const isTypeImport = /^import\s+type[\s{]/.test(match[0]);
+      const isTypeImport =
+        /^import\s+type[\s{]/.test(match[0]) ||
+        importsOnlyInlineTypes(match[0]);
       pushImport(match[1], false, isTypeImport);
     }
 

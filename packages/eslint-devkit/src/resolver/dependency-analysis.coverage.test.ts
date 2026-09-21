@@ -117,6 +117,97 @@ describe('getFileImports type-only and re-export edges', () => {
     expect(imports[0].typeOnly).toBe(true);
   });
 
+  /**
+   * The type test used to read `/^import\s+type[\s{]/` on the whole match, so it
+   * saw only the TOP-LEVEL form. `import { type Fields } from './a'` never set
+   * `typeOnly`, the edge survived the filters in Tarjan and
+   * `findShortestCyclePath`, and `no-cycle` — whose own report site IS
+   * inline-aware — then gave the same edge two different verdicts depending on
+   * which end of it was being linted.
+   *
+   * The shape is not exotic: the import-next plugin's `typescript` preset pairs
+   * `no-cycle: error` with `consistent-type-specifier-style:
+   * ['warn', 'prefer-inline']`, which autofixes `import type { Foo }` into
+   * `import { type Foo }`.
+   */
+  it('marks an all-inline-type import as typeOnly', () => {
+    const b = createTempFile('src/inline-b.ts', 'export type B = string;');
+    const a = createTempFile(
+      'src/inline-a.ts',
+      "import { type B } from './inline-b';\nexport const a = 'x' as B;\n",
+    );
+    const imports = getFileImports(a, baseOptions());
+    expect(imports).toHaveLength(1);
+    expect(imports[0].path).toBe(b);
+    expect(imports[0].typeOnly).toBe(true);
+  });
+
+  it('marks an inline-type clause spread over several lines as typeOnly', () => {
+    createTempFile(
+      'src/multi-b.ts',
+      'export type B = string;\nexport type C = number;',
+    );
+    const a = createTempFile(
+      'src/multi-a.ts',
+      "import {\n  type B,\n  type C,\n} from './multi-b';\nexport const a = ['x' as B, 1 as C];\n",
+    );
+    expect(getFileImports(a, baseOptions())[0].typeOnly).toBe(true);
+  });
+
+  // The other half. ANY value binding keeps the edge: a runtime cycle silently
+  // dropped is worse than one reported, and `no-cycle` is `error` in
+  // `recommended`. These are the shapes a widened test must not swallow.
+  it('keeps an edge whose braces mix an inline type with a value', () => {
+    createTempFile(
+      'src/mixed-b.ts',
+      'export type B = string;\nexport const val = 1;',
+    );
+    const a = createTempFile(
+      'src/mixed-a.ts',
+      "import { type B, val } from './mixed-b';\nexport const a = val as unknown as B;\n",
+    );
+    expect(getFileImports(a, baseOptions())[0].typeOnly).toBeUndefined();
+  });
+
+  it('keeps an edge whose default binding sits beside an inline type', () => {
+    createTempFile(
+      'src/deflt-b.ts',
+      'export type B = string;\nexport default class Thing {}',
+    );
+    const a = createTempFile(
+      'src/deflt-a.ts',
+      "import Thing, { type B } from './deflt-b';\nexport const a = new Thing() as unknown as B;\n",
+    );
+    expect(getFileImports(a, baseOptions())[0].typeOnly).toBeUndefined();
+  });
+
+  it('keeps an empty-brace import, whose statement still executes the module', () => {
+    // `import {} from './x'` binds nothing but survives emit — which is exactly
+    // the shape an all-inline-type import compiles TO under
+    // `verbatimModuleSyntax`. A real runtime edge, not an erased one.
+    createTempFile('src/empty-b.ts', 'export const b = 1;');
+    const a = createTempFile('src/empty-a.ts', "import {} from './empty-b';\n");
+    expect(getFileImports(a, baseOptions())[0].typeOnly).toBeUndefined();
+  });
+
+  it('keeps a side-effect import, which has no clause to read', () => {
+    createTempFile('src/effect-b.ts', 'globalThis.x = 1;');
+    const a = createTempFile('src/effect-a.ts', "import './effect-b';\n");
+    expect(getFileImports(a, baseOptions())[0].typeOnly).toBeUndefined();
+  });
+
+  it('keeps `{ type as T }`, which imports a binding NAMED type', () => {
+    // TypeScript reads `{ type as T }` as importing the VALUE `type` under the
+    // name `T`, not as an inline modifier. Every ambiguity resolves toward
+    // keeping the edge.
+    createTempFile('src/astype-b.ts', 'const type = 1;\nexport { type };');
+    const a = createTempFile(
+      'src/astype-a.ts',
+      "import { type as T } from './astype-b';\nexport const a = T;\n",
+    );
+    expect(getFileImports(a, baseOptions())[0].typeOnly).toBeUndefined();
+  });
+
   it('captures re-export (`export { } from`) edges', () => {
     const c = createTempFile('src/c.ts', 'export const c = 1;');
     const barrel = createTempFile('src/barrel.ts', "export { c } from './c';\n");

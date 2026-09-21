@@ -215,11 +215,25 @@ export type RuleOptions = [Options?];
  *     kind is not visible at the import site. That is not a shortcut — all 6
  *     default imports in the sample were classes, i.e. genuine runtime cycles.
  *
- * TWO COMPILER SETTINGS BOUND THIS, and only one of them is safe.
+ * TWO COMPILER SETTINGS BOUND THIS, and neither is entirely safe.
  *
- * `verbatimModuleSyntax` is fine: under it a plain named import of a type is a
- * compile error, so the codebase already writes `import type` and the syntactic
- * check above catches it.
+ * `verbatimModuleSyntax` is safe for the IMPLICIT form only: under it a plain
+ * named import of a type is a compile error, so the codebase writes the type
+ * modifier somewhere and a syntactic check can see it. It is NOT safe for the
+ * INLINE form. `import { type Fields } from './cap.js'` is legal under
+ * `verbatimModuleSyntax`, and the statement is PRESERVED: verified with tsc
+ * 6.0.3 under ESM + vms, it emits `import {} from './cap.js'` — the module is
+ * still loaded, so the runtime edge genuinely exists, and this rule nonetheless
+ * skips it via `importKind === 'type'` below.
+ *
+ * That is a deliberate accepted cost rather than an oversight, and the reason is
+ * consistency: the shape is one this plugin's own `typescript` preset produces
+ * (`no-cycle: error` beside `consistent-type-specifier-style:
+ * ['warn', 'prefer-inline']`, whose fixer rewrites `import type { Foo }` into
+ * `import { type Foo }`), and the dependency graph in
+ * `@interlace/eslint-devkit` now agrees with this site about such an edge. The
+ * alternative was a rule that reported the SAME pair from one file and stayed
+ * silent from the other. An import with any value binding still keeps its edge.
  *
  * `importsNotUsedAsValues: "preserve"` is NOT. TypeScript 4.8-5.4 keeps the
  * import statement, so the target module is still executed and the runtime edge
