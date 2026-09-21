@@ -323,7 +323,14 @@ export const configs = {
       'import-next/no-named-as-default-member': 'error',
       'import-next/no-named-default': 'error',
       'import-next/no-namespace': 'error',
-      'import-next/consistent-type-specifier-style': 'error',
+      // `prefer-top-level`, NOT the rule's `prefer-inline` default, because
+      // this config also runs `no-cycle` at `error`. `prefer-inline` autofixes
+      // `import type { Foo } from './y'` into `import { type Foo } from './y'`
+      // — and `no-cycle` reports the first spelling while treating the second
+      // as erased. Pairing them meant `--fix` could rewrite a detected runtime
+      // cycle into one the cycle gate no longer sees. Locked by
+      // `no-cycle-config-pairing.test.ts`.
+      'import-next/consistent-type-specifier-style': ['error', 'prefer-top-level'],
 
       // Dependency Management
       'import-next/no-extraneous-dependencies': 'error',
@@ -353,7 +360,10 @@ export const configs = {
       'import-next/order': 'warn',
       'import-next/first': 'warn',
       'import-next/newline-after-import': 'warn',
-      'import-next/consistent-type-specifier-style': ['warn', 'prefer-inline'],
+      // `prefer-top-level` for the same reason as in `strict` above: this
+      // config runs `no-cycle` at `error`, and `prefer-inline`'s autofix turns
+      // the spelling `no-cycle` catches into the one it silences.
+      'import-next/consistent-type-specifier-style': ['warn', 'prefer-top-level'],
     },
   } satisfies TSESLint.FlatConfig.Config,
 
