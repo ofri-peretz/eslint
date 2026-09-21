@@ -50,6 +50,7 @@ describe('detect-object-injection', () => {
           code: 'const val = a[b][c];',
         },
         {
+          name: 'an uninitialised for-head counter used as a READ key cannot pollute',
           code: 'function f(arr, n) { for (let loopVar; loopVar < n; loopVar++) { arr[loopVar]; } }',
         },
 
@@ -62,6 +63,7 @@ describe('detect-object-injection', () => {
           code: "let ALLOWED = { a: 'A' }; function f(req) { return ALLOWED[req.body.k]; }",
         },
         {
+          name: 'a reassigned const target is still only read from, so it cannot pollute',
           code: "const A = { a: 'A' }; A = other; function f(req) { return A[req.body.k]; }",
         },
         {

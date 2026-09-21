@@ -48,6 +48,14 @@ ruleTester.run(
         name: 'a for-loop counter initialised from arithmetic',
         code: `export function f(arr, n, v) { for (let i = n - 1; i >= 0; i--) { arr[i] = v; } }`,
       },
+      {
+        // CONTROL for the reassignment fix below: an ordinary counter, never
+        // written to inside the body, must stay silent. The all-writes scan
+        // clears it on its numeric initialiser, exactly as the removed
+        // loop-counter shortcut used to.
+        name: 'a nested pair of loop counters with no reassignment stays silent',
+        code: `export function f(g, v) { for (let i = 0; i < 3; i++) { for (let j = 0; j < 3; j++) { g[i][j] = v; } } }`,
+      },
       // NOT here: `keys.forEach((key) => { dst[key] = v })`. I expected that to be
       // quiet and the rule disagreed — correctly. If `keys` is
       // `Object.keys(req.body)` then the element IS attacker-chosen, and this is
@@ -171,6 +179,25 @@ ruleTester.run(
         // analysis this rule does not have (L3). Recorded, not silently accepted.
         name: 'an uninitialised counter declared before the loop still reports',
         code: `export function f(arr, v) { let i; for (i = 0; i < arr.length; i++) { arr[i] = v; } }`,
+        errors: 1,
+      },
+      {
+        /**
+         * burgee surfaced the FP direction of this; verification found the
+         * real defect was the opposite one.
+         *
+         * `isLoopCounterIdentifier` returned true on the DECLARATION alone,
+         * short-circuiting the all-writes scan, so a counter declared in the
+         * for-head could be reassigned to an attacker-controlled value inside
+         * the body and the write still cleared. The header forbids exactly
+         * this: 'Suppress by resolving the key's declaration. Only with a
+         * reassignment check.'
+         *
+         * The identical code with `let i` OUTSIDE the for-head already
+         * reported, so spelling alone decided it.
+         */
+        name: 'a for-head counter reassigned from user input inside the body reports',
+        code: `export function f(arr, req, v) { for (let i = 0; i < 3; i++) { i = req.query.k; arr[i] = v; } }`,
         errors: 1,
       },
       {

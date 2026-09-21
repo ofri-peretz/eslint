@@ -1885,8 +1885,14 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     const numericVarInProgress = new WeakSet<object>();
 
     const isNumericIdentifier = (node: TSESTree.Identifier): boolean => {
-      if (isLoopCounterIdentifier(node)) return true;
-
+      // No loop-counter short-circuit here any more. It returned true on the
+      // DECLARATION alone and jumped the all-writes scan below, so
+      // `for (let i = 0; …) { i = req.query.k; arr[i] = v }` cleared while the
+      // identical code with `let i` outside the for-head reported — spelling
+      // deciding the verdict, and the header's "Suppress by resolving the
+      // key's declaration / Only with a reassignment check" broken outright.
+      // The initialiser check plus the all-writes scan below already handle a
+      // for-head declarator, and keep ordinary counters silent.
       const scope = context.sourceCode.getScope(node);
       const variable = resolvedReference(scope, node);
       if (!variable || variable.defs.length === 0) return false;
@@ -1927,37 +1933,6 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       numericVarInProgress.delete(variable);
       numericVarCache.set(variable, result);
       return result;
-    };
-
-    /**
-     * Returns true if the identifier is the loop variable of an enclosing
-     * `for` statement, e.g. `for (let i = 0; i < n; i++) arr[i]`. The loop
-     * counter is by construction numeric, so the access is safe.
-     */
-    const isLoopCounterIdentifier = (node: TSESTree.Identifier): boolean => {
-      const scope = context.sourceCode.getScope(node);
-      const variable = resolvedReference(scope, node);
-      if (!variable || variable.defs.length === 0) return false;
-      const def = variable.defs[0];
-      // Look for `for (let i = <numeric init>; ...; ...)` shape.
-      const parent = def.node?.parent as TSESTree.Node | undefined;
-      const grand = parent?.parent as TSESTree.Node | undefined;
-      if (
-        parent?.type === AST_NODE_TYPES.VariableDeclaration &&
-        grand?.type === AST_NODE_TYPES.ForStatement &&
-        grand.init === parent
-      ) {
-        const init = (def.node as TSESTree.VariableDeclarator).init;
-        if (!init) return false;
-        // Initializer must itself be numeric.
-        if (
-          init.type === AST_NODE_TYPES.Literal &&
-          typeof (init as TSESTree.Literal).value === 'number'
-        ) {
-          return true;
-        }
-      }
-      return false;
     };
 
     /**
