@@ -209,14 +209,40 @@ jobs:
       #   - Without the PAT: auto-merge waits until you click "Approve" once.
       #     Auto-merge persists across CI re-runs, so the merge still happens
       #     unattended after that single approval.
+      # Resolve the Version PR by its BRANCH, not by the action's output.
+      #
+      # `changesets/action` only emits `pullRequestNumber` on the run that
+      # CREATES the PR. Every later run merely force-pushes
+      # `changeset-release/main` to refresh an existing PR, and the output
+      # comes back empty — so a condition that reads it was false on every
+      # refresh, and this step silently skipped. Measured on run 35552317950
+      # (the #1066 merge): "Open / refresh Version PR" succeeded and both
+      # dependent steps show `skipped`.
+      #
+      # That is why #1055 sat open for six days accumulating 16 changesets
+      # while nothing published: auto-merge was armed once at creation and
+      # never re-armed, and a force-push to the head branch drops it.
+      #
+      # The branch name is fixed, so look the PR up by head and gate only on
+      # "is there anything to release". That is true on creation AND on every
+      # refresh, which is exactly when auto-merge needs re-asserting.
       - name: Enable auto-merge on the Version PR
-        if: steps.changesets.outputs.hasChangesets == 'true' && steps.changesets.outputs.pullRequestNumber
+        id: automerge
+        if: steps.pending.outputs.releases != '0'
         env:
           GH_TOKEN: ${{ secrets.RELEASE_BOT_PAT || secrets.AGENTS_REPO_PAT || secrets.GITHUB_TOKEN }}
-          PR: ${{ steps.changesets.outputs.pullRequestNumber }}
           HAS_PAT: ${{ secrets.RELEASE_BOT_PAT != '' || secrets.AGENTS_REPO_PAT != '' }}
         run: |
           set -euo pipefail
+          PR=$(gh pr list --repo "${{ github.repository }}" \
+                 --head changeset-release/main --state open \
+                 --json number --jq '.[0].number // empty')
+          if [ -z "$PR" ]; then
+            echo "::warning::No open Version PR found on changeset-release/main — nothing to arm."
+            exit 0
+          fi
+          echo "Version PR: #${PR}"
+          echo "version_pr=${PR}" >> "$GITHUB_OUTPUT"
           # Self-approve when a PAT is configured (bypasses CODEOWNERS gate).
           if [ "$HAS_PAT" = "true" ]; then
             gh pr review "$PR" --approve --body "Auto-approved by changesets bot — review via the changesets that produced this PR." || \
@@ -240,11 +266,11 @@ jobs:
       # comparison base is main.
       # ───────────────────────────────────────────────────────────────────
       - name: Preview rollup notes on the Version PR
-        if: steps.changesets.outputs.hasChangesets == 'true' && steps.changesets.outputs.pullRequestNumber
+        if: steps.automerge.outputs.version_pr
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR: ${{ steps.changesets.outputs.pullRequestNumber }}
+          PR: ${{ steps.automerge.outputs.version_pr }}
         run: |
           set -euo pipefail
           # Fetched separately, and checked out by its remote-tracking ref: a
