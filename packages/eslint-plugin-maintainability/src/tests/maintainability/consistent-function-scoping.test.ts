@@ -681,4 +681,51 @@ function helper() {
       },
     );
   });
+/*
+ * ── REGRESSION: already at module scope, told to move to module scope ────────
+ * Surfaced by the burgee FP/FN corpus sweep, 2026-09-21.
+ * Anchor: burgee packages/burgee/src/yargs-parser.ts:899
+ *
+ *   const yargsParser = function Parser(args, opts) { ... } as Parser;  // silent
+ *   yargsParser.detailed = (args, opts) => parser.parse(args.slice(), opts);
+ *                                                        // ^ REPORTED
+ *
+ * Two lines apart, same scope, same capture set — the verdict turned purely on
+ * how the binding was spelled. The walk over BINDING_WRAPPERS stopped at the
+ * `AssignmentExpression` and so never reached `Program`, leaving the
+ * "already at the top scope" guard unreachable. Same shape as the type-operator
+ * bug that guard was extended for; different node type.
+ */
+describe('a function already at module scope has nowhere higher to go', () => {
+  ruleTester.run('module-scope bindings that are not declarations', consistentFunctionScoping, {
+    valid: [
+      {
+        name: 'the control: a const-bound arrow at module scope is silent',
+        code: 'export const control = (): number => 1;',
+      },
+      {
+        name: 'an arrow assigned to a property at module scope is already at module scope',
+        code: 'export const api = {} as { direct?: () => number };\napi.direct = (): number => 1;',
+      },
+      {
+        name: 'the burgee anchor: a function expression attached to a module-scope binding',
+        code: 'const parser = {} as { detailed?: (a: string) => string };\nparser.detailed = function detailed(a: string) { return a; };',
+      },
+      {
+        name: 'both arms of a module-scope ternary sit in module scope',
+        code: 'declare const flag: boolean;\nexport const pick = flag ? (x: number) => x + 1 : (x: number) => x - 1;',
+      },
+      {
+        name: 'a module-scope logical fallback is chosen between, not moved',
+        code: 'declare const preset: ((x: number) => number) | undefined;\nexport const fn = preset || ((x: number) => x);',
+      },
+    ],
+    // No new invalid fixtures. The guard must stay a MODULE-scope guard, and
+    // the 51 pre-existing cases in this file already pin that: each is a
+    // function nested inside another function, and all still report. Widening
+    // BINDING_WRAPPERS could only have loosened those, so they ARE the
+    // over-widening fence; a fresh fixture would only restate them.
+    invalid: [],
+  });
+});
 });
