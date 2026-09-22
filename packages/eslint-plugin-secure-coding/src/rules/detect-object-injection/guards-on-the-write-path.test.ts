@@ -62,6 +62,10 @@ ruleTester.run('detect-object-injection — guards, on the write path', detectOb
       code: `const ALLOW = { a: 1 }; export function f(user, k, v) { if (Object.hasOwn(ALLOW, k)) { user[k] = v; } }`,
     },
     {
+      name: 'a frozen const allowlist literal may guard a write to another object',
+      code: `const ALLOW = Object.freeze({ a: 1 } as const); export function f(user, k, v) { if (Object.hasOwn(ALLOW, k)) { user[k] = v; } }`,
+    },
+    {
       // burgee packages/seniority/src/cosmiconfig-util.ts:89 shape, inverted:
       // a MODULE-OWNED allowlist may legitimately guard a write to a different
       // object, because the allowlist itself is not caller-supplied. This is
@@ -136,6 +140,28 @@ ruleTester.run('detect-object-injection — guards, on the write path', detectOb
       // resolved about it and it cannot be shown to be the written one.
       name: 'a member-expression guard object cannot clear a write to another object',
       code: `export function f(cache, t, k, v) { if (Object.hasOwn(cache.inner, k)) { t[k] = v; } }`,
+      errors: 1,
+    },
+    {
+      // `const` pins the binding, not its contents: this is one const
+      // definition whose keys the caller chose, an own `__proto__` included.
+      name: 'a const alias of request input does not clear a write to another object',
+      code: `export function f(req, dst, k) { const allow = req.body; if (Object.hasOwn(allow, k)) { dst[k] = req.body[k]; } }`,
+      errors: 1,
+    },
+    {
+      name: 'a const object literal that spreads request input is not an owned allowlist',
+      code: `export function f(req, dst, k, v) { const allow = { ...req.body }; if (Object.hasOwn(allow, k)) { dst[k] = v; } }`,
+      errors: 1,
+    },
+    {
+      name: 'a const built by an arbitrary call is not an owned allowlist',
+      code: `const ALLOW = loadAllowlist(); export function f(user, k, v) { if (Object.hasOwn(ALLOW, k)) { user[k] = v; } }`,
+      errors: 1,
+    },
+    {
+      name: 'a const passed through a freeze that is not Object.freeze is not an owned allowlist',
+      code: `const ALLOW = Immutable.freeze({ a: 1 }); export function f(user, k, v) { if (Object.hasOwn(ALLOW, k)) { user[k] = v; } }`,
       errors: 1,
     },
     {

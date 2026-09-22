@@ -183,6 +183,7 @@ import {
   namesOneOf,
   propertyName,
   objectKeyName,
+  unwrapTypeSyntax,
 } from '@interlace/eslint-devkit';
 import {
   formatLLMMessage,
@@ -738,6 +739,35 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
        * because the allowlist is not caller-supplied. So the object must be
        * the written one, or provably not attacker-controlled.
        */
+      /**
+       * An object literal written out in this file, or that literal frozen.
+       * A spread is excluded: `{ ...req.body }` copies the caller's own keys,
+       * `__proto__` among them, so it is a literal in syntax only.
+       */
+      const isLiteralAllowlist = (
+        init: TSESTree.Expression | null,
+      ): boolean => {
+        const value = unwrapTypeSyntax(init);
+        if (value?.type === AST_NODE_TYPES.CallExpression) {
+          const { callee } = value;
+          const isFreeze =
+            callee.type === AST_NODE_TYPES.MemberExpression &&
+            callee.object.type === AST_NODE_TYPES.Identifier &&
+            callee.object.name === 'Object' &&
+            propertyName(callee) === 'freeze';
+          return (
+            isFreeze &&
+            isLiteralAllowlist(value.arguments[0] as TSESTree.Expression)
+          );
+        }
+        return (
+          value?.type === AST_NODE_TYPES.ObjectExpression &&
+          value.properties.every(
+            (property) => property.type === AST_NODE_TYPES.Property,
+          )
+        );
+      };
+
       const isModuleOwnedAllowlist = (objectNode: TSESTree.Node): boolean => {
         if (objectNode.type !== AST_NODE_TYPES.Identifier) return false;
         const variable = resolvedReference(
@@ -751,7 +781,14 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         // or a re-declared binding cannot be pinned to its initialiser.
         if (variable.defs.length !== 1) return false;
         const def = variable.defs[0];
-        return def.type === 'Variable' && def.parent?.kind === 'const';
+        if (def.type !== 'Variable' || def.parent?.kind !== 'const') {
+          return false;
+        }
+        // `const` pins the BINDING, not what it holds: `const allow = req.body`
+        // is one const definition whose keys the caller chose — including an
+        // own `__proto__`, which `Object.hasOwn(allow, k)` then waves through
+        // to the write. Only a literal the file spelled out itself is owned.
+        return isLiteralAllowlist(def.node.init);
       };
 
       const guardCoversWrittenObject = (

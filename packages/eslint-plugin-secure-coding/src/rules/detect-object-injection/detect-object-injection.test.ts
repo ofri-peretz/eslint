@@ -1663,7 +1663,10 @@ describe('detect-object-injection', () => {
           // isNumericKey: BinaryExpression bitwise op (branch 85)
           'const x = arr[y | 0];',
           // isNumericKey: Number() call (branch 88)
-          'const x = arr[Number(z)];',
+          {
+            name: 'a key coerced through Number() is numeric, not a property name',
+            code: 'const x = arr[Number(z)];',
+          },
           // hasPrecedingValidation: guard if with { return } body (branch 27 — ReturnStatement arm)
           'function f(obj, key) { if (!allowed.includes(key)) { return; } return obj[key]; }',
           // isLoopCounterIdentifier: for-loop with numeric initializer (branches 97-98)
