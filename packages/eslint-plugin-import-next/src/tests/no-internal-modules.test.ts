@@ -136,6 +136,48 @@ describe('no-internal-modules', () => {
           errors: [{ messageId: 'internalModuleImport' }],
         },
         {
+          /*
+           * `getImportAtDepth` stripped only the FIRST `../` before slicing, then
+           * re-prefixed a single `'../'` — so each extra `..` ate one real path
+           * segment. `../../a/b/c.js` and `../../../a/b/c.js` both answered
+           * '../..', a path that is not even on the import's own path, and the
+           * rule's stated invariant is that a message describing a different edit
+           * than the one applied is worse than no message.
+           */
+          name: 'the depth-1 suggestion keeps a two-level parent traversal',
+          code: "import { x } from '../../a/b/c.js';",
+          options: [{ maxDepth: 1 }],
+          output: null,
+          errors: [
+            {
+              messageId: 'internalModuleImport',
+              data: {
+                importPath: '../../a/b/c.js',
+                depth: '3',
+                maxDepth: '1',
+                suggestedPath: '../../a',
+              },
+            },
+          ],
+        },
+        {
+          name: 'the depth-1 suggestion keeps a three-level parent traversal',
+          code: "import { x } from '../../../a/b/c.js';",
+          options: [{ maxDepth: 1 }],
+          output: null,
+          errors: [
+            {
+              messageId: 'internalModuleImport',
+              data: {
+                importPath: '../../../a/b/c.js',
+                depth: '3',
+                maxDepth: '1',
+                suggestedPath: '../../../a',
+              },
+            },
+          ],
+        },
+        {
           name: 'autofix keeps every level of a ../../ specifier',
           code: "import * as m from '../../a/b';",
           options: [{ strategy: 'autofix', maxDepth: 0 }],
