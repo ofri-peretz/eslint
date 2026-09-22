@@ -30,6 +30,24 @@
  *    still report, as do parameter 0 and `reduce`'s parameter 1. Residual:
  *    a bare untyped parameter states no provenance and still reports —
  *    SEAL.json `array-provenance-requires-evidence`.
+ * 🔒 AMENDED 2026-09-22 — `const a = Object.assign(Object.create(null), src);
+ *    a[key] = 1` drew CVSS 9.8 on the fix this rule's own docs prescribe. The
+ *    2026-08 work exempted that expression as an assign TARGET
+ *    (`checkObjectAssignSpread`), so the rule certified the shape prototype-less
+ *    in one statement and reported it as the indexed object in the next. The
+ *    identifier branch of `isPrototypelessObject` resolved a declarator whose
+ *    init was literally `Object.create(null)` but pattern-matched inits instead
+ *    of asking the predicate, so the bound spelling was never reached.
+ *    `Object.assign` returns its first argument and never invokes
+ *    SetPrototypeOf — it does [[Set]] per own enumerable key — and on a
+ *    null-[[Prototype]] target a `__proto__` source key lands as an inert own
+ *    data property (verified Node 24; `({}).polluted === undefined`). Added the
+ *    Object.assign arm plus a `seen` guard so a parse-only `a↔b` assign cycle
+ *    cannot hang the walk. SPEC.md G1; fixture safe/16; duel re-run
+ *    15 TP / 0 FP / 0 FN over 15 vulnerable + 16 safe, F1 100.0%
+ *    (theirs 58.8% — safe/16 is a ninth false positive for them). The
+ *    two-step primitive `a[k1][k2] = 1` still reports, as do `{}` and
+ *    parameter targets.
  * ═══════════════════════════════════════════════════════════════════════════
  *
  * This rule's behaviour was derived from the SEMANTICS of the weakness, every
@@ -1254,7 +1272,40 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       return def.node.init ?? undefined;
     };
 
-    const isPrototypelessObject = (objectNode: TSESTree.Node): boolean => {
+    const isPrototypelessObject = (
+      objectNode: TSESTree.Node,
+      seen: Set<TSESTree.Node> = new Set(),
+    ): boolean => {
+      // `Object.assign(a, …)` resolving to `a` and back is not reachable in code that
+      // runs — the second binding is in TDZ — but it is reachable in code that PARSES,
+      // and a linter must not hang on input a compiler rejects.
+      if (seen.has(objectNode)) return false;
+      seen.add(objectNode);
+
+      // Object.assign returns its FIRST argument, unchanged in prototype: it does
+      // [[Set]] per own enumerable key and never invokes SetPrototypeOf. So the value
+      // is prototype-less exactly when its target is, however the target is spelled.
+      // On a null-[[Prototype]] target there is no inherited `__proto__` accessor —
+      // that accessor lives on Object.prototype — so a `__proto__` key in the source
+      // lands as an inert own data property (verified Node 24; SPEC.md G1).
+      //
+      // This arm is what lets the BOUND spelling through. The inline spelling was
+      // already exempt as an assign target (see checkObjectAssignSpread), so
+      // `Object.assign(Object.create(null), src)` was certified prototype-less in one
+      // statement and reported at CVSS 9.8 in the next.
+      // burgee packages/burgee/src/yargs-parser.ts:240 (declaration :152), :247.
+      if (
+        objectNode.type === AST_NODE_TYPES.CallExpression &&
+        objectNode.callee.type === AST_NODE_TYPES.MemberExpression &&
+        objectNode.callee.object.type === AST_NODE_TYPES.Identifier &&
+        objectNode.callee.object.name === 'Object' &&
+        propertyName(objectNode.callee) === 'assign' &&
+        objectNode.arguments.length > 0 &&
+        objectNode.arguments[0].type !== AST_NODE_TYPES.SpreadElement
+      ) {
+        return isPrototypelessObject(objectNode.arguments[0], seen);
+      }
+
       // Inline Object.create(null) used directly as the node itself (e.g.
       // the `target` argument of `Object.assign(Object.create(null), src)`)
       // rather than through an intermediate variable.
@@ -1291,7 +1342,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
             prop.type === AST_NODE_TYPES.Property &&
             objectKeyName(prop) === key,
         );
-        if (match === undefined || !isPrototypelessObject(match.value)) {
+        if (match === undefined || !isPrototypelessObject(match.value, seen)) {
           return false;
         }
 
@@ -1420,6 +1471,16 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
                     decl.init.type === AST_NODE_TYPES.ArrayExpression &&
                     decl.init.elements.length > 0 &&
                     decl.init.elements[0]?.type === AST_NODE_TYPES.SpreadElement
+                  ) {
+                    return true;
+                  }
+
+                  // `const a = Object.assign(Object.create(null), src)` — the binding
+                  // holds the assign TARGET, so ask the predicate about the initializer
+                  // rather than re-listing the spellings here.
+                  if (
+                    decl.init.type === AST_NODE_TYPES.CallExpression &&
+                    isPrototypelessObject(decl.init, seen)
                   ) {
                     return true;
                   }
