@@ -5,6 +5,66 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "eslint-plugin-modernization",
+      "short": "eslint-plugin-modernization",
+      "version": "3.1.5",
+      "date": "2026-09-22T23:20:48Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`prefer-at` handles member-expression receivers",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-maintainability",
+      "short": "eslint-plugin-maintainability",
+      "version": "3.2.13",
+      "date": "2026-09-22T23:20:45Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`identical-functions` normalisation no longer erases or skips distinguishing text",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "5.6.5",
+      "date": "2026-09-22T23:20:43Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-dynamic-require` resolves the loader instead of matching the name `require`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.4.8",
+      "date": "2026-09-22T23:20:41Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`detect-object-injection` no longer lets a `hasOwn` guard clear a write to a different object",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-import-next",
       "short": "eslint-plugin-import-next",
       "version": "2.8.5",
@@ -17785,51 +17845,6 @@
       ]
     },
     {
-      "package": "eslint-plugin-maintainability",
-      "short": "eslint-plugin-maintainability",
-      "version": "3.2.13",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`identical-functions` normalisation no longer erases or skips distinguishing text",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-modernization",
-      "short": "eslint-plugin-modernization",
-      "version": "3.1.5",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`prefer-at` handles member-expression receivers",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-node-security",
-      "short": "eslint-plugin-node-security",
-      "version": "5.6.5",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`no-dynamic-require` resolves the loader instead of matching the name `require`",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "eslint-plugin-postgresql-security",
       "short": "eslint-plugin-postgresql-security",
       "version": "1.4.9",
@@ -17950,21 +17965,6 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-secure-coding",
-      "short": "eslint-plugin-secure-coding",
-      "version": "5.4.8",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`detect-object-injection` no longer lets a `hasOwn` guard clear a write to a different object",
           "pr": null
         }
       ]
