@@ -20,10 +20,7 @@ import { extractFunctionSignature } from '@interlace/eslint-devkit';
  * Message IDs for cognitive complexity violations and suggestions
  */
 type MessageIds =
-  | 'highCognitiveComplexity'
-  | 'extractMethod'
-  | 'simplifyLogic'
-  | 'useStrategy';
+  'highCognitiveComplexity' | 'extractMethod' | 'simplifyLogic' | 'useStrategy';
 
 export interface Options {
   /** Maximum allowed cognitive complexity score. Default: 15 */
@@ -162,6 +159,24 @@ export const cognitiveComplexity = createRule<RuleOptions, MessageIds>({
           : 'anonymous';
 
       function traverse(n: TSESTree.Node, currentNesting: number) {
+        // A nested function is scored as its own function, not as part of this one. The
+        // docs' Complexity Factors table lists the seven things that cost a point and a
+        // nested body is not among them; its worked example annotates an extracted callee
+        // `// +0 (extracted)`. SonarQube RSPEC-3776, which those docs cite, reports a
+        // function's OWN complexity and keeps the aggregate in a metrics sink.
+        //
+        // The descent was also redundant: `checkFunction` is registered on all three
+        // function node types below, so every nested function is already visited and
+        // reported independently. Walking into it only inflated its ancestors — by exactly
+        // its own score, which is why a factory read identical to the closure it returns.
+        if (
+          n.type === 'FunctionDeclaration' ||
+          n.type === 'FunctionExpression' ||
+          n.type === 'ArrowFunctionExpression'
+        ) {
+          return;
+        }
+
         // Increment for conditionals
         if (n.type === 'IfStatement') {
           complexity += 1 + currentNesting;
@@ -272,13 +287,12 @@ export const cognitiveComplexity = createRule<RuleOptions, MessageIds>({
           }
         }
 
-        // Update max nesting
-        if (
-          n.type === 'BlockStatement' ||
-          n.type === 'FunctionDeclaration' ||
-          n.type === 'FunctionExpression' ||
-          n.type === 'ArrowFunctionExpression'
-        ) {
+        // Update max nesting. The three function node types this used to list
+        // alongside BlockStatement are unreachable here now: the walk returns at a
+        // nested function above, so a nested body can no longer raise the enclosing
+        // function's reported nesting either. tsc proves it — leaving them in is a
+        // TS2367 "no overlap" error.
+        if (n.type === 'BlockStatement') {
           breakdown.nesting = Math.max(breakdown.nesting, currentNesting);
         }
 

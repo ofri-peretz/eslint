@@ -30,6 +30,24 @@
  *    still report, as do parameter 0 and `reduce`'s parameter 1. Residual:
  *    a bare untyped parameter states no provenance and still reports —
  *    SEAL.json `array-provenance-requires-evidence`.
+ * 🔒 AMENDED 2026-09-22 — `const a = Object.assign(Object.create(null), src);
+ *    a[key] = 1` drew CVSS 9.8 on the fix this rule's own docs prescribe. The
+ *    2026-08 work exempted that expression as an assign TARGET
+ *    (`checkObjectAssignSpread`), so the rule certified the shape prototype-less
+ *    in one statement and reported it as the indexed object in the next. The
+ *    identifier branch of `isPrototypelessObject` resolved a declarator whose
+ *    init was literally `Object.create(null)` but pattern-matched inits instead
+ *    of asking the predicate, so the bound spelling was never reached.
+ *    `Object.assign` returns its first argument and never invokes
+ *    SetPrototypeOf — it does [[Set]] per own enumerable key — and on a
+ *    null-[[Prototype]] target a `__proto__` source key lands as an inert own
+ *    data property (verified Node 24; `({}).polluted === undefined`). Added the
+ *    Object.assign arm plus a `seen` guard so a parse-only `a↔b` assign cycle
+ *    cannot hang the walk. SPEC.md G1; fixture safe/16; duel re-run
+ *    15 TP / 0 FP / 0 FN over 15 vulnerable + 16 safe, F1 100.0%
+ *    (theirs 58.8% — safe/16 is a ninth false positive for them). The
+ *    two-step primitive `a[k1][k2] = 1` still reports, as do `{}` and
+ *    parameter targets.
  * ═══════════════════════════════════════════════════════════════════════════
  *
  * This rule's behaviour was derived from the SEMANTICS of the weakness, every
@@ -165,6 +183,7 @@ import {
   namesOneOf,
   propertyName,
   objectKeyName,
+  unwrapTypeSyntax,
 } from '@interlace/eslint-devkit';
 import {
   formatLLMMessage,
@@ -339,6 +358,18 @@ const KEY_GUARD_CALLEES = new Set([
 ]);
 
 /**
+ * The subset of `KEY_GUARD_CALLEES` whose soundness depends on WHICH OBJECT the
+ * guard names, not just on the key: `Object.hasOwn(o, k)`,
+ * `o.hasOwnProperty(k)` and `Object.prototype.hasOwnProperty.call(o, k)` prove
+ * `k` is an own property of `o` and nothing about any other object. The
+ * prototype-pollution copy loop defers these to the write site, where the
+ * written object is known.
+ *
+ * @protocol-constant Same membership as the built-in methods above.
+ */
+const OWNERSHIP_GUARD_CALLEES = new Set(['hasOwn', 'hasOwnProperty', 'call']);
+
+/**
  * The three keys that reach `Object.prototype`.
  *
  * @protocol-constant `__proto__`, `constructor` and `prototype` are fixed by
@@ -390,7 +421,11 @@ const mentionsKey = (n: TSESTree.Node, keyName: string): boolean => {
  * AST, not tokens — which also keeps a `__proto__` written inside a COMMENT from
  * clearing the finding, the false negative the token scan was introduced to fix.
  */
-const bodyGuardsKey = (bodyNode: TSESTree.Node, keyName: string): boolean => {
+const bodyGuardsKey = (
+  bodyNode: TSESTree.Node,
+  keyName: string,
+  { deferOwnershipGuards = false }: { deferOwnershipGuards?: boolean } = {},
+): boolean => {
   let guarded = false;
   /**
    * Which pollution keys the body actually names, and whether it hands a
@@ -431,6 +466,10 @@ const bodyGuardsKey = (bodyNode: TSESTree.Node, keyName: string): boolean => {
       n.type === AST_NODE_TYPES.CallExpression &&
       n.callee.type === AST_NODE_TYPES.MemberExpression &&
       KEY_GUARD_CALLEES.has(propertyName(n.callee) ?? '') &&
+      !(
+        deferOwnershipGuards &&
+        OWNERSHIP_GUARD_CALLEES.has(propertyName(n.callee) ?? '')
+      ) &&
       n.arguments.some((argument) => mentionsKey(argument, keyName))
     ) {
       guarded = true;
@@ -658,6 +697,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     const hasPrecedingValidation = (
       propertyNode: TSESTree.Node,
       node: TSESTree.Node,
+      writtenObject: TSESTree.Node,
     ): boolean => {
       // Only check for identifier keys (obj[key] where key is a variable)
       if (propertyNode.type !== AST_NODE_TYPES.Identifier) {
@@ -680,6 +720,88 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         // `hasValidation` below — see the comment there.
       };
 
+      /**
+       * A `hasOwn` guard is only sound for the object it NAMES.
+       *
+       * `Object.hasOwn(src, k)` proves `k` is an own DATA property of `src`,
+       * so `src[k] = v` cannot reach the `__proto__` setter. It proves nothing
+       * about a DIFFERENT object: `dst[k] = v` with `k === '__proto__'` still
+       * reparents `dst`, and in the recursive merge spelling it walks into
+       * `Object.prototype` and pollutes every object in the process.
+       *
+       * The matcher checked the KEY argument and never the object, so a guard
+       * naming any object at all — even a literal `{}` — cleared the write.
+       * The two `valid` fixtures above say "on the SAME identifier"; that was
+       * always the intent, it simply was not enforced.
+       *
+       * Cross-object guards are not all wrong, though: a module-owned
+       * allowlist (`if (Object.hasOwn(SCHEMA, k)) user[k] = v`) is sound,
+       * because the allowlist is not caller-supplied. So the object must be
+       * the written one, or provably not attacker-controlled.
+       */
+      /**
+       * An object literal written out in this file, or that literal frozen.
+       * A spread is excluded: `{ ...req.body }` copies the caller's own keys,
+       * `__proto__` among them, so it is a literal in syntax only.
+       */
+      const isLiteralAllowlist = (
+        init: TSESTree.Expression | null,
+      ): boolean => {
+        const value = unwrapTypeSyntax(init);
+        if (value?.type === AST_NODE_TYPES.CallExpression) {
+          const { callee } = value;
+          const isFreeze =
+            callee.type === AST_NODE_TYPES.MemberExpression &&
+            callee.object.type === AST_NODE_TYPES.Identifier &&
+            callee.object.name === 'Object' &&
+            propertyName(callee) === 'freeze';
+          return (
+            isFreeze &&
+            isLiteralAllowlist(value.arguments[0] as TSESTree.Expression)
+          );
+        }
+        return (
+          value?.type === AST_NODE_TYPES.ObjectExpression &&
+          value.properties.every(
+            (property) => property.type === AST_NODE_TYPES.Property,
+          )
+        );
+      };
+
+      const isModuleOwnedAllowlist = (objectNode: TSESTree.Node): boolean => {
+        if (objectNode.type !== AST_NODE_TYPES.Identifier) return false;
+        const variable = resolvedReference(
+          sourceCode.getScope(objectNode),
+          objectNode,
+        );
+        // A free binding is module- or host-owned, never a caller's argument.
+        if (!variable) return true;
+        // Exactly one definition, and it must be a `const` declaration. A
+        // parameter is the caller-supplied case this guards against; a `let`
+        // or a re-declared binding cannot be pinned to its initialiser.
+        if (variable.defs.length !== 1) return false;
+        const def = variable.defs[0];
+        if (def.type !== 'Variable' || def.parent?.kind !== 'const') {
+          return false;
+        }
+        // `const` pins the BINDING, not what it holds: `const allow = req.body`
+        // is one const definition whose keys the caller chose — including an
+        // own `__proto__`, which `Object.hasOwn(allow, k)` then waves through
+        // to the write. Only a literal the file spelled out itself is owned.
+        return isLiteralAllowlist(def.node.init);
+      };
+
+      const guardCoversWrittenObject = (
+        guardObject: TSESTree.Node,
+      ): boolean => {
+        if (
+          sourceCode.getText(guardObject) === sourceCode.getText(writtenObject)
+        ) {
+          return true;
+        }
+        return isModuleOwnedAllowlist(guardObject);
+      };
+
       const isHasOwnPropertyCall = (testNode: TSESTree.Node): boolean => {
         // Pattern: Object.prototype.hasOwnProperty.call(obj, key) OR obj.hasOwnProperty(key) OR Object.hasOwn(obj, key)
         if (testNode.type !== AST_NODE_TYPES.CallExpression) return false;
@@ -694,7 +816,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
           args[1].type === AST_NODE_TYPES.Identifier &&
           args[1].name === keyName
         ) {
-          return true;
+          return guardCoversWrittenObject(args[0]);
         }
 
         // obj.hasOwnProperty(key) OR Object.hasOwn(obj, key)
@@ -703,12 +825,16 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
           (propertyName(callee) === 'hasOwnProperty' ||
             propertyName(callee) === 'hasOwn')
         ) {
-          const keyArg = propertyName(callee) === 'hasOwn' ? args[1] : args[0];
+          const isHasOwn = propertyName(callee) === 'hasOwn';
+          const keyArg = isHasOwn ? args[1] : args[0];
+          // `Object.hasOwn(obj, key)` names the object in args[0];
+          // `obj.hasOwnProperty(key)` names it as the callee's own object.
+          const guardObject = isHasOwn ? args[0] : callee.object;
           if (
             keyArg?.type === AST_NODE_TYPES.Identifier &&
             keyArg.name === keyName
           ) {
-            return true;
+            return guardCoversWrittenObject(guardObject);
           }
         }
         return false;
@@ -1254,7 +1380,40 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       return def.node.init ?? undefined;
     };
 
-    const isPrototypelessObject = (objectNode: TSESTree.Node): boolean => {
+    const isPrototypelessObject = (
+      objectNode: TSESTree.Node,
+      seen: Set<TSESTree.Node> = new Set(),
+    ): boolean => {
+      // `Object.assign(a, …)` resolving to `a` and back is not reachable in code that
+      // runs — the second binding is in TDZ — but it is reachable in code that PARSES,
+      // and a linter must not hang on input a compiler rejects.
+      if (seen.has(objectNode)) return false;
+      seen.add(objectNode);
+
+      // Object.assign returns its FIRST argument, unchanged in prototype: it does
+      // [[Set]] per own enumerable key and never invokes SetPrototypeOf. So the value
+      // is prototype-less exactly when its target is, however the target is spelled.
+      // On a null-[[Prototype]] target there is no inherited `__proto__` accessor —
+      // that accessor lives on Object.prototype — so a `__proto__` key in the source
+      // lands as an inert own data property (verified Node 24; SPEC.md G1).
+      //
+      // This arm is what lets the BOUND spelling through. The inline spelling was
+      // already exempt as an assign target (see checkObjectAssignSpread), so
+      // `Object.assign(Object.create(null), src)` was certified prototype-less in one
+      // statement and reported at CVSS 9.8 in the next.
+      // burgee packages/burgee/src/yargs-parser.ts:240 (declaration :152), :247.
+      if (
+        objectNode.type === AST_NODE_TYPES.CallExpression &&
+        objectNode.callee.type === AST_NODE_TYPES.MemberExpression &&
+        objectNode.callee.object.type === AST_NODE_TYPES.Identifier &&
+        objectNode.callee.object.name === 'Object' &&
+        propertyName(objectNode.callee) === 'assign' &&
+        objectNode.arguments.length > 0 &&
+        objectNode.arguments[0].type !== AST_NODE_TYPES.SpreadElement
+      ) {
+        return isPrototypelessObject(objectNode.arguments[0], seen);
+      }
+
       // Inline Object.create(null) used directly as the node itself (e.g.
       // the `target` argument of `Object.assign(Object.create(null), src)`)
       // rather than through an intermediate variable.
@@ -1291,7 +1450,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
             prop.type === AST_NODE_TYPES.Property &&
             objectKeyName(prop) === key,
         );
-        if (match === undefined || !isPrototypelessObject(match.value)) {
+        if (match === undefined || !isPrototypelessObject(match.value, seen)) {
           return false;
         }
 
@@ -1420,6 +1579,16 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
                     decl.init.type === AST_NODE_TYPES.ArrayExpression &&
                     decl.init.elements.length > 0 &&
                     decl.init.elements[0]?.type === AST_NODE_TYPES.SpreadElement
+                  ) {
+                    return true;
+                  }
+
+                  // `const a = Object.assign(Object.create(null), src)` — the binding
+                  // holds the assign TARGET, so ask the predicate about the initializer
+                  // rather than re-listing the spellings here.
+                  if (
+                    decl.init.type === AST_NODE_TYPES.CallExpression &&
+                    isPrototypelessObject(decl.init, seen)
                   ) {
                     return true;
                   }
@@ -1615,7 +1784,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       }
 
       // Skip if the key has been validated (e.g., includes() or hasOwnProperty check)
-      if (hasPrecedingValidation(propertyNode, node)) {
+      if (hasPrecedingValidation(propertyNode, node, node.left.object)) {
         return false;
       }
 
@@ -1691,7 +1860,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       }
 
       // Skip if the key has been validated (e.g., includes() or hasOwnProperty check)
-      if (hasPrecedingValidation(propertyNode, node)) {
+      if (hasPrecedingValidation(propertyNode, node, node.object)) {
         return false;
       }
 
@@ -3082,7 +3251,17 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // A guarded loop is the documented fix; do not report the fix. The guard
       // must name THE KEY — `bodyGuardsKey` says why a body-wide token scan
       // could not tell a guard from a log line that happened to spell one.
-      if (bodyGuardsKey(node.body, keyName)) return;
+      //
+      // Ownership guards (`hasOwn` / `hasOwnProperty`) are NOT decided here.
+      // Naming the key is not enough for them: a hasOwn guard is only sound for
+      // the OBJECT it names, and `if (Object.hasOwn(src, k)) dst[k] = ...`
+      // proves nothing about `dst` — with `src = JSON.parse('{"__proto__":…}')`
+      // the guard passes and the write reparents `dst`. Those are decided at
+      // the write site by `hasPrecedingValidation`, which compares the guarded
+      // object against the written one (see `reportCopyLoopWrite`).
+      if (bodyGuardsKey(node.body, keyName, { deferOwnershipGuards: true })) {
+        return;
+      }
 
       // Arm the loop and let ESLint's own traversal find the assignment. The previous
       // version recursively walked the whole body here, and ESLint then walked it AGAIN
@@ -3116,6 +3295,12 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         (open) => open.keyName === propertyName && !open.reported,
       );
       if (!loop) return false;
+      // A hasOwn/hasOwnProperty guard clears this write only when it names the
+      // object being written (or a module-owned allowlist). This is what the
+      // token scan above can no longer decide on its own.
+      if (hasPrecedingValidation(node.left.property, node, node.left.object)) {
+        return false;
+      }
       loop.reported = true;
       context.report({
         node,
