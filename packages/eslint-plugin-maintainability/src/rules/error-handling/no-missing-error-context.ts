@@ -54,8 +54,20 @@ const BUILTIN_ERROR_CONSTRUCTORS = new Set([
  * strictly equal\`` is the fallback spelled out, and reading only the outermost
  * node called it "not a string".
  */
-function isProvablyString(node: TSESTree.Node): boolean {
+function isProvablyString(
+  node: TSESTree.Node,
+  sourceCode: TSESLint.SourceCode,
+): boolean {
   if (node.type === 'TemplateLiteral') return true;
+  // A `const` bound to something a reader can already see is a string is that
+  // string. The walk below descends `??`, `||`, `?:` and `+` for exactly this
+  // reason — "reading only the outermost node called it 'not a string'" — and
+  // stopping at a binding is the same failure one level over. `const message =
+  // someVar` still reports: the initializer has to prove it, not the `const`.
+  if (node.type === 'Identifier') {
+    const init = constInitializer(node, sourceCode);
+    return init !== null && isProvablyString(init, sourceCode);
+  }
   // A literal proves a string only when there is something IN it. `value ?? ''`
   // reaches an empty message on the branch that made the fallback necessary.
   if (node.type === 'Literal') {
@@ -66,24 +78,57 @@ function isProvablyString(node: TSESTree.Node): boolean {
     // on the left proves nothing: `'x' && someVar` is `someVar`. `??` and `||` can
     // land on either side, so either being a string is enough.
     return node.operator === '&&'
-      ? isProvablyString(node.right)
-      : isProvablyString(node.left) || isProvablyString(node.right);
+      ? isProvablyString(node.right, sourceCode)
+      : isProvablyString(node.left, sourceCode) ||
+          isProvablyString(node.right, sourceCode);
   }
   if (node.type === 'ConditionalExpression') {
     return (
-      isProvablyString(node.consequent) || isProvablyString(node.alternate)
+      isProvablyString(node.consequent, sourceCode) ||
+      isProvablyString(node.alternate, sourceCode)
     );
   }
   if (node.type === 'BinaryExpression' && node.operator === '+') {
-    return isProvablyString(node.left) || isProvablyString(node.right);
+    return (
+      isProvablyString(node.left, sourceCode) ||
+      isProvablyString(node.right, sourceCode)
+    );
   }
   return false;
 }
 
 /**
+ * The initializer of the single `const` this identifier resolves to, or `null`.
+ *
+ * `const` only, and exactly one definition: a `let` that is written again after
+ * its initializer is not fixed at the throw, and a name defined twice has no
+ * single provenance. A parameter or an import resolves to no initializer at
+ * all — their value is chosen elsewhere, which is unresolved, not proven.
+ */
+function constInitializer(
+  node: TSESTree.Identifier,
+  sourceCode: TSESLint.SourceCode,
+): TSESTree.Expression | null {
+  let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(node);
+  let variable: TSESLint.Scope.Variable | undefined;
+  while (scope && !variable) {
+    variable = scope.set?.get(node.name);
+    scope = scope.upper;
+  }
+  if (!variable || variable.defs.length !== 1) return null;
+
+  const def = variable.defs[0];
+  if (def?.type !== 'Variable' || def.parent.kind !== 'const') return null;
+  return def.node.init ?? null;
+}
+
+/**
  * Check if error has a message
  */
-function hasErrorMessage(node: TSESTree.ThrowStatement): boolean {
+function hasErrorMessage(
+  node: TSESTree.ThrowStatement,
+  sourceCode: TSESLint.SourceCode,
+): boolean {
   if (!node.argument) {
     return false;
   }
@@ -146,7 +191,7 @@ function hasErrorMessage(node: TSESTree.ThrowStatement): boolean {
     // one: `new Error(someVar)` proves nothing about what `someVar` holds. A
     // template literal does, and so does `message ?? \`fallback\`` — every branch a
     // reader can see is a string.
-    return isProvablyString(firstArg);
+    return isProvablyString(firstArg, sourceCode);
   }
 
   // Check if it's a string literal
@@ -303,7 +348,7 @@ export const noMissingErrorContext = createRule<RuleOptions, MessageIds>({
     function checkThrowStatement(node: TSESTree.ThrowStatement) {
       const missing: string[] = [];
 
-      if (requireMessage && !hasErrorMessage(node)) {
+      if (requireMessage && !hasErrorMessage(node, context.sourceCode)) {
         missing.push('message');
       }
 

@@ -81,12 +81,38 @@ what the code does:
 - `obj.hasOwnProperty(key)` looks the method up on `obj`: it throws on a
   null-prototype object and calls whatever a shadowing own property points at.
 
+### In TypeScript, `in` also narrows
+
+`in` is a type guard. `Object.hasOwn` is not, and TypeScript has no plan to make it
+one — it cannot, because `hasOwn` is an ordinary call whose return type says nothing
+about its arguments. So on a discriminated union the two forms are not
+interchangeable even when they agree at runtime:
+
+```typescript
+type A = { kind: 'a'; reason: string };
+type B = { kind: 'b' };
+
+declare const x: A | B;
+
+if ('reason' in x) x.reason; // narrows to A — compiles
+if (Object.hasOwn(x, 'reason')) x.reason; // TS2339: Property 'reason' does not exist on type 'A | B'
+```
+
+Measured on one TypeScript codebase, every one of 48 reports of this rule sat on a
+discriminated union, and following each of them would have replaced working narrowing
+with a cast. A TypeScript project that uses `in` for narrowing wants
+`preferred: 'in'`, and that is not the same as wanting a prototype-chain lookup.
+
+The rule never rewrites across this boundary on its own — see the autofix section
+above — so the reports are a prompt, not a silent change.
+
 ### Options
 
 `preferred: 'Object.hasOwn' | 'in' | 'hasOwnProperty'` — default `'Object.hasOwn'`.
 
-Set `'in'` when a prototype-chain lookup is what the code means. It is a choice
-worth making deliberately; it is not a good default, which is why it is no longer
+Set `'in'` when a prototype-chain lookup is what the code means, or when the project
+uses `in` to narrow unions in TypeScript. In plain JavaScript it is a choice worth
+making deliberately; it is not a good default there, which is why it is no longer
 one.
 
 ## Configuration Examples
@@ -99,7 +125,8 @@ one.
     // Default: preferred is 'Object.hasOwn'
     'conventions/consistent-existence-index-check': 'warn',
 
-    // Or state a different preference deliberately
+    // Or state a different preference deliberately — a TypeScript project that
+    // narrows unions with `in` wants this one
     // 'conventions/consistent-existence-index-check': ['warn', { preferred: 'in' }],
   }
 }
