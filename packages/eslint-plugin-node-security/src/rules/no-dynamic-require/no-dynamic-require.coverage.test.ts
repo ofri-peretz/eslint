@@ -78,7 +78,7 @@ describe('no-dynamic-require coverage gaps', () => {
     it('instantiates with the empty-string fallback and still reports dynamic require', () => {
       const { listeners, reports } = createWithMockContext(
         noDynamicRequire as never,
-        { filename: '' }
+        { filename: '' },
       );
       expect(typeof listeners.CallExpression).toBe('function');
       (listeners.CallExpression as (n: unknown) => void)({
@@ -88,7 +88,7 @@ describe('no-dynamic-require coverage gaps', () => {
       });
       expect(reports).toHaveLength(1);
       expect((reports[0] as { messageId: string }).messageId).toBe(
-        'dynamicRequire'
+        'dynamicRequire',
       );
     });
   });

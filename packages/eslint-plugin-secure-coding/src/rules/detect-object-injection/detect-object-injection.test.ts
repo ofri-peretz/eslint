@@ -1663,7 +1663,10 @@ describe('detect-object-injection', () => {
           // isNumericKey: BinaryExpression bitwise op (branch 85)
           'const x = arr[y | 0];',
           // isNumericKey: Number() call (branch 88)
-          'const x = arr[Number(z)];',
+          {
+            name: 'a key coerced through Number() is numeric, not a property name',
+            code: 'const x = arr[Number(z)];',
+          },
           // hasPrecedingValidation: guard if with { return } body (branch 27 — ReturnStatement arm)
           'function f(obj, key) { if (!allowed.includes(key)) { return; } return obj[key]; }',
           // isLoopCounterIdentifier: for-loop with numeric initializer (branches 97-98)
@@ -1684,10 +1687,17 @@ describe('detect-object-injection', () => {
 describe('prototype-polluting copy loop', () => {
   ruleTester.run('copy-loop', detectObjectInjection, {
     valid: [
-      // Source is a module-local object, not a parameter — the benign majority case.
-      `const src = { a: 1 }; const out = {}; for (const k in src) { out[k] = src[k]; }`,
-      // Guarded with hasOwnProperty — that guard IS the documented fix.
-      `function m(t, s) { for (const k in s) { if (Object.prototype.hasOwnProperty.call(s, k)) { t[k] = s[k]; } } }`,
+      {
+        name: 'a copy loop whose source is a module-local object is the benign majority case',
+        code: `const src = { a: 1 }; const out = {}; for (const k in src) { out[k] = src[k]; }`,
+      },
+      {
+        // Guards are recognised by the key being a STRING, so the computed
+        // spelling of the accessor cannot be mistaken for a guard — and a real
+        // string guard still clears the loop however the access is written.
+        name: 'a dangerous-key guard clears the loop written with a string subscript',
+        code: `function m(t, s) { for (const k in s) { if (k === '__proto__') continue; t[k] = s[k]; } }`,
+      },
       // Iterating a call result: not an Identifier, so the source cannot be proven — abstain.
       `function m(t, s) { for (const k in getSource()) { t.x = k; } }`,
       // Loop that never assigns through the key.
@@ -1706,6 +1716,16 @@ describe('prototype-polluting copy loop', () => {
       // The canonical merge helper.
       {
         code: `function merge(t, s) { for (const k in s) { t[k] = s[k]; } return t; }`,
+        errors: 1,
+      },
+      // Was pinned VALID with the comment "Guarded with hasOwnProperty — that
+      // guard IS the documented fix." It is not the fix for THIS write: the
+      // guard names `s`, the write lands on `t`. Verified in node — an own
+      // `__proto__` on `s` passes the guard and reparents `t`; recursively, it
+      // reaches Object.prototype. The fixture pinned the bug, not the contract.
+      {
+        name: 'a hasOwnProperty guard on the SOURCE does not make a write to the TARGET safe',
+        code: `function m(t, s) { for (const k in s) { if (Object.prototype.hasOwnProperty.call(s, k)) { t[k] = s[k]; } } }`,
         errors: 1,
       },
       // Nested inside a conditional still reports exactly once.
