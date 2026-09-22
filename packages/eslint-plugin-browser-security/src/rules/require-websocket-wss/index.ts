@@ -58,11 +58,6 @@ import { isLoopbackUrl, isReservedExampleUrl } from '../../utils/loopback-hosts'
  */
 const CLEARTEXT_WS_SCHEME = /^ws:\/\//i;
 
-/** Rewrite the scheme whatever case it was written in. */
-function toSecureScheme(url: string): string {
-  return url.replace(CLEARTEXT_WS_SCHEME, 'wss://');
-}
-
 type MessageIds = 'insecureWebsocket' | 'useWss';
 
 export interface Options {
@@ -173,17 +168,55 @@ export const requireWebsocketWss = createRule<RuleOptions, MessageIds>({
 
         // Check for insecure ws:// protocol
         if (CLEARTEXT_WS_SCHEME.test(url)) {
-          const fixedUrl = toSecureScheme(url);
+          // Rewrite the scheme inside the literal's ORIGINAL SOURCE TEXT, the
+          // same way the TemplateLiteral branch below does.
+          //
+          // This used to splice the DECODED `.value` between hardcoded single
+          // quotes, via a `toSecureScheme(url)` helper now deleted with it.
+          // That re-encodes the string, and three legal URLs came back wrong:
+          //
+          //   "ws://h/room's"  -> 'wss://h/room's'   SyntaxError
+          //   "ws://h/a\nb"    -> a real newline      SyntaxError, unterminated
+          //   'ws://h/a\\b'    -> 'wss://h/a\b'      parses, URL SILENTLY changed
+          //
+          // An apostrophe is an RFC 3986 sub-delim, so the first is ordinary.
+          // The third is the dangerous one: it parses, so a security rule
+          // quietly retargets the URL it claims to have secured. Siblings hit
+          // this and fixed it already — see the comment in conventions'
+          // no-console-spaces, which names all three failures.
+          //
+          // A source-text rewrite also preserves the author's quote style,
+          // which is `quotes`/Prettier's business, not a CWE-319 rule's.
+          const originalText = context.sourceCode.getText(urlArg);
+          // The literal's text starts with its quote, so the scheme is not at
+          // index 0 — anchor on the delimiter instead of the string start.
+          const fixedText = originalText.replace(
+            /(?<=^.)ws:\/\//i,
+            'wss://',
+          );
+
+          // An escaped scheme (`'\x77s://h'`) decodes to `ws://` but is not
+          // spelled that way in source, so the rewrite is a no-op. Report it —
+          // the URL is still cleartext — but offer no fix rather than one that
+          // changes nothing.
+          const canFix = fixedText !== originalText;
+
           context.report({
             node: urlArg,
             messageId: 'insecureWebsocket',
-            fix: (fixer) => fixer.replaceText(urlArg, `'${fixedUrl}'`),
-            suggest: [
-              {
-                messageId: 'useWss',
-                fix: (fixer) => fixer.replaceText(urlArg, `'${fixedUrl}'`),
-              },
-            ],
+            ...(canFix
+              ? {
+                  fix: (fixer: TSESLint.RuleFixer) =>
+                    fixer.replaceText(urlArg, fixedText),
+                  suggest: [
+                    {
+                      messageId: 'useWss' as const,
+                      fix: (fixer: TSESLint.RuleFixer) =>
+                        fixer.replaceText(urlArg, fixedText),
+                    },
+                  ],
+                }
+              : {}),
           });
         }
       }
