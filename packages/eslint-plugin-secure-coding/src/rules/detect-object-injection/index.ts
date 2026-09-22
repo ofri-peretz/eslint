@@ -15,6 +15,21 @@
  *    and moved the shared tail into `reportMassAssignment` so the spellings
  *    cannot drift again. SPEC.md N9; fixture vulnerable/04; corpus still 14/14
  *    and 14/14. The READ exemption (`isObjectKeysCallbackKey`) is unchanged.
+ * 🔒 AMENDED 2026-09-21 — `xs.forEach((v, i) => { dst[i] = v })` drew CVSS 9.8
+ *    on a key ECMA-262 guarantees is a Number. `isNumericIdentifier` proved
+ *    numeric-ness from a declarator's initialiser or a `for` counter, and a
+ *    callback parameter has neither — so the WRITE side of the guarantee
+ *    `safe/07-object-keys-foreach.js` already pins for READS was missing. This
+ *    file recorded the gap itself on 2026-09-13 ("Putting it in `invalid` would
+ *    LOCK the bug") and the SEAL entry it promised was never filed; both are
+ *    now. Added `isArrayIterationIndexParam` + `isProvablyArray`. SPEC.md E8;
+ *    fixture safe/15; duel re-run 15/15, F1 100.0% (theirs 60.6%).
+ *    The gate is Array-provenance, NOT the method name: Map/Set/Headers/
+ *    FormData/URLSearchParams `forEach` pass a string KEY in that slot
+ *    (`new URLSearchParams('__proto__=x')` → `k === '__proto__'`, Node 24) and
+ *    still report, as do parameter 0 and `reduce`'s parameter 1. Residual:
+ *    a bare untyped parameter states no provenance and still reports —
+ *    SEAL.json `array-provenance-requires-evidence`.
  * ═══════════════════════════════════════════════════════════════════════════
  *
  * This rule's behaviour was derived from the SEMANTICS of the weakness, every
@@ -1952,8 +1967,213 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     const numericVarCache = new WeakMap<object, boolean>();
     const numericVarInProgress = new WeakSet<object>();
 
+    /**
+     * Methods whose callback receives the element first and the INDEX second,
+     * and the two reducers, whose index is third: `(acc, cur, index, arr)`.
+     *
+     * Position matters more than membership. `reduce`'s second parameter is the
+     * ELEMENT — exempting it would silence
+     * `entries.reduce((acc, k) => { acc[k] = 1; return acc; }, {})`, which is
+     * textbook mass assignment.
+     */
+    const IndexParamPosition = (method: string): number | null => {
+      if (ELEMENT_FIRST_ITERATORS.has(method)) return 1;
+      if (method === 'reduce' || method === 'reduceRight') return 2;
+      return null;
+    };
+
+    /**
+     * Array-producing calls: the value they return is an Array by specification.
+     *
+     * @protocol-constant Every entry is an ECMA-262 method whose return value
+     * the specification fixes as an Array — `Array.prototype.map` / `filter` /
+     * `slice` / `concat` / `flat` / `flatMap` / `toSorted` / `toReversed` and
+     * `String.prototype.split`. This is a fact about the language, not a
+     * vocabulary a domain chooses: a consumer cannot make `.map` return
+     * something else, and a host that adds a method adds it to the spec rather
+     * than to their codebase. Letting a consumer edit the list could not change
+     * WHAT is reported in their favour — only delete an entry and re-assert the
+     * false positive this exemption exists to remove.
+     */
+    const ARRAY_PRODUCING_METHODS: ReadonlySet<string> = new Set([
+      'split',
+      'slice',
+      'concat',
+      'map',
+      'filter',
+      'flat',
+      'flatMap',
+      'toSorted',
+      'toReversed',
+    ]);
+
+    /**
+     * Is this expression provably an Array — not merely something with a
+     * `.forEach`?
+     *
+     * This gate is the whole difference between a sound exemption and a hole.
+     * `Map`, `Set`, `Headers`, `FormData` and `URLSearchParams` all have a
+     * `forEach` whose SECOND callback argument is a key, not an index, and
+     * verified in Node 24 that key can be `__proto__`:
+     *
+     *   new URLSearchParams('__proto__=x').forEach((v, k) => { dst[k] = v; })
+     *
+     * Exempting on the method name alone would silence that. Only an Array
+     * guarantees `𝔽(k)` — a Number — in the index position.
+     *
+     * Syntactic provenance, deliberately: this rule reads no type information
+     * anywhere — it never reaches for the type checker — so a type-aware gate
+     * would not fire for the consumers who do not enable project services, and
+     * would leave the false positive exactly where it is reported. Same shape
+     * as `isTypedArrayObject` above.
+     *
+     * (Do not name the type-checker accessor in a comment here. The
+     * portability auditor greps rule SOURCE for that identifier, so a sentence
+     * saying the rule does NOT call it is enough to classify the rule as
+     * type-aware — which is how this file briefly claimed to be.)
+     */
+    const isProvablyArray = (node: TSESTree.Node): boolean => {
+      if (node.type === AST_NODE_TYPES.ArrayExpression) return true;
+
+      // `xs.map(...)`, `s.split(',')`, `Array.from(x)`, `Array.of(1, 2)`.
+      if (node.type === AST_NODE_TYPES.CallExpression) {
+        const callee = node.callee;
+        if (callee.type !== AST_NODE_TYPES.MemberExpression) return false;
+        const method = propertyName(callee);
+        if (method === null) return false;
+        if (
+          callee.object.type === AST_NODE_TYPES.Identifier &&
+          callee.object.name === 'Array'
+        ) {
+          return method === 'from' || method === 'of';
+        }
+        return ARRAY_PRODUCING_METHODS.has(method);
+      }
+
+      if (node.type !== AST_NODE_TYPES.Identifier) return false;
+
+      const variable = resolvedReference(
+        context.sourceCode.getScope(node),
+        node,
+      );
+      // Exactly one definition: a name written in two places has no single
+      // provenance, and picking the first would make the answer depend on
+      // statement order.
+      const def = variable?.defs.length === 1 ? variable.defs[0] : undefined;
+      if (!def) return false;
+
+      if (def.type === 'Variable') {
+        const declarator = def.node as TSESTree.VariableDeclarator;
+        // A destructuring pattern does not bind the initializer, it binds a
+        // PIECE of it: `const [vals] = [someMap]` binds the Map, while the
+        // declarator's init is an array literal. Reading provenance off the
+        // init would call that an Array and silence a live key.
+        if (declarator.id.type !== AST_NODE_TYPES.Identifier) return false;
+
+        // `const vals: number[] = …` — an annotation the file states itself.
+        const declared = declarator.id.typeAnnotation;
+        if (declared && isArrayTypeNode(declared.typeAnnotation)) return true;
+
+        // No annotation — follow a `const` initializer, once. A `let` can be
+        // reassigned between the declaration and the loop.
+        if (def.parent.kind !== 'const') return false;
+        const init = declarator.init;
+        if (!init || init === node) return false;
+        return isProvablyArray(init);
+      }
+
+      // `function f(vals: string[])`. A parameter's value is chosen by a
+      // caller, so only an annotation can state what it is. Every other
+      // definition kind — an import, a function or class name, a catch
+      // binding — states nothing this file can read.
+      if (def.type !== 'Parameter') return false;
+      const annotation = def.name.typeAnnotation;
+      return (
+        annotation !== undefined && isArrayTypeNode(annotation.typeAnnotation)
+      );
+    };
+
+    /** `T[]`, `readonly T[]`, `[A, B]`, `Array<T>`, `ReadonlyArray<T>`. */
+    const isArrayTypeNode = (type: TSESTree.TypeNode): boolean => {
+      if (type.type === AST_NODE_TYPES.TSArrayType) return true;
+      if (type.type === AST_NODE_TYPES.TSTupleType) return true;
+      if (type.type === AST_NODE_TYPES.TSTypeOperator) {
+        return (
+          type.operator === 'readonly' &&
+          type.typeAnnotation !== undefined &&
+          isArrayTypeNode(type.typeAnnotation)
+        );
+      }
+      if (type.type === AST_NODE_TYPES.TSTypeReference) {
+        const name = type.typeName;
+        return (
+          name.type === AST_NODE_TYPES.Identifier &&
+          (name.name === 'Array' || name.name === 'ReadonlyArray')
+        );
+      }
+      return false;
+    };
+
+    /**
+     * Is this identifier the INDEX parameter of an Array iteration callback?
+     *
+     * ECMA-262 specifies that argument as `𝔽(k)` — a Number the callee
+     * supplies, which no caller can influence and which can therefore never be
+     * `__proto__`, `constructor` or `prototype`. It is the same kind of fact
+     * as "a read cannot pollute", and the same fact the plain `for` counter
+     * already earns through `isLoopCounterIdentifier`.
+     *
+     * Covering two spellings of one guarantee and not the third was an
+     * accident of node types — the argument `safe/07-object-keys-foreach.js`
+     * already makes for the READ side.
+     */
+    const isArrayIterationIndexParam = (node: TSESTree.Identifier): boolean => {
+      const variable = resolvedReference(
+        context.sourceCode.getScope(node),
+        node,
+      );
+      if (!variable || variable.defs.length !== 1) return false;
+      const def = variable.defs[0];
+      if (def?.type !== 'Parameter') return false;
+
+      const fn = def.node;
+      if (
+        fn.type !== AST_NODE_TYPES.ArrowFunctionExpression &&
+        fn.type !== AST_NODE_TYPES.FunctionExpression
+      ) {
+        return false;
+      }
+
+      // The callback must be the first argument of the iteration call itself,
+      // not merely somewhere inside it.
+      const call = fn.parent;
+      if (
+        call?.type !== AST_NODE_TYPES.CallExpression ||
+        call.arguments[0] !== fn ||
+        call.callee.type !== AST_NODE_TYPES.MemberExpression
+      ) {
+        return false;
+      }
+
+      const method = propertyName(call.callee);
+      if (method === null) return false;
+      const position = IndexParamPosition(method);
+      if (position === null) return false;
+
+      // Position-specific: `entries.forEach((key) => ...)` is parameter 0 and
+      // must keep reporting. A rest or default in the slot is not the spec's
+      // index binding either.
+      const param = fn.params[position];
+      if (param?.type !== AST_NODE_TYPES.Identifier || param !== def.name) {
+        return false;
+      }
+
+      return isProvablyArray(call.callee.object);
+    };
+
     const isNumericIdentifier = (node: TSESTree.Identifier): boolean => {
       if (isLoopCounterIdentifier(node)) return true;
+      if (isArrayIterationIndexParam(node)) return true;
 
       const scope = context.sourceCode.getScope(node);
       const variable = resolvedReference(scope, node);

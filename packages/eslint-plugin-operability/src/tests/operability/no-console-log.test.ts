@@ -200,10 +200,38 @@ function test() {
     ruleTester.run('convert strategy', noConsoleLog, {
       valid: [],
       invalid: [
+        /*
+         * burgee packages/burgee/src/yargs/factory.ts:1034 — the CLI's stdout
+         * fallback, in a file whose only logger is the private field `#logger`
+         * that the import scanner cannot see. `convert` rewrote the callee to a
+         * `logger` that is bound nowhere, turning working code into a
+         * ReferenceError (TS2304) and introducing a fresh `no-undef` report.
+         *
+         * Same doctrine the `remove`/`comment` arm already applies, citing the
+         * same burgee line: `fixable: 'code'` means safe to apply unattended,
+         * so the fixer declines rather than emit a broken rewrite. The report
+         * still stands; only the automatic fix is withheld.
+         */
         {
-          code: 'console.log("test");',
+          name: 'convert declines to rewrite when the logger name has no binding in scope',
+          code: 'function f(...args) { console.log(...args); }',
+          options: [{ strategy: 'convert' }],
+          output: null,
+          errors: [{ messageId: 'consoleLogFound' }],
+        },
+        {
+          name: 'convert still rewrites when the configured logger is imported',
+          code: "import logger from 'winston';\nconsole.log('x');",
           options: [{ strategy: 'convert', loggerName: 'logger' }],
-          output: 'logger.debug("test");',
+          output: "import logger from 'winston';\nlogger.debug('x');",
+          errors: [{ messageId: 'consoleLogFound' }],
+        },
+        {
+          // Fixture carries the import it always implied: `convert` only
+          // rewrites to a logger that is actually bound in the file.
+          code: 'import logger from \'winston\';\nconsole.log("test");',
+          options: [{ strategy: 'convert', loggerName: 'logger' }],
+          output: 'import logger from \'winston\';\nlogger.debug("test");',
           errors: [
             {
               messageId: 'consoleLogFound',
@@ -211,9 +239,10 @@ function test() {
           ],
         },
         {
-          code: 'console.log("test", data);',
+          code: 'import myLogger from \'winston\';\nconsole.log("test", data);',
           options: [{ strategy: 'convert', loggerName: 'myLogger' }],
-          output: 'myLogger.debug("test", data);',
+          output:
+            'import myLogger from \'winston\';\nmyLogger.debug("test", data);',
           errors: [
             {
               messageId: 'consoleLogFound',
@@ -339,9 +368,9 @@ console.log("fourth");`,
       valid: [],
       invalid: [
         {
-          code: 'console.log("test");',
+          code: 'import winston from \'winston\';\nconsole.log("test");',
           options: [{ strategy: 'convert', loggerName: 'winston' }],
-          output: 'winston.debug("test");',
+          output: 'import winston from \'winston\';\nwinston.debug("test");',
           errors: [
             {
               messageId: 'consoleLogFound',
@@ -349,9 +378,9 @@ console.log("fourth");`,
           ],
         },
         {
-          code: 'console.log("test");',
+          code: 'import bunyan from \'bunyan\';\nconsole.log("test");',
           options: [{ strategy: 'convert', loggerName: 'bunyan' }],
-          output: 'bunyan.debug("test");',
+          output: 'import bunyan from \'bunyan\';\nbunyan.debug("test");',
           errors: [
             {
               messageId: 'consoleLogFound',

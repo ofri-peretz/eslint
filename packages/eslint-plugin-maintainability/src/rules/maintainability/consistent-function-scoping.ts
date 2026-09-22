@@ -33,6 +33,19 @@ const BINDING_WRAPPERS: ReadonlySet<string> = new Set([
   'TSSatisfiesExpression',
   'TSNonNullExpression',
   'TSTypeAssertion',
+  // Bound by assignment rather than by declaration. `api.direct = () => 1` at
+  // the top level of a module puts the function at module scope exactly as
+  // `const direct = () => 1` does, but the walk stopped at the
+  // `AssignmentExpression` and never reached `Program`, so the rule told the
+  // consumer to move an arrow to the scope it was already in — while its
+  // `const`-bound twin, same body and same capture set, stayed silent. A
+  // verdict decided purely by declaration syntax.
+  'ExpressionStatement',
+  'AssignmentExpression',
+  // Chosen between, not moved. Both arms of `const pick = flag ? a : b` sit in
+  // whatever scope the ternary sits in.
+  'ConditionalExpression',
+  'LogicalExpression',
 ]);
 
 export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
@@ -177,8 +190,32 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
       }
     }
 
+    /**
+     * scopeStack[0] is the vestigial set created by the initializer and
+     * scopeStack[1] is the module scope pushed by `Program()`; real function
+     * scopes start at index 2.
+     */
+    const MODULE_SCOPE_DEPTH = 2;
+
     function getOuterScopeVariables(): Set<string> {
-      const outerScopes = scopeStack.slice(0, -1);
+      /*
+       * Drop the module scope along with the enclosing one.
+       *
+       * Module scope is the DESTINATION this rule suggests moving to, so a
+       * binding that lives there is equally in scope after the move and cannot
+       * be what prevents it. `Program()` already declines to register
+       * module-level `function` declarations for exactly that reason, but the
+       * `VariableDeclaration` visitor registered module-level `const`/`let`
+       * anyway — so the identical helper was reported or suppressed purely by
+       * how its module binding happened to be spelled. Found on burgee
+       * packages/roundel/src/theme.ts:98, where `step` reaches only the
+       * module-level `SRGB_MAX`.
+       *
+       * Index 0 is the vestigial set from the initializer; `Program()` pushes
+       * the real module scope at index 1. Bindings from any FUNCTION scope in
+       * between are still counted, so a genuine closure stays silent.
+       */
+      const outerScopes = scopeStack.slice(0, -1).slice(MODULE_SCOPE_DEPTH);
       const outerVars = new Set<string>();
       for (const scope of outerScopes) {
         for (const varName of scope) {
