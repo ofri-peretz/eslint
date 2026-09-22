@@ -5,6 +5,18 @@ All notable changes to `eslint-plugin-maintainability` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.2.13
+
+### Patch Changes
+
+- **🐛 Fix** — `identical-functions` normalisation no longer erases or skips distinguishing text
+
+  Nested literal placeholders are restored until none remain: a backticked word
+  inside a quoted string was stashed twice and never expanded, so bodies
+  differing only there compared identical. The object-key guard no longer
+  swallows ternary consequents or TypeScript type annotations, which had stopped
+  every annotated declaration from having its bindings renamed.
+
 ## 3.2.12
 
 ### Patch Changes
