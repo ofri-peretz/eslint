@@ -94,8 +94,9 @@ const integrityHash = crypto.createHash('ripemd160').update(data).digest('hex');
 > `integrity`), which is what makes them fire under the default options. The
 > block previously used neutral names like `hash` and `sha1Hash` and therefore
 > reported **nothing** — see [Unclassified hashes](#unclassified-hashes) below
-> for why, and set `reportUnclassifiedHashes: true` to flag every weak hash
-> regardless of what it is called.
+> for why, and set `reportUnclassifiedHashes: true` to also flag weak hashes
+> whose name gives no purpose. Names listed in `nonCryptographicNames` stay
+> exempt either way.
 
 ### ✅ Correct
 
