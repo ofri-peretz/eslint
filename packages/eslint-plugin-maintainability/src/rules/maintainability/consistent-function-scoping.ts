@@ -33,6 +33,19 @@ const BINDING_WRAPPERS: ReadonlySet<string> = new Set([
   'TSSatisfiesExpression',
   'TSNonNullExpression',
   'TSTypeAssertion',
+  // Bound by assignment rather than by declaration. `api.direct = () => 1` at
+  // the top level of a module puts the function at module scope exactly as
+  // `const direct = () => 1` does, but the walk stopped at the
+  // `AssignmentExpression` and never reached `Program`, so the rule told the
+  // consumer to move an arrow to the scope it was already in — while its
+  // `const`-bound twin, same body and same capture set, stayed silent. A
+  // verdict decided purely by declaration syntax.
+  'ExpressionStatement',
+  'AssignmentExpression',
+  // Chosen between, not moved. Both arms of `const pick = flag ? a : b` sit in
+  // whatever scope the ternary sits in.
+  'ConditionalExpression',
+  'LogicalExpression',
 ]);
 
 export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
