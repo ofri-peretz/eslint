@@ -1144,8 +1144,14 @@ describe('null guards: && for the positive form, || for the negated one', () => 
       'function f(arg) { if (arg && typeof arg === "object" && "message" in arg) { use(arg); } }',
       // `!v` on the rejecting side is the same guard, negated.
       'function f(v) { if (!v || typeof v !== "object") { return; } use(v); }',
-      // `!= null` covers null AND undefined.
-      'function f(v) { if (v != null && typeof v === "object") { use(v); } }',
+      {
+        name: 'loose != null excludes null and undefined, so it guards',
+        code: 'function f(v) { if (v != null && typeof v === "object") { use(v); } }',
+      },
+      {
+        name: 'loose != undefined is the same test as != null, so it guards',
+        code: 'function f(v) { if (v != undefined && typeof v === "object") { use(v); } }',
+      },
       // The guard may name the same member expression, not just an identifier.
       'function f(o) { if (o.cfg && typeof o.cfg === "object") { use(o.cfg); } }',
     ],
@@ -1182,6 +1188,19 @@ describe('null guards: && for the positive form, || for the negated one', () => 
       // ...and `||` cannot guard the positive form.
       {
         code: 'function f(v) { if (typeof v === "object" || v !== null) { use(v); } }',
+        errors: [{ messageId: 'unsafeTypeofCheck' }],
+      },
+      // STRICT `undefined` IS NOT A NULL GUARD. `null !== undefined` is true, so
+      // null passes it and `typeof null === 'object'` lets it through to the read.
+      // burgee packages/burgee/src/meow/validate.ts:42
+      {
+        name: 'strict === undefined on the rejecting side lets null reach the read',
+        code: 'function f(m) { if (m === undefined || typeof m !== "object" || typeof m.url !== "string") { throw new TypeError("x"); } }',
+        errors: [{ messageId: 'unsafeTypeofCheck' }],
+      },
+      {
+        name: 'strict !== undefined on the accepting side lets null reach the read',
+        code: 'function f(m) { if (m !== undefined && typeof m === "object") { return m.url; } }',
         errors: [{ messageId: 'unsafeTypeofCheck' }],
       },
     ],

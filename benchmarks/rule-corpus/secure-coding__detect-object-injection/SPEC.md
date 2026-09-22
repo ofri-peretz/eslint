@@ -8,6 +8,7 @@
 > mutation-verified test files beside `src/rules/detect-object-injection/index.ts`.
 >
 > **It reopens for three reasons only:**
+>
 > 1. ECMAScript/TypeScript gains a new route to `Object.prototype` or a new
 >    computed-access form (TC39 Stage 4 is the bar).
 > 2. A new use case arrives **with a reproduction** — code that is genuinely
@@ -24,7 +25,6 @@
 > `node -e` → add the fixture → re-run the duel → re-measure real-source volume →
 > add a lock test that fails when reverted → move this date and say what changed.
 
-
 The behaviour contract, written BEFORE the fixtures, from the semantics of the
 weakness rather than from what the rule currently does. Every claim below was
 verified by running it in Node 24, not reasoned about.
@@ -36,14 +36,14 @@ verified by running it in Node 24, not reasoned about.
 **Two different weaknesses are conflated under this rule's name, and the rule
 currently reports a third thing that is neither.**
 
-| | weakness | what an attacker gets |
-|---|---|---|
-| **A** | Prototype pollution (**CWE-1321**) | a property on `Object.prototype`, affecting *every object in the process* |
-| **B** | Object injection / mass assignment (**CWE-915**) | writes a field they should not control on *one* object (`isAdmin`) |
-| **C** | Property read with an attacker key | leaks a field they should not read (`config.dbPassword`) |
+|       | weakness                                         | what an attacker gets                                                     |
+| ----- | ------------------------------------------------ | ------------------------------------------------------------------------- |
+| **A** | Prototype pollution (**CWE-1321**)               | a property on `Object.prototype`, affecting _every object in the process_ |
+| **B** | Object injection / mass assignment (**CWE-915**) | writes a field they should not control on _one_ object (`isAdmin`)        |
+| **C** | Property read with an attacker key               | leaks a field they should not read (`config.dbPassword`)                  |
 
 The rule declares **CWE-915** and `confidence: 'low'`, and its description is
-*"Detects variable[key] as a left- or right-hand assignment operand"* — i.e. it
+_"Detects variable[key] as a left- or right-hand assignment operand"_ — i.e. it
 reports **every computed member access**. That is why the equivalent rule in
 `eslint-plugin-security` produced **10,359 findings** on 5 repos in our own
 benchmark, the single loudest rule measured, and why this class has a reputation
@@ -53,31 +53,31 @@ for being disabled on sight.
 
 Run in Node 24 — `Object.prototype.polluted` checked after each:
 
-| code | global pollution? |
-|---|---|
-| `obj['__proto__'] = { polluted: 1 }` | **no** — replaces *that object's* prototype |
-| `Object.assign(obj, JSON.parse('{"__proto__":{…}}'))` | **no** |
-| `{ ...JSON.parse('{"__proto__":{…}}') }` | **no** |
-| `JSON.parse('{"__proto__":{…}}')` alone | **no** |
-| `Object.defineProperty(obj, '__proto__', …)` | **no** |
-| `Reflect.set(obj, '__proto__', …)` | **no** |
-| `new Map().set('__proto__', …)` | **no** |
-| `Object.create(null)` as target | **no** |
-| **`obj.constructor.prototype.x = 1`** | **YES** |
-| **`obj[k]['prototype'].x = 1`** where `k = 'constructor'` | **YES** |
-| **recursive `merge({}, JSON.parse('{"__proto__":{…}}'))`** | **YES** |
-| **recursive `merge({}, JSON.parse('{"constructor":{"prototype":{…}}}'))`** | **YES** |
-| **`setPath(obj, '__proto__.polluted', 1)`** | **YES** |
-| **`setPath(obj, 'constructor.prototype.polluted', 1)`** | **YES** |
+| code                                                                       | global pollution?                           |
+| -------------------------------------------------------------------------- | ------------------------------------------- |
+| `obj['__proto__'] = { polluted: 1 }`                                       | **no** — replaces _that object's_ prototype |
+| `Object.assign(obj, JSON.parse('{"__proto__":{…}}'))`                      | **no**                                      |
+| `{ ...JSON.parse('{"__proto__":{…}}') }`                                   | **no**                                      |
+| `JSON.parse('{"__proto__":{…}}')` alone                                    | **no**                                      |
+| `Object.defineProperty(obj, '__proto__', …)`                               | **no**                                      |
+| `Reflect.set(obj, '__proto__', …)`                                         | **no**                                      |
+| `new Map().set('__proto__', …)`                                            | **no**                                      |
+| `Object.create(null)` as target                                            | **no**                                      |
+| **`obj.constructor.prototype.x = 1`**                                      | **YES**                                     |
+| **`obj[k]['prototype'].x = 1`** where `k = 'constructor'`                  | **YES**                                     |
+| **recursive `merge({}, JSON.parse('{"__proto__":{…}}'))`**                 | **YES**                                     |
+| **recursive `merge({}, JSON.parse('{"constructor":{"prototype":{…}}}'))`** | **YES**                                     |
+| **`setPath(obj, '__proto__.polluted', 1)`**                                | **YES**                                     |
+| **`setPath(obj, 'constructor.prototype.polluted', 1)`**                    | **YES**                                     |
 
 **The mechanism is a two-step traversal, not a one-step write.** `target[key]`
-with `key = '__proto__'` *reads through the getter* and returns
+with `key = '__proto__'` _reads through the getter_ and returns
 `Object.prototype`; the write on the NEXT step lands there. A single
 `obj[k] = v` cannot reach it, because `[[Set]]` on `__proto__` invokes the
 setter and only re-parents that one object.
 
 **This is the highest-value thing on the page:** flagging every `obj[k] = v` as
-prototype pollution is flagging the shape that *cannot* cause it, while the
+prototype pollution is flagging the shape that _cannot_ cause it, while the
 shapes that can — a recursive merge, a path-setter — are ordinary-looking loops
 the rule does not model at all.
 
@@ -89,7 +89,12 @@ the rule does not model at all.
 
 - **A1** user-written recursive merge/extend/deepAssign over untrusted data
   ```js
-  function merge(t, s) { for (const k in s) { if (isObj(s[k])) merge(t[k], s[k]); else t[k] = s[k]; } }
+  function merge(t, s) {
+    for (const k in s) {
+      if (isObj(s[k])) merge(t[k], s[k]);
+      else t[k] = s[k];
+    }
+  }
   merge({}, req.body);
   ```
 - **A2** path setter splitting a string and walking it
@@ -108,7 +113,7 @@ the rule does not model at all.
   Lodash patched these (4.17.5 / 4.17.11 / 4.17.21).
 
   **A rule that flagged `_.merge` would report a library that is already fixed**
-  — a false positive on every lodash user, and one they *cannot satisfy*, because
+  — a false positive on every lodash user, and one they _cannot satisfy_, because
   the code is correct. It is the `escape`/`sanitize` trap wearing a different
   hat: trusting a NAME (`_.merge` means dangerous) instead of evidence (which
   version is installed). A rule reading the AST cannot see `package.json`, so
@@ -117,6 +122,7 @@ the rule does not model at all.
   The mechanism has not gone away — it moved. A **hand-written** path setter
   still pollutes today (verified), and that is exactly what A1/A2 already cover,
   because it is visible in the file being linted.
+
 - ~~**A7** `minimist`, `yargs-parser`, `qs.parse` …~~ — same reasoning. Version
   dependent, invisible to the linter, and long since patched upstream.
 - **A8** `JSON.parse` reviver that writes into an accumulator by key
@@ -161,22 +167,23 @@ rule disabled, which costs every finding above.
 - **E3** `obj[k]` where `k` came from `Object.keys()` of the **TARGET** — and
   only for pollution. Measured, and the answer splits by weakness:
 
-  | key source | pollution (CWE-1321) | mass assignment (CWE-915) |
-  |---|---|---|
-  | `Object.keys(target)` | **safe** — bounded by the target's own keys | **NOT safe** — if the target already has `isAdmin`, the attacker still sets it |
-  | `Object.keys(untrustedSource)` | **NOT safe** — `JSON.parse('{"__proto__":…}')` puts `__proto__` in `Object.keys`, verified | **NOT safe** |
+  | key source                     | pollution (CWE-1321)                                                                       | mass assignment (CWE-915)                                                      |
+  | ------------------------------ | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+  | `Object.keys(target)`          | **safe** — bounded by the target's own keys                                                | **NOT safe** — if the target already has `isAdmin`, the attacker still sets it |
+  | `Object.keys(untrustedSource)` | **NOT safe** — `JSON.parse('{"__proto__":…}')` puts `__proto__` in `Object.keys`, verified | **NOT safe**                                                                   |
 
-  So the *same* guard is a valid FP suppressor for one weakness and a live TP for
+  So the _same_ guard is a valid FP suppressor for one weakness and a live TP for
   the other, and which object is iterated decides it. A rule that treats
-  "iterates `Object.keys`" as safe without asking *keys of what* is wrong half
+  "iterates `Object.keys`" as safe without asking _keys of what_ is wrong half
   the time — and this spec said exactly that until it was measured.
+
 - **E4** a key from a frozen/`as const` lookup table
 - **E5** an enum/union-typed key in TS (`k: keyof T`, `k: 'a' | 'b'`)
 - **E6** a module-scope constant (`const FIELD = process.env.FIELD` at boot)
 - **E7** **an object literal built in this file** — `const req = { params: {…} }`
   is not an inbound request (measured FP in `no-sql-injection`; same trap here)
 - **E8** **the INDEX argument of an Array iteration callback** — `xs.forEach((v,
-  i) => { dst[i] = v })`, and `.map` / `.filter` / `.find` / `.findLast` /
+i) => { dst[i] = v })`, and `.map` / `.filter` / `.find` / `.findLast` /
   `.some` / `.every` / `.flatMap` at the same position, plus `.reduce` /
   `.reduceRight` where the index is **third**. ECMA-262 supplies that argument as
   `𝔽(k)` — a Number no caller can influence — so it is E1 reached through a
@@ -186,13 +193,13 @@ rule disabled, which costs every finding above.
   **Gated on the receiver being provably an Array, and the gate is not
   ceremonial.** Measured in Node 24:
 
-  | receiver | `forEach` 2nd callback arg |
-  |---|---|
-  | `Array` | `number` — never `__proto__` |
+  | receiver                                                   | `forEach` 2nd callback arg                                                        |
+  | ---------------------------------------------------------- | --------------------------------------------------------------------------------- |
+  | `Array`                                                    | `number` — never `__proto__`                                                      |
   | `Map` / `Set` / `Headers` / `FormData` / `URLSearchParams` | **a string key** — `new URLSearchParams('__proto__=x')` binds `k === '__proto__'` |
 
   Exempting on the method name alone would silence a live pollution vector.
-  Position matters equally: `.reduce`'s *second* parameter is the ELEMENT, so
+  Position matters equally: `.reduce`'s _second_ parameter is the ELEMENT, so
   exempting by position-2 membership would silence
   `entries.reduce((acc, k) => { acc[k] = 1; return acc; }, {})` — textbook mass
   assignment. Both directions are pinned as `invalid` controls in
@@ -224,7 +231,10 @@ rule disabled, which costs every finding above.
 
 ### G. Structurally immune
 
-- **G1** target is `Object.create(null)` or `{ __proto__: null }`
+- **G1** target is `Object.create(null)` or `{ __proto__: null }` — of the TARGET,
+  whatever spelling reaches it: inline, bound to a name, held as a property of a
+  holder object, or returned by `Object.assign(<prototypeless>, …)`, which returns
+  its first argument and never invokes `SetPrototypeOf` (`safe/16`)
 - **G2** target is a `Map`/`Set`/`WeakMap` — `.set()` cannot pollute
 - **G3** target is frozen (`Object.freeze`)
 - **G4** `structuredClone` instead of a hand merge
@@ -248,12 +258,12 @@ rule disabled, which costs every finding above.
 - **N2** `dangerousProperties` reaches only ONE of four report paths — and not
   the noisy one. Measured across four shapes:
 
-  | shape | default | `[]` | `['__proto__']` |
-  |---|---|---|---|
-  | `o['__proto__'] = x` (literal name) | reports | **silent** | reports |
-  | `function f(o,k){ o[k]=1 }` (generic computed) | reports | reports | reports |
-  | `return cfg[req.query.k]` (read) | reports | reports | reports |
-  | `for (k in src) dst[k]=src[k]` | silent | silent | silent |
+  | shape                                          | default | `[]`       | `['__proto__']` |
+  | ---------------------------------------------- | ------- | ---------- | --------------- |
+  | `o['__proto__'] = x` (literal name)            | reports | **silent** | reports         |
+  | `function f(o,k){ o[k]=1 }` (generic computed) | reports | reports    | reports         |
+  | `return cfg[req.query.k]` (read)               | reports | reports    | reports         |
+  | `for (k in src) dst[k]=src[k]`                 | silent  | silent     | silent          |
 
   So the knob works on the path that is already precise and cannot touch the two
   that produce the volume. A user who sets `dangerousProperties: []` to quiet the
@@ -266,6 +276,7 @@ rule disabled, which costs every finding above.
   probed a single shape, saw no change, and reported the option as dead. An
   option is a function of (shape × setting) — one row of that matrix proves
   nothing about the others. Recorded in the test-plan rules below.
+
 - **N3** library sinks (A6) — no lodash/dot-prop/object-path modelling
 - **N4** `Object.setPrototypeOf`
 - **N5** `delete obj[k]`
@@ -275,10 +286,10 @@ rule disabled, which costs every finding above.
   `checkMassAssignmentLoop` was registered on `ForOfStatement` only, so the two
   loop spellings reported and the callback spelling did not:
 
-  | spelling | before | after |
-  |---|---|---|
-  | `for (const k in src) dst[k]=src[k]` | reports | reports |
-  | `for (const k of Object.keys(src)) dst[k]=src[k]` | reports | reports |
+  | spelling                                           | before     | after   |
+  | -------------------------------------------------- | ---------- | ------- |
+  | `for (const k in src) dst[k]=src[k]`               | reports    | reports |
+  | `for (const k of Object.keys(src)) dst[k]=src[k]`  | reports    | reports |
   | `Object.keys(src).forEach(k => { dst[k]=src[k] })` | **silent** | reports |
   | `Object.entries(src).map(([k,v]) => { dst[k]=v })` | **silent** | reports |
 
@@ -317,6 +328,7 @@ rule disabled, which costs every finding above.
   preserved by a read-shaped replacement.
 
   Surfaced by the burgee corpus: `packages/burgee/src/yargs/utils.ts:98-101`.
+
 - **N8** `OBJECT_INJECTION_PATTERNS` is matched with
   `new RegExp(p.pattern,'i').test(property)` over **printed source**, so
   `obj[myPrototypeVar]` substring-matches `prototype` — for the risk LABEL, not
@@ -329,7 +341,7 @@ rule disabled, which costs every finding above.
 1. **Every TP fixture needs its FP twin** — the same shape, guarded. A detector
    that fires on both has learned nothing.
 2. **Every option gets a test that the option CHANGES the report count.** N2
-   existed because no test asserted an option *does* something.
+   existed because no test asserted an option _does_ something.
 3. **Assert the CWE too.** A pollution finding labelled CWE-915 and a mass
    assignment labelled CWE-1321 are both wrong, and no F1 number notices.
 4. **Fixtures must include the binding real code has.** Two zero-signal fixtures
