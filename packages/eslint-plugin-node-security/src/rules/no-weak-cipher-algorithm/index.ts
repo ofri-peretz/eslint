@@ -56,7 +56,12 @@ const WEAK_CIPHER_PATTERNS: WeakCipherPattern[] = [
     replacement: 'aes-256-gcm',
   },
   {
-    pattern: /\bdes-ede3?\b|\b3des\b|\btripledes\b/i,
+    // `des3` and `des3-wrap` are the Triple-DES spellings `crypto.getCiphers()`
+    // actually ships; `3des` and `tripledes` are NOT and throw
+    // ERR_CRYPTO_UNKNOWN_CIPHER. `\bdes\b` cannot reach `des3` because `s`->`3`
+    // is word-char to word-char, so the only spellings that can really encrypt
+    // were the only ones going unreported.
+    pattern: /\bdes(?:-ede3?|3)\b|\b3des\b|\btripledes\b/i,
     name: '3DES',
     alternatives: ['AES-256-GCM', 'ChaCha20-Poly1305'],
     replacement: 'aes-256-gcm',

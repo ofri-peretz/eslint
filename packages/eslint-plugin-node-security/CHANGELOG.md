@@ -5,6 +5,46 @@ All notable changes to `eslint-plugin-node-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.6.2
+
+### Patch Changes
+
+- **🐛 Fix** — a TypeScript type assertion no longer blanks the two CWE-22 path rules
+
+  `detect-non-literal-fs-filename` and `no-arbitrary-file-access` no longer go silent when a TypeScript type assertion sits on the tainted value. Both rules roll their own taint walker, each a `switch` on `node.type` falling through to `default: return false`, and neither had an arm for any TS-only wrapper — so `as`, `!`, `satisfies` and angle-bracket assertions all blanked the rule. That is not an exotic spelling: `process.env.X` is `string | undefined` under `strict`, so `'/etc/app/' + (process.env.NAME as string)` is the dialect TypeScript forces, and it went quiet while the docs' own worked example — the same line without the cast — is annotated "reported". The gap covered every composition form the docs name (`+`, template literal, `path.join`), and for `no-arbitrary-file-access` it also swallowed the bare whole-value form that is the rule's own Incorrect example. Both walkers now unwrap through the devkit's `unwrapTypeSyntax`, already used by the shared `makeReadsTaintSource` and seven other rules. Assertions are erased at compile time; the runtime was always byte-identical to the reported control.
+
+- **🐛 Fix** — `no-weak-hash-algorithm` missed the `WithRSAEncryption` aliases of MD5 and SHA-1
+
+  `crypto.getHashes()` ships `md5WithRSAEncryption` and `sha1WithRSAEncryption`, and both return output byte-identical to bare `md5`/`sha1` — they are the broken digest, not a signature curiosity. `/\bmd5\b/` and `/\bsha1\b/` could not reach them because `5`→`W` and `1`→`W` are word-char to word-char. The rule was inconsistent with itself as a result: `RSA-MD5` already reported, because the hyphen supplies the boundary, and `ripemd160WithRSA` already reported, because the RIPEMD entry had this exact defect fixed previously. Both patterns now accept the suffixed alias. Verified against all 25 `WithRSA`/`RSA-` digests in `getHashes()`: only the two intended names are newly matched, and no SHA-2/SHA-3 variant is touched.
+
+- **🐛 Fix** — `no-weak-cipher-algorithm` reported only the Triple-DES spellings Node rejects
+
+  The rule matched `3des` and `tripledes` — neither of which is in `crypto.getCiphers()`; both throw `ERR_CRYPTO_UNKNOWN_CIPHER` before encrypting anything — while staying silent on `des3` and `des3-wrap`, which Node does ship and which encrypt successfully. So the only spellings that could ever be a real CWE-327 vulnerability were the only ones going unreported. The cause is a word boundary: `/\bdes\b(?!-ede)/` cannot reach `des3` because `s`→`3` is word-char to word-char, and the 3DES pattern required the literal `-ede`. The pattern now also accepts the `des3` form. Checked against all 51 names in `crypto.getCiphers()`: exactly two verdicts change, both genuinely Triple-DES, and no secure cipher is newly flagged.
+
+- **🐛 Fix** — `no-zip-slip` no longer reports a bare ambiguous extractor that extracts nowhere
+
+  `no-zip-slip` applied its `AMBIGUOUS_EXTRACTORS` disambiguation only to method
+  callees. A bare identifier — which carries strictly LESS evidence, having no
+  receiver to name an archive at all — skipped the check entirely and reported
+  unconditionally, at CWE-22 / CVSS 7.5 / HIGH. So `const out = untar(buf)`, a
+  pure in-memory call that takes no destination, imports no `fs` and writes
+  nothing, was a HIGH severity path-traversal finding, while the same call
+  renamed `extract(buf)` stayed silent because a hardcoded safe-library list
+  happens to contain `extract`. The asymmetry was accidental and nothing in the
+  docs predicted it.
+
+  The documented harm requires a place to write: Zip Slip "allows an attacker to
+  create files outside of the intended extraction directory". A call naming no
+  directory creates nothing. An ambiguous bare extractor now needs a destination
+  argument before it reports; unambiguous names (`extractAllTo`,
+  `extractArchive`) are unaffected, and `unzip(file, dest)` still reports.
+
+  Found by the burgee FP/FN sweep at `packages/compat-oracle/src/tar.ts:103`,
+  where burgee had already written an `eslint-disable` for it — the sweep now
+  reports that directive as unused.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.5`
+
 ## 5.6.1
 
 ### Patch Changes

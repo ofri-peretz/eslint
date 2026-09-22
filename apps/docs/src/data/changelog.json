@@ -1,9 +1,204 @@
 {
-  "releaseCount": 694,
+  "releaseCount": 702,
   "packageCount": 36,
-  "entryCount": 2111,
+  "entryCount": 2134,
   "oldestYear": 2024,
   "releases": [
+    {
+      "package": "eslint-plugin-import-next",
+      "short": "eslint-plugin-import-next",
+      "version": "2.8.3",
+      "date": "2026-09-21T04:48:20Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-barrel-file` was blind to a barrel spelled as imports plus an export clause",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-extraneous-dependencies` published three config options it did not honour",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.5`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-conventions",
+      "short": "eslint-plugin-conventions",
+      "version": "6.0.3",
+      "date": "2026-09-21T04:48:19Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-magic-numbers` no longer offers a suggestion that fails to parse",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`prefer-dependency-version-strategy` no longer rewrites objects that are not dependency maps",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`prefer-dependency-version-strategy` no longer autofixes a range into a caret",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.5`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.4.6",
+      "date": "2026-09-21T04:48:15Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`detect-object-injection` copy-loop guards must now name the key",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`detect-object-injection` no longer accepts a lone `__proto__` check as proof for a recursive merge",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.5`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-maintainability",
+      "short": "eslint-plugin-maintainability",
+      "version": "3.2.11",
+      "date": "2026-09-21T04:48:05Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`consistent-function-scoping` was silent on a helper capturing only a module-level `const`",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`identical-functions` compared comment prose as code, hiding duplicates behind a one-line `/* */`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.5`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "5.6.2",
+      "date": "2026-09-21T04:47:54Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "a TypeScript type assertion no longer blanks the two CWE-22 path rules",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-weak-hash-algorithm` missed the `WithRSAEncryption` aliases of MD5 and SHA-1",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-weak-cipher-algorithm` reported only the Triple-DES spellings Node rejects",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-zip-slip` no longer reports a bare ambiguous extractor that extracts nowhere",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.5`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "1.19.5",
+      "date": "2026-09-21T04:47:14Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "resolve NodeNext `.js` specifiers to their TypeScript source",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-operability",
+      "short": "eslint-plugin-operability",
+      "version": "4.1.5",
+      "date": "2026-09-21T04:47:14Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-console-log`'s `convert` fixer emitted a reference to a logger that was never imported",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.5`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-react-features",
+      "short": "eslint-plugin-react-features",
+      "version": "1.7.7",
+      "date": "2026-09-21T04:47:09Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`jsx-no-script-url` now catches control-character-obfuscated `javascript:` URLs",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.5`",
+          "pr": null
+        }
+      ]
+    },
     {
       "package": "eslint-plugin-modernization",
       "short": "eslint-plugin-modernization",

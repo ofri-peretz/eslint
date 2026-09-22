@@ -29,6 +29,21 @@ describe('consistent-function-scoping', () => {
         valid: [
           {
             /*
+             * Control for the module-const case below: a helper capturing a
+             * binding local to the enclosing FUNCTION is a genuine closure and
+             * must stay silent. burgee packages/flagstaff/src/table.ts:147 is
+             * exactly this shape — `plain` is local to `tableComponent()`.
+             */
+            name: 'a helper capturing an enclosing function local is not movable',
+            code: `function outerFn(seed) {
+  const local = seed * 2;
+  const helper = (v) => v + local;
+  return helper(1);
+}`,
+          },
+
+          {
+            /*
              * A class BODY rebinds `this` — that is the case in `invalid` below.
              * A heritage clause does not: `extends this.Base` is evaluated in
              * the enclosing scope, so the arrow does capture `this` and moving
@@ -396,6 +411,45 @@ describe('consistent-function-scoping', () => {
         invalid: [
           {
             /*
+             * burgee packages/roundel/src/theme.ts:98 — `step` reaches only the
+             * module-level `SRGB_MAX`, which is equally in scope at module
+             * level, so moving it out compiles and runs unchanged.
+             *
+             * The Program() visitor deliberately does not register module-level
+             * `function` declarations, precisely so a helper reaching only
+             * module bindings stays reportable. Module-level `const` was
+             * registered anyway by the VariableDeclaration visitor, so the same
+             * helper was reported or suppressed purely by how the module
+             * binding happened to be spelled.
+             */
+            name: 'a helper capturing only a module-level const is still movable',
+            code: `const SRGB_MAX = 255;
+function ansi256(r) {
+  const step = (v) => Math.round(v / SRGB_MAX);
+  return step(r);
+}`,
+            errors: [
+              {
+                messageId: 'inconsistentFunctionScoping',
+                suggestions: [
+                  {
+                    messageId: 'moveToModuleScope',
+                    // The suggestion anchors on the arrow, so the TODO lands
+                    // after `const step =`. Cosmetic and pre-existing; pinned
+                    // here as the behaviour actually is.
+                    output: `const SRGB_MAX = 255;
+function ansi256(r) {
+  const step = // TODO: Move this function to module scope - it doesn't capture outer variables
+(v) => Math.round(v / SRGB_MAX);
+  return step(r);
+}`,
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            /*
              * `collectReferences` walked the whole parameter pattern, so the
              * destructured `{ value }` was recorded as a USE of `value`. An
              * outer binding of the same name then made this look captured and
@@ -627,4 +681,51 @@ function helper() {
       },
     );
   });
+/*
+ * ── REGRESSION: already at module scope, told to move to module scope ────────
+ * Surfaced by the burgee FP/FN corpus sweep, 2026-09-21.
+ * Anchor: burgee packages/burgee/src/yargs-parser.ts:899
+ *
+ *   const yargsParser = function Parser(args, opts) { ... } as Parser;  // silent
+ *   yargsParser.detailed = (args, opts) => parser.parse(args.slice(), opts);
+ *                                                        // ^ REPORTED
+ *
+ * Two lines apart, same scope, same capture set — the verdict turned purely on
+ * how the binding was spelled. The walk over BINDING_WRAPPERS stopped at the
+ * `AssignmentExpression` and so never reached `Program`, leaving the
+ * "already at the top scope" guard unreachable. Same shape as the type-operator
+ * bug that guard was extended for; different node type.
+ */
+describe('a function already at module scope has nowhere higher to go', () => {
+  ruleTester.run('module-scope bindings that are not declarations', consistentFunctionScoping, {
+    valid: [
+      {
+        name: 'the control: a const-bound arrow at module scope is silent',
+        code: 'export const control = (): number => 1;',
+      },
+      {
+        name: 'an arrow assigned to a property at module scope is already at module scope',
+        code: 'export const api = {} as { direct?: () => number };\napi.direct = (): number => 1;',
+      },
+      {
+        name: 'the burgee anchor: a function expression attached to a module-scope binding',
+        code: 'const parser = {} as { detailed?: (a: string) => string };\nparser.detailed = function detailed(a: string) { return a; };',
+      },
+      {
+        name: 'both arms of a module-scope ternary sit in module scope',
+        code: 'declare const flag: boolean;\nexport const pick = flag ? (x: number) => x + 1 : (x: number) => x - 1;',
+      },
+      {
+        name: 'a module-scope logical fallback is chosen between, not moved',
+        code: 'declare const preset: ((x: number) => number) | undefined;\nexport const fn = preset || ((x: number) => x);',
+      },
+    ],
+    // No new invalid fixtures. The guard must stay a MODULE-scope guard, and
+    // the 51 pre-existing cases in this file already pin that: each is a
+    // function nested inside another function, and all still report. Widening
+    // BINDING_WRAPPERS could only have loosened those, so they ARE the
+    // over-widening fence; a fresh fixture would only restate them.
+    invalid: [],
+  });
+});
 });

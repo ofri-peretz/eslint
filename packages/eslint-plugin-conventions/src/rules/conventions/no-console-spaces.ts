@@ -128,12 +128,41 @@ export const noConsoleSpaces = createRule<RuleOptions, MessageIds>({
       return `'${escaped}'`;
     }
 
+    /**
+     * The separator `console.*` inserts between arguments is U+0020, and only
+     * U+0020 is ever made redundant by it.
+     *
+     * This asked `/^\s|\s$/` and fixed with `trim()`, so it deleted the whole
+     * Unicode whitespace class. Verified in Node 24 — the inserted space is
+     * appended AFTER a trailing newline, never absorbed by it:
+     *
+     *   util.format('a\n', 'b')                     === 'a\n b'
+     *   util.format('code=%j\n', 0)                 === 'code=0\n'
+     *   util.format('Value: ', 'x')                 === 'Value:  x'   <- the real case
+     *
+     * Only the last is a double space. Stripping `\n`, `\t`, `\r` or NBSP
+     * changes what the program prints, and this rule is `meta.type: 'problem'`
+     * with a `fix`, so `--fix` applied that silently. Upstream
+     * `unicorn/no-console-spaces` — this rule's own documentationLink —
+     * compares `charAt(0) === ' '` for exactly this reason.
+     */
     // oxlint-disable-next-line consistent-function-scoping
     function hasLeadingOrTrailingSpaces(text: string): boolean {
-      // Check if string starts or ends with whitespace, but not if it's only whitespace
-      // Only flag if there's actual content with leading/trailing spaces
+      // Still not a string that is ONLY padding: trimming that leaves nothing.
       const trimmed = text.trim();
-      return trimmed.length > 0 && /^\s|\s$/.test(text);
+      return trimmed.length > 0 && /^ | $/.test(text);
+    }
+
+    /**
+     * Strip the literal spaces the separator makes redundant, and nothing else.
+     *
+     * `trim()` cannot be used even once the predicate is narrowed: a string
+     * with BOTH a literal space and a newline (`'  banner\n'`) still loses the
+     * newline, because `trim()` does not stop at the space.
+     */
+    // oxlint-disable-next-line consistent-function-scoping
+    function trimSpaces(text: string): string {
+      return text.replace(/^ +/, '').replace(/ +$/, '');
     }
 
     // oxlint-disable-next-line consistent-function-scoping
@@ -170,8 +199,10 @@ export const noConsoleSpaces = createRule<RuleOptions, MessageIds>({
                     arg: staticText,
                   },
                   fix(fixer: TSESLint.RuleFixer) {
-                    const trimmed = staticText.trim();
-                    return fixer.replaceText(arg, quoteSingle(trimmed));
+                    return fixer.replaceText(
+                      arg,
+                      quoteSingle(trimSpaces(staticText)),
+                    );
                   },
                 });
               }
