@@ -139,6 +139,18 @@ export interface Options {
   /** Report all cycles found or just the first one. Default: false */
   reportAllCycles?: boolean;
 
+  /**
+   * Treat an inline `import { type Foo }` specifier as a RUNTIME edge.
+   * Default: false.
+   *
+   * Set this when the project compiles with TypeScript's
+   * `verbatimModuleSyntax`. Under that flag the inline form is not erased —
+   * `tsc` emits `import {} from './foo.js'`, so the target module is still
+   * evaluated and the cycle is real. A statement-level `import type` is erased
+   * under every setting and stays skipped either way.
+   */
+  verbatimModuleSyntax?: boolean;
+
   /** Strategy for fixing cycles: 'module-split', 'direct-import', 'extract-shared', 'dependency-injection', or 'auto' */
   fixStrategy?: FixStrategy;
 
@@ -269,7 +281,11 @@ function exportKindsOf(target: string): Map<string, 'type' | 'value'> {
   return kinds;
 }
 
-function importsOnlyTypes(node: TSESTree.ImportDeclaration, target: string): boolean {
+function importsOnlyTypes(
+  node: TSESTree.ImportDeclaration,
+  target: string,
+  verbatimModuleSyntax: boolean,
+): boolean {
   // `?? []` is not defensive noise: a synthetic node without `specifiers`
   // reaches here from the coverage suite, and a rule that THROWS is worse than
   // one that over-reports — the throw takes down the whole lint run. An empty
@@ -280,7 +296,14 @@ function importsOnlyTypes(node: TSESTree.ImportDeclaration, target: string): boo
   const kinds = exportKindsOf(target);
   return specifiers.every((spec) => {
     if (spec.type !== 'ImportSpecifier') return false; // default / namespace
-    if (spec.importKind === 'type') return true; // inline `import { type Foo }`
+    // Inline `import { type Foo }`. Erased only when `verbatimModuleSyntax` is
+    // OFF. With it on, TypeScript emits `import {} from './foo.js'` — the
+    // statement survives, the module is evaluated, and the runtime edge this
+    // rule exists to find is real. The block comment above called that setting
+    // "fine" on the premise that such codebases write statement-level
+    // `import type`; TS1484's own quick-fix offers the inline form instead, so
+    // the premise does not hold and the edge went silent.
+    if (spec.importKind === 'type') return !verbatimModuleSyntax;
     // `imported` is an Identifier or, since ES2022, a StringLiteral —
     // `import { "odd-name" as Odd }`. No branch for the literal case, because
     // `kinds` only ever holds identifier names, so a quoted name cannot match
@@ -404,6 +427,12 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
             description:
               'Report all circular dependencies found (not just the first one)',
           },
+          verbatimModuleSyntax: {
+            type: 'boolean',
+            default: false,
+            description:
+              "Treat an inline `import { type Foo }` specifier as a runtime edge. Set this when the project compiles with TypeScript's `verbatimModuleSyntax`, under which the inline form is emitted as `import {} from './foo.js'` rather than erased — so the target module is still evaluated and the cycle is real. A statement-level `import type` is erased under every setting and stays skipped either way.",
+          },
           fixStrategy: {
             type: 'string',
             enum: [
@@ -454,6 +483,7 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
       ignorePatterns: [],
       barrelExports: ['index.ts', 'index.tsx', 'index.js', 'index.jsx'],
       reportAllCycles: true,
+      verbatimModuleSyntax: false,
       fixStrategy: 'auto',
       moduleNamingConvention: 'semantic',
       coreModuleSuffix: 'core',
@@ -464,6 +494,7 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const maxDepth = options.maxDepth ?? Infinity;
+    const verbatimModuleSyntax = options.verbatimModuleSyntax ?? false;
     const ignorePatterns = options.ignorePatterns ?? [
       '**/*.test.ts',
       '**/*.test.tsx',
@@ -717,7 +748,7 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
         // Erased before emit? Then this edge does not exist at runtime, and the
         // cycle this rule would name through it cannot occur. See
         // `importsOnlyTypes` — 70.8% of a stratified sample was this case.
-        if (importsOnlyTypes(node, resolved)) return;
+        if (importsOnlyTypes(node, resolved, verbatimModuleSyntax)) return;
 
         // =====================================================================
         // FAST PATH 1: nonCyclicFiles O(1) lookup
