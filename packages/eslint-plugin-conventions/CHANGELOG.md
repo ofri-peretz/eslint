@@ -5,6 +5,19 @@ All notable changes to `eslint-plugin-conventions` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.0.5
+
+### Patch Changes
+
+- **🐛 Fix** — `consistent-existence-index-check` — two detection-scope fixes.
+
+  `#field in obj` is no longer reported — a private-name brand check is not one of the four
+  spellings the rule arbitrates, walks no prototype chain, and has no
+  own-property form, so the suggested `Object.hasOwn(o, #field)` was a
+  SyntaxError. And `obj.hasOwnProperty(key, extra)` is now reported: detection was
+  gated on an undocumented argument count, which suppressed the report rather than
+  the fix, while the `.call` sibling read the same doc notation as two-or-more.
+
 ## 6.0.4
 
 ### Patch Changes

@@ -5,6 +5,22 @@ All notable changes to `eslint-plugin-browser-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.1.7
+
+### Patch Changes
+
+- **🐛 Fix** — `no-clickjacking` — a declared frame protection must actually protect.
+
+  fix: `no-clickjacking` — a declared frame protection no longer counts unless it
+  actually protects. The predicate matched the `X-Frame-Options` header NAME and
+  discarded its value, so the rule's own documented "Incorrect" example —
+  `ALLOWALL` — suppressed the report for the entire file; separately, a bare
+  `deny` or `sameorigin` string anywhere in the file did the same, with no header
+  context. The value now decides, and a bare word counts only where the AST shows
+  it is the header's value (header map, Next.js `headers()` pair, or
+  `setHeader(name, value)`). All five previously locked `valid` cases are
+  unchanged.
+
 ## 2.1.6
 
 ### Patch Changes
