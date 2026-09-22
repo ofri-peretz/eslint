@@ -565,6 +565,48 @@ describe('identical-functions — normalisation', () => {
           // One report per GROUP, not per member.
           errors: [{ messageId: 'identicalFunctions' }],
         },
+        {
+          // FN GUARD: a single-line `/* */` after `{` matched the regex-literal
+          // guard — `*text*` holds no `/`, `\`, newline or `[` — so it was
+          // stashed as a pattern, skipped by comment removal, and restored into
+          // the compared text. Comment PROSE then decided the verdict: the same
+          // bodies reported with `//`, with a two-line `/* */`, or with no
+          // comment at all. From burgee packages/flagstaff/src/cli-table3.ts:635,
+          // whose `/* nothing to initialise */` body was dropped from a group
+          // holding two byte-identical `/* nothing to merge */` twins (:638, :666).
+          name: 'differing single-line block comments do not hide a duplicate',
+          code: `
+          function alpha(order) {
+            /* user orders */
+            const total = order.items.reduce((s, i) => s + i.price * i.quantity, 0);
+            return { id: order.id, total, status: 'processed' };
+          }
+          function beta(order) {
+            /* guest orders are billed to the house account instead */
+            const total = order.items.reduce((s, i) => s + i.price * i.quantity, 0);
+            return { id: order.id, total, status: 'processed' };
+          }
+        `,
+          errors: [{ messageId: 'identicalFunctions' }],
+        },
+        {
+          // FN GUARD: the same escape through a JSDoc block, which opens `/**`
+          // and so takes the identical path.
+          name: 'differing single-line JSDoc blocks do not hide a duplicate',
+          code: `
+          function alpha(order) {
+            /** user orders */
+            const total = order.items.reduce((s, i) => s + i.price * i.quantity, 0);
+            return { id: order.id, total, status: 'processed' };
+          }
+          function beta(order) {
+            /** guest orders billed elsewhere */
+            const total = order.items.reduce((s, i) => s + i.price * i.quantity, 0);
+            return { id: order.id, total, status: 'processed' };
+          }
+        `,
+          errors: [{ messageId: 'identicalFunctions' }],
+        },
       ],
     },
   );
