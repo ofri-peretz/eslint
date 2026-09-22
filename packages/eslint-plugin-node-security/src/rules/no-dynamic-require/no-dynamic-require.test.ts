@@ -64,6 +64,7 @@ describe('no-dynamic-require', () => {
           options: [{ allowContexts: ['test'] }],
         },
         {
+          name: 'a file under __tests__ is a test context even without a .test suffix',
           code: 'const fixture = require(fixturePath);',
           filename: 'src/__tests__/helper.ts',
           options: [{ allowContexts: ['test'] }],
@@ -239,6 +240,21 @@ const pkg = nodeRequire('./package.json');`,
         {
           name: 'a const bound to a call that is not createRequire is not a loader',
           code: 'const nodeRequire = makeLoader(); const mod = nodeRequire(userPath);',
+        },        {
+          name: 'a .main.require chain rooted at something other than require is not a loader',
+          code: 'const mod = app.main.require(userPath);',
+        },
+        {
+          name: 'module.require on a parameter named module is not the loader',
+          code: 'function load(module, userPath) { return module.require(userPath); }',
+        },
+        {
+          name: 'require.main.require on a parameter named require is not the loader',
+          code: 'function load(require, userPath) { return require.main.require(userPath); }',
+        },
+        {
+          name: 'require.main.require on a local named require is not the loader',
+          code: 'const require = makeLoader(); const mod = require.main.require(userPath);',
         },
       ],
       invalid: [
@@ -257,6 +273,13 @@ const mod = nodeRequire(process.argv[2]);`,
         {
           name: 'require.main.require with a steerable specifier reports',
           code: 'const mod = require.main.require(userPath);',
+          errors: [{ messageId: 'dynamicRequire' }],
+        },
+        {
+          name: 'require.main.require on a createRequire alias named require reports',
+          code: `import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
+const mod = require.main.require(userPath);`,
           errors: [{ messageId: 'dynamicRequire' }],
         },
         {
