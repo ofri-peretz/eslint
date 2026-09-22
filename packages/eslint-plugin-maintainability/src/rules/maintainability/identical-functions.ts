@@ -419,8 +419,19 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
         // to positions where a `/` can only open a pattern, never divide —
         // after an operator, an opening bracket, a comma or a statement
         // boundary — because the two are genuinely ambiguous in JavaScript.
+        //
+        // The FIRST character is narrower than the rest: a pattern may not open
+        // with `*`, per RegularExpressionFirstChar in ECMA-262. `{` and `;` are
+        // trigger characters above, so a one-line `/* text */` sitting after
+        // either one matched as a pattern — `*text*` holds no `/`, `\`, newline
+        // or `[` — and was stashed. Comment removal below then skipped it and it
+        // came back at restore, so comment PROSE was compared as code and two
+        // identical bodies carrying different remarks stopped being duplicates.
+        // Stripping comments earlier is not the fix: strings are stashed first
+        // precisely so `//` inside one survives, and a pattern like `/https:\/\//`
+        // would lose its tail to the line-comment stripper.
         .replace(
-          /(^|[=(,:[!&|?{};+\-*%<>~^]\s*)(\/(?:[^/\\\n[]|\\.|\[(?:[^\]\\]|\\.)*\])+\/[dgimsuvy]*)/g,
+          /(^|[=(,:[!&|?{};+\-*%<>~^]\s*)(\/(?:[^/\\\n[*]|\\.|\[(?:[^\]\\]|\\.)*\])(?:[^/\\\n[]|\\.|\[(?:[^\]\\]|\\.)*\])*\/[dgimsuvy]*)/g,
           (_match, prefix: string, pattern: string) => {
             literals.push(pattern);
             return `${prefix}\uE000${literals.length - 1}\uE000`;

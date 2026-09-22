@@ -107,6 +107,61 @@ ruleTester.run('no-barrel-file', noBarrelFile, {
       filename: '/project/src/config/index.ts',
     },
 
+    // ✅ Locally-declared bindings exported through a specifier clause are NOT
+    // a barrel — they re-export nothing. This is the false positive a naive
+    // "count sourceless export specifiers" fix would introduce, so it is pinned.
+    {
+      name: 'a specifier clause over locally-declared bindings is not a barrel',
+      code: `
+        const x = 1;
+        const y = 2;
+        const z = 3;
+        export { x, y, z };
+      `,
+      filename: '/project/src/values/index.ts',
+    },
+
+    // ✅ Imports used locally, with only one binding forwarded: one source, and
+    // one is below the threshold of 3.
+    {
+      name: 'a module that uses its imports and forwards a single binding',
+      code: `
+        import { d } from './d';
+        import { helper } from './helper';
+        export function run() { return helper(); }
+        export { d };
+      `,
+      filename: '/project/src/run/index.ts',
+    },
+
+    // ✅ Inline `type` specifiers are erased too, so a clause forwarding them
+    // creates no runtime edge and must not count toward the re-export total.
+    {
+      name: 'inline type import specifiers are not runtime re-exports',
+      code: `
+        import { type A } from './a';
+        import { type B } from './b';
+        import { type C } from './c';
+        import { type D } from './d';
+        export { A, B, C, D };
+      `,
+      filename: '/project/src/inline-types/index.ts',
+    },
+
+    // ✅ Type-only forwarding is erased at runtime, so it creates no module
+    // edge and must not count toward the re-export total.
+    {
+      name: 'type-only specifier forwarding creates no runtime edge',
+      code: `
+        import type { A } from './a';
+        import type { B } from './b';
+        import type { C } from './c';
+        import type { D } from './d';
+        export type { A, B, C, D };
+      `,
+      filename: '/project/src/types-only/index.ts',
+    },
+
     // ✅ Only named local exports (not a barrel)
     {
       code: `
@@ -159,6 +214,31 @@ ruleTester.run('no-barrel-file', noBarrelFile, {
         export * from './Button';
         export * from './Modal';
         export * from './Table';
+      `,
+      filename: '/project/src/components/index.ts',
+      errors: [{ messageId: 'barrelFileDetected' }],
+    },
+
+    // ❌ The same barrel written as imports plus a specifier clause. This is
+    // bit-for-bit the same module graph as the `export … from` form below —
+    // same [[RequestedModules]] edges, same tree-shaking cost — but it was
+    // silent: a sourceless `export { … }` matched neither isReexport (needs a
+    // source) nor isLocalExport (needs a declaration), so it was dropped
+    // entirely and the file was classified as having NO exports at all.
+    // burgee packages/closeout/src/index.ts is this shape with 7 modules and
+    // now reports. packages/bellpull/src/index.ts is the same shape but also
+    // declares one local binding, so it takes the mixed-file path where `ratio`
+    // counts NODES, not exported names: its single clause forwarding 20 names
+    // scores 1/2 and stays under reexportRatio. That is a separate pre-existing
+    // defect in the ratio model and is deliberately NOT addressed here.
+    {
+      name: 'a barrel spelled as imports plus a specifier clause is still a barrel',
+      code: `
+        import { a } from './a';
+        import { b } from './b';
+        import { c } from './c';
+        import { d } from './d';
+        export { a, b, c, d };
       `,
       filename: '/project/src/components/index.ts',
       errors: [{ messageId: 'barrelFileDetected' }],

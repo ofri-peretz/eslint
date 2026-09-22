@@ -48,6 +48,7 @@ describe('prefer-dependency-version-strategy', () => {
           },
           // Workspace protocol (if allowed)
           {
+            name: 'a workspace: protocol carries no version to caret',
             code: 'const deps = { "package": "workspace:*" };',
             options: [{ strategy: 'caret', allowWorkspace: true }],
           },
@@ -137,11 +138,13 @@ describe('prefer-dependency-version-strategy', () => {
           },
           // Test Property visitor with non-ObjectExpression value (line 244)
           {
+            name: 'a dependencies key whose value is not an object has no entries to read',
             code: 'const packageJson = { dependencies: "invalid" };',
             options: [{ strategy: 'caret' }],
           },
           // Test ObjectExpression with non-version values (line 257 - return false)
           {
+            name: 'a name and a number are not version specifiers, so this is not a dependency map',
             code: 'const obj = { name: "test", value: 123 };',
             options: [{ strategy: 'caret' }],
           },
@@ -183,10 +186,12 @@ describe('prefer-dependency-version-strategy', () => {
       {
         valid: [
           {
+            name: 'a two-operator range satisfies the range strategy',
             code: 'const deps = { "react": ">=18.0.0 <19.0.0" };',
             options: [{ strategy: 'range' }],
           },
           {
+            name: 'an OR of two exact versions is a range',
             code: 'const deps = { "react": "18.0.0 || 19.0.0" };',
             options: [{ strategy: 'range' }],
           },
@@ -199,6 +204,7 @@ describe('prefer-dependency-version-strategy', () => {
             options: [{ strategy: 'range' }],
           },
           {
+            name: 'a hyphen range is a range',
             code: 'const deps = { "react": "18.0.0 - 19.0.0" };',
             options: [{ strategy: 'range' }],
           },
@@ -265,6 +271,26 @@ describe('prefer-dependency-version-strategy', () => {
           name: 'a manifest whose dependencies are correct, with its own version field',
           code: 'const pkg = { name: "x", version: "1.0.0", dependencies: { react: "^18.0.0" } };',
         },
+        {
+          // @source burgee packages/compat-oracle/src/watch.test.ts:99
+          // The sealed guard above asks only whether EVERY value is a version
+          // specifier, so it passes vacuously the moment there is no
+          // disqualifying sibling left. A manifest's own `version` is the
+          // thing being versioned, not a thing depended on, and `^1.0.0`
+          // there is not a publishable manifest.
+          // @found real-source scan (burgee)
+          name: 'FP: a single-property manifest fragment is not a dependency map',
+          code: 'const m = { version: "1.0.0" };',
+        },
+        {
+          // @source burgee packages/compat-oracle/src/registry.test.ts:74
+          // An npm dist-tags map: keys are TAG names, values are the exact
+          // versions each tag resolves to. A dist-tag resolves to one
+          // published version, so a caret there is not a thing npm accepts.
+          // @found real-source scan (burgee)
+          name: 'FP: an npm dist-tags map is keyed by tag, not by package',
+          code: 'const packument = { name: "x", "dist-tags": { latest: "2.1.0", next: "3.0.0-beta.1" } };',
+        },
       ],
       invalid: [
         {
@@ -292,7 +318,65 @@ describe('prefer-dependency-version-strategy', () => {
           output: 'const deps = { app: "workspace:*", react: "^18.0.0" };',
           errors: [{ messageId: 'preferStrategy' }],
         },
+        {
+          // A block key chosen at RUNTIME names nothing, so it cannot be shown
+          // to be one of the non-dependency blocks and the map inside is still
+          // read. Silence here would be a new false negative bought with the
+          // dist-tags fix.
+          name: 'a block whose key is chosen at runtime still has its map read',
+          code: 'const m = { [k]: { react: "18.0.0" } };',
+          output: 'const m = { [k]: { react: "^18.0.0" } };',
+          errors: [{ messageId: 'preferStrategy' }],
+        },
       ],
     });
+  });
+
+  // ── FP sealed 2026-09-16, from the burgee FP/FN sweep ───────────────────
+  // Under the default `caret` strategy the fixer stripped a RANGE OPERATOR as
+  // if it were a prefix. `<2.0.0` became `^2.0.0`, and the two are disjoint:
+  // `semver.intersects('<2.0.0', '^2.0.0') === false`. An unattended `--fix`
+  // installed the major the author had pinned away from. `1.0.0 - 2.0.0`
+  // became `^1.0.0 - 2.0.0`, which `semver.validRange` rejects outright.
+  //
+  // It was never a policy either — the `/^[\^~<>=]?\d+/` gate admits one
+  // operator character, so `>=1.0.0 <2.0.0` (this rule's own documented
+  // example of a range) was already exempt while its one-character cousins
+  // were rewritten.
+  describe('range specifiers are not caret-able', () => {
+    ruleTester.run(
+      'prefer-dependency-version-strategy',
+      preferDependencyVersionStrategy,
+      {
+        valid: [
+          {
+            // @found spec diff (semver)
+            name: 'FP: an exclusive upper bound is not rewritten to a caret',
+            code: 'export const pkg = { dependencies: { legacy: "<2.0.0" } };',
+          },
+          {
+            // @found spec diff (semver)
+            name: 'FP: a lower bound is not rewritten to a caret',
+            code: 'export const pkg = { dependencies: { legacy: ">1.0.0" } };',
+          },
+          {
+            // @found spec diff (semver)
+            name: 'FP: a hyphen range is not rewritten into an invalid range',
+            code: 'export const pkg = { dependencies: { legacy: "1.0.0 - 2.0.0" } };',
+          },
+        ],
+        invalid: [
+          {
+            // CONTROL — a plain version is still caret-ed. The fix must not
+            // turn into "stop reporting anything with a digit in it".
+            name: 'CONTROL: a bare version is still rewritten to a caret',
+            code: 'export const pkg = { dependencies: { react: "18.0.0" } };',
+            output:
+              'export const pkg = { dependencies: { react: "^18.0.0" } };',
+            errors: [{ messageId: 'preferStrategy' }],
+          },
+        ],
+      },
+    );
   });
 });

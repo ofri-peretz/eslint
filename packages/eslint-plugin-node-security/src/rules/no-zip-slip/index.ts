@@ -448,7 +448,17 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
         callee.type === 'Identifier' &&
         archiveFunctions.includes(callee.name)
       ) {
-        return true;
+        // A bare identifier carries strictly LESS evidence than the method
+        // call above: there is no receiver to name an archive. So the same
+        // AMBIGUOUS_EXTRACTORS disambiguation has to apply here too, and the
+        // only evidence a bare call can still offer is a destination
+        // argument. The documented harm requires one anyway — Zip Slip is
+        // "creating files outside of the intended extraction directory", and
+        // a call that names no directory creates nothing. `untar(buf)`
+        // returning entries in memory extracts nowhere; `unzip(file, dest)`
+        // still reports.
+        if (!AMBIGUOUS_EXTRACTORS.has(callee.name)) return true;
+        return node.arguments.length >= 2;
       }
 
       return false;

@@ -11,6 +11,7 @@ autofix: false
 > **Keywords:** unchecked loop, CWE-400, CWE-835, infinite loop, DoS, security
 
 <!-- @rule-summary -->
+
 Detects unchecked loop conditions that could cause DoS
 <!-- @/rule-summary -->
 
@@ -28,7 +29,7 @@ Detects unchecked loop conditions that could cause DoS. This rule is part of [`e
 | **CWE Reference** | CWE-400 (Uncontrolled Resource Consumption), CWE-835 (Infinite Loop) |
 | **Severity**      | High (CVSS 7.5)                                                      |
 | **Auto-Fix**      | 💡 Suggestions available                                             |
-| **Category**   | Security |
+| **Category**      | Security                                                             |
 
 ## Vulnerability and Risk
 
@@ -67,13 +68,6 @@ while (true) {
 const iterations = parseInt(req.query.count);
 for (let i = 0; i < iterations; i++) {
   doWork(); // Could run billions of times!
-}
-
-// No termination condition
-let node = head;
-while (node) {
-  process(node);
-  node = node.next; // Circular reference = infinite loop
 }
 
 // Unbounded recursion
@@ -134,15 +128,15 @@ function recurse(data, depth = 0, maxDepth = 100) {
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `maxStaticIterations` | `number` | `10000` | Literal iteration count above which a loop is reported |
-| `userInputVariables` | `string[]` | `["req","request","body","query","params","input","data"]` | Variable names treated as user-controlled input |
-| `allowWhileTrueWithBreak` | `boolean` | `true` | Allow `while (true)` when the body contains a `break` |
-| `maxRecursionDepth` | `number` | `10` | Recursion depth above which a call is reported |
-| `trustedSanitizers` | `string[]` | `[]` | Additional function names to consider as loop protectors |
-| `trustedAnnotations` | `string[]` | `[]` | Additional JSDoc annotations to consider as safe markers |
-| `strictMode` | `boolean` | `false` | Disable all false positive detection (strict mode) |
+| Option                    | Type       | Default                                                    | Description                                              |
+| ------------------------- | ---------- | ---------------------------------------------------------- | -------------------------------------------------------- |
+| `maxStaticIterations`     | `number`   | `10000`                                                    | Literal iteration count above which a loop is reported   |
+| `userInputVariables`      | `string[]` | `["req","request","body","query","params","input","data"]` | Variable names treated as user-controlled input          |
+| `allowWhileTrueWithBreak` | `boolean`  | `true`                                                     | Allow `while (true)` when the body contains a `break`    |
+| `maxRecursionDepth`       | `number`   | `10`                                                       | Recursion depth above which a call is reported           |
+| `trustedSanitizers`       | `string[]` | `[]`                                                       | Additional function names to consider as loop protectors |
+| `trustedAnnotations`      | `string[]` | `[]`                                                       | Additional JSDoc annotations to consider as safe markers |
+| `strictMode`              | `boolean`  | `false`                                                    | Disable all false positive detection (strict mode)       |
 
 ## Error Message Format
 
@@ -155,51 +149,58 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-400](https://cwe.mitre.org/data/definitions/400.html) [OWASP:A06](https://owasp.org/Top10/A06_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
-| **Issue Description** | Specific vulnerability | `Uncontrolled Resource Consumption (ReDoS) detected` |
-| **Severity & Compliance** | Impact assessment | `HIGH` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A06_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                                                       |
+| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Risk Standards**        | Security benchmarks    | [CWE-400](https://cwe.mitre.org/data/definitions/400.html) [OWASP:A06](https://owasp.org/Top10/A06_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
+| **Issue Description**     | Specific vulnerability | `Uncontrolled Resource Consumption (ReDoS) detected`                                                                                                                                                                                                          |
+| **Severity & Compliance** | Impact assessment      | `HIGH`                                                                                                                                                                                                                                                        |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                                                          |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A06_2021-Injection/)                                                                                                                                                                                                   |
 
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 
-### Values from Variables
+### Loops that advance by self-reference
 
-**Why**: Values stored in variables are not traced.
-
-```typescript
-// ❌ NOT DETECTED - Value from variable
-const value = userInput;
-dangerousOperation(value);
-```
-
-**Mitigation**: Validate all user inputs.
-
-### Wrapper Functions
-
-**Why**: Custom wrappers not recognized.
+**Why**: Termination depends on the _data_ being acyclic and finite, which is not a
+syntactic property. The identical shape is correct in an AST parent walk, a scope-chain
+walk, a prototype-chain walk and a queue drain, and wrong only when the structure loops.
 
 ```typescript
-// ❌ NOT DETECTED - Wrapper
-myWrapper(userInput); // Uses dangerous API internally
+// ❌ NOT DETECTED - terminates iff the list is acyclic
+let node = head;
+while (node) {
+  process(node);
+  node = node.next;
+}
 ```
 
-**Mitigation**: Apply rule to wrapper implementations.
+**Mitigation**: Carry a `visited` set, or bound the walk with a counter.
 
-### Dynamic Invocation
+### Find-up walks without a root guard
 
-**Why**: Dynamic calls not analyzed.
+**Why**: Termination depends on a library function reaching a fixpoint — `dirname('/')`
+returns `'/'`, so a walk that never compares against its own previous value spins at the
+filesystem root. The rule cannot know which callee is idempotent.
 
 ```typescript
-// ❌ NOT DETECTED - Dynamic
-obj[method](userInput);
+// ❌ NOT DETECTED - spins forever if no ancestor has the file
+let dir = dirname(entry);
+while (!existsSync(join(dir, 'package.json'))) dir = dirname(dir);
 ```
 
-**Mitigation**: Avoid dynamic method invocation.
+**Mitigation**: Break when the parent stops changing (`if (parent === dir) break;`).
+
+### Why these stay undetected
+
+Detecting them in general is undecidable, and the syntactic approximation measures
+**0 true positives out of 1 report** across this repository's 740 rule sources — its only
+hit is a correct AST parent walk, including ones inside this rule's own implementation.
+The rule reports only what it can prove: `while (true)`/`for (;;)` without an exit, and
+loop bounds reached from user input. See
+`benchmarks/rule-corpus/secure-coding__no-unchecked-loop-condition/MANIFEST.md`, which
+keeps undecidable shapes as measured misses rather than guessed reports.
 
 ## Further Reading
 

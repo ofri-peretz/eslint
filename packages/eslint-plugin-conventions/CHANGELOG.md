@@ -5,6 +5,88 @@ All notable changes to `eslint-plugin-conventions` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.0.4
+
+### Patch Changes
+
+- **🐛 Fix** — four false positives found by sweeping the plugins over a real corpus
+
+  Each was minimized to a standalone snippet, reproduced under `RuleTester`, and
+  then argued against by an independent reviewer before any code changed. Three
+  further candidates were rejected at that gate and are not in this release.
+
+  **`no-missing-error-context` (reliability + maintainability)** — a message bound
+  to a `const` one line above the `throw` reported "Thrown error missing message",
+  which is false about the node:
+
+  ```ts
+  const message = 'The importMeta option is required.';
+  throw new TypeError(message); // REPORTED
+  ```
+
+  `isProvablyString` already walks through `??`, `||`, `?:` and `+`; it now also
+  resolves a single `const` definition. `const m = someVar`, a reassigned `let`,
+  and `const m = ''` still report.
+
+  **`require-render-return` (react-features)** — detection was the method name and
+  nothing else, so any class with a `render` method — a terminal painter, a canvas,
+  a template engine — drew a CRITICAL "must return a value" for a method whose
+  contract is to return nothing. Now gated on the React superclass check the
+  sibling rules already use.
+
+  **`detect-object-injection` (secure-coding)** — `xs.forEach((v, i) => { dst[i] = v })`
+  drew CVSS 9.8 on a key ECMA-262 guarantees is a Number, while the identical
+  `for` counter was silent. The exemption is gated on the receiver being provably
+  an Array: `Map`, `Set`, `Headers`, `FormData` and `URLSearchParams` pass a string
+  KEY in that slot and still report.
+
+  **`no-console-spaces` (conventions)** — the fixer deleted newlines from program
+  output. `console.log('code=%j\n', code)` was rewritten to drop the `\n`, which
+  reaches stdout; `util.format` appends the inter-argument space _after_ a trailing
+  newline rather than absorbing it. The predicate and the fixer are both narrowed
+  to the literal space that separator actually inserts.
+
+## 6.0.3
+
+### Patch Changes
+
+- **🐛 Fix** — `no-magic-numbers` no longer offers a suggestion that fails to parse
+
+  In a braceless single-statement body — `if (col.border) wrapWidth -= 4;` and the `while`/`for`/`else`/labelled equivalents — the extraction suggestion inserted the constant before a statement that is not an element of a statement list, producing `if (col.border) const MAGIC_4 = 4;`. That is `SyntaxError: Unexpected token 'const'` (TS1156), and it also hoisted the guarded statement out of its conditional so it ran unconditionally (TypeScript's own control-flow analysis reports the escape as TS2454). ESLint's rule-tester asserts that an applied suggestion must not produce a parse error, as a requirement written separately from and identically to the one for autofixes, so `suggestion`-not-`fix` does not excuse it — and this rule already treated the same failure mode as a bug once, for `const MAGIC_1e+21`. The suggestion is now withheld when the constant has nowhere legal to go; the report itself still fires. Note the rule-tester's parse guard does not catch this under the TypeScript parser, which recovers from TS1156, so the new fixture asserts the absence of the suggestion explicitly.
+
+- **🐛 Fix** — `prefer-dependency-version-strategy` no longer rewrites objects that are not dependency maps
+
+  The `ObjectExpression` fallback decided "is this a dependency map" from the
+  VALUES alone, never the keys — despite its own comment stating the contract as
+  "keyed by package name AND every value is a version specifier". Only the second
+  conjunct was implemented, so the guard passed vacuously whenever no
+  disqualifying sibling was left, and the rule offered a `fixable: 'code'`
+  rewrite on data that is not a dependency anywhere:
+
+  - an npm `dist-tags` map (`{ latest: '2.1.0' }`) — keys are TAG names and a
+    dist-tag resolves to one exact version, so `^2.1.0` is not a thing npm accepts
+  - a manifest's own `version` field (`{ version: '1.0.0' }` → `'^1.0.0'`, an
+    unpublishable package.json)
+
+  `{ name: 'x', version: '1.0.0', main: 'index.js' }` was already exempt; narrowing
+  it to one property brought the report back.
+
+  The fallback now also reads keys: a key naming a package.json manifest field
+  says the object is a manifest, and a block whose parent key is a known
+  non-dependency block (`dist-tags`, `versions`, `engines`, …) is skipped
+  outright. `dependencies` / `devDependencies` / `peerDependencies` are
+  deliberately absent from that list. A block key chosen at runtime names nothing
+  and is still read, so the fix buys no new false negative.
+
+  Found by the burgee FP/FN sweep at `packages/compat-oracle/src/registry.test.ts:74`
+  and `packages/compat-oracle/src/watch.test.ts:99`.
+
+- **🐛 Fix** — `prefer-dependency-version-strategy` no longer autofixes a range into a caret
+
+  Under the default `caret` strategy the fixer stripped a range OPERATOR as though it were a prefix, so `<2.0.0` autofixed to `^2.0.0` — and the two are disjoint (`semver.intersects('<2.0.0', '^2.0.0') === false`), meaning an unattended `--fix` installed the very major the author had pinned away from. `1.0.0 - 2.0.0` became `^1.0.0 - 2.0.0`, which `semver.validRange` rejects outright. It was never a deliberate policy either: the rule's entry gate admits exactly one operator character, so `>=1.0.0 <2.0.0` — this rule's own documented example of a range — was already exempt while its one-character cousins were rewritten. Range specifiers are now left alone by the `caret`, `tilde` and `exact` strategies, using the same predicate the `range` strategy already applies. Plain versions are still caret-ed exactly as before.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.5`
+
 ## 6.0.2
 
 ### Patch Changes

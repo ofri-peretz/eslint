@@ -5,6 +5,145 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.4.7
+
+### Patch Changes
+
+- **🐛 Fix** — `no-improper-type-validation` no longer accepts a strict `undefined` comparison as a null guard
+
+  `x !== undefined && typeof x === 'object'` and `x === undefined || typeof x !== 'object'`
+  were treated as guarded, but `null !== undefined` is true, so `null` still reaches the
+  property read — the crash the rule's docs describe. Strict comparisons now count as a
+  guard only against `null`; loose `!= undefined` (same test as `!= null`) still counts.
+
+- **🐛 Fix** — four false positives found by sweeping the plugins over a real corpus
+
+  Each was minimized to a standalone snippet, reproduced under `RuleTester`, and
+  then argued against by an independent reviewer before any code changed. Three
+  further candidates were rejected at that gate and are not in this release.
+
+  **`no-missing-error-context` (reliability + maintainability)** — a message bound
+  to a `const` one line above the `throw` reported "Thrown error missing message",
+  which is false about the node:
+
+  ```ts
+  const message = 'The importMeta option is required.';
+  throw new TypeError(message); // REPORTED
+  ```
+
+  `isProvablyString` already walks through `??`, `||`, `?:` and `+`; it now also
+  resolves a single `const` definition. `const m = someVar`, a reassigned `let`,
+  and `const m = ''` still report.
+
+  **`require-render-return` (react-features)** — detection was the method name and
+  nothing else, so any class with a `render` method — a terminal painter, a canvas,
+  a template engine — drew a CRITICAL "must return a value" for a method whose
+  contract is to return nothing. Now gated on the React superclass check the
+  sibling rules already use.
+
+  **`detect-object-injection` (secure-coding)** — `xs.forEach((v, i) => { dst[i] = v })`
+  drew CVSS 9.8 on a key ECMA-262 guarantees is a Number, while the identical
+  `for` counter was silent. The exemption is gated on the receiver being provably
+  an Array: `Map`, `Set`, `Headers`, `FormData` and `URLSearchParams` pass a string
+  KEY in that slot and still report.
+
+  **`no-console-spaces` (conventions)** — the fixer deleted newlines from program
+  output. `console.log('code=%j\n', code)` was rewritten to drop the `\n`, which
+  reaches stdout; `util.format` appends the inter-argument space _after_ a trailing
+  newline rather than absorbing it. The predicate and the fixer are both narrowed
+  to the literal space that separator actually inserts.
+
+- **📚 Docs** — `no-unchecked-loop-condition` no longer promises a report it cannot make
+
+  The rule's "❌ Incorrect" block listed a linked-list walk (`while (node) { node =
+node.next }`) as detected. Three of that block's four entries do report; this one
+  never did, and should not: termination depends on the data being acyclic, which
+  is not a syntactic property. The identical shape is correct in an AST parent
+  walk, a scope-chain walk and a queue drain — including several inside this
+  plugin's own rules. The syntactic approximation was implemented and measured
+  across this repository's 740 rule sources: one report, zero true positives.
+
+  The example moves to "Known False Negatives" alongside the find-up-without-a-
+  root-guard shape, and the three inherited boilerplate entries there — which
+  described call sinks rather than loops — are replaced with this rule's real
+  ceiling. No behaviour change.
+
+- **🐛 Fix** — three false positives found by sweeping the plugins over a real corpus
+
+  Each was minimized to a standalone snippet, reproduced mechanically, and then
+  argued against by an independent reviewer that saw only the snippet and the
+  rule's own docs. Two further candidates were rejected at that gate — one whose
+  minimization would not reproduce, and one where the reviewer measured the
+  proposed fix at 0 true positives out of 1 report and sent it back as a
+  documentation defect instead. Neither is in this release.
+
+  **`detect-object-injection` (secure-coding)** — the fix this rule's own docs
+  prescribe drew CVSS 9.8 when it was bound to a name rather than used as an
+  expression:
+
+  ```ts
+  const assigned = Object.assign(Object.create(null), src);
+  assigned[key] = 1; // REPORTED
+  ```
+
+  `Object.assign` returns its first argument and never invokes `SetPrototypeOf`,
+  so the binding holds the null-prototype target; a `__proto__` key in the source
+  lands as an inert own data property. The rule already certified that expression
+  as prototype-less when it was the assign _target_, then reported it one
+  statement later as the indexed object. Plain `{}` targets, parameter targets and
+  the two-step primitive `a[k1][k2] = 1` all still report.
+
+  **`exports-last` (import-next)** — a file whose every statement is an export
+  reported its own last-but-one line, telling `export default function a() {}` to
+  "move this export to the end of the file" with nothing non-export after it.
+  Declaration-exports were being reclassified as non-exports to exempt them from
+  being reported, which also made each one a positional wall for the exports
+  before it. Upstream `eslint-plugin-import`, which this rule links as its
+  documentation, treats a declaration-export as an export unconditionally.
+
+  **`cognitive-complexity` (maintainability)** — a factory whose own body is a
+  single `return` was scored at its returned closure's complexity and reported
+  alongside it, so one piece of code drew two HIGH findings and the one on the
+  factory advised "Extract logic to helpers" about a body that was already
+  nothing but a helper. The traversal descended into nested functions, charging
+  their points to every enclosing function; since each nested function is already
+  visited and reported independently, the descent only inflated ancestors. This
+  matches SonarQube RSPEC-3776, which reports a function's own complexity and
+  keeps the aggregate in a metrics sink.
+
+## 5.4.6
+
+### Patch Changes
+
+- **🐛 Fix** — `detect-object-injection` copy-loop guards must now name the key
+
+  `detect-object-injection` no longer treats a guard-shaped token that has nothing to do with the loop key as a guard. Both copy-loop arms decided "is this body guarded?" by joining the body's tokens and running a substring regex over the result, so the scan asked whether a guard SPELLING appeared anywhere — never which key it tested, nor which object, nor whether it related to the loop at all. An unrelated `LEVELS.includes(process.env.LOG_LEVEL)`, or a log line that merely named `constructor`, silenced the canonical CWE-1321 primitive: measured in Node 24, the recursive spelling of the silenced body pollutes `Object.prototype` globally. The suppression now requires a guard BOUND to the key — `ALLOWED.includes(k)`, `set.has(k)`, `Object.hasOwn(o, k)`, `Object.prototype.hasOwnProperty.call(o, k)`, `k in schema`, or `k === '__proto__'` — which is what both messages already promised. This is the contract the write path has held all along ("hasOwn naming a DIFFERENT key does not guard"); the copy-loop arms were looser still, accepting a guard that named no key at all. Guards that do name the key are unaffected, and the AST walk keeps a `__proto__` written inside a COMMENT from clearing the finding, which is why the token scan existed in the first place.
+
+- **🐛 Fix** — `detect-object-injection` no longer accepts a lone `__proto__` check as proof for a recursive merge
+
+  A one-key denylist is sound for a SHALLOW copy — `__proto__` is the only string
+  key whose `[[Set]]` escapes the receiver, so `target['constructor'] = v` merely
+  shadows with an own property. It stops being sound the moment the body
+  recurses, because the escape is then through the READ:
+  `target['constructor']` walks the prototype chain to the `Object` function,
+  then `Object['prototype']`, and the write that follows lands on the global
+  prototype. `bodyGuardsKey` credited any single member of `POLLUTION_KEYS` and
+  returned before walking the rest of the body, so a recursive merge guarding
+  only `__proto__` was silent.
+
+  Measured in Node 24: `merge({}, JSON.parse('{"constructor":{"prototype":{"pwn":1}}}'))`
+  sets `({}).pwn === 1` — global prototype pollution the rule did not report. The
+  rule's own remediation string already prescribes all three keys; it just
+  accepted any one of them as proof of the other two.
+
+  A body that only writes still needs one key, so the documented shallow-copy fix
+  is unchanged. A body that carries a key-computed read onward into a call must
+  now name every key that can escape.
+
+  Found by the burgee FP/FN sweep at `packages/burgee/src/yargs/utils.ts:220`.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.5`
+
 ## 5.4.5
 
 ### Patch Changes

@@ -5,6 +5,94 @@ All notable changes to `eslint-plugin-import-next` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.8.4
+
+### Patch Changes
+
+- **🐛 Fix** — two documented-contract violations found by the burgee FP/FN sweep
+
+  - `node-security/no-arbitrary-file-access` now reports whole-value `process.argv`
+    and `process.env` paths. `detect-non-literal-fs-filename`'s docs hand this shape
+    here by name ("that is `no-arbitrary-file-access`'s question, not this rule's"),
+    and neither rule was reporting it, so a documented handoff landed nowhere.
+
+  - `import-next/no-cycle` gains a `verbatimModuleSyntax` option (default `false`).
+    Under that TypeScript flag an inline `import { type Foo }` is emitted as
+    `import {} from './foo.js'` rather than erased, so the target module is still
+    evaluated and the cycle is real. The rule skipped those edges on the stated
+    premise that `verbatimModuleSyntax` projects write statement-level `import type`;
+    TS1484's own quick-fix offers the inline form instead.
+
+- **🐛 Fix** — three false positives found by sweeping the plugins over a real corpus
+
+  Each was minimized to a standalone snippet, reproduced mechanically, and then
+  argued against by an independent reviewer that saw only the snippet and the
+  rule's own docs. Two further candidates were rejected at that gate — one whose
+  minimization would not reproduce, and one where the reviewer measured the
+  proposed fix at 0 true positives out of 1 report and sent it back as a
+  documentation defect instead. Neither is in this release.
+
+  **`detect-object-injection` (secure-coding)** — the fix this rule's own docs
+  prescribe drew CVSS 9.8 when it was bound to a name rather than used as an
+  expression:
+
+  ```ts
+  const assigned = Object.assign(Object.create(null), src);
+  assigned[key] = 1; // REPORTED
+  ```
+
+  `Object.assign` returns its first argument and never invokes `SetPrototypeOf`,
+  so the binding holds the null-prototype target; a `__proto__` key in the source
+  lands as an inert own data property. The rule already certified that expression
+  as prototype-less when it was the assign _target_, then reported it one
+  statement later as the indexed object. Plain `{}` targets, parameter targets and
+  the two-step primitive `a[k1][k2] = 1` all still report.
+
+  **`exports-last` (import-next)** — a file whose every statement is an export
+  reported its own last-but-one line, telling `export default function a() {}` to
+  "move this export to the end of the file" with nothing non-export after it.
+  Declaration-exports were being reclassified as non-exports to exempt them from
+  being reported, which also made each one a positional wall for the exports
+  before it. Upstream `eslint-plugin-import`, which this rule links as its
+  documentation, treats a declaration-export as an export unconditionally.
+
+  **`cognitive-complexity` (maintainability)** — a factory whose own body is a
+  single `return` was scored at its returned closure's complexity and reported
+  alongside it, so one piece of code drew two HIGH findings and the one on the
+  factory advised "Extract logic to helpers" about a body that was already
+  nothing but a helper. The traversal descended into nested functions, charging
+  their points to every enclosing function; since each nested function is already
+  visited and reported independently, the descent only inflated ancestors. This
+  matches SonarQube RSPEC-3776, which reports a function's own complexity and
+  keeps the aggregate in a metrics sink.
+
+## 2.8.3
+
+### Patch Changes
+
+- **🐛 Fix** — `no-barrel-file` was blind to a barrel spelled as imports plus an export clause
+
+  `import { a } from './a'; … export { a, b, c, d };` is the same module graph as four `export … from` lines — the same requested-module edges, the same eager load, the same tree-shaking cost — but it was silent. A sourceless `export { … }` matched neither `isReexport` (which needs a `source`) nor `isLocalExport` (which needs a `declaration`), so it fell through both buckets and the file was classified as having no exports at all, bailing before any threshold was consulted. The rule's own comment above that line describes the intended behaviour as an OR and names `export { x }` explicitly; the code implemented an AND that excluded it.
+
+  Sourceless clauses are now split per specifier: a name bound by an import contributes that import's module to the re-export source set, and a locally declared name counts as a local export. Resolving per specifier rather than per clause is what keeps `const x = 1; export { x, y, z }` silent — the false positive a naive "count the clause" fix would introduce, now pinned by a test. Type-only specifiers are skipped on both sides, since they are erased before any bundler sees them. A mixed file that forwards imports and also exports a local binding now correctly reports `considerDirectExports` rather than being told it adds "no local logic".
+
+- **🐛 Fix** — `no-extraneous-dependencies` published three config options it did not honour
+
+  `ignore` was in the schema and in the generated docs — "Specific package names to ignore (don't report as missing)" — but was never destructured in `create()`, so setting it did nothing at all. It is now an exact-name allowlist, the blunt sibling of `allowPatterns`. Surfaced by the burgee corpus, where seven workspace-root devDependencies are reported as missing and `ignore` is the documented escape hatch a consumer would reach for first.
+
+  `customPackageJsonDetection` was declared on the exported `Options` interface but absent from the schema, which sets `additionalProperties: false`. A consumer typing against the exported interface and setting it got a fatal config error that aborts the entire lint run — the precise breaking direction the options audit exists to prevent. Removed from the type; nothing read it.
+
+  `resolutionStrategy` keeps its behaviour and its enum, but the schema description now states what the values actually do. `workspace` and `monorepo` were byte-identical branches delegating to a predicate that recognises only the literal `@workspace/` and `@company/` scopes — no workspace-root manifest is read, no `workspaces` glob expanded, no sibling package consulted. The description promised "allow workspace packages" and "cross-package resolution" and delivered neither, which is worse than silence because the option accepts the value without error. Removing the enum members would have been a fatal config error for every existing opt-in user, so the honest repair is to describe the limitation and point at `allowPatterns`. Implementing real workspace resolution remains open.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.5`
+
+## 2.8.2
+
+### Patch Changes
+
+- **🐛 Fix** — `extensions` now checks the specifier of a dynamic `import()`. The rule visited `ImportDeclaration`, `ExportNamedDeclaration` and `ExportAllDeclaration` but not `ImportExpression`, so the identical specifier string was reported on a static import and silent on an `await import(...)` in the same file — leaving the file less consistent after `--fix` than before it, the exact defect the export-from forms were added to remove. A non-literal specifier (template or variable) is still left alone. Surfaces 6 previously-missed findings in the burgee corpus.
+- **🐛 Fix** — `consistent-type-specifier-style` no longer emits a `Fix:` instruction that drops `type` from every specifier but the first. The `type` marker sat outside the `{{name}}` interpolation while the data bound a comma-joined list, so an import of more than one name rendered as `import { type A, B }` — following it demotes every later specifier to a value import, which under `verbatimModuleSyntax` is emitted verbatim and throws at runtime. The autofix was already correct; only the emitted guidance disagreed with it.
+
 ## 2.8.1
 
 ### Patch Changes

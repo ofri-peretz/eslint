@@ -642,6 +642,69 @@ describe('resolveModule Integration Tests', () => {
     expect(resolved).toBe(stylFile);
   });
 
+  // ── FN sealed 2026-09-16, from the burgee FP/FN sweep ───────────────────
+  // TypeScript's NodeNext/Node16 moduleResolution REQUIRES the OUTPUT
+  // extension on a relative specifier, so `./b.js` is how a .ts file must
+  // import its sibling b.ts. The fast path only ever APPENDED extensions, so
+  // it probed `b.js`, `b.js.ts`, `b.js/index.ts` — all misses — and returned
+  // null. import-next/no-cycle bails silently on an unresolved import, so a
+  // real value-level cycle written the only way TypeScript ESM allows went
+  // completely undetected, in a rule that ships `error` in the `typescript`
+  // preset.
+  it('resolves a NodeNext .js specifier to its .ts source', () => {
+    const fromFile = path.join(tempDir, 'project', 'src', 'nodenext-a.ts');
+    const tsFile = path.join(tempDir, 'project', 'src', 'nodenext-b.ts');
+    fs.writeFileSync(fromFile, "import { b } from './nodenext-b.js';");
+    fs.writeFileSync(tsFile, 'export const b = () => 1;');
+
+    expect(resolveModule('./nodenext-b.js', fromFile)).toBe(tsFile);
+  });
+
+  it('prefers a real .js file over its .ts sibling substitution', () => {
+    const fromFile = path.join(tempDir, 'project', 'src', 'both-a.ts');
+    const jsFile = path.join(tempDir, 'project', 'src', 'both-b.js');
+    const tsFile = path.join(tempDir, 'project', 'src', 'both-b.ts');
+    fs.writeFileSync(fromFile, "import { b } from './both-b.js';");
+    fs.writeFileSync(jsFile, 'export const b = 1;');
+    fs.writeFileSync(tsFile, 'export const b = 2;');
+
+    expect(resolveModule('./both-b.js', fromFile)).toBe(jsFile);
+  });
+
+  it('resolves a NodeNext .js specifier to a .tsx source', () => {
+    const fromFile = path.join(tempDir, 'project', 'src', 'tsx-a.ts');
+    const tsxFile = path.join(tempDir, 'project', 'src', 'tsx-b.tsx');
+    fs.writeFileSync(fromFile, "import { B } from './tsx-b.js';");
+    fs.writeFileSync(tsxFile, 'export const B = () => null;');
+
+    expect(resolveModule('./tsx-b.js', fromFile)).toBe(tsxFile);
+  });
+
+  it('resolves a NodeNext .cjs specifier to its .cts source', () => {
+    const fromFile = path.join(tempDir, 'project', 'src', 'cjs-a.cts');
+    const ctsFile = path.join(tempDir, 'project', 'src', 'cjs-b.cts');
+    fs.writeFileSync(fromFile, "import { b } from './cjs-b.cjs';");
+    fs.writeFileSync(ctsFile, 'export const b = () => 1;');
+
+    expect(resolveModule('./cjs-b.cjs', fromFile)).toBe(ctsFile);
+  });
+
+  it('returns null when a NodeNext specifier has no source sibling at all', () => {
+    const fromFile = path.join(tempDir, 'project', 'src', 'missing-a.ts');
+    fs.writeFileSync(fromFile, "import { b } from './missing-b.js';");
+
+    expect(resolveModule('./missing-b.js', fromFile)).toBeNull();
+  });
+
+  it('resolves a NodeNext .mjs specifier to its .mts source', () => {
+    const fromFile = path.join(tempDir, 'project', 'src', 'mjs-a.mts');
+    const mtsFile = path.join(tempDir, 'project', 'src', 'mjs-b.mts');
+    fs.writeFileSync(fromFile, "import { b } from './mjs-b.mjs';");
+    fs.writeFileSync(mtsFile, 'export const b = () => 1;');
+
+    expect(resolveModule('./mjs-b.mjs', fromFile)).toBe(mtsFile);
+  });
+
   it('should handle CSS import resolution when file exists but is not CSS', () => {
     const fromFile = path.join(tempDir, 'project', 'src', 'index.ts');
     const jsFile = path.join(tempDir, 'project', 'src', 'styles.js');

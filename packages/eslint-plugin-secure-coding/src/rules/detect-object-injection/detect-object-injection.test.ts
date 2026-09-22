@@ -68,6 +68,7 @@ describe('detect-object-injection', () => {
           code: "var A = { a: 'A' }; var A = other; function f(req) { return A[req.body.k]; }",
         },
         {
+          name: 'a returned reader closure keyed by its own parameter is not a write',
           code: 'export function build(store) { const read = (key) => store[key]; return read; }',
         },
         {
@@ -1326,6 +1327,33 @@ describe('detect-object-injection', () => {
             `,
           },
 
+          // burgee sweep: packages/burgee/src/yargs-parser.ts:240 (declaration :152) and
+          // :247 -- the same prescribed fix, BOUND to a name instead of used as an
+          // expression, still drew CVSS 9.8. The 2026-08 amendment above pinned the
+          // expression spelling; the const-bound spelling was never covered, so
+          // `Object.assign(Object.create(null), src)` was certified prototype-less as an
+          // assign TARGET and not recognized one statement later as the thing being
+          // indexed.
+          //
+          // Object.assign never invokes SetPrototypeOf -- it does [[Set]] per own
+          // enumerable key -- so the bound value IS the null-prototype target. On a
+          // null-[[Prototype]] target there is no inherited __proto__ accessor, so a
+          // `__proto__` key in the source lands as an inert own data property
+          // (verified Node 24). SPEC.md G1 states this of the *target*, with no
+          // qualification about how the target is spelled.
+          {
+            name: 'a const-bound Object.assign(Object.create(null), src) is still the null-prototype target (burgee: packages/burgee/src/yargs-parser.ts:240)',
+            code: `
+              declare const src: Record<string, unknown>;
+              declare const key: string;
+              function read() {
+                const assigned: any = Object.assign(Object.create(null), src);
+                assigned[key] = 1;
+                return assigned;
+              }
+            `,
+          },
+
           // burgee sweep: packages/burgee/src/yargs-parser.ts:184,188,192,196,200,204,
           // 226,508 -- eight CVSS 9.8 findings from one shape. The exemption resolved a
           // bare binding but bailed on a MemberExpression receiver, so the SAME
@@ -1557,7 +1585,25 @@ describe('detect-object-injection', () => {
           { code: "Object.assign(target, { a: 1 }, 'literal-string');" },
           { code: "Object.assign(target, 'just-a-string');" },
         ],
-        invalid: [],
+        invalid: [
+          // The Object.assign arm follows `arguments[0]`, which can lead back to the
+          // binding it started from. `let a = Object.assign(b, {}); let b =
+          // Object.assign(a, {})` never RUNS — `b` is in TDZ at `a`'s initialiser — but
+          // it PARSES, and the walk would recur forever on input a compiler rejects.
+          // The `seen` guard cuts the second visit to the same CallExpression and the
+          // shape falls through to a normal report; a linter must terminate on every
+          // parse, not only on programs that would execute.
+          {
+            name: 'a parse-only Object.assign cycle terminates instead of hanging the walk',
+            code: `
+              declare const key: string;
+              let a: any = Object.assign(b, {});
+              let b: any = Object.assign(a, {});
+              a[key] = 1;
+            `,
+            errors: [{ messageId: 'objectInjection' }],
+          },
+        ],
       },
     );
 

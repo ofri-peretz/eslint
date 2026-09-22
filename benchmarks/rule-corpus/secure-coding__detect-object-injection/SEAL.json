@@ -32,7 +32,7 @@
     },
     "duel": {
       "state": "met",
-      "evidence": "14 TP / 0 FP / 0 FN — 100.0% precision, 100.0% recall, 100.0% F1",
+      "evidence": "15 TP / 0 FP / 0 FN — 100.0% precision, 100.0% recall, 100.0% F1 (re-run 2026-09-22 with safe/16; eslint-plugin-security 58.8%, safe/16 is a ninth FP for them)",
       "command": "npx tsx benchmarks/suites/ilb-rule-duel/run.mjs secure-coding/detect-object-injection"
     },
     "adversarial": {
@@ -79,6 +79,14 @@
       "summary": "The rule's marginal CPU cost clears the noise floor at 8000 lines only, so no growth curve can be read.",
       "why": "Harness cost at that size is ~70ms and the rule contributes ~11ms; at 500 and 2000 lines the difference between two parser-dominated timings is smaller than the run-to-run variance. The property is decidable, the instrument is not sharp enough.",
       "reopenWhen": "a CPU profile attributing samples to the rule’s own frames exists, or the sizes are raised until two points clear the floor"
+    },
+    {
+      "id": "array-provenance-requires-evidence",
+      "kind": "precision",
+      "limit": "L3",
+      "summary": "An Array iteration callback's index argument is exempt only when the receiver's Array-ness is stated in the file AND the receiver is an identifier or a call. A bare untyped parameter, and a class property such as `this.registeredArguments` declared `Argument[] = []`, both still report.",
+      "why": "The exemption cannot key on the method name. Map, Set, Headers, FormData and URLSearchParams all expose a forEach whose second callback argument is a string KEY — verified Node 24, new URLSearchParams('__proto__=x') binds k === '__proto__' — so a name-only gate would silence a live pollution vector. The rule reads no type information anywhere, so provenance is syntactic, and an untyped parameter states none.",
+      "reopenWhen": "the rule gains type services; or the provenance resolver is extended to member expressions (burgee packages/burgee/src/commander/command.ts:937 is a live anchor: `this.registeredArguments.forEach((a, index) => { processedArgs[index] = value })` where the class declares `registeredArguments: Argument[] = []`); or a corpus measurement shows these shapes dominate the remaining volume"
     }
   ]
 }

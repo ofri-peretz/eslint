@@ -8,6 +8,8 @@
  * ESLint Rule: no-nodejs-modules
  * Prevents Node.js builtin imports (eslint-plugin-import inspired)
  */
+import { builtinModules } from 'node:module';
+
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { createRule, staticString } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
@@ -162,27 +164,60 @@ export const noNodejsModules = createRule<RuleOptions, MessageIds>({
       suggestAlternatives = true,
     } = options || {};
 
-    // Create set of all builtins to check
-    const allBuiltins = new Set([...NODEJS_BUILTINS, ...additionalBuiltins]);
+    // THE BUILTIN SET IS WHATEVER THE RUNNING NODE SAYS IT IS.
+    //
+    // `NODEJS_BUILTINS` is a hand-written literal set covering 31 of the 72
+    // names in Node 24's `module.builtinModules`: no `worker_threads` (stable
+    // since Node 12), `async_hooks`, `diagnostics_channel`, `http2`,
+    // `perf_hooks`, `inspector`, `repl`, `trace_events`, `wasi`, `console` or
+    // `sys`. The sibling `no-extraneous-dependencies` already diagnosed and
+    // fixed this exact defect class in this package, in writing, resolving via
+    // `builtinModules`; `prefer-node-protocol` carries a longer hand-written
+    // list that covers them. The stale set is kept as a floor so a name it
+    // knows is still flagged if a future Node drops it.
+    const allBuiltins = new Set([
+      ...NODEJS_BUILTINS,
+      ...builtinModules,
+      ...additionalBuiltins,
+    ]);
 
     // Create set of allowed builtins
     const allowedBuiltins = new Set(allow);
 
     function isNodejsBuiltin(moduleName: string): boolean {
-      // Check exact match
-      if (allBuiltins.has(moduleName)) {
-        return !allowedBuiltins.has(moduleName);
+      // Strip the `node:` protocol (Node.js 14.18.0+) before any lookup, so the
+      // two spellings of one builtin cannot disagree.
+      const bare = moduleName.startsWith('node:')
+        ? moduleName.slice(5)
+        : moduleName;
+
+      // A SUBPATH BUILTIN IS A BUILTIN. `fs/promises`, `timers/promises`,
+      // `stream/web`, `dns/promises` and friends are in `builtinModules`, but
+      // an exact-match lookup missed them even when the base name was already
+      // known — `node:fs` reported while `node:fs/promises` beside it did not.
+      // Only a BARE specifier can carry a builtin subpath: `@scope/fs/promises`
+      // is an ordinary package, so the base is taken from `bare`, never from a
+      // scoped name.
+      const slash = bare.indexOf('/');
+      const base =
+        bare.startsWith('@') || slash === -1 ? bare : bare.slice(0, slash);
+
+      if (!allBuiltins.has(bare) && !allBuiltins.has(base)) {
+        return false;
       }
 
-      // Check node: protocol prefix (Node.js 14.18.0+)
-      if (moduleName.startsWith('node:')) {
-        const builtinName = moduleName.slice(5);
-        return (
-          allBuiltins.has(builtinName) && !allowedBuiltins.has(builtinName)
-        );
-      }
-
-      return false;
+      // `allow` is matched against every spelling of the same builtin — the
+      // specifier as written, the `node:`-stripped name, the base, and the
+      // base's `node:` form — so `allow: ['fs']` and `allow: ['node:fs']` each
+      // cover `node:fs/promises`. Allowing a builtin but not its subpaths would
+      // be backwards from any intent, and so would honouring one spelling of
+      // the allow entry but not the other.
+      return (
+        !allowedBuiltins.has(moduleName) &&
+        !allowedBuiltins.has(bare) &&
+        !allowedBuiltins.has(base) &&
+        !allowedBuiltins.has(`node:${base}`)
+      );
     }
 
     // oxlint-disable-next-line consistent-function-scoping

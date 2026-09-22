@@ -31,6 +31,27 @@ const mockPackageJson = {
 
 ruleTester.run('no-extraneous-dependencies', noExtraneousDependencies, {
   valid: [
+    // --- burgee FP/FN sweep 2026-09-17 ---
+    // Surfaced by packages/linegauge/src/slice.test.ts:1 in the burgee corpus, where a
+    // workspace-root devDependency is reported as missing and `ignore` is the documented
+    // escape hatch. `ignore` is published in the schema and the generated docs
+    // ("Specific package names to ignore (don't report as missing)") but was never
+    // destructured in create(), so setting it did nothing at all.
+    {
+      name: 'ignore suppresses a package the manifest does not declare',
+      code: `import sliceAnsi from 'slice-ansi';`,
+      options: [{ packageJson: { dependencies: {} }, ignore: ['slice-ansi'] }],
+    },
+    {
+      name: 'ignore does not suppress a package outside its list',
+      code: `import declared from 'declared-pkg';`,
+      options: [
+        {
+          packageJson: { dependencies: { 'declared-pkg': '1.0.0' } },
+          ignore: ['something-else'],
+        },
+      ],
+    },
     // Regular dependencies
     {
       name: 'a declared dependency', 

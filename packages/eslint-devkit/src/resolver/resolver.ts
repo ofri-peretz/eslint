@@ -287,6 +287,22 @@ export function getResolverPerformanceMetrics(): ResolverPerformanceMetrics[] {
 }
 
 /**
+ * What a NodeNext OUTPUT extension can have been compiled FROM.
+ *
+ * `tsc` under `moduleResolution: NodeNext` rewrites nothing: a .ts file that
+ * imports its sibling must spell the specifier with the extension the EMIT
+ * will have. So `./b.js` in a .ts file names `b.ts` on disk.
+ *
+ * @vocabulary TypeScript — https://www.typescriptlang.org/docs/handbook/modules/reference.html#node16-nodenext
+ */
+const NODENEXT_SOURCE_EXTENSIONS: Readonly<Record<string, readonly string[]>> =
+  {
+    '.js': ['.ts', '.tsx'],
+    '.mjs': ['.mts'],
+    '.cjs': ['.cts'],
+  };
+
+/**
  * Resolve an import path using oxc-resolver (Rust NAPI)
  *
  * Resolution priority:
@@ -334,14 +350,38 @@ export function resolveModule(
         return resolved;
       }
 
-      // 2. Try adding extensions (import './foo' → './foo.ts')
+      // 2. NodeNext output extension → TypeScript source
+      //    (import './foo.js' → './foo.ts')
+      //
+      // TypeScript's `NodeNext`/`Node16` moduleResolution REQUIRES the OUTPUT
+      // extension on a relative specifier, so `./b.js` is how a .ts file must
+      // import its sibling `b.ts`. Only the exact-path check above and the
+      // APPEND loop below existed, which probe `b.js`, `b.js.ts` and
+      // `b.js/index.ts` — all misses — so the specifier resolved to nothing.
+      // Rules built on this resolver bail silently on an unresolved import,
+      // which left `no-cycle` blind to real value-level cycles written the
+      // only way TypeScript ESM allows. A real `.js` on disk still wins: the
+      // exact-path check runs first.
+      for (const [outputExt, sourceExts] of Object.entries(
+        NODENEXT_SOURCE_EXTENSIONS,
+      )) {
+        if (!resolved.endsWith(outputExt)) continue;
+        const stem = resolved.slice(0, -outputExt.length);
+        for (const ext of sourceExts) {
+          if (fileExistsSync(stem + ext)) {
+            return stem + ext;
+          }
+        }
+      }
+
+      // 3. Try adding extensions (import './foo' → './foo.ts')
       for (const ext of extensions) {
         if (fileExistsSync(resolved + ext)) {
           return resolved + ext;
         }
       }
 
-      // 3. Try index files (import './foo' → './foo/index.ts')
+      // 4. Try index files (import './foo' → './foo/index.ts')
       for (const ext of extensions) {
         const indexFile = joinPath(resolved, `index${ext}`);
         if (fileExistsSync(indexFile)) {
