@@ -588,6 +588,7 @@ ruleTester.run('options change the verdict', noClickjacking, {
     { code: OVERLAY, options: [{ detectTransparentOverlays: false }] },
     // A VISIBLE full-bleed element is not an overlay at any option setting.
     {
+      name: 'a visible full-bleed element is not an overlay at any option setting',
       code: 'const banner = "<div style=\'position: absolute; top: 0; left: 0\'></div>";',
     },
     // Nor is one removed from layout: `display: none` receives no clicks, so

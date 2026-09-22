@@ -20,7 +20,12 @@
  * - Frame-busting protections
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, objectKeyName, propertyName } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  objectKeyName,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   createSafetyChecker,
@@ -631,16 +636,16 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
       const parent = node.parent;
       if (!parent) return false;
 
-      if (parent.type === 'Property' && parent.value === node) {
+      if (parent.type === AST_NODE_TYPES.Property && parent.value === node) {
         const key = objectKeyName(parent)?.toLowerCase() ?? '';
         if (key === 'x-frame-options') return true;
         // The `{ key, value }` pair shape: look across at the sibling `key`.
-        if (key === 'value' && parent.parent.type === 'ObjectExpression') {
+        if (key === 'value' && parent.parent.type === AST_NODE_TYPES.ObjectExpression) {
           return parent.parent.properties.some(
             (sibling) =>
-              sibling.type === 'Property' &&
+              sibling.type === AST_NODE_TYPES.Property &&
               objectKeyName(sibling)?.toLowerCase() === 'key' &&
-              sibling.value.type === 'Literal' &&
+              sibling.value.type === AST_NODE_TYPES.Literal &&
               typeof sibling.value.value === 'string' &&
               sibling.value.value.toLowerCase() === 'x-frame-options',
           );
@@ -659,15 +664,15 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
       // and the header NAME is the argument immediately before this one -
       // `setHeader(name, value)`. Position alone does not do it; a logger call
       // has the same shape.
-      if (parent.type === 'CallExpression') {
-        if (parent.callee.type !== 'MemberExpression') return false;
+      if (parent.type === AST_NODE_TYPES.CallExpression) {
+        if (parent.callee.type !== AST_NODE_TYPES.MemberExpression) return false;
         if (!HEADER_SETTERS.has(propertyName(parent.callee)?.toLowerCase() ?? ''))
           return false;
         const index = parent.arguments.indexOf(node);
         if (index < 1) return false;
         const name = parent.arguments[index - 1];
         return (
-          name.type === 'Literal' &&
+          name.type === AST_NODE_TYPES.Literal &&
           typeof name.value === 'string' &&
           name.value.toLowerCase() === 'x-frame-options'
         );
