@@ -133,21 +133,32 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
         }
         // Walk to the root of `req.query.file` and judge the base object.
         case 'MemberExpression': {
-          // `process.argv` and `process.env` are named, visible user input, so
-          // they are attributable in exactly the way a bare global is not. The
-          // partition with detect-non-literal-fs-filename is what the valid
-          // cases protect, and that rule's docs hand this shape back here by
-          // name: "that is `no-arbitrary-file-access`'s question, not this
-          // rule's". Reading the base object alone never saw it, because the
-          // root of `process.argv[2]` is the Identifier `process`, and adding
-          // `process` to userInputSources would drag in `process.pid` and
+          // `process.argv` is named, visible user input, so it is attributable
+          // in exactly the way a bare global is not. The partition with
+          // detect-non-literal-fs-filename is what the valid cases protect, and
+          // that rule's docs hand this shape back here by name: "that is
+          // `no-arbitrary-file-access`'s question, not this rule's". Reading the
+          // base object alone never saw it, because the root of
+          // `process.argv[2]` is the Identifier `process`, and adding `process`
+          // to userInputSources would drag in `process.pid` and
           // `process.execPath` with it.
+          //
+          // `process.env` is deliberately NOT here. The sentence that delegates
+          // both shapes is conditional — "IF your threat model treats the
+          // environment or `process.argv` as attacker-controlled" — and an env
+          // var is normally operator configuration, not an untrusted caller.
+          // twilio-node `src/base/RequestClient.ts:128` is the measured case:
+          // `fs.readFileSync(process.env.TWILIO_CA_BUNDLE)` is an operator
+          // pointing the SDK at a CA bundle, and "path traversal vulnerability"
+          // is untrue of it. This rule has no options, so a consumer who
+          // disagrees has no way down from it — argv only is the claim that
+          // holds without one.
           if (
             node.object.type === 'Identifier' &&
-            node.object.name === 'process'
+            node.object.name === 'process' &&
+            propertyName(node) === 'argv'
           ) {
-            const property = propertyName(node);
-            if (property === 'argv' || property === 'env') return true;
+            return true;
           }
           return readsUserInput(node.object, depth + 1);
         }

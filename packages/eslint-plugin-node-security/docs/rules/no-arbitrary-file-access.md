@@ -47,9 +47,8 @@ Path traversal vulnerabilities allow attackers to access files outside the inten
 // A request-derived path
 fs.readFileSync(req.query.file, 'utf8');
 
-// `process.argv` and `process.env` are user input too
+// `process.argv` is user input too
 fs.readFileSync(process.argv[2], 'utf8');
-fs.readFileSync(process.env.CONFIG_PATH, 'utf8');
 ```
 
 ### ✅ Correct
@@ -130,9 +129,12 @@ fs.readFile(userFile, cb);
 ```
 
 **Mitigation**: [`detect-non-literal-fs-filename`](./detect-non-literal-fs-filename.md)
-owns these; the two rules partition rather than overlap. Note that the *named*
-process inputs are on this rule's side of that split — `process.argv` and
-`process.env` are reported, which is the handoff that rule's own docs describe.
+owns these; the two rules partition rather than overlap. `process.argv` is on
+this rule's side of that split, which is the handoff that rule's own docs
+describe. `process.env` is **not** reported: that delegation is conditional on
+treating the environment as attacker-controlled, and an env var is normally
+operator configuration — `fs.readFileSync(process.env.CA_BUNDLE)` is an operator
+pointing a client at a certificate, not a traversal.
 
 ## When Not To Use It
 

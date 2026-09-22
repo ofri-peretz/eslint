@@ -48,6 +48,16 @@ ruleTester.run('no-arbitrary-file-access', noArbitraryFileAccess, {
       name: 'process.cwd() is not user input',
       code: "fs.readFileSync(process.cwd(), 'utf8');",
     },
+    // `process.env` is operator configuration, not an untrusted caller. The
+    // sentence in detect-non-literal-fs-filename's docs that delegates these
+    // shapes is conditional on the threat model, and this rule has no options,
+    // so a consumer who disagrees cannot turn it down. twilio-node
+    // `src/base/RequestClient.ts:128` is the measured case: an operator
+    // pointing the SDK at a CA bundle is not a path traversal.
+    {
+      name: 'a process.env path is operator config, not user input',
+      code: "fs.readFileSync(process.env.CONFIG_PATH, 'utf8');",
+    },
     // Mutually-recursive bindings terminate instead of blowing the stack.
     {
       name: 'mutually-recursive bindings terminate instead of blowing the stack',
@@ -261,12 +271,13 @@ ruleTester.run('no-arbitrary-file-access', noArbitraryFileAccess, {
 
   invalid: [
     /*
-     * `process.argv` / `process.env` ARE attributable user input.
+     * `process.argv` IS attributable user input.
      *
      * The valid cases above partition away paths this rule cannot attribute to
      * a source — those belong to detect-non-literal-fs-filename. `process.argv`
      * is not one of them: it is a named, visible input, and that sibling rule's
-     * own docs hand this shape back here by name:
+     * own docs hand this shape back here by name (`process.env` is deliberately
+     * left out — see the valid case for why):
      *
      *   "`fs.readFileSync(process.env.X)` is silent by design [...] If your
      *    threat model treats the environment or `process.argv` as
@@ -287,11 +298,6 @@ ruleTester.run('no-arbitrary-file-access', noArbitraryFileAccess, {
     {
       name: 'process.argv reaching fs directly is user input',
       code: "fs.readFileSync(process.argv[2], 'utf8');",
-      errors: [{ messageId: 'violationDetected' }],
-    },
-    {
-      name: 'a whole-value process.env path is user input',
-      code: "fs.readFileSync(process.env.CONFIG_PATH, 'utf8');",
       errors: [{ messageId: 'violationDetected' }],
     },
     /*

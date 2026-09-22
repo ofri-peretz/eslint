@@ -1,5 +1,5 @@
 ---
-'@interlace/eslint-plugin-node-security': patch
+'eslint-plugin-node-security': patch
 'eslint-plugin-import-next': patch
 ---
 
