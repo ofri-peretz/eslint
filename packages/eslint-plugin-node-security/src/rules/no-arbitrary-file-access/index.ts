@@ -132,8 +132,25 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
           return bound !== undefined && readsUserInput(bound, depth + 1);
         }
         // Walk to the root of `req.query.file` and judge the base object.
-        case 'MemberExpression':
+        case 'MemberExpression': {
+          // `process.argv` and `process.env` are named, visible user input, so
+          // they are attributable in exactly the way a bare global is not. The
+          // partition with detect-non-literal-fs-filename is what the valid
+          // cases protect, and that rule's docs hand this shape back here by
+          // name: "that is `no-arbitrary-file-access`'s question, not this
+          // rule's". Reading the base object alone never saw it, because the
+          // root of `process.argv[2]` is the Identifier `process`, and adding
+          // `process` to userInputSources would drag in `process.pid` and
+          // `process.execPath` with it.
+          if (
+            node.object.type === 'Identifier' &&
+            node.object.name === 'process'
+          ) {
+            const property = propertyName(node);
+            if (property === 'argv' || property === 'env') return true;
+          }
           return readsUserInput(node.object, depth + 1);
+        }
         case 'TemplateLiteral':
           return node.expressions.some((e) => readsUserInput(e, depth + 1));
         case 'BinaryExpression':
