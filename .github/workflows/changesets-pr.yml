@@ -235,7 +235,7 @@ jobs:
         run: |
           set -euo pipefail
           PR=$(gh pr list --repo "${{ github.repository }}" \
-                 --head changeset-release/main --state open \
+                 --head changeset-release/main --base main --state open \
                  --json number --jq '.[0].number // empty')
           if [ -z "$PR" ]; then
             echo "::warning::No open Version PR found on changeset-release/main — nothing to arm."
