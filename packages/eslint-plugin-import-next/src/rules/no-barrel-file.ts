@@ -101,6 +101,47 @@ function isReexport(node: TSESTree.Node): boolean {
 }
 
 /**
+ * Split a sourceless `export { a, b }` clause by where each name was BOUND.
+ *
+ * `import { a } from './a'; export { a };` is the same module graph as
+ * `export { a } from './a';` — same requested-module edge, same eager load,
+ * same tree-shaking cost — so it is the same barrel. A clause over locally
+ * declared bindings re-exports nothing and must stay silent, which is why this
+ * resolves per specifier rather than counting the clause.
+ *
+ * Imports are module-scoped and cannot be shadowed at the top level, so a name
+ * map is exact here and no scope walk is needed.
+ *
+ * Type-only specifiers are erased before any bundler sees them, so they create
+ * no runtime edge and are skipped on both sides.
+ */
+function splitSpecifierClause(
+  node: TSESTree.ExportNamedDeclaration,
+  importSourceByLocalName: ReadonlyMap<string, string>,
+): { reexportSources: string[]; hasLocalExport: boolean } {
+  const reexportSources: string[] = [];
+  let hasLocalExport = false;
+
+  for (const specifier of node.specifiers) {
+    if (specifier.exportKind === 'type' || node.exportKind === 'type') {
+      continue;
+    }
+    // `local` is always an Identifier here: a string-literal local
+    // (`export { "a" as b }`) is only legal with a `from` clause, and this
+    // function is only called when `source === null`.
+    const localName = (specifier.local as TSESTree.Identifier).name;
+    const source = importSourceByLocalName.get(localName);
+    if (source === undefined) {
+      hasLocalExport = true;
+    } else {
+      reexportSources.push(source);
+    }
+  }
+
+  return { reexportSources, hasLocalExport };
+}
+
+/**
  * Check if a node is a local export (not re-exporting from another module)
  */
 function isLocalExport(node: TSESTree.Node): boolean {
@@ -115,27 +156,19 @@ function isLocalExport(node: TSESTree.Node): boolean {
 }
 
 /**
- * Count the number of modules being re-exported
+ * The set of modules re-exported by these nodes.
  */
-function countReexportSources(
+function collectReexportSources(
   reexports: TSESTree.ExportAllDeclaration[],
   namedReexports: TSESTree.ExportNamedDeclaration[],
-): number {
+): Set<string> {
   const sources = new Set<string>();
-
-  for (const node of reexports) {
+  for (const node of [...reexports, ...namedReexports]) {
     if (node.source?.value) {
       sources.add(String(node.source.value));
     }
   }
-
-  for (const node of namedReexports) {
-    if (node.source?.value) {
-      sources.add(String(node.source.value));
-    }
-  }
-
-  return sources.size;
+  return sources;
 }
 
 export const noBarrelFile = createRule<RuleOptions, MessageIds>({
@@ -253,7 +286,29 @@ export const noBarrelFile = createRule<RuleOptions, MessageIds>({
     const namedReexports: TSESTree.ExportNamedDeclaration[] = [];
     const localExports: TSESTree.Node[] = [];
 
+    // Local name -> module it was imported from, for resolving a sourceless
+    // `export { … }` clause back to the edges it actually forwards.
+    const importSourceByLocalName = new Map<string, string>();
+    // Sources forwarded indirectly (imported, then exported by specifier).
+    const indirectReexportSources = new Set<string>();
+
     return {
+      ImportDeclaration(node: TSESTree.ImportDeclaration) {
+        if (node.importKind === 'type') return;
+        for (const specifier of node.specifiers) {
+          if (
+            specifier.type === AST_NODE_TYPES.ImportSpecifier &&
+            specifier.importKind === 'type'
+          ) {
+            continue;
+          }
+          importSourceByLocalName.set(
+            specifier.local.name,
+            String(node.source.value),
+          );
+        }
+      },
+
       ExportAllDeclaration(node: TSESTree.ExportAllDeclaration) {
         exportAllDeclarations.push(node);
       },
@@ -263,6 +318,24 @@ export const noBarrelFile = createRule<RuleOptions, MessageIds>({
           namedReexports.push(node);
         } else if (isLocalExport(node)) {
           localExports.push(node);
+        } else {
+          // Everything left is a sourceless specifier clause: `isReexport` took
+          // every node with a `source`, and `isLocalExport` took every sourceless
+          // node with a `declaration`. This case used to fall through both and be
+          // dropped, which could make a real barrel look export-free.
+          const { reexportSources, hasLocalExport } = splitSpecifierClause(
+            node,
+            importSourceByLocalName,
+          );
+          for (const source of reexportSources) {
+            indirectReexportSources.add(source);
+          }
+          if (reexportSources.length > 0) {
+            namedReexports.push(node);
+          }
+          if (hasLocalExport) {
+            localExports.push(node);
+          }
         }
       },
 
@@ -282,11 +355,17 @@ export const noBarrelFile = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        // Count unique source modules
-        const sourceCount = countReexportSources(
+        // Count unique source modules. `collectReexportSources` reads `source`
+        // off the node, which a specifier clause does not have, so the sources
+        // resolved through the import map are folded in here.
+        const sources = new Set<string>(indirectReexportSources);
+        for (const source of collectReexportSources(
           exportAllDeclarations,
           namedReexports,
-        );
+        )) {
+          sources.add(source);
+        }
+        const sourceCount = sources.size;
 
         // Check if file has local exports
         const hasLocalExports = localExports.length > 0;

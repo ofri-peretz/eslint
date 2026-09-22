@@ -469,32 +469,31 @@ describe('no-console-spaces', () => {
         {
           code: 'console.log("\\n\\t");',
         },
+        // CORRECTED 2026-09-21 — these two were `invalid` with an `output` that
+        // DELETED the escape. The separator `console.*` inserts is U+0020 and
+        // it is appended after a trailing newline, never absorbed by it
+        // (Node 24: `util.format('a\\n', 'b') === 'a\\n b'`), so trimming here
+        // changed what the program printed. `--fix` did it silently. Upstream
+        // `unicorn/no-console-spaces` compares `charAt(0) === ' '` and never
+        // touches these. burgee scripts/control-bands.ts:622 and
+        // scripts/run-evals.ts:285 are banner spacers this rewrote.
+        {
+          name: 'a tab is not the separator, so it is not redundant',
+          code: 'console.log("\\thello");',
+        },
+        {
+          name: 'a trailing newline survives the separator and is not redundant',
+          code: 'console.log("hello\\n");',
+        },
       ],
       invalid: [
-        // String with tab
+        // Mixed whitespace — the literal edge spaces ARE redundant and still
+        // report; the `\\n` beside them now survives the fix. Before, the
+        // output was `'hello'` and both newlines were gone.
         {
-          code: 'console.log("\\thello");',
-          output: "console.log('hello');",
-          errors: [
-            {
-              messageId: 'noConsoleSpaces',
-            },
-          ],
-        },
-        // String with newline
-        {
-          code: 'console.log("hello\\n");',
-          output: "console.log('hello');",
-          errors: [
-            {
-              messageId: 'noConsoleSpaces',
-            },
-          ],
-        },
-        // Mixed whitespace
-        {
-          code: 'console.log(" \\t\\n hello \\n\\t ");',
-          output: "console.log('hello');",
+          name: 'literal edge spaces are stripped without taking the newlines with them',
+          code: 'console.log(" \\n hello \\n ");',
+          output: "console.log('\\n hello \\n');",
           errors: [
             {
               messageId: 'noConsoleSpaces',

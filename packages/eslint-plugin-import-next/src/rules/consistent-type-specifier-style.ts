@@ -44,7 +44,11 @@ export const consistentTypeSpecifierStyle = createRule<RuleOptions, MessageIds>(
           cwe: 'CWE-1078',
           description: 'Use inline type specifier: import { type Foo }',
           severity: 'LOW',
-          fix: 'Convert to inline type: import { type {{name}} } from ...',
+          // `type` belongs INSIDE the interpolation. Left outside the braces it marked
+          // only the first name, so the moment an import carried more than one
+          // specifier the Fix: line described a different edit than fix() applies —
+          // one that demotes every later specifier to a value import.
+          fix: 'Convert to inline type: import { {{name}} } from ...',
           documentationLink:
             'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/consistent-type-specifier-style.md',
         }),
@@ -116,7 +120,7 @@ export const consistentTypeSpecifierStyle = createRule<RuleOptions, MessageIds>(
                   messageId: 'preferInline',
                   data: {
                     name: namedSpecifiers
-                      .map((s: TSESTree.ImportSpecifier) => s.local.name)
+                      .map((s: TSESTree.ImportSpecifier) => `type ${s.local.name}`)
                       .join(', '),
                   },
                   fix: rebuildWouldDropAnAttribute

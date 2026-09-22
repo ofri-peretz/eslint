@@ -117,6 +117,25 @@ const DEFAULT_IGNORE = new Set<number>([-1, 0, 1, 2]);
  * Uppercased so the exponent marker matches the SCREAMING_SNAKE_CASE the name
  * claims to be, and trailing separators trimmed so `1e+21` cannot end in `_`.
  */
+/**
+ * Whether a statement sits in a slot that accepts a sibling declaration.
+ *
+ * A lexical declaration is illegal in every single-statement position, so the
+ * extraction suggestion has nowhere to put `const NAME = value;` unless the
+ * statement it would precede is an element of a statement list.
+ */
+const STATEMENT_LIST_PARENTS = new Set([
+  'BlockStatement',
+  'Program',
+  'SwitchCase',
+  'StaticBlock',
+  'TSModuleBlock',
+]);
+
+function isStatementListSlot(stmt: TSESTree.Node): boolean {
+  return STATEMENT_LIST_PARENTS.has(stmt.parent?.type ?? '');
+}
+
 function constNameFor(value: number): string {
   const prefix = value < 0 ? 'MAGIC_NEG_' : 'MAGIC_';
   const digits = String(Math.abs(value))
@@ -566,7 +585,6 @@ export const noMagicNumbers = createRule<RuleOptions, MessageIds>({
         if (isNumericDataArray(node)) return;
 
         const constName = constNameFor(value);
-        const sourceCode = context.sourceCode;
 
         context.report({
           node,
@@ -579,11 +597,22 @@ export const noMagicNumbers = createRule<RuleOptions, MessageIds>({
               fix(fixer) {
                 const stmt = nearestStatement(node);
                 if (!stmt) return null;
-                // Determine indentation from the statement's first token.
-                const firstToken = sourceCode.getFirstToken(stmt);
-                if (!firstToken) return null;
-                const col = firstToken.loc.start.column;
-                const indent = ' '.repeat(col);
+                // `insertTextBefore(stmt, …)` is only legal where `stmt` is an
+                // element of a statement LIST. In a braceless single-statement
+                // body (`if (x) foo(7);`, `while`, `for`, `else`, a labeled
+                // statement) it is not, and inserting there emits a lexical
+                // declaration in a position that does not parse — and hoists
+                // the guarded statement out of its conditional. ESLint's own
+                // rule-tester asserts an applied suggestion must not produce a
+                // parse error, so the suggestion is withheld instead. Returning
+                // null drops only the suggestion; the report still fires.
+                if (!isStatementListSlot(stmt)) return null;
+                // Indentation comes from the statement's own start column. This
+                // used to read `context.sourceCode.getFirstToken(stmt)` and guard its
+                // null, but the only node that returns null there is one with no
+                // parent, which the slot check above already rejects — so the
+                // guard became unreachable. `loc` needs no such guard.
+                const indent = ' '.repeat(stmt.loc.start.column);
                 return [
                   fixer.insertTextBefore(
                     stmt,

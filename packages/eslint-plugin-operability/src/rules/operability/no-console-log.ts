@@ -306,6 +306,22 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
     const effectiveLogger = loggerName || detectedLogger || 'logger';
 
     /**
+     * Whether `name` resolves to a binding visible from `node` — walking the
+     * scope chain up to module/global scope. Used to keep the `convert` fixer
+     * from emitting a reference to a logger that was never imported.
+     */
+    const hasBindingInScope = (name: string, node: TSESTree.Node): boolean => {
+      let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(node);
+      while (scope) {
+        if (scope.variables.some((variable) => variable.name === name)) {
+          return true;
+        }
+        scope = scope.upper;
+      }
+      return false;
+    };
+
+    /**
      * Check if the current file should be ignored based on ignorePaths patterns.
      * Supports exact matches, directory prefixes, and glob-like patterns.
      */
@@ -451,6 +467,29 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
               parentType === 'StaticBlock';
 
             if (!wrapsCallExactly || !inStatementList) return null;
+          }
+
+          /**
+           * `convert` rewrites the callee to `<effectiveLogger>.<method>`. That
+           * name is whatever config or detection produced, falling back to the
+           * literal string 'logger' — so on a file that imports no logger the
+           * fixer emitted a reference to a binding that does not exist, turning
+           * working code into a ReferenceError (TS2304 under TypeScript) and
+           * introducing a fresh `no-undef` report. Found on burgee
+           * packages/burgee/src/yargs/factory.ts:1034, the same line that
+           * prompted the statement guard above: its only logger is the private
+           * field `#logger`, which the import scanner cannot see.
+           *
+           * Same reasoning as `remove`/`comment` — `fixable: 'code'` means
+           * "safe to apply unattended" and the docs tell users to run `--fix`
+           * in CI — so the fixer declines when the name has no binding in
+           * scope. The report is unaffected; only the rewrite is withheld.
+           */
+          if (
+            strategy === 'convert' &&
+            !hasBindingInScope(effectiveLogger, node)
+          ) {
+            return null;
           }
 
           switch (strategy) {

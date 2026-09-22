@@ -5,6 +5,33 @@ All notable changes to `eslint-plugin-import-next` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.8.3
+
+### Patch Changes
+
+- **🐛 Fix** — `no-barrel-file` was blind to a barrel spelled as imports plus an export clause
+
+  `import { a } from './a'; … export { a, b, c, d };` is the same module graph as four `export … from` lines — the same requested-module edges, the same eager load, the same tree-shaking cost — but it was silent. A sourceless `export { … }` matched neither `isReexport` (which needs a `source`) nor `isLocalExport` (which needs a `declaration`), so it fell through both buckets and the file was classified as having no exports at all, bailing before any threshold was consulted. The rule's own comment above that line describes the intended behaviour as an OR and names `export { x }` explicitly; the code implemented an AND that excluded it.
+
+  Sourceless clauses are now split per specifier: a name bound by an import contributes that import's module to the re-export source set, and a locally declared name counts as a local export. Resolving per specifier rather than per clause is what keeps `const x = 1; export { x, y, z }` silent — the false positive a naive "count the clause" fix would introduce, now pinned by a test. Type-only specifiers are skipped on both sides, since they are erased before any bundler sees them. A mixed file that forwards imports and also exports a local binding now correctly reports `considerDirectExports` rather than being told it adds "no local logic".
+
+- **🐛 Fix** — `no-extraneous-dependencies` published three config options it did not honour
+
+  `ignore` was in the schema and in the generated docs — "Specific package names to ignore (don't report as missing)" — but was never destructured in `create()`, so setting it did nothing at all. It is now an exact-name allowlist, the blunt sibling of `allowPatterns`. Surfaced by the burgee corpus, where seven workspace-root devDependencies are reported as missing and `ignore` is the documented escape hatch a consumer would reach for first.
+
+  `customPackageJsonDetection` was declared on the exported `Options` interface but absent from the schema, which sets `additionalProperties: false`. A consumer typing against the exported interface and setting it got a fatal config error that aborts the entire lint run — the precise breaking direction the options audit exists to prevent. Removed from the type; nothing read it.
+
+  `resolutionStrategy` keeps its behaviour and its enum, but the schema description now states what the values actually do. `workspace` and `monorepo` were byte-identical branches delegating to a predicate that recognises only the literal `@workspace/` and `@company/` scopes — no workspace-root manifest is read, no `workspaces` glob expanded, no sibling package consulted. The description promised "allow workspace packages" and "cross-package resolution" and delivered neither, which is worse than silence because the option accepts the value without error. Removing the enum members would have been a fatal config error for every existing opt-in user, so the honest repair is to describe the limitation and point at `allowPatterns`. Implementing real workspace resolution remains open.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.5`
+
+## 2.8.2
+
+### Patch Changes
+
+- **🐛 Fix** — `extensions` now checks the specifier of a dynamic `import()`. The rule visited `ImportDeclaration`, `ExportNamedDeclaration` and `ExportAllDeclaration` but not `ImportExpression`, so the identical specifier string was reported on a static import and silent on an `await import(...)` in the same file — leaving the file less consistent after `--fix` than before it, the exact defect the export-from forms were added to remove. A non-literal specifier (template or variable) is still left alone. Surfaces 6 previously-missed findings in the burgee corpus.
+- **🐛 Fix** — `consistent-type-specifier-style` no longer emits a `Fix:` instruction that drops `type` from every specifier but the first. The `type` marker sat outside the `{{name}}` interpolation while the data bound a comma-joined list, so an import of more than one name rendered as `import { type A, B }` — following it demotes every later specifier to a value import, which under `verbatimModuleSyntax` is emitted verbatim and throws at runtime. The autofix was already correct; only the emitted guidance disagreed with it.
+
 ## 2.8.1
 
 ### Patch Changes

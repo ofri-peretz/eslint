@@ -58,7 +58,9 @@ describe('no-console-log — coverage completion (Layer 1: RuleTester)', () => {
       {
         code: "import pino from 'pino';\nconsole.log('x');",
         options: [{ strategy: 'convert', autoDetectLogger: false }],
-        output: "import pino from 'pino';\nlogger.debug('x');",
+        // Detection is off, so no logger is bound: the fix is withheld and
+        // only the report stands. The autoDetectLogger:false branch still runs.
+        output: null,
         errors: [{ messageId: 'consoleLogFound' }],
       },
       // Namespace import specifier — neither ImportDefaultSpecifier nor
@@ -67,7 +69,8 @@ describe('no-console-log — coverage completion (Layer 1: RuleTester)', () => {
       {
         code: "import * as winstonNs from 'winston';\nconsole.log('x');",
         options: [{ strategy: 'convert' }],
-        output: "import * as winstonNs from 'winston';\nlogger.debug('x');",
+        // Namespace specifier binds `winstonNs`, not `logger` — fix withheld.
+        output: null,
         errors: [{ messageId: 'consoleLogFound' }],
       },
       // Default import whose local name does NOT match the logger patterns —
@@ -75,7 +78,8 @@ describe('no-console-log — coverage completion (Layer 1: RuleTester)', () => {
       {
         code: "import myUtils from 'my-utils';\nconsole.log('x');",
         options: [{ strategy: 'convert' }],
-        output: "import myUtils from 'my-utils';\nlogger.debug('x');",
+        // `myUtils` does not match the logger patterns — fix withheld.
+        output: null,
         errors: [{ messageId: 'consoleLogFound' }],
       },
       // require() whose variable name does NOT match the logger patterns —
@@ -83,7 +87,8 @@ describe('no-console-log — coverage completion (Layer 1: RuleTester)', () => {
       {
         code: "const myUtils = require('my-utils');\nconsole.log('x');",
         options: [{ strategy: 'convert' }],
-        output: "const myUtils = require('my-utils');\nlogger.debug('x');",
+        // same, via require() — fix withheld.
+        output: null,
         errors: [{ messageId: 'consoleLogFound' }],
       },
     ],
@@ -93,7 +98,10 @@ describe('no-console-log — coverage completion (Layer 1: RuleTester)', () => {
 /** Build a synthetic console.log CallExpression node. */
 interface SyntheticNodeInit {
   parent: unknown;
-  loc?: { start: { line: number; column: number }; end: { line: number; column: number } };
+  loc?: {
+    start: { line: number; column: number };
+    end: { line: number; column: number };
+  };
 }
 
 function makeConsoleLogCall({ parent, loc }: SyntheticNodeInit) {

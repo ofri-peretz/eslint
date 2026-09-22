@@ -5,6 +5,37 @@ All notable changes to `eslint-plugin-maintainability` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.2.11
+
+### Patch Changes
+
+- **🐛 Fix** — `consistent-function-scoping` was silent on a helper capturing only a module-level `const`
+
+  `getOuterScopeVariables` unioned every scope below the current one, module scope included, so a nested helper whose only outer reference is a module binding looked captured and the report was withheld. But module scope is the destination the rule suggests moving to — a binding that lives there is equally in scope after the move and cannot be what prevents it.
+
+  The rule already knew this: `Program()` deliberately declines to register module-level `function` declarations, with a comment citing burgee `yargs/usage.ts:247`. The `VariableDeclaration` visitor registered module-level `const`/`let` anyway, so the identical helper was reported or suppressed purely by spelling — `function getText(){}` reported, `const SRGB_MAX = 255` silent.
+
+  Module scope is now dropped alongside the enclosing one. Bindings from any function scope in between are still counted, so a genuine closure stays silent — pinned by a new valid fixture taken from burgee `packages/flagstaff/src/table.ts:147`, where the captured binding really is local to the enclosing function. Found on burgee `packages/roundel/src/theme.ts:98`, `:131` and `:178`. Nothing pinned the old suppression; on burgee the rule goes 22 to 36 reports, all 14 additions genuinely movable and none lost.
+
+- **🐛 Fix** — `identical-functions` compared comment prose as code, hiding duplicates behind a one-line `/* */`
+
+  `normalizeBody` stashes regex literals before it strips comments, and its pattern was anchored to positions that include `{` and `;`. A single-line `/* text */` sitting after either one satisfied the regex-literal alternative — `*text*` contains no `/`, `\`, newline or `[` — so it was stashed as a pattern, skipped by the comment stripper that runs next, and restored verbatim into the string the similarity score is computed over. Comment text then decided the verdict: two byte-identical bodies carrying different remarks stopped being duplicates, while the same comments written as `//`, spread across two lines, or placed after `)` left the finding intact. Editing one character of comment prose moved the score off 100%, which is what proves the bytes were inside the comparison.
+
+  The rule's own documented ❌ Incorrect example stops reporting once each function gains one differing single-line block comment.
+
+  The fix narrows only the first character of the pattern to exclude `*`, per `RegularExpressionFirstChar` in ECMA-262: a regex literal can never open with `*`, which is exactly what makes `/*` a comment opener. Stripping comments earlier is not available as a fix — strings are stashed first precisely so that a `//` inside one survives, and a pattern such as `/https:\/\//` would lose its tail to the line-comment stripper.
+
+  Surfaced against the burgee corpus, where a group of three byte-identical no-op interface implementations reported only two members; the third was excluded because its comment read `/* nothing to initialise */` rather than `/* nothing to merge */`.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.5`
+
+## 3.2.10
+
+### Patch Changes
+
+- **🐛 Fix** — `cognitive-complexity` charges a homogeneous run of logical operators once, not once per operator. The docs' Complexity Factors table scores logical operators "+1 | `&&`, `||` (sequence breaks)" — a run costs one point and only a break in the run starts the next — but every `LogicalExpression` node was charged, so `a && b && c && d` cost 3 where the table says 1. That inflated every `&&`-heavy function against an unchanged Sonar-default threshold of 15. Mixed runs such as `a && b || c` still cost 2, as two sequences should.
+- **🐛 Fix** — `identical-functions` no longer groups a function with a closure nested inside it. An outer function whose body is largely one call taking an inline callback shares almost all its text with that callback, so the pair cleared the similarity threshold by construction — but they are one implementation, and "extract to a reusable function" is impossible advice, because lifting a closure out of its own parent removes no code. A triple-nested `forEach` was reported as "3 duplicates" of itself. Removes 6 of burgee's 24 findings for this rule.
+
 ## 3.2.9
 
 ### Patch Changes

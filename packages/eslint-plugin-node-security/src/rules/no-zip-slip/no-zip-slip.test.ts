@@ -58,20 +58,41 @@ describe('no-zip-slip', () => {
           name: 'an extraction library that validates for you',
           code: 'const safeExtract = require("safe-archive-extract"); safeExtract(file, dest);',
         },
+        {
+          // @source burgee packages/compat-oracle/src/tar.ts:103
+          // A pure in-memory untar: returns entries, takes no destination, and
+          // the file imports no fs. The documented harm — creating files
+          // outside an extraction directory — has no way to happen here.
+          // The AMBIGUOUS_EXTRACTORS disambiguation applied to member callees
+          // was never applied to a bare identifier, which carries strictly
+          // LESS evidence: it has no receiver to name an archive at all.
+          // @found real-source scan (burgee)
+          name: 'FP: an AMBIGUOUS bare extractor with no destination extracts nowhere',
+          code: 'function untar(b) { return []; }\nconst out = untar(b);',
+        },
+        {
+          // Same shape, the other ambiguous bare names.
+          // @found real-source scan (burgee)
+          name: 'FP: a bare unzip with only a source argument extracts nowhere',
+          code: 'const out = unzip(buffer);',
+        },
         // Validated paths
         {
           code: 'const safePath = validatePath(entry.name); fs.writeFileSync(path.join(dest, safePath), data);',
         },
         // Safe libraries
         {
+          name: 'opening an archive is not extracting it — no entry is written anywhere',
           code: 'const yauzl = require("yauzl"); yauzl.open(zipFile, callback);',
         },
         // Non-archive operations
         {
+          name: 'a plain file read names no archive and unpacks no entries',
           code: 'const data = fs.readFileSync(filePath);',
         },
         // Safe file paths
         {
+          name: 'a literal filename cannot carry a traversal an attacker chose',
           code: 'const filePath = "safe-file.txt";',
         },
       ],
@@ -220,6 +241,7 @@ describe('no-zip-slip', () => {
     ruleTester.run('config - custom archive functions', noZipSlip, {
       valid: [
         {
+          name: 'a configured extractor still needs archive evidence on its receiver',
           code: 'myExtractor.extract(zipFile, dest);',
           options: [{ archiveFunctions: ['myExtractor.extract'] }],
         },
@@ -230,6 +252,7 @@ describe('no-zip-slip', () => {
     ruleTester.run('config - custom safe libraries', noZipSlip, {
       valid: [
         {
+          name: 'a receiver on the configured safeLibraries list validates for you',
           code: 'mySafeZipLib.extract(file, dest);',
           options: [{ safeLibraries: ['mySafeZipLib'] }],
         },

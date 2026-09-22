@@ -64,6 +64,20 @@ ruleTester.run(
         errors: [{ messageId: 'preferInline' }],
         output: `import { type Foo as F } from 'foo';`,
       },
+      // burgee packages/burgee/src/schema.ts:7 — a seven-specifier `import type`.
+      // The `Fix:` line marked only the first name, so an agent or human applying the
+      // message as written demotes every later specifier to a value import. Under
+      // burgee's `verbatimModuleSyntax: true` that is emitted verbatim and throws at
+      // runtime. The message must name the same edit `fix()` performs, which the
+      // `output` above already pins as `{ type Foo, type Bar }`.
+      {
+        name: 'the Fix: text marks every specifier, not just the first',
+        code: `import type { Foo, Bar } from 'foo';`,
+        errors: [
+          { messageId: 'preferInline', data: { name: 'type Foo, type Bar' } },
+        ],
+        output: `import { type Foo, type Bar } from 'foo';`,
+      },
 
       // prefer-top-level: inline types should be top-level
       {

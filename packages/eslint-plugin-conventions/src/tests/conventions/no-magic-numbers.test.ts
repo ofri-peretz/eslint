@@ -262,6 +262,30 @@ describe('no-magic-numbers — ignoreArrayIndexes checks the VALUE', () => {
         ],
       },
       {
+        // A braceless single-statement body is not a statement-list slot, so
+        // `insertTextBefore(stmt, …)` put the declaration where no lexical
+        // declaration may go. Applying the suggestion produced
+        //   if (col.border) const MAGIC_4 = 4;
+        //   wrapWidth -= MAGIC_4;
+        // which is `SyntaxError: Unexpected token 'const'` (TS1156), and which
+        // also hoisted the guarded statement OUT of the `if` so it ran
+        // unconditionally (TS2454 proves the escape). Same failure mode as the
+        // `1e+21` case below, reached by a different path. The suggestion is now
+        // withheld rather than emitted broken — the report itself still fires.
+        // Note the RuleTester parse guard does NOT catch this under the TS
+        // parser (it recovers from TS1156), so this asserts the absence of the
+        // suggestion explicitly.
+        // burgee packages/burgee/src/yargs/cliui.ts:258 (FP/FN sweep 2026-09-17)
+        name: 'no suggestion is offered when the constant has nowhere legal to go',
+        code: 'declare const col: { border: boolean };\nlet wrapWidth = 100;\nif (col.border) wrapWidth -= 4;',
+        errors: [
+          {
+            messageId: 'noMagicNumber',
+            suggestions: [],
+          },
+        ],
+      },
+      {
         // Also the regression test for the const NAME: `String(1e21)` is
         // "1e+21", and replacing only `.` produced `const MAGIC_1e+21`, which
         // is not an identifier. Applying that suggestion left the file unable

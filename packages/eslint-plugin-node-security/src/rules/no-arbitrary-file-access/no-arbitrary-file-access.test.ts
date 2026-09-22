@@ -152,6 +152,7 @@ ruleTester.run('no-arbitrary-file-access', noArbitraryFileAccess, {
 
     // FP-1: path.basename() sanitization
     {
+      name: 'path.basename strips the traversal, so the result is not arbitrary',
       code: `
         const safeName = path.basename(userFilename);
         fs.readFileSync(safeName);
