@@ -155,6 +155,53 @@ describe('no-missing-error-context — throw forms (maintainability)', () => {
         code: "declare function t(k: string): string; throw t('errors.missing');",
         errors: [{ messageId: 'missingErrorContext' as const }],
       },
+      {
+        name: 'a const bound to another identifier proves nothing',
+        code: 'declare const someVar: unknown; const message = someVar; throw new TypeError(message);',
+        errors: [{ messageId: 'missingErrorContext' as const }],
+      },
+      {
+        name: 'a let reassigned after its initializer is not fixed at the throw',
+        code: "declare function f(): string; let message = 'start'; message = f(); throw new Error(message);",
+        errors: [{ messageId: 'missingErrorContext' as const }],
+      },
+      {
+        name: 'a const bound to an empty string leaves the message empty',
+        code: "const message = ''; throw new Error(message);",
+        errors: [{ messageId: 'missingErrorContext' as const }],
+      },
     ],
+  });
+
+  // One message, two throws, so the two paths cannot drift — the DRY spelling
+  // of a shape the rule already accepts inline. `isProvablyString` walked the
+  // syntax and stopped at the identifier, so binding the literal to a name one
+  // line up turned an accepted throw into "Thrown error missing message",
+  // which is false about the node.
+  //
+  // From burgee packages/burgee/src/meow.ts:147 and :151 (requireImportMeta).
+  ruleTester.run('a const bound to a visible string literal', rule, {
+    valid: [
+      {
+        name: 'a const initialized to a non-empty string literal is a message',
+        code: "const message = 'The importMeta option is required.'; throw new TypeError(message);",
+      },
+      {
+        name: 'the same const reused by a second throw',
+        code: `const message = 'The importMeta option is required.';
+function a(x: unknown): void { if (x === undefined) throw new TypeError(message); }
+function b(y: unknown): void { if (y === null) throw new TypeError(message); }`,
+      },
+      {
+        name: 'a const initialized to a template literal',
+        code: 'declare const name: string; const message = `missing ${name}`; throw new Error(message);',
+      },
+      {
+        name: 'a const declared in an outer scope, thrown from an inner one',
+        code: `const message = 'boom';
+function outer(): void { function inner(): void { throw new Error(message); } inner(); }`,
+      },
+    ],
+    invalid: [],
   });
 });
