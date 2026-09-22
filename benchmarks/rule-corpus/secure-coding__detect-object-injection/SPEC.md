@@ -175,6 +175,44 @@ rule disabled, which costs every finding above.
 - **E6** a module-scope constant (`const FIELD = process.env.FIELD` at boot)
 - **E7** **an object literal built in this file** — `const req = { params: {…} }`
   is not an inbound request (measured FP in `no-sql-injection`; same trap here)
+- **E8** **the INDEX argument of an Array iteration callback** — `xs.forEach((v,
+  i) => { dst[i] = v })`, and `.map` / `.filter` / `.find` / `.findLast` /
+  `.some` / `.every` / `.flatMap` at the same position, plus `.reduce` /
+  `.reduceRight` where the index is **third**. ECMA-262 supplies that argument as
+  `𝔽(k)` — a Number no caller can influence — so it is E1 reached through a
+  parameter instead of a loop counter. Added 2026-09-21; fixture
+  `safe/15-array-callback-index-write.js`.
+
+  **Gated on the receiver being provably an Array, and the gate is not
+  ceremonial.** Measured in Node 24:
+
+  | receiver | `forEach` 2nd callback arg |
+  |---|---|
+  | `Array` | `number` — never `__proto__` |
+  | `Map` / `Set` / `Headers` / `FormData` / `URLSearchParams` | **a string key** — `new URLSearchParams('__proto__=x')` binds `k === '__proto__'` |
+
+  Exempting on the method name alone would silence a live pollution vector.
+  Position matters equally: `.reduce`'s *second* parameter is the ELEMENT, so
+  exempting by position-2 membership would silence
+  `entries.reduce((acc, k) => { acc[k] = 1; return acc; }, {})` — textbook mass
+  assignment. Both directions are pinned as `invalid` controls in
+  `write-path-branches.test.ts`.
+
+  Provenance is decided syntactically, never from type services: this rule reads
+  no type information anywhere, so a type-services gate would not fire for most
+  consumers and would leave the false positive exactly where it is reported.
+  Accepted evidence is an array literal, a `T[]` / `readonly T[]` / `[A, B]` /
+  `Array<T>` annotation the file states, a `const` initialized to any of those,
+  or `Array.from` / `Array.of` / `.split` / `.slice` / `.concat` / `.map` /
+  `.filter` / `.flat` / `.flatMap` / `.toSorted` / `.toReversed`.
+
+  **Residual, deliberately:** a receiver whose Array-ness the file never states,
+  or states somewhere the resolver does not reach — a bare untyped parameter
+  (`function f(xs) { xs.forEach((v, i) => …) }`), and a class property such as
+  `this.registeredArguments` declared `Argument[] = []` — still reports. That is the
+  conservative side of the same trade the rest of the rule sits on — it fails to
+  clear a safe access rather than clearing an unsafe one. Recorded in `SEAL.json`
+  as `array-provenance-requires-evidence`.
 
 ### F. Guarded
 

@@ -205,18 +205,22 @@ ruleTester.run('require-websocket-wss', requireWebsocketWss, {
       ],
       output: `const ws = new WebSocket('wss://acmecorp.io');`,
     },
-    // Double quotes (fix converts to single quotes)
+    // Double quotes are PRESERVED. This case used to assert that the fix
+    // rewrote them to single quotes — requoting was the mechanism of the
+    // corruption fixed below (it re-encoded the string), not a feature. Quote
+    // style belongs to `quotes`/Prettier, not to a CWE-319 transport rule.
     {
+      name: 'the fix swaps the scheme and leaves the author\'s quote style alone',
       code: `const ws = new WebSocket("ws://acmecorp.io");`,
       errors: [
         {
           messageId: 'insecureWebsocket',
           suggestions: [
-            { messageId: 'useWss', output: `const ws = new WebSocket('wss://acmecorp.io');` },
+            { messageId: 'useWss', output: `const ws = new WebSocket("wss://acmecorp.io");` },
           ],
         },
       ],
-      output: `const ws = new WebSocket('wss://acmecorp.io');`,
+      output: `const ws = new WebSocket("wss://acmecorp.io");`,
     },
   ],
 });
@@ -265,6 +269,78 @@ ruleTester.run('regression: uppercase scheme is the same URL', requireWebsocketW
           ],
         },
       ],
+    },
+  ],
+});
+
+/*
+ * ── REGRESSION: the autofix corrupted URLs it claimed to secure ──────────────
+ * Surfaced by the burgee FP/FN corpus sweep, 2026-09-21.
+ *
+ * The fixer spliced the literal's DECODED `.value` between hardcoded single
+ * quotes. That re-encodes the string, so three legal URLs came back wrong: an
+ * apostrophe (an RFC 3986 sub-delim) closed the literal early, an interior
+ * `\n` escape became a real newline and left it unterminated, and a backslash
+ * escape silently changed the URL while still parsing.
+ *
+ * The third is the one with teeth: it parses, so nothing surfaces, and a
+ * security rule quietly retargets the connection it just "secured".
+ *
+ * The fix rewrites the scheme inside the ORIGINAL SOURCE TEXT — the technique
+ * the TemplateLiteral branch already used, and the one QUALITY_STANDARDS' own
+ * GOOD example demonstrates.
+ */
+ruleTester.run('regression: the fix must not re-encode the literal', requireWebsocketWss, {
+  valid: [],
+  invalid: [
+    {
+      name: 'an apostrophe in the path is a legal sub-delim — the fix must not close the literal on it',
+      code: `const ws = new WebSocket("ws://live.acmecorp.io/room's");`,
+      errors: [
+        {
+          messageId: 'insecureWebsocket',
+          suggestions: [
+            { messageId: 'useWss', output: `const ws = new WebSocket("wss://live.acmecorp.io/room's");` },
+          ],
+        },
+      ],
+      output: `const ws = new WebSocket("wss://live.acmecorp.io/room's");`,
+    },
+    {
+      name: 'an escaped newline stays escaped — decoding it would leave the literal unterminated',
+      code: `const ws = new WebSocket("ws://live.acmecorp.io/a\\nb");`,
+      errors: [
+        {
+          messageId: 'insecureWebsocket',
+          suggestions: [
+            { messageId: 'useWss', output: `const ws = new WebSocket("wss://live.acmecorp.io/a\\nb");` },
+          ],
+        },
+      ],
+      output: `const ws = new WebSocket("wss://live.acmecorp.io/a\\nb");`,
+    },
+    {
+      name: 'an escaped backslash stays escaped — decoding it changed the URL while still parsing',
+      code: `const ws = new WebSocket('ws://live.acmecorp.io/a\\\\b');`,
+      errors: [
+        {
+          messageId: 'insecureWebsocket',
+          suggestions: [
+            { messageId: 'useWss', output: `const ws = new WebSocket('wss://live.acmecorp.io/a\\\\b');` },
+          ],
+        },
+      ],
+      output: `const ws = new WebSocket('wss://live.acmecorp.io/a\\\\b');`,
+    },
+    {
+      // A scheme spelled with an escape decodes to `ws://` but is not written
+      // that way, so a source-text rewrite cannot find it. The URL is still
+      // cleartext, so it must still REPORT — but with no fix, rather than one
+      // that changes nothing.
+      name: 'an escaped scheme still reports, and offers no fix rather than a no-op one',
+      code: `const ws = new WebSocket('\\x77s://live.acmecorp.io/feed');`,
+      errors: [{ messageId: 'insecureWebsocket', suggestions: [] }],
+      output: null,
     },
   ],
 });
