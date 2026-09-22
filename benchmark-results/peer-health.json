@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-09-14T16:26:29.386Z",
+  "generatedAt": "2026-09-21T14:55:23.700Z",
   "ghAvailable": true,
   "totalPeers": 17,
   "totalOurs": 31,
-  "successfulFetches": 48,
+  "successfulFetches": 47,
   "peers": [
     {
       "npm": "eslint-plugin-security",
@@ -11,22 +11,22 @@
       "category": "security",
       "side": "peer",
       "npm_": {
-        "weeklyDownloads": 3290143,
+        "weeklyDownloads": 3390858,
         "latestVersion": "4.0.1",
         "releaseCount12mo": 2,
         "medianReleaseIntervalDays": 64.7,
-        "daysSinceLastRelease": 94,
+        "daysSinceLastRelease": 101,
         "license": "Apache-2.0"
       },
       "gh_": {
-        "stars": 2375,
-        "openIssues": 22,
+        "stars": 2377,
+        "openIssues": 21,
         "contributors90d": 4,
         "defaultBranch": "main",
         "medianTimeToFirstResponseHours": null,
         "ttfrSampleSize": 0
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -35,11 +35,11 @@
       "category": "security",
       "side": "peer",
       "npm_": {
-        "weeklyDownloads": 213346,
+        "weeklyDownloads": 201221,
         "latestVersion": "2.3.3",
         "releaseCount12mo": 2,
         "medianReleaseIntervalDays": 19.2,
-        "daysSinceLastRelease": 197,
+        "daysSinceLastRelease": 204,
         "license": "MIT"
       },
       "gh_": {
@@ -50,7 +50,7 @@
         "medianTimeToFirstResponseHours": 47,
         "ttfrSampleSize": 7
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -59,22 +59,22 @@
       "category": "security",
       "side": "peer",
       "npm_": {
-        "weeklyDownloads": 726778,
+        "weeklyDownloads": 727570,
         "latestVersion": "4.1.5",
         "releaseCount12mo": 1,
         "medianReleaseIntervalDays": 69.9,
-        "daysSinceLastRelease": 207,
+        "daysSinceLastRelease": 214,
         "license": "MPL-2.0"
       },
       "gh_": {
-        "stars": 248,
+        "stars": 249,
         "openIssues": 35,
         "contributors90d": 1,
         "defaultBranch": "main",
         "medianTimeToFirstResponseHours": 2.6,
         "ttfrSampleSize": 1
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -83,11 +83,11 @@
       "category": "security",
       "side": "peer",
       "npm_": {
-        "weeklyDownloads": 2850999,
-        "latestVersion": "4.2.0",
-        "releaseCount12mo": 8,
+        "weeklyDownloads": 2712116,
+        "latestVersion": "4.2.1",
+        "releaseCount12mo": 9,
         "medianReleaseIntervalDays": 30.7,
-        "daysSinceLastRelease": 62,
+        "daysSinceLastRelease": 6,
         "license": "LGPL-3.0-only"
       },
       "gh_": {
@@ -98,7 +98,7 @@
         "medianTimeToFirstResponseHours": 461.6,
         "ttfrSampleSize": 2
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -107,22 +107,22 @@
       "category": "general",
       "side": "peer",
       "npm_": {
-        "weeklyDownloads": 5187759,
-        "latestVersion": "74.0.0",
-        "releaseCount12mo": 15,
+        "weeklyDownloads": 5354608,
+        "latestVersion": "76.0.0",
+        "releaseCount12mo": 17,
         "medianReleaseIntervalDays": 15.7,
-        "daysSinceLastRelease": 16,
+        "daysSinceLastRelease": 2,
         "license": "MIT"
       },
       "gh_": {
-        "stars": 5238,
-        "openIssues": 8,
-        "contributors90d": 2,
+        "stars": 5246,
+        "openIssues": 7,
+        "contributors90d": 1,
         "defaultBranch": "main",
-        "medianTimeToFirstResponseHours": 22.3,
-        "ttfrSampleSize": 1
+        "medianTimeToFirstResponseHours": 0.7,
+        "ttfrSampleSize": 5
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -131,11 +131,11 @@
       "category": "general",
       "side": "peer",
       "npm_": {
-        "weeklyDownloads": 6227364,
+        "weeklyDownloads": 6347810,
         "latestVersion": "18.3.0",
-        "releaseCount12mo": 11,
+        "releaseCount12mo": 9,
         "medianReleaseIntervalDays": 10.3,
-        "daysSinceLastRelease": 37,
+        "daysSinceLastRelease": 44,
         "license": "MIT"
       },
       "gh_": {
@@ -146,7 +146,7 @@
         "medianTimeToFirstResponseHours": 3.4,
         "ttfrSampleSize": 1
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -155,22 +155,22 @@
       "category": "general",
       "side": "peer",
       "npm_": {
-        "weeklyDownloads": 4692478,
+        "weeklyDownloads": 4888085,
         "latestVersion": "7.3.0",
         "releaseCount12mo": 1,
         "medianReleaseIntervalDays": 17,
-        "daysSinceLastRelease": 140,
+        "daysSinceLastRelease": 147,
         "license": "ISC"
       },
       "gh_": {
         "stars": 1003,
-        "openIssues": 59,
+        "openIssues": 60,
         "contributors90d": 2,
         "defaultBranch": "main",
         "medianTimeToFirstResponseHours": null,
         "ttfrSampleSize": 0
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -179,22 +179,22 @@
       "category": "general",
       "side": "peer",
       "npm_": {
-        "weeklyDownloads": 2011702,
-        "latestVersion": "5.11.0",
-        "releaseCount12mo": 16,
-        "medianReleaseIntervalDays": 6.1,
-        "daysSinceLastRelease": 14,
+        "weeklyDownloads": 2147560,
+        "latestVersion": "5.11.1",
+        "releaseCount12mo": 17,
+        "medianReleaseIntervalDays": 7.1,
+        "daysSinceLastRelease": 6,
         "license": "MIT"
       },
       "gh_": {
-        "stars": 2925,
-        "openIssues": 9,
+        "stars": 2928,
+        "openIssues": 8,
         "contributors90d": 5,
         "defaultBranch": "main",
         "medianTimeToFirstResponseHours": 0.3,
         "ttfrSampleSize": 6
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -203,22 +203,22 @@
       "category": "react",
       "side": "peer",
       "npm_": {
-        "weeklyDownloads": 45121106,
+        "weeklyDownloads": 47477702,
         "latestVersion": "7.37.5",
         "releaseCount12mo": 0,
         "medianReleaseIntervalDays": 7.1,
-        "daysSinceLastRelease": 528,
+        "daysSinceLastRelease": 535,
         "license": "MIT"
       },
       "gh_": {
-        "stars": 9292,
+        "stars": 9293,
         "openIssues": 372,
         "contributors90d": 0,
         "defaultBranch": "master",
         "medianTimeToFirstResponseHours": 23,
         "ttfrSampleSize": 4
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -227,11 +227,11 @@
       "category": "react",
       "side": "peer",
       "npm_": {
-        "weeklyDownloads": 68865866,
+        "weeklyDownloads": 73936791,
         "latestVersion": "7.1.1",
-        "releaseCount12mo": 445,
+        "releaseCount12mo": 440,
         "medianReleaseIntervalDays": 0.1,
-        "daysSinceLastRelease": 0,
+        "daysSinceLastRelease": 2,
         "license": "MIT"
       },
       "gh_": {
@@ -242,7 +242,7 @@
         "medianTimeToFirstResponseHours": null,
         "ttfrSampleSize": 0
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -251,22 +251,22 @@
       "category": "react",
       "side": "peer",
       "npm_": {
-        "weeklyDownloads": 34715637,
+        "weeklyDownloads": 36301495,
         "latestVersion": "6.10.2",
         "releaseCount12mo": 0,
         "medianReleaseIntervalDays": 3.8,
-        "daysSinceLastRelease": 688,
+        "daysSinceLastRelease": 695,
         "license": "MIT"
       },
       "gh_": {
-        "stars": 3617,
+        "stars": 3619,
         "openIssues": 140,
         "contributors90d": 0,
         "defaultBranch": "main",
         "medianTimeToFirstResponseHours": 6.6,
         "ttfrSampleSize": 11
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -275,22 +275,22 @@
       "category": "imports",
       "side": "peer",
       "npm_": {
-        "weeklyDownloads": 44315866,
+        "weeklyDownloads": 46655083,
         "latestVersion": "2.32.0",
         "releaseCount12mo": 0,
         "medianReleaseIntervalDays": 7,
-        "daysSinceLastRelease": 450,
+        "daysSinceLastRelease": 457,
         "license": "MIT"
       },
       "gh_": {
-        "stars": 5944,
-        "openIssues": 581,
+        "stars": 5946,
+        "openIssues": 583,
         "contributors90d": 7,
         "defaultBranch": "main",
         "medianTimeToFirstResponseHours": 11,
         "ttfrSampleSize": 4
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -299,11 +299,11 @@
       "category": "imports",
       "side": "peer",
       "npm_": {
-        "weeklyDownloads": 6766039,
+        "weeklyDownloads": 6667155,
         "latestVersion": "4.4.1",
         "releaseCount12mo": 2,
         "medianReleaseIntervalDays": 38.9,
-        "daysSinceLastRelease": 217,
+        "daysSinceLastRelease": 224,
         "license": "MIT"
       },
       "gh_": {
@@ -314,7 +314,7 @@
         "medianTimeToFirstResponseHours": 3.3,
         "ttfrSampleSize": 5
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -323,22 +323,22 @@
       "category": "imports",
       "side": "peer",
       "npm_": {
-        "weeklyDownloads": 4114469,
+        "weeklyDownloads": 4250771,
         "latestVersion": "14.0.0",
         "releaseCount12mo": 2,
         "medianReleaseIntervalDays": 46.9,
-        "daysSinceLastRelease": 59,
+        "daysSinceLastRelease": 66,
         "license": "MIT"
       },
       "gh_": {
-        "stars": 2455,
-        "openIssues": 6,
+        "stars": 2458,
+        "openIssues": 7,
         "contributors90d": 3,
         "defaultBranch": "main",
-        "medianTimeToFirstResponseHours": 2.6,
+        "medianTimeToFirstResponseHours": 5,
         "ttfrSampleSize": 8
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -347,22 +347,22 @@
       "category": "typescript",
       "side": "peer",
       "npm_": {
-        "weeklyDownloads": 96472814,
+        "weeklyDownloads": 101172927,
         "latestVersion": "8.70.0",
-        "releaseCount12mo": 493,
+        "releaseCount12mo": 517,
         "medianReleaseIntervalDays": 0.1,
-        "daysSinceLastRelease": 6,
+        "daysSinceLastRelease": 0,
         "license": "MIT"
       },
       "gh_": {
-        "stars": 16391,
-        "openIssues": 282,
-        "contributors90d": 26,
+        "stars": 16392,
+        "openIssues": 232,
+        "contributors90d": 33,
         "defaultBranch": "main",
-        "medianTimeToFirstResponseHours": 3,
-        "ttfrSampleSize": 7
+        "medianTimeToFirstResponseHours": 6.3,
+        "ttfrSampleSize": 3
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -371,22 +371,22 @@
       "category": "engine-stock",
       "side": "peer",
       "npm_": {
-        "weeklyDownloads": 15852871,
-        "latestVersion": "1.83.0",
-        "releaseCount12mo": 69,
+        "weeklyDownloads": 15353471,
+        "latestVersion": "1.84.0",
+        "releaseCount12mo": 68,
         "medianReleaseIntervalDays": 5.7,
         "daysSinceLastRelease": 0,
         "license": "MIT"
       },
       "gh_": {
-        "stars": 22737,
-        "openIssues": 888,
-        "contributors90d": 15,
+        "stars": 22832,
+        "openIssues": 942,
+        "contributors90d": 10,
         "defaultBranch": "main",
-        "medianTimeToFirstResponseHours": 0.1,
-        "ttfrSampleSize": 1
+        "medianTimeToFirstResponseHours": null,
+        "ttfrSampleSize": 0
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -395,22 +395,22 @@
       "category": "engine-stock",
       "side": "peer",
       "npm_": {
-        "weeklyDownloads": 11005083,
-        "latestVersion": "2.5.13",
-        "releaseCount12mo": 50,
+        "weeklyDownloads": 10860984,
+        "latestVersion": "2.5.14",
+        "releaseCount12mo": 51,
         "medianReleaseIntervalDays": 5.9,
-        "daysSinceLastRelease": 4,
+        "daysSinceLastRelease": 5,
         "license": "MIT OR Apache-2.0"
       },
       "gh_": {
-        "stars": 25779,
-        "openIssues": 404,
-        "contributors90d": 18,
+        "stars": 25840,
+        "openIssues": 390,
+        "contributors90d": 16,
         "defaultBranch": "main",
-        "medianTimeToFirstResponseHours": 6.7,
-        "ttfrSampleSize": 2
+        "medianTimeToFirstResponseHours": 0.6,
+        "ttfrSampleSize": 5
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -419,22 +419,22 @@
       "category": "security",
       "side": "ours",
       "npm_": {
-        "weeklyDownloads": 139,
+        "weeklyDownloads": 47,
         "latestVersion": "0.3.4",
         "releaseCount12mo": 8,
         "medianReleaseIntervalDays": 3.3,
-        "daysSinceLastRelease": 9,
+        "daysSinceLastRelease": 16,
         "license": "MIT"
       },
       "gh_": {
         "stars": 19,
-        "openIssues": 3,
+        "openIssues": 14,
         "contributors90d": 3,
         "defaultBranch": "main",
-        "medianTimeToFirstResponseHours": null,
-        "ttfrSampleSize": 0
+        "medianTimeToFirstResponseHours": 108.5,
+        "ttfrSampleSize": 1
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -443,11 +443,11 @@
       "category": "security",
       "side": "ours",
       "npm_": {
-        "weeklyDownloads": 1969,
+        "weeklyDownloads": 2156,
         "latestVersion": "2.1.5",
         "releaseCount12mo": 42,
         "medianReleaseIntervalDays": 0.9,
-        "daysSinceLastRelease": 9,
+        "daysSinceLastRelease": 16,
         "license": "MIT"
       },
       "gh_": {
@@ -458,7 +458,7 @@
         "medianTimeToFirstResponseHours": null,
         "ttfrSampleSize": 0
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -467,9 +467,9 @@
       "category": "general",
       "side": "ours",
       "npm_": {
-        "weeklyDownloads": 1674,
-        "latestVersion": "6.0.1",
-        "releaseCount12mo": 32,
+        "weeklyDownloads": 839,
+        "latestVersion": "6.0.3",
+        "releaseCount12mo": 34,
         "medianReleaseIntervalDays": 1.7,
         "daysSinceLastRelease": 0,
         "license": "MIT"
@@ -482,7 +482,7 @@
         "medianTimeToFirstResponseHours": null,
         "ttfrSampleSize": 0
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -491,11 +491,11 @@
       "category": "security",
       "side": "ours",
       "npm_": {
-        "weeklyDownloads": 74,
+        "weeklyDownloads": 20,
         "latestVersion": "0.3.8",
         "releaseCount12mo": 14,
         "medianReleaseIntervalDays": 1.1,
-        "daysSinceLastRelease": 9,
+        "daysSinceLastRelease": 16,
         "license": "MIT"
       },
       "gh_": {
@@ -506,7 +506,7 @@
         "medianTimeToFirstResponseHours": null,
         "ttfrSampleSize": 0
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -515,11 +515,11 @@
       "category": "security",
       "side": "ours",
       "npm_": {
-        "weeklyDownloads": 540,
+        "weeklyDownloads": 441,
         "latestVersion": "3.2.4",
         "releaseCount12mo": 37,
         "medianReleaseIntervalDays": 1.1,
-        "daysSinceLastRelease": 9,
+        "daysSinceLastRelease": 16,
         "license": "MIT"
       },
       "gh_": {
@@ -530,7 +530,7 @@
         "medianTimeToFirstResponseHours": null,
         "ttfrSampleSize": 0
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -539,11 +539,11 @@
       "category": "security",
       "side": "ours",
       "npm_": {
-        "weeklyDownloads": 68,
+        "weeklyDownloads": 18,
         "latestVersion": "0.3.5",
         "releaseCount12mo": 9,
         "medianReleaseIntervalDays": 3.3,
-        "daysSinceLastRelease": 9,
+        "daysSinceLastRelease": 16,
         "license": "MIT"
       },
       "gh_": {
@@ -554,7 +554,7 @@
         "medianTimeToFirstResponseHours": null,
         "ttfrSampleSize": 0
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -563,10 +563,10 @@
       "category": "imports",
       "side": "ours",
       "npm_": {
-        "weeklyDownloads": 2383,
-        "latestVersion": "2.8.1",
-        "releaseCount12mo": 41,
-        "medianReleaseIntervalDays": 1.2,
+        "weeklyDownloads": 1777,
+        "latestVersion": "2.8.3",
+        "releaseCount12mo": 43,
+        "medianReleaseIntervalDays": 1.3,
         "daysSinceLastRelease": 0,
         "license": "MIT"
       },
@@ -578,7 +578,7 @@
         "medianTimeToFirstResponseHours": null,
         "ttfrSampleSize": 0
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -587,11 +587,11 @@
       "category": "security",
       "side": "ours",
       "npm_": {
-        "weeklyDownloads": 288,
+        "weeklyDownloads": 83,
         "latestVersion": "3.3.0",
         "releaseCount12mo": 16,
         "medianReleaseIntervalDays": 1.6,
-        "daysSinceLastRelease": 4,
+        "daysSinceLastRelease": 10,
         "license": "MIT"
       },
       "gh_": {
@@ -602,7 +602,7 @@
         "medianTimeToFirstResponseHours": null,
         "ttfrSampleSize": 0
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -611,11 +611,11 @@
       "category": "security",
       "side": "ours",
       "npm_": {
-        "weeklyDownloads": 73,
+        "weeklyDownloads": 50,
         "latestVersion": "0.4.8",
         "releaseCount12mo": 14,
         "medianReleaseIntervalDays": 1.1,
-        "daysSinceLastRelease": 9,
+        "daysSinceLastRelease": 16,
         "license": "MIT"
       },
       "gh_": {
@@ -626,7 +626,7 @@
         "medianTimeToFirstResponseHours": null,
         "ttfrSampleSize": 0
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -635,11 +635,11 @@
       "category": "security",
       "side": "ours",
       "npm_": {
-        "weeklyDownloads": 117,
+        "weeklyDownloads": 32,
         "latestVersion": "2.1.4",
         "releaseCount12mo": 32,
         "medianReleaseIntervalDays": 1.1,
-        "daysSinceLastRelease": 9,
+        "daysSinceLastRelease": 16,
         "license": "MIT"
       },
       "gh_": {
@@ -650,7 +650,7 @@
         "medianTimeToFirstResponseHours": null,
         "ttfrSampleSize": 0
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -659,9 +659,9 @@
       "category": "general",
       "side": "ours",
       "npm_": {
-        "weeklyDownloads": 1627,
-        "latestVersion": "3.2.8",
-        "releaseCount12mo": 30,
+        "weeklyDownloads": 1519,
+        "latestVersion": "3.2.11",
+        "releaseCount12mo": 33,
         "medianReleaseIntervalDays": 1.8,
         "daysSinceLastRelease": 0,
         "license": "MIT"
@@ -674,7 +674,7 @@
         "medianTimeToFirstResponseHours": null,
         "ttfrSampleSize": 0
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -683,11 +683,11 @@
       "category": "security",
       "side": "ours",
       "npm_": {
-        "weeklyDownloads": 76,
+        "weeklyDownloads": 37,
         "latestVersion": "0.4.3",
         "releaseCount12mo": 11,
         "medianReleaseIntervalDays": 2.1,
-        "daysSinceLastRelease": 9,
+        "daysSinceLastRelease": 16,
         "license": "MIT"
       },
       "gh_": {
@@ -698,7 +698,7 @@
         "medianTimeToFirstResponseHours": null,
         "ttfrSampleSize": 0
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -707,11 +707,11 @@
       "category": "general",
       "side": "ours",
       "npm_": {
-        "weeklyDownloads": 1166,
-        "latestVersion": "3.1.3",
-        "releaseCount12mo": 20,
-        "medianReleaseIntervalDays": 1.8,
-        "daysSinceLastRelease": 9,
+        "weeklyDownloads": 943,
+        "latestVersion": "3.1.4",
+        "releaseCount12mo": 21,
+        "medianReleaseIntervalDays": 1.9,
+        "daysSinceLastRelease": 5,
         "license": "MIT"
       },
       "gh_": {
@@ -722,7 +722,7 @@
         "medianTimeToFirstResponseHours": null,
         "ttfrSampleSize": 0
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -731,11 +731,11 @@
       "category": "general",
       "side": "ours",
       "npm_": {
-        "weeklyDownloads": 1308,
+        "weeklyDownloads": 825,
         "latestVersion": "2.5.3",
         "releaseCount12mo": 23,
         "medianReleaseIntervalDays": 1.9,
-        "daysSinceLastRelease": 9,
+        "daysSinceLastRelease": 16,
         "license": "MIT"
       },
       "gh_": {
@@ -746,7 +746,7 @@
         "medianTimeToFirstResponseHours": null,
         "ttfrSampleSize": 0
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -755,11 +755,11 @@
       "category": "security",
       "side": "ours",
       "npm_": {
-        "weeklyDownloads": 331,
+        "weeklyDownloads": 142,
         "latestVersion": "9.1.3",
         "releaseCount12mo": 26,
         "medianReleaseIntervalDays": 1.8,
-        "daysSinceLastRelease": 9,
+        "daysSinceLastRelease": 16,
         "license": "MIT"
       },
       "gh_": {
@@ -770,7 +770,7 @@
         "medianTimeToFirstResponseHours": null,
         "ttfrSampleSize": 0
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -779,11 +779,11 @@
       "category": "security",
       "side": "ours",
       "npm_": {
-        "weeklyDownloads": 93,
+        "weeklyDownloads": 23,
         "latestVersion": "0.3.8",
         "releaseCount12mo": 13,
         "medianReleaseIntervalDays": 1.4,
-        "daysSinceLastRelease": 9,
+        "daysSinceLastRelease": 16,
         "license": "MIT"
       },
       "gh_": {
@@ -794,7 +794,7 @@
         "medianTimeToFirstResponseHours": null,
         "ttfrSampleSize": 0
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -803,11 +803,11 @@
       "category": "security",
       "side": "ours",
       "npm_": {
-        "weeklyDownloads": 493,
+        "weeklyDownloads": 3689,
         "latestVersion": "3.1.3",
         "releaseCount12mo": 27,
         "medianReleaseIntervalDays": 1.4,
-        "daysSinceLastRelease": 9,
+        "daysSinceLastRelease": 16,
         "license": "MIT"
       },
       "gh_": {
@@ -818,7 +818,7 @@
         "medianTimeToFirstResponseHours": null,
         "ttfrSampleSize": 0
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -827,9 +827,9 @@
       "category": "security",
       "side": "ours",
       "npm_": {
-        "weeklyDownloads": 2517,
-        "latestVersion": "5.6.0",
-        "releaseCount12mo": 45,
+        "weeklyDownloads": 2136,
+        "latestVersion": "5.6.2",
+        "releaseCount12mo": 47,
         "medianReleaseIntervalDays": 1.1,
         "daysSinceLastRelease": 0,
         "license": "MIT"
@@ -842,7 +842,7 @@
         "medianTimeToFirstResponseHours": null,
         "ttfrSampleSize": 0
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -851,11 +851,11 @@
       "category": "security",
       "side": "ours",
       "npm_": {
-        "weeklyDownloads": 62,
+        "weeklyDownloads": 16,
         "latestVersion": "0.3.4",
         "releaseCount12mo": 8,
         "medianReleaseIntervalDays": 3.3,
-        "daysSinceLastRelease": 9,
+        "daysSinceLastRelease": 16,
         "license": "MIT"
       },
       "gh_": {
@@ -866,7 +866,7 @@
         "medianTimeToFirstResponseHours": null,
         "ttfrSampleSize": 0
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -875,10 +875,10 @@
       "category": "general",
       "side": "ours",
       "npm_": {
-        "weeklyDownloads": 1311,
-        "latestVersion": "4.1.4",
-        "releaseCount12mo": 26,
-        "medianReleaseIntervalDays": 1.9,
+        "weeklyDownloads": 828,
+        "latestVersion": "4.1.5",
+        "releaseCount12mo": 27,
+        "medianReleaseIntervalDays": 2.4,
         "daysSinceLastRelease": 0,
         "license": "MIT"
       },
@@ -890,7 +890,7 @@
         "medianTimeToFirstResponseHours": null,
         "ttfrSampleSize": 0
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -899,11 +899,11 @@
       "category": "security",
       "side": "ours",
       "npm_": {
-        "weeklyDownloads": 111,
+        "weeklyDownloads": 21,
         "latestVersion": "2.3.5",
         "releaseCount12mo": 14,
         "medianReleaseIntervalDays": 1.2,
-        "daysSinceLastRelease": 9,
+        "daysSinceLastRelease": 16,
         "license": "MIT"
       },
       "gh_": {
@@ -914,7 +914,7 @@
         "medianTimeToFirstResponseHours": null,
         "ttfrSampleSize": 0
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -923,11 +923,11 @@
       "category": "security",
       "side": "ours",
       "npm_": {
-        "weeklyDownloads": 87,
+        "weeklyDownloads": 64,
         "latestVersion": "0.3.8",
         "releaseCount12mo": 14,
         "medianReleaseIntervalDays": 1.1,
-        "daysSinceLastRelease": 9,
+        "daysSinceLastRelease": 16,
         "license": "MIT"
       },
       "gh_": {
@@ -938,7 +938,7 @@
         "medianTimeToFirstResponseHours": null,
         "ttfrSampleSize": 0
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -947,11 +947,11 @@
       "category": "react",
       "side": "ours",
       "npm_": {
-        "weeklyDownloads": 1648,
+        "weeklyDownloads": 1177,
         "latestVersion": "2.5.2",
         "releaseCount12mo": 22,
         "medianReleaseIntervalDays": 1.9,
-        "daysSinceLastRelease": 9,
+        "daysSinceLastRelease": 16,
         "license": "MIT"
       },
       "gh_": {
@@ -962,7 +962,7 @@
         "medianTimeToFirstResponseHours": null,
         "ttfrSampleSize": 0
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -971,11 +971,11 @@
       "category": "react",
       "side": "ours",
       "npm_": {
-        "weeklyDownloads": 1727,
-        "latestVersion": "1.7.5",
-        "releaseCount12mo": 30,
+        "weeklyDownloads": 986,
+        "latestVersion": "1.7.7",
+        "releaseCount12mo": 32,
         "medianReleaseIntervalDays": 1.8,
-        "daysSinceLastRelease": 4,
+        "daysSinceLastRelease": 0,
         "license": "MIT"
       },
       "gh_": {
@@ -986,7 +986,7 @@
         "medianTimeToFirstResponseHours": null,
         "ttfrSampleSize": 0
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -995,11 +995,11 @@
       "category": "general",
       "side": "ours",
       "npm_": {
-        "weeklyDownloads": 1679,
-        "latestVersion": "4.1.8",
-        "releaseCount12mo": 30,
+        "weeklyDownloads": 992,
+        "latestVersion": "4.1.9",
+        "releaseCount12mo": 31,
         "medianReleaseIntervalDays": 1.8,
-        "daysSinceLastRelease": 0,
+        "daysSinceLastRelease": 6,
         "license": "MIT"
       },
       "gh_": {
@@ -1010,7 +1010,7 @@
         "medianTimeToFirstResponseHours": null,
         "ttfrSampleSize": 0
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -1019,10 +1019,10 @@
       "category": "security",
       "side": "ours",
       "npm_": {
-        "weeklyDownloads": 3169,
-        "latestVersion": "5.4.4",
-        "releaseCount12mo": 65,
-        "medianReleaseIntervalDays": 0.8,
+        "weeklyDownloads": 2721,
+        "latestVersion": "5.4.6",
+        "releaseCount12mo": 67,
+        "medianReleaseIntervalDays": 0.9,
         "daysSinceLastRelease": 0,
         "license": "MIT"
       },
@@ -1034,7 +1034,7 @@
         "medianTimeToFirstResponseHours": null,
         "ttfrSampleSize": 0
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -1043,11 +1043,11 @@
       "category": "security",
       "side": "ours",
       "npm_": {
-        "weeklyDownloads": 85,
+        "weeklyDownloads": 90,
         "latestVersion": "0.3.9",
         "releaseCount12mo": 14,
         "medianReleaseIntervalDays": 1.1,
-        "daysSinceLastRelease": 9,
+        "daysSinceLastRelease": 16,
         "license": "MIT"
       },
       "gh_": {
@@ -1058,7 +1058,7 @@
         "medianTimeToFirstResponseHours": null,
         "ttfrSampleSize": 0
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -1067,11 +1067,11 @@
       "category": "security",
       "side": "ours",
       "npm_": {
-        "weeklyDownloads": 132,
+        "weeklyDownloads": 233,
         "latestVersion": "0.1.11",
         "releaseCount12mo": 12,
         "medianReleaseIntervalDays": 1.4,
-        "daysSinceLastRelease": 9,
+        "daysSinceLastRelease": 16,
         "license": "MIT"
       },
       "gh_": {
@@ -1082,7 +1082,7 @@
         "medianTimeToFirstResponseHours": null,
         "ttfrSampleSize": 0
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -1091,11 +1091,11 @@
       "category": "security",
       "side": "ours",
       "npm_": {
-        "weeklyDownloads": 0,
+        "weeklyDownloads": 26,
         "latestVersion": "0.2.0",
         "releaseCount12mo": 1,
         "medianReleaseIntervalDays": 0,
-        "daysSinceLastRelease": 1,
+        "daysSinceLastRelease": 8,
         "license": "MIT"
       },
       "gh_": {
@@ -1106,7 +1106,7 @@
         "medianTimeToFirstResponseHours": null,
         "ttfrSampleSize": 0
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -1115,11 +1115,11 @@
       "category": "security",
       "side": "ours",
       "npm_": {
-        "weeklyDownloads": 74,
+        "weeklyDownloads": 28,
         "latestVersion": "0.3.8",
         "releaseCount12mo": 13,
         "medianReleaseIntervalDays": 1.4,
-        "daysSinceLastRelease": 9,
+        "daysSinceLastRelease": 16,
         "license": "MIT"
       },
       "gh_": {
@@ -1130,7 +1130,7 @@
         "medianTimeToFirstResponseHours": null,
         "ttfrSampleSize": 0
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
       "errors": []
     },
     {
@@ -1139,11 +1139,11 @@
       "category": "security",
       "side": "ours",
       "npm_": {
-        "weeklyDownloads": 380,
+        "weeklyDownloads": null,
         "latestVersion": "2.1.3",
         "releaseCount12mo": 36,
         "medianReleaseIntervalDays": 0.7,
-        "daysSinceLastRelease": 9,
+        "daysSinceLastRelease": 16,
         "license": "MIT"
       },
       "gh_": {
@@ -1154,8 +1154,10 @@
         "medianTimeToFirstResponseHours": null,
         "ttfrSampleSize": 0
       },
-      "fetchedAt": "2026-09-14T16:26:29.386Z",
-      "errors": []
+      "fetchedAt": "2026-09-21T14:55:23.700Z",
+      "errors": [
+        "weekly downloads unavailable for eslint-plugin-vercel-ai-security: HTTP 429"
+      ]
     }
   ]
 }
