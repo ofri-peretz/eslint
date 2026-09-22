@@ -23,7 +23,7 @@ import {
   propertyName,
   unwrapTypeSyntax,
 } from '@interlace/eslint-devkit';
-import type { TSESTree } from '@interlace/eslint-devkit';
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 
 /**
  * @vocabulary `path`, `join`, `basename` and `fs` are Node's — the module
@@ -115,6 +115,28 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
      *
      * `depth` stops `const a = b; const b = a;` recursing forever.
      */
+    /**
+     * Is this `process` the Node.js global, or a binding that shadows it?
+     *
+     * A parameter, local or import named `process` is somebody else's object —
+     * `function f(process) { fs.readFileSync(process.argv[2]); }` says nothing
+     * about the real argv. The name alone is not the evidence; the resolution
+     * is. A global resolves either to no variable at all or to one with no
+     * declaration, so anything carrying a `def` is a shadow.
+     */
+    function isNodeGlobalProcess(identifier: TSESTree.Identifier): boolean {
+      const scope = context.sourceCode.getScope(identifier);
+      for (
+        let current: TSESLint.Scope.Scope | null = scope;
+        current;
+        current = current.upper
+      ) {
+        const variable = current.variables.find((v) => v.name === 'process');
+        if (variable) return variable.defs.length === 0;
+      }
+      return true;
+    }
+
     function readsUserInput(rawNode: TSESTree.Node, depth = 0): boolean {
       if (depth > 6) return false;
       // `as string`, `!`, `satisfies`, `<T>x` — syntax, not a value change.
@@ -156,7 +178,8 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
           if (
             node.object.type === 'Identifier' &&
             node.object.name === 'process' &&
-            propertyName(node) === 'argv'
+            propertyName(node) === 'argv' &&
+            isNodeGlobalProcess(node.object)
           ) {
             return true;
           }

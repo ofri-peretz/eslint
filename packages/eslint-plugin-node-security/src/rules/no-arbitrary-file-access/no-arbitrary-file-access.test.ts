@@ -58,6 +58,16 @@ ruleTester.run('no-arbitrary-file-access', noArbitraryFileAccess, {
       name: 'a process.env path is operator config, not user input',
       code: "fs.readFileSync(process.env.CONFIG_PATH, 'utf8');",
     },
+    // The name is not the evidence, the resolution is. A binding that shadows
+    // the global is somebody else's object and says nothing about the real argv.
+    {
+      name: 'a parameter shadowing `process` is not the Node global',
+      code: "function f(process) { fs.readFileSync(process.argv[2], 'utf8'); }",
+    },
+    {
+      name: 'a local shadowing `process` is not the Node global',
+      code: "const process = getThing(); fs.readFileSync(process.argv[2], 'utf8');",
+    },
     // Mutually-recursive bindings terminate instead of blowing the stack.
     {
       name: 'mutually-recursive bindings terminate instead of blowing the stack',
