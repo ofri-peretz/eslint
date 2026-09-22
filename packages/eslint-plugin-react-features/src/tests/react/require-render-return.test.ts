@@ -148,8 +148,6 @@ ruleTester.run('require-render-return', requireRenderReturn, {
         }
       `,
     },
-    // Note: The rule checks ALL render methods, not just React components
-    // Non-React classes with render methods are still checked
     // Valid - arrow function property named render
     {
       name: 'arrow function property named render',
@@ -184,8 +182,116 @@ ruleTester.run('require-render-return', requireRenderReturn, {
         }
       `,
     },
+    // `render` is not a React word. Detection was the method NAME and nothing
+    // else, so a terminal painter, a canvas, a template engine — anything with
+    // a method called `render` — drew a CRITICAL "must return a value".
+    // From burgee packages/caique/src/inquirer-screen.ts:206, a ScreenManager
+    // that writes ANSI escapes to a readline stream and is declared `: void`.
+    {
+      name: 'a class with no superclass is not a React component',
+      code: `
+        class ScreenManager {
+          render(content, bottom) {
+            this.out.write(content + bottom);
+          }
+        }
+      `,
+    },
+    {
+      name: 'a class extending a non-React base is not a React component',
+      code: `
+        class Painter extends EventEmitter {
+          render(frame) {
+            this.stream.write(frame);
+          }
+        }
+      `,
+    },
+    {
+      name: 'a non-React class is not saved by a React component elsewhere in the file',
+      code: `
+        class ScreenManager {
+          render(content) {
+            this.out.write(content);
+          }
+        }
+        class Ok extends React.Component {
+          render() {
+            return <div />;
+          }
+        }
+      `,
+    },
+    // The gate accepts four spellings of a React base and nothing else. Each
+    // rejection below is a class whose `render` is now unchecked; they are
+    // recorded in docs/KNOWN-LIMITATIONS.md.
+    {
+      name: 'a base reached through a call is not resolvable in one file',
+      code: `
+        class Wrapped extends withRouter(React.Component) {
+          render() {
+            this.paint();
+          }
+        }
+      `,
+    },
+    {
+      name: 'a member base on something other than React is not a React base',
+      code: `
+        class Widget extends Toolkit.Component {
+          render() {
+            this.paint();
+          }
+        }
+      `,
+    },
+    {
+      name: 'a React member that is not Component or PureComponent is not a base',
+      code: `
+        class Widget extends React.Fragment {
+          render() {
+            this.paint();
+          }
+        }
+      `,
+    },
   ],
   invalid: [
+    // PureComponent is a React base in both spellings, so a render that
+    // returns nothing is still a defect.
+    {
+      name: 'a PureComponent render that returns nothing still reports',
+      code: `
+        class MyComponent extends PureComponent {
+          render() {
+            this.doSomething();
+          }
+        }
+      `,
+      errors: [{ messageId: 'requireRenderReturn' }],
+    },
+    {
+      name: 'the React.PureComponent spelling reports too',
+      code: `
+        class MyComponent extends React.PureComponent {
+          render() {
+            this.doSomething();
+          }
+        }
+      `,
+      errors: [{ messageId: 'requireRenderReturn' }],
+    },
+    {
+      name: 'a class expression is a class too',
+      code: `
+        const MyComponent = class extends React.Component {
+          render() {
+            this.doSomething();
+          }
+        };
+      `,
+      errors: [{ messageId: 'requireRenderReturn' }],
+    },
     {
       // No `default` — an unmatched selector falls straight out and render()
       // returns undefined.
