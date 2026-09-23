@@ -130,7 +130,7 @@ describe('getFileImports type-only and re-export edges', () => {
    * ['warn', 'prefer-inline']`, which autofixes `import type { Foo }` into
    * `import { type Foo }`.
    */
-  it('marks an all-inline-type import as typeOnly', () => {
+  it('marks an all-inline-type import as inlineTypeOnly, not typeOnly', () => {
     const b = createTempFile('src/inline-b.ts', 'export type B = string;');
     const a = createTempFile(
       'src/inline-a.ts',
@@ -139,10 +139,13 @@ describe('getFileImports type-only and re-export edges', () => {
     const imports = getFileImports(a, baseOptions());
     expect(imports).toHaveLength(1);
     expect(imports[0].path).toBe(b);
-    expect(imports[0].typeOnly).toBe(true);
+    // A separate flag, because the two forms are not erased under the same
+    // settings: under `verbatimModuleSyntax` this one survives emit.
+    expect(imports[0].inlineTypeOnly).toBe(true);
+    expect(imports[0].typeOnly).toBeUndefined();
   });
 
-  it('marks an inline-type clause spread over several lines as typeOnly', () => {
+  it('marks an inline-type clause spread over several lines as inlineTypeOnly', () => {
     createTempFile(
       'src/multi-b.ts',
       'export type B = string;\nexport type C = number;',
@@ -151,7 +154,7 @@ describe('getFileImports type-only and re-export edges', () => {
       'src/multi-a.ts',
       "import {\n  type B,\n  type C,\n} from './multi-b';\nexport const a = ['x' as B, 1 as C];\n",
     );
-    expect(getFileImports(a, baseOptions())[0].typeOnly).toBe(true);
+    expect(getFileImports(a, baseOptions())[0].inlineTypeOnly).toBe(true);
   });
 
   // The other half. ANY value binding keeps the edge: a runtime cycle silently
@@ -166,7 +169,9 @@ describe('getFileImports type-only and re-export edges', () => {
       'src/mixed-a.ts',
       "import { type B, val } from './mixed-b';\nexport const a = val as unknown as B;\n",
     );
-    expect(getFileImports(a, baseOptions())[0].typeOnly).toBeUndefined();
+    const [edge] = getFileImports(a, baseOptions());
+    expect(edge).not.toHaveProperty('typeOnly');
+    expect(edge).not.toHaveProperty('inlineTypeOnly');
   });
 
   it('keeps an edge whose default binding sits beside an inline type', () => {
@@ -178,7 +183,9 @@ describe('getFileImports type-only and re-export edges', () => {
       'src/deflt-a.ts',
       "import Thing, { type B } from './deflt-b';\nexport const a = new Thing() as unknown as B;\n",
     );
-    expect(getFileImports(a, baseOptions())[0].typeOnly).toBeUndefined();
+    const [edge] = getFileImports(a, baseOptions());
+    expect(edge).not.toHaveProperty('typeOnly');
+    expect(edge).not.toHaveProperty('inlineTypeOnly');
   });
 
   it('keeps an empty-brace import, whose statement still executes the module', () => {
@@ -187,13 +194,17 @@ describe('getFileImports type-only and re-export edges', () => {
     // `verbatimModuleSyntax`. A real runtime edge, not an erased one.
     createTempFile('src/empty-b.ts', 'export const b = 1;');
     const a = createTempFile('src/empty-a.ts', "import {} from './empty-b';\n");
-    expect(getFileImports(a, baseOptions())[0].typeOnly).toBeUndefined();
+    const [edge] = getFileImports(a, baseOptions());
+    expect(edge).not.toHaveProperty('typeOnly');
+    expect(edge).not.toHaveProperty('inlineTypeOnly');
   });
 
   it('keeps a side-effect import, which has no clause to read', () => {
     createTempFile('src/effect-b.ts', 'globalThis.x = 1;');
     const a = createTempFile('src/effect-a.ts', "import './effect-b';\n");
-    expect(getFileImports(a, baseOptions())[0].typeOnly).toBeUndefined();
+    const [edge] = getFileImports(a, baseOptions());
+    expect(edge).not.toHaveProperty('typeOnly');
+    expect(edge).not.toHaveProperty('inlineTypeOnly');
   });
 
   it('keeps `{ type as T }`, which imports a binding NAMED type', () => {
@@ -205,7 +216,9 @@ describe('getFileImports type-only and re-export edges', () => {
       'src/astype-a.ts',
       "import { type as T } from './astype-b';\nexport const a = T;\n",
     );
-    expect(getFileImports(a, baseOptions())[0].typeOnly).toBeUndefined();
+    const [edge] = getFileImports(a, baseOptions());
+    expect(edge).not.toHaveProperty('typeOnly');
+    expect(edge).not.toHaveProperty('inlineTypeOnly');
   });
 
   it('captures re-export (`export { } from`) edges', () => {
@@ -233,6 +246,60 @@ describe('getFileImports type-only and re-export edges', () => {
     const second = getFileImports(a, baseOptions());
     expect(second).toHaveLength(1);
     expect(cache.sccComputed).toBe(true);
+  });
+});
+
+/**
+ * An all-inline-type import is erased unless the project compiles with
+ * `verbatimModuleSyntax`, under which `import { type P } from './p'` is emitted
+ * as `import {} from './p'` and still evaluates the module. The graph must
+ * follow the caller's setting, or `no-cycle`'s option of the same name changes
+ * nothing: the edge is already gone before the rule is asked.
+ */
+describe('inline type edges and verbatimModuleSyntax', () => {
+  function inlineCycle(): { p: string; q: string } {
+    const p = createTempFile(
+      'src/vms-p.ts',
+      "import { q } from './vms-q';\nexport interface P { n: number }\nexport const p = () => q;\n",
+    );
+    const q = createTempFile(
+      'src/vms-q.ts',
+      "import { type P } from './vms-p';\nexport const q = (x?: P) => x;\n",
+    );
+    return { p, q };
+  }
+
+  it('drops the inline edge from the SCC graph by default', () => {
+    const { p, q } = inlineCycle();
+    computeSCCsFromFile(p, { maxDepth: 20, ...baseOptions() });
+    expect(isFileInCycle(p, cache)).toBe(false);
+    // BFS from `q` back to `p` must cross the inline edge — and cannot.
+    expect(findShortestCyclePath(p, q, baseOptions())).toBeNull();
+  });
+
+  it('keeps the inline edge, and finds the cycle, under verbatimModuleSyntax', () => {
+    const { p, q } = inlineCycle();
+    const options = { ...baseOptions(), verbatimModuleSyntax: true };
+    computeSCCsFromFile(p, { maxDepth: 20, ...options });
+    expect(isFileInCycle(p, cache)).toBe(true);
+    expect(findShortestCyclePath(p, q, options)).toEqual([q, p]);
+  });
+
+  it('still drops a statement-level `import type` under verbatimModuleSyntax', () => {
+    const p = createTempFile(
+      'src/vmt-p.ts',
+      "import { q } from './vmt-q';\nexport interface P { n: number }\nexport const p = () => q;\n",
+    );
+    createTempFile(
+      'src/vmt-q.ts',
+      "import type { P } from './vmt-p';\nexport const q = (x?: P) => x;\n",
+    );
+    computeSCCsFromFile(p, {
+      maxDepth: 20,
+      ...baseOptions(),
+      verbatimModuleSyntax: true,
+    });
+    expect(isFileInCycle(p, cache)).toBe(false);
   });
 });
 

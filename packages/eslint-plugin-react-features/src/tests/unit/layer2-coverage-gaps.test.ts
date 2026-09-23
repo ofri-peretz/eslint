@@ -665,7 +665,7 @@ describe('jsx-key (layer 2, synthetic parent chains)', () => {
     expect(calls[0].args[1]).toBe(' key={kid.id}');
   });
 
-  it('callback param name walk breaks on non-iterator function then falls back to item', () => {
+  it('callback param name walk breaks on a non-iterator function and derives no key', () => {
     // RS-branch break at L449 (owner exists but is not an iterator callback),
     // FunctionExpression-branch operand walk, and the `'item'` fallback.
     const { listeners, reports } = createWithMockContext(jsxKey);
@@ -697,10 +697,14 @@ describe('jsx-key (layer 2, synthetic parent chains)', () => {
     link(childrenMap, null);
     listener(listeners, 'JSXElement')(node);
     expect(reports).toHaveLength(1);
+    /*
+     * CORRECTED 2026-09-20: previously asserted the walk fell back to
+     * ` key={item.id}`. The innermost iterator callback here takes no
+     * parameter, so nothing binds `item` and the suggestion is withheld
+     * rather than naming it.
+     */
     const report: AnyNode = reports[0];
-    const { fixer, calls } = makeRecordingFixer();
-    report.suggest[0].fix(fixer);
-    expect(calls[0].args[1]).toBe(' key={item.id}');
+    expect(report.suggest).toBeUndefined();
   });
 
   it('iterator context resets the key tracker without reporting', () => {

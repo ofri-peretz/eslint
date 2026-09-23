@@ -34,7 +34,7 @@ afterAll(() => {
 });
 
 /** Writes `b.ts`, then lints `a.ts` — both closing a cycle a→b→a. */
-const lint = (aSource: string, bSource: string): number => {
+const lint = (aSource: string, bSource: string, options?: object): number => {
   const sub = fs.mkdtempSync(path.join(dir, 'case-'));
   fs.writeFileSync(path.join(sub, 'b.ts'), bSource);
   const aPath = path.join(sub, 'a.ts');
@@ -48,7 +48,9 @@ const lint = (aSource: string, bSource: string): number => {
           files: ['**/*.ts'],
           languageOptions: { parser: tsParser as never, ecmaVersion: 2022, sourceType: 'module' },
           plugins: { 'import-next': { rules: { 'no-cycle': noCycle as never } } },
-          rules: { 'import-next/no-cycle': 'error' },
+          rules: {
+            'import-next/no-cycle': options ? ['error', options] : 'error',
+          },
         },
       ],
       aPath,
@@ -72,6 +74,31 @@ describe('no-cycle and erased imports', () => {
 
     it('inline type specifier', () => {
       expect(lint("import { type Shape } from './b';\nexport const a = () => 1 as unknown as Shape;\n", B_BOTH)).toBe(0);
+    });
+  });
+
+  // Under `verbatimModuleSyntax` the inline form is NOT erased: `tsc` emits
+  // `import {} from './b.js'`, the target module is evaluated, and the cycle is
+  // real. The block above is correct only for projects that leave the flag off,
+  // so the behaviour is an option rather than a default flip.
+  //
+  // burgee sets `verbatimModuleSyntax: true` in tsconfig.base.json and writes
+  // the inline form 379 times against 33 statement-level `import type`; the
+  // silenced edges include packages/paratext/src/template.ts:16 and
+  // packages/flagstaff/src/builtins.ts:12.
+  describe('verbatimModuleSyntax — the inline form survives emit', () => {
+    const VMS = { verbatimModuleSyntax: true };
+
+    it('reports an inline type specifier when the flag is set', () => {
+      expect(
+        lint("import { type Shape } from './b';\nexport const a = () => 1 as unknown as Shape;\n", B_BOTH, VMS),
+      ).toBeGreaterThan(0);
+    });
+
+    it('still skips a statement-level `import type`, which IS erased under the flag', () => {
+      expect(
+        lint("import type { Shape } from './b';\nexport const a = () => 1 as unknown as Shape;\n", B_BOTH, VMS),
+      ).toBe(0);
     });
   });
 
@@ -161,6 +188,7 @@ describe('one edge, one verdict', () => {
   const lintBothEnds = (
     aSource: string,
     bSource: string,
+    options?: object,
   ): { a: number; b: number } => {
     const sub = fs.mkdtempSync(path.join(dir, 'both-ends-'));
     const aPath = path.join(sub, 'a.ts');
@@ -177,7 +205,9 @@ describe('one edge, one verdict', () => {
           sourceType: 'module',
         },
         plugins: { 'import-next': { rules: { 'no-cycle': noCycle as never } } },
-        rules: { 'import-next/no-cycle': 'error' },
+        rules: {
+          'import-next/no-cycle': options ? ['error', options] : 'error',
+        },
       },
     ];
     const count = (source: string, file: string): number =>
@@ -200,6 +230,25 @@ describe('one edge, one verdict', () => {
       'export const render = (f?: Fields) => f;',
     ].join('\n');
     expect(lintBothEnds(a, b)).toEqual({ a: 0, b: 0 });
+  });
+
+  it('under verbatimModuleSyntax the same back edge reports from BOTH ends', () => {
+    // The option reads the inline form as a runtime edge (tsc emits
+    // `import {} from './a.js'`). The report site honoured it, but the devkit
+    // graph had already erased the edge, so no cycle existed to report and the
+    // option did nothing. Both halves now read the same flag.
+    const a = [
+      "import { render } from './b.js';",
+      'export interface Fields { n: number }',
+      'export const a = () => render();',
+    ].join('\n');
+    const b = [
+      "import { type Fields } from './a.js';",
+      'export const render = (f?: Fields) => f;',
+    ].join('\n');
+    const counts = lintBothEnds(a, b, { verbatimModuleSyntax: true });
+    expect(counts.a).toBeGreaterThan(0);
+    expect(counts.b).toBeGreaterThan(0);
   });
 
   it('a back edge with any value binding still reports from BOTH ends', () => {

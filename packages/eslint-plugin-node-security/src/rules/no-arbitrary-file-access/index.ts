@@ -23,7 +23,7 @@ import {
   propertyName,
   unwrapTypeSyntax,
 } from '@interlace/eslint-devkit';
-import type { TSESTree } from '@interlace/eslint-devkit';
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 
 /**
  * @vocabulary `path`, `join`, `basename` and `fs` are Node's — the module
@@ -115,6 +115,28 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
      *
      * `depth` stops `const a = b; const b = a;` recursing forever.
      */
+    /**
+     * Is this `process` the Node.js global, or a binding that shadows it?
+     *
+     * A parameter, local or import named `process` is somebody else's object —
+     * `function f(process) { fs.readFileSync(process.argv[2]); }` says nothing
+     * about the real argv. The name alone is not the evidence; the resolution
+     * is. A global resolves either to no variable at all or to one with no
+     * declaration, so anything carrying a `def` is a shadow.
+     */
+    function isNodeGlobalProcess(identifier: TSESTree.Identifier): boolean {
+      const scope = context.sourceCode.getScope(identifier);
+      for (
+        let current: TSESLint.Scope.Scope | null = scope;
+        current;
+        current = current.upper
+      ) {
+        const variable = current.variables.find((v) => v.name === 'process');
+        if (variable) return variable.defs.length === 0;
+      }
+      return true;
+    }
+
     function readsUserInput(rawNode: TSESTree.Node, depth = 0): boolean {
       if (depth > 6) return false;
       // `as string`, `!`, `satisfies`, `<T>x` — syntax, not a value change.
@@ -132,8 +154,37 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
           return bound !== undefined && readsUserInput(bound, depth + 1);
         }
         // Walk to the root of `req.query.file` and judge the base object.
-        case 'MemberExpression':
+        case 'MemberExpression': {
+          // `process.argv` is named, visible user input, so it is attributable
+          // in exactly the way a bare global is not. The partition with
+          // detect-non-literal-fs-filename is what the valid cases protect, and
+          // that rule's docs hand this shape back here by name: "that is
+          // `no-arbitrary-file-access`'s question, not this rule's". Reading the
+          // base object alone never saw it, because the root of
+          // `process.argv[2]` is the Identifier `process`, and adding `process`
+          // to userInputSources would drag in `process.pid` and
+          // `process.execPath` with it.
+          //
+          // `process.env` is deliberately NOT here. The sentence that delegates
+          // both shapes is conditional — "IF your threat model treats the
+          // environment or `process.argv` as attacker-controlled" — and an env
+          // var is normally operator configuration, not an untrusted caller.
+          // twilio-node `src/base/RequestClient.ts:128` is the measured case:
+          // `fs.readFileSync(process.env.TWILIO_CA_BUNDLE)` is an operator
+          // pointing the SDK at a CA bundle, and "path traversal vulnerability"
+          // is untrue of it. This rule has no options, so a consumer who
+          // disagrees has no way down from it — argv only is the claim that
+          // holds without one.
+          if (
+            node.object.type === 'Identifier' &&
+            node.object.name === 'process' &&
+            propertyName(node) === 'argv' &&
+            isNodeGlobalProcess(node.object)
+          ) {
+            return true;
+          }
           return readsUserInput(node.object, depth + 1);
+        }
         case 'TemplateLiteral':
           return node.expressions.some((e) => readsUserInput(e, depth + 1));
         case 'BinaryExpression':

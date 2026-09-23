@@ -183,7 +183,10 @@ function looksLikeCode(comment: string, isBlockComment: boolean): boolean {
     // that could be found by inspection.
     // A structural shape is code regardless of how the line ends; only the
     // weak patterns below need the sentence test.
-    if (!STRUCTURAL_CODE.some((pattern) => pattern.test(line)) && !ENDS_LIKE_CODE.test(line)) {
+    if (
+      !STRUCTURAL_CODE.some((pattern) => pattern.test(line)) &&
+      !ENDS_LIKE_CODE.test(line)
+    ) {
       continue;
     }
 
@@ -371,6 +374,25 @@ export const noCommentedCode = createRule<RuleOptions, MessageIds>({
       }
     }
 
+    /**
+     * Whether live source sits between two comments.
+     *
+     * Asked of the token stream rather than of line numbers: blank lines and
+     * intervening non-code comments are fine to group across, a statement is
+     * not. `getTokenAfter` with `includeComments: false` skips comments, so
+     * the next token it yields is the first real code after `before` — if it
+     * starts before `after` does, the two comments are not adjacent.
+     */
+    function hasCodeBetween(
+      before: TSESTree.Comment,
+      after: TSESTree.Comment,
+    ): boolean {
+      const nextToken = sourceCode.getTokenAfter(before, {
+        includeComments: false,
+      });
+      return nextToken !== null && nextToken.range[0] < after.range[0];
+    }
+
     return {
       Program() {
         const comments = sourceCode.getAllComments();
@@ -386,6 +408,20 @@ export const noCommentedCode = createRule<RuleOptions, MessageIds>({
 
           // Check if this comment looks like code
           if (looksLikeCode(commentText, isBlockComment)) {
+            // "Consecutive" has to mean consecutive IN THE SOURCE, not merely
+            // consecutive within the filtered stream of code-like comments.
+            // The group's suggestion removes [first.start, last.end] as ONE
+            // range, so any live statement between two members is deleted
+            // along with them. Without this boundary the two comments can sit
+            // 500 lines apart and a Quick Fix labelled "Delete the commented
+            // code block" takes all 500 lines with them — measured on
+            // burgee's vendored ora/test.js, where the range was 5,604
+            // characters and the result did not parse.
+            const previous = currentGroup[currentGroup.length - 1];
+            if (previous && hasCodeBetween(previous, comment)) {
+              groupedComments.push([...currentGroup]);
+              currentGroup = [];
+            }
             currentGroup.push(comment);
           } else {
             // If current group has comments, add it to grouped comments

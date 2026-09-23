@@ -197,7 +197,9 @@ const INLINE_TYPE_BINDING = /^type\s+(?!as(?:\s|$))/;
  * It does NOT say the module is never loaded. Under `verbatimModuleSyntax` the
  * inline form is legal and the statement is PRESERVED — `import { type Fields }
  * from './cap.js'` emits `import {} from './cap.js'`, a real runtime edge. The
- * empty-brace case is left as a value edge for exactly that reason.
+ * empty-brace case is left as a value edge for exactly that reason, and the
+ * inline form is recorded as `inlineTypeOnly` rather than `typeOnly` so a
+ * caller compiling under that flag can keep the edge (see `isErasedEdge`).
  *
  * ANY value binding keeps the edge, because a missed runtime cycle is a shipped
  * initialization bug while a reported one is an argument.
@@ -316,6 +318,17 @@ export interface ImportInfo {
   dynamic?: boolean;
   /** Whether this is a type-only import (import type {...}) — erased at compile time */
   typeOnly?: boolean;
+  /**
+   * Whether every binding carries the INLINE modifier (`import { type A }`).
+   *
+   * Kept apart from `typeOnly` because the two are not erased under the same
+   * settings: a statement-level `import type` is erased everywhere, while the
+   * inline form is PRESERVED under `verbatimModuleSyntax` — emitted as
+   * `import {} from './a.js'`, which still evaluates the module. The graph
+   * walkers drop this edge unless `CycleDetectionOptions.verbatimModuleSyntax`
+   * is set; see `isErasedEdge`.
+   */
+  inlineTypeOnly?: boolean;
 }
 
 /**
@@ -713,13 +726,19 @@ export function getFileImports(
     // Track resolved paths to dedupe across the three regexes (a single file
     // may have both `import X from 'y'` and `export { X } from 'y'`).
     const seen = new Set<string>();
-    const pushImport = (importPath: string, dynamic = false, typeOnly = false) => {
+    const pushImport = (
+      importPath: string,
+      dynamic = false,
+      typeOnly = false,
+      inlineTypeOnly = false,
+    ) => {
       const resolved = resolveImportPath(importPath, resolveOpts);
       if (resolved && fileExists(resolved, cache) && !seen.has(resolved)) {
         seen.add(resolved);
         const info: ImportInfo = { path: resolved, source: importPath };
         if (dynamic) info.dynamic = true;
         if (typeOnly) info.typeOnly = true;
+        if (inlineTypeOnly) info.inlineTypeOnly = true;
         imports.push(info);
       }
     };
@@ -730,10 +749,13 @@ export function getFileImports(
     // recognised here or the same edge gets two different verdicts — see
     // `importsOnlyInlineTypes`.
     while ((match = IMPORT_REGEX.exec(content)) !== null) {
-      const isTypeImport =
-        /^import\s+type[\s{]/.test(match[0]) ||
-        importsOnlyInlineTypes(match[0]);
-      pushImport(match[1], false, isTypeImport);
+      const isTypeImport = /^import\s+type[\s{]/.test(match[0]);
+      pushImport(
+        match[1],
+        false,
+        isTypeImport,
+        !isTypeImport && importsOnlyInlineTypes(match[0]),
+      );
     }
 
     // Match re-exports (`export … from '…'`). Without this, cycles routed
@@ -873,7 +895,7 @@ export function computeSCCsFromFile(
       // compile time and cannot form runtime cycles. Excluding them from the
       // SCC graph produces a smaller, more accurate graph and eliminates FPs
       // that would appear for `import type { Foo }` back-references.
-      if (!imp.dynamic && !imp.typeOnly && !visited.has(imp.path)) {
+      if (!imp.dynamic && !isErasedEdge(imp, options) && !visited.has(imp.path)) {
         filesToProcess.push(imp.path);
       }
     }
@@ -989,7 +1011,7 @@ function tarjanStrongConnect(
     for (const imp of imports) {
       // Skip dynamic and type-only imports — type edges are erased at compile
       // time and must not participate in SCC graph edges.
-      if (imp.dynamic || imp.typeOnly) continue;
+      if (imp.dynamic || isErasedEdge(imp, options)) continue;
       successors.push(imp.path);
     }
 
@@ -1124,7 +1146,7 @@ export function findShortestCyclePath(
     });
 
     for (const imp of imports) {
-      if (imp.dynamic || imp.typeOnly) continue;
+      if (imp.dynamic || isErasedEdge(imp, options)) continue;
 
       if (imp.path === sourceFile) {
         // Found the cycle — return the complete path
@@ -1182,6 +1204,31 @@ export interface CycleDetectionOptions {
   cache: FileSystemCache;
   /** External resolver settings */
   resolverSettings?: ResolverSetting;
+  /**
+   * The project compiles with TypeScript's `verbatimModuleSyntax`, so an
+   * all-inline-type import (`import { type A }`) is emitted as
+   * `import {} from './a.js'` and remains a runtime edge. Off by default: the
+   * inline form is then erased and its edge is dropped from the graph.
+   *
+   * SCC results are cached in `cache`, so a caller that walks the graph under
+   * both settings must use a separate `FileSystemCache` for each.
+   */
+  verbatimModuleSyntax?: boolean;
+}
+
+/**
+ * Is this edge erased before emit, so it cannot close a runtime cycle?
+ *
+ * A statement-level `import type` always is. An all-inline-type import is only
+ * when `verbatimModuleSyntax` is off — under that flag the statement survives
+ * as `import {} from '…'` and still evaluates the module.
+ */
+function isErasedEdge(
+  imp: ImportInfo,
+  options: Pick<CycleDetectionOptions, 'verbatimModuleSyntax'>,
+): boolean {
+  if (imp.typeOnly) return true;
+  return Boolean(imp.inlineTypeOnly) && !options.verbatimModuleSyntax;
 }
 
 /**

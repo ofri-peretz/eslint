@@ -26,3 +26,7 @@ dependency graph's type-edge test matched only top-level `import type`, so
 `import { type Foo } from './a'` kept its edge while the rule's own report site
 correctly treated it as erased — the same edge got two verdicts depending on
 which file you linted. An import with any value binding still keeps its edge.
+With the rule's `verbatimModuleSyntax` option set, the graph now keeps the
+inline edge too (the devkit records it as `inlineTypeOnly` and its graph walkers
+take the same flag), so that option reports the cycle from both ends instead of
+being overruled by a graph that had already erased the edge.

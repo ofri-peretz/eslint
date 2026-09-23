@@ -268,10 +268,12 @@ describe('no-cycle — Layer 2', () => {
     return { context, reports };
   }
 
-  it('clearCircularDependencyCache clears the shared cache', () => {
+  it('clearCircularDependencyCache clears both graph caches', () => {
+    // One graph per reading of `verbatimModuleSyntax`; the mocked factory
+    // hands back the same object for each, so it is cleared twice.
     mocks.clearCache.mockClear();
     clearCircularDependencyCache();
-    expect(mocks.clearCache).toHaveBeenCalledTimes(1);
+    expect(mocks.clearCache).toHaveBeenCalledTimes(2);
     expect(mocks.clearCache).toHaveBeenCalledWith(mocks.cache);
   });
 
