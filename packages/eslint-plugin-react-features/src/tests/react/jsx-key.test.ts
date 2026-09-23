@@ -901,6 +901,7 @@ describe('jsx-key', () => {
           ],
         },
         {
+          // @found reasoned from the unbound-suggestion finding (burgee FP/FN sweep 2026-09-20), not seen in real code
           name: 'FN: a renamed destructured id suggests the local it binds, not the property',
           code: `items.map(({ id: rowId, name }) => <div>{name}</div>)`,
           errors: [
@@ -923,11 +924,13 @@ describe('jsx-key', () => {
            * outer `.map(item => …)` that resolves silently and pins one
            * constant key on every row.
            */
+          // @found burgee FP/FN sweep 2026-09-20, unbound `item` suggestion
           name: 'FN: no suggestion is offered when no key expression can be derived',
           code: `items.map(({ name }) => <div>{name}</div>)`,
           errors: [{ messageId: 'missingKey', suggestions: [] }],
         },
         {
+          // @found reasoned from the unbound-suggestion finding (burgee FP/FN sweep 2026-09-20), not seen in real code
           name: 'FN: an array-pattern callback derives no key and offers no suggestion',
           code: `items.map(([a, b]) => <div>{a}</div>)`,
           errors: [{ messageId: 'missingKey', suggestions: [] }],

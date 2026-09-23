@@ -36,6 +36,38 @@ ruleTester.run('no-arbitrary-file-access', noArbitraryFileAccess, {
       name: 'a local bound to an unresolvable call is not attributed',
       code: 'const p = getPath(); fs.readFileSync(p);',
     },
+    // `process.argv` and `process.env` are user input; the rest of `process` is
+    // not. This is the reason the check reads the property instead of putting
+    // bare `process` in userInputSources — that would make every one of these
+    // a finding.
+    {
+      name: 'process.execPath is not user input',
+      code: "fs.readFileSync(process.execPath, 'utf8');",
+    },
+    {
+      name: 'process.cwd() is not user input',
+      code: "fs.readFileSync(process.cwd(), 'utf8');",
+    },
+    // `process.env` is operator configuration, not an untrusted caller. The
+    // sentence in detect-non-literal-fs-filename's docs that delegates these
+    // shapes is conditional on the threat model, and this rule has no options,
+    // so a consumer who disagrees cannot turn it down. twilio-node
+    // `src/base/RequestClient.ts:128` is the measured case: an operator
+    // pointing the SDK at a CA bundle is not a path traversal.
+    {
+      name: 'a process.env path is operator config, not user input',
+      code: "fs.readFileSync(process.env.CONFIG_PATH, 'utf8');",
+    },
+    // The name is not the evidence, the resolution is. A binding that shadows
+    // the global is somebody else's object and says nothing about the real argv.
+    {
+      name: 'a parameter shadowing `process` is not the Node global',
+      code: "function f(process) { fs.readFileSync(process.argv[2], 'utf8'); }",
+    },
+    {
+      name: 'a local shadowing `process` is not the Node global',
+      code: "const process = getThing(); fs.readFileSync(process.argv[2], 'utf8');",
+    },
     // Mutually-recursive bindings terminate instead of blowing the stack.
     {
       name: 'mutually-recursive bindings terminate instead of blowing the stack',
@@ -248,6 +280,36 @@ ruleTester.run('no-arbitrary-file-access', noArbitraryFileAccess, {
   ],
 
   invalid: [
+    /*
+     * `process.argv` IS attributable user input.
+     *
+     * The valid cases above partition away paths this rule cannot attribute to
+     * a source — those belong to detect-non-literal-fs-filename. `process.argv`
+     * is not one of them: it is a named, visible input, and that sibling rule's
+     * own docs hand this shape back here by name (`process.env` is deliberately
+     * left out — see the valid case for why):
+     *
+     *   "`fs.readFileSync(process.env.X)` is silent by design [...] If your
+     *    threat model treats the environment or `process.argv` as
+     *    attacker-controlled *and* you want every fs call driven by them
+     *    flagged regardless of shape, that is `no-arbitrary-file-access`'s
+     *    question, not this rule's."
+     *   -- docs/rules/detect-non-literal-fs-filename.md
+     *
+     * Neither rule reported it, so a documented handoff landed nowhere.
+     * burgee packages/burgee/src/cli.ts:107 is the corpus site: a CLI reading a
+     * file at a path its own argv chose.
+     */
+    {
+      name: 'a whole-value process.argv path is user input',
+      code: "const p = process.argv[2]; const s = fs.readFileSync(p, 'utf8');",
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'process.argv reaching fs directly is user input',
+      code: "fs.readFileSync(process.argv[2], 'utf8');",
+      errors: [{ messageId: 'violationDetected' }],
+    },
     /*
      * A NAME MAY NOT SILENCE A FINDING.
      *

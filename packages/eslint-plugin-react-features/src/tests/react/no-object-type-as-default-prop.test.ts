@@ -166,6 +166,7 @@ ruleTester.run('no-object-type-as-default-prop', noObjectTypeAsDefaultProp, {
       `,
     },
     {
+      // @found reasoned from the flagstaff/src/cli.ts:169 finding (burgee FP/FN sweep 2026-09-20), not seen in real code
       name: 'FP: a for-of destructuring binding is not a parameter default',
       code: `for (const { meta = {} } of rows) { use(meta); }`,
     },

@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-21",
+  "generated": "2026-09-15",
   "rules": {
     "secure-coding/detect-non-literal-regexp": [
       "duplicate-coverage",
@@ -213,7 +213,9 @@
     "browser-security/no-allow-arbitrary-loads": [
       "duplicate-coverage"
     ],
-    "browser-security/no-clickjacking": [],
+    "browser-security/no-clickjacking": [
+      "textual-matching"
+    ],
     "browser-security/no-client-side-auth-logic": [
       "unconfigurable-vocabulary"
     ],

@@ -80,6 +80,7 @@ describe('no-this-in-sfc', () => {
         {
           // A nested class must not clear the enclosing class on exit, or
           // valid class-component \`this\` after it reports.
+          // @found reasoned while fixing the declared-this finding (burgee FP/FN sweep 2026-09-20), not seen in real code
           name: 'FP: `this` in a class render stays valid after a nested class closes',
           code: `
             class Outer extends React.Component {

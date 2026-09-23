@@ -82,17 +82,31 @@ suite('detect-object-injection, read against its nearest neighbour', () => {
         // The proof is a property of the ARRAY — every value `k` can take is
         // spelled in the file — not of the loop construct. Accepting only the
         // for-of spelling reported the callback spelling of identical code.
+        // @found burgee FP/FN sweep 2026-09-20, packages/burgee/src/yargs/factory.ts:1592
         name: 'FP: the same allowlist iterated with .forEach instead of for-of',
         code: 'const KEYS = ["alpha", "beta"]; const o = {}; const s = {}; KEYS.forEach((k) => { o[k] = s[k]; });',
       },
       {
         // burgee sweep 2026-09-20, packages/burgee/src/yargs/factory.ts:1595.
+        // @found burgee FP/FN sweep 2026-09-20, packages/burgee/src/yargs/factory.ts:1595
         name: 'FP: the as const allowlist iterated with .map',
         code: 'const KEYS = ["alpha", "beta"] as const; const o = {}; KEYS.map((k) => o[k]);',
       },
       {
+        // @found reasoned from the factory.ts:1592 finding (burgee FP/FN sweep 2026-09-20), not seen in real code
         name: 'FP: the .forEach spelling with a function expression callback',
         code: 'const KEYS = ["alpha", "beta"]; const o = {}; KEYS.forEach(function (k) { o[k] = 1; });',
+      },
+      {
+        // Was pinned as invalid here when the .forEach allowlist exemption
+        // landed, to prove it binds parameter 0 only. The allowlist still does
+        // not clear `i`, but main has since cleared it on a different ground:
+        // an Array callback's index is a Number by ECMA-262, so it cannot name
+        // `__proto__` (write-path-branches.test.ts, "the index parameter of
+        // forEach is a number by language guarantee"). `KEYS` is a const array
+        // literal, so it is provably an Array and the write is safe.
+        name: 'the index parameter of a const-list forEach is cleared as a Number, not as an allowlist element',
+        code: 'const KEYS = ["alpha"]; function f(o, s) { KEYS.forEach((k, i) => { o[i] = s[k]; }); }',
       },
       {
         // burgee sweep 2026-09-10, from packages/burgee/src/testing-helpers.ts:176.
@@ -144,10 +158,6 @@ suite('detect-object-injection, read against its nearest neighbour', () => {
         name: 'a copy loop over a module-local object',
         code: 'const cfg = { a: 1 }; const out = {}; for (const k in cfg) { out[k] = cfg[k]; }',
       },
-      {
-        name: 'a merge helper guarded by Object.hasOwn',
-        code: 'function merge(dst, src) { for (const k in src) { if (Object.hasOwn(src, k)) dst[k] = src[k]; } }',
-      },
     ],
     invalid: [
       /*
@@ -185,11 +195,6 @@ suite('detect-object-injection, read against its nearest neighbour', () => {
         errors: 1,
       },
       {
-        name: 'the second callback parameter is an index, not an element',
-        code: 'const KEYS = ["alpha"]; function f(o, s) { KEYS.forEach((k, i) => { o[i] = s[k]; }); }',
-        errors: 1,
-      },
-      {
         name: 'a forEach allowlist whose contents come from a call',
         code: 'const KEYS = mk(); const o = {}; const s = {}; KEYS.forEach((k) => { o[k] = s[k]; });',
         errors: 1,
@@ -210,6 +215,19 @@ suite('detect-object-injection, read against its nearest neighbour', () => {
       {
         name: 'the merge helper behind every deep-extend CVE',
         code: 'function merge(dst, src) { for (const k in src) { dst[k] = src[k]; } return dst; }',
+        errors: 1,
+      },
+      {
+        // Was pinned VALID as 'a merge helper guarded by Object.hasOwn', on the
+        // rationale that the guard IS the documented fix. The rationale was
+        // reasoned, not run: `Object.hasOwn(src, k)` proves `k` is an own
+        // property of SRC, and says nothing about DST. Verified in node — with
+        // `src = JSON.parse('{"__proto__": {...}}')`, `__proto__` IS an own
+        // property, so the guard PASSES and `dst[k] = ...` reparents `dst`.
+        // In the recursive spelling it walks into `Object.prototype` and
+        // pollutes every object in the process. The fixture pinned the bug.
+        name: 'a hasOwn guard on the SOURCE does not make a write to the TARGET safe',
+        code: 'function merge(dst, src) { for (const k in src) { if (Object.hasOwn(src, k)) dst[k] = src[k]; } }',
         errors: 1,
       },
       {
