@@ -1,8 +1,8 @@
 # ILB-Flagship Scorecard
 
-> Per-rule × per-repo: latency (cached + uncached), findings, head-to-head overlap, and synthetic-corpus P/R/F1. Generated from `2026-09-14.json`.
+> Per-rule × per-repo: latency (cached + uncached), findings, head-to-head overlap, and synthetic-corpus P/R/F1. Generated from `2026-09-21.json`.
 
-- **Generated**: 2026-09-14T17:00:32.413Z · **Schema**: ilb-flagship/v2
+- **Generated**: 2026-09-21T17:01:39.046Z · **Schema**: ilb-flagship/v2
 - **ESLint**: v9.39.4 · **oxlint**: 1.63.0 · **Node**: v24.20.0
 - **OOS root**: `/home/runner/work/eslint/eslint/oos`
 
@@ -10,24 +10,24 @@
 
 | Rule | Repo | ⭐ | Tier | Ours cold | Ours warm | Ours findings | Comp cold | Comp warm | Comp findings | oxlint cold | oxlint warm | oxlint findings |
 | :--- | :--- | ---: | :---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `import-next/no-cycle` | next.js | 131K | T1 | 48,510 ms | 708 ms | 10 | 64,047 ms | 746 ms | 0 | 1,028 ms | 994 ms | 91 |
-| `pg/no-unsafe-query` | supabase | 78K | T1 | 39,624 ms | 1,330 ms | 0 | — | — | — | — | — | — |
-| `secure-coding/no-hardcoded-credentials` | vercel-ai | 15K | T2 | 7,824 ms | 649 ms | 903 | 9,633 ms | 601 ms | 460 | — | — | — |
-| `secure-coding/no-redos-vulnerable-regex` | lodash | 60K | T1 | 377 ms | 304 ms | 1 | 406 ms | 321 ms | 0 | — | — | — |
-| `mongodb-security/no-unsafe-query` | payload | 35K | T2 | 9,083 ms | 747 ms | 252 | — | — | — | — | — | — |
-| `jwt/no-algorithm-none` | supabase | 78K | T1 | 38,536 ms | 1,354 ms | 0 | — | — | — | — | — | — |
-| `browser-security/no-postmessage-wildcard-origin` | next.js | 131K | T1 | 45,999 ms | 708 ms | 2 | — | — | — | — | — | — |
-| `react-features/hooks-exhaustive-deps` | next.js | 131K | T1 | 47,584 ms | 712 ms | 149 | 47,042 ms | 741 ms | 53 | 432 ms | 425 ms | 22 |
-| `react-a11y/alt-text` | shadcn-ui | 100K | T1 | 293 ms | 293 ms | 0 | 10,982 ms | 798 ms | 0 | 144 ms | 146 ms | 0 |
-| `vercel-ai-security/no-unsafe-output-handling` | vercel-ai | 15K | T2 | 8,079 ms | 598 ms | 0 | — | — | — | — | — | — |
+| `import-next/no-cycle` | next.js | 131K | T1 | 43,831 ms | 661 ms | 10 | 57,631 ms | 714 ms | 0 | 1,086 ms | 1,080 ms | 91 |
+| `pg/no-unsafe-query` | supabase | 78K | T1 | 38,055 ms | 1,287 ms | 0 | — | — | — | — | — | — |
+| `secure-coding/no-hardcoded-credentials` | vercel-ai | 15K | T2 | 8,341 ms | 631 ms | 907 | 10,362 ms | 581 ms | 474 | — | — | — |
+| `secure-coding/no-redos-vulnerable-regex` | lodash | 60K | T1 | 365 ms | 289 ms | 1 | 406 ms | 316 ms | 0 | — | — | — |
+| `mongodb-security/no-unsafe-query` | payload | 35K | T2 | 9,717 ms | 720 ms | 274 | — | — | — | — | — | — |
+| `jwt/no-algorithm-none` | supabase | 78K | T1 | 37,064 ms | 1,299 ms | 0 | — | — | — | — | — | — |
+| `browser-security/no-postmessage-wildcard-origin` | next.js | 131K | T1 | 41,668 ms | 647 ms | 2 | — | — | — | — | — | — |
+| `react-features/hooks-exhaustive-deps` | next.js | 131K | T1 | 40,541 ms | 653 ms | 149 | 40,840 ms | 709 ms | 53 | 447 ms | 460 ms | 22 |
+| `react-a11y/alt-text` | shadcn-ui | 100K | T1 | 277 ms | 276 ms | 0 | 10,749 ms | 738 ms | 0 | 147 ms | 140 ms | 0 |
+| `vercel-ai-security/no-unsafe-output-handling` | vercel-ai | 15K | T2 | 8,173 ms | 548 ms | 0 | — | — | — | — | — | — |
 
 ## 2. Cache effectiveness (median across rules)
 
 | Stack | Median cold | Median warm | Δ | Cache benefit |
 | :--- | ---: | ---: | ---: | ---: |
-| Ours (ESLint) | 23,810 ms | 708 ms | 23,102 ms | 97% |
-| Peer (ESLint) | 10,982 ms | 741 ms | 10,241 ms | 93% |
-| oxlint native (peer) | 432 ms | 425 ms | 7 ms | 2% |
+| Ours (ESLint) | 23,391 ms | 650 ms | 22,741 ms | 97% |
+| Peer (ESLint) | 10,749 ms | 709 ms | 10,040 ms | 93% |
+| oxlint native (peer) | 447 ms | 460 ms | -13 ms | -3% |
 
 ## 3. Synthetic corpus — true precision / recall / F1
 
@@ -50,7 +50,7 @@ Set ops on `(file, line)` keys between our cold-run findings and the competitor'
 | Rule | Repo | Both | Ours-only | Theirs-only |
 | :--- | :--- | ---: | ---: | ---: |
 | `import-next/no-cycle` | next.js | 0 | 10 | 0 |
-| `secure-coding/no-hardcoded-credentials` | vercel-ai | 44 | 859 | 404 |
+| `secure-coding/no-hardcoded-credentials` | vercel-ai | 45 | 862 | 417 |
 | `secure-coding/no-redos-vulnerable-regex` | lodash | 0 | 1 | 0 |
 | `react-features/hooks-exhaustive-deps` | next.js | 3 | 141 | 28 |
 | `react-a11y/alt-text` | shadcn-ui | 0 | 0 | 0 |
@@ -59,7 +59,7 @@ Set ops on `(file, line)` keys between our cold-run findings and the competitor'
 
 Each row is a finding the competitor caught that ours missed. Triage to determine FN-on-our-side vs FP-on-theirs.
 
-### `secure-coding/no-hardcoded-credentials` on vercel-ai — 404 theirs-only finding(s)
+### `secure-coding/no-hardcoded-credentials` on vercel-ai — 417 theirs-only finding(s)
 
 | File | Line | Message |
 | :--- | ---: | :--- |
@@ -94,7 +94,7 @@ Each row is a finding ours caught that theirs missed. Triage same way — could 
 | `packages/next/src/server/app-render/console-async-storage.external.ts` | 4 | 🏗️ CWE-407 OWASP:A06-Insecure CVSS:5.3 \| Circular dependency detected \| MEDIUM ·    Fix: Extract shared types to - export type console-async-storage.externalId, console-async-storage-instanceId · - export interface console-async-storage.externalSummary, console-async-storage-instanc |
 | `packages/next/src/server/app-render/dynamic-access-async-storage-instance.ts` | 2 | 🏗️ CWE-407 OWASP:A06-Insecure CVSS:5.3 \| Circular dependency detected \| MEDIUM ·    Fix: Extract shared types to - export type dynamic-access-async-storage-instanceId, dynamic-access-async-storage.externalId · - export interface dynamic-access-async-storage-instanceSummary, dynamic- |
 
-### `secure-coding/no-hardcoded-credentials` on vercel-ai — 859 ours-only finding(s)
+### `secure-coding/no-hardcoded-credentials` on vercel-ai — 862 ours-only finding(s)
 
 | File | Line | Message |
 | :--- | ---: | :--- |
@@ -123,7 +123,7 @@ Each row is a finding ours caught that theirs missed. Triage same way — could 
 
 ## 7. Green-field rule samples (no competitor)
 
-### `mongodb-security/no-unsafe-query` on payload — 252 finding(s) (showing top 5)
+### `mongodb-security/no-unsafe-query` on payload — 274 finding(s) (showing top 5)
 
 | File | Line | Message |
 | :--- | ---: | :--- |

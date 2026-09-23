@@ -78,6 +78,7 @@ describe('no-zip-slip', () => {
         },
         // Validated paths
         {
+          name: 'an entry name passed through a validator before the write',
           code: 'const safePath = validatePath(entry.name); fs.writeFileSync(path.join(dest, safePath), data);',
         },
         // Safe libraries

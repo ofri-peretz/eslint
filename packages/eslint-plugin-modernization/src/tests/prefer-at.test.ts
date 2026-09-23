@@ -153,6 +153,10 @@ describe('prefer-at', () => {
           name: 'a computed segment in the receiver cannot be proven stable',
           code: 'const last = a[i].path[a[i].path.length - 1];',
         },
+        {
+          name: 'a private field and a public field of the same name are different receivers',
+          code: 'class F { #rows = []; rows = []; m() { return this.#rows[this.rows.length - 1]; } }',
+        },
       ],
       invalid: [
         {
@@ -174,6 +178,24 @@ describe('prefer-at', () => {
           name: 'a this-rooted receiver is rewritten too',
           code: 'const last = this.rows[this.rows.length - 1];',
           output: 'const last = this.rows.at(-1);',
+          errors: [{ messageId: 'useAtForLastElement' }],
+        },
+        // burgee packages/burgee/src/yargs/factory.ts:837 —
+        // `this.#context.fullCommands[this.#context.fullCommands.length - 1]` went
+        // unreported: propertyName() answers null for a PrivateIdentifier, so the
+        // receiver never rendered to a path. A private field is the same read as
+        // the public `this.rows` case above.
+        {
+          name: 'a private-field receiver is rewritten like a public one',
+          code: 'class F { #rows = []; m() { return this.#rows[this.#rows.length - 1]; } }',
+          output: 'class F { #rows = []; m() { return this.#rows.at(-1); } }',
+          errors: [{ messageId: 'useAtForLastElement' }],
+        },
+        {
+          name: 'a receiver path through a private field is rewritten',
+          code: 'class F { #context = { fullCommands: [] }; m() { return this.#context.fullCommands[this.#context.fullCommands.length - 1]; } }',
+          output:
+            'class F { #context = { fullCommands: [] }; m() { return this.#context.fullCommands.at(-1); } }',
           errors: [{ messageId: 'useAtForLastElement' }],
         },
         {

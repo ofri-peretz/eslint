@@ -32,6 +32,7 @@ describe('detect-non-literal-fs-filename', () => {
           code: 'fs.readFile("/path/to/file.txt", callback);',
         },
         {
+          name: 'a literal relative path to write is not user input',
           code: 'fs.writeFile("./config.json", data, callback);',
         },
         {
