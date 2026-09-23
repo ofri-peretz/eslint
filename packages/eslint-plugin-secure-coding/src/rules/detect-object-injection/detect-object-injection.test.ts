@@ -128,7 +128,30 @@ describe('detect-object-injection', () => {
         // ── Literal prefix rules out every dangerous name ────────────────
         // `'node' + i` always starts with "node", so it can never be
         // '__proto__' / 'prototype' / 'constructor'.
-        { code: "nodeProperties['node' + index++] = childNode;" },
+        {
+          name: 'a literal prefix no dangerous name starts with makes a concatenated key safe',
+          code: "nodeProperties['node' + index++] = childNode;",
+        },
+        // The same fact written as a template: `no-${x}` always starts with
+        // "no-". Surfaced by burgee packages/burgee/src/execute.ts:256.
+        {
+          name: 'a template literal with a non-empty literal prefix cannot spell a dangerous name',
+          code: 'function f(obj, x) { obj[`no-${x}`] = true; }',
+        },
+        {
+          name: 'a template literal with a non-empty literal suffix cannot spell a dangerous name',
+          code: 'function f(obj, x) { obj[`${x}-id`] = true; }',
+        },
+        // burgee packages/burgee/src/execute.ts:230,256 — the prefix is held in a
+        // never-reassigned const, which is the same literal under another name.
+        {
+          name: 'a prefix held in a const bound to a string literal counts as a literal prefix',
+          code: "const NO = 'no-'; function f(obj, x) { obj[`${NO}${x}`] = true; }",
+        },
+        {
+          name: 'a const-held literal prefix also counts in a + concatenation',
+          code: "const NO = 'no-'; function f(obj, x) { obj[NO + x] = true; }",
+        },
         // Literal property access
         {
           code: 'obj.name = value;',
@@ -261,6 +284,31 @@ describe('detect-object-injection', () => {
         // disqualifies nothing: '__proto__'.startsWith('__pro') is true.
         {
           code: "obj['__pro' + rest] = value;",
+          errors: 1,
+        },
+        {
+          name: 'a template prefix a dangerous name could start with disqualifies nothing',
+          code: 'obj[`__pro${rest}`] = value;',
+          errors: 1,
+        },
+        {
+          name: 'a reassigned prefix binding is not a literal prefix',
+          code: "let P = 'no-'; P = req.query.p; obj[P + x] = value;",
+          errors: 1,
+        },
+        {
+          name: 'an escaped template prefix is judged by its cooked text, which spells __pro',
+          code: 'obj[`\\x5f_pro${rest}`] = value;',
+          errors: 1,
+        },
+        {
+          name: 'a binding declared without an initialiser is not a literal prefix',
+          code: 'let P; P = req.query.p; obj[P + x] = value;',
+          errors: 1,
+        },
+        {
+          name: 'a const prefix bound to a non-literal is not a literal prefix',
+          code: 'const P = req.query.p; obj[`${P}${x}`] = value;',
           errors: 1,
         },
         // ── Scope resolution must not become an escape hatch ─────────────
