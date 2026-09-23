@@ -21,7 +21,7 @@
       "rules": 33,
       "description": "ESLint plugin for secure coding — detects LDAP, XPath, XXE, GraphQL and template injection, unsafe deserialization, ReDoS, missing authentication, and PII in logs",
       "category": "security",
-      "version": "5.4.8",
+      "version": "5.4.9",
       "published": true
     },
     {
@@ -181,7 +181,7 @@
       "rules": 55,
       "description": "ESLint plugin for imports and module boundaries — drop-in replacement for eslint-plugin-import, 3.1x faster end-to-end, zero-config migration",
       "category": "architecture",
-      "version": "2.8.6",
+      "version": "2.8.7",
       "published": true
     },
     {
@@ -189,7 +189,7 @@
       "rules": 15,
       "description": "ESLint plugin for team code conventions — enforces filename case, magic-number bans, commented-out code, expiring TODOs, and deprecated-API usage",
       "category": "quality",
-      "version": "6.0.5",
+      "version": "6.0.6",
       "published": true
     },
     {
@@ -197,7 +197,7 @@
       "rules": 12,
       "description": "ESLint plugin for maintainable code — limits cognitive complexity, nesting depth, parameter counts, duplicate functions, and unhandled or silent errors",
       "category": "quality",
-      "version": "3.2.13",
+      "version": "3.2.14",
       "published": true
     },
     {
@@ -205,7 +205,7 @@
       "rules": 9,
       "description": "ESLint plugin for runtime reliability — enforces error handling, network timeouts, null checks, and safe type narrowing",
       "category": "quality",
-      "version": "4.1.10",
+      "version": "4.1.11",
       "published": true
     },
     {
@@ -221,7 +221,7 @@
       "rules": 6,
       "description": "ESLint plugin for production operability — bans debug code and console logging in production, verbose error messages, and process.exit calls",
       "category": "quality",
-      "version": "4.1.5",
+      "version": "4.1.6",
       "published": true
     },
     {
@@ -229,7 +229,7 @@
       "rules": 4,
       "description": "ESLint plugin for modernizing JavaScript — auto-fixes legacy patterns to ES2022+ (Array.at, template literals, EventTarget, Array.isArray)",
       "category": "quality",
-      "version": "3.1.5",
+      "version": "3.1.6",
       "published": true
     },
     {
@@ -252,5 +252,5 @@
   "totalRules": 482,
   "totalPlugins": 31,
   "allPluginsCount": 31,
-  "generatedAt": "2026-09-22"
+  "generatedAt": "2026-09-23"
 }
