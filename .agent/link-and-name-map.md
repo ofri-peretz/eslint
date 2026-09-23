@@ -28,7 +28,7 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | npm package | v | prefix | alias | docs slug | pillar | logo | docs | OG | codecov |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :-: | :-: | :-: |
 | `eslint-plugin-anthropic-security` | 0.3.4 | `anthropic-security/` | — | `plugin-anthropic-security` | security | `claude` | ✅ | ✅ | ✅ |
-| `eslint-plugin-browser-security` | 2.1.8 | `browser-security/` | — | `plugin-browser-security` | security | `chromium` | ✅ | ✅ | ✅ |
+| `eslint-plugin-browser-security` | 2.1.9 | `browser-security/` | — | `plugin-browser-security` | security | `chromium` | ✅ | ✅ | ✅ |
 | `eslint-plugin-conventions` | 6.0.6 | `conventions/` | — | `plugin-conventions` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-drizzle-security` | 0.3.8 | `drizzle-security/` | — | `plugin-drizzle-security` | security | `drizzle` | ✅ | ✅ | ✅ |
 | `eslint-plugin-express-security` | 3.2.4 | `express-security/` | — | `plugin-express-security` | security | `express` | ✅ | ✅ | ✅ |
