@@ -12,7 +12,8 @@ import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
 import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
-type MessageIds = 'preferAtMethod' | 'useAtForLastElement' | 'useAtForNegativeIndex';
+type MessageIds =
+  'preferAtMethod' | 'useAtForLastElement' | 'useAtForNegativeIndex';
 
 export interface Options {
   /** Check for last element access patterns */
@@ -72,7 +73,8 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
         description: 'Use .at() method for clearer array element access',
         severity: 'MEDIUM',
         fix: 'Replace array[array.length - n] with array.at(-n)',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/at',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/at',
       }),
       useAtForLastElement: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -80,7 +82,8 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
         description: 'Use array.at(-1) for last element',
         severity: 'LOW',
         fix: 'array.at(-1) instead of array[array.length - 1]',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/at',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/at',
       }),
       useAtForNegativeIndex: formatLLMMessage({
         icon: MessageIcons.INFO,
@@ -88,7 +91,8 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
         description: 'Use array.at() for negative index',
         severity: 'LOW',
         fix: 'array.at(index) for clearer negative index access',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/at',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/at',
       }),
     },
     schema: [
@@ -108,7 +112,19 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       MemberExpression(node: TSESTree.MemberExpression) {
-        if (!node.computed || node.object.type !== 'Identifier') {
+        if (!node.computed) {
+          return;
+        }
+        // The receiver used to have to be a bare Identifier, which made
+        // `c.path[c.path.length - 1]` and `this.rows[this.rows.length - 1]`
+        // invisible — the common shape in class-based and node-tree code. The
+        // `.length` half of this expression was already generalised to read
+        // `o['length']`; this is the receiver half of the same generalisation.
+        if (
+          node.object.type !== 'Identifier' &&
+          node.object.type !== 'MemberExpression' &&
+          node.object.type !== 'ThisExpression'
+        ) {
           return;
         }
 
@@ -126,28 +142,59 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        const arrayName = node.object.name;
+        /**
+         * Render a receiver as a canonical key path, or null if any segment is
+         * dynamic.
+         *
+         * Comparing raw source text looked equivalent and was not: it made
+         * `c["path"][c.path["length"] - 1]` — the same object written two ways
+         * — compare unequal, so the rule went silent on a string subscript.
+         * `propertyName()` reads `o.k` and `o['k']` identically, which is what
+         * the receiver comparison needs.
+         */
+        const receiverPath = (receiver: TSESTree.Node): string | null => {
+          if (receiver.type === 'Identifier') return receiver.name;
+          if (receiver.type === 'ThisExpression') return 'this';
+          if (receiver.type !== 'MemberExpression') return null;
+          const base = receiverPath(receiver.object);
+          if (base === null) return null;
+          const key = propertyName(receiver);
+          return key === null ? null : `${base}.${key}`;
+        };
+
+        const arrayName = receiverPath(node.object);
+        if (arrayName === null) {
+          return;
+        }
+        // `.at()` is written where the source wrote the receiver, so the
+        // rewrite must use the ORIGINAL spelling, not the canonical path.
+        const receiverText = context.sourceCode.getText(node.object);
 
         // Check for array[array.length - n] pattern (any numeric literal n)
         if (
           node.property.type === 'BinaryExpression' &&
           node.property.operator === '-' &&
           node.property.left.type === 'MemberExpression' &&
-          node.property.left.object.type === 'Identifier' &&
-          node.property.left.object.name === arrayName &&
+          receiverPath(node.property.left.object) === arrayName &&
           propertyName(node.property.left) === 'length' &&
           node.property.right.type === 'Literal' &&
           typeof node.property.right.value === 'number' &&
           node.property.right.value > 0
         ) {
           const offset = node.property.right.value;
-          const messageId = offset === 1 ? 'useAtForLastElement' : 'preferAtMethod';
-          
+          const messageId =
+            offset === 1 ? 'useAtForLastElement' : 'preferAtMethod';
+
           context.report({
             node,
             messageId,
+            // Every receiver that reaches here rendered to a canonical path,
+            // so it is built only from identifiers, `this` and static property
+            // names — re-spelling it once cannot move a call or re-evaluate a
+            // dynamic index. The rewrite uses the ORIGINAL spelling, not the
+            // canonical path, so `c["path"]` stays as the author wrote it.
             fix(fixer: TSESLint.RuleFixer) {
-              return fixer.replaceText(node, `${arrayName}.at(-${offset})`);
+              return fixer.replaceText(node, `${receiverText}.at(-${offset})`);
             },
           });
           return;
@@ -158,8 +205,7 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
           node.property.type === 'BinaryExpression' &&
           node.property.operator === '-' &&
           node.property.left.type === 'MemberExpression' &&
-          node.property.left.object.type === 'Identifier' &&
-          node.property.left.object.name === arrayName &&
+          receiverPath(node.property.left.object) === arrayName &&
           propertyName(node.property.left) === 'length' &&
           node.property.right.type === 'Identifier'
         ) {

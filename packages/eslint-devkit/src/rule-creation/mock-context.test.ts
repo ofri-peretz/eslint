@@ -161,4 +161,38 @@ describe('createWithMockContext', () => {
     expect(bare.getAllComments()).toEqual([]);
     expect(bare.getFirstToken(bare.ast)).toBeNull();
   });
+
+  it('answers getTokenAfter from the AST token list, as a real SourceCode does', () => {
+    const rule = {
+      defaultOptions: [],
+      create() {
+        return {};
+      },
+    };
+    const first = { type: 'Keyword', value: 'const', range: [10, 15] };
+    const second = { type: 'Punctuator', value: ';', range: [20, 21] };
+
+    const sc = createWithMockContext(rule, {
+      ast: {
+        type: 'Program',
+        body: [],
+        tokens: [first, second],
+        comments: [],
+      },
+    } as never).context.getSourceCode();
+
+    // The first token starting at or after the node's end, not merely the next
+    // entry in the list — this is the question `no-commented-code` asks when it
+    // decides whether live source separates two comments.
+    expect(sc.getTokenAfter({ range: [0, 5] } as never)).toEqual(first);
+    expect(sc.getTokenAfter({ range: [0, 16] } as never)).toEqual(second);
+    // Nothing after the last token, and a node with no range, both answer
+    // rather than throw.
+    expect(sc.getTokenAfter({ range: [0, 30] } as never)).toBeNull();
+    expect(sc.getTokenAfter({} as never)).toEqual(first);
+
+    // The bare default AST carries no tokens, so there is never anything after.
+    const bare = createWithMockContext(rule).context.getSourceCode();
+    expect(bare.getTokenAfter({ range: [0, 1] } as never)).toBeNull();
+  });
 });

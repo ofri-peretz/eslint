@@ -106,8 +106,19 @@ export const noDeprecatedCipherMethod = createRule<RuleOptions, MessageIds>({
       ) {
         // Capture narrowed type before callback (TypeScript loses narrowing in closures)
         const callee = node.callee;
-        const propertyNode = callee.property as TSESTree.Identifier;
-        const methodName = propertyNode.name;
+        const propertyNode = callee.property;
+
+        // READ THE NAME THE SAME WAY THE GATE DID. The gate above resolves the
+        // property through `propertyName()`, so it matches `crypto['createCipher']`
+        // and `crypto[`createCipher`]` as well as `crypto.createCipher`. This
+        // path used to re-read it as `(property as Identifier).name`, which is
+        // `undefined` on a Literal: the message rendered `crypto.undefined()`,
+        // and because `undefined !== 'createCipher'` the ternary below always
+        // took the else limb, offering the DECRYPTION constructor for an
+        // ENCRYPTION call. The cast is what hid both symptoms from the type
+        // checker, and hoisting the read into a local is what hid it from
+        // `audit-rule-spellings.ts`, whose ratchet matches `.property.name`.
+        const methodName = propertyName(callee);
         const replacementName =
           methodName === 'createCipher' ? 'createCipheriv' : 'createDecipheriv';
 
@@ -122,7 +133,18 @@ export const noDeprecatedCipherMethod = createRule<RuleOptions, MessageIds>({
             {
               messageId: 'useCipheriv',
               fix: (fixer: TSESLint.RuleFixer) => {
-                return fixer.replaceText(propertyNode, replacementName);
+                // A computed property's range INCLUDES its quotes, so replacing
+                // it with a bare name emits `crypto[createCipheriv]` — an
+                // identifier that resolves nowhere. Re-quote with the quote
+                // character the source already used.
+                const raw = context.sourceCode.getText(propertyNode);
+                const quote = raw.startsWith('"') ? '"' : "'";
+                return fixer.replaceText(
+                  propertyNode,
+                  callee.computed
+                    ? `${quote}${replacementName}${quote}`
+                    : replacementName,
+                );
               },
             },
           ],
