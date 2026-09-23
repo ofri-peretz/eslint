@@ -9,7 +9,13 @@
  * Detect missing or incorrect React keys (requires deep reconciliation understanding)
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, namesOneOf, propertyName } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  namesOneOf,
+  objectKeyName,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 /*
@@ -37,6 +43,53 @@ export interface Options {
 }
 
 type RuleOptions = [Options?];
+
+/**
+ * The key expression to suggest for a callback parameter, or `null` when the
+ * file binds no identifier a key could be built from.
+ *
+ * `(item) => …`        -> `item.id`, the parameter's own `id` property.
+ * `({ id }) => …`      -> `id`, which the pattern already binds. Read through
+ *                         `objectKeyName` so `{ 'id': x }` and `{ ['id']: x }`
+ *                         are the same property, and a computed key that is
+ *                         not statically nameable is not mistaken for one.
+ * anything else        -> `null`, and the caller withholds the suggestion.
+ */
+const keyExpressionForParam = (param: TSESTree.Node): string | null => {
+  // A default does not change what the parameter binds: `(item = x) => …`
+  // still binds `item`, and `({ id } = {}) => …` still binds `id`.
+  if (param.type === AST_NODE_TYPES.AssignmentPattern) {
+    return keyExpressionForParam(param.left);
+  }
+  if (param.type === AST_NODE_TYPES.Identifier) return `${param.name}.id`;
+  if (param.type === AST_NODE_TYPES.ObjectPattern) {
+    for (const prop of param.properties) {
+      if (prop.type !== AST_NODE_TYPES.Property) continue;
+      if (objectKeyName(prop) !== 'id') continue;
+      // The bound local, which is what the suggestion has to name: `{ id }`
+      // binds `id`, `{ id: rowId }` binds `rowId`, `{ id = 0 }` binds `id`.
+      const bound =
+        prop.value.type === AST_NODE_TYPES.AssignmentPattern
+          ? prop.value.left
+          : prop.value;
+      if (bound.type === AST_NODE_TYPES.Identifier) return bound.name;
+    }
+  }
+  return null;
+};
+
+/**
+ * The key expression for the iterator callback that renders the element.
+ *
+ * A callback with NO parameter still ends the search: it is the callback that
+ * produces this element, so an outer callback's parameter is the wrong row. In
+ * `groups.map(item => item.rows.map(() => <li />))` climbing past the inner
+ * callback suggested `key={item.id}` — one constant key on every row.
+ */
+const keyExpressionForCallback = (
+  fn: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression,
+): string | null =>
+  fn.params.length > 0 ? keyExpressionForParam(fn.params[0]) : null;
 
 export const jsxKey = createRule<RuleOptions, MessageIds>({
   name: 'jsx-key',
@@ -401,63 +454,25 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
      * - Array.from(items, (item, index) => ...) -> 'item'
      * - Children.map(children, child => ...) -> 'child'
      */
-    function getIteratorCallbackParamName(node: TSESTree.JSXElement): string {
-      let current: TSESTree.Node = node;
-
-      while (current.parent) {
-        const parent: TSESTree.Node = current.parent;
-        const grandParent: TSESTree.Node | undefined = parent.parent;
-
-        // Check arrow function expression - isIteratorCall already handles Array.from
-        if (
-          parent.type === 'ArrowFunctionExpression' &&
-          parent.params.length > 0 &&
-          parent.params[0].type === 'Identifier' &&
-          grandParent &&
-          isIteratorCall(grandParent)
-        ) {
-          return parent.params[0].name;
-        }
-
-        // Check function expression - isIteratorCall already handles Array.from
-        if (
-          parent.type === 'FunctionExpression' &&
-          parent.params.length > 0 &&
-          parent.params[0].type === 'Identifier' &&
-          grandParent &&
-          isIteratorCall(grandParent)
-        ) {
-          return parent.params[0].name;
-        }
-
-        // Check block statement -> return -> function
-        if (parent.type === 'ReturnStatement') {
-          let funcParent: TSESTree.Node | undefined = parent.parent;
-          while (funcParent) {
-            if (
-              (funcParent.type === 'ArrowFunctionExpression' ||
-                funcParent.type === 'FunctionExpression') &&
-              funcParent.params.length > 0 &&
-              funcParent.params[0].type === 'Identifier'
-            ) {
-              if (funcParent.parent && isIteratorCall(funcParent.parent)) {
-                return funcParent.params[0].name;
-              }
-              break;
-            }
-            if (funcParent.type === 'BlockStatement') {
-              funcParent = funcParent.parent;
-              continue;
-            }
-            break;
-          }
-        }
-
-        current = parent;
+    function getIteratorKeyExpression(
+      node: TSESTree.JSXElement,
+    ): string | null {
+      // The nearest enclosing iterator callback renders this element, so its
+      // parameter — or its lack of one — decides the key. Every caller has
+      // already proved the element is returned from an iterator callback
+      // (isDirectIteratorReturn), so the climb always ends at one; there is
+      // no "ran out of ancestors" arm to carry. Stopping at the FIRST one is
+      // the point: climbing past a parameterless inner callback reached the
+      // outer row and suggested one constant key for every inner element.
+      let current: TSESTree.Node = node.parent;
+      while (!(
+        (current.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+          current.type === AST_NODE_TYPES.FunctionExpression) &&
+        isIteratorCall(current.parent)
+      )) {
+        current = current.parent as TSESTree.Node;
       }
-
-      // Default fallback
-      return 'item';
+      return keyExpressionForCallback(current);
     }
 
     function checkJSXElementInIteration(node: TSESTree.JSXElement) {
@@ -477,24 +492,37 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
       );
 
       if (!keyProp) {
-        // Get the actual callback parameter name for the fix
-        const paramName = getIteratorCallbackParamName(node);
+        /*
+         * A suggestion is applied to the user's source verbatim, so it may
+         * only name an identifier this file actually binds. When no key
+         * expression can be derived the report still stands on its own and
+         * the suggestion is withheld — emitting `key={item.id}` against a
+         * destructured callback either throws `ReferenceError` or, inside a
+         * nested map, silently captures an unrelated outer `item` and pins a
+         * constant key on every row, which is the defect this rule exists to
+         * prevent.
+         */
+        const keyExpression = getIteratorKeyExpression(node);
 
         // Missing key - this is the primary issue
         context.report({
           node: node.openingElement,
           messageId: 'missingKey',
-          suggest: [
-            {
-              messageId: 'suggestKey' as const,
-              fix(fixer: TSESLint.RuleFixer) {
-                return fixer.insertTextAfter(
-                  node.openingElement.name,
-                  ` key={${paramName}.id}`,
-                );
-              },
-            },
-          ],
+          ...(keyExpression === null
+            ? {}
+            : {
+                suggest: [
+                  {
+                    messageId: 'suggestKey' as const,
+                    fix(fixer: TSESLint.RuleFixer) {
+                      return fixer.insertTextAfter(
+                        node.openingElement.name,
+                        ` key={${keyExpression}}`,
+                      );
+                    },
+                  },
+                ],
+              }),
         });
         return;
       }

@@ -2005,22 +2005,83 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * reports. `Object.freeze(...)` around the literal is read through, since
      * it is the same declaration with a runtime guarantee attached.
      */
+    /**
+     * The receiver of `KEYS.forEach((k) => …)` when `name` is bound to the
+     * callback's FIRST parameter, or null.
+     *
+     * Deliberately strict, because each relaxation would admit a key the file
+     * does not spell out:
+     *  - parameter 0 only — `(k, i) => dst[i]` binds an index, not an element,
+     *    and `reduce((acc, k) => …)` binds the accumulator there, which is why
+     *    ELEMENT_FIRST_ITERATORS excludes `reduce`/`reduceRight`/`sort`;
+     *  - a bare Identifier receiver only — `K.concat(req.body.x).forEach(…)`
+     *    and `K.filter(f).forEach(…)` can carry elements from elsewhere.
+     * The identifier is then resolved by the caller through the same const /
+     * `Object.freeze` / `__proto__` / sparse / empty checks the for-of form
+     * uses, so no list validation is duplicated here.
+     */
+    const literalListFromIteratorCallback = (
+      fn: TSESTree.Node,
+      name: string,
+    ): TSESTree.Node | null => {
+      if (
+        fn.type !== AST_NODE_TYPES.ArrowFunctionExpression &&
+        fn.type !== AST_NODE_TYPES.FunctionExpression
+      ) {
+        return null;
+      }
+      const first = fn.params[0];
+      if (first?.type !== AST_NODE_TYPES.Identifier || first.name !== name) {
+        return null;
+      }
+      const call = fn.parent;
+      if (
+        call?.type !== AST_NODE_TYPES.CallExpression ||
+        call.arguments[0] !== fn ||
+        call.callee.type !== AST_NODE_TYPES.MemberExpression ||
+        call.callee.computed
+      ) {
+        return null;
+      }
+      const method = propertyName(call.callee);
+      if (method === null || !ELEMENT_FIRST_ITERATORS.has(method)) return null;
+      if (call.callee.object.type !== AST_NODE_TYPES.Identifier) return null;
+      return call.callee.object;
+    };
+
     const isKeyFromLiteralAllowlist = (node: TSESTree.Node): boolean => {
       if (node.type !== AST_NODE_TYPES.Identifier) return false;
       const variable = resolvedReference(sourceCode.getScope(node), node);
       if (!variable || variable.defs.length !== 1) return false;
       const def = variable.defs[0];
-      if (def.type !== 'Variable') return false;
-      // The binding must come from `for (… of SOURCE)`, not an assignment.
-      const declaration = def.node.parent;
-      const loop = declaration?.parent;
-      if (
-        loop?.type !== AST_NODE_TYPES.ForOfStatement ||
-        loop.left !== declaration
-      )
+      /*
+       * Two spellings bind `k` to the same written-out set of literals:
+       * `for (const k of KEYS)` and `KEYS.forEach((k) => …)`. The proof is a
+       * property of the ARRAY — every value `k` can take is spelled in the
+       * file — not of the loop construct, so accepting only the for-of form
+       * reported the callback spelling of identical code. Found on burgee
+       * packages/burgee/src/yargs/factory.ts:1592 and :1595.
+       */
+      let listSource: TSESTree.Node;
+      if (def.type === 'Variable') {
+        // The binding must come from `for (… of SOURCE)`, not an assignment.
+        const declaration = def.node.parent;
+        const loop = declaration?.parent;
+        if (
+          loop?.type !== AST_NODE_TYPES.ForOfStatement ||
+          loop.left !== declaration
+        )
+          return false;
+        listSource = loop.right;
+      } else if (def.type === 'Parameter') {
+        const receiver = literalListFromIteratorCallback(def.node, node.name);
+        if (receiver === null) return false;
+        listSource = receiver;
+      } else {
         return false;
+      }
 
-      let source: TSESTree.Node = withoutTypeAnnotation(loop.right);
+      let source: TSESTree.Node = withoutTypeAnnotation(listSource);
       // `Object.freeze([...])` is the same literal with a guarantee attached.
       if (
         source.type === AST_NODE_TYPES.CallExpression &&
@@ -2038,11 +2099,18 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         const listDef = listVar.defs[0];
         if (listDef.type !== 'Variable') return false;
         if (listDef.parent?.kind !== 'const') return false;
-        // No null check on `init`: `const` without an initialiser is a syntax
-        // error, so the parser never produces one. No re-assignment check
-        // either, for the same reason — a `const` has exactly one write, its
-        // own declaration. Both would be branches no test could reach.
-        source = listDef.node.init as TSESTree.Expression;
+        /*
+         * `init` IS nullable here, despite `const` requiring an initialiser in
+         * JavaScript: TypeScript's `declare const keys: string[]` is a const
+         * declaration with no initialiser, and an ambient declaration says
+         * nothing about the contents, so there is no written-out set to prove
+         * anything from. Reached once the `.forEach` spelling was accepted,
+         * which is how a list with no initialiser first arrived here.
+         */
+        if (listDef.node.init === null) return false;
+        // No re-assignment check: a `const` has exactly one write, its own
+        // declaration, so that would be a branch no test could reach.
+        source = listDef.node.init;
       }
       if (
         source.type === AST_NODE_TYPES.CallExpression &&

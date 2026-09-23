@@ -405,10 +405,34 @@ ruleTester.run('lock: declared frame protection silences the rule', noClickjacki
       code: `export default function Root() { return <html><head><meta httpEquiv="Content-Security-Policy" content="frame-ancestors *" /></head><body /></html>; }`,
       errors: [{ messageId: 'missingFrameBusting' }],
     },
-    // A CSP with no frame-ancestors directive at all.
     {
       name: 'a CSP carrying no frame-ancestors directive at all',
       code: `export default function Root() { return <html><head><meta httpEquiv="Content-Security-Policy" content="default-src 'self'" /></head><body /></html>; }`,
+      errors: [{ messageId: 'missingFrameBusting' }],
+    },
+    /*
+     * `ALLOWALL` is the X-Frame-Options twin of `frame-ancestors *`, which is
+     * pinned as invalid above. The docs list it under Incorrect ("Allowing
+     * framing from any origin").
+     * @found burgee FP/FN sweep 2026-09-20, apps/docs/src/app/layout.tsx:1
+     */
+    {
+      name: 'FN: X-Frame-Options ALLOWALL permits every framer, so it is not protection',
+      code: `export default function Root() { return <html><head><meta httpEquiv="X-Frame-Options" content="ALLOWALL" /></head><body /></html>; }`,
+      errors: [{ messageId: 'missingFrameBusting' }],
+    },
+    // ALLOW-FROM is obsolete in every modern browser — no protection in practice.
+    {
+      // @found reasoned from the ALLOWALL finding (burgee FP/FN sweep 2026-09-20), not seen in real code
+      name: 'FN: X-Frame-Options ALLOW-FROM is obsolete and does not protect',
+      code: `export default function Root() { return <html><head><meta httpEquiv="X-Frame-Options" content="ALLOW-FROM https://evil.example" /></head><body /></html>; }`,
+      errors: [{ messageId: 'missingFrameBusting' }],
+    },
+    // Prose naming the header is the author's phrasing, not evidence of a header.
+    {
+      // @found reasoned from the ALLOWALL finding (burgee FP/FN sweep 2026-09-20), not seen in real code
+      name: 'FN: prose mentioning x-frame-options does not declare frame protection',
+      code: `export default function Root() { const note = "see the x-frame-options ticket"; return <html><body>{note}</body></html>; }`,
       errors: [{ messageId: 'missingFrameBusting' }],
     },
   ],

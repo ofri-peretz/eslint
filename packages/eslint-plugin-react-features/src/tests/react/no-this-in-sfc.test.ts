@@ -61,6 +61,36 @@ describe('no-this-in-sfc', () => {
             };
           `,
         },
+        {
+          /*
+           * A receiver-forwarding wrapper. The signature declares `this`, so
+           * it is a contract the author wrote, not a component that forgot it
+           * has no instance.
+           * @found burgee FP/FN sweep 2026-09-15, packages/closeout/src/once.ts:54
+           */
+          name: 'FP: a function that declares an explicit TS `this` parameter owns its receiver',
+          code: `
+            function once(fn: (...args: unknown[]) => unknown) {
+              return function (this: unknown, ...args: unknown[]) {
+                return fn.apply(this, args);
+              };
+            }
+          `,
+        },
+        {
+          // A nested class must not clear the enclosing class on exit, or
+          // valid class-component \`this\` after it reports.
+          // @found reasoned while fixing the declared-this finding (burgee FP/FN sweep 2026-09-20), not seen in real code
+          name: 'FP: `this` in a class render stays valid after a nested class closes',
+          code: `
+            class Outer extends React.Component {
+              render() {
+                class Inner {}
+                return <div>{this.props.value}</div>;
+              }
+            }
+          `,
+        },
       ],
       invalid: [
         // this in regular functions (not in classes)
@@ -73,8 +103,8 @@ describe('no-this-in-sfc', () => {
             },
           ],
         },
-        // this in arrow functions
         {
+          name: 'an arrow function has no receiver of its own, so `this` is not its instance',
           code: 'const myFunc = () => this.value;',
           errors: [
             {
