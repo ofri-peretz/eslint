@@ -5,6 +5,14 @@ All notable changes to `eslint-plugin-modernization` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.1.7
+
+### Patch Changes
+
+- **🐛 Fix** — `prefer-at` reports a receiver that reads a private field
+
+  `this.#rows[this.#rows.length - 1]` was silent while `this.rows[this.rows.length - 1]` was reported and autofixed. A `#name` segment now renders to a receiver path like a public one, and stays distinct from a public field of the same name.
+
 ## 3.1.6
 
 ### Patch Changes

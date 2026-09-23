@@ -5,6 +5,53 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.4.11
+
+### Patch Changes
+
+- **🐛 Fix** — five FP/FN rule defects found by the burgee sweep
+
+  Each was adversarially verified against the rule's own documented contract
+  before a line was changed.
+
+  - `react-features/hooks-exhaustive-deps`: the hook callback's own parameters
+    were reported as missing dependencies, and the suggestion's fixer rewrote
+    working code into a `ReferenceError`.
+  - `secure-coding/no-redos-vulnerable-regex`: `(?:a|a)+` escaped the
+    identical-alternatives detector because its regex swallowed the `?:`, and
+    every `/v` pattern using a `\p{...}` escape was silently dropped as
+    "unparseable" because `unicodeSets` never reached the analyser.
+  - `secure-coding/detect-object-injection`: a counter declared in a `for` head
+    was cleared on its declaration alone, so reassigning it from user input
+    inside the loop body went unreported. The same reassignment now also
+    disqualifies an Array-callback index parameter (`(v, i) => { i = k; … }`).
+  - `reliability/no-unhandled-promise` and the `maintainability` fork of the same
+    rule: appending `.finally(cleanup)` silenced the chain, though `.finally`
+    does not handle a rejection. A handler-less
+    `.catch()` / `.catch(undefined)` / `.catch(null)` no longer counts as
+    handling the chain either.
+
+- **🐛 Fix** — `detect-object-injection` reports a copy loop over a `for...of` element of a caller-supplied collection
+
+  `for (const o of objects) for (const [k, v] of Object.entries(o)) out[k] = v` was silent when `objects` is a parameter, while the `objects.forEach((o) => …)` spelling reported `massAssignment`. The loop element is now judged by the collection it iterates.
+
+- **🐛 Fix** — implement the overlap half of no-redos-vulnerable-regex, and stop a config pair from erasing no-cycle findings
+
+  `no-redos-vulnerable-regex` documented "Identical — **or overlapping** —
+  alternatives" but only ever implemented the identical half, by matching the
+  source text. It now decides on the parsed pattern: for `(A|B)+` where the
+  branches are single character classes, it intersects their character sets with
+  `refa`, so `(\w|\d)+` (1,927 ms, `\d ⊆ \w`) and a six-way `\p{...}` alternation
+  (9,395 ms) are reported, while disjoint branches such as `(a|b)+` and
+  `(?:\p{Nd}|\p{Lu})+` stay silent. It declines rather than guesses on anything
+  it cannot decide.
+
+  `import-next`'s `strict` and `typescript` configs ran `no-cycle` at `error`
+  alongside `consistent-type-specifier-style` at its `prefer-inline` default,
+  whose autofix rewrites the import spelling `no-cycle` reports into the one it
+  treats as erased — so `--fix` could silence a detected cycle. Both configs now
+  pin `prefer-top-level`, locked by a test.
+
 ## 5.4.10
 
 ### Patch Changes

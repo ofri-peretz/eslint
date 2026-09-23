@@ -5,6 +5,35 @@ All notable changes to `eslint-plugin-import-next` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.8.9
+
+### Patch Changes
+
+- **🐛 Fix** — `no-unused-modules` and `unambiguous` recognise TypeScript `export =`.
+
+  A `.cts` file whose only export is `export = { … }` was reported by
+  `no-unused-modules` as "Module has no exports", and by `unambiguous` as a file
+  that could be parsed as a script. `export =` compiles to `module.exports =`,
+  which `no-unused-modules` already counts, and it is a syntax error in a script.
+  Both rules now treat `TSExportAssignment` as module/export syntax.
+
+- **🐛 Fix** — implement the overlap half of no-redos-vulnerable-regex, and stop a config pair from erasing no-cycle findings
+
+  `no-redos-vulnerable-regex` documented "Identical — **or overlapping** —
+  alternatives" but only ever implemented the identical half, by matching the
+  source text. It now decides on the parsed pattern: for `(A|B)+` where the
+  branches are single character classes, it intersects their character sets with
+  `refa`, so `(\w|\d)+` (1,927 ms, `\d ⊆ \w`) and a six-way `\p{...}` alternation
+  (9,395 ms) are reported, while disjoint branches such as `(a|b)+` and
+  `(?:\p{Nd}|\p{Lu})+` stay silent. It declines rather than guesses on anything
+  it cannot decide.
+
+  `import-next`'s `strict` and `typescript` configs ran `no-cycle` at `error`
+  alongside `consistent-type-specifier-style` at its `prefer-inline` default,
+  whose autofix rewrites the import spelling `no-cycle` reports into the one it
+  treats as erased — so `--fix` could silence a detected cycle. Both configs now
+  pin `prefer-top-level`, locked by a test.
+
 ## 2.8.8
 
 ### Patch Changes
