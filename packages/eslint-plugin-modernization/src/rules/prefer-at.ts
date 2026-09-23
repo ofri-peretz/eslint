@@ -158,7 +158,12 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
           if (receiver.type !== 'MemberExpression') return null;
           const base = receiverPath(receiver.object);
           if (base === null) return null;
-          const key = propertyName(receiver);
+          // propertyName() answers null for `this.#rows`; a private name is
+          // static too, and its `#` keeps it distinct from a public `rows`.
+          const key =
+            receiver.property.type === 'PrivateIdentifier'
+              ? context.sourceCode.getText(receiver.property)
+              : propertyName(receiver);
           return key === null ? null : `${base}.${key}`;
         };
 
