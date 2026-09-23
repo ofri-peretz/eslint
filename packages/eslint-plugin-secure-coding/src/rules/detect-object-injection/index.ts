@@ -3258,6 +3258,11 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * not a value this file merely forwards. A spread is excluded from both:
      * `{ ...req.body }` copies the caller's own keys, `__proto__` among them,
      * so it is a literal in syntax only.
+     *
+     * And an allowlist that ADMITS a pollution key is not a guard against it:
+     * `['constructor', 'prototype'].includes(k)` waves both links of the
+     * traversal through at every level of a recursive merge. Every entry has
+     * to be a static name outside `POLLUTION_KEYS`.
      */
     const isLiteralAllowlist = (init: TSESTree.Expression | null): boolean => {
       const value = unwrapTypeSyntax(init);
@@ -3273,16 +3278,20 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
           isLiteralAllowlist(value.arguments[0] as TSESTree.Expression)
         );
       }
+      const isOwnedName = (name: string | null): boolean =>
+        name !== null && !POLLUTION_KEYS.has(name);
       if (value?.type === AST_NODE_TYPES.ArrayExpression) {
         // A hole is `undefined`, which no string key equals — harmless.
         return value.elements.every(
-          (element) => element === null || staticString(element) !== null,
+          (element) => element === null || isOwnedName(staticString(element)),
         );
       }
       return (
         value?.type === AST_NODE_TYPES.ObjectExpression &&
         value.properties.every(
-          (property) => property.type === AST_NODE_TYPES.Property,
+          (property) =>
+            property.type === AST_NODE_TYPES.Property &&
+            isOwnedName(objectKeyName(property)),
         )
       );
     };

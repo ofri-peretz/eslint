@@ -414,6 +414,55 @@ export function merge(target, source) {
 }`,
         errors: [{ messageId: 'massAssignment' }],
       },
+      {
+        // Review follow-up: an allowlist that ADMITS the traversal keys is no
+        // guard against them. \`constructor\` then \`prototype\` both pass
+        // \`includes\` at successive levels, and the write lands on
+        // Object.prototype.
+        // @provenance 2026-09-17 caller-supplied-guard sweep; review follow-up
+        // @found code review
+        name: 'FN: a literal allowlist that admits constructor and prototype does not guard a recursive merge',
+        code: `const ASSIGNABLE = ['profile', 'constructor', 'prototype'];
+export function merge(target, source) {
+  for (const key of Object.keys(source)) {
+    if (!ASSIGNABLE.includes(key)) continue;
+    if (source[key] && typeof source[key] === 'object') merge(target[key], source[key]);
+    else target[key] = source[key];
+  }
+}`,
+        errors: [{ messageId: 'massAssignment' }],
+      },
+      {
+        // The object-literal spelling of the same hole, tested with hasOwn.
+        // @provenance 2026-09-17 caller-supplied-guard sweep; review follow-up
+        // @found code review
+        name: 'FN: a schema literal that owns constructor and prototype does not guard a recursive merge',
+        code: `const SCHEMA = { profile: 1, constructor: 1, prototype: 1 };
+export function merge(target, source) {
+  for (const key of Object.keys(source)) {
+    if (!Object.hasOwn(SCHEMA, key)) continue;
+    if (source[key] && typeof source[key] === 'object') merge(target[key], source[key]);
+    else target[key] = source[key];
+  }
+}`,
+        errors: [{ messageId: 'massAssignment' }],
+      },
+      {
+        // A computed key is a name this file does not spell: \`extra\` is the
+        // caller's, so the literal does not own it.
+        // @provenance 2026-09-17 caller-supplied-guard sweep; review follow-up
+        // @found code review
+        name: 'FN: a schema literal with a caller-computed key is not module-owned',
+        code: `export function merge(target, source, extra) {
+  const SCHEMA = { profile: 1, [extra]: 1 };
+  for (const key of Object.keys(source)) {
+    if (!Object.hasOwn(SCHEMA, key)) continue;
+    if (source[key] && typeof source[key] === 'object') merge(target[key], source[key], extra);
+    else target[key] = source[key];
+  }
+}`,
+        errors: [{ messageId: 'massAssignment' }],
+      },
       // ── LOCK 2026-09-13: the callback spelling of the copy loop ────────────
       // `checkMassAssignmentLoop` was registered on `ForOfStatement` only, so
       // `for (const k of Object.keys(src)) dst[k] = src[k]` reported and the
