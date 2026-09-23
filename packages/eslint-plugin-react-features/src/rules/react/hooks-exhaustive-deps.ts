@@ -313,7 +313,11 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
               declared.add(param.left.name);
             }
           };
-          for (const param of n.params) collectFromPattern(param);
+          // `?? []` is not defensive noise: now that the hook callback itself
+          // is visited, a synthetic function node without `params` reaches
+          // here from the coverage suite, and a rule that THROWS takes down
+          // the whole lint run.
+          for (const param of n.params ?? []) collectFromPattern(param);
         }
 
         // Traverse children using the cached child-keys table.
@@ -639,10 +643,16 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
         // Extract used identifiers from callback
         const usedInCallback = extractUsedIdentifiers(callback.body);
 
-        // Extract locally declared identifiers (should not be dependencies)
-        const locallyDeclared = extractLocallyDeclaredIdentifiers(
-          callback.body,
-        );
+        // Extract locally declared identifiers (should not be dependencies).
+        //
+        // Entered at `callback`, not `callback.body`: the hook callback's OWN
+        // parameters are as local as a nested callback's, and starting at the
+        // body walks straight past them. `useCallback((event) => …, [])` then
+        // reported `event` as a missing dependency and suggested `}, [event])`
+        // — a `ReferenceError`, or, under `lib.dom`, a silent bind to the
+        // deprecated global `window.event`. Used identifiers still come from
+        // `.body`, because a parameter is bound, not used.
+        const locallyDeclared = extractLocallyDeclaredIdentifiers(callback);
 
         // Filter out locally declared vars before checking reactive deps
         const externalUsed = new Set<string>();

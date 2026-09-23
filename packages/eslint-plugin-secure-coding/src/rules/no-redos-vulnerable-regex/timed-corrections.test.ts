@@ -89,11 +89,41 @@ describe('no-redos-vulnerable-regex — timed corrections to the NFA verdict', (
         name: '\\s*(\\S+\\s*)+$ — 0.0 ms, \\S and \\s are complements',
         code: 'const re = /^\\s*(\\S+\\s*)+$/;',
       },
+      {
+        // Proves the `v`-flag fix below does not blanket-report `v` patterns:
+        // one class, one quantifier, nothing to trade.
+        name: '[\\p{ASCII}]+$ under the v flag — 0.0 ms, a single class cannot backtrack',
+        code: 'const re = /^[\\p{ASCII}]+$/v;',
+      },
     ],
     invalid: [
       {
         name: '(a+)+$ — 5,151 ms',
         code: 'const re = /^(a+)+$/;',
+        errors: [{ messageId: 'redosVulnerable' }],
+      },
+      {
+        // burgee packages/linegauge/src/width.ts:193 surfaced the class.
+        // The SAME pattern the suite already pins as `(a|a)*`, written
+        // non-capturing. `isProvablyCatastrophic` matched `(x|x)` with
+        // `[^()|]+`, which swallows `?:` into the first branch, so the
+        // identity test compared '?:a' against 'a' and never fired.
+        // Measured: 1,013 ms on 'a'.repeat(28) + '!'.
+        name: '(?:a|a)+$ — 1,013 ms, the pinned (a|a)* case written non-capturing',
+        code: 'const re = /^(?:a|a)+$/;',
+        errors: [{ messageId: 'redosVulnerable' }],
+      },
+      {
+        // burgee packages/linegauge/src/width.ts:193 — a `v`-flag pattern
+        // built from `\\p{...}` alternatives. `unicodeSets` was forwarded to
+        // the PARSER but not to scslre, so analysing any `/v` pattern using a
+        // property escape threw "Unicode property escapes cannot be used
+        // without the u flag" and landed in the catch, whose stated rationale
+        // is "the pattern is not a valid regex". It is: it compiles and runs.
+        // Measured: 315 ms on 'a'.repeat(26) + 'e-acute', identical to the
+        // `/u` spelling below it, which the rule has always reported.
+        name: '(\\p{ASCII}+)+$ under the v flag — 315 ms, and /u reports the same pattern',
+        code: 'const re = /^(\\p{ASCII}+)+$/v;',
         errors: [{ messageId: 'redosVulnerable' }],
       },
       {

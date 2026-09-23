@@ -165,8 +165,86 @@ describe('no-unhandled-promise', () => {
         { code: 'doWork().finally(cleanup);' },
         // Inner call skipped when wrapped by a sync-namespace outer call
         { code: 'String(fetchData());' },
+        {
+          // `.finally` is chain-TRANSPARENT, not reportable on sight: the
+          // `.catch` under it is the handler, and appending cleanup after it
+          // must not start a report.
+          name: 'a .catch followed by .finally is still handled',
+          code: `
+            async function apiCall() {}
+            apiCall().then(processData).catch(onError).finally(cleanup);
+          `,
+        },
+        {
+          name: 'a two-argument .then under a .finally is still handled',
+          code: `
+            async function apiCall() {}
+            apiCall().then(processData, onError).finally(cleanup);
+          `,
+        },
       ],
       invalid: [
+        {
+          /**
+           * Walks PAST a `.finally` onto a member call that is not a chain
+           * link (`api.load`), which ends the downstream search: there is no
+           * handler under it, so the chain reports.
+           */
+          name: 'a .finally over a non-chain member call still reports',
+          code: 'api.load().finally(cleanup);',
+          options: [{ promiseReturning: ['fetch', 'api'] }],
+          errors: [{ messageId: 'unhandledPromise' }],
+        },
+        {
+          /**
+           * The docs' own ❌ chain with `.finally(cleanup)` appended.
+           * `.finally` does not handle a rejection —
+           * `Promise.reject(e).finally(f)` runs `f` and rejects with the same
+           * `e`, verified on Node 24 — yet it silenced a HIGH-severity check.
+           * A one-token edit defeated the rule.
+           */
+          name: 'appending .finally does not handle the chain',
+          code: `
+            async function apiCall() {}
+            apiCall().then(processData).then(saveToDatabase).finally(cleanup);
+          `,
+          errors: [{ messageId: 'unhandledPromise' }],
+        },
+        {
+          // @found PR review (coderabbit). `.catch(x)` is `.then(undefined, x)`
+          // and ignores a non-callable `x`, so a handler-less `.catch` under a
+          // `.finally` settles nothing — it must not read as the handler.
+          name: 'a .catch with no handler under a .finally does not handle the chain',
+          code: `
+            async function apiCall() {}
+            apiCall().catch().finally(cleanup);
+          `,
+          errors: [{ messageId: 'unhandledPromise' }],
+        },
+        {
+          name: 'a .catch(undefined) under a .finally does not handle the chain',
+          code: `
+            async function apiCall() {}
+            apiCall().catch(undefined).finally(cleanup);
+          `,
+          errors: [{ messageId: 'unhandledPromise' }],
+        },
+        {
+          name: 'a .catch(null) ending the chain does not handle it',
+          code: `
+            async function apiCall() {}
+            apiCall().catch(null);
+          `,
+          errors: [{ messageId: 'unhandledPromise' }],
+        },
+        {
+          name: 'a bare .catch() ending the chain does not handle it',
+          code: `
+            async function apiCall() {}
+            apiCall().catch();
+          `,
+          errors: [{ messageId: 'unhandledPromise' }],
+        },
         /**
          * These fixtures exercise the AST walk-up branches, not promise
          * detection. Each now carries a local `async function` so the file
