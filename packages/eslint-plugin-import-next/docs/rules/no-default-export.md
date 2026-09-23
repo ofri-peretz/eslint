@@ -1,7 +1,7 @@
 # no-default-export
 
 💼 This rule is enabled in the following configs: `recommended`, `typescript`.
-💡 This rule is automatically fixable by the `--fix` CLI option.
+🔧 This rule is automatically fixable by the `--fix` CLI option.
 
 <!-- end auto-generated rule header -->
 

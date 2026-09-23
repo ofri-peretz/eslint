@@ -13,10 +13,7 @@ import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds =
-  | 'commonjsRequire'
-  | 'commonjsExport'
-  | 'commonjsModule'
-  | 'preferES6';
+  'commonjsRequire' | 'commonjsExport' | 'commonjsModule' | 'preferES6';
 
 export interface Options {
   /** Allow CommonJS in certain contexts */
@@ -347,6 +344,20 @@ export const noCommonjs = createRule<RuleOptions, MessageIds>({
 
         // Check if it's import x = require('module')
         if (node.moduleReference.type === 'TSExternalModuleReference') {
+          // A callable CommonJS export (`module.exports = fn`) used as `x()`,
+          // `new x()` or x`…` cannot be reached through a namespace import.
+          const usedAsCallee = (
+            context.sourceCode.getDeclaredVariables(node)[0]?.references ?? []
+          ).some((ref) => {
+            const parent = ref.identifier.parent;
+            return (
+              ((parent.type === 'CallExpression' ||
+                parent.type === 'NewExpression') &&
+                parent.callee === ref.identifier) ||
+              (parent.type === 'TaggedTemplateExpression' &&
+                parent.tag === ref.identifier)
+            );
+          });
           context.report({
             node,
             messageId: 'commonjsRequire',
@@ -355,25 +366,34 @@ export const noCommonjs = createRule<RuleOptions, MessageIds>({
               currentFile: filename,
               suggestion: 'Use ES6 import statement',
             },
-            suggest: suggestES6
-              ? [
-                  {
-                    messageId: 'commonjsRequire',
-                    fix(fixer: TSESLint.RuleFixer) {
-                      const modulePath =
-                        node.moduleReference.type ===
-                          'TSExternalModuleReference' &&
-                        node.moduleReference.expression.type === 'Literal'
-                          ? node.moduleReference.expression.value
-                          : 'unknown';
-                      return fixer.replaceText(
-                        node,
-                        `import ${node.id.name} from '${modulePath}';`,
-                      );
+            // `export import x = …` has no one-statement ES6 form that also
+            // binds `x` locally, so it gets no suggestion.
+            suggest:
+              suggestES6 &&
+              !usedAsCallee &&
+              node.parent.type !== 'ExportNamedDeclaration'
+                ? [
+                    {
+                      messageId: 'commonjsRequire',
+                      fix(fixer: TSESLint.RuleFixer) {
+                        const modulePath =
+                          node.moduleReference.type ===
+                            'TSExternalModuleReference' &&
+                          node.moduleReference.expression.type === 'Literal'
+                            ? node.moduleReference.expression.value
+                            : 'unknown';
+                        // `import x = require()` binds the whole module: a
+                        // namespace import, never a default import.
+                        const typeOnly =
+                          node.importKind === 'type' ? 'type ' : '';
+                        return fixer.replaceText(
+                          node,
+                          `import ${typeOnly}* as ${node.id.name} from '${modulePath}';`,
+                        );
+                      },
                     },
-                  },
-                ]
-              : undefined,
+                  ]
+                : undefined,
           });
         }
       },

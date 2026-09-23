@@ -269,7 +269,11 @@ describe('no-commonjs', () => {
         },
       ],
       invalid: [
+        // `import x = require()` binds the whole module, so its ES6 form is a
+        // namespace import. A default import fails TS1192 against a module
+        // with only named exports — burgee packages/closeout/src/signal-exit.cts:35.
         {
+          name: 'import-equals-require suggests a namespace import, not a default import',
           code: 'import helper = require("./helper");',
           filename: '/src/utils/helpers.ts',
           errors: [
@@ -278,11 +282,88 @@ describe('no-commonjs', () => {
               suggestions: [
                 {
                   messageId: 'commonjsRequire',
-                  output: `import helper from './helper';`,
+                  output: `import * as helper from './helper';`,
                 },
               ],
             },
           ],
+        },
+        {
+          name: 'a type-only import-equals keeps its type modifier in the suggestion',
+          code: 'import type Foo = require("foo");',
+          filename: '/src/utils/helpers.ts',
+          errors: [
+            {
+              messageId: 'commonjsRequire',
+              suggestions: [
+                {
+                  messageId: 'commonjsRequire',
+                  output: `import type * as Foo from 'foo';`,
+                },
+              ],
+            },
+          ],
+        },
+        // A callable CommonJS export (`module.exports = fn`) used as `x()` is
+        // not callable through a namespace import, so no rewrite is offered.
+        {
+          name: 'an import-equals binding that is called gets no namespace suggestion',
+          code: 'import express = require("express");\nexpress();',
+          filename: '/src/utils/helpers.ts',
+          errors: [{ messageId: 'commonjsRequire', suggestions: [] }],
+        },
+        {
+          name: 'an import-equals binding that is constructed gets no namespace suggestion',
+          code: 'import Emitter = require("events");\nnew Emitter();',
+          filename: '/src/utils/helpers.ts',
+          errors: [{ messageId: 'commonjsRequire', suggestions: [] }],
+        },
+        {
+          name: 'an import-equals binding used as a template tag gets no namespace suggestion',
+          code: 'import dedent = require("dedent");\ndedent`x`;',
+          filename: '/src/utils/helpers.ts',
+          errors: [{ messageId: 'commonjsRequire', suggestions: [] }],
+        },
+        {
+          name: 'an import-equals binding passed as an argument, not called, still gets the suggestion',
+          code: 'import path = require("path");\nuse(path);',
+          filename: '/src/utils/helpers.ts',
+          errors: [
+            {
+              messageId: 'commonjsRequire',
+              suggestions: [
+                {
+                  messageId: 'commonjsRequire',
+                  output: `import * as path from 'path';\nuse(path);`,
+                },
+              ],
+            },
+          ],
+        },
+        {
+          name: 'an import-equals binding used only as a namespace still gets the suggestion',
+          code: 'import path = require("path");\npath.join("a", "b");',
+          filename: '/src/utils/helpers.ts',
+          errors: [
+            {
+              messageId: 'commonjsRequire',
+              suggestions: [
+                {
+                  messageId: 'commonjsRequire',
+                  output: `import * as path from 'path';\npath.join("a", "b");`,
+                },
+              ],
+            },
+          ],
+        },
+        // `export import foo = …` has no one-statement ES6 equivalent that also
+        // binds `foo` locally; rewriting only the inner node left
+        // `export import foo from 'foo'`, a syntax error.
+        {
+          name: 'an exported import-equals is reported without a syntax-breaking suggestion',
+          code: 'export import foo = require("foo");',
+          filename: '/src/utils/helpers.ts',
+          errors: [{ messageId: 'commonjsRequire', suggestions: [] }],
         },
       ],
     });

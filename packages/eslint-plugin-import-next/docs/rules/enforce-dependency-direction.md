@@ -1,7 +1,7 @@
 # enforce-dependency-direction
 
 💼 This rule is enabled in the following configs: `recommended`, `typescript`.
-💡 This rule is automatically fixable by the `--fix` CLI option.
+💡 This rule is manually fixable by editor suggestions.
 
 <!-- end auto-generated rule header -->
 
