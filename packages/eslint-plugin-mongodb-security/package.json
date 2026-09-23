@@ -100,7 +100,7 @@
     "@typescript-eslint/parser": "^8.68.0",
     "@typescript-eslint/rule-tester": "^8.68.0",
     "mongodb": "^7.6.0",
-    "mongoose": "^9.10.0"
+    "mongoose": "^9.10.1"
   },
   "scripts": {
     "build": "tsx ../../scripts/build-package.ts",
