@@ -24,6 +24,13 @@ ruleTester.run('no-unused-modules', noUnusedModules, {
   valid: [
     // Has named exports
     { name: 'an export', code: `export const foo = 1;` },
+
+    // TypeScript `export =` compiles to module.exports, which already counts.
+    // From burgee packages/closeout/src/signal-exit-signals.cts:21
+    {
+      name: 'a TypeScript export assignment is an export',
+      code: `const signals: string[] = [];\nexport = { signals };`,
+    },
     
     // Has default export
     { code: `export default function() {}` },

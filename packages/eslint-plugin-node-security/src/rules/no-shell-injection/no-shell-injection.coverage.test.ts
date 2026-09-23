@@ -34,6 +34,7 @@ describe('no-shell-injection coverage gaps', () => {
     invalid: [
       // Identifier + Literal → only the RIGHT operand matches (Literal)
       {
+        name: 'exec of an unknown identifier concatenated with a flag string is reported',
         code: 'import { exec } from "node:child_process";\nexec(userInput + " -la");',
         errors: [{ messageId: 'shellInjection' }],
       },

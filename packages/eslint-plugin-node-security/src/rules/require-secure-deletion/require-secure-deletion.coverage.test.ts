@@ -29,7 +29,7 @@ describe('require-secure-deletion coverage gaps', () => {
       // `delete` of a non-member expression → no statically known property
       { code: 'delete window[Symbol.iterator];' },
       // Computed member with a non-string literal key
-      { code: 'delete arr[0];' },
+      { name: 'delete of a numeric array index is not a sensitive field deletion', code: 'delete arr[0];' },
       // Custom term not configured → not sensitive
       { code: 'delete record.pinCode;' },
       // Argument is not a member expression at all → no property name

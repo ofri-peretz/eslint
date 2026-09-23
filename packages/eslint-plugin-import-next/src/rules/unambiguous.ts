@@ -75,6 +75,11 @@ export const unambiguous = createRule<RuleOptions, MessageIds>({
         hasModuleSyntax = true;
       },
 
+      // TypeScript `export = x` cannot appear in a script
+      TSExportAssignment() {
+        hasModuleSyntax = true;
+      },
+
       'Program:exit'(node: TSESTree.Program) {
         if (hasModuleSyntax) {
           // File is unambiguously a module

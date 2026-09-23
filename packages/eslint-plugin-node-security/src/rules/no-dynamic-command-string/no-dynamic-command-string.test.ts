@@ -21,7 +21,7 @@ describe('no-dynamic-command-string', () => {
     valid: [
       // THE safe pattern — the program is invoked directly with its own argv
       { name: 'argv passed as an array', code: `spawn('kill', ['-9', String(pid)]);` },
-      { code: `execFile('git', ['clone', repoUrl]);` },
+      { name: 'execFile with a fixed binary and an argv array is not reported', code: `execFile('git', ['clone', repoUrl]);` },
       { code: `cp.spawnSync('ls', ['-la', dir]);` },
       // A shell with a fully static command line
       { code: `spawn('bash', ['-c', 'ls -la']);` },

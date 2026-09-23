@@ -81,6 +81,10 @@ export const noUnusedModules = createRule<RuleOptions, MessageIds>({
       ExportAllDeclaration() {
         hasExports = true;
       },
+      // TypeScript `export = x` compiles to `module.exports = x`
+      TSExportAssignment() {
+        hasExports = true;
+      },
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
         // Check for CommonJS exports
         if (

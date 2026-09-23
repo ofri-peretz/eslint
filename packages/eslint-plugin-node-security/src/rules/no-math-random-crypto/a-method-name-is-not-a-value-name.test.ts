@@ -48,7 +48,11 @@ ruleTester.run(
     ],
     invalid: [
       // Positive controls — every way the name legitimately reaches the value.
-      { code: `const token = Math.random().toString(36).slice(2);`, errors: 1 },
+      {
+        name: 'Math.random assigned to a variable named token is reported',
+        code: `const token = Math.random().toString(36).slice(2);`,
+        errors: 1,
+      },
       {
         code: `const api = { sessionToken: Math.random().toString(36) };`,
         errors: 1,

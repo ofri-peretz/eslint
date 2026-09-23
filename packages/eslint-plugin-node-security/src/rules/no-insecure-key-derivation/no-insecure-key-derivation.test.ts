@@ -34,7 +34,7 @@ describe('no-insecure-key-derivation', () => {
         code: `crypto.subtle[derive]({ name: 'PBKDF2' }, k, 256);`,
       },
       { name: '100,000', code: 'crypto.pbkdf2(password, salt, 100000, 32, "sha256", callback);' },
-      { code: 'crypto.pbkdf2Sync(password, salt, 600000, 32, "sha256");' },
+      { name: 'pbkdf2Sync with 600000 iterations is not reported', code: 'crypto.pbkdf2Sync(password, salt, 600000, 32, "sha256");' },
       { code: 'crypto.pbkdf2(password, salt, iterations, 32, "sha256", callback);' },
       { code: 'pbkdf2(password, salt, 100000, 32, "sha256", callback);' },
       { code: 'scrypt(password, salt, 64);' },

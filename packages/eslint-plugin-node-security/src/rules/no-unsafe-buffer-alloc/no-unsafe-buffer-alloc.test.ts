@@ -24,7 +24,10 @@ describe('no-unsafe-buffer-alloc', () => {
       },
       // The safe allocator.
       { name: 'alloc zeroes it', code: 'Buffer.alloc(1024)' },
-      { code: 'Buffer.from("hello")' },
+      {
+        name: 'Buffer.from a string literal is initialized memory and not reported',
+        code: 'Buffer.from("hello")',
+      },
       { code: 'Buffer.concat([a, b])' },
       // Structural exemption: zeroed in the same expression.
       { code: 'const buf = Buffer.allocUnsafe(64).fill(0);' },

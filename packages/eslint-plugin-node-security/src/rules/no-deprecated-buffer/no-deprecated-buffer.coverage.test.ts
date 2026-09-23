@@ -28,7 +28,7 @@ describe('no-deprecated-buffer coverage gaps', () => {
       // A `Buffer` binding declared without an initializer proves nothing.
       { code: 'let Buffer;\nBuffer = loadCtor();\nconst x = new Buffer(4);' },
       // Bound to something that is not the buffer module.
-      { code: "const Buffer = require('./shim');\nconst x = new Buffer(4);" },
+      { name: 'new Buffer on a locally required shim is not the Node Buffer and is not reported', code: "const Buffer = require('./shim');\nconst x = new Buffer(4);" },
       // A namespace test only answers for a bare identifier receiver.
       { code: 'const x = new vendor.buffer.Buffer(4);' },
       // Imported from `node:buffer`, but not the constructor specifier.

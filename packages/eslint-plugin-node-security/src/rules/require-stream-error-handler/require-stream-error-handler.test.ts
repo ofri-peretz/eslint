@@ -60,7 +60,10 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
       s.on('error', log);
     `,
     // `once` and `addListener` register the same handler.
-    "const s = fs.createReadStream(p); s.once('error', log); s.pipe(res);",
+    {
+      name: 'a stream with a once error listener before pipe is not reported',
+      code: "const s = fs.createReadStream(p); s.once('error', log); s.pipe(res);",
+    },
     "const s = fs.createReadStream(p); s.addListener('error', log); s.pipe(res);",
     // Test files are exempt by default.
     {

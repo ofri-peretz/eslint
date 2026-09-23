@@ -27,7 +27,7 @@ describe('no-cryptojs', () => {
         'const flag = true;',
       // Valid: Native crypto
       { name: 'node:crypto', code: 'import crypto from "node:crypto";' },
-      { code: 'const crypto = require("crypto");' },
+      { name: 'require of native node crypto is not reported', code: 'const crypto = require("crypto");' },
       // Valid: Other packages
       { code: 'import hash from "crypto-hash";' },
     ],

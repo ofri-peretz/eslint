@@ -16,7 +16,7 @@ describe('no-dynamic-algorithm-selection', () => {
   ruleTester.run('no-dynamic-algorithm-selection', noDynamicAlgorithmSelection, {
     valid: [
       { name: 'a named algorithm', code: 'crypto.createHash("sha256")' },
-      { code: 'crypto.createHmac("sha512", secret)' },
+      { name: 'createHmac with a literal sha512 algorithm is not reported', code: 'crypto.createHmac("sha512", secret)' },
       { code: 'crypto.createCipheriv("aes-256-gcm", key, iv)' },
       { code: 'crypto.createSign("RSA-SHA256")' },
       { code: 'crypto.createHash(`sha256`)' },  // static template literal

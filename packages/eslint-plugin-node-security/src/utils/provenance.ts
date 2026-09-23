@@ -111,6 +111,19 @@ export function constLiteralOf(
 }
 
 /** Property names that carry request data whatever the receiver is called. */
+const RUNTIME_FIXED_PROCESS_PROPERTIES: ReadonlySet<string> = new Set([
+  'execPath',
+  'pid',
+  'ppid',
+  'platform',
+  'arch',
+  'version',
+  'versions',
+  'release',
+  'config',
+  'features',
+]);
+
 const REQUEST_PROPERTY_NAMES: ReadonlySet<string> = new Set([
   'headers',
   'query',
@@ -199,6 +212,18 @@ export function makeReadsTaintSource(
           REQUEST_PROPERTY_NAMES.has(surface.toLowerCase())
         ) {
           return true;
+        }
+        // `process` is a root for `argv` and `env`, not for the values the
+        // runtime fixes: `process.execPath` is the interpreter already running,
+        // `process.pid` a number the OS assigned. An allowlist, so a property
+        // not named here (`execArgv`, `title`, `stdin`) stays tainted.
+        if (
+          node.object.type === AST_NODE_TYPES.Identifier &&
+          node.object.name === 'process' &&
+          surface !== null &&
+          RUNTIME_FIXED_PROCESS_PROPERTIES.has(surface)
+        ) {
+          return false;
         }
         return reads(node.object, depth + 1);
       }

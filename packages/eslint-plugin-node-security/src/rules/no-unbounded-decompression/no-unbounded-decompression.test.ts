@@ -30,7 +30,7 @@ describe('no-unbounded-decompression', () => {
         name: 'maxOutputLength is set',
         code: `${REQUIRE}zlib.gunzip(reqBody, { maxOutputLength: MAX }, cb);`,
       },
-      { code: `${REQUIRE}zlib.gunzipSync(body, { maxOutputLength: 1024 });` },
+      { name: 'gunzipSync with a numeric maxOutputLength cap is not reported', code: `${REQUIRE}zlib.gunzipSync(body, { maxOutputLength: 1024 });` },
       { code: `${REQUIRE}zlib.gunzipSync(body, { 'maxOutputLength': 1024 });` },
       // Options this rule cannot read may already carry the cap.
       { code: `${REQUIRE}zlib.gunzip(body, opts, cb);` },

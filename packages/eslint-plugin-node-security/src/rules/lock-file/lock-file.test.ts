@@ -80,6 +80,7 @@ ruleTester.run('lock-file', lockFile, {
       filename: __filename,
     },
     {
+      name: 'a project with package-lock.json passes when packageManager is npm',
       code: "const validNpm = 1",
       filename: __filename,
       options: [{ packageManager: 'npm' }]

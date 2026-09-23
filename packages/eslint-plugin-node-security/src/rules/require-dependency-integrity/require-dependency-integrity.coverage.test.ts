@@ -34,6 +34,7 @@ describe('require-dependency-integrity coverage gaps', () => {
       },
       // Template CDN script WITH integrity → integrity check blocks report
       {
+        name: 'a CDN script tag in a template with an integrity attribute is not reported',
         code: 'const t = `<script src="https://cdn.example.com/app.js" integrity="sha384-abc"></script>`;',
       },
       // Every CDN tag protected, attributes spread over lines as they are in

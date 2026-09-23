@@ -30,7 +30,7 @@ describe('prefer-native-crypto coverage gaps', () => {
       // CallExpression that is not require() → member guard falls through
       { code: 'loadCrypto("crypto-js");' },
       // require() of a non-crypto lib → THIRD_PARTY_CRYPTO_LIBS miss
-      { code: 'require("lodash");' },
+      { name: 'require of a non-crypto library is not reported', code: 'require("lodash");' },
     ],
     invalid: [
       // require() of a third-party crypto lib → reported

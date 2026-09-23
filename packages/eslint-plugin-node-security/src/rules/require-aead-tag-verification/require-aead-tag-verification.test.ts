@@ -46,6 +46,7 @@ describe('require-aead-tag-verification', () => {
       },
       // Non-AEAD mode — there is no tag, so there is nothing to verify.
       {
+        name: 'a CBC decipher has no auth tag to verify and is not reported',
         code: `
           const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
           decipher.update(ct);

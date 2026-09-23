@@ -40,6 +40,7 @@ describe('no-ssrf coverage gaps', () => {
       },
       // Named validation function in the guarding if-test
       {
+        name: 'fetch guarded by an isValidUrl check is not reported',
         code: [
           'function callApi(targetUrl) {',
           '  if (isValidUrl(targetUrl)) { return fetch(targetUrl); }',

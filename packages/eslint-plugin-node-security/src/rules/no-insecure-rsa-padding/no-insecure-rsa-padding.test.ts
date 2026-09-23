@@ -26,7 +26,7 @@ describe('no-insecure-rsa-padding', () => {
       // Valid: OAEP padding
       { name: 'OAEP', code: 'crypto.privateDecrypt({ key, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING }, buffer);' },
       // Valid: OAEP with hash
-      { code: 'crypto.publicEncrypt({ key, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING, oaepHash: "sha256" }, data);' },
+      { name: 'publicEncrypt with OAEP padding and a sha256 oaepHash is not reported', code: 'crypto.publicEncrypt({ key, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING, oaepHash: "sha256" }, data);' },
       // Valid: No padding specified (different method)
       { code: 'crypto.sign(algorithm, data, key);' },
     ],

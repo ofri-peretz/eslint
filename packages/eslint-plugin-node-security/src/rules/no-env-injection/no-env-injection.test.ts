@@ -35,7 +35,10 @@ describe('no-env-injection', () => {
          res.status(204).end();
        }`,
       // Constant keys, in both spellings.
-      `process.env.NODE_ENV = 'production';`,
+      {
+        name: 'assigning a literal to a fixed env var name is not reported',
+        code: `process.env.NODE_ENV = 'production';`,
+      },
       `process.env['NODE_ENV'] = 'production';`,
       // A request-derived VALUE under a key the source names is a different
       // (and far weaker) concern — this rule judges the key.
