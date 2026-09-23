@@ -316,7 +316,14 @@ export const noInternalModules = createRule<RuleOptions, MessageIds>({
       // A subpath import has no rewritable root (see `isSubpathImport`), so the
       // fixing strategies degrade to a plain report rather than emitting an
       // edit that cannot resolve.
-      if (isSubpathImport(importPath)) {
+      //
+      // So does a `./` specifier whose only in-policy spelling is `'.'` — every
+      // `./x` at `maxDepth: 0`, and a forbid-only `./x` at any depth. `'.'` is
+      // the importing file's OWN directory index, not the target's owner (see
+      // `fixTarget`), and the edit leaves no report behind, so writing it would
+      // swap the module silently. No relative specifier is both safe and in
+      // policy there; report and let a human choose.
+      if (isSubpathImport(importPath) || fixTarget === '.') {
         context.report({
           node,
           messageId: 'internalModuleImport',

@@ -103,9 +103,31 @@ describe('no-internal-modules', () => {
           errors: [{ messageId: 'internalModuleImport' }],
         },
         {
+          /*
+           * CORRECTED: this pinned `output: "import utils from '.'"`. At
+           * `maxDepth: 0` every `./x` specifier is out of policy, so the only
+           * in-policy rewrite is `'.'` — the importing file's OWN directory
+           * index, not the module that owns `./utils/helpers/format`. The
+           * edit swapped the module and left no report behind. No relative
+           * specifier is both safe and in policy here, so the rule reports
+           * and does not rewrite.
+           */
+          name: 'autofix at maxDepth 0 reports a ./ deep specifier without rewriting it to the own directory',
           code: "import utils from './utils/helpers/format';",
           options: [{ strategy: 'autofix', maxDepth: 0 }],
-          output: "import utils from '.';",
+          output: null,
+          errors: [{ messageId: 'internalModuleImport' }],
+        },
+        {
+          /*
+           * A forbid-only violation sits within `maxDepth`, so its suggested
+           * path is the root — `'.'` for any `./` specifier, at the DEFAULT
+           * depth. Same own-directory swap as above; same answer.
+           */
+          name: 'autofix reports a forbidden ./ specifier within maxDepth without rewriting it to the own directory',
+          code: "import secret from './internal';",
+          options: [{ strategy: 'autofix', forbid: ['./internal'] }],
+          output: null,
           errors: [{ messageId: 'internalModuleImport' }],
         },
         {
@@ -333,6 +355,20 @@ describe('no-internal-modules', () => {
               ],
             },
           ],
+        },
+        {
+          // The `suggest` spelling of the same edit carries the same hazard:
+          // no suggestion rather than an offer of the own directory index.
+          name: 'suggest at maxDepth 0 offers no own-directory rewrite for a ./ deep specifier',
+          code: "import utils from './utils/helpers';",
+          options: [{ strategy: 'suggest', maxDepth: 0 }],
+          errors: [{ messageId: 'internalModuleImport', suggestions: [] }],
+        },
+        {
+          name: 'suggest offers no own-directory rewrite for a forbidden ./ specifier within maxDepth',
+          code: "import secret from './internal';",
+          options: [{ strategy: 'suggest', forbid: ['./internal'] }],
+          errors: [{ messageId: 'internalModuleImport', suggestions: [] }],
         },
         {
           /*
