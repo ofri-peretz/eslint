@@ -131,6 +131,21 @@ export function apply(user) {
 }`,
       },
       {
+        name: 'a for-of element of a module-owned array is not caller-supplied',
+        code: `const LAYERS = [{ theme: 'dark' }];
+export function apply(user) {
+  for (const layer of LAYERS) {
+    for (const [k, v] of Object.entries(layer)) { user[k] = v; }
+  }
+}`,
+      },
+      {
+        name: 'a for-of binding that iterates itself does not recurse forever',
+        code: `export function f(user) {
+  for (const o of o) { for (const [k, v] of Object.entries(o)) { user[k] = v; } }
+}`,
+      },
+      {
         name: 'a `req` this file BUILDS is a fixture, not a request',
         code: `const req = { body: { theme: 'dark' } };
 export function apply(user) {
@@ -487,6 +502,33 @@ export function merge(target, source) {
       {
         name: 'LOCK: the Object.entries destructuring spelling',
         code: `export function b(target, src) { Object.entries(src).forEach(([k, v]) => { target[k] = v; }); }`,
+        errors: [{ messageId: 'massAssignment' }],
+      },
+      // burgee packages/caique/src/inquirer-theme.ts:133 — variadic
+      // `deepMerge(...objects)` iterates each caller object with `for...of`. The
+      // `objects.forEach((object) => …)` spelling reports, because `object` is a
+      // callback Parameter; the loop spelling bound `object` as a Variable with
+      // no initialiser, so `isCopyLoopSourceOpaque` never looked at the
+      // parameter it iterates. `deepMerge({}, JSON.parse('{"__proto__":{"isAdmin":true}}')).isAdmin`
+      // is `true`.
+      {
+        name: 'a for-of element of a rest parameter is caller-supplied, like the forEach callback twin',
+        code: `export function deepMerge(...objects) {
+  const output = {};
+  for (const object of objects) {
+    for (const [key, value] of Object.entries(object)) { output[key] = value; }
+  }
+  return output;
+}`,
+        errors: [{ messageId: 'massAssignment' }],
+      },
+      {
+        name: 'a for-of element of an array parameter is caller-supplied too',
+        code: `export function mergeAll(target, sources) {
+  for (const src of sources) {
+    for (const k of Object.keys(src)) { target[k] = src[k]; }
+  }
+}`,
         errors: [{ messageId: 'massAssignment' }],
       },
       {

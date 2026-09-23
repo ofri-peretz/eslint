@@ -3428,6 +3428,23 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       if (!variable) return false;
       if (variable.defs.some((def) => def.type === 'Parameter')) return true;
 
+      // A `for (const o of objects)` element is whatever `objects` holds — the
+      // loop twin of `objects.forEach((o) => …)`, whose `o` is a Parameter
+      // above. Judge the iterated collection instead of the bare binding. The
+      // name check stops `for (const o of o)` (a TDZ error, but parseable)
+      // from recursing forever.
+      const loopDef = variable.defs[0];
+      const loop = loopDef?.type === 'Variable' ? loopDef.parent?.parent : null;
+      if (
+        loop?.type === AST_NODE_TYPES.ForOfStatement &&
+        loop.left === loopDef?.parent &&
+        !(
+          loop.right.type === AST_NODE_TYPES.Identifier &&
+          loop.right.name === variable.name
+        )
+      )
+        return isCopyLoopSourceOpaque(loop.right);
+
       // The binding hop. More than one write means the declaration no longer
       // tells you what the loop iterates — the same trap that silenced a real
       // finding in `isLocallyConstructed` and in two other rules since.
