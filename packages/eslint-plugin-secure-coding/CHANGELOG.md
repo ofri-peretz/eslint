@@ -5,6 +5,18 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.4.12
+
+### Patch Changes
+
+- **🐛 Fix** — `detect-object-injection` no longer reports a template-literal key with a fixed prefix or suffix
+
+  ``obj[`no-${x}`]`` always starts with `no-`, so it can never be `__proto__`, `prototype` or
+  `constructor`. The rule already accepted `obj['no-' + x]` for exactly that reason, but not the same
+  key written as a template. A literal held in a never-reassigned binding (`const NO = 'no-'`) now
+  counts as a literal too. Prefixes that a dangerous name could begin with (`` `__pro${x}` ``) still
+  report.
+
 ## 5.4.11
 
 ### Patch Changes
