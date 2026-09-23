@@ -5,6 +5,26 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "eslint-plugin-import-next",
+      "short": "eslint-plugin-import-next",
+      "version": "2.8.6",
+      "date": "2026-09-23T00:12:32Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "the extensions fixer no longer renames the module it is rewriting",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "no-internal-modules suggests a path that is actually on the import's path",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-modernization",
       "short": "eslint-plugin-modernization",
       "version": "3.1.5",
@@ -17721,26 +17741,6 @@
           "kind": "feature",
           "title": "`RemoteMarkdown` accepts `tags`, forwarded to the underlying fetch as `next.tags`.",
           "pr": 628
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-import-next",
-      "short": "eslint-plugin-import-next",
-      "version": "2.8.6",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "the extensions fixer no longer renames the module it is rewriting",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "no-internal-modules suggests a path that is actually on the import's path",
-          "pr": null
         }
       ]
     },
