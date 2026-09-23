@@ -1,4 +1,5 @@
 {
+  "command": "npx tsx scripts/real-source-scan.mts  # CI only — never run on a developer machine",
   "filesLinted": 357065,
   "filesFailed": 3628,
   "reposScanned": 112,
@@ -3373,9 +3374,7 @@
     "sequelize-security/no-unsafe-query": {
       "count": 13,
       "repos": 1,
-      "samples": [
-        "outline__outline/server/models/Document.ts:1198"
-      ]
+      "samples": ["outline__outline/server/models/Document.ts:1198"]
     },
     "import-next/no-absolute-path": {
       "count": 12,
@@ -3641,9 +3640,7 @@
     "node-security/require-aead-tag-verification": {
       "count": 6,
       "repos": 1,
-      "samples": [
-        "nodejs__node/test/parallel/test-crypto-authenticated.js:181"
-      ]
+      "samples": ["nodejs__node/test/parallel/test-crypto-authenticated.js:181"]
     },
     "vercel-ai-security/no-training-data-exposure": {
       "count": 6,
@@ -3872,9 +3869,7 @@
     "vercel-ai-security/require-tool-schema": {
       "count": 3,
       "repos": 1,
-      "samples": [
-        "vercel__ai/packages/workflow/src/serializable-schema.ts:165"
-      ]
+      "samples": ["vercel__ai/packages/workflow/src/serializable-schema.ts:165"]
     },
     "express-security/no-disabled-helmet-protections": {
       "count": 3,
@@ -3895,9 +3890,7 @@
     "express-security/no-unsafe-csp-directives": {
       "count": 3,
       "repos": 1,
-      "samples": [
-        "ghostfolio__ghostfolio/apps/api/src/main.ts:106"
-      ]
+      "samples": ["ghostfolio__ghostfolio/apps/api/src/main.ts:106"]
     },
     "browser-security/no-sensitive-localstorage": {
       "count": 2,
@@ -3956,9 +3949,7 @@
     "express-security/no-cors-credentials-wildcard": {
       "count": 2,
       "repos": 1,
-      "samples": [
-        "okta__okta-signin-widget/playground/mocks/server.js:73"
-      ]
+      "samples": ["okta__okta-signin-widget/playground/mocks/server.js:73"]
     },
     "browser-security/no-unsafe-eval-csp": {
       "count": 2,
@@ -4029,9 +4020,7 @@
     "browser-security/require-websocket-wss": {
       "count": 1,
       "repos": 1,
-      "samples": [
-        "nodejs__node/benchmark/websocket/simple.js:90"
-      ]
+      "samples": ["nodejs__node/benchmark/websocket/simple.js:90"]
     },
     "react-features/no-danger-with-children": {
       "count": 1,
