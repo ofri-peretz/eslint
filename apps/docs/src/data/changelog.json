@@ -5,6 +5,21 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "eslint-plugin-browser-security",
+      "short": "eslint-plugin-browser-security",
+      "version": "2.1.9",
+      "date": "2026-09-23T04:43:59Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-innerhtml` reported a false positive on an awaited trusted sanitiser",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-secure-coding",
       "short": "eslint-plugin-secure-coding",
       "version": "5.4.10",
@@ -17956,21 +17971,6 @@
           "kind": "feature",
           "title": "`RemoteMarkdown` accepts `tags`, forwarded to the underlying fetch as `next.tags`.",
           "pr": 628
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-browser-security",
-      "short": "eslint-plugin-browser-security",
-      "version": "2.1.9",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`no-innerhtml` reported a false positive on an awaited trusted sanitiser",
-          "pr": null
         }
       ]
     },
