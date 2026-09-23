@@ -25,6 +25,7 @@ import {
   staticString,
   namesOneOf,
   propertyName,
+  resolveModuleBinding,
 } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 /**
@@ -464,6 +465,23 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
       return false;
     };
 
+    /** A bare callee bound to one of `fns` exported by `path` / `path/posix`. */
+    const isNamedPathFunction = (
+      callee: TSESTree.Identifier,
+      fns: readonly string[],
+    ): boolean => {
+      const binding = resolveModuleBinding(
+        callee,
+        context.sourceCode.getScope(callee),
+        { equivalents: { 'path/posix': 'path' } },
+      );
+      return (
+        binding?.module === 'path' &&
+        binding.path.length === 1 &&
+        fns.includes(binding.path[0])
+      );
+    };
+
     /**
      * Check if path has been validated or sanitized
      * Detects patterns like:
@@ -705,15 +723,15 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
 
         // Check for path.join or similar operations with archive entry names
         const callee = node.callee;
+        // @vocabulary Node path API
+        const pathFns = ['join', 'resolve', 'relative', 'normalize'];
         if (
-          callee.type === 'MemberExpression' &&
-          // @vocabulary Node path API
-          namesOneOf(propertyName(callee), [
-            'join',
-            'resolve',
-            'relative',
-            'normalize',
-          ])
+          (callee.type === 'MemberExpression' &&
+            namesOneOf(propertyName(callee), pathFns)) ||
+          // `import { join } from 'node:path'` / `const { join } = require('path')`.
+          // Resolved through the module graph, not matched on the callee's
+          // NAME: a local function called `join` is not `path.join`.
+          (callee.type === 'Identifier' && isNamedPathFunction(callee, pathFns))
         ) {
           // Check arguments for potential archive entry usage
           const args = node.arguments;

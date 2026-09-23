@@ -433,7 +433,13 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
      */
     function isProvablyCatastrophic(pattern: string): boolean {
       // `(x|x)` with byte-identical branches, under a `*`/`+`.
-      const m = /\(([^()|]+)\|([^()|]+)\)[+*]/.exec(pattern);
+      //
+      // The `(?:` alternative is not cosmetic. `[^()|]+` happily matches `?:`,
+      // so on `(?:a|a)+` the first branch captured as `?:a` and the identity
+      // test compared it against `a` — the pinned `(a|a)*` case, silent purely
+      // because it was written non-capturing. Consuming the `?:` before the
+      // branch keeps the comparison on the alternatives themselves.
+      const m = /\((?:\?:)?([^()|]+)\|([^()|]+)\)[+*]/.exec(pattern);
       return m !== null && m[1] === m[2];
     }
 
@@ -451,9 +457,16 @@ export const noRedosVulnerableRegex = createRule<RuleOptions, MessageIds>({
             source.length,
             { unicode: flags.includes('u'), unicodeSets: flags.includes('v') }
           );
+        // `unicodeSets` has to reach the ANALYSER, not just the parser above.
+        // Without it a `/v` pattern is handed to refa with `unicode: false`,
+        // which rejects every `\p{...}` escape with "Unicode property escapes
+        // cannot be used without the u flag" — so the whole analysis threw and
+        // landed in the catch below, whose rationale is "the pattern is not a
+        // valid regex". A `/v` pattern is a valid regex; it compiles, runs, and
+        // backtracks. Every `/v` pattern using a property escape was dropped.
         const run = (ast: ReturnType<typeof parse>) =>
           analyse(
-            { pattern: ast, flags: { ignoreCase: flags.includes('i'), unicode: flags.includes('u'), dotAll: flags.includes('s'), multiline: flags.includes('m') } as never },
+            { pattern: ast, flags: { ignoreCase: flags.includes('i'), unicode: flags.includes('u'), unicodeSets: flags.includes('v'), dotAll: flags.includes('s'), multiline: flags.includes('m') } as never },
             { reportTypes: { Move: false } }
           );
 

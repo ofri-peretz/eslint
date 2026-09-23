@@ -181,6 +181,54 @@ describe('no-zip-slip', () => {
     });
   });
 
+  describe('Invalid Code - Named path imports', () => {
+    // `import { join } from 'node:path'` is the same sink as `path.join`. The
+    // callee is resolved through the module graph, not matched on its name.
+    ruleTester.run('named path imports', noZipSlip, {
+      valid: [
+        {
+          name: 'a locally defined join is not path.join',
+          code: `import AdmZip from 'adm-zip';
+                 function join(...parts) { return parts[parts.length - 1]; }
+                 const zip = new AdmZip(buf);
+                 for (const entry of zip.getEntries()) writeFileSync(join(dest, entry.entryName), entry.getData());`,
+        },
+      ],
+      invalid: [
+        {
+          name: 'import { join } from node:path with adm-zip',
+          code: `import { join } from 'node:path';
+                 import { writeFileSync } from 'node:fs';
+                 import AdmZip from 'adm-zip';
+                 const zip = new AdmZip(buf);
+                 for (const entry of zip.getEntries()) writeFileSync(join(dest, entry.entryName), entry.getData());`,
+          errors: [{ messageId: 'unvalidatedArchivePath' }],
+        },
+        {
+          name: 'import { resolve } from path with tar',
+          code: `import { resolve } from 'path';
+                 import tar from 'tar';
+                 tar.t({ file, onentry: (entry) => { const out = resolve(dest, entry.path); } });`,
+          errors: [{ messageId: 'unvalidatedArchivePath' }],
+        },
+        {
+          name: 'renamed import from node:path/posix',
+          code: `import { join as pjoin } from 'node:path/posix';
+                 import AdmZip from 'adm-zip';
+                 const out = pjoin(dest, entry.entryName);`,
+          errors: [{ messageId: 'unvalidatedArchivePath' }],
+        },
+        {
+          name: 'const { join } = require(path)',
+          code: `const { join } = require('path');
+                 const AdmZip = require('adm-zip');
+                 fs.writeFileSync(join(dest, entry.name), data);`,
+          errors: [{ messageId: 'unvalidatedArchivePath' }],
+        },
+      ],
+    });
+  });
+
   describe('Invalid Code - Dangerous Destinations', () => {
     ruleTester.run('invalid - dangerous extraction destinations', noZipSlip, {
       valid: [],

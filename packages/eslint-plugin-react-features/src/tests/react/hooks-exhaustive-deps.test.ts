@@ -633,5 +633,60 @@ describe('hooks-exhaustive-deps', () => {
       invalid: [],
     });
   });
+  describe("the hook callback's own parameters are local, not dependencies", () => {
+    /**
+     * A parameter of the hook callback itself is bound per INVOCATION, in a
+     * scope that does not exist where the dependency array is evaluated. Naming
+     * it as a missing dependency produces `}, [event]);` — `ReferenceError` at
+     * runtime, or, with `lib.dom`, a silent bind to the deprecated global
+     * `window.event`.
+     *
+     * The rule already states this principle for NESTED callbacks and honours
+     * it there; the outer callback's own params were unreachable because the
+     * collector was entered at `callback.body`.
+     */
+    ruleTester.run('valid - callback parameters are not dependencies', hooksExhaustiveDeps, {
+      valid: [
+        {
+          // burgee packages/caique/src/inquirer.ts:130 — `useEffect((rl) => {
+          // rl.input.on('keypress', handler); }, [])`, reduced to useCallback.
+          name: "a useCallback parameter is not a missing dependency",
+          code: `
+            function Component() {
+              const [v, setV] = useState('');
+              const onChange = useCallback((event) => {
+                setV(event.target.value);
+              }, []);
+              return onChange;
+            }
+          `,
+        },
+        {
+          name: 'a destructured callback parameter is not a missing dependency',
+          code: `
+            function Component({ save }) {
+              const onSave = useCallback(({ id, name }) => {
+                save(id, name);
+              }, [save]);
+              return onSave;
+            }
+          `,
+        },
+        {
+          name: 'a callback parameter read inside a nested function is still not a dependency',
+          code: `
+            function Component() {
+              const onChange = useCallback((event) => {
+                requestAnimationFrame(() => {
+                  console.log(event.target);
+                });
+              }, []);
+              return onChange;
+            }
+          `,
+        },
+      ],
+      invalid: [],
+    });
+  });
 });
-
