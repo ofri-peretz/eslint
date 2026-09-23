@@ -61,86 +61,106 @@ describe('no-commented-code', () => {
   });
 
   describe('Invalid Code — Commented-out code detected', () => {
-    ruleTester.run(
-      'invalid - commented code patterns',
-      noCommentedCode,
-      {
-        valid: [],
-        invalid: [
-          // Variable declaration
-          {
-            name: 'a commented-out statement',
-            code: '// const x = 1;',
-            errors: [{
+    ruleTester.run('invalid - commented code patterns', noCommentedCode, {
+      valid: [],
+      invalid: [
+        // Variable declaration
+        {
+          name: 'a commented-out statement',
+          code: '// const x = 1;',
+          errors: [
+            {
               messageId: 'commentedCode',
-              suggestions: [{
-                messageId: 'removeCode',
-                output: '',
-              }],
-            }],
-          },
-          // Function declaration
-          {
-            code: '// function doStuff() {',
-            errors: [{
+              suggestions: [
+                {
+                  messageId: 'removeCode',
+                  output: '',
+                },
+              ],
+            },
+          ],
+        },
+        // Function declaration
+        {
+          code: '// function doStuff() {',
+          errors: [
+            {
               messageId: 'commentedCode',
-              suggestions: [{
-                messageId: 'removeCode',
-                output: '',
-              }],
-            }],
-          },
-          // Import statement
-          {
-            code: '// import lodash from "lodash";',
-            errors: [{
+              suggestions: [
+                {
+                  messageId: 'removeCode',
+                  output: '',
+                },
+              ],
+            },
+          ],
+        },
+        // Import statement
+        {
+          code: '// import lodash from "lodash";',
+          errors: [
+            {
               messageId: 'commentedCode',
-              suggestions: [{
-                messageId: 'removeCode',
-                output: '',
-              }],
-            }],
-          },
-          // Block comment with code inside
-          {
-            code: '/* const x = 1; */',
-            errors: [{
+              suggestions: [
+                {
+                  messageId: 'removeCode',
+                  output: '',
+                },
+              ],
+            },
+          ],
+        },
+        // Block comment with code inside
+        {
+          code: '/* const x = 1; */',
+          errors: [
+            {
               messageId: 'commentedCode',
-              suggestions: [{
-                messageId: 'removeCode',
-                output: '',
-              }],
-            }],
-          },
-          // Multi-line block comment with code
-          {
-            code: `/*
+              suggestions: [
+                {
+                  messageId: 'removeCode',
+                  output: '',
+                },
+              ],
+            },
+          ],
+        },
+        // Multi-line block comment with code
+        {
+          code: `/*
 const a = 1;
 const b = 2;
 */`,
-            errors: [{
+          errors: [
+            {
               messageId: 'commentedCode',
-              suggestions: [{
-                messageId: 'removeCode',
-                output: '',
-              }],
-            }],
-          },
-          // Multiple consecutive single-line comments that look like code
-          {
-            code: `// const x = 1;
+              suggestions: [
+                {
+                  messageId: 'removeCode',
+                  output: '',
+                },
+              ],
+            },
+          ],
+        },
+        // Multiple consecutive single-line comments that look like code
+        {
+          code: `// const x = 1;
 // const y = 2;`,
-            errors: [{
+          errors: [
+            {
               messageId: 'commentedCode',
-              suggestions: [{
-                messageId: 'removeCode',
-                output: '',
-              }],
-            }],
-          },
-        ],
-      },
-    );
+              suggestions: [
+                {
+                  messageId: 'removeCode',
+                  output: '',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
   });
 
   describe('Options', () => {
@@ -155,13 +175,17 @@ const b = 2;
         {
           code: '// const x = 1;',
           options: [{ ignoreSingleLine: false }],
-          errors: [{
-            messageId: 'commentedCode',
-            suggestions: [{
-              messageId: 'removeCode',
-              output: '',
-            }],
-          }],
+          errors: [
+            {
+              messageId: 'commentedCode',
+              suggestions: [
+                {
+                  messageId: 'removeCode',
+                  output: '',
+                },
+              ],
+            },
+          ],
         },
       ],
     });
@@ -183,13 +207,17 @@ const b = 2;
           code: '// const x = 1;',
           filename: 'test.spec.ts',
           options: [{ ignoreInTests: false }],
-          errors: [{
-            messageId: 'commentedCode',
-            suggestions: [{
-              messageId: 'removeCode',
-              output: '',
-            }],
-          }],
+          errors: [
+            {
+              messageId: 'commentedCode',
+              suggestions: [
+                {
+                  messageId: 'removeCode',
+                  output: '',
+                },
+              ],
+            },
+          ],
         },
       ],
     });
@@ -216,15 +244,21 @@ describe('no-commented-code — prose is not code', () => {
     valid: [
       // Sentences that begin with a JavaScript keyword.
       { code: 'const a = 1;\n// for widget / idx-js backward compatibility' },
-      { code: 'const a = 1;\n// if no key is passed, all cookies are returned' },
-      { code: 'const a = 1;\n// let existing promise finish to prevent running into loops' },
+      {
+        code: 'const a = 1;\n// if no key is passed, all cookies are returned',
+      },
+      {
+        code: 'const a = 1;\n// let existing promise finish to prevent running into loops',
+      },
       { code: 'const a = 1;\n// return all cookies when no args is provided' },
       { code: 'const a = 1;\n// class names are kebab-case here' },
       // Prose with a parenthetical reads as a call only if the gap is allowed.
       { code: 'const a = 1;\n// Authn (classic) api' },
       { code: 'const a = 1;\n// fetch() can throw exceptions' },
       // A documentation link.
-      { code: 'const a = 1;\n// https://developer.mozilla.org/en-US/docs/Web/API/fetch#exceptions' },
+      {
+        code: 'const a = 1;\n// https://developer.mozilla.org/en-US/docs/Web/API/fetch#exceptions',
+      },
       { code: 'const a = 1;\n// See http://example.com/a/b#c for details' },
       // The terser "preserve" banner: a legal notice, never code.
       {
@@ -236,27 +270,62 @@ describe('no-commented-code — prose is not code', () => {
         // FN GUARD: real commented-out code keeps its punctuation.
         // okta-auth-js lib/idx/idxState/v1/generateIdxAction.ts:80.
         code: 'const a = 1;\n//   const target = actionDefinition.href;',
-        errors: [{ messageId: 'commentedCode', suggestions: [{ messageId: 'removeCode', output: 'const a = 1;\n' }] }],
+        errors: [
+          {
+            messageId: 'commentedCode',
+            suggestions: [
+              { messageId: 'removeCode', output: 'const a = 1;\n' },
+            ],
+          },
+        ],
       },
       {
         // okta-auth-js lib/http/request.ts:110.
         code: 'const a = 1;\n//   err = wwwAuthErr ?? err;',
-        errors: [{ messageId: 'commentedCode', suggestions: [{ messageId: 'removeCode', output: 'const a = 1;\n' }] }],
+        errors: [
+          {
+            messageId: 'commentedCode',
+            suggestions: [
+              { messageId: 'removeCode', output: 'const a = 1;\n' },
+            ],
+          },
+        ],
       },
       {
         // A call with no gap before the paren is still a call.
         code: 'const a = 1;\n// const inputs = this.getInputs();',
-        errors: [{ messageId: 'commentedCode', suggestions: [{ messageId: 'removeCode', output: 'const a = 1;\n' }] }],
+        errors: [
+          {
+            messageId: 'commentedCode',
+            suggestions: [
+              { messageId: 'removeCode', output: 'const a = 1;\n' },
+            ],
+          },
+        ],
       },
       {
         // A keyword line that DOES end like a statement.
         code: 'const a = 1;\n// if (ready) {',
-        errors: [{ messageId: 'commentedCode', suggestions: [{ messageId: 'removeCode', output: 'const a = 1;\n' }] }],
+        errors: [
+          {
+            messageId: 'commentedCode',
+            suggestions: [
+              { messageId: 'removeCode', output: 'const a = 1;\n' },
+            ],
+          },
+        ],
       },
       {
         // A plain block comment is not a `/*!` banner and is still checked.
         code: '/*\n * const target = actionDefinition.href;\n */\nconst a = 1;',
-        errors: [{ messageId: 'commentedCode', suggestions: [{ messageId: 'removeCode', output: '\nconst a = 1;' }] }],
+        errors: [
+          {
+            messageId: 'commentedCode',
+            suggestions: [
+              { messageId: 'removeCode', output: '\nconst a = 1;' },
+            ],
+          },
+        ],
       },
     ],
   });
@@ -300,7 +369,9 @@ describe('no-commented-code — adversarial', () => {
           'export function f() { return 1; }',
         ].join('\n'),
       },
-      { code: 'const a = 1;\n// await for the retry window to elapse before polling' },
+      {
+        code: 'const a = 1;\n// await for the retry window to elapse before polling',
+      },
       { code: 'const a = 1;\n// throw away the cache when the tab closes' },
       { code: 'const a = 1;\n// for widget / idx-js backward compatibility' },
       { code: 'const a = 1;\n// fetch() can throw exceptions' },
@@ -311,43 +382,165 @@ describe('no-commented-code — adversarial', () => {
         // out, and is NOT exempt. Only `/**` is.
         name: 'a plain block comment is still checked',
         code: '/*\n * const target = actionDefinition.href;\n */\nconst a = 1;',
-        errors: [{ messageId: 'commentedCode', suggestions: [{ messageId: 'removeCode', output: '\nconst a = 1;' }] }],
+        errors: [
+          {
+            messageId: 'commentedCode',
+            suggestions: [
+              { messageId: 'removeCode', output: '\nconst a = 1;' },
+            ],
+          },
+        ],
       },
       {
         name: 'a declaration with an initializer needs no terminator',
         code: 'const a = 1;\n// const timeout = 5000',
-        errors: [{ messageId: 'commentedCode', suggestions: [{ messageId: 'removeCode', output: 'const a = 1;\n' }] }],
+        errors: [
+          {
+            messageId: 'commentedCode',
+            suggestions: [
+              { messageId: 'removeCode', output: 'const a = 1;\n' },
+            ],
+          },
+        ],
       },
       {
         name: 'an import with a module specifier',
         code: 'const a = 1;\n// import fs from "fs"',
-        errors: [{ messageId: 'commentedCode', suggestions: [{ messageId: 'removeCode', output: 'const a = 1;\n' }] }],
+        errors: [
+          {
+            messageId: 'commentedCode',
+            suggestions: [
+              { messageId: 'removeCode', output: 'const a = 1;\n' },
+            ],
+          },
+        ],
       },
       {
         name: 'an export',
         code: 'const a = 1;\n// export default config',
-        errors: [{ messageId: 'commentedCode', suggestions: [{ messageId: 'removeCode', output: 'const a = 1;\n' }] }],
+        errors: [
+          {
+            messageId: 'commentedCode',
+            suggestions: [
+              { messageId: 'removeCode', output: 'const a = 1;\n' },
+            ],
+          },
+        ],
       },
       {
         name: 'a constructed throw',
         code: 'const a = 1;\n// throw new Error("x")',
-        errors: [{ messageId: 'commentedCode', suggestions: [{ messageId: 'removeCode', output: 'const a = 1;\n' }] }],
+        errors: [
+          {
+            messageId: 'commentedCode',
+            suggestions: [
+              { messageId: 'removeCode', output: 'const a = 1;\n' },
+            ],
+          },
+        ],
       },
       {
         name: 'an awaited call',
         code: 'const a = 1;\n// await client.connect()',
-        errors: [{ messageId: 'commentedCode', suggestions: [{ messageId: 'removeCode', output: 'const a = 1;\n' }] }],
+        errors: [
+          {
+            messageId: 'commentedCode',
+            suggestions: [
+              { messageId: 'removeCode', output: 'const a = 1;\n' },
+            ],
+          },
+        ],
       },
       {
         name: 'a call on a member chain',
         code: 'const a = 1;\n// promise.then(x => x).catch(noop)',
-        errors: [{ messageId: 'commentedCode', suggestions: [{ messageId: 'removeCode', output: 'const a = 1;\n' }] }],
+        errors: [
+          {
+            messageId: 'commentedCode',
+            suggestions: [
+              { messageId: 'removeCode', output: 'const a = 1;\n' },
+            ],
+          },
+        ],
       },
       {
         name: 'a typed declaration',
         code: 'const a = 1;\n// let count: number = 0',
-        errors: [{ messageId: 'commentedCode', suggestions: [{ messageId: 'removeCode', output: 'const a = 1;\n' }] }],
+        errors: [
+          {
+            messageId: 'commentedCode',
+            suggestions: [
+              { messageId: 'removeCode', output: 'const a = 1;\n' },
+            ],
+          },
+        ],
       },
     ],
   });
+});
+
+// ── Adjacency: live code between two code-like comments is NOT one block ──────
+// Surfaced by the burgee FP/FN sweep at
+// packages/compat-oracle/vendor/ora/test.js:1658, where the grouped suggestion
+// spanned 5,604 characters and produced output that does not parse.
+describe('no-commented-code — a group stops at live code', () => {
+  ruleTester.run(
+    'invalid - grouping must not span live source',
+    noCommentedCode,
+    {
+      valid: [],
+      invalid: [
+        {
+          name: 'two comments separated by a live function are two reports, and neither fix deletes it',
+          code: `// const a = 1;
+export function realCode() {
+  return 42;
+}
+// const b = 2;`,
+          errors: [
+            {
+              messageId: 'commentedCode',
+              suggestions: [
+                {
+                  messageId: 'removeCode',
+                  output: `
+export function realCode() {
+  return 42;
+}
+// const b = 2;`,
+                },
+              ],
+            },
+            {
+              messageId: 'commentedCode',
+              suggestions: [
+                {
+                  messageId: 'removeCode',
+                  output: `// const a = 1;
+export function realCode() {
+  return 42;
+}
+`,
+                },
+              ],
+            },
+          ],
+        },
+        {
+          name: 'a group still forms across genuinely adjacent comments',
+          code: `const keep = 1;
+// const a = 1;
+// const b = 2;`,
+          errors: [
+            {
+              messageId: 'commentedCode',
+              suggestions: [
+                { messageId: 'removeCode', output: `const keep = 1;\n` },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  );
 });
