@@ -82,16 +82,24 @@ ruleTester.run('extensions (coverage)', extensions, {
       code: `import fs from 'fs';`,
       options: [{ default: 'always' }],
     },
-  ],
-  invalid: [
+    // This case used to sit in `invalid`, named "falls back to the built-in
+    // pattern map when only default is set", asserting that
+    // `{ default: 'always' }` reported `./x.js` and stripped it to `./x`. That
+    // was the defect, pinned: the rule read `pattern` as a whole object, so a
+    // user who set only `default` got the package's own map, whose `js: 'never'`
+    // beat the `always` they had just asked for — the only configuration that
+    // worked was `{ pattern: { js: 'always' } }`, which no documentation asks
+    // for. `default` now governs every extension the user did not name in
+    // `pattern`, so the same input carries the opposite verdict: the case is now
+    // a claim about what the option MEANS rather than about which fallback
+    // happened to run.
     {
-      name: 'falls back to the built-in pattern map when only default is set',
+      name: 'a lone default of always keeps an extension the user never named in pattern',
       code: `import x from './x.js';`,
       options: [{ default: 'always' }],
-      errors: [{ messageId: 'unexpectedExtension' }],
-      output: `import x from './x';`,
     },
   ],
+  invalid: [],
 });
 
 // ---------------------------------------------------------------------------

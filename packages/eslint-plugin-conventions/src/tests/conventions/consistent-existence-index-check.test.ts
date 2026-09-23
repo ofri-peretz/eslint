@@ -42,7 +42,7 @@ describe('consistent-existence-index-check', () => {
           // Reported, not rewritten: `in` and an own-property check disagree on an
           // inherited key. See consistent-existence-index-check.own-property.test.ts.
           output: null,
-          errors: [{ messageId: 'consistentExistenceCheck' }],
+          errors: [{ messageId: 'nonEquivalentExistenceCheck' }],
         },
         // Object.hasOwn should be flagged
         {
@@ -51,7 +51,7 @@ describe('consistent-existence-index-check', () => {
           // Reported, not rewritten: `in` and an own-property check disagree on an
           // inherited key. See consistent-existence-index-check.own-property.test.ts.
           output: null,
-          errors: [{ messageId: 'consistentExistenceCheck' }],
+          errors: [{ messageId: 'nonEquivalentExistenceCheck' }],
         },
       ],
     });
@@ -74,7 +74,7 @@ describe('consistent-existence-index-check', () => {
           // inherited key. See consistent-existence-index-check.own-property.test.ts.
           output: null,
           options: [{ preferred: 'hasOwnProperty' }],
-          errors: [{ messageId: 'consistentExistenceCheck' }],
+          errors: [{ messageId: 'nonEquivalentExistenceCheck' }],
         },
         // Object.hasOwn should be flagged
         {
@@ -84,7 +84,7 @@ describe('consistent-existence-index-check', () => {
           // a shadowing own property. See the own-property test file.
           output: null,
           options: [{ preferred: 'hasOwnProperty' }],
-          errors: [{ messageId: 'consistentExistenceCheck' }],
+          errors: [{ messageId: 'nonEquivalentExistenceCheck' }],
         },
       ],
     });
@@ -107,7 +107,7 @@ describe('consistent-existence-index-check', () => {
           // inherited key. See consistent-existence-index-check.own-property.test.ts.
           output: null,
           options: [{ preferred: 'Object.hasOwn' }],
-          errors: [{ messageId: 'consistentExistenceCheck' }],
+          errors: [{ messageId: 'nonEquivalentExistenceCheck' }],
         },
         // hasOwnProperty should be flagged
         {
@@ -117,7 +117,7 @@ describe('consistent-existence-index-check', () => {
           // a shadowing own property. See the own-property test file.
           output: null,
           options: [{ preferred: 'Object.hasOwn' }],
-          errors: [{ messageId: 'consistentExistenceCheck' }],
+          errors: [{ messageId: 'nonEquivalentExistenceCheck' }],
         },
       ],
     });
@@ -149,6 +149,10 @@ describe('consistent-existence-index-check', () => {
           },
         ],
         invalid: [
+          // All three are sites whose fix is WITHHELD (a surplus argument is
+          // evaluated, and the direct forms also cross the dispatch boundary), so
+          // they carry the hand-edit message rather than the one whose `Fix:`
+          // line asks for the rewrite the rule just refused to make.
           // burgee packages/compat-oracle/vendor/yargs/test/command.mjs:1534
           // (and :1558). Vendored, so burgee's own config does not lint it; the
           // defect is config-independent. `Object.prototype.hasOwnProperty(argv,
@@ -159,7 +163,7 @@ describe('consistent-existence-index-check', () => {
             name: 'hasOwnProperty called through Object.prototype, with a surplus argument',
             code: "Object.prototype.hasOwnProperty(argv, 'b')",
             output: null,
-            errors: [{ messageId: 'consistentExistenceCheck' }],
+            errors: [{ messageId: 'nonEquivalentExistenceCheck' }],
           },
           // Minimized from the same site. The native method ignores extras —
           // `({k:1}).hasOwnProperty('k','zzz') === true` — so the dispatch hazard
@@ -169,7 +173,7 @@ describe('consistent-existence-index-check', () => {
             name: 'a surplus argument does not disarm the direct-dispatch hazard',
             code: 'obj.hasOwnProperty(key, extra)',
             output: null,
-            errors: [{ messageId: 'consistentExistenceCheck' }],
+            errors: [{ messageId: 'nonEquivalentExistenceCheck' }],
           },
           // The mirror of the same gate on the `Object.hasOwn` visitor, which
           // required exactly 2 arguments. Surplus arguments are evaluated, so the
@@ -179,7 +183,7 @@ describe('consistent-existence-index-check', () => {
             code: 'Object.hasOwn(obj, key, extra)',
             options: [{ preferred: 'in' as const }],
             output: null,
-            errors: [{ messageId: 'consistentExistenceCheck' }],
+            errors: [{ messageId: 'nonEquivalentExistenceCheck' }],
           },
         ],
       },
