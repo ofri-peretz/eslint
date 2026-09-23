@@ -5,7 +5,7 @@
       "rules": 46,
       "description": "ESLint plugin for browser security — detects DOM XSS, postMessage abuse, tokens in localStorage, insecure cookies, clickjacking, mixed content, and CSP gaps",
       "category": "security",
-      "version": "2.1.7",
+      "version": "2.1.8",
       "published": true
     },
     {
@@ -21,7 +21,7 @@
       "rules": 33,
       "description": "ESLint plugin for secure coding — detects LDAP, XPath, XXE, GraphQL and template injection, unsafe deserialization, ReDoS, missing authentication, and PII in logs",
       "category": "security",
-      "version": "5.4.9",
+      "version": "5.4.10",
       "published": true
     },
     {
@@ -237,7 +237,7 @@
       "rules": 61,
       "description": "ESLint plugin for React — hooks, prop-types, JSX correctness, render performance, and class-to-hooks migration rules for modern React codebases",
       "category": "react",
-      "version": "1.7.8",
+      "version": "1.7.9",
       "published": true
     },
     {
