@@ -13,7 +13,7 @@
       "rules": 43,
       "description": "ESLint plugin for Node.js security — detects command injection, path traversal, SSRF, zip slip, and weak crypto (MD5/SHA-1, ECB, static IV) in fs, child_process, vm, and crypto",
       "category": "security",
-      "version": "5.6.6",
+      "version": "5.6.7",
       "published": true
     },
     {
@@ -21,7 +21,7 @@
       "rules": 33,
       "description": "ESLint plugin for secure coding — detects LDAP, XPath, XXE, GraphQL and template injection, unsafe deserialization, ReDoS, missing authentication, and PII in logs",
       "category": "security",
-      "version": "5.4.10",
+      "version": "5.4.11",
       "published": true
     },
     {
@@ -181,7 +181,7 @@
       "rules": 55,
       "description": "ESLint plugin for imports and module boundaries — drop-in replacement for eslint-plugin-import, 3.1x faster end-to-end, zero-config migration",
       "category": "architecture",
-      "version": "2.8.8",
+      "version": "2.8.9",
       "published": true
     },
     {
@@ -197,7 +197,7 @@
       "rules": 12,
       "description": "ESLint plugin for maintainable code — limits cognitive complexity, nesting depth, parameter counts, duplicate functions, and unhandled or silent errors",
       "category": "quality",
-      "version": "3.2.14",
+      "version": "3.2.15",
       "published": true
     },
     {
@@ -205,7 +205,7 @@
       "rules": 9,
       "description": "ESLint plugin for runtime reliability — enforces error handling, network timeouts, null checks, and safe type narrowing",
       "category": "quality",
-      "version": "4.1.11",
+      "version": "4.1.12",
       "published": true
     },
     {
@@ -229,7 +229,7 @@
       "rules": 4,
       "description": "ESLint plugin for modernizing JavaScript — auto-fixes legacy patterns to ES2022+ (Array.at, template literals, EventTarget, Array.isArray)",
       "category": "quality",
-      "version": "3.1.6",
+      "version": "3.1.7",
       "published": true
     },
     {
@@ -237,7 +237,7 @@
       "rules": 61,
       "description": "ESLint plugin for React — hooks, prop-types, JSX correctness, render performance, and class-to-hooks migration rules for modern React codebases",
       "category": "react",
-      "version": "1.7.9",
+      "version": "1.7.10",
       "published": true
     },
     {
