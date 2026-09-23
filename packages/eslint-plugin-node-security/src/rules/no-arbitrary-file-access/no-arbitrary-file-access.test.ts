@@ -23,7 +23,10 @@ ruleTester.run('no-arbitrary-file-access', noArbitraryFileAccess, {
     //
     // Nothing goes undetected: the generic rule still reports every one of
     // these at `warn`. The two rules partition instead of overlapping.
-    'fs.readFileSync(filePath)',
+    {
+      name: 'a bare global path with no visible binding is left to the generic rule',
+      code: 'fs.readFileSync(filePath)',
+    },
     'fs.readFile(userFile, cb)',
     'fs.readdirSync(scanPath)',
     'fs.writeFileSync(destPath, content)',
