@@ -45,7 +45,7 @@ describe('consistent-existence-index-check — the default is Object.hasOwn', ()
         code: 'if (key in obj) {}',
         // Not rewritten: the two ask different questions. Only the report is made.
         output: null,
-        errors: [{ messageId: 'consistentExistenceCheck' as const }],
+        errors: [{ messageId: 'nonEquivalentExistenceCheck' as const }],
       },
       {
         name: 'the long-hand own-property check is shortened, which is safe',
@@ -57,7 +57,7 @@ describe('consistent-existence-index-check — the default is Object.hasOwn', ()
         name: 'the direct dispatch is reported but never rewritten',
         code: 'if (obj.hasOwnProperty(key)) {}',
         output: null,
-        errors: [{ messageId: 'consistentExistenceCheck' as const }],
+        errors: [{ messageId: 'nonEquivalentExistenceCheck' as const }],
       },
     ],
   });

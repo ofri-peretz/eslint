@@ -5,6 +5,34 @@ All notable changes to `eslint-plugin-node-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.6.5
+
+### Patch Changes
+
+- **🐛 Fix** — `no-dynamic-require` resolves the loader instead of matching the name `require`
+
+  A binding from `module.createRequire()`, plus `module.require`,
+  `require.main.require` and the `(0, require)` idiom, all load a specifier and
+  were all invisible. The rule also documents its largest false-negative class:
+  `no-weak-hash-algorithm`'s ❌ examples now fire under the default options, and
+  unclassified hashes are described as the deliberate trade they are.
+
+## 5.6.4
+
+### Patch Changes
+
+- **🐛 Fix** — `no-deprecated-cipher-method` — correct the report path on a computed subscript.
+
+  fix: `no-deprecated-cipher-method` — correct the report path on a computed subscript. The
+  detection gate reads the property through the computed-aware `propertyName()`,
+  but the report path re-read it as `(property as Identifier).name`, which is
+  `undefined` on a Literal — so `crypto['createCipher'](...)` produced the message
+  `crypto.undefined()`, offered `createDecipheriv` (the DECRYPTION constructor)
+  for an encryption call, and emitted a suggestion that dropped the quotes and
+  referenced an identifier resolving nowhere. The stale "Known False Negatives"
+  entry claiming this form is undetected is corrected to describe the gap that
+  does remain — a genuinely runtime-chosen key.
+
 ## 5.6.3
 
 ### Patch Changes

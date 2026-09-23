@@ -895,6 +895,73 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
       );
     };
 
+    /**
+     * `const NAME = <expr>` — the initialiser this identifier is bound to, so a
+     * path passed as a bare identifier can be traced to what it was built from.
+     *
+     * Without this hop, `const BUILD_DIR = path.resolve(__dirname, '..', 'build')`
+     * followed by `fs.readFileSync(\`${BUILD_DIR}/package.json\`)` reported —
+     * the safe-construction check existed but only ever saw the *direct*
+     * argument, never one hop back. Measured on the 8-repo corpus, that single
+     * hop is the difference between "flags every build script" and "flags
+     * paths that are actually assembled at runtime".
+     *
+     * Resolved through the scope manager, exactly as `isLocallyConstructed`
+     * above, `isFreeVariable` and `resolveModuleBinding` already do. This used
+     * to be a `Map<string, Node>` keyed by the bare identifier NAME and written
+     * from every `VariableDeclarator` in the file, so the LAST `const p`
+     * anywhere decided what `p` meant at every fs call — and since every call is
+     * judged at `Program:exit`, "anywhere" included declarations below the call
+     * and in unrelated scopes. One corpus file declares `const dir` five times
+     * in five scopes; all five fs calls got the fifth one's verdict. That both
+     * invented findings on paths assembled purely from literals and erased real
+     * ones, which are the two failures the README calls bugs. Which binding a
+     * name refers to is scope analysis's answer, not a name table's.
+     *
+     * `const` only: a `let` can be reassigned to anything after the point we
+     * read it, so proving its initialiser safe proves nothing about the value
+     * at the call.
+     *
+     * One hop, one initialiser: a destructured `const { dir } = config` binds a
+     * pattern, not an expression, so there is nothing to read back. Both
+     * restrictions are unchanged — widening either is a separate decision.
+     */
+    const constBindingInit = (
+      id: TSESTree.Identifier,
+    ): TSESTree.Node | undefined => {
+      const variable = context.sourceCode
+        .getScope(id)
+        .references.find(
+          (ref: TSESLint.Scope.Reference) => ref.identifier === id,
+        )?.resolved;
+      if (!variable || variable.defs.length !== 1) return undefined;
+      const def = variable.defs[0];
+      if (def.type !== 'Variable') return undefined;
+      const declarator = def.node as TSESTree.VariableDeclarator;
+      // `def.parent` is the declaration the scope manager recorded this
+      // definition from, so `kind` comes from the analyser rather than from
+      // walking `.parent` and re-checking that it is a `VariableDeclaration`.
+      // That walk has an arm no input can reach, and an unreachable branch is a
+      // permanent hole in a package held at a 100% coverage threshold.
+      if (
+        def.parent.kind !== 'const' ||
+        declarator.id.type !== AST_NODE_TYPES.Identifier
+      ) {
+        return undefined;
+      }
+      // `init` IS nullable here, and the reachable case is not exotic:
+      // `for (const entry of xs)` and `for (const k in o)` are `const`
+      // declarators with `init: null`. A bare `const x;` is a syntax error,
+      // which is what makes a non-null assertion look safe here — but a
+      // for-of/for-in head is neither bare nor a syntax error, and it reaches
+      // this line whenever the loop variable is later used as an fs path.
+      // Asserting non-null handed `null` to `readsTaintSource`, which crashed
+      // on `node.type` and took the entire lint run down: burgee
+      // `packages/compat-oracle/src/facts.ts` does exactly this. The arm is
+      // covered by the for-of fixtures in this rule's test file.
+      return declarator.init ?? undefined;
+    };
+
     /** Does this expression read from something outside the program? */
     const readsTaintSource = (rawNode: TSESTree.Node, depth = 0): boolean => {
       if (depth > 6) return false;
@@ -939,7 +1006,7 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
             }
             return !isLocallyConstructed(node);
           }
-          const bound = constBindings.get(node.name);
+          const bound = constBindingInit(node);
           return bound !== undefined && readsTaintSource(bound, depth + 1);
         }
         case AST_NODE_TYPES.MemberExpression: {
@@ -1051,7 +1118,7 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
         case AST_NODE_TYPES.Identifier: {
           if (taintRoots.has(node.name))
             return !WHOLE_VALUE_TRUSTED_ROOTS.has(node.name);
-          const bound = constBindings.get(node.name);
+          const bound = constBindingInit(node);
           return bound !== undefined && containsUntrustedRoot(bound, depth + 1);
         }
         case AST_NODE_TYPES.MemberExpression:
@@ -1084,7 +1151,7 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
           // arbitrary file read, so it must NOT be suppressed here.
           if (taintRoots.has(node.name))
             return WHOLE_VALUE_TRUSTED_ROOTS.has(node.name);
-          const bound = constBindings.get(node.name);
+          const bound = constBindingInit(node);
           return bound !== undefined && isWholeTaintValue(bound);
         }
         // `process.env.X`, `process.argv[2]` — a whole value read off a root.
@@ -1332,7 +1399,7 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
       if (node.type === AST_NODE_TYPES.Identifier) {
         if (node.name === '__dirname' || node.name === '__filename')
           return true;
-        const bound = constBindings.get(node.name);
+        const bound = constBindingInit(node);
         return bound !== undefined && isBuildTimeConstant(bound, depth + 1);
       }
       if (node.type === AST_NODE_TYPES.TemplateLiteral) {
@@ -1650,22 +1717,6 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
     const fsNamedMethods = new Map<string, string>();
     /** Calls to judge at Program:exit, once every binding in the file is known. */
     const pendingCalls: TSESTree.CallExpression[] = [];
-    /**
-     * `const NAME = <expr>` bindings, so a path passed as a bare identifier can
-     * be traced to what it was built from.
-     *
-     * Without this, `const BUILD_DIR = path.resolve(__dirname, '..', 'build')`
-     * followed by `fs.readFileSync(\`${BUILD_DIR}/package.json\`)` reported —
-     * the safe-construction check existed but only ever saw the *direct*
-     * argument, never one hop back. Measured on the 8-repo corpus, that single
-     * hop is the difference between "flags every build script" and "flags
-     * paths that are actually assembled at runtime".
-     *
-     * `const` only: a `let` can be reassigned to anything after the point we
-     * read it, so proving its initializer safe proves nothing about the value
-     * at the call.
-     */
-    const constBindings = new Map<string, TSESTree.Node>();
 
     /**
      * Record what a destructured / named binding refers to.
@@ -1806,14 +1857,9 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
       },
 
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
-        if (
-          node.init !== null &&
-          node.id.type === AST_NODE_TYPES.Identifier &&
-          node.parent?.type === AST_NODE_TYPES.VariableDeclaration &&
-          node.parent.kind === 'const'
-        ) {
-          constBindings.set(node.id.name, node.init);
-        }
+        // No `const` path bindings are collected here any more: a name is not a
+        // binding, and `constBindingInit` asks the scope manager at the point of
+        // use instead. See its doc comment.
         if (node.init === null || !isFsRequire(node.init)) return;
         if (node.id.type === AST_NODE_TYPES.Identifier) {
           fsNamespaces.add(node.id.name);

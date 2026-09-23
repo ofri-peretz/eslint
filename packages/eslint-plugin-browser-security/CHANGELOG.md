@@ -5,6 +5,38 @@ All notable changes to `eslint-plugin-browser-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.1.9
+
+### Patch Changes
+
+- **🐛 Fix** — `no-innerhtml` reported a false positive on an awaited trusted sanitiser
+
+  `isSanitized()` only recognized a trusted sanitiser (from the `trustedSanitizers` allowlist, e.g. `DOMPurify.sanitize` or `sanitize`) when the value being judged was itself a `CallExpression`. `await sanitize(x)` is an `AwaitExpression` wrapping that call, so an async sanitiser wrapper — such as an async DOMPurify wrapper — still reported as unsanitized once a caller `await`ed it, even though the callee was on the default allowlist. `AwaitExpression` is now unwrapped the same way `ChainExpression` already is (for `DOMPurify?.sanitize(x)`), then the call underneath is judged. Reported in #1056.
+
+## 2.1.8
+
+### Patch Changes
+
+- **🧪 Tests** — `no-clickjacking` pins three more shapes where the header NAME is not frame protection
+
+  The fix itself shipped earlier (a declared protection counts only when its VALUE protects). This adds regression cases for a `<meta httpEquiv="X-Frame-Options" content="ALLOWALL">`, the obsolete `ALLOW-FROM`, and prose that merely mentions `x-frame-options`, each of which must still report. No behaviour change.
+
+## 2.1.7
+
+### Patch Changes
+
+- **🐛 Fix** — `no-clickjacking` — a declared frame protection must actually protect.
+
+  fix: `no-clickjacking` — a declared frame protection no longer counts unless it
+  actually protects. The predicate matched the `X-Frame-Options` header NAME and
+  discarded its value, so the rule's own documented "Incorrect" example —
+  `ALLOWALL` — suppressed the report for the entire file; separately, a bare
+  `deny` or `sameorigin` string anywhere in the file did the same, with no header
+  context. The value now decides, and a bare word counts only where the AST shows
+  it is the header's value (header map, Next.js `headers()` pair, or
+  `setHeader(name, value)`). All five previously locked `valid` cases are
+  unchanged.
+
 ## 2.1.6
 
 ### Patch Changes

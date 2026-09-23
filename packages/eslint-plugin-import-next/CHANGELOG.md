@@ -5,6 +5,72 @@ All notable changes to `eslint-plugin-import-next` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.8.7
+
+### Patch Changes
+
+- **🐛 Fix** — `no-internal-modules` rewrote relative deep imports to the importing file's own directory
+
+  For any `./a/b…` specifier the fixer wrote `'.'` — not the target's owner, but the directory of the file doing the importing. On a real file:
+
+  ```ts
+  import { Command } from './commander/command.js';
+  import { Option } from './commander/option.js';
+  export { Help } from './commander/help.js';
+  ```
+
+  `eslint --fix` collapsed three distinct modules to one specifier:
+
+  ```ts
+  import { Command } from '.';
+  import { Option } from '.';
+  export { Help } from '.';
+  ```
+
+  `'.'` resolves to `src/index.ts`, which exports none of those names, so the file no longer compiles — and under `"type": "module"` with NodeNext it does not resolve at all (`ERR_UNSUPPORTED_DIR_IMPORT`), because ESM has no directory-index resolution for relative specifiers. Zero reports remained afterwards, so the breakage was silent. The `suggest` strategy offered the same edit.
+
+  The rule was already computing the right answer and discarding it: for the identical violation, `strategy: 'error'` reported `Import from "./commander"`. Both fixing strategies now write that computed path for `./`-rooted specifiers.
+
+  `suggestedPath` rather than the immediate barrel, deliberately: `suggestedPath` sits exactly at `maxDepth`, so the rewritten specifier no longer reports and `--fix` converges in one pass. The immediate barrel re-reports on the next pass, and successive `--fix` passes would walk it back down to `'.'` — fixing nothing outside a single-pass `RuleTester`. A new `valid` fixture locks that fixpoint property.
+
+  Packages and `../` traversal are untouched: `lodash/get` → `lodash`, `@company/ui/x/Button` → `@company/ui`, `../../a/b` → `../..`.
+
+  **Two pre-existing fixtures encoded the defect and were corrected** — both asserted message/fixer _agreement_, a claim that survives intact; they had simply recorded that agreement at the wrong string, copied from the buggy fixer into a mandatory `output:` field. See the commit message for the detail.
+
+  Where no safe relative rewrite exists, the fixing strategies now report without an edit. At `maxDepth: 0` every `./x` specifier is out of policy, and a forbid-only `./x` violation (within `maxDepth`, so its suggested path is the root) resolves to the root — in both cases the only in-policy spelling is `'.'`, the same own-directory swap. `autofix` leaves the specifier alone and `suggest` offers nothing, the way a `#` subpath import already degrades. The `error` message still names `"."` at `maxDepth: 0`; `maxDepth: 0` is an unsatisfiable policy for relative specifiers, which is a separate question from this fix.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.6`
+
+## 2.8.6
+
+### Patch Changes
+
+- **🐛 Fix** — the extensions fixer no longer renames the module it is rewriting
+
+  `extensions` ran `path.extname` over the raw specifier, so any final dot read as an extension. `./source.config` and `./schema.v2` were reported and stripped to `./source` and `./schema` — a different module, or none at all — and because the fix is `fixable: 'code'` rather than a suggestion, `--fix` applied it unattended. The strip also ran to a fixed point, so a compound name lost a segment per pass: `./types.d.ts` became `./types.d` and then `./types`, and `./a.min.js` became `./a`. Those two started with a real extension, so no "don't put dots in filenames" rule would have saved them. A token now counts as an extension only when the user's own `pattern` claims it or it is one the rule ships a default for, and a strip that would leave a second extension behind reports without a fix instead of guessing.
+
+  The same fixer built its replacement as a fresh single-quoted string, `'${value}'`, which silently reflowed every double-quoted specifier and produced unparseable output for a path containing an apostrophe. It now rewrites the raw token and keeps the original quote character.
+
+  Separately, the rule declared `defaultOptions` and then read `context.options`, which is the raw user options — `createRule` passes the merged options as `create`'s second argument. Its own defaults were therefore dead, and a hardcoded table inside `create` decided behaviour instead. The two disagreed on exactly svg, png and jpg, in the direction of a build-breaking fix: `import logo from './logo.svg'` was reported and stripped under the shipped `strict` and `typescript` configs. The same bug made a partial `pattern` replace the default table rather than merge into it, so `{ pattern: { vue: 'always' } }` quietly dropped json, css and scss down to `default`.
+
+- **🐛 Fix** — no-internal-modules suggests a path that is actually on the import's path
+
+  `getImportAtDepth` stripped only the first `../` from a specifier before slicing path segments, then re-prefixed a single `'../'`. Every additional `..` stayed in the segment list, where the slice consumed it as though it were a real directory name. At `maxDepth: 1`, `'../../a/b/c.js'` suggested `'../..'` and `'../../../a/b/c.js'` suggested `'../..'` as well — two different imports collapsing onto one answer, and that answer is not on either import's path. The rule states its own invariant on the autofix branch: a message that describes a different edit than the one applied is worse than no message. The full traversal prefix is now captured and re-applied. `maxDepth: 0` returns before this code and is unchanged, so the existing root-collapse behaviour is untouched.
+
+## 2.8.5
+
+### Patch Changes
+
+- **🐛 Fix** — `no-nodejs-modules` — resolve builtins via `builtinModules`, and recognise subpaths.
+
+  fix: `no-nodejs-modules` — resolve builtins through `builtinModules` and recognise
+  subpaths. The set was a hand-written 31 of the 72 names in Node 24, with an
+  exact-match lookup and no subpath step, so `node:fs/promises` stayed silent
+  beside a reported `node:fs`, and `worker_threads` and `diagnostics_channel` were
+  missed outright. Two sibling rules in this package already resolve builtins this
+  way. `allow` now matches every spelling of one builtin, so `allow: ['fs']`
+  covers `node:fs/promises`.
+
 ## 2.8.4
 
 ### Patch Changes
