@@ -5,6 +5,28 @@ All notable changes to `eslint-plugin-react-features` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 1.7.9
+
+### Patch Changes
+
+- **🐛 Fix** — `no-is-prefix-prop` suggested renaming `isTTY` to `tTY`
+
+  `stripIsPrefix` lowercased exactly one character after the `is` prefix, so a prop whose name continues with an acronym got a suggestion nobody would accept: `isTTY` → `tTY`, `isURL` → `uRL`, `isID` → `iD`. This shipped as an APPLYABLE suggestion with a concrete fix range, so accepting it wrote the mangled name into the source. The leading run of capitals is now lowered as a whole, except a trailing capital that begins the next word, which has to survive — and a capital begins a word only when a lowercase letter follows it: `isTTY` → `tty`, `isURLPath` → `urlPath`, `isURL2FA` → `url2FA`.
+
+- **🐛 Fix** — `jsx-key` suggested `key={item.id}` against callbacks that bind no `item`
+
+  `getIteratorCallbackParamName` returned a name only when the callback's first parameter was an `Identifier`; every other shape — a destructured `({ id, name })`, an array pattern, no parameter at all — fell through to a hard-coded `return 'item'`, which the fixer interpolated verbatim. ESLint applies an accepted suggestion to the source as written, so the result either threw `ReferenceError: item is not defined` at render or, nested inside an outer `.map(item => …)`, resolved silently to the OUTER row and pinned one constant key on every element of the inner list — the reconciliation bug this rule exists to prevent, with React's own "missing key" warning removed along with it.
+
+  A destructured parameter now yields the identifier the pattern already binds (`({ id }) → key={id}`, `({ id: rowId }) → key={rowId}`, read through `objectKeyName` so quoted and computed-but-static keys agree). When no key expression can be derived the report stands on its own and no suggestion is offered. The callback that renders the element decides even when it has no parameter, so `groups.map(item => item.rows.map(() => <li />))` no longer borrows the outer `item.id`. Three pre-existing fixtures asserted the old output and were justified in their own comments by the implementation's fallback ("since param is destructured, fallback is 'item'"); under `AGENTS.md` those pin implementation rather than behaviour, and they have been corrected.
+
+- **🐛 Fix** — `no-this-in-sfc` reported a declared TS `this` parameter, and lost class context on a nested class
+
+  Two defects in the same predicate. A function that declares an explicit `this` parameter has named its own receiver in its signature — `function (this: unknown, ...args)` forwarding through `fn.apply(this, args)` is the canonical shape — and `this` there is a declared contract, not a component mistake; it is now exempt. Separately, class tracking was a boolean flag rather than a depth, so a class nested inside a class cleared the flag on exit and valid `this` in the ENCLOSING class body then reported. It is now a depth counter.
+
+- **🐛 Fix** — `no-object-type-as-default-prop` reported any object destructuring default, anywhere
+
+  The `AssignmentPattern` visitor's only gate was `node.parent.type === 'Property' || 'RestElement'`, which is true of ANY object destructuring — including a plain `const { components = {} } = plugin;` at module scope. The rule's own comment said "destructured parameter in a function component", but nothing checked for a function, a parameter, or a component, so the rule reported code that is not a prop, is never rendered, and runs exactly once. Every harm the docs cite — a new reference on every render, a broken `React.memo`, an ineffective `useMemo` — requires the default to be re-evaluated per render, which only a parameter does. The report is now additionally gated on the pattern spine terminating in a function's `params`. The pre-existing exclusion of whole-object parameter defaults (`function C(props = {})`) is unchanged.
+
 ## 1.7.8
 
 ### Patch Changes
