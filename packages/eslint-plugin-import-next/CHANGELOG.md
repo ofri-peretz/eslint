@@ -5,6 +5,39 @@ All notable changes to `eslint-plugin-import-next` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.8.8
+
+### Patch Changes
+
+- **🐛 Fix** — extensions stops breaking ESM builds, and no-cycle stops reporting inline type-only edges.
+
+  `extensions` no longer strips an extension the module resolver proves is
+  load-bearing. Under `moduleResolution: NodeNext` its `--fix` turned a clean
+  `tsc` into 207 `TS2835` errors and `ERR_MODULE_NOT_FOUND` at runtime. The rule
+  now resolves both spellings and withholds report and fix unless they name the
+  same file; an extension that is pure decoration is still reported and fixed.
+
+  `extensions` also now honours the options it declares. Its `defaultOptions`
+  (`svg`/`png`/`jpg` set to `always`) never reached the rule, because `create`
+  did not declare the merged-options parameter the devkit passes — so a stale
+  local fallback map won and `./logo.svg` was stripped with no configuration at
+  all. Relatedly, `{ default: 'always' }` was a no-op: `pattern` was taken as a
+  whole object, so a user who set only `default` got the built-in map. Precedence
+  is now user `pattern` → user `default` → declared `pattern` → declared
+  `default`.
+
+  `no-cycle` no longer reports a cycle through an inline type-only import. The
+  dependency graph's type-edge test matched only top-level `import type`, so
+  `import { type Foo } from './a'` kept its edge while the rule's own report site
+  correctly treated it as erased — the same edge got two verdicts depending on
+  which file you linted. An import with any value binding still keeps its edge.
+  With the rule's `verbatimModuleSyntax` option set, the graph now keeps the
+  inline edge too (the devkit records it as `inlineTypeOnly` and its graph walkers
+  take the same flag), so that option reports the cycle from both ends instead of
+  being overruled by a graph that had already erased the edge.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.7`
+
 ## 2.8.7
 
 ### Patch Changes

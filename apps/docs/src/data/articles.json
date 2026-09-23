@@ -1,6 +1,26 @@
 {
   "articles": [
     {
+      "id": 4720793,
+      "title": "55 Places My Code Predates the Language. All Auto-Fixed.",
+      "description": "Four rules over 389 of my own files found 55 spots written the pre-2022 way. Every one carried a fixer, so the whole thing was one command.",
+      "url": "https://dev.to/ofri-peretz/55-places-my-code-predates-the-language-all-auto-fixed-21dd",
+      "canonical_url": "https://ofriperetz.dev/articles/modernization-lint-as-codemod",
+      "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fofriperetz.dev%2Fcdn%2Fblog-cover-image%2Fmodernization-lint-as-codemod.jpg",
+      "published_at": "2026-09-23T04:04:28Z",
+      "readable_publish_date": "Sep 23",
+      "reading_time_minutes": 4,
+      "page_views_count": 0,
+      "public_reactions_count": 0,
+      "positive_reactions_count": 0,
+      "comments_count": 0,
+      "tag_list": [
+        "javascript",
+        "webdev",
+        "typescript"
+      ]
+    },
+    {
       "id": 4674104,
       "title": "My Benchmark Judged Five Models Against a Threshold Built for Three",
       "description": "Every degree of freedom the table did not know about borrowed the df=2 threshold. It fired once, got the right answer, and nobody noticed for four months.",
@@ -11,8 +31,8 @@
       "readable_publish_date": "Sep 17",
       "reading_time_minutes": 4,
       "page_views_count": 0,
-      "public_reactions_count": 3,
-      "positive_reactions_count": 3,
+      "public_reactions_count": 5,
+      "positive_reactions_count": 5,
       "comments_count": 1,
       "tag_list": [
         "javascript",
@@ -1804,7 +1824,7 @@
       ]
     }
   ],
-  "total": 88,
-  "lastUpdated": "2026-09-21T04:39:41.548Z",
+  "total": 89,
+  "lastUpdated": "2026-09-23T05:39:39.249Z",
   "source": "public"
 }

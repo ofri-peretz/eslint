@@ -5,7 +5,7 @@
  */
 
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, resolveModule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import path from 'node:path';
 
@@ -113,21 +113,93 @@ export const extensions = createRule<Options, MessageIds>({
       },
     },
   ],
-  // `createRule` passes the user's options already merged over `defaultOptions`
-  // as the SECOND argument. Reading `context.options` instead took the raw user
-  // options, so the `defaultOptions` block above was dead — a second, hardcoded
-  // table decided the defaults, and a partial `pattern` replaced the table rather
-  // than merging into it.
+  /**
+   * The second parameter is the whole point.
+   *
+   * The devkit's factory computes the merged options — `create(context,
+   * applyDefault(resolvedDefaultOptions, context.options))` in
+   * `rule-creation/rule-creator.ts` — and a rule that declares only `context`
+   * silently throws that away. This rule did, then read raw `context.options`
+   * and fell back to a hand-written map that was a stale 7-of-10 copy of the
+   * `defaultOptions` above, missing exactly `svg`/`png`/`jpg`. So with no
+   * options configured, the three extensions the rule declares as `always`
+   * behaved as `never`: `./logo.svg` was reported and fixed to `./logo`.
+   *
+   * `applyDefault` deep-merges (`rule-creator.ts` `deepMerge`), so a user who
+   * names one key in `pattern` still overrides only that key, and the declared
+   * defaults fill the rest — which is also what makes the local fallback map
+   * unnecessary rather than merely stale.
+   */
   create(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     [options]: Readonly<Options>,
   ) {
-    // `defaultOptions` supplies both fields and `applyDefault` merges onto a
-    // clone of it, so neither can arrive undefined — a `??` fallback here would
-    // be a branch no input can reach.
+    // `Required` rather than `??` on each read: the merge above always supplies
+    // both keys, so a fallback here would be a branch no input can reach — a
+    // permanent hole in a package at a 100% coverage threshold.
     const { default: defaultBehavior, pattern } = options as Required<
       Options[0]
     >;
+
+    /**
+     * The user's OWN options, before the declared defaults were merged in.
+     *
+     * The merged view cannot answer "did the user NAME this extension?", and
+     * that is the question `{ default: 'always' }` has to be resolved against.
+     * It was a documented escape hatch that did nothing: the rule took
+     * `pattern` as a whole object, so a user who set only `default` got the
+     * package's own map, whose `js: 'never'` then beat their `default`. The only
+     * configuration that worked was `{ pattern: { js: 'always' } }` — which no
+     * documentation asks for, and which nobody reaching for "always" would
+     * guess.
+     */
+    const [userOptions = {}] = context.options;
+    const userPattern = userOptions.pattern ?? {};
+    // A comparison, not a fallback: `defaultBehavior` above already carries the
+    // user's `default` when they set one (`applyDefault` merges that key too).
+    // What is needed here is only whether they set it, to place it correctly in
+    // the precedence ladder below.
+    const userSetDefault = userOptions.default !== undefined;
+
+    /**
+     * Would removing the extension change, or break, what the specifier
+     * resolves to?
+     *
+     * Upstream `eslint-plugin-import` ships NO fixer for this rule and
+     * additionally guards the report on resolvability
+     * (`lib/rules/extensions.js:231`: `isUseOfExtensionForbidden(extension) &&
+     * isResolvableWithoutExtension(importPath)`). This port dropped both, and
+     * the result breaks ESM builds: measured on a NodeNext codebase, `tsc` exits
+     * 0 with zero `TS2835` as authored and exits 2 with 207 of them after
+     * `--fix`, plus `ERR_MODULE_NOT_FOUND` at runtime. `ROADMAP.md:469,479`
+     * already assigns extension requirements under `nodenext` to `tsc`, with
+     * this rule a "complement only for bundler users".
+     *
+     * So the guard is restored, using the resolver the devkit already ships
+     * rather than any new resolution logic. It can only ever WITHHOLD: every
+     * outcome it cannot prove keeps the rule's existing verdict.
+     *
+     *   - the specifier does not resolve at all → no evidence either way (a
+     *     virtual file, an asset the resolver does not handle, a genuinely
+     *     wrong path), so nothing changes;
+     *   - it resolves to a file whose extension is NOT the one written → the
+     *     written one is an EMIT extension. `./width.js` naming `width.ts` is
+     *     the spelling `moduleResolution: NodeNext` requires, and stripping it
+     *     is a build break rather than a style change;
+     *   - it resolves to a real file of that extension, but the shortened
+     *     specifier resolves elsewhere or nowhere → the extension is carrying
+     *     the resolution, which is the `./only.mjs` shape;
+     *   - both spellings name the same file → the extension is decoration, and
+     *     the rule reports and fixes exactly as before. That is the bundler
+     *     user this rule is for.
+     */
+    function extensionIsLoadBearing(specifier: string, ext: string): boolean {
+      const withExtension = resolveModule(specifier, context.filename);
+      if (!withExtension) return false;
+      if (!withExtension.endsWith(`.${ext}`)) return true;
+      const stripped = specifier.slice(0, -(ext.length + 1));
+      return resolveModule(stripped, context.filename) !== withExtension;
+    }
 
     /**
      * A module specifier carries the same extension either way it is written, so
@@ -150,9 +222,17 @@ export const extensions = createRule<Options, MessageIds>({
       // own `pattern`, or the set of extensions this rule ships defaults for.
       if (ext && !(ext in pattern) && !KNOWN_EXTENSIONS.has(ext)) return;
 
-      const expected = pattern[ext] || defaultBehavior;
+      // Most specific first: an extension the USER named in `pattern`, then the
+      // USER's `default`, then the extension in the package's own declared
+      // `pattern`, then the declared `default`. A package default is the least
+      // specific thing in the room, so it must not beat a preference the user
+      // stated — which is exactly how `{ default: 'always' }` came to be a
+      // no-op.
+      const expected =
+        userPattern[ext] ??
+        (userSetDefault ? defaultBehavior : (pattern[ext] ?? defaultBehavior));
 
-      if (ext && expected === 'never') {
+      if (ext && expected === 'never' && !extensionIsLoadBearing(value, ext)) {
         // Removing a real extension can still leave a compound name behind
         // (`./types.d.ts` -> `./types.d`, `./a.min.js` -> `./a.min`). `--fix` runs
         // to a fixed point, so the next pass strips again and lands on `./types`

@@ -160,6 +160,197 @@ describe('detect-non-literal-fs-filename', () => {
     );
   });
 
+  // A `const` path binding is resolved through ESLint's scope analysis, not by
+  // its bare NAME.
+  //
+  // Found by a sweep of the burgee corpus. No burgee line flips today — what is
+  // live there is the PRECONDITION: `packages/compat-oracle/src/run.ts` declares
+  // `const dir` five separate times (lines 536, 600, 636, 671, 779 — line 671 is
+  // `const dir = process.env['COMPAT_TAP_DIR'];`) and uses it for `mkdirSync(dir)`
+  // (673), `writeFileSync(join(dir, …))` (674) and `existsSync(dir)` (782). One
+  // file, one name, five unrelated bindings, four of them in different scopes
+  // from the fs call that reads them. A name-keyed binding table cannot tell
+  // those apart, and both directions below follow from that alone.
+  //
+  // The mechanism: `constBindings` was a `Map<string, Node>` keyed by the bare
+  // identifier name and written from every `VariableDeclarator`, so the LAST
+  // `const p` in the file decided what `p` meant at every fs call in the file.
+  // That erases a real finding (a safe binding declared below it) and invents
+  // one (a tainted binding declared below a safe call) with the same line of
+  // code. README doctrine: "evidence, not names … resolved through the AST and
+  // ESLint's own scope analysis", and "a false positive is a bug".
+  describe('Scope-correct const path bindings', () => {
+    ruleTester.run(
+      'const bindings resolve through scope, not by name',
+      detectNonLiteralFsFilename,
+      {
+        valid: [
+          // REGRESSION, burgee packages/compat-oracle/src/facts.ts. A for-of /
+          // for-in head is a `const` declarator whose `init` is null, and the
+          // loop variable is then used as an fs path. Resolving the binding
+          // through the scope manager reaches that declarator, so asserting
+          // `init` non-null handed `null` down the taint walker, which crashed
+          // on `node.type` and aborted the whole lint run rather than reporting
+          // anything. The for-of case is the one that crashed and is the
+          // fail-first witness; the for-in case passes in both directions and is
+          // kept as a CONTROL, so the sibling loop head cannot regress silently.
+          {
+            name: 'a for-of const loop variable used as an fs path does not crash the rule',
+            code: [
+              "import { readFileSync } from 'node:fs';",
+              "import { join } from 'node:path';",
+              "export function readAll(names: readonly string[]) {",
+              '  const out: string[] = [];',
+              '  for (const name of names) {',
+              "    out.push(readFileSync(join('/etc/app', name), 'utf8'));",
+              '  }',
+              '  return out;',
+              '}',
+            ].join('\n'),
+          },
+          {
+            name: 'a for-in const key used as an fs path does not crash the rule',
+            code: [
+              "import { existsSync } from 'node:fs';",
+              "import { join } from 'node:path';",
+              'export function present(table: Record<string, unknown>) {',
+              '  const found: string[] = [];',
+              '  for (const key in table) {',
+              "    if (existsSync(join('/etc/app', key))) found.push(key);",
+              '  }',
+              '  return found;',
+              '}',
+            ].join('\n'),
+          },
+          // FALSE POSITIVE. Every part of the reported path is a literal. The
+          // only reason it reported is the unrelated `p` in the function below,
+          // which never touches fs at all.
+          {
+            name: 'a literal-only path is not a finding because a later, differently-scoped const of the same name is tainted',
+            code: [
+              "import { readFileSync } from 'node:fs';",
+              "import { join } from 'node:path';",
+              'export function safe() {',
+              "  const p = join('/etc/app', 'settings.json');",
+              "  return readFileSync(p, 'utf8');",
+              '}',
+              'export function fromArgv() {',
+              "  const p = join('/srv/data', process.argv[2]);",
+              '  return p;',
+              '}',
+            ].join('\n'),
+          },
+          // CONTROL. The same claim with the shadowing the other way round: an
+          // inner `const p` must win over a top-level one of the same name. This
+          // one passes in BOTH directions — the inner declaration is also the
+          // last one the name-keyed table saw — which is exactly what makes it a
+          // control: it pins that the scope-chain lookup did not break the case
+          // the old keying got right by accident.
+          {
+            name: 'an inner const shadows a top-level const of the same name',
+            code: [
+              "import { readFileSync } from 'node:fs';",
+              "import { join } from 'node:path';",
+              'const p = process.argv[2];',
+              'export function safe() {',
+              "  const p = join('/etc/app', 'settings.json');",
+              "  return readFileSync(p, 'utf8');",
+              '}',
+            ].join('\n'),
+          },
+          // CONTROL, also green in both directions. A destructured `const` binds
+          // a pattern, not a single initializer, so there is no one-hop value to
+          // read — the same restriction the name-keyed table had, kept. It is
+          // here because the scope manager DOES resolve `dir` to a definition,
+          // where the old write site never recorded one, so the restriction now
+          // has to be stated explicitly instead of falling out of the keying.
+          {
+            name: 'a destructured const has no single initializer to resolve one hop back',
+            code: [
+              "import { readFileSync } from 'node:fs';",
+              'const { dir } = config;',
+              "readFileSync(dir, 'utf8');",
+            ].join('\n'),
+          },
+        ],
+        invalid: [
+          // FALSE NEGATIVE, strongest shape: the unrelated binding is a plain
+          // literal at TOP LEVEL, below the call, in a statement that touches no
+          // fs method. It silenced the genuine traversal above it outright.
+          {
+            name: 'a genuine traversal is still reported when an unrelated top-level const of the same name is declared below it',
+            code: [
+              "import { readFileSync } from 'node:fs';",
+              "import { join } from 'node:path';",
+              'export function load() {',
+              "  const p = join('/srv/data', process.argv[2]);",
+              "  return readFileSync(p, 'utf8');",
+              '}',
+              "const p = 'plain-literal';",
+              'export const fallback = p;',
+            ].join('\n'),
+            errors: [{ messageId: 'fsPathTraversal', line: 5 }],
+          },
+          // FALSE NEGATIVE + FALSE POSITIVE in one file: two functions, same
+          // binding name, one tainted and one literal. Name-keyed, BOTH verdicts
+          // came from the second function, so both calls went quiet.
+          {
+            name: 'two same-named const bindings in sibling scopes are judged separately: the tainted one reports and the literal one does not',
+            code: [
+              "import { readFileSync } from 'node:fs';",
+              "import { join } from 'node:path';",
+              'export function fromArgv() {',
+              "  const target = join('/srv/data', process.argv[2]);",
+              "  return readFileSync(target, 'utf8');",
+              '}',
+              'export function fromLiteral() {',
+              "  const target = join('/etc/app', 'settings.json');",
+              "  return readFileSync(target, 'utf8');",
+              '}',
+            ].join('\n'),
+            errors: [{ messageId: 'fsPathTraversal', line: 5 }],
+          },
+          // The FP snippet exactly as reproduced, with its genuine finding left
+          // in: one report, on the argv line only.
+          {
+            name: 'the literal call and the tainted call in the same file get their own verdicts',
+            code: [
+              "import { readFileSync } from 'node:fs';",
+              "import { join } from 'node:path';",
+              'export function safe() {',
+              "  const p = join('/etc/app', 'settings.json');",
+              "  return readFileSync(p, 'utf8');",
+              '}',
+              'export function fromArgv() {',
+              "  const p = join('/srv/data', process.argv[2]);",
+              "  return readFileSync(p, 'utf8');",
+              '}',
+            ].join('\n'),
+            errors: [{ messageId: 'fsPathTraversal', line: 9 }],
+          },
+          // Order is not a security property: swapping the two functions must
+          // not change either verdict.
+          {
+            name: 'swapping the two functions leaves the same single finding',
+            code: [
+              "import { readFileSync } from 'node:fs';",
+              "import { join } from 'node:path';",
+              'export function fromArgv() {',
+              "  const p = join('/srv/data', process.argv[2]);",
+              "  return readFileSync(p, 'utf8');",
+              '}',
+              'export function safe() {',
+              "  const p = join('/etc/app', 'settings.json');",
+              "  return readFileSync(p, 'utf8');",
+              '}',
+            ].join('\n'),
+            errors: [{ messageId: 'fsPathTraversal', line: 5 }],
+          },
+        ],
+      },
+    );
+  });
+
   // The validation escapes only matter once a path is TAINTED — an untainted
   // path is already silent, so these must be written with a real source to
   // exercise them at all.

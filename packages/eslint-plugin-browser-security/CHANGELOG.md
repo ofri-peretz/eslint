@@ -5,6 +5,14 @@ All notable changes to `eslint-plugin-browser-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.1.9
+
+### Patch Changes
+
+- **🐛 Fix** — `no-innerhtml` reported a false positive on an awaited trusted sanitiser
+
+  `isSanitized()` only recognized a trusted sanitiser (from the `trustedSanitizers` allowlist, e.g. `DOMPurify.sanitize` or `sanitize`) when the value being judged was itself a `CallExpression`. `await sanitize(x)` is an `AwaitExpression` wrapping that call, so an async sanitiser wrapper — such as an async DOMPurify wrapper — still reported as unsanitized once a caller `await`ed it, even though the callee was on the default allowlist. `AwaitExpression` is now unwrapped the same way `ChainExpression` already is (for `DOMPurify?.sanitize(x)`), then the call underneath is judged. Reported in #1056.
+
 ## 2.1.8
 
 ### Patch Changes

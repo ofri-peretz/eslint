@@ -1,9 +1,84 @@
 {
-  "releaseCount": 727,
+  "releaseCount": 735,
   "packageCount": 36,
-  "entryCount": 2174,
+  "entryCount": 2189,
   "oldestYear": 2024,
   "releases": [
+    {
+      "package": "eslint-plugin-browser-security",
+      "short": "eslint-plugin-browser-security",
+      "version": "2.1.9",
+      "date": "2026-09-23T04:43:59Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-innerhtml` reported a false positive on an awaited trusted sanitiser",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.4.10",
+      "date": "2026-09-23T02:57:12Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`detect-object-injection` accepted a `const` allowlist only in `for-of`, not in `.forEach`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-react-features",
+      "short": "eslint-plugin-react-features",
+      "version": "1.7.9",
+      "date": "2026-09-23T02:56:55Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-is-prefix-prop` suggested renaming `isTTY` to `tTY`",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`jsx-key` suggested `key={item.id}` against callbacks that bind no `item`",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-this-in-sfc` reported a declared TS `this` parameter, and lost class context on a nested class",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-object-type-as-default-prop` reported any object destructuring default, anywhere",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-browser-security",
+      "short": "eslint-plugin-browser-security",
+      "version": "2.1.8",
+      "date": "2026-09-23T02:56:46Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "`no-clickjacking` pins three more shapes where the header NAME is not frame protection",
+          "pr": null
+        }
+      ]
+    },
     {
       "package": "eslint-plugin-secure-coding",
       "short": "eslint-plugin-secure-coding",
@@ -17855,6 +17930,21 @@
       ]
     },
     {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "1.19.7",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "extensions stops breaking ESM builds, and no-cycle stops reporting inline type-only edges.",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "@interlace/eslint-formatter",
       "short": "eslint-formatter",
       "version": "0.2.0",
@@ -17896,6 +17986,46 @@
           "kind": "feature",
           "title": "`RemoteMarkdown` accepts `tags`, forwarded to the underlying fetch as `next.tags`.",
           "pr": 628
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-conventions",
+      "short": "eslint-plugin-conventions",
+      "version": "6.0.7",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "consistent-existence-index-check no longer instructs a rewrite it refuses to perform.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.7`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-import-next",
+      "short": "eslint-plugin-import-next",
+      "version": "2.8.8",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "extensions stops breaking ESM builds, and no-cycle stops reporting inline type-only edges.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.7`",
+          "pr": null
         }
       ]
     },
@@ -18015,6 +18145,31 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "5.6.6",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "detect-non-literal-fs-filename resolves const path bindings through scope, not by name.",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-zip-slip`: recognise the entry-path join when `join`/`resolve`/`relative`/`normalize` is imported by name — `import { join } from 'node:path'` (also `path`, `path/posix`, `node:path/posix`, renamed specifiers) or `const { join } = require('path')`. Previously only the member form `path.join(dest, entry.name)` reported, so ESM code extracting archives was silent. The callee is resolved through its import binding, so a locally defined `join` still does not report.",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.7`",
           "pr": null
         }
       ]
