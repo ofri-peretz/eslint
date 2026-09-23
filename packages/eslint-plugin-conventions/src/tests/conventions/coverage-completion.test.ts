@@ -960,35 +960,34 @@ describe('prefer-dependency-version-strategy — protocols, overrides, key shape
       valid: [
         // file:/link: protocols and non-semver specifiers are skipped.
         {
-          code: 'const deps = { "a": "^1.0.0", "b": "file:../pkg", "c": "link:../pkg2", "d": "latest" };',
+          code: 'const pkg = { dependencies: { "a": "^1.0.0", "b": "file:../pkg", "c": "link:../pkg2", "d": "latest" } };',
         },
         // Per-package override to "any" skips that package.
         {
-          code: 'const deps = { "a": "^1.0.0", "b": "1.9.9" };',
+          code: 'const pkg = { dependencies: { "a": "^1.0.0", "b": "1.9.9" } };',
           options: [{ overrides: { b: 'any' } }],
         },
         // Spread elements are skipped by the property scan.
-        { code: 'const deps = { "a": "^1.0.0", ...extra };' },
+        { code: 'const pkg = { dependencies: { "a": "^1.0.0", ...extra } };' },
         // Computed keys yield no dependency name.
-        { code: 'const deps = { "a": "^1.0.0", [k + "x"]: "2.0.0" };' },
+        { code: 'const pkg = { dependencies: { "a": "^1.0.0", [k + "x"]: "2.0.0" } };' },
         // "dependencies" property whose value is not an object is ignored.
         { code: 'const pkg = { "dependencies": "latest" };' },
       ],
       invalid: [
         // Identifier keys are read via key.name.
         {
-          code: 'const deps = { react: "18.0.0" };',
+          code: 'const pkg = { dependencies: { react: "18.0.0" } };',
           errors: [{ messageId: 'preferStrategy' }],
-          output: 'const deps = { react: "^18.0.0" };',
+          output: 'const pkg = { dependencies: { react: "^18.0.0" } };',
         },
-        // String-keyed "dependencies" fires the dedicated selector listener
-        // (and the generic ObjectExpression listener → two identical reports).
+        // A string-keyed "dependencies" block. This used to report TWICE: the
+        // selector listener and the shape-based ObjectExpression listener
+        // both read it. Evidence now comes only from the key, so it reports once.
         {
+          name: 'a string-keyed dependencies block reports once, not twice',
           code: 'const pkg = { "dependencies": { "react": "18.2.0" } };',
-          errors: [
-            { messageId: 'preferStrategy' },
-            { messageId: 'preferStrategy' },
-          ],
+          errors: [{ messageId: 'preferStrategy' }],
           output: 'const pkg = { "dependencies": { "react": "^18.2.0" } };',
         },
       ],
@@ -1012,7 +1011,11 @@ describe('prefer-dependency-version-strategy — protocols, overrides, key shape
       preferDependencyVersionStrategy,
       { options: [] },
     );
-    (listeners['ObjectExpression'] as Listener)({ properties: [] });
+    (listeners['Property'] as Listener)({
+      key: { type: 'Identifier', name: 'dependencies' },
+      computed: false,
+      value: { type: 'ObjectExpression', properties: [] },
+    });
     expect(reports).toEqual([]);
   });
 });

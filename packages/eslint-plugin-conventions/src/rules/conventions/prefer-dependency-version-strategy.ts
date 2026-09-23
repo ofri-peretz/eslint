@@ -15,83 +15,53 @@
  */
 
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import {
-  formatLLMMessage,
-  MessageIcons,
-  objectKeyName,
-} from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type VersionStrategy = 'caret' | 'tilde' | 'exact' | 'range' | 'any';
 
 /**
- * Does this string read as something npm accepts where a version goes?
+ * The manifest keys whose value IS a dependency map.
  *
- * Semver and its ranges (`1.2.3`, `^1.2`, `>=1 <2`, `1.0.0 - 2.0.0`, `1.x`),
- * the `*` and `x` wildcards, the dist-tags npm itself documents, and the
- * protocol specifiers this rule's options already name. Used only to decide
- * whether an object literal IS a dependency map; what a value should look like
- * once it is one is `checkVersion`'s question.
+ * These keys are the only evidence the rule accepts. An object keyed by package
+ * name with version-shaped values could be a lot of things: a record of the
+ * exact versions a compatibility oracle graded, a lockfile excerpt, or a test
+ * fixture. The rule used to guess from that shape, and the guess reported
+ * burgee's `GRADED_VERSIONS` table, where exact versions are the whole point.
  *
  * @vocabulary npm — https://docs.npmjs.com/cli/configuring-npm/package-json#dependencies
  */
-const VERSION_SPECIFIER =
-  /^(?:[\^~<>=]*\s*\d|[*x]$|latest$|next$|(?:workspace|file|link|npm|git\+[a-z]+|github|https?):)/i;
-
-/**
- * Manifest fields that are ABOUT the package rather than things it depends on.
- *
- * The guard below asked only whether every VALUE was a version specifier,
- * which passes vacuously as soon as no disqualifying sibling is left:
- * `{ name: 'x', version: '1.0.0', main: 'index.js' }` is exempt, but narrow it
- * to `{ version: '1.0.0' }` and the same field reports — and the autofix
- * rewrites a manifest's own version to `^1.0.0`, which is not publishable.
- * A dependency map is keyed by PACKAGE NAME; these keys never are.
- *
- * @vocabulary npm — https://docs.npmjs.com/cli/configuring-npm/package-json
- */
-const MANIFEST_FIELDS: ReadonlySet<string> = new Set([
-  'name',
-  'version',
-  'description',
-  'main',
-  'module',
-  'types',
-  'typings',
-  'license',
-  'author',
-  'homepage',
-  'repository',
-  'keywords',
-  'files',
-  'type',
-  'private',
-  'man',
-  'sideEffects',
-  'publishConfig',
+const DEPENDENCY_KEYS: ReadonlySet<string> = new Set([
+  'dependencies',
+  'devDependencies',
+  'peerDependencies',
+  'optionalDependencies',
 ]);
 
 /**
- * Blocks whose VALUE is keyed by something other than a package name.
- *
- * `dist-tags` is the sharp one: npm keys it by TAG (`latest`, `next`) and each
- * value is the single exact version that tag resolves to, so a caret there is
- * not a thing npm accepts. `dependencies`, `devDependencies` and
- * `peerDependencies` are deliberately absent — those ARE dependency maps, and
- * the selector above reads them.
- *
- * @vocabulary npm — https://docs.npmjs.com/cli/commands/npm-dist-tag
+ * An ESTree `Property`, or the `JSONProperty` that `jsonc-eslint-parser`
+ * produces for a real `package.json`. The two have the same shape, but
+ * TSESTree only knows about the first.
  */
-const NON_DEPENDENCY_BLOCKS: ReadonlySet<string> = new Set([
-  'dist-tags',
-  'versions',
-  'engines',
-  'scripts',
-  'exports',
-  'imports',
-  'bin',
-  'browser',
-]);
+type AnyProperty = TSESTree.Property;
+
+/** The static name of a property key, in either AST. */
+function keyName(prop: AnyProperty): string | null {
+  const key = prop.key as { type: string; name: string; value?: unknown };
+  if (
+    !prop.computed &&
+    (key.type === 'Identifier' || key.type === 'JSONIdentifier')
+  ) {
+    return key.name;
+  }
+  if (
+    (key.type === 'Literal' || key.type === 'JSONLiteral') &&
+    typeof key.value === 'string'
+  ) {
+    return key.value;
+  }
+  return null;
+}
 
 export interface Options {
   strategy?: VersionStrategy;
@@ -334,84 +304,35 @@ export const preferDependencyVersionStrategy = createRule<
       }
     }
 
-    /**
-     * Check an object expression for dependency version violations
-     */
-    const checkObjectExpression = (node: TSESTree.ObjectExpression) => {
-      for (const prop of node.properties) {
+    const checkDependencyBlock = (node: AnyProperty): void => {
+      if (!DEPENDENCY_KEYS.has(keyName(node) ?? '')) return;
+      const block = node.value as { type: string; properties: AnyProperty[] };
+      if (
+        block.type !== 'ObjectExpression' &&
+        block.type !== 'JSONObjectExpression'
+      ) {
+        return;
+      }
+      for (const prop of block.properties) {
         if (
-          prop.type === 'Property' &&
-          prop.key &&
-          prop.value &&
-          prop.value.type === 'Literal'
+          prop.type !== 'Property' &&
+          (prop.type as string) !== 'JSONProperty'
         ) {
-          const depName =
-            prop.key.type === 'Identifier'
-              ? prop.key.name
-              : prop.key.type === 'Literal'
-                ? String(prop.key.value)
-                : null;
-
-          if (depName && typeof prop.value.value === 'string') {
-            checkVersion(prop, depName, prop.value.value);
-          }
+          continue;
+        }
+        const value = prop.value as { type: string; value?: unknown };
+        if (value.type !== 'Literal' && value.type !== 'JSONLiteral') continue;
+        const depName = keyName(prop);
+        if (depName && typeof value.value === 'string') {
+          checkVersion(prop, depName, value.value);
         }
       }
     };
 
     return {
-      // Check package.json dependencies properties
-      'Property[key.value="dependencies"], Property[key.value="devDependencies"], Property[key.value="peerDependencies"]'(
-        node: TSESTree.Property,
-      ) {
-        if (node.value.type !== 'ObjectExpression') return;
-        checkObjectExpression(node.value);
-      },
-
-      // Also check object literals (for testing and general use)
-      ObjectExpression(node: TSESTree.ObjectExpression) {
-        // A dependency map is keyed by package name and EVERY value is a
-        // version specifier. This used to ask whether ANY value looked like a
-        // version, which made a package.json fixture in a test —
-        // `{ name: 'x', version: '1.0.0', main: 'index.js' }` — and a vendoring
-        // record carrying `version: '1.0.0'` beside a repo URL and a commit
-        // count both report `Dependency "version" should use caret`. One value
-        // that is not a specifier — a name, a path, a date, a number, an array
-        // — says the object is something else. A spread says nothing either
-        // way. The `dependencies` selector above still reads the real map
-        // inside a manifest.
-        // What this object is sitting IN can disqualify it outright: the
-        // values under `dist-tags` are every one of them version-shaped, so
-        // no amount of looking at values alone will ever reject it.
-        const parent = node.parent;
-        if (
-          parent?.type === 'Property' &&
-          NON_DEPENDENCY_BLOCKS.has(objectKeyName(parent) ?? '')
-        ) {
-          return;
-        }
-
-        let sawSpecifier = false;
-        for (const prop of node.properties) {
-          if (prop.type !== 'Property') continue;
-          // A key that names a manifest field is not a package name, and one
-          // is enough to say the object is a manifest rather than a map of
-          // dependencies — however few siblings it has left.
-          if (MANIFEST_FIELDS.has(objectKeyName(prop) ?? '')) return;
-          if (
-            prop.value.type !== 'Literal' ||
-            typeof prop.value.value !== 'string' ||
-            !VERSION_SPECIFIER.test(prop.value.value)
-          ) {
-            return;
-          }
-          sawSpecifier = true;
-        }
-
-        if (sawSpecifier) {
-          checkObjectExpression(node);
-        }
-      },
+      Property: checkDependencyBlock,
+      // `jsonc-eslint-parser`, which the docs configure for `**/package.json`.
+      JSONProperty: checkDependencyBlock,
     };
   },
 });
