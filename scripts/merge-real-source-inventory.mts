@@ -22,6 +22,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import * as prettier from 'prettier';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
@@ -34,6 +35,7 @@ const OUT = path.join(
 
 type Rule = { count: number; repos: number; samples: string[] };
 type Inventory = {
+  command: string;
   filesLinted: number;
   filesFailed: number;
   reposScanned: number;
@@ -131,6 +133,14 @@ for (const part of parts) {
 }
 
 const merged: Inventory = {
+  /*
+   * First key, carried from the shards. `real-source-scan.mts` learned to
+   * write `command` in #914, but in CI the scan only writes shard partials —
+   * THIS merger writes the committed file, and it rebuilt the object without
+   * the field. Every refresh PR (#1063) therefore failed
+   * `artefacts-name-their-method.lock.test.ts` exactly as #905 did.
+   */
+  command: parts[0].command,
   filesLinted: parts.reduce((n, p) => n + p.filesLinted, 0),
   filesFailed: parts.reduce((n, p) => n + p.filesFailed, 0),
   reposScanned: parts.reduce((n, p) => n + p.reposScanned, 0),
@@ -159,7 +169,19 @@ const merged: Inventory = {
 };
 
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
-fs.writeFileSync(OUT, `${JSON.stringify(merged, null, 2)}\n`);
+/*
+ * Prettier, not bare JSON.stringify. Prettier collapses a short array such as
+ * a one-sample `samples` onto a single line; stringify never does. Unformatted,
+ * every refresh PR tripped `check:format-drift` on the one file it touches.
+ */
+const config = await prettier.resolveConfig(OUT);
+fs.writeFileSync(
+  OUT,
+  await prettier.format(JSON.stringify(merged, null, 2), {
+    ...config,
+    filepath: OUT,
+  }),
+);
 console.log(
   `\n  merged ${parts.length} shard(s): ${merged.reposScanned} repos, ` +
     `${merged.filesLinted} files, ${merged.withMaterial} rules with material, ` +

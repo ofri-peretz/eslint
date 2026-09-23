@@ -89,11 +89,113 @@ describe('no-redos-vulnerable-regex — timed corrections to the NFA verdict', (
         name: '\\s*(\\S+\\s*)+$ — 0.0 ms, \\S and \\s are complements',
         code: 'const re = /^\\s*(\\S+\\s*)+$/;',
       },
+      {
+        // Proves the `v`-flag fix below does not blanket-report `v` patterns:
+        // one class, one quantifier, nothing to trade.
+        name: '[\\p{ASCII}]+$ under the v flag — 0.0 ms, a single class cannot backtrack',
+        code: 'const re = /^[\\p{ASCII}]+$/v;',
+      },
+      {
+        // The PRECISION boundary for the overlap check below. Two property
+        // escapes under a `+`, but `Nd` (digits) and `Lu` (uppercase letters)
+        // are disjoint, so no character can be taken by either branch and
+        // there is nothing to backtrack over. 0.0 ms at 28 characters.
+        name: '(?:\\p{Nd}|\\p{Lu})+$ — 0.0 ms, disjoint properties cannot be ambiguous',
+        code: 'const re = /^(?:\\p{Nd}|\\p{Lu})+$/v;',
+      },
+      {
+        // GAP: burgee's ACTUAL spelling of the 9,395 ms pattern pinned in the
+        // invalid block below. `INVISIBLE_CLASSES.join('|')` is interpolated
+        // into the template, and `${…}` is replaced by a single placeholder
+        // character before analysis — so the whole six-way alternation
+        // collapses to `^(?:\uE000)+$` and there is nothing left to intersect.
+        //
+        // This is NOT the overlap gap, which is fixed: the same pattern
+        // written literally, and built through `new RegExp` from a literal
+        // STRING, both report. Closing this one means resolving an
+        // interpolated constant back to its value, which is a separate
+        // capability with its own false-positive surface.
+        name: 'GAP: an alternation that arrives through an interpolated constant is invisible',
+        code: "const A = ['\\p{Default_Ignorable_Code_Point}','\\p{Format}'].join('|'); const re = new RegExp(`^(?:${A})+$`, 'v');",
+      },
+      {
+        // The overlap check DECLINES rather than guesses when an alternative
+        // is not a single character class. Here alternative 0 is a capturing
+        // group, so there is no character set to intersect and the answer is
+        // silence.
+        name: 'an alternative that is a group, not a character class, is declined',
+        code: 'const re = /^(?:(x)|y)+$/;',
+      },
+      {
+        // A `v`-flag class holding STRINGS is a UnicodeSet, not a character
+        // set; refa answers "Unsupported element". A throw means decline, not
+        // report — the rule never guesses from a failed analysis.
+        name: 'a v-flag string set refa cannot model is declined, not reported',
+        code: 'const re = /^(?:[\\q{ab}]|[\\q{cd}])+$/v;',
+      },
     ],
     invalid: [
       {
         name: '(a+)+$ — 5,151 ms',
         code: 'const re = /^(a+)+$/;',
+        errors: [{ messageId: 'redosVulnerable' }],
+      },
+      {
+        // TWO ambiguous groups in one pattern. The first sets the verdict and
+        // the walk stops deciding at the second — one finding per regex, not
+        // one per ambiguous group. Measured: 245 ms on 'a'.repeat(26) + '!'.
+        name: '(a|a)+(b|b)+$ — 245 ms, a second ambiguous group adds no second report',
+        code: 'const re = /^(a|a)+(b|b)+$/;',
+        errors: [{ messageId: 'redosVulnerable' }],
+      },
+      {
+        // `\\d` is a SUBSET of `\\w`, so every digit can be taken by either
+        // branch. The identity test could not see this — the two branches are
+        // not byte-identical — and scslre returns zero reports.
+        // Measured: 1,927 ms on '1'.repeat(28) + '!'.
+        name: '(\\w|\\d)+$ — 1,927 ms, \\d is a subset of \\w',
+        code: 'const re = /^(\\w|\\d)+$/;',
+        errors: [{ messageId: 'redosVulnerable' }],
+      },
+      {
+        // Partially overlapping ranges: `c`-`f` belongs to both branches.
+        // Measured: 1,691 ms on 'c'.repeat(28) + '!'.
+        name: '([a-f]|[c-z])+$ — 1,691 ms, ranges overlap at c-f',
+        code: 'const re = /^([a-f]|[c-z])+$/;',
+        errors: [{ messageId: 'redosVulnerable' }],
+      },
+      {
+        // burgee packages/linegauge/src/width.ts:193, the pattern that opened
+        // this whole line of work. Six property escapes under a `+`;
+        // Default_Ignorable_Code_Point and Format intersect, so a variation
+        // selector can be taken by either branch. Measured: 9,395 ms on
+        // '\\uFE0E'.repeat(28) + '\\u0903' — a 29-character string.
+        name: 'the burgee ZERO_WIDTH alternation — 9,395 ms, Default_Ignorable meets Format',
+        code: 'const re = /^(?:\\p{Default_Ignorable_Code_Point}|\\p{Control}|\\p{Format}|\\p{Nonspacing_Mark}|\\p{Enclosing_Mark}|\\p{Surrogate})+$/v;',
+        errors: [{ messageId: 'redosVulnerable' }],
+      },
+      {
+        // burgee packages/linegauge/src/width.ts:193 surfaced the class.
+        // The SAME pattern the suite already pins as `(a|a)*`, written
+        // non-capturing. `isProvablyCatastrophic` matched `(x|x)` with
+        // `[^()|]+`, which swallows `?:` into the first branch, so the
+        // identity test compared '?:a' against 'a' and never fired.
+        // Measured: 1,013 ms on 'a'.repeat(28) + '!'.
+        name: '(?:a|a)+$ — 1,013 ms, the pinned (a|a)* case written non-capturing',
+        code: 'const re = /^(?:a|a)+$/;',
+        errors: [{ messageId: 'redosVulnerable' }],
+      },
+      {
+        // burgee packages/linegauge/src/width.ts:193 — a `v`-flag pattern
+        // built from `\\p{...}` alternatives. `unicodeSets` was forwarded to
+        // the PARSER but not to scslre, so analysing any `/v` pattern using a
+        // property escape threw "Unicode property escapes cannot be used
+        // without the u flag" and landed in the catch, whose stated rationale
+        // is "the pattern is not a valid regex". It is: it compiles and runs.
+        // Measured: 315 ms on 'a'.repeat(26) + 'e-acute', identical to the
+        // `/u` spelling below it, which the rule has always reported.
+        name: '(\\p{ASCII}+)+$ under the v flag — 315 ms, and /u reports the same pattern',
+        code: 'const re = /^(\\p{ASCII}+)+$/v;',
         errors: [{ messageId: 'redosVulnerable' }],
       },
       {

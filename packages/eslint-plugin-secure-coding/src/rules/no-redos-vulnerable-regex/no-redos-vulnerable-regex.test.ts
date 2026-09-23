@@ -44,6 +44,7 @@ describe('no-redos-vulnerable-regex', () => {
           errors: [{ messageId: 'redosVulnerable' }],
         },
         {
+          name: 'the same nested quantifier built at runtime through new RegExp',
           code: 'const pattern = new RegExp("(x+)+y");',
           errors: [{ messageId: 'redosVulnerable' }],
         },
@@ -61,6 +62,7 @@ describe('no-redos-vulnerable-regex', () => {
       valid: [],
       invalid: [
         {
+          name: 'a quantifier reaching itself through the parent loop — Self, exponential',
           code: 'const regex = /(a+)+b/;',
           errors: [{ messageId: 'redosVulnerable' }],
         },
@@ -71,6 +73,7 @@ describe('no-redos-vulnerable-regex', () => {
       valid: [],
       invalid: [
         {
+          name: 'two adjacent quantifiers exchanging characters — Trade, polynomial',
           code: 'const regex = /(a+)(a+)b/;',
           errors: [{ messageId: 'redosVulnerable' }],
         },
@@ -146,10 +149,12 @@ describe('no-redos-vulnerable-regex', () => {
       valid: [],
       invalid: [
         {
+          name: 'an anchored nested quantifier is still catastrophic',
           code: 'const regex = /(a+)+$/;',
           errors: [{ messageId: 'redosVulnerable' }],
         },
         {
+          name: '\\w and \\s overlap, unlike the complementary \\S/\\s pair',
           code: String.raw`const regex = /(\w+\s?)*$/;`,
           errors: [{ messageId: 'redosVulnerable' }],
         },
@@ -161,6 +166,7 @@ describe('no-redos-vulnerable-regex', () => {
     ruleTester.run('options - allowCommonPatterns is accepted and ignored', noRedosVulnerableRegex, {
       valid: [
         {
+          name: 'distinct alternatives are linear, with or without the option',
           code: 'const regex = /(a|b)+c/;',
           options: [{ allowCommonPatterns: true }],
         },
