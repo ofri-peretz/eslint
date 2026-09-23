@@ -250,6 +250,79 @@ describe('getFileImports type-only and re-export edges', () => {
 });
 
 /**
+ * A file that imports the same target more than once gets ONE edge, and that
+ * edge is erased only as far as its least-erased import allows. The dedupe used
+ * to keep only the first import's flags, so a value import that followed a type
+ * import of the same file was dropped and its runtime edge erased with it.
+ */
+describe('getFileImports merges repeated imports of one target', () => {
+  const edgeFor = (name: string, importer: string) => {
+    createTempFile(
+      `src/${name}-b.ts`,
+      'export type T = string;\nexport type U = number;\nexport const v = 1;',
+    );
+    const a = createTempFile(`src/${name}-a.ts`, importer);
+    const imports = getFileImports(a, baseOptions());
+    expect(imports).toHaveLength(1);
+    return imports[0];
+  };
+
+  it('a value import after an inline type import keeps the runtime edge', () => {
+    const edge = edgeFor(
+      'tv',
+      "import { type T } from './tv-b';\nimport { v } from './tv-b';\n",
+    );
+    expect(edge).not.toHaveProperty('typeOnly');
+    expect(edge).not.toHaveProperty('inlineTypeOnly');
+  });
+
+  it('a value import after a statement-level `import type` keeps the runtime edge', () => {
+    const edge = edgeFor(
+      'sv',
+      "import type { T } from './sv-b';\nimport { v } from './sv-b';\n",
+    );
+    expect(edge).not.toHaveProperty('typeOnly');
+    expect(edge).not.toHaveProperty('inlineTypeOnly');
+  });
+
+  it('an inline type import before a value import stays a runtime edge', () => {
+    const edge = edgeFor(
+      'vt',
+      "import { v } from './vt-b';\nimport { type T } from './vt-b';\n",
+    );
+    expect(edge).not.toHaveProperty('typeOnly');
+    expect(edge).not.toHaveProperty('inlineTypeOnly');
+  });
+
+  it('`import type` then an inline type import is erased only without verbatimModuleSyntax', () => {
+    const edge = edgeFor(
+      'si',
+      "import type { T } from './si-b';\nimport { type U } from './si-b';\n",
+    );
+    expect(edge).not.toHaveProperty('typeOnly');
+    expect(edge.inlineTypeOnly).toBe(true);
+  });
+
+  it('an inline type import then `import type` stays inline-only', () => {
+    const edge = edgeFor(
+      'is',
+      "import { type U } from './is-b';\nimport type { T } from './is-b';\n",
+    );
+    expect(edge).not.toHaveProperty('typeOnly');
+    expect(edge.inlineTypeOnly).toBe(true);
+  });
+
+  it('a later dynamic import leaves a statement-level type edge as it was', () => {
+    const edge = edgeFor(
+      'sd',
+      "import type { T } from './sd-b';\nconst m = import('./sd-b');\n",
+    );
+    expect(edge.typeOnly).toBe(true);
+    expect(edge).not.toHaveProperty('dynamic');
+  });
+});
+
+/**
  * An all-inline-type import is erased unless the project compiles with
  * `verbatimModuleSyntax`, under which `import { type P } from './p'` is emitted
  * as `import {} from './p'` and still evaluates the module. The graph must

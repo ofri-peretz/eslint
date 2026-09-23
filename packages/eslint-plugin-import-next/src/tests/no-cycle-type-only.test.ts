@@ -232,6 +232,26 @@ describe('one edge, one verdict', () => {
     expect(lintBothEnds(a, b)).toEqual({ a: 0, b: 0 });
   });
 
+  it('a value import that FOLLOWS an inline type import of the same file still reports from BOTH ends', () => {
+    // RECALL. The graph keeps one edge per target file and used to keep only
+    // the first import's flags, so the inline type import erased the value
+    // import behind it and the cycle vanished from `b.ts`'s end.
+    const a = [
+      "import { render } from './b.js';",
+      'export interface Fields { n: number }',
+      'export const KEY = 1;',
+      'export const a = () => render();',
+    ].join('\n');
+    const b = [
+      "import { type Fields } from './a.js';",
+      "import { KEY } from './a.js';",
+      'export const render = (f?: Fields) => [f, KEY];',
+    ].join('\n');
+    const counts = lintBothEnds(a, b);
+    expect(counts.a).toBeGreaterThan(0);
+    expect(counts.b).toBeGreaterThan(0);
+  });
+
   it('under verbatimModuleSyntax the same back edge reports from BOTH ends', () => {
     // The option reads the inline form as a runtime edge (tsc emits
     // `import {} from './a.js'`). The report site honoured it, but the devkit

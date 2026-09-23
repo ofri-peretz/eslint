@@ -725,7 +725,7 @@ export function getFileImports(
 
     // Track resolved paths to dedupe across the three regexes (a single file
     // may have both `import X from 'y'` and `export { X } from 'y'`).
-    const seen = new Set<string>();
+    const seen = new Map<string, ImportInfo>();
     const pushImport = (
       importPath: string,
       dynamic = false,
@@ -733,14 +733,34 @@ export function getFileImports(
       inlineTypeOnly = false,
     ) => {
       const resolved = resolveImportPath(importPath, resolveOpts);
-      if (resolved && fileExists(resolved, cache) && !seen.has(resolved)) {
-        seen.add(resolved);
-        const info: ImportInfo = { path: resolved, source: importPath };
-        if (dynamic) info.dynamic = true;
-        if (typeOnly) info.typeOnly = true;
-        if (inlineTypeOnly) info.inlineTypeOnly = true;
-        imports.push(info);
+      if (!resolved || !fileExists(resolved, cache)) return;
+      const existing = seen.get(resolved);
+      if (existing) {
+        // One edge per target, so its erasure flags must describe EVERY static
+        // import of that target, not just the first. First-wins dropped
+        // `import { value } from './b'` after `import { type T } from './b'`,
+        // and the surviving type flag then erased a real runtime edge. The
+        // edge is erased only as far as the LEAST-erased import allows:
+        // a runtime import clears both flags, and an inline-type import
+        // downgrades a statement-level `typeOnly` to `inlineTypeOnly`.
+        // Dynamic edges are skipped by the walkers either way, and every
+        // static import is pushed before any dynamic one.
+        if (dynamic) return;
+        if (!typeOnly && !inlineTypeOnly) {
+          delete existing.typeOnly;
+          delete existing.inlineTypeOnly;
+        } else if (inlineTypeOnly && existing.typeOnly) {
+          delete existing.typeOnly;
+          existing.inlineTypeOnly = true;
+        }
+        return;
       }
+      const info: ImportInfo = { path: resolved, source: importPath };
+      if (dynamic) info.dynamic = true;
+      if (typeOnly) info.typeOnly = true;
+      if (inlineTypeOnly) info.inlineTypeOnly = true;
+      seen.set(resolved, info);
+      imports.push(info);
     };
 
     // Match ES6 static imports using pre-compiled regex.
