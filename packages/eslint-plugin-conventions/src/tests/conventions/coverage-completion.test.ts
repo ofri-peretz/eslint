@@ -186,7 +186,7 @@ describe('consistent-existence-index-check — parent-context matrix', () => {
           name: 'the same call with `in` preferred, reported and left alone',
           code: 'Object.prototype.hasOwnProperty.call(obj, "k");',
           options: [{ preferred: 'in' }],
-          errors: [{ messageId: 'consistentExistenceCheck' }],
+          errors: [{ messageId: 'nonEquivalentExistenceCheck' }],
           output: null,
         },
       ],
