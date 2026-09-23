@@ -386,6 +386,15 @@ jobs:
             benchmark-results/ilb-headline.md \
             benchmark-results/ilb-flagship-scorecard.md \
             apps/docs/src/data/headline-bench.json
+          # The ilb generators write raw JSON.stringify output, which prettier
+          # reformats (short arrays collapse onto one line), so every refresh
+          # tripped check:format-drift on the very files it added and had to
+          # be hand-formatted before merge (#1036, #1079). Format exactly the
+          # staged additions/modifications — not the baselined older files —
+          # and re-stage them.
+          git diff --staged --name-only --diff-filter=AM -z \
+            | xargs -0 -r npx prettier --write --ignore-unknown
+          git diff --staged --name-only --diff-filter=AM -z | xargs -0 -r git add
           if git diff --staged --quiet; then
             echo "No changes — numbers identical to last week."
             exit 0
