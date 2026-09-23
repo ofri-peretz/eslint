@@ -1,6 +1,48 @@
 {
   "articles": [
     {
+      "id": 4726357,
+      "title": "One Import Moves a commander CLI to burgee. --json Still Says null.",
+      "description": "Swapping commander for burgee/commander kept 7 of 7 invocations byte-identical and added --schema, MCP and completions. Getting data out took a return.",
+      "url": "https://dev.to/ofri-peretz/one-import-moves-a-commander-cli-to-burgee-json-still-says-null-6h8",
+      "canonical_url": "https://ofriperetz.dev/articles/burgee-change-one-import",
+      "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fofriperetz.dev%2Fcdn%2Fblog-cover-image%2Fburgee-change-one-import.jpg",
+      "published_at": "2026-09-23T15:28:33Z",
+      "readable_publish_date": "Sep 23",
+      "reading_time_minutes": 4,
+      "page_views_count": 0,
+      "public_reactions_count": 1,
+      "positive_reactions_count": 1,
+      "comments_count": 0,
+      "tag_list": [
+        "node",
+        "javascript",
+        "webdev",
+        "ai"
+      ]
+    },
+    {
+      "id": 4722817,
+      "title": "A commander Stack Installs 70 Packages, burgee's Family 9. Like for Like, the Family Weighs 2.4 More.",
+      "description": "Part 2 of the dependency-weight method: nine CLI layers, counted. 70 packages from 25 npm accounts against 9 from one, the rows where the nine weigh more, and three unmet gates.",
+      "url": "https://dev.to/ofri-peretz/a-commander-stack-installs-70-packages-burgees-family-9-like-for-like-the-family-weighs-24x-aed",
+      "canonical_url": "https://ofriperetz.dev/articles/burgee-zero-dependency-cli-stack",
+      "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fofriperetz.dev%2Fcdn%2Fblog-cover-image%2Fburgee-zero-dependency-cli-stack.jpg",
+      "published_at": "2026-09-23T08:13:43Z",
+      "readable_publish_date": "Sep 23",
+      "reading_time_minutes": 4,
+      "page_views_count": 0,
+      "public_reactions_count": 1,
+      "positive_reactions_count": 1,
+      "comments_count": 0,
+      "tag_list": [
+        "node",
+        "javascript",
+        "cli",
+        "webdev"
+      ]
+    },
+    {
       "id": 4720793,
       "title": "55 Places My Code Predates the Language. All Auto-Fixed.",
       "description": "Four rules over 389 of my own files found 55 spots written the pre-2022 way. Every one carried a fixer, so the whole thing was one command.",
@@ -11,9 +53,9 @@
       "readable_publish_date": "Sep 23",
       "reading_time_minutes": 4,
       "page_views_count": 0,
-      "public_reactions_count": 0,
-      "positive_reactions_count": 0,
-      "comments_count": 0,
+      "public_reactions_count": 2,
+      "positive_reactions_count": 2,
+      "comments_count": 1,
       "tag_list": [
         "javascript",
         "webdev",
@@ -1824,7 +1866,7 @@
       ]
     }
   ],
-  "total": 89,
-  "lastUpdated": "2026-09-23T05:39:39.249Z",
+  "total": 91,
+  "lastUpdated": "2026-09-23T23:16:22.998Z",
   "source": "public"
 }
