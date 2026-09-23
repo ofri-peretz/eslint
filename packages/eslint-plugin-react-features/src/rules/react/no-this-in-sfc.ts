@@ -9,7 +9,7 @@
  * Disallow this from being used in stateless functional components
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'noThisInSfc';
@@ -45,25 +45,31 @@ export const noThisInSfc = createRule<[], MessageIds>({
      * own receiver in its signature, so `this` there is a declared contract
      * rather than a component mistake — `function (this: unknown, ...args)`
      * forwarding through `fn.apply(this, args)` is the canonical shape.
+     *
+     * Tracked as a stack on function entry/exit rather than by climbing from
+     * each `this`, so a deep arrow chain with a `this` at every level stays
+     * O(n). Arrows push nothing: they have no receiver of their own, so the
+     * top of the stack is already the function whose `this` they close over.
      */
-    const hasDeclaredThisParam = (node: TSESTree.Node): boolean => {
-      for (let cur: TSESTree.Node | undefined = node; cur; cur = cur.parent) {
-        if (
-          cur.type === 'FunctionDeclaration' ||
-          cur.type === 'FunctionExpression' ||
-          cur.type === 'ArrowFunctionExpression'
-        ) {
-          // An arrow has no receiver of its own; keep climbing to the function
-          // whose `this` it closes over.
-          if (cur.type === 'ArrowFunctionExpression') continue;
-          const [first] = cur.params;
-          return first?.type === 'Identifier' && first.name === 'this';
-        }
-      }
-      return false;
+    const declaredThis: boolean[] = [];
+    const enterFunction = (
+      node: TSESTree.FunctionDeclaration | TSESTree.FunctionExpression,
+    ): void => {
+      const [first] = node.params;
+      declaredThis.push(
+        first?.type === AST_NODE_TYPES.Identifier && first.name === 'this',
+      );
+    };
+    const exitFunction = (): void => {
+      declaredThis.pop();
     };
 
     return {
+      FunctionDeclaration: enterFunction,
+      'FunctionDeclaration:exit': exitFunction,
+      FunctionExpression: enterFunction,
+      'FunctionExpression:exit': exitFunction,
+
       ClassDeclaration() {
         classDepth += 1;
       },
@@ -86,7 +92,7 @@ export const noThisInSfc = createRule<[], MessageIds>({
           return;
         }
 
-        if (hasDeclaredThisParam(node)) {
+        if (declaredThis.at(-1) === true) {
           return;
         }
 

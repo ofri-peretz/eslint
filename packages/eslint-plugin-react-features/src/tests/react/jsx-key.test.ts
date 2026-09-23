@@ -936,6 +936,23 @@ describe('jsx-key', () => {
           errors: [{ messageId: 'missingKey', suggestions: [] }],
         },
         {
+          /*
+           * The inner callback renders the row, so its (absent) parameter
+           * decides. Climbing past it reached the OUTER `item` and suggested
+           * `key={item.id}`, one constant key for every inner row.
+           * @found PR #1067 review (coderabbit), reasoned from the nested-map case
+           */
+          name: 'FN: a parameterless inner callback does not borrow the outer row key',
+          code: `groups.map(item => item.rows.map(() => <li />))`,
+          errors: [{ messageId: 'missingKey', suggestions: [] }],
+        },
+        {
+          // @found PR #1067 review (coderabbit), reasoned from the nested-map case
+          name: 'FN: a parameterless inner block-return callback does not borrow the outer row key',
+          code: `groups.map(item => item.rows.map(() => { return <li />; }))`,
+          errors: [{ messageId: 'missingKey', suggestions: [] }],
+        },
+        {
           // A rest element is not a Property, so it carries no key to read.
           name: 'a rest element in the pattern is skipped when looking for id',
           code: `items.map(({ ...rest }) => <div>{rest.name}</div>)`,

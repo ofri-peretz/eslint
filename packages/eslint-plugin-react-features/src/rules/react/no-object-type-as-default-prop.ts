@@ -9,7 +9,7 @@
  * Prevent object types as default props
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'noObjectTypeAsDefaultProp';
@@ -31,11 +31,11 @@ const isInParameterPosition = (node: TSESTree.AssignmentPattern): boolean => {
   let current: TSESTree.Node = node;
   let parent: TSESTree.Node = current.parent;
   while (
-    parent.type === 'Property' ||
-    parent.type === 'ObjectPattern' ||
-    parent.type === 'ArrayPattern' ||
-    parent.type === 'RestElement' ||
-    parent.type === 'AssignmentPattern'
+    parent.type === AST_NODE_TYPES.Property ||
+    parent.type === AST_NODE_TYPES.ObjectPattern ||
+    parent.type === AST_NODE_TYPES.ArrayPattern ||
+    parent.type === AST_NODE_TYPES.RestElement ||
+    parent.type === AST_NODE_TYPES.AssignmentPattern
   ) {
     current = parent;
     parent = current.parent;
@@ -91,7 +91,8 @@ export const noObjectTypeAsDefaultProp = createRule<[], MessageIds>({
         // The destructuring requirement is unchanged: a whole-object parameter
         // default (`function C(props = {})`) is deliberately not a prop default.
         const inDestructuring =
-          node.parent.type === 'Property' || node.parent.type === 'RestElement';
+          node.parent.type === AST_NODE_TYPES.Property ||
+          node.parent.type === AST_NODE_TYPES.RestElement;
         if (node.right.type === 'ObjectExpression' && inDestructuring && isInParameterPosition(node)) {
           context.report({
             node: node.left,

@@ -105,6 +105,23 @@ describe('no-is-prefix-prop', () => {
         ],
       },
       {
+        // A digit is not a word start, so the whole capital run is the
+        // acronym: `isURL2FA` -> `url2FA`, not `urL2FA`. PR #1067 review.
+        name: 'an acronym followed by a digit lowercases the whole run',
+        code: `interface Props { isURL2FA: boolean; }`,
+        errors: [
+          {
+            messageId: 'isPrefix',
+            suggestions: [
+              {
+                messageId: 'renameSuggestion',
+                output: `interface Props { url2FA: boolean; }`,
+              },
+            ],
+          },
+        ],
+      },
+      {
         /*
          * A two-letter acronym.
          * @found burgee FP/FN sweep 2026-09-15, packages/caique/src/terminal.ts:20

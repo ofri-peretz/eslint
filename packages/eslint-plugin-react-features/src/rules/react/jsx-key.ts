@@ -10,6 +10,7 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
+  AST_NODE_TYPES,
   createRule,
   namesOneOf,
   objectKeyName,
@@ -55,18 +56,31 @@ type RuleOptions = [Options?];
  * anything else        -> `null`, and the caller withholds the suggestion.
  */
 const keyExpressionForParam = (param: TSESTree.Node): string | null => {
-  if (param.type === 'Identifier') return `${param.name}.id`;
-  if (param.type === 'ObjectPattern') {
+  if (param.type === AST_NODE_TYPES.Identifier) return `${param.name}.id`;
+  if (param.type === AST_NODE_TYPES.ObjectPattern) {
     for (const prop of param.properties) {
-      if (prop.type !== 'Property') continue;
+      if (prop.type !== AST_NODE_TYPES.Property) continue;
       if (objectKeyName(prop) !== 'id') continue;
       // The bound local, which is what the suggestion has to name: `{ id }`
       // binds `id`, `{ id: rowId }` binds `rowId`.
-      if (prop.value.type === 'Identifier') return prop.value.name;
+      if (prop.value.type === AST_NODE_TYPES.Identifier) return prop.value.name;
     }
   }
   return null;
 };
+
+/**
+ * The key expression for the iterator callback that renders the element.
+ *
+ * A callback with NO parameter still ends the search: it is the callback that
+ * produces this element, so an outer callback's parameter is the wrong row. In
+ * `groups.map(item => item.rows.map(() => <li />))` climbing past the inner
+ * callback suggested `key={item.id}` — one constant key on every row.
+ */
+const keyExpressionForCallback = (
+  fn: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression,
+): string | null =>
+  fn.params.length > 0 ? keyExpressionForParam(fn.params[0]) : null;
 
 export const jsxKey = createRule<RuleOptions, MessageIds>({
   name: 'jsx-key',
@@ -434,60 +448,22 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
     function getIteratorKeyExpression(
       node: TSESTree.JSXElement,
     ): string | null {
-      let current: TSESTree.Node = node;
-
-      while (current.parent) {
-        const parent: TSESTree.Node = current.parent;
-        const grandParent: TSESTree.Node | undefined = parent.parent;
-
-        // Check arrow function expression - isIteratorCall already handles Array.from
-        if (
-          parent.type === 'ArrowFunctionExpression' &&
-          parent.params.length > 0 &&
-          grandParent &&
-          isIteratorCall(grandParent)
-        ) {
-          return keyExpressionForParam(parent.params[0]);
-        }
-
-        // Check function expression - isIteratorCall already handles Array.from
-        if (
-          parent.type === 'FunctionExpression' &&
-          parent.params.length > 0 &&
-          grandParent &&
-          isIteratorCall(grandParent)
-        ) {
-          return keyExpressionForParam(parent.params[0]);
-        }
-
-        // Check block statement -> return -> function
-        if (parent.type === 'ReturnStatement') {
-          let funcParent: TSESTree.Node | undefined = parent.parent;
-          while (funcParent) {
-            if (
-              (funcParent.type === 'ArrowFunctionExpression' ||
-                funcParent.type === 'FunctionExpression') &&
-              funcParent.params.length > 0
-            ) {
-              if (funcParent.parent && isIteratorCall(funcParent.parent)) {
-                return keyExpressionForParam(funcParent.params[0]);
-              }
-              break;
-            }
-            if (funcParent.type === 'BlockStatement') {
-              funcParent = funcParent.parent;
-              continue;
-            }
-            break;
-          }
-        }
-
-        current = parent;
+      // The nearest enclosing iterator callback renders this element, so its
+      // parameter — or its lack of one — decides the key. Every caller has
+      // already proved the element is returned from an iterator callback
+      // (isDirectIteratorReturn), so the climb always ends at one; there is
+      // no "ran out of ancestors" arm to carry. Stopping at the FIRST one is
+      // the point: climbing past a parameterless inner callback reached the
+      // outer row and suggested one constant key for every inner element.
+      let current: TSESTree.Node = node.parent;
+      while (!(
+        (current.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+          current.type === AST_NODE_TYPES.FunctionExpression) &&
+        isIteratorCall(current.parent)
+      )) {
+        current = current.parent as TSESTree.Node;
       }
-
-      // No callback parameter was reachable, so there is no identifier this
-      // file binds that a key could be built from.
-      return null;
+      return keyExpressionForCallback(current);
     }
 
     function checkJSXElementInIteration(node: TSESTree.JSXElement) {
