@@ -1053,7 +1053,11 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
           if (def.type !== 'Variable') return null;
           if (variable.references.filter((ref) => ref.isWrite()).length > 1)
             return null;
-          const init = (def.node as TSESTree.VariableDeclarator).init;
+          const declarator = def.node as TSESTree.VariableDeclarator;
+          // `const [P] = '__private'` binds P to '_': only a plain `P = …`
+          // declarator makes the initialiser P's own text.
+          if (declarator.id !== def.name) return null;
+          const init = declarator.init;
           // One hop only: never chase identifier-to-identifier bindings.
           const value = init ? withoutTypeAnnotation(init) : null;
           return value?.type === AST_NODE_TYPES.Literal

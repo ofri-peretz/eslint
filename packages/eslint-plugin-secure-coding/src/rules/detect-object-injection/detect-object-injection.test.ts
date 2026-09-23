@@ -301,6 +301,13 @@ describe('detect-object-injection', () => {
           code: 'obj[`\\x5f_pro${rest}`] = value;',
           errors: 1,
         },
+        // `const [P] = '__private'` binds P to '_', not to the whole string, so
+        // the initialiser is not P's text — '_' + '_proto__' is '__proto__'.
+        {
+          name: 'a destructured binding does not take its initialiser as its literal text',
+          code: "const [P] = '__private'; obj[P + rest] = value;",
+          errors: 1,
+        },
         {
           name: 'a binding declared without an initialiser is not a literal prefix',
           code: 'let P; P = req.query.p; obj[P + x] = value;',
