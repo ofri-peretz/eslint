@@ -5,6 +5,21 @@ All notable changes to `eslint-plugin-node-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.6.7
+
+### Patch Changes
+
+- **🐛 Fix** — `detect-child-process` no longer treats `process.execPath` or `process.pid` as attacker input.
+
+  `process` is a taint root because of `process.argv` and `process.env`, but the
+  shared taint reader followed every `process.<property>` back to that root. So
+  `spawnSync(process.execPath, ['-e', CONSTANT])` and ``execSync(`kill -0 ${process.pid}`)``
+  were reported as CWE-78 command injection, while the same call spelled with
+  `'node'` was silent. Values the runtime fixes (`execPath`, `pid`, `ppid`,
+  `platform`, `arch`, `version`, `versions`, `release`, `config`, `features`) are
+  no longer taint. Every other property, including `argv`, `env`, `execArgv` and
+  `title`, still is.
+
 ## 5.6.6
 
 ### Patch Changes

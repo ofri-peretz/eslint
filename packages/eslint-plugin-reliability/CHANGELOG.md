@@ -5,6 +5,32 @@ All notable changes to `eslint-plugin-reliability` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 4.1.12
+
+### Patch Changes
+
+- **🐛 Fix** — five FP/FN rule defects found by the burgee sweep
+
+  Each was adversarially verified against the rule's own documented contract
+  before a line was changed.
+
+  - `react-features/hooks-exhaustive-deps`: the hook callback's own parameters
+    were reported as missing dependencies, and the suggestion's fixer rewrote
+    working code into a `ReferenceError`.
+  - `secure-coding/no-redos-vulnerable-regex`: `(?:a|a)+` escaped the
+    identical-alternatives detector because its regex swallowed the `?:`, and
+    every `/v` pattern using a `\p{...}` escape was silently dropped as
+    "unparseable" because `unicodeSets` never reached the analyser.
+  - `secure-coding/detect-object-injection`: a counter declared in a `for` head
+    was cleared on its declaration alone, so reassigning it from user input
+    inside the loop body went unreported. The same reassignment now also
+    disqualifies an Array-callback index parameter (`(v, i) => { i = k; … }`).
+  - `reliability/no-unhandled-promise` and the `maintainability` fork of the same
+    rule: appending `.finally(cleanup)` silenced the chain, though `.finally`
+    does not handle a rejection. A handler-less
+    `.catch()` / `.catch(undefined)` / `.catch(null)` no longer counts as
+    handling the chain either.
+
 ## 4.1.11
 
 ### Patch Changes
