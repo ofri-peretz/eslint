@@ -5,6 +5,161 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.4.9",
+      "date": "2026-09-23T01:38:00Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`detect-object-injection` FN — a guard naming an unrelated object cleared a recursive merge",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.6`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-import-next",
+      "short": "eslint-plugin-import-next",
+      "version": "2.8.7",
+      "date": "2026-09-23T01:37:28Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-internal-modules` rewrote relative deep imports to the importing file's own directory",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.6`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "1.19.6",
+      "date": "2026-09-23T01:36:41Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-commented-code` grouped across live source and its suggestion deleted it",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-reliability",
+      "short": "eslint-plugin-reliability",
+      "version": "4.1.11",
+      "date": "2026-09-23T01:36:00Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-unhandled-promise` dropped `ignoreInTests` on `.mts` / `.cts` / `.mjs` / `.cjs`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.6`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-operability",
+      "short": "eslint-plugin-operability",
+      "version": "4.1.6",
+      "date": "2026-09-23T01:35:27Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-console-log` `strategy: 'comment'` autofix emitted source that does not parse",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.6`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-modernization",
+      "short": "eslint-plugin-modernization",
+      "version": "3.1.6",
+      "date": "2026-09-23T01:34:31Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`prefer-template-literal` autofix turned arithmetic into concatenation",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.6`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-maintainability",
+      "short": "eslint-plugin-maintainability",
+      "version": "3.2.14",
+      "date": "2026-09-23T01:33:56Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-unhandled-promise` dropped `ignoreInTests` on `.mts` / `.cts` / `.mjs` / `.cjs`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.6`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-conventions",
+      "short": "eslint-plugin-conventions",
+      "version": "6.0.6",
+      "date": "2026-09-23T01:31:41Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-commented-code` grouped across live source and its suggestion deleted it",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.6`",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-import-next",
       "short": "eslint-plugin-import-next",
       "version": "2.8.6",
@@ -17700,21 +17855,6 @@
       ]
     },
     {
-      "package": "@interlace/eslint-devkit",
-      "short": "eslint-devkit",
-      "version": "1.19.6",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`no-commented-code` grouped across live source and its suggestion deleted it",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "@interlace/eslint-formatter",
       "short": "eslint-formatter",
       "version": "0.2.0",
@@ -17756,46 +17896,6 @@
           "kind": "feature",
           "title": "`RemoteMarkdown` accepts `tags`, forwarded to the underlying fetch as `next.tags`.",
           "pr": 628
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-conventions",
-      "short": "eslint-plugin-conventions",
-      "version": "6.0.6",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`no-commented-code` grouped across live source and its suggestion deleted it",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.6`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-import-next",
-      "short": "eslint-plugin-import-next",
-      "version": "2.8.7",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`no-internal-modules` rewrote relative deep imports to the importing file's own directory",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.6`",
-          "pr": null
         }
       ]
     },
@@ -17915,66 +18015,6 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-maintainability",
-      "short": "eslint-plugin-maintainability",
-      "version": "3.2.14",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`no-unhandled-promise` dropped `ignoreInTests` on `.mts` / `.cts` / `.mjs` / `.cjs`",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.6`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-modernization",
-      "short": "eslint-plugin-modernization",
-      "version": "3.1.6",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`prefer-template-literal` autofix turned arithmetic into concatenation",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.6`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-operability",
-      "short": "eslint-plugin-operability",
-      "version": "4.1.6",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`no-console-log` `strategy: 'comment'` autofix emitted source that does not parse",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.6`",
           "pr": null
         }
       ]
@@ -18100,46 +18140,6 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-reliability",
-      "short": "eslint-plugin-reliability",
-      "version": "4.1.11",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`no-unhandled-promise` dropped `ignoreInTests` on `.mts` / `.cts` / `.mjs` / `.cjs`",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.6`",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-secure-coding",
-      "short": "eslint-plugin-secure-coding",
-      "version": "5.4.9",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`detect-object-injection` FN — a guard naming an unrelated object cleared a recursive merge",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.6`",
           "pr": null
         }
       ]
