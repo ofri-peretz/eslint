@@ -269,7 +269,11 @@ describe('no-commonjs', () => {
         },
       ],
       invalid: [
+        // `import x = require()` binds the whole module, so its ES6 form is a
+        // namespace import. A default import fails TS1192 against a module
+        // with only named exports — burgee packages/closeout/src/signal-exit.cts:35.
         {
+          name: 'import-equals-require suggests a namespace import, not a default import',
           code: 'import helper = require("./helper");',
           filename: '/src/utils/helpers.ts',
           errors: [
@@ -278,11 +282,36 @@ describe('no-commonjs', () => {
               suggestions: [
                 {
                   messageId: 'commonjsRequire',
-                  output: `import helper from './helper';`,
+                  output: `import * as helper from './helper';`,
                 },
               ],
             },
           ],
+        },
+        {
+          name: 'a type-only import-equals keeps its type modifier in the suggestion',
+          code: 'import type Foo = require("foo");',
+          filename: '/src/utils/helpers.ts',
+          errors: [
+            {
+              messageId: 'commonjsRequire',
+              suggestions: [
+                {
+                  messageId: 'commonjsRequire',
+                  output: `import type * as Foo from 'foo';`,
+                },
+              ],
+            },
+          ],
+        },
+        // `export import foo = …` has no one-statement ES6 equivalent that also
+        // binds `foo` locally; rewriting only the inner node left
+        // `export import foo from 'foo'`, a syntax error.
+        {
+          name: 'an exported import-equals is reported without a syntax-breaking suggestion',
+          code: 'export import foo = require("foo");',
+          filename: '/src/utils/helpers.ts',
+          errors: [{ messageId: 'commonjsRequire', suggestions: [] }],
         },
       ],
     });

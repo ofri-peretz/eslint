@@ -709,6 +709,7 @@ describe('no-commonjs — Layer 2', () => {
     (listeners.TSImportEqualsDeclaration as (n: unknown) => void)({
       type: 'TSImportEqualsDeclaration',
       id: { type: 'Identifier', name: 'x' },
+      parent: { type: 'Program' },
       moduleReference: {
         type: 'TSExternalModuleReference',
         expression: { type: 'Identifier', name: 'dynamic' },
@@ -722,7 +723,7 @@ describe('no-commonjs — Layer 2', () => {
       replaceText: (_n: unknown, text: string) => ({ text }),
     } as unknown as TSESLint.RuleFixer;
     expect(report.suggest[0].fix(fixer)).toMatchObject({
-      text: `import x from 'unknown';`,
+      text: `import * as x from 'unknown';`,
     });
   });
 });
