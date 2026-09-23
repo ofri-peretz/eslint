@@ -20,7 +20,12 @@
  * - Frame-busting protections
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule, propertyName } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  objectKeyName,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   createSafetyChecker,
@@ -577,11 +582,103 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
      * directive it contains is the evidence, not the name of the variable it
      * is stored in.
      */
-    const declaresFrameProtection = (value: string): boolean => {
+    const declaresFrameProtection = (
+      value: string,
+      inFrameOptionsSlot = false,
+    ): boolean => {
       const text = value.toLowerCase();
       const ancestors = /frame-ancestors\s+([^;]+)/.exec(text);
       if (ancestors && ancestors[1].trim() !== '*') return true;
-      return /^\s*(deny|sameorigin)\s*$/.test(text) || text.includes('x-frame-options');
+
+      // THE VALUE DECIDES, NOT THE HEADER NAME. This used to end in
+      // `text.includes('x-frame-options')`, which credited the file with
+      // protection for merely NAMING the header — so the docs' own ❌ Incorrect
+      // example, `res.setHeader('X-Frame-Options', 'ALLOWALL')`, suppressed the
+      // rule for the whole file. A single string carrying both name and value
+      // (`'X-Frame-Options: DENY'`, a raw header line) still counts, but only
+      // when the value it carries is one that actually forbids framing.
+      if (text.includes('x-frame-options')) {
+        return /x-frame-options["']?\s*[:,=]\s*["']?\s*(deny|sameorigin)\b/.test(
+          text,
+        );
+      }
+
+      // A BARE `deny` / `sameorigin` IS ONLY EVIDENCE IN A HEADER SLOT. On its
+      // own it is just a word: a referrer policy, a CORS mode, a permission
+      // enum or a cookie constant would each silence the rule from anywhere in
+      // the file. It counts only where the AST shows it IS the header's value.
+      return inFrameOptionsSlot && /^\s*(deny|sameorigin)\s*$/.test(text);
+    };
+
+    /**
+     * Methods that actually SET a response header. `res.setHeader(...)` and
+     * `res.header(...)` are Express/Node; `headers.set/append` is the Fetch
+     * `Headers` API; `setRequestHeader` is XHR.
+     */
+    const HEADER_SETTERS = new Set([
+      'setheader',
+      'setrequestheader',
+      'header',
+      'set',
+      'append',
+    ]);
+
+    /**
+     * Is this string literal the VALUE of an X-Frame-Options header?
+     *
+     * Three spellings carry one meaning, and the rule must read all three or
+     * the locked `{ "X-Frame-Options": "DENY" }` case breaks:
+     *   `{ 'X-Frame-Options': 'DENY' }`              — header map
+     *   `{ key: 'X-Frame-Options', value: 'DENY' }`  — Next.js `headers()`
+     *   `res.setHeader('X-Frame-Options', 'DENY')`   — Express / Node
+     */
+    const isFrameOptionsValue = (node: TSESTree.Literal): boolean => {
+      const parent = node.parent;
+      if (!parent) return false;
+
+      if (parent.type === AST_NODE_TYPES.Property && parent.value === node) {
+        const key = objectKeyName(parent)?.toLowerCase() ?? '';
+        if (key === 'x-frame-options') return true;
+        // The `{ key, value }` pair shape: look across at the sibling `key`.
+        if (key === 'value' && parent.parent.type === AST_NODE_TYPES.ObjectExpression) {
+          return parent.parent.properties.some(
+            (sibling) =>
+              sibling.type === AST_NODE_TYPES.Property &&
+              objectKeyName(sibling)?.toLowerCase() === 'key' &&
+              sibling.value.type === AST_NODE_TYPES.Literal &&
+              typeof sibling.value.value === 'string' &&
+              sibling.value.value.toLowerCase() === 'x-frame-options',
+          );
+        }
+        return false;
+      }
+
+      // A CALL IS A HEADER SLOT ONLY WHEN IT IS A HEADER SETTER, AND ONLY IN
+      // THE VALUE POSITION. Accepting any call carrying `'x-frame-options'` in
+      // some other argument meant `logger.warn('x-frame-options', 'deny')` and
+      // `expect(headers['x-frame-options']).toBe('deny')` each declared frame
+      // protection and silenced the rule for the WHOLE FILE. A log line must
+      // not be able to disarm a security rule.
+      //
+      // Two conditions, both required: the callee is a known header setter,
+      // and the header NAME is the argument immediately before this one -
+      // `setHeader(name, value)`. Position alone does not do it; a logger call
+      // has the same shape.
+      if (parent.type === AST_NODE_TYPES.CallExpression) {
+        if (parent.callee.type !== AST_NODE_TYPES.MemberExpression) return false;
+        if (!HEADER_SETTERS.has(propertyName(parent.callee)?.toLowerCase() ?? ''))
+          return false;
+        const index = parent.arguments.indexOf(node);
+        if (index < 1) return false;
+        const name = parent.arguments[index - 1];
+        return (
+          name.type === AST_NODE_TYPES.Literal &&
+          typeof name.value === 'string' &&
+          name.value.toLowerCase() === 'x-frame-options'
+        );
+      }
+
+      return false;
     };
 
     /**
@@ -813,7 +910,10 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
 
       // Check for CSS that could hide clickjacking attacks
       Literal(node: TSESTree.Literal) {
-        if (typeof node.value === 'string' && declaresFrameProtection(node.value)) {
+        if (
+          typeof node.value === 'string' &&
+          declaresFrameProtection(node.value, isFrameOptionsValue(node))
+        ) {
           hasDeclaredFrameProtection = true;
         }
         if (typeof node.value === 'string' && detectTransparentOverlays) {
