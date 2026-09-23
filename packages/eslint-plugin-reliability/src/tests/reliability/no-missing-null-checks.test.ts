@@ -1231,4 +1231,73 @@ describe('no-missing-null-checks', () => {
       ],
     });
   });
+  // `ignoreInTests` is documented ecosystem-wide as "Skip this rule in
+  // `*.test.*` / `*.spec.*` files" — a glob that says nothing about the
+  // extension. The predicate listed `ts|tsx|js|jsx` and so stopped applying
+  // the moment a repository adopted the ESM/CJS extensions. Surfaced by the
+  // burgee FP/FN sweep, which lints a `"type": "module"` monorepo; the same
+  // defect was fixed for the sibling `no-unhandled-promise` in c24bfe0b0 and
+  // its own commit noted the remaining rules as a separate pass. This is it.
+  describe('ignoreInTests reaches the ESM and CJS module extensions', () => {
+    ruleTester.run('ignoreInTests module extensions', noMissingNullChecks, {
+      valid: [
+        {
+          name: 'ignoreInTests covers .test.mts — an ESM TypeScript test file is a test file',
+          code: 'declare const s: string;\nconst m = s.match(/a/);\nconst v = m[0];',
+          filename: 'c.test.mts',
+          options: [{ ignoreInTests: true }],
+        },
+        {
+          name: 'ignoreInTests covers .test.cts — a CommonJS TypeScript test file is a test file',
+          code: 'declare const s: string;\nconst m = s.match(/a/);\nconst v = m[0];',
+          filename: 'c.test.cts',
+          options: [{ ignoreInTests: true }],
+        },
+        {
+          name: 'ignoreInTests covers .test.mjs — an ESM JavaScript test file is a test file',
+          code: 'declare const s: string;\nconst m = s.match(/a/);\nconst v = m[0];',
+          filename: 'c.test.mjs',
+          options: [{ ignoreInTests: true }],
+        },
+        {
+          name: 'ignoreInTests covers .test.cjs — a CommonJS JavaScript test file is a test file',
+          code: 'declare const s: string;\nconst m = s.match(/a/);\nconst v = m[0];',
+          filename: 'c.test.cjs',
+          options: [{ ignoreInTests: true }],
+        },
+        {
+          name: 'ignoreInTests covers .spec.mts — the `*.spec.*` half of the contract is extension-agnostic too',
+          code: 'declare const s: string;\nconst m = s.match(/a/);\nconst v = m[0];',
+          filename: 'c.spec.mts',
+          options: [{ ignoreInTests: true }],
+        },
+        {
+          name: 'ignoreInTests covers .spec.cjs — the `*.spec.*` half reaches CommonJS as well',
+          code: 'declare const s: string;\nconst m = s.match(/a/);\nconst v = m[0];',
+          filename: 'c.spec.cjs',
+          options: [{ ignoreInTests: true }],
+        },
+      ],
+      invalid: [
+        // The widened extension set must widen the exemption only — with the
+        // option off, an `.mts` test file is linted like any other file.
+        {
+          name: 'ignoreInTests: false still reports in a .test.mts file',
+          code: 'declare const s: string;\nconst m = s.match(/a/);\nconst v = m[0];',
+          filename: 'c.test.mts',
+          options: [{ ignoreInTests: false }],
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+        // `.mts` is only exempt because of `.test.`/`.spec.` — a production
+        // `.mts` file is production code.
+        {
+          name: 'a plain .mts file is production code, not a test file',
+          code: 'declare const s: string;\nconst m = s.match(/a/);\nconst v = m[0];',
+          filename: 'c.mts',
+          options: [{ ignoreInTests: true }],
+          errors: [{ messageId: 'missingNullCheck' }],
+        },
+      ],
+    });
+  });
 });

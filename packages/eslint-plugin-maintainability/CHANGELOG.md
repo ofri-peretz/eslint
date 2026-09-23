@@ -5,6 +5,147 @@ All notable changes to `eslint-plugin-maintainability` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.2.13
+
+### Patch Changes
+
+- **🐛 Fix** — `identical-functions` normalisation no longer erases or skips distinguishing text
+
+  Nested literal placeholders are restored until none remain: a backticked word
+  inside a quoted string was stashed twice and never expanded, so bodies
+  differing only there compared identical. The object-key guard no longer
+  swallows ternary consequents or TypeScript type annotations, which had stopped
+  every annotated declaration from having its bindings renamed.
+
+## 3.2.12
+
+### Patch Changes
+
+- **🐛 Fix** — four false positives found by sweeping the plugins over a real corpus
+
+  Each was minimized to a standalone snippet, reproduced under `RuleTester`, and
+  then argued against by an independent reviewer before any code changed. Three
+  further candidates were rejected at that gate and are not in this release.
+
+  **`no-missing-error-context` (reliability + maintainability)** — a message bound
+  to a `const` one line above the `throw` reported "Thrown error missing message",
+  which is false about the node:
+
+  ```ts
+  const message = 'The importMeta option is required.';
+  throw new TypeError(message); // REPORTED
+  ```
+
+  `isProvablyString` already walks through `??`, `||`, `?:` and `+`; it now also
+  resolves a single `const` definition. `const m = someVar`, a reassigned `let`,
+  and `const m = ''` still report.
+
+  **`require-render-return` (react-features)** — detection was the method name and
+  nothing else, so any class with a `render` method — a terminal painter, a canvas,
+  a template engine — drew a CRITICAL "must return a value" for a method whose
+  contract is to return nothing. Now gated on the React superclass check the
+  sibling rules already use.
+
+  **`detect-object-injection` (secure-coding)** — `xs.forEach((v, i) => { dst[i] = v })`
+  drew CVSS 9.8 on a key ECMA-262 guarantees is a Number, while the identical
+  `for` counter was silent. The exemption is gated on the receiver being provably
+  an Array: `Map`, `Set`, `Headers`, `FormData` and `URLSearchParams` pass a string
+  KEY in that slot and still report.
+
+  **`no-console-spaces` (conventions)** — the fixer deleted newlines from program
+  output. `console.log('code=%j\n', code)` was rewritten to drop the `\n`, which
+  reaches stdout; `util.format` appends the inter-argument space _after_ a trailing
+  newline rather than absorbing it. The predicate and the fixer are both narrowed
+  to the literal space that separator actually inserts.
+
+- **🐛 Fix** — `consistent-function-scoping` told a module-scope function to move to module scope
+
+  A function bound by assignment rather than by declaration was reported even when it already sat at the top level of a module:
+
+  ```ts
+  export const control = (): number => 1; // silent — correct
+  api.direct = (): number => 1; // REPORTED "can be moved to higher scope"
+  ```
+
+  Same scope, same body, same capture set — the verdict turned purely on how the binding was spelled. Both arms of a module-scope ternary, and a module-scope logical fallback, reported for the same reason.
+
+  The rule's fix text is "Move function declaration to module scope" and its doc says "Move functions to the highest possible scope". Module scope _is_ the highest, so the advice was impossible to act on. The rule already holds the principle — its own guard is commented "Already at the top scope, so there is nowhere to move it" — but the walk that reaches it only stepped over `VariableDeclarator`, `VariableDeclaration` and the four TypeScript type operators, so an `AssignmentExpression`, `ConditionalExpression` or `LogicalExpression` stopped it short of `Program`.
+
+  This is the same defect as the type-operator case that guard was previously extended for, one node type over. `ExpressionStatement`, `AssignmentExpression`, `ConditionalExpression` and `LogicalExpression` join `BINDING_WRAPPERS`: like the declarator and the type operators, they can sit between a function and its scope without moving it.
+
+  Surfaced at burgee `packages/burgee/src/yargs-parser.ts:899`, two lines below a function expression in the same scope that the rule correctly left alone.
+
+  Deliberately narrow: this only affects whether the walk reaches `Program`. A function nested inside another function still meets a function or block ancestor first, so it still reports — pinned by the 51 pre-existing cases in the rule's test file, every one of which is a nested function and all of which still pass.
+
+  Four fixtures failed before the fix and pass after.
+
+- **🐛 Fix** — three false positives found by sweeping the plugins over a real corpus
+
+  Each was minimized to a standalone snippet, reproduced mechanically, and then
+  argued against by an independent reviewer that saw only the snippet and the
+  rule's own docs. Two further candidates were rejected at that gate — one whose
+  minimization would not reproduce, and one where the reviewer measured the
+  proposed fix at 0 true positives out of 1 report and sent it back as a
+  documentation defect instead. Neither is in this release.
+
+  **`detect-object-injection` (secure-coding)** — the fix this rule's own docs
+  prescribe drew CVSS 9.8 when it was bound to a name rather than used as an
+  expression:
+
+  ```ts
+  const assigned = Object.assign(Object.create(null), src);
+  assigned[key] = 1; // REPORTED
+  ```
+
+  `Object.assign` returns its first argument and never invokes `SetPrototypeOf`,
+  so the binding holds the null-prototype target; a `__proto__` key in the source
+  lands as an inert own data property. The rule already certified that expression
+  as prototype-less when it was the assign _target_, then reported it one
+  statement later as the indexed object. Plain `{}` targets, parameter targets and
+  the two-step primitive `a[k1][k2] = 1` all still report.
+
+  **`exports-last` (import-next)** — a file whose every statement is an export
+  reported its own last-but-one line, telling `export default function a() {}` to
+  "move this export to the end of the file" with nothing non-export after it.
+  Declaration-exports were being reclassified as non-exports to exempt them from
+  being reported, which also made each one a positional wall for the exports
+  before it. Upstream `eslint-plugin-import`, which this rule links as its
+  documentation, treats a declaration-export as an export unconditionally.
+
+  **`cognitive-complexity` (maintainability)** — a factory whose own body is a
+  single `return` was scored at its returned closure's complexity and reported
+  alongside it, so one piece of code drew two HIGH findings and the one on the
+  factory advised "Extract logic to helpers" about a body that was already
+  nothing but a helper. The traversal descended into nested functions, charging
+  their points to every enclosing function; since each nested function is already
+  visited and reported independently, the descent only inflated ancestors. This
+  matches SonarQube RSPEC-3776, which reports a function's own complexity and
+  keeps the aggregate in a metrics sink.
+
+## 3.2.11
+
+### Patch Changes
+
+- **🐛 Fix** — `consistent-function-scoping` was silent on a helper capturing only a module-level `const`
+
+  `getOuterScopeVariables` unioned every scope below the current one, module scope included, so a nested helper whose only outer reference is a module binding looked captured and the report was withheld. But module scope is the destination the rule suggests moving to — a binding that lives there is equally in scope after the move and cannot be what prevents it.
+
+  The rule already knew this: `Program()` deliberately declines to register module-level `function` declarations, with a comment citing burgee `yargs/usage.ts:247`. The `VariableDeclaration` visitor registered module-level `const`/`let` anyway, so the identical helper was reported or suppressed purely by spelling — `function getText(){}` reported, `const SRGB_MAX = 255` silent.
+
+  Module scope is now dropped alongside the enclosing one. Bindings from any function scope in between are still counted, so a genuine closure stays silent — pinned by a new valid fixture taken from burgee `packages/flagstaff/src/table.ts:147`, where the captured binding really is local to the enclosing function. Found on burgee `packages/roundel/src/theme.ts:98`, `:131` and `:178`. Nothing pinned the old suppression; on burgee the rule goes 22 to 36 reports, all 14 additions genuinely movable and none lost.
+
+- **🐛 Fix** — `identical-functions` compared comment prose as code, hiding duplicates behind a one-line `/* */`
+
+  `normalizeBody` stashes regex literals before it strips comments, and its pattern was anchored to positions that include `{` and `;`. A single-line `/* text */` sitting after either one satisfied the regex-literal alternative — `*text*` contains no `/`, `\`, newline or `[` — so it was stashed as a pattern, skipped by the comment stripper that runs next, and restored verbatim into the string the similarity score is computed over. Comment text then decided the verdict: two byte-identical bodies carrying different remarks stopped being duplicates, while the same comments written as `//`, spread across two lines, or placed after `)` left the finding intact. Editing one character of comment prose moved the score off 100%, which is what proves the bytes were inside the comparison.
+
+  The rule's own documented ❌ Incorrect example stops reporting once each function gains one differing single-line block comment.
+
+  The fix narrows only the first character of the pattern to exclude `*`, per `RegularExpressionFirstChar` in ECMA-262: a regex literal can never open with `*`, which is exactly what makes `/*` a comment opener. Stripping comments earlier is not available as a fix — strings are stashed first precisely so that a `//` inside one survives, and a pattern such as `/https:\/\//` would lose its tail to the line-comment stripper.
+
+  Surfaced against the burgee corpus, where a group of three byte-identical no-op interface implementations reported only two members; the third was excluded because its comment read `/* nothing to initialise */` rather than `/* nothing to merge */`.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.5`
+
 ## 3.2.10
 
 ### Patch Changes

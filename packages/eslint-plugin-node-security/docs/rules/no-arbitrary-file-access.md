@@ -44,7 +44,11 @@ Path traversal vulnerabilities allow attackers to access files outside the inten
 ### ❌ Incorrect
 
 ```typescript
-fs.readFile(userFile, cb)
+// A request-derived path
+fs.readFileSync(req.query.file, 'utf8');
+
+// `process.argv` is user input too
+fs.readFileSync(process.argv[2], 'utf8');
 ```
 
 ### ✅ Correct
@@ -112,9 +116,30 @@ fs.readFileSync(`./uploads/${userId}/${req.query.file}`);
 
 **Mitigation**: Use path.join() with basename().
 
+### Paths This Rule Cannot Attribute To A Source
+
+**Why**: This rule reports "file path from user input", so it stays silent when
+there is no visible input to point at — a bare global, an unresolved import, a
+parameter no call site in the file fills in. Reporting those said something
+untrue and duplicated `detect-non-literal-fs-filename` at a second severity.
+
+```typescript
+// ❌ NOT DETECTED - nothing here names a source
+fs.readFile(userFile, cb);
+```
+
+**Mitigation**: [`detect-non-literal-fs-filename`](./detect-non-literal-fs-filename.md)
+owns these; the two rules partition rather than overlap. `process.argv` is on
+this rule's side of that split, which is the handoff that rule's own docs
+describe. `process.env` is **not** reported: that delegation is conditional on
+treating the environment as attacker-controlled, and an env var is normally
+operator configuration — `fs.readFileSync(process.env.CA_BUNDLE)` is an operator
+pointing a client at a certificate, not a traversal.
+
 ## When Not To Use It
 
-- In CLI tools where file paths come from command-line arguments (trusted)
+- In CLI tools where file paths come from command-line arguments, if you treat
+  `process.argv` as trusted (this rule does not — it reports those paths)
 - In build scripts processing known file trees
 - When using a file access abstraction layer with built-in validation
 

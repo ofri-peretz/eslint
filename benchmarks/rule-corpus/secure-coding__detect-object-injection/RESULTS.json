@@ -1,15 +1,15 @@
 {
   "rule": "secure-coding/detect-object-injection",
   "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
-  "fixtures": 28,
-  "vulnerable": 14,
+  "fixtures": 31,
+  "vulnerable": 15,
   "results": [
     {
       "name": "Interlace secure-coding/detect-object-injection",
-      "tp": 14,
+      "tp": 15,
       "fp": 0,
       "fn": 0,
-      "tn": 14,
+      "tn": 16,
       "precision": 1,
       "recall": 1,
       "specificity": 1,
@@ -21,15 +21,15 @@
     },
     {
       "name": "eslint-plugin-security [detect-object-injection]",
-      "tp": 9,
-      "fp": 7,
+      "tp": 10,
+      "fp": 9,
       "fn": 5,
       "tn": 7,
-      "precision": 0.5625,
-      "recall": 0.6428571428571429,
-      "specificity": 0.5,
-      "youdenJ": 0.1428571428571428,
-      "f1": 0.6000000000000001,
+      "precision": 0.5263157894736842,
+      "recall": 0.6666666666666666,
+      "specificity": 0.4375,
+      "youdenJ": 0.10416666666666652,
+      "f1": 0.5882352941176471,
       "crashes": [],
       "missed": [
         "vulnerable/01-express-settings-write.js",
@@ -45,7 +45,9 @@
         "safe/05-hasown-guard.js",
         "safe/07-object-keys-foreach.js",
         "safe/09-buffer-offset-arithmetic.js",
-        "safe/14-mass-assignment-allowlisted.js"
+        "safe/14-mass-assignment-allowlisted.js",
+        "safe/15-array-callback-index-write.js",
+        "safe/16-assign-null-proto-bound.js"
       ]
     },
     {

@@ -5,6 +5,18 @@ All notable changes to `eslint-plugin-modernization` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.1.5
+
+### Patch Changes
+
+- **🐛 Fix** — `prefer-at` handles member-expression receivers
+
+  `c.path[c.path.length - 1]` and `this.rows[this.rows.length - 1]` were invisible
+  because the receiver had to be a bare identifier. The two halves are now
+  compared by canonical key path, so `c["path"]` and `c.path` match. A receiver
+  containing a call or a dynamic computed segment is left alone, since two such
+  reads cannot be shown to name one object.
+
 ## 3.1.4
 
 ### Patch Changes

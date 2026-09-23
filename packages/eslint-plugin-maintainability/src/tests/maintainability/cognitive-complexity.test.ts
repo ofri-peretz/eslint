@@ -732,4 +732,67 @@ describe('cognitive-complexity', () => {
       },
     );
   });
+  // burgee packages/flagstaff/src/cli-table3.ts:823 — `makeComputeDimensions` is a factory
+  // whose own body is a single ReturnStatement: no conditional, loop, switch, logical
+  // operator, catch or recursion. It was reported at 52/15, a score identical to the arrow
+  // it returns (also reported, at :824) — one piece of code, two HIGH findings, one of them
+  // on a body containing none of the charged constructs and told to "Extract logic to
+  // helpers" when the returned closure *is* the extraction.
+  //
+  // The docs' Complexity Factors table (docs/rules/cognitive-complexity.md) enumerates the
+  // seven things that cost a point; a nested function's body is not among them, and the
+  // table's worked example annotates an extracted callee `// +0 (extracted)`. SonarQube
+  // RSPEC-3776 — cited by those docs, and vendored here as eslint-plugin-sonarjs S3776 —
+  // reports a function's OWN complexity and keeps the aggregate in a metrics sink, never in
+  // an issue; S3776 leaves `makeComputeDimensions` unreported even at threshold 0.
+  describe('Nested functions are scored on their own bodies', () => {
+    ruleTester.run(
+      'nested function complexity does not charge the enclosing function',
+      cognitiveComplexity,
+      {
+        valid: [
+          {
+            name: 'a factory is not charged for the helpers it declares',
+            code: `
+              function factory() {
+                const a = (x) => { if (x > 0) { if (x > 1) { if (x > 2) { return 1; } } } return 0; };
+                const b = (x) => { if (x > 0) { if (x > 1) { if (x > 2) { return 1; } } } return 0; };
+                return { a, b };
+              }
+            `,
+            options: [{ maxComplexity: 10 }],
+          },
+        ],
+        invalid: [
+          {
+            name: 'the returned closure is reported, the factory around it is not',
+            code: `
+              function makeReducer(key) {
+                return (rows) => {
+                  let total = 0;
+                  for (const row of rows) {
+                    for (const v of row) {
+                      if (v > 0) {
+                        if (v > 10) {
+                          if (v > 100) total += v;
+                          else total += 1;
+                        } else if (v > 5) {
+                          total -= v;
+                        } else {
+                          total -= 1;
+                        }
+                      }
+                    }
+                  }
+                  return total;
+                };
+              }
+            `,
+            options: [{ maxComplexity: 15 }],
+            errors: [{ messageId: 'highCognitiveComplexity' }],
+          },
+        ],
+      },
+    );
+  });
 });

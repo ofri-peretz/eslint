@@ -1,9 +1,419 @@
 {
-  "releaseCount": 694,
+  "releaseCount": 718,
   "packageCount": 36,
-  "entryCount": 2111,
+  "entryCount": 2157,
   "oldestYear": 2024,
   "releases": [
+    {
+      "package": "eslint-plugin-import-next",
+      "short": "eslint-plugin-import-next",
+      "version": "2.8.5",
+      "date": "2026-09-22T22:39:16Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-nodejs-modules` — resolve builtins via `builtinModules`, and recognise subpaths.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-browser-security",
+      "short": "eslint-plugin-browser-security",
+      "version": "2.1.7",
+      "date": "2026-09-22T22:39:08Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-clickjacking` — a declared frame protection must actually protect.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-conventions",
+      "short": "eslint-plugin-conventions",
+      "version": "6.0.5",
+      "date": "2026-09-22T22:37:28Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`consistent-existence-index-check` — two detection-scope fixes.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "5.6.4",
+      "date": "2026-09-22T22:36:12Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-deprecated-cipher-method` — correct the report path on a computed subscript.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "5.6.3",
+      "date": "2026-09-22T21:36:56Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "two documented-contract violations found by the burgee FP/FN sweep",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-import-next",
+      "short": "eslint-plugin-import-next",
+      "version": "2.8.4",
+      "date": "2026-09-22T21:36:55Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "two documented-contract violations found by the burgee FP/FN sweep",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "three false positives found by sweeping the plugins over a real corpus",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-browser-security",
+      "short": "eslint-plugin-browser-security",
+      "version": "2.1.6",
+      "date": "2026-09-22T21:36:54Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`require-websocket-wss` autofix corrupted URLs containing a quote, newline or backslash",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-conventions",
+      "short": "eslint-plugin-conventions",
+      "version": "6.0.4",
+      "date": "2026-09-22T21:36:54Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "four false positives found by sweeping the plugins over a real corpus",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.4.7",
+      "date": "2026-09-22T21:36:52Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-improper-type-validation` no longer accepts a strict `undefined` comparison as a null guard",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "four false positives found by sweeping the plugins over a real corpus",
+          "pr": null
+        },
+        {
+          "kind": "docs",
+          "title": "`no-unchecked-loop-condition` no longer promises a report it cannot make",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "three false positives found by sweeping the plugins over a real corpus",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-reliability",
+      "short": "eslint-plugin-reliability",
+      "version": "4.1.10",
+      "date": "2026-09-22T21:36:42Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "four false positives found by sweeping the plugins over a real corpus",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "four more rules dropped `ignoreInTests` on `.mts` / `.cts` / `.mjs` / `.cjs`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-react-features",
+      "short": "eslint-plugin-react-features",
+      "version": "1.7.8",
+      "date": "2026-09-22T21:36:31Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "four false positives found by sweeping the plugins over a real corpus",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-maintainability",
+      "short": "eslint-plugin-maintainability",
+      "version": "3.2.12",
+      "date": "2026-09-22T21:36:29Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "four false positives found by sweeping the plugins over a real corpus",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`consistent-function-scoping` told a module-scope function to move to module scope",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "three false positives found by sweeping the plugins over a real corpus",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-import-next",
+      "short": "eslint-plugin-import-next",
+      "version": "2.8.3",
+      "date": "2026-09-21T04:48:20Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-barrel-file` was blind to a barrel spelled as imports plus an export clause",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-extraneous-dependencies` published three config options it did not honour",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.5`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-conventions",
+      "short": "eslint-plugin-conventions",
+      "version": "6.0.3",
+      "date": "2026-09-21T04:48:19Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-magic-numbers` no longer offers a suggestion that fails to parse",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`prefer-dependency-version-strategy` no longer rewrites objects that are not dependency maps",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`prefer-dependency-version-strategy` no longer autofixes a range into a caret",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.5`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.4.6",
+      "date": "2026-09-21T04:48:15Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`detect-object-injection` copy-loop guards must now name the key",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`detect-object-injection` no longer accepts a lone `__proto__` check as proof for a recursive merge",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.5`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-maintainability",
+      "short": "eslint-plugin-maintainability",
+      "version": "3.2.11",
+      "date": "2026-09-21T04:48:05Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`consistent-function-scoping` was silent on a helper capturing only a module-level `const`",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`identical-functions` compared comment prose as code, hiding duplicates behind a one-line `/* */`",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.5`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "5.6.2",
+      "date": "2026-09-21T04:47:54Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "a TypeScript type assertion no longer blanks the two CWE-22 path rules",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-weak-hash-algorithm` missed the `WithRSAEncryption` aliases of MD5 and SHA-1",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-weak-cipher-algorithm` reported only the Triple-DES spellings Node rejects",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-zip-slip` no longer reports a bare ambiguous extractor that extracts nowhere",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.5`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "1.19.5",
+      "date": "2026-09-21T04:47:14Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "resolve NodeNext `.js` specifiers to their TypeScript source",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-operability",
+      "short": "eslint-plugin-operability",
+      "version": "4.1.5",
+      "date": "2026-09-21T04:47:14Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-console-log`'s `convert` fixer emitted a reference to a logger that was never imported",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.5`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-react-features",
+      "short": "eslint-plugin-react-features",
+      "version": "1.7.7",
+      "date": "2026-09-21T04:47:09Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`jsx-no-script-url` now catches control-character-obfuscated `javascript:` URLs",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.5`",
+          "pr": null
+        }
+      ]
+    },
     {
       "package": "eslint-plugin-modernization",
       "short": "eslint-plugin-modernization",
@@ -17375,6 +17785,51 @@
       ]
     },
     {
+      "package": "eslint-plugin-maintainability",
+      "short": "eslint-plugin-maintainability",
+      "version": "3.2.13",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`identical-functions` normalisation no longer erases or skips distinguishing text",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-modernization",
+      "short": "eslint-plugin-modernization",
+      "version": "3.1.5",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`prefer-at` handles member-expression receivers",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "5.6.5",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-dynamic-require` resolves the loader instead of matching the name `require`",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-postgresql-security",
       "short": "eslint-plugin-postgresql-security",
       "version": "1.4.9",
@@ -17495,6 +17950,21 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.4.8",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`detect-object-injection` no longer lets a `hasOwn` guard clear a write to a different object",
           "pr": null
         }
       ]

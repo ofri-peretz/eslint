@@ -16,6 +16,7 @@ import {
   matchesAnyUserPattern,
 } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { isModuleLoader } from './module-loader';
 
 type MessageIds = 'dynamicRequire';
 
@@ -41,10 +42,10 @@ export const noDynamicRequire = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-dynamic-require.md',
-      description:
-        'Forbid `require()` calls with expressions',
+      description: 'Forbid `require()` calls with expressions',
       cwe: 'CWE-94',
-      cweJustification: 'CWE-94 (Improper Control of Generation of Code) — dynamic require with attacker-influenced path can load arbitrary modules, equivalent to remote code execution.',
+      cweJustification:
+        'CWE-94 (Improper Control of Generation of Code) — dynamic require with attacker-influenced path can load arbitrary modules, equivalent to remote code execution.',
       confidence: 'high',
     },
     hasSuggestions: false,
@@ -59,7 +60,8 @@ export const noDynamicRequire = createRule<RuleOptions, MessageIds>({
         description: 'Require call uses dynamic expression',
         severity: 'HIGH',
         fix: 'Use static string literals for require() calls',
-        documentationLink: 'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-dynamic-require.md',
+        documentationLink:
+          'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-dynamic-require.md',
       }),
     },
     schema: [
@@ -87,17 +89,16 @@ export const noDynamicRequire = createRule<RuleOptions, MessageIds>({
       },
     ],
   },
-  defaultOptions: [{
-    allowContexts: [],
-    allowPatterns: []
-  }],
+  defaultOptions: [
+    {
+      allowContexts: [],
+      allowPatterns: [],
+    },
+  ],
 
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
-    const {
-      allowContexts = [],
-      allowPatterns = [],
-    } = options || {};
+    const { allowContexts = [], allowPatterns = [] } = options || {};
 
     const filename = context.filename || '';
 
@@ -113,19 +114,37 @@ export const noDynamicRequire = createRule<RuleOptions, MessageIds>({
     const allowed = compileUserPatterns(allowPatterns, '');
 
     function isInAllowedContext(): boolean {
-      if (allowContexts.includes('test') && (filename.includes('.test.') || filename.includes('.spec.') || filename.includes('/__tests__/'))) {
+      if (
+        allowContexts.includes('test') &&
+        (filename.includes('.test.') ||
+          filename.includes('.spec.') ||
+          filename.includes('/__tests__/'))
+      ) {
         return true;
       }
 
-      if (allowContexts.includes('config') && (filename.includes('config') || filename.includes('webpack') || filename.includes('rollup'))) {
+      if (
+        allowContexts.includes('config') &&
+        (filename.includes('config') ||
+          filename.includes('webpack') ||
+          filename.includes('rollup'))
+      ) {
         return true;
       }
 
-      if (allowContexts.includes('build') && (filename.includes('build') || filename.includes('scripts') || filename.includes('tools'))) {
+      if (
+        allowContexts.includes('build') &&
+        (filename.includes('build') ||
+          filename.includes('scripts') ||
+          filename.includes('tools'))
+      ) {
         return true;
       }
 
-      if (allowContexts.includes('runtime') && (filename.includes('runtime') || filename.includes('dynamic'))) {
+      if (
+        allowContexts.includes('runtime') &&
+        (filename.includes('runtime') || filename.includes('dynamic'))
+      ) {
         return true;
       }
 
@@ -139,14 +158,23 @@ export const noDynamicRequire = createRule<RuleOptions, MessageIds>({
      * are cases eslint-plugin-security's own corpus marks valid, which we reported.
      */
     function isFixedSpecifier(node: TSESTree.Node): boolean {
-      return isStaticExpression({ node, scope: context.sourceCode.getScope(node) });
+      return isStaticExpression({
+        node,
+        scope: context.sourceCode.getScope(node),
+      });
     }
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
+        // The loader is whatever Node hands you, not the six letters `require`:
+        // a `module.createRequire()` binding, `module.require`,
+        // `require.main.require` and the `(0, require)` idiom all load a
+        // specifier. Testing `callee.name === 'require'` missed every one of
+        // them, while the sibling `no-dynamic-dependency-loading` resolved
+        // them — so the two rules disagreed about what a loader is, and
+        // `module.require(x)` fell through both.
         if (
-          node.callee.type === 'Identifier' &&
-          node.callee.name === 'require' &&
+          isModuleLoader(node.callee, context.sourceCode) &&
           node.arguments.length === 1
         ) {
           const requireArg = node.arguments[0];
