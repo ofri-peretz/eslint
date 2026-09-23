@@ -427,8 +427,8 @@ function catchHasHandler(node: TSESTree.CallExpression): boolean {
 function chainHasRejectionHandler(node: TSESTree.CallExpression): boolean {
   let current: TSESTree.Node = node;
   while (
-    current.type === 'CallExpression' &&
-    current.callee.type === 'MemberExpression'
+    current.type === AST_NODE_TYPES.CallExpression &&
+    current.callee.type === AST_NODE_TYPES.MemberExpression
   ) {
     const member = propertyName(current.callee);
     if (member === 'catch' && catchHasHandler(current)) return true;
