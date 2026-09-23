@@ -308,6 +308,27 @@ function test() {
         },
         {
           /*
+           * A `//` comment ends at ANY line terminator. Splitting only on
+           * `\n` left every line after a lone `\r` (or U+2028 / U+2029) live,
+           * and the unattended `--fix` stopped parsing. Each physical line,
+           * however it is terminated, gets its own `// `.
+           */
+          name: 'comment comments every physical line when lines end in a lone CR',
+          code: "function f() {\r  console.log(\r    'a',\r  );\r}",
+          options: [{ strategy: 'comment' }],
+          output: "function f() {\r  // console.log(\r    // 'a',\r  // );\r}",
+          errors: [{ messageId: 'consoleLogFound' }],
+        },
+        {
+          name: 'comment comments every physical line across CRLF and U+2028 terminators',
+          code: "function f() {\r\n  console.log(\r\n    'a',\u2028  );\r\n}",
+          options: [{ strategy: 'comment' }],
+          output:
+            "function f() {\r\n  // console.log(\r\n    // 'a',\u2028  // );\r\n}",
+          errors: [{ messageId: 'consoleLogFound' }],
+        },
+        {
+          /*
            * The statement shares its physical line with the code that FOLLOWS
            * it, so a `//` anywhere on that line swallows `break;` too and the
            * case falls through. Commenting cannot be made sound here, so the

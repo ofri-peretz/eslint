@@ -526,16 +526,16 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
               );
               if (afterStatement.trim() !== '') return null;
 
+              /*
+               * Every JavaScript line terminator, not only `\n`: a `//`
+               * comment also ends at a lone `\r`, U+2028 and U+2029, so a
+               * `split('\n')` left the lines after one of those live. `\r\n`
+               * is matched first so a CRLF file gains one `// ` per line. The
+               * `// ` goes after each line's own indentation.
+               */
               const commented = sourceCode
                 .getText(statement)
-                .split('\n')
-                .map((physicalLine, index) =>
-                  index === 0
-                    ? `// ${physicalLine}`
-                    : /** Keep the `// ` after the line's own indentation. */
-                      physicalLine.replace(/^[ \t]*/, '$&// '),
-                )
-                .join('\n');
+                .replace(/(^|\r\n|[\r\n\u2028\u2029])([ \t]*)/gu, '$1$2// ');
 
               return fixer.replaceText(statement, commented);
             }

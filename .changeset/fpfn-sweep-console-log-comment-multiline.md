@@ -27,6 +27,6 @@ became
 
 → `Parsing error: Expression expected.`
 
-The fixer now comments every physical line the statement spans, keeping the `//` marker after each line's own indentation, and declines (no rewrite, report unaffected) when non-whitespace follows the statement on its last line — `case 1: console.log(x); break;` and `if (r) { console.log(x); }` would otherwise lose the `break;` or the closing brace to the same comment.
+The fixer now comments every physical line the statement spans — split on every JavaScript line terminator (`\r\n`, `\n`, a lone `\r`, U+2028, U+2029), since a `//` comment ends at each of them — keeping the `//` marker after each line's own indentation, and declines (no rewrite, report unaffected) when non-whitespace follows the statement on its last line — `case 1: console.log(x); break;` and `if (r) { console.log(x); }` would otherwise lose the `break;` or the closing brace to the same comment.
 
 The documented single-line shape `console.log("test");` → `// console.log("test");` is unchanged, as is the existing structural guard and the `remove`, `convert` and `warn` strategies.
