@@ -5,6 +5,14 @@ All notable changes to `eslint-plugin-browser-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.1.8
+
+### Patch Changes
+
+- **🧪 Tests** — `no-clickjacking` pins three more shapes where the header NAME is not frame protection
+
+  The fix itself shipped earlier (a declared protection counts only when its VALUE protects). This adds regression cases for a `<meta httpEquiv="X-Frame-Options" content="ALLOWALL">`, the obsolete `ALLOW-FROM`, and prose that merely mentions `x-frame-options`, each of which must still report. No behaviour change.
+
 ## 2.1.7
 
 ### Patch Changes
