@@ -70,7 +70,7 @@ const item = array.at(-offset);
 const lastChar = string.at(-1);
 ```
 
-> **Not auto-fixed.** Two of the reported shapes are left for you to edit,
+> **Not auto-fixed.** Three of the reported shapes are left for you to edit,
 > because the rewrite is not equivalent in general:
 >
 > - `array[array.length - n]` with a variable `n` — see above.
@@ -79,8 +79,12 @@ const lastChar = string.at(-1);
 >   cannot prove the object is an array: on a `Record<number, string>` holding
 >   a `-1` key the bracket form reads a real value, and on that object (or on
 >   `arguments`) `.at` does not exist at all.
+> - `array[array.length - n]` as the callee of a call or `new`, or the tag of a
+>   tagged template. `obj.fns.at(-1)()` calls with `this` undefined where
+>   `obj.fns[obj.fns.length - 1]()` passed `obj.fns`, and `new ctors.at(-1)()`
+>   parses as `new (ctors.at)(-1)` and throws.
 >
-> Both still report — `array[-1]` is almost always a mistake — but naming the
+> All still report — `array[-1]` is almost always a mistake — but naming the
 > mistake is as far as a semantics-preserving fixer can go.
 
 ## Configuration Examples

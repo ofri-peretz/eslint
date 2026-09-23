@@ -213,4 +213,46 @@ describe('prefer-at', () => {
       ],
     });
   });
+
+  // `a.b[i]()` calls with `this === a.b`; `a.b.at(-1)()` calls with `this`
+  // undefined. `new c[i]()` becomes `new c.at(-1)()`, which parses as
+  // `new (c.at)(-1)` and throws "c.at is not a constructor". A callee or tag
+  // position is reported, never rewritten.
+  describe('callee and tag positions', () => {
+    ruleTester.run('prefer-at callee positions', preferAt, {
+      valid: [],
+      invalid: [
+        {
+          name: 'the callee of a new expression is reported, not rewritten',
+          code: 'const x = new ctors[ctors.length - 1]();',
+          output: null,
+          errors: [{ messageId: 'useAtForLastElement' }],
+        },
+        {
+          name: 'the callee of a call is reported, not rewritten — the rewrite drops this',
+          code: 'obj.fns[obj.fns.length - 1]();',
+          output: null,
+          errors: [{ messageId: 'useAtForLastElement' }],
+        },
+        {
+          name: 'the callee of an optional call is reported, not rewritten',
+          code: 'obj.fns[obj.fns.length - 2]?.();',
+          output: null,
+          errors: [{ messageId: 'preferAtMethod' }],
+        },
+        {
+          name: 'the tag of a tagged template is reported, not rewritten',
+          code: 'obj.tags[obj.tags.length - 1]`x`;',
+          output: null,
+          errors: [{ messageId: 'useAtForLastElement' }],
+        },
+        {
+          name: 'a call argument is still rewritten — only the callee is unsafe',
+          code: 'f(arr[arr.length - 1]);',
+          output: 'f(arr.at(-1));',
+          errors: [{ messageId: 'useAtForLastElement' }],
+        },
+      ],
+    });
+  });
 });

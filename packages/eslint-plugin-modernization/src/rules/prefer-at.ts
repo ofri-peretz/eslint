@@ -55,6 +55,26 @@ function isWriteTarget(node: TSESTree.MemberExpression): boolean {
   }
 }
 
+/**
+ * Is this member expression the function being called, constructed or tagged?
+ *
+ * The rewrite is not equivalent there. `a.b[i]()` calls with `this === a.b`,
+ * `a.b.at(-1)()` with `this` undefined. `new c[i]()` becomes `new c.at(-1)()`,
+ * which parses as `new (c.at)(-1)` and throws "c.at is not a constructor".
+ */
+function isCalleeOrTag(node: TSESTree.MemberExpression): boolean {
+  const parent = node.parent as TSESTree.Node;
+  switch (parent.type) {
+    case 'CallExpression':
+    case 'NewExpression':
+      return parent.callee === node;
+    case 'TaggedTemplateExpression':
+      return parent.tag === node;
+    default:
+      return false;
+  }
+}
+
 export const preferAt = createRule<RuleOptions, MessageIds>({
   name: 'prefer-at',
   meta: {
@@ -189,6 +209,13 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
           const offset = node.property.right.value;
           const messageId =
             offset === 1 ? 'useAtForLastElement' : 'preferAtMethod';
+
+          // Reported, not rewritten, where the element is called or tagged —
+          // see isCalleeOrTag(). Same shape as the variable-offset branch.
+          if (isCalleeOrTag(node)) {
+            context.report({ node, messageId });
+            return;
+          }
 
           context.report({
             node,
