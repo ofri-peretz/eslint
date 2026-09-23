@@ -1,7 +1,7 @@
 {
-  "releaseCount": 727,
+  "releaseCount": 730,
   "packageCount": 36,
-  "entryCount": 2174,
+  "entryCount": 2180,
   "oldestYear": 2024,
   "releases": [
     {
@@ -17900,6 +17900,21 @@
       ]
     },
     {
+      "package": "eslint-plugin-browser-security",
+      "short": "eslint-plugin-browser-security",
+      "version": "2.1.8",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "chore",
+          "title": "`no-clickjacking` pins three more shapes where the header NAME is not frame protection",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-jwt-security",
       "short": "eslint-plugin-jwt-security",
       "version": "2.2.9",
@@ -18140,6 +18155,51 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-react-features",
+      "short": "eslint-plugin-react-features",
+      "version": "1.7.9",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-is-prefix-prop` suggested renaming `isTTY` to `tTY`",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`jsx-key` suggested `key={item.id}` against callbacks that bind no `item`",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-this-in-sfc` reported a declared TS `this` parameter, and lost class context on a nested class",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`no-object-type-as-default-prop` reported any object destructuring default, anywhere",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.4.10",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`detect-object-injection` accepted a `const` allowlist only in `for-of`, not in `.forEach`",
           "pr": null
         }
       ]
