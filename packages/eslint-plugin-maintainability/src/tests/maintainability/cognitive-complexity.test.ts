@@ -63,6 +63,22 @@ describe('cognitive-complexity', () => {
           code: 'function f(a, b, c, d) { return a ?? b ?? c ?? d; }',
           options: [{ maxComplexity: 1 }],
         },
+        // burgee packages/burgee/src/yargs-parser.ts:72 (`tokenizeArgString`) and
+        // packages/burgee/src/suggest.ts:24 (`suggestSimilar`) each scored 16-17/15 on an
+        // `else if` inside a loop. The docs' Complexity Factors table charges
+        // "Conditionals | +1 | `if`, `else if`", and RSPEC-3776, which the docs cite, adds
+        // no nesting increment for `else if` / `else`. The rule charged a nested `else if`
+        // 1 + nesting, as if it were a fresh nested `if`.
+        {
+          name: 'a nested else-if costs a flat point, not a nesting increment',
+          code: 'function f(xs) { for (const x of xs) { if (x > 0) { a(); } else if (x < 0) { b(); } } }',
+          options: [{ maxComplexity: 4 }],
+        },
+        {
+          name: 'an else-if chain at depth two costs one flat point per link',
+          code: 'function f(xs) { for (const x of xs) { while (x) { if (x > 0) { a(); } else if (x < 0) { b(); } else if (x === 0) { c(); } else { d(); } } } }',
+          options: [{ maxComplexity: 9 }],
+        },
       ],
       invalid: [],
     });
