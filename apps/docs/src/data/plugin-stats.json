@@ -5,7 +5,7 @@
       "rules": 46,
       "description": "ESLint plugin for browser security — detects DOM XSS, postMessage abuse, tokens in localStorage, insecure cookies, clickjacking, mixed content, and CSP gaps",
       "category": "security",
-      "version": "2.1.8",
+      "version": "2.1.9",
       "published": true
     },
     {
