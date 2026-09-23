@@ -246,6 +246,44 @@ describe('prefer-at', () => {
           output: null,
           errors: [{ messageId: 'useAtForLastElement' }],
         },
+        // TS wrappers and a parenthesised chain have no runtime effect, so the
+        // call still binds `this` to the receiver.
+        {
+          name: 'a non-null-asserted callee is reported, not rewritten',
+          code: 'obj.fns[obj.fns.length - 1]!();',
+          output: null,
+          errors: [{ messageId: 'useAtForLastElement' }],
+        },
+        {
+          name: 'an as-asserted callee is reported, not rewritten',
+          code: '(obj.fns[obj.fns.length - 1] as F)();',
+          output: null,
+          errors: [{ messageId: 'useAtForLastElement' }],
+        },
+        {
+          name: 'a satisfies-checked callee is reported, not rewritten',
+          code: '(obj.fns[obj.fns.length - 1] satisfies F)();',
+          output: null,
+          errors: [{ messageId: 'useAtForLastElement' }],
+        },
+        {
+          name: 'an angle-bracket-asserted callee is reported, not rewritten',
+          code: '(<F>obj.fns[obj.fns.length - 1])();',
+          output: null,
+          errors: [{ messageId: 'useAtForLastElement' }],
+        },
+        {
+          name: 'a parenthesised optional-chain callee is reported, not rewritten',
+          code: '(obj?.fns[obj.fns.length - 1])();',
+          output: null,
+          errors: [{ messageId: 'useAtForLastElement' }],
+        },
+        {
+          name: 'a wrapped value that is not called is still rewritten',
+          code: 'const f = obj.fns[obj.fns.length - 1]!;',
+          output: 'const f = obj.fns.at(-1)!;',
+          errors: [{ messageId: 'useAtForLastElement' }],
+        },
         {
           name: 'a call argument is still rewritten — only the callee is unsafe',
           code: 'f(arr[arr.length - 1]);',

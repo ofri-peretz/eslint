@@ -61,15 +61,32 @@ function isWriteTarget(node: TSESTree.MemberExpression): boolean {
  * The rewrite is not equivalent there. `a.b[i]()` calls with `this === a.b`,
  * `a.b.at(-1)()` with `this` undefined. `new c[i]()` becomes `new c.at(-1)()`,
  * which parses as `new (c.at)(-1)` and throws "c.at is not a constructor".
+ *
+ * TS wrappers (`x!`, `x as T`, `x satisfies T`, `<T>x`) and a parenthesised
+ * optional chain erase at runtime — `(a.b[i] as F)()` still binds `this` to
+ * `a.b` — so walk through them before checking the call.
  */
+const TRANSPARENT_WRAPPERS = new Set([
+  'TSNonNullExpression',
+  'TSAsExpression',
+  'TSSatisfiesExpression',
+  'TSTypeAssertion',
+  'ChainExpression',
+]);
+
 function isCalleeOrTag(node: TSESTree.MemberExpression): boolean {
-  const parent = node.parent as TSESTree.Node;
+  let child: TSESTree.Node = node;
+  let parent = node.parent as TSESTree.Node;
+  while (TRANSPARENT_WRAPPERS.has(parent.type)) {
+    child = parent;
+    parent = parent.parent as TSESTree.Node;
+  }
   switch (parent.type) {
     case 'CallExpression':
     case 'NewExpression':
-      return parent.callee === node;
+      return parent.callee === child;
     case 'TaggedTemplateExpression':
-      return parent.tag === node;
+      return parent.tag === child;
     default:
       return false;
   }
