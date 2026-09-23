@@ -344,6 +344,20 @@ export const noCommonjs = createRule<RuleOptions, MessageIds>({
 
         // Check if it's import x = require('module')
         if (node.moduleReference.type === 'TSExternalModuleReference') {
+          // A callable CommonJS export (`module.exports = fn`) used as `x()`,
+          // `new x()` or x`…` cannot be reached through a namespace import.
+          const usedAsCallee = (
+            context.sourceCode.getDeclaredVariables(node)[0]?.references ?? []
+          ).some((ref) => {
+            const parent = ref.identifier.parent;
+            return (
+              ((parent.type === 'CallExpression' ||
+                parent.type === 'NewExpression') &&
+                parent.callee === ref.identifier) ||
+              (parent.type === 'TaggedTemplateExpression' &&
+                parent.tag === ref.identifier)
+            );
+          });
           context.report({
             node,
             messageId: 'commonjsRequire',
@@ -355,7 +369,9 @@ export const noCommonjs = createRule<RuleOptions, MessageIds>({
             // `export import x = …` has no one-statement ES6 form that also
             // binds `x` locally, so it gets no suggestion.
             suggest:
-              suggestES6 && node.parent.type !== 'ExportNamedDeclaration'
+              suggestES6 &&
+              !usedAsCallee &&
+              node.parent.type !== 'ExportNamedDeclaration'
                 ? [
                     {
                       messageId: 'commonjsRequire',

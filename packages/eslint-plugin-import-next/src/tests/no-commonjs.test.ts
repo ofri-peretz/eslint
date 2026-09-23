@@ -304,6 +304,58 @@ describe('no-commonjs', () => {
             },
           ],
         },
+        // A callable CommonJS export (`module.exports = fn`) used as `x()` is
+        // not callable through a namespace import, so no rewrite is offered.
+        {
+          name: 'an import-equals binding that is called gets no namespace suggestion',
+          code: 'import express = require("express");\nexpress();',
+          filename: '/src/utils/helpers.ts',
+          errors: [{ messageId: 'commonjsRequire', suggestions: [] }],
+        },
+        {
+          name: 'an import-equals binding that is constructed gets no namespace suggestion',
+          code: 'import Emitter = require("events");\nnew Emitter();',
+          filename: '/src/utils/helpers.ts',
+          errors: [{ messageId: 'commonjsRequire', suggestions: [] }],
+        },
+        {
+          name: 'an import-equals binding used as a template tag gets no namespace suggestion',
+          code: 'import dedent = require("dedent");\ndedent`x`;',
+          filename: '/src/utils/helpers.ts',
+          errors: [{ messageId: 'commonjsRequire', suggestions: [] }],
+        },
+        {
+          name: 'an import-equals binding passed as an argument, not called, still gets the suggestion',
+          code: 'import path = require("path");\nuse(path);',
+          filename: '/src/utils/helpers.ts',
+          errors: [
+            {
+              messageId: 'commonjsRequire',
+              suggestions: [
+                {
+                  messageId: 'commonjsRequire',
+                  output: `import * as path from 'path';\nuse(path);`,
+                },
+              ],
+            },
+          ],
+        },
+        {
+          name: 'an import-equals binding used only as a namespace still gets the suggestion',
+          code: 'import path = require("path");\npath.join("a", "b");',
+          filename: '/src/utils/helpers.ts',
+          errors: [
+            {
+              messageId: 'commonjsRequire',
+              suggestions: [
+                {
+                  messageId: 'commonjsRequire',
+                  output: `import * as path from 'path';\npath.join("a", "b");`,
+                },
+              ],
+            },
+          ],
+        },
         // `export import foo = …` has no one-statement ES6 equivalent that also
         // binds `foo` locally; rewriting only the inner node left
         // `export import foo from 'foo'`, a syntax error.
