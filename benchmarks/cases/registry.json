@@ -196,9 +196,9 @@
     {
       "id": "ILB-0007",
       "added": "2026-08-26",
-      "title": "A merge helper guarded by Object.hasOwn",
-      "rationale": "NOT a defect — it is the documented remediation for ILB-0002. Reporting the fix leaves the user with nothing to do, which is how a rule teaches people to disable it.",
-      "cwe": null,
+      "title": "Prototype pollution through a merge helper whose hasOwn guard names the source",
+      "rationale": "Reclassified from decoy on 2026-09-15. It was registered as the documented remediation for ILB-0002, on the reasoning that Object.hasOwn is the sanctioned guard. That reasoning was never executed. The guard names src and the write lands on dst, so it proves nothing about the object being written: with src = JSON.parse('{\"__proto__\": {...}}'), __proto__ IS an own property, the guard passes, and dst[k] = src[k] reparents dst. In the recursive spelling it walks into Object.prototype and pollutes every object in the process. It is ILB-0002 with a guard that does not cover the write, not its fix.",
+      "cwe": "CWE-1321",
       "severity": {
         "cvss": null,
         "vector": null,
@@ -210,11 +210,11 @@
       "coverage": [
         {
           "rule": "secure-coding/detect-object-injection",
-          "expect": "silent",
+          "expect": "report",
           "evidence": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/head-to-head.test.ts"
         }
       ],
-      "kind": "decoy",
+      "kind": "defect",
       "peers": [
         {
           "plugin": "eslint-plugin-security",

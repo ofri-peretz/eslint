@@ -110,4 +110,85 @@ describe('prefer-at', () => {
       ],
     });
   });
+
+  /**
+   * The receiver does not have to be a bare identifier.
+   *
+   * `node.object.type !== 'Identifier'` sat above every detection branch, so
+   * `c.path[c.path.length - 1]` and `this.rows[this.rows.length - 1]` — the
+   * common shape in class-based and node-tree code — were invisible. burgee
+   * has 11 such sites. The `.length` half of this very expression was already
+   * generalised to read `o['length']`; the receiver half was left behind.
+   *
+   * Receivers are compared by source text, so the two halves still have to
+   * name the same object. The FIXER is gated separately: it rewrites only a
+   * receiver made of plain identifiers and dot access, because re-spelling a
+   * receiver that contains a call would move that call.
+   */
+  describe('member-expression receivers', () => {
+    ruleTester.run('receiver is not a bare identifier', preferAt, {
+      valid: [
+        {
+          name: 'the receiver and the .length receiver must be the same object',
+          code: 'const x = a.path[b.path.length - 1];',
+        },
+        {
+          name: 'a computed receiver segment is not matched by text alone',
+          code: 'const x = a[i].path[a[j].path.length - 1];',
+        },
+        {
+          name: 'a call as the whole receiver is out of scope — it is a new value each time',
+          code: 'const x = getArr()[getArr().length - 1];',
+        },
+        {
+          // Narrowed from `invalid` while fixing the computed-key blind spot:
+          // two calls need not return the same object, so the two halves
+          // cannot be shown to name one receiver. Silence is the sound answer.
+          name: 'a call inside the receiver cannot be proven to name one object',
+          code: 'const last = get().rows[get().rows.length - 1];',
+        },
+        {
+          // Same narrowing: `a[i]` and a later `a[i]` are the same element only
+          // while `i` is unchanged, which nothing here proves.
+          name: 'a computed segment in the receiver cannot be proven stable',
+          code: 'const last = a[i].path[a[i].path.length - 1];',
+        },
+      ],
+      invalid: [
+        {
+          // The computed-key blind spot itself: the same object written two
+          // ways must still match, so the receiver comparison canonicalises
+          // through propertyName() rather than comparing source text.
+          name: 'a string-subscript receiver matches its dotted twin',
+          code: 'const last = c["path"][c.path["length"] - 1];',
+          output: 'const last = c["path"].at(-1);',
+          errors: [{ messageId: 'useAtForLastElement' }],
+        },
+        {
+          name: 'a dotted receiver is rewritten like a bare identifier',
+          code: 'const last = c.path[c.path.length - 1];',
+          output: 'const last = c.path.at(-1);',
+          errors: [{ messageId: 'useAtForLastElement' }],
+        },
+        {
+          name: 'a this-rooted receiver is rewritten too',
+          code: 'const last = this.rows[this.rows.length - 1];',
+          output: 'const last = this.rows.at(-1);',
+          errors: [{ messageId: 'useAtForLastElement' }],
+        },
+        {
+          name: 'a dotted receiver with a variable offset is reported, not rewritten',
+          code: 'const item = c.path[c.path.length - n];',
+          output: null,
+          errors: [{ messageId: 'preferAtMethod' }],
+        },
+        {
+          name: 'a negative literal index on a dotted receiver is reported',
+          code: 'const last = c.path[-1];',
+          output: null,
+          errors: [{ messageId: 'useAtForNegativeIndex' }],
+        },
+      ],
+    });
+  });
 });

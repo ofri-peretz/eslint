@@ -68,18 +68,21 @@ export const preferTemplateLiteral = createRule<RuleOptions, MessageIds>({
     type: 'suggestion',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-modernization/docs/rules/prefer-template-literal.md',
-      description: 'Prefer template literals over string concatenation with the + operator',
+      description:
+        'Prefer template literals over string concatenation with the + operator',
     },
     fixable: 'code',
     messages: {
       preferTemplateLiteral: formatLLMMessage({
         icon: MessageIcons.INFO,
         issueName: 'Prefer Template Literal',
-        description: 'String concatenation using + can be replaced with a template literal for readability',
+        description:
+          'String concatenation using + can be replaced with a template literal for readability',
         severity: 'LOW',
         // eslint-disable-next-line no-template-curly-in-string
         fix: 'Use a template literal: `Hello ${name}` instead of "Hello " + name',
-        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals',
       }),
     },
     schema: [],
@@ -91,22 +94,31 @@ export const preferTemplateLiteral = createRule<RuleOptions, MessageIds>({
      * `"a" + b + "c"` → [Literal("a"), Identifier(b), Literal("c")]
      *
      * `+` is left-associative, so a nested `+` on the LEFT is the same concat
-     * chain and flattens. One on the RIGHT only got there by parentheses, and
-     * it evaluates on its own before the concat does — so it is a single part
-     * unless it is itself string-producing. Flattening it splits one addition
-     * into two placeholders and changes the value: `"row " + (i + 1)` became
-     * `` `row ${i}${1}` ``, which prints "row 01" where the source printed
-     * "row 1". Arithmetic reaches the template intact instead.
+     * chain — but only when that sub-expression is itself string-producing.
+     * One on the RIGHT only got there by parentheses, and it evaluates on its
+     * own before the concat does. Either way, a non-string-producing `+` is
+     * ARITHMETIC: it evaluates to one number and must become one placeholder.
+     * Flattening it splits one addition into two placeholders and changes the
+     * value: `"row " + (i + 1)` became `` `row ${i}${1}` `` ("row 01" for
+     * "row 1"), and `i + 1 + "px"` became `` `${i}${1}px` `` ("51px" for
+     * "6px"). Both sides are guarded, so arithmetic reaches the template
+     * intact regardless of operand types.
      */
     function collectParts(node: TSESTree.Node): TSESTree.Node[] {
       if (node.type === 'BinaryExpression' && node.operator === '+') {
+        const left =
+          node.left.type === 'BinaryExpression' &&
+          node.left.operator === '+' &&
+          !isStringExpression(node.left)
+            ? [node.left as TSESTree.Node]
+            : collectParts(node.left);
         const right =
           node.right.type === 'BinaryExpression' &&
           node.right.operator === '+' &&
           !isStringExpression(node.right)
             ? [node.right as TSESTree.Node]
             : collectParts(node.right);
-        return [...collectParts(node.left), ...right];
+        return [...left, ...right];
       }
       return [node];
     }
@@ -146,7 +158,8 @@ export const preferTemplateLiteral = createRule<RuleOptions, MessageIds>({
         if (node.operator !== '+') return;
 
         // Only flag the ROOT of a + chain (skip nested ones already covered by the root)
-        const parent = (node as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+        const parent = (node as TSESTree.Node & { parent?: TSESTree.Node })
+          .parent;
         if (
           parent?.type === 'BinaryExpression' &&
           (parent as TSESTree.BinaryExpression).operator === '+'
@@ -168,7 +181,10 @@ export const preferTemplateLiteral = createRule<RuleOptions, MessageIds>({
           node,
           messageId: 'preferTemplateLiteral',
           fix(fixer: TSESLint.RuleFixer) {
-            return fixer.replaceText(node, buildTemplateLiteral(parts, sourceCode));
+            return fixer.replaceText(
+              node,
+              buildTemplateLiteral(parts, sourceCode),
+            );
           },
         });
       },

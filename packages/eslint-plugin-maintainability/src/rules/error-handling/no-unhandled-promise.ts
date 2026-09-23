@@ -392,6 +392,27 @@ function isThenWithRejectionHandler(node: TSESTree.CallExpression): boolean {
 }
 
 /**
+ * Does this `.catch(…)` call pass anything that could handle a rejection?
+ *
+ * `Promise.prototype.catch(x)` is `then(undefined, x)`, and a non-callable `x`
+ * is ignored — so `.catch()`, `.catch(undefined)` and `.catch(null)` pass the
+ * rejection straight through, exactly like the spelled-out one-argument
+ * `.then` that `isThenWithRejectionHandler` already refuses to count.
+ *
+ * Deliberately narrower than that function: anything that is not provably
+ * absent — an identifier, a call returning a handler (`.catch(log(ctx))`) — is
+ * still assumed to handle it, as the terminator branch always has.
+ */
+function catchHasHandler(node: TSESTree.CallExpression): boolean {
+  const handler = node.arguments[0];
+  if (handler === undefined) return false;
+  if (handler.type === AST_NODE_TYPES.Literal) return false;
+  return !(
+    handler.type === AST_NODE_TYPES.Identifier && handler.name === 'undefined'
+  );
+}
+
+/**
  * Does anything DOWNSTREAM of this call actually handle a rejection?
  *
  * Walks `callee.object` through the chain-transparent links — `.then` and
@@ -410,9 +431,12 @@ function chainHasRejectionHandler(node: TSESTree.CallExpression): boolean {
     current.callee.type === 'MemberExpression'
   ) {
     const member = propertyName(current.callee);
-    if (member === 'catch') return true;
+    if (member === 'catch' && catchHasHandler(current)) return true;
     if (isThenWithRejectionHandler(current)) return true;
-    if (member !== 'then' && member !== 'finally') return false;
+    // A handler-less `.catch()` is as transparent as `.then(f)`.
+    if (member !== 'then' && member !== 'finally' && member !== 'catch') {
+      return false;
+    }
     current = current.callee.object;
   }
   return false;
@@ -656,8 +680,21 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
     }
 
     const filename = context.filename;
+    // `ignoreInTests` is documented ecosystem-wide as "Skip this rule in
+    // `*.test.*` / `*.spec.*` files" — a glob with nothing to say about the
+    // extension. The alternation here was `ts|tsx|js|jsx`, which quietly
+    // dropped the option on `.mts`/`.cts`/`.mjs`/`.cjs`: `c.test.mts` reported
+    // where `c.test.ts` did not, for the same source. `[cm]?` restores the
+    // documented contract, and matches the `[cm]?[jt]sx?` tail of the devkit's
+    // own `TEST_BASENAME`.
+    //
+    // Deliberately NOT the devkit's `isTestFilePath`: that helper also treats
+    // `fixture|mock|e2e-spec|stories|story` basenames and whole test
+    // DIRECTORIES as exempt, which would silence this rule on `.stories.ts`
+    // and on every file under `__tests__/`. That is a far larger behaviour
+    // change than the extension defect being fixed here.
     const isTestFile =
-      ignoreInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+      ignoreInTests && /\.(test|spec)\.[cm]?[jt]sx?$/.test(filename);
 
     if (isTestFile) {
       return {};
@@ -696,6 +733,8 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
          */
         if (methodName === 'finally' && !chainHasRejectionHandler(node)) {
           // Nothing downstream handles the rejection — fall through and report.
+        } else if (methodName === 'catch' && !catchHasHandler(node)) {
+          // `.catch()` / `.catch(undefined)` settles nothing — fall through.
         } else if (methodName === 'catch' || methodName === 'finally') {
           // Check if the callback is empty or meaningless
           if (

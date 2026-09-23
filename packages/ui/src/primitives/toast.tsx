@@ -365,11 +365,6 @@ function ToastTrigger({
       if (event.defaultPrevented) return;
       manager.add({ title, description, type: tone });
     },
-    // `event` is this callback's own parameter (not a free variable) and
-    // `type` is an object-literal key in `manager.add({ ..., type: tone })`
-    // above, not an identifier reference — neither belongs in the
-    // dependency array.
-    // eslint-disable-next-line react-features/hooks-exhaustive-deps
     [manager, onClick, title, description, tone],
   );
 

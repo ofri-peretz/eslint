@@ -1329,6 +1329,33 @@ describe('detect-object-injection', () => {
             `,
           },
 
+          // burgee sweep: packages/burgee/src/yargs-parser.ts:240 (declaration :152) and
+          // :247 -- the same prescribed fix, BOUND to a name instead of used as an
+          // expression, still drew CVSS 9.8. The 2026-08 amendment above pinned the
+          // expression spelling; the const-bound spelling was never covered, so
+          // `Object.assign(Object.create(null), src)` was certified prototype-less as an
+          // assign TARGET and not recognized one statement later as the thing being
+          // indexed.
+          //
+          // Object.assign never invokes SetPrototypeOf -- it does [[Set]] per own
+          // enumerable key -- so the bound value IS the null-prototype target. On a
+          // null-[[Prototype]] target there is no inherited __proto__ accessor, so a
+          // `__proto__` key in the source lands as an inert own data property
+          // (verified Node 24). SPEC.md G1 states this of the *target*, with no
+          // qualification about how the target is spelled.
+          {
+            name: 'a const-bound Object.assign(Object.create(null), src) is still the null-prototype target (burgee: packages/burgee/src/yargs-parser.ts:240)',
+            code: `
+              declare const src: Record<string, unknown>;
+              declare const key: string;
+              function read() {
+                const assigned: any = Object.assign(Object.create(null), src);
+                assigned[key] = 1;
+                return assigned;
+              }
+            `,
+          },
+
           // burgee sweep: packages/burgee/src/yargs-parser.ts:184,188,192,196,200,204,
           // 226,508 -- eight CVSS 9.8 findings from one shape. The exemption resolved a
           // bare binding but bailed on a MemberExpression receiver, so the SAME
@@ -1560,7 +1587,25 @@ describe('detect-object-injection', () => {
           { code: "Object.assign(target, { a: 1 }, 'literal-string');" },
           { code: "Object.assign(target, 'just-a-string');" },
         ],
-        invalid: [],
+        invalid: [
+          // The Object.assign arm follows `arguments[0]`, which can lead back to the
+          // binding it started from. `let a = Object.assign(b, {}); let b =
+          // Object.assign(a, {})` never RUNS — `b` is in TDZ at `a`'s initialiser — but
+          // it PARSES, and the walk would recur forever on input a compiler rejects.
+          // The `seen` guard cuts the second visit to the same CallExpression and the
+          // shape falls through to a normal report; a linter must terminate on every
+          // parse, not only on programs that would execute.
+          {
+            name: 'a parse-only Object.assign cycle terminates instead of hanging the walk',
+            code: `
+              declare const key: string;
+              let a: any = Object.assign(b, {});
+              let b: any = Object.assign(a, {});
+              a[key] = 1;
+            `,
+            errors: [{ messageId: 'objectInjection' }],
+          },
+        ],
       },
     );
 
@@ -1620,7 +1665,10 @@ describe('detect-object-injection', () => {
           // isNumericKey: BinaryExpression bitwise op (branch 85)
           'const x = arr[y | 0];',
           // isNumericKey: Number() call (branch 88)
-          'const x = arr[Number(z)];',
+          {
+            name: 'a key coerced through Number() is numeric, not a property name',
+            code: 'const x = arr[Number(z)];',
+          },
           // hasPrecedingValidation: guard if with { return } body (branch 27 — ReturnStatement arm)
           'function f(obj, key) { if (!allowed.includes(key)) { return; } return obj[key]; }',
           // isLoopCounterIdentifier: for-loop with numeric initializer (branches 97-98)
@@ -1641,10 +1689,17 @@ describe('detect-object-injection', () => {
 describe('prototype-polluting copy loop', () => {
   ruleTester.run('copy-loop', detectObjectInjection, {
     valid: [
-      // Source is a module-local object, not a parameter — the benign majority case.
-      `const src = { a: 1 }; const out = {}; for (const k in src) { out[k] = src[k]; }`,
-      // Guarded with hasOwnProperty — that guard IS the documented fix.
-      `function m(t, s) { for (const k in s) { if (Object.prototype.hasOwnProperty.call(s, k)) { t[k] = s[k]; } } }`,
+      {
+        name: 'a copy loop whose source is a module-local object is the benign majority case',
+        code: `const src = { a: 1 }; const out = {}; for (const k in src) { out[k] = src[k]; }`,
+      },
+      {
+        // Guards are recognised by the key being a STRING, so the computed
+        // spelling of the accessor cannot be mistaken for a guard — and a real
+        // string guard still clears the loop however the access is written.
+        name: 'a dangerous-key guard clears the loop written with a string subscript',
+        code: `function m(t, s) { for (const k in s) { if (k === '__proto__') continue; t[k] = s[k]; } }`,
+      },
       // Iterating a call result: not an Identifier, so the source cannot be proven — abstain.
       `function m(t, s) { for (const k in getSource()) { t.x = k; } }`,
       // Loop that never assigns through the key.
@@ -1663,6 +1718,16 @@ describe('prototype-polluting copy loop', () => {
       // The canonical merge helper.
       {
         code: `function merge(t, s) { for (const k in s) { t[k] = s[k]; } return t; }`,
+        errors: 1,
+      },
+      // Was pinned VALID with the comment "Guarded with hasOwnProperty — that
+      // guard IS the documented fix." It is not the fix for THIS write: the
+      // guard names `s`, the write lands on `t`. Verified in node — an own
+      // `__proto__` on `s` passes the guard and reparents `t`; recursively, it
+      // reaches Object.prototype. The fixture pinned the bug, not the contract.
+      {
+        name: 'a hasOwnProperty guard on the SOURCE does not make a write to the TARGET safe',
+        code: `function m(t, s) { for (const k in s) { if (Object.prototype.hasOwnProperty.call(s, k)) { t[k] = s[k]; } } }`,
         errors: 1,
       },
       // Nested inside a conditional still reports exactly once.

@@ -5,6 +5,86 @@ All notable changes to `eslint-plugin-conventions` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.0.6
+
+### Patch Changes
+
+- **🐛 Fix** — `no-commented-code` grouped across live source and its suggestion deleted it
+
+  The `Program` visitor built groups of "consecutive" comments by walking `getAllComments()` and only breaking the group on a comment that does _not_ look like code. Intervening source was never a boundary, so two code-like comments with a hundred lines of live statements between them formed one group — and the group's suggestion removes `[first.range[0], last.range[1]]` as a single range, taking everything in between with it.
+
+  Minimized, the Quick Fix labelled "Delete the commented code block" reduces
+
+  ```js
+  // const a = 1;
+  export function realCode() {
+    return 42;
+  }
+  // const b = 2;
+  ```
+
+  to a single newline: `realCode` is gone. On burgee's vendored `ora/test.js:1658` the range was 5,604 characters and swallowed the `});` closing the enclosing `test(...)` call, so the output did not parse. The in-source comment above that branch already described the intent as "Multiple consecutive comments"; the implementation grouped comments consecutive in the _filtered_ stream, which is not the same thing.
+
+  Groups now break when live source separates two comments, asked of the token stream rather than of line numbers so blank lines and interleaved prose comments still group as before. Each commented-out region becomes its own report with its own non-destructive fix, which also restores a suppression site for the second region — previously only the first comment carried a marker.
+
+  `createWithMockContext` gains a `getTokenAfter` stub. A real `SourceCode` has one and the rule now needs it; per the standing note in that file, the mock is completed rather than the rule made defensive about a shape ESLint always provides.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.6`
+
+## 6.0.5
+
+### Patch Changes
+
+- **🐛 Fix** — `consistent-existence-index-check` — two detection-scope fixes.
+
+  `#field in obj` is no longer reported — a private-name brand check is not one of the four
+  spellings the rule arbitrates, walks no prototype chain, and has no
+  own-property form, so the suggested `Object.hasOwn(o, #field)` was a
+  SyntaxError. And `obj.hasOwnProperty(key, extra)` is now reported: detection was
+  gated on an undocumented argument count, which suppressed the report rather than
+  the fix, while the `.call` sibling read the same doc notation as two-or-more.
+
+## 6.0.4
+
+### Patch Changes
+
+- **🐛 Fix** — four false positives found by sweeping the plugins over a real corpus
+
+  Each was minimized to a standalone snippet, reproduced under `RuleTester`, and
+  then argued against by an independent reviewer before any code changed. Three
+  further candidates were rejected at that gate and are not in this release.
+
+  **`no-missing-error-context` (reliability + maintainability)** — a message bound
+  to a `const` one line above the `throw` reported "Thrown error missing message",
+  which is false about the node:
+
+  ```ts
+  const message = 'The importMeta option is required.';
+  throw new TypeError(message); // REPORTED
+  ```
+
+  `isProvablyString` already walks through `??`, `||`, `?:` and `+`; it now also
+  resolves a single `const` definition. `const m = someVar`, a reassigned `let`,
+  and `const m = ''` still report.
+
+  **`require-render-return` (react-features)** — detection was the method name and
+  nothing else, so any class with a `render` method — a terminal painter, a canvas,
+  a template engine — drew a CRITICAL "must return a value" for a method whose
+  contract is to return nothing. Now gated on the React superclass check the
+  sibling rules already use.
+
+  **`detect-object-injection` (secure-coding)** — `xs.forEach((v, i) => { dst[i] = v })`
+  drew CVSS 9.8 on a key ECMA-262 guarantees is a Number, while the identical
+  `for` counter was silent. The exemption is gated on the receiver being provably
+  an Array: `Map`, `Set`, `Headers`, `FormData` and `URLSearchParams` pass a string
+  KEY in that slot and still report.
+
+  **`no-console-spaces` (conventions)** — the fixer deleted newlines from program
+  output. `console.log('code=%j\n', code)` was rewritten to drop the `\n`, which
+  reaches stdout; `util.format` appends the inter-argument space _after_ a trailing
+  newline rather than absorbing it. The predicate and the fixer are both narrowed
+  to the literal space that separator actually inserts.
+
 ## 6.0.3
 
 ### Patch Changes

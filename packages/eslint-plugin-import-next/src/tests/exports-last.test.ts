@@ -62,6 +62,23 @@ ruleTester.run('exports-last', exportsLast, {
       code: `export { foo };`,
     },
 
+    // burgee packages/flagstaff/src/ora.ts:691 — the file's last two statements are
+    // `export default function ora(...)` followed by `export async function oraPromise(...)`,
+    // with nothing after them, and line 691 was told to "Move this export to the end of the
+    // file". A declaration-export was being reclassified into nonExportIndices to exempt it
+    // from being reported, which also made it a positional wall for every export before it.
+    //
+    // Upstream eslint-plugin-import — linked from this rule's documentationLink and @see —
+    // treats a declaration-export as an export unconditionally and reports nothing here;
+    // its docs list this shape under "This will not be reported".
+    {
+      name: 'a declaration-export is not a wall for the exports before it',
+      code: `
+        export default function a() {}
+        export function b() {}
+      `,
+    },
+
     // Re-export at end
     {
       code: `
@@ -110,10 +127,7 @@ ruleTester.run('exports-last', exportsLast, {
         export { b };
         const b = 2;
       `,
-      errors: [
-        { messageId: 'exportNotLast' },
-        { messageId: 'exportNotLast' },
-      ],
+      errors: [{ messageId: 'exportNotLast' }, { messageId: 'exportNotLast' }],
     },
 
     // Re-export not at end

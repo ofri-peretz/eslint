@@ -503,8 +503,41 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
               );
 
             case 'comment': {
-              const text = sourceCode.getText(statement);
-              return fixer.replaceText(statement, `// ${text}`);
+              /**
+               * A `//` comment ends at the newline, so prefixing the STATEMENT
+               * commented only its FIRST physical line and left the rest of it
+               * behind as loose source — `Expression expected.`, emitted by an
+               * unattended `--fix` (`fixable: 'code'`, `hasSuggestions: false`).
+               *
+               * That is not an exotic input: Prettier — this repo's own
+               * formatter — wraps any `console.log` wider than the print width
+               * across several lines. So comment EVERY physical line the
+               * statement spans.
+               *
+               * Which is sound only while nothing FOLLOWS the statement on its
+               * last line. A one-line `case 1: console.log(x); break;` or
+               * `if (r) { console.log(x); }` would lose the `break;` or the
+               * closing brace to the same comment, so there the fixer declines.
+               * The report is unaffected; only the rewrite is withheld.
+               */
+              const end = statement.loc.end;
+              const afterStatement = sourceCode.lines[end.line - 1].slice(
+                end.column,
+              );
+              if (afterStatement.trim() !== '') return null;
+
+              /*
+               * Every JavaScript line terminator, not only `\n`: a `//`
+               * comment also ends at a lone `\r`, U+2028 and U+2029, so a
+               * `split('\n')` left the lines after one of those live. `\r\n`
+               * is matched first so a CRLF file gains one `// ` per line. The
+               * `// ` goes after each line's own indentation.
+               */
+              const commented = sourceCode
+                .getText(statement)
+                .replace(/(^|\r\n|[\r\n\u2028\u2029])([ \t]*)/gu, '$1$2// ');
+
+              return fixer.replaceText(statement, commented);
             }
 
             case 'warn':

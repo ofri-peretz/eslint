@@ -26,6 +26,17 @@ describe('identical-functions', () => {
   describe('Valid Code', () => {
     ruleTester.run('valid - unique functions', identicalFunctions, {
       valid: [
+        {
+          // FP: a backticked word INSIDE a quoted string was stashed by the
+          // template pass, then stashed again inside the quoted string, and
+          // the single-pass restore never expanded the inner placeholder — so
+          // `read` and `write` both vanished and these compared 100%
+          // identical. The distinguishing text must survive normalisation.
+          name: 'a backticked word inside a quoted string still distinguishes two bodies',
+          code:
+            "function openReadPort(p) {\n  const mode = 'use `read` on the port, and only the port, when opening it';\n  log(mode);\n  return p;\n}\n" +
+            "function openWritePort(p) {\n  const mode = 'use `write` on the port, and only the port, when opening it';\n  log(mode);\n  return p;\n}",
+        },
         // Unique functions
         {
           name: 'two functions that do different things',
@@ -655,6 +666,29 @@ describe('identical-functions — short bodies need an exact match', () => {
           // FN GUARD: an exact renamed copy is still a duplicate at any length.
           name: 'a short body that matches exactly still reports',
           code: 'function a(input) {\n  const parsed = parse(input);\n  return parsed;\n}\nfunction b(other) {\n  const decoded = parse(other);\n  return decoded;\n}',
+          errors: [{ messageId: 'identicalFunctions' }],
+        },
+        {
+          // FN GUARD: a ternary CONSEQUENT is a binding, and must be renamed
+          // like any other. The key-colon guard fired on the ternary's `:`, so
+          // `flag ? alpha : fallback` kept `alpha` verbatim and two bodies
+          // differing only there were not recognised as duplicates. Control:
+          // moving the differing name AFTER the colon always reported.
+          name: 'a pair differing only in a ternary consequent is still a duplicate',
+          code:
+            'function pickA(flag, fallback) {\n  const chosen = flag ? alpha : fallback;\n  emit(chosen);\n  return chosen;\n}\n' +
+            'function pickB(flag, fallback) {\n  const chosen = flag ? beta : fallback;\n  emit(chosen);\n  return chosen;\n}',
+          errors: [{ messageId: 'identicalFunctions' }],
+        },
+        {
+          // FN GUARD: a TypeScript type annotation also ends in a colon, so
+          // every annotated declaration escaped renaming — a silent capability
+          // loss across typed code in a TypeScript-first plugin. This is the
+          // FN GUARD case above with annotations added; it must still report.
+          name: 'annotated declarations do not escape binding renaming',
+          code:
+            'function a(input: string) {\n  const parsed: Parsed = parse(input);\n  return parsed;\n}\n' +
+            'function b(other: string) {\n  const decoded: Parsed = parse(other);\n  return decoded;\n}',
           errors: [{ messageId: 'identicalFunctions' }],
         },
         {
