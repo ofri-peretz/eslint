@@ -31,6 +31,13 @@ ruleTester.run('unambiguous', unambiguous, {
 
     // Use strict - intentional script
     { code: `'use strict'; const x = 1;` },
+
+    // TypeScript `export =` cannot be a script; the reference rule lists TSExportAssignment
+    // as module syntax. From burgee packages/closeout/src/signal-exit-signals.cts:21
+    {
+      name: 'a TypeScript export assignment makes the file a module',
+      code: `const signals: string[] = [];\nexport = { signals };`,
+    },
   ],
 
   invalid: [
