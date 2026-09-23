@@ -1,7 +1,7 @@
 {
-  "releaseCount": 735,
+  "releaseCount": 742,
   "packageCount": 36,
-  "entryCount": 2189,
+  "entryCount": 2200,
   "oldestYear": 2024,
   "releases": [
     {
@@ -18055,6 +18055,26 @@
       ]
     },
     {
+      "package": "eslint-plugin-import-next",
+      "short": "eslint-plugin-import-next",
+      "version": "2.8.9",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-unused-modules` and `unambiguous` recognise TypeScript `export =`.",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "implement the overlap half of no-redos-vulnerable-regex, and stop a config pair from erasing no-cycle findings",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-jwt-security",
       "short": "eslint-plugin-jwt-security",
       "version": "2.2.9",
@@ -18170,6 +18190,56 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-maintainability",
+      "short": "eslint-plugin-maintainability",
+      "version": "3.2.15",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "five FP/FN rule defects found by the burgee sweep",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`cognitive-complexity` charges an `else if` a flat +1 instead of a nesting increment",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-modernization",
+      "short": "eslint-plugin-modernization",
+      "version": "3.1.7",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`prefer-at` reports a receiver that reads a private field",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "5.6.7",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`detect-child-process` no longer treats `process.execPath` or `process.pid` as attacker input.",
           "pr": null
         }
       ]
@@ -18295,6 +18365,61 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-react-features",
+      "short": "eslint-plugin-react-features",
+      "version": "1.7.10",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "five FP/FN rule defects found by the burgee sweep",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-reliability",
+      "short": "eslint-plugin-reliability",
+      "version": "4.1.12",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "five FP/FN rule defects found by the burgee sweep",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.4.11",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "five FP/FN rule defects found by the burgee sweep",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`detect-object-injection` reports a copy loop over a `for...of` element of a caller-supplied collection",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "implement the overlap half of no-redos-vulnerable-regex, and stop a config pair from erasing no-cycle findings",
           "pr": null
         }
       ]
