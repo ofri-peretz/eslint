@@ -936,6 +936,52 @@ describe('jsx-key', () => {
           errors: [{ messageId: 'missingKey', suggestions: [] }],
         },
         {
+          // A default does not change the binding. PR #1067 review.
+          name: 'a defaulted callback parameter still suggests its own id',
+          code: `items.map((item = fallback) => <div>{item.name}</div>)`,
+          errors: [
+            {
+              messageId: 'missingKey',
+              suggestions: [
+                {
+                  messageId: 'suggestKey',
+                  output: `items.map((item = fallback) => <div key={item.id}>{item.name}</div>)`,
+                },
+              ],
+            },
+          ],
+        },
+        {
+          name: 'a defaulted destructured parameter suggests the id it binds',
+          code: `items.map(({ id } = {}) => <div>{id}</div>)`,
+          errors: [
+            {
+              messageId: 'missingKey',
+              suggestions: [
+                {
+                  messageId: 'suggestKey',
+                  output: `items.map(({ id } = {}) => <div key={id}>{id}</div>)`,
+                },
+              ],
+            },
+          ],
+        },
+        {
+          name: 'a defaulted id property still binds id',
+          code: `items.map(({ id = 0, name }) => <div>{name}</div>)`,
+          errors: [
+            {
+              messageId: 'missingKey',
+              suggestions: [
+                {
+                  messageId: 'suggestKey',
+                  output: `items.map(({ id = 0, name }) => <div key={id}>{name}</div>)`,
+                },
+              ],
+            },
+          ],
+        },
+        {
           /*
            * The inner callback renders the row, so its (absent) parameter
            * decides. Climbing past it reached the OUTER `item` and suggested

@@ -56,14 +56,23 @@ type RuleOptions = [Options?];
  * anything else        -> `null`, and the caller withholds the suggestion.
  */
 const keyExpressionForParam = (param: TSESTree.Node): string | null => {
+  // A default does not change what the parameter binds: `(item = x) => …`
+  // still binds `item`, and `({ id } = {}) => …` still binds `id`.
+  if (param.type === AST_NODE_TYPES.AssignmentPattern) {
+    return keyExpressionForParam(param.left);
+  }
   if (param.type === AST_NODE_TYPES.Identifier) return `${param.name}.id`;
   if (param.type === AST_NODE_TYPES.ObjectPattern) {
     for (const prop of param.properties) {
       if (prop.type !== AST_NODE_TYPES.Property) continue;
       if (objectKeyName(prop) !== 'id') continue;
       // The bound local, which is what the suggestion has to name: `{ id }`
-      // binds `id`, `{ id: rowId }` binds `rowId`.
-      if (prop.value.type === AST_NODE_TYPES.Identifier) return prop.value.name;
+      // binds `id`, `{ id: rowId }` binds `rowId`, `{ id = 0 }` binds `id`.
+      const bound =
+        prop.value.type === AST_NODE_TYPES.AssignmentPattern
+          ? prop.value.left
+          : prop.value;
+      if (bound.type === AST_NODE_TYPES.Identifier) return bound.name;
     }
   }
   return null;
