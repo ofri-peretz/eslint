@@ -239,8 +239,13 @@ i) => { dst[i] = v })`, and `.map` / `.filter` / `.find` / `.findLast` /
 - **G3** target is frozen (`Object.freeze`)
 - **G4** `structuredClone` instead of a hand merge
 - **G5** the read is on a `class` instance field with a fixed shape
-- **G6** single-step `obj[k] = v` where the target is a **local** object that
-  never escapes — worst case is one object's own prototype, not the process's
+- ~~**G6** single-step `obj[k] = v` where the target is a **local** object that
+  never escapes~~ — **struck 2026-09-23.** Never implemented, never fixtured, and
+  wrong: a non-escaping local is still CWE-915 (§B) —
+  `const p = {}; p[req.body.role] = true; return p.isAdmin === true;`
+  never escapes yet the attacker picks the field. `{}` targets report
+  (index.ts 2026-09-22 amendment; `head-to-head.test.ts`,
+  `dangerous-properties-option.test.ts:77`). The remediation is G1/G2.
 
 ### H. The rule's own remediation
 
