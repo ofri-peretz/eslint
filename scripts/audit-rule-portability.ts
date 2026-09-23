@@ -388,7 +388,7 @@ function summarize(allPlugins) {
 // audit's blocker assumptions (sourceCode + scope + fixer + selector + comments
 // + tokens all present). Bumping oxlint past the latest entry must include a
 // re-verification of apps/oxlint/src-js/plugins/ at the new tag.
-const VERIFIED_OXLINT_RANGE = { min: '1.74.0', maxKnown: '1.82.x' };
+const VERIFIED_OXLINT_RANGE = { min: '1.74.0', maxKnown: '1.83.x' };
 
 // Hash-pinned bundles. These are the actual runtime files shipped with oxlint
 // — the bundled output of apps/oxlint/src-js/plugins/ that I read at 1.62.0.
@@ -400,7 +400,28 @@ const VERIFIED_OXLINT_RANGE = { min: '1.74.0', maxKnown: '1.82.x' };
 // source_code,scope,fix,selector}.ts at the new tag, then update both
 // VERIFIED_OXLINT_RANGE and these hashes in the same commit.
 const VERIFIED_OXLINT_RUNTIME_HASHES = {
-  // Re-verified at 1.82.0 (2026-09-14) by `verify-oxlint-runtime.ts`: all 33
+  // Re-verified at 1.83.0 (2026-09-23) by `verify-oxlint-runtime.ts`: all 33
+  // probes pass. Every runtime file in `dist/` has the same name as at 1.82.0,
+  // so no bundle appeared or vanished. `plugins.js`, `plugins-dev.js` and
+  // `rolldown-runtime.js` are BYTE-IDENTICAL to 1.82.0, and their pins below
+  // are untouched. A `;`-split diff of the two files that did change:
+  //   1. `bindings.js` has 27 differing chunks, and each one is just the
+  //      version literal inside a napi guard.
+  //   2. `lint.js` has 9 differing chunks, none of them in the plugin API:
+  //        - the version literal;
+  //        - the vendored ESLint going from 10.9.1 to 10.10.0, which moves
+  //          one `//#region` path comment;
+  //        - 7 `debug()`/`debug.dump()` calls in the vendored code-path
+  //          analyzer that switch from template literals to `%s` format
+  //          args. That is debug logging only, and nothing it emits changes.
+  // `plugins-dev.d.ts` moved too, adding the `Globals`/`Envs` types and
+  // inlining JSON-schema types. It holds types only, is not a runtime bundle,
+  // and nothing in this repo imports types from `oxlint`.
+  //
+  // Kept below: the 1.82.0 note, because `min` records the OLDEST version
+  // still verified.
+  //
+  // Previously re-verified at 1.82.0 (2026-09-14) by `verify-oxlint-runtime.ts`: all 33
   // probes pass. This is the first bump where `plugins-dev.js` itself moved,
   // so the `;`-split diff mattered more than usual. What changed:
   //   1. `plugins.js` — the production plugin API surface, and the bundle this
@@ -478,9 +499,9 @@ const VERIFIED_OXLINT_RUNTIME_HASHES = {
     '81e4c275f6200ab4b6aed66ba2836b2a8e68756a8609ced02daf91e226377e2d',
   'plugins-dev.js':
     '9160dbc594c8f9fa6e624cc358cb2093dc19281c5233168f0352203fc11b5c16',
-  'lint.js': '1df3522ab96862436a66c9b33cb1252e0a87ff383d63756fc458d96409dd5c3e',
+  'lint.js': '648bb2d1fc92dfca6f6662e29a8495958e0516703975045dea45429d61440718',
   'bindings.js':
-    'e527e0448f9bfa5abac4fcdca1041bed89c2743c0ae6e189dce6b2f5b99664ac',
+    '8624c38feb02764a48bc91fa8ae9b1a329cde185936dc5c0106c059185eb07e0',
   'rolldown-runtime.js':
     '5fc650d7f3c5b72629da633623bf7bc72fd972051fe82268c703b2681f26eb51',
 };
