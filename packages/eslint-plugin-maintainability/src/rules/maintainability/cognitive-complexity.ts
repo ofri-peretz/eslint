@@ -179,7 +179,12 @@ export const cognitiveComplexity = createRule<RuleOptions, MessageIds>({
 
         // Increment for conditionals
         if (n.type === 'IfStatement') {
-          complexity += 1 + currentNesting;
+          // An `else if` is a flat +1: the docs' table charges "Conditionals | +1 |
+          // `if`, `else if`" and RSPEC-3776 adds no nesting increment for `else if` /
+          // `else`. Only the head `if` of a chain pays for its depth.
+          const isElseIf =
+            n.parent?.type === 'IfStatement' && n.parent.alternate === n;
+          complexity += isElseIf ? 1 : 1 + currentNesting;
           breakdown.conditionals++;
           // Traverse the test condition to count logical operators
           traverse(n.test, currentNesting);
