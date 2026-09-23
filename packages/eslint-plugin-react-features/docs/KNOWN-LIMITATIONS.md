@@ -177,6 +177,28 @@ This document catalogs known limitations in our ESLint rules to help users under
 
 - Fragment shorthand `<>` in some edge cases (though this is valid)
 
+#### `require-render-return`
+
+The rule recognises a React component by its superclass, the same check
+`sort-comp`, `state-in-constructor`, `prefer-stateless-function` and
+`no-direct-mutation-state` use. A base it cannot resolve in one file is not a
+React component as far as this rule is concerned, and its `render` is not
+checked.
+
+**Known False Negatives (Not Detected)**
+
+- Aliased import: `import { Component as Base } from 'react'; class X extends Base`
+- Namespace alias other than `React`: `import * as R from 'react'; class X extends R.Component`
+- A base built by a call: `class X extends withRouter(React.Component)` — any HOC or mixin
+- A base imported from another module: `import { Base } from './base'` where `Base extends React.Component`
+- `createReactClass({ render() {} })` — an object property, not a `MethodDefinition`
+
+**Known False Positives (Incorrectly Flagged)**
+
+- None currently recorded. Before v3.3, detection was the method name alone, so any
+  class with a `render` method — a terminal painter, a canvas, a template engine —
+  was reported at CRITICAL.
+
 ---
 
 ## eslint-plugin-react-a11y

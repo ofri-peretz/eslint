@@ -71,8 +71,14 @@ export const exportsLast = createRule<RuleOptions, MessageIds>({
               statement.type === AST_NODE_TYPES.ExportNamedDeclaration &&
               statement.declaration
             ) {
-              // This is an inline export, treat as non-export for ordering
-              nonExportIndices.push(index);
+              // An inline export is exempt from being reported, but it is still an export:
+              // it must not count toward lastNonExportIndex either. Pushing it into
+              // nonExportIndices made it a positional wall, so a file whose every statement
+              // is an export reported the ones before it — telling `export default f` on the
+              // second-to-last line to "move to the end of the file" with nothing non-export
+              // after it. Upstream eslint-plugin-import (this rule's documentationLink)
+              // classifies a declaration-export as an export unconditionally.
+              // burgee packages/flagstaff/src/ora.ts:691.
             } else {
               exportIndices.push(index);
             }

@@ -147,6 +147,15 @@ function isSanitized(
     return isSanitized(node.expression, sourceCode, sanitizers);
   }
 
+  // `await sanitize(x)` is an AwaitExpression wrapping the call — the
+  // trusted-sanitiser shape for an async wrapper (e.g. an async DOMPurify
+  // wrapper). Without unwrapping it, `node.type !== 'CallExpression'` below
+  // fails for every awaited call, so a sanitiser on the default allowlist
+  // still reported once a caller awaited it (#1056).
+  if (node.type === 'AwaitExpression') {
+    return isSanitized(node.argument, sourceCode, sanitizers);
+  }
+
   // A value with a FALLBACK is safe only when every branch is.
   //
   // This is the fix for the finding that spent weeks parked as noise:

@@ -9,7 +9,7 @@
  * Require render methods to return
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, objectKeyName, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'requireRenderReturn';
@@ -39,9 +39,9 @@ export const requireRenderReturn = createRule<[], MessageIds>({
     return {
       MethodDefinition(node: TSESTree.MethodDefinition) {
         if (
-          node.key.type === 'Identifier' &&
-          node.key.name === 'render' &&
-          node.value.type === 'FunctionExpression'
+          objectKeyName(node) === 'render' &&
+          node.value.type === 'FunctionExpression' &&
+          isInReactComponent(node)
         ) {
           const body = node.value.body;
 
@@ -55,6 +55,42 @@ export const requireRenderReturn = createRule<[], MessageIds>({
         }
       },
     };
+
+    /**
+     * `render` is not a React word. Matching the method name alone made every
+     * class with a `render` method a React component — a terminal painter, a
+     * canvas, a template engine — and handed each one a CRITICAL "must return
+     * a value" for a method whose contract is to return nothing.
+     *
+     * The superclass check is the one every sibling in this plugin already
+     * uses (sort-comp, state-in-constructor, prefer-stateless-function,
+     * no-direct-mutation-state). It costs the aliased and HOC base cases,
+     * which those rules already accept and KNOWN-LIMITATIONS now records.
+     */
+    function isInReactComponent(node: TSESTree.MethodDefinition): boolean {
+      // A MethodDefinition's parent is always a ClassBody, whose parent is
+      // always the class — TSESTree types it that way, so there is nothing to
+      // guard against here.
+      const superClass = node.parent.parent.superClass;
+      if (!superClass) return false;
+
+      if (superClass.type === 'Identifier') {
+        return (
+          superClass.name === 'Component' || superClass.name === 'PureComponent'
+        );
+      }
+
+      if (superClass.type === 'MemberExpression') {
+        const base = propertyName(superClass);
+        return (
+          superClass.object.type === 'Identifier' &&
+          superClass.object.name === 'React' &&
+          (base === 'Component' || base === 'PureComponent')
+        );
+      }
+
+      return false;
+    }
 
     function hasReturnStatement(
       node: TSESTree.Statement | TSESTree.BlockStatement,

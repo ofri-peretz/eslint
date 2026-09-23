@@ -19,7 +19,10 @@ before a line was changed.
   "unparseable" because `unicodeSets` never reached the analyser.
 - `secure-coding/detect-object-injection`: a counter declared in a `for` head
   was cleared on its declaration alone, so reassigning it from user input
-  inside the loop body went unreported.
+  inside the loop body went unreported. The same reassignment now also
+  disqualifies an Array-callback index parameter (`(v, i) => { i = k; … }`).
 - `reliability/no-unhandled-promise` and the `maintainability` fork of the same
   rule: appending `.finally(cleanup)` silenced the chain, though `.finally`
-  does not handle a rejection.
+  does not handle a rejection. A handler-less
+  `.catch()` / `.catch(undefined)` / `.catch(null)` no longer counts as
+  handling the chain either.

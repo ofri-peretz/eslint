@@ -5,6 +5,79 @@ All notable changes to `eslint-plugin-node-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.6.6
+
+### Patch Changes
+
+- **🐛 Fix** — detect-non-literal-fs-filename resolves const path bindings through scope, not by name.
+
+  The binding table was a file-wide `Map` keyed on the bare identifier, so the
+  last `const` of a given name in the file won everywhere. Two consequences, both
+  measured: a path composed entirely of literals was reported as CWE-22 because an
+  unrelated `const p` appeared later in the file, and — the serious direction — a
+  genuine path traversal went silent when any later `const` of the same name
+  existed, including a top-level one in a function containing no fs call at all.
+  `reportUnresolvedPaths` could not recover the silenced finding, because the path
+  did resolve; just to the wrong initialiser.
+
+  Bindings are now resolved through ESLint's scope analysis, which is what this
+  plugin's README already promises. The one-hop and `const`-only restrictions and
+  the `Program:exit` deferral are unchanged.
+
+  Also fixes a crash: a `for (const x of …)` head is a `const` declarator whose
+  `init` is `null`, and asserting it non-null passed `null` into the taint walker,
+  which threw `TypeError: Cannot read properties of null` and aborted the entire
+  lint run rather than reporting anything.
+
+- **🐛 Fix** — `no-zip-slip`: recognise the entry-path join when `join`/`resolve`/`relative`/`normalize` is imported by name — `import { join } from 'node:path'` (also `path`, `path/posix`, `node:path/posix`, renamed specifiers) or `const { join } = require('path')`. Previously only the member form `path.join(dest, entry.name)` reported, so ESM code extracting archives was silent. The callee is resolved through its import binding, so a locally defined `join` still does not report.
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.7`
+
+## 5.6.5
+
+### Patch Changes
+
+- **🐛 Fix** — `no-dynamic-require` resolves the loader instead of matching the name `require`
+
+  A binding from `module.createRequire()`, plus `module.require`,
+  `require.main.require` and the `(0, require)` idiom, all load a specifier and
+  were all invisible. The rule also documents its largest false-negative class:
+  `no-weak-hash-algorithm`'s ❌ examples now fire under the default options, and
+  unclassified hashes are described as the deliberate trade they are.
+
+## 5.6.4
+
+### Patch Changes
+
+- **🐛 Fix** — `no-deprecated-cipher-method` — correct the report path on a computed subscript.
+
+  fix: `no-deprecated-cipher-method` — correct the report path on a computed subscript. The
+  detection gate reads the property through the computed-aware `propertyName()`,
+  but the report path re-read it as `(property as Identifier).name`, which is
+  `undefined` on a Literal — so `crypto['createCipher'](...)` produced the message
+  `crypto.undefined()`, offered `createDecipheriv` (the DECRYPTION constructor)
+  for an encryption call, and emitted a suggestion that dropped the quotes and
+  referenced an identifier resolving nowhere. The stale "Known False Negatives"
+  entry claiming this form is undetected is corrected to describe the gap that
+  does remain — a genuinely runtime-chosen key.
+
+## 5.6.3
+
+### Patch Changes
+
+- **🐛 Fix** — two documented-contract violations found by the burgee FP/FN sweep
+
+  - `node-security/no-arbitrary-file-access` now reports whole-value `process.argv`
+    and `process.env` paths. `detect-non-literal-fs-filename`'s docs hand this shape
+    here by name ("that is `no-arbitrary-file-access`'s question, not this rule's"),
+    and neither rule was reporting it, so a documented handoff landed nowhere.
+
+  - `import-next/no-cycle` gains a `verbatimModuleSyntax` option (default `false`).
+    Under that TypeScript flag an inline `import { type Foo }` is emitted as
+    `import {} from './foo.js'` rather than erased, so the target module is still
+    evaluated and the cycle is real. The rule skipped those edges on the stated
+    premise that `verbatimModuleSyntax` projects write statement-level `import type`;
+    TS1484's own quick-fix offers the inline form instead.
+
 ## 5.6.2
 
 ### Patch Changes

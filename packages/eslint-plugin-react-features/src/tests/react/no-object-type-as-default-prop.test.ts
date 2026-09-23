@@ -141,7 +141,37 @@ ruleTester.run('no-object-type-as-default-prop', noObjectTypeAsDefaultProp, {
         }
       `,
     },
+    /*
+     * A plain variable-declaration destructuring is not a prop and is not
+     * rendered: it runs once, there is no memo boundary, and none of the
+     * documented harms apply.
+     * @found burgee FP/FN sweep 2026-09-20, packages/flagstaff/src/cli.ts:169
+     */
+    {
+      name: 'FP: a module-scope variable destructuring is not a default prop',
+      code: `
+        const plugin = {} as Record<string, unknown>;
+        const { components = {}, spinners = {} } = plugin;
+        export { components, spinners };
+      `,
+    },
+    {
+      // @found burgee FP/FN sweep 2026-09-20, packages/flagstaff/src/plugin.ts:200
+      name: 'FP: a destructuring inside a function body is not a parameter default',
+      code: `
+        function run(cfg) {
+          const { opts = {} } = cfg;
+          return opts;
+        }
+      `,
+    },
+    {
+      // @found reasoned from the flagstaff/src/cli.ts:169 finding (burgee FP/FN sweep 2026-09-20), not seen in real code
+      name: 'FP: a for-of destructuring binding is not a parameter default',
+      code: `for (const { meta = {} } of rows) { use(meta); }`,
+    },
   ],
+
   invalid: [
     // Invalid - object literal in defaultProps
     {

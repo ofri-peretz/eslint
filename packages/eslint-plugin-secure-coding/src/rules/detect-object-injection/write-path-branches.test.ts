@@ -70,11 +70,47 @@ ruleTester.run(
         name: 'an element bound by an array pattern in map, read from the iterated object',
         code: `export function f(src) { let t = 0; Object.entries(src).map(([key]) => { t += src[key]; }); return t; }`,
       },
-      // NOT here, deliberately: `forEach((item, i) => { dst[i] = v })`. The rule
-      // reports it and should not — a callback's second parameter is a number by
-      // language guarantee, the same kind of fact as "a read cannot pollute". It
-      // occurs in the corpus. Putting it in `invalid` would LOCK the bug, so it is
-      // recorded as a gap in SEAL.json and fixed as its own unit of work instead.
+      // The gap this file recorded on 2026-09-13 as "NOT here, deliberately"
+      // — `forEach((item, i) => { dst[i] = v })` — closed 2026-09-21. A
+      // callback's index argument is `𝔽(k)` by ECMA-262, the same kind of fact
+      // as "a read cannot pollute". The exemption is gated on the receiver
+      // being provably an Array; the controls for that gate are below.
+      {
+        name: 'the index parameter of forEach is a number by language guarantee',
+        code: `export function f(vals) { const out = []; const src = [].concat(vals); src.forEach((val, index) => { out[index] = val; }); return out; }`,
+      },
+      {
+        name: 'the same guarantee through map',
+        code: `export function f(vals) { const out = []; const src = Array.from(vals); src.map((val, i) => { out[i] = val; return val; }); return out; }`,
+      },
+      {
+        name: 'a declared array type is provenance enough',
+        code: `export function f(vals: number[]) { const out: number[] = []; vals.forEach((val, index) => { out[index] = val; }); return out; }`,
+      },
+      {
+        name: 'reduce carries its index third, and that one is a number too',
+        code: `export function f(vals: string[]) { return vals.reduce((acc, cur, index) => { acc[index] = cur; return acc; }, [] as string[]); }`,
+      },
+      {
+        name: 'a readonly array annotation is provenance too',
+        code: `export function f(vals: readonly number[]) { const out: number[] = []; vals.forEach((val, index) => { out[index] = val; }); return out; }`,
+      },
+      {
+        name: 'the Array<T> spelling of the same annotation',
+        code: `export function f(vals: Array<number>) { const out: number[] = []; vals.forEach((val, index) => { out[index] = val; }); return out; }`,
+      },
+      {
+        name: 'a tuple annotation is an array annotation',
+        code: `export function f(vals: [number, number]) { const out: number[] = []; vals.forEach((val, index) => { out[index] = val; }); return out; }`,
+      },
+      {
+        name: 'a const bound to an array literal is provenance without an annotation',
+        code: `export function f() { const xs = [1, 2]; const out: number[] = []; xs.forEach((val, index) => { out[index] = val; }); return out; }`,
+      },
+      {
+        name: 'an array annotation on a const is provenance even when the initialiser is opaque',
+        code: `declare function getThem(): number[]; export function f() { const xs: number[] = getThem(); const out: number[] = []; xs.forEach((val, index) => { out[index] = val; }); return out; }`,
+      },
       {
         // Reflect metadata reached through a parenthesised optional chain — the
         // ChainExpression recursion arm.
@@ -154,6 +190,123 @@ ruleTester.run(
       },
     ],
     invalid: [
+      // ── CONTROLS for the Array-iteration index exemption (2026-09-21) ─────
+      // A quiet probe proves nothing without a positive control. Each of these
+      // is one edit away from the exempted shape and must stay loud.
+      //
+      // Verified in Node 24: `new URLSearchParams('__proto__=x')
+      // .forEach((v, k) => ...)` binds k === '__proto__' (a string). Map, Set,
+      // Headers and FormData all pass a KEY in the slot where an Array passes
+      // an index — which is why the exemption is gated on Array provenance and
+      // not on the method name.
+      {
+        name: 'URLSearchParams forEach passes a key, not an index',
+        code: `export function f(qs, dst) { new URLSearchParams(qs).forEach((v, k) => { dst[k] = v; }); }`,
+        errors: [{ messageId: 'objectInjection' }],
+      },
+      {
+        name: 'Map forEach passes a key, not an index',
+        code: `export function f(m: Map<string, string>, dst) { m.forEach((v, k) => { dst[k] = v; }); }`,
+        errors: [{ messageId: 'objectInjection' }],
+      },
+      {
+        name: 'a receiver of unproven provenance is not an Array',
+        code: `export function f(bag, dst) { bag.forEach((v, k) => { dst[k] = v; }); }`,
+        errors: [{ messageId: 'objectInjection' }],
+      },
+      {
+        name: 'parameter 0 is the element, and it stays loud',
+        code: `export function f(entries: string[], store) { entries.forEach((key) => { store[key] = 1; }); }`,
+        errors: [{ messageId: 'objectInjection' }],
+      },
+      {
+        name: 'reduce parameter 1 is the element, not the index',
+        code: `export function f(entries: string[]) { return entries.reduce((acc, k) => { acc[k] = 1; return acc; }, {}); }`,
+        errors: [{ messageId: 'objectInjection' }],
+      },
+      {
+        // A union is not an array type — the annotation says the value might
+        // not be one, which is the opposite of stating provenance.
+        name: 'a union annotation states no provenance',
+        code: `export function f(vals: number[] | string[], dst) { vals.forEach((v, k) => { dst[k] = v; }); }`,
+        errors: [{ messageId: 'objectInjection' }],
+      },
+      {
+        // `readonly` over something that is not an array is still not an array.
+        name: 'a keyof operator is not an array type',
+        code: `export function f(vals: keyof Window, dst) { vals.forEach((v, k) => { dst[k] = v; }); }`,
+        errors: [{ messageId: 'objectInjection' }],
+      },
+      {
+        // A destructuring pattern binds a PIECE of the initializer, not the
+        // initializer. `[someMap]` is an array literal; `vals` is the Map.
+        // Reading provenance off the init would silence a live key.
+        name: 'a destructured binding does not inherit the initializer provenance',
+        code: `declare const someMap: Map<string, string>; const [vals] = [someMap]; export function f(dst) { vals.forEach((v, k) => { dst[k] = v; }); }`,
+        errors: [{ messageId: 'objectInjection' }],
+      },
+      {
+        name: 'a let can be reassigned between the declaration and the loop',
+        code: `let vals = [1, 2]; export function f(dst) { vals.forEach((v, k) => { dst[k] = v; }); }`,
+        errors: [{ messageId: 'objectInjection' }],
+      },
+      {
+        name: 'a const with no initialiser states nothing',
+        code: `declare const vals: unknown; export function f(dst) { vals.forEach((v, k) => { dst[k] = v; }); }`,
+        errors: [{ messageId: 'objectInjection' }],
+      },
+      {
+        name: 'an imported binding states nothing this file can read',
+        code: `import { vals } from './m'; export function f(dst) { vals.forEach((v, k) => { dst[k] = v; }); }`,
+        errors: [{ messageId: 'objectInjection' }],
+      },
+      {
+        name: 'a computed callee names no method',
+        code: `const m = 'forEach'; const xs = [1, 2]; export function f(dst) { xs[m]((v, k) => { dst[k] = v; }); }`,
+        errors: [{ messageId: 'objectInjection' }],
+      },
+      {
+        name: 'an unresolvable global receiver states nothing',
+        code: `export function f(dst) { globalRegistry.forEach((v, k) => { dst[k] = v; }); }`,
+        errors: [{ messageId: 'objectInjection' }],
+      },
+      {
+        name: 'a twice-declared receiver has no single provenance',
+        code: `var xs = [1, 2]; var xs = other; export function f(dst) { xs.forEach((v, k) => { dst[k] = v; }); }`,
+        errors: [{ messageId: 'objectInjection' }],
+      },
+      {
+        name: 'Array.isArray is not an array-producing call',
+        code: `export function f(z, dst) { const xs = Array.isArray(z); xs.forEach((v, k) => { dst[k] = v; }); }`,
+        errors: [{ messageId: 'objectInjection' }],
+      },
+      {
+        name: 'a bare call states nothing about what it returns',
+        code: `declare function makeList(): unknown; export function f(dst) { const xs = makeList(); xs.forEach((v, k) => { dst[k] = v; }); }`,
+        errors: [{ messageId: 'objectInjection' }],
+      },
+      {
+        // Two reports: the `src[m]` read is itself a computed access, and the
+        // write keyed by `k` is not exempted because a computed callee names
+        // no method to check provenance against.
+        name: 'a computed method on the initialiser names nothing',
+        code: `declare const src: any; declare const m: string; export function f(dst) { const xs = src[m](); xs.forEach((v, k) => { dst[k] = v; }); }`,
+        errors: [
+          { messageId: 'objectInjection' },
+          { messageId: 'objectInjection' },
+        ],
+      },
+      {
+        name: 'a non-array annotation on a const states nothing',
+        code: `declare const z: any; export function f(dst) { const xs: unknown = z; xs.forEach((v, k) => { dst[k] = v; }); }`,
+        errors: [{ messageId: 'objectInjection' }],
+      },
+      {
+        // Self-reference: following the initializer would recurse forever.
+        name: 'a self-referential initialiser terminates rather than recursing',
+        code: `const xs = xs; export function f(dst) { xs.forEach((v, k) => { dst[k] = v; }); }`,
+        errors: [{ messageId: 'objectInjection' }],
+      },
       {
         // MOVED FROM `valid` on 2026-09-13. This is the exact shape the comment
         // fifteen lines above declares IS mass assignment — "If `keys` is
@@ -198,6 +351,14 @@ ruleTester.run(
          */
         name: 'a for-head counter reassigned from user input inside the body reports',
         code: `export function f(arr, req, v) { for (let i = 0; i < 3; i++) { i = req.query.k; arr[i] = v; } }`,
+        errors: 1,
+      },
+      {
+        // @found merge review (main's Array-index exemption met this branch's
+        // reassignment fix). The same shortcut, one spelling over: ECMA-262
+        // fixes the index the callee PASSES, not what the body writes over it.
+        name: 'an Array-callback index parameter reassigned from user input inside the body reports',
+        code: `export function f(vals, req) { const out = []; [].concat(vals).forEach((val, index) => { index = req.query.k; out[index] = val; }); return out; }`,
         errors: 1,
       },
       {

@@ -43,6 +43,27 @@ describe('detect-object-injection — copy-loop source', () => {
   ruleTester.run('detect-object-injection', detectObjectInjection, {
     valid: [
       {
+        // Covers the write-site guard check in the copy-loop path: the loop is
+        // armed (source is a parameter) but the guard names the WRITTEN object.
+        name: 'a same-object guard still clears an armed copy loop',
+        code: `export function normalise(s) {
+  for (const k in s) {
+    if (Object.hasOwn(s, k)) s[k] = 1;
+  }
+}`,
+      },
+      {
+        // Regression for the accessor-token strip above: a genuine
+        // `k === 'prototype'` guard must still clear the loop.
+        name: 'an explicit dangerous-key guard still clears the loop',
+        code: `export function merge(target, source) {
+  for (const k in source) {
+    if (k === '__proto__' || k === 'constructor' || k === 'prototype') continue;
+    target[k] = source[k];
+  }
+}`,
+      },
+      {
         // CONTROL for the whole widening. A module-owned object is not a
         // parameter and not request-rooted, and copying it is ordinary code. If
         // this ever reports, the widening has swallowed the benign majority.
@@ -115,17 +136,38 @@ export function apply(target) {
   }
 }`,
       },
+    ],
+    invalid: [
       {
-        name: 'CONTROL: a guarded loop is the documented fix and is not reported',
+        // burgee packages/burgee/src/yargs/y18n.ts:85-91, the exact spelling it
+        // ships. `Object.prototype.hasOwnProperty` contains the token `prototype`,
+        // so the loop's guard scan read the ACCESSOR as a `k === 'prototype'`
+        // guard and cleared the write. Both halves are needed: the accessor token
+        // must not count as a guard, and the hasOwn guard must name the written
+        // object. `obj` is public API input; `table` is the locale cache.
+        name: 'the long hasOwnProperty spelling guarding the SOURCE does not clear the TARGET',
+        code: `export function updateLocale(cache, obj) {
+  const table = cache.en;
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) table[key] = obj[key];
+  }
+}`,
+        errors: 1,
+      },
+      {
+        // Was pinned VALID as 'a guarded loop is the documented fix'. It is not a
+        // fix: the guard names SOURCE while the write lands on TARGET, so it
+        // proves nothing about the object being written. Same defect as the
+        // head-to-head merge fixture, in the negated guard-clause spelling.
+        name: 'a guard on the SOURCE does not clear a write to the TARGET',
         code: `export function merge(target, source) {
   for (const k in source) {
     if (!Object.hasOwn(source, k)) continue;
     target[k] = source[k];
   }
 }`,
+        errors: 1,
       },
-    ],
-    invalid: [
       {
         // The shape that was silent. `req.body` is a MemberExpression, so the
         // Identifier-only test returned before any of the logic ran.

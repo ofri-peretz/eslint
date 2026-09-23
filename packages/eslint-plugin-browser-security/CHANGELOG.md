@@ -5,6 +5,65 @@ All notable changes to `eslint-plugin-browser-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.1.9
+
+### Patch Changes
+
+- **🐛 Fix** — `no-innerhtml` reported a false positive on an awaited trusted sanitiser
+
+  `isSanitized()` only recognized a trusted sanitiser (from the `trustedSanitizers` allowlist, e.g. `DOMPurify.sanitize` or `sanitize`) when the value being judged was itself a `CallExpression`. `await sanitize(x)` is an `AwaitExpression` wrapping that call, so an async sanitiser wrapper — such as an async DOMPurify wrapper — still reported as unsanitized once a caller `await`ed it, even though the callee was on the default allowlist. `AwaitExpression` is now unwrapped the same way `ChainExpression` already is (for `DOMPurify?.sanitize(x)`), then the call underneath is judged. Reported in #1056.
+
+## 2.1.8
+
+### Patch Changes
+
+- **🧪 Tests** — `no-clickjacking` pins three more shapes where the header NAME is not frame protection
+
+  The fix itself shipped earlier (a declared protection counts only when its VALUE protects). This adds regression cases for a `<meta httpEquiv="X-Frame-Options" content="ALLOWALL">`, the obsolete `ALLOW-FROM`, and prose that merely mentions `x-frame-options`, each of which must still report. No behaviour change.
+
+## 2.1.7
+
+### Patch Changes
+
+- **🐛 Fix** — `no-clickjacking` — a declared frame protection must actually protect.
+
+  fix: `no-clickjacking` — a declared frame protection no longer counts unless it
+  actually protects. The predicate matched the `X-Frame-Options` header NAME and
+  discarded its value, so the rule's own documented "Incorrect" example —
+  `ALLOWALL` — suppressed the report for the entire file; separately, a bare
+  `deny` or `sameorigin` string anywhere in the file did the same, with no header
+  context. The value now decides, and a bare word counts only where the AST shows
+  it is the header's value (header map, Next.js `headers()` pair, or
+  `setHeader(name, value)`). All five previously locked `valid` cases are
+  unchanged.
+
+## 2.1.6
+
+### Patch Changes
+
+- **🐛 Fix** — `require-websocket-wss` autofix corrupted URLs containing a quote, newline or backslash
+
+  The fixer spliced the string literal's **decoded** `.value` between hardcoded single quotes. That re-encodes the string, and three legal URLs came back wrong:
+
+  ```js
+  new WebSocket("ws://h/room's"); // -> 'wss://h/room's'  SyntaxError
+  new WebSocket('ws://h/a\nb'); // -> a real newline    SyntaxError, unterminated
+  new WebSocket('ws://h/a\\b'); // -> 'wss://h/a\b'     parses, URL SILENTLY changed
+  ```
+
+  An apostrophe is an RFC 3986 sub-delim, so the first is an ordinary URL. The third is the one with teeth: it parses, so nothing surfaces — a security rule quietly retargets the connection it claims to have secured.
+
+  This is the only `fixable` rule in the plugin, so `--fix` applies it unreviewed, and the same broken text was offered as an editor suggestion.
+
+  The fix rewrites the scheme inside the literal's **original source text** — the technique this rule's own `TemplateLiteral` branch already used, and the one `QUALITY_STANDARDS.md`'s ✅ example demonstrates. A grep for the naive `` `'${value}'` `` pattern now returns nothing in the monorepo: sibling rules in `conventions` and `express-security` hit this exact class and fixed it already, and their comments name all three failure modes.
+
+  Two consequential details:
+
+  - **Quote style is now preserved.** One pre-existing test asserted that the fix rewrote double quotes to single. That requoting was the _mechanism_ of the corruption, not a feature — quote style belongs to `quotes`/Prettier, not to a CWE-319 transport rule. That assertion is corrected; it was the only test affected.
+  - **An escaped scheme (`'\x77s://h'`) reports with no fix.** It decodes to `ws://` but is not spelled that way in source, so a source-text rewrite cannot find it. The URL is still cleartext, so it must still report — but offering a fix that changes nothing is the failure this rule's own header criticises.
+
+  Four fixtures failed before the fix and pass after; two of them failed with RuleTester's own `A fatal parsing error occurred in autofix`.
+
 ## 2.1.5
 
 ### Patch Changes

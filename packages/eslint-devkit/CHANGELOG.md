@@ -5,6 +5,61 @@ All notable changes to `@interlace/eslint-devkit` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 1.19.7
+
+### Patch Changes
+
+- **🐛 Fix** — extensions stops breaking ESM builds, and no-cycle stops reporting inline type-only edges.
+
+  `extensions` no longer strips an extension the module resolver proves is
+  load-bearing. Under `moduleResolution: NodeNext` its `--fix` turned a clean
+  `tsc` into 207 `TS2835` errors and `ERR_MODULE_NOT_FOUND` at runtime. The rule
+  now resolves both spellings and withholds report and fix unless they name the
+  same file; an extension that is pure decoration is still reported and fixed.
+
+  `extensions` also now honours the options it declares. Its `defaultOptions`
+  (`svg`/`png`/`jpg` set to `always`) never reached the rule, because `create`
+  did not declare the merged-options parameter the devkit passes — so a stale
+  local fallback map won and `./logo.svg` was stripped with no configuration at
+  all. Relatedly, `{ default: 'always' }` was a no-op: `pattern` was taken as a
+  whole object, so a user who set only `default` got the built-in map. Precedence
+  is now user `pattern` → user `default` → declared `pattern` → declared
+  `default`.
+
+  `no-cycle` no longer reports a cycle through an inline type-only import. The
+  dependency graph's type-edge test matched only top-level `import type`, so
+  `import { type Foo } from './a'` kept its edge while the rule's own report site
+  correctly treated it as erased — the same edge got two verdicts depending on
+  which file you linted. An import with any value binding still keeps its edge.
+  With the rule's `verbatimModuleSyntax` option set, the graph now keeps the
+  inline edge too (the devkit records it as `inlineTypeOnly` and its graph walkers
+  take the same flag), so that option reports the cycle from both ends instead of
+  being overruled by a graph that had already erased the edge.
+
+## 1.19.6
+
+### Patch Changes
+
+- **🐛 Fix** — `no-commented-code` grouped across live source and its suggestion deleted it
+
+  The `Program` visitor built groups of "consecutive" comments by walking `getAllComments()` and only breaking the group on a comment that does _not_ look like code. Intervening source was never a boundary, so two code-like comments with a hundred lines of live statements between them formed one group — and the group's suggestion removes `[first.range[0], last.range[1]]` as a single range, taking everything in between with it.
+
+  Minimized, the Quick Fix labelled "Delete the commented code block" reduces
+
+  ```js
+  // const a = 1;
+  export function realCode() {
+    return 42;
+  }
+  // const b = 2;
+  ```
+
+  to a single newline: `realCode` is gone. On burgee's vendored `ora/test.js:1658` the range was 5,604 characters and swallowed the `});` closing the enclosing `test(...)` call, so the output did not parse. The in-source comment above that branch already described the intent as "Multiple consecutive comments"; the implementation grouped comments consecutive in the _filtered_ stream, which is not the same thing.
+
+  Groups now break when live source separates two comments, asked of the token stream rather than of line numbers so blank lines and interleaved prose comments still group as before. Each commented-out region becomes its own report with its own non-destructive fix, which also restores a suppression site for the second region — previously only the first comment carried a marker.
+
+  `createWithMockContext` gains a `getTokenAfter` stub. A real `SourceCode` has one and the rule now needs it; per the standing note in that file, the mock is completed rather than the rule made defensive about a shape ESLint always provides.
+
 ## 1.19.5
 
 ### Patch Changes

@@ -61,7 +61,18 @@ type MessageIds =
  * The cache is automatically invalidated when file content changes
  * (detected via mtime + size hash).
  */
-const sharedCache: FileSystemCache = createFileSystemCache();
+const defaultGraphCache: FileSystemCache = createFileSystemCache();
+
+/**
+ * A second graph for files linted with `verbatimModuleSyntax: true`.
+ *
+ * The SCCs cached in a `FileSystemCache` are computed under one reading of an
+ * all-inline-type import — erased, or a runtime edge — so a lint run that mixes
+ * both settings (per-directory flat-config blocks) must not share one. Sharing
+ * would let whichever file was linted first decide the cycle membership of
+ * every other.
+ */
+const verbatimGraphCache: FileSystemCache = createFileSystemCache();
 
 /**
  * Clear the circular dependency cache
@@ -74,7 +85,8 @@ const sharedCache: FileSystemCache = createFileSystemCache();
  * @public
  */
 export function clearCircularDependencyCache(): void {
-  clearCache(sharedCache);
+  clearCache(defaultGraphCache);
+  clearCache(verbatimGraphCache);
   // `exportKindCache` is module-level and separate from `sharedCache`, so
   // clearing that alone leaves it stale. It caches whether each exported name
   // is a type or a value, and that is exactly what an edit changes: turn a
@@ -138,6 +150,18 @@ export interface Options {
 
   /** Report all cycles found or just the first one. Default: false */
   reportAllCycles?: boolean;
+
+  /**
+   * Treat an inline `import { type Foo }` specifier as a RUNTIME edge.
+   * Default: false.
+   *
+   * Set this when the project compiles with TypeScript's
+   * `verbatimModuleSyntax`. Under that flag the inline form is not erased —
+   * `tsc` emits `import {} from './foo.js'`, so the target module is still
+   * evaluated and the cycle is real. A statement-level `import type` is erased
+   * under every setting and stays skipped either way.
+   */
+  verbatimModuleSyntax?: boolean;
 
   /** Strategy for fixing cycles: 'module-split', 'direct-import', 'extract-shared', 'dependency-injection', or 'auto' */
   fixStrategy?: FixStrategy;
@@ -215,11 +239,30 @@ export type RuleOptions = [Options?];
  *     kind is not visible at the import site. That is not a shortcut — all 6
  *     default imports in the sample were classes, i.e. genuine runtime cycles.
  *
- * TWO COMPILER SETTINGS BOUND THIS, and only one of them is safe.
+ * TWO COMPILER SETTINGS BOUND THIS, and neither is entirely safe.
  *
- * `verbatimModuleSyntax` is fine: under it a plain named import of a type is a
- * compile error, so the codebase already writes `import type` and the syntactic
- * check above catches it.
+ * `verbatimModuleSyntax` is safe for the IMPLICIT form only: under it a plain
+ * named import of a type is a compile error, so the codebase writes the type
+ * modifier somewhere and a syntactic check can see it. It is NOT safe for the
+ * INLINE form. `import { type Fields } from './cap.js'` is legal under
+ * `verbatimModuleSyntax`, and the statement is PRESERVED: verified with tsc
+ * 6.0.3 under ESM + vms, it emits `import {} from './cap.js'` — the module is
+ * still loaded, so the runtime edge genuinely exists. The rule cannot read
+ * tsconfig, so that reading is the `verbatimModuleSyntax` OPTION: off by
+ * default, and on it keeps the inline edge (see `importsOnlyTypes`).
+ *
+ * Whichever way the option is set, BOTH halves of the rule must agree on it:
+ * this report site, and the dependency graph in `@interlace/eslint-devkit`
+ * that decides whether a cycle exists at all (`ImportInfo.inlineTypeOnly`,
+ * dropped by the graph walkers unless they are passed the same flag). When
+ * only the report site knew about the inline form, the SAME pair reported
+ * from one file and stayed silent from the other; when only the report site
+ * knew about the option, setting it changed nothing, because the graph had
+ * already erased the edge. The shape is common — this plugin's own
+ * `typescript` preset pairs `no-cycle: error` with
+ * `consistent-type-specifier-style: ['warn', 'prefer-inline']`, whose fixer
+ * rewrites `import type { Foo }` into `import { type Foo }`. An import with any
+ * value binding keeps its edge under either setting.
  *
  * `importsNotUsedAsValues: "preserve"` is NOT. TypeScript 4.8-5.4 keeps the
  * import statement, so the target module is still executed and the runtime edge
@@ -269,7 +312,11 @@ function exportKindsOf(target: string): Map<string, 'type' | 'value'> {
   return kinds;
 }
 
-function importsOnlyTypes(node: TSESTree.ImportDeclaration, target: string): boolean {
+function importsOnlyTypes(
+  node: TSESTree.ImportDeclaration,
+  target: string,
+  verbatimModuleSyntax: boolean,
+): boolean {
   // `?? []` is not defensive noise: a synthetic node without `specifiers`
   // reaches here from the coverage suite, and a rule that THROWS is worse than
   // one that over-reports — the throw takes down the whole lint run. An empty
@@ -280,7 +327,14 @@ function importsOnlyTypes(node: TSESTree.ImportDeclaration, target: string): boo
   const kinds = exportKindsOf(target);
   return specifiers.every((spec) => {
     if (spec.type !== 'ImportSpecifier') return false; // default / namespace
-    if (spec.importKind === 'type') return true; // inline `import { type Foo }`
+    // Inline `import { type Foo }`. Erased only when `verbatimModuleSyntax` is
+    // OFF. With it on, TypeScript emits `import {} from './foo.js'` — the
+    // statement survives, the module is evaluated, and the runtime edge this
+    // rule exists to find is real. The block comment above once called that
+    // setting "fine" on the premise that such codebases write statement-level
+    // `import type`; TS1484's own quick-fix offers the inline form instead, so
+    // the premise does not hold and the edge went silent.
+    if (spec.importKind === 'type') return !verbatimModuleSyntax;
     // `imported` is an Identifier or, since ES2022, a StringLiteral —
     // `import { "odd-name" as Odd }`. No branch for the literal case, because
     // `kinds` only ever holds identifier names, so a quoted name cannot match
@@ -404,6 +458,12 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
             description:
               'Report all circular dependencies found (not just the first one)',
           },
+          verbatimModuleSyntax: {
+            type: 'boolean',
+            default: false,
+            description:
+              "Treat an inline `import { type Foo }` specifier as a runtime edge. Set this when the project compiles with TypeScript's `verbatimModuleSyntax`, under which the inline form is emitted as `import {} from './foo.js'` rather than erased — so the target module is still evaluated and the cycle is real. A statement-level `import type` is erased under every setting and stays skipped either way.",
+          },
           fixStrategy: {
             type: 'string',
             enum: [
@@ -454,6 +514,7 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
       ignorePatterns: [],
       barrelExports: ['index.ts', 'index.tsx', 'index.js', 'index.jsx'],
       reportAllCycles: true,
+      verbatimModuleSyntax: false,
       fixStrategy: 'auto',
       moduleNamingConvention: 'semantic',
       coreModuleSuffix: 'core',
@@ -464,6 +525,10 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const maxDepth = options.maxDepth ?? Infinity;
+    const verbatimModuleSyntax = options.verbatimModuleSyntax ?? false;
+    const sharedCache = verbatimModuleSyntax
+      ? verbatimGraphCache
+      : defaultGraphCache;
     const ignorePatterns = options.ignorePatterns ?? [
       '**/*.test.ts',
       '**/*.test.tsx',
@@ -717,7 +782,7 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
         // Erased before emit? Then this edge does not exist at runtime, and the
         // cycle this rule would name through it cannot occur. See
         // `importsOnlyTypes` — 70.8% of a stratified sample was this case.
-        if (importsOnlyTypes(node, resolved)) return;
+        if (importsOnlyTypes(node, resolved, verbatimModuleSyntax)) return;
 
         // =====================================================================
         // FAST PATH 1: nonCyclicFiles O(1) lookup
@@ -750,6 +815,7 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
             barrelExports,
             cache: sharedCache,
             resolverSettings,
+            verbatimModuleSyntax,
           });
           tgtSCC = sharedCache.sccIndex.get(resolved);
         }
@@ -764,6 +830,7 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
             barrelExports,
             cache: sharedCache,
             resolverSettings,
+            verbatimModuleSyntax,
           });
           srcSCC = sharedCache.sccIndex.get(normalizedFilename);
         }
@@ -785,6 +852,7 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
           barrelExports,
           cache: sharedCache,
           resolverSettings,
+          verbatimModuleSyntax,
         });
 
         if (!cyclePath) return;
@@ -836,6 +904,7 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
             barrelExports,
             cache: sharedCache,
             resolverSettings,
+            verbatimModuleSyntax,
           });
           tgtSCC = sharedCache.sccIndex.get(resolved);
         }
@@ -849,6 +918,7 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
           barrelExports,
           cache: sharedCache,
           resolverSettings,
+          verbatimModuleSyntax,
         });
 
         if (!cyclePath) return;

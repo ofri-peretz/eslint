@@ -5,7 +5,7 @@ tags: ['security', 'cryptography', 'cwe-327', 'nodejs']
 category: security
 severity: high
 cwe: CWE-327
-owasp: "A02:2021"
+owasp: 'A02:2021'
 autofix: false
 ---
 
@@ -13,8 +13,8 @@ autofix: false
 > **CWE:** [CWE-327](https://cwe.mitre.org/data/definitions/327.html)  
 > **OWASP:** [A02:2021-Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
 
-
 <!-- @rule-summary -->
+
 Disallow weak hash algorithms (MD5, MD4, SHA-1, RIPEMD)
 <!-- @/rule-summary -->
 
@@ -53,10 +53,10 @@ This rule detects usage of weak hash algorithms in `crypto.createHash()` calls a
 
 ## Configuration
 
-| Option                     | Type       | Default | Description                        |
-| -------------------------- | ---------- | ------- | ---------------------------------- |
-| `additionalWeakAlgorithms` | `string[]` | `[]`    | Additional weak algorithms to flag |
-| `allowInTests`             | `boolean`  | `false` | Allow weak hashes in test files    |
+| Option                     | Type       | Default                                                           | Description                                                                       |
+| -------------------------- | ---------- | ----------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `additionalWeakAlgorithms` | `string[]` | `[]`                                                              | Additional weak algorithms to flag                                                |
+| `allowInTests`             | `boolean`  | `false`                                                           | Allow weak hashes in test files                                                   |
 | `nonCryptographicNames`    | `string[]` | `['sha', 'etag', 'cachekey', 'cachebuster', 'thumbprint', 'x5t']` | Assignment-target names that mark a hash as an identifier, not a security control |
 
 ```javascript
@@ -78,17 +78,25 @@ This rule detects usage of weak hash algorithms in `crypto.createHash()` calls a
 import crypto from 'crypto';
 
 // MD5 - completely broken
-const hash = crypto.createHash('md5').update(data).digest('hex');
+const passwordHash = crypto.createHash('md5').update(data).digest('hex');
 
 // SHA-1 - collision attacks demonstrated
-const sha1Hash = crypto.createHash('sha1').update(data).digest('hex');
+const signatureHash = crypto.createHash('sha1').update(data).digest('hex');
 
 // MD4 - severely broken
-const md4Hash = crypto.createHash('md4').update(data).digest('hex');
+const tokenHash = crypto.createHash('md4').update(data).digest('hex');
 
 // RIPEMD - deprecated
-const ripemdHash = crypto.createHash('ripemd160').update(data).digest('hex');
+const integrityHash = crypto.createHash('ripemd160').update(data).digest('hex');
 ```
+
+> These examples name a security use (`password`, `signature`, `token`,
+> `integrity`), which is what makes them fire under the default options. The
+> block previously used neutral names like `hash` and `sha1Hash` and therefore
+> reported **nothing** — see [Unclassified hashes](#unclassified-hashes) below
+> for why, and set `reportUnclassifiedHashes: true` to also flag weak hashes
+> whose name gives no purpose. Names listed in `nonCryptographicNames` stay
+> exempt either way.
 
 ### ✅ Correct
 
@@ -179,6 +187,29 @@ crypto.createHash(algo);
 
 **Mitigation**: Apply linting at integration points.
 
+### Unclassified hashes
+
+**Why**: This is the largest false-negative class, and it is a deliberate
+trade rather than an analysis limit. By default (`reportUnclassifiedHashes:
+false`) a weak hash is reported only when a `securityUseNames` word is visible
+at the site. A digest whose surrounding identifiers name no security use is
+**not** reported, however the value is then used:
+
+```typescript
+// ❌ NOT DETECTED - no securityUseNames word at the site
+const sha1 = (buf: Buffer) => createHash('sha1').update(buf).digest('hex');
+const shasum = sha1(archive);
+if (published !== shasum) throw new Error('tarball integrity mismatch');
+```
+
+This is a real supply-chain integrity check on a downloaded archive, and it is
+silent. Renaming `shasum` to `integrity` makes the identical code report
+CRITICAL, because `integrity` IS in `securityUseNames` — so the discriminator
+is the vocabulary that happens to appear, not the security semantics.
+
+**Mitigation**: set `reportUnclassifiedHashes: true`, or name the binding after
+what it protects so the classifier can see it.
+
 ## Further Reading
 
 - **[NIST Hash Function Guidelines](https://csrc.nist.gov/projects/hash-functions)** - NIST recommendations
@@ -203,17 +234,24 @@ A hash **assigned to** a name in `nonCryptographicNames` is not reported. The
 test is where the value lands, not which API produced it: the rule walks out
 through the `.update(...).digest(...)` receiver chain and reads the assignment
 target. A hash that is returned, passed as an argument, compared, or stored
-under a computed key is still reported — so renaming a variable to `sha` cannot
-silence the rule on a real security control.
+under a computed key is not exempted **by this rule** — so renaming a variable
+to `sha` cannot silence a hash the classifier had already decided to report.
+
+That is a statement about the `nonCryptographicNames` exemption only, and it is
+not a promise that such a hash reports. Under the default
+`reportUnclassifiedHashes: false`, a digest with no `securityUseNames` word at
+the site is never classified as a security control in the first place, so there
+is nothing for the exemption to override. See
+[Unclassified hashes](#unclassified-hashes).
 
 Set `nonCryptographicNames: []` to switch the exemption off.
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `additionalWeakAlgorithms` | `string[]` | `[]` | Additional weak algorithms to detect |
-| `allowInTests` | `boolean` | `false` | Allow weak hashes in test files |
-| `nonCryptographicNames` | `string[]` | `["sha","etag","cachekey","cachebuster","thumbprint","x5t"]` | Assignment target names that mark a hash as an identifier rather than a security control |
-| `securityUseNames` | `string[]` | `["password","passwd","secret","secrets","token","tokens","signature","signing","signed","sign","hmac","credential","credentials","certificate","cert","certs","apikey","privatekey","secretkey","signingkey","encryptionkey","session","csrf","salt","jwt","nonce","integrity","auth","authorization","authenticate","otp","mfa","totp","passphrase","pincode","mnemonic","seedphrase","masterkey","securityanswer","recoverycode","backupcode"]` | Names that mark a hash as a security control (whole-word matched) |
-| `reportUnclassifiedHashes` | `boolean` | `false` | Report weak hashes whose purpose cannot be determined. Restores the pre-inversion behaviour. |
+| Option                     | Type       | Default                                                                                                                                                                                                                                                                                                                                                                                                                                            | Description                                                                                  |
+| -------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `additionalWeakAlgorithms` | `string[]` | `[]`                                                                                                                                                                                                                                                                                                                                                                                                                                               | Additional weak algorithms to detect                                                         |
+| `allowInTests`             | `boolean`  | `false`                                                                                                                                                                                                                                                                                                                                                                                                                                            | Allow weak hashes in test files                                                              |
+| `nonCryptographicNames`    | `string[]` | `["sha","etag","cachekey","cachebuster","thumbprint","x5t"]`                                                                                                                                                                                                                                                                                                                                                                                       | Assignment target names that mark a hash as an identifier rather than a security control     |
+| `securityUseNames`         | `string[]` | `["password","passwd","secret","secrets","token","tokens","signature","signing","signed","sign","hmac","credential","credentials","certificate","cert","certs","apikey","privatekey","secretkey","signingkey","encryptionkey","session","csrf","salt","jwt","nonce","integrity","auth","authorization","authenticate","otp","mfa","totp","passphrase","pincode","mnemonic","seedphrase","masterkey","securityanswer","recoverycode","backupcode"]` | Names that mark a hash as a security control (whole-word matched)                            |
+| `reportUnclassifiedHashes` | `boolean`  | `false`                                                                                                                                                                                                                                                                                                                                                                                                                                            | Report weak hashes whose purpose cannot be determined. Restores the pre-inversion behaviour. |

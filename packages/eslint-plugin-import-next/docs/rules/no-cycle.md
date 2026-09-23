@@ -57,6 +57,11 @@ This rule aims to prevent issues related to cycle.
         "default": true,
         "description": "Report all circular dependencies found (not just the first one)"
       },
+      "verbatimModuleSyntax": {
+        "type": "boolean",
+        "default": false,
+        "description": "Treat an inline `import { type Foo }` specifier as a runtime edge. Set this when the project compiles with TypeScript's `verbatimModuleSyntax`, under which the inline form is emitted as `import {} from './foo.js'` rather than erased — so the target module is still evaluated and the cycle is real. A statement-level `import type` is erased under every setting and stays skipped either way."
+      },
       "fixStrategy": {
         "type": "string",
         "enum": [
