@@ -5,6 +5,33 @@ All notable changes to `eslint-plugin-node-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.6.6
+
+### Patch Changes
+
+- **🐛 Fix** — detect-non-literal-fs-filename resolves const path bindings through scope, not by name.
+
+  The binding table was a file-wide `Map` keyed on the bare identifier, so the
+  last `const` of a given name in the file won everywhere. Two consequences, both
+  measured: a path composed entirely of literals was reported as CWE-22 because an
+  unrelated `const p` appeared later in the file, and — the serious direction — a
+  genuine path traversal went silent when any later `const` of the same name
+  existed, including a top-level one in a function containing no fs call at all.
+  `reportUnresolvedPaths` could not recover the silenced finding, because the path
+  did resolve; just to the wrong initialiser.
+
+  Bindings are now resolved through ESLint's scope analysis, which is what this
+  plugin's README already promises. The one-hop and `const`-only restrictions and
+  the `Program:exit` deferral are unchanged.
+
+  Also fixes a crash: a `for (const x of …)` head is a `const` declarator whose
+  `init` is `null`, and asserting it non-null passed `null` into the taint walker,
+  which threw `TypeError: Cannot read properties of null` and aborted the entire
+  lint run rather than reporting anything.
+
+- **🐛 Fix** — `no-zip-slip`: recognise the entry-path join when `join`/`resolve`/`relative`/`normalize` is imported by name — `import { join } from 'node:path'` (also `path`, `path/posix`, `node:path/posix`, renamed specifiers) or `const { join } = require('path')`. Previously only the member form `path.join(dest, entry.name)` reported, so ESM code extracting archives was silent. The callee is resolved through its import binding, so a locally defined `join` still does not report.
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.7`
+
 ## 5.6.5
 
 ### Patch Changes
