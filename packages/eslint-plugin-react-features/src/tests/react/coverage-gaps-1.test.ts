@@ -248,16 +248,15 @@ describe('jsx-key coverage gaps', () => {
         ],
       },
       {
-        name: 'missing key with zero-param Children.map callback falls back to item',
+        /*
+         * CORRECTED 2026-09-20: previously pinned the output as
+         * `key={item.id}`. The callback takes no parameter, so `item` is
+         * bound nowhere and accepting that edit threw at render. With no
+         * parameter there is no key to derive, so no suggestion is offered.
+         */
+        name: 'a zero-param Children.map callback offers no suggestion, having no key to name',
         code: 'const a = Children.map(children, () => <div />);',
-        errors: [
-          {
-            messageId: 'missingKey',
-            suggestions: [
-              { messageId: 'suggestKey', output: 'const a = Children.map(children, () => <div key={item.id} />);' },
-            ],
-          },
-        ],
+        errors: [{ messageId: 'missingKey', suggestions: [] }],
       },
       {
         name: 'missing key in function-expression map with block return',

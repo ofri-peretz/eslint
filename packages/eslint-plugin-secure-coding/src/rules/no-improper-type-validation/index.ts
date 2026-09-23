@@ -333,9 +333,14 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
           return !negated && sameExpression(expression.left, operand);
         const wanted = negated ? ['===', '=='] : ['!==', '!='];
         if (!wanted.includes(expression.operator)) return false;
-        if (isNullish(expression.right))
+        // Strictly, only `null` excludes null: `null !== undefined` is true, so
+        // `x !== undefined && typeof x === 'object'` still lets null through.
+        const strict = expression.operator.length === 3;
+        const excludesNull = (side: TSESTree.Node): boolean =>
+          isNullish(side) && (!strict || side.type === 'Literal');
+        if (excludesNull(expression.right))
           return sameExpression(expression.left, operand);
-        if (isNullish(expression.left))
+        if (excludesNull(expression.left))
           return sameExpression(expression.right, operand);
         return false;
       };

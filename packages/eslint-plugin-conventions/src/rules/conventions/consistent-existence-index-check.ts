@@ -12,7 +12,7 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { createRule, propertyName } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
-type MessageIds = 'consistentExistenceCheck';
+type MessageIds = 'consistentExistenceCheck' | 'nonEquivalentExistenceCheck';
 
 export interface Options {
   /**
@@ -54,6 +54,31 @@ export const consistentExistenceIndexCheck = createRule<
         description: 'Use consistent method for property existence checks',
         severity: 'MEDIUM',
         fix: 'Use "{{preferred}}" instead of "{{current}}" for property checks',
+        documentationLink:
+          'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/in',
+      }),
+      // The same report, on a site the fixer deliberately refuses to rewrite.
+      //
+      // Withholding the fix was only half the job. Every report used to carry the
+      // message above, whose `Fix:` line is an imperative to perform the exact
+      // rewrite the rule just declined to make. Following it breaks the program in
+      // both directions: `Object.hasOwn` is declared
+      // `hasOwn(o: object, v: PropertyKey): boolean` and is NOT a type predicate, so
+      // rewriting `'on' in target` loses the narrowing `in` performed and the
+      // following `target.on(...)` becomes TS2339; and at runtime `'on' in emitter` is
+      // `true` while `Object.hasOwn(emitter, 'on')` is `false`, because `on` lives on
+      // the prototype.
+      //
+      // So the `Fix:` here names what actually DIFFERS between the two forms and asks
+      // for a hand edit. Everything else about the report is identical — the decision
+      // to report is unchanged, because which form a codebase writes is still the
+      // user's style to pick.
+      nonEquivalentExistenceCheck: formatLLMMessage({
+        icon: MessageIcons.WARNING,
+        issueName: 'Inconsistent Property Check',
+        description: 'Use consistent method for property existence checks',
+        severity: 'MEDIUM',
+        fix: 'Change this site by hand: "{{current}}" and "{{preferred}}" disagree on {{disagreement}}',
         documentationLink:
           'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/in',
       }),
@@ -153,12 +178,30 @@ export const consistentExistenceIndexCheck = createRule<
         };
       }
 
+      // The SAME three boundaries also decide which message is emitted, because a
+      // boundary is exactly the reason the mechanical instruction would be wrong. Named
+      // most-fundamental first: the prototype chain changes which KEYS answer yes, the
+      // dispatch changes whether the call runs at all, the argument list changes what it
+      // is handed. `preferred !== 'Object.hasOwn'` is deliberately NOT one of these —
+      // that arm of the fix gate is "no fixer written for this target", where the
+      // rewrite is still safe and the ordinary instruction is still the right one.
+      const disagreement = crossesPrototypeBoundary
+        ? 'an inherited key'
+        : crossesDispatchBoundary
+          ? 'method dispatch on the object'
+          : spliceWouldChangeArity || surplusArguments
+            ? 'the argument list'
+            : undefined;
+
       context.report({
         node,
-        messageId: 'consistentExistenceCheck',
+        messageId: disagreement
+          ? 'nonEquivalentExistenceCheck'
+          : 'consistentExistenceCheck',
         data: {
           current: currentMethod,
           preferred,
+          ...(disagreement === undefined ? {} : { disagreement }),
         },
         fix,
       });
@@ -174,7 +217,16 @@ export const consistentExistenceIndexCheck = createRule<
         if (
           node.callee.type === 'MemberExpression' &&
           propertyName(node.callee) === 'hasOwnProperty' &&
-          node.arguments.length === 1 &&
+          // ARITY IS NOT A DETECTION BOUNDARY. The documented hazard here is
+          // DISPATCH — the method is looked up ON `obj`, so it throws on a
+          // null-prototype object and calls whatever a shadowing own property
+          // points at — and that is independent of what follows the key. The
+          // native method ignores surplus arguments, so `obj.hasOwnProperty(k, x)`
+          // asks exactly the question `obj.hasOwnProperty(k)` asks. This used to
+          // require `=== 1`, which silenced the identical hazard and disagreed
+          // with the `.call` sibling below, whose docs entry uses the same
+          // one-key notation but is implemented as `>= 2`.
+          node.arguments.length >= 1 &&
           preferred !== 'hasOwnProperty'
         ) {
           reportInconsistentCheck(
@@ -182,6 +234,7 @@ export const consistentExistenceIndexCheck = createRule<
             'hasOwnProperty',
             node.callee.object,
             node.arguments[0],
+            node.arguments.length > 1,
           );
         }
 
@@ -213,7 +266,11 @@ export const consistentExistenceIndexCheck = createRule<
           node.callee.object.type === 'Identifier' &&
           node.callee.object.name === 'Object' &&
           propertyName(node.callee) === 'hasOwn' &&
-          node.arguments.length === 2 &&
+          // Same gate, same reasoning as the direct form above: `Object.hasOwn`
+          // reads its first two arguments and ignores the rest, so a surplus
+          // argument leaves the question unchanged. It is still EVALUATED, so it
+          // is passed on as `surplusArguments` and the fix stays withheld.
+          node.arguments.length >= 2 &&
           preferred !== 'Object.hasOwn'
         ) {
           reportInconsistentCheck(
@@ -221,13 +278,26 @@ export const consistentExistenceIndexCheck = createRule<
             'Object.hasOwn',
             node.arguments[0],
             node.arguments[1],
+            node.arguments.length > 2,
           );
         }
       },
 
       // Check for 'in' operator usage
       BinaryExpression(node: TSESTree.BinaryExpression) {
-        if (node.operator === 'in' && preferred !== 'in') {
+        // A PRIVATE-NAME BRAND CHECK IS NOT ONE OF THE FOUR SPELLINGS. `#field in
+        // obj` asks whether `obj` was constructed with this class's field — it
+        // does not walk the prototype chain, cannot answer `true` for an
+        // inherited key, and cannot be reached by prototype pollution, so every
+        // rationale the docs give for steering `in` toward an own-property check
+        // is false for it. There is also nothing to steer it to:
+        // `Object.hasOwn(obj, #field)` is a SyntaxError, so the message named a
+        // fix that cannot be written in the language.
+        if (
+          node.operator === 'in' &&
+          node.left.type !== 'PrivateIdentifier' &&
+          preferred !== 'in'
+        ) {
           reportInconsistentCheck(node, 'in', node.right, node.left);
         }
       },

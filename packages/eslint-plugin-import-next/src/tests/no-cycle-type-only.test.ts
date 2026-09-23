@@ -34,7 +34,7 @@ afterAll(() => {
 });
 
 /** Writes `b.ts`, then lints `a.ts` — both closing a cycle a→b→a. */
-const lint = (aSource: string, bSource: string): number => {
+const lint = (aSource: string, bSource: string, options?: object): number => {
   const sub = fs.mkdtempSync(path.join(dir, 'case-'));
   fs.writeFileSync(path.join(sub, 'b.ts'), bSource);
   const aPath = path.join(sub, 'a.ts');
@@ -48,7 +48,9 @@ const lint = (aSource: string, bSource: string): number => {
           files: ['**/*.ts'],
           languageOptions: { parser: tsParser as never, ecmaVersion: 2022, sourceType: 'module' },
           plugins: { 'import-next': { rules: { 'no-cycle': noCycle as never } } },
-          rules: { 'import-next/no-cycle': 'error' },
+          rules: {
+            'import-next/no-cycle': options ? ['error', options] : 'error',
+          },
         },
       ],
       aPath,
@@ -72,6 +74,31 @@ describe('no-cycle and erased imports', () => {
 
     it('inline type specifier', () => {
       expect(lint("import { type Shape } from './b';\nexport const a = () => 1 as unknown as Shape;\n", B_BOTH)).toBe(0);
+    });
+  });
+
+  // Under `verbatimModuleSyntax` the inline form is NOT erased: `tsc` emits
+  // `import {} from './b.js'`, the target module is evaluated, and the cycle is
+  // real. The block above is correct only for projects that leave the flag off,
+  // so the behaviour is an option rather than a default flip.
+  //
+  // burgee sets `verbatimModuleSyntax: true` in tsconfig.base.json and writes
+  // the inline form 379 times against 33 statement-level `import type`; the
+  // silenced edges include packages/paratext/src/template.ts:16 and
+  // packages/flagstaff/src/builtins.ts:12.
+  describe('verbatimModuleSyntax — the inline form survives emit', () => {
+    const VMS = { verbatimModuleSyntax: true };
+
+    it('reports an inline type specifier when the flag is set', () => {
+      expect(
+        lint("import { type Shape } from './b';\nexport const a = () => 1 as unknown as Shape;\n", B_BOTH, VMS),
+      ).toBeGreaterThan(0);
+    });
+
+    it('still skips a statement-level `import type`, which IS erased under the flag', () => {
+      expect(
+        lint("import type { Shape } from './b';\nexport const a = () => 1 as unknown as Shape;\n", B_BOTH, VMS),
+      ).toBe(0);
     });
   });
 
@@ -126,6 +153,140 @@ describe('no-cycle and erased imports', () => {
       const b = ["import { a } from './a';", "export { Shape } from './c';", 'export const keep = a;'].join('\n');
       expect(lint("import { Shape } from './b';\nexport const a = () => 1 as unknown as Shape;\n", b)).toBeGreaterThan(0);
     });
+  });
+});
+
+/**
+ * One edge, two verdicts.
+ *
+ * The rule's report site is inline-aware (`spec.importKind === 'type'`), but the
+ * GRAPH it asks about the cycle was not: the devkit's type test read
+ * `/^import\s+type[\s{]/` against the whole statement, so
+ * `import { type Fields } from './a.js'` never set `typeOnly`, and the edge
+ * survived the type filters in Tarjan and `findShortestCyclePath`. The result is
+ * a rule that contradicts itself — the SAME pair reports from one end and is
+ * silent from the other, and which answer you get depends on which file the lint
+ * run happens to be visiting.
+ *
+ * This is NOT a claim that the cycle does not exist. Under
+ * `verbatimModuleSyntax` — which the burgee corpus sets
+ * (`tsconfig.base.json:4-5,10`) — the inline form is legal and PRESERVED:
+ * verified with tsc 6.0.3 that `import { type Fields } from './cap.js'` emits a
+ * real `import {} from './cap.js'`, a genuine runtime edge. What is fixed here is
+ * the self-inconsistency, resolved in the direction the report site already
+ * chose.
+ *
+ * Burgee anchor: `packages/paratext/src/capability.ts:25`, with
+ * `packages/paratext/src/template.ts:16` as the back edge. The shape is one the
+ * plugin actively produces: its `typescript` preset (`src/index.ts:351,356`)
+ * pairs `no-cycle: error` with
+ * `consistent-type-specifier-style: ['warn', 'prefer-inline']`, whose fixer
+ * rewrites `import type { Foo }` into `import { type Foo }`.
+ */
+describe('one edge, one verdict', () => {
+  /** Lints BOTH ends of the same pair and returns a count for each. */
+  const lintBothEnds = (
+    aSource: string,
+    bSource: string,
+    options?: object,
+  ): { a: number; b: number } => {
+    const sub = fs.mkdtempSync(path.join(dir, 'both-ends-'));
+    const aPath = path.join(sub, 'a.ts');
+    const bPath = path.join(sub, 'b.ts');
+    fs.writeFileSync(aPath, aSource);
+    fs.writeFileSync(bPath, bSource);
+    const linter = new Linter({ configType: 'flat', cwd: sub });
+    const config = [
+      {
+        files: ['**/*.ts'],
+        languageOptions: {
+          parser: tsParser as never,
+          ecmaVersion: 2022,
+          sourceType: 'module',
+        },
+        plugins: { 'import-next': { rules: { 'no-cycle': noCycle as never } } },
+        rules: {
+          'import-next/no-cycle': options ? ['error', options] : 'error',
+        },
+      },
+    ];
+    const count = (source: string, file: string): number =>
+      linter
+        .verify(source, config as never, file)
+        .filter((m) => m.ruleId === 'import-next/no-cycle').length;
+    return { a: count(aSource, aPath), b: count(bSource, bPath) };
+  };
+
+  it('an all-inline-type back edge is silent from BOTH ends', () => {
+    // `a.ts` imports a value; `b.ts` imports nothing but an inline type back.
+    // Linting `a.ts` reported the cycle while linting `b.ts` reported nothing.
+    const a = [
+      "import { render } from './b.js';",
+      'export interface Fields { n: number }',
+      'export const a = () => render();',
+    ].join('\n');
+    const b = [
+      "import { type Fields } from './a.js';",
+      'export const render = (f?: Fields) => f;',
+    ].join('\n');
+    expect(lintBothEnds(a, b)).toEqual({ a: 0, b: 0 });
+  });
+
+  it('a value import that FOLLOWS an inline type import of the same file still reports from BOTH ends', () => {
+    // RECALL. The graph keeps one edge per target file and used to keep only
+    // the first import's flags, so the inline type import erased the value
+    // import behind it and the cycle vanished from `b.ts`'s end.
+    const a = [
+      "import { render } from './b.js';",
+      'export interface Fields { n: number }',
+      'export const KEY = 1;',
+      'export const a = () => render();',
+    ].join('\n');
+    const b = [
+      "import { type Fields } from './a.js';",
+      "import { KEY } from './a.js';",
+      'export const render = (f?: Fields) => [f, KEY];',
+    ].join('\n');
+    const counts = lintBothEnds(a, b);
+    expect(counts.a).toBeGreaterThan(0);
+    expect(counts.b).toBeGreaterThan(0);
+  });
+
+  it('under verbatimModuleSyntax the same back edge reports from BOTH ends', () => {
+    // The option reads the inline form as a runtime edge (tsc emits
+    // `import {} from './a.js'`). The report site honoured it, but the devkit
+    // graph had already erased the edge, so no cycle existed to report and the
+    // option did nothing. Both halves now read the same flag.
+    const a = [
+      "import { render } from './b.js';",
+      'export interface Fields { n: number }',
+      'export const a = () => render();',
+    ].join('\n');
+    const b = [
+      "import { type Fields } from './a.js';",
+      'export const render = (f?: Fields) => f;',
+    ].join('\n');
+    const counts = lintBothEnds(a, b, { verbatimModuleSyntax: true });
+    expect(counts.a).toBeGreaterThan(0);
+    expect(counts.b).toBeGreaterThan(0);
+  });
+
+  it('a back edge with any value binding still reports from BOTH ends', () => {
+    // RECALL. `import { type Fields, KEY }` carries a runtime binding, so the
+    // edge survives compilation and the cycle is real from either end.
+    const a = [
+      "import { render } from './b.js';",
+      'export interface Fields { n: number }',
+      'export const KEY = 1;',
+      'export const a = () => render();',
+    ].join('\n');
+    const b = [
+      "import { type Fields, KEY } from './a.js';",
+      'export const render = (f?: Fields) => [f, KEY];',
+    ].join('\n');
+    const counts = lintBothEnds(a, b);
+    expect(counts.a).toBeGreaterThan(0);
+    expect(counts.b).toBeGreaterThan(0);
   });
 });
 
