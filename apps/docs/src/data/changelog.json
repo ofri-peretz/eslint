@@ -1,7 +1,7 @@
 {
-  "releaseCount": 730,
+  "releaseCount": 731,
   "packageCount": 36,
-  "entryCount": 2180,
+  "entryCount": 2181,
   "oldestYear": 2024,
   "releases": [
     {
@@ -17956,6 +17956,21 @@
           "kind": "feature",
           "title": "`RemoteMarkdown` accepts `tags`, forwarded to the underlying fetch as `next.tags`.",
           "pr": 628
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-browser-security",
+      "short": "eslint-plugin-browser-security",
+      "version": "2.1.9",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-innerhtml` reported a false positive on an awaited trusted sanitiser",
+          "pr": null
         }
       ]
     },
