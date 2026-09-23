@@ -28,7 +28,7 @@ describe('no-insecure-http-parser', () => {
       { name: 'the default parser', code: `http.createServer((req, res) => res.end('ok'));` },
       { code: `https.request({ host, path, method: 'GET' }, onResponse);` },
       // Explicitly strict.
-      { code: `http.createServer({ insecureHTTPParser: false }, handler);` },
+      { name: 'createServer with insecureHTTPParser explicitly false is not reported', code: `http.createServer({ insecureHTTPParser: false }, handler);` },
       // A non-literal value may well be false at runtime — reporting is a guess.
       { code: `http.createServer({ insecureHTTPParser: allowLegacy }, handler);` },
       { code: `opts.insecureHTTPParser = allowLegacy;` },

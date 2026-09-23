@@ -31,6 +31,7 @@ describe('no-cryptojs-weak-random coverage gaps', () => {
       },
       // allowInTests but non-test file, safe code → regex operand false
       {
+        name: 'native crypto.randomBytes in a non-test file is not reported',
         code: 'crypto.randomBytes(16);',
         options: [{ allowInTests: true }],
         filename: 'random.ts',

@@ -24,7 +24,7 @@ describe('no-dynamic-dependency-loading coverage gaps', () => {
   ruleTester.run('no-dynamic-dependency-loading', noDynamicDependencyLoading, {
     valid: [
       // import() with a literal source → Literal check suppresses report
-      { code: 'import("node:fs");' },
+      { name: 'dynamic import of a literal builtin specifier is not reported', code: 'import("node:fs");' },
     ],
     invalid: [],
   });

@@ -31,7 +31,10 @@ describe('detect-eval-with-expression', () => {
           name: 'a name chosen at RUNTIME resolves to nothing to match',
           code: `const r = globalThis[fn](userInput);`,
         },
-        'const x = Math.eval();',
+        {
+          name: 'Math.eval is a method on another object, not the global eval',
+          code: 'const x = Math.eval();',
+        },
         'const obj = { eval: () => {} }; obj.eval("code");',
         'function myFunction(data) { return data; }',
         'const result = calculateValue();',

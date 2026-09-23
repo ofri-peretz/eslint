@@ -21,7 +21,7 @@ describe('no-sha1-hash', () => {
     valid: [
       { name: 'SHA-256', code: 'import { sha256 } from "crypto-hash"; sha256(data);' },
       { code: 'import { sha512 } from "crypto-hash"; sha512(data);' },
-      { code: 'import crypto from "crypto"; crypto.createHash("sha256");' },
+      { name: 'createHash with sha256 from native crypto is not reported', code: 'import crypto from "crypto"; crypto.createHash("sha256");' },
       { code: 'import { sha1 } from "some-other-package"; sha1(data);' },
       { code: 'sha1(data);' }, // Not from crypto-hash, should be valid
       { code: 'const sha1 = () => {}; sha1(data);' },

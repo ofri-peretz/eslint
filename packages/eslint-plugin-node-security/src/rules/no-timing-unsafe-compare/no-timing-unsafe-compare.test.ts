@@ -89,7 +89,7 @@ if ((pick())(presented, storedToken) === 0) { ok(); }`,
         // attacker-supplied operand, so there is nothing to time. Measured: the
         // rule fired on `if (firstKey !== undefined)` in a plain object walk.
         `if (firstKey !== undefined) { use(firstKey); }`,
-        `if (token === undefined) return;`,
+        { name: 'comparing a token against undefined is a presence check, not a secret comparison', code: `if (token === undefined) return;` },
         `if (hash === null) throw new Error('missing');`,
         `if (signature.length === 0) return false;`,
         `if (apiKey !== null) init(apiKey);`,

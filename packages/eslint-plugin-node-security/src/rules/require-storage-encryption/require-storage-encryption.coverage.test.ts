@@ -25,7 +25,10 @@ describe('require-storage-encryption coverage gaps', () => {
   ruleTester.run('require-storage-encryption', requireStorageEncryption, {
     valid: [
       // encrypt() wrapper argument → hasEncryption true, no report
-      { code: "localStorage.setItem('user', encrypt(user));" },
+      {
+        name: 'localStorage.setItem of an encrypt()-wrapped value is not reported',
+        code: "localStorage.setItem('user', encrypt(user));",
+      },
       // CallExpression arg whose callee is a MemberExpression, plus a real
       // encrypt() wrapper → exercises both callback operands
       { code: "localStorage.setItem(keys.get('u'), encryptData(user));" },

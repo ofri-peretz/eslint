@@ -49,7 +49,7 @@ describe('no-buffer-overread coverage gaps', () => {
     valid: [
     // Without the flag the read throws on an out-of-range offset, which is the
     // behaviour this rule wants.
-    'export const f = (b) => b.readUInt8(0);',
+    { name: 'readUInt8 at a constant offset without noAssert throws on overread and is not reported', code: 'export const f = (b) => b.readUInt8(0);' },
     'export const f = (b) => b.readUIntBE(0, 4);',
     // `false` is the default spelled out, not a disabled check.
     'export const f = (b) => b.readUInt8(0, false);',

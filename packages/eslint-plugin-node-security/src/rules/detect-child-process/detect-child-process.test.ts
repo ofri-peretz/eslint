@@ -43,6 +43,7 @@ describe('detect-child-process', () => {
           code: 'const exec = myFunction; exec(command);',
         },
         {
+          name: 'a method named exec on an arbitrary object is not child_process exec',
           code: 'obj.exec(command);',
         },
         // Note: Rule flags ALL child_process methods, even execFile/spawn
@@ -673,6 +674,22 @@ describe('detect-child-process — coverage completion', () => {
          const args = process.argv.slice(2);
          const changesetBinPath = fileURLToPath(new URL('../bin.js', import.meta.url));
          spawn(process.execPath, [changesetBinPath, ...args], {stdio: 'inherit'});`,
+        // burgee packages/burgee/src/pty-signal.test.ts:173 and
+        // scripts/subpath-weight.ts:108 — `-e` puts a shell-like evaluator in
+        // front of the argv, but the program text is a constant and
+        // `process.execPath` / `process.pid` are fixed by the runtime, not
+        // input. Swapping `process.execPath` for `'node'` was already silent.
+        {
+          name: 'process.execPath with -e and a constant program is not steerable',
+          code: `import { spawnSync } from 'node:child_process';
+                 const READ_EXPORTS = 'console.log(1)';
+                 spawnSync(process.execPath, ['-e', READ_EXPORTS]);`,
+        },
+        {
+          name: 'process.pid interpolated into a shell command is not steerable',
+          code: `import { execSync } from 'node:child_process';
+                 execSync(\`kill -0 \${process.pid}\`);`,
+        },
       ],
       invalid: [
         // The shape CWE-78 is actually about: a shell, and a request steering

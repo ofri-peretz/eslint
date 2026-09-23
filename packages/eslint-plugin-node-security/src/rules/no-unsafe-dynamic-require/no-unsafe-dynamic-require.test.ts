@@ -42,6 +42,7 @@ describe('no-unsafe-dynamic-require', () => {
           code: 'const fs = require("fs");',
         },
         {
+          name: 'require of the literal builtin path is not reported',
           code: 'const path = require("path");',
         },
         {

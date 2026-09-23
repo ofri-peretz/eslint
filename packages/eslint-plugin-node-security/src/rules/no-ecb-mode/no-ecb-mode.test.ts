@@ -24,7 +24,7 @@ describe('no-ecb-mode', () => {
   ruleTester.run('no-ecb-mode', noEcbMode, {
     valid: [
       { name: 'GCM', code: 'crypto.createCipheriv("aes-256-gcm", key, iv);' },
-      { code: 'crypto.createCipheriv("aes-256-cbc", key, iv);' },
+      { name: 'AES-256-CBC is not ECB mode and is not reported', code: 'crypto.createCipheriv("aes-256-cbc", key, iv);' },
       { code: 'crypto.createCipheriv("aes-256-ctr", key, iv);' },
       { code: 'crypto.createCipheriv(algorithm, key, iv);' },
       { code: 'createCipheriv("aes-256-gcm", key, iv);' },

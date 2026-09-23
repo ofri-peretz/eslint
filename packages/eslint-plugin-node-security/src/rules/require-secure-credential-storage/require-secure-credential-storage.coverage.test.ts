@@ -28,7 +28,7 @@ describe('require-secure-credential-storage coverage gaps', () => {
     {
       valid: [
         // encrypt() wrapper argument → hasEncryption true, no report
-        { code: "storage.setItem('token', encrypt(token));" },
+        { name: 'storing a token wrapped in encrypt() is not reported', code: "storage.setItem('token', encrypt(token));" },
         // Callback partially true: CallExpression arg with a member callee
         // (callee.type !== Identifier) alongside an encrypt() call
         { code: "storage.setItem(keys.get('a'), encryptValue(token));" },

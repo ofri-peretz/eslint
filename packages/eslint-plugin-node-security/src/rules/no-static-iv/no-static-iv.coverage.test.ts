@@ -30,7 +30,10 @@ describe('no-static-iv coverage gaps', () => {
       // base64) and is < 8 chars → length operand evaluates and stays false
       { code: 'crypto.createCipheriv("aes-256-gcm", key, "@#!");' },
       // Buffer.from(variable) → literal-string check false, array check false
-      { code: 'crypto.createCipheriv("aes-256-gcm", key, Buffer.from(seed));' },
+      {
+        name: 'an IV built by Buffer.from over a variable is not a static IV',
+        code: 'crypto.createCipheriv("aes-256-gcm", key, Buffer.from(seed));',
+      },
       // Buffer.from mixed array (identifier element) → allLiterals false
       {
         code: 'crypto.createCipheriv("aes-256-gcm", key, Buffer.from([seed, 2]));',

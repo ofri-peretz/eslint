@@ -33,6 +33,7 @@ describe('no-data-in-temp-storage coverage gaps', () => {
       },
       // ignoreFiles present but does NOT match → callback evaluates false
       {
+        name: 'a non-temp path in a file not matched by ignoreFiles is not reported',
         code: "const p = 'safe-path';",
         options: [{ ignoreFiles: ['generated'] }],
         filename: '/proj/app.ts',
