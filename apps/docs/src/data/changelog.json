@@ -7,6 +7,21 @@
     {
       "package": "eslint-plugin-import-next",
       "short": "eslint-plugin-import-next",
+      "version": "2.8.11",
+      "date": "2026-09-24T18:26:57Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "no-nodejs-modules shows the documented builtin alternative",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-import-next",
+      "short": "eslint-plugin-import-next",
       "version": "2.8.10",
       "date": "2026-09-24T00:02:52Z",
       "isApp": false,
@@ -18206,21 +18221,6 @@
           "kind": "feature",
           "title": "`RemoteMarkdown` accepts `tags`, forwarded to the underlying fetch as `next.tags`.",
           "pr": 628
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-import-next",
-      "short": "eslint-plugin-import-next",
-      "version": "2.8.11",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "no-nodejs-modules shows the documented builtin alternative",
-          "pr": null
         }
       ]
     },
