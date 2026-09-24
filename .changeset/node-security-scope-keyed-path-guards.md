@@ -2,7 +2,7 @@
 'eslint-plugin-node-security': patch
 ---
 
-fix(node-security): `no-arbitrary-file-access` no longer lets one function's guard silence another's sink; `path` sanitisers are recognised under their destructured spelling
+fix(node-security): path guards no longer leak across functions; destructured `basename`/`sep` recognised
 
 `no-arbitrary-file-access` kept its `path.basename()` and `startsWith()` state per variable NAME for the whole
 file, so `const p = …; if (!p.startsWith('/safe/')) throw …` in one function silenced an unguarded
