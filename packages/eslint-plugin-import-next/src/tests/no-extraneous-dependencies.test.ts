@@ -319,8 +319,39 @@ ruleTester.run('no-extraneous-dependencies — type-only imports', noExtraneousD
       code: "import { type MDXComponents } from 'mdx/types';",
       options: [{ packageJson: typesOnlyPackageJson }],
     },
+    {
+      // `verbatimModuleSyntax` changes only the inline form: a statement-level
+      // `import type` is erased under every compiler setting.
+      name: 'an `import type` declaration stays ignored with `verbatimModuleSyntax: true`',
+      code: "import type { Schema } from 'zod';",
+      options: [{ packageJson: typesOnlyPackageJson, verbatimModuleSyntax: true }],
+    },
   ],
   invalid: [
+    {
+      // FN GUARD (PR #1125 review): under TypeScript `verbatimModuleSyntax`,
+      // `import { type X } from 'pkg'` is NOT erased — tsc emits
+      // `import {} from 'pkg'`, so the package must still resolve at runtime.
+      // Mirrors `no-cycle`'s option of the same name, off by default.
+      name: 'an inline-type-only import is checked when `verbatimModuleSyntax` is on',
+      code: "import { type Schema } from 'zod';",
+      options: [{ packageJson: typesOnlyPackageJson, verbatimModuleSyntax: true }],
+      errors: [
+        {
+          messageId: 'missingDependency',
+          suggestions: [
+            {
+              messageId: 'addToDependencies',
+              output: "// TODO: Run: npm install zod\nimport { type Schema } from 'zod';",
+            },
+            {
+              messageId: 'addToDevDependencies',
+              output: "// TODO: Run: npm install --save-dev zod\nimport { type Schema } from 'zod';",
+            },
+          ],
+        },
+      ],
+    },
     {
       // FN GUARD: one value specifier keeps the import at runtime.
       name: 'a mixed import with one value specifier is still checked',

@@ -45,6 +45,15 @@ export interface Options {
   allowPatterns?: string[];
   /** Ignore specific packages (don't report as missing) */
   ignore?: string[];
+  /**
+   * Treat an inline-type-only import (`import { type X } from 'pkg'`) as a
+   * runtime import. Set this when the project compiles with TypeScript's
+   * `verbatimModuleSyntax`: under that flag the inline form is not erased —
+   * `tsc` emits `import {} from 'pkg'`, so the package must still resolve at
+   * runtime. A statement-level `import type` is erased under every setting and
+   * stays skipped either way. Same option, same meaning, as `no-cycle`.
+   */
+  verbatimModuleSyntax?: boolean;
 }
 
 type RuleOptions = [Options?];
@@ -174,6 +183,12 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
             description:
               "Specific package names to ignore (don't report as missing).",
           },
+          verbatimModuleSyntax: {
+            type: 'boolean',
+            default: false,
+            description:
+              "Check inline-type-only imports (`import { type X } from 'pkg'`) as runtime imports. Enable when the project compiles with TypeScript's `verbatimModuleSyntax`, under which tsc emits `import {} from 'pkg'` for them. Statement-level `import type` is always ignored.",
+          },
         },
         additionalProperties: false,
       },
@@ -187,6 +202,7 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
       bundledDependencies: true,
       resolutionStrategy: 'strict',
       allowPatterns: [],
+      verbatimModuleSyntax: false,
     },
   ],
 
@@ -202,6 +218,7 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
       resolutionStrategy = 'strict',
       allowPatterns = [],
       ignore = [],
+      verbatimModuleSyntax = false,
     } = options || {};
 
     const filename = context.filename;
@@ -525,10 +542,13 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         // Type imports are erased at compile time, so they cannot pull in a
         // runtime dependency. Upstream ignores them by default: `import type`,
-        // and an import whose every specifier is an inline `type`.
+        // and an import whose every specifier is an inline `type`. The inline
+        // form is NOT erased under `verbatimModuleSyntax` (tsc emits
+        // `import {} from 'pkg'`), so the option keeps it checked.
         if (
           node.importKind === 'type' ||
-          (node.specifiers.length > 0 &&
+          (!verbatimModuleSyntax &&
+            node.specifiers.length > 0 &&
             node.specifiers.every(
               (s) => s.type === 'ImportSpecifier' && s.importKind === 'type',
             ))
