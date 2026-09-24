@@ -1,0 +1,97 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Dependabot Auto-merge
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Arms auto-merge on a Dependabot PR when EVERY update in it is low-risk:
+#
+#   - update-type is `version-update:semver-patch` or `…:semver-minor`, and
+#   - dependency-type is not `direct:production`, except in the
+#     `github_actions` ecosystem, where Dependabot labels every action
+#     `direct:production` (there is no dev/prod split for actions).
+#
+# Any other entry (a major, a runtime dependency of a published package, or an
+# entry with no update-type at all) leaves the PR alone for a human. Grouped
+# PRs (`all-packages`, `all-actions`) are judged entry by entry, so one major
+# in a group of forty keeps the whole group manual.
+#
+# Arming is not merging. The PR still merges only when branch protection's
+# required checks go green.
+#
+# Why `pull_request_target`: a `pull_request` run triggered by Dependabot gets
+# a read-only token, which cannot arm auto-merge. `pull_request_target` runs
+# the workflow from `main` with the base repo's token. That trigger is only
+# safe because this workflow NEVER checks out or executes PR code. It reads
+# Dependabot's commit metadata and calls the GitHub API, nothing else. Do not
+# add a checkout here.
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: dependabot-automerge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  automerge:
+    name: Arm auto-merge (patch/minor, non-production)
+    # The PR author, not `github.actor`: the actor is whoever triggered this
+    # run, which is not always the PR's author. fetch-metadata separately
+    # verifies that Dependabot authored the commits, so both have to hold.
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write # auto-merge squashes into main
+      pull-requests: write # arm auto-merge on the PR
+    steps:
+      - name: Fetch Dependabot metadata
+        id: meta
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+
+      - name: Decide eligibility
+        id: decide
+        env:
+          DEPS_JSON: ${{ steps.meta.outputs.updated-dependencies-json }}
+          ECOSYSTEM: ${{ steps.meta.outputs.package-ecosystem }}
+        run: |
+          set -euo pipefail
+          # Fail closed: an empty or unparseable list is not "nothing risky".
+          eligible=$(printf '%s' "$DEPS_JSON" | jq -r --arg eco "$ECOSYSTEM" '
+            if type != "array" or length == 0 then false
+            else all(.[];
+              (.updateType == "version-update:semver-patch"
+                or .updateType == "version-update:semver-minor")
+              and (.dependencyType != "direct:production"
+                or $eco == "github_actions"))
+            end' 2>/dev/null || echo false)
+          # Blank input makes jq print nothing and exit 0.
+          [ "$eligible" = "true" ] || eligible=false
+          echo "eligible=$eligible" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Dependabot auto-merge: eligible=$eligible"
+            echo ""
+            echo "| Dependency | Type | Update |"
+            echo "|---|---|---|"
+            printf '%s' "$DEPS_JSON" | jq -r '.[]? | "| \(.dependencyName) | \(.dependencyType) | \(.updateType // "unknown") |"' 2>/dev/null || true
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Arm auto-merge
+        if: steps.decide.outputs.eligible == 'true'
+        env:
+          # The token that arms auto-merge is the one GitHub credits with the
+          # merge. A merge credited to the bare GITHUB_TOKEN fires no push
+          # workflows on main (see issue-sweep.yml and #1041), so use the same
+          # PAT-fallback chain as the other arming steps. `github.token` stays
+          # last, so this is never worse than the default.
+          GH_TOKEN: ${{ secrets.RELEASE_BOT_PAT || secrets.AGENTS_REPO_PAT || github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          set -euo pipefail
+          gh pr merge --auto --squash "$PR_URL"
+          echo "::notice title=Dependabot PR armed::$PR_URL merges once every required check is green."
