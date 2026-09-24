@@ -15,6 +15,14 @@
       "notes": "Threat-model review of this surface is pending; the figure is an upper bound over a raw denominator."
     },
     {
+      "plugin": "eslint-plugin-cli-floor",
+      "surface": "commander, yargs, burgee",
+      "surfaceVersion": "installed: commander@10.0.1, yargs@17.7.3; burgee is not installed in this repository and cannot be loaded, so its surface is not counted",
+      "denominatorTrust": "raw",
+      "denominatorNote": "The enumeration is yargs' instance methods at the installed version: commander contributes no enumerable callables, and burgee is not installed here. It is not the surface these rules target, which is a command's declaration (description, example, handler, prompts) rather than a set of APIs that can be misused.",
+      "notes": "The named count is inflated: the rules name most yargs methods only to walk a `this`-returning chain back to a proven yargs instance, not because they check how those methods are called. Read the figure as an upper bound over a raw denominator, not as coverage."
+    },
+    {
       "plugin": "eslint-plugin-drizzle-security",
       "surface": "drizzle-orm",
       "surfaceVersion": "installed: drizzle-orm@0.45.2",
