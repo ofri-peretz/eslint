@@ -5,6 +5,18 @@ All notable changes to `eslint-plugin-import-next` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.8.11
+
+### Patch Changes
+
+- **🐛 Fix** — no-nodejs-modules shows the documented builtin alternative
+
+  `suggestAlternatives` (default `true`) built a per-builtin alternative such as
+  "Use Web Crypto API (crypto.subtle) or crypto libraries" and passed it as report
+  data, but no message template had a placeholder for it, so the option changed
+  nothing. Each message now carries the alternative in its Fix line when the
+  option is on and the builtin has one; `suggestAlternatives: false` drops it.
+
 ## 2.8.10
 
 ### Patch Changes
