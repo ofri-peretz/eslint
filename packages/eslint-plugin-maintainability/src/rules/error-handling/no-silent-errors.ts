@@ -202,7 +202,7 @@ export const noSilentErrors = createRule<RuleOptions, MessageIds>({
 
     const filename = context.filename;
     const isTestFile =
-      ignoreInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+      ignoreInTests && /\.(test|spec)\.[cm]?[jt]sx?$/.test(filename);
 
     if (isTestFile) {
       return {};
