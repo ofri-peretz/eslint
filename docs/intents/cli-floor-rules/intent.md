@@ -3,7 +3,7 @@ slug: cli-floor-rules
 opened: 2026-09-24
 packages:
   - eslint-plugin-cli-floor
-  - '@interlace/eslint-devkit'
+  - eslint-devkit
   - docs
 cases: []
 ---
