@@ -97,7 +97,7 @@ export const noNodejsModules = createRule<RuleOptions, MessageIds>({
         issueName: 'Node.js Builtin Import',
         description: 'Node.js builtin module import detected',
         severity: 'HIGH',
-        fix: 'Replace with browser-compatible alternative or conditional import',
+        fix: 'Replace with browser-compatible alternative or conditional import{{alternative}}',
         documentationLink:
           'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-nodejs-modules.md',
       }),
@@ -106,7 +106,7 @@ export const noNodejsModules = createRule<RuleOptions, MessageIds>({
         issueName: 'Node.js Builtin Require',
         description: 'Node.js builtin module require() detected',
         severity: 'HIGH',
-        fix: 'Replace with browser-compatible alternative or conditional require',
+        fix: 'Replace with browser-compatible alternative or conditional require{{alternative}}',
         documentationLink:
           'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-nodejs-modules.md',
       }),
@@ -115,7 +115,7 @@ export const noNodejsModules = createRule<RuleOptions, MessageIds>({
         issueName: 'Node.js Builtin Dynamic Import',
         description: 'Node.js builtin module dynamic import detected',
         severity: 'HIGH',
-        fix: 'Use conditional dynamic import with browser-compatible fallback',
+        fix: 'Use conditional dynamic import with browser-compatible fallback{{alternative}}',
         documentationLink:
           'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-nodejs-modules.md',
       }),
@@ -233,12 +233,10 @@ export const noNodejsModules = createRule<RuleOptions, MessageIds>({
         return '';
       }
 
+      // Rendered into each message's `{{alternative}}` slot; a builtin with no
+      // table entry adds nothing, since the fix text already says the generic.
       const alternative = BUILTIN_ALTERNATIVES[builtinName];
-      if (alternative) {
-        return `// Alternative: ${alternative}`;
-      }
-
-      return '// Consider using a browser-compatible library or conditional import';
+      return alternative ? ` (${alternative})` : '';
     }
 
     function reportBuiltin(

@@ -3,7 +3,8 @@
  * Prevents Node.js builtin imports
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
-import { describe, it, afterAll } from 'vitest';
+import { describe, it, expect, afterAll } from 'vitest';
+import { Linter } from 'eslint';
 import parser from '@typescript-eslint/parser';
 import { noNodejsModules } from '../rules/no-nodejs-modules';
 
@@ -417,6 +418,8 @@ describe('no-nodejs-modules', () => {
                 moduleName: 'fs',
                 builtinName: 'fs',
                 currentFile: '/src/utils/helpers.js',
+                alternative:
+                  ' (Use platform-specific file APIs or isomorphic libraries)',
               },
             },
           ],
@@ -431,6 +434,8 @@ describe('no-nodejs-modules', () => {
                 moduleName: 'fs',
                 builtinName: 'fs',
                 currentFile: '/src/utils/helpers.js',
+                alternative:
+                  ' (Use platform-specific file APIs or isomorphic libraries)',
               },
             },
           ],
@@ -499,6 +504,57 @@ describe('no-nodejs-modules', () => {
           errors: [{ messageId: 'nodejsBuiltinDynamic' }],
         },
       ],
+    });
+  });
+
+  // burgee packages/burgee/src/dev.ts:12 (`import { watch } from 'node:fs'`) and
+  // all 154 builtin sites in the burgee sweep: `suggestAlternatives` (documented
+  // default `true`, "Suggest browser-compatible alternatives.") built the
+  // per-builtin text and passed it as report data, but no message template had
+  // a placeholder for it, so the option changed nothing a user could see.
+  describe('suggestAlternatives is visible in the message', () => {
+    const lint = (code: string, options?: object) =>
+      new Linter({ configType: 'flat' })
+        .verify(
+          code,
+          {
+            files: ['**/*.ts'],
+            languageOptions: { parser, sourceType: 'module' },
+            plugins: { t: { rules: { r: noNodejsModules as never } } },
+            rules: { 't/r': options ? ['error', options] : 'error' },
+          },
+          'a.ts',
+        )
+        .map((m) => m.message);
+
+    it('the default names the builtin-specific alternative', () => {
+      expect(lint("import { readFileSync } from 'node:fs';")).toEqual([
+        expect.stringContaining(
+          'Use platform-specific file APIs or isomorphic libraries',
+        ),
+      ]);
+    });
+
+    it('require() and dynamic import() carry the alternative too', () => {
+      expect(
+        lint("const c = require('crypto'); const h = import('http');"),
+      ).toEqual([
+        expect.stringContaining('Use Web Crypto API'),
+        expect.stringContaining('Use fetch() API'),
+      ]);
+    });
+
+    it('suggestAlternatives: false drops the alternative', () => {
+      const [off] = lint("import { readFileSync } from 'node:fs';", {
+        suggestAlternatives: false,
+      });
+      expect(off).not.toContain('platform-specific');
+      expect(off).not.toContain('{{');
+    });
+
+    it('a builtin with no table entry adds nothing and leaves no placeholder', () => {
+      const [msg] = lint("import { Worker } from 'node:worker_threads';");
+      expect(msg).not.toContain('{{');
     });
   });
 });

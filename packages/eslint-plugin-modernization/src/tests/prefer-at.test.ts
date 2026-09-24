@@ -213,4 +213,84 @@ describe('prefer-at', () => {
       ],
     });
   });
+
+  // `a.b[i]()` calls with `this === a.b`; `a.b.at(-1)()` calls with `this`
+  // undefined. `new c[i]()` becomes `new c.at(-1)()`, which parses as
+  // `new (c.at)(-1)` and throws "c.at is not a constructor". A callee or tag
+  // position is reported, never rewritten.
+  describe('callee and tag positions', () => {
+    ruleTester.run('prefer-at callee positions', preferAt, {
+      valid: [],
+      invalid: [
+        {
+          name: 'the callee of a new expression is reported, not rewritten',
+          code: 'const x = new ctors[ctors.length - 1]();',
+          output: null,
+          errors: [{ messageId: 'useAtForLastElement' }],
+        },
+        {
+          name: 'the callee of a call is reported, not rewritten — the rewrite drops this',
+          code: 'obj.fns[obj.fns.length - 1]();',
+          output: null,
+          errors: [{ messageId: 'useAtForLastElement' }],
+        },
+        {
+          name: 'the callee of an optional call is reported, not rewritten',
+          code: 'obj.fns[obj.fns.length - 2]?.();',
+          output: null,
+          errors: [{ messageId: 'preferAtMethod' }],
+        },
+        {
+          name: 'the tag of a tagged template is reported, not rewritten',
+          code: 'obj.tags[obj.tags.length - 1]`x`;',
+          output: null,
+          errors: [{ messageId: 'useAtForLastElement' }],
+        },
+        // TS wrappers and a parenthesised chain have no runtime effect, so the
+        // call still binds `this` to the receiver.
+        {
+          name: 'a non-null-asserted callee is reported, not rewritten',
+          code: 'obj.fns[obj.fns.length - 1]!();',
+          output: null,
+          errors: [{ messageId: 'useAtForLastElement' }],
+        },
+        {
+          name: 'an as-asserted callee is reported, not rewritten',
+          code: '(obj.fns[obj.fns.length - 1] as F)();',
+          output: null,
+          errors: [{ messageId: 'useAtForLastElement' }],
+        },
+        {
+          name: 'a satisfies-checked callee is reported, not rewritten',
+          code: '(obj.fns[obj.fns.length - 1] satisfies F)();',
+          output: null,
+          errors: [{ messageId: 'useAtForLastElement' }],
+        },
+        {
+          name: 'an angle-bracket-asserted callee is reported, not rewritten',
+          code: '(<F>obj.fns[obj.fns.length - 1])();',
+          output: null,
+          errors: [{ messageId: 'useAtForLastElement' }],
+        },
+        {
+          name: 'a parenthesised optional-chain callee is reported, not rewritten',
+          code: '(obj?.fns[obj.fns.length - 1])();',
+          output: null,
+          errors: [{ messageId: 'useAtForLastElement' }],
+        },
+        {
+          name: 'a wrapped value that is not called is still rewritten',
+          code: 'const f = obj.fns[obj.fns.length - 1]!;',
+          output: 'const f = obj.fns.at(-1)!;',
+          errors: [{ messageId: 'useAtForLastElement' }],
+        },
+        {
+          name: 'a call argument is still rewritten — only the callee is unsafe',
+          code: 'f(arr[arr.length - 1]);',
+          output: 'f(arr.at(-1));',
+          errors: [{ messageId: 'useAtForLastElement' }],
+        },
+      ],
+    });
+  });
 });

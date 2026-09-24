@@ -52,6 +52,14 @@ describe('no-keyboard-inaccessible-elements', () => {
           filename: 'test.spec.tsx',
           options: [{ ignoreInTests: true }],
         },
+        {
+          // burgee sweep 2026-09-23: ignoreInTests missed .[cm]js/.[cm]ts test files
+          // (compat-oracle/vendor/commander/tests/*.test.cjs); matches reliability #1080.
+          name: 'ignoreInTests also skips an ESM test file (.test.mjs)',
+          code: '<div onClick={handler}>Click</div>',
+          filename: 'test.test.mjs',
+          options: [{ ignoreInTests: true }],
+        },
       ],
       invalid: [],
     });
