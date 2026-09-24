@@ -1043,29 +1043,63 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * narrows what counts as disqualifying.
      */
     const hasDisqualifyingLiteralAffix = (node: TSESTree.Node): boolean => {
-      if (
-        node.type !== AST_NODE_TYPES.BinaryExpression ||
-        (node as TSESTree.BinaryExpression).operator !== '+'
-      ) {
-        return false;
-      }
-      const bin = node as TSESTree.BinaryExpression;
-      const literalText = (n: TSESTree.Node): string | null => {
-        if (n.type !== AST_NODE_TYPES.Literal) return null;
+      // A literal, or a never-reassigned binding initialised with one:
+      // `const NO = 'no-'` is the same text under another name.
+      const literalText = (n: TSESTree.Node | undefined): string | null => {
+        if (n?.type === AST_NODE_TYPES.Identifier) {
+          const variable = resolvedReference(sourceCode.getScope(n), n);
+          if (!variable || variable.defs.length !== 1) return null;
+          const def = variable.defs[0];
+          if (def.type !== 'Variable') return null;
+          if (variable.references.filter((ref) => ref.isWrite()).length > 1)
+            return null;
+          const declarator = def.node as TSESTree.VariableDeclarator;
+          // `const [P] = '__private'` binds P to '_': only a plain `P = …`
+          // declarator makes the initialiser P's own text.
+          if (declarator.id !== def.name) return null;
+          const init = declarator.init;
+          // One hop only: never chase identifier-to-identifier bindings.
+          const value = init ? withoutTypeAnnotation(init) : null;
+          return value?.type === AST_NODE_TYPES.Literal
+            ? literalText(value)
+            : null;
+        }
+        if (n?.type !== AST_NODE_TYPES.Literal) return null;
         const v = (n as TSESTree.Literal).value;
         if (typeof v !== 'string' && typeof v !== 'number') return null;
         const s = String(v);
         return s.length > 0 ? s : null;
       };
 
-      const prefix = literalText(bin.left as TSESTree.Node);
+      let prefix: string | null = null;
+      let suffix: string | null = null;
+      if (
+        node.type === AST_NODE_TYPES.BinaryExpression &&
+        node.operator === '+'
+      ) {
+        prefix = literalText(node.left);
+        suffix = literalText(node.right);
+      } else if (
+        node.type === AST_NODE_TYPES.TemplateLiteral &&
+        node.expressions.length > 0
+      ) {
+        // `` `no-${x}` `` is `'no-' + x`. The outer quasis pin the ends; an
+        // empty one falls through to the adjacent expression, so
+        // `` `${NO}${x}` `` still reads the `NO` const.
+        const { quasis, expressions } = node;
+        // `cooked`, not `raw`: `` `\x5f_pro${x}` `` spells `__pro`.
+        prefix = quasis[0].value.cooked || literalText(expressions[0]);
+        suffix =
+          quasis[quasis.length - 1].value.cooked ||
+          literalText(expressions[expressions.length - 1]);
+      }
+
       if (
         prefix !== null &&
         !dangerousProperties.some((d) => d.startsWith(prefix))
       ) {
         return true;
       }
-      const suffix = literalText(bin.right as TSESTree.Node);
       if (
         suffix !== null &&
         !dangerousProperties.some((d) => d.endsWith(suffix))

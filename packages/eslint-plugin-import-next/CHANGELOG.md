@@ -5,6 +5,32 @@ All notable changes to `eslint-plugin-import-next` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.8.11
+
+### Patch Changes
+
+- **🐛 Fix** — no-nodejs-modules shows the documented builtin alternative
+
+  `suggestAlternatives` (default `true`) built a per-builtin alternative such as
+  "Use Web Crypto API (crypto.subtle) or crypto libraries" and passed it as report
+  data, but no message template had a placeholder for it, so the option changed
+  nothing. Each message now carries the alternative in its Fix line when the
+  option is on and the builtin has one; `suggestAlternatives: false` drops it.
+
+## 2.8.10
+
+### Patch Changes
+
+- **🐛 Fix** — `no-commonjs` suggests `import * as x` for `import x = require()`
+
+  `import x = require('m')` binds the whole module, but the suggestion rewrote it to a default import,
+  which fails to compile (TS1192) against a module with only named exports. It now suggests a namespace
+  import, keeps the `type` modifier on `import type x = require()`, and offers no suggestion for
+  `export import x = require()`, where the old rewrite produced a syntax error.
+
+  No suggestion is offered either when the binding is called, constructed or used as a template tag
+  (`import express = require('express'); express()`), because a namespace import cannot be called.
+
 ## 2.8.9
 
 ### Patch Changes

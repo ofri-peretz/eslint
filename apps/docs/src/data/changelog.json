@@ -1,9 +1,179 @@
 {
-  "releaseCount": 742,
+  "releaseCount": 746,
   "packageCount": 36,
-  "entryCount": 2200,
+  "entryCount": 2204,
   "oldestYear": 2024,
   "releases": [
+    {
+      "package": "eslint-plugin-import-next",
+      "short": "eslint-plugin-import-next",
+      "version": "2.8.11",
+      "date": "2026-09-24T18:26:57Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "no-nodejs-modules shows the documented builtin alternative",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-import-next",
+      "short": "eslint-plugin-import-next",
+      "version": "2.8.10",
+      "date": "2026-09-24T00:02:52Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-commonjs` suggests `import * as x` for `import x = require()`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.4.12",
+      "date": "2026-09-24T00:02:51Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`detect-object-injection` no longer reports a template-literal key with a fixed prefix or suffix",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-import-next",
+      "short": "eslint-plugin-import-next",
+      "version": "2.8.9",
+      "date": "2026-09-23T08:26:29Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-unused-modules` and `unambiguous` recognise TypeScript `export =`.",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "implement the overlap half of no-redos-vulnerable-regex, and stop a config pair from erasing no-cycle findings",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.4.11",
+      "date": "2026-09-23T08:26:19Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "five FP/FN rule defects found by the burgee sweep",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`detect-object-injection` reports a copy loop over a `for...of` element of a caller-supplied collection",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "implement the overlap half of no-redos-vulnerable-regex, and stop a config pair from erasing no-cycle findings",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-modernization",
+      "short": "eslint-plugin-modernization",
+      "version": "3.1.7",
+      "date": "2026-09-23T08:25:49Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`prefer-at` reports a receiver that reads a private field",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-reliability",
+      "short": "eslint-plugin-reliability",
+      "version": "4.1.12",
+      "date": "2026-09-23T08:25:43Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "five FP/FN rule defects found by the burgee sweep",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "5.6.7",
+      "date": "2026-09-23T08:25:20Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`detect-child-process` no longer treats `process.execPath` or `process.pid` as attacker input.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-react-features",
+      "short": "eslint-plugin-react-features",
+      "version": "1.7.10",
+      "date": "2026-09-23T08:24:49Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "five FP/FN rule defects found by the burgee sweep",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-maintainability",
+      "short": "eslint-plugin-maintainability",
+      "version": "3.2.15",
+      "date": "2026-09-23T08:24:46Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "five FP/FN rule defects found by the burgee sweep",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`cognitive-complexity` charges an `else if` a flat +1 instead of a nesting increment",
+          "pr": null
+        }
+      ]
+    },
     {
       "package": "@interlace/eslint-devkit",
       "short": "eslint-devkit",
@@ -18055,26 +18225,6 @@
       ]
     },
     {
-      "package": "eslint-plugin-import-next",
-      "short": "eslint-plugin-import-next",
-      "version": "2.8.9",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`no-unused-modules` and `unambiguous` recognise TypeScript `export =`.",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "implement the overlap half of no-redos-vulnerable-regex, and stop a config pair from erasing no-cycle findings",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "eslint-plugin-jwt-security",
       "short": "eslint-plugin-jwt-security",
       "version": "2.2.9",
@@ -18195,51 +18345,16 @@
       ]
     },
     {
-      "package": "eslint-plugin-maintainability",
-      "short": "eslint-plugin-maintainability",
-      "version": "3.2.15",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "five FP/FN rule defects found by the burgee sweep",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "`cognitive-complexity` charges an `else if` a flat +1 instead of a nesting increment",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "eslint-plugin-modernization",
       "short": "eslint-plugin-modernization",
-      "version": "3.1.7",
+      "version": "3.1.8",
       "date": null,
       "isApp": false,
       "isPrivate": false,
       "entries": [
         {
           "kind": "fix",
-          "title": "`prefer-at` reports a receiver that reads a private field",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-node-security",
-      "short": "eslint-plugin-node-security",
-      "version": "5.6.7",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`detect-child-process` no longer treats `process.execPath` or `process.pid` as attacker input.",
+          "title": "`prefer-at` no longer autofixes a callee or template tag.",
           "pr": null
         }
       ]
@@ -18365,61 +18480,6 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-react-features",
-      "short": "eslint-plugin-react-features",
-      "version": "1.7.10",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "five FP/FN rule defects found by the burgee sweep",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-reliability",
-      "short": "eslint-plugin-reliability",
-      "version": "4.1.12",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "five FP/FN rule defects found by the burgee sweep",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-secure-coding",
-      "short": "eslint-plugin-secure-coding",
-      "version": "5.4.11",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "five FP/FN rule defects found by the burgee sweep",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "`detect-object-injection` reports a copy loop over a `for...of` element of a caller-supplied collection",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "implement the overlap half of no-redos-vulnerable-regex, and stop a config pair from erasing no-cycle findings",
           "pr": null
         }
       ]

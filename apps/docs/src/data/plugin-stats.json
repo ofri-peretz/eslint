@@ -21,7 +21,7 @@
       "rules": 33,
       "description": "ESLint plugin for secure coding — detects LDAP, XPath, XXE, GraphQL and template injection, unsafe deserialization, ReDoS, missing authentication, and PII in logs",
       "category": "security",
-      "version": "5.4.11",
+      "version": "5.4.12",
       "published": true
     },
     {
@@ -181,7 +181,7 @@
       "rules": 55,
       "description": "ESLint plugin for imports and module boundaries — drop-in replacement for eslint-plugin-import, 3.1x faster end-to-end, zero-config migration",
       "category": "architecture",
-      "version": "2.8.9",
+      "version": "2.8.11",
       "published": true
     },
     {
@@ -229,7 +229,7 @@
       "rules": 4,
       "description": "ESLint plugin for modernizing JavaScript — auto-fixes legacy patterns to ES2022+ (Array.at, template literals, EventTarget, Array.isArray)",
       "category": "quality",
-      "version": "3.1.7",
+      "version": "3.1.8",
       "published": true
     },
     {
@@ -252,5 +252,5 @@
   "totalRules": 482,
   "totalPlugins": 31,
   "allPluginsCount": 31,
-  "generatedAt": "2026-09-23"
+  "generatedAt": "2026-09-24"
 }

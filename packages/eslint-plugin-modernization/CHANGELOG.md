@@ -5,6 +5,18 @@ All notable changes to `eslint-plugin-modernization` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.1.8
+
+### Patch Changes
+
+- **🐛 Fix** — `prefer-at` no longer autofixes a callee or template tag.
+
+  `new ctors[ctors.length - 1]()` was rewritten to `new ctors.at(-1)()`, which
+  parses as `new (ctors.at)(-1)` and throws "ctors.at is not a constructor".
+  `obj.fns[obj.fns.length - 1]()` became `obj.fns.at(-1)()`, which calls with
+  `this` undefined instead of `obj.fns`; a tagged-template tag had the same
+  problem. These positions are still reported, but without a fix.
+
 ## 3.1.7
 
 ### Patch Changes

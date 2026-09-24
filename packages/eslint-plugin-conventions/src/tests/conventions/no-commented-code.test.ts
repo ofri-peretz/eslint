@@ -46,6 +46,17 @@ describe('no-commented-code', () => {
           filename: 'test.spec.ts',
           options: [{ ignoreInTests: true }],
         },
+        {
+          // burgee sweep 2026-09-23: ignoreInTests missed .[cm]js/.[cm]ts test files
+          // (compat-oracle/vendor/commander/tests/*.test.cjs); matches reliability #1080.
+          name: 'ignoreInTests also skips an ESM test file (.test.mjs)',
+          code: `
+            // const oldCode = "removed";
+            // function oldFunction() { }
+          `,
+          filename: 'test.test.mjs',
+          options: [{ ignoreInTests: true }],
+        },
         // Below minLines threshold
         {
           code: '// const x = 1;',
