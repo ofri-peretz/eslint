@@ -68,6 +68,7 @@ describe('detect-non-literal-fs-filename', () => {
         },
         // Static path construction with path.join(__dirname, ...literals)
         {
+          name: 'a path joined from __dirname and literals only is not steerable',
           code: `fs.readFileSync(path.join(__dirname, 'data', 'users.json'));`,
         },
       ],
@@ -200,7 +201,7 @@ describe('detect-non-literal-fs-filename', () => {
             code: [
               "import { readFileSync } from 'node:fs';",
               "import { join } from 'node:path';",
-              "export function readAll(names: readonly string[]) {",
+              'export function readAll(names: readonly string[]) {',
               '  const out: string[] = [];',
               '  for (const name of names) {',
               "    out.push(readFileSync(join('/etc/app', name), 'utf8'));",

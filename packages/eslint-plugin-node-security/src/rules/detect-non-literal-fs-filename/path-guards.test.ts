@@ -58,6 +58,28 @@ const P = `import fs from 'fs';\nimport path from 'path';\n`;
 describe('detect-non-literal-fs-filename — taint roots and path guards', () => {
   ruleTester.run('detect-non-literal-fs-filename', detectNonLiteralFsFilename, {
     valid: [
+      // 2026-09-24 burgee FP/FN sweep: the destructured twins of the two
+      // guards below. Only the `path.` member spelling was recognised, so the
+      // same remediation reported depending on import style.
+      {
+        name: 'destructured basename from node:path strips every directory component',
+        code: `import { readFileSync } from 'fs';
+import { basename, join } from 'node:path';
+export function read(req) {
+  return readFileSync(join('/uploads', basename(req.query.f)));
+}`,
+      },
+      {
+        name: 'a prefix guard anchored with destructured sep holds',
+        code: `import fs from 'fs';
+import { resolve, sep } from 'node:path';
+const BASE = '/safe';
+export function read(req) {
+  const p = resolve(BASE, req.query.f);
+  if (!p.startsWith(BASE + sep)) throw new Error('denied');
+  return fs.readFileSync(p);
+}`,
+      },
       {
         name: 'path.basename strips every directory component',
         code: `${P}export function read(req) {

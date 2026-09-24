@@ -196,6 +196,7 @@ ruleTester.run('no-arbitrary-file-access', noArbitraryFileAccess, {
 
     // FP-2: path.basename() + path.join() with safe base
     {
+      name: 'a basename binding joined onto a safe base stays sanitised',
       code: `
         const safeName = path.basename(userFilename);
         const safePath = path.join(SAFE_DIR, safeName);
@@ -280,9 +281,46 @@ ruleTester.run('no-arbitrary-file-access', noArbitraryFileAccess, {
         }
       `,
     },
+    // ── 2026-09-24 burgee FP/FN sweep: the path.basename() sanitisation the
+    // docs list, written inline. `readsUserInput` walked straight into the
+    // basename call and reported the rule's own documented mitigation.
+    {
+      name: 'inline path.basename inside path.join is sanitised',
+      code: `import fs from 'fs'; import path from 'path';
+export function read(req) { return fs.readFileSync(path.join('/uploads', path.basename(req.query.f))); }`,
+    },
   ],
 
   invalid: [
+    // ── 2026-09-24 burgee FP/FN sweep: sanitised/validated state was keyed by
+    // variable NAME file-wide, so a guard or basename on `p` in one function
+    // silenced an unguarded `p` in another. Keyed on the scope Variable now.
+    {
+      name: 'a startsWith guard in another function does not validate this p',
+      code: `import fs from 'fs'; import path from 'path';
+export function a(req){ const p = path.resolve('/safe', req.query.f); if (!p.startsWith('/safe/')) throw new Error('x'); return fs.readFileSync(p); }
+export function b(req){ const p = req.query.g; return fs.readFileSync(p); }`,
+      errors: [{ messageId: 'violationDetected', line: 3 }],
+    },
+    {
+      name: 'a basename binding in another function does not sanitise this name',
+      code: `import fs from 'fs'; import path from 'path';
+export function a(x){ const name = path.basename(x); return name; }
+export function b(req){ const name = req.query.g; return fs.readFileSync(name); }`,
+      errors: [{ messageId: 'violationDetected', line: 3 }],
+    },
+    {
+      name: 'a startsWith guard AFTER the sink does not protect it',
+      code: `import fs from 'fs'; import path from 'path';
+export function read(req){ const p = req.query.f; const data = fs.readFileSync(p); if (!p.startsWith('/safe/')) throw new Error('x'); return data; }`,
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'a variable name appearing inside the guard literal is not a guard on it',
+      code: `import fs from 'fs'; import path from 'path';
+export function read(req, other){ const file = req.query.f; if (!other.startsWith('/files/')) throw new Error('x'); return fs.readFileSync(file); }`,
+      errors: [{ messageId: 'violationDetected' }],
+    },
     /*
      * `process.argv` IS attributable user input.
      *

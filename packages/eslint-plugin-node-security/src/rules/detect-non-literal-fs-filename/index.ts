@@ -113,6 +113,7 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   AST_NODE_TYPES,
   formatLLMMessage,
+  isModuleBinding,
   namesOneOf,
   objectKeyName,
   propertyName,
@@ -1060,6 +1061,19 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
           ) {
             return false;
           }
+          // `import { basename } from 'node:path'` — the same sanitiser under
+          // its destructured spelling, resolved through the module graph so a
+          // local `basename` helper is not mistaken for it.
+          if (
+            isModuleBinding(
+              callee,
+              context.sourceCode.getScope(callee),
+              'path',
+              ['basename'],
+            )
+          ) {
+            return false;
+          }
           // `path.join(base, req.query.f)` is tainted through its arguments.
           return node.arguments.some(
             (arg) =>
@@ -1481,6 +1495,9 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
         ) {
           return true;
         }
+        // `import { sep } from 'node:path'`
+        if (isModuleBinding(n, context.sourceCode.getScope(n), 'path', ['sep']))
+          return true;
         const staticText = staticString(n);
         if (staticText !== null) {
           return staticText.endsWith('/') || staticText.endsWith('\\');
