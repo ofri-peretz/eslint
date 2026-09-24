@@ -1,0 +1,80 @@
+---
+title: no-prompt-without-flag
+description: Require every interactive prompt in a CLI command to be skippable with a flag
+tags: ['quality', 'cli', 'prompts', 'commander', 'yargs', 'burgee']
+category: quality
+severity: high
+autofix: false
+---
+
+# no-prompt-without-flag
+
+> Require every interactive prompt in a CLI command to be skippable with a flag.
+
+- **burgee requirement:** P1 — every prompt is backed by a flag; a flag value skips the prompt
+- **Hosts:** commander (and `burgee/commander`, `@commander-js/extra-typings`), yargs (and `burgee/yargs`), burgee
+- **Prompt libraries:** `@clack/prompts`, `inquirer`, `@inquirer/prompts` and `@inquirer/<prompt>`, `prompts`, `enquirer`, `caique` (and its `caique/clack`, `caique/inquirer` drop-ins)
+- **Recommended:** off — **`strict` only**
+
+## Why
+
+A prompt with no flag behind it is a question only a person at a keyboard can answer. An agent, a CI job and a pipe hang or fail on it (clack #167, oclif/oclif #1492). The fix is structural — read the value from the command line first, and ask only when it is missing — so the check is structural too.
+
+## Rule details
+
+Reports a call into one of the prompt libraries above — resolved by import, never by the function's name — that sits inside a proven command handler and is not guarded by a read of that handler's **inputs**: its parameters (or names destructured from them), `this.opts()` in a `function` handler, or `.opts()` on a proven commander command.
+
+These shapes count as backed by a flag:
+
+```ts
+const name = opts.name ?? await text({ message: 'Name?' });        // fallback
+if (!opts.name) name = await text({ message: 'Name?' });           // guarded branch
+const ok = opts.yes ? true : await confirm({ message: 'Sure?' });  // conditional
+if (opts.yes) return remove(); await confirm({ message: 'Sure?' });// early exit
+async ({ name = await text({ message: 'Name?' }) }) => {}          // destructuring default
+await inquirer.prompt(questions, { name: opts.name });             // inquirer prefill
+await inquirer.prompt([{ name: 'name', when: () => !opts.name }]); // inquirer gate
+const v = decide({ value: opts.name, … }); if (v.action === 'prompt') await ask(…); // caique
+```
+
+It does **not** match the prompt's result variable to an option by spelling — that would be deciding by a name.
+
+A prompt outside any command handler is not reported: it is not command code this rule can reason about.
+
+## Incorrect
+
+```ts
+import { Command } from 'commander';
+import { text } from '@clack/prompts';
+const program = new Command();
+
+program.command('init').action(async () => {
+  const name = await text({ message: 'Project name?' });
+});
+```
+
+## Correct
+
+```ts
+program
+  .command('init')
+  .option('--name <name>', 'project name')
+  .action(async (opts) => {
+    const name = opts.name ?? (await text({ message: 'Project name?' }));
+  });
+```
+
+## Why `strict` only
+
+burgee's intent for this plugin holds it out of `recommended` until a precision study on ten real CLIs shows fewer than one false positive per hundred prompt calls. The guard is read from control flow, and control flow has more shapes than a declaration does.
+
+## Known limitations
+
+- A guard that lives in a helper (`if (needsName(opts)) …` where `needsName` is elsewhere) is read — the test reads `opts` — but a prompt inside a helper called from the handler is not followed.
+- Any read of the inputs in the guard counts; the rule does not check that the flag it reads is the one the prompt would answer.
+- A handler imported from another file is not read here.
+
+## Further reading
+
+- [burgee spec — requirements P1, P2](https://github.com/ofri-peretz/burgee/blob/main/.sdlc/intents/burgee/spec.md)
+- [caique — prompts that are flags first](https://www.npmjs.com/package/caique)

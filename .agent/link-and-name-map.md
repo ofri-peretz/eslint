@@ -5,7 +5,7 @@
 > plugin list in this repo has drifted at least once; this one is derived so
 > that when it disagrees with a source file, the source file is what changes.
 
-Covers 31 plugins.
+Covers 32 plugins.
 
 ## The eight identifiers a plugin has
 
@@ -29,6 +29,7 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :-: | :-: | :-: |
 | `eslint-plugin-anthropic-security` | 0.3.4 | `anthropic-security/` | — | `plugin-anthropic-security` | security | `claude` | ✅ | ✅ | ✅ |
 | `eslint-plugin-browser-security` | 2.1.9 | `browser-security/` | — | `plugin-browser-security` | security | `chromium` | ✅ | ✅ | ✅ |
+| `eslint-plugin-cli-floor` | 0.0.0 | `cli-floor/` | — | `plugin-cli-floor` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-conventions` | 6.0.7 | `conventions/` | — | `plugin-conventions` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-drizzle-security` | 0.3.8 | `drizzle-security/` | — | `plugin-drizzle-security` | security | `drizzle` | ✅ | ✅ | ✅ |
 | `eslint-plugin-express-security` | 3.2.4 | `express-security/` | — | `plugin-express-security` | security | `express` | ✅ | ✅ | ✅ |

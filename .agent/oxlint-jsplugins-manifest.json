@@ -1,10 +1,10 @@
 {
   "command": "npm run oxlint:shims",
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-09-10",
-  "totalPlugins": 31,
-  "totalRules": 482,
-  "oxlintCompatible": 482,
+  "generatedAt": "2026-09-24",
+  "totalPlugins": 32,
+  "totalRules": 486,
+  "oxlintCompatible": 486,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -314,6 +314,39 @@
         },
         {
           "name": "require-websocket-wss",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-cli-floor",
+      "short": "cli-floor",
+      "shim": "tools/oxlint-plugins/interlace-cli-floor.cjs",
+      "subpath": "eslint-plugin-cli-floor/oxlint",
+      "ruleCount": 4,
+      "rules": [
+        {
+          "name": "no-console-in-command",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-prompt-without-flag",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-command-description",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-command-example",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false

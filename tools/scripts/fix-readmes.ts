@@ -130,6 +130,8 @@ const DESCRIPTIONS: Record<string, string> = {
     'Modularity rules — module boundaries, circular dependency detection, and layered architecture.',
   'eslint-plugin-operability':
     'Operability rules — observability hooks, structured logging, and runtime resilience.',
+  'eslint-plugin-cli-floor':
+    'The CLI floor — commander, yargs and burgee commands with descriptions, one-line examples, no console, and a flag behind every prompt.',
 };
 
 // CVSS fallback map

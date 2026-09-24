@@ -31,6 +31,9 @@ describe('sync-plugin-stats', () => {
     
     it('should classify quality plugins', () => {
         expect(getCategory('eslint-plugin-quality')).toBe('quality');
+        // A pillar-quality plugin with no quality word in its name: without its
+        // own entry it fell through to the security default.
+        expect(getCategory('eslint-plugin-cli-floor')).toBe('quality');
     });
 
     it('should classify react plugins', () => {

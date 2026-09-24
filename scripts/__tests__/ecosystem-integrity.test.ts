@@ -59,7 +59,8 @@ const PLUGIN_NAMES = [
   // listed until their deprecations age out
   'eslint-plugin-postgresql-security',
   'eslint-plugin-jwt-security',
-  // quality (7)
+  // quality (8)
+  'eslint-plugin-cli-floor',
   'eslint-plugin-conventions',
   'eslint-plugin-import-next',
   'eslint-plugin-maintainability',

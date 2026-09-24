@@ -1,0 +1,107 @@
+{
+  "name": "eslint-plugin-cli-floor",
+  "version": "0.0.0",
+  "description": "ESLint plugin for the CLI floor — every commander, yargs or burgee command declares a description and a one-line example, writes through the output layer instead of console, and backs every prompt with a flag.",
+  "type": "commonjs",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
+    },
+    "./oxlint": {
+      "types": "./dist/src/oxlint.d.ts",
+      "default": "./dist/src/oxlint.js"
+    }
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://eslint.interlace.tools/docs/quality/plugin-cli-floor?utm_source=npm&utm_medium=referral&utm_campaign=eslint-plugin-cli-floor",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
+    "directory": "packages/eslint-plugin-cli-floor"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "src/",
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "keywords": [
+    "eslint",
+    "eslintplugin",
+    "eslint-plugin",
+    "static-analysis",
+    "linting",
+    "code-quality",
+    "interlace-quality",
+    "cli",
+    "command-line",
+    "commander",
+    "yargs",
+    "burgee",
+    "agent-ready",
+    "ai-agents",
+    "prompts",
+    "non-interactive",
+    "json-output",
+    "llm-optimized",
+    "typescript"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "peerDependencies": {
+    "eslint": "^8.40.0 || ^9.0.0 || ^10.0.0",
+    "burgee": ">=0.12.0 <1.0.0",
+    "commander": ">=7.0.0 <16.0.0",
+    "yargs": ">=16.0.0 <19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "burgee": {
+      "optional": true
+    },
+    "commander": {
+      "optional": true
+    },
+    "yargs": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@interlace/eslint-devkit": "^1.19.6"
+  },
+  "devDependencies": {
+    "@typescript-eslint/parser": "^8.68.0",
+    "@typescript-eslint/rule-tester": "^8.68.0"
+  },
+  "scripts": {
+    "build": "tsx ../../scripts/build-package.ts",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsgo -p tsconfig.lib.json --noEmit"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/ofri-peretz/eslint"
+  },
+  "interlace": {
+    "surface": {
+      "kind": "npm",
+      "modules": [
+        "commander",
+        "yargs",
+        "burgee"
+      ]
+    }
+  }
+}

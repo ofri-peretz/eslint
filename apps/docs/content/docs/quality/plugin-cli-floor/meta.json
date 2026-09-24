@@ -1,0 +1,6 @@
+{
+  "title": "Plugin: cli-floor",
+  "icon": "Terminal",
+  "defaultOpen": false,
+  "pages": ["index", "changelog", "rules"]
+}

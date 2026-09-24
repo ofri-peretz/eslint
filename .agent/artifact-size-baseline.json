@@ -27,6 +27,11 @@
       "tarball": 88,
       "files": 131
     },
+    "eslint-plugin-cli-floor": {
+      "unpacked": 59,
+      "tarball": 14,
+      "files": 14
+    },
     "eslint-plugin-conventions": {
       "unpacked": 86,
       "tarball": 21,

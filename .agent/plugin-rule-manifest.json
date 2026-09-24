@@ -2272,6 +2272,32 @@
       "notes": "A destructuring of `.auth.getUser()` and siblings that does not bind `error`. These report a forged or expired token by returning it rather than throwing. A computed key counts as bound, since `const k = 'error'` binds it and the node cannot tell."
     }
   },
+  "eslint-plugin-cli-floor": {
+    "no-console-in-command": {
+      "environment": "cli",
+      "detection": "structural-api",
+      "confidence": "enforcement",
+      "notes": "A call on the global `console` lexically inside a command handler whose host is proven by binding — commander `.action()`, a yargs handler, burgee `run`. A local binding named `console` and a helper defined outside the handler are not reported."
+    },
+    "no-prompt-without-flag": {
+      "environment": "cli",
+      "detection": "data-flow-lightweight",
+      "confidence": "opt-in",
+      "notes": "A prompt-library call (resolved by import) inside a proven handler with no guard that reads the handler's inputs: `??`/`||` fallback, an `if`/conditional test, an earlier exiting `if`, a destructuring default, inquirer prefill or `when`. Strict only until a precision study on real CLIs."
+    },
+    "require-command-description": {
+      "environment": "cli",
+      "detection": "structural-api",
+      "confidence": "enforcement",
+      "notes": "A command of a proven host (commander, yargs, burgee) with no description or an empty one. A description in a variable, a spread, or a hidden command abstains."
+    },
+    "require-command-example": {
+      "environment": "cli",
+      "detection": "structural-api",
+      "confidence": "enforcement",
+      "notes": "A runnable command of a proven host with no example (commander `addHelpText`, yargs `.example()` in its builder, burgee `examples`), or an example command line containing a line break."
+    }
+  },
   "eslint-plugin-vercel-ai-security": {
     "require-validated-prompt": {
       "environment": "vercel-ai",

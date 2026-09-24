@@ -181,6 +181,7 @@ export function getCategory(packageName: string) {
     'reliability',
     'modernization',
     'quality',
+    'cli-floor',
   ];
   if (qualityPlugins.some(q => packageName.includes(q))) {
     return 'quality';
