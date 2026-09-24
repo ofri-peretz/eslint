@@ -523,6 +523,18 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
 
     return {
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
+        // Type imports are erased at compile time, so they cannot pull in a
+        // runtime dependency. Upstream ignores them by default: `import type`,
+        // and an import whose every specifier is an inline `type`.
+        if (
+          node.importKind === 'type' ||
+          (node.specifiers.length > 0 &&
+            node.specifiers.every(
+              (s) => s.type === 'ImportSpecifier' && s.importKind === 'type',
+            ))
+        ) {
+          return;
+        }
         if (node.source.value && typeof node.source.value === 'string') {
           checkImport(node.source.value, node.source);
         }
