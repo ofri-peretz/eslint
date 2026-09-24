@@ -1657,72 +1657,38 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         return false;
       }
 
-      const varName = objectNode.name;
+      // Resolve the binding through scope, not by name: a parameter or inner `const`
+      // that shadows an outer `Object.create(null)` holds whatever the caller passed.
+      // burgee packages/burgee/src/yargs-parser.ts:623,636 (outer `argv` at :258).
+      const variable = resolvedReference(
+        sourceCode.getScope(objectNode),
+        objectNode,
+      );
+      if (!variable || variable.defs.length !== 1) return false;
+      const def = variable.defs[0];
+      if (def.type !== 'Variable') return false;
+      // Reassignment disqualifies, as in isSymbolKey — `o = {}` after the
+      // declaration leaves a prototype to pollute.
+      if (variable.references.filter((ref) => ref.isWrite()).length > 1)
+        return false;
+      const init = (def.node as TSESTree.VariableDeclarator).init;
+      if (!init) return false;
 
-      // Walk up to find the variable declaration
-      let current: TSESTree.Node | undefined = objectNode;
-      while (current) {
-        if (
-          current.type === AST_NODE_TYPES.BlockStatement ||
-          current.type === AST_NODE_TYPES.Program
-        ) {
-          const statements =
-            current.type === AST_NODE_TYPES.BlockStatement
-              ? current.body
-              : current.body;
-
-          for (const stmt of statements) {
-            if (stmt.type === AST_NODE_TYPES.VariableDeclaration) {
-              for (const decl of stmt.declarations) {
-                if (
-                  decl.id.type === AST_NODE_TYPES.Identifier &&
-                  decl.id.name === varName &&
-                  decl.init
-                ) {
-                  // Check for Object.create(null)
-                  if (
-                    decl.init.type === AST_NODE_TYPES.CallExpression &&
-                    decl.init.callee.type === AST_NODE_TYPES.MemberExpression &&
-                    decl.init.callee.object.type ===
-                      AST_NODE_TYPES.Identifier &&
-                    decl.init.callee.object.name === 'Object' &&
-                    decl.init.callee.property.type ===
-                      AST_NODE_TYPES.Identifier &&
-                    decl.init.callee.property.name === 'create' &&
-                    decl.init.arguments.length > 0 &&
-                    decl.init.arguments[0].type === AST_NODE_TYPES.Literal &&
-                    decl.init.arguments[0].value === null
-                  ) {
-                    return true;
-                  }
-
-                  // Check for array spread: [...array]
-                  if (
-                    decl.init.type === AST_NODE_TYPES.ArrayExpression &&
-                    decl.init.elements.length > 0 &&
-                    decl.init.elements[0]?.type === AST_NODE_TYPES.SpreadElement
-                  ) {
-                    return true;
-                  }
-
-                  // `const a = Object.assign(Object.create(null), src)` — the binding
-                  // holds the assign TARGET, so ask the predicate about the initializer
-                  // rather than re-listing the spellings here.
-                  if (
-                    decl.init.type === AST_NODE_TYPES.CallExpression &&
-                    isPrototypelessObject(decl.init, seen)
-                  ) {
-                    return true;
-                  }
-                }
-              }
-            }
-          }
-        }
-        current = current.parent;
+      // Check for array spread: [...array]
+      if (
+        init.type === AST_NODE_TYPES.ArrayExpression &&
+        init.elements.length > 0 &&
+        init.elements[0]?.type === AST_NODE_TYPES.SpreadElement
+      ) {
+        return true;
       }
 
-      return false;
+      // `Object.create(null)` and `Object.assign(Object.create(null), src)` — ask the
+      // predicate about the initializer rather than re-listing the spellings here.
+      return (
+        init.type === AST_NODE_TYPES.CallExpression &&
+        isPrototypelessObject(init, seen)
+      );
     };
 
     /**
