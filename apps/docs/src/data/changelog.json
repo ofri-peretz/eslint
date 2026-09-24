@@ -1,9 +1,39 @@
 {
-  "releaseCount": 744,
+  "releaseCount": 745,
   "packageCount": 36,
-  "entryCount": 2202,
+  "entryCount": 2203,
   "oldestYear": 2024,
   "releases": [
+    {
+      "package": "eslint-plugin-import-next",
+      "short": "eslint-plugin-import-next",
+      "version": "2.8.10",
+      "date": "2026-09-24T00:02:52Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-commonjs` suggests `import * as x` for `import x = require()`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.4.12",
+      "date": "2026-09-24T00:02:51Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`detect-object-injection` no longer reports a template-literal key with a fixed prefix or suffix",
+          "pr": null
+        }
+      ]
+    },
     {
       "package": "eslint-plugin-import-next",
       "short": "eslint-plugin-import-next",
@@ -18182,14 +18212,14 @@
     {
       "package": "eslint-plugin-import-next",
       "short": "eslint-plugin-import-next",
-      "version": "2.8.10",
+      "version": "2.8.11",
       "date": null,
       "isApp": false,
       "isPrivate": false,
       "entries": [
         {
           "kind": "fix",
-          "title": "`no-commonjs` suggests `import * as x` for `import x = require()`",
+          "title": "no-nodejs-modules shows the documented builtin alternative",
           "pr": null
         }
       ]
@@ -18435,21 +18465,6 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-secure-coding",
-      "short": "eslint-plugin-secure-coding",
-      "version": "5.4.12",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`detect-object-injection` no longer reports a template-literal key with a fixed prefix or suffix",
           "pr": null
         }
       ]
