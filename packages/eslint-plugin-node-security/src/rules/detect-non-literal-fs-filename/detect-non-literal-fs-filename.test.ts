@@ -40,6 +40,7 @@ describe('detect-non-literal-fs-filename', () => {
           code: 'fs.stat("/var/log/app.log", callback);',
         },
         {
+          name: 'a literal directory to list is not user input',
           code: 'fs.readdir("./src", callback);',
         },
         // Note: Template literals without expressions may still trigger the rule

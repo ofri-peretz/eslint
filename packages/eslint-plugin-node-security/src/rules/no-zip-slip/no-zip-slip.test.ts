@@ -168,6 +168,7 @@ describe('no-zip-slip', () => {
         },
         // An ESM import of an archive module counts the same.
         {
+          name: 'an ESM import of an archive module establishes archive context',
           code: `import unzipper from 'unzipper';
                  const filePath = path.resolve(destDir, entry.path);`,
           errors: [{ messageId: 'unvalidatedArchivePath' }],

@@ -122,6 +122,7 @@ import {
   unwrapTypeSyntax,
 } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
+import { isSeparatorAnchored } from '../../utils/separator-anchored';
 
 type MessageIds = 'fsPathTraversal';
 
@@ -1470,74 +1471,6 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
      * 1. Inside if-block: if (safePath.startsWith(SAFE_DIR)) { fs.readFileSync(safePath); }
      * 2. After guard clause: if (!safePath.startsWith(SAFE_DIR)) { throw }; fs.readFileSync(safePath);
      */
-    /**
-     * Is this `startsWith` argument anchored to a path separator?
-     *
-     * Accepted, because each provably ends the prefix at a boundary:
-     *   `base + path.sep`      a concatenation ending in the separator
-     *   `base + '/'`           the literal form of the same thing
-     *   `'/safe/'`             a literal already ending in a separator
-     *   `` `${base}/` ``       the template form
-     *
-     * Rejected: a bare `base`, which is the prefix bug — `/safebad` passes it.
-     * When the argument cannot be read at all, reject: an unproven guard must not
-     * silence a finding.
-     */
-    const isSeparatorAnchored = (arg: TSESTree.Node | undefined): boolean => {
-      if (arg === undefined) return false;
-      const endsWithSep = (n: TSESTree.Node): boolean => {
-        // `path.sep`
-        if (
-          n.type === AST_NODE_TYPES.MemberExpression &&
-          n.object.type === AST_NODE_TYPES.Identifier &&
-          n.object.name === 'path' &&
-          propertyName(n) === 'sep'
-        ) {
-          return true;
-        }
-        // `import { sep } from 'node:path'`
-        if (isModuleBinding(n, context.sourceCode.getScope(n), 'path', ['sep']))
-          return true;
-        const staticText = staticString(n);
-        if (staticText !== null) {
-          return staticText.endsWith('/') || staticText.endsWith('\\');
-        }
-        return false;
-      };
-      if (endsWithSep(arg)) return true;
-      // `base + path.sep` / `base + '/'` — the separator must be the LAST part.
-      if (
-        arg.type === AST_NODE_TYPES.BinaryExpression &&
-        arg.operator === '+'
-      ) {
-        return endsWithSep(arg.right);
-      }
-      // `` `${base}/` `` — the trailing quasi carries the separator.
-      if (arg.type === AST_NODE_TYPES.TemplateLiteral) {
-        // `quasis` is never empty for a TemplateLiteral — a template with n
-        // expressions has n+1 quasis — and `cooked` is null only for an invalid
-        // escape in a TAGGED template, which a `startsWith` argument is not. The
-        // `?? ''` fallback that used to sit here was unreachable, and it showed
-        // up as the one branch this package could not cover.
-        // The `!` carries that same argument: `arg` is the ARGUMENT node, so a
-        // tagged template arrives as `TaggedTemplateExpression` and never gets
-        // here. @typescript-eslint 8.68.0 made `cooked` nullable in the types;
-        // it did not make this position reachable.
-        const last = arg.quasis[arg.quasis.length - 1].value.cooked!;
-        if (last.endsWith('/') || last.endsWith('\\')) return true;
-        // `` `${base}${path.sep}` `` ends with an EXPRESSION, so its trailing
-        // quasi is empty — the separator is the last interpolation instead.
-        // Reading only the quasi rejected a guard that does hold, which a
-        // suppression must never do; found by writing the test for it.
-        if (last === '') {
-          const tail = arg.expressions[arg.expressions.length - 1];
-          return tail !== undefined && endsWithSep(tail);
-        }
-        return false;
-      }
-      return false;
-    };
-
     const hasPathValidation = (pathNode: TSESTree.Node): boolean => {
       // A COMPOSED path validates through its tainted PART.
       // `if (!OK.includes(f)) throw; fs.readFileSync('/safe/' + f)` is guarded, but
@@ -1620,7 +1553,7 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
           // worst direction for a suppression to be wrong in.
           return propertyName(testNode.callee) === 'includes'
             ? true
-            : isSeparatorAnchored(testNode.arguments[0]);
+            : isSeparatorAnchored(testNode.arguments[0], context.sourceCode);
         }
 
         // Pattern 2: ALLOWED_FILES.includes(varName) - allowlist validation

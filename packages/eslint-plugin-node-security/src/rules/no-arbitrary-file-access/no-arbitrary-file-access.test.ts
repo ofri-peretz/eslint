@@ -209,7 +209,7 @@ ruleTester.run('no-arbitrary-file-access', noArbitraryFileAccess, {
       code: `
         function readFile(userPath) {
           const filePath = path.join('/uploads', userPath);
-          if (!filePath.startsWith('/uploads')) {
+          if (!filePath.startsWith('/uploads/')) {
             throw new Error('Invalid path');
           }
           return fs.readFileSync(filePath);
@@ -222,7 +222,7 @@ ruleTester.run('no-arbitrary-file-access', noArbitraryFileAccess, {
       code: `
         function readFile(userPath) {
           const filePath = path.join(baseDir, userPath);
-          if (!filePath.startsWith(baseDir)) {
+          if (!filePath.startsWith(baseDir + path.sep)) {
             return null;
           }
           return fs.readFileSync(filePath);
@@ -269,17 +269,61 @@ ruleTester.run('no-arbitrary-file-access', noArbitraryFileAccess, {
 
     // FP-6: Combined pattern (real-world safe pattern from safe-patterns.js)
     {
+      name: 'basename joined onto a safe base behind an anchored guard stays sanitised',
       code: `
         const SAFE_DIR = path.resolve(__dirname, 'uploads');
         function safeReadFile(userFilename) {
           const safeName = path.basename(userFilename);
           const safePath = path.join(SAFE_DIR, safeName);
-          if (!safePath.startsWith(SAFE_DIR)) {
+          if (!safePath.startsWith(SAFE_DIR + path.sep)) {
             throw new Error('Invalid path');
           }
           return fs.readFileSync(safePath);
         }
       `,
+    },
+    // ── PR #1126 review: every separator-anchored guard form still suppresses.
+    // These mirror detect-non-literal-fs-filename's accepted set exactly, since
+    // both rules now share one `isSeparatorAnchored`.
+    {
+      name: 'a literal prefix ending in / anchors the guard',
+      code: `import fs from 'fs';
+export function read(req){ const p = req.query.f; if (!p.startsWith('/safe/')) throw new Error('x'); return fs.readFileSync(p); }`,
+    },
+    {
+      name: 'a literal prefix ending in a backslash anchors the guard',
+      code: `import fs from 'fs';
+export function read(req){ const p = req.query.f; if (!p.startsWith('C:\\\\safe\\\\')) throw new Error('x'); return fs.readFileSync(p); }`,
+    },
+    {
+      name: 'base + path.sep anchors the guard',
+      code: `import fs from 'fs'; import path from 'path';
+export function read(req, base){ const p = req.query.f; if (!p.startsWith(base + path.sep)) return null; return fs.readFileSync(p); }`,
+    },
+    {
+      name: "base + '/' anchors the guard",
+      code: `import fs from 'fs';
+export function read(req, base){ const p = req.query.f; if (!p.startsWith(base + '/')) throw new Error('x'); return fs.readFileSync(p); }`,
+    },
+    {
+      name: 'an imported sep anchors the guard',
+      code: `import fs from 'fs'; import { sep } from 'node:path';
+export function read(req, base){ const p = req.query.f; if (!p.startsWith(base + sep)) throw new Error('x'); return fs.readFileSync(p); }`,
+    },
+    {
+      name: 'a template literal ending in / anchors the guard',
+      code: `import fs from 'fs';
+export function read(req, base){ const p = req.query.f; if (!p.startsWith(\`\${base}/\`)) throw new Error('x'); return fs.readFileSync(p); }`,
+    },
+    {
+      name: 'a template literal ending in an interpolated path.sep anchors the guard',
+      code: `import fs from 'fs'; import path from 'path';
+export function read(req, base){ const p = req.query.f; if (!p.startsWith(\`\${base}\${path.sep}\`)) throw new Error('x'); return fs.readFileSync(p); }`,
+    },
+    {
+      name: 'an anchored startsWith enclosing-if protects the sink',
+      code: `import fs from 'fs';
+export function read(req){ const p = req.query.f; if (p.startsWith('/safe/')) { return fs.readFileSync(p); } }`,
     },
     // ── 2026-09-24 burgee FP/FN sweep: the path.basename() sanitisation the
     // docs list, written inline. `readsUserInput` walked straight into the
@@ -313,6 +357,47 @@ export function b(req){ const name = req.query.g; return fs.readFileSync(name); 
       name: 'a startsWith guard AFTER the sink does not protect it',
       code: `import fs from 'fs'; import path from 'path';
 export function read(req){ const p = req.query.f; const data = fs.readFileSync(p); if (!p.startsWith('/safe/')) throw new Error('x'); return data; }`,
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    // ── PR #1126 review: an UNANCHORED prefix is not a containment check.
+    // `'/safebad/secret'.startsWith('/safe')` is true, so a guard that does not
+    // end its prefix at a separator lets a sibling directory through.
+    // detect-non-literal-fs-filename already rejected this shape; this rule
+    // accepted any `p.startsWith(...)` and the two gave opposite verdicts.
+    {
+      name: 'an unanchored literal startsWith guard-clause does not protect the sink',
+      code: `import fs from 'fs';
+export function read(req){ const p = req.query.f; if (!p.startsWith('/safe')) throw new Error('x'); return fs.readFileSync(p); }`,
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'an unanchored identifier startsWith guard-clause does not protect the sink',
+      code: `import fs from 'fs';
+export function read(req, base){ const p = req.query.f; if (!p.startsWith(base)) return null; return fs.readFileSync(p); }`,
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'an unanchored startsWith enclosing-if does not protect the sink',
+      code: `import fs from 'fs';
+export function read(req){ const p = req.query.f; if (p.startsWith('/safe')) { return fs.readFileSync(p); } }`,
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'an unanchored template-literal startsWith guard does not protect the sink',
+      code: `import fs from 'fs';
+export function read(req, base){ const p = req.query.f; if (!p.startsWith(\`\${base}\`)) throw new Error('x'); return fs.readFileSync(p); }`,
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'a concatenation not ending in a separator does not anchor the guard',
+      code: `import fs from 'fs';
+export function read(req, base){ const p = req.query.f; if (!p.startsWith(base + 'uploads')) throw new Error('x'); return fs.readFileSync(p); }`,
+      errors: [{ messageId: 'violationDetected' }],
+    },
+    {
+      name: 'a startsWith guard with no argument does not protect the sink',
+      code: `import fs from 'fs';
+export function read(req){ const p = req.query.f; if (!p.startsWith()) throw new Error('x'); return fs.readFileSync(p); }`,
       errors: [{ messageId: 'violationDetected' }],
     },
     {

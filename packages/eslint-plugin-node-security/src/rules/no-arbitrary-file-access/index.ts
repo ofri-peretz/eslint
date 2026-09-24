@@ -26,6 +26,7 @@ import {
 } from '@interlace/eslint-devkit';
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { findVariable } from '../../utils/provenance';
+import { isSeparatorAnchored } from '../../utils/separator-anchored';
 
 /**
  * @vocabulary `path`, `join`, `basename` and `fs` are Node's — the module
@@ -421,11 +422,17 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
     }
 
     /**
-     * Is `test` exactly `<same variable>.startsWith(...)`?
+     * Is `test` exactly `<same variable>.startsWith(<separator-anchored>)`?
      *
      * Matched on the AST, not the source text: a text match let `file` be
      * "guarded" by `other.startsWith('/files/')`, and a name match let a guard
      * on one function's `p` stand in for another's.
+     *
+     * The prefix must end at a path separator. `'/safebad/secret'.startsWith(
+     * '/safe')` is true, so an unanchored prefix lets a sibling directory
+     * through — the classic incomplete fix for CWE-22. Accepting it here
+     * suppressed the finding on a guard that does not hold, and gave the
+     * opposite verdict to detect-non-literal-fs-filename on the same code.
      */
     function isStartsWithOn(
       test: TSESTree.Expression,
@@ -436,7 +443,8 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
         test.callee.type === AST_NODE_TYPES.MemberExpression &&
         test.callee.object.type === AST_NODE_TYPES.Identifier &&
         propertyName(test.callee) === 'startsWith' &&
-        resolve(test.callee.object) === variable
+        resolve(test.callee.object) === variable &&
+        isSeparatorAnchored(test.arguments[0], sourceCode)
       );
     }
 
