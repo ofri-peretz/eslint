@@ -245,7 +245,10 @@ i) => { dst[i] = v })`, and `.map` / `.filter` / `.find` / `.findLast` /
   `const p = {}; p[req.body.role] = true; return p.isAdmin === true;`
   never escapes yet the attacker picks the field. `{}` targets report
   (index.ts 2026-09-22 amendment; `head-to-head.test.ts`,
-  `dangerous-properties-option.test.ts:77`). The remediation is G1/G2.
+  `dangerous-properties-option.test.ts:77`). The remediation for this CWE-915
+  shape is an explicit field allowlist (F2) or schema validation (F4). G1/G2 only
+  neutralize prototype pollution (CWE-1321): `Object.create(null)` still accepts
+  an attacker-chosen `isAdmin` as an own property.
 
 ### H. The rule's own remediation
 
