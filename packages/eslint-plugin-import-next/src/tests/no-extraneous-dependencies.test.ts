@@ -289,3 +289,125 @@ ruleTester.run('no-extraneous-dependencies — what is not a package', noExtrane
     },
   ],
 });
+
+/**
+ * Type-only imports.
+ *
+ * burgee FP/FN sweep 2026-09-23 — surfaced by apps/docs-chassis/src/mdx.tsx:3 and
+ * apps/docs-chassis/src/source.ts:12 (`import type { MDXComponents } from 'mdx/types'`,
+ * satisfied by `@types/mdx` in devDependencies). The rule reported a HIGH missing
+ * dependency and suggested `npm install mdx`, an unrelated runtime package.
+ *
+ * Upstream (the doc every message links to, and the README's "Full drop-in
+ * replacement" claim): "Type imports are ignored by default." A type import is
+ * erased at compile time, so it cannot pull in a runtime dependency.
+ */
+const typesOnlyPackageJson = {
+  dependencies: { react: '19.0.0' },
+  devDependencies: { '@types/mdx': '2.0.0' },
+};
+
+ruleTester.run('no-extraneous-dependencies — type-only imports', noExtraneousDependencies, {
+  valid: [
+    {
+      name: 'an `import type` declaration is ignored, it is erased at compile time',
+      code: "import type { MDXComponents } from 'mdx/types';",
+      options: [{ packageJson: typesOnlyPackageJson }],
+    },
+    {
+      name: 'an import whose every specifier is an inline `type` is ignored like `import type`',
+      code: "import { type MDXComponents } from 'mdx/types';",
+      options: [{ packageJson: typesOnlyPackageJson }],
+    },
+    {
+      // `verbatimModuleSyntax` changes only the inline form: a statement-level
+      // `import type` is erased under every compiler setting.
+      name: 'an `import type` declaration stays ignored with `verbatimModuleSyntax: true`',
+      code: "import type { Schema } from 'zod';",
+      options: [{ packageJson: typesOnlyPackageJson, verbatimModuleSyntax: true }],
+    },
+  ],
+  invalid: [
+    {
+      // FN GUARD (PR #1125 review): under TypeScript `verbatimModuleSyntax`,
+      // `import { type X } from 'pkg'` is NOT erased — tsc emits
+      // `import {} from 'pkg'`, so the package must still resolve at runtime.
+      // Mirrors `no-cycle`'s option of the same name, off by default.
+      name: 'an inline-type-only import is checked when `verbatimModuleSyntax` is on',
+      code: "import { type Schema } from 'zod';",
+      options: [{ packageJson: typesOnlyPackageJson, verbatimModuleSyntax: true }],
+      errors: [
+        {
+          messageId: 'missingDependency',
+          suggestions: [
+            {
+              messageId: 'addToDependencies',
+              output: "// TODO: Run: npm install zod\nimport { type Schema } from 'zod';",
+            },
+            {
+              messageId: 'addToDevDependencies',
+              output: "// TODO: Run: npm install --save-dev zod\nimport { type Schema } from 'zod';",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      // FN GUARD: one value specifier keeps the import at runtime.
+      name: 'a mixed import with one value specifier is still checked',
+      code: "import { type MDXComponents, compile } from 'mdx';",
+      options: [{ packageJson: typesOnlyPackageJson }],
+      errors: [
+        {
+          messageId: 'missingDependency',
+          suggestions: [
+            {
+              messageId: 'addToDependencies',
+              output: "// TODO: Run: npm install mdx\nimport { type MDXComponents, compile } from 'mdx';",
+            },
+            {
+              messageId: 'addToDevDependencies',
+              output: "// TODO: Run: npm install --save-dev mdx\nimport { type MDXComponents, compile } from 'mdx';",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      // FN GUARD: a default import is a value binding even beside a `type` specifier.
+      name: 'a default import beside an inline type specifier is still checked',
+      code: "import mdx, { type MDXComponents } from 'mdx';",
+      options: [{ packageJson: typesOnlyPackageJson }],
+      errors: [
+        {
+          messageId: 'missingDependency',
+          suggestions: [
+            {
+              messageId: 'addToDependencies',
+              output: "// TODO: Run: npm install mdx\nimport mdx, { type MDXComponents } from 'mdx';",
+            },
+            {
+              messageId: 'addToDevDependencies',
+              output: "// TODO: Run: npm install --save-dev mdx\nimport mdx, { type MDXComponents } from 'mdx';",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      // FN GUARD: a side-effect import has no specifiers and is not a type import.
+      name: 'a bare side-effect import is still checked',
+      code: "import 'mdx';",
+      options: [{ packageJson: typesOnlyPackageJson }],
+      errors: [
+        {
+          messageId: 'missingDependency',
+          suggestions: [
+            { messageId: 'addToDependencies', output: "// TODO: Run: npm install mdx\nimport 'mdx';" },
+            { messageId: 'addToDevDependencies', output: "// TODO: Run: npm install --save-dev mdx\nimport 'mdx';" },
+          ],
+        },
+      ],
+    },
+  ],
+});

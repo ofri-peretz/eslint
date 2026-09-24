@@ -69,6 +69,11 @@ This rule aims to prevent issues related to extraneous-dependencies.
           "type": "string"
         },
         "description": "Specific package names to ignore (don't report as missing)."
+      },
+      "verbatimModuleSyntax": {
+        "type": "boolean",
+        "default": false,
+        "description": "Check inline-type-only imports (`import { type X } from 'pkg'`) as runtime imports. Enable when the project compiles with TypeScript's `verbatimModuleSyntax`, under which tsc emits `import {} from 'pkg'` for them. Statement-level `import type` is always ignored."
       }
     },
     "additionalProperties": false
