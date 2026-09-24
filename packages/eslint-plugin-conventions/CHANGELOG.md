@@ -5,6 +5,41 @@ All notable changes to `eslint-plugin-conventions` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 6.0.8
+
+### Patch Changes
+
+- **🐛 Fix** — `prefer-dependency-version-strategy` reads manifests, not shapes
+
+  The rule treated any object of package names to version strings as a
+  dependency map, so a table of exact versions a compatibility oracle graded got
+  one report per entry, and the autofix would have rewritten those pins to
+  ranges. It now reads only objects under a `dependencies`, `devDependencies`,
+  `peerDependencies` or `optionalDependencies` key. Other objects of that shape
+  are no longer reported.
+
+  Two false negatives are fixed on the way, so some projects will see new
+  findings:
+
+  - `optionalDependencies` is now checked.
+  - The documented `**/package.json` setup through `jsonc-eslint-parser` reported
+    nothing, because the rule only matched ESTree `Property` nodes. It now also
+    matches `JSONProperty`, so a real `package.json` is linted.
+
+  A quoted `"dependencies"` block in source is no longer reported twice, and an
+  unquoted `dependencies:` key is matched by name rather than by the removed
+  shape fallback.
+
+- **🐛 Fix** — `ignoreInTests` now skips `.test`/`.spec` files with `.mjs`, `.cjs`, `.mts` and `.cts` extensions.
+
+  Eight rules matched test files with `/\.(test|spec)\.(ts|tsx|js|jsx)$/`, so a
+  `foo.test.cjs` or `foo.spec.mts` was linted as production code despite
+  `ignoreInTests` defaulting to `true`. They now use `/\.(test|spec)\.[cm]?[jt]sx?$/`,
+  the pattern reliability adopted in #1080: `no-commented-code`, `no-silent-errors`,
+  `no-missing-error-context`, `no-external-api-calls-in-utils`,
+  `no-missing-aria-labels`, `no-keyboard-inaccessible-elements`,
+  `no-unnecessary-rerenders` and `react-render-optimization`.
+
 ## 6.0.7
 
 ### Patch Changes
