@@ -111,6 +111,7 @@ ruleTester.run('no-weak-cipher-algorithm', noWeakCipherAlgorithm, {
     },
     // RC4
     {
+      name: 'RC4',
       code: `const cipher = crypto.createCipheriv('rc4', key, iv);`,
       errors: [{ messageId: 'weakCipherAlgorithm', suggestions: [
         { messageId: 'useAes256Gcm', output: `const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);` },

@@ -19,11 +19,14 @@ import {
   AST_NODE_TYPES,
   createRule,
   formatLLMMessage,
+  isModuleBinding,
   MessageIcons,
   propertyName,
   unwrapTypeSyntax,
 } from '@interlace/eslint-devkit';
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { findVariable } from '../../utils/provenance';
+import { isSeparatorAnchored } from '../../utils/separator-anchored';
 
 /**
  * @vocabulary `path`, `join`, `basename` and `fs` are Node's — the module
@@ -95,8 +98,23 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
     /**
      * `name = <expr>` bindings, so a request can be followed one hop back
      * through a local even when the local is buried inside an expression.
+     *
+     * Keyed on the scope Variable, not the name: `const p` in one function is
+     * not `const p` in the next, and a name-keyed map let the last declaration
+     * in the file answer for every same-named local.
      */
-    const bindings = new Map<string, TSESTree.Node>();
+    const bindings = new Map<TSESLint.Scope.Variable, TSESTree.Node>();
+    const resolve = (id: TSESTree.Identifier) => findVariable(sourceCode, id);
+
+    /** `path.basename(x)`, or `basename` imported / required from `path`. */
+    const isBasenameCall = (node: TSESTree.CallExpression): boolean =>
+      (node.callee.type === 'MemberExpression' &&
+        node.callee.object.type === 'Identifier' &&
+        node.callee.object.name === 'path' &&
+        propertyName(node.callee) === 'basename') ||
+      isModuleBinding(node.callee, sourceCode.getScope(node.callee), 'path', [
+        'basename',
+      ]);
 
     /**
      * Does this expression read from a request?
@@ -150,7 +168,8 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
       switch (node.type) {
         case 'Identifier': {
           if (userInputSources.has(node.name.toLowerCase())) return true;
-          const bound = bindings.get(node.name);
+          const variable = resolve(node);
+          const bound = variable ? bindings.get(variable) : undefined;
           return bound !== undefined && readsUserInput(bound, depth + 1);
         }
         // Walk to the root of `req.query.file` and judge the base object.
@@ -193,7 +212,10 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
             readsUserInput(node.right, depth + 1)
           );
         // `path.join(base, req.query.f)` carries the request through.
+        // `path.basename(req.query.f)` does not: it strips every directory
+        // component, and it is the mitigation this rule's docs prescribe.
         case 'CallExpression':
+          if (isBasenameCall(node)) return false;
           return node.arguments.some(
             (arg) =>
               arg.type !== 'SpreadElement' && readsUserInput(arg, depth + 1),
@@ -349,9 +371,8 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
     }
 
     // Track variables that have been sanitized with path.basename()
-    const sanitizedVariables = new Set<string>();
-    // Track variables that have been validated with startsWith() guards
-    const validatedVariables = new Set<string>();
+    // `| null` so an unresolvable name can be looked up and simply miss.
+    const sanitizedVariables = new Set<TSESLint.Scope.Variable | null>();
 
     /**
      * Check if a variable is assigned from path.basename() or path.join() with basename
@@ -361,20 +382,15 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
         return;
       }
 
-      const varName = node.id.name;
+      // A declarator id always resolves to the variable it declares.
+      const variable = resolve(node.id)!;
       const init = node.init;
 
-      bindings.set(varName, init);
+      bindings.set(variable, init);
 
       // Check for path.basename() assignment
-      if (
-        init.type === 'CallExpression' &&
-        init.callee.type === 'MemberExpression' &&
-        init.callee.object.type === 'Identifier' &&
-        init.callee.object.name === 'path' &&
-        propertyName(init.callee) === 'basename'
-      ) {
-        sanitizedVariables.add(varName);
+      if (init.type === 'CallExpression' && isBasenameCall(init)) {
+        sanitizedVariables.add(variable);
       }
 
       // Check for path.join() with a sanitized variable or literal base
@@ -388,7 +404,7 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
         // Check if any argument is a sanitized variable
         const hasSanitizedArg = init.arguments.some(
           (arg: TSESTree.CallExpressionArgument) =>
-            arg.type === 'Identifier' && sanitizedVariables.has(arg.name),
+            arg.type === 'Identifier' && sanitizedVariables.has(resolve(arg)),
         );
 
         // Check if first arg is a safe base (literal or known safe variable)
@@ -400,82 +416,82 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
               /^(SAFE|BASE|ROOT|UPLOAD|PUBLIC)/i.test(firstArg.name)));
 
         if (hasSanitizedArg && hasSafeBase) {
-          sanitizedVariables.add(varName);
+          sanitizedVariables.add(variable);
         }
       }
     }
 
     /**
-     * Check if there's a startsWith() guard validation for this variable
-     * Looks for patterns like:
-     * if (!path.startsWith(baseDir)) { throw ... }
-     * if (!path.startsWith(baseDir)) { return ... }
+     * Is `test` exactly `<same variable>.startsWith(<separator-anchored>)`?
+     *
+     * Matched on the AST, not the source text: a text match let `file` be
+     * "guarded" by `other.startsWith('/files/')`, and a name match let a guard
+     * on one function's `p` stand in for another's.
+     *
+     * The prefix must end at a path separator. `'/safebad/secret'.startsWith(
+     * '/safe')` is true, so an unanchored prefix lets a sibling directory
+     * through — the classic incomplete fix for CWE-22. Accepting it here
+     * suppressed the finding on a guard that does not hold, and gave the
+     * opposite verdict to detect-non-literal-fs-filename on the same code.
      */
-    function hasStartsWithGuard(node: TSESTree.Node, varName: string): boolean {
-      // Already validated
-      if (validatedVariables.has(varName)) {
-        return true;
-      }
+    function isStartsWithOn(
+      test: TSESTree.Expression,
+      variable: TSESLint.Scope.Variable,
+    ): boolean {
+      return (
+        test.type === AST_NODE_TYPES.CallExpression &&
+        test.callee.type === AST_NODE_TYPES.MemberExpression &&
+        test.callee.object.type === AST_NODE_TYPES.Identifier &&
+        propertyName(test.callee) === 'startsWith' &&
+        resolve(test.callee.object) === variable &&
+        isSeparatorAnchored(test.arguments[0], sourceCode)
+      );
+    }
 
-      // Walk up to find the containing block or function
-      let current: TSESTree.Node | undefined = node.parent;
+    /**
+     * Is the sink protected by a startsWith() guard on this variable?
+     *   if (!p.startsWith(base)) { throw ... }   — BEFORE the sink
+     *   if (!p.startsWith(base)) return ...;     — BEFORE the sink
+     *   if (p.startsWith(base)) { sink }         — sink inside the consequent
+     */
+    function hasStartsWithGuard(
+      sink: TSESTree.Node,
+      variable: TSESLint.Scope.Variable,
+    ): boolean {
+      let current: TSESTree.Node | undefined = sink.parent;
 
       while (current) {
-        // If we've reached a function body or block, search its statements
         if (current.type === AST_NODE_TYPES.BlockStatement) {
-          const statements = current.body;
-
-          // Look for IF statements in this block that validate our variable
-          for (const stmt of statements) {
-            if (stmt.type === AST_NODE_TYPES.IfStatement) {
-              const testText = sourceCode.getText(stmt.test).toLowerCase();
-
-              // Check for startsWith() validation pattern with our variable
-              if (
-                testText.includes('startswith') &&
-                testText.includes(varName.toLowerCase())
-              ) {
-                // Check if this is a guard clause (negated condition with throw/return)
-                const consequent = stmt.consequent;
-
-                // Handle block statement: if (...) { throw/return; }
-                if (
-                  consequent.type === AST_NODE_TYPES.BlockStatement &&
-                  consequent.body.length > 0
-                ) {
-                  const firstStmt = consequent.body[0];
-                  if (
-                    firstStmt.type === AST_NODE_TYPES.ThrowStatement ||
-                    firstStmt.type === AST_NODE_TYPES.ReturnStatement
-                  ) {
-                    validatedVariables.add(varName);
-                    return true;
-                  }
-                }
-
-                // Handle direct statement: if (...) throw/return;
-                if (
-                  consequent.type === AST_NODE_TYPES.ThrowStatement ||
-                  consequent.type === AST_NODE_TYPES.ReturnStatement
-                ) {
-                  validatedVariables.add(varName);
-                  return true;
-                }
-              }
+          for (const stmt of current.body) {
+            // A guard after the sink runs after the file was already read.
+            if (stmt.range[1] > sink.range[0]) break;
+            if (
+              stmt.type !== AST_NODE_TYPES.IfStatement ||
+              stmt.test.type !== AST_NODE_TYPES.UnaryExpression ||
+              stmt.test.operator !== '!' ||
+              !isStartsWithOn(stmt.test.argument, variable)
+            )
+              continue;
+            const consequent =
+              stmt.consequent.type === AST_NODE_TYPES.BlockStatement
+                ? stmt.consequent.body[0]
+                : stmt.consequent;
+            if (
+              consequent?.type === AST_NODE_TYPES.ThrowStatement ||
+              consequent?.type === AST_NODE_TYPES.ReturnStatement
+            ) {
+              return true;
             }
           }
         }
 
-        // Also check if current IS an if statement (when node is inside the consequent)
-        if (current.type === AST_NODE_TYPES.IfStatement) {
-          const testText = sourceCode.getText(current.test).toLowerCase();
-          if (
-            testText.includes('startswith') &&
-            testText.includes(varName.toLowerCase())
-          ) {
-            validatedVariables.add(varName);
-            return true;
-          }
+        if (
+          current.type === AST_NODE_TYPES.IfStatement &&
+          isStartsWithOn(current.test, variable) &&
+          current.consequent.range[0] <= sink.range[0] &&
+          sink.range[1] <= current.consequent.range[1]
+        ) {
+          return true;
         }
 
         current = current.parent;
@@ -487,14 +503,19 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
     /**
      * Check if a variable comes from a sanitized/validated source
      */
-    function isVariableSafe(varName: string, node: TSESTree.Node): boolean {
+    function isVariableSafe(
+      id: TSESTree.Identifier,
+      node: TSESTree.Node,
+    ): boolean {
+      const varName = id.name;
+      const variable = resolve(id);
       // Already tracked as sanitized
-      if (sanitizedVariables.has(varName)) {
+      if (sanitizedVariables.has(variable)) {
         return true;
       }
 
       // Has startsWith guard validation
-      if (hasStartsWithGuard(node, varName)) {
+      if (variable !== null && hasStartsWithGuard(node, variable)) {
         return true;
       }
 
@@ -522,7 +543,7 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
        * silent about it.
        */
       if (/^(safe|sanitized|validated|clean)/i.test(varName)) {
-        const bound = bindings.get(varName);
+        const bound = variable ? bindings.get(variable) : undefined;
         if (bound === undefined) return true;
         /*
          * A CALL is where laundering happens, so it is not a contradiction.
@@ -578,7 +599,7 @@ export const noArbitraryFileAccess = createRule<RuleOptions, MessageIds>({
           const varName = pathArg.name;
 
           // Skip if variable is sanitized or validated
-          if (isVariableSafe(varName, node)) {
+          if (isVariableSafe(pathArg, node)) {
             return;
           }
 

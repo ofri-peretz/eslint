@@ -38,11 +38,14 @@ describe('no-arbitrary-file-access coverage gaps', () => {
       },
       // Declarator without initializer → tracking guard returns early
       { code: "let pending;\nfs.readFileSync('/etc/hosts');" },
+      // The guards below are separator-anchored (`base + path.sep`): a bare
+      // `startsWith(base)` is the prefix bug (`/safebad` passes `/safe`) and no
+      // longer counts as a guard (PR #1126 review).
       // Guard validates once; the second fs call hits the validated cache
       {
         code: [
           'function readTwice(userPath, base, data) {',
-          "  if (!userPath.startsWith(base)) throw new Error('outside');",
+          "  if (!userPath.startsWith(base + path.sep)) throw new Error('outside');",
           '  fs.readFile(userPath);',
           '  fs.writeFile(userPath, data);',
           '}',
@@ -53,7 +56,7 @@ describe('no-arbitrary-file-access coverage gaps', () => {
       {
         code: [
           'function readOnce(userPath, base) {',
-          '  if (!userPath.startsWith(base)) return null;',
+          '  if (!userPath.startsWith(base + path.sep)) return null;',
           '  return fs.readFile(userPath);',
           '}',
           'readOnce(req.query.p, base);',
@@ -63,7 +66,7 @@ describe('no-arbitrary-file-access coverage gaps', () => {
       {
         code: [
           'function readIf(userPath, base) {',
-          '  if (userPath.startsWith(base)) {',
+          '  if (userPath.startsWith(base + path.sep)) {',
           '    fs.readFile(userPath);',
           '  }',
           '}',

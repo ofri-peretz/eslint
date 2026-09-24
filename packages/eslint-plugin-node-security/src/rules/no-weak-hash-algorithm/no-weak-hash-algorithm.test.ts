@@ -44,7 +44,7 @@ describe('no-weak-hash-algorithm', () => {
       },
       // Valid: SHA-256 (strong)
       { name: 'SHA-256', code: 'crypto.createHash("sha256").update(data);' },
-      { code: 'crypto.createHash("sha512").update(data);' },
+      { name: 'SHA-512', code: 'crypto.createHash("sha512").update(data);' },
       { code: 'crypto.createHash("sha3-256").update(data);' },
       // Valid: Non-crypto context
       { code: 'const message = "md5 is weak";' },
