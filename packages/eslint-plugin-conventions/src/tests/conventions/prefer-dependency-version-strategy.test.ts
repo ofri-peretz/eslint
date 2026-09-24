@@ -5,6 +5,7 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
+import * as jsoncParser from 'jsonc-eslint-parser';
 import { preferDependencyVersionStrategy } from '../../rules/conventions/prefer-dependency-version-strategy';
 
 // Configure RuleTester for Vitest
@@ -32,24 +33,25 @@ describe('prefer-dependency-version-strategy', () => {
           // Caret strategy (default)
           {
             name: 'a caret range',
-            code: 'const deps = { "react": "^18.0.0" };',
+            code: 'const pkg = { dependencies: { "react": "^18.0.0" } };',
             options: [{ strategy: 'caret' }],
           },
           // Tilde strategy
           {
             name: 'a tilde range under the tilde strategy',
-            code: 'const deps = { "react": "~18.0.0" };',
+            code: 'const pkg = { dependencies: { "react": "~18.0.0" } };',
             options: [{ strategy: 'tilde' }],
           },
           // Exact strategy
           {
-            code: 'const deps = { "react": "18.0.0" };',
+            name: 'an exact version under the exact strategy',
+            code: 'const pkg = { dependencies: { "react": "18.0.0" } };',
             options: [{ strategy: 'exact' }],
           },
           // Workspace protocol (if allowed)
           {
             name: 'a workspace: protocol carries no version to caret',
-            code: 'const deps = { "package": "workspace:*" };',
+            code: 'const pkg = { dependencies: { "package": "workspace:*" } };',
             options: [{ strategy: 'caret', allowWorkspace: true }],
           },
         ],
@@ -67,22 +69,22 @@ describe('prefer-dependency-version-strategy', () => {
         invalid: [
           {
             name: 'a tilde range pins tighter than the strategy allows',
-            code: 'const deps = { "react": "~18.0.0" };',
+            code: 'const pkg = { dependencies: { "react": "~18.0.0" } };',
             options: [{ strategy: 'caret' }],
             errors: [{ messageId: 'preferStrategy' }],
-            output: 'const deps = { "react": "^18.0.0" };',
+            output: 'const pkg = { dependencies: { "react": "^18.0.0" } };',
           },
           {
-            code: 'const deps = { "react": "^18.0.0" };',
+            code: 'const pkg = { dependencies: { "react": "^18.0.0" } };',
             options: [{ strategy: 'tilde' }],
             errors: [{ messageId: 'preferStrategy' }],
-            output: 'const deps = { "react": "~18.0.0" };',
+            output: 'const pkg = { dependencies: { "react": "~18.0.0" } };',
           },
           {
-            code: 'const deps = { "react": "^18.0.0" };',
+            code: 'const pkg = { dependencies: { "react": "^18.0.0" } };',
             options: [{ strategy: 'exact' }],
             errors: [{ messageId: 'preferStrategy' }],
-            output: 'const deps = { "react": "18.0.0" };',
+            output: 'const pkg = { dependencies: { "react": "18.0.0" } };',
           },
         ],
       },
@@ -96,7 +98,7 @@ describe('prefer-dependency-version-strategy', () => {
       {
         valid: [
           {
-            code: 'const deps = { "react": "18.0.0", "lodash": "^4.0.0" };',
+            code: 'const pkg = { dependencies: { "react": "18.0.0", "lodash": "^4.0.0" } };',
             options: [
               {
                 strategy: 'caret',
@@ -187,35 +189,35 @@ describe('prefer-dependency-version-strategy', () => {
         valid: [
           {
             name: 'a two-operator range satisfies the range strategy',
-            code: 'const deps = { "react": ">=18.0.0 <19.0.0" };',
+            code: 'const pkg = { dependencies: { "react": ">=18.0.0 <19.0.0" } };',
             options: [{ strategy: 'range' }],
           },
           {
             name: 'an OR of two exact versions is a range',
-            code: 'const deps = { "react": "18.0.0 || 19.0.0" };',
+            code: 'const pkg = { dependencies: { "react": "18.0.0 || 19.0.0" } };',
             options: [{ strategy: 'range' }],
           },
           {
-            code: 'const deps = { "react": "<=18.0.0" };',
+            code: 'const pkg = { dependencies: { "react": "<=18.0.0" } };',
             options: [{ strategy: 'range' }],
           },
           {
-            code: 'const deps = { "react": ">18.0.0" };',
+            code: 'const pkg = { dependencies: { "react": ">18.0.0" } };',
             options: [{ strategy: 'range' }],
           },
           {
             name: 'a hyphen range is a range',
-            code: 'const deps = { "react": "18.0.0 - 19.0.0" };',
+            code: 'const pkg = { dependencies: { "react": "18.0.0 - 19.0.0" } };',
             options: [{ strategy: 'range' }],
           },
         ],
         invalid: [
           // Lines 191-192: Range strategy - when version is just a version (not a range), suggest caret
           {
-            code: 'const deps = { "react": "18.0.0" };',
+            code: 'const pkg = { dependencies: { "react": "18.0.0" } };',
             options: [{ strategy: 'range' }],
             errors: [{ messageId: 'preferStrategy' }],
-            output: 'const deps = { "react": "^18.0.0" };',
+            output: 'const pkg = { dependencies: { "react": "^18.0.0" } };',
           },
         ],
       },
@@ -227,15 +229,15 @@ describe('prefer-dependency-version-strategy', () => {
       {
         valid: [
           {
-            code: 'const deps = { "react": "^18.0.0" };',
+            code: 'const pkg = { dependencies: { "react": "^18.0.0" } };',
             options: [{ strategy: 'any' }],
           },
           {
-            code: 'const deps = { "react": "~18.0.0" };',
+            code: 'const pkg = { dependencies: { "react": "~18.0.0" } };',
             options: [{ strategy: 'any' }],
           },
           {
-            code: 'const deps = { "react": "18.0.0" };',
+            code: 'const pkg = { dependencies: { "react": "18.0.0" } };',
             options: [{ strategy: 'any' }],
           },
         ],
@@ -291,18 +293,52 @@ describe('prefer-dependency-version-strategy', () => {
           name: 'FP: an npm dist-tags map is keyed by tag, not by package',
           code: 'const packument = { name: "x", "dist-tags": { latest: "2.1.0", next: "3.0.0-beta.1" } };',
         },
+        {
+          // @source burgee packages/burgee/src/compat.ts (PR #517)
+          // Package names to the exact versions a compatibility oracle graded.
+          // Every key is a package name and every value is a version, so no
+          // amount of looking at the object's shape tells it apart from a
+          // dependency map. Only a manifest says so: a `dependencies`-family
+          // key. Exact is the point here; a caret would claim grades the
+          // oracle never ran.
+          // @found real-source scan (burgee)
+          name: 'FP: an exported record of graded exact versions is not a manifest',
+          filename: 'compat.ts',
+          code: `export const GRADED_VERSIONS: Readonly<Record<string, string>> = {
+  '@clack/prompts': '1.8.1',
+  chalk: '6.0.0',
+};`,
+        },
+        {
+          // A key chosen at RUNTIME names nothing, so it is no evidence of a
+          // manifest. This used to be an invalid case, back when any object of
+          // package names to versions counted as a dependency map. The rule no
+          // longer guesses from shape; see the GRADED_VERSIONS case above.
+          name: 'a block whose key is chosen at runtime is not evidence of a manifest',
+          code: 'const m = { [k]: { react: "18.0.0" } };',
+        },
+        {
+          name: 'a spread inside a dependencies block is skipped, not read as an entry',
+          code: 'const pkg = { dependencies: { ...base, react: "^18.0.0" } };',
+        },
+        {
+          name: 'a version held in a variable has no literal to read or rewrite',
+          code: 'const pkg = { dependencies: { react: reactVersion } };',
+        },
       ],
       invalid: [
         {
           name: 'a homogeneous dependency map still reports the odd one out',
-          code: 'const deps = { react: "18.0.0", lodash: "^4.17.21" };',
-          output: 'const deps = { react: "^18.0.0", lodash: "^4.17.21" };',
+          code: 'const pkg = { dependencies: { react: "18.0.0", lodash: "^4.17.21" } };',
+          output:
+            'const pkg = { dependencies: { react: "^18.0.0", lodash: "^4.17.21" } };',
           errors: [{ messageId: 'preferStrategy' }],
         },
         {
           name: 'dist-tags and a wildcard are version specifiers too',
-          code: 'const deps = { react: "18.0.0", foo: "latest", bar: "*" };',
-          output: 'const deps = { react: "^18.0.0", foo: "latest", bar: "*" };',
+          code: 'const pkg = { dependencies: { react: "18.0.0", foo: "latest", bar: "*" } };',
+          output:
+            'const pkg = { dependencies: { react: "^18.0.0", foo: "latest", bar: "*" } };',
           errors: [{ messageId: 'preferStrategy' }],
         },
         {
@@ -314,18 +350,47 @@ describe('prefer-dependency-version-strategy', () => {
         },
         {
           name: 'a map mixing a workspace link with a bare version',
-          code: 'const deps = { app: "workspace:*", react: "18.0.0" };',
-          output: 'const deps = { app: "workspace:*", react: "^18.0.0" };',
+          code: 'const pkg = { dependencies: { app: "workspace:*", react: "18.0.0" } };',
+          output:
+            'const pkg = { dependencies: { app: "workspace:*", react: "^18.0.0" } };',
           errors: [{ messageId: 'preferStrategy' }],
         },
         {
-          // A block key chosen at RUNTIME names nothing, so it cannot be shown
-          // to be one of the non-dependency blocks and the map inside is still
-          // read. Silence here would be a new false negative bought with the
-          // dist-tags fix.
-          name: 'a block whose key is chosen at runtime still has its map read',
-          code: 'const m = { [k]: { react: "18.0.0" } };',
-          output: 'const m = { [k]: { react: "^18.0.0" } };',
+          name: 'optionalDependencies is a dependency map too',
+          code: 'const pkg = { optionalDependencies: { fsevents: "2.3.3" } };',
+          output:
+            'const pkg = { optionalDependencies: { fsevents: "^2.3.3" } };',
+          errors: [{ messageId: 'preferStrategy' }],
+        },
+      ],
+    });
+  });
+
+  /**
+   * The docs configure this rule for every `package.json` through
+   * `jsonc-eslint-parser`, which emits `JSONProperty` / `JSONLiteral` rather
+   * than ESTree nodes. The ESTree-only selectors never matched them, so the
+   * documented setup reported nothing at all.
+   */
+  describe('a real package.json through jsonc-eslint-parser', () => {
+    const jsonTester = new RuleTester({
+      languageOptions: { parser: jsoncParser },
+    });
+    jsonTester.run('package.json', preferDependencyVersionStrategy, {
+      valid: [
+        {
+          name: "a manifest's own version and its engines are not dependencies",
+          filename: 'package.json',
+          code: '{ "name": "x", "version": "1.0.0", "engines": { "node": "24.0.0" }, "dependencies": { "react": "^18.0.0" } }',
+        },
+      ],
+      invalid: [
+        {
+          name: 'a bare version under dependencies in package.json',
+          filename: 'package.json',
+          code: '{ "name": "x", "version": "1.0.0", "dependencies": { "react": "18.0.0" } }',
+          output:
+            '{ "name": "x", "version": "1.0.0", "dependencies": { "react": "^18.0.0" } }',
           errors: [{ messageId: 'preferStrategy' }],
         },
       ],
