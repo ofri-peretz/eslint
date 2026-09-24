@@ -55,6 +55,43 @@ function isWriteTarget(node: TSESTree.MemberExpression): boolean {
   }
 }
 
+/**
+ * Is this member expression the function being called, constructed or tagged?
+ *
+ * The rewrite is not equivalent there. `a.b[i]()` calls with `this === a.b`,
+ * `a.b.at(-1)()` with `this` undefined. `new c[i]()` becomes `new c.at(-1)()`,
+ * which parses as `new (c.at)(-1)` and throws "c.at is not a constructor".
+ *
+ * TS wrappers (`x!`, `x as T`, `x satisfies T`, `<T>x`) and a parenthesised
+ * optional chain erase at runtime — `(a.b[i] as F)()` still binds `this` to
+ * `a.b` — so walk through them before checking the call.
+ */
+const TRANSPARENT_WRAPPERS = new Set([
+  'TSNonNullExpression',
+  'TSAsExpression',
+  'TSSatisfiesExpression',
+  'TSTypeAssertion',
+  'ChainExpression',
+]);
+
+function isCalleeOrTag(node: TSESTree.MemberExpression): boolean {
+  let child: TSESTree.Node = node;
+  let parent = node.parent as TSESTree.Node;
+  while (TRANSPARENT_WRAPPERS.has(parent.type)) {
+    child = parent;
+    parent = parent.parent as TSESTree.Node;
+  }
+  switch (parent.type) {
+    case 'CallExpression':
+    case 'NewExpression':
+      return parent.callee === child;
+    case 'TaggedTemplateExpression':
+      return parent.tag === child;
+    default:
+      return false;
+  }
+}
+
 export const preferAt = createRule<RuleOptions, MessageIds>({
   name: 'prefer-at',
   meta: {
@@ -189,6 +226,13 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
           const offset = node.property.right.value;
           const messageId =
             offset === 1 ? 'useAtForLastElement' : 'preferAtMethod';
+
+          // Reported, not rewritten, where the element is called or tagged —
+          // see isCalleeOrTag(). Same shape as the variable-offset branch.
+          if (isCalleeOrTag(node)) {
+            context.report({ node, messageId });
+            return;
+          }
 
           context.report({
             node,
