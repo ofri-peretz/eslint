@@ -42,6 +42,7 @@ Every GitHub Actions workflow for this repo. Triggered by PRs, pushes to `main`,
 | [`codeql.yml`](./codeql.yml) | GitHub CodeQL static analysis |
 | [`scorecard.yml`](./scorecard.yml) | OSSF Scorecard — supply-chain security score |
 | [`codecov.yml`](./codecov.yml) | Coverage upload to Codecov |
+| [`dependabot-automerge.yml`](./dependabot-automerge.yml) | Arms auto-merge on a Dependabot PR only when every update is a patch/minor and none is a `direct:production` npm dependency (GitHub Actions bumps allowed). Never checks out PR code |
 
 ## Conventions
 
