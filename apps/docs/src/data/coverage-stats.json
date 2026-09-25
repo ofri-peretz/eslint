@@ -207,6 +207,13 @@
         "category": "quality"
       },
       {
+        "name": "eslint-plugin-cli-floor",
+        "slug": "cli-floor",
+        "coverage": 80,
+        "status": "production",
+        "category": "quality"
+      },
+      {
         "name": "eslint-plugin-modernization",
         "slug": "modernization",
         "coverage": 80,
@@ -221,7 +228,7 @@
     "qualityPlugins": 75
   },
   "meta": {
-    "generatedAt": "2026-09-10T16:16:46.958Z",
+    "generatedAt": "2026-09-25T01:20:21.264Z",
     "source": "estimated",
     "ttl": 14400
   }
