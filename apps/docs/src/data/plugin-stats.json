@@ -21,7 +21,7 @@
       "rules": 33,
       "description": "ESLint plugin for secure coding — detects LDAP, XPath, XXE, GraphQL and template injection, unsafe deserialization, ReDoS, missing authentication, and PII in logs",
       "category": "security",
-      "version": "5.4.12",
+      "version": "5.4.13",
       "published": true
     },
     {
@@ -229,7 +229,7 @@
       "rules": 4,
       "description": "ESLint plugin for the CLI floor — every commander, yargs or burgee command declares a description and a one-line example, writes through the output layer instead of console, and backs every prompt with a flag",
       "category": "quality",
-      "version": "0.0.0",
+      "version": "0.1.0",
       "published": true
     },
     {
