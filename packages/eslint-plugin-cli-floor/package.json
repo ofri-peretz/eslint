@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-cli-floor",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "ESLint plugin for the CLI floor — every commander, yargs or burgee command declares a description and a one-line example, writes through the output layer instead of console, and backs every prompt with a flag.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
@@ -78,7 +78,7 @@
     }
   },
   "dependencies": {
-    "@interlace/eslint-devkit": "^1.19.6"
+    "@interlace/eslint-devkit": "^1.19.8"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.68.0",
