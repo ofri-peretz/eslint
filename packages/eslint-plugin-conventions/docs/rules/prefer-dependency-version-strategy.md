@@ -28,6 +28,8 @@ Enforce consistent version strategy (caret `^`, tilde `~`, exact, range, or any)
 
 ## Rule Details
 
+The rule reads only objects under a `dependencies`, `devDependencies`, `peerDependencies` or `optionalDependencies` key: in a `package.json` parsed by `jsonc-eslint-parser`, or in an object literal in source. Any other object of package names to versions is left alone, such as a table of the exact versions a test matrix pinned. Its shape is no evidence that it is a manifest.
+
 ```mermaid
 %%{init: {
   'theme': 'base',
@@ -47,6 +49,7 @@ flowchart TD
     B -->|dependencies| C[Validate version]
     B -->|devDependencies| C
     B -->|peerDependencies| C
+    B -->|optionalDependencies| C
     
     C --> D{Check protocol}
     D -->|workspace:| E[✅ Skip if allowWorkspace]

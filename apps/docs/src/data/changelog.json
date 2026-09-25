@@ -1,9 +1,24 @@
 {
-  "releaseCount": 745,
+  "releaseCount": 746,
   "packageCount": 36,
-  "entryCount": 2203,
+  "entryCount": 2204,
   "oldestYear": 2024,
   "releases": [
+    {
+      "package": "eslint-plugin-modernization",
+      "short": "eslint-plugin-modernization",
+      "version": "3.1.8",
+      "date": "2026-09-24T21:49:07Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`prefer-at` no longer autofixes a callee or template tag.",
+          "pr": null
+        }
+      ]
+    },
     {
       "package": "eslint-plugin-import-next",
       "short": "eslint-plugin-import-next",

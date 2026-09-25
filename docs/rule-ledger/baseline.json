@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-21",
+  "generated": "2026-09-24",
   "rules": {
     "secure-coding/detect-non-literal-regexp": [
       "duplicate-coverage",
@@ -105,8 +105,7 @@
     ],
     "node-security/no-arbitrary-file-access": [
       "duplicate-coverage",
-      "nominal-inference-suppress",
-      "textual-matching"
+      "nominal-inference-suppress"
     ],
     "node-security/no-buffer-overread": [
       "nominal-inference-report",

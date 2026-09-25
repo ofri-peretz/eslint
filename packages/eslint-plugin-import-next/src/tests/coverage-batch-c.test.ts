@@ -573,6 +573,7 @@ describe('no-extraneous-dependencies — Layer 2', () => {
     (listeners.ImportDeclaration as (n: unknown) => void)({
       type: 'ImportDeclaration',
       source: { type: 'Literal', value: 'unknown-pkg', parent: undefined },
+      specifiers: [],
     });
     expect(reports).toHaveLength(1);
     const report = reports[0] as unknown as {
@@ -604,6 +605,7 @@ describe('no-extraneous-dependencies — Layer 2', () => {
     (listeners.ImportDeclaration as (n: unknown) => void)({
       type: 'ImportDeclaration',
       source: { type: 'Literal', value: 'pkg-dev', parent: undefined },
+      specifiers: [],
     });
     expect(reports).toHaveLength(1);
     const report = reports[0] as unknown as {
@@ -625,6 +627,7 @@ describe('no-extraneous-dependencies — Layer 2', () => {
     (listeners.ImportDeclaration as (n: unknown) => void)({
       type: 'ImportDeclaration',
       source: { type: 'Literal', value: 42 },
+      specifiers: [],
     });
     expect(reports).toEqual([]);
   });

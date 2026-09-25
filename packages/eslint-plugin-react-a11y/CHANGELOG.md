@@ -5,6 +5,20 @@ All notable changes to `eslint-plugin-react-a11y` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.5.3
+
+### Patch Changes
+
+- **🐛 Fix** — `ignoreInTests` now skips `.test`/`.spec` files with `.mjs`, `.cjs`, `.mts` and `.cts` extensions.
+
+  Eight rules matched test files with `/\.(test|spec)\.(ts|tsx|js|jsx)$/`, so a
+  `foo.test.cjs` or `foo.spec.mts` was linted as production code despite
+  `ignoreInTests` defaulting to `true`. They now use `/\.(test|spec)\.[cm]?[jt]sx?$/`,
+  the pattern reliability adopted in #1080: `no-commented-code`, `no-silent-errors`,
+  `no-missing-error-context`, `no-external-api-calls-in-utils`,
+  `no-missing-aria-labels`, `no-keyboard-inaccessible-elements`,
+  `no-unnecessary-rerenders` and `react-render-optimization`.
+
 ## 2.5.2
 
 ### Patch Changes

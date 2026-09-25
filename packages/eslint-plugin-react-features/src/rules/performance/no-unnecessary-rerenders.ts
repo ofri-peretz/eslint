@@ -192,7 +192,7 @@ ignoreInTests = true, minSize = 5
     const filename = context.filename;
     // Only skip if ignoreInTests is true AND filename matches test pattern
     // If ignoreInTests is explicitly false, always run the rule
-    const isTestFile = ignoreInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+    const isTestFile = ignoreInTests && /\.(test|spec)\.[cm]?[jt]sx?$/.test(filename);
 
     if (isTestFile) {
       return {};
