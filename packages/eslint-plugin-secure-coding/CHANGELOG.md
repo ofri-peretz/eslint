@@ -5,6 +5,19 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.4.13
+
+### Patch Changes
+
+- **🐛 Fix** — detect-object-injection resolves the Object.create(null) exemption by scope
+
+  The null-prototype exemption matched any `const`/`let` of the same NAME in an enclosing block, so a
+  parameter shadowing an outer `const store = Object.create(null)` had its `store[key] = value` writes
+  silenced, and so did a binding reassigned to `{}` after declaration. The binding is now resolved through
+  scope and a reassignment disqualifies it, as the rule's other bindings already do.
+
+- **🔗 Dependencies** — updated workspace dependencies: `@interlace/eslint-devkit@1.19.8`
+
 ## 5.4.12
 
 ### Patch Changes
