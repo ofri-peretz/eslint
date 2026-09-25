@@ -1671,7 +1671,10 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // declaration leaves a prototype to pollute.
       if (variable.references.filter((ref) => ref.isWrite()).length > 1)
         return false;
-      const init = (def.node as TSESTree.VariableDeclarator).init;
+      const declarator = def.node as TSESTree.VariableDeclarator;
+      // A destructured name binds a piece of the initializer, not the initializer.
+      if (declarator.id.type !== AST_NODE_TYPES.Identifier) return false;
+      const init = declarator.init;
       if (!init) return false;
 
       // Check for array spread: [...array]

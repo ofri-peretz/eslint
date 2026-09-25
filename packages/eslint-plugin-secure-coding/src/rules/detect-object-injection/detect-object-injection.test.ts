@@ -1647,6 +1647,28 @@ describe('detect-object-injection', () => {
             `,
             errors: [{ messageId: 'objectInjection' }],
           },
+          // A destructured name binds a PIECE of the initializer, not the initializer:
+          // `first` is `items[0]` and `cache` is `src.cache`, both ordinary objects.
+          {
+            name: 'an array-destructured name does not inherit the spread exemption',
+            code: `
+              export function f(items, k, v) {
+                const [first] = [...items];
+                first[k] = v;
+              }
+            `,
+            errors: [{ messageId: 'objectInjection' }],
+          },
+          {
+            name: 'an object-destructured name does not inherit the null-prototype exemption',
+            code: `
+              export function f(src, k, v) {
+                const { cache } = Object.assign(Object.create(null), src);
+                cache[k] = v;
+              }
+            `,
+            errors: [{ messageId: 'objectInjection' }],
+          },
           // No initializer, no evidence of a null prototype.
           {
             name: 'a binding declared without an initializer gets no exemption',
