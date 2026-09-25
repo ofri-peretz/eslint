@@ -1,0 +1,52 @@
+---
+title: eslint-plugin-cli-floor
+description: The CLI floor for commander, yargs and burgee programs, held in the source
+icon: FileText
+---
+
+import { RemoteReadme } from '@/components/docs/remote-readme';
+import { BookOpen, History } from 'lucide-react';
+import { Cards, Card } from 'fumadocs-ui/components/card';
+
+<Callout type="info" title="Agent-ready CLIs">
+  Every command describes itself, shows a one-line example, writes through the
+  output layer, and never asks a question a flag could have answered.
+</Callout>
+
+## Install
+
+<InstallSnippet packages="eslint-plugin-cli-floor" dev />
+
+<Cards>
+  <Card
+    title="Rules"
+    description="Browse all cli-floor rules"
+    href="/docs/quality/plugin-cli-floor/rules"
+    icon={<BookOpen />}
+  />
+  <Card
+    title="Changelog"
+    description="View version history and updates"
+    href="/docs/quality/plugin-cli-floor/changelog"
+    icon={<History />}
+  />
+</Cards>
+
+---
+
+<Callout type="info" title="Live from GitHub">
+  This content is fetched directly from
+  [README.md](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-cli-floor/README.md)
+  on GitHub and cached for 1 hour.
+</Callout>
+
+<RemoteReadme plugin="cli-floor" sections={['full']} />
+
+<a
+  href="https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-cli-floor/README.md"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="inline-flex items-center gap-1 text-sm text-fd-muted-foreground hover:text-fd-foreground mt-6"
+>
+  View README.md on GitHub →
+</a>

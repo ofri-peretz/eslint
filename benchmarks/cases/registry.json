@@ -4357,6 +4357,150 @@
       ],
       "kind": "defect",
       "peers": []
+    },
+    {
+      "id": "ILB-0148",
+      "added": "2026-09-24",
+      "title": "CLI command registered with no description",
+      "rationale": "burgee F3. A command with no description is a bare word in --help, --schema and an MCP tool list; an agent has to run it to learn what it does (yargs #877, #1047).",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import { Command } from 'commander';\nconst program = new Command();\nprogram.command('build').action(build);",
+      "coverage": [
+        {
+          "rule": "cli-floor/require-command-description",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-cli-floor/src/rules/require-command-description/require-command-description.test.ts"
+        }
+      ],
+      "kind": "defect",
+      "peers": []
+    },
+    {
+      "id": "ILB-0149",
+      "added": "2026-09-24",
+      "title": "Runnable CLI command with no example",
+      "rationale": "burgee F3 and H2. The example is the one part of help an agent can act on without reading prose. A runnable yargs command whose builder declares no .example() shows none in `serve --help` (yargs #877, #1640).",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import yargs from 'yargs';\nyargs(process.argv.slice(2)).command('serve', 'Start the server', (y) => y.option('port', {}), serve);",
+      "coverage": [
+        {
+          "rule": "cli-floor/require-command-example",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-cli-floor/src/rules/require-command-example/require-command-example.test.ts"
+        }
+      ],
+      "kind": "defect",
+      "peers": []
+    },
+    {
+      "id": "ILB-0150",
+      "added": "2026-09-24",
+      "title": "console.log inside a CLI command handler",
+      "rationale": "burgee O3. --json (O1) and quiet non-TTY output (O2) only hold if every byte goes through one output layer; a console.log in a handler is prose inside a JSON document (oclif/core #1644).",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import { Command } from 'commander';\nconst program = new Command();\nprogram.command('ls').description('List').action(async () => { console.log(await list()); });",
+      "coverage": [
+        {
+          "rule": "cli-floor/no-console-in-command",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-cli-floor/src/rules/no-console-in-command/no-console-in-command.test.ts"
+        }
+      ],
+      "kind": "defect",
+      "peers": []
+    },
+    {
+      "id": "ILB-0151",
+      "added": "2026-09-24",
+      "title": "Prompt in a CLI command with no flag behind it",
+      "rationale": "burgee P1. A prompt that no flag can answer hangs or fails every non-interactive caller — an agent, CI, a pipe (clack #167, oclif/oclif #1492).",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import { text } from '@clack/prompts';\nimport { Command } from 'commander';\nconst program = new Command();\nprogram.command('init').description('Init').action(async () => { await text({ message: 'Project name?' }); });",
+      "coverage": [
+        {
+          "rule": "cli-floor/no-prompt-without-flag",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-cli-floor/src/rules/no-prompt-without-flag/no-prompt-without-flag.test.ts"
+        }
+      ],
+      "kind": "defect",
+      "peers": []
+    },
+    {
+      "id": "ILB-0152",
+      "added": "2026-09-24",
+      "title": "A job queue that owns .command() and .action()",
+      "rationale": "NOT a defect. `.command()`, `.action()` and `console.log` are ordinary names; with commander imported in the same file, the receiver here is still not commander's. Only binding resolution keeps the CLI-floor rules quiet on it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import 'commander';\nqueue.command('email').action((job) => { console.log(job); });",
+      "coverage": [
+        {
+          "rule": "cli-floor/no-console-in-command",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-cli-floor/src/rules/no-console-in-command/no-console-in-command.test.ts"
+        }
+      ],
+      "kind": "decoy",
+      "peers": []
+    },
+    {
+      "id": "ILB-0153",
+      "added": "2026-09-24",
+      "title": "A prompt whose value a flag supplies first",
+      "rationale": "NOT a defect. The prompt is the right operand of `??` on the handler's own options parameter, so a caller who passes --name never sees it.",
+      "cwe": null,
+      "severity": {
+        "cvss": null,
+        "vector": null,
+        "source": null
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import { text } from '@clack/prompts';\nimport { Command } from 'commander';\nconst program = new Command();\nprogram.command('init').description('Init').option('--name <n>').action(async (opts) => opts.name ?? text({ message: 'Name?' }));",
+      "coverage": [
+        {
+          "rule": "cli-floor/no-prompt-without-flag",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-cli-floor/src/rules/no-prompt-without-flag/no-prompt-without-flag.test.ts"
+        }
+      ],
+      "kind": "decoy",
+      "peers": []
     }
   ]
 }

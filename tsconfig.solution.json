@@ -32,6 +32,7 @@
     { "path": "./packages/eslint-plugin-nestjs-security/tsconfig.lib.json" },
     { "path": "./packages/eslint-plugin-node-security/tsconfig.lib.json" },
     { "path": "./packages/eslint-plugin-operability/tsconfig.lib.json" },
+    { "path": "./packages/eslint-plugin-cli-floor/tsconfig.lib.json" },
     { "path": "./packages/eslint-plugin-react-a11y/tsconfig.lib.json" },
     { "path": "./packages/eslint-plugin-react-features/tsconfig.lib.json" },
     { "path": "./packages/eslint-plugin-reliability/tsconfig.lib.json" },

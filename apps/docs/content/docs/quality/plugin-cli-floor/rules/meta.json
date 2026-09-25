@@ -1,0 +1,11 @@
+{
+  "title": "Rules",
+  "icon": "BookOpen",
+  "defaultOpen": false,
+  "pages": [
+    "no-console-in-command",
+    "no-prompt-without-flag",
+    "require-command-description",
+    "require-command-example"
+  ]
+}

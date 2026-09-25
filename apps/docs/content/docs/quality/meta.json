@@ -13,6 +13,8 @@
         "plugin-reliability",
         "plugin-modularity",
         "plugin-operability",
+        "---CLI---",
+        "plugin-cli-floor",
         "---Conventions---",
         "plugin-conventions",
         "plugin-modernization",

@@ -111,6 +111,8 @@ const PLUGIN_ALLOWED_ENVIRONMENTS: Record<string, string[]> = {
   // fire outside its SDK.
   'eslint-plugin-mcp-sdk-security': ['mcp'],
   'eslint-plugin-supabase-security': ['supabase'],
+  // Every rule gates on a CLI host (commander, yargs, burgee) proven by binding.
+  'eslint-plugin-cli-floor': ['cli'],
   // Quality plugins — all universal
   'eslint-plugin-conventions': ['universal'],
   'eslint-plugin-maintainability': ['universal'],

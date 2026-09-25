@@ -1,0 +1,93 @@
+---
+title: require-command-description
+description: Require every CLI command to declare a description
+tags: ['quality', 'cli', 'commander', 'yargs', 'burgee']
+category: quality
+severity: medium
+autofix: false
+---
+
+# require-command-description
+
+> Require every CLI command to declare a description.
+
+- **burgee requirement:** F3 — every command declares a description and at least one example
+- **Hosts:** commander (and `burgee/commander`, `@commander-js/extra-typings`), yargs (and `burgee/yargs`), burgee
+- **Recommended:** `error`
+
+## Why
+
+A command with no description is a bare word in `--help`, in `--schema` and in an MCP tool list. A person guesses what it does; an agent has to run it to find out. yargs #877, #1640 and #1047 are the issue trail.
+
+## Rule details
+
+Reports a command that declares no description, or an empty one:
+
+| Host      | Where the description is read                                                                                                            |
+| :-------- | :--------------------------------------------------------------------------------------------------------------------------------------- |
+| commander | `.description(text)` or `.summary(text)` on the command                                                                                  |
+| yargs     | the second `.command()` argument, or `describe` / `description` / `desc` in the object form                                              |
+| burgee    | `description` on the object given to `defineCommand`, and on each object literal in a `commands` array (`defineProgram`, `definePlugin`) |
+
+A command counts only when its host is **proven by import**: the receiver of `.command()` resolves, through ESLint's scope analysis, to `new Command()`, `createCommand()` or the `program` export of commander, to `yargs()` or the instance a yargs builder is handed, or to a parameter typed `Command` / `Argv` imported from those modules. A router, a job queue or a local class that happens to own `.command()` and `.action()` is never reported.
+
+Not reported:
+
+- a description the AST cannot read (a variable, a call) — it is unknown, not absent;
+- a hidden command (`{ hidden: true }`, yargs `describe: false`) — it is not in help;
+- a commander root program with no `.action()` — it only dispatches to its subcommands;
+- a burgee `defineProgram` / `definePlugin` object itself — a container, not a command;
+- a command whose declaration a spread may complete (`{ ...base, name: 'x' }`).
+
+## Incorrect
+
+```ts
+import { Command } from 'commander';
+const program = new Command();
+
+program.command('build').action(build);
+```
+
+```ts
+import yargs from 'yargs';
+
+yargs(process.argv.slice(2)).command({ command: 'serve', handler: serve });
+```
+
+```ts
+import { defineCommand } from 'burgee';
+
+defineCommand({ name: 'greet', effects: 'read_only', run: greet });
+```
+
+## Correct
+
+```ts
+program
+  .command('build')
+  .description('Build the site into ./dist')
+  .action(build);
+
+yargs(process.argv.slice(2)).command(
+  'serve',
+  'Start the dev server',
+  builder,
+  serve,
+);
+
+defineCommand({
+  name: 'greet',
+  description: 'Greet someone by name',
+  effects: 'read_only',
+  run: greet,
+});
+```
+
+## Known limitations
+
+- A command object built in another file (`yargs.command(require('./serve'))`, `defineProgram({ commands: [greet] })`) is not read — its description lives where it is declared, and is checked there when that file declares it through a host.
+- A command created through an injected constructor (`new lib.Command()` where `lib` is a parameter) is not recognised: the model cannot prove where `lib` came from.
+
+## Further reading
+
+- [burgee spec — requirement F3](https://github.com/ofri-peretz/burgee/blob/main/.sdlc/intents/burgee/spec.md)

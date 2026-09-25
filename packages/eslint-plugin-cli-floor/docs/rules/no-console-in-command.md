@@ -1,0 +1,82 @@
+---
+title: no-console-in-command
+description: Disallow console.* inside a CLI command handler; write through the output layer
+tags: ['quality', 'cli', 'commander', 'yargs', 'burgee']
+category: quality
+severity: medium
+autofix: false
+---
+
+# no-console-in-command
+
+> Disallow `console.*` inside a CLI command handler; write through the output layer.
+
+- **burgee requirement:** O3 — command code writes through the output layer, never `console.*`, so O1 (`--json`) and O2 (no decoration when not a TTY) are honoured
+- **Hosts:** commander (and `burgee/commander`, `@commander-js/extra-typings`), yargs (and `burgee/yargs`), burgee
+- **Recommended:** `error`
+
+## Why
+
+`--json` and a quiet non-TTY mode only hold if every byte a command prints goes through one place that knows about them. A `console.log` inside a handler is a line of prose in the middle of a JSON document, and a colour code in a captured log. oclif/core #1644 shows the drift when this is not enforced.
+
+## Rule details
+
+Reports a call on the global `console` that is lexically inside a proven command handler:
+
+- commander: the function given to `.action()` — inline, or a function declared in the same file and passed by name;
+- yargs: the handler of a `.command()` registration (fourth argument, or `handler` in the object form);
+- burgee: `run` on a command object.
+
+Nested callbacks inside the handler are command code too (`items.forEach((i) => console.log(i))` reports).
+
+Not reported: `console` at module scope, in a hook (`.hook('preAction', …)`), in a yargs builder, in a helper defined outside the handler, or a local binding named `console`.
+
+## Incorrect
+
+```ts
+import { Command } from 'commander';
+const program = new Command();
+
+program.command('ls').action(async () => {
+  const items = await list();
+  console.log(items.join('\n'));
+});
+```
+
+```ts
+import { defineCommand } from 'burgee';
+
+defineCommand({
+  name: 'ls',
+  description: 'List',
+  effects: 'read_only',
+  run: async () => {
+    console.log(await list());
+  },
+});
+```
+
+## Correct
+
+```ts
+// burgee: return the data. The engine renders it for a person and envelopes it for --json.
+defineCommand({
+  name: 'ls',
+  description: 'List',
+  effects: 'read_only',
+  run: async () => ({ items: await list() }),
+});
+
+// commander / yargs: write through the one output module the program owns.
+import { out } from './output.js';
+program.command('ls').action(async () => out.result(await list()));
+```
+
+## Known limitations
+
+- A helper called from the handler is not followed: `action(() => report())` with `report` writing to `console` is not reported. Following calls across functions is a data-flow question this rule does not ask.
+- A handler imported from another file is not read here — lint that file, where it is registered, or declare it with a host there.
+
+## Further reading
+
+- [burgee spec — requirements O1, O2, O3](https://github.com/ofri-peretz/burgee/blob/main/.sdlc/intents/burgee/spec.md)

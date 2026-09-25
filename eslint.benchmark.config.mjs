@@ -45,6 +45,11 @@ const mcpSdkSecurityModule =
   await import('./packages/eslint-plugin-mcp-sdk-security/src/index.ts');
 const supabaseSecurityModule =
   await import('./packages/eslint-plugin-supabase-security/src/index.ts');
+// Not a security plugin. Registered so its rules are exercised by their
+// by-rule fixtures; every rule gates on a commander / yargs / burgee import,
+// which no CWE fixture carries, so it cannot move a scored number.
+const cliFloorModule =
+  await import('./packages/eslint-plugin-cli-floor/src/index.ts');
 const modernizationModule =
   await import('./packages/eslint-plugin-modernization/src/index.ts');
 const prismaSecurityModule =
@@ -83,6 +88,7 @@ const knexSecurity = normalize(knexSecurityModule);
 const drizzleSecurity = normalize(drizzleSecurityModule);
 const mcpSdkSecurity = normalize(mcpSdkSecurityModule);
 const supabaseSecurity = normalize(supabaseSecurityModule);
+const cliFloor = normalize(cliFloorModule);
 const modernization = normalize(modernizationModule);
 const prismaSecurity = normalize(prismaSecurityModule);
 const sequelizeSecurity = normalize(sequelizeSecurityModule);
@@ -141,6 +147,7 @@ export default [
       'drizzle-security': drizzleSecurity,
       'mcp-sdk-security': mcpSdkSecurity,
       'supabase-security': supabaseSecurity,
+      'cli-floor': cliFloor,
       modernization: modernization,
       'prisma-security': prismaSecurity,
       'sequelize-security': sequelizeSecurity,
@@ -169,6 +176,7 @@ export default [
       ...allRulesError('drizzle-security', drizzleSecurity),
       ...allRulesError('mcp-sdk-security', mcpSdkSecurity),
       ...allRulesError('supabase-security', supabaseSecurity),
+      ...allRulesError('cli-floor', cliFloor),
       ...allRulesError('modernization', modernization),
       ...allRulesError('prisma-security', prismaSecurity),
       ...allRulesError('sequelize-security', sequelizeSecurity),

@@ -82,6 +82,9 @@ flags:
   eslint-plugin-operability:
     paths: [packages/eslint-plugin-operability/]
     carryforward: false
+  eslint-plugin-cli-floor:
+    paths: [packages/eslint-plugin-cli-floor/]
+    carryforward: false
   eslint-plugin-postgresql-security:
     paths: [packages/eslint-plugin-postgresql-security/]
     carryforward: false
@@ -418,6 +421,16 @@ component_management:
       name: 'eslint-plugin-modularity'
       paths:
         - packages/eslint-plugin-modularity/**
+      statuses:
+        - type: project
+          target: 100%
+        - type: patch
+          target: 100%
+
+    - component_id: eslint-plugin-cli-floor
+      name: 'eslint-plugin-cli-floor'
+      paths:
+        - packages/eslint-plugin-cli-floor/**
       statuses:
         - type: project
           target: 100%

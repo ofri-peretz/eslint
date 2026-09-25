@@ -225,6 +225,14 @@
       "published": true
     },
     {
+      "name": "eslint-plugin-cli-floor",
+      "rules": 4,
+      "description": "ESLint plugin for the CLI floor — every commander, yargs or burgee command declares a description and a one-line example, writes through the output layer instead of console, and backs every prompt with a flag",
+      "category": "quality",
+      "version": "0.0.0",
+      "published": true
+    },
+    {
       "name": "eslint-plugin-modernization",
       "rules": 4,
       "description": "ESLint plugin for modernizing JavaScript — auto-fixes legacy patterns to ES2022+ (Array.at, template literals, EventTarget, Array.isArray)",
@@ -249,8 +257,8 @@
       "published": true
     }
   ],
-  "totalRules": 482,
-  "totalPlugins": 31,
-  "allPluginsCount": 31,
+  "totalRules": 486,
+  "totalPlugins": 32,
+  "allPluginsCount": 32,
   "generatedAt": "2026-09-24"
 }
