@@ -1,9 +1,119 @@
 {
-  "releaseCount": 746,
+  "releaseCount": 753,
   "packageCount": 36,
-  "entryCount": 2204,
+  "entryCount": 2212,
   "oldestYear": 2024,
   "releases": [
+    {
+      "package": "eslint-plugin-conventions",
+      "short": "eslint-plugin-conventions",
+      "version": "6.0.8",
+      "date": "2026-09-25T01:11:36Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`prefer-dependency-version-strategy` reads manifests, not shapes",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "`ignoreInTests` now skips `.test`/`.spec` files with `.mjs`, `.cjs`, `.mts` and `.cts` extensions.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-import-next",
+      "short": "eslint-plugin-import-next",
+      "version": "2.8.12",
+      "date": "2026-09-25T01:10:18Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-extraneous-dependencies` no longer reports type-only imports. `import type { X } from 'pkg'` and `import { type X } from 'pkg'` are erased at compile time, so they cannot pull in a runtime dependency, and upstream ignores them by default. The rule used to report them as a missing dependency and suggest `npm install` of the wrong package (`mdx` for `mdx/types`, which `@types/mdx` satisfies). An import that also binds a value, or a bare side-effect import, is still checked.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-maintainability",
+      "short": "eslint-plugin-maintainability",
+      "version": "3.2.16",
+      "date": "2026-09-25T01:10:01Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`ignoreInTests` now skips `.test`/`.spec` files with `.mjs`, `.cjs`, `.mts` and `.cts` extensions.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-react-features",
+      "short": "eslint-plugin-react-features",
+      "version": "1.7.11",
+      "date": "2026-09-25T01:09:03Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`ignoreInTests` now skips `.test`/`.spec` files with `.mjs`, `.cjs`, `.mts` and `.cts` extensions.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-react-a11y",
+      "short": "eslint-plugin-react-a11y",
+      "version": "2.5.3",
+      "date": "2026-09-25T01:05:28Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`ignoreInTests` now skips `.test`/`.spec` files with `.mjs`, `.cjs`, `.mts` and `.cts` extensions.",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "5.6.8",
+      "date": "2026-09-25T01:05:27Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "path guards no longer leak across functions; destructured `basename`/`sep` recognised",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-modularity",
+      "short": "eslint-plugin-modularity",
+      "version": "2.5.4",
+      "date": "2026-09-25T01:03:24Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`ignoreInTests` now skips `.test`/`.spec` files with `.mjs`, `.cjs`, `.mts` and `.cts` extensions.",
+          "pr": null
+        }
+      ]
+    },
     {
       "package": "eslint-plugin-modernization",
       "short": "eslint-plugin-modernization",
