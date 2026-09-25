@@ -1613,6 +1613,78 @@ describe('detect-object-injection', () => {
     );
 
     ruleTester.run(
+      'the Object.create(null) exemption belongs to the binding, not to its name',
+      detectObjectInjection,
+      {
+        valid: [],
+        invalid: [
+          // burgee sweep: packages/burgee/src/yargs-parser.ts:623 and :636 -- nested
+          // helpers `applyCoercions(argv: any)` / `setPlaceholderKeys(argv: any)` write
+          // `argv[key]`, and their PARAMETER shadows the outer null-prototype
+          // `const argv` (:258). The exemption matched the outer declaration by name,
+          // so a caller-supplied object was certified prototype-less.
+          {
+            name: 'a parameter shadowing an outer Object.create(null) const is still reported (burgee: packages/burgee/src/yargs-parser.ts:623)',
+            code: `
+              const store = Object.create(null);
+              export function put(store, key, value) {
+                store[key] = value;
+              }
+            `,
+            errors: [{ messageId: 'objectInjection' }],
+          },
+          // Reassignment disqualifies, as everywhere else in this rule: by the write,
+          // the binding holds a plain `{}` with a prototype to pollute.
+          {
+            name: 'a binding reassigned away from Object.create(null) is reported',
+            code: `
+              export function f(k, v) {
+                let o = Object.create(null);
+                o = {};
+                o[k] = v;
+                return o;
+              }
+            `,
+            errors: [{ messageId: 'objectInjection' }],
+          },
+          // A destructured name binds a PIECE of the initializer, not the initializer:
+          // `first` is `items[0]` and `cache` is `src.cache`, both ordinary objects.
+          {
+            name: 'an array-destructured name does not inherit the spread exemption',
+            code: `
+              export function f(items, k, v) {
+                const [first] = [...items];
+                first[k] = v;
+              }
+            `,
+            errors: [{ messageId: 'objectInjection' }],
+          },
+          {
+            name: 'an object-destructured name does not inherit the null-prototype exemption',
+            code: `
+              export function f(src, k, v) {
+                const { cache } = Object.assign(Object.create(null), src);
+                cache[k] = v;
+              }
+            `,
+            errors: [{ messageId: 'objectInjection' }],
+          },
+          // No initializer, no evidence of a null prototype.
+          {
+            name: 'a binding declared without an initializer gets no exemption',
+            code: `
+              export function f(k, v) {
+                let o: any;
+                o[k] = v;
+              }
+            `,
+            errors: [{ messageId: 'objectInjection' }],
+          },
+        ],
+      },
+    );
+
+    ruleTester.run(
       'Object.assign onto a non-literal target with an untrusted source is flagged',
       detectObjectInjection,
       {
