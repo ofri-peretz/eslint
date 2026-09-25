@@ -1,7 +1,7 @@
 {
-  "releaseCount": 753,
-  "packageCount": 36,
-  "entryCount": 2212,
+  "releaseCount": 757,
+  "packageCount": 37,
+  "entryCount": 2218,
   "oldestYear": 2024,
   "releases": [
     {
@@ -18305,6 +18305,21 @@
       ]
     },
     {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "1.19.8",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "new plugin — the lint half of burgee's CLI floor (F3, O3, P1) for commander, yargs and burgee programs",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "@interlace/eslint-formatter",
       "short": "eslint-formatter",
       "version": "0.2.0",
@@ -18346,6 +18361,41 @@
           "kind": "feature",
           "title": "`RemoteMarkdown` accepts `tags`, forwarded to the underlying fetch as `next.tags`.",
           "pr": 628
+        }
+      ]
+    },
+    {
+      "package": "docs",
+      "short": "docs",
+      "version": "1.2.1",
+      "date": null,
+      "isApp": true,
+      "isPrivate": true,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "new plugin — the lint half of burgee's CLI floor (F3, O3, P1) for commander, yargs and burgee programs",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-cli-floor",
+      "short": "eslint-plugin-cli-floor",
+      "version": "0.1.0",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "new plugin — the lint half of burgee's CLI floor (F3, O3, P1) for commander, yargs and burgee programs",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.8`",
+          "pr": null
         }
       ]
     },
@@ -18590,6 +18640,26 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.4.13",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "detect-object-injection resolves the Object.create(null) exemption by scope",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.8`",
           "pr": null
         }
       ]
