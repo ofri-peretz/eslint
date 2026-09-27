@@ -75,6 +75,22 @@ const SENSITIVE_OPERATIONS = new Set([
   'getItem',
 ]);
 
+// Standard-library namespaces. `Object.create`, `Reflect.deleteProperty`
+// share a name with a data operation but touch nothing outside the process.
+const BUILTIN_NAMESPACES = new Set([
+  'Object',
+  'Reflect',
+  'JSON',
+  'Math',
+  'Array',
+  'Promise',
+  'Atomics',
+]);
+
+// In-process collections: `cache.delete(key)` on `new Map()` is not a
+// resource anyone needs permission to reach.
+const IN_PROCESS_COLLECTIONS = new Set(['Map', 'Set', 'WeakMap', 'WeakSet']);
+
 // Event parameter names
 const EVENT_PARAM_NAMES = new Set(['event', 'evt', 'e', 'request', 'req']);
 
@@ -222,12 +238,47 @@ export const noMissingAuthorizationCheck = createRule<RuleOptions, MessageIds>({
     }
 
     /**
+     * Whether the receiver is a standard-library namespace, or a binding
+     * initialised with `new Map()` / `new Set()` / … — nothing a caller needs
+     * authorization to reach, whatever the method is called.
+     */
+    function isInProcessReceiver(receiver: TSESTree.Node): boolean {
+      if (receiver.type !== AST_NODE_TYPES.Identifier) return false;
+      let scope: ReturnType<typeof context.sourceCode.getScope> | null =
+        context.sourceCode.getScope(receiver);
+      while (scope) {
+        const variable = scope.set.get(receiver.name);
+        // typescript-eslint declares the lib globals (`Object`, `Map`, …) as
+        // variables with no definitions; those are globals, not bindings.
+        if (variable && variable.defs.length > 0) {
+          const def = variable.defs[0];
+          const init =
+            variable.defs.length === 1 &&
+            def.node.type === AST_NODE_TYPES.VariableDeclarator
+              ? def.node.init
+              : null;
+          return (
+            init?.type === AST_NODE_TYPES.NewExpression &&
+            init.callee.type === AST_NODE_TYPES.Identifier &&
+            IN_PROCESS_COLLECTIONS.has(init.callee.name)
+          );
+        }
+        scope = scope.upper;
+      }
+      // Unbound: a global. Only the standard namespaces are known to be local.
+      return BUILTIN_NAMESPACES.has(receiver.name);
+    }
+
+    /**
      * Check if call is a sensitive operation
      */
     function getSensitiveOperationName(
       node: TSESTree.CallExpression,
     ): string | null {
-      if (node.callee.type === AST_NODE_TYPES.MemberExpression) {
+      if (
+        node.callee.type === AST_NODE_TYPES.MemberExpression &&
+        !isInProcessReceiver(node.callee.object)
+      ) {
         // `db['deleteItem'](…)` is the same sensitive operation.
         const operation = propertyName(node.callee);
         if (operation !== null && SENSITIVE_OPERATIONS.has(operation)) {

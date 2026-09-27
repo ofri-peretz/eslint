@@ -170,9 +170,61 @@ ruleTester.run('no-missing-authorization-check', noMissingAuthorizationCheck, {
         };
       `,
     },
+    // burgee packages/burgee/src/yargs/command.ts:95 — `req` there is a require
+    // function, and `Object.create` builds an in-memory object.
+    {
+      name: 'Object.create is not a privileged operation',
+      code: `
+        function load(req, p) {
+          const m = req(p);
+          return Object.create(null, Object.getOwnPropertyDescriptors({ ...m }));
+        }
+      `,
+    },
+    {
+      name: 'deleting from an in-process Map is not a privileged operation',
+      code: `
+        const cache = new Map();
+        export const handler = async (event) => {
+          cache.delete(event.key);
+          return { statusCode: 200 };
+        };
+      `,
+    },
   ]),
 
   invalid: lambda([
+    // The in-process exemption is for receivers proven local — a store built by
+    // anything other than `new Map()` / `new Set()` still counts.
+    {
+      name: 'a delete on a store not created as an in-process collection still reports',
+      code: `
+        const store = createStore();
+        export const handler = async (event) => {
+          await store.delete(event.id);
+        };
+      `,
+      errors: [{ messageId: 'missingAuthCheck' }],
+    },
+    {
+      name: 'a delete on an imported client still reports',
+      code: `
+        import { db } from './db';
+        export const handler = async (event) => {
+          await db.delete(event.id);
+        };
+      `,
+      errors: [{ messageId: 'missingAuthCheck' }],
+    },
+    {
+      name: 'a delete through a member-chain receiver still reports',
+      code: `
+        export const handler = async (event) => {
+          await clients.db.delete(event.id);
+        };
+      `,
+      errors: [{ messageId: 'missingAuthCheck' }],
+    },
     // Lambda handler with DB query but no auth check (classic FN)
     {
       name: 'a handler that deletes rows without checking who asked',
