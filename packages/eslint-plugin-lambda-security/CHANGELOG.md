@@ -5,6 +5,27 @@ All notable changes to `eslint-plugin-lambda-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.1.5
+
+### Patch Changes
+
+- **🐛 Fix** — `no-missing-authorization-check` ignores built-in receivers
+
+  `Object.create(...)` and `cache.delete(key)` on a `new Map()` were reported as
+  privileged operations because the operation was matched on the method name alone.
+  Standard-library namespaces (`Object`, `Reflect`, `JSON`, …) and bindings initialised
+  with `new Map()` / `new Set()` / `new WeakMap()` / `new WeakSet()` are now skipped;
+  any other receiver still reports.
+
+- **🐛 Fix** — the Lambda gate no longer reads a local `handler` assignment as a handler export
+
+  `handler = handler || noop` (reassigning a parameter), `this.handler = h` and
+  `opts.handler = fn` admitted a file with no AWS import, no handler export and no
+  `(event, context)` function as Lambda code, switching on all fourteen rules. The
+  assignment arm now requires the `exports` / `module.exports` receiver its docstring
+  lists. ES2022 string export names (`export { main as "handler" }`) now count as a
+  handler export.
+
 ## 2.1.4
 
 ### Patch Changes
