@@ -1,7 +1,7 @@
 {
-  "releaseCount": 759,
+  "releaseCount": 761,
   "packageCount": 37,
-  "entryCount": 2220,
+  "entryCount": 2223,
   "oldestYear": 2024,
   "releases": [
     {
@@ -18570,6 +18570,26 @@
       ]
     },
     {
+      "package": "eslint-plugin-lambda-security",
+      "short": "eslint-plugin-lambda-security",
+      "version": "2.1.5",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-missing-authorization-check` ignores built-in receivers",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "the Lambda gate no longer reads a local `handler` assignment as a handler export",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-postgresql-security",
       "short": "eslint-plugin-postgresql-security",
       "version": "1.4.9",
@@ -18690,6 +18710,21 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.4.15",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`detect-object-injection` reports writes through TypeScript type-only wrappers",
           "pr": null
         }
       ]
