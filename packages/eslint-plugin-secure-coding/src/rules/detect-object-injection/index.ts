@@ -1751,7 +1751,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
 
       // Note: the `node.left.type !== MemberExpression` / plain-MemberExpression
       // shapes are the only two forms ever passed in — every call site
-      // (isHighRiskAssignment / isHighRiskMemberAccess and their two
+      // (highRiskTarget / isHighRiskMemberAccess and their two
       // downstream checkAssignmentExpression / checkMemberExpression callers)
       // already guards on the same discriminants before calling this
       // function, so a "neither shape matched" fallback is unreachable dead
@@ -1865,36 +1865,38 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     };
 
     /**
-     * Determine if this is a high-risk assignment
+     * The computed member an assignment writes through, when that write is
+     * high-risk; `null` otherwise. Returning the narrowed target, not a boolean,
+     * lets the caller use it without re-asserting its type.
      */
-    const isHighRiskAssignment = (
+    const highRiskTarget = (
       node: TSESTree.AssignmentExpression,
-    ): boolean => {
+    ): TSESTree.MemberExpression | null => {
       const left = assignmentTarget(node);
       if (left.type !== AST_NODE_TYPES.MemberExpression) {
-        return false;
+        return null;
       }
 
       // Only check computed member access (bracket notation)
       // Dot notation (obj.name) is safe
       if (!left.computed) {
-        return false;
+        return null;
       }
 
       // SAFE: Object.create(null) objects have no prototype to pollute
       if (isPrototypelessObject(left.object)) {
-        return false;
+        return null;
       }
 
       // SAFE: typed-array element assignment is numeric, not a string-key injection
       if (isTypedArrayObject(left.object)) {
-        return false;
+        return null;
       }
 
       // SAFE: `arr[arr.length] = x` appends to an array. Verified against the
       // language: the key is a number, so it cannot name a prototype slot.
       if (isArrayAppend(left)) {
-        return false;
+        return null;
       }
 
       const { propertyNode } = extractPropertyAccess(node);
@@ -1902,28 +1904,28 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // SAFE: numeric keys can't pollute Object prototypes (typed-array
       // / numeric-array assignment is structurally safe).
       if (isNumericKey(propertyNode)) {
-        return false;
+        return null;
       }
 
       // SAFE: the key is bound by `for (const k of KEYS)` over a const array of
       // string literals, so every value it can hold is written out in the file
       // and none of them is a dangerous property.
       if (isKeyFromLiteralAllowlist(propertyNode)) {
-        return false;
+        return null;
       }
 
       // SAFE: key originates from for..in or Object.keys/entries iteration
       if (isForInOrObjectKeysKey(propertyNode)) {
-        return false;
+        return null;
       }
 
       // Skip if the key has been validated (e.g., includes() or hasOwnProperty check)
       if (hasPrecedingValidation(propertyNode, node, left.object)) {
-        return false;
+        return null;
       }
 
       // Check for dangerous property access in assignment
-      return isDangerousPropertyAccess(propertyNode);
+      return isDangerousPropertyAccess(propertyNode) ? left : null;
     };
 
     /**
@@ -2724,7 +2726,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * Check assignment expressions for object injection
      */
     const checkAssignmentExpression = (node: TSESTree.AssignmentExpression) => {
-      // BEFORE isHighRiskAssignment, which returns false for a non-computed left
+      // BEFORE highRiskTarget, which returns null for a non-computed left
       // side. The canonical pollution shape is a plain dot chain
       // (`o.constructor.prototype.p = 1`), so gating this on bracket notation is
       // what made the rule blind to it.
@@ -2750,13 +2752,10 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         return;
       }
 
-      if (!isHighRiskAssignment(node)) {
+      const target = highRiskTarget(node);
+      if (target === null) {
         return;
       }
-
-      // isHighRiskAssignment already verified the (unwrapped) target is a
-      // computed MemberExpression.
-      const target = assignmentTarget(node) as TSESTree.MemberExpression;
 
       // `const t = ALLOWED[x]; process.env[t] = v` — the key is provably one of the closed
       // set of literals in ALLOWED, so no attacker-chosen property is reachable.
@@ -2991,7 +2990,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         // `(o[a] as T) = v` emit `o[a] = v`, so the wrapper is the same position.
         if (isTsTypeWrapper(parent) && parent.expression === current) {
           current = parent;
-          parent = current.parent as TSESTree.Node | undefined;
+          parent = parent.parent;
           continue;
         }
         // Keep climbing only while we are still the OBJECT of an enclosing
@@ -3108,7 +3107,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         holder.expression === target
       ) {
         target = holder;
-        holder = holder.parent as TSESTree.Node | undefined;
+        holder = holder.parent;
       }
       if (
         holder &&
