@@ -2171,3 +2171,71 @@ describe('pattern and loop-head targets are writes', () => {
     ],
   });
 });
+
+// docs-grounded FN (no burgee anchor) — found by the 2026-09-27 burgee FP/FN sweep.
+// A TypeScript type-only wrapper (`!`, `as`, `satisfies`, `<T>`) around a write
+// target is erased at compile time, so `o[a][b]! = v` emits exactly
+// `o[a][b] = v` and pollutes `Object.prototype` the same way. The rule treated
+// the wrapped target as a READ and said nothing. Each invalid case below is the
+// wrapped twin of an unwrapped control that reports `objectInjection` under this
+// same setup; each valid case is the wrapped twin of an unwrapped shape that
+// stays silent, so the fix is proven not to widen past the write path.
+describe('TypeScript type-only wrappers around a write target', () => {
+  ruleTester.run('ts-wrapped write targets', detectObjectInjection, {
+    valid: [
+      {
+        name: 'a non-null-asserted READ is still a read and stays silent',
+        code: 'const o = {}; const x = o[a]!;',
+      },
+      {
+        name: 'an as-cast READ passed as an argument is still a read and stays silent',
+        code: 'const o = {}; use(o[a] as T);',
+      },
+      {
+        name: 'a hasOwn guard still clears a non-null-asserted write, as it clears the bare write',
+        code: 'function f(o, a, v) { if (!Object.hasOwn(o, a)) return; o[a]! = v; }',
+      },
+      {
+        name: 'a non-null-asserted write into an Object.create(null) map stays silent, as the bare write does',
+        code: 'const o = Object.create(null); o[a]! = v;',
+      },
+    ],
+    invalid: [
+      {
+        name: 'a non-null-asserted two-step write target reports like the bare o[a][b] = v',
+        code: 'export function setPath(o, a, b, v) { o[a][b]! = v; }',
+        errors: [{ messageId: 'objectInjection' }],
+      },
+      {
+        name: 'an as-cast two-step write target reports like the bare o[a][b] = v',
+        code: 'export function setPath(o, a, b, v) { (o[a][b] as unknown) = v; }',
+        errors: [{ messageId: 'objectInjection' }],
+      },
+      {
+        name: 'a non-null-asserted single computed write target reports like the bare o[a] = v',
+        code: 'export function set(o, a, v) { o[a]! = v; }',
+        errors: [{ messageId: 'objectInjection' }],
+      },
+      {
+        name: 'a satisfies-wrapped single computed write target reports like the bare o[a] = v',
+        code: 'export function set(o, a, v) { (o[a] satisfies unknown) = v; }',
+        errors: [{ messageId: 'objectInjection' }],
+      },
+      {
+        name: 'an angle-bracket-asserted single computed write target reports like the bare o[a] = v',
+        code: 'export function set(o, a, v) { (<any>o[a]) = v; }',
+        errors: [{ messageId: 'objectInjection' }],
+      },
+      {
+        name: 'a non-null-asserted update target reports like the bare o[a]++',
+        code: 'export function bump(o, a) { o[a]!++; }',
+        errors: [{ messageId: 'objectInjection' }],
+      },
+      {
+        name: 'a non-null-asserted destructuring target reports like the bare [o[k]] = [v]',
+        code: 'export function set(o, k, v) { [o[k]!] = [v]; }',
+        errors: [{ messageId: 'objectInjection' }],
+      },
+    ],
+  });
+});

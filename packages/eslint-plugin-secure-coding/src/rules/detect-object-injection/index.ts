@@ -1244,6 +1244,34 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       return current;
     };
 
+    // A TypeScript type-only wrapper around an expression. Every one of these is
+    // erased at compile time, so `o[a]! = v`, `(o[a] as T) = v`,
+    // `(o[a] satisfies T) = v` and `(<T>o[a]) = v` all emit exactly `o[a] = v`
+    // and write through the same key. Separate from `withoutTypeAnnotation`,
+    // which deliberately does not step past `!` on an initialiser.
+    const isTsTypeWrapper = (
+      node: TSESTree.Node,
+    ): node is
+      | TSESTree.TSAsExpression
+      | TSESTree.TSNonNullExpression
+      | TSESTree.TSSatisfiesExpression
+      | TSESTree.TSTypeAssertion =>
+      node.type === AST_NODE_TYPES.TSAsExpression ||
+      node.type === AST_NODE_TYPES.TSNonNullExpression ||
+      node.type === AST_NODE_TYPES.TSSatisfiesExpression ||
+      node.type === AST_NODE_TYPES.TSTypeAssertion;
+
+    const withoutTsWrapper = (node: TSESTree.Node): TSESTree.Node => {
+      let current = node;
+      while (isTsTypeWrapper(current)) current = current.expression;
+      return current;
+    };
+
+    /** The assignment's real write target, with any type-only wrapper erased. */
+    const assignmentTarget = (
+      node: TSESTree.AssignmentExpression,
+    ): TSESTree.Node => withoutTsWrapper(node.left);
+
     const isLocallyConstructed = (id: TSESTree.Identifier): boolean => {
       const variable = resolvedReference(sourceCode.getScope(id), id);
       if (!variable || variable.defs.length !== 1) return false;
@@ -1730,14 +1758,15 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // code. The `if`/`else if` below is kept (rather than a non-null
       // assertion) purely for TypeScript exhaustiveness over the declared
       // union parameter type.
-      if (
-        node.type === AST_NODE_TYPES.AssignmentExpression &&
-        node.left.type === AST_NODE_TYPES.MemberExpression
-      ) {
+      const left =
+        node.type === AST_NODE_TYPES.AssignmentExpression
+          ? assignmentTarget(node)
+          : null;
+      if (left !== null && left.type === AST_NODE_TYPES.MemberExpression) {
         // Assignment: obj[key] = value
-        object = sourceCode.getText(node.left.object);
-        property = sourceCode.getText(node.left.property);
-        propertyNode = node.left.property;
+        object = sourceCode.getText(left.object);
+        property = sourceCode.getText(left.property);
+        propertyNode = left.property;
         isAssignment = true;
       } else {
         // Access: obj[key]. By contract with every call site, `node` is a
@@ -1811,17 +1840,20 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     const globalPrototypeWrite = (
       node: TSESTree.AssignmentExpression,
     ): string | null => {
-      if (node.left.type !== AST_NODE_TYPES.MemberExpression) return null;
+      const left = assignmentTarget(node);
+      if (left.type !== AST_NODE_TYPES.MemberExpression) return null;
 
       // Every step EXCEPT the final one — the final property is what is written
       // TO, and writing to `__proto__` re-parents one object rather than polluting.
+      // Type-only wrappers on a step (`(o.__proto__ as any).p = 1`) are erased at
+      // compile time, so they are stepped past rather than ending the chain.
       const steps: string[] = [];
-      let cur: TSESTree.Node = node.left.object;
+      let cur: TSESTree.Node = withoutTsWrapper(left.object);
       while (cur.type === AST_NODE_TYPES.MemberExpression) {
         const name = stepName(cur);
         if (name === null) return null; // a dynamic step — not provably this shape
         steps.unshift(name);
-        cur = cur.object;
+        cur = withoutTsWrapper(cur.object);
       }
 
       if (steps.includes('__proto__')) return '__proto__';
@@ -1838,29 +1870,30 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     const isHighRiskAssignment = (
       node: TSESTree.AssignmentExpression,
     ): boolean => {
-      if (node.left.type !== 'MemberExpression') {
+      const left = assignmentTarget(node);
+      if (left.type !== AST_NODE_TYPES.MemberExpression) {
         return false;
       }
 
       // Only check computed member access (bracket notation)
       // Dot notation (obj.name) is safe
-      if (!node.left.computed) {
+      if (!left.computed) {
         return false;
       }
 
       // SAFE: Object.create(null) objects have no prototype to pollute
-      if (isPrototypelessObject(node.left.object)) {
+      if (isPrototypelessObject(left.object)) {
         return false;
       }
 
       // SAFE: typed-array element assignment is numeric, not a string-key injection
-      if (isTypedArrayObject(node.left.object)) {
+      if (isTypedArrayObject(left.object)) {
         return false;
       }
 
       // SAFE: `arr[arr.length] = x` appends to an array. Verified against the
       // language: the key is a number, so it cannot name a prototype slot.
-      if (isArrayAppend(node.left)) {
+      if (isArrayAppend(left)) {
         return false;
       }
 
@@ -1885,7 +1918,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       }
 
       // Skip if the key has been validated (e.g., includes() or hasOwnProperty check)
-      if (hasPrecedingValidation(propertyNode, node, node.left.object)) {
+      if (hasPrecedingValidation(propertyNode, node, left.object)) {
         return false;
       }
 
@@ -2703,9 +2736,9 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         // two findings, which is the over-reporting we criticise in competitors.
         // The dot spelling never hit it, so this only shows up on the bracket form.
         for (
-          let m: TSESTree.Node = node.left;
+          let m: TSESTree.Node = assignmentTarget(node);
           m.type === AST_NODE_TYPES.MemberExpression;
-          m = m.object
+          m = withoutTsWrapper(m.object)
         ) {
           handledMemberExpressions.add(m);
         }
@@ -2721,13 +2754,13 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         return;
       }
 
+      // isHighRiskAssignment already verified the (unwrapped) target is a
+      // computed MemberExpression.
+      const target = assignmentTarget(node) as TSESTree.MemberExpression;
+
       // `const t = ALLOWED[x]; process.env[t] = v` — the key is provably one of the closed
       // set of literals in ALLOWED, so no attacker-chosen property is reachable.
-      if (
-        node.left.type === AST_NODE_TYPES.MemberExpression &&
-        node.left.computed &&
-        keyComesFromConstAllowlist(node.left.property, node)
-      ) {
+      if (keyComesFromConstAllowlist(target.property, node)) {
         return;
       }
 
@@ -2737,15 +2770,16 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // would fire again for the INNER `a[b]` access. We walk the object
       // chain and mark every intermediate computed MemberExpression so the
       // MemberExpression visitor skips them — preventing exact duplicates.
-      // isHighRiskAssignment already verified node.left.type === 'MemberExpression'
-      let me = node.left as TSESTree.MemberExpression;
+      let me = target;
       handledMemberExpressions.add(me);
-      // Walk into chained computed accesses: a[b][c] → also mark a[b]
-      while (
-        me.object.type === AST_NODE_TYPES.MemberExpression &&
-        me.object.computed
+      // Walk into chained computed accesses: a[b][c] → also mark a[b], and
+      // a[b]![c] → also mark a[b] (the wrapper is erased at compile time).
+      for (
+        let inner = withoutTsWrapper(me.object);
+        inner.type === AST_NODE_TYPES.MemberExpression && inner.computed;
+        inner = withoutTsWrapper(me.object)
       ) {
-        me = me.object as TSESTree.MemberExpression;
+        me = inner;
         handledMemberExpressions.add(me);
       }
 
@@ -2953,6 +2987,13 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         ) {
           return true;
         }
+        // A type-only wrapper is erased at compile time: `o[a]! = v` and
+        // `(o[a] as T) = v` emit `o[a] = v`, so the wrapper is the same position.
+        if (isTsTypeWrapper(parent) && parent.expression === current) {
+          current = parent;
+          parent = current.parent as TSESTree.Node | undefined;
+          continue;
+        }
         // Keep climbing only while we are still the OBJECT of an enclosing
         // member expression; that is the `o[a]` in `o[a][b] = v`. Being the
         // computed PROPERTY (`x` in `o[x]`) is a read of `x`, not a write path.
@@ -3058,10 +3099,21 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
 
       // The assignment's left side is the AssignmentExpression visitor's to
       // report; this catches the case where visitor order beat the WeakSet.
+      // Step past type-only wrappers so `o[a]! = v` is the same left side.
+      let target: TSESTree.Node = node;
+      let holder = parent;
+      while (
+        holder &&
+        isTsTypeWrapper(holder) &&
+        holder.expression === target
+      ) {
+        target = holder;
+        holder = holder.parent as TSESTree.Node | undefined;
+      }
       if (
-        parent &&
-        parent.type === AST_NODE_TYPES.AssignmentExpression &&
-        parent.left === node
+        holder &&
+        holder.type === AST_NODE_TYPES.AssignmentExpression &&
+        holder.left === target
       ) {
         return;
       }
@@ -3569,14 +3621,18 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     const reportCopyLoopWrite = (
       node: TSESTree.AssignmentExpression,
     ): boolean => {
+      const left = assignmentTarget(node);
       if (
-        node.left.type !== AST_NODE_TYPES.MemberExpression ||
-        !node.left.computed ||
-        node.left.property.type !== AST_NODE_TYPES.Identifier
+        left.type !== AST_NODE_TYPES.MemberExpression ||
+        !left.computed ||
+        left.property.type !== AST_NODE_TYPES.Identifier
       ) {
         return false;
       }
-      const propertyName = node.left.property.name;
+      // Deliberate `.name`: `left` is computed with an Identifier key, so this is
+      // the key VARIABLE in `o[k]`, matched against the loop's binding — not a
+      // property spelling that `o['k']` could also reach.
+      const propertyName = left.property.name;
       const loop = openCopyLoops.find(
         (open) => open.keyName === propertyName && !open.reported,
       );
@@ -3584,7 +3640,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // A hasOwn/hasOwnProperty guard clears this write only when it names the
       // object being written (or a module-owned allowlist). This is what the
       // token scan above can no longer decide on its own.
-      if (hasPrecedingValidation(node.left.property, node, node.left.object)) {
+      if (hasPrecedingValidation(left.property, node, left.object)) {
         return false;
       }
       loop.reported = true;

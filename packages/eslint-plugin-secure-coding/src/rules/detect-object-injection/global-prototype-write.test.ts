@@ -122,6 +122,21 @@ target['constructor']['prototype'].isAdmin = true;`,
 o.a.b.__proto__.polluted = 1;`,
         errors: [{ messageId: 'globalPrototypeWrite' }],
       },
+      // docs-grounded FN (no burgee anchor) — found by the 2026-09-27 burgee FP/FN sweep.
+      // A TypeScript type-only wrapper is erased at compile time, so each of these
+      // emits exactly the bare traversal above it and pollutes Object.prototype.
+      {
+        name: 'a non-null-asserted write through __proto__ is the bare o.__proto__[b] = v',
+        code: `const o = {};
+o.__proto__[b]! = v;`,
+        errors: [{ messageId: 'globalPrototypeWrite' }],
+      },
+      {
+        name: 'an as-cast __proto__ step is still a traversal through __proto__',
+        code: `const o = {};
+(o.__proto__ as any).polluted = 1;`,
+        errors: [{ messageId: 'globalPrototypeWrite' }],
+      },
     ],
   });
 });
