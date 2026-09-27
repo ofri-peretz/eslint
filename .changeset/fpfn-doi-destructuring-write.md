@@ -2,7 +2,7 @@
 'eslint-plugin-secure-coding': patch
 ---
 
-fix(secure-coding): `detect-object-injection` now reports a write through a destructuring or loop-head target
+fix(secure-coding): `detect-object-injection` reports destructuring and loop-head writes
 
 `[o[a][b]] = [v]`, `({ x: o[k] } = src)`, `[...o[k]] = xs` and `for (o[k] of xs)`
 were classified as reads and exempted, although each performs the same write as
