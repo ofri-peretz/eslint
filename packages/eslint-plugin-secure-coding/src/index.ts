@@ -161,7 +161,7 @@ withCanonicalDocsUrls('plugin-secure-coding', rules);
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-secure-coding',
-    version: '5.4.13',
+    version: '5.4.14',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
