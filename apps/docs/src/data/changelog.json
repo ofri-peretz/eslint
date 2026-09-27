@@ -5,6 +5,56 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "1.19.8",
+      "date": "2026-09-25T02:36:14Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "new plugin — the lint half of burgee's CLI floor (F3, O3, P1) for commander, yargs and burgee programs",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.4.13",
+      "date": "2026-09-25T02:36:10Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "detect-object-injection resolves the Object.create(null) exemption by scope",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.8`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "docs",
+      "short": "docs",
+      "version": "1.2.1",
+      "date": "2026-09-25T02:34:18Z",
+      "isApp": true,
+      "isPrivate": true,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "new plugin — the lint half of burgee's CLI floor (F3, O3, P1) for commander, yargs and burgee programs",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-conventions",
       "short": "eslint-plugin-conventions",
       "version": "6.0.8",
@@ -18305,21 +18355,6 @@
       ]
     },
     {
-      "package": "@interlace/eslint-devkit",
-      "short": "eslint-devkit",
-      "version": "1.19.8",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "feature",
-          "title": "new plugin — the lint half of burgee's CLI floor (F3, O3, P1) for commander, yargs and burgee programs",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "@interlace/eslint-formatter",
       "short": "eslint-formatter",
       "version": "0.2.0",
@@ -18361,21 +18396,6 @@
           "kind": "feature",
           "title": "`RemoteMarkdown` accepts `tags`, forwarded to the underlying fetch as `next.tags`.",
           "pr": 628
-        }
-      ]
-    },
-    {
-      "package": "docs",
-      "short": "docs",
-      "version": "1.2.1",
-      "date": null,
-      "isApp": true,
-      "isPrivate": true,
-      "entries": [
-        {
-          "kind": "feature",
-          "title": "new plugin — the lint half of burgee's CLI floor (F3, O3, P1) for commander, yargs and burgee programs",
-          "pr": null
         }
       ]
     },
@@ -18640,26 +18660,6 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-secure-coding",
-      "short": "eslint-plugin-secure-coding",
-      "version": "5.4.13",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "detect-object-injection resolves the Object.create(null) exemption by scope",
-          "pr": null
-        },
-        {
-          "kind": "deps",
-          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.19.8`",
           "pr": null
         }
       ]
