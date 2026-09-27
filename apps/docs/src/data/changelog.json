@@ -1,7 +1,7 @@
 {
-  "releaseCount": 757,
+  "releaseCount": 759,
   "packageCount": 37,
-  "entryCount": 2218,
+  "entryCount": 2220,
   "oldestYear": 2024,
   "releases": [
     {
@@ -18540,6 +18540,21 @@
       ]
     },
     {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "5.6.9",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-unbounded-decompression` resolves zlib bindings through scope",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-postgresql-security",
       "short": "eslint-plugin-postgresql-security",
       "version": "1.4.9",
@@ -18660,6 +18675,21 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.4.14",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`detect-object-injection` reports destructuring and loop-head writes",
           "pr": null
         }
       ]
