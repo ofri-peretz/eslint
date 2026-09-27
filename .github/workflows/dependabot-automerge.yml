@@ -17,6 +17,12 @@ name: Dependabot Auto-merge
 # Arming is not merging. The PR still merges only when branch protection's
 # required checks go green.
 #
+# Eligibility is judged again on every push, and a PR can lose it. Dependabot
+# recreates a grouped PR when a new release lands, so a group armed as forty
+# minors can come back holding a major, and a person can push onto the
+# branch. A PR that no longer qualifies has its auto-merge turned OFF, so an
+# arm granted to an earlier diff cannot land a later one.
+#
 # Why `pull_request_target`: a `pull_request` run triggered by Dependabot gets
 # a read-only token, which cannot arm auto-merge. `pull_request_target` runs
 # the workflow from `main` with the base repo's token. That trigger is only
@@ -38,7 +44,7 @@ permissions:
 
 jobs:
   automerge:
-    name: Arm auto-merge (patch/minor, non-production)
+    name: Arm or disarm auto-merge (patch/minor, non-production)
     # The PR author, not `github.actor`: the actor is whoever triggered this
     # run, which is not always the PR's author. fetch-metadata separately
     # verifies that Dependabot authored the commits, so both have to hold.
@@ -95,3 +101,38 @@ jobs:
           set -euo pipefail
           gh pr merge --auto --squash "$PR_URL"
           echo "::notice title=Dependabot PR armed::$PR_URL merges once every required check is green."
+
+      # The ineligible branch. An earlier push may have armed this PR (see the
+      # header), and a push that made it ineligible must not leave that arm in
+      # place. Arming uses the credential chain above, which records the PAT's
+      # owner (a person, `is_bot: false`) as `enabledBy`, so a workflow arm and
+      # a hand arm look the same. Both were granted to an earlier diff, so
+      # both are withdrawn. A person can re-arm after reviewing the new
+      # contents.
+      #
+      # "Not enabled" is the common case and is not an error: the state is
+      # read first. A failed disable fails the step only if the PR is still
+      # armed afterwards, because a person or a concurrent run can turn it off
+      # in between. A failed READ fails the step (fail closed), and is never
+      # taken to mean "not enabled".
+      - name: Disarm auto-merge
+        if: steps.decide.outputs.eligible != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          set -euo pipefail
+          armed=$(gh pr view "$PR_URL" --json autoMergeRequest --jq '.autoMergeRequest != null')
+          if [ "$armed" != "true" ]; then
+            echo "Auto-merge is not enabled. This PR is not eligible, so it is left for a person." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if ! gh pr merge --disable-auto "$PR_URL"; then
+            armed=$(gh pr view "$PR_URL" --json autoMergeRequest --jq '.autoMergeRequest != null')
+            if [ "$armed" = "true" ]; then
+              echo "::error title=Auto-merge still enabled::Could not turn off auto-merge on $PR_URL, which is no longer eligible. Turn it off by hand."
+              exit 1
+            fi
+          fi
+          echo "::notice title=Dependabot PR disarmed::$PR_URL no longer moves only patch/minor, non-production updates. Auto-merge is off, and the PR needs a person."
