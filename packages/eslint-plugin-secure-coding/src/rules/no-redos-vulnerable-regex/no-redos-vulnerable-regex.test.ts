@@ -188,6 +188,7 @@ describe('no-redos-vulnerable-regex', () => {
       valid: [],
       invalid: [
         {
+          name: 'RegExp called without new on a nested quantifier',
           code: 'RegExp("(a+)+b");',
           errors: [{ messageId: 'redosVulnerable' }],
         },

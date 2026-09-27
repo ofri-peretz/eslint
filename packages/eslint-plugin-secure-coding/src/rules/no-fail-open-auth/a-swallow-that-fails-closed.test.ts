@@ -79,6 +79,7 @@ ruleTester.run(
       // Nothing branches on the variable before the privileged work — the
       // corpus case, restated so this file carries both sides.
       {
+        name: 'privileged work runs after a swallowed auth failure that nothing branches on',
         code: `async function handleAdminAction(req, res) {
          let actor = null;
          try { actor = await assertAdmin(req.headers.authorization); } catch (err) {}

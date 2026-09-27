@@ -96,6 +96,7 @@ describe('no-unsafe-regex-construction', () => {
         invalid: [
           // Pattern exceeds maxPatternLength
           {
+            name: 'a constructed pattern longer than maxPatternLength',
             code: `const regex = new RegExp("${'a'.repeat(150)}");`,
             options: [{ maxPatternLength: 100 }],
             errors: [{ messageId: 'unsafeRegexConstruction' }],

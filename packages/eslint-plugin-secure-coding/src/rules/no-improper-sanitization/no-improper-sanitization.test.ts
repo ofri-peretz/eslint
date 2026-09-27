@@ -163,6 +163,7 @@ describe('no-improper-sanitization', () => {
           // here as-is rather than silently accepted by a looser matcher — if it
           // is ever deduplicated, this test should fail and be updated.
           {
+            name: 'request input concatenated into HTML reports once per surrounding literal',
             code: `res.send('<div>' + req.query.name + '</div>');`,
             errors: [
               { messageId: 'unsafeReplaceSanitization' },

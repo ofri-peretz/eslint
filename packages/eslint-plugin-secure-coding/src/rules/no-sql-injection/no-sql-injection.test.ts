@@ -230,6 +230,7 @@ db.query('SELECT * FROM users WHERE id = ' + f);`,
       },
       // FN GUARD — a single non-leaving statement, without a block.
       {
+        name: 'an unbraced allowlist check that only logs does not guard the query',
         code: `const A = new Set(['a']);
      export const q = async (t) => {
        if (!A.has(t)) log('bad');

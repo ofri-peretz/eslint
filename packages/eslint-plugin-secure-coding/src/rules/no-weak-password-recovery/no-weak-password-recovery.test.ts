@@ -76,6 +76,7 @@ describe('no-weak-password-recovery', () => {
         },
         // forgotPassword token
         {
+          name: 'a Date.now() recovery token is predictable',
           code: 'const forgotPasswordToken = Date.now();',
           errors: [{ messageId: 'predictableRecoveryToken' }],
         },

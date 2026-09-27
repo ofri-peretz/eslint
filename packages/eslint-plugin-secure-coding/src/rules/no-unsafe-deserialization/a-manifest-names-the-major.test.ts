@@ -78,6 +78,7 @@ ruleTester.run(
     invalid: [
       // v3: `load` builds JS objects from `!!js/function` tags.
       {
+        name: 'js-yaml v3 load on request input is unsafe deserialization',
         code: LOAD,
         filename: join(v3, 'src', 'i18n.js'),
         errors: [{ messageId: 'unsafeYamlParsing' as const }],

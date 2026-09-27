@@ -137,6 +137,7 @@ describe('no-sensitive-data-exposure', () => {
         // silent: the logging path read Literal, `+` and Identifier arguments
         // only, so every `user.password` walked straight through.
         {
+          name: 'logging a user password',
           code: `console.log(user.password);`,
           errors: [{ messageId: 'sensitiveDataExposure' }],
         },

@@ -113,7 +113,7 @@ ruleTester.run('detect-weak-password-validation', detectWeakPasswordValidation, 
     },
     // Weak password requirements
     { name: 'a four-character minimum', code: "if (password.length >= 4) { accept() }", errors: [{ messageId: 'violationDetected' }] },
-    { code: "if (pwd.length >= 6) { proceed() }", errors: [{ messageId: 'violationDetected' }] },
+    { name: 'a six-character minimum is too weak a password length policy', code: "if (pwd.length >= 6) { proceed() }", errors: [{ messageId: 'violationDetected' }] },
     { code: "if (pass.length > 3) { ok() }", errors: [{ messageId: 'violationDetected' }] },
 
     /**

@@ -202,6 +202,7 @@ ruleTester.run('require-backend-authorization', requireBackendAuthorization, {
     // Optional chaining, which is how every React codebase written after 2020
     // reads a session that may not have loaded.
     {
+      name: 'a client component gating a dangerous action on an optional-chained role',
       code: "'use client'; export function render(user) { if (user?.role === 'admin') { openDangerZone(); } }",
       errors: [{ messageId: 'violationDetected' }],
     },

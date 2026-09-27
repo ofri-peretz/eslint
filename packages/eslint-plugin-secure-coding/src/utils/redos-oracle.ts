@@ -95,7 +95,7 @@ export function confirmsRedos(source: string, flags: string, timeoutMs = 1000): 
   const memo = decided.get(key);
   if (memo !== undefined) return memo;
 
-  let survives = true;
+  let survives: boolean;
   try {
     const result = recheck.checkSync(source, flags, { timeout: timeoutMs });
     survives = result.status !== 'safe';

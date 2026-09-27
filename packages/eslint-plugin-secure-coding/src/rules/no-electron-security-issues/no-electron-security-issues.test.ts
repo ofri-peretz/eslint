@@ -62,6 +62,7 @@ describe('no-electron-security-issues', () => {
           ],
         },
         {
+          name: 'a BrowserWindow with contextIsolation disabled',
           code: 'const win = new BrowserWindow({ contextIsolation: false });',
           errors: [
             {
