@@ -28,6 +28,7 @@ describe('fileIsLambda', () => {
       ['export async function handler(e) {}', 'ESM function declaration'],
       ['export function handler(e) {}', 'ESM sync function'],
       ['const main = async (e) => {};\nexport { main as handler };', 'renamed export'],
+      ['const main = async (e) => {};\nexport { main as "handler" };', 'ES2022 string export name'],
     ])('%s → true (%s)', (code) => {
       expect(isLambda(code)).toBe(true);
     });
@@ -36,6 +37,17 @@ describe('fileIsLambda', () => {
       ['export const handleRequest = async (e) => {};', 'a name merely containing "handle"'],
       ['export const handlers = [];', 'the plural is a different export'],
       ['const handler = async (e) => {};', 'a local, unexported handler'],
+      // burgee packages/burgee/src/yargs/command.ts:117 — this one line admitted
+      // the whole file, and all fourteen rules with it.
+      [
+        'export function add(cmd, handler) { handler = handler || (() => {}); }',
+        'reassigning a parameter named handler',
+      ],
+      [
+        'export class Cmd { constructor(h) { this.handler = h; } }',
+        'a handler property on this, not on exports',
+      ],
+      ['opts.handler = () => {};', 'a handler property on an arbitrary object'],
     ])('%s → false (%s)', (code) => {
       expect(isLambda(code)).toBe(false);
     });
