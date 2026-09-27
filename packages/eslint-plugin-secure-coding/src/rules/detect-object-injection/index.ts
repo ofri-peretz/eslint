@@ -64,6 +64,16 @@
  *    (theirs 58.8% — safe/16 is a ninth false positive for them). The
  *    two-step primitive `a[k1][k2] = 1` still reports, as do `{}` and
  *    parameter targets.
+ * 🔒 AMENDED 2026-09-27 — `[o[a][b]] = [v]` was silent while `o[a][b] = v`
+ *    reported. `isWriteTarget` climbed only through `MemberExpression.object`,
+ *    so a member inside a destructuring pattern or a for-of/for-in head was
+ *    classified as a READ and exempted. ECMA-262 runs PutValue on each; Node 24:
+ *    `(function (o,a,b,v) { [o[a][b]] = [v]; })({}, '__proto__', 'polluted', 1)`
+ *    leaves `({}).polluted === 1`. The walk now climbs Array/ObjectPattern,
+ *    a pattern Property VALUE, AssignmentPattern.left and RestElement, and
+ *    treats a loop head as a write. Pattern DEFAULTS and computed pattern KEYS
+ *    remain reads. SPEC.md N10; fixture vulnerable/15; duel 16/16, F1 100.0%
+ *    (theirs 61.1%); lock tests fail 6/6 with the change reverted.
  * ═══════════════════════════════════════════════════════════════════════════
  *
  * This rule's behaviour was derived from the SEMANTICS of the weakness, every
@@ -2953,6 +2963,34 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
           current = parent;
           parent = current.parent as TSESTree.Node | undefined;
           continue;
+        }
+        // A destructuring target is a write too: `[o[k]] = [v]`,
+        // `({ x: o[k] } = src)`, `[o[k] = d] = xs`, `[...o[k]] = xs` each run
+        // PutValue on `o[k]` exactly as `o[k] = v` does. Climb to the pattern
+        // root so the assignment check above sees it. A DEFAULT (`[x = o[k]]`)
+        // and a computed pattern KEY (`{ [o[k]]: x }`) are reads and stop here.
+        if (
+          parent.type === AST_NODE_TYPES.ArrayPattern ||
+          parent.type === AST_NODE_TYPES.ObjectPattern ||
+          (parent.type === AST_NODE_TYPES.RestElement &&
+            parent.argument === current) ||
+          (parent.type === AST_NODE_TYPES.AssignmentPattern &&
+            parent.left === current) ||
+          (parent.type === AST_NODE_TYPES.Property &&
+            parent.value === current &&
+            parent.parent.type === AST_NODE_TYPES.ObjectPattern)
+        ) {
+          current = parent;
+          parent = current.parent as TSESTree.Node | undefined;
+          continue;
+        }
+        // `for (o[k] of xs)` / `for (o[k] in src)` assign on every iteration.
+        if (
+          (parent.type === AST_NODE_TYPES.ForOfStatement ||
+            parent.type === AST_NODE_TYPES.ForInStatement) &&
+          parent.left === current
+        ) {
+          return true;
         }
         return false;
       }

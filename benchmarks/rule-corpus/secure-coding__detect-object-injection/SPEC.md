@@ -337,6 +337,37 @@ i) => { dst[i] = v })`, and `.map` / `.filter` / `.find` / `.findLast` /
 
   Surfaced by the burgee corpus: `packages/burgee/src/yargs/utils.ts:98-101`.
 
+- **N10** ~~a write through a DESTRUCTURING or LOOP-HEAD target~~ — **FIXED 2026-09-27.**
+  `isWriteTarget` climbed only through `MemberExpression.object`, so a member
+  sitting inside a pattern stopped the walk and was classified as a READ — and
+  reads are exempt by design. ECMA-262 runs PutValue on every one of these,
+  exactly as it does for `o[k] = v`:
+
+  | spelling                                 | before     | after   |
+  | ---------------------------------------- | ---------- | ------- |
+  | `o[a][b] = v`                            | reports    | reports |
+  | `[o[a][b]] = [v]`                        | **silent** | reports |
+  | `({ x: o[a][b] } = { x: v })`            | **silent** | reports |
+  | `[o[k] = d] = xs` / `[...o[k]] = xs`     | **silent** | reports |
+  | `for (o[k] of xs)` / `for (o[k] in src)` | **silent** | reports |
+
+  Measured in Node 24:
+  `(function (o, a, b, v) { [o[a][b]] = [v]; })({}, '__proto__', 'polluted', 1)`
+  leaves `({}).polluted === 1` — the A3 two-step traversal, GLOBAL.
+
+  Unchanged, and pinned: a pattern DEFAULT (`[x = o[k]] = xs`) and a computed
+  pattern KEY are reads; the numeric-index swap
+  `[xs[i], xs[j]] = [xs[j], xs[i]]` stays silent through the existing numeric
+  proof. Residual: `globalPrototypeWrite` still inspects only an
+  `AssignmentExpression` whose left side is a member, so a literal
+  `[o.__proto__.p] = [1]` draws the generic finding rather than the
+  CWE-1321 one — it is no longer silent, only mislabelled.
+
+  Fixture: `vulnerable/15-destructuring-path-write.js`; duel 16/16, F1 100.0%
+  (eslint-plugin-security 61.1%). Docs-grounded, no burgee anchor — surfaced by
+  the 2026-09-27 FP/FN sweep reading `isWriteTarget` against the doc's
+  "left- or right-hand assignment operand".
+
 - **N8** `OBJECT_INJECTION_PATTERNS` is matched with
   `new RegExp(p.pattern,'i').test(property)` over **printed source**, so
   `obj[myPrototypeVar]` substring-matches `prototype` — for the risk LABEL, not
