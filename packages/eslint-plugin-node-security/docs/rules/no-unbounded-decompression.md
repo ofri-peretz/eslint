@@ -41,7 +41,7 @@ Detects zlib's buffer-at-once decompressors (`gunzip`, `inflate`, `unzip`, `brot
 
 ## Rule Details
 
-The rule resolves the receiver to what it was **imported from**, not to what it is called — `const z = require('node:zlib')` is the same API, and a local helper named `gunzip` is not. It reports a call when there is no options object at all, or when the options literal carries no `maxOutputLength`.
+The rule resolves the receiver to what it was **imported from**, not to what it is called — `const z = require('node:zlib')`, `require('node:zlib').gunzipSync`, `import zlib = require('zlib')`, `await import('node:zlib')` and a decompressor destructured from any of them are the same API, while a local helper — or a parameter shadowing an imported name — called `gunzip` is not. It reports a call when there is no options object at all, or when the options literal carries no `maxOutputLength`.
 
 It stays quiet where it would be guessing:
 

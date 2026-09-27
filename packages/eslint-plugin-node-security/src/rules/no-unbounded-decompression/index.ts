@@ -29,9 +29,10 @@ import {
   createRule,
   formatLLMMessage,
   isTestFilePath,
-  memberPropertyName,
   MessageIcons,
   objectKeyName,
+  propertyName,
+  resolveModuleBinding,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unboundedDecompression';
@@ -117,64 +118,107 @@ export const noUnboundedDecompression = createRule<RuleOptions, MessageIds>({
 
     const isTestFile = allowInTests && isTestFilePath(context.filename);
 
-    /**
-     * Locals bound to the zlib namespace, and locals bound directly to one of
-     * its decompressors. Resolved from the import/require, not from the
-     * spelling of the variable — `const z = require('node:zlib')` is the same
-     * API, and a local helper named `gunzip` is not.
-     */
-    const namespaceBindings = new Set<string>();
-    const directBindings = new Map<string, string>();
-
-    /** Candidate calls, judged at `Program:exit` so binding order is moot. */
-    const pending: { node: TSESTree.CallExpression }[] = [];
-
-    function noteDirect(local: string, imported: string): void {
-      if (
-        ASYNC_DECOMPRESSORS.has(imported) ||
-        SYNC_DECOMPRESSORS.has(imported)
-      ) {
-        directBindings.set(local, imported);
-      }
+    function isZlibSpecifier(node: TSESTree.Node | undefined): boolean {
+      return (
+        node?.type === AST_NODE_TYPES.Literal &&
+        typeof node.value === 'string' &&
+        ZLIB_MODULE.test(node.value)
+      );
     }
 
-    /** `require('zlib')` / `require('node:zlib')`. */
-    function requiredModule(init: TSESTree.Expression): string | null {
+    /**
+     * The two bindings devkit's `resolveModuleBinding` does not follow:
+     * `import zlib = require('zlib')` (TS) and `await import('node:zlib')`.
+     * Returns the export path under zlib the identifier denotes, or `null`.
+     * Resolved through scope, so a parameter that shadows the name is not it.
+     */
+    function extraZlibPath(
+      identifier: TSESTree.Identifier,
+      scope: TSESLint.Scope.Scope,
+    ): string[] | null {
+      let variable: TSESLint.Scope.Variable | undefined;
+      for (let s: TSESLint.Scope.Scope | null = scope; s; s = s.upper) {
+        variable = s.set.get(identifier.name);
+        if (variable) break;
+      }
+      const def = variable?.defs[0];
+      if (!variable || !def) return null;
+
       if (
-        init.type === AST_NODE_TYPES.CallExpression &&
-        init.callee.type === AST_NODE_TYPES.Identifier &&
-        init.callee.name === 'require' &&
-        init.arguments[0]?.type === AST_NODE_TYPES.Literal &&
-        typeof init.arguments[0].value === 'string'
+        def.node.type === AST_NODE_TYPES.TSImportEqualsDeclaration &&
+        def.node.moduleReference.type ===
+          AST_NODE_TYPES.TSExternalModuleReference
       ) {
-        return init.arguments[0].value;
+        return isZlibSpecifier(def.node.moduleReference.expression) ? [] : null;
+      }
+
+      if (def.node.type !== AST_NODE_TYPES.VariableDeclarator) return null;
+      const init = def.node.init;
+      if (
+        init?.type !== AST_NODE_TYPES.AwaitExpression ||
+        init.argument.type !== AST_NODE_TYPES.ImportExpression ||
+        !isZlibSpecifier(init.argument.source)
+      ) {
+        return null;
+      }
+      // A reassigned binding may hold something else by the time it is used.
+      if (variable.references.filter((ref) => ref.isWrite()).length !== 1) {
+        return null;
+      }
+      const id = def.node.id;
+      if (id.type === AST_NODE_TYPES.Identifier) return [];
+      if (id.type !== AST_NODE_TYPES.ObjectPattern) return null;
+      for (const property of id.properties) {
+        // Abstain on a rest element, a runtime-decided key (`objectKeyName`
+        // is null for `{ [k]: g }`) and a nested pattern.
+        if (property.type !== AST_NODE_TYPES.Property) continue;
+        const key = objectKeyName(property);
+        if (
+          key !== null &&
+          property.value.type === AST_NODE_TYPES.Identifier &&
+          property.value.name === identifier.name
+        ) {
+          return [key];
+        }
+      }
+      return null;
+    }
+
+    /**
+     * Resolve a callee to the zlib export path it names, from what it was
+     * imported from, not from its spelling — `const z = require('node:zlib')`
+     * is the same API, and a local helper (or parameter) named `gunzip` is not.
+     */
+    function zlibPath(
+      callee: TSESTree.Expression,
+      scope: TSESLint.Scope.Scope,
+    ): string[] | null {
+      const binding = resolveModuleBinding(callee, scope);
+      if (binding !== undefined) {
+        return binding.module === 'zlib' ? binding.path : null;
+      }
+      if (callee.type === AST_NODE_TYPES.Identifier) {
+        return extraZlibPath(callee, scope);
+      }
+      if (
+        callee.type === AST_NODE_TYPES.MemberExpression &&
+        callee.object.type === AST_NODE_TYPES.Identifier
+      ) {
+        const name = propertyName(callee);
+        const base = extraZlibPath(callee.object, scope);
+        return name !== null && base !== null ? [...base, name] : null;
       }
       return null;
     }
 
     /** Resolve a call to the zlib decompressor it invokes, or `null`. */
     function decompressorName(node: TSESTree.CallExpression): string | null {
-      const callee = node.callee;
-
-      // `zlib['unzipSync'](body)` inflates the same unbounded input. Resolved
-      // once, before the guard, so the guard tests the binding the body reads.
-      const name = memberPropertyName(callee);
-      if (
-        callee.type === AST_NODE_TYPES.MemberExpression &&
-        callee.object.type === AST_NODE_TYPES.Identifier &&
-        name !== null &&
-        namespaceBindings.has(callee.object.name)
-      ) {
-        return ASYNC_DECOMPRESSORS.has(name) || SYNC_DECOMPRESSORS.has(name)
-          ? name
-          : null;
-      }
-
-      if (callee.type === AST_NODE_TYPES.Identifier) {
-        return directBindings.get(callee.name) ?? null;
-      }
-
-      return null;
+      const path = zlibPath(node.callee, context.sourceCode.getScope(node));
+      if (path === null || path.length !== 1) return null;
+      const [name] = path;
+      return ASYNC_DECOMPRESSORS.has(name) || SYNC_DECOMPRESSORS.has(name)
+        ? name
+        : null;
     }
 
     /**
@@ -250,51 +294,9 @@ export const noUnboundedDecompression = createRule<RuleOptions, MessageIds>({
     }
 
     return {
-      ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        if (!ZLIB_MODULE.test(node.source.value)) return;
-        for (const specifier of node.specifiers) {
-          if (specifier.type === AST_NODE_TYPES.ImportSpecifier) {
-            // `import { "gunzip" as gz }` is legal ES2022 and binds the same
-            // export as `import { gunzip as gz }`.
-            const imported =
-              specifier.imported.type === AST_NODE_TYPES.Identifier
-                ? specifier.imported.name
-                : specifier.imported.value;
-            noteDirect(specifier.local.name, imported);
-            continue;
-          }
-          namespaceBindings.add(specifier.local.name);
-        }
-      },
-
-      VariableDeclarator(node: TSESTree.VariableDeclarator) {
-        if (!node.init) return;
-        const source = requiredModule(node.init);
-        if (source === null || !ZLIB_MODULE.test(source)) return;
-
-        if (node.id.type === AST_NODE_TYPES.Identifier) {
-          namespaceBindings.add(node.id.name);
-          return;
-        }
-        if (node.id.type !== AST_NODE_TYPES.ObjectPattern) return;
-        for (const property of node.id.properties) {
-          if (property.type !== AST_NODE_TYPES.Property) continue;
-          if (
-            property.key.type === AST_NODE_TYPES.Identifier &&
-            property.value.type === AST_NODE_TYPES.Identifier
-          ) {
-            noteDirect(property.value.name, property.key.name);
-          }
-        }
-      },
-
       CallExpression(node: TSESTree.CallExpression) {
         if (isTestFile) return;
-        pending.push({ node });
-      },
-
-      'Program:exit'() {
-        for (const { node } of pending) judge(node);
+        judge(node);
       },
     };
   },

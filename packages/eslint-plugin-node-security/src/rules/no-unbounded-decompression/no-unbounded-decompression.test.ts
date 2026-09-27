@@ -82,6 +82,64 @@ describe('no-unbounded-decompression', () => {
         options: [{ allowInTests: true }],
         filename: 'inflate.test.ts',
       },
+      // fp/fn sweep 2026-09-27: docs-grounded, no burgee anchor (nearest: packages/compat-oracle/src/registry.ts:20)
+      {
+        name: 'a parameter shadowing an imported gunzipSync is not zlib',
+        code: `import { gunzipSync } from 'node:zlib'; export function f(gunzipSync: (b: Buffer) => Buffer, body: Buffer) { return gunzipSync(body); }`,
+      },
+      // fp/fn sweep 2026-09-27: docs-grounded, no burgee anchor (nearest: packages/compat-oracle/src/registry.ts:20)
+      {
+        name: 'capped inline require member call stays silent',
+        code: `export function f(body) { return require('node:zlib').gunzipSync(body, { maxOutputLength: 1e6 }); }`,
+      },
+      // fp/fn sweep 2026-09-27: docs-grounded, no burgee anchor (nearest: packages/compat-oracle/src/registry.ts:20)
+      {
+        name: 'capped call through a destructured dynamic import stays silent',
+        code: `export async function f(body) { const { gunzipSync } = await import('node:zlib'); return gunzipSync(body, { maxOutputLength: 1e6 }); }`,
+      },
+      // fp/fn sweep 2026-09-27: docs-grounded, no burgee anchor (nearest: packages/compat-oracle/src/registry.ts:20)
+      {
+        name: 'capped call through a dynamic-import namespace stays silent',
+        code: `export async function f(body) { const zlib = await import('node:zlib'); return zlib.gunzipSync(body, { maxOutputLength: 1e6 }); }`,
+      },
+      // fp/fn sweep 2026-09-27: docs-grounded, no burgee anchor (nearest: packages/compat-oracle/src/registry.ts:20)
+      {
+        name: 'capped call through a TS import-equals binding stays silent',
+        code: `import zlib = require('zlib'); export function f(body) { return zlib.gunzipSync(body, { maxOutputLength: 1e6 }); }`,
+      },
+      // fp/fn sweep 2026-09-27: docs-grounded, no burgee anchor (nearest: packages/compat-oracle/src/registry.ts:20)
+      {
+        name: 'capped call through a namespace destructured later stays silent',
+        code: `import * as zlib from 'node:zlib'; const { gunzipSync } = zlib; export function f(body) { return gunzipSync(body, { maxOutputLength: 1e6 }); }`,
+      },
+      // fp/fn sweep 2026-09-27: docs-grounded, no burgee anchor (nearest: packages/compat-oracle/src/registry.ts:20)
+      {
+        name: 'a dynamic import of another module is not zlib',
+        code: `export async function f(body) { const { gunzipSync } = await import('./local'); return gunzipSync(body); }`,
+      },
+      // fp/fn sweep 2026-09-27: docs-grounded, no burgee anchor (nearest: packages/compat-oracle/src/registry.ts:20)
+      {
+        name: 'a TS import-equals of another module is not zlib',
+        code: `import zlib = require('./zlib-shim'); export function f(body) { return zlib.gunzipSync(body); }`,
+      },
+      // fp/fn sweep 2026-09-27: the dynamic-import fallback abstains rather
+      // than guess, matching devkit's own destructuring abstentions.
+      {
+        name: 'a dynamic-import binding reassigned before use is not trusted as zlib',
+        code: `export async function f(body, other) { let zlib = await import('node:zlib'); zlib = other; return zlib.gunzipSync(body); }`,
+      },
+      {
+        name: 'a rest element destructured from a dynamic import is not resolved',
+        code: `export async function f(body) { const { ...rest } = await import('node:zlib'); return rest.gunzipSync(body); }`,
+      },
+      {
+        name: 'a computed key destructured from a dynamic import is not resolved',
+        code: `export async function f(body, k) { const { [k]: g } = await import('node:zlib'); return g(body); }`,
+      },
+      {
+        name: 'an array pattern over a dynamic import is not resolved',
+        code: `export async function f(body) { const [z] = await import('node:zlib'); return z.gunzipSync(body); }`,
+      },
     ],
     invalid: [
       // LOCK: benchmarks/corpus/CWE-409/vulnerable/gunzip-no-limit.js
@@ -142,8 +200,8 @@ describe('no-unbounded-decompression', () => {
         code: `${REQUIRE}zlib.gunzipSync(body, { [key]: 4096 });`,
         errors: [{ messageId: 'unboundedDecompression' }],
       },
-      // The binding is declared AFTER the call site in source order — the
-      // judgement runs at Program:exit precisely so this still resolves.
+      // The binding is declared AFTER the call site in source order — scope
+      // resolution sees the whole module, so this still resolves.
       {
         code: `function f(body) { return zlib.gunzipSync(body); }\n${REQUIRE}`,
         errors: [{ messageId: 'unboundedDecompression' }],
@@ -153,6 +211,41 @@ describe('no-unbounded-decompression', () => {
         code: `${REQUIRE}zlib.gunzip(body, cb);`,
         options: [{ allowInTests: true }],
         filename: 'inflate.ts',
+        errors: [{ messageId: 'unboundedDecompression' }],
+      },
+      // fp/fn sweep 2026-09-27: docs-grounded, no burgee anchor (nearest: packages/compat-oracle/src/registry.ts:20)
+      {
+        name: "an inline require('node:zlib') member call is the same API",
+        code: `export function f(body) { return require('node:zlib').gunzipSync(body); }`,
+        errors: [{ messageId: 'unboundedDecompression' }],
+      },
+      // fp/fn sweep 2026-09-27: docs-grounded, no burgee anchor (nearest: packages/compat-oracle/src/registry.ts:20)
+      {
+        name: "a decompressor destructured from await import('node:zlib') is the same API",
+        code: `export async function f(body) { const { gunzipSync } = await import('node:zlib'); return gunzipSync(body); }`,
+        errors: [{ messageId: 'unboundedDecompression' }],
+      },
+      {
+        name: 'the decompressor is found past nested and unrelated destructured siblings',
+        code: `export async function f(body) { const { constants: { Z_OK }, gzipSync, ['gunzipSync']: gunzipSync } = await import('node:zlib'); return gunzipSync(body); }`,
+        errors: [{ messageId: 'unboundedDecompression' }],
+      },
+      // fp/fn sweep 2026-09-27: docs-grounded, no burgee anchor (nearest: packages/compat-oracle/src/registry.ts:20)
+      {
+        name: "a namespace bound from await import('node:zlib') is the same API",
+        code: `export async function f(body) { const zlib = await import('node:zlib'); return zlib.gunzipSync(body); }`,
+        errors: [{ messageId: 'unboundedDecompression' }],
+      },
+      // fp/fn sweep 2026-09-27: docs-grounded, no burgee anchor (nearest: packages/compat-oracle/src/registry.ts:20)
+      {
+        name: "a TS import-equals require('zlib') binding is the same API",
+        code: `import zlib = require('zlib'); export function f(body) { return zlib.gunzipSync(body); }`,
+        errors: [{ messageId: 'unboundedDecompression' }],
+      },
+      // fp/fn sweep 2026-09-27: docs-grounded, no burgee anchor (nearest: packages/compat-oracle/src/registry.ts:20)
+      {
+        name: 'a decompressor destructured from a zlib namespace import is the same API',
+        code: `import * as zlib from 'node:zlib'; const { gunzipSync } = zlib; export function f(body) { return gunzipSync(body); }`,
         errors: [{ messageId: 'unboundedDecompression' }],
       },
     ],
