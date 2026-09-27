@@ -61,6 +61,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { readFlag, scopedUpdate } from './lib/prover-args.js';
+import { createTextFileExclusive, openTextFile } from './lib/text-file.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
@@ -134,8 +135,14 @@ for (const lock of locks()) {
   let verdict: (typeof results)[number] = { rel: lock.rel, status: 'proven' };
 
   for (const proof of lock.proofs) {
-    const target = path.join(ROOT, proof.file);
-    if (proof.file === '' || !fs.existsSync(target)) {
+    // One descriptor for the read, the break and the restore: the file that is
+    // put back is the file that was read, even if the path moves meanwhile.
+    const subject =
+      proof.file === ''
+        ? null
+        : openTextFile(path.join(ROOT, proof.file), 'edit');
+    const original = subject?.text ?? null;
+    if (subject === null || original === null) {
       verdict = {
         rel: lock.rel,
         status: 'broken',
@@ -143,9 +150,9 @@ for (const lock of locks()) {
       };
       break;
     }
-    const original = fs.readFileSync(target, 'utf8');
     const hits = original.split(proof.find).length - 1;
     if (hits !== 1) {
+      subject.close();
       verdict = {
         rel: lock.rel,
         status: 'broken',
@@ -154,14 +161,15 @@ for (const lock of locks()) {
       break;
     }
 
-    fs.writeFileSync(target, original.replace(proof.find, proof.replace));
     let stillPassing: boolean;
     try {
+      subject.replace(original.replace(proof.find, proof.replace));
       stillPassing = lockPasses(lock.rel);
     } finally {
       // ALWAYS put the file back, including on Ctrl-C mid-run — a prover that
       // leaves the tree mutated is worse than no prover.
-      fs.writeFileSync(target, original);
+      subject.replace(original);
+      subject.close();
     }
 
     if (stillPassing) {
@@ -211,9 +219,28 @@ for (const b of broken) {
  * makes a NEW lock arrive with a proof without demanding all 61 at once.
  */
 type Baseline = { command: string; note: string; unproven: string[] };
-const previous: Baseline = fs.existsSync(BASELINE)
-  ? (JSON.parse(fs.readFileSync(BASELINE, 'utf8')) as Baseline)
-  : { command: '', note: '', unproven: [] };
+// Opened once, read now and — under --update — rewritten below through the
+// same descriptor, so the baseline that is compared is the one that is replaced.
+const baselineFile = openTextFile(BASELINE, UPDATE ? 'edit' : 'read');
+const previous: Baseline =
+  baselineFile.text === null
+    ? { command: '', note: '', unproven: [] }
+    : (JSON.parse(baselineFile.text) as Baseline);
+
+/** Rewrite the baseline that was read, or create it if there was none. */
+function writeBaseline(text: string): void {
+  if (baselineFile.text !== null) {
+    baselineFile.replace(text);
+    baselineFile.close();
+    return;
+  }
+  fs.mkdirSync(path.dirname(BASELINE), { recursive: true });
+  if (!createTextFileExclusive(BASELINE, text)) {
+    throw new Error(
+      `${path.relative(ROOT, BASELINE)} appeared while prove-locks ran; re-run.`,
+    );
+  }
+}
 
 const now = unproven.map((u) => u.rel).sort();
 const known = new Set(previous.unproven ?? []);
@@ -233,9 +260,7 @@ if (UPDATE && added.length > 0) {
   );
   process.exit(1);
 } else if (UPDATE) {
-  fs.mkdirSync(path.dirname(BASELINE), { recursive: true });
-  fs.writeFileSync(
-    BASELINE,
+  writeBaseline(
     `${JSON.stringify(
       {
         command: 'npx tsx scripts/prove-locks.mts --update',

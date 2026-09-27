@@ -111,6 +111,7 @@ describe('no-insecure-comparison', () => {
       valid: [],
       invalid: [
         {
+          name: 'loose equality reports and suggests strict equality',
           code: 'if (x == y) {}',
           errors: [
             {

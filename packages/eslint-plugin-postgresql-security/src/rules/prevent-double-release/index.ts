@@ -446,7 +446,7 @@ export const preventDoubleRelease: TSESLint.RuleModule<
               );
               // A checkout inside the same loop means each iteration owns its
               // own client, which is correct.
-              if (loop === undefined || loop === null) continue;
+              if (loop === null) continue;
               if (loop.range[0] <= def.node.range[0] && def.node.range[1] <= loop.range[1]) {
                 continue;
               }

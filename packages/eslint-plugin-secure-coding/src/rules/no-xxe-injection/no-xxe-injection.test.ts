@@ -234,6 +234,7 @@ describe('no-xxe-injection', () => {
           errors: [{ messageId: 'externalEntityEnabled' }],
         },
         {
+          name: 'libxmljs with noent: true resolves external entities',
           code: 'libxmljs.parseXmlString(xml, { noent: true });',
           errors: [{ messageId: 'externalEntityEnabled' }],
         },

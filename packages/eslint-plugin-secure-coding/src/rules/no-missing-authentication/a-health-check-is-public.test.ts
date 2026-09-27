@@ -50,6 +50,7 @@ ruleTester.run(
       // a probe still reports. Without this the file would pass just as well if
       // the rule had stopped looking at routes altogether.
       {
+        name: 'a non-probe admin route with no auth middleware still reports',
         code: `router.get('/admin/accounts', (req, res) => { res.json(listUsers()); });`,
         errors: [{ messageId: 'missingAuthentication' }],
       },

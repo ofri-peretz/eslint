@@ -38,6 +38,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createTextFileExclusive, openTextFile } from './lib/text-file.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CORPUS = path.join(ROOT, 'benchmarks/rule-corpus');
@@ -415,9 +416,11 @@ for (const dir of dirs) {
   const ruleId = dir.replace('__', '/');
   const [prefix, ruleName] = ruleId.split('/');
   const sealFile = path.join(CORPUS, dir, 'SEAL.json');
-  const existing: Partial<Seal> = fs.existsSync(sealFile)
-    ? (JSON.parse(fs.readFileSync(sealFile, 'utf8')) as Seal)
-    : {};
+  // Opened once: the seal whose fields are preserved below is the seal that is
+  // rewritten at the end of this iteration, even if the path moves meanwhile.
+  const sealHandle = openTextFile(sealFile, 'edit');
+  const existing: Partial<Seal> =
+    sealHandle.text === null ? {} : (JSON.parse(sealHandle.text) as Seal);
   const keep = (axis: string): Axis | undefined => existing.axes?.[axis];
 
   process.stdout.write(`  ${ruleId} … `);
@@ -639,7 +642,13 @@ for (const dir of dirs) {
     axes,
     knownGaps: existing.knownGaps ?? [],
   };
-  fs.writeFileSync(sealFile, `${JSON.stringify(seal, null, 2)}\n`);
+  const sealText = `${JSON.stringify(seal, null, 2)}\n`;
+  if (sealHandle.text !== null) {
+    sealHandle.replace(sealText);
+    sealHandle.close();
+  } else if (!createTextFileExclusive(sealFile, sealText)) {
+    throw new Error(`${path.relative(ROOT, sealFile)} appeared while the audit ran; re-run.`);
+  }
   const unmet = Object.entries(axes).filter(([, a]) => a.state === 'unmet').map(([k]) => k);
   console.log(`${seal.status}${unmet.length ? ` — unmet: ${unmet.join(', ')}` : ''}`);
 }

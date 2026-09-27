@@ -78,6 +78,7 @@ describe('no-graphql-injection', () => {
             ],
           },
           {
+            name: 'a hardcoded __type introspection query',
             code: 'const introspectionQuery = `query { __type(name: "User") { name fields { name } } }`;',
             errors: [
               {

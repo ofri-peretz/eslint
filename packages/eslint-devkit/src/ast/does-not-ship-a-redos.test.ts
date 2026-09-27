@@ -24,11 +24,19 @@ import { describe, expect, it } from 'vitest';
 
 const source = readFileSync(fileURLToPath(new URL('./user-regex.ts', import.meta.url)), 'utf8');
 
+/**
+ * A regex literal: `/body/flags`. Each alternative owns its first character
+ * (`\`, `[`, anything else), so the extractor cannot itself backtrack
+ * exponentially on a `[]`- or `\`-heavy line — the first version could, and
+ * CodeQL `js/redos` flagged it.
+ */
+const REGEX_LITERAL = /\/((?:\\.|\[(?:\\.|[^\]\\])*\]|[^/\\[])+)\/([gimsuy]*)/;
+
 /** Every regex literal that is run against a user-supplied pattern string. */
 const probes = source
   .split('\n')
   .filter((line) => line.includes('.test(pattern)'))
-  .map((line) => /\/((?:\\.|\[(?:\\.|[^\]])*\]|[^/\\])+)\/([gimsuy]*)/.exec(line))
+  .map((line) => REGEX_LITERAL.exec(line))
   .filter((match): match is RegExpExecArray => match !== null)
   .map((match) => ({ source: match[1], flags: match[2] }));
 
@@ -36,6 +44,12 @@ describe('user-regex probes', () => {
   it('finds the probes it means to check', () => {
     // Without this the suite passes vacuously if the extraction ever breaks.
     expect(probes.length).toBe(3);
+  });
+
+  it('the probe extractor is not itself an exponential ReDoS', () => {
+    const verdict = checkSync(REGEX_LITERAL.source, REGEX_LITERAL.flags);
+    expect(verdict.status).not.toBe('unknown');
+    expect(verdict.complexity?.type).not.toBe('exponential');
   });
 
   it.each(probes)('/$source/ is not vulnerable to backtracking', ({ source: pattern, flags }) => {

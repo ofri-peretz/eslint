@@ -61,6 +61,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { signatureOf } from './case-signature.ts';
+import { createTextFileExclusive, openTextFile } from './lib/text-file.ts';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CACHE = path.join(ROOT, 'benchmarks/.real-source-cache');
@@ -89,9 +90,13 @@ type Case = {
 };
 type Ledger = { rule: string; cases: Case[] };
 
-const ledger: Ledger = fs.existsSync(ledgerFile)
-  ? (JSON.parse(fs.readFileSync(ledgerFile, 'utf8')) as Ledger)
-  : { rule: ruleId, cases: [] };
+// Opened once and, under --update, rewritten through the same descriptor: the
+// ledger the findings are compared against is the ledger that gets appended to.
+const ledgerHandle = openTextFile(ledgerFile, update ? 'edit' : 'read');
+const ledger: Ledger =
+  ledgerHandle.text === null
+    ? { rule: ruleId, cases: [] }
+    : (JSON.parse(ledgerHandle.text) as Ledger);
 const bySignature = new Map(ledger.cases.map((c) => [c.signature, c]));
 
 /**
@@ -259,8 +264,16 @@ if (buckets.fresh.length > 25) console.log(`  … and ${buckets.fresh.length - 2
 
 if (update) {
   ledger.cases.push(...buckets.fresh);
-  fs.mkdirSync(path.dirname(ledgerFile), { recursive: true });
-  fs.writeFileSync(ledgerFile, `${JSON.stringify({ rule: ruleId, cases: ledger.cases }, null, 2)}\n`);
+  const ledgerText = `${JSON.stringify({ rule: ruleId, cases: ledger.cases }, null, 2)}\n`;
+  if (ledgerHandle.text !== null) {
+    ledgerHandle.replace(ledgerText);
+    ledgerHandle.close();
+  } else {
+    fs.mkdirSync(path.dirname(ledgerFile), { recursive: true });
+    if (!createTextFileExclusive(ledgerFile, ledgerText)) {
+      throw new Error(`${path.relative(ROOT, ledgerFile)} appeared while the ledger ran; re-run.`);
+    }
+  }
   console.log(`\n  filed ${buckets.fresh.length} new case(s) as unreviewed → ${path.relative(ROOT, ledgerFile)}`);
 }
 

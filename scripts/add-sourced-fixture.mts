@@ -43,6 +43,7 @@ import { parse } from '@typescript-eslint/typescript-estree';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createTextFileExclusive } from './lib/text-file.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
@@ -188,8 +189,11 @@ const dir = path.join(
 );
 fs.mkdirSync(dir, { recursive: true });
 const out = path.join(dir, `${slug}.js`);
-if (fs.existsSync(out)) die(`${path.relative(ROOT, out)} already exists`);
-fs.writeFileSync(out, `${header}${snippet}\n`);
+// Exclusive create: "already exists?" and "create" are one atomic step, so a
+// fixture that appears concurrently is refused rather than overwritten.
+if (!createTextFileExclusive(out, `${header}${snippet}\n`)) {
+  die(`${path.relative(ROOT, out)} already exists`);
+}
 
 console.log(
   `\n  ✅ ${path.relative(ROOT, out)}` +

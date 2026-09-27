@@ -40,7 +40,7 @@ ruleTester.run('no-pii-in-logs', noPiiInLogs, {
 
   invalid: [
     { name: 'an email address written to the log', code: "console.log(user.email)", errors: [{ messageId: 'violationDetected' }] },
-    { code: "console.log('email:', value)", errors: [{ messageId: 'violationDetected' }] },
+    { name: 'logging a value under an email label', code: "console.log('email:', value)", errors: [{ messageId: 'violationDetected' }] },
     { code: "console.log(data.ssn)", errors: [{ messageId: 'violationDetected' }] }
   ],
 });

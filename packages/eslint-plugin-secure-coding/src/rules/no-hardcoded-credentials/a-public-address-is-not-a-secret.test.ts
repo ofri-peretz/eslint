@@ -49,6 +49,7 @@ ruleTester.run(
       // 64 hex — an EVM private key. The positive control for the length guard:
       // if this ever goes quiet the exemption has been widened to `{40,}`.
       {
+        name: 'a 64-hex EVM private key is a secret, not a public address',
         code: `const privateKey = '0x4c0883a69102937d6231471b5dbb6204fe5129617082792ae468d01a3f362318';`,
         errors: 1,
       },

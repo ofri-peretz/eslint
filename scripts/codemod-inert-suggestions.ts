@@ -33,6 +33,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import url from 'node:url';
+import { openTextFile } from './lib/text-file.js';
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 const PACKAGES = path.resolve(__dirname, '..', 'packages');
@@ -67,8 +68,8 @@ function suggestBlocks(src: string): { start: number; end: number; body: string 
 const INERT_FIX = /\bfix\s*:\s*(?:\([^)]*\)|\w+)\s*=>\s*(?:null|undefined|\[\s*\])/g;
 const ANY_FIX = /\bfix\s*:/g;
 
-function processRule(file: string): { changed: boolean; removedIds: string[] } {
-  const original = fs.readFileSync(file, 'utf8');
+/** Pure: the rewritten source, or the same string when nothing is inert. */
+function processRule(original: string): { next: string; removedIds: string[] } {
   let src = original;
   const removedIds: string[] = [];
 
@@ -95,7 +96,7 @@ function processRule(file: string): { changed: boolean; removedIds: string[] } {
     src = src.slice(0, start) + src.slice(end);
   }
 
-  if (removedIds.length === 0) return { changed: false, removedIds: [] };
+  if (removedIds.length === 0) return { next: original, removedIds: [] };
 
   // Drop messageIds no longer reachable, and their union-type members.
   const stillUsed = (id: string): boolean =>
@@ -128,9 +129,8 @@ function processRule(file: string): { changed: boolean; removedIds: string[] } {
     src = src.replace(/^\s*hasSuggestions\s*:\s*true,\s*$\n?/m, '');
   }
 
-  if (src === original) return { changed: false, removedIds: [] };
-  fs.writeFileSync(file, src);
-  return { changed: true, removedIds: orphaned };
+  if (src === original) return { next: original, removedIds: [] };
+  return { next: src, removedIds: orphaned };
 }
 
 function main(): void {
@@ -143,12 +143,15 @@ function main(): void {
     const rulesDir = path.join(PACKAGES, plugin, 'src', 'rules');
     if (!fs.existsSync(rulesDir)) continue;
     for (const rule of fs.readdirSync(rulesDir)) {
-      const file = path.join(rulesDir, rule, 'index.ts');
-      if (!fs.existsSync(file)) continue;
-      const before = fs.readFileSync(file, 'utf8');
-      const result = processRule(file);
-      if (!apply) fs.writeFileSync(file, before);
-      if (result.changed) {
+      // A dry run never writes. --apply rewrites through the descriptor it
+      // read from, so the rule that was analysed is the rule that is changed.
+      const handle = openTextFile(path.join(rulesDir, rule, 'index.ts'), apply ? 'edit' : 'read');
+      if (handle.text === null) continue;
+      const result = processRule(handle.text);
+      const changed = result.next !== handle.text;
+      if (apply && changed) handle.replace(result.next);
+      handle.close();
+      if (changed) {
         touched++;
         report.push(`  ${plugin.replace('eslint-plugin-', '')}/${rule}  −${result.removedIds.length} messageId(s)`);
       }

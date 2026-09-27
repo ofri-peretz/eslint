@@ -50,7 +50,7 @@ describe('no-bidi-characters', () => {
         errors: 3,
       },
       // A right-to-left override inside a string literal.
-      { code: `const label = '${RLO}admin';`, errors: 1 },
+      { name: 'a right-to-left override inside a string literal', code: `const label = '${RLO}admin';`, errors: 1 },
       // ...and inside a comment, which an AST-only rule would never see.
       { code: `// begin admins only ${RLO}\nconst x = 1;`, errors: 1 },
       // Directional marks are dangerous by default.

@@ -102,6 +102,7 @@ describe('no-directive-injection', () => {
           errors: [{ messageId: 'unsafeSanitizerConfig' }],
         },
         {
+          name: 'a DOMPurify allowlist that admits iframe is an unsafe sanitizer config',
           code: `DOMPurify.sanitize(html, { ALLOWED_TAGS: ['b', 'iframe'] });`,
           errors: [{ messageId: 'unsafeSanitizerConfig' }],
         },

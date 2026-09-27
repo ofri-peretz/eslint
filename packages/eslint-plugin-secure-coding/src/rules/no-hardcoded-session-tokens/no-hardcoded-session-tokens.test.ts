@@ -52,6 +52,7 @@ ruleTester.run('no-hardcoded-session-tokens', noHardcodedSessionTokens, {
     },
     // Bearer tokens
     {
+      name: 'a Bearer JWT hardcoded in a string literal',
       code: "const auth = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9'",
       errors: [{ messageId: 'violationDetected' }],
     },

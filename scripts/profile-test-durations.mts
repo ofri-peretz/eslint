@@ -27,6 +27,7 @@
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { openTextFile } from './lib/text-file.js';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 /** Mirrors ci-test-shard.mts: the daily codecov job sets this, PR runs do not. */
@@ -104,11 +105,12 @@ for (const p of pkgs) {
   console.log(`  ${String(durations[p.name]).padStart(4)}s  ${p.name}`);
 }
 
-const existing = fs.existsSync(OUT)
-  ? JSON.parse(fs.readFileSync(OUT, 'utf8'))
-  : {};
-fs.writeFileSync(
-  OUT,
+// Read and rewritten through one descriptor: the profile that is merged into
+// is the profile that is replaced.
+fs.mkdirSync(path.dirname(OUT), { recursive: true });
+const profile = openTextFile(OUT, 'upsert');
+const existing = profile.text === null ? {} : JSON.parse(profile.text);
+profile.replace(
   JSON.stringify(
     {
       // Recorded so a stale profile is visible rather than silently trusted.
@@ -138,6 +140,7 @@ fs.writeFileSync(
     2,
   ) + '\n',
 );
+profile.close();
 console.log(
   `\nwrote ${path.relative(ROOT, OUT)} (${Object.keys(durations).length} measured)`,
 );

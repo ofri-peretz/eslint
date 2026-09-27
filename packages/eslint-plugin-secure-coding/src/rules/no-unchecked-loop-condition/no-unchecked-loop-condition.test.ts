@@ -85,6 +85,7 @@ describe('no-unchecked-loop-condition', () => {
           ],
         },
         {
+          name: 'while (true) with no break is an unbounded loop',
           code: 'while (true) { /* no break */ }',
           options: [{ allowWhileTrueWithBreak: false }],
           errors: [

@@ -57,6 +57,7 @@ describe('no-template-injection', () => {
         errors: [{ messageId: 'templateInjection', data: { engine: 'Handlebars', method: 'compile' } }],
       },
       {
+        name: 'a request body rendered as an EJS template',
         code: 'ejs.render(req.body.template, data)',
         errors: [{ messageId: 'templateInjection', data: { engine: 'ejs', method: 'render' } }],
       },

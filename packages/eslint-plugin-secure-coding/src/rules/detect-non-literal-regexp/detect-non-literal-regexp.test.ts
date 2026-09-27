@@ -59,6 +59,7 @@ describe('detect-non-literal-regexp', () => {
           errors: [{ messageId: 'runtimeDecidedPattern' }],
         },
         {
+          name: 'RegExp called without new on a runtime pattern compiles an attacker-chosen regex',
           code: 'const regex = RegExp(userPattern);',
           errors: [{ messageId: 'runtimeDecidedPattern' }],
         },

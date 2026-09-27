@@ -49,6 +49,7 @@ ruleTester.run(
     invalid: [
       // A named attribute predicate is XPath and still reports.
       {
+        name: 'a named attribute predicate built from input is XPath and still reports',
         code: `const xpath = require('xpath'); const q = "//user[@name='" + name + "']"; xpath.select(q, doc);`,
         errors: 1,
       },

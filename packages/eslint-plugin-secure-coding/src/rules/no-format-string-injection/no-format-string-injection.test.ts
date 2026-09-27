@@ -100,6 +100,7 @@ describe('no-format-string-injection', () => {
           ],
         },
         {
+          name: 'a request query value used as the sprintf format string',
           code: 'sprintf(req.query.format, data);',
           errors: [
             {

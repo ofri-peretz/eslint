@@ -103,6 +103,7 @@ describe('no-privilege-escalation', () => {
             ],
           },
           {
+            name: 'a permission assigned straight from the request query',
             code: 'user.permission = req.query.permission;',
             errors: [
               {

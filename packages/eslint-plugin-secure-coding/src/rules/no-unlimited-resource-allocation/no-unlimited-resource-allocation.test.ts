@@ -217,6 +217,7 @@ describe('no-unlimited-resource-allocation', () => {
           ],
         },
         {
+          name: 'a Buffer sized from the request query',
           code: 'const buffer = new Buffer(req.query.size);',
           errors: [
             {

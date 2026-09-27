@@ -775,6 +775,7 @@ const inputType = \`(\${intentKey})\`;`,
       // Every load spelling opens the gate, through the shared devkit probe:
       // `require`, dynamic `import()`, `import =`, and Deno's `npm:` prefix.
       {
+        name: 'a require() of ldapts opens the LDAP gate',
         code: "const ldap = require('ldapts');\nconst filter = `(uid=${req.query.uid})`;",
         errors: [{ messageId: 'unsafeLdapFilter' }],
       },

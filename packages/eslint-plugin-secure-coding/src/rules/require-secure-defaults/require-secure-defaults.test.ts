@@ -196,6 +196,7 @@ ruleTester.run('require-secure-defaults', requireSecureDefaults, {
       errors: [{ messageId: 'violationDetected' }],
     },
     {
+      name: 'a cookie set with httpOnly: false',
       code: "res.cookie('sid', id, { secure: true, httpOnly: false, sameSite: 'none' });",
       errors: [{ messageId: 'violationDetected' }],
     },
