@@ -5,6 +5,18 @@ All notable changes to `eslint-plugin-secure-coding` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.4.14
+
+### Patch Changes
+
+- **🐛 Fix** — `detect-object-injection` reports destructuring and loop-head writes
+
+  `[o[a][b]] = [v]`, `({ x: o[k] } = src)`, `[...o[k]] = xs` and `for (o[k] of xs)`
+  were classified as reads and exempted, although each performs the same write as
+  `o[a][b] = v` — and the two-step form pollutes `Object.prototype` (verified in
+  Node 24). Pattern defaults and computed pattern keys are still treated as reads,
+  and numeric-index swaps stay silent.
+
 ## 5.4.13
 
 ### Patch Changes

@@ -5,6 +5,18 @@ All notable changes to `eslint-plugin-node-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 5.6.9
+
+### Patch Changes
+
+- **🐛 Fix** — `no-unbounded-decompression` resolves zlib bindings through scope
+
+  The rule now reports uncapped decompression reached through an inline
+  `require('node:zlib').gunzipSync(...)`, `await import('node:zlib')` (namespace or
+  destructured), a TypeScript `import zlib = require('zlib')`, and a decompressor
+  destructured from a zlib namespace import. It no longer reports a function
+  parameter that shadows an imported `gunzipSync`.
+
 ## 5.6.8
 
 ### Patch Changes
