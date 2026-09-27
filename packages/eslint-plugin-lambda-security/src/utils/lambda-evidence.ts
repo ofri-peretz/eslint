@@ -115,25 +115,42 @@ function isAwsDynamicLoad(
   );
 }
 
-/** Whether a member/identifier chain ends in `handler`. */
-function namesHandler(node: TSESTree.Node): boolean {
-  if (node.type === AST_NODE_TYPES.Identifier) return node.name === 'handler';
-  if (node.type === AST_NODE_TYPES.MemberExpression) {
-    return (
-      propertyName(node) === 'handler'
-    );
-  }
-  return false;
+/** Whether an export name — `handler` or ES2022's `"handler"` — is `handler`. */
+function namesHandler(
+  node: TSESTree.Identifier | TSESTree.StringLiteral,
+): boolean {
+  return (
+    (node.type === AST_NODE_TYPES.Identifier ? node.name : node.value) ===
+    'handler'
+  );
+}
+
+/** `exports` or `module.exports` — the only objects a CommonJS export is set on. */
+function isExportsObject(node: TSESTree.Node): boolean {
+  if (node.type === AST_NODE_TYPES.Identifier) return node.name === 'exports';
+  return (
+    node.type === AST_NODE_TYPES.MemberExpression &&
+    node.object.type === AST_NODE_TYPES.Identifier &&
+    node.object.name === 'module' &&
+    propertyName(node) === 'exports'
+  );
 }
 
 /**
  * `exports.handler = …`, `module.exports.handler = …`, `export const handler`,
  * `export async function handler`, `export { x as handler }`.
+ *
+ * The assignment arm needs the `exports` receiver. `handler = handler || noop`
+ * reassigning a parameter, or `this.handler = h`, is a local binding that
+ * happens to be named `handler` — no more an export than
+ * `const handler = …`.
  */
 function declaresHandler(node: TSESTree.Node): boolean {
   if (
     node.type === AST_NODE_TYPES.AssignmentExpression &&
-    namesHandler(node.left)
+    node.left.type === AST_NODE_TYPES.MemberExpression &&
+    isExportsObject(node.left.object) &&
+    propertyName(node.left) === 'handler'
   ) {
     return true;
   }

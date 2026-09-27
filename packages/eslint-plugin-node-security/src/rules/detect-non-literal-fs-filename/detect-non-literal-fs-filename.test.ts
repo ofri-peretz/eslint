@@ -362,9 +362,21 @@ describe('detect-non-literal-fs-filename', () => {
       valid: [
         'const p = process.argv[2];\nif (ALLOWED.includes(p)) { fs.readFile(p); }',
         'const p = process.argv[2];\nif (/^[a-z]+$/.test(p)) { fs.readFile(p); }',
-        "const p = process.env.OUT;\nif (p.startsWith('/safe')) { fs.readFile(p); }",
+        // A request value used whole DOES report (arbitrary file read), so only
+        // the guard can silence this. `process.env` here would be silent with
+        // or without the guard, and test nothing.
+        {
+          name: 'separator-anchored startsWith guard silences a whole request value',
+          code: "const p = req.query.f;\nif (p.startsWith('/safe/')) { fs.readFile(p); }",
+        },
       ],
       invalid: [
+        // CONTROL for the case above: `'/safebad'.startsWith('/safe')` is true.
+        {
+          name: 'unanchored startsWith guard does not silence a whole request value',
+          code: "const p = req.query.f;\nif (p.startsWith('/safe')) { fs.readFile(p); }",
+          errors: [{ messageId: 'fsPathTraversal' }],
+        },
         // The same taint without the guard, COMPOSED into a path: `p` extends
         // a base directory the code chose, which is what traversal means.
         {
