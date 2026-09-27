@@ -225,6 +225,9 @@ if (CHECK) {
     BASELINE,
     `${JSON.stringify(
       {
+        // The artefacts lock requires every machine artefact to name the
+        // command that regenerates it; writing without it broke that lock.
+        command: 'npm run audit:spellings -- --update',
         note: 'Sites that read one spelling of a construct the grammar spells two ways. Shrink-only: a NEW one fails the gate. See CASE_PHILOSOPHY.md and benchmarks/SPELLING_MISSES.md.',
         sites: current,
       },
