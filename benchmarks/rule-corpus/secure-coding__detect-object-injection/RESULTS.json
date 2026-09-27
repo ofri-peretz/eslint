@@ -1,12 +1,12 @@
 {
   "rule": "secure-coding/detect-object-injection",
   "generatedBy": "benchmarks/suites/ilb-rule-duel/run.mjs",
-  "fixtures": 31,
-  "vulnerable": 15,
+  "fixtures": 32,
+  "vulnerable": 16,
   "results": [
     {
       "name": "Interlace secure-coding/detect-object-injection",
-      "tp": 15,
+      "tp": 16,
       "fp": 0,
       "fn": 0,
       "tn": 16,
@@ -21,15 +21,15 @@
     },
     {
       "name": "eslint-plugin-security [detect-object-injection]",
-      "tp": 10,
+      "tp": 11,
       "fp": 9,
       "fn": 5,
       "tn": 7,
-      "precision": 0.5263157894736842,
-      "recall": 0.6666666666666666,
+      "precision": 0.55,
+      "recall": 0.6875,
       "specificity": 0.4375,
-      "youdenJ": 0.10416666666666652,
-      "f1": 0.5882352941176471,
+      "youdenJ": 0.125,
+      "f1": 0.6111111111111112,
       "crashes": [],
       "missed": [
         "vulnerable/01-express-settings-write.js",

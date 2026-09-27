@@ -2112,3 +2112,62 @@ export function f(req: any) { const k = req.query.k; flags.bools[k] = 1; }`,
     ],
   });
 });
+
+// fp/fn sweep 2026-09-27 — docs-grounded, no burgee anchor (burgee has no
+// destructuring or for-of target that writes through a computed member).
+// A destructuring target, a for-of/for-in head and a rest element are WRITES:
+// ECMA-262 performs PutValue on each, exactly as `o[k] = v` does. Executed in
+// Node v24: `(function (o, a, b, v) { [o[a][b]] = [v]; })({}, '__proto__', 'polluted', 1)`
+// leaves `({}).polluted === 1`. `isWriteTarget` stopped climbing at the pattern
+// node, so every one of these was treated as a READ and exempted.
+describe('pattern and loop-head targets are writes', () => {
+  ruleTester.run('destructuring write targets', detectObjectInjection, {
+    valid: [
+      {
+        name: 'a numeric-index swap through a destructuring assignment stays silent',
+        code: `function swap(xs) { for (let i = 0; i < xs.length - 1; i++) { [xs[i], xs[i + 1]] = [xs[i + 1], xs[i]]; } }`,
+      },
+      {
+        name: 'a computed member used as a destructuring DEFAULT is a read, not a target',
+        code: `function f(o, k, arr) { const [x = o[k]] = arr; return x; }`,
+      },
+    ],
+    invalid: [
+      {
+        name: 'the plain two-step write reports (control)',
+        code: `export function setPath(o, a, b, v) { o[a][b] = v; }`,
+        errors: 1,
+      },
+      {
+        name: 'a two-step write through an array-destructuring target reports',
+        code: `export function setPath(o, a, b, v) { [o[a][b]] = [v]; }`,
+        errors: 1,
+      },
+      {
+        name: 'a two-step write through an object-destructuring target reports',
+        code: `export function setPath(o, a, b, v) { ({ x: o[a][b] } = { x: v }); }`,
+        errors: 1,
+      },
+      {
+        name: 'a single computed write through an array-destructuring target reports',
+        code: `export function set(o, k, v) { [o[k]] = [v]; }`,
+        errors: 1,
+      },
+      {
+        name: 'a destructuring target with a default value is still a write',
+        code: `export function set(o, k, arr) { [o[k] = 1] = arr; }`,
+        errors: 1,
+      },
+      {
+        name: 'a rest-element target is a write',
+        code: `export function set(o, k, arr) { [...o[k]] = arr; }`,
+        errors: 1,
+      },
+      {
+        name: 'a for-of head writes the member on every iteration',
+        code: `export function set(o, k, arr) { for (o[k] of arr) {} }`,
+        errors: 1,
+      },
+    ],
+  });
+});
