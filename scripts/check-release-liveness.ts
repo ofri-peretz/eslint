@@ -277,9 +277,47 @@ function npmLatestVersion(name: string): string {
   }).trim();
 }
 
+/**
+ * Is `release.yml` actively running right now?
+ *
+ * The retry budget above rides out npm registry replication lag -- seconds.
+ * It cannot ride out `release.yml` itself, which builds, runs a 3-way ESLint
+ * integrity matrix, and fans out one publish job per package: over an hour
+ * end to end once GitHub Actions is queuing runners. Measured on #1159/#1162:
+ * the version-bump push landed at 03:40Z; `eslint-plugin-secure-coding`'s
+ * publish step did not start until 04:52Z. `--skip-publish-lag` already
+ * covers the `workflow_run` trigger, which fires FROM the push that starts a
+ * release and so knows to stay out of the way. `schedule` has no such
+ * relationship to any particular push -- it can land anywhere inside a
+ * release that is still going -- so it asks directly instead of guessing from
+ * timing.
+ *
+ * Memoized: every ahead package in one run shares a single answer, and a
+ * release, if one is running, is running for all of them together.
+ *
+ * Read-only (`gh run list`). A query failure returns false -- fails toward
+ * reporting the stall rather than silently excusing one, the same posture as
+ * the rest of this file.
+ */
+let releaseInFlightAnswer: boolean | undefined;
+function releaseInFlight(): boolean {
+  if (releaseInFlightAnswer !== undefined) return releaseInFlightAnswer;
+  try {
+    const count = gh([
+      'run', 'list', '--repo', REPO, '--workflow', 'release.yml',
+      '--json', 'status', '--jq', '[.[] | select(.status != "completed")] | length',
+    ]);
+    releaseInFlightAnswer = count !== '0';
+  } catch {
+    releaseInFlightAnswer = false;
+  }
+  return releaseInFlightAnswer;
+}
+
 let neverPublished = 0;
 let compared = 0;
 let lagResolved = 0;
+let inFlightSkipped = 0;
 for (const m of SKIP_PUBLISH_LAG ? [] : manifests) {
   const pkg = JSON.parse(fs.readFileSync(m, 'utf8')) as {
     name?: string;
@@ -337,14 +375,22 @@ for (const m of SKIP_PUBLISH_LAG ? [] : manifests) {
     }
     if (ordering <= 0) lagResolved++;
   }
-  if (ordering > 0)
-    findings.push({
-      kind: 'unpublished-bump',
-      detail:
-        `${pkg.name} is ${pkg.version} on main but ${latest} on npm. ` +
-        'A version bump landed and the publish did not follow.',
-    });
-  else if (ordering < 0)
+  if (ordering > 0) {
+    // A release for this exact push can still be running -- see
+    // `releaseInFlight()`. That is the ordinary shape of a release in
+    // progress, not a stall, and reporting it is the cry-wolf failure this
+    // file exists to avoid.
+    if (releaseInFlight()) {
+      inFlightSkipped++;
+    } else {
+      findings.push({
+        kind: 'unpublished-bump',
+        detail:
+          `${pkg.name} is ${pkg.version} on main but ${latest} on npm. ` +
+          'A version bump landed and the publish did not follow.',
+      });
+    }
+  } else if (ordering < 0)
     findings.push({
       kind: 'registry-ahead',
       detail:
@@ -364,6 +410,9 @@ checked.push(
       : '') +
     (lagResolved > 0
       ? `; ${lagResolved} looked ahead of npm and caught up on retry (registry propagation lag)`
+      : '') +
+    (inFlightSkipped > 0
+      ? `; ${inFlightSkipped} looked ahead of npm but release.yml is currently running (not a stall)`
       : ''),
 );
 

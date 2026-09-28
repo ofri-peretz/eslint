@@ -68,6 +68,7 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
+      actions: read # list in-flight release.yml runs
       pull-requests: read # list the Version Packages PR
       issues: write # the failure channel
     steps:
