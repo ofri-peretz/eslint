@@ -1,7 +1,7 @@
 {
-  "releaseCount": 761,
+  "releaseCount": 763,
   "packageCount": 37,
-  "entryCount": 2223,
+  "entryCount": 2225,
   "oldestYear": 2024,
   "releases": [
     {
@@ -18465,6 +18465,21 @@
       ]
     },
     {
+      "package": "docs",
+      "short": "docs",
+      "version": "1.2.2",
+      "date": null,
+      "isApp": true,
+      "isPrivate": true,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "make the docs site lintable under ESLint 10, and fix the errors it had been hiding",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-cli-floor",
       "short": "eslint-plugin-cli-floor",
       "version": "0.1.0",
@@ -18725,6 +18740,21 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
+      "version": "5.4.16",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`detect-object-injection` no longer throws under oxlint on an untyped `forEach` receiver",
           "pr": null
         }
       ]
