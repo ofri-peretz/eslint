@@ -54,7 +54,10 @@ describe('detect-object-injection', () => {
           code: 'function f(arr, n) { for (let loopVar; loopVar < n; loopVar++) { arr[loopVar]; } }',
         },
 
-        { code: 'const x = arr[obj.method()];' },
+        {
+          name: 'a method-call key that is only read cannot pollute',
+          code: 'const x = arr[obj.method()];',
+        },
         {
           // `let` means the binding can be reassigned, so the object read at
           // this point is not provably the literal declared above it. The

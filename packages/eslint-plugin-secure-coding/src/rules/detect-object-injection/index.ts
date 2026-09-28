@@ -2392,10 +2392,16 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // definition kind — an import, a function or class name, a catch
       // binding — states nothing this file can read.
       if (def.type !== 'Parameter') return false;
+      /*
+       * `!= null`, not `!== undefined`. An absent annotation is `undefined` in
+       * typescript-estree and `null` in oxc's ESTree, which is the AST oxlint
+       * hands a JS plugin. The strict check let `null` through to
+       * `annotation.typeAnnotation`, and under oxlint every untyped
+       * `bag.forEach((v, k) => { dst[k] = v; })` threw — which aborts the
+       * whole file, so every other rule's finding on it vanished too (#1147).
+       */
       const annotation = def.name.typeAnnotation;
-      return (
-        annotation !== undefined && isArrayTypeNode(annotation.typeAnnotation)
-      );
+      return annotation != null && isArrayTypeNode(annotation.typeAnnotation);
     };
 
     /** `T[]`, `readonly T[]`, `[A, B]`, `Array<T>`, `ReadonlyArray<T>`. */
@@ -2405,7 +2411,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       if (type.type === AST_NODE_TYPES.TSTypeOperator) {
         return (
           type.operator === 'readonly' &&
-          type.typeAnnotation !== undefined &&
+          type.typeAnnotation != null &&
           isArrayTypeNode(type.typeAnnotation)
         );
       }
