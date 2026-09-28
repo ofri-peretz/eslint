@@ -291,6 +291,8 @@ export const noBarrelFile = createRule<RuleOptions, MessageIds>({
     const exportAllDeclarations: TSESTree.ExportAllDeclaration[] = [];
     const namedReexports: TSESTree.ExportNamedDeclaration[] = [];
     const localExports: TSESTree.Node[] = [];
+    // Sourceless `export { … }` clauses, classified once every import is known.
+    const sourcelessClauses: TSESTree.ExportNamedDeclaration[] = [];
 
     // Local name -> module it was imported from, for resolving a sourceless
     // `export { … }` clause back to the edges it actually forwards.
@@ -332,20 +334,9 @@ export const noBarrelFile = createRule<RuleOptions, MessageIds>({
           // every node with a `source`, and `isLocalExport` took every sourceless
           // node with a `declaration`. This case used to fall through both and be
           // dropped, which could make a real barrel look export-free.
-          const { reexportSources, hasLocalExport } = splitSpecifierClause(
-            node,
-            importSourceByLocalName,
-            typeOnlyImportNames,
-          );
-          for (const source of reexportSources) {
-            indirectReexportSources.add(source);
-          }
-          if (reexportSources.length > 0) {
-            namedReexports.push(node);
-          }
-          if (hasLocalExport) {
-            localExports.push(node);
-          }
+          // Resolved at Program:exit: imports are hoisted, so the import binding
+          // a clause's name may come after the clause.
+          sourcelessClauses.push(node);
         }
       },
 
@@ -356,6 +347,23 @@ export const noBarrelFile = createRule<RuleOptions, MessageIds>({
       },
 
       'Program:exit'(node: TSESTree.Program) {
+        for (const clause of sourcelessClauses) {
+          const { reexportSources, hasLocalExport } = splitSpecifierClause(
+            clause,
+            importSourceByLocalName,
+            typeOnlyImportNames,
+          );
+          for (const source of reexportSources) {
+            indirectReexportSources.add(source);
+          }
+          if (reexportSources.length > 0) {
+            namedReexports.push(clause);
+          }
+          if (hasLocalExport) {
+            localExports.push(clause);
+          }
+        }
+
         const totalReexports =
           exportAllDeclarations.length + namedReexports.length;
         const totalExports = totalReexports + localExports.length;

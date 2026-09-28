@@ -371,6 +371,33 @@ ruleTester.run('no-barrel-file', noBarrelFile, {
       errors: [{ messageId: 'barrelFileDetected' }],
     },
 
+    // ❌ Imports are hoisted, so a clause may precede the import that binds its
+    // names. Clauses used to be classified as they were visited, before the
+    // later import was recorded (review on #1158).
+    {
+      name: 'a clause before the type-only import it forwards does not demote a pure barrel',
+      code: `
+        export * from './a';
+        export * from './b';
+        export * from './c';
+        export { T };
+        import type { T } from './t';
+      `,
+      filename: '/project/src/type-forward-hoisted/index.ts',
+      errors: [{ messageId: 'barrelFileDetected' }],
+    },
+    {
+      name: 'a clause before the value imports it forwards is still a barrel',
+      code: `
+        export { a, b, c };
+        import { a } from './a';
+        import { b } from './b';
+        import { c } from './c';
+      `,
+      filename: '/project/src/value-forward-hoisted/index.ts',
+      errors: [{ messageId: 'barrelFileDetected' }],
+    },
+
     // ❌ High re-export ratio triggers suggestion (mixed barrel)
     {
       code: `
