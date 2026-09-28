@@ -1,7 +1,7 @@
 {
-  "releaseCount": 765,
+  "releaseCount": 766,
   "packageCount": 37,
-  "entryCount": 2228,
+  "entryCount": 2229,
   "oldestYear": 2024,
   "releases": [
     {
@@ -18665,6 +18665,21 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-modernization",
+      "short": "eslint-plugin-modernization",
+      "version": "3.1.9",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`prefer-at` no longer autofixes an optional access or a destructuring target.",
           "pr": null
         }
       ]
