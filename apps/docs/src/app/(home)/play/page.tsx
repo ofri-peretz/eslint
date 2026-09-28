@@ -61,10 +61,10 @@ export default async function PlaygroundPage({
             Each of the {PLAYGROUND_SNIPPETS.length} examples corresponds to one
             of our flagship rules. The findings list shows what our rule emits
             when run against the snippet on the left — captured directly from
-            the rule's test corpus, not invented for marketing. The "Read the
-            rule" link takes you to the canonical docs page where you can read
-            the detection logic, CWE / OWASP mapping, and configuration
-            options.
+            the rule&rsquo;s test corpus, not invented for marketing. The
+            &ldquo;Read the rule&rdquo; link takes you to the canonical docs
+            page where you can read the detection logic, CWE / OWASP mapping,
+            and configuration options.
           </p>
         </div>
       </Section>
