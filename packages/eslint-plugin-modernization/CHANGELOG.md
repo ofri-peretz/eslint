@@ -5,6 +5,18 @@ All notable changes to `eslint-plugin-modernization` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.1.9
+
+### Patch Changes
+
+- **🐛 Fix** — `prefer-at` no longer autofixes an optional access or a destructuring target.
+
+  `a?.[a.length - 1]` was rewritten to `a.at(-1)`, which throws a `TypeError`
+  where the original yielded `undefined` on a nullish `a`; it is now reported
+  without a fix. `[...xs[xs.length - 1]] = a`, `[xs[xs.length - 1] = 0] = a` and
+  `({ k: xs[xs.length - 1] } = o)` were rewritten to invalid assignment targets;
+  these write positions are no longer reported, like the other write targets.
+
 ## 3.1.8
 
 ### Patch Changes
