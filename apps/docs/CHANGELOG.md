@@ -5,6 +5,14 @@ All notable changes to `docs` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 1.2.2
+
+### Patch Changes
+
+- **🐛 Fix** — make the docs site lintable under ESLint 10, and fix the errors it had been hiding
+
+  `npm run lint` crashed in `docs#lint` before reporting anything (`scopeManager.addGlobals is not a function`), so no lint rule had run on the docs site since ESLint 10 landed. Once lint runs again it reports four real errors, now fixed: raw `'`/`"` characters in the playground's "About the examples" copy (`react/no-unescaped-entities`), and a `Date.now()` call during render in the scorecard's "last run" age chip (`react-hooks/purity`). The chip now measures against the static build time, which is what the page already rendered, since `/scorecard` is `force-static`. Nothing changes for visitors.
+
 ## 1.2.1
 
 ### Patch Changes
