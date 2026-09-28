@@ -5,6 +5,19 @@ All notable changes to `eslint-plugin-import-next` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 2.8.13
+
+### Patch Changes
+
+- **🐛 Fix** — `no-barrel-file` no longer counts a forwarded type-only import as a local export
+
+  `import type { T } from './t'; export { T };` is erased before any bundler runs, like
+  `export type { T }`, but the name was missing from the import map and was counted as a
+  local export. That demoted a pure barrel to the mixed path: it reported
+  `considerDirectExports` instead of `barrelFileDetected`, and nothing at all under
+  `allowWithLocalExports: true`. Names bound by `import type` or `import { type X }` are
+  now skipped in a sourceless export clause, as type-marked specifiers already were.
+
 ## 2.8.12
 
 ### Patch Changes
