@@ -29,16 +29,25 @@ type RuleOptions = [Options?];
  * it — `arr.at(-1) = 5` is a syntax error, and so are the compound, update and
  * delete forms.
  *
- * Only the shapes with a test behind them are listed. An earlier draft also
- * enumerated ObjectPattern, AssignmentPattern, Property and RestElement, and
- * the 100% branch gate rejected it: every one was unreachable here, because a
- * computed member expression in those positions is reached through
- * `AssignmentExpression.left` or `ArrayPattern` instead. Guessing at parent
- * types is how a guard grows branches nobody can trigger.
+ * Only the shapes with a test behind them are listed. An earlier draft claimed
+ * RestElement, AssignmentPattern and Property were unreachable, reasoning that
+ * a destructuring target is always reached through `ArrayPattern`. It is not:
+ * `[...xs[i]] = a`, `[xs[i] = 0] = a` and `({ k: xs[i] } = o)` put the member
+ * expression directly under those nodes, and the fix produced an invalid
+ * assignment target for each.
  */
 function isWriteTarget(node: TSESTree.MemberExpression): boolean {
   const parent = node.parent as TSESTree.Node;
   switch (parent.type) {
+    case 'RestElement':
+      return true;
+    case 'AssignmentPattern':
+      // Typed `left: BindingName`, but a destructuring assignment puts a
+      // member expression there too — so test the side that is a read.
+      return parent.right !== node;
+    case 'Property':
+      // `{ k: xs[i] }` is a read in an object literal, a write in a pattern.
+      return parent.value === node && parent.parent.type === 'ObjectPattern';
     case 'AssignmentExpression':
       return parent.left === node;
     case 'UpdateExpression':
@@ -229,7 +238,9 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
 
           // Reported, not rewritten, where the element is called or tagged —
           // see isCalleeOrTag(). Same shape as the variable-offset branch.
-          if (isCalleeOrTag(node)) {
+          // Nor on an optional access: `a?.[a.length - 1]` is undefined when
+          // `a` is nullish, where `a.at(-1)` throws.
+          if (node.optional || isCalleeOrTag(node)) {
             context.report({ node, messageId });
             return;
           }

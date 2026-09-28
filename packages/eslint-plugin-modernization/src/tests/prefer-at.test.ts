@@ -293,4 +293,81 @@ describe('prefer-at', () => {
       ],
     });
   });
+
+  // `a?.[i]` yields undefined when `a` is nullish; `a.at(-1)` throws a
+  // TypeError there. The optional access is reported, never rewritten.
+  describe('optional element access', () => {
+    ruleTester.run('prefer-at optional access', preferAt, {
+      valid: [],
+      invalid: [
+        {
+          name: 'an optional element access is reported, not rewritten',
+          code: 'const x = a?.[a.length - 1];',
+          output: null,
+          errors: [{ messageId: 'useAtForLastElement' }],
+        },
+        {
+          name: 'an optional element access on a dotted receiver is reported, not rewritten',
+          code: 'const x = o.list?.[o.list.length - 1];',
+          output: null,
+          errors: [{ messageId: 'useAtForLastElement' }],
+        },
+        {
+          name: 'a non-optional access inside an optional chain is still rewritten',
+          code: 'const x = o?.list[o.list.length - 1];',
+          output: 'const x = o?.list.at(-1);',
+          errors: [{ messageId: 'useAtForLastElement' }],
+        },
+      ],
+    });
+  });
+
+  // A destructuring target is written, not read, and `.at()` is not a valid
+  // assignment target in any of these positions.
+  describe('destructuring targets', () => {
+    ruleTester.run('prefer-at destructuring targets', preferAt, {
+      valid: [
+        {
+          name: 'an array-rest target is not reported',
+          code: '[...xs[xs.length - 1]] = [1];',
+        },
+        {
+          name: 'an array element target with a default is not reported',
+          code: '[xs[xs.length - 1] = 0] = [];',
+        },
+        {
+          name: 'an object property target is not reported',
+          code: '({ a: xs[xs.length - 1] } = o);',
+        },
+        {
+          name: 'an object property target with a default is not reported',
+          code: '({ a: xs[xs.length - 1] = 0 } = o);',
+        },
+        {
+          name: 'an object-rest target is not reported',
+          code: '({ ...xs[xs.length - 1] } = o);',
+        },
+      ],
+      invalid: [
+        {
+          name: 'a default value inside a pattern is a read and is rewritten',
+          code: '[a = xs[xs.length - 1]] = [];',
+          output: '[a = xs.at(-1)] = [];',
+          errors: [{ messageId: 'useAtForLastElement' }],
+        },
+        {
+          name: 'a property value in an object literal is a read and is rewritten',
+          code: 'const o = { a: xs[xs.length - 1] };',
+          output: 'const o = { a: xs.at(-1) };',
+          errors: [{ messageId: 'useAtForLastElement' }],
+        },
+        {
+          name: 'a computed key inside an object pattern is a read and is rewritten',
+          code: '({ [xs[xs.length - 1]]: v } = o);',
+          output: '({ [xs.at(-1)]: v } = o);',
+          errors: [{ messageId: 'useAtForLastElement' }],
+        },
+      ],
+    });
+  });
 });
