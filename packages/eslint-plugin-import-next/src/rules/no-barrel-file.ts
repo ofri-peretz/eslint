@@ -118,6 +118,7 @@ function isReexport(node: TSESTree.Node): boolean {
 function splitSpecifierClause(
   node: TSESTree.ExportNamedDeclaration,
   importSourceByLocalName: ReadonlyMap<string, string>,
+  typeOnlyImportNames: ReadonlySet<string>,
 ): { reexportSources: string[]; hasLocalExport: boolean } {
   const reexportSources: string[] = [];
   let hasLocalExport = false;
@@ -130,6 +131,11 @@ function splitSpecifierClause(
     // (`export { "a" as b }`) is only legal with a `from` clause, and this
     // function is only called when `source === null`.
     const localName = (specifier.local as TSESTree.Identifier).name;
+    // Bound by `import type` / `import { type X }`: erased like a type-marked
+    // specifier, so it is neither a re-export nor a local export.
+    if (typeOnlyImportNames.has(localName)) {
+      continue;
+    }
     const source = importSourceByLocalName.get(localName);
     if (source === undefined) {
       hasLocalExport = true;
@@ -289,17 +295,20 @@ export const noBarrelFile = createRule<RuleOptions, MessageIds>({
     // Local name -> module it was imported from, for resolving a sourceless
     // `export { … }` clause back to the edges it actually forwards.
     const importSourceByLocalName = new Map<string, string>();
+    // Local names bound by a type-only import; erased, so skipped in clauses.
+    const typeOnlyImportNames = new Set<string>();
     // Sources forwarded indirectly (imported, then exported by specifier).
     const indirectReexportSources = new Set<string>();
 
     return {
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        if (node.importKind === 'type') return;
         for (const specifier of node.specifiers) {
           if (
-            specifier.type === AST_NODE_TYPES.ImportSpecifier &&
-            specifier.importKind === 'type'
+            node.importKind === 'type' ||
+            (specifier.type === AST_NODE_TYPES.ImportSpecifier &&
+              specifier.importKind === 'type')
           ) {
+            typeOnlyImportNames.add(specifier.local.name);
             continue;
           }
           importSourceByLocalName.set(
@@ -326,6 +335,7 @@ export const noBarrelFile = createRule<RuleOptions, MessageIds>({
           const { reexportSources, hasLocalExport } = splitSpecifierClause(
             node,
             importSourceByLocalName,
+            typeOnlyImportNames,
           );
           for (const source of reexportSources) {
             indirectReexportSources.add(source);
