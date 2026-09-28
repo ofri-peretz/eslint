@@ -223,6 +223,51 @@ describe('registry propagation lag is retried before it becomes a finding', () =
 });
 
 /**
+ * Lock for #1162: a `schedule` run asked npm about
+ * `eslint-plugin-secure-coding` at 04:17Z, npm still answered 5.4.15, and the
+ * check filed "Release pipeline is stalled" -- against a `release.yml` run
+ * from the very same push whose publish step for that exact package did not
+ * start until 04:52Z. The 2-retry/15s budget rides out npm's own replication
+ * lag (seconds); it was never going to ride out a still-running release
+ * pipeline (over an hour, end to end, once Actions is queuing runners). npm
+ * had 5.4.16 within the hour -- this was never a stall.
+ */
+describe('a release still running is not reported as a stall', () => {
+  it('does not flag a package ahead of npm while release.yml has an in-progress run', () => {
+    write('packages/x/package.json', '{"name":"eslint-plugin-x","version":"1.1.0"}');
+    git('add', '-A');
+    git('commit', '-q', '-m', 'chore: version packages');
+    // npm never catches up within the retry budget -- the publish job simply
+    // has not run yet, which no amount of short-interval retrying fixes.
+    // `gh run list --workflow release.yml` reports one non-completed run.
+    stub(
+      'gh',
+      `case "$*" in
+        *"run list"*"release.yml"*) echo 1 ;;
+        *) echo 0 ;;
+      esac`,
+    );
+
+    const { out, status } = run();
+    expect(status).toBe(0);
+    expect(out).not.toContain('unpublished-bump');
+    expect(out).toContain('release.yml is currently running');
+  });
+
+  it('still flags the same package once release.yml is no longer running', () => {
+    write('packages/x/package.json', '{"name":"eslint-plugin-x","version":"1.1.0"}');
+    git('add', '-A');
+    git('commit', '-q', '-m', 'chore: version packages');
+    // Default stub (beforeEach) reports 0 in-progress runs for every `gh`
+    // call, release.yml included -- a genuine stall, not a race.
+
+    const { out, status } = run();
+    expect(status).toBe(1);
+    expect(out).toContain('unpublished-bump');
+  });
+});
+
+/**
  * A question this check could not ask must never read as a clean answer.
  *
  * The original version caught any `npm view` failure and `continue`d. With one
