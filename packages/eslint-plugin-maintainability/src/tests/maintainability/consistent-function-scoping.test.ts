@@ -728,4 +728,44 @@ describe('a function already at module scope has nowhere higher to go', () => {
     invalid: [],
   });
 });
+
+  // FP from the burgee sweep (packages/burgee/src/fig-schema.test.ts:253, where burgee
+  // carries a block disable for it): a function nested in an expression at module top
+  // level was reported, because the module-scope guard only stepped over binding
+  // wrappers and stopped at the ArrayExpression / ObjectExpression. The docs ask for a
+  // HIGHER scope, and there is none above the module.
+  ruleTester.run('module-scope functions nested in expressions', consistentFunctionScoping, {
+    valid: [
+      {
+        name: 'an arrow in a module-scope it.each table has no higher scope to move to',
+        code: "const spec = { a: 1 };\nconst broken = [['a', () => ({ ...spec, x: 1 }), 'msg']];\ndescribe('d', () => { it.each(broken)('t', () => {}); });",
+      },
+      {
+        name: 'an arrow as a module-scope object property value is already at module scope',
+        code: 'export const handlers = { double: (x: number) => x * 2 };',
+      },
+      {
+        name: 'a function expression in a module-scope array is already at module scope',
+        code: 'export const steps = [function first() { return 1; }];',
+      },
+    ],
+    invalid: [
+      {
+        name: 'an arrow in an array literal bound inside a function still reports',
+        code: "function build() {\n  const table = [['a', () => 1]];\n  return table.length;\n}",
+        errors: [
+          {
+            messageId: 'inconsistentFunctionScoping',
+            suggestions: [
+              {
+                messageId: 'moveToModuleScope',
+                output:
+                  "function build() {\n  const table = [['a', // TODO: Move this function to module scope - it doesn't capture outer variables\n() => 1]];\n  return table.length;\n}",
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  });
 });

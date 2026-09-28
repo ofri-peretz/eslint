@@ -118,6 +118,7 @@ function isReexport(node: TSESTree.Node): boolean {
 function splitSpecifierClause(
   node: TSESTree.ExportNamedDeclaration,
   importSourceByLocalName: ReadonlyMap<string, string>,
+  typeOnlyImportNames: ReadonlySet<string>,
 ): { reexportSources: string[]; hasLocalExport: boolean } {
   const reexportSources: string[] = [];
   let hasLocalExport = false;
@@ -130,6 +131,11 @@ function splitSpecifierClause(
     // (`export { "a" as b }`) is only legal with a `from` clause, and this
     // function is only called when `source === null`.
     const localName = (specifier.local as TSESTree.Identifier).name;
+    // Bound by `import type` / `import { type X }`: erased like a type-marked
+    // specifier, so it is neither a re-export nor a local export.
+    if (typeOnlyImportNames.has(localName)) {
+      continue;
+    }
     const source = importSourceByLocalName.get(localName);
     if (source === undefined) {
       hasLocalExport = true;
@@ -285,21 +291,26 @@ export const noBarrelFile = createRule<RuleOptions, MessageIds>({
     const exportAllDeclarations: TSESTree.ExportAllDeclaration[] = [];
     const namedReexports: TSESTree.ExportNamedDeclaration[] = [];
     const localExports: TSESTree.Node[] = [];
+    // Sourceless `export { … }` clauses, classified once every import is known.
+    const sourcelessClauses: TSESTree.ExportNamedDeclaration[] = [];
 
     // Local name -> module it was imported from, for resolving a sourceless
     // `export { … }` clause back to the edges it actually forwards.
     const importSourceByLocalName = new Map<string, string>();
+    // Local names bound by a type-only import; erased, so skipped in clauses.
+    const typeOnlyImportNames = new Set<string>();
     // Sources forwarded indirectly (imported, then exported by specifier).
     const indirectReexportSources = new Set<string>();
 
     return {
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        if (node.importKind === 'type') return;
         for (const specifier of node.specifiers) {
           if (
-            specifier.type === AST_NODE_TYPES.ImportSpecifier &&
-            specifier.importKind === 'type'
+            node.importKind === 'type' ||
+            (specifier.type === AST_NODE_TYPES.ImportSpecifier &&
+              specifier.importKind === 'type')
           ) {
+            typeOnlyImportNames.add(specifier.local.name);
             continue;
           }
           importSourceByLocalName.set(
@@ -323,19 +334,9 @@ export const noBarrelFile = createRule<RuleOptions, MessageIds>({
           // every node with a `source`, and `isLocalExport` took every sourceless
           // node with a `declaration`. This case used to fall through both and be
           // dropped, which could make a real barrel look export-free.
-          const { reexportSources, hasLocalExport } = splitSpecifierClause(
-            node,
-            importSourceByLocalName,
-          );
-          for (const source of reexportSources) {
-            indirectReexportSources.add(source);
-          }
-          if (reexportSources.length > 0) {
-            namedReexports.push(node);
-          }
-          if (hasLocalExport) {
-            localExports.push(node);
-          }
+          // Resolved at Program:exit: imports are hoisted, so the import binding
+          // a clause's name may come after the clause.
+          sourcelessClauses.push(node);
         }
       },
 
@@ -346,6 +347,23 @@ export const noBarrelFile = createRule<RuleOptions, MessageIds>({
       },
 
       'Program:exit'(node: TSESTree.Program) {
+        for (const clause of sourcelessClauses) {
+          const { reexportSources, hasLocalExport } = splitSpecifierClause(
+            clause,
+            importSourceByLocalName,
+            typeOnlyImportNames,
+          );
+          for (const source of reexportSources) {
+            indirectReexportSources.add(source);
+          }
+          if (reexportSources.length > 0) {
+            namedReexports.push(clause);
+          }
+          if (hasLocalExport) {
+            localExports.push(clause);
+          }
+        }
+
         const totalReexports =
           exportAllDeclarations.length + namedReexports.length;
         const totalExports = totalReexports + localExports.length;

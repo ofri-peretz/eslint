@@ -341,6 +341,63 @@ ruleTester.run('no-barrel-file', noBarrelFile, {
       errors: [{ messageId: 'barrelFileDetected' }],
     },
 
+    // ❌ Latent FN from the 2026-09-27 burgee sweep: a name bound by `import type`
+    // and forwarded through an unmarked `export { T }` clause is erased like any
+    // type-only export, but it was counted as a LOCAL export, which demoted a pure
+    // barrel to the mixed path.
+    {
+      name: 'a type-only import forwarded by an unmarked clause does not demote a pure barrel',
+      code: `
+        export * from './a';
+        export * from './b';
+        export * from './c';
+        import type { T } from './t';
+        export { T };
+      `,
+      filename: '/project/src/type-forward/index.ts',
+      errors: [{ messageId: 'barrelFileDetected' }],
+    },
+    {
+      name: 'a type-only import forwarded by a clause is not a local export under allowWithLocalExports',
+      code: `
+        export * from './a';
+        export * from './b';
+        export * from './c';
+        import type { T } from './t';
+        export { T };
+      `,
+      filename: '/project/src/type-forward-allowed/index.ts',
+      options: [{ allowWithLocalExports: true }],
+      errors: [{ messageId: 'barrelFileDetected' }],
+    },
+
+    // ❌ Imports are hoisted, so a clause may precede the import that binds its
+    // names. Clauses used to be classified as they were visited, before the
+    // later import was recorded (review on #1158).
+    {
+      name: 'a clause before the type-only import it forwards does not demote a pure barrel',
+      code: `
+        export * from './a';
+        export * from './b';
+        export * from './c';
+        export { T };
+        import type { T } from './t';
+      `,
+      filename: '/project/src/type-forward-hoisted/index.ts',
+      errors: [{ messageId: 'barrelFileDetected' }],
+    },
+    {
+      name: 'a clause before the value imports it forwards is still a barrel',
+      code: `
+        export { a, b, c };
+        import { a } from './a';
+        import { b } from './b';
+        import { c } from './c';
+      `,
+      filename: '/project/src/value-forward-hoisted/index.ts',
+      errors: [{ messageId: 'barrelFileDetected' }],
+    },
+
     // ❌ High re-export ratio triggers suggestion (mixed barrel)
     {
       code: `

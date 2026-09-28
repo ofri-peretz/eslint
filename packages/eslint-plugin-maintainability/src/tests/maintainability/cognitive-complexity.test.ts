@@ -811,4 +811,58 @@ describe('cognitive-complexity', () => {
       },
     );
   });
+
+  // Latent FN surfaced by the 2026-09-27 burgee sweep (no burgee function crossed the
+  // threshold): the walk followed a fixed child-key whitelist with no JSX keys, so it
+  // stopped at every JSXElement/JSXFragment and the `? :` / `&&` inside JSX scored 0,
+  // although the docs charge +1 for each.
+  describe('JSX', () => {
+    const jsxTester = new RuleTester({
+      languageOptions: {
+        parser,
+        ecmaVersion: 2022,
+        sourceType: 'module',
+        parserOptions: { ecmaFeatures: { jsx: true } },
+      },
+    });
+    jsxTester.run('conditionals inside JSX are charged', cognitiveComplexity, {
+      valid: [
+        {
+          name: 'JSX with a single conditional child stays under a threshold of 1',
+          code: 'function View({ a }) { return <div>{a && <A />}</div>; }',
+          options: [{ maxComplexity: 1 }],
+        },
+      ],
+      invalid: [
+        {
+          name: 'conditionals in JSX children are charged like any other conditional',
+          code: `
+            function View({ a, b, c }) {
+              return (
+                <div>
+                  {a && <A />}
+                  {b ? <B /> : null}
+                  {c && <C />}
+                </div>
+              );
+            }
+          `,
+          options: [{ maxComplexity: 2 }],
+          errors: [{ messageId: 'highCognitiveComplexity' }],
+        },
+        {
+          name: 'conditionals inside a fragment are charged',
+          code: 'function View({ a, b, c }) { return <>{a && <A />}{b && <B />}{c && <C />}</>; }',
+          options: [{ maxComplexity: 2 }],
+          errors: [{ messageId: 'highCognitiveComplexity' }],
+        },
+        {
+          name: 'conditionals in JSX attribute values are charged',
+          code: 'function View({ a, b, c }) { return <A x={a ? 1 : 2} y={b && c ? 3 : 4} />; }',
+          options: [{ maxComplexity: 2 }],
+          errors: [{ messageId: 'highCognitiveComplexity' }],
+        },
+      ],
+    });
+  });
 });

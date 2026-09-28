@@ -48,6 +48,16 @@ const BINDING_WRAPPERS: ReadonlySet<string> = new Set([
   'LogicalExpression',
 ]);
 
+/**
+ * Literals a function can sit inside without leaving the enclosing scope:
+ * array elements and object property values.
+ */
+const LITERAL_CONTAINERS: ReadonlySet<string> = new Set([
+  'ArrayExpression',
+  'ObjectExpression',
+  'Property',
+]);
+
 export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
   name: 'consistent-function-scoping',
   meta: {
@@ -310,6 +320,15 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
       let ancestor: TSESTree.Node | undefined = node.parent;
       while (ancestor && BINDING_WRAPPERS.has(ancestor.type)) {
         ancestor = ancestor.parent;
+      }
+      // Array and object literals create no scope either: an arrow in a
+      // module-level `it.each` table or `{ key: () => … }` is at module scope,
+      // and the docs ask for a HIGHER scope, which does not exist.
+      while (ancestor && LITERAL_CONTAINERS.has(ancestor.type)) {
+        ancestor = ancestor.parent;
+        while (ancestor && BINDING_WRAPPERS.has(ancestor.type)) {
+          ancestor = ancestor.parent;
+        }
       }
       if (
         ancestor?.type === 'Program' ||
