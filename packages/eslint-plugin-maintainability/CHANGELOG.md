@@ -5,6 +5,27 @@ All notable changes to `eslint-plugin-maintainability` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 3.2.17
+
+### Patch Changes
+
+- **🐛 Fix** — `consistent-function-scoping` no longer reports functions already at module scope inside a literal
+
+  An arrow or function expression inside a module-level array or object literal — an
+  `it.each` table, `export const steps = [function first() {}]` — was told to move to
+  module scope, the scope it was already in. The module-scope guard only stepped over
+  binding wrappers and stopped at the `ArrayExpression`. It now also steps over array
+  elements and object property values; a function in a literal inside another function
+  still reports.
+
+- **🐛 Fix** — `cognitive-complexity` charges conditionals inside JSX
+
+  The scoring walk followed a fixed child-key list with no JSX keys, so it stopped at
+  every JSXElement and JSXFragment: `cond && <X />`, `a ? <A /> : <B />` and conditionals
+  in attribute values scored 0, although the docs charge +1 for `? :` and for each
+  `&&`/`||` sequence. The walk now descends through `children`, `openingElement` and
+  `attributes`, so a component's markup is scored like the rest of its body.
+
 ## 3.2.16
 
 ### Patch Changes
