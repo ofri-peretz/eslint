@@ -345,6 +345,11 @@ export const cognitiveComplexity = createRule<RuleOptions, MessageIds>({
           'handler',
           'block',
           'finalizer',
+          // JSX: without these the walk stops at every JSXElement/JSXFragment and
+          // `cond && <X />` or `a ? <A /> : <B />` inside markup scores 0.
+          'children',
+          'openingElement',
+          'attributes',
         ]; // handler for TryStatement.catch, block/finalizer for TryStatement
 
         for (const key of childKeys) {
