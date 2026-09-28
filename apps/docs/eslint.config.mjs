@@ -1,5 +1,39 @@
+import { fixupConfigRules } from '@eslint/compat';
 import { defineConfig, globalIgnores } from 'eslint/config';
 import nextVitals from 'eslint-config-next/core-web-vitals';
+import tseslint from 'typescript-eslint';
+
+// ESLint 10 compatibility for eslint-config-next (16.3.x, latest as of this
+// change). Two independent breakages, each crashing the whole lint run:
+//
+// 1. Parser. For `*.{js,jsx,mjs,mts,cts}`, the `next` config block sets
+//    `languageOptions.parser` to `eslint-config-next/parser`, a thin wrapper
+//    over `next/dist/compiled/babel/eslint-parser` — a copy of
+//    `@babel/eslint-parser` bundled INSIDE `next` (so no `overrides` pin can
+//    reach it). Its ScopeManager predates ESLint 10, which calls
+//    `scopeManager.addGlobals()` on every file:
+//      TypeError: scopeManager.addGlobals is not a function
+//    No `next` release (16.3.6, 16.4.0-canary.50) ships a fixed bundle, so
+//    those files are parsed with typescript-eslint's parser instead — the same
+//    parser eslint-config-next already uses for `*.ts`/`*.tsx`, whose
+//    ScopeManager implements `addGlobals`. It parses plain JS and JSX too.
+//
+// 2. Plugin rules. eslint-plugin-react 7.37.5 (latest) calls
+//    `context.getFilename()` for `settings.react.version: 'detect'`; ESLint 10
+//    removed that method. `fixupConfigRules` is ESLint's official shim: it
+//    wraps every plugin rule so the removed context/SourceCode methods are
+//    restored, without changing which rules run or their severity.
+//
+// Drop each shim once its upstream ships ESLint 10 support; removing one early
+// brings the crash back on the first `npm run lint --workspace=docs`.
+const nextVitalsEslint10 = [
+  ...fixupConfigRules(nextVitals),
+  {
+    name: 'docs/eslint10-js-parser',
+    files: ['**/*.{js,jsx,mjs,cjs,mts,cts}'],
+    languageOptions: { parser: tseslint.parser },
+  },
+];
 
 // `eslint-plugin-conventions` is a workspace package. Its `package.json`
 // `main` points at `./src/index.js`, which only exists after the package's
@@ -24,7 +58,7 @@ try {
 }
 
 const eslintConfig = defineConfig([
-  ...nextVitals,
+  ...nextVitalsEslint10,
   globalIgnores([
     '.next/**',
     'out/**',

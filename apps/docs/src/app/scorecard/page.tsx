@@ -19,6 +19,12 @@ import { InstallCell, StarButton } from '@/components/stats/cta';
 // and re-evaluates the loader on every request.
 export const dynamic = 'force-static';
 
+// The moment this module was evaluated — i.e. the static build, given
+// `force-static` above. The age chip in <ScoreSummary> measures against it, so
+// the rendered age is a build-time fact and the render itself stays pure
+// (react-hooks/purity: no `Date.now()` inside a component body).
+const RENDERED_AT_MS = Date.now();
+
 export const metadata: Metadata = {
   title: 'Flagship Scorecard',
   description:
@@ -358,7 +364,7 @@ function ScoreSummary({
   const greenField = rows.filter((r) => !r.runs.competitorEslint).length;
   const ageDays = Math.max(
     0,
-    Math.floor((Date.now() - new Date(runAt).getTime()) / 86_400_000),
+    Math.floor((RENDERED_AT_MS - new Date(runAt).getTime()) / 86_400_000),
   );
   const age =
     ageDays < 45 ? `${ageDays} days ago` : `${Math.round(ageDays / 30)} months ago`;
