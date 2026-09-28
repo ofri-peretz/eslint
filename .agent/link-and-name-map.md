@@ -40,7 +40,7 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-lambda-security` | 2.1.5 | `lambda-security/` | — | `plugin-lambda-security` | security | `lambda` | ✅ | ✅ | ✅ |
 | `eslint-plugin-maintainability` | 3.2.17 | `maintainability/` | — | `plugin-maintainability` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-mcp-sdk-security` | 0.4.3 | `mcp-sdk-security/` | — | `plugin-mcp-sdk-security` | security | `mcp` | ✅ | ✅ | ✅ |
-| `eslint-plugin-modernization` | 3.1.8 | `modernization/` | — | `plugin-modernization` | quality | `—` | ✅ | ✅ | ✅ |
+| `eslint-plugin-modernization` | 3.1.9 | `modernization/` | — | `plugin-modernization` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-modularity` | 2.5.4 | `modularity/` | — | `plugin-modularity` | quality | `—` | ✅ | ✅ | ✅ |
 | `eslint-plugin-mongodb-security` | 9.1.3 | `mongodb-security/` | — | `plugin-mongodb-security` | security | `mongodb` | ✅ | ✅ | ✅ |
 | `eslint-plugin-mysql-security` | 0.3.8 | `mysql-security/` | — | `plugin-mysql-security` | security | `mysql` | ✅ | ✅ | ✅ |
