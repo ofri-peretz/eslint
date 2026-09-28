@@ -511,6 +511,9 @@ function runOxlintBatched(configPath, files) {
   return JSON.stringify({ diagnostics });
 }
 
+/** Files on which a JS rule threw under oxlint, with the first error line. */
+const jsPluginCrashes: { file: string; error: string }[] = [];
+
 function lintOxlint(corpus, configPath) {
   /*
    * Explicit file list, never a bare directory.
@@ -574,6 +577,29 @@ function lintOxlint(corpus, configPath) {
   const diags = parsed.diagnostics ?? [];
   const findings = [];
   for (const d of diags) {
+    const filename = d.filename ?? '';
+    const rel = path
+      .relative(REPO_ROOT, path.resolve(REPO_ROOT, filename))
+      .split(path.sep)
+      .join('/');
+    /*
+     * A JS rule that THROWS, recorded rather than dropped.
+     *
+     * oxlint reports it as a diagnostic with no `code` at all — the message is
+     * "Error running JS plugin.\nFile path: <abs>\nTypeError: ..." — and aborts
+     * every JS rule on that file. The `code` parse below skipped it, so a crash
+     * was visible only as the eslint-only findings it cost, and only when ESLint
+     * happened to report something there. On a file where ESLint reports
+     * nothing, a crashing rule left parity at 100% (issue #1147).
+     */
+    if ((d.message ?? '').startsWith('Error running JS plugin')) {
+      const lines = d.message.split('\n');
+      jsPluginCrashes.push({
+        file: rel,
+        error: lines.slice(2).find(Boolean) ?? d.message,
+      });
+      continue;
+    }
     const m = (d.code ?? '').match(/^([^(]+)\(([^)]+)\)$/);
     if (!m) continue;
     const [, source, ruleName] = m;
@@ -596,11 +622,6 @@ function lintOxlint(corpus, configPath) {
      * parity break.
      */
     if (!allowedPrefixes.some((prefix) => ruleId.startsWith(prefix))) continue;
-    const filename = d.filename ?? '';
-    const rel = path
-      .relative(REPO_ROOT, path.resolve(REPO_ROOT, filename))
-      .split(path.sep)
-      .join('/');
     const label = (d.labels ?? [])[0]?.span ?? {};
     findings.push({
       file: rel,
@@ -868,6 +889,9 @@ function main() {
       .sort(),
     eslintOnlyUnexplained: allow.eUnexplained,
     oxlintOnlyUnexplained: allow.oUnexplained,
+    // Never allowlisted: a crash means the rules did not run, so no parity
+    // number computed over that file means anything.
+    jsPluginCrashes,
   };
 
   /*
@@ -926,7 +950,18 @@ function main() {
     console.log('');
   }
 
+  if (jsPluginCrashes.length > 0) {
+    console.log(
+      `  ✗ JS plugin crashed under oxlint on ${jsPluginCrashes.length} file(s) — every JS rule on those files was aborted:`,
+    );
+    for (const c of jsPluginCrashes) {
+      console.log(`     - ${c.file}  ${c.error}`);
+    }
+    console.log('');
+  }
+
   const passed =
+    jsPluginCrashes.length === 0 &&
     allow.eUnexplained.length === 0 &&
     allow.oUnexplained.length === 0 &&
     parityRate >= THRESHOLD;
@@ -973,6 +1008,10 @@ function main() {
   }
 
   if (CI) {
+    if (jsPluginCrashes.length > 0) {
+      console.log(`  ✗ FAIL — a JS plugin rule crashed under oxlint.`);
+      process.exit(1);
+    }
     if (allow.eUnexplained.length > 0 || allow.oUnexplained.length > 0) {
       console.log(`  ✗ FAIL — unexplained divergence not in allowlist.`);
       process.exit(1);
