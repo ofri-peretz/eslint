@@ -7,6 +7,36 @@
     {
       "package": "eslint-plugin-secure-coding",
       "short": "eslint-plugin-secure-coding",
+      "version": "5.4.16",
+      "date": "2026-09-28T04:52:33Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`detect-object-injection` no longer throws under oxlint on an untyped `forEach` receiver",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "docs",
+      "short": "docs",
+      "version": "1.2.2",
+      "date": "2026-09-28T04:10:10Z",
+      "isApp": true,
+      "isPrivate": true,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "make the docs site lintable under ESLint 10, and fix the errors it had been hiding",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "eslint-plugin-secure-coding",
       "version": "5.4.15",
       "date": "2026-09-27T22:03:16Z",
       "isApp": false,
@@ -18465,21 +18495,6 @@
       ]
     },
     {
-      "package": "docs",
-      "short": "docs",
-      "version": "1.2.2",
-      "date": null,
-      "isApp": true,
-      "isPrivate": true,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "make the docs site lintable under ESLint 10, and fix the errors it had been hiding",
-          "pr": null
-        }
-      ]
-    },
-    {
       "package": "eslint-plugin-cli-floor",
       "short": "eslint-plugin-cli-floor",
       "version": "0.1.0",
@@ -18740,21 +18755,6 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-secure-coding",
-      "short": "eslint-plugin-secure-coding",
-      "version": "5.4.16",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "`detect-object-injection` no longer throws under oxlint on an untyped `forEach` receiver",
           "pr": null
         }
       ]
