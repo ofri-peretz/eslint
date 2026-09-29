@@ -1,6 +1,27 @@
 {
   "articles": [
     {
+      "id": 4757678,
+      "title": "Everyone Greps for SQL Injection. Nobody Greps for the Other Eight.",
+      "description": "SQL injection has a name everyone knows. Eight more injections aim the same defect at parsers nobody audits: GraphQL, LDAP, XPath, XXE, template and more.",
+      "url": "https://dev.to/ofri-peretz/everyone-greps-for-sql-injection-nobody-greps-for-the-other-eight-4pjm",
+      "canonical_url": "https://ofriperetz.dev/articles/injection-beyond-sql",
+      "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fofriperetz.dev%2Fcdn%2Fblog-cover-image%2Finjection-beyond-sql.jpg",
+      "published_at": "2026-09-27T19:27:57Z",
+      "readable_publish_date": "Sep 27",
+      "reading_time_minutes": 4,
+      "page_views_count": 0,
+      "public_reactions_count": 3,
+      "positive_reactions_count": 3,
+      "comments_count": 2,
+      "tag_list": [
+        "javascript",
+        "security",
+        "webdev",
+        "node"
+      ]
+    },
+    {
       "id": 4726357,
       "title": "One Import Moves a commander CLI to burgee. --json Still Says null.",
       "description": "Swapping commander for burgee/commander kept 7 of 7 invocations byte-identical and added --schema, MCP and completions. Getting data out took a return.",
@@ -1866,7 +1887,7 @@
       ]
     }
   ],
-  "total": 91,
-  "lastUpdated": "2026-09-27T06:09:04.102Z",
+  "total": 92,
+  "lastUpdated": "2026-09-29T04:22:45.213Z",
   "source": "public"
 }
