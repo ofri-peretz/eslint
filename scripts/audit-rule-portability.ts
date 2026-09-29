@@ -388,7 +388,7 @@ function summarize(allPlugins) {
 // audit's blocker assumptions (sourceCode + scope + fixer + selector + comments
 // + tokens all present). Bumping oxlint past the latest entry must include a
 // re-verification of apps/oxlint/src-js/plugins/ at the new tag.
-const VERIFIED_OXLINT_RANGE = { min: '1.74.0', maxKnown: '1.83.x' };
+const VERIFIED_OXLINT_RANGE = { min: '1.74.0', maxKnown: '1.85.x' };
 
 // Hash-pinned bundles. These are the actual runtime files shipped with oxlint
 // — the bundled output of apps/oxlint/src-js/plugins/ that I read at 1.62.0.
@@ -400,7 +400,35 @@ const VERIFIED_OXLINT_RANGE = { min: '1.74.0', maxKnown: '1.83.x' };
 // source_code,scope,fix,selector}.ts at the new tag, then update both
 // VERIFIED_OXLINT_RANGE and these hashes in the same commit.
 const VERIFIED_OXLINT_RUNTIME_HASHES = {
-  // Re-verified at 1.83.0 (2026-09-23) by `verify-oxlint-runtime.ts`: all 33
+  // Re-verified at 1.85.0 (2026-09-28) by `verify-oxlint-runtime.ts`: all 33
+  // probes pass. Every runtime file in `dist/` has the same name as at 1.83.0.
+  // `plugins.js`, `plugins-dev.js` and `rolldown-runtime.js` are BYTE-IDENTICAL
+  // to 1.83.0 (and to 1.84.0), and their pins below are untouched. A
+  // `;`-split diff of 1.83.0 against 1.85.0 on the two files that did change:
+  //   1. `bindings.js` has 29 differing hunks. 27 are the version literal
+  //      inside napi guards. The other 2 let a `NAPI_RS_NATIVE_LIBRARY_PATH`
+  //      override binding report its `__napiBindingTarget`. That is
+  //      binary-loader plumbing, with no plugin API in it.
+  //   2. `lint.js` adds opt-in per-rule timing (`src-js/plugins/timing.ts`):
+  //        - `lintFile` takes a new `collectTimings` argument, and its JSON
+  //          reply to the Rust side becomes `{ Success: { diagnostics,
+  //          timings? } }` / `{ Failure: { message, timings? } }`. That is the
+  //          internal JS<->Rust protocol, and `cli.js` + the native binding
+  //          ship in the same package, so they move together;
+  //        - `create`, `before`/`after` hooks and visitor fns are wrapped in
+  //          `timeCall`/`wrapTimedFunction` ONLY when `timing` is defined. With
+  //          timings off, `addVisitorToCompiled` assigns the raw `visitFn`
+  //          exactly as before, and complex selectors still wrap it with
+  //          `wrapVisitFnWithSelectorMatch`;
+  //        - `resetStateAfterError` is split into `runAfterHooks` +
+  //          `clearStateAfterError`, running the same steps in the same order.
+  //      None of it touches `context`, `sourceCode`, scope, fixer, tokens or
+  //      comments, so none of the blocker patterns this audit reads can move.
+  //
+  // Kept below: the 1.83.0 note, because `min` records the OLDEST version
+  // still verified.
+  //
+  // Previously re-verified at 1.83.0 (2026-09-23) by `verify-oxlint-runtime.ts`: all 33
   // probes pass. Every runtime file in `dist/` has the same name as at 1.82.0,
   // so no bundle appeared or vanished. `plugins.js`, `plugins-dev.js` and
   // `rolldown-runtime.js` are BYTE-IDENTICAL to 1.82.0, and their pins below
@@ -499,9 +527,9 @@ const VERIFIED_OXLINT_RUNTIME_HASHES = {
     '81e4c275f6200ab4b6aed66ba2836b2a8e68756a8609ced02daf91e226377e2d',
   'plugins-dev.js':
     '9160dbc594c8f9fa6e624cc358cb2093dc19281c5233168f0352203fc11b5c16',
-  'lint.js': '648bb2d1fc92dfca6f6662e29a8495958e0516703975045dea45429d61440718',
+  'lint.js': '3d1cdbcb1ea50cf2a41cab3781f92ce8611aaed41c649d70305a9dbd0659ed8a',
   'bindings.js':
-    '8624c38feb02764a48bc91fa8ae9b1a329cde185936dc5c0106c059185eb07e0',
+    '100d242f1c30b5e3c49759e4724025a8604510f618ce1acb56b759fd5fc58c55',
   'rolldown-runtime.js':
     '5fc650d7f3c5b72629da633623bf7bc72fd972051fe82268c703b2681f26eb51',
 };
