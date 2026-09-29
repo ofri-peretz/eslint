@@ -8,3 +8,6 @@
 # the emitter does not; formatting it would make the script and the formatter
 # fight over the same file on every run.
 /benchmarks/corpus-index.json
+# Same fight: the docs write-lock test pins this to exact JSON.stringify output
+# (no trailing newline), and weekly-benchmark.yml prettier-formats staged files.
+/apps/docs/src/data/headline-bench.json
