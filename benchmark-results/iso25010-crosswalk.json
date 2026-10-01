@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-09-03T05:51:13.630Z",
+  "generatedAt": "2026-10-01T14:11:20.687Z",
   "summary": {
-    "qualityRules": 61,
+    "qualityRules": 66,
     "mapped": 3,
     "coveragePct": 5
   },
@@ -102,6 +102,11 @@
       "mappings": []
     },
     {
+      "ruleId": "maintainability/error-handling/no-missing-error-context.throw-forms.test",
+      "plugin": "maintainability",
+      "mappings": []
+    },
+    {
       "ruleId": "maintainability/error-handling/no-missing-error-context",
       "plugin": "maintainability",
       "mappings": []
@@ -113,6 +118,11 @@
     },
     {
       "ruleId": "maintainability/error-handling/no-unhandled-promise",
+      "plugin": "maintainability",
+      "mappings": []
+    },
+    {
+      "ruleId": "maintainability/error-handling/no-unhandled-promise.value-position.test",
       "plugin": "maintainability",
       "mappings": []
     },
@@ -277,6 +287,11 @@
       "mappings": []
     },
     {
+      "ruleId": "reliability/error-handling/no-missing-error-context.throw-forms.test",
+      "plugin": "reliability",
+      "mappings": []
+    },
+    {
       "ruleId": "reliability/error-handling/no-missing-error-context",
       "plugin": "reliability",
       "mappings": []
@@ -297,6 +312,11 @@
       ]
     },
     {
+      "ruleId": "reliability/error-handling/no-unhandled-promise.value-position.test",
+      "plugin": "reliability",
+      "mappings": []
+    },
+    {
       "ruleId": "reliability/reliability/no-await-in-loop",
       "plugin": "reliability",
       "mappings": []
@@ -308,6 +328,11 @@
     },
     {
       "ruleId": "reliability/reliability/no-jsdoc-terminator-in-example",
+      "plugin": "reliability",
+      "mappings": []
+    },
+    {
+      "ruleId": "reliability/reliability/no-missing-null-checks.computed-chain.test",
       "plugin": "reliability",
       "mappings": []
     },
