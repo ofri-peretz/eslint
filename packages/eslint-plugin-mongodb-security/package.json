@@ -99,8 +99,8 @@
   "devDependencies": {
     "@typescript-eslint/parser": "^8.68.0",
     "@typescript-eslint/rule-tester": "^8.68.0",
-    "mongodb": "^7.6.0",
-    "mongoose": "^9.10.2"
+    "mongodb": "^7.7.0",
+    "mongoose": "^9.10.3"
   },
   "scripts": {
     "build": "tsx ../../scripts/build-package.ts",
