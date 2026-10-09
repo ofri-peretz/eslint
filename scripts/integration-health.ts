@@ -130,7 +130,12 @@ export function missingHeaders(
   csp: string | null = null,
 ): string[] {
   const have = new Set([...present].map((h) => h.toLowerCase()));
-  if (csp?.includes('frame-ancestors')) have.add('x-frame-options');
+  const framed = csp
+    ?.split(';')
+    .some(
+      (d) => d.trim().split(/\s+/, 1)[0].toLowerCase() === 'frame-ancestors',
+    );
+  if (framed) have.add('x-frame-options');
   return REQUIRED_HEADERS.filter((h) => !have.has(h));
 }
 

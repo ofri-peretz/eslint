@@ -109,6 +109,13 @@ describe('required headers', () => {
     expect(missingHeaders(withoutXfo, "default-src 'self'")).toEqual([
       'x-frame-options',
     ]);
+    // A directive name, not a substring: neither of these frames anything.
+    for (const csp of [
+      "frame-ancestors-extra 'self'",
+      'default-src https://frame-ancestors.example',
+    ]) {
+      expect(missingHeaders(withoutXfo, csp)).toEqual(['x-frame-options']);
+    }
   });
 
   it('is case-insensitive, since header casing is not guaranteed', () => {
