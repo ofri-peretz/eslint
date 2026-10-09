@@ -98,6 +98,26 @@ describe('required headers', () => {
     ).toEqual(['x-frame-options']);
   });
 
+  it('accepts an enforced frame-ancestors in place of x-frame-options', () => {
+    const withoutXfo = REQUIRED_HEADERS.filter((h) => h !== 'x-frame-options');
+    expect(
+      missingHeaders(
+        withoutXfo,
+        "frame-ancestors 'self' https://ds.interlace.tools",
+      ),
+    ).toEqual([]);
+    expect(missingHeaders(withoutXfo, "default-src 'self'")).toEqual([
+      'x-frame-options',
+    ]);
+    // A directive name, not a substring: neither of these frames anything.
+    for (const csp of [
+      "frame-ancestors-extra 'self'",
+      'default-src https://frame-ancestors.example',
+    ]) {
+      expect(missingHeaders(withoutXfo, csp)).toEqual(['x-frame-options']);
+    }
+  });
+
   it('is case-insensitive, since header casing is not guaranteed', () => {
     expect(
       missingHeaders(REQUIRED_HEADERS.map((h) => h.toUpperCase())),

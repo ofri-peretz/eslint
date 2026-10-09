@@ -120,8 +120,22 @@ export function diagnoseToken(csp: string | null): string {
   return 'report-uri present but its token is not a readable value';
 }
 
-export function missingHeaders(present: Iterable<string>): string[] {
+/**
+ * An enforced CSP `frame-ancestors` supersedes `x-frame-options`, and it is the
+ * only one of the two that can allow a cross-origin framer: storybook drops XFO
+ * on purpose so ds can embed its previews (interlace#85).
+ */
+export function missingHeaders(
+  present: Iterable<string>,
+  csp: string | null = null,
+): string[] {
   const have = new Set([...present].map((h) => h.toLowerCase()));
+  const framed = csp
+    ?.split(';')
+    .some(
+      (d) => d.trim().split(/\s+/, 1)[0].toLowerCase() === 'frame-ancestors',
+    );
+  if (framed) have.add('x-frame-options');
   return REQUIRED_HEADERS.filter((h) => !have.has(h));
 }
 
@@ -161,7 +175,10 @@ async function main(): Promise<void> {
       continue;
     }
 
-    const absent = missingHeaders(res.headers.keys());
+    const absent = missingHeaders(
+      res.headers.keys(),
+      res.headers.get('content-security-policy'),
+    );
     if (absent.length > 0) {
       failures.push({
         site,
