@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-09-10T05:15:21.748Z",
+  "generatedAt": "2026-10-01T14:11:19.528Z",
   "summary": {
-    "distinctCwes": 115,
-    "totalRules": 273,
-    "unmappedRules": 8,
+    "distinctCwes": 116,
+    "totalRules": 281,
+    "unmappedRules": 12,
     "top25Covered": 20,
     "top25Gaps": 5
   },
@@ -275,7 +275,8 @@
         "jwt-security/require-audience-validation",
         "jwt-security/require-issuer-validation",
         "mongodb-security/require-auth-mechanism",
-        "secure-coding/no-missing-authentication"
+        "secure-coding/no-missing-authentication",
+        "supabase-security/require-auth-error-check"
       ],
       "top25": true,
       "owaspTop10": false
@@ -731,7 +732,8 @@
     },
     "CWE-732": {
       "rules": [
-        "lambda-security/no-overly-permissive-iam-policy"
+        "lambda-security/no-overly-permissive-iam-policy",
+        "supabase-security/no-public-storage-bucket"
       ],
       "top25": false,
       "owaspTop10": false
@@ -789,6 +791,7 @@
         "secure-coding/no-hardcoded-credentials",
         "secure-coding/no-hardcoded-session-tokens",
         "sequelize-security/no-hardcoded-credentials",
+        "supabase-security/no-service-role-key-in-client",
         "typeorm-security/no-hardcoded-credentials",
         "vercel-ai-security/no-hardcoded-api-keys"
       ],
@@ -836,6 +839,13 @@
     "CWE-908": {
       "rules": [
         "node-security/no-unsafe-buffer-alloc"
+      ],
+      "top25": false,
+      "owaspTop10": false
+    },
+    "CWE-913": {
+      "rules": [
+        "supabase-security/no-dynamic-rpc-name"
       ],
       "top25": false,
       "owaspTop10": false
@@ -1006,6 +1016,34 @@
       "cwes": [],
       "justifications": [],
       "sourcePath": "packages/eslint-plugin-anthropic-security/src/rules/no-untrusted-content-in-prompt/index.ts"
+    },
+    {
+      "plugin": "cli-floor",
+      "rule": "cli-floor/no-console-in-command",
+      "cwes": [],
+      "justifications": [],
+      "sourcePath": "packages/eslint-plugin-cli-floor/src/rules/no-console-in-command/index.ts"
+    },
+    {
+      "plugin": "cli-floor",
+      "rule": "cli-floor/no-prompt-without-flag",
+      "cwes": [],
+      "justifications": [],
+      "sourcePath": "packages/eslint-plugin-cli-floor/src/rules/no-prompt-without-flag/index.ts"
+    },
+    {
+      "plugin": "cli-floor",
+      "rule": "cli-floor/require-command-description",
+      "cwes": [],
+      "justifications": [],
+      "sourcePath": "packages/eslint-plugin-cli-floor/src/rules/require-command-description/index.ts"
+    },
+    {
+      "plugin": "cli-floor",
+      "rule": "cli-floor/require-command-example",
+      "cwes": [],
+      "justifications": [],
+      "sourcePath": "packages/eslint-plugin-cli-floor/src/rules/require-command-example/index.ts"
     },
     {
       "plugin": "gemini-security",

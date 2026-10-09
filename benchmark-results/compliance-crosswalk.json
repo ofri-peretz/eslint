@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-09-03T05:51:13.253Z",
+  "generatedAt": "2026-10-01T14:11:20.267Z",
   "summary": {
-    "totalRules": 272,
+    "totalRules": 281,
     "ssdfPracticesHit": 2,
     "asvsSectionsHit": 6,
     "capecPatternsHit": 17
@@ -862,6 +862,62 @@
         "CWE-319",
         "CWE-319"
       ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "cli-floor/no-console-in-command",
+      "plugin": "cli-floor",
+      "cwes": [],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "cli-floor/no-prompt-without-flag",
+      "plugin": "cli-floor",
+      "cwes": [],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "cli-floor/require-command-description",
+      "plugin": "cli-floor",
+      "cwes": [],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "cli-floor/require-command-example",
+      "plugin": "cli-floor",
+      "cwes": [],
       "ssdf": [],
       "asvs": [],
       "capec": [],
@@ -3285,6 +3341,25 @@
       "derivedCapec": []
     },
     {
+      "ruleId": "node-security/no-weak-dh-parameters",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-326",
+        "CWE-326",
+        "CWE-326",
+        "CWE-326"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
       "ruleId": "node-security/no-weak-hash-algorithm",
       "plugin": "node-security",
       "cwes": [
@@ -3581,6 +3656,7 @@
       "plugin": "postgresql-security",
       "cwes": [
         "CWE-404",
+        "CWE-404",
         "CWE-404"
       ],
       "ssdf": [],
@@ -3685,6 +3761,7 @@
       "ruleId": "postgresql-security/prefer-pool-query",
       "plugin": "postgresql-security",
       "cwes": [
+        "CWE-400",
         "CWE-400"
       ],
       "ssdf": [],
@@ -4521,6 +4598,81 @@
       "derivedAsvs": [],
       "derivedCapec": [
         "CAPEC-66"
+      ]
+    },
+    {
+      "ruleId": "supabase-security/no-dynamic-rpc-name",
+      "plugin": "supabase-security",
+      "cwes": [
+        "CWE-913",
+        "CWE-913"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "supabase-security/no-public-storage-bucket",
+      "plugin": "supabase-security",
+      "cwes": [
+        "CWE-732",
+        "CWE-732"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "supabase-security/no-service-role-key-in-client",
+      "plugin": "supabase-security",
+      "cwes": [
+        "CWE-798",
+        "CWE-798",
+        "CWE-798"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-560",
+        "CAPEC-CWE-798"
+      ]
+    },
+    {
+      "ruleId": "supabase-security/require-auth-error-check",
+      "plugin": "supabase-security",
+      "cwes": [
+        "CWE-287",
+        "CWE-287"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-114",
+        "CAPEC-115"
       ]
     },
     {
