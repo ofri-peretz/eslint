@@ -388,7 +388,7 @@ function summarize(allPlugins) {
 // audit's blocker assumptions (sourceCode + scope + fixer + selector + comments
 // + tokens all present). Bumping oxlint past the latest entry must include a
 // re-verification of apps/oxlint/src-js/plugins/ at the new tag.
-const VERIFIED_OXLINT_RANGE = { min: '1.74.0', maxKnown: '1.85.x' };
+const VERIFIED_OXLINT_RANGE = { min: '1.74.0', maxKnown: '1.86.x' };
 
 // Hash-pinned bundles. These are the actual runtime files shipped with oxlint
 // — the bundled output of apps/oxlint/src-js/plugins/ that I read at 1.62.0.
@@ -400,6 +400,18 @@ const VERIFIED_OXLINT_RANGE = { min: '1.74.0', maxKnown: '1.85.x' };
 // source_code,scope,fix,selector}.ts at the new tag, then update both
 // VERIFIED_OXLINT_RANGE and these hashes in the same commit.
 const VERIFIED_OXLINT_RUNTIME_HASHES = {
+  // Re-verified at 1.86.0 (2026-10-09) by `verify-oxlint-runtime.ts`: all 33
+  // probes pass. Same `dist/` file names as 1.85.0; `plugins.js`,
+  // `plugins-dev.js` and `rolldown-runtime.js` are BYTE-IDENTICAL to 1.85.0.
+  // `;`-split diff of 1.85.0 against 1.86.0 on the two that changed:
+  //   1. `bindings.js`: every differing hunk is the version literal.
+  //   2. `lint.js`: comment deserialisation learns comment kinds >= 3 (their
+  //      `value` skips a kind-length prefix; Line/Block unchanged); the scope
+  //      manager merges same-named lib globals' type/value flags before
+  //      defining them; selector visitors are wrapped for timing after the
+  //      esquery match instead of before; the bundled eslint assert moves to
+  //      10.11.0. No plugin API is added, removed or renamed.
+  //
   // Re-verified at 1.85.0 (2026-09-28) by `verify-oxlint-runtime.ts`: all 33
   // probes pass. Every runtime file in `dist/` has the same name as at 1.83.0.
   // `plugins.js`, `plugins-dev.js` and `rolldown-runtime.js` are BYTE-IDENTICAL
@@ -527,9 +539,9 @@ const VERIFIED_OXLINT_RUNTIME_HASHES = {
     '81e4c275f6200ab4b6aed66ba2836b2a8e68756a8609ced02daf91e226377e2d',
   'plugins-dev.js':
     '9160dbc594c8f9fa6e624cc358cb2093dc19281c5233168f0352203fc11b5c16',
-  'lint.js': '3d1cdbcb1ea50cf2a41cab3781f92ce8611aaed41c649d70305a9dbd0659ed8a',
+  'lint.js': '0f14570575cda93e5e58dda814cb6c5b2cd58f8f59504cfbfbb515778eb02681',
   'bindings.js':
-    '100d242f1c30b5e3c49759e4724025a8604510f618ce1acb56b759fd5fc58c55',
+    '5693f32a8103da80016ea9d2aad4ae95318eba40ca226721721192aed322fd7d',
   'rolldown-runtime.js':
     '5fc650d7f3c5b72629da633623bf7bc72fd972051fe82268c703b2681f26eb51',
 };
