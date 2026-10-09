@@ -226,6 +226,19 @@ jobs:
               ;;
           esac
 
+      # The check above only reports; without this the job stays green on an
+      # expired token and the report job below never fires. Run 37356028196
+      # (2026-10-05) logged E401 and concluded success; nobody noticed until
+      # Release had been red for two weeks.
+      - name: 🚨 Fail on invalid or missing token
+        if: steps.token-check.outputs.status == 'invalid' || steps.token-check.outputs.status == 'missing'
+        env:
+          STATUS: ${{ steps.token-check.outputs.status }}
+          MESSAGE: ${{ steps.token-check.outputs.message }}
+        run: |
+          echo "::error::NPM_TOKEN is $STATUS: $MESSAGE"
+          exit 1
+
   # Without this the jobs above can fail on a schedule with nobody watching:
   # a red cron produces no PR, no reviewer and no notification, so silence and
   # success look identical. Tracked as debt in .github/cron-alerting-debt.json.
@@ -248,5 +261,5 @@ jobs:
         with:
           title: "npm token health check is failing"
           body: >-
-            The token check did not complete. If NPM_TOKEN has expired or lost scope, the next release fails at publish time instead of here.
+            NPM_TOKEN is invalid, expired or missing, or the check could not run. Release's NPM_TOKEN fallback for first-release packages fails at publish time until the token is rotated (npmjs.com, Access Tokens, then the NPM_TOKEN repository secret).
           token: ${{ github.token }}
