@@ -83,7 +83,7 @@
   "devDependencies": {
     "@typescript-eslint/parser": "^8.68.0",
     "@typescript-eslint/rule-tester": "^8.68.0",
-    "pg": "^8.23.0"
+    "pg": "^8.23.1"
   },
   "scripts": {
     "build": "tsx ../../scripts/build-package.ts",
