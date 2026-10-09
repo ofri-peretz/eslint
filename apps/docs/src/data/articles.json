@@ -1,6 +1,46 @@
 {
   "articles": [
     {
+      "id": 4810846,
+      "title": "I Linted 14 Public AI SDK Repos. 12 Ship a Call With No Token Ceiling.",
+      "description": "A field study of 116 generation call sites across 14 public repositories, including five of the SDK vendor's own. The output cap is the one almost nobody sets.",
+      "url": "https://dev.to/ofri-peretz/i-linted-14-public-ai-sdk-repos-12-ship-a-call-with-no-token-ceiling-2349",
+      "canonical_url": "https://ofriperetz.dev/articles/ai-agent-unbounded-loop-audit",
+      "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fofriperetz.dev%2Fcdn%2Fblog-cover-image%2Fai-agent-unbounded-loop-audit.jpg",
+      "published_at": "2026-10-07T07:49:42Z",
+      "readable_publish_date": "Oct 7",
+      "reading_time_minutes": 3,
+      "page_views_count": 0,
+      "public_reactions_count": 3,
+      "positive_reactions_count": 3,
+      "comments_count": 2,
+      "tag_list": [
+        "ai",
+        "webdev",
+        "security"
+      ]
+    },
+    {
+      "id": 4786339,
+      "title": "Your LLM Call Has No Ceiling. TypeScript Is Fine With It. Three CWEs Aren't.",
+      "description": "An AI SDK call with no token cap, no timeout and no abort signal is three distinct CWEs hiding in one missing config object.",
+      "url": "https://dev.to/ofri-peretz/your-llm-call-has-no-ceiling-typescript-is-fine-with-it-three-cwes-arent-dkd",
+      "canonical_url": "https://ofriperetz.dev/articles/agent-resource-bounds",
+      "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fofriperetz.dev%2Fcdn%2Fblog-cover-image%2Fagent-resource-bounds.jpg",
+      "published_at": "2026-10-02T09:10:34Z",
+      "readable_publish_date": "Oct 2",
+      "reading_time_minutes": 4,
+      "page_views_count": 0,
+      "public_reactions_count": 1,
+      "positive_reactions_count": 1,
+      "comments_count": 0,
+      "tag_list": [
+        "ai",
+        "webdev",
+        "security"
+      ]
+    },
+    {
       "id": 4757678,
       "title": "Everyone Greps for SQL Injection. Nobody Greps for the Other Eight.",
       "description": "SQL injection has a name everyone knows. Eight more injections aim the same defect at parsers nobody audits: GraphQL, LDAP, XPath, XXE, template and more.",
@@ -1509,8 +1549,8 @@
       "readable_publish_date": "Jan 2",
       "reading_time_minutes": 18,
       "page_views_count": 0,
-      "public_reactions_count": 5,
-      "positive_reactions_count": 5,
+      "public_reactions_count": 6,
+      "positive_reactions_count": 6,
       "comments_count": 1,
       "tag_list": [
         "node",
@@ -1887,7 +1927,7 @@
       ]
     }
   ],
-  "total": 92,
-  "lastUpdated": "2026-09-29T04:22:45.213Z",
+  "total": 94,
+  "lastUpdated": "2026-10-09T05:58:14.467Z",
   "source": "public"
 }
