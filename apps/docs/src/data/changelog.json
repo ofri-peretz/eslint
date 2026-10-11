@@ -5,6 +5,66 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "eslint-plugin-jwt-security",
+      "short": "eslint-plugin-jwt-security",
+      "version": "3.4.0",
+      "date": "2026-10-11T05:34:29Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "resolve options structurally, read NestJS/jose/config APIs, skip non-JWT sign/verify calls",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-postgresql-security",
+      "short": "eslint-plugin-postgresql-security",
+      "version": "2.4.0",
+      "date": "2026-10-11T05:33:16Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "close 16 false positives and 16 false negatives; floating-query and double-release now warn",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-mcp-sdk-security",
+      "short": "eslint-plugin-mcp-sdk-security",
+      "version": "0.5.0",
+      "date": "2026-10-11T05:29:17Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "support SDK v2 and mcp-handler, resolve sinks by module, fix schema-less tool FPs, reset presets",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-vercel-ai-security",
+      "short": "eslint-plugin-vercel-ai-security",
+      "version": "2.2.0",
+      "date": "2026-10-11T05:27:37Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "fix 26 FPs and 13 FNs, apply documented option defaults, quieter recommended preset",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-modernization",
       "short": "eslint-plugin-modernization",
       "version": "3.1.9",
@@ -18567,21 +18627,6 @@
     {
       "package": "eslint-plugin-jwt-security",
       "short": "eslint-plugin-jwt-security",
-      "version": "3.4.0",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "resolve options structurally, read NestJS/jose/config APIs, skip non-JWT sign/verify calls",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-jwt-security",
-      "short": "eslint-plugin-jwt-security",
       "version": "2.2.9",
       "date": null,
       "isApp": false,
@@ -18695,36 +18740,6 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-mcp-sdk-security",
-      "short": "eslint-plugin-mcp-sdk-security",
-      "version": "0.5.0",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "support SDK v2 and mcp-handler, resolve sinks by module, fix schema-less tool FPs, reset presets",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-postgresql-security",
-      "short": "eslint-plugin-postgresql-security",
-      "version": "2.4.0",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "close 16 false positives and 16 false negatives; floating-query and double-release now warn",
           "pr": null
         }
       ]
@@ -18850,21 +18865,6 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-vercel-ai-security",
-      "short": "eslint-plugin-vercel-ai-security",
-      "version": "2.2.0",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "fix 26 FPs and 13 FNs, apply documented option defaults, quieter recommended preset",
           "pr": null
         }
       ]
