@@ -118,7 +118,7 @@ await client.query(`SET search_path = ${schema}`);
 
 ### Also checked (since 2026-10)
 
-- `options: \`-c search_path=${userSchema}\`` on a pg `Pool` / `Client`.
+- ``options: `-c search_path=${userSchema}` `` on a pg `Pool` / `Client`.
 - `SELECT set_config('search_path', $1, …)` with a non-constant value in the
   bound array — a parameter stops injection, not hijacking.
 - An allowlist check extracted into a TypeScript `asserts` helper called before

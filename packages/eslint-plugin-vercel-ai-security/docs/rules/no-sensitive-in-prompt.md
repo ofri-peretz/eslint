@@ -103,7 +103,7 @@ Sending sensitive data to LLMs can result in:
 - Names are matched by whole word: `businessName` has no `ssn` word, and
   `maxTokens` / `totalTokens` are counts of tokens, not tokens.
 - `messages: [...]` is searched: array elements, spread elements, and the values
-  of message objects (`{ role, content: \`… ${user.password}\` }`).
+  of message objects (``{ role, content: `… ${user.password}` }``).
 - `user['password']` is the same property as `user.password`.
 - **Options:** the documented `defaultOptions` now apply. Earlier versions read `context.options` and silently ran a shorter hard-coded list instead.
 
