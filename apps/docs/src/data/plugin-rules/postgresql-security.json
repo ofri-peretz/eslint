@@ -39,8 +39,8 @@
       "cvss": "",
       "description": "Ensures query promises are awaited or handled.",
       "typeStatus": "unaware",
-      "recommended": true,
-      "warns": false,
+      "recommended": false,
+      "warns": true,
       "fixable": false,
       "hasSuggestions": false,
       "deprecated": false,
@@ -189,8 +189,8 @@
       "cvss": "",
       "description": "Prevents calling client.release() multiple times on the same client.",
       "typeStatus": "unaware",
-      "recommended": true,
-      "warns": false,
+      "recommended": false,
+      "warns": true,
       "fixable": false,
       "hasSuggestions": false,
       "deprecated": false,
@@ -199,5 +199,5 @@
     }
   ],
   "totalRules": 13,
-  "lastSynced": "2026-08-09T03:05:47.404Z"
+  "lastSynced": "2026-10-11T04:53:24.284Z"
 }
