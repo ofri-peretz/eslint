@@ -19,6 +19,8 @@
  * log, not an OS-level OOM-kill. This locks the fix in place: every forked
  * worker must get an explicit heap ceiling sized from the runner's own
  * memory and the worker count, not whatever V8 picks by default.
+ *
+ * @provenBy {"file": "scripts/real-source-scan.mts", "find": "execArgv: [\n              ...process.execArgv,\n              `--max-old-space-size=${WORKER_HEAP_MB}`,\n            ],", "replace": "execArgv: process.execArgv,"}
  */
 
 import { describe, it, expect } from 'vitest';
