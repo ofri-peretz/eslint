@@ -11,6 +11,7 @@
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { AST_NODE_TYPES, resolveModuleBinding } from '@interlace/eslint-devkit';
 import { PG_MODULES } from './index';
+import { pgTypeName } from './pool-receiver';
 
 const PG_MODULE_SET: ReadonlySet<string> = new Set(PG_MODULES);
 
@@ -121,23 +122,8 @@ function isPgConfigType(
   type: TSESTree.TypeNode | undefined,
   scope: TSESLint.Scope.Scope,
 ): boolean {
-  if (type?.type !== AST_NODE_TYPES.TSTypeReference) return false;
-  const { typeName } = type;
-  const name =
-    typeName.type === AST_NODE_TYPES.TSQualifiedName
-      ? typeName.right.name
-      : null;
-  const binding =
-    typeName.type === AST_NODE_TYPES.TSQualifiedName
-      ? resolveModuleBinding(typeName.left, scope)
-      : resolveModuleBinding(typeName, scope);
-  const exported = name ?? binding?.path.at(-1);
-  return (
-    binding !== undefined &&
-    PG_MODULE_SET.has(packageRoot(binding.module)) &&
-    exported !== undefined &&
-    PG_CONFIG_TYPES.has(exported)
-  );
+  const name = pgTypeName(type, scope);
+  return name !== null && PG_CONFIG_TYPES.has(name);
 }
 
 /**
