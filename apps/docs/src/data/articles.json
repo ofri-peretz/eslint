@@ -33,7 +33,7 @@
       "page_views_count": 0,
       "public_reactions_count": 1,
       "positive_reactions_count": 1,
-      "comments_count": 0,
+      "comments_count": 1,
       "tag_list": [
         "ai",
         "webdev",
@@ -1928,6 +1928,6 @@
     }
   ],
   "total": 94,
-  "lastUpdated": "2026-10-09T05:58:14.467Z",
+  "lastUpdated": "2026-10-11T04:53:26.615Z",
   "source": "public"
 }
