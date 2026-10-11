@@ -323,7 +323,7 @@ jobs:
       # This built all 32 packages until 2026-08-30. Measured on run
       # 33324089803: 159s of a 194s job — 82% — to serve a gate that takes 6s,
       # and `quality.yml`'s wall-clock is this job. The corpus config
-      # (benchmarks/suites/ilb-arena/configs/interlace.config.js) imports TEN
+      # (benchmarks/suites/ilb-arena/configs/interlace.config.js) imports ELEVEN
       # plugins. Turbo still builds `@interlace/eslint-devkit` because the
       # `...` suffix pulls each plugin's dependencies — that is the correct
       # reason for it to build, rather than because the glob happened to
@@ -339,6 +339,7 @@ jobs:
             --filter=eslint-plugin-express-security... \
             --filter=eslint-plugin-jwt-security... \
             --filter=eslint-plugin-lambda-security... \
+            --filter=eslint-plugin-mcp-sdk-security... \
             --filter=eslint-plugin-mongodb-security... \
             --filter=eslint-plugin-nestjs-security... \
             --filter=eslint-plugin-node-security... \

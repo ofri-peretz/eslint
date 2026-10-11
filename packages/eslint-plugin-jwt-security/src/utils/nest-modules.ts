@@ -21,7 +21,6 @@
  */
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { createRequire } from 'node:module';
 import type { TSESTree } from '@interlace/eslint-devkit';
 import {
   AST_NODE_TYPES,
@@ -29,14 +28,10 @@ import {
   propertyName,
 } from '@interlace/eslint-devkit';
 import { childNodes, requireSpecifier, soleReturn } from './value-flow';
+import { parseSource } from './cross-file';
 
 /** What the package's JwtModule registrations say about `expiresIn`. */
 export type ModuleExpiry = 'set' | 'missing' | 'unknown';
-
-interface ParserLike {
-  parseForESLint?(code: string, options: object): { ast: TSESTree.Program };
-  parse?(code: string, options: object): TSESTree.Program;
-}
 
 /** Directories that hold built, vendored or generated code, never sources. */
 const SKIPPED_DIRECTORIES: ReadonlySet<string> = new Set([
@@ -124,40 +119,6 @@ function moduleFiles(root: string): string[] {
   return files;
 }
 
-/** `@typescript-eslint/parser` from the project being linted, if installed. */
-function fallbackParser(): unknown {
-  try {
-    return createRequire(path.join(process.cwd(), 'noop.js'))(
-      '@typescript-eslint/parser',
-    );
-  } catch {
-    return null;
-  }
-}
-
-function tryParse(
-  candidate: unknown,
-  code: string,
-  filePath: string,
-): TSESTree.Program | null {
-  const parser = candidate as ParserLike | null;
-  if (!parser) return null;
-  const options = {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    range: true,
-    loc: true,
-    filePath,
-  };
-  try {
-    return parser.parseForESLint
-      ? parser.parseForESLint(code, options).ast
-      : parser.parse!(code, options);
-  } catch {
-    return null;
-  }
-}
-
 function parseModule(file: string, parser: unknown): TSESTree.Program | null {
   let code: string;
   try {
@@ -167,7 +128,7 @@ function parseModule(file: string, parser: unknown): TSESTree.Program | null {
   }
   // Most module files never mention it; parse only the ones that might.
   if (!code.includes('JwtModule')) return null;
-  return tryParse(parser, code, file) ?? tryParse(fallbackParser(), code, file);
+  return parseSource(code, file, parser);
 }
 
 /** Local names `JwtModule` is bound to from `@nestjs/jwt` in this file. */

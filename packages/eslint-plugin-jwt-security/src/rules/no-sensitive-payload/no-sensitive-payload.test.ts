@@ -439,3 +439,63 @@ jwt.sign({ sub, ...profile }, key);`,
     ],
   });
 });
+
+// ---------------------------------------------------------------------------
+// Pinned corpus (PR #1192): a JAR request object (RFC 9101). Its claims ARE
+// the authorization request parameters, so spreading them in is the point.
+// Recognised structurally by the claims RFC 9101 defines for it: `client_id`,
+// with `iss` set to that same client id and an `aud` (the authorization
+// server), or with `response_type` / `redirect_uri`.
+// ---------------------------------------------------------------------------
+describe('no-sensitive-payload — JAR request objects', () => {
+  ruleTester.run('authorization request objects', noSensitivePayload, {
+    valid: [
+      {
+        // @found pinned corpus auth0/express-openid-connect:lib/client.js:376
+        name: 'FP: a JAR request object carries the authorization parameters by design',
+        code: `const { SignJWT } = require('jose');
+async function buildRequestObject(authParams, config, audience) {
+  const now = Math.floor(Date.now() / 1000);
+  const payload = {
+    ...authParams,
+    client_id: config.clientID,
+    iss: config.clientID,
+    aud: audience,
+    jti: id(),
+    iat: now,
+    nbf: now,
+    exp: now + 60,
+  };
+  return new SignJWT(payload).setProtectedHeader({ alg: config.alg }).sign(key);
+}`,
+      },
+      {
+        name: 'a request object that names response_type beside client_id',
+        code: `import jwt from 'jsonwebtoken';
+export const requestObject = (params) =>
+  jwt.sign({ ...params, client_id: cid, response_type: 'code' }, key, { expiresIn: 60 });`,
+      },
+    ],
+    invalid: [
+      {
+        name: 'a client_id claim alone does not make a token a request object',
+        code: `import jwt from 'jsonwebtoken';
+export const issue = (user) => jwt.sign({ ...user, client_id: cid }, key);`,
+        errors: [{ messageId: 'wholeRecordSpread' }],
+      },
+      {
+        name: 'an iss that is not the client id is not a JAR request object',
+        code: `import jwt from 'jsonwebtoken';
+export const issue = (user) => jwt.sign({ ...user, client_id: cid, iss: issuer, aud }, key);`,
+        errors: [{ messageId: 'wholeRecordSpread' }],
+      },
+      {
+        name: 'a JAR request object still may not carry a password',
+        code: `import jwt from 'jsonwebtoken';
+export const req = (params) =>
+  jwt.sign({ ...params, client_id: cid, redirect_uri: uri, password: pw }, key);`,
+        errors: [{ messageId: 'sensitivePayloadField' }],
+      },
+    ],
+  });
+});

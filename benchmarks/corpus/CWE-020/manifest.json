@@ -3,7 +3,10 @@
   "name": "Improper Input Validation (validation-bypass cluster)",
   "owasp": "A03:2021",
   "severity": "HIGH",
-  "expectedPlugins": ["eslint-plugin-browser-security"],
+  "expectedPlugins": [
+    "eslint-plugin-browser-security",
+    "eslint-plugin-mcp-sdk-security"
+  ],
   "expectedPluginsNote": "Was eslint-plugin-secure-coding, and had been wrong since these fixtures landed in #290 — not broken by any later change. They are candidate-research fixtures, written for rules that were PLANNED for secure-coding; the rules were then built in browser-security instead (no-incomplete-url-sanitization, no-insecure-redirects, require-postmessage-origin-check), which is where a redirect allowlist, a postMessage origin test and a URL scheme check belong. The only secure-coding rule carrying CWE-020 is no-graphql-injection, which could never fire on a URL substring check. Every fixture here IS detected, with accurate messages, by the plugin now named. Safe to correct: expectedPlugins reaches ilb-cwe-corpus output metadata only and does not gate scoring — every plugin is run against every fixture — so this restates no published number.",
   "fixtures": {
     "vulnerable": [
@@ -26,6 +29,10 @@
       {
         "file": "incorrect-suffix-check.js",
         "description": "indexOf-emulated endsWith with no tail boundary (.trusted.com.evil.io passes)"
+      },
+      {
+        "file": "mcp-tool-reads-args-without-schema.js",
+        "description": "MCP tool handler destructures client arguments while the registration declares no inputSchema"
       }
     ],
     "safe": [
@@ -48,6 +55,10 @@
       {
         "file": "endswith-boundary.js",
         "description": "String.prototype.endsWith suffix check with explicit dot boundary"
+      },
+      {
+        "file": "mcp-tool-declares-input-schema.js",
+        "description": "MCP tool declares a Zod inputSchema for every argument it reads; a zero-argument tool declares none"
       }
     ]
   }

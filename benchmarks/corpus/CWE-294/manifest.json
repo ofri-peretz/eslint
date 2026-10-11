@@ -1,0 +1,21 @@
+{
+  "cwe": "CWE-294",
+  "name": "Authentication Bypass by Capture-replay",
+  "owasp": "A07:2021",
+  "severity": "MEDIUM",
+  "expectedPlugins": ["eslint-plugin-jwt"],
+  "fixtures": {
+    "vulnerable": [
+      {
+        "file": "signjwt-no-issued-at.js",
+        "description": "jose SignJWT minted without setIssuedAt() — no iat claim"
+      }
+    ],
+    "safe": [
+      {
+        "file": "signjwt-with-issued-at.js",
+        "description": "jose SignJWT with setIssuedAt() and setExpirationTime()"
+      }
+    ]
+  }
+}

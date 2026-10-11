@@ -50,6 +50,7 @@
     "eslint-plugin-import-next": "*",
     "eslint-plugin-jwt-security": "*",
     "eslint-plugin-lambda-security": "*",
+    "eslint-plugin-mcp-sdk-security": "*",
     "eslint-plugin-maintainability": "*",
     "eslint-plugin-modernization": "*",
     "eslint-plugin-modularity": "*",

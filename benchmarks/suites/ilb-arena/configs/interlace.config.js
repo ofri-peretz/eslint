@@ -1,6 +1,6 @@
 /**
  * ESLint Configuration for Interlace Security Ecosystem
- * Full security fleet: 10 plugins (the crypto rules now ship in node-security)
+ * Full security fleet: 11 plugins (the crypto rules now ship in node-security)
  */
 
 import secureCoding from "eslint-plugin-secure-coding";
@@ -13,6 +13,7 @@ import expressSecurity from "eslint-plugin-express-security";
 import nestjsSecurity from "eslint-plugin-nestjs-security";
 import lambdaSecurity from "eslint-plugin-lambda-security";
 import vercelAiSecurity from "eslint-plugin-vercel-ai-security";
+import mcpSdkSecurity from "eslint-plugin-mcp-sdk-security";
 
 export default [
   // Core security rules (23 rules)
@@ -44,4 +45,9 @@ export default [
 
   // Vercel AI SDK security rules — prompt injection, output validation (19 rules)
   vercelAiSecurity.configs.recommended,
+
+  // MCP SDK security rules — tool argument injection, schemas, descriptions
+  // (4 rules). Every rule gates on an MCP SDK import, so it is silent on
+  // every non-MCP fixture and repository.
+  mcpSdkSecurity.configs.recommended,
 ];

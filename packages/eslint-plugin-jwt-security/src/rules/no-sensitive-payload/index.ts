@@ -20,11 +20,14 @@ import {
   objectKeyName,
 } from '@interlace/eslint-devkit';
 import {
+  getOptionValue,
+  hasOption,
   isSignOperation,
   joseBuilderChain,
   resolveObject,
   SENSITIVE_PAYLOAD_FIELDS,
 } from '../../utils';
+import type { ResolvedObject } from '../../utils';
 import { mayCarryField } from '../../utils/type-info';
 import type { NoSensitivePayloadOptions } from '../../types';
 
@@ -115,6 +118,32 @@ export const noSensitivePayload = createRule<RuleOptions, MessageIds>({
 
     const sourceCode = context.sourceCode;
 
+    /**
+     * A JAR request object (RFC 9101): a signed authorization request whose
+     * claims ARE the authorization parameters, so spreading them in is its
+     * purpose, not a leak. Recognised by the claims RFC 9101 defines for it —
+     * `client_id` together with `response_type` or `redirect_uri`, or with an
+     * `aud` and an `iss` that is the very same expression as the client id
+     * (the request is issued BY the client). Only the whole-record check
+     * stands down; a sensitive field named in it is still reported.
+     */
+    const isRequestObject = (payload: ResolvedObject): boolean => {
+      const clientId = getOptionValue(payload, 'client_id');
+      if (clientId === undefined) return false;
+      if (
+        hasOption(payload, 'response_type') ||
+        hasOption(payload, 'redirect_uri')
+      ) {
+        return true;
+      }
+      const issuer = getOptionValue(payload, 'iss');
+      return (
+        hasOption(payload, 'aud') &&
+        issuer !== undefined &&
+        sourceCode.getText(issuer) === sourceCode.getText(clientId)
+      );
+    };
+
     return {
       CallExpression(node: TSESTree.CallExpression) {
         if (!isSignOperation(node, sourceCode)) {
@@ -145,7 +174,9 @@ export const noSensitivePayload = createRule<RuleOptions, MessageIds>({
          * (CWE-200). With type information the declared fields ARE known, and
          * the spread is reported only when one of them is sensitive.
          */
-        for (const spread of payload.opaqueSpreads) {
+        for (const spread of isRequestObject(payload)
+          ? []
+          : payload.opaqueSpreads) {
           if (mayCarryField(spread.argument, sourceCode, allSensitiveFields)) {
             context.report({ node: spread, messageId: 'wholeRecordSpread' });
           }
