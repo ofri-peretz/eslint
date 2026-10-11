@@ -219,7 +219,9 @@ describe('no-batch-insert-loop — walk boundaries', () => {
       {
         // Arguments the pagination reader cannot interpret fall through to a
         // report: the evidence for this rule is the loop, not the SQL.
-        code: 'async function f() { for (const i of items) { await pool.query(123); } }',
+        // FP/FN zero-deferral 2026-10 (BIL-2b): now carries per-pass params,
+        // which is what makes a loop one round trip per row.
+        code: 'async function f() { for (const i of items) { await pool.query(123, [i]); } }',
         errors: [{ messageId: 'noBatchInsertLoop' }],
       },
       {
@@ -250,8 +252,12 @@ describe('no-batch-insert-loop — fp/fn review 2026-10', () => {
     ]),
     invalid: pg([
       {
-        name: 'a statement built by a call with no arguments is unreadable, so reported',
-        code: 'const pool = new Pool();\nfor (const r of rows) { await pool.query(build()); }',
+        // FP/FN zero-deferral 2026-10 (BIL-2b): was 'a statement built by a call
+        // with no arguments is unreadable, so reported'. A call in the statement
+        // position is not provably the same statement each pass, so it is no
+        // longer reported — the per-row shape needs per-pass parameters.
+        name: 'a statement built by a call with per-row parameters is still one round trip per row',
+        code: 'const pool = new Pool();\nfor (const r of rows) { await pool.query(SQL_FOR_ROWS, [r.id]); }',
         errors: [{ messageId: 'noBatchInsertLoop' }],
       },
       {
@@ -331,5 +337,76 @@ describe('no-batch-insert-loop — fp/fn review 2026-10', () => {
  name: 'FP: supertest .query({ q }) in a loop is not a database query', code: "for (const term of terms) { await request(app).get('/users/search').query({ q: term }).expect(200); }" },
     ]),
     invalid: pg([]),
+  });
+});
+
+/** FP/FN zero-deferral, 2026-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md). */
+describe('no-batch-insert-loop — the statement must be iteration-invariant', () => {
+  ruleTester.run('BIL-2b: a loop whose SQL text varies per iteration is not a batch', noBatchInsertLoop, {
+    valid: pg([
+      {
+        name: 'a statement produced by a call inside the loop is not provably the same each pass',
+        code: 'const pool = new Pool();\nfor (const r of rows) { await pool.query(build()); }',
+      },
+      {
+        // @found harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md)
+        name: 'FP: a migration runner reads a different file into the statement each pass',
+        code: "import fs from 'node:fs/promises';\nexport async function migrate(client, files) { for (const file of files) { const sql = await fs.readFile(file, 'utf8'); await client.query(sql); } }",
+      },
+      {
+        // @found reasoned during the 2026-10-10 FP/FN audit, not seen in real code
+        name: 'FP: each element of a statement list is its own statement',
+        code: 'export async function run(client, statements) { for (const stmt of statements) { await client.query(stmt); } }',
+      },
+      {
+        // @found reasoned during the 2026-10-10 FP/FN audit, not seen in real code
+        name: 'FP: a statement built from the loop element differs each pass',
+        code: 'export async function reset(pool, tables) { for (const t of tables) { await pool.query(`TRUNCATE ${t}`); } }',
+      },
+      {
+        name: 'a fixed statement with no parameters is not one row per pass',
+        code: "export async function ping(pool, n) { for (let i = 0; i < n; i++) { await pool.query('SELECT 1'); } }",
+      },
+      {
+        name: 'a fixed statement with parameters that do not vary is not one row per pass',
+        code: "export async function f(pool, id) { for (const _ of [1, 2]) { await pool.query('UPDATE t SET n = n + 1 WHERE id = $1', [id]); } }",
+      },
+      {
+        name: 'a map callback whose statement is its element is not a batch',
+        code: 'export const run = (client, statements) => statements.forEach((stmt) => client.query(stmt));',
+      },
+    ]),
+    invalid: pg([
+      {
+        name: 'a fixed statement bound outside the loop with per-row parameters',
+        code: "const sql = 'INSERT INTO t (a) VALUES ($1)';\nexport async function f(pool, rows) { for (const r of rows) { await pool.query(sql, [r.a]); } }",
+        errors: [{ messageId: 'noBatchInsertLoop' }],
+      },
+      {
+        name: 'per-row parameters derived through a binding declared in the loop',
+        code: "export async function f(pool, rows) { for (const r of rows) { const a = r.a; await pool.query('INSERT INTO t (a) VALUES ($1)', [a]); } }",
+        errors: [{ messageId: 'noBatchInsertLoop' }],
+      },
+      {
+        name: 'a config object whose values vary per row',
+        code: "export async function f(pool, rows) { for (const r of rows) { await pool.query({ text: 'INSERT INTO t (a) VALUES ($1)', values: [r.a] }); } }",
+        errors: [{ messageId: 'noBatchInsertLoop' }],
+      },
+      {
+        name: 'per-row parameters inside an object literal',
+        code: "export async function f(pool, rows) { for (const r of rows) { await pool.query('INSERT INTO t (doc) VALUES ($1)', [{ id: r.id, [kind]: 1 }]); } }",
+        errors: [{ messageId: 'noBatchInsertLoop' }],
+      },
+      {
+        name: 'a counted loop indexing the rows',
+        code: "export async function f(pool, rows) { for (let i = 0; i < rows.length; i++) { await pool.query('INSERT INTO t (a) VALUES ($1)', [rows[i].a]); } }",
+        errors: [{ messageId: 'noBatchInsertLoop' }],
+      },
+      {
+        name: 'a while loop over a queue',
+        code: "export async function f(pool, queue) { while (queue.length) { const job = queue.shift(); await pool.query('INSERT INTO done (id) VALUES ($1)', [job.id]); } }",
+        errors: [{ messageId: 'noBatchInsertLoop' }],
+      },
+    ]),
   });
 });

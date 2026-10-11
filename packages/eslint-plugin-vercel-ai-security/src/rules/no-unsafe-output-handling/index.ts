@@ -24,7 +24,8 @@ import {
   resolveModuleBinding,
 } from '@interlace/eslint-devkit';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
-import { calleeName, lookupVariable, unwrap } from '../../utils/sdk';
+import { calleeName, isSdkHookCall, isSdkTypedParameter, lookupVariable } from '../../utils/sdk';
+import { derivesFrom } from '../../utils/flow';
 
 type MessageIds =
   | 'unsafeOutputExecution'
@@ -142,55 +143,43 @@ export const noUnsafeOutputHandling = createRule<RuleOptions, MessageIds>({
 
     const sourceCode = context.sourceCode;
 
-    /**
-     * Variables locally bound to model output: the result of a known AI SDK
-     * call (`const { text } = await generateText(...)`), a property awaited off
-     * one (`const code = await result.text`), or the parameters of a tool's
-     * `execute` — which the SDK fills from the model's tool call.
-     *
-     * Keyed on the resolved scope variable, not the name: `text` is one of the
-     * most common identifiers there is, so a name set reports any unrelated
-     * `text` parameter in a file that happens to also destructure one.
-     */
-    const aiBoundVariables = new Set<TSESLint.Scope.Variable>();
-
-    function isAIBound(node: TSESTree.Node): boolean {
-      if (node.type !== 'Identifier') return false;
-      for (const variable of aiBoundVariables) {
-        if (variable.references.some((r) => r.identifier === node)) return true;
-      }
-      return false;
-    }
-
     const AI_SDK_CALLS = new Set(['generateText', 'streamText', 'generateObject', 'streamObject']);
 
-    function isAISDKCall(node: TSESTree.Expression): boolean {
-      // generateText(...) | ai.generateText(...) | sdk.generateText(...)
-      let target: TSESTree.Expression = node;
-      if (target.type === 'AwaitExpression') target = target.argument as TSESTree.Expression;
-      if (target.type !== 'CallExpression') return false;
-      const callee = target.callee;
-      if (callee.type === 'Identifier' && AI_SDK_CALLS.has(callee.name)) return true;
-      // `has(null)` is already false for a runtime-keyed member, so no `?? ''`
-      // sentinel — its empty-string arm is a branch no input can reach.
-      if (
-        callee.type === 'MemberExpression' &&
-        namesOneOf(propertyName(callee), AI_SDK_CALLS)
-      )
-        return true;
-      return false;
+    /** generateText(...) | ai.generateText(...) | sdk['generateText'](...) */
+    function isAISDKCall(call: TSESTree.CallExpression): boolean {
+      const callee = call.callee;
+      if (callee.type === 'Identifier') return AI_SDK_CALLS.has(callee.name);
+      // `has(null)` is already false for a runtime-keyed member.
+      return callee.type === 'MemberExpression' && namesOneOf(propertyName(callee), AI_SDK_CALLS);
     }
 
-    /** Structurally model output: a bound variable, a property of one, or a string method on one. */
+    /**
+     * Where model output enters a file: an AI SDK call's result, a UI hook's
+     * result (`useChat()` / `useCompletion()` from the SDK), a tool's
+     * `execute` parameters (filled from the model's tool call), and a
+     * parameter typed with an SDK message type (`{ m }: { m: UIMessage }`).
+     */
+    const outputFlow = {
+      sourceCode,
+      isSource: (node: TSESTree.Node) =>
+        (node.type === 'CallExpression' && isAISDKCall(node)) || isSdkHookCall(node, sourceCode),
+      isSourceParameter: (
+        variable: TSESLint.Scope.Variable,
+        fn: TSESTree.FunctionLike,
+      ) =>
+        (fn.parent.type === 'Property' && isToolExecute(fn.parent)) ||
+        isSdkTypedParameter(variable, sourceCode),
+    };
+
+    /**
+     * Structurally model output: followed back through declarations,
+     * reassignments, member reads, string / array derivations, same-file
+     * helpers and component props to one of the sources above. Keyed on
+     * resolved bindings, never names: a shadowing `text` is a different
+     * variable.
+     */
     function isBoundOutput(node: TSESTree.Node): boolean {
-      if (isAIBound(node)) return true;
-      if (node.type === 'MemberExpression') return isBoundOutput(node.object);
-      // `text.trim()`, `result.text.replace(...)` — still the model's string.
-      return (
-        node.type === 'CallExpression' &&
-        node.callee.type === 'MemberExpression' &&
-        isBoundOutput(node.callee.object)
-      );
+      return derivesFrom(node, outputFlow);
     }
 
     /**
@@ -255,14 +244,9 @@ export const noUnsafeOutputHandling = createRule<RuleOptions, MessageIds>({
     }
 
     /** Is this a tool's `execute`, whose parameters the model fills? */
+    /** Is this property — whose value is a function — a tool's `execute`? */
     function isToolExecute(node: TSESTree.Property): boolean {
       if (objectKeyName(node) !== 'execute') return false;
-      if (
-        node.value.type !== 'ArrowFunctionExpression' &&
-        node.value.type !== 'FunctionExpression'
-      ) {
-        return false;
-      }
       const definition = node.parent as TSESTree.ObjectExpression;
       const owner = definition.parent;
       if (
@@ -304,29 +288,6 @@ export const noUnsafeOutputHandling = createRule<RuleOptions, MessageIds>({
     }
 
     return {
-      VariableDeclarator(node: TSESTree.VariableDeclarator) {
-        if (!node.init) return;
-        // `const r = await generateText(...)`, `const code = await r.text`
-        // where `r` already holds model output, or
-        // `const out = (await generateText(...)).text`.
-        const init = unwrap(node.init);
-        const bound =
-          isAISDKCall(node.init) ||
-          (init.type === 'MemberExpression' &&
-            (isBoundOutput(init.object) || isAISDKCall(init.object)));
-        if (!bound) return;
-        for (const variable of sourceCode.getDeclaredVariables(node)) {
-          aiBoundVariables.add(variable);
-        }
-      },
-
-      Property(node: TSESTree.Property) {
-        if (!isToolExecute(node)) return;
-        for (const variable of sourceCode.getDeclaredVariables(node.value)) {
-          aiBoundVariables.add(variable);
-        }
-      },
-
       NewExpression(node: TSESTree.NewExpression) {
         // `new Function(code)`, `new vm.Script(code)`
         const isFunction = isGlobal(node.callee, 'Function');

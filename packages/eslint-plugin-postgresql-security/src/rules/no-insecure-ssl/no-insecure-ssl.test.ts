@@ -109,8 +109,11 @@ describe('no-insecure-ssl', () => {
         'class LocalPool {}\nnew LocalPool({ ssl: { rejectUnauthorized: false } });',
         // A computed key that is not a static string names nothing knowable.
         'new Pool({ [KEY]: { rejectUnauthorized: false } });',
-        // More binding hops than the walker follows.
-        'const a = { ssl: { rejectUnauthorized: false } };\nconst b = a;\nconst c = b;\nconst d = c;\nconst e = d;\nconst f = e;\nnew Pool(f);',
+        // More binding hops than the walker follows. The bound moved from 4
+        // to 8 when value following went multi-hop and cross-file (FP/FN
+        // zero-deferral, 2026-10); the chain is ten aliases so the bound,
+        // not the chain length, is what this case still pins.
+        'const a0 = { ssl: { rejectUnauthorized: false } };\nconst a1 = a0;\nconst a2 = a1;\nconst a3 = a2;\nconst a4 = a3;\nconst a5 = a4;\nconst a6 = a5;\nconst a7 = a6;\nconst a8 = a7;\nconst a9 = a8;\nconst a10 = a9;\nnew Pool(a10);',
         // A parameter has no initialiser to follow.
         'export function make(config) { return new Pool(config); }',
         // Declared without an initialiser.
@@ -330,6 +333,14 @@ describe('no-insecure-ssl — fp/fn review 2026-10', () => {
       { name: 'a generic type annotation is not a pg config type', code: "import { Pool } from 'pg';\nconst o: Partial<X> = { ssl: { rejectUnauthorized: false } };" },
       { name: 'an unresolved PoolConfig name is not proven to be pg', code: "import { Pool } from 'pg';\nconst o: PoolConfig = { ssl: { rejectUnauthorized: false } };" },
       { name: 'a declaration with no initialiser has no config to read', code: "import { Pool } from 'pg';\nlet o: import('pg').PoolConfig;" },
+      {
+        name: 'a pg-promise factory written by assignment is not read',
+        code: "import pgPromise from 'pg-promise';\nlet pgp;\npgp = pgPromise();\npgp({ ssl: { rejectUnauthorized: false } });",
+      },
+      {
+        name: 'a pg-promise factory parameter is not read',
+        code: "import pgPromise from 'pg-promise';\nexport function f(pgp) { pgp = pgPromise(); pgp({ ssl: { rejectUnauthorized: false } }); }",
+      },
       // A local function that does not simply return a config.
       { name: 'a local function that returns nothing yields no config', code: "import { Pool } from 'pg';\nfunction cfg() { log(); }\nnew Pool(cfg());" },
       { name: 'a computed callee is not a local config factory', code: "import { Pool } from 'pg';\nnew Pool(cfgs[0]());" },

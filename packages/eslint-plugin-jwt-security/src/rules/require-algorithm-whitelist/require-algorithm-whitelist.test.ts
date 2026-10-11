@@ -273,6 +273,57 @@ class AuthService {
   check(code) { return this.totp.verify(code, 'base32'); }
 }`,
       },
+      /*
+       * Audit 2026-10 (zero-deferral pass, owner decision on the FP-4
+       * residual): the five cases below used to be INVALID. They reported a
+       * `this.<member>.verify()` the class gives no structural evidence for —
+       * no annotation that resolves to a JWT library, no `@Inject(X)` of a JWT
+       * import, no assignment from one. The rule now requires positive
+       * evidence before treating an injected member as a JWT client, because
+       * the only other signal left is the member's NAME. Each case keeps its
+       * shape so the "no evidence" arms of the lookup stay covered.
+       */
+      {
+        name: 'no evidence: a member typed with a qualified name is not a JWT client',
+        code: `import jwt from 'jsonwebtoken';
+class A {
+  private readonly k: ns.Type;
+  run(token) { return this.k.verify(token, key); }
+}`,
+      },
+      {
+        name: 'no evidence: this.<member> outside any class is not a JWT client',
+        code: `import jwt from 'jsonwebtoken';
+const o = { run(token) { return this.jwt.verify(token, key); } };`,
+      },
+      {
+        name: 'no evidence: a union-typed member is not a JWT client',
+        code: `import jwt from 'jsonwebtoken';
+import { Foo } from './foo';
+class A {
+  constructor(private readonly j: Foo | Bar, plain: Foo, private readonly q = 1) {}
+  m() {}
+  #hidden = 1;
+  run(token) { return this.j.verify(token, key); }
+}`,
+      },
+      {
+        name: 'no evidence: a member typed with an un-imported name is not a JWT client',
+        code: `import jwt from 'jsonwebtoken';
+class A {
+  private readonly j: Ambient;
+  run(token) { return this.j.inner.verify(token, key); }
+}`,
+      },
+      {
+        name: 'no evidence: a computed this[name] member names nothing to check',
+        code: `import { JwtService } from '@nestjs/jwt';
+class A {
+  private readonly j!: JwtService;
+  untyped;
+  run(token) { return this[name].verify(token, key); }
+}`,
+      },
     ],
     invalid: [
       {
@@ -316,15 +367,6 @@ jwt.verify(token, { key: pem, passphrase: p });`,
         errors: [{ messageId: 'missingAlgorithmWhitelist' }],
       },
       {
-        name: 'a member typed with a qualified name has no single import',
-        code: `import jwt from 'jsonwebtoken';
-class A {
-  private readonly k: ns.Type;
-  run(token) { return this.k.verify(token, key); }
-}`,
-        errors: [{ messageId: 'missingAlgorithmWhitelist' }],
-      },
-      {
         name: 'a const receiver built by a JWT-library call is still checked',
         code: `import jwt from 'jsonwebtoken';
 import { createVerifier } from 'fast-jwt';
@@ -360,43 +402,6 @@ class A { run(token) { return this.verify(token, key); } }`,
         errors: [{ messageId: 'missingAlgorithmWhitelist' }],
       },
       {
-        name: 'this.<member> outside any class is left alone',
-        code: `import jwt from 'jsonwebtoken';
-const o = { run(token) { return this.jwt.verify(token, key); } };`,
-        errors: [{ messageId: 'missingAlgorithmWhitelist' }],
-      },
-      {
-        name: 'a union-typed member has no single source',
-        code: `import jwt from 'jsonwebtoken';
-import { Foo } from './foo';
-class A {
-  constructor(private readonly j: Foo | Bar, plain: Foo, private readonly q = 1) {}
-  m() {}
-  #hidden = 1;
-  run(token) { return this.j.verify(token, key); }
-}`,
-        errors: [{ messageId: 'missingAlgorithmWhitelist' }],
-      },
-      {
-        name: 'a member typed with an un-imported name is left alone',
-        code: `import jwt from 'jsonwebtoken';
-class A {
-  private readonly j: Ambient;
-  run(token) { return this.j.inner.verify(token, key); }
-}`,
-        errors: [{ messageId: 'missingAlgorithmWhitelist' }],
-      },
-      {
-        name: 'a member typed from @nestjs/jwt with jsonwebtoken arity',
-        code: `import { JwtService } from '@nestjs/jwt';
-class A {
-  private readonly j!: JwtService;
-  untyped;
-  run(token) { return this[name].verify(token, key); }
-}`,
-        errors: [{ messageId: 'missingAlgorithmWhitelist' }],
-      },
-      {
         name: 'a bound crypto name that is not the WebCrypto global is still checked',
         code: `import jwt from 'jsonwebtoken';
 export function f(crypto) { return crypto.verify(token, key); }`,
@@ -418,6 +423,108 @@ q.verify(token, key);`,
           { messageId: 'missingAlgorithmWhitelist' },
           { messageId: 'missingAlgorithmWhitelist' },
         ],
+      },
+    ],
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Zero-deferral pass (audit 2026-10): an injected member needs POSITIVE
+// evidence before it is treated as a JWT client.
+// ---------------------------------------------------------------------------
+describe('require-algorithm-whitelist — injected member evidence', () => {
+  ruleTester.run('this.<member> evidence', requireAlgorithmWhitelist, {
+    valid: [
+      {
+        // @found FP-4 residual, harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-jwt-security.md)
+        name: 'FP: an untyped constructor-injected member is not assumed to be a JWT client',
+        code: `import jwt from 'jsonwebtoken';
+class AuthService {
+  constructor(private readonly hashing) {}
+  check(pw, hash) { return this.hashing.verify(pw, hash); }
+}`,
+      },
+      {
+        // @found FP-4 residual, reasoned during the 2026-10-10 zero-deferral pass
+        name: 'FP: an @Inject token that is not a JWT import is no evidence',
+        code: `import jwt from 'jsonwebtoken';
+import { Inject } from '@nestjs/common';
+import { HASHER } from './tokens';
+class AuthService {
+  constructor(@Inject(HASHER) private readonly hashing) {}
+  check(pw, hash) { return this.hashing.verify(pw, hash); }
+}`,
+      },
+      {
+        // @found FP-4 residual, reasoned during the 2026-10-10 zero-deferral pass
+        name: 'FP: a member assigned from a non-JWT construction is no evidence',
+        code: `import jwt from 'jsonwebtoken';
+import { Webhook } from 'svix';
+class Hooks {
+  wh;
+  constructor() { this.wh = new Webhook(secret); }
+  check(p, h) { return this.wh.verify(p, h); }
+}`,
+      },
+    ],
+    invalid: [
+      {
+        name: 'a member assigned the jsonwebtoken import in the constructor is a JWT client',
+        code: `import jwt from 'jsonwebtoken';
+class A {
+  lib;
+  constructor() { this.lib = jwt; }
+  run(token) { return this.lib.verify(token, key); }
+}`,
+        errors: [{ messageId: 'missingAlgorithmWhitelist' }],
+      },
+      {
+        name: 'a property initialised from a JWT import is a JWT client',
+        code: `import * as jsonwebtoken from 'jsonwebtoken';
+class A {
+  private readonly lib = jsonwebtoken;
+  run(token) { return this.lib.verify(token, key); }
+}`,
+        errors: [{ messageId: 'missingAlgorithmWhitelist' }],
+      },
+      {
+        name: 'a property typed `typeof` a JWT import is a JWT client',
+        code: `import jsonwebtoken from 'jsonwebtoken';
+class A {
+  constructor(private readonly lib: typeof jsonwebtoken) {}
+  run(token) { return this.lib.verify(token, key); }
+}`,
+        errors: [{ messageId: 'missingAlgorithmWhitelist' }],
+      },
+      {
+        name: 'an @Inject of a JWT import is evidence',
+        code: `import jsonwebtoken from 'jsonwebtoken';
+import { Inject } from '@nestjs/common';
+class A {
+  @Inject(jsonwebtoken) private readonly lib;
+  run(token) { return this.lib.verify(token, key); }
+}`,
+        errors: [{ messageId: 'missingAlgorithmWhitelist' }],
+      },
+      {
+        name: 'a defaulted parameter property built from a JWT import is evidence',
+        code: `import jsonwebtoken from 'jsonwebtoken';
+class A {
+  constructor(private readonly lib = require('jsonwebtoken')) {}
+  run(token) { return this.lib.verify(token, key); }
+}`,
+        errors: [{ messageId: 'missingAlgorithmWhitelist' }],
+      },
+      {
+        name: 'a member set from an awaited JWT-library factory is evidence',
+        code: `import jwt from 'jsonwebtoken';
+import { createVerifier } from 'fast-jwt';
+class A {
+  v;
+  async init() { this.v = await createVerifier({ key }); this.other = 1; other.x = 2; }
+  run(token) { return this.v.verify(token, key); }
+}`,
+        errors: [{ messageId: 'missingAlgorithmWhitelist' }],
       },
     ],
   });

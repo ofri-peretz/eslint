@@ -10,11 +10,7 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, afterAll, expect } from 'vitest';
 import * as parser from '@typescript-eslint/parser';
-import {
-  noCommandInjectionInTool,
-  isBuiltString,
-  handlerArgNames,
-} from './index';
+import { noCommandInjectionInTool, handlerArgNames } from './index';
 import type { TSESTree } from '@typescript-eslint/utils';
 
 RuleTester.afterAll = afterAll;
@@ -48,21 +44,6 @@ describe('no-command-injection-in-tool', () => {
   describe('Valid', () => {
     ruleTester.run('valid', noCommandInjectionInTool, {
       valid: [
-        {
-          // THE boundary case. node-security/no-shell-injection owns the
-          // concatenated form; reporting it here too would put two plugins on
-          // one line.
-          name: 'an interpolated command belongs to node-security',
-          code:
-            SDK +
-            'server.registerTool("run", cfg, async ({ cmd }) => { execSync(`ls ${cmd}`); });',
-        },
-        {
-          name: 'a concatenated command likewise',
-          code:
-            SDK +
-            'server.registerTool("run", cfg, async ({ cmd }) => { execSync("ls " + cmd); });',
-        },
         {
           name: 'a literal command',
           code:
@@ -145,12 +126,6 @@ describe('no-command-injection-in-tool', () => {
             'server.registerTool("run", cfg, async ({ cmd }) => { getRunner()(cmd); });',
         },
         {
-          name: 'an array-pattern property binds nothing this rule tracks',
-          code:
-            SDK +
-            'server.registerTool("run", cfg, async ({ pair: [a, b] }) => { execSync(a); });',
-        },
-        {
           name: 'a computed member on the args object',
           code:
             SDK +
@@ -165,7 +140,10 @@ describe('no-command-injection-in-tool', () => {
             'server.registerTool("get_issue", cfg, async ({ key }) => { const m = ISSUE_KEY.exec(key); return m; });',
         },
         {
-          name: 'a database exec is not a process sink',
+          // Not a defect of this rule: it was SQL injection reported under the
+          // wrong CWE. Sealed silent here; the SQL-injection rule is backlog.
+          // @found mcp-sdk-security FP/FN review 2026-10, db.exec(sql) reported as CWE-78
+          name: 'FP: a database exec is not a process sink (SQL injection, wrong CWE before)',
           code:
             SDK +
             "import Database from 'better-sqlite3';\nconst db = new Database('app.db');\n" +
@@ -216,7 +194,7 @@ describe('no-command-injection-in-tool', () => {
           name: 'a shell invoked with a fixed script',
           code:
             SDK +
-            'server.registerTool("run", cfg, async ({ cmd }) => { spawn("sh", ["-c", "ls -la"]); spawn("sh", ["-c"]); spawn("sh", ["-c", `ls ${cmd}`]); });',
+            'server.registerTool("run", cfg, async ({ cmd }) => { spawn("sh", ["-c", "ls -la"]); spawn("sh", ["-c"]); spawn("sh", ["-c", `ls ${HOME}`]); });',
         },
         {
           name: 'a tool argument after a flag that is not a shell -c',
@@ -244,7 +222,85 @@ describe('no-command-injection-in-tool', () => {
           name: 'a body declaration that does not come from the arguments',
           code:
             SDK +
-            'server.registerTool("run", cfg, async (args) => { const { cmd } = other; const c2 = args.cmd.trim(); const [x] = args.list; let y; execSync(cmd); execSync(c2); execSync(x); });',
+            'server.registerTool("run", cfg, async (args) => { const { cmd } = other; const c2 = other.cmd.trim(); let y; let z = "ls"; z = "pwd"; execSync(cmd); execSync(c2); execSync(y); execSync(z); });',
+        },
+        {
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, CMD-FN-5 (derived string values)
+          name: 'recall boundary: derived values that are not string derivations stay silent',
+          code:
+            SDK +
+            'server.registerTool("run", cfg, async ({ cmd }) => { execSync(lookup(cmd)); execSync(cmd.length > 3 ? "ls" : "pwd"); execSync(ALLOWED[cmd]); });',
+        },
+        {
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, CMD-FN-5 (derived string values)
+          name: 'recall boundary: a same-file helper whose return ignores its parameter',
+          code:
+            SDK +
+            'function fixed(x) { return "ls -la"; }\nfunction noReturn(x) { x; }\nconst arrow = (x) => "pwd";\n' +
+            'server.registerTool("run", cfg, async ({ cmd }) => { execSync(fixed(cmd)); execSync(noReturn(cmd)); execSync(arrow(cmd)); execSync(unknownFn(cmd)); });',
+        },
+        {
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, CMD-FN-5 (derived string values)
+          name: 'recall boundary: following stops at a cycle and at the depth bound',
+          code:
+            SDK +
+            'server.registerTool("run", cfg, async () => { let a = b; let b = a; execSync(a); });',
+        },
+        {
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, CMD-FN-7 residual (zx / execa $ templates)
+          name: 'recall boundary: a zx template quotes an interpolated argument after the binary',
+          code:
+            SDK +
+            "import { $ } from 'zx';\nimport { $ as e$ } from 'execa';\n" +
+            'server.registerTool("run", cfg, async ({ ref }) => { await $`git log ${ref}`; await e$`git log ${ref}`; await $`ls`; await $({ shell: false })`git log ${ref}`; await $(opts)`git log ${ref}`; });',
+        },
+        {
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, CMD-FN-7 residual (zx / execa $ templates)
+          name: 'recall boundary: a template tag that is not zx or execa',
+          code:
+            SDK +
+            "import { sql } from 'postgres';\n" +
+            'server.registerTool("run", cfg, async ({ q }) => { await sql`${q}`; await html`${q}`; await tags.$`${q}`; });',
+        },
+        {
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, CMD-FN-6 (interpolated command)
+          name: 'recall boundary: shell: true with a fixed argv, or shell: false',
+          code:
+            SDK +
+            'server.registerTool("run", cfg, async ({ cmd }) => { spawn("ls", ["-la"], { shell: true }); spawn("ls", [cmd], { shell: false }); spawn("ls", [cmd], opts); });',
+        },
+        {
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, residual 2 (legacy shape held in variables)
+          name: 'FP: a closed-set schema held in a const is still the allowlist',
+          code:
+            SDK +
+            'const Tool = z.enum(["node", "npm"]);\nconst Schemas = { bin: z.literal("git") };\n' +
+            'server.registerTool("v", { inputSchema: { tool: Tool } }, async ({ tool }) => { execFile(tool); });\n' +
+            'server.tool("w", { bin: Schemas.bin }, async ({ bin }) => { execFile(bin); });',
+        },
+        {
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, CMD-FN-5 (derived string values)
+          name: 'recall boundary: values that are not derived from the argument text',
+          code:
+            SDK +
+            'function f() {}\nclass K {}\n' +
+            'server.registerTool("run", cfg, async ({ cmd }, extra) => {\n' +
+            '  let n = 0; n++;\n' +
+            '  execSync(f); execSync(K); execSync(n); execSync(String()); execSync(cmd.custom()); execSync(cmd[method]());\n' +
+            '  execSync("a".concat("b")); execSync(cmd * 1); execSync(extra.sessionId); execSync([, "ls"].join(" "));\n' +
+            '  for (const item of cmd) { execSync(item); }\n' +
+            '});',
+        },
+        {
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, CMD-FN-5 (derived string values)
+          name: 'recall boundary: helpers that return early, nest a function, or take a destructured parameter',
+          code:
+            SDK +
+            'function early(x) { if (!x) return; return "ls"; }\n' +
+            'function nested(x) { const inner = () => { return x; }; return "pwd"; }\n' +
+            'function picked({ x }) { return x; }\n' +
+            'function needsArg(x) { return x; }\n' +
+            'server.registerTool("run", cfg, async ({ cmd }) => { execSync(early(cmd)); execSync(nested(cmd)); execSync(picked({ x: cmd })); execSync(needsArg()); });',
         },
         {
           name: 'a promisify cycle does not recurse forever',
@@ -616,6 +672,299 @@ describe('no-command-injection-in-tool', () => {
           errors: [{ messageId: 'toolArgToShell' }],
         },
         {
+          // Moved from valid ('an interpolated command belongs to
+          // node-security'). Owner decision 2026-10: inside an MCP tool
+          // handler the built command is this plugin's scope too.
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, CMD-FN-6 (interpolated command)
+          name: 'FN: an interpolated command carrying a tool argument',
+          code:
+            SDK +
+            'server.registerTool("run", cfg, async ({ cmd }) => { execSync(`ls ${cmd}`); });',
+          errors: [
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'cmd', sink: 'execSync' },
+            },
+          ],
+        },
+        {
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, CMD-FN-6 (interpolated command)
+          name: 'FN: a concatenated command carrying a tool argument',
+          code:
+            SDK +
+            'server.registerTool("run", cfg, async (args) => { execSync("git log " + args.ref); exec("ls " + (args.dir || ".")); });',
+          errors: [
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'args.ref', sink: 'execSync' },
+            },
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'args.dir', sink: 'exec' },
+            },
+          ],
+        },
+        {
+          // Moved from the valid 'a shell invoked with a fixed script' case.
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, CMD-FN-6 (interpolated command)
+          name: 'FN: an interpolated script after sh -c',
+          code:
+            SDK +
+            'server.registerTool("run", cfg, async ({ cmd }) => { spawn("sh", ["-c", `ls ${cmd}`]); });',
+          errors: [
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'cmd', sink: 'spawn' },
+            },
+          ],
+        },
+        {
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, CMD-FN-6 (interpolated command)
+          name: 'FN: argv elements under shell: true are a command line',
+          code:
+            SDK +
+            'server.registerTool("run", cfg, async ({ dir }) => { spawn("ls", ["-la", dir], { shell: true }); execFile("ls", [dir], { shell: "/bin/bash" }); });',
+          errors: [
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'dir', sink: 'spawn' },
+            },
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'dir', sink: 'execFile' },
+            },
+          ],
+        },
+        {
+          // Moved from the valid 'a body declaration that does not come from
+          // the arguments' case: `args.cmd.trim()` is the argument.
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, CMD-FN-5 (derived string values)
+          name: 'FN: a trimmed argument through a const',
+          code:
+            SDK +
+            'server.registerTool("run", cfg, async (args) => { const c2 = args.cmd.trim(); execSync(c2); });',
+          errors: [
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'args.cmd', sink: 'execSync' },
+            },
+          ],
+        },
+        {
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, CMD-FN-5 (derived string values)
+          name: 'FN: string derivations, awaits and conditionals',
+          code:
+            SDK +
+            'server.registerTool("run", cfg, async ({ command, flag }) => {\n' +
+            '  const parts = command.split(" ");\n' +
+            '  const bin = parts[0].toLowerCase();\n' +
+            '  execFile(bin, parts.slice(1));\n' +
+            '  execSync(String(await command));\n' +
+            '  execSync(flag ? command.trim() : "ls");\n' +
+            '  execSync(["git", command].join(" "));\n' +
+            '  execSync("ls ".concat(command));\n' +
+            '});',
+          errors: [
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'command', sink: 'execFile' },
+            },
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'command', sink: 'execSync' },
+            },
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'command', sink: 'execSync' },
+            },
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'command', sink: 'execSync' },
+            },
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'command', sink: 'execSync' },
+            },
+          ],
+        },
+        {
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, CMD-FN-5 (derived string values)
+          name: 'FN: a let assigned later and a destructured element',
+          code:
+            SDK +
+            'server.registerTool("run", cfg, async (args) => {\n' +
+            '  let c = "ls";\n' +
+            '  if (args.custom) c = args.custom;\n' +
+            '  let d;\n' +
+            '  ({ d } = args);\n' +
+            '  const [first] = args.list;\n' +
+            '  const { opts: { bin } } = args;\n' +
+            '  execSync(c); execSync(d); execSync(first); spawn(bin);\n' +
+            '});',
+          errors: [
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'args.custom', sink: 'execSync' },
+            },
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'args.d', sink: 'execSync' },
+            },
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'args.list', sink: 'execSync' },
+            },
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'args.opts.bin', sink: 'spawn' },
+            },
+          ],
+        },
+        {
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, CMD-FN-5 (derived string values)
+          name: 'FN: the return value of a same-file helper',
+          code:
+            SDK +
+            'function buildCommand(target) { const t = target.trim(); return `git log ${t}`; }\n' +
+            'const quoteIt = (s) => `"${s}"`;\n' +
+            'server.registerTool("run", cfg, async ({ ref }) => { execSync(buildCommand(ref)); exec(quoteIt(ref)); });',
+          errors: [
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'ref', sink: 'execSync' },
+            },
+            { messageId: 'toolArgToShell', data: { arg: 'ref', sink: 'exec' } },
+          ],
+        },
+        {
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, CMD-FN-5 (derived string values)
+          name: 'FN: a closed-set argument stays allowed through a derivation',
+          code:
+            SDK +
+            'server.registerTool("v", { inputSchema: { tool: z.enum(["git"]), extra: z.string() } }, async ({ tool, extra }) => { execSync(`${tool} --version`); execSync(`${tool} ${extra}`); });',
+          errors: [
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'extra', sink: 'execSync' },
+            },
+          ],
+        },
+        {
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, CMD-FN-7 residual (zx / execa $ templates)
+          name: 'FN: a tool argument as the first token of a zx or execa $ template',
+          code:
+            SDK +
+            "import { $ } from 'zx';\nimport { $ as e$, execa } from 'execa';\n" +
+            'server.registerTool("run", cfg, async ({ bin, script }) => {\n' +
+            '  await $`${bin} --version`;\n' +
+            '  await e$` ${bin}`;\n' +
+            '  await execa`${bin} --help`;\n' +
+            '  await $`sh -c ${script}`;\n' +
+            '  await e$({ shell: true })`git log ${script}`;\n' +
+            '});',
+          errors: [
+            { messageId: 'toolArgToShell', data: { arg: 'bin', sink: '$' } },
+            { messageId: 'toolArgToShell', data: { arg: 'bin', sink: '$' } },
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'bin', sink: 'execa' },
+            },
+            { messageId: 'toolArgToShell', data: { arg: 'script', sink: '$' } },
+            { messageId: 'toolArgToShell', data: { arg: 'script', sink: '$' } },
+          ],
+        },
+        {
+          // Scope-correct: an inner callback parameter that shadows the tool
+          // argument is not the argument.
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, CMD-FN-5 (derived string values)
+          name: 'FN: a shadowing callback parameter is not the argument, the outer one is',
+          code:
+            SDK +
+            'server.registerTool("run", cfg, async ({ cmd }) => { ["ls"].forEach((cmd) => execSync(cmd)); execSync(cmd); });',
+          errors: [
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'cmd', sink: 'execSync' },
+            },
+          ],
+        },
+        {
+          // Moved from valid ('an array-pattern property binds nothing this
+          // rule tracks'): an element of an argument is the argument.
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, CMD-FN-5 (derived string values)
+          name: 'FN: an element destructured from an argument array',
+          code:
+            SDK +
+            'server.registerTool("run", cfg, async ({ pair: [a, b] }) => { execSync(a); });',
+          errors: [
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'a', sink: 'execSync' },
+            },
+          ],
+        },
+        {
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, CMD-FN-5 (derived string values)
+          name: 'FN: array destructuring, holes, rests, spreads and sequences',
+          code:
+            SDK +
+            'server.registerTool("run", cfg, async (args) => {\n' +
+            '  const [, second] = args.list;\n' +
+            '  const [x, y] = args.pair;\n' +
+            '  const [...rest] = args.more;\n' +
+            '  execSync(second); execSync(y); execSync(rest); execSync([...args.parts].join(" ")); execSync((0, args.cmd));\n' +
+            '});',
+          errors: [
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'args.list', sink: 'execSync' },
+            },
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'args.pair', sink: 'execSync' },
+            },
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'args.more', sink: 'execSync' },
+            },
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'args.parts', sink: 'execSync' },
+            },
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'args.cmd', sink: 'execSync' },
+            },
+          ],
+        },
+        {
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, CMD-FN-7 residual (zx / execa $ templates)
+          name: 'FN: the default execa export as a template tag',
+          code:
+            SDK +
+            "import execaDefault from 'execa';\n" +
+            'server.registerTool("run", cfg, async ({ bin }) => { await execaDefault`${bin} --help`; });',
+          errors: [
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'bin', sink: 'execa' },
+            },
+          ],
+        },
+        {
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, CMD-FN-5 (derived string values)
+          name: 'FN: a schema the rule cannot resolve is not a closed set',
+          code:
+            SDK +
+            'server.registerTool("v", { inputSchema: { tool: ExternalSchema } }, async ({ tool }) => { execFile(tool); });',
+          errors: [
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'tool', sink: 'execFile' },
+            },
+          ],
+        },
+        {
           name: 'require() opens the same gate',
           code:
             "const { McpServer } = require('@modelcontextprotocol/sdk/server/mcp.js');\n" +
@@ -625,26 +974,6 @@ describe('no-command-injection-in-tool', () => {
         },
       ],
     });
-  });
-});
-
-describe('isBuiltString', () => {
-  const exprOf = (code: string): TSESTree.Node =>
-    (
-      parser.parse(code, { range: true })
-        .body[0] as TSESTree.ExpressionStatement
-    ).expression;
-
-  it('is true for the shapes node-security owns', () => {
-    expect(isBuiltString(exprOf('`ls ${x}`'))).toBe(true);
-    expect(isBuiltString(exprOf("'ls ' + x"))).toBe(true);
-  });
-
-  it('is false for a bare reference or literal', () => {
-    expect(isBuiltString(exprOf('cmd'))).toBe(false);
-    expect(isBuiltString(exprOf("'ls'"))).toBe(false);
-    expect(isBuiltString(exprOf('`ls`'))).toBe(false);
-    expect(isBuiltString(exprOf('args.cmd'))).toBe(false);
   });
 });
 
@@ -687,6 +1016,12 @@ describe('handlerArgNames', () => {
   it('returns nothing for a function with no parameters', () => {
     const { direct, objects } = handlerArgNames(fnOf('() => {}'));
     expect(direct.size).toBe(0);
+    expect(objects.size).toBe(0);
+  });
+
+  it('skips a computed key, which names no argument', () => {
+    const { direct, objects } = handlerArgNames(fnOf('({ [k]: v, a }) => {}'));
+    expect([...direct]).toEqual(['a']);
     expect(objects.size).toBe(0);
   });
 

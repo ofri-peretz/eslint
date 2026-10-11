@@ -4,9 +4,10 @@
  * MIT license that can be found in the LICENSE file.
  */
 
-import type { TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES } from '@interlace/eslint-devkit';
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, staticString } from '@interlace/eslint-devkit';
 import { PG_PROTOCOLS } from '../constants';
+import { envOf, loadModule, resolveRelative } from './cross-file';
 
 /**
  * Packages that give a file a PostgreSQL client.
@@ -217,7 +218,7 @@ export function fileUsesPostgres(ast: TSESTree.Program): boolean {
   return result;
 }
 
-function computeUsesPostgres(ast: TSESTree.Program): boolean {
+function computeUsesPostgres(ast: TSESTree.Program, withDsn = true): boolean {
   let found = false;
 
   // No `if (found) return` guard at the top: every recursive call site below
@@ -238,7 +239,7 @@ function computeUsesPostgres(ast: TSESTree.Program): boolean {
       isImportEqualsLoad(node) ||
       isPgDynamicImport(node) ||
       (!requireIsShadowed && isPgRequire(node)) ||
-      isPgConnectionString(node)
+      (withDsn && isPgConnectionString(node))
     ) {
       found = true;
       return;
@@ -270,4 +271,119 @@ function computeUsesPostgres(ast: TSESTree.Program): boolean {
 
   visit(ast, false);
   return found;
+}
+
+/** Every module specifier a file loads: imports, re-exports, `require`, `import()`. */
+function specifiersIn(ast: TSESTree.Program): string[] {
+  const found: string[] = [];
+  const literal = (node: TSESTree.Node | null | undefined): void => {
+    const text = staticString(node);
+    if (text !== null) found.push(text);
+  };
+  const visit = (node: TSESTree.Node): void => {
+    if (
+      node.type === AST_NODE_TYPES.ImportDeclaration ||
+      node.type === AST_NODE_TYPES.ExportAllDeclaration ||
+      node.type === AST_NODE_TYPES.ExportNamedDeclaration
+    ) {
+      literal(node.source);
+    } else if (node.type === AST_NODE_TYPES.ImportExpression) {
+      literal(node.source);
+    } else if (
+      node.type === AST_NODE_TYPES.CallExpression &&
+      node.callee.type === AST_NODE_TYPES.Identifier &&
+      node.callee.name === 'require'
+    ) {
+      literal(node.arguments[0]);
+    } else if (
+      node.type === AST_NODE_TYPES.TSImportEqualsDeclaration &&
+      node.moduleReference.type === AST_NODE_TYPES.TSExternalModuleReference
+    ) {
+      literal(node.moduleReference.expression);
+    }
+    for (const [key, value] of Object.entries(node)) {
+      if (key === 'parent') continue;
+      const children: unknown[] = Array.isArray(value) ? value : [value];
+      for (const child of children) {
+        if (
+          typeof child === 'object' &&
+          child !== null &&
+          typeof (child as TSESTree.Node).type === 'string'
+        ) {
+          visit(child as TSESTree.Node);
+        }
+      }
+    }
+  };
+  visit(ast);
+  return found;
+}
+
+/** How many relative hops a barrel chain is followed for evidence. */
+const MAX_MODULE_HOPS = 3;
+
+/**
+ * Does a RELATIVE import of this file lead, within a few hops, to a module that
+ * itself imports a PostgreSQL driver?
+ *
+ * Only an import of a driver counts there — not a DSN string — so the evidence
+ * one hop away is the same kind the cross-plugin gate contract accepts locally.
+ */
+function relativeModuleUsesPostgres(
+  ast: TSESTree.Program,
+  file: string,
+  parser: unknown,
+  hops: number,
+  visited: Set<string>,
+): boolean {
+  if (hops > MAX_MODULE_HOPS) return false;
+  for (const specifier of specifiersIn(ast)) {
+    const target = resolveRelative(file, specifier);
+    if (target === null || visited.has(target)) continue;
+    visited.add(target);
+    const module = loadModule(target, parser);
+    if (module === null) continue;
+    if (
+      computeUsesPostgres(module.ast, false) ||
+      relativeModuleUsesPostgres(module.ast, target, parser, hops + 1, visited)
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+const relativeCache = new WeakMap<TSESTree.Program, boolean>();
+
+interface GateContext {
+  readonly physicalFilename: string;
+  readonly languageOptions?: { readonly parser?: unknown };
+  readonly sourceCode: {
+    readonly ast: TSESTree.Program;
+    getScope(node: TSESTree.Node): TSESLint.Scope.Scope;
+  };
+}
+
+/**
+ * The plugin-wide gate: PostgreSQL evidence in this file, or one relative
+ * import away.
+ *
+ * A route file that reaches the pool only through `import * as db from
+ * '../db'` — the layout node-postgres recommends — has no driver import of its
+ * own, and every rule used to abstain on it. When `../db` resolves to a file
+ * on disk that itself imports `pg` / `pg-pool` / `pg-promise` / `postgres` (or
+ * re-exports one that does), the Postgres evidence is real and one hop away,
+ * which satisfies the cross-plugin SDK gate contract. A `./api` with nothing
+ * on disk behind it, or a `./db` that imports mongoose or redis, keeps the
+ * gate closed.
+ */
+export function usesPostgres(context: GateContext): boolean {
+  const { ast } = context.sourceCode;
+  if (fileUsesPostgres(ast)) return true;
+  const cached = relativeCache.get(ast);
+  if (cached !== undefined) return cached;
+  const env = envOf(context);
+  const result = relativeModuleUsesPostgres(ast, env.file, env.parser, 1, new Set());
+  relativeCache.set(ast, result);
+  return result;
 }

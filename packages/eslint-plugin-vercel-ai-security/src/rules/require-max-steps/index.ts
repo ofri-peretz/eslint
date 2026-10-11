@@ -83,8 +83,7 @@ export const requireMaxSteps = createRule<RuleOptions, MessageIds>({
      * runs exactly one step (v4 `maxSteps: 1`, v5+ `stopWhen: stepCountIs(1)`).
      */
     function unboundedReason(key: string, value: TSESTree.Node): string | null {
-      const scope = sourceCode.getScope(value);
-      if (isRequestDerived(value, scope)) return `${key} comes from the request`;
+      if (isRequestDerived(value, sourceCode)) return `${key} comes from the request`;
       if (value.type === AST_NODE_TYPES.Identifier && value.name === 'Infinity') {
         return `${key} is Infinity`;
       }
@@ -101,7 +100,7 @@ export const requireMaxSteps = createRule<RuleOptions, MessageIds>({
         if (
           condition?.type === AST_NODE_TYPES.CallExpression &&
           STEP_COUNTERS.has(calleeName(condition.callee) as string) &&
-          condition.arguments.some((arg) => isRequestDerived(arg, scope))
+          condition.arguments.some((arg) => isRequestDerived(arg, sourceCode))
         ) {
           return 'the step count comes from the request';
         }

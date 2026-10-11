@@ -107,6 +107,20 @@ Sending sensitive data to LLMs can result in:
 - `user['password']` is the same property as `user.password`.
 - **Options:** the documented `defaultOptions` now apply. Earlier versions read `context.options` and silently ran a shorter hard-coded list instead.
 
+## 🔄 Changes in the 2026-10-11 zero-deferral pass
+
+- A **whole record** embedded in a prompt — `JSON.stringify(x)`, `String(x)`
+  or `${x}` — is reported when its fields include a sensitive one:
+  - with type information (`parserOptions.projectService`), the declared
+    property names of `x`'s type decide;
+  - without it, `x` must resolve in the file to an object literal with a
+    sensitive key, or to a full database row: a read from a Prisma, pg,
+    postgres, mysql2, knex, kysely, drizzle, `@vercel/postgres` or
+    better-sqlite3 client with no column projection (Prisma `select`/`omit`,
+    `select(cols)`, or SQL other than `SELECT *`).
+- A field read (`${user.name}`) and chat history spread into `messages` are
+  not records and are not reported.
+
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:

@@ -17,8 +17,9 @@ import {
   propertyName,
 } from '@interlace/eslint-devkit';
 import { NoTransactionOnPoolOptions } from '../../types';
-import { fileUsesPostgres, PG_MODULES } from '../../utils';
-import { isDeclaredPgPool } from '../../utils/pool-receiver';
+import { usesPostgres, PG_MODULES } from '../../utils';
+import { isDeclaredPgPool, isPgPoolType } from '../../utils/pool-receiver';
+import { envOf, follow, type Env } from '../../utils/cross-file';
 
 const PG_MODULE_SET: ReadonlySet<string> = new Set(PG_MODULES);
 
@@ -61,6 +62,30 @@ function isPgPoolConstructor(
   const [exported] = binding.path;
   // `const Pool = require('pg-pool')` — the module itself is the constructor.
   return exported === undefined || exported === 'Pool';
+}
+
+/**
+ * Does the receiver RESOLVE to a pg Pool — `new Pool()`, or a declaration typed
+ * as pg's `Pool` — following bindings in this file and relative imports into
+ * the module that creates it? `import { pool } from './db'` is a Pool only if
+ * `./db` says so; a `new Client()` exported the same way is a single
+ * connection, where a transaction is correct.
+ */
+function resolvesToPool(
+  receiver: TSESTree.Node,
+  scope: TSESLint.Scope.Scope,
+  env: Env,
+): boolean {
+  const value = follow({ node: receiver, scope, env });
+  if (value.node.type === AST_NODE_TYPES.NewExpression) {
+    return isPgPoolConstructor(value.node.callee, value.scope);
+  }
+  const declarator = value.node.parent;
+  return (
+    declarator?.type === AST_NODE_TYPES.VariableDeclarator &&
+    declarator.id.type === AST_NODE_TYPES.Identifier &&
+    isPgPoolType(declarator.id.typeAnnotation, value.scope)
+  );
 }
 
 /** The statement text of a query argument, when it is written as a plain string. */
@@ -183,7 +208,7 @@ export const noTransactionOnPool: TSESLint.RuleModule<
     // 108,838 files, 94% of this plugin's findings were in files with no
     // PostgreSQL client at all. Registering no visitors is both the gate and
     // the cheap path — a file with no database in it does no work.
-    if (!fileUsesPostgres(context.sourceCode.ast)) return {};
+    if (!usesPostgres(context)) return {};
 
     /**
      * Properties of `this` that were assigned a pg Pool in this file.
@@ -317,7 +342,8 @@ export const noTransactionOnPool: TSESLint.RuleModule<
         if (
           isPool(receiver, scope) ||
           isDeclaredPgPool(receiver, scope) ||
-          handsOutClients(receiver, scope)
+          handsOutClients(receiver, scope) ||
+          resolvesToPool(receiver, scope, envOf(context))
         ) {
           context.report({ node: queryArg, messageId: 'noTransactionOnPool' });
         }

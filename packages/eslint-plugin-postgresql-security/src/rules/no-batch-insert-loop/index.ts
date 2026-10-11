@@ -10,9 +10,10 @@ import {
   TSESTree,
   formatLLMMessage,
   MessageIcons,
+  objectKeyName,
 } from '@interlace/eslint-devkit';
 import { NoBatchInsertLoopOptions } from '../../types';
-import { fileUsesPostgres } from '../../utils';
+import { usesPostgres } from '../../utils';
 import { isNonPgQueryObject } from '../../utils/query-call';
 
 /**
@@ -91,7 +92,7 @@ const OFFSET = /\bOFFSET\b/i;
 
 type IterationContext =
   | { readonly kind: 'loop'; readonly node: TSESTree.Node }
-  | { readonly kind: 'method' };
+  | { readonly kind: 'method'; readonly node: TSESTree.Node };
 
 function isLoop(node: TSESTree.Node): boolean {
   return (
@@ -153,11 +154,98 @@ function iterationContext(start: TSESTree.Node, writes: boolean): IterationConte
 
     const method = callbackMethod(node);
     if (method === null) return null;
-    if (ITERATION_METHODS.has(method)) return { kind: 'method' };
-    if (writes && WRITE_MAPPING_METHODS.has(method)) return { kind: 'method' };
+    if (ITERATION_METHODS.has(method)) return { kind: 'method', node };
+    if (writes && WRITE_MAPPING_METHODS.has(method)) return { kind: 'method', node };
     if (method !== 'iife' && !TRANSPARENT_METHODS.has(method)) return null;
   }
   return null;
+}
+
+/** The value of a plainly keyed property of a query config object. */
+function configValue(object: TSESTree.ObjectExpression, key: string): TSESTree.Node | undefined {
+  const found = object.properties.find(
+    (p): p is TSESTree.Property =>
+      p.type === AST_NODE_TYPES.Property && objectKeyName(p) === key,
+  );
+  return found?.value;
+}
+
+/** Is `node` inside `container`? */
+function within(node: TSESTree.Node, container: TSESTree.Node): boolean {
+  return node.range[0] >= container.range[0] && node.range[1] <= container.range[1];
+}
+
+/** The variable a name resolves to, walking outward from `scope`. */
+function lookup(name: string, scope: TSESLint.Scope.Scope): TSESLint.Scope.Variable | null {
+  for (let current: TSESLint.Scope.Scope | null = scope; current; current = current.upper) {
+    const variable = current.set.get(name);
+    if (variable !== undefined) return variable;
+  }
+  return null;
+}
+
+/**
+ * Can this expression take a different value on each pass of `iteration`
+ * (a loop statement or an iteration callback)?
+ *
+ * A binding declared by the loop header or the callback's parameters does. A
+ * binding written inside the iteration does when what is written does. A
+ * call evaluated inside the iteration does — `queue.shift()`, `readFile(f)` —
+ * because nothing proves it returns the same value twice. A constant, or a
+ * binding written only outside, does not.
+ */
+function variesPerIteration(
+  node: TSESTree.Node,
+  iteration: TSESTree.Node,
+  sourceCode: TSESLint.SourceCode,
+  seen: Set<TSESLint.Scope.Variable>,
+): boolean {
+  if (
+    node.type === AST_NODE_TYPES.CallExpression ||
+    node.type === AST_NODE_TYPES.NewExpression ||
+    node.type === AST_NODE_TYPES.AwaitExpression ||
+    node.type === AST_NODE_TYPES.UpdateExpression
+  ) {
+    return true;
+  }
+  if (node.type === AST_NODE_TYPES.Identifier) {
+    const variable = lookup(node.name, sourceCode.getScope(node));
+    if (variable === null || seen.has(variable)) return false;
+    seen.add(variable);
+    if (
+      variable.defs.some(
+        (def) =>
+          within(def.name, iteration) &&
+          (def.type === 'Parameter' || def.node.parent?.parent === iteration),
+      )
+    ) {
+      return true;
+    }
+    return variable.references.some(
+      (ref) =>
+        ref.isWrite() &&
+        within(ref.identifier, iteration) &&
+        (ref.writeExpr == null ||
+          variesPerIteration(ref.writeExpr as TSESTree.Node, iteration, sourceCode, seen)),
+    );
+  }
+  for (const [key, value] of Object.entries(node)) {
+    if (key === 'parent') continue;
+    if (key === 'property' && node.type === AST_NODE_TYPES.MemberExpression && !node.computed) continue;
+    if (key === 'key' && node.type === AST_NODE_TYPES.Property && !node.computed) continue;
+    const children: unknown[] = Array.isArray(value) ? value : [value];
+    for (const child of children) {
+      if (
+        typeof child === 'object' &&
+        child !== null &&
+        typeof (child as TSESTree.Node).type === 'string' &&
+        variesPerIteration(child as TSESTree.Node, iteration, sourceCode, seen)
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 /**
@@ -245,7 +333,7 @@ export const noBatchInsertLoop: TSESLint.RuleModule<'noBatchInsertLoop', NoBatch
     // 108,838 files, 94% of this plugin's findings were in files with no
     // PostgreSQL client at all. Registering no visitors is both the gate and
     // the cheap path — a file with no database in it does no work.
-    if (!fileUsesPostgres(context.sourceCode.ast)) return {};
+    if (!usesPostgres(context)) return {};
 
     return {
       CallExpression(node) {
@@ -273,6 +361,19 @@ export const noBatchInsertLoop: TSESLint.RuleModule<'noBatchInsertLoop', NoBatch
 
         if (text !== null && BATCHED_STATEMENT.test(text)) return;
         if (isPagination(text, iteration)) return;
+
+        // One round trip per ROW is an iteration-invariant statement whose
+        // parameters change each pass. A statement that is itself different
+        // each pass — a migration file read in the loop, an element of a list
+        // of statements — is a sequence of distinct statements, not a batch
+        // insert written the slow way.
+        const config =
+          queryArg?.type === AST_NODE_TYPES.ObjectExpression ? queryArg : null;
+        const statement = config === null ? queryArg : configValue(config, 'text');
+        const params = config === null ? node.arguments[1] : configValue(config, 'values');
+        const varies = (target: TSESTree.Node | undefined): boolean =>
+          target !== undefined && variesPerIteration(target, iteration.node, context.sourceCode, new Set());
+        if (varies(statement) || !varies(params)) return;
 
         context.report({ node, messageId: 'noBatchInsertLoop' });
       },

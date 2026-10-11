@@ -14,7 +14,7 @@ import {
   objectKeyName,
 } from '@interlace/eslint-devkit';
 import { CheckQueryParamsOptions } from '../../types';
-import { fileUsesPostgres } from '../../utils';
+import { usesPostgres } from '../../utils';
 import { blankNonPlaceholderText } from '../../utils/sql-scan';
 
 /**
@@ -283,7 +283,7 @@ export const checkQueryParams: TSESLint.RuleModule<
     // 108,838 files, 94% of this plugin's findings were in files with no
     // PostgreSQL client at all. Registering no visitors is both the gate and
     // the cheap path — a file with no database in it does no work.
-    if (!fileUsesPostgres(context.sourceCode.ast)) return {};
+    if (!usesPostgres(context)) return {};
 
     /**
      * Report when a knowable statement and a knowable values array disagree.

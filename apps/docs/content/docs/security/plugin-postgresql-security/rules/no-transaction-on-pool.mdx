@@ -74,17 +74,18 @@ try {
 
 The following patterns are **not detected** due to static analysis limitations:
 
-### Aliased Pool Reference
+### Aliased and imported pools (detected since 2026-10)
 
-**Why**: The rule tracks `pool.query()` patterns; renamed references are missed.
+The receiver is followed to where it is created — through `const db = pool`,
+and through a relative import into the module that writes `new Pool()` (or
+declares the handle with pg's `Pool` type). An imported `new Client()` is a
+single connection, where a transaction is correct, and is not reported.
 
 ```typescript
-// ❌ NOT DETECTED - Aliased pool
-const db = pool;
-await db.query('BEGIN'); // 'db' not recognized as pool
+// ❌ REPORTED - ./db exports `new Pool()`
+import { pool } from './db';
+await pool.query('BEGIN');
 ```
-
-**Mitigation**: Use consistent naming for database pools. Add custom pool identifiers via configuration.
 
 ### Dynamic Query String
 

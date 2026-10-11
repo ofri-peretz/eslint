@@ -45,6 +45,14 @@ This rule mandates expiration in JWT tokens. Tokens without expiration are valid
 
 ### ❌ Incorrect
 
+NestJS: `this.jwtService.sign(payload)` when the package's
+`JwtModule.register(...)` / `registerAsync(...)` sets no
+`signOptions.expiresIn`. The rule walks up to the nearest `package.json`,
+reads every `*.module.ts` under it that registers `JwtModule`, and reports
+only when every registration it finds can be read. No registration found, or
+one it cannot read (a factory returning `config.get('jwt')`), means no
+report.
+
 ```javascript
 jwt.sign(payload, secret);
 jwt.sign(payload, secret, {});
@@ -68,7 +76,7 @@ jwt.sign(payload, key, { expiresIn: process.env.JWT_EXPIRES_IN } as SignOptions)
 // @nestjs/jwt: options are the second argument; a bare sign(payload) /
 // signAsync(payload) takes expiresIn from JwtModule.register({ signOptions })
 this.jwtService.sign(payload, { secret, expiresIn: '7d' });
-this.jwtService.signAsync(payload);
+this.jwtService.signAsync(payload); // JwtModule sets signOptions.expiresIn
 
 // jose: expiry set on the builder, inline or in its own statement
 const builder = new SignJWT(claims).setProtectedHeader({ alg: 'ES256' });

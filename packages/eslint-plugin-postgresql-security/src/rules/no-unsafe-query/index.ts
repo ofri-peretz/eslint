@@ -18,7 +18,16 @@ import {
   unwrapTypeSyntax,
 } from '@interlace/eslint-devkit';
 import { NoUnsafeQueryOptions } from '../../types';
-import { fileUsesPostgres } from '../../utils';
+import { usesPostgres } from '../../utils';
+import {
+  envOf,
+  exportedValue,
+  follow,
+  importOrigin,
+  returnedValue,
+  type Env,
+  type Value,
+} from '../../utils/cross-file';
 
 /**
  * Methods that hand a raw SQL string to the server.
@@ -180,34 +189,170 @@ function endsWithPlaceholderPrefix(text: string): boolean {
  * the new length), and arithmetic over those — not request data, a string, or
  * a member such as `req.query.n`.
  */
-function isIndexShaped(node: TSESTree.Node): boolean {
+function isIndexShaped(node: TSESTree.Node, scope: TSESLint.Scope.Scope): boolean {
+  return isNumeric(unwrapTypeSyntax(node), scope, new Set());
+}
+
+/** Array methods whose callback receives the element INDEX at this position. */
+const INDEX_PARAMETER: ReadonlyMap<string, number> = new Map([
+  ['map', 1],
+  ['flatMap', 1],
+  ['forEach', 1],
+  ['filter', 1],
+  ['some', 1],
+  ['every', 1],
+  ['find', 1],
+  ['findIndex', 1],
+  ['findLast', 1],
+  ['findLastIndex', 1],
+  ['from', 1],
+  ['reduce', 2],
+  ['reduceRight', 2],
+]);
+
+/**
+ * Is this function parameter a number — annotated `: number`, or the index
+ * argument an array method passes to its callback?
+ */
+function isNumericParameter(name: TSESTree.Identifier): boolean {
+  if (name.typeAnnotation?.typeAnnotation.type === AST_NODE_TYPES.TSNumberKeyword) return true;
+  const fn = name.parent;
+  const call = fn?.parent;
+  if (
+    (fn?.type !== AST_NODE_TYPES.ArrowFunctionExpression &&
+      fn?.type !== AST_NODE_TYPES.FunctionExpression) ||
+    call?.type !== AST_NODE_TYPES.CallExpression ||
+    call.callee.type !== AST_NODE_TYPES.MemberExpression
+  ) {
+    return false;
+  }
+  const method = propertyName(call.callee);
+  const index = method === null ? undefined : INDEX_PARAMETER.get(method);
+  return index !== undefined && fn.params[index] === name;
+}
+
+/** The nearest enclosing function parameter spelled `name`, or `null`. */
+function enclosingParameter(node: TSESTree.Identifier): TSESTree.Identifier | null {
+  for (let current: TSESTree.Node | undefined = node.parent; current; current = current.parent) {
+    if (
+      current.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+      current.type === AST_NODE_TYPES.FunctionExpression ||
+      current.type === AST_NODE_TYPES.FunctionDeclaration
+    ) {
+      const param = current.params.find(
+        (p): p is TSESTree.Identifier => p.type === AST_NODE_TYPES.Identifier && p.name === node.name,
+      );
+      if (param !== undefined) return param;
+    }
+  }
+  return null;
+}
+
+/** Arithmetic whose result is a number whatever its operands are. */
+const NUMERIC_OPERATORS: ReadonlySet<string> = new Set(['-', '*', '%', '**', '|', '&', '^', '<<', '>>', '>>>']);
+
+/**
+ * Is this expression a NUMBER — so `$${expr}` can only print a placeholder
+ * index? Followed through the bindings of this file: a counter, `.length`,
+ * `.push(…)`, a number conversion, arithmetic, a `: number` parameter, the
+ * index argument of an array callback. Request data, a string, an untyped
+ * parameter or an undeclared name is not.
+ */
+function isNumeric(
+  node: TSESTree.Node,
+  scope: TSESLint.Scope.Scope,
+  seen: Set<TSESLint.Scope.Variable>,
+): boolean {
   switch (node.type) {
     case AST_NODE_TYPES.Literal:
       return typeof node.value === 'number';
-    case AST_NODE_TYPES.Identifier:
     case AST_NODE_TYPES.UpdateExpression:
       return true;
+    case AST_NODE_TYPES.UnaryExpression:
+      return node.operator === '+' || node.operator === '-' || node.operator === '~';
     case AST_NODE_TYPES.MemberExpression:
       return propertyName(node) === 'length';
     case AST_NODE_TYPES.CallExpression:
       return (
-        node.callee.type === AST_NODE_TYPES.MemberExpression &&
-        propertyName(node.callee) === 'push'
+        (node.callee.type === AST_NODE_TYPES.MemberExpression &&
+          propertyName(node.callee) === 'push') ||
+        isNumberConversion(node, scope)
       );
     case AST_NODE_TYPES.BinaryExpression:
-      return (
-        (node.operator === '+' || node.operator === '-' || node.operator === '*') &&
-        isIndexShaped(node.left as TSESTree.Node) &&
-        isIndexShaped(node.right)
-      );
+      if (node.operator === '+') {
+        return (
+          isNumeric(node.left as TSESTree.Node, scope, seen) && isNumeric(node.right, scope, seen)
+        );
+      }
+      return NUMERIC_OPERATORS.has(node.operator);
+    case AST_NODE_TYPES.Identifier:
+      return isNumericBinding(node, scope, seen);
     default:
       return false;
   }
 }
 
+/** `Number(x)`, `parseInt(x)`, `Math.floor(x)` — a global number conversion. */
+function isNumberConversion(call: TSESTree.CallExpression, scope: TSESLint.Scope.Scope): boolean {
+  const { callee } = call;
+  if (callee.type === AST_NODE_TYPES.Identifier) {
+    return NUMBER_CONVERSIONS.has(callee.name) && isGlobal(callee.name, scope);
+  }
+  return (
+    callee.type === AST_NODE_TYPES.MemberExpression &&
+    callee.object.type === AST_NODE_TYPES.Identifier &&
+    NUMBER_NAMESPACES.has(callee.object.name) &&
+    isGlobal(callee.object.name, scope)
+  );
+}
+
+/** Is every value this identifier's binding can hold a number? */
+function isNumericBinding(
+  node: TSESTree.Identifier,
+  scope: TSESLint.Scope.Scope,
+  seen: Set<TSESLint.Scope.Variable>,
+): boolean {
+  const param = enclosingParameter(node);
+  if (param !== null) return isNumericParameter(param);
+  const variable = resolveVariable(node.name, scope);
+  if (variable === null || variable.defs.length === 0) return false;
+  // `n = n + 1` reads the binding it is deciding — assume the other writes decide.
+  if (seen.has(variable)) return true;
+  seen.add(variable);
+  const [def] = variable.defs;
+  if (def.type === 'Parameter') return isNumericParameter(def.name as TSESTree.Identifier);
+  if (def.type !== 'Variable') return false;
+  const declarator = def.node as TSESTree.VariableDeclarator;
+  if (declarator.id.type === AST_NODE_TYPES.Identifier &&
+    declarator.id.typeAnnotation?.typeAnnotation.type === AST_NODE_TYPES.TSNumberKeyword) {
+    return true;
+  }
+  // A `for…in` key is a string; a `for…of` element is whatever the list holds.
+  const loop = declarator.parent.parent;
+  if (loop?.type === AST_NODE_TYPES.ForInStatement || loop?.type === AST_NODE_TYPES.ForOfStatement) {
+    return false;
+  }
+  const writes = variable.references.filter((reference) => reference.isWrite());
+  return (
+    writes.length > 0 &&
+    writes.every((write) => {
+      const parent = write.identifier.parent;
+      if (parent?.type === AST_NODE_TYPES.UpdateExpression) return true;
+      if (parent?.type === AST_NODE_TYPES.AssignmentExpression && parent.operator !== '=') {
+        return parent.operator !== '+=' || isNumeric(parent.right, write.from, seen);
+      }
+      return write.writeExpr != null && isNumeric(unwrapTypeSyntax(write.writeExpr as TSESTree.Node), write.from, seen);
+    })
+  );
+}
+
 /** Is `expression` a placeholder index, given the static text in front of it? */
-function isPlaceholderIndex(textBefore: string, expression: TSESTree.Node): boolean {
-  return endsWithPlaceholderPrefix(textBefore) && isIndexShaped(expression);
+function isPlaceholderIndex(
+  textBefore: string,
+  expression: TSESTree.Node,
+  scope: TSESLint.Scope.Scope,
+): boolean {
+  return endsWithPlaceholderPrefix(textBefore) && isIndexShaped(expression, scope);
 }
 
 /**
@@ -217,18 +362,19 @@ function isPlaceholderIndex(textBefore: string, expression: TSESTree.Node): bool
  * `rows.map((r, i) => `($${2 * i + 1}, $${2 * i + 2})`)` — the IN-list and
  * multi-row VALUES idioms.
  */
-function isPlaceholderOnly(node: TSESTree.Node): boolean {
+function isPlaceholderOnly(node: TSESTree.Node, scope: TSESLint.Scope.Scope): boolean {
   if (staticString(node) !== null) return true;
   if (node.type === AST_NODE_TYPES.TemplateLiteral) {
     return node.expressions.every((expression, i) =>
-      isPlaceholderIndex(node.quasis[i].value.raw, expression),
+      isPlaceholderIndex(node.quasis[i].value.raw, expression, scope),
     );
   }
   if (node.type === AST_NODE_TYPES.BinaryExpression && node.operator === '+') {
     const left = node.left as TSESTree.Node;
     return (
-      isPlaceholderOnly(left) &&
-      (isPlaceholderOnly(node.right) || isPlaceholderIndex(trailingText(left), node.right))
+      isPlaceholderOnly(left, scope) &&
+      (isPlaceholderOnly(node.right, scope) ||
+        isPlaceholderIndex(trailingText(left), node.right, scope))
     );
   }
   return false;
@@ -250,9 +396,16 @@ function callbackResult(fn: TSESTree.Node): TSESTree.Node | null {
 /** Is this `<arr>.map(cb)` / `Array.from(x, cb)` with a placeholder-only callback? */
 function isPlaceholderList(node: TSESTree.Node, scope: TSESLint.Scope.Scope): boolean {
   if (node.type === AST_NODE_TYPES.Identifier) {
+    const variable = resolveVariable(node.name, scope);
+    const init = unwrapTypeSyntax(singleInit(variable));
     // `const tuples = rows.map(…); tuples.join(', ')`
-    const init = singleInit(resolveVariable(node.name, scope));
-    return init !== null && init.type === AST_NODE_TYPES.CallExpression && isPlaceholderList(init, scope);
+    if (init?.type === AST_NODE_TYPES.CallExpression) return isPlaceholderList(init, scope);
+    // `const sets = []; sets.push(`name = $${values.length}`); sets.join(', ')`
+    return (
+      variable !== null &&
+      init?.type === AST_NODE_TYPES.ArrayExpression &&
+      isFixedTextList(variable, init)
+    );
   }
   if (
     node.type !== AST_NODE_TYPES.CallExpression ||
@@ -264,7 +417,89 @@ function isPlaceholderList(node: TSESTree.Node, scope: TSESLint.Scope.Scope): bo
   if (method === null || !MAPPING_METHODS.has(method)) return false;
   const mapper = node.arguments.at(-1);
   const result = mapper === undefined ? null : callbackResult(mapper);
-  return result !== null && isPlaceholderOnly(result);
+  return result !== null && isPlaceholderOnly(result, scope);
+}
+
+/** Is this text fixed, or built only of placeholder indexes and safe values? */
+function isFixedText(node: TSESTree.Node, scope: TSESLint.Scope.Scope): boolean {
+  if (staticString(node) !== null) return true;
+  return (
+    (node.type === AST_NODE_TYPES.TemplateLiteral ||
+      node.type === AST_NODE_TYPES.BinaryExpression) &&
+    !hasRawPart(node, scope, null)
+  );
+}
+
+/**
+ * Is this array — a SET list, a column list — only ever filled with fixed
+ * text? Every element it is declared with, and every `.push(…)` into it, must
+ * be fixed text or `column = $N`; any other use of the array (passed to a
+ * function, assigned by index, spread) makes its contents unknowable.
+ *
+ * The SET-list builder is how a PATCH handler writes an UPDATE with bound
+ * values, and was reported as an injection. A column name taken from
+ * `Object.keys(req.body)` / `Object.entries(req.body)` is NOT fixed text, so
+ * the same builder over request keys still reports.
+ */
+function isFixedTextList(
+  variable: TSESLint.Scope.Variable,
+  init: TSESTree.ArrayExpression,
+): boolean {
+  if (
+    !init.elements.every(
+      (element) =>
+        element !== null &&
+        element.type !== AST_NODE_TYPES.SpreadElement &&
+        isFixedText(element, variable.scope),
+    )
+  ) {
+    return false;
+  }
+  return variable.references.every((reference) => {
+    if (reference.isWrite()) return true;
+    const member = reference.identifier.parent;
+    if (member?.type !== AST_NODE_TYPES.MemberExpression || member.object !== reference.identifier) {
+      return false;
+    }
+    const method = propertyName(member);
+    if (method === 'join' || method === 'length') return true;
+    const call = member.parent;
+    return (
+      method === 'push' &&
+      call?.type === AST_NODE_TYPES.CallExpression &&
+      call.arguments.every(
+        (argument) =>
+          argument.type !== AST_NODE_TYPES.SpreadElement && isFixedText(argument, reference.from),
+      )
+    );
+  });
+}
+
+/**
+ * Is this binding the element of a `for…of` over a fixed list —
+ * `for (const col of ['name', 'email'])`, or over a `const COLUMNS = [...]`?
+ * Each pass sees one of those constants.
+ */
+function isFixedLoopElement(variable: TSESLint.Scope.Variable, scope: TSESLint.Scope.Scope): boolean {
+  const def = variable.defs[0];
+  if (def?.type !== 'Variable') return false;
+  const declaration = def.node.parent as TSESTree.VariableDeclaration;
+  const loop = declaration.parent;
+  if (loop?.type !== AST_NODE_TYPES.ForOfStatement || loop.left !== declaration) return false;
+  const right = unwrapTypeSyntax(loop.right);
+  const list =
+    right.type === AST_NODE_TYPES.Identifier
+      ? unwrapTypeSyntax(singleInit(resolveVariable(right.name, scope)))
+      : right;
+  return (
+    list?.type === AST_NODE_TYPES.ArrayExpression &&
+    list.elements.every(
+      (element) =>
+        element !== null &&
+        element.type !== AST_NODE_TYPES.SpreadElement &&
+        isStaticExpression({ node: element, scope }),
+    )
+  );
 }
 
 /**
@@ -376,6 +611,7 @@ function isRawValue(
   if (part.type === AST_NODE_TYPES.Identifier) {
     const variable = resolveVariable(part.name, scope);
     if (variable !== null && variable === self) return false;
+    if (variable !== null && isFixedLoopElement(variable, scope)) return false;
     // A `const` bound to a call is judged exactly as the call written inline:
     // `const placeholders = ids.map(…).join(', ')` and
     // `const col = escapeIdentifier(sort)` used to be reported only because
@@ -405,12 +641,12 @@ function hasRawPart(
   if (node.type === AST_NODE_TYPES.TemplateLiteral) {
     return node.expressions.some(
       (expression, i) =>
-        !isPlaceholderIndex(node.quasis[i].value.raw, expression) &&
+        !isPlaceholderIndex(node.quasis[i].value.raw, expression, scope) &&
         isRawValue(expression, scope, self),
     );
   }
   const left = node.left as TSESTree.Node;
-  if (isPlaceholderIndex(trailingText(left), node.right)) {
+  if (isPlaceholderIndex(trailingText(left), node.right, scope)) {
     return isRawValue(left, scope, self);
   }
   return isRawValue(left, scope, self) || isRawValue(node.right, scope, self);
@@ -530,6 +766,68 @@ function returnedExpression(body: TSESTree.Node): TSESTree.Node | null {
     : null;
 }
 
+/**
+ * What a builder IMPORTED from a relative module returns for this call —
+ * `db.query(buildSearch(req.query))` with `buildSearch` in `./queries`.
+ * `null` when the callee is not an imported function this rule can read.
+ */
+function importedBuilderResult(
+  node: TSESTree.Node,
+  scope: TSESLint.Scope.Scope,
+  env: Env,
+): Value | null {
+  if (node.type !== AST_NODE_TYPES.CallExpression || node.callee.type !== AST_NODE_TYPES.Identifier) {
+    return null;
+  }
+  const variable = resolveVariable(node.callee.name, scope);
+  const origin = variable === null ? null : importOrigin(variable, env);
+  if (origin === null) return null;
+  const exported = exportedValue(origin.module, origin.name, env.parser);
+  const fn = exported === null ? null : follow(exported);
+  const returned = fn === null ? null : returnedValue(fn.node);
+  return fn === null || returned === null
+    ? null
+    : { node: returned, scope: fn.env.scopeOf(returned), env: fn.env };
+}
+
+/**
+ * The string fragments a binding is assembled from, in source order, read
+ * from its own writes — the scope-analysis twin of the `fragments` map, for a
+ * builder in a module this rule is not traversing.
+ */
+function writtenFragments(variable: TSESLint.Scope.Variable): TSESTree.Node[] {
+  let parts: TSESTree.Node[] = [];
+  const writes = variable.references
+    .filter((reference) => reference.isWrite() && reference.writeExpr != null)
+    .sort((a, b) => a.identifier.range[0] - b.identifier.range[0]);
+  for (const write of writes) {
+    const value = write.writeExpr as TSESTree.Node;
+    const assignment = write.identifier.parent;
+    const appends =
+      assignment?.type === AST_NODE_TYPES.AssignmentExpression &&
+      (assignment.operator === '+=' ||
+        leftmostOperand(value) !== value && isSameBinding(leftmostOperand(value), variable));
+    if (!isStringText(value)) parts = [];
+    else if (appends) parts.push(value);
+    else parts = [value];
+  }
+  return parts;
+}
+
+/** Does this identifier refer to `variable`? */
+function isSameBinding(node: TSESTree.Node, variable: TSESLint.Scope.Variable): boolean {
+  return variable.references.some((reference) => reference.identifier === node);
+}
+
+/** Is this expression string text — written, or built from parts? */
+function isStringText(node: TSESTree.Node): boolean {
+  return (
+    node.type === AST_NODE_TYPES.TemplateLiteral ||
+    (node.type === AST_NODE_TYPES.BinaryExpression && node.operator === '+') ||
+    staticString(node) !== null
+  );
+}
+
 /** The leftmost operand of a `+` chain — `q` in `q + a + b`. */
 function leftmostOperand(node: TSESTree.Node): TSESTree.Node {
   let current = node;
@@ -587,6 +885,7 @@ export const noUnsafeQuery: TSESLint.RuleModule<
   defaultOptions: [],
   create(context) {
     const { sourceCode } = context;
+    const env = envOf(context);
 
     // Every rule here is PostgreSQL-specific, and none of them knew it: over
     // 108,838 files, 94% of this plugin's findings were in files with no
@@ -595,7 +894,7 @@ export const noUnsafeQuery: TSESLint.RuleModule<
     // reaches PostgreSQL only through a local `./db` wrapper is deliberately
     // left to `secure-coding`: the SDK-evidence gate is a contract shared with
     // the sibling SQL plugins (benchmarks/__tests__/sdk-gate-coverage.lock).
-    if (!fileUsesPostgres(sourceCode.ast)) return {};
+    if (!usesPostgres(context)) return {};
 
     /**
      * Every string-valued fragment written into a local binding, in source
@@ -637,6 +936,7 @@ export const noUnsafeQuery: TSESLint.RuleModule<
       reportNode: TSESTree.Node,
       parts: readonly TSESTree.Node[],
       self: FragmentKey | null,
+      scopeOf: (node: TSESTree.Node) => TSESLint.Scope.Scope = (node) => sourceCode.getScope(node),
     ): void => {
       const selfVariable = typeof self === 'string' ? null : self;
       let kind: 'concat' | 'template' | null = null;
@@ -645,7 +945,7 @@ export const noUnsafeQuery: TSESLint.RuleModule<
 
       for (const part of parts) {
         text += staticText(part);
-        const scope = sourceCode.getScope(part);
+        const scope = scopeOf(part);
         if (part.type === AST_NODE_TYPES.BinaryExpression && part.operator === '+') {
           kind = 'concat';
           if (hasRawPart(part, scope, selfVariable)) raw = true;
@@ -726,6 +1026,21 @@ export const noUnsafeQuery: TSESLint.RuleModule<
         }
 
         const scope = sourceCode.getScope(node);
+
+        // A builder IMPORTED from a relative module: read in that module.
+        const imported = importedBuilderResult(queryArg, scope, env);
+        if (imported !== null) {
+          const { node: result, env: builderEnv } = imported;
+          if (isBuilt(result)) {
+            reportIfUnsafe(queryArg, [result], null, builderEnv.scopeOf);
+          } else if (result.type === AST_NODE_TYPES.Identifier) {
+            const variable = resolveVariable(result.name, builderEnv.scopeOf(result));
+            if (variable !== null) {
+              reportIfUnsafe(queryArg, writtenFragments(variable), variable, builderEnv.scopeOf);
+            }
+          }
+          return;
+        }
 
         // The query written at the sink, or the one a LOCAL builder returns.
         const expression = effectiveExpression(queryArg, scope);

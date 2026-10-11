@@ -147,10 +147,12 @@ export const requireIssuedAt = createRule<RuleOptions, MessageIds>({
 
         /*
          * jsonwebtoken adds iat by default, so only a `noTimestamp` that may
-         * be `true` drops it. The literal `false` KEEPS iat (it is the
-         * default, made explicit) and is not a finding; a runtime value may
-         * be either and still is. `no-timestamp-manipulation` owns the
-         * literal-`true` case too — this rule reports it as the missing claim.
+         * be `true` drops it. A LITERAL boolean is settled either way:
+         * `false` keeps iat (the default, made explicit), and `true` is
+         * reported by `no-timestamp-manipulation` at the same node — one
+         * defect, so one finding. What is left here is the value only this
+         * rule asks about: a `noTimestamp` chosen at runtime, which may drop
+         * the claim on some path.
          */
         const options = resolveCallOptions(node, sourceCode);
         if (options === null) {
@@ -159,7 +161,10 @@ export const requireIssuedAt = createRule<RuleOptions, MessageIds>({
         const noTimestamp = getOptionValue(options, 'noTimestamp');
         if (
           noTimestamp !== undefined &&
-          !(noTimestamp.type === 'Literal' && noTimestamp.value === false)
+          !(
+            noTimestamp.type === 'Literal' &&
+            typeof noTimestamp.value === 'boolean'
+          )
         ) {
           context.report({
             node,

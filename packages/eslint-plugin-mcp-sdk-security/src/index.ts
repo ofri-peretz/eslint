@@ -76,12 +76,12 @@ export const plugin: TSESLint.FlatConfig.Plugin = {
  *     schema-less handler reading arguments the SDK never passes it.
  *   - `recommended`: adds `no-unvalidated-tool-args` — a destructured key the
  *     schema does not declare is stripped (or, on a loose schema, passed
- *     through unvalidated); no false positive was found in the 2026-10
- *     FP/FN review.
- *   - `strict`: everything, adding `no-tool-description-injection`. A
- *     description imported from another module is reported because this
- *     file cannot see it; that is correct for a strict preset and too noisy
- *     for the default.
+ *     through unvalidated) — and `no-tool-description-injection`, which
+ *     resolves consts and relative imports and reports only description text
+ *     it can show is dynamic. No false positive was found for either in the
+ *     2026-10 FP/FN review.
+ *   - `strict`: everything. Today that equals `recommended`; it is where a
+ *     rule lands before its false-positive profile is measured.
  *
  * README.md's preset table and rules-table 💼 column are locked to these lists
  * by `src/index.test.ts`.
@@ -93,6 +93,7 @@ const minimalRules: TSESLint.FlatConfig.Rules = {
 
 const recommendedRules: TSESLint.FlatConfig.Rules = {
   'mcp-sdk-security/no-command-injection-in-tool': 'error',
+  'mcp-sdk-security/no-tool-description-injection': 'error',
   'mcp-sdk-security/no-unvalidated-tool-args': 'error',
   'mcp-sdk-security/require-tool-input-schema': 'error',
 };

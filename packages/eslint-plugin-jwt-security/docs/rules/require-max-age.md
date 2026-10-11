@@ -61,7 +61,7 @@ The following patterns are **not detected** due to static analysis limitations:
 
 ### Options from Variables, Casts and Spreads
 
-**What is read**: options are resolved structurally — an inline object, a same-file `const`, an `as` / `satisfies` cast, and a spread of such a `const`. NestJS `JwtService` calls are read at the second argument, where `@nestjs/jwt` takes them.
+**What is read**: options are followed within the file — an inline object, a `const` or a never-reassigned `let`, a destructure, a member of an object literal, an `as` / `satisfies` cast, a spread of any of those, and the single `return` of a same-file function. NestJS `JwtService` calls are read at the second argument, where `@nestjs/jwt` takes them. An injected `this.<member>` counts as a JWT client only on evidence the class gives (a type annotation resolving to a JWT library, an `@Inject(X)` of a JWT import, or an assignment from one).
 
 ```typescript
 const verifyOptions = { algorithms: ['RS256'], maxAge: '15m' };

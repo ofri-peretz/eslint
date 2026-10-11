@@ -12,7 +12,7 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 import { NoSelectAllOptions } from '../../types';
-import { fileUsesPostgres } from '../../utils';
+import { usesPostgres } from '../../utils';
 
 /**
  * The select-list star, in the two spellings Postgres accepts.
@@ -261,7 +261,7 @@ export const noSelectAll: TSESLint.RuleModule<'noSelectAll', NoSelectAllOptions>
     // 108,838 files, 94% of this plugin's findings were in files with no
     // PostgreSQL client at all. Registering no visitors is both the gate and
     // the cheap path — a file with no database in it does no work.
-    if (!fileUsesPostgres(context.sourceCode.ast)) return {};
+    if (!usesPostgres(context)) return {};
 
     return {
       CallExpression(node) {

@@ -12,7 +12,7 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 import { NoFloatingQueryOptions } from '../../types';
-import { fileUsesPostgres } from '../../utils';
+import { usesPostgres } from '../../utils';
 import { isNonPgQueryObject } from '../../utils/query-call';
 
 /**
@@ -138,7 +138,7 @@ export const noFloatingQuery: TSESLint.RuleModule<'noFloatingQuery', NoFloatingQ
     // 108,838 files, 94% of this plugin's findings were in files with no
     // PostgreSQL client at all. Registering no visitors is both the gate and
     // the cheap path — a file with no database in it does no work.
-    if (!fileUsesPostgres(context.sourceCode.ast)) return {};
+    if (!usesPostgres(context)) return {};
 
     return {
       CallExpression(node) {

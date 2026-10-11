@@ -26,13 +26,21 @@ import {
   jwtConfigOf,
   resolveCallOptions,
   getOptionValue,
+  staticNumber,
 } from '../../utils';
 import type { ResolvedObject } from '../../utils';
-import type { JwtRuleOptions } from '../../types';
+import type { NoTimestampManipulationOptions } from '../../types';
 
-type MessageIds = 'timestampDisabled' | 'noTimestampTrue' | 'ignoreExpiration';
+type MessageIds =
+  | 'timestampDisabled'
+  | 'noTimestampTrue'
+  | 'ignoreExpiration'
+  | 'excessiveClockTolerance';
 
-type RuleOptions = [JwtRuleOptions?];
+type RuleOptions = [NoTimestampManipulationOptions?];
+
+/** Five minutes: generous clock skew between two servers, and no more. */
+const DEFAULT_MAX_CLOCK_TOLERANCE_SECONDS = 300;
 
 export const noTimestampManipulation = createRule<RuleOptions, MessageIds>({
   name: 'no-timestamp-manipulation',
@@ -83,11 +91,29 @@ export const noTimestampManipulation = createRule<RuleOptions, MessageIds>({
         fix: 'Remove ignoreExpiration; refresh the token instead of accepting an expired one',
         documentationLink: 'https://tools.ietf.org/html/rfc8725',
       }),
+      excessiveClockTolerance: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Excessive Clock Tolerance',
+        cwe: 'CWE-613',
+        cvss: 7.5,
+        description:
+          'A clockTolerance far beyond clock skew keeps expired tokens valid for that long',
+        severity: 'HIGH',
+        fix: 'Keep clockTolerance to seconds of skew (maxClockToleranceSeconds, default 300)',
+        documentationLink: 'https://tools.ietf.org/html/rfc8725',
+      }),
     },
     schema: [
       {
         type: 'object',
         properties: {
+          maxClockToleranceSeconds: {
+            type: 'number',
+            minimum: 0,
+            default: DEFAULT_MAX_CLOCK_TOLERANCE_SECONDS,
+            description:
+              'Largest numeric clockTolerance (seconds) a verify may allow',
+          },
           trustedSanitizers: {
             type: 'array',
             items: { type: 'string' },
@@ -109,6 +135,7 @@ export const noTimestampManipulation = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [
     {
+      maxClockToleranceSeconds: DEFAULT_MAX_CLOCK_TOLERANCE_SECONDS,
       trustedSanitizers: [],
       trustedAnnotations: [],
       strictMode: false,
@@ -116,6 +143,8 @@ export const noTimestampManipulation = createRule<RuleOptions, MessageIds>({
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const sourceCode = context.sourceCode;
+    const { maxClockToleranceSeconds = DEFAULT_MAX_CLOCK_TOLERANCE_SECONDS } =
+      context.options[0] ?? {};
 
     /** Report `options[name]` when it is the literal `true`. */
     const reportLiteralTrue = (
@@ -170,6 +199,24 @@ export const noTimestampManipulation = createRule<RuleOptions, MessageIds>({
           const options = resolveCallOptions(node, sourceCode);
           if (options !== null) {
             reportLiteralTrue(options, 'ignoreExpiration', 'ignoreExpiration');
+            /*
+             * `clockTolerance` is skew allowance: seconds by which `exp` and
+             * `nbf` are stretched. A year of "tolerance" is `ignoreExpiration`
+             * by another name. Only a value that is a number in every run —
+             * a literal, a same-file const, `+ - * /` over those — is judged;
+             * jose's duration strings and runtime values are not.
+             */
+            const tolerance = getOptionValue(options, 'clockTolerance');
+            const seconds =
+              tolerance === undefined
+                ? null
+                : staticNumber(tolerance, sourceCode);
+            if (seconds !== null && seconds > maxClockToleranceSeconds) {
+              context.report({
+                node: tolerance!,
+                messageId: 'excessiveClockTolerance',
+              });
+            }
           }
         }
       },

@@ -15,7 +15,7 @@ import {
   propertyName,
 } from '@interlace/eslint-devkit';
 import { NoUnsafeCopyFromOptions } from '../../types';
-import { fileUsesPostgres } from '../../utils';
+import { usesPostgres } from '../../utils';
 import { stripComments } from '../../utils/sql-scan';
 
 /**
@@ -358,7 +358,7 @@ export const noUnsafeCopyFrom: TSESLint.RuleModule<MessageIds, NoUnsafeCopyFromO
     // 108,838 files, 94% of this plugin's findings were in files with no
     // PostgreSQL client at all. Registering no visitors is both the gate and
     // the cheap path — a file with no database in it does no work.
-    if (!fileUsesPostgres(context.sourceCode.ast)) return {};
+    if (!usesPostgres(context)) return {};
 
     const options = context.options[0] ?? {};
     const allowHardcodedPaths = options.allowHardcodedPaths ?? false;

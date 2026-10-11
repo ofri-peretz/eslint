@@ -47,14 +47,25 @@ describe('coverage: no-algorithm-confusion property-loop guards', () => {
     'spread and computed props before algorithms',
     noAlgorithmConfusion,
     {
-      valid: [],
-      invalid: [
+      valid: [
+        // Audit 2026-10 (zero-deferral pass, FP-12): this case used to be
+        // INVALID — `publicKey` was "public" only by its NAME. The name
+        // heuristic is gone; the structural spelling below keeps the
+        // loop-guard coverage this case was written for.
         {
-          // SpreadElement (prop.type !== 'Property') and computed key
-          // (prop.key.type !== 'Identifier') are skipped; the report fires on
-          // the `algorithms` property value.
+          name: 'no evidence: a key named publicKey beside a spread and a computed key',
           code: `import jwt from 'jsonwebtoken';
 jwt.verify(token, publicKey, { ...baseOpts, ['audit']: true, algorithms: ['HS256'] });`,
+        },
+      ],
+      invalid: [
+        {
+          // SpreadElement and computed key are skipped; the report fires on
+          // the `algorithms` property value.
+          name: 'a PEM public key with a spread and a computed key before algorithms',
+          code: `import jwt from 'jsonwebtoken';
+const pem = '-----BEGIN PUBLIC KEY-----\\nMFkw';
+jwt.verify(token, pem, { ...baseOpts, ['audit']: true, algorithms: ['HS256'] });`,
           errors: [{ messageId: 'algorithmConfusion' }],
         },
       ],
@@ -192,10 +203,12 @@ const payload = jwt_decode(token);`,
 describe('coverage: no-hardcoded-secret const-literal resolution', () => {
   ruleTester.run('single-frame const indirection', noHardcodedSecret, {
     valid: [
-      // `let` binding is never resolved (kind !== 'const') -> treated safe
+      // A `let` that IS reassigned holds whichever write ran last, which one
+      // file's structure cannot say -> not followed, treated safe.
       {
+        name: 'a reassigned let is not followed to its initialiser',
         code: `import jwt from 'jsonwebtoken';
-let MUTABLE_SECRET = 'abc'; jwt.sign(payload, MUTABLE_SECRET);`,
+let MUTABLE_SECRET = 'abc'; MUTABLE_SECRET = load(); jwt.sign(payload, MUTABLE_SECRET);`,
       },
       // function parameter: def.type is 'Parameter', not 'Variable' -> safe
       {
@@ -225,6 +238,16 @@ jwt.sign(payload, [42]);`,
       },
     ],
     invalid: [
+      // Audit 2026-10 (zero-deferral pass): this case used to be VALID — a
+      // `let` was never resolved. A `let` written exactly once (its
+      // initialiser) holds that value as surely as a `const` does, and the
+      // owner's relaxed constraint (a) admits following it.
+      {
+        name: 'a let that is never reassigned is followed to its literal',
+        code: `import jwt from 'jsonwebtoken';
+let MUTABLE_SECRET = 'abc'; jwt.sign(payload, MUTABLE_SECRET);`,
+        errors: [{ messageId: 'hardcodedSecret' }],
+      },
       // const-hidden string literal is resolved and flagged
       {
         code: `import jwt from 'jsonwebtoken';
@@ -249,14 +272,27 @@ describe('coverage: no-sensitive-payload property-loop guards', () => {
     noSensitivePayload,
     {
       valid: [
-        // SpreadElement (prop.type !== 'Property') and string-literal key
-        // (prop.key.type !== 'Identifier') are both skipped without reporting.
+        // A string-literal key that is not sensitive is skipped.
         {
+          name: 'a quoted harmless key beside a resolvable spread',
           code: `import jwt from 'jsonwebtoken';
+const claims = { iss: 'api' };
 jwt.sign({ ...claims, 'display-name': name, role: 'admin' }, process.env.JWT_SECRET);`,
         },
       ],
-      invalid: [],
+      invalid: [
+        // Audit 2026-10 (zero-deferral pass, owner decision on FN-6b): this
+        // case used to be VALID. `...claims` resolves to nothing in the file,
+        // so every field it carries goes into the token unseen — the
+        // whole-record spread is now reported (CWE-200). The string-literal
+        // key beside it is still skipped, which is what this case guards.
+        {
+          name: 'an unresolvable spread beside a quoted harmless key',
+          code: `import jwt from 'jsonwebtoken';
+jwt.sign({ ...claims, 'display-name': name, role: 'admin' }, process.env.JWT_SECRET);`,
+          errors: [{ messageId: 'wholeRecordSpread' }],
+        },
+      ],
     },
   );
 });

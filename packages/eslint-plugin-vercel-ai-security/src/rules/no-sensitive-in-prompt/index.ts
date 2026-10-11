@@ -10,10 +10,13 @@
  * @see OWASP LLM02: Sensitive Information Disclosure
  */
 
-import { AST_NODE_TYPES, TSESTree, createRule, formatLLMMessage, MessageIcons, nameHasWord, propertyName } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, TSESTree, createRule, formatLLMMessage, MessageIcons, memberPath, nameHasWord, objectKeyName, propertyName } from '@interlace/eslint-devkit';
 import { SYSTEM_PROMPT_PROPS, getStaticPropName } from '../../utils/prompt-props';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
 import { sdkCallName } from '../../utils/sdk';
+import { derivesFrom } from '../../utils/flow';
+import { isDatabaseRowRead } from '../../utils/records';
+import { typePropertyNames } from '../../utils/type-info';
 
 type MessageIds = 'sensitiveInPrompt';
 
@@ -109,7 +112,19 @@ export const noSensitiveInPrompt = createRule<RuleOptions, MessageIds>({
           return name !== null && isSensitiveIdentifier(name) ? sourceCode.getText(node) : null;
         }
         case 'TemplateLiteral':
-          return firstSensitive(node.expressions);
+          // `${record}` embeds the whole object, so the record check applies too.
+          for (const expr of node.expressions) {
+            const found = findSensitiveData(expr) ?? wholeRecord(expr);
+            if (found) return found;
+          }
+          return null;
+        case 'CallExpression': {
+          // JSON.stringify(record) / String(record)
+          const path = memberPath(node.callee)?.join('.');
+          const [first] = node.arguments;
+          if ((path !== 'JSON.stringify' && path !== 'String') || first === undefined) return null;
+          return findSensitiveData(first) ?? wholeRecord(first);
+        }
         case 'BinaryExpression':
           return findSensitiveData(node.left) ?? findSensitiveData(node.right);
         case 'ArrayExpression':
@@ -124,6 +139,33 @@ export const noSensitiveInPrompt = createRule<RuleOptions, MessageIds>({
           return null;
       }
     }
+
+    /**
+     * A whole object whose fields include a sensitive one — decided from the
+     * fields, never the variable's name. With type information, the declared
+     * property names of its type. Without, the object it resolves to in this
+     * file: a literal with a sensitive key, or a full database row (no column
+     * projection). A field read (`user.name`) is a field, not a record.
+     */
+    function wholeRecord(node: TSESTree.Node): string | null {
+      const label = sourceCode.getText(node);
+      const names = typePropertyNames(node, sourceCode);
+      if (names !== null) return names.some(isSensitiveIdentifier) ? label : null;
+      if (node.type === 'MemberExpression') return null;
+      return derivesFrom(node, recordFlow) ? label : null;
+    }
+
+    const recordFlow = {
+      sourceCode,
+      isSource: (candidate: TSESTree.Node) =>
+        (candidate.type === 'ObjectExpression' &&
+          candidate.properties.some(
+            (prop) =>
+              prop.type === 'Property' &&
+              isSensitiveIdentifier(objectKeyName(prop) ?? ''),
+          )) ||
+        isDatabaseRowRead(candidate, sourceCode),
+    };
 
     function firstSensitive(nodes: ReadonlyArray<TSESTree.Node | null>): string | null {
       for (const node of nodes) {

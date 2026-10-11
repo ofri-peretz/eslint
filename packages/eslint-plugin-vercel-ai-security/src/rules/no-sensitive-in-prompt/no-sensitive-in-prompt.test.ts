@@ -381,3 +381,122 @@ ruleTester.run('no-sensitive-in-prompt (fp-fn audit)', noSensitiveInPrompt, {
     },
   ]),
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Zero-deferral pass 2026-10-11: a WHOLE object embedded in a prompt —
+// JSON.stringify(x), String(x) or `${x}` — is reported when x resolves, in the
+// same file, to an object literal with a sensitive key or to a full DB row.
+// Property names describe the data; variable names are not consulted.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('no-sensitive-in-prompt (whole records)', noSensitiveInPrompt, {
+  valid: xai([
+    {
+      // guard reasoned from F-11b: an explicit projection names its columns
+      name: 'guard: a Prisma row fetched with an explicit select',
+      code: `
+        import { PrismaClient } from '@prisma/client';
+        const prisma = new PrismaClient();
+        const foo = await prisma.user.findUnique({ where: { id }, select: { name: true, plan: true } });
+        await generateText({ model, prompt: \`Greet: \${JSON.stringify(foo)}\` });
+      `,
+    },
+    {
+      // guard reasoned from F-11b: an object literal with no sensitive key
+      name: 'guard: an object literal with only harmless keys',
+      code: `
+        const foo = { name, plan, locale: 'en' };
+        await generateText({ model, prompt: JSON.stringify(foo) });
+      `,
+    },
+    {
+      // guard reasoned from F-11b: chat history loaded from the DB is the conversation, not a record dump
+      name: 'guard: chat history rows spread into messages',
+      code: `
+        import { PrismaClient } from '@prisma/client';
+        const prisma = new PrismaClient();
+        const foo = await prisma.message.findMany({ where: { chatId } });
+        await streamText({ model, messages: [...foo, { role: 'user', content: question }] });
+      `,
+    },
+    {
+      name: 'projections and non-database handles are not full rows',
+      code: `
+        import { drizzle } from 'drizzle-orm/node-postgres';
+        import knex from 'knex';
+        const db = drizzle(pool);
+        const shared = globalThis.db;
+        const a = await db.select({ name: users.name }).from(users);
+        const b = await knex('users').select('name', 'plan');
+        const c = await shared.user.findMany();
+        const d = await notADb.query();
+        await generateText({ model, prompt: JSON.stringify(a) + JSON.stringify(b) });
+        await generateText({ model, prompt: JSON.stringify(c) + JSON.stringify(d) + String() });
+      `,
+    },
+    {
+      // guard reasoned from F-11b: a column list is a projection
+      name: 'guard: a pg query with an explicit column list',
+      code: `
+        import { Pool } from 'pg';
+        const pool = new Pool();
+        const { rows: [foo] } = await pool.query('SELECT name, plan FROM users WHERE id = $1', [id]);
+        await generateText({ model, prompt: \`User: \${JSON.stringify(foo)}\` });
+      `,
+    },
+  ]),
+  invalid: xai([
+    {
+      // @found reasoned from F-11b: the same full-row read through other database clients
+      name: 'FN: full rows from drizzle, knex and a mysql2 connection serialised into prompts',
+      code: `
+        import { drizzle } from 'drizzle-orm/node-postgres';
+        import knex from 'knex';
+        import mysql from 'mysql2/promise';
+        const db = drizzle(pool);
+        const conn = await mysql.createConnection(url);
+        const a = await db.select().from(users);
+        const b = await knex('users').where({ id }).select('*');
+        const [c] = await conn.query('SELECT * FROM users');
+        await generateText({ model, prompt: JSON.stringify(a) });
+        await generateText({ model, prompt: JSON.stringify(b) });
+        await generateText({ model, prompt: JSON.stringify(c) });
+      `,
+      errors: [
+        { messageId: 'sensitiveInPrompt' },
+        { messageId: 'sensitiveInPrompt' },
+        { messageId: 'sensitiveInPrompt' },
+      ],
+    },
+    {
+      // @found F-11b, harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-vercel-ai-security.md)
+      name: 'FN: a whole Prisma user row serialised into the prompt',
+      code: `
+        import { PrismaClient } from '@prisma/client';
+        const prisma = new PrismaClient();
+        const foo = await prisma.user.findUnique({ where: { id } });
+        await generateText({ model, prompt: \`Personalize a greeting for: \${JSON.stringify(foo)}\` });
+      `,
+      errors: [{ messageId: 'sensitiveInPrompt' }],
+    },
+    {
+      // @found reasoned from F-11b: the pg SELECT-star row shape
+      name: 'FN: a SELECT * row interpolated into the system prompt',
+      code: `
+        import { Pool } from 'pg';
+        const pool = new Pool();
+        const { rows: [foo] } = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
+        await generateText({ model, system: \`Account: \${foo}\`, prompt: 'hi' });
+      `,
+      errors: [{ messageId: 'sensitiveInPrompt' }],
+    },
+    {
+      // @found reasoned from F-11b: an object literal whose key names a secret
+      name: 'FN: an object literal with a password key serialised into a message',
+      code: `
+        const foo = { email, password: input.password };
+        await streamText({ model, messages: [{ role: 'user', content: String(foo) }] });
+      `,
+      errors: [{ messageId: 'sensitiveInPrompt' }],
+    },
+  ]),
+});

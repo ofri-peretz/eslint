@@ -23,6 +23,7 @@ import {
   objectKeyName,
 } from '@interlace/eslint-devkit';
 import {
+  isPublicKeySource,
   isSignatureVerifyOperation,
   resolveCallOptions,
   extractAlgorithms,
@@ -34,19 +35,6 @@ type MessageIds =
   'algorithmConfusion' | 'symmetricWithPublicKey' | 'useAsymmetricAlgorithm';
 
 type RuleOptions = [NoAlgorithmConfusionOptions?];
-
-// Patterns that indicate a public key
-const PUBLIC_KEY_PATTERNS = [
-  /public/i,
-  /\.pub$/,
-  /\.pem$/,
-  /-----BEGIN PUBLIC KEY-----/,
-  /-----BEGIN RSA PUBLIC KEY-----/,
-  /-----BEGIN EC PUBLIC KEY-----/,
-  /getPublicKey/i,
-  /publicKey/i,
-  /jwks/i,
-];
 
 export const noAlgorithmConfusion = createRule<RuleOptions, MessageIds>({
   name: 'no-algorithm-confusion',
@@ -138,14 +126,6 @@ export const noAlgorithmConfusion = createRule<RuleOptions, MessageIds>({
     const sourceCode = context.sourceCode;
 
     /**
-     * Check if a node looks like a public key reference
-     */
-    const looksLikePublicKey = (node: TSESTree.Node): boolean => {
-      const text = sourceCode.getText(node);
-      return PUBLIC_KEY_PATTERNS.some((pattern) => pattern.test(text));
-    };
-
-    /**
      * Check if algorithms include symmetric algorithms
      */
     const hasSymmetricAlgorithm = (algorithms: string[]): string | null => {
@@ -190,13 +170,19 @@ export const noAlgorithmConfusion = createRule<RuleOptions, MessageIds>({
          *    RS* or ES*. The key's name says nothing either way — `cert`, `foo`
          *    and `publicKey` are equally exploitable — so this is decided from
          *    the list alone.
-         * 2. An HMAC-only list with a key that looks public (a PEM header, a
-         *    `getPublicKey()` call, a `.pem` path …).
+         * 2. An HMAC-only list with a key that IS public on structural
+         *    evidence: a PEM public header, `createPublicKey()`, jose's
+         *    `importSPKI` / `createRemoteJWKSet`, a jwks-rsa signing key, a
+         *    `.pub` file read (`isPublicKeySource`). The key's NAME is never
+         *    read — `publicKey` may hold an HMAC secret.
          */
         const mixesFamilies = algorithms.some((alg) =>
           SECURE_ALGORITHMS.has(alg),
         );
-        if (!mixesFamilies && !looksLikePublicKey(node.arguments[1])) {
+        if (
+          !mixesFamilies &&
+          !isPublicKeySource(node.arguments[1]!, sourceCode)
+        ) {
           return;
         }
 

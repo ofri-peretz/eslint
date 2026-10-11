@@ -43,6 +43,7 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 import { fileUsesMcpSdk } from '../../utils/mcp-evidence';
+import { valueResolverFor } from '../../utils/module-resolver';
 import {
   configSchema,
   propertyKey,
@@ -158,6 +159,9 @@ export const noUnvalidatedToolArgs = createRule<[], MessageIds>({
     // replaces saw ESM and `require()` only, so import-equals and dynamic
     // `import()` files ran no rule at all.
     if (!fileUsesMcpSdk(context.sourceCode.ast)) return {};
+    // Names in a legacy params shape resolve through consts and relative
+    // imports, so `{ path: PathSchema }` reads as the schema it is.
+    const resolve = valueResolverFor(context);
     const candidates: Array<{
       node: TSESTree.Node;
       tool: string;
@@ -167,7 +171,7 @@ export const noUnvalidatedToolArgs = createRule<[], MessageIds>({
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
-        const registration = readRegistration(node);
+        const registration = readRegistration(node, resolve);
         // No readable schema means no contract to check against. That is
         // require-tool-input-schema's question, not this rule's.
         if (registration?.schema.kind !== 'schema') return;

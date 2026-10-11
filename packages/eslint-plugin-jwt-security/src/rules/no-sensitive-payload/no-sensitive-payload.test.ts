@@ -376,3 +376,66 @@ export const f = (svc, user) => svc.signAsync({ sub: user.id, password: user.pas
     ],
   });
 });
+
+// ---------------------------------------------------------------------------
+// Zero-deferral pass (audit 2026-10): a whole record spread into the claims.
+// ---------------------------------------------------------------------------
+describe('no-sensitive-payload — whole-record spread', () => {
+  ruleTester.run('spread of an unresolvable object', noSensitivePayload, {
+    valid: [
+      {
+        name: 'a spread of a same-file object literal with harmless claims',
+        code: `import jwt from 'jsonwebtoken';
+const base = { iss: 'api', aud: 'web' };
+jwt.sign({ ...base, sub }, key);`,
+      },
+      {
+        name: 'a spread of a value followed through a let and a function return',
+        code: `import jwt from 'jsonwebtoken';
+function claimsFor(id) { return { sub: id, scope: 'read' }; }
+let claims = claimsFor(user.id);
+jwt.sign({ ...claims }, key);`,
+      },
+      {
+        name: 'a spread of a member read off a same-file object literal',
+        code: `import jwt from 'jsonwebtoken';
+const config = { claims: { iss: 'api' } };
+jwt.sign({ ...config.claims, sub }, key);`,
+      },
+    ],
+    invalid: [
+      {
+        // @found FN-6b, harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-jwt-security.md)
+        name: 'FN: the whole user record spread into the token',
+        code: `import jwt from 'jsonwebtoken';
+export function issue(user) {
+  return jwt.sign({ ...user }, process.env.JWT_SECRET, { expiresIn: '1h' });
+}`,
+        errors: [{ messageId: 'wholeRecordSpread' }],
+      },
+      {
+        // @found FN-6b, reasoned during the 2026-10-10 zero-deferral pass
+        name: 'FN: a database row spread into the token',
+        code: `import jwt from 'jsonwebtoken';
+export async function issue(id) {
+  const row = await prisma.user.findUnique({ where: { id } });
+  return jwt.sign({ ...row, role: 'user' }, key);
+}`,
+        errors: [{ messageId: 'wholeRecordSpread' }],
+      },
+      {
+        name: "a call result spread into jose's claims",
+        code: `import { SignJWT } from 'jose';
+await new SignJWT({ ...(await loadProfile(id)) }).setProtectedHeader({ alg: 'HS256' }).sign(key);`,
+        errors: [{ messageId: 'wholeRecordSpread' }],
+      },
+      {
+        name: 'a spread of a destructured const that cannot be resolved',
+        code: `import jwt from 'jsonwebtoken';
+const { profile } = await getSession();
+jwt.sign({ sub, ...profile }, key);`,
+        errors: [{ messageId: 'wholeRecordSpread' }],
+      },
+    ],
+  });
+});

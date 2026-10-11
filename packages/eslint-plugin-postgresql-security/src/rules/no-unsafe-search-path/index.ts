@@ -16,8 +16,9 @@ import {
   objectKeyName,
 } from '@interlace/eslint-devkit';
 import { NoUnsafeSearchPathOptions } from '../../types';
-import { fileUsesPostgres } from '../../utils';
-import { connectionConfigArguments, effectiveValue } from '../../utils/connection-config';
+import { usesPostgres } from '../../utils';
+import { connectionConfigArguments } from '../../utils/connection-config';
+import { envOf, follow } from '../../utils/cross-file';
 import { stripComments } from '../../utils/sql-scan';
 
 /**
@@ -425,7 +426,7 @@ export const noUnsafeSearchPath: TSESLint.RuleModule<
     // 108,838 files, 94% of this plugin's findings were in files with no
     // PostgreSQL client at all. Registering no visitors is both the gate and
     // the cheap path — a file with no database in it does no work.
-    if (!fileUsesPostgres(context.sourceCode.ast)) return {};
+    if (!usesPostgres(context)) return {};
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
@@ -508,7 +509,7 @@ export const noUnsafeSearchPath: TSESLint.RuleModule<
       NewExpression(node: TSESTree.NewExpression) {
         const scope = context.sourceCode.getScope(node);
         for (const argument of connectionConfigArguments(node, scope)) {
-          const config = effectiveValue(argument, scope);
+          const config = follow({ node: argument, scope, env: envOf(context) }).node;
           if (config.type !== AST_NODE_TYPES.ObjectExpression) continue;
           const options = configProperty(config, 'options');
           if (

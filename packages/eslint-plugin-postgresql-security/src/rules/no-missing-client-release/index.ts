@@ -15,7 +15,7 @@ import {
   propertyName,
 } from '@interlace/eslint-devkit';
 import { NoMissingClientReleaseOptions } from '../../types';
-import { fileUsesPostgres, PG_MODULES } from '../../utils';
+import { usesPostgres, PG_MODULES } from '../../utils';
 import { isDeclaredPgPool } from '../../utils/pool-receiver';
 
 const PG_MODULE_SET: ReadonlySet<string> = new Set(PG_MODULES);
@@ -270,7 +270,7 @@ export const noMissingClientRelease: TSESLint.RuleModule<
     // 108,838 files, 94% of this plugin's findings were in files with no
     // PostgreSQL client at all. Registering no visitors is both the gate and
     // the cheap path — a file with no database in it does no work.
-    if (!fileUsesPostgres(context.sourceCode.ast)) return {};
+    if (!usesPostgres(context)) return {};
 
     /** Properties of `this` assigned a pg Pool in this file. */
     const poolProperties = new Set<string>();

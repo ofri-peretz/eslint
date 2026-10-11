@@ -62,15 +62,13 @@ describe('eslint-plugin-mcp-sdk-security', () => {
     expect(Object.keys(strictRules).length).toBe(Object.keys(rules).length);
   });
 
-  it('keeps no-tool-description-injection out of minimal and recommended', () => {
-    // Promotion is a deliberate act, not a side effect of adding a rule. This
-    // rule still reports a description imported from another module (the file
-    // cannot see its text), so it stays strict-only. no-unvalidated-tool-args
-    // and no-command-injection-in-tool were promoted after the 2026-10 FP/FN
-    // review (benchmarks/audits/2026-10-10-fp-fn-mcp-sdk-security.md).
-    for (const preset of ['minimal', 'recommended'] as const) {
-      expect(configs[preset].rules?.['mcp-sdk-security/no-tool-description-injection']).toBeUndefined();
-    }
+  it('keeps no-tool-description-injection out of minimal', () => {
+    // Promoted to recommended after the zero-deferral pass: it now resolves
+    // consts and relative imports and reports only text it can show is
+    // dynamic (benchmarks/audits/2026-10-10-fp-fn-mcp-sdk-security.md). It
+    // still reports a description returned by a call, which minimal — "every
+    // finding is a defect by construction" — does not accept.
+    expect(configs.minimal.rules?.['mcp-sdk-security/no-tool-description-injection']).toBeUndefined();
   });
 
   it('pins the exact rule set of every preset', () => {
@@ -82,6 +80,7 @@ describe('eslint-plugin-mcp-sdk-security', () => {
     ]);
     expect(ids('recommended')).toEqual([
       'mcp-sdk-security/no-command-injection-in-tool',
+      'mcp-sdk-security/no-tool-description-injection',
       'mcp-sdk-security/no-unvalidated-tool-args',
       'mcp-sdk-security/require-tool-input-schema',
     ]);

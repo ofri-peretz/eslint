@@ -11,6 +11,17 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
+  childNodes,
+  findVariable,
+  importEqualsSpecifier,
+  originModule,
+  calleeExportName,
+  requireSpecifier as requireSpecifierOf,
+  resolveTerminal,
+} from './value-flow';
+export { staticNumber } from './value-flow';
+import type { SourceCodeLike } from './value-flow';
+import {
   AST_NODE_TYPES,
   createModuleEvidence,
   objectKeyName,
@@ -220,52 +231,6 @@ const JWT_LIBRARY_ROOTS: ReadonlySet<string> = new Set(
 );
 
 /**
- * `import argon = require('argon2')` -> `'argon2'`.
- *
- * TypeScript's grammar only admits a string literal in an external module
- * reference, so the value is read straight through and the caller's
- * `typeof === 'string'` check is the only guard needed. A namespace alias
- * (`import A = B.C`) loads nothing and yields `null`.
- */
-function importEqualsSpecifierOf(
-  stmt: TSESTree.TSImportEqualsDeclaration,
-): string | null {
-  const ref = stmt.moduleReference;
-  if (ref.type !== AST_NODE_TYPES.TSExternalModuleReference) return null;
-  // TypeScript's grammar only admits a string literal in an external module
-  // reference, so a `typeof !== 'string'` arm here is a branch no parser can
-  // reach — and an unreachable branch is a permanently red coverage gate.
-  return String((ref.expression as TSESTree.Literal).value);
-}
-
-/**
- * `require('x')` -> `'x'`, including when member-accessed.
- *
- * `const { sign } = require('jose').default` and
- * `const jwt = require('jsonwebtoken')` are the same load; anything that is not
- * a call to `require` with a string literal is not one at all.
- */
-function requireSpecifierOf(
-  node: TSESTree.Node | null | undefined,
-): string | null {
-  if (node == null) return null;
-  // `require('jose').jwtVerify` — the call is the receiver.
-  const call =
-    node.type === AST_NODE_TYPES.MemberExpression ? node.object : node;
-  if (
-    call.type !== AST_NODE_TYPES.CallExpression ||
-    call.callee.type !== AST_NODE_TYPES.Identifier ||
-    call.callee.name !== 'require'
-  ) {
-    return null;
-  }
-  const [arg] = call.arguments;
-  return arg?.type === AST_NODE_TYPES.Literal && typeof arg.value === 'string'
-    ? arg.value
-    : null;
-}
-
-/**
  * `jose/jwt/verify` -> `jose`; `@nestjs/jwt/dist/x` -> `@nestjs/jwt`.
  *
  * Deno's prefixes are stripped first, matching the devkit probe that now opens
@@ -381,7 +346,7 @@ function bindingSourceOf(stmt: TSESTree.Node, name: string): string | null {
   }
   // import argon = require('argon2')
   if (stmt.type === AST_NODE_TYPES.TSImportEqualsDeclaration) {
-    return stmt.id.name === name ? importEqualsSpecifierOf(stmt) : null;
+    return stmt.id.name === name ? importEqualsSpecifier(stmt) : null;
   }
   // const argon = require('argon2')  /  const { verify } = require('argon2')
   if (stmt.type === AST_NODE_TYPES.VariableDeclaration) {
@@ -824,8 +789,7 @@ export function isDecodeOperation(
  * missing?" must stay silent on an opaque answer.
  * ======================================================================== */
 
-/** The slice of `SourceCode` these helpers use. */
-export type SourceCodeLike = Pick<TSESLint.SourceCode, 'getScope'>;
+export type { SourceCodeLike } from './value-flow';
 
 /** Anything with object-literal properties: an ObjectExpression or a `ResolvedObject`. */
 export interface OptionsLike {
@@ -837,6 +801,12 @@ export interface ResolvedObject extends OptionsLike {
   readonly properties: TSESTree.Property[];
   /** Some part of the value could not be seen (a parameter, an import, a call…). */
   readonly opaque: boolean;
+  /**
+   * The spreads that made it opaque: `{ ...user }` where `user` is a
+   * parameter, a call result, a database row. Each one copies fields this
+   * file cannot see.
+   */
+  readonly opaqueSpreads: TSESTree.SpreadElement[];
 }
 
 /** What a name in this file is bound to. */
@@ -846,27 +816,11 @@ type Binding =
       init: TSESTree.Expression;
       variable: TSESLint.Scope.Variable;
     }
-  | { kind: 'function' }
   | { kind: 'other' }
   | { kind: 'unbound' };
 
 /** Bounds every recursive walk; resolution is a lookup, not a solver. */
 const MAX_RESOLUTION_DEPTH = 4;
-
-function findVariable(
-  sourceCode: SourceCodeLike,
-  node: TSESTree.Identifier,
-): TSESLint.Scope.Variable | null {
-  for (
-    let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(node);
-    scope !== null;
-    scope = scope.upper
-  ) {
-    const variable = scope.set.get(node.name);
-    if (variable !== undefined) return variable;
-  }
-  return null;
-}
 
 /**
  * The binding an identifier refers to.
@@ -883,7 +837,6 @@ function bindingOf(
   // A configured global (`crypto`, `window`) has a variable but no definition.
   const def = variable?.defs[0];
   if (def === undefined) return { kind: 'unbound' };
-  if (def.type === 'FunctionName') return { kind: 'function' };
   if (
     def.type === 'Variable' &&
     def.parent.kind === 'const' &&
@@ -902,26 +855,43 @@ function flattenObject(
   depth: number,
 ): ResolvedObject {
   const properties: TSESTree.Property[] = [];
-  let opaque = false;
+  const opaqueSpreads: TSESTree.SpreadElement[] = [];
   for (const element of object.properties) {
     if (element.type === AST_NODE_TYPES.Property) {
       properties.push(element);
       continue;
     }
     const spread = resolveObject(element.argument, sourceCode, depth + 1);
-    // `...cond && extra` or a spread of a string: nothing we can read.
+    // `...'x'`: not an object at all, so nothing here can list its fields.
     if (spread === null) {
-      opaque = true;
+      opaqueSpreads.push(element);
       continue;
     }
     properties.push(...spread.properties);
-    opaque ||= spread.opaque;
+    // `...user` (a parameter, a call, a row) is opaque itself; a resolved
+    // object that carries opaque spreads of its own passes those on.
+    if (spread.opaque) {
+      opaqueSpreads.push(
+        ...(spread.opaqueSpreads.length > 0 ? spread.opaqueSpreads : [element]),
+      );
+    }
   }
-  return { properties, opaque };
+  return { properties, opaque: opaqueSpreads.length > 0, opaqueSpreads };
 }
+
+/** What an opaque value resolves to: nothing visible. */
+const OPAQUE: ResolvedObject = {
+  properties: [],
+  opaque: true,
+  opaqueSpreads: [],
+};
 
 /**
  * Resolve an expression that should be an options object.
+ *
+ * The value is followed within this file (`resolveTerminal`): a `const` or a
+ * never-reassigned `let`, a destructure, a member of an object literal, an
+ * `await`, a cast, the single `return` of a same-file function.
  *
  * - `null`: the expression is definitely NOT an options object (a callback,
  *   a string, a number) — or there is no expression at all.
@@ -934,26 +904,18 @@ export function resolveObject(
   depth = 0,
 ): ResolvedObject | null {
   if (node === undefined || depth > MAX_RESOLUTION_DEPTH) return null;
-  const value = unwrapTypeSyntax(node);
+  const value = resolveTerminal(node, sourceCode);
   switch (value.type) {
     case AST_NODE_TYPES.ObjectExpression:
       return flattenObject(value, sourceCode, depth);
-    case AST_NODE_TYPES.Identifier: {
-      const binding = bindingOf(sourceCode, value);
-      if (binding.kind === 'const') {
-        return resolveObject(binding.init, sourceCode, depth + 1);
-      }
-      // `function onVerified(err, decoded) {}` passed as the callback.
-      if (binding.kind === 'function') return null;
-      return { properties: [], opaque: true };
-    }
     case AST_NODE_TYPES.ArrowFunctionExpression:
     case AST_NODE_TYPES.FunctionExpression:
+    case AST_NODE_TYPES.FunctionDeclaration:
     case AST_NODE_TYPES.Literal:
     case AST_NODE_TYPES.TemplateLiteral:
       return null;
     default:
-      return { properties: [], opaque: true };
+      return OPAQUE;
   }
 }
 
@@ -979,18 +941,25 @@ function chainRoot(node: TSESTree.Node): TSESTree.Node {
 }
 
 /**
- * The module a `this.<member>` is typed from, when the class declares it.
+ * The JWT library a `this.<member>` is POSITIVELY known to come from, or null.
  *
- * `constructor(private readonly hashing: HashingService)` and
- * `private readonly jwt: JwtService` are TYPE ANNOTATIONS — structural facts
- * about the binding, not guesses from its name. The type name is then looked
- * up among this file's imports, so `HashingService` from `./hashing.service`
- * resolves to a relative (foreign) module and `JwtService` from `@nestjs/jwt`
- * resolves to a JWT library. Anything else — no annotation, a union, a type
- * that is not imported — answers `null` and leaves the call alone.
+ * An injected member is a JWT client only on structural evidence the class
+ * itself gives — never on its name:
+ *
+ * - a type annotation that resolves to a JWT import
+ *   (`private readonly jwt: JwtService`, `lib: typeof jsonwebtoken`);
+ * - an `@Inject(X)` decorator whose argument resolves to a JWT import;
+ * - a value assigned from one — a property initialiser, a defaulted
+ *   parameter property, or `this.member = …` anywhere in the class
+ *   (`= jsonwebtoken`, `= new JwtService()`, `= await createVerifier()`).
+ *
+ * Without any of these the member is treated as foreign: an untyped
+ * `constructor(private readonly hashing)` says nothing, and assuming it is a
+ * JWT client is what reported `this.hashing.verify(pw, hash)`.
  */
-function thisMemberTypeSource(
+function thisMemberJwtSource(
   member: TSESTree.MemberExpression,
+  sourceCode: SourceCodeLike,
 ): string | null {
   const name = propertyName(member);
   // `Program.parent` is `null` in ESLint's tree, so the walk ends on a falsy
@@ -999,43 +968,85 @@ function thisMemberTypeSource(
   while (classBody && classBody.type !== AST_NODE_TYPES.ClassBody) {
     classBody = classBody.parent;
   }
-  if (!classBody) return null;
+  if (!classBody || name === null) return null;
 
-  let annotation: TSESTree.TypeNode | undefined;
+  const evidence: TSESTree.Node[] = [];
+  const declare = (
+    annotation: TSESTree.TSTypeAnnotation | undefined,
+    decorators: readonly TSESTree.Decorator[],
+    value: TSESTree.Node | null | undefined,
+  ): void => {
+    const type = annotation?.typeAnnotation;
+    if (type?.type === AST_NODE_TYPES.TSTypeReference) {
+      evidence.push(type.typeName);
+    }
+    if (type?.type === AST_NODE_TYPES.TSTypeQuery) evidence.push(type.exprName);
+    for (const decorator of decorators) {
+      const call = decorator.expression;
+      if (call.type === AST_NODE_TYPES.CallExpression && call.arguments[0]) {
+        evidence.push(call.arguments[0]);
+      }
+    }
+    if (value) evidence.push(value);
+  };
+
   for (const element of classBody.body) {
     if (
       element.type === AST_NODE_TYPES.PropertyDefinition &&
       objectKeyName(element) === name
     ) {
-      annotation = element.typeAnnotation?.typeAnnotation;
+      declare(element.typeAnnotation, element.decorators, element.value);
     }
     if (
       element.type === AST_NODE_TYPES.MethodDefinition &&
       element.kind === 'constructor'
     ) {
       for (const param of element.value.params) {
-        if (
-          param.type === AST_NODE_TYPES.TSParameterProperty &&
-          param.parameter.type === AST_NODE_TYPES.Identifier &&
-          param.parameter.name === name
-        ) {
-          annotation = param.parameter.typeAnnotation?.typeAnnotation;
+        if (param.type !== AST_NODE_TYPES.TSParameterProperty) continue;
+        const target =
+          param.parameter.type === AST_NODE_TYPES.AssignmentPattern
+            ? param.parameter.left
+            : param.parameter;
+        // TypeScript admits only an identifier (optionally defaulted) as a
+        // parameter property, so the target always has a name.
+        if ((target as TSESTree.Identifier).name === name) {
+          declare(
+            (target as TSESTree.Identifier).typeAnnotation,
+            param.decorators,
+            param.parameter.type === AST_NODE_TYPES.AssignmentPattern
+              ? param.parameter.right
+              : null,
+          );
         }
       }
     }
   }
-  if (
-    annotation?.type !== AST_NODE_TYPES.TSTypeReference ||
-    annotation.typeName.type !== AST_NODE_TYPES.Identifier
-  ) {
-    return null;
-  }
-  const typeName = annotation.typeName.name;
-  for (const stmt of programOf(member).body) {
-    const source = bindingSourceOf(stmt, typeName);
-    if (source !== null) return source;
+  collectThisAssignments(classBody, name, evidence);
+
+  for (const node of evidence) {
+    const source = originModule(node, sourceCode);
+    if (source !== null && isJwtSource(source)) return source;
   }
   return null;
+}
+
+/** Every `this.<name> = value` right-hand side inside a class body. */
+function collectThisAssignments(
+  node: TSESTree.Node,
+  name: string,
+  out: TSESTree.Node[],
+): void {
+  if (
+    node.type === AST_NODE_TYPES.AssignmentExpression &&
+    node.left.type === AST_NODE_TYPES.MemberExpression &&
+    node.left.object.type === AST_NODE_TYPES.ThisExpression &&
+    propertyName(node.left) === name
+  ) {
+    out.push(node.right);
+  }
+  for (const child of childNodes(node)) {
+    collectThisAssignments(child, name, out);
+  }
 }
 
 function programOf(node: TSESTree.Node): TSESTree.Program {
@@ -1103,8 +1114,8 @@ function receiverIsForeignValue(
   if (root.type === AST_NODE_TYPES.ThisExpression) {
     // `this.verify()` names no member to look up.
     if (receiver.type !== AST_NODE_TYPES.MemberExpression) return false;
-    const source = thisMemberTypeSource(innermostMember(receiver));
-    return source !== null && !isJwtSource(source);
+    // A member is a JWT client only on positive evidence the class gives.
+    return thisMemberJwtSource(innermostMember(receiver), sourceCode) === null;
   }
   if (root.type !== AST_NODE_TYPES.Identifier) return false;
 
@@ -1179,7 +1190,10 @@ export function isNestJwtShape(
     node.callee.type === AST_NODE_TYPES.MemberExpression &&
     node.callee.object.type === AST_NODE_TYPES.MemberExpression &&
     node.callee.object.object.type === AST_NODE_TYPES.ThisExpression &&
-    thisMemberTypeSource(node.callee.object) === JWT_LIBRARIES.NESTJS_JWT
+    // Reached only for a call `isJwtLibraryCall` accepted, and a `this`
+    // member is accepted only on evidence — so the source is never null.
+    packageRootOf(thisMemberJwtSource(node.callee.object, sourceCode)!) ===
+      JWT_LIBRARIES.NESTJS_JWT
   ) {
     return true;
   }
@@ -1206,7 +1220,7 @@ export function resolveCallOptions(
 ): ResolvedObject | null {
   if (isNestJwtShape(node, sourceCode)) {
     const own = resolveObject(node.arguments[1], sourceCode);
-    return { properties: own === null ? [] : own.properties, opaque: true };
+    return own === null ? OPAQUE : { ...own, opaque: true };
   }
   return resolveObject(node.arguments[2], sourceCode);
 }
@@ -1334,7 +1348,7 @@ export interface KeyLiteral {
 /**
  * Every static string that can reach the key position, structurally.
  *
- * Follows a same-file `const`, both arms of `||` / `??` / `&&` (the
+ * Follows a same-file value (`resolveTerminal`), both arms of `||` / `??` / `&&` (the
  * `process.env.JWT_SECRET || 'secret'` fallback that ships the literal the
  * moment the variable is unset), `as` casts, and the byte wrappers jose is
  * fed (`new TextEncoder().encode('…')`, `Buffer.from('…', 'hex')`).
@@ -1358,11 +1372,11 @@ export function keyLiterals(
       ...keyLiterals(value.right, sourceCode, depth + 1),
     ];
   }
-  if (value.type === AST_NODE_TYPES.Identifier) {
-    const binding = bindingOf(sourceCode, value);
-    return binding.kind === 'const'
-      ? keyLiterals(binding.init, sourceCode, depth + 1)
-      : [];
+  // A const, a never-reassigned let, a member of an object literal, a
+  // same-file function's return: follow it one value-flow step at a time.
+  const resolved = resolveTerminal(value, sourceCode);
+  if (resolved !== value) {
+    return keyLiterals(resolved, sourceCode, depth + 1);
   }
   const bytes = byteKeyLiteral(value);
   if (bytes === null) return [];
@@ -1385,6 +1399,66 @@ const PUBLIC_PEM =
 export function isPublicKeyMaterial(literal: KeyLiteral['literal']): boolean {
   // `keyLiterals` only yields static strings, so this always has a value.
   return PUBLIC_PEM.test(staticString(literal)!);
+}
+
+/** Files that hold public key material by convention of their format. */
+const PUBLIC_KEY_FILE = /\.(?:pub|crt|cer)$/;
+
+/** File readers whose first argument is the path. */
+const FILE_READERS: ReadonlySet<string> = new Set(['readFileSync', 'readFile']);
+
+/** Package -> exports that can only produce PUBLIC key material. */
+const PUBLIC_KEY_EXPORTS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
+  ['crypto', new Set(['createPublicKey', 'X509Certificate'])],
+  [
+    JWT_LIBRARIES.JOSE,
+    new Set([
+      'importSPKI',
+      'importX509',
+      'createRemoteJWKSet',
+      'createLocalJWKSet',
+    ]),
+  ],
+]);
+
+/**
+ * Whether a key is public key material, on STRUCTURAL evidence only.
+ *
+ * The value is followed within the file to where it was made, and only that
+ * decides: a PEM `PUBLIC KEY` / `CERTIFICATE` string; `createPublicKey()` /
+ * `new X509Certificate()` from `node:crypto`; jose's `importSPKI`,
+ * `importX509`, `createRemoteJWKSet`, `createLocalJWKSet`; anything a
+ * `jwks-rsa` client produces; a file read whose path ends in `.pub`, `.crt`
+ * or `.cer`. What the key is CALLED is never consulted — `publicKey` may hold
+ * an HMAC secret and `cert` may hold an RSA key.
+ */
+export function isPublicKeySource(
+  node: TSESTree.Node,
+  sourceCode: SourceCodeLike,
+): boolean {
+  const value = resolveTerminal(node, sourceCode);
+  const text = staticString(value);
+  if (text !== null) return PUBLIC_PEM.test(text);
+  if (
+    value.type !== AST_NODE_TYPES.CallExpression &&
+    value.type !== AST_NODE_TYPES.NewExpression
+  ) {
+    return false;
+  }
+  const module = originModule(value.callee, sourceCode);
+  if (module === null) return false;
+  const root = packageRootOf(module.replace(/^node:/, ''));
+  if (root === JWT_LIBRARIES.JWKS_RSA) return true;
+  const exportName = String(calleeExportName(value.callee, sourceCode));
+  if (root === 'fs' && FILE_READERS.has(exportName)) {
+    const [path] = value.arguments;
+    const file =
+      path === undefined
+        ? null
+        : staticString(resolveTerminal(path, sourceCode));
+    return file !== null && PUBLIC_KEY_FILE.test(file);
+  }
+  return PUBLIC_KEY_EXPORTS.get(root)?.has(exportName) ?? false;
 }
 
 /** A JWT library configured through an object rather than a sign/verify call. */

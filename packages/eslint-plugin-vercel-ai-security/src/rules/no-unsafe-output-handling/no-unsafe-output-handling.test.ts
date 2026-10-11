@@ -419,3 +419,166 @@ ruleTester.run('no-unsafe-output-handling (fp-fn audit)', noUnsafeOutputHandling
     },
   ]),
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Zero-deferral pass 2026-10-11: model output reaching dangerouslySetInnerHTML
+// through a component prop typed with an AI SDK message type, a useChat /
+// useCompletion result, or `.map(m => <C m={m} />)` into a same-file component.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('no-unsafe-output-handling (UI message flow)', noUnsafeOutputHandling, {
+  valid: xai([
+    {
+      // guard reasoned from X-FN-2b: a prop typed with the app's own type is not model output
+      name: 'guard: a prop typed with a non-SDK type rendered as HTML',
+      code: `
+        type Article = { html: string };
+        export function Body({ a }: { a: Article }) {
+          return <div dangerouslySetInnerHTML={{ __html: a.html }} />;
+        }
+      `,
+      languageOptions: jsx,
+    },
+    {
+      // guard reasoned from X-FN-2b: a same-file component fed only static content
+      name: 'guard: a same-file component whose only caller passes static HTML',
+      code: `
+        const LEGAL = { body: '<p>Terms</p>' };
+        function Bubble({ m }) { return <div dangerouslySetInnerHTML={{ __html: m.body }} />; }
+        export const Page = () => <Bubble m={LEGAL} />;
+      `,
+      languageOptions: jsx,
+    },
+    {
+      name: 'a function in a non-execute property of a tool-shaped object is not a tool input',
+      code: `
+        import { execSync } from 'node:child_process';
+        const t = tool({ inputSchema, onInput: async ({ cmd }) => execSync(cmd), execute: async () => ({}) });
+      `,
+    },
+    {
+      name: 'a prop typed through an interface with no SDK type',
+      code: `
+        interface Props { m: { html: string } }
+        export function Body({ m }: Props) { return <div dangerouslySetInnerHTML={{ __html: m.html }} />; }
+      `,
+      languageOptions: jsx,
+    },
+    {
+      name: 'a prop typed with an unresolvable type name, or with mutually recursive aliases',
+      code: `
+        type A = { next: B }; type B = { prev: A };
+        export function One({ m }: Unknown) { return <div dangerouslySetInnerHTML={{ __html: m.html }} />; }
+        export function Two({ m }: { m: A }) { return <div dangerouslySetInnerHTML={{ __html: m.html }} />; }
+        export function Three({ m }: { m: string }) { return <div dangerouslySetInnerHTML={{ __html: m }} />; }
+        export function Four({ m }: Unknown.Thing) { return <div dangerouslySetInnerHTML={{ __html: m.html }} />; }
+      `,
+      languageOptions: jsx,
+    },
+    {
+      // guard reasoned from X-FN-2b: a hook with the same name from another package
+      name: 'guard: useChat imported from a non-SDK package',
+      code: `
+        import { useChat } from '@kapaai/react-sdk';
+        export function Chat() {
+          const { messages } = useChat();
+          return messages.map((m) => <div dangerouslySetInnerHTML={{ __html: m.answer }} />);
+        }
+      `,
+      languageOptions: jsx,
+    },
+  ]),
+  invalid: xai([
+    {
+      // @found X-FN-2b, harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-vercel-ai-security.md)
+      name: 'FN: a component prop typed as the SDK UIMessage rendered as HTML',
+      code: `
+        import type { UIMessage } from 'ai';
+        export function Msg({ m }: { m: UIMessage }) {
+          return <div dangerouslySetInnerHTML={{ __html: m.parts.map((p) => p.text).join('') }} />;
+        }
+      `,
+      languageOptions: jsx,
+      errors: [{ messageId: 'unsafeOutputInHTML' }],
+    },
+    {
+      // @found reasoned from X-FN-2b: the same type through a same-file props alias
+      name: 'FN: a props alias whose field is an SDK message type',
+      code: `
+        import type { Message } from '@ai-sdk/react';
+        type Props = { message: Message };
+        export function Msg(props: Props) {
+          return <div dangerouslySetInnerHTML={{ __html: props.message.content }} />;
+        }
+      `,
+      languageOptions: jsx,
+      errors: [{ messageId: 'unsafeOutputInHTML' }],
+    },
+    {
+      // @found reasoned from X-FN-2b: the SDK type behind a same-file interface and a qualified name
+      name: 'FN: a destructured prop whose interface field is an SDK message type',
+      code: `
+        import * as ai from 'ai';
+        interface Props { m: ai.UIMessage }
+        export function Msg({ m }: Props) {
+          return <div dangerouslySetInnerHTML={{ __html: JSON.stringify(m.parts) }} />;
+        }
+      `,
+      languageOptions: jsx,
+      errors: [{ messageId: 'unsafeOutputInHTML' }],
+    },
+    {
+      // @found residual "Model Output Passed Through Another Variable or Helper" in docs/rules/no-unsafe-output-handling.md (2026-10-10)
+      name: 'FN: model output wrapped by a same-file helper and a second variable before eval',
+      code: `
+        function wrap(t) { return \`(\${t.trim()})\`; }
+        const { text } = await generateText({ prompt: 'write js' });
+        const foo = wrap(text);
+        let bar;
+        bar = foo;
+        eval(bar);
+      `,
+      errors: [{ messageId: 'unsafeOutputExecution' }],
+    },
+    {
+      // @found reasoned from X-FN-2b: useChat messages rendered in the same file
+      name: 'FN: useChat messages rendered as HTML',
+      code: `
+        import { useChat } from '@ai-sdk/react';
+        export function Chat() {
+          const { messages } = useChat();
+          return messages.map((m) => <div dangerouslySetInnerHTML={{ __html: m.content }} />);
+        }
+      `,
+      languageOptions: jsx,
+      errors: [{ messageId: 'unsafeOutputInHTML' }],
+    },
+    {
+      // @found reasoned from X-FN-2b: useChat messages passed into a same-file component
+      name: 'FN: useChat messages mapped into a same-file component that renders HTML',
+      code: `
+        import { useChat } from '@ai-sdk/react';
+        function Bubble({ m }) { return <div dangerouslySetInnerHTML={{ __html: m.content }} />; }
+        export function Chat() {
+          const { messages } = useChat();
+          return <div>{messages.map((m) => <Bubble key={m.id} m={m} />)}</div>;
+        }
+      `,
+      languageOptions: jsx,
+      errors: [{ messageId: 'unsafeOutputInHTML' }],
+    },
+    {
+      // @found reasoned from X-FN-2b: useCompletion's completion string
+      name: 'FN: a useCompletion completion rendered as HTML',
+      code: `
+        import { useCompletion } from 'ai/react';
+        export function Box() {
+          // renamed on purpose: the name pattern \`completion\` must not be what fires
+          const { completion: foo } = useCompletion();
+          return <div dangerouslySetInnerHTML={{ __html: foo }} />;
+        }
+      `,
+      languageOptions: jsx,
+      errors: [{ messageId: 'unsafeOutputInHTML' }],
+    },
+  ]),
+});

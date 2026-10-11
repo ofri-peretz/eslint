@@ -15,6 +15,21 @@ import {
   modelFacingProperties,
 } from './index';
 import type { TSESTree } from '@typescript-eslint/utils';
+import { join } from 'node:path';
+
+/**
+ * A file inside the cross-file fixture directory. Imports in these cases
+ * resolve against it and are read from disk; the file itself need not exist.
+ */
+const SERVER = join(
+  __dirname,
+  '..',
+  '..',
+  '..',
+  'fixtures',
+  'cross-file',
+  'server.ts',
+);
 
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
@@ -190,6 +205,67 @@ describe('no-tool-description-injection', () => {
             "server.registerTool('search', { description: ({ d: 'Search' }).d }, handler);",
         },
         {
+          // Moved from invalid ('an imported value is decided in another
+          // file'): the import does not resolve, so its text is unknown, and
+          // the rule reports only a value it can show is dynamic.
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, residual 1 (imported description)
+          name: 'FP: an import that does not resolve is not reported',
+          filename: SERVER,
+          code:
+            SDK +
+            "import { DESC } from './no-such-module';\nimport { PKG } from 'some-package';\n" +
+            "server.registerTool('search', { title: PKG, description: DESC }, handler);",
+        },
+        {
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, residual 1 (imported description)
+          name: 'FP: static descriptions imported from another file',
+          filename: SERVER,
+          code:
+            SDK +
+            "import { SEARCH, LIST, RENAMED, REEXPORTED, TOOLS } from './descriptions';\n" +
+            "import DEFAULT_DESCRIPTION from './descriptions';\n" +
+            "import * as D from './descriptions.js';\n" +
+            "import { BRAND } from './barrel';\nimport { IN_DIR } from './dir';\n" +
+            "server.registerTool('a', { title: SEARCH, description: LIST }, handler);\n" +
+            "server.registerTool('b', { title: RENAMED, description: REEXPORTED }, handler);\n" +
+            "server.registerTool('c', { title: TOOLS.search.description, description: DEFAULT_DESCRIPTION }, handler);\n" +
+            "server.registerTool('d', { title: D.SEARCH, description: `${BRAND}: ${IN_DIR}` }, handler);\n" +
+            "import { 'quoted-name' as QUOTED } from './descriptions';\n" +
+            "server.registerTool('e', { title: QUOTED, description: QUOTED }, handler);",
+        },
+        {
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, residual 1 (imported description)
+          name: 'FP: an imported value that cannot be read stays unknown, not dynamic',
+          filename: SERVER,
+          code:
+            SDK +
+            "import { FROM_PACKAGE, MISSING_TOO, NOPE } from './descriptions';\nimport { LOOP } from './cycle-a';\n" +
+            "import { NOT_HERE } from './barrel';\nimport * as D from './descriptions';\n" +
+            "server.registerTool('a', { title: FROM_PACKAGE, description: MISSING_TOO }, handler);\n" +
+            "server.registerTool('b', { title: NOPE, description: LOOP }, handler);\n" +
+            "server.registerTool('c', { title: NOT_HERE, description: D.NOPE }, handler);\n" +
+            "import { GHOST } from './barrel';\nimport { PKG } from 'some-package';\nimport E = require('./descriptions');\n" +
+            "server.registerTool('e', { title: GHOST, description: `Search ${PKG}` }, handler);\n" +
+            "server.registerTool('f', { title: E.SEARCH, description: [PKG].join() }, handler);",
+        },
+        {
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, residual 1 (imported description)
+          name: 'FP: a static const interpolated into a template is static text',
+          code:
+            SDK +
+            "const PRODUCT = 'Acme';\nserver.registerTool('search', { description: `Search ${PRODUCT} docs`, title: dedent`${PRODUCT}` }, handler);",
+        },
+        {
+          // Moved from invalid. The resolver is bounded and abstains when it
+          // cannot reach a value (`unknown`), and reports only text it can
+          // show is dynamic. A const cycle is a TDZ ReferenceError, not text.
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, residual 1 (imported description)
+          name: 'FP: a const cycle resolves to nothing, so it is not reported',
+          code:
+            SDK +
+            "const A = B;\nconst B = A;\nserver.registerTool('q', { description: A }, handler);",
+        },
+        {
           name: 'a static prompt description',
           code:
             SDK +
@@ -300,13 +376,6 @@ describe('no-tool-description-injection', () => {
           errors: [{ messageId: 'dynamicDescription' }],
         },
         {
-          name: 'an imported value is decided in another file',
-          code:
-            SDK +
-            "import { DESC } from './descriptions';\nserver.registerTool('search', { description: DESC }, handler);",
-          errors: [{ messageId: 'dynamicDescription' }],
-        },
-        {
           name: 'a const initialised from a call',
           code:
             SDK +
@@ -376,13 +445,6 @@ describe('no-tool-description-injection', () => {
           errors: [{ messageId: 'dynamicDescription' }],
         },
         {
-          name: 'a const that refers to itself through a cycle stays unresolved',
-          code:
-            SDK +
-            "const A = B;\nconst B = A;\nserver.registerTool('q', { description: A }, handler);",
-          errors: [{ messageId: 'dynamicDescription' }],
-        },
-        {
           name: 'a const object key a later spread may override',
           code:
             SDK +
@@ -425,6 +487,63 @@ describe('no-tool-description-injection', () => {
           code:
             SDK +
             "declare const DESC: string;\nserver.registerTool('search', { description: DESC }, handler);",
+          errors: [{ messageId: 'dynamicDescription' }],
+        },
+        {
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, residual 1 (imported description)
+          name: 'FN: a dynamic description imported from another file',
+          filename: SERVER,
+          code:
+            SDK +
+            "import { DYNAMIC, MUTABLE, TOOLS } from './descriptions';\nimport blurb, { ALIAS } from './dynamic-default';\n" +
+            "import * as D from './descriptions';\n" +
+            "server.registerTool('a', { title: DYNAMIC, description: MUTABLE }, handler);\n" +
+            "server.registerTool('b', { title: TOOLS.dyn, description: blurb }, handler);\n" +
+            "server.registerTool('c', { title: ALIAS, description: D.describeTool }, handler);\n" +
+            "import describeDefault from './default-fn';\nimport { nsBrand } from './barrel';\n" +
+            "server.registerTool('d', { title: describeDefault, description: nsBrand }, handler);",
+          errors: [
+            {
+              messageId: 'dynamicDescription',
+              data: { tool: 'a', key: 'title' },
+            },
+            {
+              messageId: 'dynamicDescription',
+              data: { tool: 'a', key: 'description' },
+            },
+            {
+              messageId: 'dynamicDescription',
+              data: { tool: 'b', key: 'title' },
+            },
+            {
+              messageId: 'dynamicDescription',
+              data: { tool: 'b', key: 'description' },
+            },
+            {
+              messageId: 'dynamicDescription',
+              data: { tool: 'c', key: 'title' },
+            },
+            {
+              messageId: 'dynamicDescription',
+              data: { tool: 'c', key: 'description' },
+            },
+            {
+              messageId: 'dynamicDescription',
+              data: { tool: 'd', key: 'title' },
+            },
+            {
+              messageId: 'dynamicDescription',
+              data: { tool: 'd', key: 'description' },
+            },
+          ],
+        },
+        {
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, residual 1 (imported description)
+          name: 'FN: a namespace import used as text is not text',
+          filename: SERVER,
+          code:
+            SDK +
+            "import * as D from './descriptions';\nserver.registerTool('a', { description: D }, handler);",
           errors: [{ messageId: 'dynamicDescription' }],
         },
         {

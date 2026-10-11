@@ -17,6 +17,18 @@ import {
   propertyKey,
 } from './index';
 import type { TSESTree } from '@typescript-eslint/utils';
+import { join } from 'node:path';
+
+/** A file inside the cross-file fixture directory; imports resolve against it. */
+const SERVER = join(
+  __dirname,
+  '..',
+  '..',
+  '..',
+  'fixtures',
+  'cross-file',
+  'server.ts',
+);
 
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
@@ -153,6 +165,24 @@ describe('no-unvalidated-tool-args', () => {
           code:
             SDK +
             'server.tool("read", { path: PathSchema }, async ({ path, extra }) => read(path));',
+        },
+        {
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, residual 2 (legacy shape held in variables)
+          name: 'FP: a legacy object whose values resolve to literals is annotations, not a shape',
+          filename: SERVER,
+          code:
+            SDK +
+            "import { Labels } from './schemas';\nconst TITLE = 'Read';\n" +
+            'server.tool("read", { title: TITLE, label: Labels.path }, async ({ path, extra }) => read(path, extra));',
+        },
+        {
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, residual 2 (legacy shape held in variables)
+          name: 'FP: a legacy schema from a package stays unreadable',
+          filename: SERVER,
+          code:
+            SDK +
+            "import { PathSchema } from 'some-package';\n" +
+            'server.tool("read", { path: PathSchema }, async ({ path, extra }) => read(path, extra));',
         },
         {
           name: 'a legacy shape held in a variable',
@@ -414,6 +444,35 @@ describe('no-unvalidated-tool-args', () => {
             "import { McpServer } from '@modelcontextprotocol/server';\n" +
             'server.registerTool("read", { inputSchema: z.object({ path: z.string() }) }, async ({ path, encoding }) => read(path, encoding));',
           errors: [{ messageId: 'undeclaredArg' }],
+        },
+        {
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, residual 2 (legacy shape held in variables)
+          name: 'FN: a legacy shape whose schemas are same-file consts',
+          code:
+            SDK +
+            'const PathSchema = z.string();\nconst S = { mode: z.enum(["r"]) };\n' +
+            'server.tool("read", { path: PathSchema, mode: S.mode }, async ({ path, mode, extra }) => read(path, mode, extra));',
+          errors: [
+            {
+              messageId: 'undeclaredArg',
+              data: { tool: 'read', arg: 'extra' },
+            },
+          ],
+        },
+        {
+          // @found mcp-sdk-security FP/FN audit 2026-10-10, residual 2 (legacy shape held in variables)
+          name: 'FN: a legacy shape whose schemas are imported from a relative module',
+          filename: SERVER,
+          code:
+            SDK +
+            "import { PathSchema, Schemas } from './schemas';\n" +
+            'server.tool("read", "Read", { path: PathSchema, mode: Schemas.mode }, async ({ path, mode, extra }) => read(path, mode, extra));',
+          errors: [
+            {
+              messageId: 'undeclaredArg',
+              data: { tool: 'read', arg: 'extra' },
+            },
+          ],
         },
         {
           name: 'require() opens the same gate',

@@ -323,3 +323,43 @@ const sign = createSigner({ key: 'secret' });`,
     ],
   });
 });
+
+// ---------------------------------------------------------------------------
+// Zero-deferral pass (audit 2026-10)
+// ---------------------------------------------------------------------------
+describe('no-hardcoded-secret — injected member evidence', () => {
+  ruleTester.run('this.<member> evidence', noHardcodedSecret, {
+    valid: [
+      {
+        // @found FP-4 residual, harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-jwt-security.md)
+        name: 'FP: an untyped injected member signing with a literal is not a JWT call',
+        code: `import { JwtService } from '@nestjs/jwt';
+class AuthService {
+  constructor(private readonly signer) {}
+  run(p) { return this.signer.sign(p, 'not-a-jwt-secret'); }
+}`,
+      },
+    ],
+    invalid: [
+      {
+        name: 'an @Inject(JwtService) member signing with a literal secret',
+        code: `import { JwtService } from '@nestjs/jwt';
+import { Inject } from '@nestjs/common';
+class AuthService {
+  constructor(@Inject(JwtService) private readonly jwt) {}
+  run(p) { return this.jwt.sign(p, { secret: 'secretKey' }); }
+}`,
+        errors: [{ messageId: 'hardcodedSecret' }],
+      },
+      {
+        name: 'a member constructed as a JwtService signing with a literal secret',
+        code: `import { JwtService } from '@nestjs/jwt';
+class AuthService {
+  private readonly jwt = new JwtService({});
+  run(p) { return this.jwt.sign(p, { secret: 'secretKey' }); }
+}`,
+        errors: [{ messageId: 'hardcodedSecret' }],
+      },
+    ],
+  });
+});

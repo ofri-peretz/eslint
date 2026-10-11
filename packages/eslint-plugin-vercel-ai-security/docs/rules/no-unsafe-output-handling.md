@@ -100,6 +100,17 @@ Passing AI output to dangerous functions enables:
 - `textContent` was removed from the default `aiOutputPatterns`.
 - **Options:** the documented `defaultOptions` now apply. Earlier versions read `context.options` and silently ran a shorter hard-coded list instead.
 
+## 🔄 Changes in the 2026-10-11 zero-deferral pass
+
+- Model output is followed through same-file declarations, reassignments,
+  string / array derivations and helpers: `const foo = wrap(text); eval(foo)`.
+- **UI sources:** a component parameter typed with an SDK message type
+  (`{ m }: { m: UIMessage }`, a same-file props alias or interface naming one),
+  and the result of `useChat` / `useCompletion` / `useObject` /
+  `useAssistant` imported from the SDK — including through
+  `messages.map((m) => <Bubble m={m} />)` into a same-file component. A
+  same-named hook from another package is not one.
+
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
@@ -118,12 +129,6 @@ executeCode(result.text); // Custom wrapper, not one of the recognised sinks
 the SQL / `fetch` / HTML sinks listed above) are fixed and not configurable.
 Call the underlying function directly at the point the AI output is used, or
 wrap the call site in your own review.
-
-### Model Output Passed Through Another Variable or Helper
-
-**Why**: The rule binds the result of an SDK call, a property read off it, and
-a tool's `execute` parameters. A value copied through a second variable or
-returned from a helper is data flow, which this plugin does not do.
 
 ### Dynamic Function Invocation
 

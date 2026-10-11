@@ -101,6 +101,12 @@ Unbounded tool loops can cause:
 - [`require-max-tokens`](./require-max-tokens.md) - Limit token consumption
 - [`require-tool-confirmation`](./require-tool-confirmation.md) - Require confirmation
 
+## 🔄 Changes in the 2026-10-11 zero-deferral pass
+
+- A step count or stop condition read from the request through further
+  same-file hops (`const n = Number(body.steps); stopWhen: stepCountIs(n)`) is
+  reported.
+
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
@@ -111,13 +117,6 @@ The following patterns are **not detected** due to static analysis limitations:
 may not bound the loop; the rule does not guess.
 
 **Mitigation**: Combine custom conditions with `stepCountIs(n)` in an array.
-
-### Request Values Passed Through Another Variable
-
-**Why**: The rule follows a value one declaration back to the request body
-(`const { steps } = await req.json()`). A second hop
-(`const n = body.steps; stopWhen: stepCountIs(n)`) is data flow, which this
-plugin does not do.
 
 ### Options from Variable, Wrappers, ToolLoopAgent
 

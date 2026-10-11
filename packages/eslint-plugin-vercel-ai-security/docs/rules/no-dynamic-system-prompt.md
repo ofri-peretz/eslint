@@ -117,6 +117,16 @@ Dynamic system prompts enable attackers to:
   `userControlledSystemPrompt`, even with no template around it.
 - **Options:** the documented `defaultOptions` now apply. Earlier versions read `context.options` and silently ran a shorter hard-coded list instead.
 
+## 🔄 Changes in the 2026-10-11 zero-deferral pass
+
+- The request value is followed through any number of same-file hops:
+  `const body = await req.json(); const persona = body.persona as string;`,
+  later reassignments, a same-file helper's return
+  (`system = pickPersona(body)`), and a same-file function whose parameter is
+  fed from the request.
+- A call to a same-file function every return of which is static text
+  (`system: buildSystemPrompt()`) is static and no longer reported.
+
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:

@@ -34,7 +34,6 @@
 
 import {
   TSESTree,
-  TSESLint,
   createRule,
   formatLLMMessage,
   MessageIcons,
@@ -43,9 +42,16 @@ import {
 } from '@interlace/eslint-devkit';
 import { fileUsesMcpSdk } from '../../utils/mcp-evidence';
 import {
+  activeParser,
+  resolveValue,
+  siteOf,
+  unwrapTypeOnly,
+  valueResolverFor,
+  type Site,
+} from '../../utils/module-resolver';
+import {
   calledMethod,
   classifyLegacyObject,
-  constInitializer,
   readRegistration,
   toolNameOf,
 } from '../../utils/tool-registration';
@@ -65,131 +71,109 @@ const METADATA_CONFIG_INDEX: Readonly<Record<string, [number, string]>> = {
   registerResource: [2, 'resource'],
 };
 
-/** `x as const`, `x satisfies T`, `<T>x`, `x!` — the same value. */
-function unwrapTypeOnly(node: TSESTree.Node): TSESTree.Node {
-  let current = node;
-  while (
-    current.type === 'TSAsExpression' ||
-    current.type === 'TSSatisfiesExpression' ||
-    current.type === 'TSTypeAssertion' ||
-    current.type === 'TSNonNullExpression'
-  ) {
-    current = current.expression;
-  }
-  return current;
+/** What a text expression is, as far as this file and its relative imports show. */
+export type TextKind = 'static' | 'dynamic' | 'unknown';
+
+/** Where names in an expression resolve: the file's site and parser. */
+export interface TextEnv {
+  site: Site;
+  parser: unknown;
+}
+
+/** Any part dynamic → dynamic; else any part unknown → unknown; else static. */
+function combine(kinds: readonly TextKind[]): TextKind {
+  if (kinds.includes('dynamic')) return 'dynamic';
+  return kinds.includes('unknown') ? 'unknown' : 'static';
 }
 
 /**
- * Is this expression a compile-time constant string?
+ * Is this expression text the developer wrote?
  *
- * Accepts what a developer can be said to have *written*:
- *
- *   - a string literal, a template with no interpolations, a concatenation of
- *     those;
- *   - a tagged template with no interpolations — `dedent\`…\``, `outdent\`…\``;
- *   - an array literal of those, `.join()`ed with a static separator — the
- *     usual way a multi-paragraph description is written;
- *   - with a `scope`, a `const` bound to any of the above, and a property of a
- *     `const` object literal whose value is one (`TOOLS.search.description`).
- *
- * The `const` is followed because its initializer is in this file and cannot
- * change. A `let`, a destructured binding, an import, a call result and an
- * interpolation all have a value decided elsewhere, and stay dynamic.
+ *   - `static`: a string literal; a template, tagged template (`dedent`) or
+ *     `+` whose every part is static; an array of static parts `.join()`ed
+ *     with a static separator; and — given an `env` — a `const`, a property
+ *     of a `const` object literal, or a value imported from a RELATIVE module
+ *     that is one of those.
+ *   - `dynamic`: provably decided at runtime — a call result, a `let`, a
+ *     parameter, a global, an interpolated dynamic value, an exported
+ *     function or mutable binding.
+ *   - `unknown`: cannot be read — a package import, a module that is not
+ *     there or does not export the name, a cycle. The rule reports only
+ *     `dynamic`.
  */
-export function isStaticText(
+export function textKind(
   node: TSESTree.Node,
-  scope?: TSESLint.Scope.Scope,
-  seen: Set<TSESTree.Node> = new Set(),
-): boolean {
+  env?: TextEnv,
+  depth = 0,
+): TextKind {
   node = unwrapTypeOnly(node);
-  if (seen.has(node)) return false;
-  seen.add(node);
-
-  if (node.type === 'Literal') return typeof node.value === 'string';
-  if (node.type === 'TemplateLiteral') return node.expressions.length === 0;
-  if (node.type === 'TaggedTemplateExpression')
-    return node.quasi.expressions.length === 0;
-  if (node.type === 'BinaryExpression' && node.operator === '+') {
-    return (
-      isStaticText(node.left, scope, seen) &&
-      isStaticText(node.right, scope, seen)
-    );
+  switch (node.type) {
+    case 'Literal':
+      return typeof node.value === 'string' ? 'static' : 'dynamic';
+    case 'TemplateLiteral':
+      return combine(node.expressions.map((e) => textKind(e, env, depth + 1)));
+    case 'TaggedTemplateExpression':
+      return combine(
+        node.quasi.expressions.map((e) => textKind(e, env, depth + 1)),
+      );
+    case 'BinaryExpression':
+      return node.operator === '+'
+        ? combine([
+            textKind(node.left, env, depth + 1),
+            textKind(node.right, env, depth + 1),
+          ])
+        : 'dynamic';
+    case 'CallExpression':
+      return joinKind(node, env, depth);
+    case 'Identifier':
+    case 'MemberExpression': {
+      if (env === undefined) return 'dynamic';
+      const resolved = resolveValue(node, env.site, {
+        parser: env.parser,
+        depth,
+      });
+      if (resolved.kind === 'unknown') return 'unknown';
+      if (resolved.kind !== 'value') return 'dynamic';
+      return textKind(
+        resolved.node,
+        { ...env, site: resolved.site },
+        depth + 1,
+      );
+    }
+    default:
+      return 'dynamic';
   }
-  if (node.type === 'CallExpression') return isStaticJoin(node, scope, seen);
-  if (scope === undefined) return false;
-  if (node.type === 'Identifier') {
-    const init = constInitializer(node, scope);
-    return init !== undefined && isStaticText(init, scope, seen);
-  }
-  if (node.type === 'MemberExpression') {
-    const value = constObjectProperty(node, scope, seen);
-    return value !== undefined && isStaticText(value, scope, seen);
-  }
-  return false;
 }
 
 /** `['a', 'b'].join('\n')` — every element and the separator static. */
-function isStaticJoin(
+function joinKind(
   node: TSESTree.CallExpression,
-  scope: TSESLint.Scope.Scope | undefined,
-  seen: Set<TSESTree.Node>,
-): boolean {
-  if (node.callee.type !== 'MemberExpression') return false;
-  if (propertyName(node.callee) !== 'join') return false;
+  env: TextEnv | undefined,
+  depth: number,
+): TextKind {
+  if (node.callee.type !== 'MemberExpression') return 'dynamic';
+  if (propertyName(node.callee) !== 'join') return 'dynamic';
   const array = node.callee.object;
-  if (array.type !== 'ArrayExpression') return false;
-  if (node.arguments.length > 1) return false;
-  const separator = node.arguments[0];
-  if (separator !== undefined && !isStaticText(separator, scope, seen))
-    return false;
-  return array.elements.every(
-    (element) =>
-      element !== null &&
-      element.type !== 'SpreadElement' &&
-      isStaticText(element, scope, seen),
+  if (array.type !== 'ArrayExpression') return 'dynamic';
+  if (node.arguments.length > 1) return 'dynamic';
+  const parts: TextKind[] = node.arguments.map((a) =>
+    textKind(a, env, depth + 1),
   );
+  for (const element of array.elements) {
+    if (element === null || element.type === 'SpreadElement') return 'dynamic';
+    parts.push(textKind(element, env, depth + 1));
+  }
+  return combine(parts);
+}
+
+/** Static text, with no names resolved. Kept for callers and tests. */
+export function isStaticText(node: TSESTree.Node): boolean {
+  return textKind(node) === 'static';
 }
 
 /**
- * The value expression `OBJ.a.b` names inside a `const OBJ = { a: { b: … } }`
- * object literal, or `undefined` when any step is not a literal property.
- */
-function constObjectProperty(
-  node: TSESTree.MemberExpression,
-  scope: TSESLint.Scope.Scope,
-  seen: Set<TSESTree.Node>,
-): TSESTree.Node | undefined {
-  const key = propertyName(node);
-  if (key === null) return undefined;
-  let object: TSESTree.Node = unwrapTypeOnly(node.object);
-  if (object.type === 'MemberExpression') {
-    const inner = constObjectProperty(object, scope, seen);
-    if (inner === undefined) return undefined;
-    object = unwrapTypeOnly(inner);
-  } else if (object.type === 'Identifier') {
-    const init = constInitializer(object, scope);
-    if (init === undefined) return undefined;
-    object = unwrapTypeOnly(init);
-  }
-  if (object.type !== 'ObjectExpression') return undefined;
-  // The last writer wins: a spread after the key may override it, and one
-  // before it is overridden by it.
-  let value: TSESTree.Node | undefined;
-  for (const prop of object.properties) {
-    if (prop.type === 'SpreadElement') {
-      value = undefined;
-      continue;
-    }
-    if (prop.computed) continue;
-    const name =
-      prop.key.type === 'Identifier' ? prop.key.name : staticString(prop.key);
-    if (name === key) value = prop.value;
-  }
-  return value;
-}
-
-/**
- * Every model-facing property of a config object whose value is not static.
+ * Every model-facing property of a config object whose value is provably
+ * dynamic.
  *
  * Returns *all* of them, not the first. A tool can declare both a dynamic
  * `title` and a dynamic `description`, and reporting only one hides the second
@@ -198,7 +182,7 @@ function constObjectProperty(
  */
 export function modelFacingProperties(
   config: TSESTree.ObjectExpression,
-  scope?: TSESLint.Scope.Scope,
+  env?: TextEnv,
 ): Array<{ key: string; value: TSESTree.Node }> {
   const found: Array<{ key: string; value: TSESTree.Node }> = [];
   for (const prop of config.properties) {
@@ -210,7 +194,7 @@ export function modelFacingProperties(
     if (key === undefined) continue;
     if (!MODEL_FACING_KEYS.includes(key as (typeof MODEL_FACING_KEYS)[number]))
       continue;
-    if (isStaticText(prop.value, scope)) continue;
+    if (textKind(prop.value, env) !== 'dynamic') continue;
     found.push({ key, value: prop.value });
   }
   return found;
@@ -276,9 +260,13 @@ export const noToolDescriptionInjection = createRule<[], MessageIds>({
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
-        const scope = context.sourceCode.getScope(node);
+        const env: TextEnv = {
+          site: siteOf(context, node),
+          parser: activeParser(context),
+        };
+        const resolve = valueResolverFor(context);
         const tool = toolNameOf(node);
-        const registration = readRegistration(node);
+        const registration = readRegistration(node, resolve);
 
         if (registration !== undefined) {
           // `registerTool(name, config, cb)` — the config object. A config
@@ -292,11 +280,11 @@ export const noToolDescriptionInjection = createRule<[], MessageIds>({
           if (registration.config) objects.push(registration.config);
           if (
             registration.annotations &&
-            classifyLegacyObject(registration.annotations) !== 'shape'
+            classifyLegacyObject(registration.annotations, resolve) !== 'shape'
           )
             objects.push(registration.annotations);
           for (const config of objects) {
-            for (const finding of modelFacingProperties(config, scope)) {
+            for (const finding of modelFacingProperties(config, env)) {
               candidates.push({
                 node: finding.value,
                 messageId: 'dynamicDescription',
@@ -306,7 +294,7 @@ export const noToolDescriptionInjection = createRule<[], MessageIds>({
           }
           if (
             registration.description &&
-            !isStaticText(registration.description, scope)
+            textKind(registration.description, env) === 'dynamic'
           ) {
             candidates.push({
               node: registration.description,
@@ -324,7 +312,7 @@ export const noToolDescriptionInjection = createRule<[], MessageIds>({
         const [index, kind] = slot;
         const config = node.arguments[index];
         if (config?.type !== 'ObjectExpression') return;
-        for (const finding of modelFacingProperties(config, scope)) {
+        for (const finding of modelFacingProperties(config, env)) {
           candidates.push({
             node: finding.value,
             messageId: 'dynamicMetadata',

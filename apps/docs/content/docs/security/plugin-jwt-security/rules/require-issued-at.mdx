@@ -28,8 +28,8 @@ This rule ensures tokens have the `iat` claim for freshness validation. Most lib
 ### ❌ Incorrect
 
 ```javascript
-// Explicitly disables iat
-jwt.sign(payload, secret, { noTimestamp: true });
+// A noTimestamp chosen at runtime may drop iat on some path
+jwt.sign(payload, secret, { noTimestamp: process.env.LEGACY === '1' });
 
 // jose does NOT add iat unless asked
 await new SignJWT({ sub })
@@ -49,6 +49,10 @@ jwt.sign({ sub: 'user', iat: Math.floor(Date.now() / 1000) }, secret);
 
 // noTimestamp: false keeps iat (it is the default, made explicit)
 jwt.sign(payload, secret, { noTimestamp: false });
+
+// noTimestamp: true is reported by no-timestamp-manipulation, not here —
+// one defect, one finding
+jwt.sign(payload, secret, { noTimestamp: true });
 
 // jose with setIssuedAt()
 await new SignJWT({ sub })
@@ -84,7 +88,7 @@ jwt.sign(payload, secret, getSignOptions());
 
 ### Payload Without iat When noTimestamp Is Not Used
 
-**Why**: The rule primarily checks for `noTimestamp: true`, not payload contents.
+**Why**: jsonwebtoken adds `iat` unless `noTimestamp` is set, so for jsonwebtoken the rule only asks about a `noTimestamp` chosen at runtime (`no-timestamp-manipulation` owns the literal `true`).
 
 ```typescript
 // ⚠️ EDGE CASE - Most libraries auto-add iat, so this is usually safe

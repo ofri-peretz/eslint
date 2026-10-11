@@ -22,11 +22,14 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 import {
+  isNestJwtShape,
   isSignOperation,
   joseBuilderChain,
   resolveCallOptions,
+  resolveObject,
   hasOption,
 } from '../../utils';
+import { nestModuleExpiry } from '../../utils/nest-modules';
 import type { RequireExpirationOptions } from '../../types';
 
 type MessageIds = 'missingExpiration' | 'addExpiration';
@@ -223,36 +226,50 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
           }
 
           /*
-           * `this.jwtService.sign(payload)` — one argument on a plain
-           * receiver. No JWT library's sign takes a payload alone except
-           * @nestjs/jwt, which applies `JwtModule.register({ signOptions })`
-           * from another file. A chained receiver (`builder().sign(key)`) is
-           * a jose-style builder this rule could not resolve, and stays a
-           * finding.
+           * NestJS. `this.jwtService.sign(payload)` — one argument on a plain
+           * receiver — and every NestJS-shaped call (`signAsync`, a typed
+           * `JwtService`, a second-argument options literal) merge their
+           * per-call options over `JwtModule.register({ signOptions })`,
+           * which lives in a `*.module.ts` elsewhere in the package. A
+           * per-call `expiresIn` (or options this file cannot see) settles
+           * it; otherwise the module registration decides, read cross-file,
+           * and an unreadable or absent registration means no judgement.
            */
-          if (
-            node.arguments.length === 1 &&
-            node.callee.type === AST_NODE_TYPES.MemberExpression &&
-            node.callee.object.type !== AST_NODE_TYPES.CallExpression &&
-            node.callee.object.type !== AST_NODE_TYPES.NewExpression
-          ) {
-            return;
-          }
-
-          // Options resolved structurally: a const, an `as` cast, a spread,
-          // NestJS's second argument. An opaque value may set expiresIn where
-          // this file cannot see it.
-          const options = resolveCallOptions(node, sourceCode);
-          if (
-            options !== null &&
-            (hasOption(options, 'expiresIn') || options.opaque)
-          ) {
-            return;
+          const nestShaped =
+            isNestJwtShape(node, sourceCode) ||
+            (node.arguments.length === 1 &&
+              node.callee.type === AST_NODE_TYPES.MemberExpression &&
+              node.callee.object.type !== AST_NODE_TYPES.CallExpression &&
+              node.callee.object.type !== AST_NODE_TYPES.NewExpression);
+          if (nestShaped) {
+            const own = resolveObject(node.arguments[1], sourceCode);
+            if (
+              (own !== null && (hasOption(own, 'expiresIn') || own.opaque)) ||
+              nestModuleExpiry(
+                context.filename,
+                context.languageOptions.parser,
+              ) !== 'missing'
+            ) {
+              return;
+            }
+          } else {
+            // Options resolved structurally: a const, an `as` cast, a
+            // spread. An opaque value may set expiresIn where this file
+            // cannot see it.
+            const options = resolveCallOptions(node, sourceCode);
+            if (
+              options !== null &&
+              (hasOption(options, 'expiresIn') || options.opaque)
+            ) {
+              return;
+            }
           }
         }
 
         // Report missing expiration — suggest adding expiresIn to the options object
-        const optionsArg3 = node.arguments[2];
+        // NestJS takes its options second; jsonwebtoken third.
+        const optionsArg3 =
+          node.arguments[isNestJwtShape(node, sourceCode) ? 1 : 2];
         context.report({
           node,
           messageId: 'missingExpiration',

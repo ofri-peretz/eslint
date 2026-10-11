@@ -178,12 +178,12 @@ export const requireValidatedPrompt = createRule<RuleOptions, MessageIds>({
       if (node.type === 'Identifier') {
         if (isValidatedBinding(node)) return null;
         const unsafe =
-          isRequestDerived(node, sourceCode.getScope(node)) || nameLooksLikeInput(node.name);
+          isRequestDerived(node, sourceCode) || nameLooksLikeInput(node.name);
         return unsafe ? node.name : null;
       }
       if (node.type === 'MemberExpression') {
         const unsafe =
-          isRequestDerived(node, sourceCode.getScope(node)) ||
+          isRequestDerived(node, sourceCode) ||
           pathLooksLikeInput(node) ||
           nameLooksLikeInput(propertyName(node) ?? '');
         return unsafe ? sourceCode.getText(node) : null;

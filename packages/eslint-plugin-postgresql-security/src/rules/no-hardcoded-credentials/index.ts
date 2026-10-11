@@ -14,8 +14,9 @@ import {
 } from '@interlace/eslint-devkit';
 import { NoHardcodedCredentialsOptions } from '../../types';
 import { PG_PROTOCOLS } from '../../constants';
-import { fileUsesPostgres } from '../../utils';
-import { connectionConfigArguments, effectiveValue } from '../../utils/connection-config';
+import { usesPostgres } from '../../utils';
+import { connectionConfigArguments } from '../../utils/connection-config';
+import { envOf, follow, type Value } from '../../utils/cross-file';
 
 /** The name a property key denotes, including a computed string literal. */
 function propertyKeyName(prop: TSESTree.Property): string | null {
@@ -101,7 +102,7 @@ export const noHardcodedCredentials: TSESLint.RuleModule<
     // 108,838 files, 94% of this plugin's findings were in files with no
     // PostgreSQL client at all. Registering no visitors is both the gate and
     // the cheap path — a file with no database in it does no work.
-    if (!fileUsesPostgres(context.sourceCode.ast)) return {};
+    if (!usesPostgres(context)) return {};
 
     /**
      * String literals already judged as the DSN of a config site — so the
@@ -111,17 +112,28 @@ export const noHardcodedCredentials: TSESLint.RuleModule<
     /** Every literal in the file that spells a DSN, judged at `Program:exit`. */
     const dsnLiterals: TSESTree.Node[] = [];
 
-    /** The string a node folds to, recording the literal it came from. */
-    const stringValue = (node: TSESTree.Node, scope: TSESLint.Scope.Scope): string | null => {
-      const value = effectiveValue(node, scope);
-      const text = staticString(value);
-      if (text !== null) consumed.add(value);
+    const env = envOf(context);
+
+    /** The string a value folds to, recording the literal it came from. */
+    const stringValue = (start: Value): string | null => {
+      const value = follow(start);
+      const text = staticString(value.node);
+      if (text !== null) consumed.add(value.node);
       return text;
     };
 
+    /** Report in this file — at the node itself, or where a foreign config entered. */
+    const report = (value: Value, fallback: TSESTree.Node): void => {
+      context.report({
+        node: value.env.module === null ? value.node : fallback,
+        messageId: 'noHardcodedCredentials',
+      });
+    };
+
     const checkConfig = (argument: TSESTree.Node, scope: TSESLint.Scope.Scope): void => {
+      const start: Value = { node: argument, scope, env };
       // `new Client('postgres://app:pw@host/db')` — the DSN passed bare.
-      const bare = stringValue(argument, scope);
+      const bare = stringValue(start);
       if (bare !== null) {
         if (parseDsnWithPassword(bare) !== null) {
           context.report({ node: argument, messageId: 'noHardcodedCredentials' });
@@ -129,18 +141,16 @@ export const noHardcodedCredentials: TSESLint.RuleModule<
         return;
       }
 
-      const config = effectiveValue(argument, scope);
-      if (config.type !== AST_NODE_TYPES.ObjectExpression) return;
+      const config = follow(start);
+      if (config.node.type !== AST_NODE_TYPES.ObjectExpression) return;
+      const at = (node: TSESTree.Node): Value => ({ node, scope: config.env.scopeOf(node), env: config.env });
 
       // `connectionString: 'postgres://app:pw@host/db'`
-      const connectionString = property(config, 'connectionString');
+      const connectionString = property(config.node, 'connectionString');
       if (connectionString !== undefined) {
-        const dsn = stringValue(connectionString.value, scope);
+        const dsn = stringValue(at(connectionString.value));
         if (dsn !== null && parseDsnWithPassword(dsn) !== null) {
-          context.report({
-            node: connectionString.value,
-            messageId: 'noHardcodedCredentials',
-          });
+          report(at(connectionString.value), argument);
         }
       }
 
@@ -150,11 +160,11 @@ export const noHardcodedCredentials: TSESLint.RuleModule<
       // a unix-socket or trust-authentication setup is written, and it
       // discloses nothing. The old rule reported any Literal at all, which
       // made `password: ''` and `password: null` CRITICAL findings.
-      const password = property(config, 'password');
+      const password = property(config.node, 'password');
       if (password !== undefined) {
-        const secret = stringValue(password.value, scope);
+        const secret = stringValue(at(password.value));
         if (secret !== null && secret !== '') {
-          context.report({ node: password.value, messageId: 'noHardcodedCredentials' });
+          report(at(password.value), argument);
         }
       }
     };
