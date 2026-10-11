@@ -37,12 +37,16 @@ This rule detects algorithm confusion attacks where symmetric algorithms (HS256,
 ### ❌ Incorrect
 
 ```javascript
-// HS256 with public key - VULNERABLE
+// HS256 with a key that IS public, by how it was made - VULNERABLE
+const publicKey = createPublicKey(pem); // node:crypto
 jwt.verify(token, publicKey, { algorithms: ['HS256'] });
 
-// Any symmetric algorithm with public key
-jwt.verify(token, getPublicKey(), { algorithms: ['HS384'] });
-jwt.verify(token, jwksKey, { algorithms: ['HS512'] });
+// Any symmetric algorithm with public key material
+const spki = await importSPKI(pem, 'RS256'); // jose
+await jwtVerify(token, spki, { algorithms: ['HS384'] });
+const signingKey = await jwksClient({ jwksUri }).getSigningKey(kid); // jwks-rsa
+jwt.verify(token, signingKey.getPublicKey(), { algorithms: ['HS512'] });
+jwt.verify(token, readFileSync('/keys/jwt.pub'), { algorithms: ['HS256'] });
 
 // HMAC and asymmetric algorithms in ONE whitelist (CVE-2015-9235's shape).
 // Reported whatever the key is called: the attacker picks HS256 and the
@@ -60,7 +64,19 @@ jwt.verify(token, publicKey, { algorithms: ['ES256'] });
 // Symmetric algorithm with shared secret - SAFE
 jwt.verify(token, sharedSecret, { algorithms: ['HS256'] });
 jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
+
+// A NAME is not evidence: an HMAC secret called PUBLIC_* is still a secret
+jwt.verify(token, process.env.PUBLIC_WIDGET_HMAC_SECRET, {
+  algorithms: ['HS256'],
+});
 ```
+
+A key counts as public only on structural evidence: a PEM `PUBLIC KEY` /
+`CERTIFICATE` string (inline or one constant away), `createPublicKey()` /
+`new X509Certificate()` from `node:crypto`, jose's `importSPKI`, `importX509`,
+`createRemoteJWKSet` or `createLocalJWKSet`, anything a `jwks-rsa` client
+returns, or a file read whose path ends in `.pub`, `.crt` or `.cer`. What the
+variable is called is never consulted.
 
 ## How the Attack Works
 
@@ -76,15 +92,15 @@ The following patterns are **not detected** due to static analysis limitations:
 
 ### Key Source Detection Limits
 
-**Why**: The rule uses heuristics (variable names, function patterns) to identify public keys. Novel naming conventions are missed.
+**Why**: A key is public only on structural evidence. A `.pem` file can hold a private key as easily as a public one, so its extension is not evidence, and an HMAC-only list against such a key is not reported. A whitelist that mixes HS\* with RS\*/ES\*/PS\*/EdDSA is reported whatever the key is.
 
 ```typescript
-// ❌ NOT DETECTED - Unusual variable name
-const asymKey = fs.readFileSync('public.pem'); // Not recognized as public key
+// ❌ NOT DETECTED - a .pem path says nothing about which half of the pair it holds
+const asymKey = fs.readFileSync('public.pem');
 jwt.verify(token, asymKey, { algorithms: ['HS256'] });
 ```
 
-**Mitigation**: Use consistent naming (`publicKey`, `rsaPublic`). Document key types in comments.
+**Mitigation**: Load public keys with `createPublicKey()` or jose's `importSPKI()`, which the rule recognises, or name the file `.pub`.
 
 ### Dynamic Algorithm Selection
 

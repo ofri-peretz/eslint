@@ -90,94 +90,86 @@ jwt.verify(token, publicKey, { complete: true });`,
   });
 
   describe('Invalid Code - Algorithm Confusion', () => {
+    /*
+     * Audit 2026-10 (zero-deferral pass, owner decision on FP-12): every case
+     * in this valid list used to be INVALID. Each one decided the key was
+     * "public" from the key's NAME — `publicKey`, `getPublicKey()`, `jwksKey`
+     * matched by `/public/i`, `/publicKey/i`, `/getPublicKey/i` and `/jwks/i`
+     * against the source text — so renaming the variable to `foo` silenced it
+     * and an HMAC secret named `PUBLIC_WIDGET_SECRET` tripped it. The name
+     * heuristic is gone. A key is public now only on structural evidence
+     * (a PEM public header, `createPublicKey()`, jose's `importSPKI` /
+     * `importX509` / `createRemoteJWKSet`, a jwks-rsa signing key, a `.pub` /
+     * `.pem` file read); the structural equivalents of these cases are in
+     * the "public key evidence" block below. Only the mixed-family case stays
+     * here, because a whitelist that admits HS* and RS* is the CVE whatever
+     * the key is called.
+     */
     ruleTester.run(
-      'invalid - symmetric with public key',
+      'flipped - a key NAME is not evidence the key is public',
       noAlgorithmConfusion,
       {
-        valid: [],
-        invalid: [
-          // HS256 with publicKey variable
+        valid: [
           {
-            name: 'verifying with HS256 against a key that is public',
+            name: 'no evidence: HS256 against an identifier named publicKey',
             code: `import jwt from 'jsonwebtoken';
 jwt.verify(token, publicKey, { algorithms: ['HS256'] });`,
-            errors: [{ messageId: 'algorithmConfusion' }],
           },
-          /*
-           * One option, three spellings. The rule required an Identifier key,
-           * so it saw only the first — missing the computed form a bundler
-           * emits AND the quoted form that is ordinary hand-written JS. The
-           * runtime-computed key stays silent: nothing shows what `x` names,
-           * and that is the one case where refusing to decide is right.
-           */
-          /*
-           * A runtime-computed key SITTING BESIDE the offending option. The
-           * finding comes from `algorithms`; the location loop walks properties
-           * in order and stops at the first match, so the runtime key has to sit
-           * FIRST to be reached at all. It must be skipped rather than throw or
-           * mis-locate the report onto a property that names nothing.
-           */
           {
-            name: 'a sibling key chosen at runtime does not disturb the report',
+            name: 'no evidence: a runtime-keyed sibling beside HS256 and a publicKey name',
             code: `import jwt from 'jsonwebtoken';
 jwt.verify(token, publicKey, { [extra]: 1, algorithms: ['HS256'] });`,
-            errors: [{ messageId: 'algorithmConfusion' as const }],
           },
           ...[
             { label: 'a quoted key', key: "'algorithms'" },
             { label: 'a computed key', key: "['algorithms']" },
           ].map(({ label, key }) => ({
-            name: `algorithm confusion behind ${label}`,
+            name: `no evidence: HS256 behind ${label} with a publicKey name`,
             code: `import jwt from 'jsonwebtoken';
 jwt.verify(token, publicKey, { ${key}: ['HS256'] });`,
-            errors: [{ messageId: 'algorithmConfusion' as const }],
           })),
-          // HS384 with public key
           {
+            name: 'no evidence: HS384 against a publicKey name',
             code: `import jwt from 'jsonwebtoken';
 jwt.verify(token, publicKey, { algorithms: ['HS384'] });`,
-            errors: [{ messageId: 'algorithmConfusion' }],
           },
-          // HS512 with public key
           {
+            name: 'no evidence: HS512 against a publicKey name',
             code: `import jwt from 'jsonwebtoken';
 jwt.verify(token, publicKey, { algorithms: ['HS512'] });`,
-            errors: [{ messageId: 'algorithmConfusion' }],
           },
-          // Single algorithm option
           {
+            name: 'no evidence: the singular algorithm option with a publicKey name',
             code: `import jwt from 'jsonwebtoken';
 jwt.verify(token, publicKey, { algorithm: 'HS256' });`,
-            errors: [{ messageId: 'algorithmConfusion' }],
           },
-          // Mixed algorithms with symmetric
           {
-            code: `import jwt from 'jsonwebtoken';
-jwt.verify(token, publicKey, { algorithms: ['RS256', 'HS256'] });`,
-            errors: [{ messageId: 'algorithmConfusion' }],
-          },
-          // getPublicKey() function
-          {
+            name: 'no evidence: an unbound getPublicKey() call',
             code: `import jwt from 'jsonwebtoken';
 jwt.verify(token, getPublicKey(), { algorithms: ['HS256'] });`,
-            errors: [{ messageId: 'algorithmConfusion' }],
           },
-          // JWKS pattern
           {
+            name: 'no evidence: an identifier named jwksKey',
             code: `import jwt from 'jsonwebtoken';
 jwt.verify(token, jwksKey, { algorithms: ['HS256'] });`,
-            errors: [{ messageId: 'algorithmConfusion' }],
           },
-          // alg shorthand with public key
           {
+            name: 'no evidence: the alg shorthand with a publicKey name',
             code: `import jwt from 'jsonwebtoken';
 jwt.verify(token, publicKey, { alg: 'HS256' });`,
-            errors: [{ messageId: 'algorithmConfusion' }],
           },
-          // jwtVerify with public key
           {
+            name: 'no evidence: jwtVerify with a publicKey name',
             code: `import jwt from 'jsonwebtoken';
 jwtVerify(token, publicKey, { algorithms: ['HS256'] });`,
+          },
+        ],
+        invalid: [
+          // Mixed algorithms with symmetric — structural, kept.
+          {
+            name: 'a whitelist mixing RS256 and HS256',
+            code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, publicKey, { algorithms: ['RS256', 'HS256'] });`,
             errors: [{ messageId: 'algorithmConfusion' }],
           },
         ],
@@ -203,6 +195,13 @@ jwt.verify(token, foo, { algorithms: ['HS256', 'HS512'] });`,
 jwt.verify(token, foo, { algorithms: ['RS256', 'ES256', 'EdDSA'] });`,
       },
       {
+        // Flipped (FP-12): the key's only "public" evidence was its name.
+        name: 'no evidence: HS* in a const options object with a publicKey name',
+        code: `import jwt from 'jsonwebtoken';
+const opts = { algorithms: ['HS256'] };
+jwt.verify(token, publicKey, opts);`,
+      },
+      {
         name: 'unresolvable options say nothing about algorithms',
         code: `import jwt from 'jsonwebtoken';
 export const f = (t, k, o) => jwt.verify(t, k, o);`,
@@ -226,11 +225,87 @@ const opts = { algorithms: ['ES256', 'HS384'] };
 jwt.verify(token, foo, opts);`,
         errors: [{ messageId: 'algorithmConfusion' }],
       },
+    ],
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Zero-deferral pass (audit 2026-10): public-key EVIDENCE, not names.
+// ---------------------------------------------------------------------------
+describe('no-algorithm-confusion — public key evidence', () => {
+  ruleTester.run('structural public-key evidence', noAlgorithmConfusion, {
+    valid: [
       {
-        name: 'a public key with HS* in a const options object',
+        // @found FP-12, harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-jwt-security.md)
+        name: 'FP: an HMAC secret whose name contains PUBLIC is not a public key',
         code: `import jwt from 'jsonwebtoken';
-const opts = { algorithms: ['HS256'] };
-jwt.verify(token, publicKey, opts);`,
+jwt.verify(token, process.env.PUBLIC_WIDGET_HMAC_SECRET, { algorithms: ['HS256'], issuer: 'w' });`,
+      },
+      {
+        name: 'a key read from a file that is not a public-key file',
+        code: `import jwt from 'jsonwebtoken';
+import fs from 'node:fs';
+jwt.verify(token, fs.readFileSync(secretPath), { algorithms: ['HS256'] });`,
+      },
+      {
+        name: 'a private-key PEM is not public material',
+        code: `import jwt from 'jsonwebtoken';
+const k = '-----BEGIN PRIVATE KEY-----\\nMIIE';
+jwt.verify(token, k, { algorithms: ['HS256'] });`,
+      },
+      {
+        name: 'a call from an unrelated module is no evidence',
+        code: `import jwt from 'jsonwebtoken';
+import { loadKey } from './keys';
+jwt.verify(token, loadKey(), { algorithms: ['HS256'] });`,
+      },
+    ],
+    invalid: [
+      {
+        name: 'HS256 against a PEM public key held in a const',
+        code: `import jwt from 'jsonwebtoken';
+const pem = '-----BEGIN PUBLIC KEY-----\\nMFkw';
+jwt.verify(token, pem, { algorithms: ['HS256'] });`,
+        errors: [{ messageId: 'algorithmConfusion' }],
+      },
+      {
+        name: "HS256 against node:crypto's createPublicKey",
+        code: `import jwt from 'jsonwebtoken';
+import { createPublicKey } from 'node:crypto';
+const key = createPublicKey(pem);
+jwt.verify(token, key, { [extra]: 1, 'algorithms': ['HS256'] });`,
+        errors: [{ messageId: 'algorithmConfusion' }],
+      },
+      {
+        name: "HS384 against jose's importSPKI",
+        code: `import { importSPKI, jwtVerify } from 'jose';
+const key = await importSPKI(pem, 'RS256');
+await jwtVerify(token, key, { ['algorithms']: ['HS384'] });`,
+        errors: [{ messageId: 'algorithmConfusion' }],
+      },
+      {
+        name: 'HS256 against a remote JWKS',
+        code: `import * as jose from 'jose';
+const JWKS = jose.createRemoteJWKSet(new URL(u));
+await jose.jwtVerify(token, JWKS, { algorithm: 'HS256' });`,
+        errors: [{ messageId: 'algorithmConfusion' }],
+      },
+      {
+        name: 'HS512 against a jwks-rsa signing key',
+        code: `import jwt from 'jsonwebtoken';
+import jwksClient from 'jwks-rsa';
+const client = jwksClient({ jwksUri });
+export async function check(token, kid) {
+  const signingKey = await client.getSigningKey(kid);
+  return jwt.verify(token, signingKey.getPublicKey(), { alg: 'HS512' });
+}`,
+        errors: [{ messageId: 'algorithmConfusion' }],
+      },
+      {
+        name: 'HS256 against a .pub file read',
+        code: `import jwt from 'jsonwebtoken';
+import { readFileSync } from 'node:fs';
+jwt.verify(token, readFileSync('/etc/keys/jwt.key.pub'), { algorithms: ['HS256'] });`,
         errors: [{ messageId: 'algorithmConfusion' }],
       },
     ],

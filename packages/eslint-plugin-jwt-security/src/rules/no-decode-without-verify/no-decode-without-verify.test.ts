@@ -236,10 +236,105 @@ ruleTester.run(
   noDecodeWithoutVerify,
   {
     valid: [
+      /*
+       * Audit 2026-10 (zero-deferral pass, owner decision on FN-8): the five
+       * corpus cases that stood here are now INVALID (first five in the
+       * invalid list). They were exempted because the token was read off a
+       * member NAMED `access_token` / `id_token` / `refresh_token` of a
+       * receiver not NAMED like a request — so `data.id_token` from
+       * `await request.json()` (a browser POST) was exempt too. The exemption
+       * now rests on provenance: the value must come, structurally, from a
+       * back-channel HTTP response this code made — `fetch(...).json()`, an
+       * axios/got/ky/undici response, an openid-client grant. None of the five
+       * shows that within its file (each receives the response as a parameter
+       * from elsewhere), so each reports. Code that truly decodes a token it
+       * fetched itself can say so with `@verified-separately`, or keep the
+       * fetch in view.
+       */
+      {
+        // @found FN-8, reasoned during the 2026-10-10 zero-deferral pass
+        name: 'FP: a token read off the JSON body of a fetch() to the token endpoint',
+        code: `import { decodeJwt } from 'jose';
+export async function exchange(code) {
+  const res = await fetch(tokenUrl, { method: 'POST', body: form(code) });
+  const tokens = await res.json();
+  return decodeJwt(tokens.id_token).sub;
+}`,
+      },
+      {
+        name: 'a token destructured straight off an awaited fetch body',
+        code: `import { decodeJwt } from 'jose';
+export async function exchange(code) {
+  const { access_token } = await (await fetch(tokenUrl, { method: 'POST' })).json();
+  return decodeJwt(access_token as string).scope;
+}`,
+      },
+      {
+        name: "a token read off an axios response's data",
+        code: `import axios from 'axios';
+import { decodeJwt } from 'jose';
+const http = axios.create({ baseURL });
+export async function refresh(rt) {
+  const response = await http.post('/oauth/token', { refresh_token: rt });
+  return decodeJwt(response.data.access_token).exp;
+}`,
+      },
+      {
+        name: "a token read off got's parsed JSON",
+        code: `import got from 'got';
+import { decodeJwt } from 'jose';
+export async function exchange(code) {
+  const body = await got.post(tokenUrl, { form: { code } }).json();
+  return decodeJwt(body.id_token).sub;
+}`,
+      },
+      {
+        name: "a token read off undici's response body",
+        code: `import { request } from 'undici';
+import { decodeJwt } from 'jose';
+export async function exchange(code) {
+  const { body } = await request(tokenUrl, { method: 'POST' });
+  const tokens = await body.json();
+  return decodeJwt(tokens.id_token).sub;
+}`,
+      },
+      {
+        name: 'a token from an openid-client grant',
+        code: `import * as client from 'openid-client';
+import { decodeJwt } from 'jose';
+export async function callback(config, url) {
+  const tokens = await client.authorizationCodeGrant(config, url);
+  return decodeJwt(tokens.access_token).scope;
+}`,
+      },
+      {
+        name: "a token from openid-client's back-channel callback()",
+        code: `import { Issuer } from 'openid-client';
+import { decodeJwt } from 'jose';
+const issuer = await Issuer.discover(issuerUrl);
+const client = new issuer.Client({ client_id });
+export async function cb(req) {
+  const tokenSet = await client.callback(redirectUri, client.callbackParams(req));
+  return decodeJwt(tokenSet.id_token).sub;
+}`,
+      },
+      {
+        name: 'a parameter every caller feeds from a fetched body',
+        code: `import { decodeJwt } from 'jose';
+function readScope(token) { return decodeJwt(token).scope; }
+export async function exchange(code) {
+  const tokens = await (await fetch(tokenUrl)).json();
+  return readScope(tokens.access_token);
+}`,
+      },
+    ],
+    invalid: [
       // Corpus: auth0/express-openid-connect lib/context.js:184
       // (`extractActClaim`). The token is a field of the response openid-client
       // just got back from the token endpoint.
-      `import { decodeJwt } from 'jose';
+      {
+        name: 'no provenance: a field of a parameter named like a token exchange (auth0 extractActClaim)',
+        code: `import { decodeJwt } from 'jose';
 function extractActClaim(exchanged) {
   if (exchanged.access_token) {
     const decoded = decodeJwt(exchanged.access_token);
@@ -247,17 +342,25 @@ function extractActClaim(exchanged) {
   }
   return undefined;
 }`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
       // Corpus: Shopify/cli packages/cli-kit/src/private/node/session/exchange.ts:291
       // (`buildIdentityToken`) — the decoded `sub` becomes a local cache key.
-      `import * as jose from 'jose';
+      {
+        name: 'no provenance: a field of a parameter named like a token response (Shopify buildIdentityToken)',
+        code: `import * as jose from 'jose';
 function buildIdentityToken(result) {
   return { userId: result.id_token ? jose.decodeJwt(result.id_token).sub! : undefined };
 }`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
       // Corpus: auth0/express-openid-connect lib/context.js:221
       // (`warnIfNotCertificateBound`). The grant response is TWO frames up: the
       // parameter hop is what makes this one work, and a strictly same-function
       // model would still report it.
-      `import { decodeJwt } from 'jose';
+      {
+        name: 'no provenance: a parameter fed by a parameter named session (auth0 warnIfNotCertificateBound)',
+        code: `import { decodeJwt } from 'jose';
 function warnIfNotCertificateBound(config, accessToken) {
   const decoded = decodeJwt(accessToken);
   if (!decoded.cnf) console.warn('not certificate-bound');
@@ -268,27 +371,35 @@ function onCallback(config, session) {
 function onRefresh(config, session) {
   warnIfNotCertificateBound(config, session.access_token);
 }`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
       // Corpus: auth0/express-openid-connect lib/tokenset.js:63 (`claims()`).
       // DISPUTED upstream; exempted here for the same reason as the rest —
       // `id_token` is a grant-response field name, and `this` is the TokenSet
       // that response was parsed into. (It is also verified at issuance and
       // stored in an A256GCM-encrypted cookie, so the value never round-trips
       // through anything the attacker can write.)
-      `const { decodeJwt } = require('jose');
+      {
+        name: 'no provenance: this.id_token on a class named TokenSet (auth0 TokenSet.claims)',
+        code: `const { decodeJwt } = require('jose');
 class TokenSet {
   claims() {
     if (!this.id_token) return undefined;
     return decodeJwt(this.id_token);
   }
 }`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
       // One `const` hop, and the `as` wrapper TypeScript adds.
-      `import { decodeJwt } from 'jose';
+      {
+        name: 'no provenance: a field of a parameter named grant, behind an as-cast',
+        code: `import { decodeJwt } from 'jose';
 function f(grant) {
   const raw = grant.refresh_token as string;
   return decodeJwt(raw);
 }`,
-    ],
-    invalid: [
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
       // THE FRONT CHANNEL. `response_mode=form_post` posts `id_token` into the
       // request body and openid-client hands callback `params` with the same
       // keys — identical member name, opposite trust. Verifying these is the
@@ -549,3 +660,59 @@ d.decode(token).role;`,
     },
   );
 });
+
+// ---------------------------------------------------------------------------
+// Zero-deferral pass (audit 2026-10): provenance, not names, for FN-8.
+// ---------------------------------------------------------------------------
+ruleTester.run(
+  'no-decode-without-verify — back-channel provenance',
+  noDecodeWithoutVerify,
+  {
+    valid: [],
+    invalid: [
+      {
+        // @found FN-8, harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-jwt-security.md)
+        name: 'FN: an id_token the browser POSTed, read off request.json()',
+        code: `import { decodeJwt } from 'jose';
+export async function POST(request) {
+  const data = await request.json();
+  const claims = decodeJwt(data.id_token);
+  return createSession(claims.sub);
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        // @found FN-8, reasoned during the 2026-10-10 zero-deferral pass
+        name: "FN: openid-client's callbackParams are the front channel",
+        code: `import { Issuer } from 'openid-client';
+import { decodeJwt } from 'jose';
+const issuer = await Issuer.discover(issuerUrl);
+const client = new issuer.Client({ client_id });
+export function cb(req) {
+  const params = client.callbackParams(req);
+  return decodeJwt(params.id_token).sub;
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        name: 'a fetch that is shadowed by a local binding is not the platform fetch',
+        code: `import { decodeJwt } from 'jose';
+export async function f(fetch) {
+  const t = await (await fetch(u)).json();
+  return decodeJwt(t.id_token).sub;
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        name: 'a response from an unrelated library is not a back channel',
+        code: `import { decodeJwt } from 'jose';
+import { fromCache } from './cache';
+export async function f() {
+  const t = await fromCache('tokens');
+  return decodeJwt(t.id_token).sub;
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+    ],
+  },
+);

@@ -100,6 +100,15 @@ Poisoned RAG content can:
   (`researchTopic` is not a `search`); `context` was removed from the defaults.
 - **Options:** the documented `defaultOptions` now apply. Earlier versions read `context.options` and silently ran a shorter hard-coded list instead.
 
+## 🔄 Changes in the 2026-10-11 zero-deferral pass
+
+- Retrieved content is followed through derivations — `.map`, `.filter`,
+  `.join`, `.slice`, member reads, templates — and through the returns of
+  same-file helpers into `prompt` / `system`:
+  `docs.map((d) => d.pageContent).join('\n')` into a `context` variable is
+  reported. A call to a configured validator (including a same-file one) stops
+  the trace. The previous name-based variable tracking was removed.
+
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:

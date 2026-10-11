@@ -14,6 +14,7 @@ import { AST_NODE_TYPES, TSESTree, createRule, formatLLMMessage, MessageIcons, n
 import { isSystemPromptProp, getStaticPropName } from '../../utils/prompt-props';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
 import { calleeChain, sdkCallName } from '../../utils/sdk';
+import { derivesFrom, isDerivationCall } from '../../utils/flow';
 
 type MessageIds = 'unsanitizedRagContent';
 
@@ -97,75 +98,44 @@ export const requireRagContentValidation = createRule<RuleOptions, MessageIds>({
 
     const sourceCode = context.sourceCode;
 
-    // Track variables that hold RAG content
-    const ragVariables = new Set<string>();
-
     /**
-     * Check if expression is a RAG retrieval call
+     * A retrieval call: its call chain has a RAG word (`similaritySearch`,
+     * `retrieve`, `index.query`) and no validator word. An array / string
+     * derivation (`.map`, `.join`) is followed instead of matched.
      */
-    function isRagCall(node: TSESTree.Node): string | null {
-      if (node.type !== 'CallExpression') return null;
-      
-      // Whole words of the call chain: `vectorStore.similaritySearch` has the
-      // word `search`; `researchTopic` does not.
+    function isRagCall(node: TSESTree.Node): boolean {
+      if (node.type !== 'CallExpression' || isDerivationCall(node)) return false;
       const chain = calleeChain(node.callee);
-      return ragPatterns.some((pattern: string) => nameHasWord(chain, pattern))
-        ? sourceCode.getText(node.callee)
-        : null;
+      return (
+        ragPatterns.some((pattern: string) => nameHasWord(chain, pattern)) && !isValidated(node)
+      );
     }
 
-    /**
-     * Check if expression is wrapped in validation
-     */
+    /** A configured validator — `validateDocs(docs)`, `sanitize(x)` — cleans the value. */
     function isValidated(node: TSESTree.CallExpression): boolean {
       const chain = calleeChain(node.callee);
       return validatorFunctions.some((fn: string) => nameHasWord(chain, fn));
     }
 
+    const ragFlow = {
+      sourceCode,
+      isSource: isRagCall,
+      isBarrier: (node: TSESTree.Node) =>
+        node.type === 'CallExpression' && !isDerivationCall(node) && isValidated(node),
+    };
+
     /**
-     * Check if an expression contains RAG content
+     * The part of a prompt value made of retrieved content, followed through
+     * declarations, `.map/.filter/.join/.slice`, templates and the returns of
+     * same-file helpers — or `null`.
      */
     function containsRagContent(node: TSESTree.Node): string | null {
-      if (node.type === 'Identifier' && ragVariables.has(node.name)) {
-        return node.name;
-      }
-      if (node.type === 'TemplateLiteral') {
-        for (const expr of node.expressions) {
-          const rag = containsRagContent(expr);
-          if (rag) return rag;
-        }
-      }
-      // Handle: ${await retrieve(query)}
-      if (node.type === 'AwaitExpression') {
-        return containsRagContent(node.argument);
-      }
-      if (node.type === 'CallExpression') {
-        // Check if this is an unvalidated RAG call
-        const ragSource = isRagCall(node);
-        if (ragSource && !isValidated(node)) {
-          return ragSource;
-        }
-      }
-      return null;
+      const parts = node.type === 'TemplateLiteral' ? node.expressions : [node];
+      const found = parts.find((part) => derivesFrom(part, ragFlow));
+      return found ? sourceCode.getText(found) : null;
     }
 
     return {
-      // Track RAG variable assignments
-      VariableDeclarator(node: TSESTree.VariableDeclarator) {
-        if (node.id.type !== 'Identifier') return;
-        if (!node.init) return;
-        
-        // Handle: const docs = await vectorStore.search(query);
-        let initNode = node.init;
-        if (initNode.type === 'AwaitExpression') {
-          initNode = initNode.argument;
-        }
-        
-        if (isRagCall(initNode)) {
-          ragVariables.add(node.id.name);
-        }
-      },
-
       CallExpression(node: TSESTree.CallExpression) {
         // Check if this is an AI SDK function (exact name, not a substring)
         if (!sdkCallName(node)) return;
@@ -177,7 +147,7 @@ export const requireRagContentValidation = createRule<RuleOptions, MessageIds>({
         // Check prompt property
         for (const prop of optionsArg.properties) {
           if (prop.type !== AST_NODE_TYPES.Property) continue;
-          
+
           const keyName = getStaticPropName(prop);
           if (keyName !== 'prompt' && !isSystemPromptProp(keyName)) continue;
 

@@ -26,6 +26,11 @@ export interface JwtRuleOptions extends SecurityRuleOptions {
 }
 
 // Rule-specific options
+export interface NoTimestampManipulationOptions extends JwtRuleOptions {
+  /** Largest numeric `clockTolerance` (seconds) a verify may allow. Default 300. */
+  maxClockToleranceSeconds?: number;
+}
+
 export interface NoAlgorithmNoneOptions extends JwtRuleOptions {
   /** Allow 'none' algorithm in test files. Default: false */
   allowInTests?: boolean;

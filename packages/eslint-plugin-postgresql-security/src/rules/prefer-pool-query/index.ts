@@ -12,7 +12,7 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 import { PreferPoolQueryOptions } from '../../types';
-import { fileUsesPostgres } from '../../utils';
+import { usesPostgres } from '../../utils';
 
 /**
  * Statements whose effect belongs to the CONNECTION, not to the statement.
@@ -186,7 +186,7 @@ export const preferPoolQuery: TSESLint.RuleModule<'preferPoolQuery', PreferPoolQ
     // 108,838 files, 94% of this plugin's findings were in files with no
     // PostgreSQL client at all. Registering no visitors is both the gate and
     // the cheap path — a file with no database in it does no work.
-    if (!fileUsesPostgres(context.sourceCode.ast)) return {};
+    if (!usesPostgres(context)) return {};
 
     return {
       VariableDeclarator(node) {

@@ -183,8 +183,11 @@ describe('no-hardcoded-credentials', () => {
         'new Pool(loadConfig());',
         // A computed key that is not a static string names nothing knowable.
         "new Pool({ [KEY]: 'secret' });",
-        // More binding hops than the walker follows.
-        "const a = { password: 'p' };\nconst b = a;\nconst c = b;\nconst d = c;\nconst e = d;\nconst f = e;\nnew Pool(f);",
+        // More binding hops than the walker follows. The bound moved from 4
+        // to 8 when value following went multi-hop and cross-file (FP/FN
+        // zero-deferral, 2026-10); the chain is ten aliases so the bound,
+        // not the chain length, is what this case still pins.
+        "const a0 = { password: 'p' };\nconst a1 = a0;\nconst a2 = a1;\nconst a3 = a2;\nconst a4 = a3;\nconst a5 = a4;\nconst a6 = a5;\nconst a7 = a6;\nconst a8 = a7;\nconst a9 = a8;\nconst a10 = a9;\nnew Pool(a10);",
         // Declared without an initialiser, then assigned once: there is a
         // declaration to find but nothing on it to follow.
         'let config;\nconfig = loadConfig();\nnew Pool(config);',

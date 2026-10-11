@@ -16,6 +16,19 @@ const ruleTester = new RuleTester({
   },
 });
 
+import { join } from 'node:path';
+
+/** A file inside the cross-file fixture directory; imports resolve against it. */
+const SERVER = join(
+  __dirname,
+  '..',
+  '..',
+  '..',
+  'fixtures',
+  'cross-file',
+  'server.ts',
+);
+
 const IMPORT = `import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';`;
 
 ruleTester.run('require-tool-input-schema', requireToolInputSchema, {
@@ -283,6 +296,29 @@ ruleTester.run('require-tool-input-schema', requireToolInputSchema, {
       `,
     },
     {
+      // @found mcp-sdk-security FP/FN audit 2026-10-10, residual 2 (legacy shape held in variables)
+      name: 'FP: a legacy shape whose schemas are imported is a schema',
+      filename: SERVER,
+      code: `
+        ${IMPORT}
+        import { PathSchema } from './schemas';
+        const ModeSchema = z.enum(['r']);
+        server.tool('read_file', { path: PathSchema, mode: ModeSchema }, async ({ path, mode }) => read(path, mode));
+      `,
+    },
+    {
+      name: 'a handler bound by let, by a destructure, or declared ambiently cannot be judged',
+      code: `
+        ${IMPORT}
+        let letHandler = async ({ path }) => path;
+        const { destructured } = handlers;
+        declare const ambient: (args: { path: string }) => string;
+        server.registerTool('a', { description: 'x' }, letHandler);
+        server.registerTool('b', { description: 'x' }, destructured);
+        server.registerTool('c', { description: 'x' }, ambient);
+      `,
+    },
+    {
       name: 'a legacy description and shape',
       code: `
         ${IMPORT}
@@ -473,6 +509,21 @@ ruleTester.run('require-tool-input-schema', requireToolInputSchema, {
         {
           messageId: 'missingInputSchema',
           data: { tool: 'unknown', arg: 'path' },
+        },
+      ],
+    },
+    {
+      // @found mcp-sdk-security FP/FN audit 2026-10-10, residual 2 (legacy shape held in variables)
+      name: 'FN: a legacy annotations object whose values are consts declares no schema',
+      code: `
+        ${IMPORT}
+        const TITLE = 'Read';
+        server.tool('read_file', { title: TITLE }, async ({ path }) => read(path));
+      `,
+      errors: [
+        {
+          messageId: 'missingInputSchema',
+          data: { tool: 'read_file', arg: 'path' },
         },
       ],
     },

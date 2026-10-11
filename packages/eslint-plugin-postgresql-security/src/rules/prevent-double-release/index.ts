@@ -13,7 +13,7 @@ import {
   propertyName,
 } from '@interlace/eslint-devkit';
 import { PreventDoubleReleaseOptions } from '../../types';
-import { fileUsesPostgres } from '../../utils';
+import { usesPostgres } from '../../utils';
 
 /**
  * Finds the nearest ancestor of a given type.
@@ -363,7 +363,7 @@ export const preventDoubleRelease: TSESLint.RuleModule<
     // 108,838 files, 94% of this plugin's findings were in files with no
     // PostgreSQL client at all. Registering no visitors is both the gate and
     // the cheap path — a file with no database in it does no work.
-    if (!fileUsesPostgres(context.sourceCode.ast)) return {};
+    if (!usesPostgres(context)) return {};
 
     return {
       /**

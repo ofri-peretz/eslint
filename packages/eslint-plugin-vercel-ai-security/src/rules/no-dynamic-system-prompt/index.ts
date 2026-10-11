@@ -13,7 +13,7 @@
 import { AST_NODE_TYPES, TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { isSystemPromptProp, getStaticPropName } from '../../utils/prompt-props';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
-import { isDateValue, isRequestDerived, isStaticText, sdkCallName } from '../../utils/sdk';
+import { isRequestDerived, isStaticText, sdkCallName } from '../../utils/sdk';
 
 type MessageIds = 'dynamicSystemPrompt' | 'userControlledSystemPrompt';
 
@@ -96,15 +96,14 @@ export const noDynamicSystemPrompt = createRule<RuleOptions, MessageIds>({
      * or `${new Date().toISOString()}`, is fixed by the source.
      */
     function isDynamicContent(node: TSESTree.Node): boolean {
-      const scope = sourceCode.getScope(node);
       if (node.type === 'TemplateLiteral') {
         if (node.expressions.length === 0) return !allowStaticTemplates;
-        return !isStaticText(node, scope);
+        return !isStaticText(node, sourceCode);
       }
       if (node.type === 'BinaryExpression' && node.operator === '+') {
-        return !isStaticText(node, scope);
+        return !isStaticText(node, sourceCode);
       }
-      if (node.type === 'CallExpression') return !isDateValue(node);
+      if (node.type === 'CallExpression') return !isStaticText(node, sourceCode);
       return node.type === 'AwaitExpression';
     }
 
@@ -128,7 +127,7 @@ export const noDynamicSystemPrompt = createRule<RuleOptions, MessageIds>({
               node: prop.value,
               messageId: 'dynamicSystemPrompt',
             });
-          } else if (isRequestDerived(prop.value, sourceCode.getScope(prop.value))) {
+          } else if (isRequestDerived(prop.value, sourceCode)) {
             // A bare reference to the request body — no template to see,
             // but the caller still writes the agent's instructions.
             context.report({

@@ -94,7 +94,9 @@ const CASES: Case[] = [
     vulnerable: 'location-assign-unvalidated.js', safe: 'location-assign-allowlisted.js',
   },
   { cwe: 'CWE-434', plugin: 'browser-security', rule: 'require-mime-type-validation', vulnerable: 'multer-no-filter.js', safe: 'multer-with-filter.js' },
-  { cwe: 'CWE-294', plugin: 'jwt-security', rule: 'require-issued-at', vulnerable: 'jwt-no-timestamp.js', safe: 'jwt-default-iat.js' },
+  // `noTimestamp: true` is owned by no-timestamp-manipulation (same CWE);
+  // require-issued-at stopped double-reporting it in the zero-deferral pass.
+  { cwe: 'CWE-294', plugin: 'jwt-security', rule: 'no-timestamp-manipulation', vulnerable: 'jwt-no-timestamp.js', safe: 'jwt-default-iat.js' },
 ];
 
 async function lintWithRule(plugin: string, ruleName: string, file: string): Promise<number> {

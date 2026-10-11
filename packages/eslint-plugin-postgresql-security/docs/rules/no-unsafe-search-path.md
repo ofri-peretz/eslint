@@ -91,18 +91,20 @@ await client.query(searchPathQuery);
 
 **Mitigation**: Use inline query strings. Define safe schema constants.
 
-### pg-format or Identifier Escaping
+### pg-format or Identifier Escaping — reported by design
 
-**Why**: pg-format's %I formatting looks like safe escaping but may still be vulnerable.
+`format('SET search_path = %I', userSchema)` and
+`` `SET search_path TO ${escapeIdentifier(userSchema)}` `` ARE reported, and that
+is correct rather than a false positive: quoting stops injection, but it does
+nothing about WHICH schema the caller selects, and CWE-426 is about the
+selection. Validate the schema against an allowlist (an inline `if (…) throw`
+or an `asserts` helper) before the sink.
 
 ```typescript
-// ❌ NOT DETECTED (and may be safe) - pg-format used
+// ❌ REPORTED - quoted, but the caller still picks the schema
 import format from 'pg-format';
 await client.query(format('SET search_path = %I', userSchema));
-// ^^ pg-format doesn't validate schema existence
 ```
-
-**Mitigation**: Validate schema against allowlist before using. Don't rely on escaping alone.
 
 ### Multi-Tenant Schema Selection
 

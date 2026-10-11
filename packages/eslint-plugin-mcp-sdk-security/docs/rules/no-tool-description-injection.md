@@ -20,7 +20,7 @@ Require MCP tool descriptions and titles to be static text, since they reach the
 
 Detects an MCP tool `description` or `title` that is assembled at runtime rather than written as a literal. This rule is part of [`eslint-plugin-mcp-sdk-security`](https://www.npmjs.com/package/eslint-plugin-mcp-sdk-security).
 
-💼 This rule is set to **error** in the `strict` config.
+💼 This rule is set to **error** in the `recommended` and `strict` configs.
 
 ## Quick Summary
 
@@ -124,14 +124,23 @@ a literal is not resolved either.
 
 ## What counts as static
 
-Text the developer wrote, in this file:
+Text the developer wrote, in this file or in a relative module it imports:
 
-- a string literal, a template with no interpolations, and a `+` of those;
-- a tagged template with no interpolations (``dedent`…` ``, ``outdent`…` ``);
-- an array literal of those `.join()`ed with a static separator;
+- a string literal, and a template, tagged template (`dedent`, `outdent`) or
+  `+` whose every part is static;
+- an array literal of static parts `.join()`ed with a static separator;
 - a `const` bound to any of the above, and a property of a `const` object
   literal whose value is one (`TOOLS.search.description`), where no spread
-  after the key could override it.
+  after the key could override it;
+- a value imported from a **relative** module (`./descriptions`) that is one of
+  the above. The module is read with the parser ESLint is already using;
+  named, default, namespace and re-exported (`export { … } from`,
+  `export * from`) bindings are followed.
+
+The rule reports only text it can show is **dynamic** — a call result, a `let`
+or exported mutable binding, a parameter, a global, an exported function. A
+value it cannot read (a package import, a module that is not there or does not
+export the name, a cycle) is unknown, and is not reported.
 
 ## What this rule deliberately does not report
 
@@ -147,9 +156,10 @@ Text the developer wrote, in this file:
 
 ## What it still reports that you may consider safe
 
-- **A description imported from another module**, a `let`, or a call result.
-  This file cannot see the text. That is why this rule is in `strict` and not
-  `recommended`.
+- **A description returned by a call** — `t('tools.search')`,
+  `buildDescription()`. The text exists only at runtime. Write it as a const,
+  or disable the line with the reason. This is why the rule is in
+  `recommended` but not `minimal`.
 
 Prompts (`registerPrompt`) and resources (`registerResource`) are checked the
 same way: their descriptions reach the model through `prompts/list` and

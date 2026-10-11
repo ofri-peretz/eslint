@@ -12,30 +12,24 @@
  * output. Treating it as trusted input is the MCP equivalent of trusting
  * `req.body`.
  *
- * ## Why this is not `node-security/no-shell-injection`
+ * ## Built commands are reported too
  *
- * That rule is deliberately shape-based and says so in its own header:
- *
- *     Does NOT fire on:
- *       - exec(variable) — indirect; data-flow analysis required, out of scope
- *
- * It reports `exec(`git ${cmd}`)` because the concatenation is visible, and
- * stays silent on `exec(cmd)` because proving what `cmd` holds needs data-flow
- * analysis it does not do.
- *
- * Inside an MCP tool handler that analysis is not needed. The taint source is
- * the handler's own parameter, declared in the same expression:
+ * `node-security/no-shell-injection` reports a command built by interpolation
+ * when the concatenation is visible, and declines `exec(cmd)` because proving
+ * what `cmd` holds needs value following. Inside an MCP tool handler the
+ * source is known — the handler's own parameter — so this rule follows the
+ * argument and reports every shape that lets it choose what runs:
  *
  *     server.registerTool('run', { inputSchema: { cmd: z.string() } },
  *       async ({ cmd }) => {
- *         await execSync(cmd);           // ← nothing reports this today
- *         await execSync(`ls ${cmd}`);   // ← no-shell-injection already reports
+ *         execSync(cmd);                       // the argument IS the command
+ *         execSync(`ls ${cmd}`);               // built from it
+ *         const c = cmd.trim(); execSync(c);   // derived from it
  *       });
  *
- * So this rule takes the half its sibling declines: a sink whose command comes
- * *directly* from a tool argument. The concatenated shape is left to
- * `node-security`, which keeps the two from reporting the same line — the
- * taxonomy contract's hard rule.
+ * In an MCP server both plugins may report the interpolated line; that
+ * overlap is the plugin owner's decision (2026-10): tool handlers are this
+ * plugin's scope.
  *
  * ## What counts as a sink, and as a tool argument
  *
@@ -48,8 +42,16 @@
  * handler's first parameter (destructured or whole) for `registerTool` /
  * `tool`, `request.params.arguments` for `setRequestHandler(CallToolRequestSchema)`
  * / `'tools/call'`, and a body declaration destructured straight off one of
- * those. A key the input schema restricts to `z.enum` / `z.literal` /
- * `z.nativeEnum` is the allowlist, and is not reported.
+ * those. Its value is then followed within the file (see `utils/value-flow`):
+ * through `const`/`let` bindings and reassignments, destructuring, member
+ * reads, `await`, string derivations (`.trim()`, `.split()`, `String()`,
+ * templates, `+`) and the return of a same-file helper. A key the input
+ * schema restricts to `z.enum` / `z.literal` / `z.nativeEnum` is the
+ * allowlist, and is not reported, however it is derived.
+ *
+ * zx and execa `$` templates quote each interpolation, so only a tool argument
+ * as the template's first token (the binary), after `sh -c`, or under
+ * `{ shell: true }` is reported.
  *
  * @see https://modelcontextprotocol.io/docs/concepts/tools
  */
@@ -65,6 +67,7 @@ import {
   staticString,
 } from '@interlace/eslint-devkit';
 import { fileUsesMcpSdk } from '../../utils/mcp-evidence';
+import { valueResolverFor } from '../../utils/module-resolver';
 import {
   constInitializer,
   isClosedSetSchema,
@@ -72,8 +75,8 @@ import {
   readRegistration,
   resolveFunction,
   schemaFields,
-  type FunctionNode,
 } from '../../utils/tool-registration';
+import { createFlow, type HandlerRoot } from '../../utils/value-flow';
 
 type MessageIds = 'toolArgToShell';
 
@@ -142,160 +145,52 @@ const SHELL_SCRIPT_FLAGS = new Set([
 /** The request path, from a call-tool handler's parameter, to the arguments. */
 const CALL_TOOL_ARGS_PATH = ['params', 'arguments'];
 
-/**
- * Is this expression built by concatenation or interpolation?
- *
- * Those shapes belong to `node-security/no-shell-injection`, which already
- * reports them. Skipping them here is what keeps one line from carrying a
- * finding from two plugins.
- */
-export function isBuiltString(node: TSESTree.Node): boolean {
-  if (node.type === 'TemplateLiteral') return node.expressions.length > 0;
-  if (node.type === 'BinaryExpression' && node.operator === '+') return true;
-  return false;
-}
+/** zx / execa template tags, as `module` → export → sink name. */
+const TEMPLATE_SINKS: Readonly<Record<string, ReadonlySet<string>>> = {
+  zx: new Set(['$']),
+  execa: new Set(['$', '$sync', 'execa', 'execaSync']),
+};
 
-/**
- * The tool-argument bindings in scope inside one handler.
- *
- *   - `direct`: local name → the top-level argument key it was read from.
- *   - `roots`: local name → the property path from it to the arguments
- *     object. `[]` means the name IS the arguments object (`args`, a rest
- *     element); `['params', 'arguments']` is a call-tool request.
- */
-interface ArgBindings {
-  direct: Map<string, string>;
-  roots: Map<string, string[]>;
-}
-
-/**
- * Bind the names `pattern` introduces, given the path from the value it
- * destructures to the arguments object.
- */
-function bindPattern(
-  pattern: TSESTree.Node,
-  toArgs: readonly string[],
-  into: ArgBindings,
-  topKey?: string,
-): void {
-  if (pattern.type === 'AssignmentPattern') pattern = pattern.left;
-  if (pattern.type === 'Identifier') {
-    if (topKey !== undefined && toArgs.length === 0)
-      into.direct.set(pattern.name, topKey);
-    else into.roots.set(pattern.name, [...toArgs]);
-    return;
-  }
-  if (pattern.type !== 'ObjectPattern') return;
-  for (const prop of pattern.properties) {
-    if (prop.type === 'RestElement') {
-      // `{ ...rest }` of the arguments is still the arguments; `rest.cmd` is
-      // as model-controlled as `args.cmd`. A rest of the request is not.
-      if (toArgs.length === 0) bindPattern(prop.argument, [], into);
-      continue;
-    }
-    const key = propertyKey(prop);
-    if (key === undefined) continue;
-    if (toArgs.length === 0) bindPattern(prop.value, [], into, topKey ?? key);
-    else if (key === toArgs[0]) bindPattern(prop.value, toArgs.slice(1), into);
-  }
-}
+/** `sh -c `, `/bin/bash -lc ` … as the literal text before an interpolation. */
+const SHELL_PREFIX = new RegExp(String.raw`^(?:\S*[\\/])?(\S+)\s+(\S+)\s*$`);
 
 /**
  * The names a tool handler's first parameter binds.
- *
- * Two shapes, because both are idiomatic:
  *
  *   - `async ({ cmd, path }) => …` — destructured; each property is a name.
  *   - `async (args) => …` — whole object; `args.cmd` counts, `args` alone does
  *     not, since passing the object itself to a sink is not a command.
  *
- * A nested or defaulted pattern (`{ cmd = 'ls' }`, `{ a: { b } }`) yields the
- * names it binds; anything else contributes nothing rather than guessing.
+ * Kept as a summary for callers and tests; the rule itself resolves each
+ * reference through the scope manager (`utils/value-flow`).
  */
 export function handlerArgNames(handler: TSESTree.Node): {
   direct: Set<string>;
   objects: Set<string>;
 } {
-  const bindings: ArgBindings = { direct: new Map(), roots: new Map() };
+  const direct = new Set<string>();
+  const objects = new Set<string>();
+  const visit = (pattern: TSESTree.Node, inside: boolean): void => {
+    if (pattern.type === 'AssignmentPattern') pattern = pattern.left;
+    if (pattern.type === 'Identifier') {
+      (inside ? direct : objects).add(pattern.name);
+      return;
+    }
+    if (pattern.type !== 'ObjectPattern') return;
+    for (const prop of pattern.properties) {
+      if (prop.type === 'RestElement') visit(prop.argument, false);
+      else if (propertyKey(prop) !== undefined) visit(prop.value, true);
+    }
+  };
   if (
     (handler.type === 'ArrowFunctionExpression' ||
       handler.type === 'FunctionExpression' ||
       handler.type === 'FunctionDeclaration') &&
     handler.params[0] !== undefined
   ) {
-    bindPattern(handler.params[0], [], bindings);
+    visit(handler.params[0], false);
   }
-  return {
-    direct: new Set(bindings.direct.keys()),
-    objects: new Set(bindings.roots.keys()),
-  };
-}
-
-/** `x as T`, `x!`, `<T>x`, `a?.b` and `String(x)` — the same value. */
-function unwrap(node: TSESTree.Node): TSESTree.Node {
-  for (;;) {
-    if (
-      node.type === 'TSAsExpression' ||
-      node.type === 'TSNonNullExpression' ||
-      node.type === 'TSTypeAssertion' ||
-      node.type === 'ChainExpression'
-    ) {
-      node = node.expression;
-    } else if (
-      node.type === 'CallExpression' &&
-      node.callee.type === 'Identifier' &&
-      node.callee.name === 'String' &&
-      node.arguments.length === 1
-    ) {
-      node = node.arguments[0]!;
-    } else {
-      return node;
-    }
-  }
-}
-
-/** `a.b.c` → `{ root: 'a', path: ['b', 'c'] }`; `undefined` if not a plain chain. */
-function memberChain(
-  node: TSESTree.Node,
-): { root: string; path: string[] } | undefined {
-  const path: string[] = [];
-  let current = unwrap(node);
-  while (current.type === 'MemberExpression') {
-    const key = propertyName(current);
-    if (key === null) return undefined;
-    path.unshift(key);
-    current = unwrap(current.object);
-  }
-  return current.type === 'Identifier'
-    ? { root: current.name, path }
-    : undefined;
-}
-
-const startsWith = (path: readonly string[], prefix: readonly string[]) =>
-  prefix.every((segment, i) => path[i] === segment);
-
-/**
- * Extend `bindings` with a body declaration destructured or read straight off
- * a binding — `const { name, arguments: args } = request.params`,
- * `const { cmd } = args`, `const c = args.cmd`. The initializer has to be a
- * plain property path from a parameter-bound name; a call (`args.cmd.trim()`)
- * is a new value and is not followed.
- */
-function bindDeclarator(
-  declarator: TSESTree.VariableDeclarator,
-  bindings: ArgBindings,
-): void {
-  const chain =
-    declarator.init === null ? undefined : memberChain(declarator.init);
-  const toArgs = chain && bindings.roots.get(chain.root);
-  if (toArgs === undefined) return;
-  if (startsWith(toArgs, chain!.path)) {
-    bindPattern(declarator.id, toArgs.slice(chain!.path.length), bindings);
-  } else if (startsWith(chain!.path, toArgs)) {
-    const inside = chain!.path.slice(toArgs.length);
-    // `const c = args.cmd` is `const { cmd: c } = args`.
-    bindPattern(declarator.id, [], bindings, inside[0]);
-  }
+  return { direct, objects };
 }
 
 /** Is `node` the SDK's call-tool request schema, or v2's `'tools/call'`? */
@@ -313,6 +208,17 @@ function isCallToolMethod(
   );
 }
 
+/** Does this options object turn the shell on (`shell: true` / a path)? */
+function enablesShell(node: TSESTree.Node | undefined): boolean {
+  if (node?.type !== 'ObjectExpression') return false;
+  return node.properties.some(
+    (prop) =>
+      prop.type === 'Property' &&
+      propertyKey(prop) === 'shell' &&
+      !(prop.value.type === 'Literal' && !prop.value.value),
+  );
+}
+
 export const noCommandInjectionInTool = createRule<[], MessageIds>({
   name: 'no-command-injection-in-tool',
   meta: {
@@ -320,7 +226,7 @@ export const noCommandInjectionInTool = createRule<[], MessageIds>({
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mcp-sdk-security/docs/rules/no-command-injection-in-tool.md',
       description:
-        'Disallow an MCP tool argument being used directly as the command in a child_process call',
+        'Disallow an MCP tool argument choosing the command a child_process call runs',
       cwe: 'CWE-78',
       cvss: 9.8,
     },
@@ -332,10 +238,10 @@ export const noCommandInjectionInTool = createRule<[], MessageIds>({
         owasp: 'A03:2021',
         cvss: 9.8,
         description:
-          'Tool argument `{{arg}}` is passed straight to `{{sink}}()`, so whatever steers the model chooses what runs on this host',
+          'Tool argument `{{arg}}` reaches the command of `{{sink}}()`, so whatever steers the model chooses what runs on this host',
         severity: 'CRITICAL',
         compliance: ['SOC2', 'NIST-CSF'],
-        fix: 'Do not let the argument name the command. Map it through a fixed allowlist of permitted operations, and pass user data as an argv array element — `execFile(ALLOWED[op], [value])` — never as the executable.',
+        fix: 'Do not let the argument name or build the command. Map it through a fixed allowlist of permitted operations (or declare it with z.enum), and pass user data as an argv array element — `execFile(ALLOWED[op], [value])` — with no shell.',
         documentationLink:
           'https://modelcontextprotocol.io/docs/concepts/tools',
       }),
@@ -348,16 +254,12 @@ export const noCommandInjectionInTool = createRule<[], MessageIds>({
     // replaces saw ESM and `require()` only, so import-equals and dynamic
     // `import()` files ran no rule at all.
     if (!fileUsesMcpSdk(context.sourceCode.ast)) return {};
+    // Names in a legacy params shape resolve through consts and relative
+    // imports, so `{ path: PathSchema }` reads as the schema it is.
+    const resolve = valueResolverFor(context);
 
-    /** Handler functions, how their first parameter maps to the arguments. */
-    const handlers: Array<{
-      fn: FunctionNode;
-      toArgs: string[];
-      /** Argument keys the schema restricts to a closed set of values. */
-      closed: Set<string>;
-      bindings?: ArgBindings;
-    }> = [];
-    const declarators: TSESTree.VariableDeclarator[] = [];
+    /** Tool handler functions → the argument object their first parameter gets. */
+    const handlers = new Map<TSESTree.Node, HandlerRoot>();
     const candidates: Array<{ node: TSESTree.Node; sink: string }> = [];
 
     /** The `child_process` / `execa` export this callee resolves to. */
@@ -400,23 +302,26 @@ export const noCommandInjectionInTool = createRule<[], MessageIds>({
       return sinkOf(wrapped, scope, seen);
     }
 
-    /** The positions in a sink call that name what runs. */
+    /** The positions in a sink call that choose or build what runs. */
     function commandPositions(
       node: TSESTree.CallExpression,
       sink: string,
     ): TSESTree.Node[] {
       const positions: TSESTree.Node[] = [];
-      const [file, argv] = node.arguments;
+      const [file, argv, options] = node.arguments;
       if (file === undefined) return positions;
       positions.push(file);
+      if (!ARGV_SINKS.has(sink) || argv?.type !== 'ArrayExpression')
+        return positions;
+      const elements = argv.elements.filter(
+        (el): el is TSESTree.Expression =>
+          el !== null && el.type !== 'SpreadElement',
+      );
+      // `{ shell: true }` joins file and argv into one command line.
+      if (enablesShell(options)) return [...positions, ...elements];
       // `spawn('sh', ['-c', x])` — `x` is a shell script.
       const shell = staticString(file)?.split(/[\\/]/).pop();
-      if (
-        ARGV_SINKS.has(sink) &&
-        shell !== undefined &&
-        SHELLS.has(shell) &&
-        argv?.type === 'ArrayExpression'
-      ) {
+      if (shell !== undefined && SHELLS.has(shell)) {
         const flag = argv.elements.findIndex(
           (el) => el !== null && SHELL_SCRIPT_FLAGS.has(staticString(el) ?? ''),
         );
@@ -426,70 +331,48 @@ export const noCommandInjectionInTool = createRule<[], MessageIds>({
       return positions;
     }
 
-    /** The narrowest handler whose function encloses `node`. */
-    function enclosingHandler(node: TSESTree.Node) {
-      let innermost: (typeof handlers)[number] | undefined;
-      for (const h of handlers) {
-        const [start, end] = h.fn.range;
-        if (node.range[0] < start || node.range[1] > end) continue;
-        if (
-          innermost === undefined ||
-          end - start < innermost.fn.range[1] - innermost.fn.range[0]
-        )
-          innermost = h;
-      }
-      return innermost;
-    }
-
-    function bindingsOf(handler: (typeof handlers)[number]): ArgBindings {
-      if (handler.bindings) return handler.bindings;
-      const bindings: ArgBindings = { direct: new Map(), roots: new Map() };
-      const first = handler.fn.params[0];
-      if (first !== undefined) bindPattern(first, handler.toArgs, bindings);
-      // Declarations are visited in source order, so a binding a later one
-      // depends on is already in place.
-      for (const declarator of declarators) {
-        if (enclosingHandler(declarator) === handler)
-          bindDeclarator(declarator, bindings);
-      }
-      handler.bindings = bindings;
-      return bindings;
-    }
-
-    /** `cmd` / `args.cmd` / `request.params.arguments.cmd`, or `undefined`. */
-    function argumentRead(
-      expression: TSESTree.Node,
-      bindings: ArgBindings,
-    ): { text: string; key: string } | undefined {
-      const node = unwrap(expression);
-      if (node.type === 'Identifier') {
-        const key = bindings.direct.get(node.name);
-        return key === undefined ? undefined : { text: node.name, key };
-      }
-      const chain = memberChain(node);
-      const toArgs = chain && bindings.roots.get(chain.root);
+    /** A zx / execa `$` template: the interpolations that choose what runs. */
+    function templatePositions(
+      node: TSESTree.TaggedTemplateExpression,
+      scope: TSESLint.Scope.Scope,
+    ): { sink: string; positions: TSESTree.Node[] } | undefined {
+      const tag = node.tag;
+      const base = tag.type === 'CallExpression' ? tag.callee : tag;
+      const binding = resolveModuleBinding(base, scope);
+      const name = binding?.path.length === 0 ? 'execa' : binding?.path[0];
       if (
-        toArgs === undefined ||
-        chain!.path.length !== toArgs.length + 1 ||
-        !startsWith(chain!.path, toArgs)
+        binding === undefined ||
+        binding.path.length > 1 ||
+        !TEMPLATE_SINKS[binding.module]?.has(name!)
       )
         return undefined;
-      return {
-        text: [chain!.root, ...chain!.path].join('.'),
-        key: chain!.path[toArgs.length]!,
-      };
+      const { quasis, expressions } = node.quasi;
+      // `$({ shell: true })`…`` hands the whole template to a shell.
+      if (tag.type === 'CallExpression' && enablesShell(tag.arguments[0]))
+        return { sink: name!, positions: [...expressions] };
+      // Raw text: only whitespace and `sh -c` are looked for, and raw is never
+      // null (cooked is, for an invalid escape in a tagged template).
+      const lead = quasis[0]!.value.raw;
+      const first = expressions[0];
+      if (first === undefined) return undefined;
+      if (lead.trim() === '') return { sink: name!, positions: [first] };
+      // `$`sh -c ${x}`` — the interpolation is a script.
+      const shell = SHELL_PREFIX.exec(lead);
+      if (
+        shell !== null &&
+        SHELLS.has(shell[1]!) &&
+        SHELL_SCRIPT_FLAGS.has(shell[2]!)
+      )
+        return { sink: name!, positions: [first] };
+      return undefined;
     }
 
     return {
-      VariableDeclarator(node: TSESTree.VariableDeclarator) {
-        declarators.push(node);
-      },
-
       CallExpression(node: TSESTree.CallExpression) {
         const scope = context.sourceCode.getScope(node);
 
         // Tool handlers.
-        const registration = readRegistration(node);
+        const registration = readRegistration(node, resolve);
         if (registration !== undefined) {
           const fn = resolveFunction(registration.handler, scope);
           if (fn !== undefined) {
@@ -499,9 +382,9 @@ export const noCommandInjectionInTool = createRule<[], MessageIds>({
                 ? schemaFields(registration.schema.node)
                 : undefined;
             for (const [key, value] of fields?.fields ?? []) {
-              if (isClosedSetSchema(value)) closed.add(key);
+              if (isClosedSetSchema(resolve(value) ?? value)) closed.add(key);
             }
-            handlers.push({ fn, toArgs: [], closed });
+            handlers.set(fn, { toArgs: [], closed });
           }
         } else if (
           node.callee.type === 'MemberExpression' &&
@@ -510,35 +393,40 @@ export const noCommandInjectionInTool = createRule<[], MessageIds>({
         ) {
           const fn = resolveFunction(node.arguments[1], scope);
           if (fn !== undefined)
-            handlers.push({
-              fn,
+            handlers.set(fn, {
               toArgs: CALL_TOOL_ARGS_PATH,
               closed: new Set(),
             });
         }
 
         // Process sinks. Judged at Program:exit, because the handler that
-        // encloses a sink may be registered further down the file.
+        // binds an argument may be registered further down the file.
         const sink = sinkOf(node.callee, scope);
         if (sink === undefined) return;
-        for (const position of commandPositions(node, sink)) {
-          // Concatenated / interpolated commands belong to
-          // node-security/no-shell-injection. See isBuiltString.
-          if (!isBuiltString(position))
-            candidates.push({ node: position, sink });
-        }
+        for (const position of commandPositions(node, sink))
+          candidates.push({ node: position, sink });
+      },
+
+      TaggedTemplateExpression(node: TSESTree.TaggedTemplateExpression) {
+        const found = templatePositions(
+          node,
+          context.sourceCode.getScope(node),
+        );
+        for (const position of found?.positions ?? [])
+          candidates.push({ node: position, sink: found!.sink });
       },
 
       'Program:exit'() {
+        const carries = createFlow(context.sourceCode, (fn) =>
+          handlers.get(fn),
+        );
         for (const candidate of candidates) {
-          const handler = enclosingHandler(candidate.node);
-          if (handler === undefined) continue;
-          const read = argumentRead(candidate.node, bindingsOf(handler));
-          if (read === undefined || handler.closed.has(read.key)) continue;
+          const taint = carries(candidate.node);
+          if (taint?.kind !== 'value') continue;
           context.report({
             node: candidate.node,
             messageId: 'toolArgToShell',
-            data: { arg: read.text, sink: candidate.sink },
+            data: { arg: taint.text, sink: candidate.sink },
           });
         }
       },

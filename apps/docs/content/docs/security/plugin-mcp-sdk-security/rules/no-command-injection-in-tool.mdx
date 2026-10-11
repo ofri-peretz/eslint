@@ -1,6 +1,6 @@
 ---
 title: no-command-injection-in-tool
-description: "Disallow an MCP tool argument being used directly as the command in a child_process call."
+description: "Disallow an MCP tool argument choosing the command a child_process call runs."
 tags: ['security', 'mcp']
 category: security
 severity: critical
@@ -17,9 +17,9 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 **CWE:** [CWE-78](https://cwe.mitre.org/data/definitions/78.html)
 **OWASP:** [A03:2021 – Injection](https://owasp.org/Top10/A03_2021-Injection/)
 
-Detects a tool handler's own parameter reaching `exec`, `spawn`, `execFile` or `fork` as the thing being run. This rule is part of [`eslint-plugin-mcp-sdk-security`](https://www.npmjs.com/package/eslint-plugin-mcp-sdk-security).
+Detects a tool handler's own parameter — used as, built into, or derived into the command — reaching `exec`, `spawn`, `execFile`, `fork`, `execa` or a zx / execa `$` template. This rule is part of [`eslint-plugin-mcp-sdk-security`](https://www.npmjs.com/package/eslint-plugin-mcp-sdk-security).
 
-💼 This rule is set to **error** in the `strict` config.
+💼 This rule is set to **error** in the `minimal`, `recommended` and `strict` configs.
 
 ## Quick Summary
 
@@ -41,38 +41,33 @@ is a language model that an attacker may be writing the inputs for.
 When that value names the command, whoever steers the model chooses what runs
 on the host.
 
-## Why this is not `node-security/no-shell-injection`
+## Relationship to `node-security/no-shell-injection`
 
-They split by **shape**, and the split is deliberate. `no-shell-injection` says
-so in its own header:
-
-> Does NOT fire on: `exec(variable)` — indirect; data-flow analysis required,
-> out of scope
-
-It reports `` exec(`git ${cmd}`) `` because the concatenation is visible in the
-expression, and stays silent on `exec(cmd)` because proving what `cmd` holds
-needs data-flow analysis it does not do.
-
-Inside a tool handler that analysis is not needed — the taint source is the
-handler's own parameter, declared in the same expression:
+`no-shell-injection` is shape-based: it reports `` exec(`git ${cmd}`) `` because
+the interpolation is visible, and declines `exec(cmd)` because proving what
+`cmd` holds needs value following. Inside an MCP tool handler the source is
+known — the handler's own parameter — so this rule follows it and reports every
+shape that lets it choose what runs:
 
 ```ts
 server.registerTool('run', { inputSchema: { cmd: z.string() } },
   async ({ cmd }) => {
-    execSync(cmd);           // ← this rule; nothing else reports it
-    execSync(`ls ${cmd}`);   // ← node-security/no-shell-injection reports
+    execSync(cmd);                      // the argument IS the command
+    execSync(`ls ${cmd}`);              // built from it
+    const c = cmd.trim(); execSync(c);  // derived from it
   });
 ```
 
-So this rule takes exactly the half its sibling declines. The concatenated
-shape is **not** reported here, which is what keeps one line from carrying a
-finding from two plugins.
+| Shape | This rule | `node-security/no-shell-injection` |
+|---|---|---|
+| `execSync(cmd)` — argument is the command | ✅ | — |
+| `` execSync(`ls ${cmd}`) `` — built from the argument | ✅ | ✅ |
+| `const c = cmd.trim(); execSync(c)` — derived from it | ✅ | — |
+| `execSync('ls -la')` — static | — | — |
 
-| Shape | Reported by |
-|---|---|
-| `execSync(cmd)` — argument is the command | this rule |
-| `` execSync(`ls ${cmd}`) `` — command built by interpolation | `node-security/no-shell-injection` |
-| `execSync('ls -la')` — static | neither |
+On the interpolated line both plugins may report. Tool handlers are this
+plugin's own scope, so it reports them rather than leave a gap for servers that
+do not install `node-security` (owner decision, 2026-10).
 
 ## ❌ Incorrect
 
@@ -111,13 +106,22 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   `ISSUE_KEY.exec(key)` is a RegExp and `db.exec(sql)` is a database; neither
   is reported.
 - **Tool arguments** are the handler's first parameter (destructured or whole)
-  for `registerTool`/`tool`, `request.params.arguments` for
-  `setRequestHandler(CallToolRequestSchema)` / `setRequestHandler('tools/call')`,
-  and a body declaration that destructures or reads straight off one of those
-  (`const { cmd } = args`, `const c = args.cmd`).
+  for `registerTool`/`tool`, and `request.params.arguments` for
+  `setRequestHandler(CallToolRequestSchema)` / `setRequestHandler('tools/call')`.
+  Each reference is resolved through the scope manager, so a callback parameter
+  that shadows an argument is a different variable.
+- **The argument's value is followed within the file**, bounded and
+  cycle-guarded: through `const`/`let` bindings and reassignments,
+  destructuring, member and element reads, `await`, string derivations
+  (`.trim()`, `.split()`, `.slice()`, `.toLowerCase()`, `.join()`, `String()`,
+  template literals, `+`) and the return value of a same-file helper.
 - **A shell script position** — the element after `-c`, `-lc`, `/c` or
   `-Command` when the file is `sh`, `bash`, `zsh`, `cmd.exe`, `powershell`,
-  `pwsh`… — is a command position too.
+  `pwsh`… — is a command position too, and so is every argv element when the
+  options set `shell: true`.
+- **zx / execa `$` templates** quote each interpolation, so they are reported
+  only where the argument chooses what runs: the first token (the binary),
+  after `sh -c`, or under `$({ shell: true })`.
 - **A closed set is the allowlist.** An argument whose input schema is
   `z.enum([...])`, `z.literal(...)` or `z.nativeEnum(...)` is not reported:
   the SDK rejects anything outside the set before the handler runs.
@@ -142,16 +146,15 @@ does not involve a shell, so there is no metacharacter to escape.
 
 ## What this rule deliberately does not report
 
-- **The concatenated form.** It belongs to `node-security/no-shell-injection`
-  — see the table above.
 - **The whole args object.** `execSync(args)` is not a command; only a member
   of it (`args.cmd`) is.
 - **A variable that is not a tool argument.** `execSync(configuredBinary)` may
   well be unsafe, but this rule cannot show it came from the model, and
   guessing is what earns a security rule its false-positive reputation.
 - **A computed member.** `args[key]` is not statically a name.
-- **A value computed from an argument.** `const c = cmd.trim(); exec(c)` is a
-  new value; following it is data-flow analysis this rule does not do.
+- **A value the argument only selects.** `execSync(lookup(cmd))`,
+  `ALLOWED[cmd]`, or `cmd.length > 3 ? 'ls' : 'pwd'` — an arbitrary call, a
+  lookup or a comparison yields a value the code chose, not the argument's text.
 - **A sink outside any tool handler.** The handler is the taint boundary; a
   sink elsewhere in the file is `node-security`'s question.
 - **A file that imports no MCP server package** (`@modelcontextprotocol/sdk`,

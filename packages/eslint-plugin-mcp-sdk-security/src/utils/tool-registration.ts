@@ -122,15 +122,29 @@ export function resolveFunction(
  */
 export type LegacyObjectKind = 'shape' | 'annotations' | 'unknown';
 
+/**
+ * Resolves an identifier or member read to the expression it denotes (see
+ * `module-resolver.ts`), or `undefined` when it cannot.
+ */
+export type ValueResolver = (node: TSESTree.Node) => TSESTree.Node | undefined;
+
 export function classifyLegacyObject(
   node: TSESTree.ObjectExpression,
+  resolve?: ValueResolver,
 ): LegacyObjectKind {
   if (node.properties.length === 0) return 'shape';
   let calls = 0;
   let literals = 0;
   for (const prop of node.properties) {
     if (prop.type !== 'Property' || prop.computed) return 'unknown';
-    const value = prop.value;
+    let value: TSESTree.Node = prop.value;
+    // `{ path: PathSchema }` — a schema held in a const, here or in a
+    // relative module, is still a schema.
+    if (
+      resolve &&
+      (value.type === 'Identifier' || value.type === 'MemberExpression')
+    )
+      value = resolve(value) ?? value;
     if (value.type === 'CallExpression') calls++;
     else if (value.type === 'Literal' || value.type === 'TemplateLiteral')
       literals++;
@@ -194,6 +208,7 @@ export function toolNameOf(node: TSESTree.CallExpression): string {
  */
 export function readRegistration(
   node: TSESTree.CallExpression,
+  resolve?: ValueResolver,
 ): ToolRegistration | undefined {
   const method = calledMethod(node);
   const args = node.arguments;
@@ -244,7 +259,7 @@ export function readRegistration(
       // A schema held in a variable — cannot see whether it is one.
       registration.schema = { kind: 'unknown' };
     } else {
-      const kind = classifyLegacyObject(slot);
+      const kind = classifyLegacyObject(slot, resolve);
       if (kind === 'shape') {
         registration.schema = { kind: 'schema', node: slot };
         const next = args[index + 1]!;

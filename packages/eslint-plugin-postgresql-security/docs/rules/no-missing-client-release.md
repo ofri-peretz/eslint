@@ -126,7 +126,9 @@ async function signup(name) {
 
 A `new Pool()` in the same file, a binding or `this.x` declared with pg's
 `Pool` type (an injected pool), or any `.connect()` whose result then runs
-`.query(...)` — the pool checkout shape, whatever the pool is called.
+`.query(...)` — the pool checkout shape, whatever the pool is called. A route
+file that imports its pool from a relative module (`import { pool } from
+'../db'`) is linted when that module imports a PostgreSQL driver.
 
 ### Thrown Exceptions Before Release
 

@@ -138,9 +138,14 @@ ruleTester.run('no-batch-insert-loop', noBatchInsertLoop, {
       errors: [{ messageId: 'noBatchInsertLoop' }],
     },
     {
+      // FP/FN zero-deferral 2026-10 (BIL-2b): a loop is reported only for an
+      // iteration-invariant statement whose PARAMETERS vary — one row per pass.
+      // The fixture now carries the per-pass row; the identical constant
+      // statement repeated with no parameters is not a batch insert.
       code: `
       while(condition) {
-        client.query('INSERT ...');
+        const job = next();
+        client.query('INSERT INTO done (id) VALUES ($1)', [job.id]);
       }
       `,
       errors: [{ messageId: 'noBatchInsertLoop' }],
@@ -149,7 +154,7 @@ ruleTester.run('no-batch-insert-loop', noBatchInsertLoop, {
     {
       code: `
       items.filter(item => {
-        client.query('INSERT INTO items VALUES (1)');
+        client.query('INSERT INTO items VALUES ($1)', [item.id]);
         return item.valid;
       });
       `,
@@ -159,7 +164,7 @@ ruleTester.run('no-batch-insert-loop', noBatchInsertLoop, {
     {
       code: `
       items.reduce((acc, item) => {
-        client.query('INSERT INTO items VALUES (1)');
+        client.query('INSERT INTO items VALUES ($1)', [item.id]);
         return acc;
       }, []);
       `,

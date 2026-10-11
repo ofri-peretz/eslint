@@ -4,6 +4,10 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
+import * as espree from 'espree';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 import { requireExpiration } from './index';
 
 RuleTester.afterAll = afterAll;
@@ -414,3 +418,209 @@ export const f = (b, key) => b.setProtectedHeader({ alg }).sign(key);`,
     },
   ],
 });
+
+// ---------------------------------------------------------------------------
+// Zero-deferral pass (audit 2026-10): NestJS module signOptions, cross-file.
+//
+// `this.jwtService.sign(payload)` takes `expiresIn` from
+// `JwtModule.register({ signOptions })`, which lives in a `*.module.ts`
+// elsewhere in the package. The rule walks up to the nearest package.json,
+// reads every `*.module.ts` that registers JwtModule, and reports only when
+// the registration it can read sets no expiresIn. No module found, or one it
+// cannot read, means it abstains.
+// ---------------------------------------------------------------------------
+const nestProject = (
+  modules: Record<string, string>,
+  withPackageJson = true,
+): string => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'jwt-nest-'));
+  if (withPackageJson) {
+    fs.writeFileSync(path.join(root, 'package.json'), '{"name":"fixture"}');
+  }
+  for (const [file, source] of Object.entries(modules)) {
+    fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+    fs.writeFileSync(path.join(root, file), source);
+  }
+  fs.mkdirSync(path.join(root, 'src', 'auth'), { recursive: true });
+  return path.join(root, 'src', 'auth', 'auth.service.ts');
+};
+
+const SERVICE = `import { Injectable } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+@Injectable()
+export class AuthService {
+  constructor(private readonly jwtService: JwtService) {}
+  login(sub: string) { return this.jwtService.sign({ sub }); }
+}`;
+
+const SERVICE_ASYNC = `import { JwtService } from '@nestjs/jwt';
+export class AuthService {
+  constructor(private readonly jwtService: JwtService) {}
+  login(sub: string) { return this.jwtService.signAsync({ sub }, { secret: process.env.S }); }
+}`;
+
+const MODULE = (options: string, method = 'register'): string =>
+  `import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
+@Module({ imports: [JwtModule.${method}(${options})] })
+export class AuthModule {}`;
+
+ruleTester.run(
+  'require-expiration — NestJS module signOptions',
+  requireExpiration,
+  {
+    valid: [
+      {
+        name: 'JwtModule.register sets signOptions.expiresIn',
+        filename: nestProject({
+          'src/auth/auth.module.ts': MODULE(
+            "{ secret: process.env.S, signOptions: { expiresIn: '15m' } }",
+          ),
+        }),
+        code: SERVICE,
+      },
+      {
+        name: 'the register options held in a const',
+        filename: nestProject({
+          'src/auth/auth.module.ts': `import { JwtModule } from '@nestjs/jwt';
+const jwtOptions = { secret: process.env.S, signOptions: { 'expiresIn': '1h' } };
+export const imports = [JwtModule.register(jwtOptions)];`,
+        }),
+        code: SERVICE,
+      },
+      {
+        name: 'registerAsync whose factory returns signOptions.expiresIn',
+        filename: nestProject({
+          'src/app.module.ts': MODULE(
+            "{ useFactory: (config) => ({ secret: config.get('S'), signOptions: { expiresIn: config.get('TTL') } }) }",
+            'registerAsync',
+          ),
+        }),
+        code: SERVICE_ASYNC,
+      },
+      {
+        name: 'registerAsync whose factory result cannot be read is not judged',
+        filename: nestProject({
+          'src/app.module.ts': MODULE(
+            "{ useFactory: (config) => config.get('jwt') }",
+            'registerAsync',
+          ),
+        }),
+        code: SERVICE,
+      },
+      {
+        name: 'registerAsync with useClass is not judged',
+        filename: nestProject({
+          'src/app.module.ts': MODULE(
+            '{ useClass: JwtConfig }',
+            'registerAsync',
+          ),
+        }),
+        code: SERVICE,
+      },
+      {
+        name: 'register called with a value the module file cannot see',
+        filename: nestProject({
+          'src/app.module.ts': MODULE('loadJwtOptions()'),
+        }),
+        code: SERVICE,
+      },
+      {
+        name: 'no module registers JwtModule, so nothing is known',
+        filename: nestProject({
+          'src/app.module.ts': `import { Module } from '@nestjs/common';
+@Module({})
+export class AppModule {}`,
+          'src/other.module.ts': `export const JwtModule = 1; JwtModule.register;`,
+        }),
+        code: SERVICE,
+      },
+      {
+        name: 'a module file that does not parse is skipped',
+        filename: nestProject({
+          'src/broken.module.ts': 'JwtModule.register({ signOptions: { ',
+        }),
+        code: SERVICE,
+      },
+      {
+        name: 'JwtModule imported from somewhere else is not @nestjs/jwt',
+        filename: nestProject({
+          'src/app.module.ts': `import { JwtModule } from './my-jwt';
+JwtModule.register({ secret: 's' });`,
+        }),
+        code: SERVICE,
+      },
+      {
+        name: 'modules under node_modules and dist are not scanned',
+        filename: nestProject({
+          'node_modules/lib/x.module.ts': MODULE('{ secret: process.env.S }'),
+          'dist/app.module.ts': MODULE('{ secret: process.env.S }'),
+          'src/auth/auth.module.ts': MODULE(
+            '{ secret: process.env.S, signOptions: { expiresIn: 900 } }',
+          ),
+        }),
+        code: SERVICE,
+      },
+      {
+        name: 'no package.json above the file: no root, no judgement',
+        filename: nestProject(
+          { 'src/auth/auth.module.ts': MODULE('{ secret: process.env.S }') },
+          false,
+        ),
+        code: SERVICE,
+      },
+    ],
+    invalid: [
+      {
+        // @found FN-3b, harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-jwt-security.md)
+        name: 'FN: sign(payload) when JwtModule.register sets no expiresIn',
+        filename: nestProject({
+          'src/auth/auth.module.ts': MODULE(
+            '{ secret: process.env.JWT_SECRET }',
+          ),
+        }),
+        code: SERVICE,
+        errors: [{ messageId: 'missingExpiration', suggestions: 1 }],
+      },
+      {
+        // @found FN-3b, reasoned during the 2026-10-10 zero-deferral pass
+        name: 'FN: signAsync with per-call options and no module expiresIn',
+        filename: nestProject({
+          'src/app.module.ts': MODULE(
+            "{ useFactory: async () => { return { secret: process.env.S, signOptions: { algorithm: 'HS256' } }; } }",
+            'registerAsync',
+          ),
+        }),
+        code: SERVICE_ASYNC,
+        errors: [{ messageId: 'missingExpiration', suggestions: 1 }],
+      },
+      {
+        name: 'one of two registrations sets no expiresIn',
+        filename: nestProject({
+          'src/a.module.ts': MODULE(
+            "{ secret: process.env.S, signOptions: { expiresIn: '1h' } }",
+          ),
+          'src/b/b.module.ts': `const { JwtModule } = require('@nestjs/jwt');
+module.exports = JwtModule.registerAsync({ useFactory: function () { return { secret: 'x' }; } });`,
+        }),
+        code: SERVICE,
+        errors: [{ messageId: 'missingExpiration', suggestions: 1 }],
+      },
+      {
+        name: 'a plain-JS service whose JwtService is constructed in place',
+        filename: nestProject({
+          'src/auth/auth.module.ts': MODULE(
+            '{ secret: process.env.JWT_SECRET }',
+          ),
+        }),
+        code: `import { JwtService } from '@nestjs/jwt';
+export class AuthService {
+  constructor() { this.jwt = new JwtService(); }
+  login(sub) { return this.jwt.sign({ sub }); }
+}`,
+        languageOptions: { parser: espree },
+        errors: [{ messageId: 'missingExpiration', suggestions: 1 }],
+      },
+    ],
+  },
+);

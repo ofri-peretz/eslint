@@ -96,17 +96,17 @@ The following patterns are **not detected** due to static analysis limitations:
 - A config returned from a function in the same file, and a config object
   declared with pg's `PoolConfig` / `ClientConfig` type (or `satisfies` it).
 
-### Configuration Object from File
+### Configuration Object from a package or path alias
 
-**Why**: Values imported from config files are not traced.
+**Why**: A config imported from a RELATIVE module or JSON file is read
+(`import dbConfig from './database.json'` is reported when it sets
+`rejectUnauthorized: false`). One from an npm package or a path alias is not.
 
 ```typescript
-// ❌ NOT DETECTED - Config from file
-import dbConfig from './database.json';
-const client = new Client(dbConfig); // May have rejectUnauthorized: false
+// ❌ NOT DETECTED - config from a path alias
+import dbConfig from '@/config/database';
+const client = new Client(dbConfig);
 ```
-
-**Mitigation**: Apply rule to config files. Use schema validation for database configs.
 
 ### Spread Operator
 

@@ -99,7 +99,16 @@ structurally — never because of what a variable is called:
 - a constant: a literal, a `const` that folds to one, a member of a `const`
   object literal, or a TypeScript `enum` member with a literal initialiser;
 - a bind-parameter **index** after a single `$` — `$${params.length}`,
-  `$${i + 1}`, `$${params.push(v)}` — the dynamic-filter builder idiom;
+  `$${i + 1}`, `$${params.push(v)}` — the dynamic-filter builder idiom. The
+  index must be provably a number: `.length`, `.push(…)`, a counter, a
+  `Number()` / `parseInt` / `Math.*` result, arithmetic, a `: number`
+  parameter or an array callback's index argument. `$${n}` where `n` is an
+  untyped parameter or request data is reported;
+- a SET or column list filled only with fixed text — ``sets.push(`name =
+  $${values.length}`)`` then ``${sets.join(', ')}`` — or the element of a
+  `for…of` over a fixed column array. Column names from
+  `Object.keys(req.body)` / `Object.entries(req.body)` are not fixed text and
+  are reported;
 - a placeholder list: ``ids.map((_, i) => `$${i + 1}`).join(', ')``, inline or
   bound to a `const` first;
 - a closed list of escapers and conversions: `escapeIdentifier` /
@@ -121,10 +130,17 @@ quiet.
 
 ### Route files that import a local `db` wrapper
 
-A file that reaches PostgreSQL only through `import * as db from '../db'` has
-no SDK evidence, and is left to `secure-coding/no-sql-injection`. That
-abstention is a contract shared with the sibling SQL plugins, so the same line
-is never reported twice.
+A file that reaches PostgreSQL only through `import * as db from '../db'` is
+linted when `../db` resolves to a file on disk that itself imports `pg`,
+`pg-pool`, `pg-promise` or `postgres` (directly, or through a short chain of
+relative re-exports). That is real PostgreSQL evidence one hop away, which
+satisfies the SDK gate contract shared with the sibling SQL plugins. A relative
+import with nothing on disk behind it, or a `../db` that imports mongoose or
+redis, keeps the rule silent.
+
+Query builders imported from a relative module are read in that module: a
+builder that returns an interpolated template, or assembles `q` over several
+statements and returns it, is judged exactly as one written in the same file.
 
 ## Known False Negatives
 
@@ -145,13 +161,13 @@ await client.query(sql`SELECT * FROM users WHERE id = ${userId}`);
 
 ### Dynamic Query Variables
 
-**Why**: A builder IMPORTED from another module cannot be read. (A builder
-written in the same file is followed, including one that assembles `q` over
-several statements and ends with `return q`.)
+**Why**: A builder from an npm package, or one reached through a path alias
+(`@/queries`), cannot be read. Builders in the same file and in RELATIVE
+modules are followed.
 
 ```typescript
 // ❌ NOT DETECTED
-import { buildQuery } from './queries';
+import { buildQuery } from '@/queries';
 const unsafeQuery = buildQuery(userInput); // May concatenate strings internally
 await client.query(unsafeQuery);
 ```

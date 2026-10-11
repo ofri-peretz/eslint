@@ -36,6 +36,7 @@ import {
   propertyName,
 } from '@interlace/eslint-devkit';
 import { fileUsesMcpSdk } from '../../utils/mcp-evidence';
+import { valueResolverFor } from '../../utils/module-resolver';
 import {
   HANDLER_CONTEXT_KEYS,
   readRegistration,
@@ -120,6 +121,9 @@ export const requireToolInputSchema = createRule<[], MessageIds>({
     // replaces saw ESM and `require()` only, so import-equals and dynamic
     // `import()` files ran no rule at all.
     if (!fileUsesMcpSdk(context.sourceCode.ast)) return {};
+    // Names in a legacy params shape resolve through consts and relative
+    // imports, so `{ path: PathSchema }` reads as the schema it is.
+    const resolve = valueResolverFor(context);
     // Registrations are collected and judged at Program:exit so the rule does
     // not depend on the import appearing above them.
     const candidates: Array<{
@@ -130,7 +134,7 @@ export const requireToolInputSchema = createRule<[], MessageIds>({
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
-        const registration = readRegistration(node);
+        const registration = readRegistration(node, resolve);
         if (registration?.schema.kind !== 'none') return;
         // A handler this file cannot see cannot be judged.
         const fn = resolveFunction(

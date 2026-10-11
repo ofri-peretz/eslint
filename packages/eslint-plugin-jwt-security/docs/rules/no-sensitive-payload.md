@@ -47,7 +47,21 @@ jwt.sign(payload, secret);
 await new SignJWT({ sub: user.id, password: user.password })
   .setProtectedHeader({ alg: 'HS256' })
   .sign(key);
+
+// A whole record spread into the claims (CWE-200): every field it has —
+// the password hash included, and any column added later — goes in the token
+function issue(user) {
+  return jwt.sign({ ...user }, secret);
+}
+const row = await prisma.user.findUnique({ where: { id } });
+jwt.sign({ ...row, role: 'user' }, secret);
 ```
+
+A spread whose source cannot be followed to an object literal in the file is
+reported as a whole-record exposure, with a "pick the claims" fix. With type
+information (`parserOptions.projectService`) the declared fields of the
+spread source are known, and the spread is reported only when one of them is
+sensitive — `{ ...claims }` of `{ sub; scope }` is then left alone.
 
 ### ✅ Correct
 
@@ -55,6 +69,9 @@ await new SignJWT({ sub: user.id, password: user.password })
 // Store sensitive data server-side, reference by ID
 jwt.sign({ sub: 'user-id-123', role: 'admin' }, secret);
 jwt.sign({ userId: 'abc123', permissions: ['read'] }, secret);
+
+// Pick the claims explicitly instead of spreading the record
+jwt.sign({ sub: user.id, role: user.role }, secret);
 ```
 
 ## Options
@@ -90,18 +107,18 @@ jwt.sign({ [field]: 'secret123' }, secret); // Property name unknown
 
 **Mitigation**: Avoid computed property names in JWT payloads. Use TypeScript interfaces.
 
-### Spread of an Unresolvable Value
+### A Whole Record Passed Without a Spread
 
-**Why**: a spread of a same-file `const` is flattened and read. A spread of a parameter or a database row is not — the rule cannot see which fields it carries.
+**Why**: the whole-record check reads spreads. A record passed as the payload itself is not resolved to its fields.
 
 ```typescript
-// ⚠️ NOT DETECTED - the spread source is a parameter
+// ⚠️ NOT DETECTED - the record is the payload, not a spread into it
 function issue(user) {
-  return jwt.sign({ ...user, role: 'admin' }, secret);
+  return jwt.sign(user, secret);
 }
 ```
 
-**Mitigation**: Explicitly pick/omit fields before signing. Use `pick()` utilities.
+**Mitigation**: Build the payload as an object literal of the claims you mean to send.
 
 ### Nested Sensitive Data
 

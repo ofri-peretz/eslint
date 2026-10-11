@@ -373,3 +373,24 @@ ruleTester.run('require-max-steps (fp-fn audit)', requireMaxSteps, {
     },
   ]),
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Zero-deferral pass 2026-10-11: request values followed through further hops.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('require-max-steps (multi-hop)', requireMaxSteps, {
+  valid: xai([]),
+  invalid: xai([
+    {
+      // @found residual "Request Values Passed Through Another Variable" in docs/rules/require-max-steps.md (2026-10-10)
+      name: 'FN: a step count read from the body through a second variable',
+      code: `
+        export async function POST(req) {
+          const body = await req.json();
+          const n = Number(body.steps);
+          return streamText({ model, tools, stopWhen: stepCountIs(n) });
+        }
+      `,
+      errors: [{ messageId: 'unboundedSteps' }],
+    },
+  ]),
+});

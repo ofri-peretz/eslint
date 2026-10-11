@@ -37,6 +37,12 @@ new JwtStrategy(
   { secretOrKey, jwtFromRequest, ignoreExpiration: true },
   verify,
 ); // passport-jwt
+
+// A "clock tolerance" of a year keeps expired tokens alive for a year
+jwt.verify(token, secret, {
+  algorithms: ['HS256'],
+  clockTolerance: 60 * 60 * 24 * 365,
+});
 ```
 
 ### ✅ Correct
@@ -48,7 +54,14 @@ jwt.sign(payload, secret, { expiresIn: '1h' });
 
 // Explicit false (redundant but clear)
 jwt.sign(payload, secret, { noTimestamp: false });
+
+// Seconds of clock skew, not hours
+jwt.verify(token, secret, { algorithms: ['HS256'], clockTolerance: 30 });
 ```
+
+`clockTolerance` is judged only when it is a number in every run: a literal,
+a same-file constant, or `+ - * /` over those. jose's duration strings
+(`'5 minutes'`) and values chosen at runtime are not reported.
 
 ## The "Back to the Future" Attack
 
@@ -61,11 +74,20 @@ From LightSEC 2025 research:
 
 ## Options
 
-| Option               | Type       | Default | Description                                                      |
-| -------------------- | ---------- | ------- | ---------------------------------------------------------------- |
-| `trustedSanitizers`  | `string[]` | `[]`    | Extra function names to treat as sanitizers                      |
-| `trustedAnnotations` | `string[]` | `[]`    | Extra JSDoc annotations to treat as safe markers                 |
-| `strictMode`         | `boolean`  | `false` | Disable false-positive suppression — report even sanitized input |
+| Option                     | Type       | Default | Description                                                                 |
+| -------------------------- | ---------- | ------- | --------------------------------------------------------------------------- |
+| `maxClockToleranceSeconds` | `number`   | `300`   | Largest numeric `clockTolerance` (seconds) a verify may allow without a report |
+| `trustedSanitizers`        | `string[]` | `[]`    | Extra function names to treat as sanitizers                                 |
+| `trustedAnnotations`       | `string[]` | `[]`    | Extra JSDoc annotations to treat as safe markers                            |
+| `strictMode`               | `boolean`  | `false` | Disable false-positive suppression — report even sanitized input            |
+
+```javascript
+{
+  "jwt-security/no-timestamp-manipulation": ["error", {
+    "maxClockToleranceSeconds": 300
+  }]
+}
+```
 
 <WhenNotToUse />
 

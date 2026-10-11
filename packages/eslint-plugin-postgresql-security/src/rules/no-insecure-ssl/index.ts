@@ -13,12 +13,12 @@ import {
   staticString,
 } from '@interlace/eslint-devkit';
 import { NoInsecureSslOptions } from '../../types';
-import { fileUsesPostgres } from '../../utils';
+import { usesPostgres } from '../../utils';
 import {
   connectionConfigArguments,
-  effectiveValue,
   typedConnectionConfig,
 } from '../../utils/connection-config';
+import { envOf, follow, type Value } from '../../utils/cross-file';
 
 /**
  * The name a property key denotes, or `null` when it cannot be known statically.
@@ -65,8 +65,8 @@ function property(
  * literal disables verification. `undefined` is deliberately not one of them:
  * an absent option takes `tls.connect`'s default, which is to verify.
  */
-function disablesVerification(node: TSESTree.Node, scope: TSESLint.Scope.Scope): boolean {
-  const value = effectiveValue(node, scope);
+function disablesVerification(start: Value): boolean {
+  const value = follow(start).node;
   if (value.type !== AST_NODE_TYPES.Literal) return false;
   // `null` is a Literal with value `null`; `undefined` is an Identifier and
   // never reaches here.
@@ -122,13 +122,14 @@ export const noInsecureSsl: TSESLint.RuleModule<
     // 108,838 files, 94% of this plugin's findings were in files with no
     // PostgreSQL client at all. Registering no visitors is both the gate and
     // the cheap path — a file with no database in it does no work.
-    if (!fileUsesPostgres(context.sourceCode.ast)) return {};
+    if (!usesPostgres(context)) return {};
 
     /**
      * One finding per insecure property, however many routes reach it — a
      * typed `const config: PoolConfig` that is ALSO passed to `new Pool(config)`
      * is one defect, not two.
      */
+    const env = envOf(context);
     const reported = new Set<TSESTree.Node>();
     const report = (node: TSESTree.Node): void => {
       if (reported.has(node)) return;
@@ -141,54 +142,65 @@ export const noInsecureSsl: TSESLint.RuleModule<
      * false } : false` — the Heroku snippet — disables verification in exactly
      * the environment that matters, and the rule read only a bare object.
      */
-    const sslBranches = (node: TSESTree.Node, scope: TSESLint.Scope.Scope): TSESTree.Node[] => {
-      const value = effectiveValue(node, scope);
-      if (value.type === AST_NODE_TYPES.ConditionalExpression) {
-        return [...sslBranches(value.consequent, scope), ...sslBranches(value.alternate, scope)];
+    const sslBranches = (start: Value): Value[] => {
+      const value = follow(start);
+      const at = (node: TSESTree.Node): Value => ({ node, scope: value.env.scopeOf(node), env: value.env });
+      if (value.node.type === AST_NODE_TYPES.ConditionalExpression) {
+        return [...sslBranches(at(value.node.consequent)), ...sslBranches(at(value.node.alternate))];
       }
-      if (value.type === AST_NODE_TYPES.LogicalExpression) {
-        return [...sslBranches(value.left, scope), ...sslBranches(value.right, scope)];
+      if (value.node.type === AST_NODE_TYPES.LogicalExpression) {
+        return [...sslBranches(at(value.node.left)), ...sslBranches(at(value.node.right))];
       }
       return [value];
     };
 
+    /**
+     * Report `node` when it sits in this file; otherwise report `fallback`, the
+     * place in this file that led to a config written in another module or in
+     * a JSON file.
+     */
+    const reportAt = (value: Value, fallback: TSESTree.Node): void => {
+      report(value.env.module === null ? value.node : fallback);
+    };
+
     const checkConfig = (argument: TSESTree.Node, scope: TSESLint.Scope.Scope): void => {
-      const config = effectiveValue(argument, scope);
+      const config = follow({ node: argument, scope, env });
+      const at = (node: TSESTree.Node): Value => ({ node, scope: config.env.scopeOf(node), env: config.env });
 
       // `new Client('postgres://…?sslmode=no-verify')` — the DSN passed bare.
-      const dsnText = staticString(config);
+      const dsnText = staticString(config.node);
       if (dsnText !== null) {
         if (dsnSkipsVerification(dsnText)) report(argument);
         return;
       }
 
-      if (config.type !== AST_NODE_TYPES.ObjectExpression) return;
+      if (config.node.type !== AST_NODE_TYPES.ObjectExpression) return;
 
       // `connectionString: 'postgres://…?sslmode=no-verify'`
-      const connectionString = property(config, 'connectionString');
+      const connectionString = property(config.node, 'connectionString');
       if (connectionString !== undefined) {
-        const dsn = effectiveValue(connectionString.value, scope);
+        const dsn = follow(at(connectionString.value)).node;
         if (
           dsn.type === AST_NODE_TYPES.Literal &&
           typeof dsn.value === 'string' &&
           dsnSkipsVerification(dsn.value)
         ) {
-          report(connectionString.value);
+          reportAt(at(connectionString.value), argument);
           return;
         }
       }
 
-      const ssl = property(config, 'ssl');
+      const ssl = property(config.node, 'ssl');
       if (ssl === undefined) return;
 
-      for (const branch of sslBranches(ssl.value, scope)) {
-        if (branch.type !== AST_NODE_TYPES.ObjectExpression) continue;
-        const rejectUnauthorized = property(branch, 'rejectUnauthorized');
+      for (const branch of sslBranches(at(ssl.value))) {
+        if (branch.node.type !== AST_NODE_TYPES.ObjectExpression) continue;
+        const rejectUnauthorized = property(branch.node, 'rejectUnauthorized');
         if (
           rejectUnauthorized !== undefined &&
-          disablesVerification(rejectUnauthorized.value, scope)
+          disablesVerification({ node: rejectUnauthorized.value, scope: branch.env.scopeOf(rejectUnauthorized.value), env: branch.env })
         ) {
-          report(rejectUnauthorized);
+          reportAt({ node: rejectUnauthorized, scope: branch.scope, env: branch.env }, argument);
         }
       }
     };

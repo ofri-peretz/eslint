@@ -59,30 +59,46 @@ jwt.sign({ iat: Math.floor(Date.now() / 1000), sub: 'user' }, secret);`,
   });
 
   describe('Invalid Code', () => {
-    ruleTester.run('invalid - noTimestamp disables iat', requireIssuedAt, {
-      valid: [],
-      invalid: [
-        // noTimestamp: true explicitly disables iat
-        {
-          name: 'noTimestamp removes the only claim that dates the token',
-          code: `import jwt from 'jsonwebtoken';
+    /*
+     * Audit 2026-10 (zero-deferral pass, owner decision on FP-11b): these
+     * three cases used to be INVALID. `noTimestamp: true` is reported by
+     * `no-timestamp-manipulation` (recommended) at the same node, so this rule
+     * reporting it too was one defect, two findings. The literal `true` now
+     * belongs to that rule alone; this rule keeps the cases it alone can see —
+     * a `noTimestamp` chosen at runtime, and a jose builder that never sets iat.
+     */
+    ruleTester.run(
+      'flipped - noTimestamp: true is owned by no-timestamp-manipulation',
+      requireIssuedAt,
+      {
+        valid: [
+          {
+            // @found FP-11b, harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-jwt-security.md)
+            name: 'FP: noTimestamp: true is reported once, by no-timestamp-manipulation',
+            code: `import jwt from 'jsonwebtoken';
 jwt.sign({ sub: 'user' }, secret, { noTimestamp: true });`,
-          errors: [{ messageId: 'missingIssuedAt' }],
-        },
-        // noTimestamp with other options
-        {
-          code: `import jwt from 'jsonwebtoken';
+          },
+          {
+            name: 'noTimestamp: true beside other options is not double-reported',
+            code: `import jwt from 'jsonwebtoken';
 jwt.sign(payload, secret, { expiresIn: '1h', noTimestamp: true });`,
-          errors: [{ messageId: 'missingIssuedAt' }],
-        },
-        // SignJWT with noTimestamp
-        {
-          code: `import jwt from 'jsonwebtoken';
+          },
+          {
+            name: 'signJWT with noTimestamp: true is not double-reported',
+            code: `import jwt from 'jsonwebtoken';
 signJWT(payload, key, { noTimestamp: true });`,
-          errors: [{ messageId: 'missingIssuedAt' }],
-        },
-      ],
-    });
+          },
+        ],
+        invalid: [
+          {
+            name: 'a noTimestamp chosen at runtime may strip iat',
+            code: `import jwt from 'jsonwebtoken';
+jwt.sign(payload, secret, { noTimestamp: process.env.LEGACY === '1' });`,
+            errors: [{ messageId: 'missingIssuedAt' }],
+          },
+        ],
+      },
+    );
   });
 });
 

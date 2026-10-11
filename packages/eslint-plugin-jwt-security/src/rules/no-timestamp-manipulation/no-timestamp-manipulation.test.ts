@@ -143,3 +143,73 @@ jwt.sign(payload, key, opts);`,
     },
   );
 });
+
+// ---------------------------------------------------------------------------
+// Zero-deferral pass (audit 2026-10): an unbounded clockTolerance.
+// ---------------------------------------------------------------------------
+describe('no-timestamp-manipulation — maxClockToleranceSeconds', () => {
+  ruleTester.run('clockTolerance ceiling', noTimestampManipulation, {
+    valid: [
+      {
+        name: 'a 30-second clock tolerance is ordinary skew allowance',
+        code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, key, { algorithms: ['HS256'], clockTolerance: 30 });`,
+      },
+      {
+        name: 'exactly the default ceiling is allowed',
+        code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, key, { algorithms: ['HS256'], clockTolerance: 5 * 60 });`,
+      },
+      {
+        name: 'a raised ceiling admits a longer tolerance',
+        code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, key, { algorithms: ['HS256'], clockTolerance: 3600 });`,
+        options: [{ maxClockToleranceSeconds: 7200 }],
+      },
+      {
+        name: "jose's duration string is not a number of seconds",
+        code: `import { jwtVerify } from 'jose';
+await jwtVerify(token, key, { algorithms: ['HS256'], clockTolerance: '5 minutes' });`,
+      },
+      {
+        name: 'a tolerance chosen at runtime is not reported',
+        code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, key, { algorithms: ['HS256'], clockTolerance: Number(process.env.SKEW) });`,
+      },
+      {
+        name: 'arithmetic over a runtime value is not evaluated',
+        code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, key, { algorithms: ['HS256'], clockTolerance: skew * 60 });`,
+      },
+      {
+        name: 'a non-arithmetic operator is not evaluated',
+        code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, key, { algorithms: ['HS256'], clockTolerance: 1 << 20 });`,
+      },
+    ],
+    invalid: [
+      {
+        // @found FN-5b, harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-jwt-security.md)
+        name: 'FN: a one-year clockTolerance keeps expired tokens alive',
+        code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, key, { algorithms: ['HS256'], clockTolerance: 60 * 60 * 24 * 365 });`,
+        errors: [{ messageId: 'excessiveClockTolerance' }],
+      },
+      {
+        // @found FN-5b, reasoned during the 2026-10-10 zero-deferral pass
+        name: 'FN: an excessive clockTolerance held in a const',
+        code: `import jwt from 'jsonwebtoken';
+const SKEW = (3600 + 0) / 1 - 0;
+jwt.verify(token, key, { algorithms: ['HS256'], clockTolerance: SKEW });`,
+        errors: [{ messageId: 'excessiveClockTolerance' }],
+      },
+      {
+        name: 'a tolerance above a lowered ceiling',
+        code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, key, { algorithms: ['HS256'], clockTolerance: 120 });`,
+        options: [{ maxClockToleranceSeconds: 60 }],
+        errors: [{ messageId: 'excessiveClockTolerance' }],
+      },
+    ],
+  });
+});

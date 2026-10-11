@@ -384,3 +384,67 @@ ruleTester.run('no-dynamic-system-prompt (fp-fn audit)', noDynamicSystemPrompt, 
     },
   ]),
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Zero-deferral pass 2026-10-11: the request value is followed through any
+// number of same-file hops — declarations, reassignments, member reads,
+// awaits, and the returns / parameters of same-file functions.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('no-dynamic-system-prompt (multi-hop)', noDynamicSystemPrompt, {
+  valid: xai([
+    {
+      // @found reasoned from F-6b (benchmarks/audits/2026-10-10-fp-fn-vercel-ai-security.md): a helper that ignores its argument must not taint
+      name: 'FP: a same-file helper that returns a constant, whatever it is passed',
+      code: `
+        const DEFAULT_PERSONA = 'You are Acme support.';
+        function pickPersona(body) { return DEFAULT_PERSONA; }
+        export async function POST(req) {
+          const body = await req.json();
+          return streamText({ model, system: pickPersona(body), prompt: 'hi' });
+        }
+      `,
+    },
+  ]),
+  invalid: xai([
+    {
+      // @found F-6b, harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-vercel-ai-security.md)
+      name: 'FN: system prompt read from the body through a second variable',
+      code: `
+        export async function POST2(req) {
+          const body = await req.json();
+          const persona = body.persona as string;
+          return streamText({ model, system: persona, prompt: 'hello' });
+        }
+      `,
+      errors: [{ messageId: 'userControlledSystemPrompt' }],
+    },
+    {
+      // @found reasoned from F-6b: the same value through a reassignment and a same-file helper
+      name: 'FN: system prompt reassigned from a same-file helper that returns a body field',
+      code: `
+        function pickPersona(input) { return input.persona; }
+        export async function POST(req) {
+          const body = await req.json();
+          let system = 'You are Acme support.';
+          system = pickPersona(body);
+          return streamText({ model, system, prompt: 'hello' });
+        }
+      `,
+      errors: [{ messageId: 'userControlledSystemPrompt' }],
+    },
+    {
+      // @found reasoned from F-6b: the request handed to a same-file builder function
+      name: 'FN: a same-file builder whose parameter receives a body field',
+      code: `
+        function run(persona) {
+          return streamText({ model, system: persona, prompt: 'hello' });
+        }
+        export async function POST(req) {
+          const { persona } = await req.json();
+          return run(persona);
+        }
+      `,
+      errors: [{ messageId: 'userControlledSystemPrompt' }],
+    },
+  ]),
+});

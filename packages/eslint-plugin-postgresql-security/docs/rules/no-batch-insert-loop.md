@@ -122,6 +122,15 @@ async function insertUsers(users: User[], i = 0): Promise<void> {
 }
 ```
 
+### One round trip per ROW
+
+A loop is reported when its statement is the same on every pass and its
+parameters change — one row per round trip. A loop whose statement itself
+differs per pass (a migration runner reading a different file each time, an
+element of a list of statements, a statement built from the loop element) is
+a sequence of distinct statements and is not reported, nor is the identical
+statement repeated with no parameters.
+
 ### Promise.all with Mapping
 
 A row-WRITING statement (INSERT / UPDATE / DELETE / MERGE) inside `.map()`,

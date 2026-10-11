@@ -80,6 +80,28 @@ jwt.verify(token, key.getPublicKey(), { algorithms: ['RS256'] });
 const decoder = new TextDecoder();
 decoder.decode(bytes);
 base64url.decode(process.env.JWT_SECRET_B64);
+
+// Decoding a token this code fetched itself from the authorization server
+const tokens = await (await fetch(tokenUrl, { method: 'POST', body })).json();
+decodeJwt(tokens.id_token).sub;
+const response = await axios.post('/oauth/token', form);
+decodeJwt(response.data.access_token).exp;
+```
+
+A token is exempt as a **back-channel** value only when it structurally
+comes from an HTTP response this code requested: the body of a `fetch()`
+response, an axios / got / ky / undici response, or an openid-client grant
+(`client.callback()`, `authorizationCodeGrant()`). Its field or variable
+NAME is never consulted — `data.id_token` from `await request.json()` is a
+token the browser POSTed, and is reported. A parameter is exempt only when
+every call site in the file passes such a value.
+
+```javascript
+// ❌ reported: the incoming request's body is the front channel
+export async function POST(request) {
+  const data = await request.json();
+  return decodeJwt(data.id_token).sub;
+}
 ```
 
 `header.kid` is exempt by default: a forged kid only selects a key the

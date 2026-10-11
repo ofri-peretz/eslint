@@ -9,11 +9,7 @@
  * `no-insecure-ssl` and `no-hardcoded-credentials`, which read the same object.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import {
-  AST_NODE_TYPES,
-  resolveModuleBinding,
-  unwrapTypeSyntax,
-} from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, resolveModuleBinding } from '@interlace/eslint-devkit';
 import { PG_MODULES } from './index';
 
 const PG_MODULE_SET: ReadonlySet<string> = new Set(PG_MODULES);
@@ -24,9 +20,6 @@ const PG_CONFIG_TYPES: ReadonlySet<string> = new Set([
   'ClientConfig',
   'ConnectionConfig',
 ]);
-
-/** How many bindings deep to follow a value before giving up. */
-const MAX_DEPTH = 4;
 
 function packageRoot(specifier: string): string {
   const parts = specifier.split('/');
@@ -80,65 +73,6 @@ function singleInit(
   return def === undefined
     ? null
     : ((def.node as TSESTree.VariableDeclarator).init ?? null);
-}
-
-/**
- * What a call to a function written in THIS file returns, when its body is
- * a concise expression or ends in `return <expr>`.
- *
- * `new Pool(dbConfig())` with `function dbConfig() { return { … } }` is how
- * config is commonly factored, and the object was never read.
- */
-function localReturn(
-  call: TSESTree.CallExpression,
-  scope: TSESLint.Scope.Scope,
-): TSESTree.Node | null {
-  if (call.callee.type !== AST_NODE_TYPES.Identifier) return null;
-  const variable = lookup(call.callee.name, scope);
-  const declaration = variable?.defs.find((d) => d.type === 'FunctionName')
-    ?.node as TSESTree.FunctionDeclaration | undefined;
-  const init = singleInit(variable);
-  const fn =
-    declaration ??
-    (init?.type === AST_NODE_TYPES.ArrowFunctionExpression ||
-    init?.type === AST_NODE_TYPES.FunctionExpression
-      ? init
-      : undefined);
-  if (fn === undefined) return null;
-  if (fn.body.type !== AST_NODE_TYPES.BlockStatement) return fn.body;
-  const last = fn.body.body.at(-1);
-  return last?.type === AST_NODE_TYPES.ReturnStatement ? last.argument : null;
-}
-
-/**
- * The expression a value really holds, following a written-once local binding
- * or a local config factory.
- *
- * Every real application builds its connection config one binding away from
- * the constructor — `const config = {...}; new Pool(config)` — and the rule
- * read only a config object written inline at the call site.
- */
-export function effectiveValue(
-  node: TSESTree.Node,
-  scope: TSESLint.Scope.Scope,
-  depth = 0,
-): TSESTree.Node {
-  if (depth > MAX_DEPTH) return node;
-  const bare = unwrapTypeSyntax(node);
-  if (bare !== node) return effectiveValue(bare, scope, depth + 1);
-  if (node.type === AST_NODE_TYPES.CallExpression) {
-    const returned = localReturn(node, scope);
-    return returned === null
-      ? node
-      : effectiveValue(returned, scope, depth + 1);
-  }
-  if (node.type !== AST_NODE_TYPES.Identifier) return node;
-
-  const variable = lookup(node.name, scope);
-  if (variable === undefined) return node;
-  // A binding written more than once has no knowable value at the use site.
-  const init = singleInit(variable);
-  return init === null ? node : effectiveValue(init, scope, depth + 1);
 }
 
 /**

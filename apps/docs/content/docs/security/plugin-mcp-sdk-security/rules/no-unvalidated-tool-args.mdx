@@ -19,7 +19,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 Detects a destructured handler argument that the tool's `inputSchema` does not declare. This rule is part of [`eslint-plugin-mcp-sdk-security`](https://www.npmjs.com/package/eslint-plugin-mcp-sdk-security).
 
-💼 This rule is set to **error** in the `strict` config.
+💼 This rule is set to **error** in the `recommended` and `strict` configs.
 
 ## Quick Summary
 
@@ -97,7 +97,10 @@ server.registerTool('read', { inputSchema: { path: z.string(), mode: z.string() 
 - a **loose** schema — `.passthrough()`, `.loose()`, `z.looseObject({...})` —
   reported with a stronger message: an undeclared key reaches the handler
   exactly as the model sent it;
-- the legacy `tool(name, [description,] shape, [annotations,] cb)` params shape;
+- the legacy `tool(name, [description,] shape, [annotations,] cb)` params shape,
+  including one whose schemas are consts or come from a relative module
+  (`{ path: PathSchema }`) — a value that resolves to a schema call makes the
+  object a params shape;
 - a handler declared as a function in the same file and passed by name.
 
 ## What this rule deliberately does not report
