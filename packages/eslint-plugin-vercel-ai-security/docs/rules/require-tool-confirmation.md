@@ -25,7 +25,7 @@ This rule identifies destructive tools (delete, transfer, execute, etc.) that do
 | **OWASP Agentic**  | [ASI09: Human-Agent Trust Exploitation](https://owasp.org)                                             |
 | **CWE**            | [CWE-862: Missing Authorization](https://cwe.mitre.org/data/definitions/862.html)                      |
 | **CVSS**           | 7.5                                                                                                    |
-| **Config Default** | `warn` (recommended), `error` (strict)                                                                 |
+| **Config Default** | `error` (recommended, strict)                                                                          |
 
 ## 🔍 What This Rule Detects
 
@@ -79,7 +79,7 @@ const tools = {
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
-| `destructivePatterns` | `string[]` | `["delete","remove","drop","truncate","destroy","transfer","send","pay","withdraw","purchase","execute","run","eval","exec","spawn","update","modify","change","alter","create","insert","post","write"]` | Patterns that suggest destructive operations |
+| `destructivePatterns` | `string[]` | `["delete","remove","drop","truncate","destroy","transfer","send","pay","withdraw","purchase","execute","exec","eval","spawn","shell","update","modify","alter","insert","write"]` | Patterns that suggest destructive operations |
 
 ## 🛡️ Why This Matters
 
@@ -94,6 +94,19 @@ Unconfirmed destructive operations can cause:
 
 - [`require-tool-schema`](./require-tool-schema.md) - Validate tool inputs
 - [`require-audit-logging`](./require-audit-logging.md) - Log AI operations
+
+## 🔄 Changes in the 2026-10-10 FP/FN audit
+
+- Tools written with the idiomatic `tool({...})` / `dynamicTool({...})` helper
+  are checked (they used to be skipped).
+- The SDK's own approval API counts: `needsApproval` on the tool, or
+  `toolApproval` on the call. A tool with no `execute` is confirmed on the client
+  and is not reported.
+- Tool names are matched by whole word, and the documented default patterns now
+  actually apply. `create`, `post`, `change` and `run` were removed from the
+  defaults (`createChart` is not destructive); `send`, `pay`, `exec`, `drop` and
+  the rest now take effect.
+- **Options:** the documented `defaultOptions` now apply. Earlier versions read `context.options` and silently ran a shorter hard-coded list instead.
 
 ## Known False Negatives
 

@@ -293,9 +293,115 @@ describe('no-missing-client-release', () => {
     // NOT wrapped — a file with no PostgreSQL client does no work at all.
     ruleTester.run('the module gate still abstains', noMissingClientRelease, {
       valid: [
-        'const pool = new Pool();\nasync function f() { const c = await pool.connect(); }',
+        { name: 'the module gate abstains in a file with no PostgreSQL client', code: 'const pool = new Pool();\nasync function f() { const c = await pool.connect(); }' },
       ],
       invalid: [],
     });
+  });
+});
+
+/** FP/FN review 2026-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md). */
+describe('no-missing-client-release — fp/fn review 2026-10', () => {
+  ruleTester.run('REL-1: imported, injected and typed pools', noMissingClientRelease, {
+    valid: pg([
+      // Released properly through an injected pool.
+      { name: 'an injected typed pool released in finally is correct', code: 'export class Repo { constructor(private readonly pool: Pool) {} async run() { const c = await this.pool.connect(); try { await c.query("SELECT 1"); } finally { c.release(); } } }' },
+      // A checkout whose client never runs a query is not evidence of a pool.
+      { name: 'a broker channel checkout that runs no query is not a pg pool checkout', code: "import { broker } from '../lib/broker';\nasync function f() { const ch = await broker.connect(); ch.publish('x'); }" },
+      // A typed parameter that is NOT pg's Pool.
+      { name: 'a parameter typed as generic-pool Pool is not a pg pool', code: "import { Pool as Workers } from 'generic-pool';\nexport async function f(p: Workers) { const c = await p.connect(); }" },
+      { name: 'a parameter typed pg.PoolClient is not a pool', code: "import pg from 'pg';\nexport async function f(p: pg.PoolClient) { const c = await p.connect(); }" },
+      { name: 'a deeply qualified Pool type cannot be resolved to pg', code: 'export async function f(p: ns.pg.Pool) { const c = await p.connect(); }' },
+      { name: 'a generic type reference is not a pg pool type', code: 'export async function f(p: Array<string>) { const c = await p.connect(); }' },
+      { name: 'a destructured typed parameter is not read', code: 'export async function f({ p }: { p: Pool }) { const c = await p.connect(); }' },
+      // `this` outside any class, and a computed field.
+      { name: 'this outside any class has no declared field', code: 'export async function f() { const c = await this.pool.connect(); }' },
+      { name: 'a computed this[key] field cannot be named', code: 'class R { async f() { const c = await this[key].connect(); } }' },
+      { name: 'a typed field that is not the receiver does not make it a pool', code: 'class R { db: Pool; [k]: Pool; async f() { const c = await this.other.connect(); } }' },
+      { name: 'a constructor parameter that is not a parameter property is not a field', code: 'class R { constructor(other: Pool, private x: number) {} async f() { const c = await this.pool.connect(); } }' },
+    ]),
+    invalid: pg([
+      {
+        name: 'pool imported from a local db module; the client runs queries',
+        code: "import { pool } from './db';\nexport async function transfer() { const client = await pool.connect(); await client.query('BEGIN'); await client.query('COMMIT'); }",
+        errors: [{ messageId: 'missingClientRelease' }],
+      },
+      {
+        name: 'pool as an untyped parameter',
+        code: "export async function work(p) { const c = await p.connect(); await c.query('SELECT 1'); }",
+        errors: [{ messageId: 'missingClientRelease' }],
+      },
+      {
+        name: 'pool injected through a constructor parameter property',
+        code: "export class Repo { constructor(private readonly pool: Pool) {} async run() { const c = await this.pool.connect(); } }",
+        errors: [{ messageId: 'missingClientRelease' }],
+      },
+      {
+        name: 'pool declared as a typed class field',
+        code: "import pg from 'pg';\nexport class Repo { private db: pg.Pool; async run() { const c = await this.db.connect(); } }",
+        errors: [{ messageId: 'missingClientRelease' }],
+      },
+      {
+        name: 'a pool type from a scoped driver package',
+        code: "import type { Pool as NeonPool } from '@neondatabase/serverless';\nexport async function f(p: NeonPool) { const c = await p.connect(); }",
+        errors: [{ messageId: 'missingClientRelease' }],
+      },
+      {
+        name: 'pool as a typed parameter and a typed const',
+        code: "export async function f(p: Pool) { const c = await p.connect(); }\nconst shared: Pool = make();\nexport async function g() { const c = await shared.connect(); }",
+        errors: [{ messageId: 'missingClientRelease' }, { messageId: 'missingClientRelease' }],
+      },
+    ]),
+  });
+
+  ruleTester.run('REL-2: passing the client to a helper is not handing it off', noMissingClientRelease, {
+    valid: pg([
+      // A wrapper that is handed the client and runs nothing on it itself.
+      { name: 'a wrapper handed the client that runs no query itself owns the release', code: "import { withClient } from './tx';\nconst pool = new Pool();\nexport async function f() { const c = await pool.connect(); await withClient(c, (x) => x.query('SELECT 1')); }" },
+    ]),
+    invalid: pg([
+      {
+        name: 'the function runs the transaction itself and passes the client to a repository helper',
+        code: "const pool = new Pool();\nasync function insertUser(client, name) { await client.query('INSERT INTO users (name) VALUES ($1)', [name]); }\nexport async function signup(name) { const client = await pool.connect(); await client.query('BEGIN'); await insertUser(client, name); await client.query('COMMIT'); }",
+        errors: [{ messageId: 'missingClientRelease' }],
+      },
+    ]),
+  });
+
+  ruleTester.run('REL-3: released in the try and in its catch covers every path', noMissingClientRelease, {
+    valid: pg([
+      {
+// @found harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md)
+ name: 'FP: release at the end of the try plus release in its catch covers every path', code: "const pool = new Pool();\nexport async function get(id) { const client = await pool.connect(); try { const res = await client.query('SELECT * FROM users WHERE id = $1', [id]); client.release(); return res.rows[0]; } catch (err) { client.release(err); throw err; } }" },
+      {
+// @found reasoned during the 2026-10-10 FP/FN audit, not seen in real code
+ name: 'FP: release as the last try statement plus catch release covers every path', code: "const pool = new Pool();\nexport async function get(id) { const client = await pool.connect(); try { await client.query('SELECT 1'); client.release(); } catch (err) { client.release(err); throw err; } }" },
+      // A `return` inside a nested callback does not leave the try early.
+      { name: 'a return inside a nested callback does not leave the try early', code: "const pool = new Pool();\nexport async function get(ids) { const client = await pool.connect(); try { const keep = ids.filter((x) => { return x > 0; }); await client.query('SELECT 1', [keep]); client.release(); } catch (err) { client.release(err); throw err; } }" },
+      // Released in a nested block of the try, then in the catch.
+      { name: 'a release after a nested block plus a conditional catch release covers every path', code: "const pool = new Pool();\nexport async function get(id) { const client = await pool.connect(); try { { await client.query('SELECT 1'); } client.release(); } catch (err) { if (err) { client.release(err); } throw err; } }" },
+    ]),
+    invalid: pg([
+      {
+        name: 'released in the try, but the catch path leaks',
+        code: "const pool = new Pool();\nexport async function get(id) { const client = await pool.connect(); try { await client.query('SELECT 1'); client.release(); } catch (err) { log(err); } }",
+        errors: [{ messageId: 'releaseNotGuaranteed' }],
+      },
+      {
+        name: 'an early return before the try-block release leaks',
+        code: "const pool = new Pool();\nexport async function get(id) { const client = await pool.connect(); try { if (!id) { return null; } await client.query('SELECT 1'); client.release(); } catch (err) { client.release(err); throw err; } }",
+        errors: [{ messageId: 'releaseNotGuaranteed' }],
+      },
+      {
+        name: 'an awaited release is not read as the try-block release',
+        code: "const pool = new Pool();\nexport async function get(id) { const client = await pool.connect(); try { await client.query('SELECT 1'); await client.release(); } catch (err) { client.release(err); throw err; } }",
+        errors: [{ messageId: 'releaseNotGuaranteed' }],
+      },
+      {
+        name: 'released in a catch that belongs to a different try',
+        code: "const pool = new Pool();\nexport async function get(id) { const client = await pool.connect(); try { await client.query('SELECT 1'); client.release(); return 1; } catch (e) { throw e; }\ntry { x(); } catch (err) { client.release(err); } }",
+        errors: [{ messageId: 'releaseNotGuaranteed' }],
+      },
+    ]),
   });
 });

@@ -360,6 +360,12 @@ const REGISTERED: RegistryEntry[] = [
       'startsWith("on") identifies a JSX event prop, which is the React convention for exactly that. Renaming makes it not an event prop.',
   },
   {
+    file: 'eslint-plugin-postgresql-security/src/rules/no-unsafe-query/index.ts',
+    direction: 'suppress',
+    reason:
+      'endsWith("$") reads the static SQL text before an interpolation, not an identifier: a lone `$` there prefixes an interpolated index to form a `$1`-style bind placeholder (and `$$` opens a dollar-quoted body). Renaming any variable cannot change it.',
+  },
+  {
     file: 'eslint-plugin-jwt-security/src/utils/index.ts',
     direction: 'report',
     reason:
@@ -572,82 +578,12 @@ const REGISTERED: RegistryEntry[] = [
   // from `ai` / `@ai-sdk/*` once, in a shared util, the way node-security now
   // resolves child_process — not seven separate patches.
   {
-    file: 'eslint-plugin-vercel-ai-security/src/rules/require-audit-logging/index.ts',
-    direction: 'suppress',
-    reason:
-      'AI SDK entry points substring-matched against a callee to gate the rule. Needs the shared import-resolution util.',
-  },
-  {
-    file: 'eslint-plugin-vercel-ai-security/src/rules/require-error-handling/index.ts',
-    direction: 'suppress',
-    reason:
-      'AI SDK entry points substring-matched against a callee to gate the rule. Needs the shared import-resolution util.',
-  },
-  {
-    file: 'eslint-plugin-vercel-ai-security/src/rules/require-output-validation/index.ts',
-    direction: 'suppress',
-    reason:
-      'AI SDK entry points substring-matched against a callee to gate the rule. Needs the shared import-resolution util.',
-  },
-  {
-    file: 'eslint-plugin-vercel-ai-security/src/rules/require-rag-content-validation/index.ts',
-    direction: 'suppress',
-    reason:
-      'AI SDK entry points substring-matched against a callee to gate the rule. Needs the shared import-resolution util.',
-  },
-  {
-    file: 'eslint-plugin-vercel-ai-security/src/rules/require-request-timeout/index.ts',
-    direction: 'suppress',
-    reason:
-      'AI SDK entry points substring-matched against a callee to gate the rule. Needs the shared import-resolution util.',
-  },
-  {
-    file: 'eslint-plugin-vercel-ai-security/src/rules/require-tool-schema/index.ts',
-    direction: 'suppress',
-    reason:
-      'AI SDK entry points substring-matched against a callee to gate the rule. Needs the shared import-resolution util.',
-  },
-  {
-    file: 'eslint-plugin-vercel-ai-security/src/rules/require-validated-prompt/index.ts',
-    direction: 'suppress',
-    reason:
-      'AI SDK entry points substring-matched against a callee to gate the rule. Needs the shared import-resolution util.',
-  },
-  {
     file: 'eslint-plugin-mongodb-security/src/rules/no-operator-injection/index.ts',
     direction: 'report',
     reason:
       'userInputPatterns substring-matched against the printed text of a value to decide it is ' +
       'user input. The same defect no-ssrf carried until it moved to readsRequestShape, one ' +
       'layer further from the AST.',
-  },
-  {
-    file: 'eslint-plugin-vercel-ai-security/src/rules/no-dynamic-system-prompt/index.ts',
-    direction: 'suppress',
-    reason:
-      'aiSDKFunctions substring-matched against a callee to decide whether this is an AI SDK ' +
-      'call at all. Loose matching here GATES the rule on, so it widens what reports — but the ' +
-      'names (generateText, streamText) are distinctive enough that the practical risk is a ' +
-      'missed call, not a false one. Resolve the import instead.',
-  },
-  {
-    file: 'eslint-plugin-vercel-ai-security/src/rules/no-hardcoded-api-keys/index.ts',
-    direction: 'suppress',
-    reason:
-      'providerFunctions substring-matched against a callee; same shape as no-dynamic-system-prompt.',
-  },
-  {
-    file: 'eslint-plugin-vercel-ai-security/src/rules/no-sensitive-in-prompt/index.ts',
-    direction: 'suppress',
-    reason:
-      'aiSDKFunctions substring-matched against a callee; same shape as no-dynamic-system-prompt.',
-  },
-  {
-    file: 'eslint-plugin-vercel-ai-security/src/rules/no-unsafe-output-handling/index.ts',
-    direction: 'report',
-    reason:
-      'dangerousFunctions substring-matched against a callee to decide the sink is dangerous. ' +
-      '`exec` matches `execute`, `eval` matches `evaluate` — both ordinary method names.',
   },
   // ── direction: report — a wrong guess ships a false positive ──────────
   {

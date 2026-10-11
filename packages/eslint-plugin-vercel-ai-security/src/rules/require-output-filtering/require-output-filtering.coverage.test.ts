@@ -85,16 +85,34 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('require-output-filtering (branch coverage)', requireOutputFiltering, {
   valid: xai([
-    // String-literal 'execute' key — keyName resolves to null, arrow skipped.
-    {
-      code: `const w = { 'execute': () => db.queryAll() };`,
-    },
     // Arrow not attached to a Property at all.
     {
       code: `const cb = () => db.queryAll();`,
     },
+    // A data-source chain that ends in a filter is filtered.
+    {
+      name: 'a data-source chain that ends in a filter is filtered',
+      code: `const t = { execute: () => db.users.filter(isPublic) };`,
+    },
+    // Returning a parameter: not bound to a data-source call.
+    {
+      name: 'returning a parameter is not returning a data-source result',
+      code: `const t = { execute: async (row) => { return row; } };`,
+    },
+    // A bare return inside execute.
+    {
+      name: 'a bare return inside execute reports nothing',
+      code: `const t = { execute: async () => { if (done) return; return { ok: true }; } };`,
+    },
   ]),
   invalid: xai([
+    // (Moved 2026-10-10 from valid) a quoted 'execute' key is the same
+    // property; it used to be skipped.
+    {
+      name: 'a quoted execute key is the same property and is checked',
+      code: `const w = { 'execute': () => db.queryAll() };`,
+      errors: [{ messageId: 'missingOutputFilter' }],
+    },
     // Full tools nesting: tool name resolved from the tools object property.
     {
       code: `generateText({ tools: { fetchUser: { execute: () => db.queryUsers(id) } } });`,
@@ -166,10 +184,20 @@ describe('require-output-filtering — synthetic AST', () => {
       key: { type: 'Identifier', name: 'execute' },
       parent: detachedObject,
     };
+    // The body must be a member call on a data source (`db.queryAll()`) —
+    // the rule matches the callee's path, not the text a bare call reads as.
     const arrow = {
       type: 'ArrowFunctionExpression',
       parent: executeProp,
-      body: { type: 'CallExpression', callee: { type: 'Identifier', name: 'q' } },
+      body: {
+        type: 'CallExpression',
+        callee: {
+          type: 'MemberExpression',
+          computed: false,
+          object: { type: 'Identifier', name: 'db' },
+          property: { type: 'Identifier', name: 'queryAll' },
+        },
+      },
     };
     (listeners.ArrowFunctionExpression as Listener)(arrow);
     expect(reports).toHaveLength(1);

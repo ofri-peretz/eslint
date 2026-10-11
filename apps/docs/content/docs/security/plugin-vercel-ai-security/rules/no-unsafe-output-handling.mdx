@@ -62,7 +62,7 @@ Hello
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
-| `aiOutputPatterns` | `string[]` | `["result.text","response.text","completion","generated","aiOutput","aiResponse","llmOutput","llmResponse","modelOutput","textContent",".text"]` | Variable patterns that suggest AI output |
+| `aiOutputPatterns` | `string[]` | `["result.text","response.text","completion","generated","aiOutput","aiResponse","llmOutput","llmResponse","modelOutput",".text"]` | Variable patterns that suggest AI output |
 
 ## 🛡️ Why This Matters
 
@@ -78,6 +78,29 @@ Passing AI output to dangerous functions enables:
 - [`require-validated-prompt`](./require-validated-prompt) - Validate input prompts
 - [`require-output-filtering`](./require-output-filtering) - Filter tool output
 
+## 🔄 Changes in the 2026-10-10 FP/FN audit
+
+- **Tool inputs are model output.** The parameters of a tool's `execute` (in
+  `tool({...})`, `dynamicTool({...})`, or an object literal with
+  `inputSchema`/`parameters`) are filled from the model's tool call, so
+  `execute: async ({ command }) => execSync(command)` is reported.
+- **Sinks are matched by resolved callee, never by substring.** Code execution:
+  global `eval` / `Function` (call or `new`), `child_process`
+  `exec`/`execSync`/`execFile`/`execFileSync`/`spawn`/`spawnSync`/`fork`, and
+  `vm` `runInNewContext`/`runInThisContext`/`runInContext`/`compileFunction`/
+  `new vm.Script` — resolved through imports and `require`. SQL: the first
+  argument of `.query`/`.execute`/`.raw`/`.run`/`.unsafe`/`$queryRawUnsafe`/
+  `$executeRawUnsafe`. `/re/.exec(result.text)`, `evaluateAnswer(...)` and
+  `truncate(...)` are no longer reported.
+- **New sinks:** `dangerouslySetInnerHTML={{ __html: … }}`, and `fetch(url)`
+  where model output chooses the URL or its leading part (new message
+  `unsafeOutputInRequest`, CWE-918). A fixed host with model input in the query
+  string is not reported.
+- **Calls are not output.** `DOMPurify.sanitize(result.text)` assigned to
+  `innerHTML` is not reported; a string method on output (`text.trim()`) still is.
+- `textContent` was removed from the default `aiOutputPatterns`.
+- **Options:** the documented `defaultOptions` now apply. Earlier versions read `context.options` and silently ran a shorter hard-coded list instead.
+
 <WhenNotToUse />
 
 <FalseNegativeCTA />
@@ -85,19 +108,6 @@ Passing AI output to dangerous functions enables:
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
-
-### AI Output Stored in Variable
-
-**Why**: Assignment to dangerous functions from variables is not traced.
-
-```typescript
-// ❌ NOT DETECTED - Output stored first
-const aiOutput = (await generateText({ prompt })).text;
-// Later in code...
-eval(aiOutput); // Not linked to AI output
-```
-
-**Mitigation**: Never use eval or similar with any external data.
 
 ### Custom Dangerous Functions
 
@@ -108,10 +118,17 @@ eval(aiOutput); // Not linked to AI output
 executeCode(result.text); // Custom wrapper, not one of the recognised sinks
 ```
 
-**Mitigation**: none available — the recognised sinks (`eval`, `Function`,
-`exec`, `execSync`, `execFile`, `spawn`) are fixed and not configurable. Call
-the underlying function directly at the point the AI output is used, or wrap
-the call site in your own review.
+**Mitigation**: none available — the recognised sinks (global `eval` /
+`Function`, `child_process` and `vm` functions resolved through imports, and
+the SQL / `fetch` / HTML sinks listed above) are fixed and not configurable.
+Call the underlying function directly at the point the AI output is used, or
+wrap the call site in your own review.
+
+### Model Output Passed Through Another Variable or Helper
+
+**Why**: The rule binds the result of an SDK call, a property read off it, and
+a tool's `execute` parameters. A value copied through a second variable or
+returned from a helper is data flow, which this plugin does not do.
 
 ### Dynamic Function Invocation
 
@@ -124,17 +141,6 @@ window[method](result.text); // Dynamic access
 ```
 
 **Mitigation**: Avoid dynamic function invocation.
-
-### Framework Rendering
-
-**Why**: Framework-specific unsafe patterns may not be recognized.
-
-```typescript
-// ❌ NOT DETECTED - React dangerouslySetInnerHTML
-<div dangerouslySetInnerHTML={{ __html: result.text }} />
-```
-
-**Mitigation**: Use framework-specific security rules.
 
 ## 📚 References
 

@@ -168,8 +168,7 @@ describe('no-batch-insert-loop — regression locks', () => {
       // to escape sequential round trips — reporting it fires on the fix — and
       // the carve-out must survive the indirection through a binding.
       "async function f() { await Promise.all(ids.map(id => pool.query('SELECT id FROM t WHERE id = $1', [id]))); }",
-      "async function f() { const pending = ids.map(id => pool.query('SELECT 1')); await Promise.all(pending); }",
-      "async function f() { return Promise.allSettled(skus.map(s => pool.query('UPDATE p SET r = now() WHERE sku = $1', [s]))); }",
+      { name: 'a map of reads bound to a const and awaited by Promise.all is the concurrency fix', code: "async function f() { const pending = ids.map(id => pool.query('SELECT 1')); await Promise.all(pending); }" },
       // A lambda the loop STORES rather than invokes. `push` stores, `map`
       // invokes; "the parent is a call" cannot tell them apart.
       "for (const a of accounts) { jobs.push(() => pool.query('UPDATE a SET s = now() WHERE id = $1', [a.id])); }",
@@ -232,5 +231,105 @@ describe('no-batch-insert-loop — walk boundaries', () => {
         errors: [{ messageId: 'noBatchInsertLoop' }],
       },
     ]),
+  });
+});
+
+/** FP/FN review 2026-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md). */
+describe('no-batch-insert-loop — fp/fn review 2026-10', () => {
+  ruleTester.run('BIL-1: an already-batched statement in a chunk loop', noBatchInsertLoop, {
+    valid: pg([
+      {
+// @found harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md)
+ name: 'FP: a chunk loop over an unnest batch insert is the rule\'s own suggested fix', code: "const pool = new Pool();\nfor (const batch of chunks) { await pool.query('INSERT INTO users (email, name) SELECT * FROM unnest($1::text[], $2::text[])', [batch.map((u) => u.email), batch.map((u) => u.name)]); }" },
+      {
+// @found reasoned during the 2026-10-10 FP/FN audit, not seen in real code
+ name: 'FP: a chunk loop over a pg-format %L batch insert is already batched', code: "const pool = new Pool();\nfor (const batch of chunks) { await pool.query(format('INSERT INTO t (a, b) VALUES %L', batch)); }" },
+      {
+// @found reasoned during the 2026-10-10 FP/FN audit, not seen in real code
+ name: 'FP: a chunk loop over a jsonb_to_recordset batch insert is already batched', code: "const pool = new Pool();\nfor (const batch of chunks) { await pool.query({ text: 'INSERT INTO t SELECT * FROM jsonb_to_recordset($1) AS x(a int)', values: [JSON.stringify(batch)] }); }" },
+    ]),
+    invalid: pg([
+      {
+        name: 'a statement built by a call with no arguments is unreadable, so reported',
+        code: 'const pool = new Pool();\nfor (const r of rows) { await pool.query(build()); }',
+        errors: [{ messageId: 'noBatchInsertLoop' }],
+      },
+      {
+        name: 'one row per round trip is still N+1',
+        code: "const pool = new Pool();\nfor (const r of rows) { await pool.query('INSERT INTO t (a) VALUES ($1)', [r.a]); }",
+        errors: [{ messageId: 'noBatchInsertLoop' }],
+      },
+    ]),
+  });
+
+  ruleTester.run('BIL-2: keyset pagination in for(;;)', noBatchInsertLoop, {
+    valid: pg([
+      {
+// @found harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md)
+ name: 'FP: keyset pagination with LIMIT in for(;;) is one query per page', code: "const pool = new Pool();\nfor (;;) { const { rows } = await pool.query('SELECT id FROM users WHERE id > $1 ORDER BY id LIMIT 1000', [last]); if (!rows.length) break; last = rows.at(-1).id; }" },
+    ]),
+    invalid: pg([
+      {
+        name: 'a counted for loop with LIMIT is not pagination',
+        code: "const pool = new Pool();\nfor (let i = 0; i < ids.length; i++) { await pool.query('SELECT id FROM users WHERE id = $1 LIMIT 1', [ids[i]]); }",
+        errors: [{ messageId: 'noBatchInsertLoop' }],
+      },
+    ]),
+  });
+
+  // Moved here from 'shapes that are not an N+1' (it was a VALID case). A
+  // per-row UPDATE inside `.map()` issues one statement per element whatever
+  // awaits the array — `UPDATE p SET r = now() WHERE sku = ANY($1)` is the
+  // batched form — and the rule's own docs list the `.map` write as Incorrect.
+  ruleTester.run('BIL-3: a per-row UPDATE through allSettled(map) is reported', noBatchInsertLoop, {
+    valid: [],
+    invalid: pg([
+      {
+// @found reasoned during the 2026-10-10 FP/FN audit, not seen in real code
+
+          name: 'FN: a per-row UPDATE through Promise.allSettled(map) is one round trip per element',
+        code: "async function f() { return Promise.allSettled(skus.map(s => pool.query('UPDATE p SET r = now() WHERE sku = $1', [s]))); }",
+        errors: [{ messageId: 'noBatchInsertLoop' }],
+      },
+    ]),
+  });
+
+  ruleTester.run('BIL-3: a write inside .map() is one round trip per element', noBatchInsertLoop, {
+    valid: pg([
+      // Concurrent reads through the pool stay the documented trade-off.
+      { name: 'concurrent reads through Promise.all(map) stay the documented trade-off', code: "const pool = new Pool();\nawait Promise.all(ids.map((id) => pool.query('SELECT id, name FROM users WHERE id = $1', [id])));" },
+      { name: 'an unreadable statement inside map is not treated as a write', code: "const pool = new Pool();\nawait Promise.all(ids.map((id) => pool.query(sqlFor(id))));" },
+    ]),
+    invalid: pg([
+      {
+        name: 'the docs’ own Incorrect example',
+        code: "users.map((user) => client.query('INSERT INTO users VALUES ($1)', [user.id]));",
+        errors: [{ messageId: 'noBatchInsertLoop' }],
+      },
+      {
+        name: 'Promise.all over per-item INSERTs on one client',
+        code: "await Promise.all(items.map((it) => client.query('INSERT INTO order_items (order_id, sku) VALUES ($1, $2)', [orderId, it.sku])));",
+        errors: [{ messageId: 'noBatchInsertLoop' }],
+      },
+      {
+        name: 'Array.from with a mapper (the docs’ Known False Negative)',
+        code: "const queries = Array.from(users, (u) => client.query('INSERT INTO users VALUES ($1)', [u.id]));\nawait Promise.all(queries);",
+        errors: [{ messageId: 'noBatchInsertLoop' }],
+      },
+      {
+        name: 'flatMap with UPDATE and DELETE',
+        code: "items.flatMap((it) => [client.query({ text: 'UPDATE t SET a = 1 WHERE id = $1', values: [it] }), client.query(`DELETE FROM t WHERE id = $1`, [it])]);",
+        errors: [{ messageId: 'noBatchInsertLoop' }, { messageId: 'noBatchInsertLoop' }],
+      },
+    ]),
+  });
+
+  ruleTester.run('FQ-2: a non-pg .query() in a pg-importing test file', noBatchInsertLoop, {
+    valid: pg([
+      {
+// @found harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md)
+ name: 'FP: supertest .query({ q }) in a loop is not a database query', code: "for (const term of terms) { await request(app).get('/users/search').query({ q: term }).expect(200); }" },
+    ]),
+    invalid: pg([]),
   });
 });

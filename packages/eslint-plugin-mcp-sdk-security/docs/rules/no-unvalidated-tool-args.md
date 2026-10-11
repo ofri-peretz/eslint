@@ -88,20 +88,31 @@ server.registerTool('read', { inputSchema: { path: z.string(), mode: z.string() 
   async ({ path }) => readFile(path));
 ```
 
+## Which schemas are read
+
+- the raw shape, `inputSchema: { path: z.string() }`;
+- an object schema written in place — `z.object({...})`, `z.strictObject({...})`
+  — through chained calls that keep its key set (`.strict()`, `.describe()`,
+  `.partial()`, …). This is the canonical form in SDK v2;
+- a **loose** schema — `.passthrough()`, `.loose()`, `z.looseObject({...})` —
+  reported with a stronger message: an undeclared key reaches the handler
+  exactly as the model sent it;
+- the legacy `tool(name, [description,] shape, [annotations,] cb)` params shape;
+- a handler declared as a function in the same file and passed by name.
+
 ## What this rule deliberately does not report
 
-- **A schema it cannot read.** `inputSchema: z.object({ … })`,
-  `inputSchema: SharedSchema`, or one built with a spread could declare
-  anything. Judging a handler against a shape this file does not contain would
-  report correct code, so the whole registration is skipped.
+- **A schema it cannot read.** `inputSchema: SharedSchema`, `buildSchema()`,
+  `z.object(shapeVar)`, `.extend(...)`, or one built with a spread could
+  declare anything. Judging a handler against a shape this file does not
+  contain would report correct code, so the whole registration is skipped.
 - **A registration with no `inputSchema`.** That is
   [`require-tool-input-schema`](./require-tool-input-schema.md)'s question.
 - **The whole-args form.** `async (args) => read(args.extra)` hands the object
   around; following every `args.x` through a body is data-flow analysis this
-  rule is built to avoid. The destructured shape is where the mismatch is
-  visible in one place, and it is the shape the SDK documentation uses.
+  rule is built to avoid.
 - **A rest element.** `{ path, ...rest }` names no specific key.
-- **A file that never imports `@modelcontextprotocol/sdk`.**
+- **A file that imports no MCP server package.**
 
 ## When Not To Use It
 

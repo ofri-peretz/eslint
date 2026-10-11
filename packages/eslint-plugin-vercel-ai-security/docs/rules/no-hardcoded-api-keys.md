@@ -24,7 +24,7 @@ This rule identifies hardcoded API keys, tokens, and secrets in your codebase th
 | **OWASP Agentic**  | [ASI03: Identity & Privilege Abuse](https://owasp.org)                                    |
 | **CWE**            | [CWE-798: Use of Hard-coded Credentials](https://cwe.mitre.org/data/definitions/798.html) |
 | **CVSS**           | 9.8                                                                                       |
-| **Config Default** | `error` (all configs)                                                                     |
+| **Config Default** | `error` (recommended, strict)                                                                     |
 
 ## 🔍 What This Rule Detects
 
@@ -80,7 +80,7 @@ const openai = createOpenAI();
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
-| `apiKeyPatterns` | `string[]` | `["apiKey","api_key","token","secret","credentials"]` | Property names that contain API keys |
+| `apiKeyPatterns` | `string[]` | `["apiKey","api_key","token","secret","credentials","authorization"]` | Property names that contain API keys |
 
 ## 🛡️ Why This Matters
 
@@ -95,21 +95,24 @@ Hardcoded API keys can be:
 
 - [`no-sensitive-in-prompt`](./no-sensitive-in-prompt.md) - Prevent sensitive data in prompts
 
+## 🔄 Changes in the 2026-10-10 FP/FN audit
+
+- **Provider-shaped keys are reported wherever they appear** — a module
+  constant, a header value (`'x-api-key'`, `Authorization: 'Bearer sk-…'`), an
+  array element: `sk-…`/`sk-proj-…`/`sk-ant-…`, `AIza…`, `gsk_…`, `hf_…`,
+  `r8_…`, `xai-…`, `pplx-…`, `AKIA…`. The body must contain a digit, so
+  `sk-loading-spinner` is not a key.
+- **Generic long strings** are reported only under a key-ish name (whole word of
+  `apiKeyPatterns`, now including `authorization`) and only if they are not a
+  URL, a multi-segment resource path, or the NAME of an environment variable
+  (`OPENAI_API_KEY_PRODUCTION`).
+- One literal is reported once (it used to be reported twice when passed as a
+  provider's second argument).
+- **Options:** the documented `defaultOptions` now apply. Earlier versions read `context.options` and silently ran a shorter hard-coded list instead.
+
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
-
-### Keys from Variables
-
-**Why**: Keys stored in variables are not analyzed.
-
-```typescript
-// ❌ NOT DETECTED - Key from variable
-const apiKey = 'sk-proj-abc123xyz789...';
-const openai = createOpenAI({ apiKey });
-```
-
-**Mitigation**: Use environment variables directly. Never store keys in variables.
 
 ### Encoded/Obfuscated Keys
 

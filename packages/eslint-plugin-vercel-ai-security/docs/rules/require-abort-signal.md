@@ -24,7 +24,7 @@ This rule identifies streaming AI SDK calls (streamText, streamObject) that don'
 | **OWASP LLM**      | [LLM10: Unbounded Consumption](https://owasp.org/www-project-top-10-for-large-language-model-applications/) |
 | **CWE**            | [CWE-404: Improper Resource Shutdown](https://cwe.mitre.org/data/definitions/404.html)                      |
 | **CVSS**           | 4.0                                                                                                         |
-| **Config Default** | `off` (recommended), `warn` (strict)                                                                        |
+| **Config Default** | `off` (recommended), `error` (strict)                                                                        |
 
 ## 🔍 What This Rule Detects
 
@@ -86,6 +86,13 @@ Without abort signals:
 
 - [`require-max-tokens`](./require-max-tokens.md) - Limit token consumption
 - [`require-error-handling`](./require-error-handling.md) - Handle errors
+
+## 🔄 Changes in the 2026-10-10 FP/FN audit
+
+- A spread in the options may carry the signal and counts; SDK calls are matched
+  by exact name.
+- Now `off` in `recommended`: CVSS 4, and it fired on the SDK quickstart route.
+- **Options:** the documented `defaultOptions` now apply. Earlier versions read `context.options` and silently ran a shorter hard-coded list instead.
 
 ## Known False Negatives
 

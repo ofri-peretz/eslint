@@ -13,9 +13,11 @@ import {
   isStaticExpression,
   staticString,
   propertyName,
+  objectKeyName,
 } from '@interlace/eslint-devkit';
 import { NoUnsafeSearchPathOptions } from '../../types';
 import { fileUsesPostgres } from '../../utils';
+import { connectionConfigArguments, effectiveValue } from '../../utils/connection-config';
 import { stripComments } from '../../utils/sql-scan';
 
 /**
@@ -49,6 +51,24 @@ const SQL_SINK_METHODS: ReadonlySet<string> = new Set(['query', 'execute']);
 const SEARCH_PATH_STATEMENT = /^\s*set\s+(?:local\s+|session\s+)?search_path\b/i;
 
 /** SQL comments, stripped before a statement's verb is read. */
+
+/** `set_config('search_path', …)` — the parameterisable spelling of SET. */
+const SET_CONFIG_SEARCH_PATH = /\bset_config\s*\(\s*'search_path'/i;
+
+/** libpq's per-connection startup option: `-c search_path=…`. */
+const SEARCH_PATH_OPTION = /(?:^|\s)-c\s*search_path\s*=/i;
+
+/** The value of a plainly keyed property of an object literal. */
+function configProperty(
+  object: TSESTree.ObjectExpression,
+  name: string,
+): TSESTree.Node | undefined {
+  const found = object.properties.find(
+    (p): p is TSESTree.Property =>
+      p.type === AST_NODE_TYPES.Property && objectKeyName(p) === name,
+  );
+  return found?.value;
+}
 
 /** How many bindings deep to follow a value before giving up. */
 const MAX_RESOLUTION_DEPTH = 4;
@@ -259,11 +279,48 @@ function exitsUnconditionally(node: TSESTree.Node): boolean {
  * reported these would be telling a developer who did the right thing that they
  * did the wrong thing, which is how a security rule gets switched off.
  */
+/**
+ * Is `call` an assertion function, written in this file, about its argument
+ * at `index` — `function assertSchema(s: string): asserts s is …`?
+ *
+ * Extracting the allowlist check into a TypeScript `asserts` helper is how it
+ * is usually written once it is needed twice, and it re-triggered a CRITICAL
+ * finding on validated input. The `asserts` signature is the structural
+ * contract: if the helper returns, the argument passed the check.
+ */
+function isAssertionAbout(
+  call: TSESTree.CallExpression,
+  index: number,
+  scope: TSESLint.Scope.Scope,
+): boolean {
+  if (call.callee.type !== AST_NODE_TYPES.Identifier) return false;
+  const variable = resolveVariable(call.callee.name, scope);
+  const fn = variable === null ? null : functionImplementation(variable);
+  const predicate = fn?.returnType?.typeAnnotation;
+  const param = fn?.params[index];
+  return (
+    predicate?.type === AST_NODE_TYPES.TSTypePredicate &&
+    predicate.asserts &&
+    predicate.parameterName.type === AST_NODE_TYPES.Identifier &&
+    param?.type === AST_NODE_TYPES.Identifier &&
+    param.name === predicate.parameterName.name
+  );
+}
+
 function isAllowlistGuarded(
   variable: TSESLint.Scope.Variable,
   sink: TSESTree.Node,
 ): boolean {
   return variable.references.some((ref) => {
+    // `assertSchema(tenant);` before the sink.
+    const call = ref.identifier.parent;
+    if (
+      call?.type === AST_NODE_TYPES.CallExpression &&
+      call.range[1] <= sink.range[0] &&
+      isAssertionAbout(call, call.arguments.indexOf(ref.identifier as TSESTree.Expression), ref.from)
+    ) {
+      return true;
+    }
     // `Program.parent` is `null`, not `undefined` — an `!== undefined` guard
     // walks one step past the root and dereferences it.
     for (
@@ -386,6 +443,28 @@ export const noUnsafeSearchPath: TSESLint.RuleModule<
         }
 
         const scope = context.sourceCode.getScope(node);
+
+        // `SET` cannot take a bind parameter, so `set_config('search_path',
+        // $1, …)` is how the value is parameterised — and a bound value the
+        // caller chose is exactly the hijack CWE-426 describes. Judged on the
+        // values array, the same way the template form judges its parts.
+        const config = queryArg.type === AST_NODE_TYPES.ObjectExpression ? queryArg : null;
+        const textNode = config === null ? queryArg : configProperty(config, 'text');
+        const valuesNode = config === null ? node.arguments[1] : configProperty(config, 'values');
+        if (
+          textNode !== undefined &&
+          SET_CONFIG_SEARCH_PATH.test(stripComments(staticText(textNode))) &&
+          valuesNode?.type === AST_NODE_TYPES.ArrayExpression &&
+          valuesNode.elements.some(
+            (element) =>
+              element !== null &&
+              (element.type === AST_NODE_TYPES.SpreadElement || isRawPart(element, scope, node)),
+          )
+        ) {
+          context.report({ node: queryArg, messageId: 'noUnsafeSearchPath' });
+          return;
+        }
+
         const expression = effectiveExpression(queryArg, scope);
 
         // A library formatter — `format('SET search_path TO %I', schema)`.
@@ -422,6 +501,26 @@ export const noUnsafeSearchPath: TSESLint.RuleModule<
         if (!hasRawPart(expression, scope, node)) return;
 
         context.report({ node: queryArg, messageId: 'noUnsafeSearchPath' });
+      },
+
+      // A pool per tenant: `new Pool({ options: `-c search_path=${tenant}` })`
+      // sets the path for every session the pool opens.
+      NewExpression(node: TSESTree.NewExpression) {
+        const scope = context.sourceCode.getScope(node);
+        for (const argument of connectionConfigArguments(node, scope)) {
+          const config = effectiveValue(argument, scope);
+          if (config.type !== AST_NODE_TYPES.ObjectExpression) continue;
+          const options = configProperty(config, 'options');
+          if (
+            options !== undefined &&
+            (options.type === AST_NODE_TYPES.TemplateLiteral ||
+              options.type === AST_NODE_TYPES.BinaryExpression) &&
+            SEARCH_PATH_OPTION.test(staticText(options)) &&
+            hasRawPart(options, scope, node)
+          ) {
+            context.report({ node: options, messageId: 'noUnsafeSearchPath' });
+          }
+        }
       },
     };
   },

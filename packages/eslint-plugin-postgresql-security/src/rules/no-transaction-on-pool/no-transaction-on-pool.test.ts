@@ -171,7 +171,10 @@ describe('no-transaction-on-pool', () => {
       {
         valid: pg([
           // Identifiers that merely START with a keyword.
-          "const pool = new Pool();\npool.query('SELECT beginning_balance, committed_total FROM ledger');",
+          {
+            name: 'column names that start with begin and commit are not transaction statements',
+            code: "const pool = new Pool();\npool.query('SELECT beginning_balance, committed_total FROM ledger');",
+          },
           "const pool = new Pool();\npool.query('SELECT * FROM sprints WHERE ended_at IS NULL');",
           // "BEGIN" as data, not as a statement.
           "const pool = new Pool();\npool.query('SELECT * FROM events WHERE marker = $1', ['BEGIN']);",
@@ -264,4 +267,79 @@ describe('no-transaction-on-pool', () => {
       },
     );
   });
+});
+
+/** FP/FN review 2026-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md). */
+describe('no-transaction-on-pool — fp/fn review 2026-10', () => {
+  ruleTester.run(
+    'TX-1: injected, typed and checkout-proven pools',
+    noTransactionOnPool,
+    {
+      valid: pg([
+        // A typed CLIENT is where a transaction belongs.
+        {
+          name: 'a typed PoolClient is where a transaction belongs',
+          code: "import type { PoolClient } from 'pg';\nexport async function f(client: PoolClient) { await client.query('BEGIN'); await client.query('COMMIT'); }",
+        },
+        // An imported handle with no evidence of being a pool (it could be a single Client).
+        {
+          name: 'GAP: an untyped imported handle with no checkout could be a single Client, so it is not judged',
+          code: "import { db } from './db';\nexport async function f() { await db.query('BEGIN'); }",
+        },
+        // A receiver whose checkout is not kept is not proven to be a pool.
+        {
+          name: 'an un-kept connect() does not prove the receiver is a pool',
+          code: "import { db } from './db';\nexport async function f() { await db.connect(); await db.query('BEGIN'); }",
+        },
+      ]),
+      invalid: pg([
+        {
+          name: 'pool injected through a constructor parameter property',
+          code: "export class AccountRepo { constructor(private readonly pool: Pool) {} async transfer() { await this.pool.query('BEGIN'); await this.pool.query('COMMIT'); } }",
+          errors: [
+            { messageId: 'noTransactionOnPool' },
+            { messageId: 'noTransactionOnPool' },
+          ],
+        },
+        {
+          name: 'pool as a typed parameter',
+          code: "import pg from 'pg';\nexport async function f(pool: pg.Pool) { await pool.query('BEGIN'); }",
+          errors: [{ messageId: 'noTransactionOnPool' }],
+        },
+        {
+          name: 'an imported handle the same file checks clients out of',
+          code: "import { pool } from './db';\nexport async function a() { const c = await pool.connect(); try { await c.query('SELECT 1'); } finally { c.release(); } }\nexport async function b() { await pool.query('BEGIN'); }",
+          errors: [{ messageId: 'noTransactionOnPool' }],
+        },
+      ]),
+    },
+  );
+
+  ruleTester.run(
+    'TX-2: one multi-statement string runs on one connection',
+    noTransactionOnPool,
+    {
+      valid: pg([
+        {
+          // @found harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md)
+
+          name: 'FP: one BEGIN…COMMIT string runs on one connection',
+          code: "const pool = new Pool();\nawait pool.query(`BEGIN; TRUNCATE demo; INSERT INTO demo (k) VALUES ('seed'); COMMIT;`);",
+        },
+        {
+          // @found reasoned during the 2026-10-10 FP/FN audit, not seen in real code
+
+          name: 'FP: a lowercase begin…end string runs on one connection',
+          code: "const pool = new Pool();\nawait pool.query('begin;update t set a = 1;end');",
+        },
+      ]),
+      invalid: pg([
+        {
+          name: 'BEGIN alone is still split across connections',
+          code: "const pool = new Pool();\nawait pool.query('BEGIN;');",
+          errors: [{ messageId: 'noTransactionOnPool' }],
+        },
+      ]),
+    },
+  );
 });

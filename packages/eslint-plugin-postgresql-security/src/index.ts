@@ -106,10 +106,16 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
       'postgresql-security/no-unsafe-search-path': 'error',
       'postgresql-security/no-unsafe-copy-from': 'error',
       'postgresql-security/no-transaction-on-pool': 'error',
-      // Resource management (errors)
+      // Resource management
       'postgresql-security/no-missing-client-release': 'error',
-      'postgresql-security/prevent-double-release': 'error',
-      'postgresql-security/no-floating-query': 'error',
+      // `warn`, not `error`: both are path heuristics without control-flow
+      // analysis (prevent-double-release declares `confidence: 'medium'`), and
+      // the FP/FN review of 2026-10 reproduced false positives in each on
+      // idiomatic code — the callback API, retry loops, try/catch release
+      // pairs. Those shapes are fixed; the class of heuristic remains.
+      // benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md
+      'postgresql-security/prevent-double-release': 'warn',
+      'postgresql-security/no-floating-query': 'warn',
       // Quality (warnings)
       'postgresql-security/check-query-params': 'warn',
       'postgresql-security/no-select-all': 'warn',

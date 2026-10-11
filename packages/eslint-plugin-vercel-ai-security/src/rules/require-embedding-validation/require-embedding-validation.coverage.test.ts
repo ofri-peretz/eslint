@@ -68,11 +68,6 @@ ruleTester.run('require-embedding-validation (branch coverage)', requireEmbeddin
     {
       code: `vectorStore.upsert({ ...defaults });`,
     },
-    // String-literal 'embedding' key — keyName resolves to null, prop skipped
-    // (documented FN: only Identifier keys are matched).
-    {
-      code: `vectorStore.upsert({ 'embedding': await embed(text) });`,
-    },
     // embedding value that is a plain identifier, not a call.
     {
       code: `vectorStore.upsert({ embedding: precomputedVector });`,
@@ -82,6 +77,12 @@ ruleTester.run('require-embedding-validation (branch coverage)', requireEmbeddin
     // Baseline: unvalidated embedding call still reported alongside skipped props.
     {
       code: `vectorStore.upsert({ ...defaults, embedding: await embed(text) });`,
+      errors: [{ messageId: 'unvalidatedEmbedding' }],
+    },
+    // (Moved 2026-10-10 from valid) a quoted 'embedding' key is the same
+    // property — this was a documented FN.
+    {
+      code: `vectorStore.upsert({ 'embedding': await embed(text) });`,
       errors: [{ messageId: 'unvalidatedEmbedding' }],
     },
   ]),

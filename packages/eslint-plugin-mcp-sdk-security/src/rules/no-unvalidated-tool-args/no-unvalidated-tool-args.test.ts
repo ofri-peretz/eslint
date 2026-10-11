@@ -71,13 +71,100 @@ describe('no-unvalidated-tool-args', () => {
             SDK +
             'server.registerTool("read", { title: "Read" }, async ({ path }) => read(path));',
         },
+        // Moved to `invalid` (FN fix, 2026-10): `z.object({ … })` is not a schema
+        // the file cannot see — its keys are written right there, and it is the
+        // canonical form in SDK v2 (the raw shape is deprecated). What stays
+        // silent is a call whose key set is NOT visible:
         {
-          // Every shape the rule cannot read must be silent, or it judges a
-          // handler against a schema this file does not contain.
-          name: 'a schema built by a call',
+          name: 'a schema built by a call whose keys are not visible',
           code:
             SDK +
-            'server.registerTool("read", { inputSchema: z.object({ path: z.string() }) }, async ({ path, extra }) => read(path));',
+            'server.registerTool("read", { inputSchema: buildSchema() }, async ({ path, extra }) => read(path));',
+        },
+        {
+          name: 'z.object of a shape held in a variable',
+          code:
+            SDK +
+            'server.registerTool("read", { inputSchema: z.object(ReadShape) }, async ({ path, extra }) => read(path));',
+        },
+        {
+          name: 'z.object with a spread inside',
+          code:
+            SDK +
+            'server.registerTool("read", { inputSchema: z.object({ ...Base, path: z.string() }) }, async ({ path, extra }) => read(path));',
+        },
+        {
+          name: '.extend() can add any key',
+          code:
+            SDK +
+            'server.registerTool("read", { inputSchema: z.object({ path: z.string() }).extend(More) }, async ({ path, extra }) => read(path));',
+        },
+        {
+          name: 'a computed chained method',
+          code:
+            SDK +
+            'server.registerTool("read", { inputSchema: z.object({ path: z.string() })[m]() }, async ({ path, extra }) => read(path));',
+        },
+        {
+          name: 'a schema built by a bare call',
+          code:
+            SDK +
+            'server.registerTool("read", { inputSchema: object({ path: z.string() }) }, async ({ path, extra }) => read(path));',
+        },
+        {
+          name: 'z.object with two arguments is not a plain key set',
+          code:
+            SDK +
+            'server.registerTool("read", { inputSchema: z.object({ path: z.string() }, opts) }, async ({ path, extra }) => read(path));',
+        },
+        {
+          name: 'every key read is declared in a z.object schema',
+          code:
+            SDK +
+            'server.registerTool("read", { inputSchema: z.object({ path: z.string() }).strict().describe("x") }, async ({ path }) => read(path));',
+        },
+        {
+          // Moved from `invalid`. The legacy `tool()` has no config object:
+          // its second argument is a params shape or annotations, decided by
+          // whether the values are Zod schemas. `{ inputSchema: {…} }` is
+          // neither a params shape (its value is not a schema) nor readable as
+          // one, so the rule abstains rather than treat `inputSchema` as an
+          // argument name. The legacy shape is now read correctly — see the
+          // `tool(name, shape, cb)` cases under invalid.
+          name: 'a legacy object with an inputSchema key is not a config',
+          code:
+            SDK +
+            'server.tool("read", { inputSchema: { path: z.string() } }, async ({ extra }) => read(extra));',
+        },
+        {
+          name: 'a legacy shape that declares every key read',
+          code:
+            SDK +
+            'server.tool("read", "Read a file", { path: z.string() }, async ({ path }) => read(path));',
+        },
+        {
+          name: 'a legacy annotations object declares no schema to compare against',
+          code:
+            SDK +
+            'server.tool("read", { readOnlyHint: true }, async ({ path }) => read(path));',
+        },
+        {
+          name: 'a legacy object of schemas held in variables is not readable',
+          code:
+            SDK +
+            'server.tool("read", { path: PathSchema }, async ({ path, extra }) => read(path));',
+        },
+        {
+          name: 'a legacy shape held in a variable',
+          code:
+            SDK +
+            'server.tool("read", ReadShape, async ({ path, extra }) => read(path));',
+        },
+        {
+          name: 'a handler passed by a name that is not a function in this file',
+          code:
+            SDK +
+            'import { handleRead } from "./handlers";\nserver.registerTool("read", { inputSchema: { path: z.string() } }, handleRead);',
         },
         {
           name: 'a schema spread from elsewhere',
@@ -218,13 +305,6 @@ describe('no-unvalidated-tool-args', () => {
           ],
         },
         {
-          name: 'the legacy tool() arity',
-          code:
-            SDK +
-            'server.tool("read", { inputSchema: { path: z.string() } }, async ({ extra }) => read(extra));',
-          errors: [{ messageId: 'undeclaredArg' }],
-        },
-        {
           name: 'a function expression handler',
           code:
             SDK +
@@ -242,6 +322,98 @@ describe('no-unvalidated-tool-args', () => {
               data: { tool: 'unknown', arg: 'extra' },
             },
           ],
+        },
+        {
+          name: 'a z.object schema (the canonical SDK v2 form)',
+          code:
+            SDK +
+            'server.registerTool("read", { inputSchema: z.object({ path: z.string() }) }, async ({ path, encoding }) => read(path, encoding));',
+          errors: [
+            {
+              messageId: 'undeclaredArg',
+              data: { tool: 'read', arg: 'encoding' },
+            },
+          ],
+        },
+        {
+          name: 'a z.strictObject schema with chained modifiers',
+          code:
+            SDK +
+            'server.registerTool("read", { inputSchema: z.strictObject({ path: z.string() }).describe("x").strict() }, async ({ path, encoding }) => read(path, encoding));',
+          errors: [{ messageId: 'undeclaredArg' }],
+        },
+        {
+          name: 'a passthrough schema lets the undeclared key through unvalidated',
+          code:
+            SDK +
+            'server.registerTool("read", { inputSchema: z.object({ path: z.string() }).passthrough() }, async ({ path, encoding }) => read(path, encoding));',
+          errors: [
+            {
+              messageId: 'undeclaredArgPassthrough',
+              data: { tool: 'read', arg: 'encoding' },
+            },
+          ],
+        },
+        {
+          name: 'a zod 4 .loose() schema',
+          code:
+            SDK +
+            'server.registerTool("read", { inputSchema: z.object({ path: z.string() }).loose() }, async ({ path, encoding }) => read(path, encoding));',
+          errors: [{ messageId: 'undeclaredArgPassthrough' }],
+        },
+        {
+          name: 'a z.looseObject schema',
+          code:
+            SDK +
+            'server.registerTool("read", { inputSchema: z.looseObject({ path: z.string() }) }, async ({ path, encoding }) => read(path, encoding));',
+          errors: [{ messageId: 'undeclaredArgPassthrough' }],
+        },
+        {
+          name: 'the legacy tool(name, shape, cb) form',
+          code:
+            SDK +
+            'server.tool("read", { path: z.string() }, async ({ path, encoding }) => read(path, encoding));',
+          errors: [
+            {
+              messageId: 'undeclaredArg',
+              data: { tool: 'read', arg: 'encoding' },
+            },
+          ],
+        },
+        {
+          name: 'the legacy tool(name, description, shape, cb) form',
+          code:
+            SDK +
+            'server.tool("read", "Read a file", { path: z.string() }, async ({ path, encoding }) => read(path, encoding));',
+          errors: [{ messageId: 'undeclaredArg' }],
+        },
+        {
+          name: 'the legacy form with annotations after the shape',
+          code:
+            SDK +
+            'server.tool("read", "Read a file", { path: z.string() }, { readOnlyHint: true }, async ({ path, encoding }) => read(path, encoding));',
+          errors: [{ messageId: 'undeclaredArg' }],
+        },
+        {
+          name: 'a legacy empty shape declares nothing',
+          code:
+            SDK + 'server.tool("read", {}, async ({ path }) => read(path));',
+          errors: [{ messageId: 'undeclaredArg' }],
+        },
+        {
+          name: 'a same-file handler passed by reference',
+          code:
+            SDK +
+            'async function handleRead({ path, encoding }) { return read(path, encoding); }\n' +
+            'server.registerTool("read", { inputSchema: { path: z.string() } }, handleRead);',
+          errors: [{ messageId: 'undeclaredArg' }],
+        },
+        {
+          name: 'an SDK v2 server',
+          code:
+            "import { McpServer } from '@modelcontextprotocol/server';\n" +
+            'server.registerTool("read", { inputSchema: z.object({ path: z.string() }) }, async ({ path, encoding }) => read(path, encoding));',
+          errors: [{ messageId: 'undeclaredArg' }],
         },
         {
           name: 'require() opens the same gate',
@@ -274,9 +446,15 @@ describe('propertyKey', () => {
     expect(propertyKey(firstProp('({ "path": 1 })'))).toBe('path');
   });
 
-  it('returns undefined for a computed, numeric or spread member', () => {
+  // Changed 2026-10-10: `{ 0: 1 }` and `{ ['path']: 1 }` declare real keys;
+  // devkit's objectKeyName reads them (the spellings gate forbids the blind spot).
+  it('reads a numeric and a computed string-literal key', () => {
+    expect(propertyKey(firstProp('({ 0: 1 })'))).toBe('0');
+    expect(propertyKey(firstProp('({ ["path"]: 1 })'))).toBe('path');
+  });
+
+  it('returns undefined for a dynamic computed or spread member', () => {
     expect(propertyKey(firstProp('({ [k]: 1 })'))).toBeUndefined();
-    expect(propertyKey(firstProp('({ 0: 1 })'))).toBeUndefined();
     expect(propertyKey(firstProp('({ ...base })'))).toBeUndefined();
   });
 });
@@ -285,6 +463,13 @@ describe('declaredSchemaKeys', () => {
   it('reads a plain object schema', () => {
     const keys = declaredSchemaKeys(objOf('({ inputSchema: { a: 1, b: 2 } })'));
     expect([...keys!].sort()).toEqual(['a', 'b']);
+  });
+
+  it('reads a z.object schema written in place (was: "gives up" — FN fix)', () => {
+    const keys = declaredSchemaKeys(
+      objOf('({ inputSchema: z.object({ a: 1 }) })'),
+    );
+    expect([...keys!]).toEqual(['a']);
   });
 
   it('reads an empty schema as declaring nothing', () => {
@@ -297,7 +482,7 @@ describe('declaredSchemaKeys', () => {
     // Each of these could declare anything; a partial read would report
     // correct handlers.
     expect(
-      declaredSchemaKeys(objOf('({ inputSchema: z.object({}) })')),
+      declaredSchemaKeys(objOf('({ inputSchema: buildSchema() })')),
     ).toBeUndefined();
     expect(
       declaredSchemaKeys(objOf('({ inputSchema: Schema })')),

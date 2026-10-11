@@ -116,19 +116,13 @@ await client.query(`SET search_path = ${schema}`);
 
 **Mitigation**: Use centralized tenant schema resolver with allowlist validation.
 
-### Connection Pool Configuration
+### Also checked (since 2026-10)
 
-**Why**: search_path set in pool configuration is not checked.
-
-```typescript
-// ❌ NOT DETECTED - search_path in pool options
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  options: `-c search_path=${userSchema}`, // Dynamic!
-});
-```
-
-**Mitigation**: Validate pool configuration at startup. Use static search_path values.
+- ``options: `-c search_path=${userSchema}` `` on a pg `Pool` / `Client`.
+- `SELECT set_config('search_path', $1, …)` with a non-constant value in the
+  bound array — a parameter stops injection, not hijacking.
+- An allowlist check extracted into a TypeScript `asserts` helper called before
+  the sink (`assertSchema(s): asserts s is …`) counts as a guard.
 
 ## Related Rules
 

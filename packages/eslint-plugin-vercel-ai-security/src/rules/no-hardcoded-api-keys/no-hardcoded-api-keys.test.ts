@@ -91,14 +91,10 @@ ruleTester.run('no-hardcoded-api-keys', noHardcodedApiKeys, {
         const openai = createOpenAI({ apiKey: key });
       `,
     },
-    // Not an API key property
-    {
-      code: `
-        const config = {
-          name: 'sk-proj-1234567890abcdefghijklmn',
-        };
-      `,
-    },
+    // (Moved 2026-10-10) `name: 'sk-proj-…'` was valid because the property is
+    // not called apiKey. A string shaped like a provider key is a leaked key
+    // whatever holds it — gating on the holder's name is exactly what missed
+    // `const OPENAI_KEY = 'sk-…'`. It is now in the fp-fn audit invalid suite.
     // Short value - not flagged
     {
       code: `
@@ -190,14 +186,15 @@ ruleTester.run('no-hardcoded-api-keys', noHardcodedApiKeys, {
       `,
       errors: [{ messageId: 'hardcodedApiKey' }],
     },
-    // Hardcoded key in provider function (second arg) - fires both handlers
+    // Hardcoded key in provider function (second arg). (Changed 2026-10-10)
+    // This used to be reported twice — once per handler — for one literal.
     {
       code: `
         const model = openai('gpt-4', {
           apiKey: 'sk-1234567890abcdefghijklmnopqrstuvwxyz',
         });
       `,
-      errors: [{ messageId: 'hardcodedApiKey' }, { messageId: 'hardcodedApiKey' }],
+      errors: [{ messageId: 'hardcodedApiKey' }],
     },
     // Hardcoded key in createOpenAI
     {
@@ -262,23 +259,23 @@ ruleTester.run('no-hardcoded-api-keys', noHardcodedApiKeys, {
       `,
       errors: [{ messageId: 'hardcodedApiKey' }],
     },
-    // anthropic provider with hardcoded key in second arg - fires both handlers
+    // anthropic provider with hardcoded key in second arg (one report, see above)
     {
       code: `
         const model = anthropic('claude-3', {
           apiKey: 'sk-ant-1234567890abcdefghijklmnop',
         });
       `,
-      errors: [{ messageId: 'hardcodedApiKey' }, { messageId: 'hardcodedApiKey' }],
+      errors: [{ messageId: 'hardcodedApiKey' }],
     },
-    // api_key snake case in provider - fires both handlers
+    // api_key snake case in provider (one report, see above)
     {
       code: `
         const model = google('gemini-pro', {
           api_key: 'AIzaSyA1234567890abcdefghijklmnopqrstu',
         });
       `,
-      errors: [{ messageId: 'hardcodedApiKey' }, { messageId: 'hardcodedApiKey' }],
+      errors: [{ messageId: 'hardcodedApiKey' }],
     },
     // String literal key name in Property
     {
@@ -288,6 +285,70 @@ ruleTester.run('no-hardcoded-api-keys', noHardcodedApiKeys, {
         };
       `,
       errors: [{ messageId: 'hardcodedApiKey' }],
+    },
+  ]),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-vercel-ai-security.md)
+// A provider-prefixed key is a key wherever it sits; a generic long string is
+// one only under a key-ish name AND only if it is not a URL, a resource path or
+// the NAME of an environment variable.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('no-hardcoded-api-keys (fp-fn audit)', noHardcodedApiKeys, {
+  valid: xai([
+    {
+      name: 'secret names, OAuth URLs and env-var names are not secrets',
+      code: `
+        const secretsConfig = {
+          secretName: 'projects/acme-prod/secrets/openai-api-key/versions/latest',
+          tokenEndpoint: 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
+          apiKeyEnvVar: 'OPENAI_API_KEY_PRODUCTION',
+        };
+      `,
+    },
+    {
+      name: 'an sk- string with no digits is not a key (CSS class, slug)',
+      code: `const cls = 'sk-loading-spinner-container-wrapper';`,
+    },
+    {
+      name: 'whole-word key names: maxTokens is not a token',
+      code: `const cfg = { maxTokens: 'unlimited-for-internal-batch-runs' };`,
+    },
+  ]),
+  invalid: xai([
+    {
+      name: 'a key hoisted into a module constant, then referenced',
+      code: `
+        const OPENAI_KEY = 'sk-proj-Abc123Def456Ghi789Jkl012Mno345Pqr678Stu901';
+        export const openai2 = createOpenAI({ apiKey: OPENAI_KEY });
+      `,
+      errors: [{ messageId: 'hardcodedApiKey' }],
+    },
+    {
+      name: 'a generic secret in a constant named like a key',
+      code: `const ANTHROPIC_API_KEY = \`a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6\`;`,
+      errors: [{ messageId: 'hardcodedApiKey' }],
+    },
+    {
+      name: 'an x-api-key header',
+      code: `export const anthropic = createAnthropic({ headers: { 'x-api-key': 'sk-ant-api03-AbCdEfGhIjKlMnOpQrStUvWxYz0123456789' } });`,
+      errors: [{ messageId: 'hardcodedApiKey' }],
+    },
+    {
+      name: 'an Authorization: Bearer header',
+      code: `export const gw = createOpenAI({ baseURL: 'https://gw.example/v1', headers: { Authorization: 'Bearer sk-proj-Abc123Def456Ghi789Jkl012Mno345Pqr678' } });`,
+      errors: [{ messageId: 'hardcodedApiKey' }],
+    },
+    {
+      name: 'a provider-shaped key under a neutral property name',
+      code: `const config = { name: 'sk-proj-1234567890abcdefghijklmn' };`,
+      errors: [{ messageId: 'hardcodedApiKey' }],
+    },
+    {
+      name: 'Groq / Hugging Face / AWS key shapes',
+      code: `const k = ['gsk_AbCdEf0123456789AbCdEf0123', 'hf_AbCdEf0123456789AbCdEf0123', 'AKIAIOSFODNN7EXAMPLE'];`,
+      errors: [{ messageId: 'hardcodedApiKey' }, { messageId: 'hardcodedApiKey' }, { messageId: 'hardcodedApiKey' }],
     },
   ]),
 });

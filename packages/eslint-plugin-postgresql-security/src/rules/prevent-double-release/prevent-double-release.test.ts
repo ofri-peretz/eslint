@@ -74,10 +74,17 @@ describe('prevent-double-release', () => {
     ruleTester.run('invalid - dangerous patterns', preventDoubleRelease, {
       valid: [],
       invalid: pg([
-        // Triggers doubleRelease
+        // Triggers doubleRelease.
+        //
+        // FP/FN review 2026-10 (DR-3): this case used to end the try block with
+        // the release, which is NOT a double release — no throw can reach the
+        // catch after the last statement, so exactly one of the two runs (that
+        // shape is now a valid case under 'DR-3'). The hazard is real once
+        // anything after the release can throw into the catch, so that is what
+        // this case now pins.
         {
           name: 'release on both the success and the catch path',
-          code: `async function test() { const client = await pool.connect(); try { await client.query('SELECT 1'); client.release(); } catch(e) { client.release(); } }`,
+          code: `async function test() { const client = await pool.connect(); try { await client.query('SELECT 1'); client.release(); notify(); } catch(e) { client.release(); } }`,
           errors: [{ messageId: 'doubleRelease' }],
         },
       ]),
@@ -243,5 +250,76 @@ describe('prevent-double-release', () => {
       ],
       invalid: [],
     });
+  });
+});
+
+/** FP/FN review 2026-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md). */
+describe('prevent-double-release — fp/fn review 2026-10', () => {
+  ruleTester.run('DR-1: done() in mutually exclusive branches', preventDoubleRelease, {
+    valid: pg([
+      {
+// @found harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md)
+ name: 'FP: done(err) and done() in if/else branches release once', code: "const pool = new Pool();\npool.connect((err, client, done) => { client.query('SELECT 1', (qerr, res) => { if (qerr) done(qerr); else done(); cb(qerr, res); }); });" },
+      {
+// @found reasoned during the 2026-10-10 FP/FN audit, not seen in real code
+ name: 'FP: done(err) and done() in ternary branches release once', code: "const pool = new Pool();\npool.connect((err, client, done) => { client.query('SELECT 1', (qerr) => { qerr ? done(qerr) : done(); }); });" },
+      {
+// @found reasoned during the 2026-10-10 FP/FN audit, not seen in real code
+ name: 'FP: done in the if branch and in the else branch callback release once', code: "const pool = new Pool();\npool.connect((err, client, done) => { if (err) { done(err); } else { client.query('SELECT 1', () => done()); } });" },
+    ]),
+    invalid: pg([
+      {
+        name: 'done() in a branch, then again unconditionally',
+        code: "const pool = new Pool();\npool.connect((err, client, done) => { if (err) done(err); done(); });",
+        errors: [{ messageId: 'doubleReleaseCallback' }],
+      },
+    ]),
+  });
+
+  ruleTester.run('DR-2: a retry loop checks out a NEW client each pass', preventDoubleRelease, {
+    valid: pg([
+      { name: 'a client declared inside the loop body is per-iteration', code: "const pool = new Pool();\nexport async function f(xs) { for (const x of xs) { let client; if (x) { client.release(); } } }" },
+      {
+// @found harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md)
+ name: 'FP: a retry loop releases the client that pass checked out', code: "const pool = new Pool();\nexport async function connectWithRetry() { let client; for (let a = 1; a <= 3; a++) { client = await pool.connect(); try { await client.query('SELECT 1'); return client; } catch (e) { client.release(true); } } throw new Error('db unavailable'); }" },
+    ]),
+    invalid: pg([
+      {
+        name: 'one client released on every pass of a loop',
+        code: "const pool = new Pool();\nexport async function f(items) { const client = await pool.connect(); for (const it of items) { await client.query('SELECT 1'); client.release(); } }",
+        errors: [{ messageId: 'doubleRelease' }],
+      },
+    ]),
+  });
+
+  ruleTester.run('DR-3: release at the end of the try, then in its catch', preventDoubleRelease, {
+    valid: pg([
+      {
+// @found harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md)
+ name: 'FP: release ending the try before return of a computed value plus catch release runs once', code: "const pool = new Pool();\nexport async function get(id) { const client = await pool.connect(); try { const res = await client.query('SELECT * FROM users WHERE id = $1', [id]); client.release(); return res.rows[0]; } catch (err) { client.release(err); throw err; } }" },
+      {
+// @found reasoned during the 2026-10-10 FP/FN audit, not seen in real code
+ name: 'FP: release as the last try statement plus catch release runs once', code: "const pool = new Pool();\nexport async function get(id) { const client = await pool.connect(); try { await client.query('SELECT 1'); client.release(); } catch (err) { client.release(err); throw err; } }" },
+      {
+// @found reasoned during the 2026-10-10 FP/FN audit, not seen in real code
+ name: 'FP: release followed by a bare return plus catch release runs once', code: "const pool = new Pool();\nexport async function get(id) { const client = await pool.connect(); try { await client.query('SELECT 1'); client.release(); return; } catch (err) { client.release(err); throw err; } }" },
+    ]),
+    invalid: pg([
+      {
+        name: 'work after the try-block release can throw into the catch, which releases again',
+        code: "const pool = new Pool();\nexport async function get(id) { const client = await pool.connect(); try { const res = await client.query('SELECT 1'); client.release(); return mapRow(res.rows[0]); } catch (err) { client.release(err); throw err; } }",
+        errors: [{ messageId: 'doubleRelease' }],
+      },
+      {
+        name: 'a release nested inside the try block is not its end',
+        code: "const pool = new Pool();\nexport async function get(id) { const client = await pool.connect(); try { if (id) { client.release(); } } catch (err) { client.release(err); throw err; } }",
+        errors: [{ messageId: 'doubleRelease' }],
+      },
+      {
+        name: 'a statement after the release',
+        code: "const pool = new Pool();\nexport async function get(id) { const client = await pool.connect(); try { await client.query('SELECT 1'); client.release(); log('done'); } catch (err) { client.release(err); throw err; } }",
+        errors: [{ messageId: 'doubleRelease' }],
+      },
+    ]),
   });
 });

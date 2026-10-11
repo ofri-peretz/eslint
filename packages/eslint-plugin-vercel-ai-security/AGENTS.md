@@ -68,18 +68,18 @@ import { createOpenAI, createAnthropic, createGoogle } from '@ai-sdk/*';
 
 ## Quick Reference: All 10 Rules
 
-| Rule                        | Severity | Fix Pattern                          |
-| --------------------------- | -------- | ------------------------------------ |
-| `require-validated-prompt`  | CRITICAL | `prompt: validateInput(userInput)`   |
-| `no-sensitive-in-prompt`    | CRITICAL | Remove password/token from prompt    |
-| `no-hardcoded-api-keys`     | CRITICAL | `apiKey: process.env.OPENAI_API_KEY` |
-| `no-unsafe-output-handling` | CRITICAL | Don't pass `result.text` to `eval()` |
-| `require-tool-schema`       | HIGH     | Add `inputSchema: z.object({...})`   |
-| `require-max-tokens`        | HIGH     | Add `maxTokens: 4096`                |
-| `require-max-steps`         | HIGH     | Add `maxSteps: 5` when using tools   |
-| `require-tool-confirmation` | HIGH     | Add `requiresConfirmation: true`     |
-| `require-error-handling`    | MEDIUM   | Wrap in `try { } catch { }`          |
-| `require-abort-signal`      | LOW      | Add `abortSignal: controller.signal` |
+| Rule                        | Severity | Fix Pattern                            |
+| --------------------------- | -------- | -------------------------------------- |
+| `require-validated-prompt`  | CRITICAL | `prompt: validateInput(userInput)`     |
+| `no-sensitive-in-prompt`    | CRITICAL | Remove password/token from prompt      |
+| `no-hardcoded-api-keys`     | CRITICAL | `apiKey: process.env.OPENAI_API_KEY`   |
+| `no-unsafe-output-handling` | CRITICAL | Don't pass `result.text` to `eval()`   |
+| `require-tool-schema`       | HIGH     | Add `inputSchema: z.object({...})`     |
+| `require-max-tokens`        | HIGH     | Add `maxTokens: 4096`                  |
+| `require-max-steps`         | MEDIUM   | Bound `stopWhen` with `stepCountIs(n)` |
+| `require-tool-confirmation` | HIGH     | Add `needsApproval: true`              |
+| `require-error-handling`    | MEDIUM   | Wrap in `try { } catch { }`            |
+| `require-abort-signal`      | LOW      | Add `abortSignal: controller.signal`   |
 
 ## Common Fix Patterns
 

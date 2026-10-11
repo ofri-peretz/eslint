@@ -197,14 +197,19 @@ const minimalConfig: TSESLint.FlatConfig.Config = {
 
 /**
  * Recommended configuration - balanced security
- * Critical rules as errors, high-priority as warnings
+ *
+ * A rule's level follows the CVSS it reports: `error` at 7.0 and above, `warn`
+ * below. Rules that are hardening preferences rather than findings, or whose
+ * heuristics are too broad for a default, are `off` here and `error` in
+ * `strict`. Locked by src/recommended-preset.lock.test.ts; the reasons for each
+ * level are in benchmarks/audits/2026-10-10-fp-fn-vercel-ai-security.md.
  */
 const recommendedConfig: TSESLint.FlatConfig.Config = {
   plugins: {
     'vercel-ai-security': plugin,
   },
   rules: {
-    // Critical - always enabled as errors (LLM01-02, LLM05-07)
+    // CVSS >= 7.0 — errors (LLM01-02, LLM05-07, ASI02)
     'vercel-ai-security/require-validated-prompt': 'error',
     'vercel-ai-security/no-hardcoded-api-keys': 'error',
     'vercel-ai-security/no-unsafe-output-handling': 'error',
@@ -212,19 +217,24 @@ const recommendedConfig: TSESLint.FlatConfig.Config = {
     'vercel-ai-security/no-system-prompt-leak': 'error',
     'vercel-ai-security/no-dynamic-system-prompt': 'error',
     'vercel-ai-security/require-tool-confirmation': 'error',
-    
-    // High - enabled as warnings
     'vercel-ai-security/require-tool-schema': 'error',
-    'vercel-ai-security/require-max-tokens': 'error',
-    'vercel-ai-security/require-max-steps': 'error',
-    'vercel-ai-security/require-output-filtering': 'warn',
-    'vercel-ai-security/require-rag-content-validation': 'warn',
-    'vercel-ai-security/no-training-data-exposure': 'warn',
-    'vercel-ai-security/require-request-timeout': 'warn',
 
-    // Medium - disabled by default
+    // CVSS < 7.0 — warnings
+    'vercel-ai-security/require-max-tokens': 'warn',
+    'vercel-ai-security/require-rag-content-validation': 'warn',
+
+    // Off by default — on in `strict`
+    // The SDK default is one step; this rule now only reports unbounded
+    // step settings, which is a strict-mode concern.
+    'vercel-ai-security/require-max-steps': 'off',
+    // CVSS 4 / 5 hardening, and both fire on the SDK quickstart route.
+    'vercel-ai-security/require-abort-signal': 'off',
+    'vercel-ai-security/require-request-timeout': 'off',
+    // Name and URL heuristics with no tie to a provider setting.
+    'vercel-ai-security/no-training-data-exposure': 'off',
+    // Cannot tell a sensitive data source from a benign one without types.
+    'vercel-ai-security/require-output-filtering': 'off',
     'vercel-ai-security/require-error-handling': 'off',
-    'vercel-ai-security/require-abort-signal': 'error',
     'vercel-ai-security/require-audit-logging': 'off',
     'vercel-ai-security/require-embedding-validation': 'off',
     'vercel-ai-security/require-output-validation': 'off',

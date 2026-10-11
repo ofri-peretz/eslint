@@ -279,6 +279,49 @@ function ifBranchHasExitAfterRelease(releaseNode: TSESTree.Node, ifStmt: TSESTre
   return false;
 }
 
+/**
+ * Do `a` and `b` sit in opposite branches of one `if`/`else` or `?:` — so at
+ * most one of them runs? `a` precedes `b` in source order (callers sort), so
+ * `a` can only be in the consequent.
+ */
+function inOppositeBranches(a: TSESTree.Node, b: TSESTree.Node): boolean {
+  const within = (node: TSESTree.Node, container: TSESTree.Node | null | undefined): boolean =>
+    container != null && node.range[0] >= container.range[0] && node.range[1] <= container.range[1];
+  for (let current = a.parent; current; current = current.parent) {
+    if (
+      current.type !== AST_NODE_TYPES.IfStatement &&
+      current.type !== AST_NODE_TYPES.ConditionalExpression
+    ) {
+      continue;
+    }
+    const { consequent, alternate } = current;
+    if (within(a, consequent) && within(b, alternate)) return true;
+  }
+  return false;
+}
+
+/** Can this returned expression not throw — a value already computed? */
+function cannotThrow(node: TSESTree.Node | null): boolean {
+  if (node === null) return true;
+  if (node.type === AST_NODE_TYPES.Identifier || node.type === AST_NODE_TYPES.Literal) return true;
+  return node.type === AST_NODE_TYPES.MemberExpression && cannotThrow(node.object);
+}
+
+/**
+ * Is this release the end of its `try` block — nothing after it but a
+ * `return` of an already-computed value? Then no throw can reach the `catch`
+ * after it, and a `catch` release is the other path, not a second release.
+ */
+function endsTryBlock(release: TSESTree.Node, tryStatement: TSESTree.TryStatement): boolean {
+  const statement = release.parent;
+  const { body } = tryStatement.block;
+  const index = body.indexOf(statement as TSESTree.Statement);
+  if (index === -1) return false;
+  return body
+    .slice(index + 1)
+    .every((s) => s.type === AST_NODE_TYPES.ReturnStatement && cannotThrow(s.argument));
+}
+
 export const preventDoubleRelease: TSESLint.RuleModule<
   'doubleRelease' | 'doubleReleaseCallback',
   PreventDoubleReleaseOptions
@@ -385,7 +428,16 @@ export const preventDoubleRelease: TSESLint.RuleModule<
             );
         };
 
-        if (calls.slice(0, -1).every((c) => terminated(c))) return;
+        // Each earlier call must either end its path or be the other branch of
+        // an `if`/`else` (or `?:`) from every later one: `if (e) done(e); else
+        // done();` releases exactly once.
+        if (
+          calls.every((c, i) =>
+            calls.slice(i + 1).every((later) => terminated(c) || inOppositeBranches(c, later)),
+          )
+        ) {
+          return;
+        }
 
         context.report({
           node: calls[calls.length - 1],
@@ -447,6 +499,18 @@ export const preventDoubleRelease: TSESLint.RuleModule<
               // A checkout inside the same loop means each iteration owns its
               // own client, which is correct.
               if (loop === null) continue;
+              // `client = await pool.connect()` INSIDE the loop: each pass
+              // releases the client that pass checked out (the retry loop).
+              if (
+                variable.references.some(
+                  (ref) =>
+                    ref.isWrite() &&
+                    ref.identifier.range[0] >= loop.range[0] &&
+                    ref.identifier.range[1] <= loop.range[1],
+                )
+              ) {
+                continue;
+              }
               if (loop.range[0] <= def.node.range[0] && def.node.range[1] <= loop.range[1]) {
                 continue;
               }
@@ -482,6 +546,7 @@ export const preventDoubleRelease: TSESLint.RuleModule<
                 const tryA = isInTryBlock(callA.node);
                 const catchB = isInCatchBlock(callB.node);
                 if (tryA && catchB && catchB.parent === tryA) {
+                  if (endsTryBlock(callA.node, tryA)) continue;
                   context.report({ node: callB.node, messageId: 'doubleRelease' });
                   reported.add(callB.node);
                   continue;

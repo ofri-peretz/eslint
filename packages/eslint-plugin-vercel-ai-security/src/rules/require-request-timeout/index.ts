@@ -12,6 +12,7 @@
 
 import { TSESTree, createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
+import { declaresOption, sdkCallName } from '../../utils/sdk';
 
 type MessageIds = 'missingTimeout';
 
@@ -64,57 +65,34 @@ export const requireRequestTimeout = createRule<RuleOptions, MessageIds>({
       allowInTests: true,
     },
   ],
-  create(context) {
+  create(context, [options]) {
     // Every rule in this plugin is Vercel-AI-specific, and none of them knew
     // it: over 107,384 files, 91% of this plugin's findings were in files with
     // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
     // the cheap path — a file without the SDK does no work.
     if (!fileUsesVercelAi(context.sourceCode.ast)) return {};
 
-    const [options = {}] = context.options;
-    const allowInTests = options.allowInTests ?? true;
-
-    const sourceCode = context.sourceCode;
-    const filename = context.filename;
+    // Merged with `defaultOptions` before `create` runs.
+    const { allowInTests } = options as Required<Options>;
 
     // Skip test files if allowed
-    if (allowInTests && isTestFilePath(filename)) {
+    if (allowInTests && isTestFilePath(context.filename)) {
       return {};
     }
 
-    // Vercel AI SDK functions
-    const aiSDKFunctions = ['generateText', 'streamText', 'generateObject', 'streamObject'];
-
-    // Timeout-related property names
-    const timeoutProperties = new Set(['timeout', 'abortSignal', 'signal', 'timeoutMs', 'requestTimeout']);
-
     return {
       CallExpression(node: TSESTree.CallExpression) {
-        const callee = sourceCode.getText(node.callee);
-        
-        // Check if this is an AI SDK function
-        const matchedFunction = aiSDKFunctions.find(fn => callee.includes(fn));
+        const matchedFunction = sdkCallName(node);
         if (!matchedFunction) return;
 
-        // Check first argument (options object)
         const optionsArg = node.arguments[0];
-        if (!optionsArg || optionsArg.type !== 'ObjectExpression') {
-          context.report({
-            node,
-            messageId: 'missingTimeout',
-            data: { function: matchedFunction },
-          });
-          return;
-        }
+        // `generateText(opts)` — options built elsewhere may well carry a
+        // timeout; only a call with no options at all provably lacks one.
+        if (optionsArg && optionsArg.type !== 'ObjectExpression') return;
 
-        // Check for timeout or abort signal properties
-        const hasTimeout = optionsArg.properties.some(prop => {
-          if (prop.type !== 'Property') return false;
-          const keyName = prop.key.type === 'Identifier' ? prop.key.name : null;
-          return keyName && timeoutProperties.has(keyName);
-        });
-
-        if (!hasTimeout) {
+        // `timeout` (number or v7 `{ totalMs, stepMs, ... }`), or a signal —
+        // `AbortSignal.timeout(ms)` is the idiomatic bound. A spread may carry either.
+        if (!optionsArg || !declaresOption(optionsArg, TIMEOUT_KEYS)) {
           context.report({
             node,
             messageId: 'missingTimeout',
@@ -125,3 +103,5 @@ export const requireRequestTimeout = createRule<RuleOptions, MessageIds>({
     };
   },
 });
+
+const TIMEOUT_KEYS = ['timeout', 'abortSignal', 'signal', 'timeoutMs', 'requestTimeout'];

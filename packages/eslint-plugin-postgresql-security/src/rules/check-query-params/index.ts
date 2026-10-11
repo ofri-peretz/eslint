@@ -267,7 +267,7 @@ export const checkQueryParams: TSESLint.RuleModule<
       parameterCountMismatch: formatLLMMessage({
         icon: MessageIcons.QUALITY,
         issueName: 'Parameter Count Mismatch',
-        description: 'Query parameter count mismatch detected.',
+        description: 'Query parameter count mismatch detected: {{expected}} placeholder(s), {{actual}} value(s).',
         severity: 'HIGH',
         cwe: 'CWE-20',
         effort: 'low',

@@ -217,7 +217,7 @@ describe('no-floating-query — chain and binding edges', () => {
   ruleTester.run('member access that is not a chain link', noFloatingQuery, {
     valid: [
       // No PostgreSQL client in the file: the plugin does not run at all.
-      "db.query('SELECT 1');",
+      { name: 'the module gate abstains in a file with no PostgreSQL client', code: "db.query('SELECT 1');" },
       ...pg([
         // `.then` read as a VALUE rather than called. The chain walk stops
         // there, and a property access is a value use, not a discard.
@@ -232,6 +232,48 @@ describe('no-floating-query — chain and binding edges', () => {
         // An implicit global has no binding to look up, so nothing can be
         // shown to read it.
         code: "function f() { globalPending = pool.query('SELECT 1'); }",
+        errors: [{ messageId: 'noFloatingQuery' }],
+      },
+    ]),
+  });
+});
+
+/** FP/FN review 2026-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md). */
+describe('no-floating-query — fp/fn review 2026-10', () => {
+  ruleTester.run('FQ-1 and FQ-2: calls that return no promise to float', noFloatingQuery, {
+    valid: pg([
+      // FQ-1: with a callback, node-postgres returns undefined.
+      {
+// @found harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md)
+ name: 'FP: pool.query with a callback returns undefined, not a promise', code: "const pool = new Pool();\npool.query('SELECT * FROM users WHERE id = $1', [id], (err, res) => { cb(err, res); });" },
+      {
+// @found reasoned during the 2026-10-10 FP/FN audit, not seen in real code
+ name: 'FP: a function-expression callback returns undefined, not a promise', code: "const pool = new Pool();\npool.query('LISTEN jobs', function (err) { if (err) throw err; });" },
+      // FQ-2: supertest / superagent `.query({ ... })` is a query-STRING builder.
+      {
+// @found harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md)
+ name: 'FP: supertest .query({ page }) is a query-string builder, not pg', code: "import request from 'supertest';\nrequest(app).get('/users').query({ page: 2 }).expect(200).end(done);" },
+      { name: 'a computed-key query-string object is not a pg QueryConfig', code: "import request from 'supertest';\nrequest(app).get('/users').query({ [key]: 2 }).end(done);" },
+    ]),
+    invalid: pg([
+      {
+        name: 'a callback identifier is not provably a callback literal',
+        code: "const pool = new Pool();\npool.query('UPDATE stats SET hits = hits + 1', handler);",
+        errors: [{ messageId: 'noFloatingQuery' }],
+      },
+      {
+        name: 'a pg QueryConfig object still floats',
+        code: "const pool = new Pool();\npool.query({ text: 'UPDATE stats SET hits = hits + 1' });",
+        errors: [{ messageId: 'noFloatingQuery' }],
+      },
+      {
+        name: 'a spread config may carry text',
+        code: 'const pool = new Pool();\npool.query({ ...config });',
+        errors: [{ messageId: 'noFloatingQuery' }],
+      },
+      {
+        name: 'no arguments at all',
+        code: 'const pool = new Pool();\npool.query();',
         errors: [{ messageId: 'noFloatingQuery' }],
       },
     ]),

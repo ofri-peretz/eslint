@@ -201,3 +201,31 @@ ruleTester.run('require-error-handling', requireErrorHandling, {
     },
   ]),
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-vercel-ai-security.md)
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('require-error-handling (fp-fn audit)', requireErrorHandling, {
+  valid: xai([
+    {
+      name: 'streamText does not throw — errors arrive through onError, which is handled',
+      code: `
+        export async function POST(req) {
+          const result = streamText({ model, messages, onError: ({ error }) => console.error(error) });
+          return result.toUIMessageStreamResponse();
+        }
+      `,
+    },
+    {
+      name: 'a user function whose name contains generateText is not the SDK',
+      code: `generateTextureAtlas({ size: 512 });`,
+    },
+  ]),
+  invalid: xai([
+    {
+      name: 'streamText with neither onError nor try is still reported',
+      code: `const result = streamText({ model, messages });`,
+      errors: [{ messageId: 'missingErrorHandling' }],
+    },
+  ]),
+});

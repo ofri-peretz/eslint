@@ -10,8 +10,8 @@ autofix: false
 
 > Prevent algorithm confusion attacks using symmetric algorithms with asymmetric keys
 
-
 <!-- @rule-summary -->
+
 This rule detects algorithm confusion attacks where symmetric algorithms (HS256, HS384, HS512) are used with asymmetr...
 <!-- @/rule-summary -->
 
@@ -24,7 +24,7 @@ This rule detects algorithm confusion attacks where symmetric algorithms (HS256,
 | **CWE Reference** | [CWE-347](https://cwe.mitre.org/data/definitions/347.html)                 |
 | **Severity**      | Critical                                                                   |
 | **Auto-Fix**      | ❌ No auto-fix available                                                   |
-| **Category**   | Security |
+| **Category**      | Security                                                                   |
 | **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                    |
 | **Best For**      | Protecting asymmetric JWT verification from algorithm substitution attacks |
 
@@ -43,6 +43,11 @@ jwt.verify(token, publicKey, { algorithms: ['HS256'] });
 // Any symmetric algorithm with public key
 jwt.verify(token, getPublicKey(), { algorithms: ['HS384'] });
 jwt.verify(token, jwksKey, { algorithms: ['HS512'] });
+
+// HMAC and asymmetric algorithms in ONE whitelist (CVE-2015-9235's shape).
+// Reported whatever the key is called: the attacker picks HS256 and the
+// verifier HMACs with the key material it holds for RS256.
+jwt.verify(token, cert, { algorithms: ['RS256', 'HS256'] });
 ```
 
 ### ✅ Correct
@@ -124,9 +129,9 @@ jwt.verify(token, config.key, { algorithms: ['HS256'] }); // Key type unknown
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `symmetricAlgorithms` | `string[]` | `["HS256","HS384","HS512"]` | Algorithms to flag when used with public keys |
-| `trustedSanitizers` | `string[]` | `[]` | Extra function names to treat as sanitizers |
-| `trustedAnnotations` | `string[]` | `[]` | Extra JSDoc annotations to treat as safe markers |
-| `strictMode` | `boolean` | `false` | Disable false-positive suppression — report even sanitized input |
+| Option                | Type       | Default                     | Description                                                      |
+| --------------------- | ---------- | --------------------------- | ---------------------------------------------------------------- |
+| `symmetricAlgorithms` | `string[]` | `["HS256","HS384","HS512"]` | Algorithms to flag when used with public keys                    |
+| `trustedSanitizers`   | `string[]` | `[]`                        | Extra function names to treat as sanitizers                      |
+| `trustedAnnotations`  | `string[]` | `[]`                        | Extra JSDoc annotations to treat as safe markers                 |
+| `strictMode`          | `boolean`  | `false`                     | Disable false-positive suppression — report even sanitized input |

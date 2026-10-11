@@ -41,61 +41,39 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
-  staticString,
 } from '@interlace/eslint-devkit';
 import { fileUsesMcpSdk } from '../../utils/mcp-evidence';
+import {
+  configSchema,
+  propertyKey,
+  readRegistration,
+  resolveFunction,
+  schemaFields,
+  toolNameOf,
+} from '../../utils/tool-registration';
 
-type MessageIds = 'undeclaredArg';
+export { propertyKey };
 
-const REGISTER_TOOL = 'registerTool';
-const LEGACY_TOOL = 'tool';
-
-/** The statically-readable key name of a property, or `undefined`. */
-export function propertyKey(
-  prop: TSESTree.ObjectLiteralElement,
-): string | undefined {
-  if (prop.type !== 'Property' || prop.computed) return undefined;
-  if (prop.key.type === 'Identifier') return prop.key.name;
-  return staticString(prop.key) ?? undefined;
-}
+type MessageIds = 'undeclaredArg' | 'undeclaredArgPassthrough';
 
 /**
- * The keys an `inputSchema` declares, or `undefined` if it cannot be read.
+ * The keys an inline `registerTool` config's `inputSchema` declares, or
+ * `undefined` if it cannot be read.
  *
- * `undefined` means "do not judge this registration". A schema built by a call
- * (`z.object({...})`, `buildSchema()`) or spread from elsewhere may declare
- * anything, and reporting against a shape this file cannot see would flag
- * correct code.
+ * `undefined` means "do not judge this registration". A schema whose key set
+ * is not written at the call — `buildSchema()`, `SharedSchema`, a spread, a
+ * spread after `inputSchema` that can replace it — may declare anything, and
+ * reporting against a shape this file cannot see would flag correct code. A
+ * raw shape and an object schema written in place (`z.object({ … })`) are both
+ * read.
  */
 export function declaredSchemaKeys(
   config: TSESTree.ObjectExpression,
 ): Set<string> | undefined {
-  const index = config.properties.findIndex(
-    (prop) => propertyKey(prop) === 'inputSchema',
-  );
-  if (index === -1) return undefined;
-
-  // A spread *after* `inputSchema` replaces it wholesale at runtime —
-  // `{ inputSchema: { path: z.string() }, ...options }` declares whatever
-  // `options.inputSchema` holds, which this file cannot see. A spread before it
-  // is harmless: the explicit key wins, so it is not a reason to go silent.
-  for (let i = index + 1; i < config.properties.length; i++) {
-    if (config.properties[i]!.type === 'SpreadElement') return undefined;
-  }
-
-  const value = (config.properties[index] as TSESTree.Property).value;
-  if (value.type !== 'ObjectExpression') return undefined;
-
-  const keys = new Set<string>();
-  for (const entry of value.properties) {
-    // A spread could contribute any key, so the whole schema becomes
-    // unreadable rather than partially known.
-    if (entry.type === 'SpreadElement') return undefined;
-    const key = propertyKey(entry);
-    if (key === undefined) return undefined;
-    keys.add(key);
-  }
-  return keys;
+  const schema = configSchema(config);
+  if (schema.kind !== 'schema') return undefined;
+  const read = schemaFields(schema.node);
+  return read === undefined ? undefined : new Set(read.fields.keys());
 }
 
 /**
@@ -157,6 +135,20 @@ export const noUnvalidatedToolArgs = createRule<[], MessageIds>({
         documentationLink:
           'https://modelcontextprotocol.io/docs/concepts/tools',
       }),
+      undeclaredArgPassthrough: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'MCP Tool Argument Passed Through Unvalidated',
+        cwe: 'CWE-20',
+        owasp: 'A03:2021',
+        cvss: 7.5,
+        description:
+          'Tool "{{tool}}" reads `{{arg}}`, which its inputSchema does not declare, and the schema is loose (passthrough) — so the value reaches the handler exactly as the model sent it',
+        severity: 'HIGH',
+        compliance: ['SOC2'],
+        fix: 'Declare `{{arg}}` in the inputSchema with the type and constraints it needs. A loose schema validates the declared keys and waves every other key through.',
+        documentationLink:
+          'https://modelcontextprotocol.io/docs/concepts/tools',
+      }),
     },
     schema: [],
   },
@@ -170,53 +162,40 @@ export const noUnvalidatedToolArgs = createRule<[], MessageIds>({
       node: TSESTree.Node;
       tool: string;
       arg: string;
+      messageId: MessageIds;
     }> = [];
-
-    function toolNameOf(node: TSESTree.CallExpression): string {
-      const first = node.arguments[0];
-      if (first?.type === 'Literal' && typeof first.value === 'string')
-        return first.value;
-      return 'unknown';
-    }
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
-        if (node.callee.type !== 'MemberExpression' || node.callee.computed)
-          return;
-        if (node.callee.property.type !== 'Identifier') return;
-        const method = node.callee.property.name;
-        if (method !== REGISTER_TOOL && method !== LEGACY_TOOL) return;
-
-        const config = node.arguments[1];
-        if (config?.type !== 'ObjectExpression') return;
-
-        const declared = declaredSchemaKeys(config);
+        const registration = readRegistration(node);
         // No readable schema means no contract to check against. That is
         // require-tool-input-schema's question, not this rule's.
+        if (registration?.schema.kind !== 'schema') return;
+        const declared = schemaFields(registration.schema.node);
         if (declared === undefined) return;
 
-        // Reaching here means `arguments[1]` is an ObjectExpression, so the
-        // call has at least two arguments and a last one always exists. No
-        // undefined guard, because no input reaches it.
-        const handler = node.arguments[node.arguments.length - 1]!;
+        const handler = resolveFunction(
+          registration.handler,
+          context.sourceCode.getScope(node),
+        );
+        if (handler === undefined) return;
 
         for (const read of destructuredArgNames(handler)) {
-          if (declared.has(read.name)) continue;
+          if (declared.fields.has(read.name)) continue;
           candidates.push({
             node: read.node,
             tool: toolNameOf(node),
             arg: read.name,
+            messageId: declared.loose
+              ? 'undeclaredArgPassthrough'
+              : 'undeclaredArg',
           });
         }
       },
 
       'Program:exit'() {
-        for (const { node, tool, arg } of candidates) {
-          context.report({
-            node,
-            messageId: 'undeclaredArg',
-            data: { tool, arg },
-          });
+        for (const { node, tool, arg, messageId } of candidates) {
+          context.report({ node, messageId, data: { tool, arg } });
         }
       },
     };

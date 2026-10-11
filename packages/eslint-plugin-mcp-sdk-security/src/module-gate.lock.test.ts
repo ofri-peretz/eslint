@@ -32,7 +32,8 @@ const SDK = "import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
  * fixture proving both directions is what stops this suite passing with the
  * gate shut on everything.
  */
-const VIOLATION = `server.registerTool('run', cfg, async ({ cmd }) => { execSync(cmd); });`;
+const VIOLATION = `import { execSync } from 'node:child_process';
+server.registerTool('run', cfg, async ({ cmd }) => { execSync(cmd); });`;
 
 /** Files that use no MCP SDK at all. */
 const NON_SDK_SOURCES: ReadonlyArray<readonly [string, string]> = [
@@ -126,6 +127,41 @@ describe('MCP SDK module gate', () => {
     it('and the same violation reports', () => {
       expect(lint(`${load}\n${VIOLATION}`, 'no-command-injection-in-tool').length).toBeGreaterThan(0);
     });
+  });
+
+  /**
+   * The SDK is not one package any more. v2 split it into
+   * `@modelcontextprotocol/server` / `client` / `core` plus per-framework
+   * adapters, and Vercel's `mcp-handler` (formerly `@vercel/mcp-adapter`) hands
+   * the same `McpServer` to a callback. A file importing only one of these ran
+   * **no rule in this plugin** — the gate matched `@modelcontextprotocol/sdk`
+   * alone. One case per package, so dropping any one from the gate goes red.
+   */
+  describe.each([
+    '@modelcontextprotocol/server',
+    '@modelcontextprotocol/client',
+    '@modelcontextprotocol/core',
+    '@modelcontextprotocol/node',
+    '@modelcontextprotocol/express',
+    '@modelcontextprotocol/hono',
+    '@modelcontextprotocol/fastify',
+    'mcp-handler',
+    '@vercel/mcp-adapter',
+  ])('the gate opens on %s', (pkg) => {
+    it('and the same violation reports', () => {
+      const load = `import { anything } from '${pkg}';`;
+      expect(lint(`${load}\n${VIOLATION}`, 'no-command-injection-in-tool').length).toBeGreaterThan(0);
+    });
+
+    it('including a subpath of it', () => {
+      const load = `import { anything } from '${pkg}/sub/path.js';`;
+      expect(lint(`${load}\n${VIOLATION}`, 'no-command-injection-in-tool').length).toBeGreaterThan(0);
+    });
+  });
+
+  it('a look-alike package outside the SDK family does not open the gate', () => {
+    const code = `import { McpServer } from 'mcp-handler-extras';\n${VIOLATION}`;
+    expect(lint(code, 'no-command-injection-in-tool')).toHaveLength(0);
   });
 
   it('but a locally bound `require` parameter is not a module load', () => {

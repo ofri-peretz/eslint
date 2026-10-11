@@ -523,6 +523,10 @@ ruleTester.run('prevent-double-release', preventDoubleRelease, {
           try {
             await client.query('SELECT 1');
             client.release();
+          // FP/FN review 2026-10 (DR-3): a release that ENDS the try block
+          // cannot be followed by a throw into the catch, so the two never
+          // both run. The double release needs work after it — pinned here.
+            await client.query('SELECT 2');
           } catch (e) {
             client.release();
           }
@@ -801,6 +805,10 @@ ruleTester.run('prevent-double-release', preventDoubleRelease, {
           const client = await pool.connect();
           try {
             client.release();
+          // FP/FN review 2026-10 (DR-3): a release that ENDS the try block
+          // cannot be followed by a throw into the catch, so the two never
+          // both run. The double release needs work after it — pinned here.
+            audit();
           } catch (e) {
             client.release();
           }

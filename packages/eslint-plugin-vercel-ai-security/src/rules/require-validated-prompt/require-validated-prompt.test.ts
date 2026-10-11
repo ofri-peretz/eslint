@@ -249,79 +249,10 @@ ruleTester.run('require-validated-prompt (coverage gaps)', requireValidatedPromp
   ]),
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Layer 2: synthetic AST for parser-unreachable branches.
-// A local mock context is used (instead of devkit's createWithMockContext)
-// because this branch needs a node-sensitive getText stub: the callee must
-// read as an AI SDK call while the matched identifier reads as user input.
-// ─────────────────────────────────────────────────────────────────────────────
-import { describe, it, expect } from 'vitest';
-import type { TSESLint } from '@interlace/eslint-devkit';
-
-/**
- * The module gate reads `sourceCode.ast`, so a synthetic context needs a
- * Program that actually contains the SDK — otherwise the rule correctly
- * abstains and registers no listeners, and these branch tests would be
- * asserting against a handler that no longer exists.
- */
-const AI_PROGRAM = {
-  type: 'Program',
-  body: [
-    {
-      type: 'ImportDeclaration',
-      specifiers: [],
-      source: { type: 'Literal', value: 'ai' },
-    },
-  ],
-  tokens: [],
-  comments: [],
-};
-
-
-describe('require-validated-prompt — synthetic AST', () => {
-  it('falls back to the "user input" label when the matched identifier has an empty name', () => {
-    const reports: TSESLint.ReportDescriptor<string>[] = [];
-    const callee = { type: 'Identifier', name: 'generateText' };
-    const emptyNameIdentifier = { type: 'Identifier', name: '' };
-    const callNode = {
-      type: 'CallExpression',
-      callee,
-      arguments: [
-        {
-          type: 'ObjectExpression',
-          properties: [
-            {
-              type: 'Property',
-              key: { type: 'Identifier', name: 'prompt' },
-              value: emptyNameIdentifier,
-            },
-          ],
-        },
-      ],
-    };
-    const context = {
-      options: [{}],
-      filename: 'synthetic.ts',
-      sourceCode: {
-        ast: AI_PROGRAM,
-        // Node-sensitive stub: callee looks like an AI SDK call, the empty-name
-        // identifier looks like user input to the pattern matcher.
-        getText: (n?: unknown) => (n === callee ? 'generateText' : 'userInput'),
-      },
-      report: (descriptor: TSESLint.ReportDescriptor<string>) => {
-        reports.push(descriptor);
-      },
-    } as unknown as Parameters<typeof requireValidatedPrompt.create>[0];
-
-    const listeners = requireValidatedPrompt.create(context);
-    (listeners.CallExpression as (node: unknown) => void)(callNode);
-
-    expect(reports).toHaveLength(1);
-    const report = reports[0] as { messageId: string; data?: { input?: string } };
-    expect(report.messageId).toBe('unsafePrompt');
-    expect(report.data?.input).toBe('user input');
-  });
-});
+// (Removed 2026-10-10) A Layer-2 synthetic test pinned the `|| 'user input'`
+// label fallback for an Identifier with an empty name. The report label is now
+// the node's source text, which is never empty for a parsed node, so the branch
+// and its synthetic test are gone. See the fp-fn audit note.
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AI SDK v7 renamed the system prompt to `instructions` (`system` is deprecated
@@ -353,4 +284,78 @@ ruleTester.run('require-validated-prompt (computed key collision)', requireValid
     },
   ]),
   invalid: [],
+});
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FP/FN audit 2026-10-10: user input is recognised by SHAPE (read from the
+// request), and a name pattern must be the name's head noun, whole words —
+// `inputTokens` is a count of tokens, not an input.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('require-validated-prompt (fp-fn audit)', requireValidatedPrompt, {
+  valid: xai([
+    {
+      name: 'a constant whose name merely starts with "input" is not user input',
+      code: `
+        const inputTokens = 1200;
+        await generateText({ model, prompt: \`Summarize the usage report (\${inputTokens} tokens).\` });
+      `,
+    },
+    {
+      name: 'a value parsed through a schema is validated',
+      code: `
+        export async function POST(req) {
+          const { query } = z.object({ query: z.string().max(500) }).parse(await req.json());
+          return streamText({ model, prompt: query });
+        }
+      `,
+    },
+    {
+      name: 'a value bound from a validator call is validated',
+      code: `
+        const safeInput = validateInput(userInput);
+        await generateText({ model, prompt: safeInput });
+      `,
+    },
+    {
+      name: 'a runtime-keyed member names no property to match',
+      code: `await generateText({ model, prompt: data[key] });`,
+    },
+    {
+      name: 'a member of an unrelated object whose head noun is not an input word',
+      code: `await generateText({ model, prompt: settings.inputMode });`,
+    },
+  ]),
+  invalid: xai([
+    {
+      name: 'prompt destructured straight out of the request, under a neutral name',
+      code: `
+        export async function POST(req) {
+          const { prompt } = await req.json();
+          return streamText({ model, prompt });
+        }
+      `,
+      errors: [{ messageId: 'unsafePrompt' }],
+    },
+    {
+      name: 'a member of the parsed body interpolated into the prompt',
+      code: `
+        export async function POST(req) {
+          const body = await req.json();
+          return streamText({ model, prompt: \`Translate to French: \${body.text}\` });
+        }
+      `,
+      errors: [{ messageId: 'unsafePrompt' }],
+    },
+    {
+      name: 'a query-string value in the system prompt',
+      code: `
+        export async function GET(req) {
+          const q = new URL(req.url).searchParams.get('q') ?? '';
+          return streamText({ model, system: \`Answer about \${q}\`, prompt: 'go' });
+        }
+      `,
+      errors: [{ messageId: 'unsafeSystemPrompt' }],
+    },
+  ]),
 });

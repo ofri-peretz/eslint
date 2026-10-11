@@ -204,3 +204,52 @@ ruleTester.run('require-audit-logging', requireAuditLogging, {
     },
   ]),
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-vercel-ai-security.md)
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('require-audit-logging (fp-fn audit)', requireAuditLogging, {
+  valid: xai([
+    {
+      name: 'OpenTelemetry telemetry enabled on the call is audit logging',
+      code: `
+        export async function summarize(text) {
+          return generateText({ model, prompt: text, experimental_telemetry: { isEnabled: true, functionId: 'summarize' } });
+        }
+      `,
+    },
+    {
+      name: 'the v7 telemetry option counts too',
+      code: `generateText({ model, prompt: 'x', telemetry: { isEnabled: true } });`,
+    },
+  ]),
+  invalid: xai([
+    {
+      name: 'a preceding call with no static callee path, or a non-level method, is not logging',
+      code: `
+        function handler() {
+          (getLogger())('x');
+          cache.clear();
+          generateText(cfg);
+        }
+      `,
+      errors: [{ messageId: 'missingAuditLogging' }],
+    },
+    {
+      name: 'telemetry explicitly disabled is not logging',
+      code: `generateText({ model, prompt: 'x', experimental_telemetry: { isEnabled: false } });`,
+      errors: [{ messageId: 'missingAuditLogging' }],
+    },
+    {
+      name: 'a call whose name merely contains "log" or "info" is not logging',
+      code: `
+        function handler() {
+          showDialog();
+          getUserInfo();
+          generateText({ prompt: p });
+        }
+      `,
+      errors: [{ messageId: 'missingAuditLogging' }],
+    },
+  ]),
+});

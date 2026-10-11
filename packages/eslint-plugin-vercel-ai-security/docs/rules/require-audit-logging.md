@@ -24,7 +24,7 @@ This rule identifies AI SDK calls that aren't preceded by logging statements
 | **OWASP Agentic**  | [ASI10: Logging & Monitoring](https://owasp.org)                                 |
 | **CWE**            | [CWE-778: Insufficient Logging](https://cwe.mitre.org/data/definitions/778.html) |
 | **CVSS**           | 4.0                                                                              |
-| **Config Default** | `off` (recommended, strict)                                                      |
+| **Config Default** | `off` (recommended), `warn` (strict)                                                      |
 
 ## 🔍 What This Rule Detects
 
@@ -74,6 +74,12 @@ Insufficient logging makes it impossible to:
 
 - [`require-error-handling`](./require-error-handling.md) - Handle errors
 - [`require-tool-confirmation`](./require-tool-confirmation.md) - Log destructive operations
+
+## 🔄 Changes in the 2026-10-10 FP/FN audit
+
+- `experimental_telemetry` / `telemetry` with `isEnabled: true` counts as audit
+  logging. Logging calls are matched by callee path (`console.log`,
+  `logger.info`, `debug(...)`), not by substring (`showDialog()` is not logging).
 
 ## Known False Negatives
 

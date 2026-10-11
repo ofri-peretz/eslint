@@ -13,6 +13,7 @@ import {
 } from '@interlace/eslint-devkit';
 import { NoBatchInsertLoopOptions } from '../../types';
 import { fileUsesPostgres } from '../../utils';
+import { isNonPgQueryObject } from '../../utils/query-call';
 
 /**
  * Array methods that invoke their callback once per element.
@@ -62,6 +63,28 @@ const TRANSPARENT_METHODS: ReadonlySet<string> = new Set([
   'map',
   'flatMap',
 ]);
+
+/**
+ * Mapping methods that DO make a write one round trip per element (`from` is
+ * `Array.from(xs, mapper)`).
+ *
+ * `map` stays transparent for reads (see TRANSPARENT_METHODS), but a per-row
+ * INSERT/UPDATE/DELETE inside `.map()` is the textbook N+1 whatever consumes
+ * the array: on a transaction client pg queues the queries, so
+ * `Promise.all(items.map((it) => client.query('INSERT …')))` runs strictly
+ * one after another. The rule's own docs list it under "Incorrect".
+ */
+const WRITE_MAPPING_METHODS: ReadonlySet<string> = new Set(['map', 'flatMap', 'from']);
+
+/** A row-writing statement — what `.map()` must not issue once per element. */
+const WRITE_STATEMENT = /^\s*(?:insert\s+into|update\b[\s\S]*\bset\b|delete\s+from|merge\s+into)\b/i;
+
+/**
+ * A statement that is ALREADY batched: arrays unnested into rows, a JSON
+ * recordset, or pg-format's `%L` multi-row literal. A loop over chunks of
+ * these is the remediation this rule's message recommends, not an N+1.
+ */
+const BATCHED_STATEMENT = /\bunnest\s*\(|\bjsonb?_to_recordset\s*\(|%L/i;
 
 const LIMIT = /\bLIMIT\b/i;
 const OFFSET = /\bOFFSET\b/i;
@@ -123,7 +146,7 @@ function callbackMethod(fn: TSESTree.Node): string | null {
  * loop for a query inside a helper is interprocedural, and blaming a lambda's
  * enclosing loop for something that lambda may never run is a lexical accident.
  */
-function iterationContext(start: TSESTree.Node): IterationContext | null {
+function iterationContext(start: TSESTree.Node, writes: boolean): IterationContext | null {
   for (let node: TSESTree.Node | undefined = start.parent; node; node = node.parent) {
     if (isLoop(node)) return { kind: 'loop', node };
     if (!isFunction(node)) continue;
@@ -131,6 +154,7 @@ function iterationContext(start: TSESTree.Node): IterationContext | null {
     const method = callbackMethod(node);
     if (method === null) return null;
     if (ITERATION_METHODS.has(method)) return { kind: 'method' };
+    if (writes && WRITE_MAPPING_METHODS.has(method)) return { kind: 'method' };
     if (method !== 'iife' && !TRANSPARENT_METHODS.has(method)) return null;
   }
   return null;
@@ -144,6 +168,11 @@ function iterationContext(start: TSESTree.Node): IterationContext | null {
  * loop rather than the SQL.
  */
 function statementText(node: TSESTree.Node): string | null {
+  // `format('INSERT INTO t VALUES %L', rows)` — the statement is the format string.
+  if (node.type === AST_NODE_TYPES.CallExpression) {
+    const [first] = node.arguments;
+    return first === undefined ? null : statementText(first);
+  }
   if (node.type === AST_NODE_TYPES.Literal) {
     return typeof node.value === 'string' ? node.value : null;
   }
@@ -177,10 +206,13 @@ function statementText(node: TSESTree.Node): string | null {
 function isPagination(text: string | null, context: IterationContext): boolean {
   if (text === null || !LIMIT.test(text)) return false;
   if (OFFSET.test(text)) return true;
+  // `for (;;)` is `while (true)` spelled differently — the keyset-pagination
+  // loop is written both ways.
   return (
     context.kind === 'loop' &&
     (context.node.type === AST_NODE_TYPES.WhileStatement ||
-      context.node.type === AST_NODE_TYPES.DoWhileStatement)
+      context.node.type === AST_NODE_TYPES.DoWhileStatement ||
+      (context.node.type === AST_NODE_TYPES.ForStatement && context.node.test === null))
   );
 }
 
@@ -232,11 +264,15 @@ export const noBatchInsertLoop: TSESLint.RuleModule<'noBatchInsertLoop', NoBatch
         // Worse, the filter only ran when the argument was a plain string, so
         // the identical SELECT written as a template literal reported and the
         // string form did not.
-        const iteration = iterationContext(node);
+        const [queryArg] = node.arguments;
+        if (isNonPgQueryObject(queryArg)) return;
+        const text = queryArg === undefined ? null : statementText(queryArg);
+
+        const iteration = iterationContext(node, text !== null && WRITE_STATEMENT.test(text));
         if (iteration === null) return;
 
-        const [queryArg] = node.arguments;
-        if (queryArg !== undefined && isPagination(statementText(queryArg), iteration)) return;
+        if (text !== null && BATCHED_STATEMENT.test(text)) return;
+        if (isPagination(text, iteration)) return;
 
         context.report({ node, messageId: 'noBatchInsertLoop' });
       },

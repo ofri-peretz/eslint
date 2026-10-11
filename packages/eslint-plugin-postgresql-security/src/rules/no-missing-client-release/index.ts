@@ -16,6 +16,7 @@ import {
 } from '@interlace/eslint-devkit';
 import { NoMissingClientReleaseOptions } from '../../types';
 import { fileUsesPostgres, PG_MODULES } from '../../utils';
+import { isDeclaredPgPool } from '../../utils/pool-receiver';
 
 const PG_MODULE_SET: ReadonlySet<string> = new Set(PG_MODULES);
 
@@ -111,6 +112,71 @@ function isInsideFinally(node: TSESTree.Node): boolean {
   return false;
 }
 
+/** Is this reference the receiver of a `.query(...)` call? */
+function isQueryCall(identifier: TSESTree.Node): boolean {
+  const member = identifier.parent;
+  return (
+    member?.type === AST_NODE_TYPES.MemberExpression &&
+    member.object === identifier &&
+    propertyName(member) === 'query' &&
+    member.parent?.type === AST_NODE_TYPES.CallExpression &&
+    member.parent.callee === member
+  );
+}
+
+/** Does this subtree contain a `return`, not counting nested functions? */
+function containsReturn(node: TSESTree.Node): boolean {
+  if (node.type === AST_NODE_TYPES.ReturnStatement) return true;
+  if (
+    node.type === AST_NODE_TYPES.FunctionDeclaration ||
+    node.type === AST_NODE_TYPES.FunctionExpression ||
+    node.type === AST_NODE_TYPES.ArrowFunctionExpression
+  ) {
+    return false;
+  }
+  return Object.entries(node).some(([key, value]) => {
+    if (key === 'parent') return false;
+    const children: unknown[] = Array.isArray(value) ? value : [value];
+    return children.some(
+      (child) =>
+        typeof child === 'object' &&
+        child !== null &&
+        typeof (child as TSESTree.Node).type === 'string' &&
+        containsReturn(child as TSESTree.Node),
+    );
+  });
+}
+
+/**
+ * Is this release a direct statement of a `try` block that nothing before it
+ * can leave early? Returns that `try`.
+ */
+function tryBlockRelease(release: TSESTree.Node): TSESTree.TryStatement | null {
+  const statement = release.parent?.parent?.parent;
+  const block = statement?.parent;
+  if (
+    statement?.type !== AST_NODE_TYPES.ExpressionStatement ||
+    block?.type !== AST_NODE_TYPES.BlockStatement ||
+    block.parent?.type !== AST_NODE_TYPES.TryStatement ||
+    block.parent.block !== block
+  ) {
+    return null;
+  }
+  const before = block.body.slice(0, block.body.indexOf(statement));
+  return before.some(containsReturn) ? null : block.parent;
+}
+
+/** Is this release inside the `catch` clause of `tryStatement`? */
+function isInCatchOf(
+  release: TSESTree.Node,
+  tryStatement: TSESTree.TryStatement,
+): boolean {
+  for (let current = release.parent; current; current = current.parent) {
+    if (current === tryStatement.handler) return true;
+  }
+  return false;
+}
+
 /**
  * Does this reference hand the client to something else?
  *
@@ -119,7 +185,10 @@ function isInsideFinally(node: TSESTree.Node): boolean {
  * exists precisely to guarantee the release. Reporting those fires on the
  * remediation, so ownership leaving the function means abstain.
  */
-function transfersOwnership(identifier: TSESTree.Node): boolean {
+function transfersOwnership(
+  identifier: TSESTree.Node,
+  runsQueries: boolean,
+): boolean {
   // Every reference identifier has a parent — only `Program` does not — so the
   // undefined arm is unreachable through the real parser. Asserted rather than
   // branched on, so there is no dead branch to chase to 100%.
@@ -128,9 +197,16 @@ function transfersOwnership(identifier: TSESTree.Node): boolean {
   if (parent.type === AST_NODE_TYPES.ArrowFunctionExpression) return true;
   // A bare argument: `runInTransaction(client, ...)`. A `client.query(...)`
   // receiver is a MemberExpression parent and never reaches here.
+  //
+  // Only when this function runs no query on the client itself. A function
+  // that does `client.query('BEGIN')`, `await insertUser(client, …)`,
+  // `client.query('COMMIT')` is the client's OWNER, merely lending it to a
+  // repository helper — treating every such call as a hand-off silenced the
+  // rule on the ordinary transaction shape, leak or not.
   if (parent.type === AST_NODE_TYPES.CallExpression) {
-    return parent.arguments.includes(
-      identifier as TSESTree.CallExpressionArgument,
+    return (
+      !runsQueries &&
+      parent.arguments.includes(identifier as TSESTree.CallExpressionArgument)
     );
   }
   if (parent.type === AST_NODE_TYPES.Property) return true;
@@ -166,7 +242,7 @@ export const noMissingClientRelease: TSESLint.RuleModule<
         description: 'PG client acquired but not released.',
         severity: 'HIGH',
         cwe: 'CWE-404',
-        owasp: 'A05:2025',
+        owasp: 'A10:2025',
         effort: 'low',
         fix: 'Ensure "client.release()" is called in a finally block to return the client to the pool.',
         documentationLink:
@@ -179,7 +255,7 @@ export const noMissingClientRelease: TSESLint.RuleModule<
           'PG client is released on some paths but not all. A throw, an early return or a rejected query skips the release and leaks the connection.',
         severity: 'HIGH',
         cwe: 'CWE-404',
-        owasp: 'A05:2025',
+        owasp: 'A10:2025',
         effort: 'low',
         fix: 'Move "client.release()" into a finally block so it runs on every path out of the function.',
         documentationLink:
@@ -251,17 +327,6 @@ export const noMissingClientRelease: TSESLint.RuleModule<
           return;
         }
 
-        // Only a POOL hands out a client that has to be given back.
-        if (
-          !isPgPool(
-            node.callee.object,
-            context.sourceCode.getScope(node),
-            poolProperties,
-          )
-        ) {
-          return;
-        }
-
         // `const client = await pool.connect()`
         const checkout: TSESTree.Node =
           node.parent?.type === AST_NODE_TYPES.AwaitExpression
@@ -282,9 +347,27 @@ export const noMissingClientRelease: TSESLint.RuleModule<
             variable.references.map((ref) => ref.identifier),
           );
 
+        const runsQueries = uses.some((id) => isQueryCall(id));
+
+        // Only a POOL hands out a client that has to be given back. Proven by
+        // a `new Pool()` in this file, by a declared `Pool` type (the
+        // injected / imported pool), or by what the checkout is used for: a
+        // `.connect()` whose result then runs `.query(...)` is a pg pool
+        // checkout whatever the receiver is called — `pg.Client#connect`
+        // resolves to nothing, and broker / socket connections have no
+        // `.query`.
+        const scope = context.sourceCode.getScope(node);
+        if (
+          !isPgPool(node.callee.object, scope, poolProperties) &&
+          !isDeclaredPgPool(node.callee.object, scope) &&
+          !runsQueries
+        ) {
+          return;
+        }
+
         // Ownership left this function — a helper, the caller, or a container
         // now decides when the client goes back.
-        if (uses.some((id) => transfersOwnership(id))) return;
+        if (uses.some((id) => transfersOwnership(id, runsQueries))) return;
 
         const releases = uses.filter((id) => isReleaseCall(id));
 
@@ -300,7 +383,20 @@ export const noMissingClientRelease: TSESLint.RuleModule<
         // reach it. An early return, a throw, or a rejected query skips it —
         // and the happy path always returns the client, so this is the leak
         // that only ever shows up in production.
-        if (!releases.some((id) => isInsideFinally(id))) {
+        // Released at the end of the `try` AND in its `catch` also covers
+        // every path: success reaches the first, any throw before it reaches
+        // the second.
+        const coveredByTryAndCatch = releases.some((id) => {
+          const tryStatement = tryBlockRelease(id);
+          return (
+            tryStatement !== null &&
+            releases.some((other) => isInCatchOf(other, tryStatement))
+          );
+        });
+        if (
+          !coveredByTryAndCatch &&
+          !releases.some((id) => isInsideFinally(id))
+        ) {
           context.report({
             node: declarator,
             messageId: 'releaseNotGuaranteed',

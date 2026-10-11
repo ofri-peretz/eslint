@@ -19,7 +19,12 @@ import {
   MessageIcons,
   objectKeyName,
 } from '@interlace/eslint-devkit';
-import { isSignOperation, SENSITIVE_PAYLOAD_FIELDS } from '../../utils';
+import {
+  isSignOperation,
+  joseBuilderChain,
+  resolveObject,
+  SENSITIVE_PAYLOAD_FIELDS,
+} from '../../utils';
 import type { NoSensitivePayloadOptions } from '../../types';
 
 type MessageIds = 'sensitivePayloadField';
@@ -96,35 +101,44 @@ export const noSensitivePayload = createRule<RuleOptions, MessageIds>({
       ...additionalFields,
     ]);
 
+    const sourceCode = context.sourceCode;
+
     return {
       CallExpression(node: TSESTree.CallExpression) {
-        if (!isSignOperation(node)) {
+        if (!isSignOperation(node, sourceCode)) {
           return;
         }
 
-        if (node.arguments.length < 1) {
+        /*
+         * Where the claims are. jose's `.sign(key)` takes only the key — the
+         * claims went into `new SignJWT(claims)` at the root of the chain.
+         * Everywhere else they are the first argument. Either way they are
+         * resolved structurally: an inline literal, a same-file const, a
+         * spread of such a const. A payload this file cannot see is silent.
+         */
+        const chain = joseBuilderChain(node, sourceCode);
+        const payload = resolveObject(
+          chain === null ? node.arguments[0] : chain.builder.arguments[0],
+          sourceCode,
+        );
+        if (payload === null) {
           return;
         }
 
-        const payloadArg = node.arguments[0];
-
-        // Check object literal payload
-        if (payloadArg.type === 'ObjectExpression') {
-          for (const prop of payloadArg.properties) {
-            // A computed or quoted key is still the field being put in the
-            // token. `{ ['password']: p }` leaks exactly what `{ password: p }`
-            // leaks.
-            const keyText =
-              prop.type === 'Property' ? objectKeyName(prop) : null;
-            if (keyText !== null) {
-              if (allSensitiveFields.has(keyText.toLowerCase())) {
-                context.report({
-                  node: prop,
-                  messageId: 'sensitivePayloadField',
-                  data: { fieldName: keyText },
-                });
-              }
-            }
+        for (const prop of payload.properties) {
+          // A computed or quoted key is still the field being put in the
+          // token. `{ ['password']: p }` leaks exactly what `{ password: p }`
+          // leaks.
+          const keyText = objectKeyName(prop);
+          if (
+            keyText !== null &&
+            allSensitiveFields.has(keyText.toLowerCase())
+          ) {
+            context.report({
+              node: prop,
+              messageId: 'sensitivePayloadField',
+              data: { fieldName: keyText },
+            });
           }
         }
       },

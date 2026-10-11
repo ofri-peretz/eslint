@@ -267,3 +267,23 @@ ruleTester.run('require-max-tokens (AI SDK v4 + v5 option names)', requireMaxTok
     },
   ]),
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-vercel-ai-security.md)
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('require-max-tokens (fp-fn audit)', requireMaxTokens, {
+  valid: xai([
+    {
+      name: 'a limit supplied through a spread of shared settings',
+      code: `
+        const LIMITS = { maxOutputTokens: 1024, maxRetries: 2 };
+        await generateText({ model, ...LIMITS, prompt: 'hi' });
+      `,
+    },
+    {
+      name: 'a user function whose name contains generateText is not the SDK',
+      code: `generateTextureAtlas({ size: 512 });`,
+    },
+  ]),
+  invalid: xai([]),
+});

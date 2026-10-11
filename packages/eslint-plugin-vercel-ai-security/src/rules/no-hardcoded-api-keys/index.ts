@@ -10,7 +10,7 @@
  * @see OWASP ASI03: Identity & Privilege Abuse
  */
 
-import { TSESTree, createRule, formatLLMMessage, MessageIcons, staticString } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, TSESTree, createRule, formatLLMMessage, MessageIcons, nameHasWord, objectKeyName, staticString } from '@interlace/eslint-devkit';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
 
 type MessageIds = 'hardcodedApiKey';
@@ -62,114 +62,86 @@ export const noHardcodedApiKeys = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [
     {
-      apiKeyPatterns: ['apiKey', 'api_key', 'token', 'secret', 'credentials'],
+      apiKeyPatterns: ['apiKey', 'api_key', 'token', 'secret', 'credentials', 'authorization'],
     },
   ],
-  create(context) {
+  create(context, [options]) {
     // Every rule in this plugin is Vercel-AI-specific, and none of them knew
     // it: over 107,384 files, 91% of this plugin's findings were in files with
     // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
     // the cheap path — a file without the SDK does no work.
     if (!fileUsesVercelAi(context.sourceCode.ast)) return {};
 
-    const [options = {}] = context.options;
-    const apiKeyPatterns = options.apiKeyPatterns ?? [
-      'apiKey', 'api_key', 'token', 'secret', 'credentials',
-    ];
+    // Merged with `defaultOptions` before `create` runs.
+    const { apiKeyPatterns } = options as Required<Options>;
 
-    const sourceCode = context.sourceCode;
+    /** The name a string is stored under: a property key or a declared variable. */
+    function holderName(node: TSESTree.Node): string | null {
+      const parent = node.parent;
+      if (parent?.type === AST_NODE_TYPES.Property && parent.value === node) {
+        return objectKeyName(parent);
+      }
+      if (
+        parent?.type === AST_NODE_TYPES.VariableDeclarator &&
+        parent.id.type === AST_NODE_TYPES.Identifier
+      ) {
+        return parent.id.name;
+      }
+      return null;
+    }
 
-    // Known model provider functions
-    const providerFunctions = [
-      'openai', 'anthropic', 'google', 'cohere', 'mistral',
-      'createOpenAI', 'createAnthropic', 'createGoogle', 'createMistral',
-    ];
+    function check(node: TSESTree.Literal | TSESTree.TemplateLiteral): void {
+      const raw = staticString(node);
+      if (raw === null) return;
+      // `Authorization: 'Bearer sk-…'` carries the key after the scheme.
+      const value = raw.replace(/^Bearer\s+/i, '');
 
-    /**
-     * Check if a string looks like an API key
-     */
-    // oxlint-disable-next-line consistent-function-scoping
-    function looksLikeApiKey(value: string): boolean {
-      // Common API key patterns
-      const patterns = [
-        /^sk-[a-zA-Z0-9]{20,}$/,           // OpenAI
-        /^sk-ant-[a-zA-Z0-9-]+$/,          // Anthropic
-        /^[a-zA-Z0-9]{32,}$/,              // Generic long alphanumeric
-        /^[A-Z0-9]{20,}$/,                 // AWS-style keys
-        /^AIza[a-zA-Z0-9-_]{35}$/,         // Google AI
-      ];
-      return patterns.some(p => p.test(value));
+      const holder = holderName(node);
+      const isKey =
+        PROVIDER_KEY_SHAPES.some((shape) => shape.test(value)) ||
+        (holder !== null &&
+          apiKeyPatterns.some((pattern: string) => nameHasWord(holder, pattern)) &&
+          isGenericSecret(value));
+      if (!isKey) return;
+
+      context.report({
+        node,
+        messageId: 'hardcodedApiKey',
+        data: { key: value.substring(0, 10) + '...' },
+      });
     }
 
     return {
-      Property(node: TSESTree.Property) {
-        const keyName = node.key.type === 'Identifier' 
-          ? node.key.name 
-          : node.key.type === 'Literal' 
-            ? String(node.key.value)
-            : null;
-
-        if (!keyName) return;
-
-        // Check if this is an API key property
-        const isApiKeyProp = apiKeyPatterns.some(
-          (pattern: string) => keyName.toLowerCase().includes(pattern.toLowerCase())
-        );
-
-        if (!isApiKeyProp) return;
-
-        // Check if value is a hardcoded string
-        const staticText1 = staticString(node.value);
-        if (staticText1 !== null) {
-          const value = staticText1;
-          
-          // Skip placeholder values
-          if (value === '' || value === 'YOUR_API_KEY' || value.startsWith('$')) {
-            return;
-          }
-
-          // Report if it looks like a real API key
-          if (looksLikeApiKey(value) || value.length > 20) {
-            context.report({
-              node: node.value,
-              messageId: 'hardcodedApiKey',
-              data: { key: value.substring(0, 10) + '...' },
-            });
-          }
-        }
-      },
-
-      // Also check model provider function calls
-      CallExpression(node: TSESTree.CallExpression) {
-        const callee = sourceCode.getText(node.callee);
-        
-        // Check if this is a model provider function
-        const isProvider = providerFunctions.some(fn => callee.includes(fn));
-        if (!isProvider) return;
-
-        // Check if second argument is options with apiKey
-        const optionsArg = node.arguments[1];
-        if (optionsArg && optionsArg.type === 'ObjectExpression') {
-          for (const prop of optionsArg.properties) {
-            if (prop.type !== 'Property') continue;
-            
-            const keyName = prop.key.type === 'Identifier' ? prop.key.name : null;
-            if (keyName === 'apiKey' || keyName === 'api_key') {
-              const staticText2 = staticString(prop.value);
-              if (staticText2 !== null) {
-                const value = staticText2;
-                if (looksLikeApiKey(value) || value.length > 20) {
-                  context.report({
-                    node: prop.value,
-                    messageId: 'hardcodedApiKey',
-                    data: { key: value.substring(0, 10) + '...' },
-                  });
-                }
-              }
-            }
-          }
-        }
-      },
+      Literal: check,
+      TemplateLiteral: check,
     };
   },
 });
+
+/**
+ * Provider key formats. Each is a fixed prefix plus a random body, and the
+ * body must contain a digit — `sk-loading-spinner-…` is a CSS class.
+ */
+const PROVIDER_KEY_SHAPES: readonly RegExp[] = [
+  /^sk-(?:proj-|ant-|svcacct-|admin-)?(?=[\w-]*\d)[\w-]{20,}$/, // OpenAI, Anthropic
+  /^AIza[\w-]{35}$/, // Google
+  /^(?:gsk|hf|r8)_(?=\w*\d)\w{20,}$/, // Groq, Hugging Face, Replicate
+  /^(?:xai|pplx)-(?=\w*\d)\w{20,}$/, // xAI, Perplexity
+  /^AKIA[0-9A-Z]{16}$/, // AWS access key id
+];
+
+/**
+ * A long opaque token — not a URL, not a multi-segment resource path
+ * (`projects/x/secrets/y`), not the NAME of an environment variable
+ * (`OPENAI_API_KEY_PRODUCTION`), and not a placeholder.
+ */
+function isGenericSecret(value: string): boolean {
+  return (
+    value.length > 20 &&
+    !value.startsWith('$') &&
+    !/\s/.test(value) &&
+    !value.includes('://') &&
+    !(value.includes('_') && /^[A-Z][A-Z0-9_]*$/.test(value)) &&
+    !/^[\w.-]+(?:\/[\w.-]+){2,}$/.test(value)
+  );
+}

@@ -312,7 +312,7 @@ describe('no-unsafe-query', () => {
     ruleTester.run('sink-argument shapes', noUnsafeQuery, {
       valid: pg([
         // No first argument at all.
-        'db.query();',
+        { name: 'a sink call with no arguments has no query to judge', code: 'db.query();' },
         // A spread cannot be read as the query text.
         'db.query(...args);',
         // A computed sink property is not a name we can match.
@@ -349,5 +349,420 @@ describe('no-unsafe-query', () => {
         },
       ]),
     });
+  });
+});
+
+/**
+ * FP/FN review, 2026-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md).
+ * Every case below was reproduced against the published 2.3.5 before the fix.
+ */
+describe('no-unsafe-query — fp/fn review 2026-10', () => {
+  const T = (s: string): string => s;
+
+  ruleTester.run('UQ-6: only a closed list of calls is an escaper', noUnsafeQuery, {
+    valid: pg([
+      // The documented remediations, inline and imported.
+      { name: 'an imported pg escapeIdentifier is the documented remediation', code: "import { escapeIdentifier } from 'pg';\ndb.query(`SELECT id FROM t ORDER BY ${escapeIdentifier(req.query.sort)}`);" },
+      { name: 'client.escapeIdentifier inline is the documented remediation', code: 'db.query(`SELECT id FROM t ORDER BY ${client.escapeIdentifier(req.query.sort)} LIMIT 1`);' },
+      { name: 'client.escapeLiteral in a concatenation is the documented remediation', code: "db.query('SELECT id FROM t WHERE a = ' + client.escapeLiteral(req.query.a));" },
+      { name: 'pg-format format.ident quotes the identifier', code: "import format from 'pg-format';\ndb.query(`SELECT * FROM ${format.ident(req.query.t)}`);" },
+      { name: 'pg-format %L quotes the literal', code: "import format from 'pg-format';\ndb.query(`SELECT * FROM t WHERE a = ${format('%L', req.query.a)}`);" },
+      { name: 'pg-promise as.name quotes the identifier', code: 'db.query(`SELECT * FROM ${pgp.as.name(req.query.t)}`);' },
+      // Number conversions emit digits, never SQL.
+      {
+// @found reasoned during the 2026-10-10 FP/FN audit, not seen in real code
+ name: 'FP: Number() conversion emits digits, never SQL', code: 'db.query(`SELECT id FROM t LIMIT ${Number(req.query.limit)}`);' },
+      {
+// @found reasoned during the 2026-10-10 FP/FN audit, not seen in real code
+ name: 'FP: parseInt and parseFloat emit digits, never SQL', code: 'db.query(`SELECT id FROM t LIMIT ${parseInt(req.query.limit, 10)} OFFSET ${parseFloat(req.query.o)}`);' },
+      {
+// @found reasoned during the 2026-10-10 FP/FN audit, not seen in real code
+ name: 'FP: a Math.min clamp over Number() is numeric', code: 'db.query(`SELECT id FROM t LIMIT ${Math.min(Number(req.query.limit) || 20, 100)}`);' },
+      { name: 'Number.parseInt is a number conversion', code: 'db.query(`SELECT id FROM t LIMIT ${Number.parseInt(req.query.limit, 10)}`);' },
+      // A path helper over constants is still static.
+      { name: 'path.join over constants is static', code: "import path from 'node:path';\ndb.query(`COPY t FROM '${path.join('/data', 'x.csv')}'`);" },
+    ]),
+    invalid: pg([
+      {
+        name: 'join() on request data',
+        code: "db.query(`SELECT * FROM users WHERE id IN (${req.body.ids.join(',')})`);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'trim() on request data',
+        code: "db.query(`SELECT * FROM users WHERE email = '${req.body.email.trim()}'`);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'String() is a conversion to text, not an escaper',
+        code: "db.query(`SELECT * FROM users WHERE name = '${String(req.query.name)}'`);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'toLowerCase() in a concatenation',
+        code: "db.query('SELECT * FROM users WHERE name = \\'' + req.query.name.toLowerCase() + '\\'');",
+        errors: [{ messageId: 'noUnsafeQuery' }],
+      },
+      {
+        name: 'a shadowed Number is not the global',
+        code: 'const Number = (x) => x;\ndb.query(`SELECT * FROM t LIMIT ${Number(req.query.l)}`);',
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'a local function merely named escapeIdentifier is not the pg API',
+        code: 'function escapeIdentifier(x) { return x; }\ndb.query(`SELECT * FROM t ORDER BY ${escapeIdentifier(req.query.s)}`);',
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'join() on a map whose callback returns data, not placeholders',
+        code: "db.query(`SELECT * FROM t WHERE id IN (${ids.map((id) => `'${id}'`).join(',')})`);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'an immediately-invoked function is not a known escaper',
+        code: 'db.query(`SELECT * FROM t WHERE a = ${(() => req.query.a)()}`);',
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'a default import from another module is not an escaper',
+        code: "import helper from './helper';\ndb.query(`SELECT * FROM t WHERE a = ${helper(req.query.a)}`);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'a map() with no callback is not a placeholder list',
+        code: "db.query(`SELECT * FROM t WHERE id IN (${ids.map().join(',')})`);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'a member of an undeclared object',
+        code: 'db.query(`SELECT id FROM ${cfg.table}`);',
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'a computed callee is not a known escaper',
+        code: 'db.query(`SELECT * FROM t WHERE a = ${fns[k](req.query.a)}`);',
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+    ]),
+  });
+
+  ruleTester.run('UQ-1: a placeholder index is not data', noUnsafeQuery, {
+    valid: pg([
+      // The dynamic-filter builder: values are bound, only `$N` is interpolated.
+      {
+// @found harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md)
+ name: 'FP: the dynamic-filter builder binds values and interpolates only $N indexes', code: T(`export async function search(f) {
+  let sql = 'SELECT id, name FROM users WHERE 1=1';
+  const params = [];
+  if (f.name) { params.push(f.name); sql += \` AND name ILIKE $\${params.length}\`; }
+  if (f.city) { sql += \` AND city = $\${params.push(f.city)}\`; }
+  return db.query(sql, params);
+}`) },
+      {
+// @found reasoned during the 2026-10-10 FP/FN audit, not seen in real code
+ name: 'FP: a post-incremented counter after $ is a placeholder index', code: 'let i = 1;\ndb.query(`UPDATE users SET name = $${i++} WHERE id = $${i}`, values);' },
+      {
+// @found reasoned during the 2026-10-10 FP/FN audit, not seen in real code
+ name: 'FP: arithmetic over an index after $ is a placeholder index', code: 'db.query(`SELECT * FROM t WHERE a = $${idx * 2 + 1} AND b = $${(idx - 1)}`, values);' },
+      {
+// @found reasoned during the 2026-10-10 FP/FN audit, not seen in real code
+ name: 'FP: \'$\' + (n + 1) concatenation is a placeholder index', code: "db.query('SELECT * FROM t WHERE a = $' + (n + 1), values);" },
+      {
+// @found reasoned during the 2026-10-10 FP/FN audit, not seen in real code
+ name: 'FP: \'$\' + numeric literal is a placeholder index', code: "db.query('SELECT * FROM t WHERE a = $' + 3, values);" },
+      {
+// @found reasoned during the 2026-10-10 FP/FN audit, not seen in real code
+ name: 'FP: a static template ending in $ followed by an index', code: 'db.query(`SELECT * FROM t WHERE a = $` + (i + 1), values);' },
+    ]),
+    invalid: pg([
+      {
+        name: 'request data after a $ is still request data',
+        code: 'db.query(`SELECT * FROM t WHERE a = $${req.query.n}`);',
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'a dollar-quoted body is not a placeholder',
+        code: 'db.query(`CREATE FUNCTION f() RETURNS int AS $$${body}$$ LANGUAGE sql`);',
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'concatenated dollar-quote is not a placeholder either',
+        code: "db.query('CREATE FUNCTION f() RETURNS int AS $$' + body + '$$ LANGUAGE sql');",
+        errors: [{ messageId: 'noUnsafeQuery' }],
+      },
+      {
+        name: 'a logical expression is not an index expression',
+        code: 'db.query(`SELECT * FROM t WHERE a = $${req.query.n || 1}`);',
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'division is not an index expression',
+        code: 'db.query(`SELECT * FROM t WHERE a = $${a / b}`);',
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'a string literal after $ is not an index',
+        code: "db.query(`SELECT * FROM t WHERE a = $${'1 OR 1=1' + x}`);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+    ]),
+  });
+
+  ruleTester.run('UQ-2 and UQ-5: a safe fragment bound to a const first', noUnsafeQuery, {
+    valid: pg([
+      {
+// @found harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md)
+ name: 'FP: a placeholder list bound to a const before interpolation', code: T(`const placeholders = ids.map((_, i) => \`$\${i + 1}\`).join(', ');
+db.query(\`SELECT id FROM users WHERE id IN (\${placeholders})\`, ids);`) },
+      {
+// @found harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md)
+ name: 'FP: multi-row VALUES tuples built from placeholders and joined via a const', code: T(`const tuples = rows.map((r, i) => { params.push(r.a, r.b); return \`($\${i * 2 + 1}, $\${i * 2 + 2})\`; });
+const valuesSql = tuples.join(', ');
+db.query(\`INSERT INTO items (a, b) VALUES \${valuesSql}\`, params);`) },
+      {
+// @found reasoned during the 2026-10-10 FP/FN audit, not seen in real code
+ name: 'FP: a concatenated placeholder list bound to a const', code: "const ph = ids.map((_, i) => '$' + (i + 1)).join(',');\ndb.query('SELECT * FROM t WHERE id IN (' + ph + ')', ids);" },
+      {
+// @found reasoned during the 2026-10-10 FP/FN audit, not seen in real code
+ name: 'FP: Array.from placeholder list bound to a const', code: "const ph = Array.from({ length: n }, (_, i) => `$${i + 1}`).join(',');\ndb.query(`SELECT * FROM t WHERE id IN (${ph})`, ids);" },
+      {
+// @found reasoned during the 2026-10-10 FP/FN audit, not seen in real code
+ name: 'FP: a ?-placeholder list is fixed text', code: "const ph = ids.map(() => '?').join(',');\ndb.query(`SELECT * FROM t WHERE id IN (${ph})`, ids);" },
+      {
+// @found harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md)
+ name: 'FP: escapeIdentifier bound to a const before interpolation', code: "import { escapeIdentifier } from 'pg';\nconst col = escapeIdentifier(sortCol);\ndb.query(`SELECT id FROM users ORDER BY ${col}`);" },
+      {
+// @found harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md)
+ name: 'FP: a numeric clamp bound to a const before interpolation', code: 'const lim = Math.min(Number(limit) || 20, 100);\ndb.query(`SELECT id FROM users LIMIT ${lim}`);' },
+    ]),
+    invalid: pg([
+      {
+        name: 'a const bound to a non-escaping call',
+        code: "const ids = req.body.ids.join(',');\ndb.query(`SELECT * FROM t WHERE id IN (${ids})`);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'a map callback with no return is not a placeholder list',
+        code: "const ph = ids.map((i) => { log(i); }).join(',');\ndb.query(`SELECT * FROM t WHERE id IN (${ph})`);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'a map callback that is not a function literal',
+        code: "const ph = ids.map(quote).join(',');\ndb.query(`SELECT * FROM t WHERE id IN (${ph})`);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'join() on something other than a map',
+        code: "const ph = ids.filter(Boolean).join(',');\ndb.query(`SELECT * FROM t WHERE id IN (${ph})`);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'a placeholder builder that concatenates data',
+        code: "const ph = ids.map((id, i) => '$' + i + id).join(',');\ndb.query(`SELECT * FROM t WHERE id IN (${ph})`);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+    ]),
+  });
+
+  ruleTester.run('UQ-3: constant object members and enum members fold', noUnsafeQuery, {
+    valid: pg([
+      {
+// @found harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md)
+ name: 'FP: a member of an as-const object literal folds to a constant', code: "const TABLES = { users: 'app_users', orders: 'app_orders' } as const;\ndb.query(`SELECT id FROM ${TABLES.users} WHERE id = $1`, [1]);" },
+      {
+// @found reasoned during the 2026-10-10 FP/FN audit, not seen in real code
+ name: 'FP: a string-keyed member of a const object folds to a constant', code: "const TABLES = { 'users': 'app_users' };\ndb.query(`SELECT id FROM ${TABLES['users']} WHERE id = $1`, [1]);" },
+      {
+// @found harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md)
+ name: 'FP: a string enum member folds to a constant', code: "enum Schema { Public = 'public', Audit = 'audit' }\ndb.query(`SELECT id FROM ${Schema.Public}.users WHERE id = $1`, [1]);" },
+      {
+// @found reasoned during the 2026-10-10 FP/FN audit, not seen in real code
+ name: 'FP: a numeric auto-initialised enum member folds to a constant', code: 'enum Level { Low, High }\ndb.query(`SELECT id FROM t WHERE lvl = ${Level.High}`);' },
+    ]),
+    invalid: pg([
+      {
+        name: 'an object member that holds request data',
+        code: 'const cfg = { table: req.query.t };\ndb.query(`SELECT id FROM ${cfg.table}`);',
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'a member the object does not declare',
+        code: "const TABLES = { users: 'u' };\ndb.query(`SELECT id FROM ${TABLES.other}`);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'a reassigned object',
+        code: "let TABLES = { users: 'u' };\nTABLES = req.body;\ndb.query(`SELECT id FROM ${TABLES.users}`);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'a computed member key',
+        code: "const TABLES = { users: 'u' };\ndb.query(`SELECT id FROM ${TABLES[req.query.k]}`);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'request data is not a const object',
+        code: 'db.query(`SELECT id FROM ${req.query.table}`);',
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'an enum member initialised from a call',
+        code: 'enum E { A = compute() }\ndb.query(`SELECT id FROM ${E.A}`);',
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'an enum member that does not exist',
+        code: "enum E { A = 'a' }\ndb.query(`SELECT id FROM ${E.B}`);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'a member of a parameter',
+        code: 'function f(o) { return db.query(`SELECT id FROM ${o.t}`); }',
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'a spread-built object is not read',
+        code: "const T = { ...base, users: 'u' };\ndb.query(`SELECT id FROM ${T.other}`);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+    ]),
+  });
+
+  ruleTester.run('UQ-4: query fragments are tracked per binding, not per name', noUnsafeQuery, {
+    valid: pg([
+      {
+// @found harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md)
+ name: 'FP: a generic run(sql, params) helper does not inherit another function\'s sql fragments', code: T(`export function a(term) { const sql = \`SELECT id FROM docs WHERE t = $\${1}\`; return db.query(sql, [term]); }
+export function run(sql, params) { return db.query(sql, params); }`) },
+    ]),
+    invalid: pg([
+      {
+        name: 'the first function is still reported; the generic runner is not',
+        code: T(`export function search(term) { const sql = \`SELECT id FROM docs WHERE title ILIKE '%\${term}%'\`; return db.query(sql); }
+export function run(sql, params) { return db.query(sql, params); }`),
+        errors: [{ messageId: 'unsafeTemplateLiteral', line: 2 }],
+      },
+    ]),
+  });
+
+  // UQ-7 is DEFERRED, not fixed: a file with no PostgreSQL SDK evidence is
+  // left to secure-coding/no-sql-injection. That abstention is a contract
+  // shared with the sibling SQL plugins (benchmarks/__tests__/
+  // sdk-gate-coverage.lock.test.ts) — widening it here would double-report.
+  ruleTester.run('UQ-7: a receiver imported from a local db module (deferred)', noUnsafeQuery, {
+    // NOT wrapped in pg(): these files import no PostgreSQL client.
+    valid: [
+      {
+        name: 'GAP: routes importing a local ../db wrapper are left to secure-coding (cross-plugin SDK gate contract)',
+        code: "import * as db from '../db';\ndb.query(`SELECT * FROM users WHERE id = ${req.params.id}`);",
+      },
+      {
+        name: 'GAP: a CommonJS require of a local db module is left to secure-coding',
+        code: "const db = require('./db');\ndb.query('SELECT * FROM users WHERE id = ' + req.params.id);",
+      },
+      {
+        name: 'a GraphQL client query object is not SQL',
+        code: "import { client } from './apollo';\nclient.query({ query: USER_QUERY, variables: { id } });",
+      },
+      {
+        name: 'a React Query hook is not a SQL sink',
+        code: "import { useQuery } from '@tanstack/react-query';\nuseQuery({ queryKey: ['u', id] });",
+      },
+      {
+        name: 'a DOM selector built from a template is not SQL',
+        code: 'const el = document.querySelector(`#${id}`);',
+      },
+    ],
+    invalid: [],
+  });
+
+  ruleTester.run('UQ-8: pg-promise and postgres.js sinks', noUnsafeQuery, {
+    valid: [
+      { name: 'a parameterised pg-promise db.any is safe', code: "import pgPromise from 'pg-promise';\ndb.any('SELECT * FROM users WHERE name = $1', [name]);" },
+      { name: 'a parameterised postgres.js sql.unsafe is safe', code: "import postgres from 'postgres';\nsql.unsafe('SELECT * FROM users WHERE name = $1', [name]);" },
+      { name: 'an array .any() callback is not a SQL sink', code: "import pgPromise from 'pg-promise';\nconst ok = list.any((x) => x > 1);" },
+    ],
+    invalid: [
+      ...['any', 'one', 'oneOrNone', 'many', 'manyOrNone', 'none', 'result', 'multi', 'multiResult'].map((m) => ({
+        name: `pg-promise db.${m}`,
+        code: `import pgPromise from 'pg-promise';\ndb.${m}(\`SELECT * FROM users WHERE name = '\${req.query.name}'\`);`,
+        errors: [{ messageId: 'unsafeTemplateLiteral' as const }],
+      })),
+      {
+        name: 'postgres.js sql.unsafe',
+        code: "import postgres from 'postgres';\nsql.unsafe('SELECT * FROM users ORDER BY ' + req.query.sort);",
+        errors: [{ messageId: 'noUnsafeQuery' }],
+      },
+    ],
+  });
+
+  ruleTester.run('UQ-9..12: other shapes the SQL reaches the sink through', noUnsafeQuery, {
+    valid: pg([
+      { name: 'a plain reassignment to a static statement is safe', code: "let sql;\nsql = 'SELECT * FROM t WHERE a = $1';\ndb.query(sql, [a]);" },
+      { name: 'q = q + static text keeps the binding static', code: "let q = 'SELECT * FROM t WHERE 1=1';\nq = q + ' AND a = $1';\ndb.query(q, [a]);" },
+      { name: 'reassigning to a non-string value drops the earlier unsafe fragments', code: "let q = `SELECT * FROM t WHERE a = ${req.query.a}`;\nq = buildSafe();\ndb.query(q);" },
+      { name: 'a multi-statement builder returning a static binding is safe', code: "function build() { const q = 'SELECT 1'; return q; }\ndb.query(build());" },
+      { name: 'a concise builder returning an unknown identifier has no fragments', code: 'const build = () => CONSTANT_SQL;\ndb.query(build());' },
+      { name: 'a parameterised Cursor statement is safe', code: "db.query(new Cursor('SELECT * FROM events WHERE tenant = $1', [t]));" },
+      { name: 'a Cursor with no statement has nothing to judge', code: 'db.query(new Cursor());' },
+      { name: 'an English sentence starting with listen is not a LISTEN statement', code: "logger.query('listen to ' + name + ' carefully');" },
+    ]),
+    invalid: pg([
+      {
+        name: 'UQ-9: { text } shorthand naming a built variable',
+        code: "const text = `SELECT * FROM users WHERE email = '${req.body.email}'`;\ndb.query({ text, values: [] });",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'UQ-10: plain reassignment',
+        code: "let sql;\nsql = `SELECT * FROM users WHERE email = '${req.body.email}'`;\ndb.query(sql);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'UQ-10: q = q + ...',
+        code: "let q = 'SELECT * FROM users WHERE 1=1';\nq = q + ` AND name = '${req.query.name}'`;\ndb.query(q);",
+        errors: [{ messageId: 'noUnsafeQuery' }],
+      },
+      {
+        name: 'UQ-10: q = q + a + b',
+        code: "let q = 'SELECT * FROM users WHERE 1=1';\nq = q + ' AND name = ' + req.query.name;\ndb.query(q);",
+        errors: [{ messageId: 'noUnsafeQuery' }],
+      },
+      {
+        name: 'UQ-11: a builder with more than one statement',
+        code: T(`function buildSearch(filters) {
+  let q = 'SELECT * FROM users WHERE 1=1';
+  if (filters.name) q += \` AND name = '\${filters.name}'\`;
+  return q;
+}
+db.query(buildSearch(req.query));`),
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'UQ-12: SQL handed to new Cursor(...)',
+        code: "db.query(new Cursor(`SELECT * FROM events WHERE tenant = '${req.query.tenant}'`));",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'UQ-12: LISTEN',
+        code: 'db.query(`LISTEN ${req.query.channel}`);',
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'UQ-12: NOTIFY',
+        code: "db.query(`NOTIFY ${req.query.channel}, '${req.body.msg}'`);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'UQ-12: CALL',
+        code: "db.query(`CALL refresh_tenant('${req.body.t}')`);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'CF-1: COPY ... TO a user path',
+        code: "db.query(`COPY users TO '/var/lib/postgresql/exports/${req.query.name}.csv' WITH CSV`);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+    ]),
   });
 });

@@ -125,3 +125,32 @@ ruleTester.run('require-output-validation', requireOutputValidation, {
     },
   ]),
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FP/FN audit 2026-10-10: AI output is a `.text` / `.content` / `.output`
+// property by exact name — `err.message` is an exception, not model output —
+// and display calls are matched by whole word (`showcase` is not `show`).
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('require-output-validation (fp-fn audit)', requireOutputValidation, {
+  valid: xai([
+    {
+      name: 'an exception message is not AI output',
+      code: `export function onFail(err) { res.status(500).send(err.message); }`,
+    },
+    {
+      name: 'a property that merely starts with "text" is not the output',
+      code: `display(el.textContent); render(cfg.contentType);`,
+    },
+    {
+      name: 'a call whose name merely contains "show"',
+      code: `showcaseItems(result.text);`,
+    },
+  ]),
+  invalid: xai([
+    {
+      name: 'model text sent through a chained response',
+      code: `res.status(200).send(result.text);`,
+      errors: [{ messageId: 'unvalidatedOutput' }],
+    },
+  ]),
+});

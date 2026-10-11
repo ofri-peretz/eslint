@@ -21,11 +21,13 @@ import {
   MessageIcons,
 } from '@interlace/eslint-devkit';
 import {
-  byteKeyLiteral,
   isSignOperation,
   isSignatureVerifyOperation,
-  isEnvVariable,
+  jwtConfigOf,
+  keyLiterals,
+  keyNodesOf,
 } from '../../utils';
+import type { KeyLiteral } from '../../utils';
 import type { NoWeakSecretOptions } from '../../types';
 
 type MessageIds = 'weakSecret' | 'shortSecret' | 'useStrongSecret';
@@ -68,6 +70,11 @@ function decodedByteLength(value: string, encoding?: string): number {
 
 export const noWeakSecret = createRule<RuleOptions, MessageIds>({
   name: 'no-weak-secret',
+  /**
+   * A fixture token signed with `'test-secret'` inside a test is not a
+   * production key. Matches `no-hardcoded-secret`.
+   */
+  skipTestFiles: true,
   meta: {
     type: 'problem',
     docs: {
@@ -148,6 +155,7 @@ export const noWeakSecret = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] ?? {};
     const { minSecretLength = 32 } = options;
+    const sourceCode = context.sourceCode;
 
     /**
      * Check if a value matches known weak patterns
@@ -157,39 +165,22 @@ export const noWeakSecret = createRule<RuleOptions, MessageIds>({
     };
 
     /**
-     * Check the secret argument for weakness
+     * Judge one literal that can reach the key position.
+     *
+     * `keyLiterals` already saw through consts, `||` / `??` fallbacks and the
+     * byte wrappers jose is fed, and carried the `Buffer.from` encoding along:
+     * a short secret is exactly as weak wrapped in an encoder as it is bare,
+     * and a hex key is measured in BYTES, not source characters.
      */
-    const checkSecret = (
-      secretNode: TSESTree.Node,
-      encoding?: string,
-    ): void => {
-      // Environment variables are considered safe (configuration)
-      if (isEnvVariable(secretNode)) {
-        return;
-      }
-
-      /*
-       * jose takes symmetric keys as bytes, and its documented idiom is
-       * `new TextEncoder().encode(secret)`. A short secret is exactly as weak
-       * wrapped in an encoder as it is bare, so judge the literal inside.
-       */
-      const bytes = byteKeyLiteral(secretNode);
-      if (bytes !== null) {
-        checkSecret(bytes.literal, bytes.encoding);
-        return;
-      }
-
+    const checkLiteral = ({ literal, encoding }: KeyLiteral): void => {
       // Check string literals
-      if (
-        secretNode.type === 'Literal' &&
-        typeof secretNode.value === 'string'
-      ) {
-        const secretValue = secretNode.value;
+      if (literal.type === 'Literal') {
+        const secretValue = literal.value as string;
 
         // Check for known weak patterns
         if (isKnownWeakPattern(secretValue)) {
           context.report({
-            node: secretNode,
+            node: literal,
             messageId: 'weakSecret',
           });
           return;
@@ -198,7 +189,7 @@ export const noWeakSecret = createRule<RuleOptions, MessageIds>({
         // Check for short secrets
         if (decodedByteLength(secretValue, encoding) < minSecretLength) {
           context.report({
-            node: secretNode,
+            node: literal,
             messageId: 'shortSecret',
             data: {
               length: String(secretValue.length),
@@ -206,35 +197,52 @@ export const noWeakSecret = createRule<RuleOptions, MessageIds>({
             },
           });
         }
+        return;
       }
 
-      // Template literals with obvious weak values
-      if (
-        secretNode.type === 'TemplateLiteral' &&
-        secretNode.quasis.length === 1
-      ) {
-        const rawValue = secretNode.quasis[0].value.raw;
-        if (isKnownWeakPattern(rawValue) || rawValue.length < minSecretLength) {
-          context.report({
-            node: secretNode,
-            messageId: 'weakSecret',
-          });
-        }
+      // Template literals with obvious weak values. `keyLiterals` only
+      // yields a template with nothing to interpolate.
+      const rawValue = literal.quasis[0]!.value.raw;
+      if (isKnownWeakPattern(rawValue) || rawValue.length < minSecretLength) {
+        context.report({
+          node: literal,
+          messageId: 'weakSecret',
+        });
       }
+    };
+
+    const checkKeys = (keys: TSESTree.Node[]): void => {
+      for (const key of keys) {
+        keyLiterals(key, sourceCode).forEach(checkLiteral);
+      }
+    };
+
+    /** `JwtModule.register({ secret })`, `expressjwt({ secret })`, … */
+    const checkConfig = (
+      node: TSESTree.CallExpression | TSESTree.NewExpression,
+    ): boolean => {
+      const config = jwtConfigOf(node, sourceCode);
+      if (config === null) return false;
+      checkKeys(config.keys);
+      return true;
     };
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
-        // Check both sign and verify operations
-        if (!isSignOperation(node) && !isSignatureVerifyOperation(node)) {
+        if (checkConfig(node)) {
           return;
         }
-
-        // Secret is usually the second argument
-        if (node.arguments.length >= 2) {
-          checkSecret(node.arguments[1]);
+        // Check both sign and verify operations
+        if (
+          !isSignOperation(node, sourceCode) &&
+          !isSignatureVerifyOperation(node, sourceCode)
+        ) {
+          return;
         }
+        // jose's `.sign(key)`, NestJS's `{ secret }`, or the second argument.
+        checkKeys(keyNodesOf(node, sourceCode));
       },
+      NewExpression: checkConfig,
     };
   },
 });

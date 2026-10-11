@@ -10,9 +10,10 @@
  * @see OWASP ASI07: Poisoned RAG Pipeline
  */
 
-import { AST_NODE_TYPES, TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, TSESTree, createRule, formatLLMMessage, MessageIcons, nameHasWord } from '@interlace/eslint-devkit';
 import { isSystemPromptProp, getStaticPropName } from '../../utils/prompt-props';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
+import { calleeChain, sdkCallName } from '../../utils/sdk';
 
 type MessageIds = 'unsanitizedRagContent';
 
@@ -73,7 +74,10 @@ export const requireRagContentValidation = createRule<RuleOptions, MessageIds>({
       ragPatterns: [
         'search', 'retrieve', 'query', 'vectorStore', 'embeddings',
         'similaritySearch', 'findSimilar', 'getDocuments', 'fetchDocs',
-        'documents', 'chunks', 'passages', 'context',
+        // `context` was dropped: `getRequestContext()`, `createContext()` and
+        // friends retrieve no documents, and with the defaults finally applied
+        // (they never were — see the audit) it would have tracked them as RAG.
+        'documents', 'chunks', 'passages',
       ],
       validatorFunctions: [
         'validate', 'sanitize', 'filter', 'clean', 'verify',
@@ -81,25 +85,17 @@ export const requireRagContentValidation = createRule<RuleOptions, MessageIds>({
       ],
     },
   ],
-  create(context) {
+  create(context, [options]) {
     // Every rule in this plugin is Vercel-AI-specific, and none of them knew
     // it: over 107,384 files, 91% of this plugin's findings were in files with
     // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
     // the cheap path — a file without the SDK does no work.
     if (!fileUsesVercelAi(context.sourceCode.ast)) return {};
 
-    const [options = {}] = context.options;
-    const ragPatterns = options.ragPatterns ?? [
-      'search', 'retrieve', 'query', 'vectorStore', 'documents',
-    ];
-    const validatorFunctions = options.validatorFunctions ?? [
-      'validate', 'sanitize', 'filter', 'clean',
-    ];
+    // Merged with `defaultOptions` before `create` runs.
+    const { ragPatterns, validatorFunctions } = options as Required<Options>;
 
     const sourceCode = context.sourceCode;
-
-    // Vercel AI SDK functions
-    const aiSDKFunctions = ['generateText', 'streamText', 'generateObject', 'streamObject'];
 
     // Track variables that hold RAG content
     const ragVariables = new Set<string>();
@@ -110,23 +106,20 @@ export const requireRagContentValidation = createRule<RuleOptions, MessageIds>({
     function isRagCall(node: TSESTree.Node): string | null {
       if (node.type !== 'CallExpression') return null;
       
-      const callee = sourceCode.getText(node.callee);
-      for (const pattern of ragPatterns) {
-        if (callee.toLowerCase().includes(pattern.toLowerCase())) {
-          return callee;
-        }
-      }
-      return null;
+      // Whole words of the call chain: `vectorStore.similaritySearch` has the
+      // word `search`; `researchTopic` does not.
+      const chain = calleeChain(node.callee);
+      return ragPatterns.some((pattern: string) => nameHasWord(chain, pattern))
+        ? sourceCode.getText(node.callee)
+        : null;
     }
 
     /**
      * Check if expression is wrapped in validation
      */
     function isValidated(node: TSESTree.CallExpression): boolean {
-      const callee = sourceCode.getText(node.callee);
-      return validatorFunctions.some((fn: string) => 
-        callee.toLowerCase().includes(fn.toLowerCase())
-      );
+      const chain = calleeChain(node.callee);
+      return validatorFunctions.some((fn: string) => nameHasWord(chain, fn));
     }
 
     /**
@@ -174,11 +167,8 @@ export const requireRagContentValidation = createRule<RuleOptions, MessageIds>({
       },
 
       CallExpression(node: TSESTree.CallExpression) {
-        const callee = sourceCode.getText(node.callee);
-        
-        // Check if this is an AI SDK function
-        const isAIFunction = aiSDKFunctions.some(fn => callee.includes(fn));
-        if (!isAIFunction) return;
+        // Check if this is an AI SDK function (exact name, not a substring)
+        if (!sdkCallName(node)) return;
 
         // Check first argument (options object)
         const optionsArg = node.arguments[0];

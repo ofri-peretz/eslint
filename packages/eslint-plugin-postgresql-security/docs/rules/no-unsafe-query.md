@@ -91,6 +91,41 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 | **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                          |
 | **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A05_2021-Injection/)                                                                                                                                                                   |
 
+## What the rule treats as safe inside an interpolation
+
+A value interpolated into SQL is accepted only when the file can prove it safe
+structurally — never because of what a variable is called:
+
+- a constant: a literal, a `const` that folds to one, a member of a `const`
+  object literal, or a TypeScript `enum` member with a literal initialiser;
+- a bind-parameter **index** after a single `$` — `$${params.length}`,
+  `$${i + 1}`, `$${params.push(v)}` — the dynamic-filter builder idiom;
+- a placeholder list: ``ids.map((_, i) => `$${i + 1}`).join(', ')``, inline or
+  bound to a `const` first;
+- a closed list of escapers and conversions: `escapeIdentifier` /
+  `escapeLiteral` (pg), anything from `pg-format`, pg-promise's `pgp.as.*`,
+  `Number` / `parseInt` / `parseFloat`, and `Math.*`.
+
+Any other call is **not** an escaper: `${ids.join(',')}`, `${email.trim()}` and
+`${String(name)}` are reported.
+
+### Sinks
+
+Sinks are `query` / `execute`, pg-promise's `none`, `one`, `oneOrNone`, `many`,
+`manyOrNone`, `any`, `result`, `multi`, `multiResult`, and postgres.js
+`sql.unsafe`. The rule runs only in files with PostgreSQL SDK evidence (an
+import of `pg`, `pg-promise`, `postgres`, … or a `postgres://` DSN), and a
+SQL-shaped string built from a raw value is required, so GraphQL
+`client.query({ query })`, analytics `.query('event:…')` and DOM queries stay
+quiet.
+
+### Route files that import a local `db` wrapper
+
+A file that reaches PostgreSQL only through `import * as db from '../db'` has
+no SDK evidence, and is left to `secure-coding/no-sql-injection`. That
+abstention is a contract shared with the sibling SQL plugins, so the same line
+is never reported twice.
+
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
@@ -110,10 +145,13 @@ await client.query(sql`SELECT * FROM users WHERE id = ${userId}`);
 
 ### Dynamic Query Variables
 
-**Why**: When the query is stored in a variable, we can't analyze its construction.
+**Why**: A builder IMPORTED from another module cannot be read. (A builder
+written in the same file is followed, including one that assembles `q` over
+several statements and ends with `return q`.)
 
 ```typescript
 // ❌ NOT DETECTED
+import { buildQuery } from './queries';
 const unsafeQuery = buildQuery(userInput); // May concatenate strings internally
 await client.query(unsafeQuery);
 ```

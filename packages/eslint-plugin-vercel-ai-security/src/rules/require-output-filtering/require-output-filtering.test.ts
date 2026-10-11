@@ -98,6 +98,19 @@ ruleTester.run('require-output-filtering', requireOutputFiltering, {
         };
       `,
     },
+    // (Moved 2026-10-10 from invalid) `fetchData(url)` — a bare helper whose
+    // NAME starts with fetch says nothing about what it returns; the same
+    // substring rule flagged the canonical `getWeather(city)` tool.
+    {
+      name: 'a bare helper named fetch* is not a data source',
+      code: `
+        const tools = {
+          loadData: {
+            execute: async ({ url }) => fetchData(url),
+          },
+        };
+      `,
+    },
     // Non-data-source call
     {
       code: `
@@ -134,17 +147,6 @@ ruleTester.run('require-output-filtering', requireOutputFiltering, {
       `,
       errors: [{ messageId: 'missingOutputFilter' }],
     },
-    // Direct fetch
-    {
-      code: `
-        const tools = {
-          loadData: {
-            execute: async ({ url }) => fetchData(url),
-          },
-        };
-      `,
-      errors: [{ messageId: 'missingOutputFilter' }],
-    },
     // Select query
     {
       code: `
@@ -153,6 +155,73 @@ ruleTester.run('require-output-filtering', requireOutputFiltering, {
             execute: async ({ table }) => prisma.select(table),
           },
         };
+      `,
+      errors: [{ messageId: 'missingOutputFilter' }],
+    },
+  ]),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FP/FN audit 2026-10-10: a data source is a member call on a data-access
+// object or method (`db.user.findUnique`, `supabase.from().select`), matched by
+// whole word; a block-bodied or method-form execute is checked too.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('require-output-filtering (fp-fn audit)', requireOutputFiltering, {
+  valid: xai([
+    {
+      name: 'the canonical weather tool',
+      code: `const weather = tool({ inputSchema, execute: async ({ city }) => getWeather(city) });`,
+    },
+    {
+      name: "the AI SDK RAG guide's getInformation tool",
+      code: `const tools = { getInformation: tool({ inputSchema, execute: async ({ question }) => findRelevantContent(question) }) };`,
+    },
+    {
+      name: 'a member call that is not data access',
+      code: `const t = tool({ inputSchema, execute: async ({ city }) => weatherApi.getForecast(city) });`,
+    },
+    {
+      name: 'a block body returning a computed value',
+      code: `
+        const t = tool({ inputSchema, execute: async ({ id }) => {
+          const n = count + 1;
+          return n;
+        } });
+      `,
+    },
+    {
+      name: 'a filtered result in a block body',
+      code: `
+        const t = tool({ inputSchema, async execute({ id }) {
+          return redactUser(await db.user.findUnique({ where: { id } }));
+        } });
+      `,
+    },
+    {
+      name: 'a return inside a nested callback is not the tool result',
+      code: `
+        const t = tool({ inputSchema, execute: async ({ ids }) => {
+          ids.forEach((id) => { return db.user.findUnique({ where: { id } }); });
+          return { ok: true };
+        } });
+      `,
+    },
+  ]),
+  invalid: xai([
+    {
+      name: 'a block body returning the full user row',
+      code: `
+        const lookupUser = tool({
+          inputSchema,
+          execute: async ({ id }) => { const u = await db.user.findUnique({ where: { id } }); return u; },
+        });
+      `,
+      errors: [{ messageId: 'missingOutputFilter' }],
+    },
+    {
+      name: 'a method-form execute returning a query result directly',
+      code: `
+        const tools = { search: tool({ inputSchema, async execute({ q }) { return await supabase.from('users').select('*'); } }) };
       `,
       errors: [{ messageId: 'missingOutputFilter' }],
     },

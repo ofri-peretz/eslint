@@ -131,10 +131,40 @@ function stripSqlNoise(sql: string): string {
 }
 
 /** Whether a normalised statement selects an implicit column set. */
+/**
+ * `SELECT * FROM (SELECT id, email FROM …) AS u` — a derived table. Its column
+ * list is written out one level down, so the outer star names nothing implicit;
+ * a star INSIDE the derived table is still matched on its own.
+ */
+const SELECT_STAR_FROM_DERIVED = new RegExp(String.raw`\b${SELECT_PREFIX}\*\s+FROM\s*\(`, 'gi');
+
+/** The names a `WITH` clause declares: `WITH a AS (…), b(x, y) AS (…)`. */
+const CTE_NAME = /(?:\bWITH(?:\s+RECURSIVE)?|,)\s{0,20}([A-Za-z_][\w$]{0,62})\s{0,20}(?:\([^)]{0,500}\)\s{0,20})?AS\s*(?:NOT\s+)?(?:MATERIALIZED\s+)?\(/gi;
+
+/**
+ * Rewrite `SELECT * FROM <cte>` to a projection when `<cte>` is a common table
+ * expression declared in the same statement: the CTE's own SELECT lists the
+ * columns, and is judged on its own.
+ */
+function exemptCteStars(sql: string): string {
+  let out = sql;
+  for (const [, name] of sql.matchAll(CTE_NAME)) {
+    const escaped = name.replaceAll('$', '\\$');
+    out = out.replace(
+      new RegExp(String.raw`\b${SELECT_PREFIX}\*(\s+FROM\s+${escaped}\b)`, 'gi'),
+      'SELECT 1$1',
+    );
+  }
+  return out;
+}
+
 function selectsEveryColumn(sql: string): boolean {
-  const cleaned = stripSqlNoise(sql)
-    .replace(EXISTS_STAR, 'EXISTS ( SELECT 1')
-    .replace(SELECT_STAR_FROM_FUNCTION, 'SELECT 1 FROM f(');
+  const cleaned = exemptCteStars(
+    stripSqlNoise(sql)
+      .replace(EXISTS_STAR, 'EXISTS ( SELECT 1')
+      .replace(SELECT_STAR_FROM_FUNCTION, 'SELECT 1 FROM f(')
+      .replace(SELECT_STAR_FROM_DERIVED, 'SELECT 1 FROM ('),
+  );
 
   if (SELECT_STAR.test(cleaned)) return true;
 

@@ -36,6 +36,9 @@ const QUOTED_SOURCE = /from\s+['"]([^'"]+)['"]/i;
 /** `FROM STDIN` — the streaming form, where the server opens no file at all. */
 const FROM_STDIN = /^\s*stdin\b/i;
 
+/** `TO STDOUT` — the streaming export, where the server writes no file. */
+const TO_STDOUT = /^\s*stdout\b/i;
+
 /** How many bindings deep to follow a value before giving up. */
 const MAX_RESOLUTION_DEPTH = 4;
 
@@ -60,7 +63,8 @@ function staticText(node: TSESTree.Node): string {
 }
 
 /**
- * The source clause of a `COPY` statement, or `null` if this is not one.
+ * Every `COPY` statement in the text, with its direction and the clause after
+ * the direction keyword (the source for `FROM`, the target for `TO`).
  *
  * The old test was `/\bCOPY\b.*\bFROM\b/i`, which is wrong in both directions:
  *
@@ -78,7 +82,8 @@ function staticText(node: TSESTree.Node): string {
  * balanced group, and the direction keyword that follows decides whether this
  * is a read (`FROM`) or a write (`TO`).
  */
-function copySourceClause(text: string): string | null {
+function copyClauses(text: string): Array<{ direction: 'from' | 'to'; clause: string }> {
+  const found: Array<{ direction: 'from' | 'to'; clause: string }> = [];
   const stripped = stripComments(text);
   for (const statement of stripped.split(';')) {
     const head = /^\s*copy\b/i.exec(statement);
@@ -104,10 +109,13 @@ function copySourceClause(text: string): string | null {
     }
 
     const direction = /\b(from|to)\b/i.exec(statement.slice(index));
-    if (direction === null || direction[1].toLowerCase() !== 'from') continue;
-    return statement.slice(index + direction.index + direction[1].length);
+    if (direction === null) continue;
+    found.push({
+      direction: direction[1].toLowerCase() as 'from' | 'to',
+      clause: statement.slice(index + direction.index + direction[1].length),
+    });
   }
-  return null;
+  return found;
 }
 
 /** The variable a name resolves to, walking outward from `scope`. */
@@ -268,7 +276,7 @@ function hasDynamicPart(node: TSESTree.Node, scope: TSESLint.Scope.Scope): boole
   return !isStaticExpression({ node, scope });
 }
 
-type MessageIds = 'dynamicPath' | 'hardcodedPath' | 'unverifiablePath';
+type MessageIds = 'dynamicPath' | 'dynamicWritePath' | 'hardcodedPath' | 'unverifiablePath';
 
 export const noUnsafeCopyFrom: TSESLint.RuleModule<MessageIds, NoUnsafeCopyFromOptions> = {
   meta: {
@@ -291,6 +299,18 @@ export const noUnsafeCopyFrom: TSESLint.RuleModule<MessageIds, NoUnsafeCopyFromO
         compliance: ['SOC2', 'PCI-DSS'],
         effort: 'low',
         fix: 'Never use user input in COPY FROM paths. Use COPY FROM STDIN for user data.',
+        documentationLink: 'https://www.postgresql.org/docs/current/sql-copy.html',
+      }),
+      dynamicWritePath: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'COPY TO Injection',
+        description: 'Dynamic file path in COPY TO detected - potential arbitrary file write on the database server.',
+        severity: 'CRITICAL',
+        cwe: 'CWE-73',
+        owasp: 'A03:2021',
+        compliance: ['SOC2', 'PCI-DSS'],
+        effort: 'low',
+        fix: 'Never use user input in COPY TO paths. Use COPY TO STDOUT and write the file from the application.',
         documentationLink: 'https://www.postgresql.org/docs/current/sql-copy.html',
       }),
       hardcodedPath: formatLLMMessage({
@@ -364,8 +384,22 @@ export const noUnsafeCopyFrom: TSESLint.RuleModule<MessageIds, NoUnsafeCopyFromO
 
         const scope = context.sourceCode.getScope(node);
         const expression = effectiveExpression(queryArg, scope);
-        const source = copySourceClause(staticText(expression));
-        if (source === null) return;
+        const copies = copyClauses(staticText(expression));
+
+        // `COPY … TO '<path>'` is the same server-side file access in the
+        // WRITE direction — an arbitrary file write as the database server's
+        // user — and it was skipped outright. A fixed export path is an admin
+        // script, as a fixed FROM path is, so only a dynamic one is reported.
+        if (
+          copies.some((copy) => copy.direction === 'to' && !TO_STDOUT.test(copy.clause)) &&
+          hasDynamicPart(expression, scope)
+        ) {
+          context.report({ node: queryArg, messageId: 'dynamicWritePath' });
+          return;
+        }
+
+        const source = copies.find((copy) => copy.direction === 'from')?.clause;
+        if (source === undefined) return;
 
         // STDIN is the remediation: the bytes travel over the client
         // connection, so the server never opens a path. A dynamic TABLE name in

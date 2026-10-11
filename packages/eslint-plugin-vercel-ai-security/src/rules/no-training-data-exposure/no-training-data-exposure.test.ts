@@ -125,13 +125,9 @@ ruleTester.run('no-training-data-exposure', noTrainingDataExposure, {
       `,
       errors: [{ messageId: 'trainingDataExposure' }],
     },
-    // Feedback endpoint
-    {
-      code: `
-        fetch('https://api.example.com/feedback');
-      `,
-      errors: [{ messageId: 'trainingDataExposure' }],
-    },
+    // (Moved 2026-10-10) A `/feedback` endpoint used to be reported. Thumbs
+    // up/down feedback is a standard chat-UI feature and says nothing about
+    // model training; it is now in the fp-fn audit valid suite.
   ]),
 });
 
@@ -151,6 +147,43 @@ ruleTester.run('no-training-data-exposure (coverage gaps)', noTrainingDataExposu
     // string-literal key resolves via String(key.value) and reports
     {
       code: `const cfg = { 'training': true };`,
+      errors: [{ messageId: 'trainingDataExposure' }],
+    },
+  ]),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FP/FN audit 2026-10-10: training is matched by whole URL path segment and
+// whole word of a flag name; feedback/improve/learn are not training.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('no-training-data-exposure (fp-fn audit)', noTrainingDataExposure, {
+  valid: xai([
+    {
+      name: 'a thumbs-up/down feedback endpoint in a chat UI',
+      code: `await fetch('/api/feedback', { method: 'POST', body: JSON.stringify({ messageId, up }) });`,
+    },
+    {
+      name: 'UI feature flags about feedback',
+      code: `export const chatConfig = { showFeedback: true, enableFeedbackButtons: true };`,
+    },
+    {
+      name: 'routes whose segments merely start with "train"',
+      code: `export const links = { trainers: '/trainers', schedule: '/training-schedule' };`,
+    },
+    {
+      name: 'a learnMore flag is not a training opt-in',
+      code: `const ui = { learnMore: true, improveContrast: true };`,
+    },
+  ]),
+  invalid: xai([
+    {
+      name: "OpenAI's fine-tuning jobs endpoint",
+      code: `await fetch('https://api.openai.com/v1/fine_tuning/jobs?limit=10', { method: 'POST' });`,
+      errors: [{ messageId: 'trainingDataExposure' }],
+    },
+    {
+      name: 'a fineTune flag',
+      code: `const job = { fineTune: true };`,
       errors: [{ messageId: 'trainingDataExposure' }],
     },
   ]),

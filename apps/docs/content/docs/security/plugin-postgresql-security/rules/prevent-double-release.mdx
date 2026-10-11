@@ -18,7 +18,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 Prevents calling `client.release()` multiple times on the same client.
 
-⚠️ This rule **errors** by default in the `recommended` config.
+⚠️ This rule **warns** by default in the `recommended` config.
 
 ## Quick Summary
 
@@ -214,18 +214,11 @@ rel(); // Double release!
 
 ### Callback `done()` Pattern
 
-**Why**: The callback parameter tracking requires following the `done` identifier through the callback body, which has partial support.
-
-```typescript
-// ⚠️ PARTIALLY DETECTED
-pool.connect((err, client, done) => {
-  if (err) {
-    done();
-    return;
-  }
-  done(); // May not be detected in all cases
-});
-```
+Calls in opposite branches of one `if`/`else` or `?:` — `if (err) done(err);
+else done();` — run at most once and are not reported (since 2026-10). A
+release at the very end of a `try` block plus one in its `catch` is also one
+release per execution, as is a retry loop that checks out a new client on each
+pass.
 
 > **Workaround**: For any of these patterns, use the **guarded release pattern** shown in the examples above.
 

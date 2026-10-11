@@ -100,6 +100,22 @@ ruleTester.run('no-unsafe-output-handling (branch coverage)', noUnsafeOutputHand
     {
       code: `el.innerHTML = safeHtml;`,
     },
+    // A declarator with no initialiser binds nothing.
+    {
+      name: 'a declarator with no initialiser binds nothing',
+      code: `let pending;`,
+    },
+    // A tool-shaped object whose execute is a reference, not a function literal.
+    {
+      name: 'a tool whose execute is a reference, not a function literal, seeds nothing',
+      code: `const t = tool({ inputSchema, execute: runIt });`,
+    },
+    // A JSX attribute other than dangerouslySetInnerHTML.
+    {
+      name: 'a JSX attribute other than dangerouslySetInnerHTML is not a sink',
+      code: `export const A = () => <div className="x" />;`,
+      languageOptions: { parserOptions: { ecmaFeatures: { jsx: true } } },
+    },
   ]),
   invalid: xai([
     // Destructured `text` from generateText tracked into eval — ObjectPattern path.

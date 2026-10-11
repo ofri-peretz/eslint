@@ -11,8 +11,9 @@
  * @see OWASP LLM06: Excessive Agency
  */
 
-import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, TSESTree, createRule, formatLLMMessage, MessageIcons, nameHasWord, objectKeyName } from '@interlace/eslint-devkit';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
+import { calleeName, optionValue } from '../../utils/sdk';
 
 type MessageIds = 'missingConfirmation';
 
@@ -43,7 +44,7 @@ export const requireToolConfirmation = createRule<RuleOptions, MessageIds>({
         description: 'Tool "{{toolName}}" performs destructive operation "{{operation}}" without requiring confirmation.',
         severity: 'HIGH',
         compliance: ['SOC2'],
-        fix: 'Add requiresConfirmation: true or implement confirmation logic in the tool',
+        fix: 'Add needsApproval: true to the tool (or toolApproval on the call), or omit execute so the client confirms',
         documentationLink: 'https://sdk.vercel.ai/docs/ai-sdk-core/tools-and-tool-calling',
       }),
     },
@@ -63,101 +64,98 @@ export const requireToolConfirmation = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [
     {
+      // Whole words of the tool name. `create`, `post`, `change` and `run` were
+      // dropped: `createChart`, `runReport` and `changeTheme` are not
+      // destructive, and with the defaults finally applied (they never were —
+      // see the audit) they would have fired on ordinary read/render tools.
       destructivePatterns: [
         'delete', 'remove', 'drop', 'truncate', 'destroy',
         'transfer', 'send', 'pay', 'withdraw', 'purchase',
-        'execute', 'run', 'eval', 'exec', 'spawn',
-        'update', 'modify', 'change', 'alter',
-        'create', 'insert', 'post', 'write',
+        'execute', 'exec', 'eval', 'spawn', 'shell',
+        'update', 'modify', 'alter', 'insert', 'write',
       ],
     },
   ],
-  create(context) {
+  create(context, [options]) {
     // Every rule in this plugin is Vercel-AI-specific, and none of them knew
     // it: over 107,384 files, 91% of this plugin's findings were in files with
     // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
     // the cheap path — a file without the SDK does no work.
     if (!fileUsesVercelAi(context.sourceCode.ast)) return {};
 
-    const [options = {}] = context.options;
-    const destructivePatterns = options.destructivePatterns ?? [
-      'delete', 'remove', 'transfer', 'execute', 'update', 'create',
-    ];
+    // `defaultOptions` is merged in before `create` runs. Reading
+    // `context.options` instead (as this rule did) silently replaced the
+    // documented defaults with a shorter hard-coded list.
+    const { destructivePatterns } = options as Required<Options>;
 
-    /**
-     * Check if a tool name suggests destructive operation
-     */
-    function isDestructiveTool(name: string): string | null {
-      const lowerName = name.toLowerCase();
-      for (const pattern of destructivePatterns) {
-        if (lowerName.includes(pattern.toLowerCase())) {
-          return pattern;
-        }
+    /** The tool's definition object: `{ ... }` or the argument of `tool({ ... })`. */
+    function toolDefinition(value: TSESTree.Node): TSESTree.ObjectExpression | null {
+      if (value.type === AST_NODE_TYPES.ObjectExpression) return value;
+      if (
+        value.type === AST_NODE_TYPES.CallExpression &&
+        TOOL_FACTORIES.has(calleeName(value.callee) as string) &&
+        value.arguments[0]?.type === AST_NODE_TYPES.ObjectExpression
+      ) {
+        return value.arguments[0];
       }
       return null;
     }
 
     /**
-     * Check if tool has confirmation requirement
+     * Confirmed when the tool carries an approval flag, when a spread may
+     * carry one, or when it has no `execute` at all — the SDK then forwards
+     * the call to the client, which is its documented human-in-the-loop path.
      */
-    // oxlint-disable-next-line consistent-function-scoping
-    function hasConfirmationFlag(toolDef: TSESTree.ObjectExpression): boolean {
-      const confirmationProps = new Set([
-        'requiresConfirmation', 'requireConfirmation', 'confirmation',
-        'requiresApproval', 'requireApproval', 'approval',
-        'dangerouslyAllowBrowser', // If explicitly acknowledged
-      ]);
-      
-      return toolDef.properties.some(prop => {
-        if (prop.type !== 'Property') return false;
-        const keyName = prop.key.type === 'Identifier' ? prop.key.name : null;
-        return keyName && confirmationProps.has(keyName);
-      });
+    function isConfirmed(def: TSESTree.ObjectExpression): boolean {
+      let hasExecute = false;
+      for (const prop of def.properties) {
+        if (prop.type === AST_NODE_TYPES.SpreadElement) return true;
+        const key = objectKeyName(prop) as string;
+        if (CONFIRMATION_PROPS.has(key)) return true;
+        if (key === 'execute') hasExecute = true;
+      }
+      return !hasExecute;
     }
 
     return {
       Property(node: TSESTree.Property) {
-        // Looking for tool definitions in tools object
-        if (node.key.type !== 'Identifier' && node.key.type !== 'Literal') return;
-        
-        const toolName = node.key.type === 'Identifier' 
-          ? node.key.name 
-          : String(node.key.value);
+        const toolName = objectKeyName(node);
+        if (toolName === null) return;
 
-        // Check if this looks like a tool definition
-        if (node.value.type !== 'ObjectExpression' && node.value.type !== 'CallExpression') {
-          return;
-        }
+        const def = toolDefinition(node.value);
+        if (!def) return;
 
-        // Check if tool name suggests destructive operation
-        const destructiveOp = isDestructiveTool(toolName);
-        if (!destructiveOp) return;
+        const operation = destructivePatterns.find((pattern) => nameHasWord(toolName, pattern));
+        if (!operation) return;
 
-        // Check the parent to ensure this is in a tools object
-        const parent = node.parent;
-        if (parent?.type !== 'ObjectExpression') return;
-        
-        const grandparent = parent.parent;
-        if (grandparent?.type !== 'Property') return;
-        
-        const toolsKey = grandparent.key;
-        if (toolsKey.type !== 'Identifier' || toolsKey.name !== 'tools') return;
+        // The tool must sit directly in a `tools: { ... }` object.
+        const tools = node.parent;
+        if (tools?.type !== AST_NODE_TYPES.ObjectExpression) return;
+        const toolsProp = tools.parent;
+        if (toolsProp?.type !== AST_NODE_TYPES.Property || objectKeyName(toolsProp) !== 'tools') return;
 
-        // For object expressions, check for confirmation flag
-        if (node.value.type === 'ObjectExpression') {
-          if (!hasConfirmationFlag(node.value)) {
-            context.report({
-              node,
-              messageId: 'missingConfirmation',
-              data: { 
-                toolName,
-                operation: destructiveOp,
-              },
-            });
-          }
-        }
-        // For CallExpressions (tool() helper), we'll assume it might be handled
+        // A call-level `toolApproval` (AI SDK 6+) gates every tool in the call.
+        // A Property holding an object literal always lives in an ObjectExpression.
+        if (optionValue(toolsProp.parent as TSESTree.ObjectExpression, 'toolApproval')) return;
+
+        if (isConfirmed(def)) return;
+
+        context.report({
+          node,
+          messageId: 'missingConfirmation',
+          data: { toolName, operation },
+        });
       },
     };
   },
 });
+
+/** Factories that wrap a tool definition object. */
+const TOOL_FACTORIES = new Set(['tool', 'dynamicTool']);
+
+/** Keys that mark a tool as gated on a human. `needsApproval` is the SDK's own. */
+const CONFIRMATION_PROPS = new Set([
+  'needsApproval',
+  'requiresConfirmation', 'requireConfirmation', 'confirmation',
+  'requiresApproval', 'requireApproval', 'approval',
+]);

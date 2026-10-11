@@ -50,6 +50,10 @@ await client.query('SELECT id, name, email FROM users WHERE id = $1', [id]);
 
 // COUNT(*) is acceptable
 await pool.query('SELECT COUNT(*) FROM users');
+
+// `*` over a CTE or derived table whose own SELECT lists the columns
+await pool.query('WITH recent AS (SELECT id, total FROM orders) SELECT * FROM recent');
+await pool.query('SELECT * FROM (SELECT id, email FROM users) AS u');
 ```
 
 ## Error Message Format

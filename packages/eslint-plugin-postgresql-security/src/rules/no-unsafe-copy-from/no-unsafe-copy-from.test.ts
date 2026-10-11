@@ -82,6 +82,7 @@ describe('no-unsafe-copy-from', () => {
         },
         // Triggers hardcodedPath
         {
+          name: 'a hardcoded server path is a server-side file read',
           code: `client.query("COPY users FROM '/tmp/data.csv'")`,
           errors: [{ messageId: 'hardcodedPath' }],
         },
@@ -92,5 +93,40 @@ describe('no-unsafe-copy-from', () => {
         },
       ]),
     });
+  });
+});
+
+/** FP/FN review 2026-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md). */
+describe('no-unsafe-copy-from — fp/fn review 2026-10', () => {
+  ruleTester.run('CF-1: COPY … TO a server path is a file WRITE', noUnsafeCopyFrom, {
+    valid: pg([
+      { name: 'COPY TO STDOUT streams to the client and writes no file', code: "client.query('COPY users TO STDOUT WITH CSV');" },
+      { name: 'an interpolation in the exported query of COPY TO STDOUT writes no file', code: "client.query(`COPY (SELECT id FROM users WHERE org = ${ORG}) TO STDOUT`);" },
+      // A fixed export path is an admin script, as with a fixed FROM path.
+      { name: 'a fixed export path is an admin script, as a fixed FROM path is', code: "client.query(\"COPY users TO '/var/lib/postgresql/exports/users.csv' WITH CSV\");" },
+      { name: 'an export path built from a constant is fixed', code: "const ORG = 'acme';\nclient.query(`COPY users TO '/exports/${ORG}.csv'`);" },
+    ]),
+    invalid: pg([
+      {
+        name: 'a user-chosen export path',
+        code: "client.query(`COPY users TO '/var/lib/postgresql/exports/${req.query.name}.csv' WITH CSV`);",
+        errors: [{ messageId: 'dynamicWritePath' }],
+      },
+      {
+        name: 'COPY (query) TO a concatenated path',
+        code: "client.query('COPY (SELECT * FROM users) TO \\'' + target + '\\'');",
+        errors: [{ messageId: 'dynamicWritePath' }],
+      },
+      {
+        name: 'an export statement BEFORE a dynamic read is still read',
+        code: "client.query(`COPY a TO STDOUT; COPY b FROM '/data/${file}'`);",
+        errors: [{ messageId: 'dynamicPath' }],
+      },
+      {
+        name: 'COPY TO PROGRAM with input',
+        code: "client.query(`COPY users TO PROGRAM 'gzip > /tmp/${name}.gz'`);",
+        errors: [{ messageId: 'dynamicWritePath' }],
+      },
+    ]),
   });
 });

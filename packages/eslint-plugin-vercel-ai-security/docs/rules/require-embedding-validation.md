@@ -76,6 +76,13 @@ Unvalidated embeddings can:
 - **Enable jailbreaks** - Crafted embeddings bypass safety
 - **Leak information** - Embedding inversion attacks
 
+## 🔄 Changes in the 2026-10-10 FP/FN audit
+
+- Store operations, embedding calls and validators are matched by whole word of
+  the call chain (`addressService` is not an `add`); a quoted `'embedding'` key
+  is the same property.
+- **Options:** the documented `defaultOptions` now apply. Earlier versions read `context.options` and silently ran a shorter hard-coded list instead.
+
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:

@@ -112,6 +112,99 @@ describe('no-tool-description-injection', () => {
             SDK +
             "server.registerTool('search', { [key]: `Search ${x}` }, handler);",
         },
+        // ---- FP fixes, 2026-10. Each is text the developer wrote, just not
+        // inline at the call.
+        {
+          name: 'a const initialised from a literal',
+          code:
+            SDK +
+            "const DESC = 'Search the docs';\nserver.registerTool('search', { description: DESC }, handler);",
+        },
+        {
+          name: 'a const chain and an `as const` literal',
+          code:
+            SDK +
+            "const BASE = 'Search' as const;\nconst DESC = BASE + ' the docs';\nserver.registerTool('search', { title: BASE, description: DESC }, handler);",
+        },
+        {
+          name: 'a property of a const object of literals',
+          code:
+            SDK +
+            "const TOOLS = { search: { description: 'Search the docs' } } as const;\n" +
+            "server.registerTool('search', { description: TOOLS.search.description }, handler);",
+        },
+        {
+          name: 'a quoted and a subscripted property of a const object',
+          code:
+            SDK +
+            "const D = { 'search-tool': 'Search the docs' } satisfies Record<string, string>;\n" +
+            "server.registerTool('search', { description: D['search-tool'] }, handler);",
+        },
+        {
+          name: 'lines joined from an array of literals',
+          code:
+            SDK +
+            "server.registerTool('query', { description: ['Run a read-only query.', 'SELECT only.'].join('\\n') }, handler);",
+        },
+        {
+          name: 'an array of literals joined with the default separator',
+          code:
+            SDK +
+            "server.registerTool('query', { description: ['a', `b`].join() }, handler);",
+        },
+        {
+          name: 'a tagged template with nothing interpolated (dedent)',
+          code:
+            SDK +
+            "server.registerTool('explain', { description: dedent`\n  Explain a query plan.\n` }, handler);",
+        },
+        {
+          name: 'legacy tool(name, shape, cb) whose PARAMETERS are named title and description',
+          code:
+            SDK +
+            "server.tool('create_issue', { title: z.string().max(200), description: z.string().optional() }, async ({ title, description }) => ({ content: [] }));",
+        },
+        {
+          name: 'legacy tool(name, description, shape, cb) with a static description',
+          code:
+            SDK +
+            "server.tool('search', 'Search the docs', { title: z.string() }, async ({ title }) => ({ content: [] }));",
+        },
+        {
+          name: 'legacy tool(name, description, cb) with a const description',
+          code:
+            SDK +
+            "const DESC = 'Search';\nserver.tool('search', DESC, { q: z.string() }, async ({ q }) => q);",
+        },
+        {
+          name: 'a const object key written after a spread wins over it',
+          code:
+            SDK +
+            "const TOOLS = { ...base, [k]: 'x', search: 'Search the docs' };\n" +
+            "server.registerTool('search', { description: TOOLS.search }, handler);",
+        },
+        {
+          name: 'a property of an object literal written in place',
+          code:
+            SDK +
+            "server.registerTool('search', { description: ({ d: 'Search' }).d }, handler);",
+        },
+        {
+          name: 'a static prompt description',
+          code:
+            SDK +
+            "server.registerPrompt('summarize', { description: 'Summarize text' }, cb);",
+        },
+        {
+          name: 'a static resource description',
+          code:
+            SDK +
+            "server.registerResource('notes', 'notes://all', { description: 'All notes' }, cb);",
+        },
+        {
+          name: 'a prompt config passed by reference',
+          code: SDK + "server.registerPrompt('summarize', config, cb);",
+        },
       ],
       invalid: [],
     });
@@ -171,6 +264,192 @@ describe('no-tool-description-injection', () => {
             SDK +
             'server.tool("search", { description: `Search ${scope}` }, handler);',
           errors: [{ messageId: 'dynamicDescription' }],
+        },
+        // ---- FN fixes and the limits of the FP fixes, 2026-10.
+        {
+          name: 'the legacy positional description, interpolated',
+          code:
+            SDK +
+            'server.tool("search", `Search ${await loadBlurb()}`, { q: z.string() }, async ({ q }) => q);',
+          errors: [
+            {
+              messageId: 'dynamicDescription',
+              data: { tool: 'search', key: 'description' },
+            },
+          ],
+        },
+        {
+          name: 'the legacy positional description with no schema',
+          code:
+            SDK +
+            'server.tool("search", "Search " + blurb, async () => ({ content: [] }));',
+          errors: [{ messageId: 'dynamicDescription' }],
+        },
+        {
+          name: 'a legacy positional description held in a value this file does not fix',
+          code:
+            SDK +
+            'server.tool("search", blurb, { q: z.string() }, async ({ q }) => q);',
+          errors: [{ messageId: 'dynamicDescription' }],
+        },
+        {
+          name: 'a let binding can be reassigned',
+          code:
+            SDK +
+            "let DESC = 'Search';\nserver.registerTool('search', { description: DESC }, handler);",
+          errors: [{ messageId: 'dynamicDescription' }],
+        },
+        {
+          name: 'an imported value is decided in another file',
+          code:
+            SDK +
+            "import { DESC } from './descriptions';\nserver.registerTool('search', { description: DESC }, handler);",
+          errors: [{ messageId: 'dynamicDescription' }],
+        },
+        {
+          name: 'a const initialised from a call',
+          code:
+            SDK +
+            "const DESC = loadBlurb();\nserver.registerTool('search', { description: DESC }, handler);",
+          errors: [{ messageId: 'dynamicDescription' }],
+        },
+        {
+          name: 'a destructured const',
+          code:
+            SDK +
+            "const { DESC } = config;\nserver.registerTool('search', { description: DESC }, handler);",
+          errors: [{ messageId: 'dynamicDescription' }],
+        },
+        {
+          name: 'a const object property that is not a literal',
+          code:
+            SDK +
+            "const TOOLS = { search: blurb, ...more };\nserver.registerTool('search', { description: TOOLS.search }, handler);",
+          errors: [{ messageId: 'dynamicDescription' }],
+        },
+        {
+          name: 'a const object property that does not exist, or a computed one',
+          code:
+            SDK +
+            "const TOOLS = { search: 'S' };\nserver.registerTool('search', { title: TOOLS.other, description: TOOLS[k] }, handler);",
+          errors: [
+            { messageId: 'dynamicDescription' },
+            { messageId: 'dynamicDescription' },
+          ],
+        },
+        {
+          name: 'a property of a const that is not an object literal',
+          code:
+            SDK +
+            "const TOOLS = load();\nserver.registerTool('search', { description: TOOLS.search }, handler);",
+          errors: [{ messageId: 'dynamicDescription' }],
+        },
+        {
+          name: 'a joined array with a dynamic element',
+          code:
+            SDK +
+            "server.registerTool('q', { description: ['Query', blurb].join('\\n') }, handler);",
+          errors: [{ messageId: 'dynamicDescription' }],
+        },
+        {
+          name: 'a joined array with a spread or a dynamic separator',
+          code:
+            SDK +
+            "server.registerTool('q', { title: [...lines].join(), description: ['a'].join(sep) }, handler);",
+          errors: [
+            { messageId: 'dynamicDescription' },
+            { messageId: 'dynamicDescription' },
+          ],
+        },
+        {
+          name: 'a join on something that is not an array literal',
+          code:
+            SDK +
+            "server.registerTool('q', { description: lines.join('\\n') }, handler);",
+          errors: [{ messageId: 'dynamicDescription' }],
+        },
+        {
+          name: 'a tagged template that interpolates',
+          code:
+            SDK +
+            "server.registerTool('q', { description: dedent`Search ${blurb}` }, handler);",
+          errors: [{ messageId: 'dynamicDescription' }],
+        },
+        {
+          name: 'a const that refers to itself through a cycle stays unresolved',
+          code:
+            SDK +
+            "const A = B;\nconst B = A;\nserver.registerTool('q', { description: A }, handler);",
+          errors: [{ messageId: 'dynamicDescription' }],
+        },
+        {
+          name: 'a const object key a later spread may override',
+          code:
+            SDK +
+            "const TOOLS = { search: 'S', ...overrides };\nserver.registerTool('search', { description: TOOLS.search }, handler);",
+          errors: [{ messageId: 'dynamicDescription' }],
+        },
+        {
+          name: 'a nested const path that does not exist',
+          code:
+            SDK +
+            "const TOOLS = { search: { d: 'S' } };\nserver.registerTool('search', { description: TOOLS.missing.d }, handler);",
+          errors: [{ messageId: 'dynamicDescription' }],
+        },
+        {
+          name: 'a property of a call result',
+          code:
+            SDK +
+            "server.registerTool('search', { description: load().search }, handler);",
+          errors: [{ messageId: 'dynamicDescription' }],
+        },
+        {
+          name: 'an awaited value',
+          code:
+            SDK +
+            "server.registerTool('search', { description: await loadBlurb() }, handler);",
+          errors: [{ messageId: 'dynamicDescription' }],
+        },
+        {
+          name: 'an array method other than join, and a join with extra arguments',
+          code:
+            SDK +
+            "server.registerTool('search', { title: ['a'].map(f), description: ['a'].join('', extra) }, handler);",
+          errors: [
+            { messageId: 'dynamicDescription' },
+            { messageId: 'dynamicDescription' },
+          ],
+        },
+        {
+          name: 'an ambient declaration has no initializer to read',
+          code:
+            SDK +
+            "declare const DESC: string;\nserver.registerTool('search', { description: DESC }, handler);",
+          errors: [{ messageId: 'dynamicDescription' }],
+        },
+        {
+          name: 'a dynamic prompt description',
+          code:
+            SDK +
+            "server.registerPrompt('summarize', { description: `Summarize. ${blurb}` }, cb);",
+          errors: [
+            {
+              messageId: 'dynamicMetadata',
+              data: { kind: 'prompt', name: 'summarize', key: 'description' },
+            },
+          ],
+        },
+        {
+          name: 'a dynamic resource description (config is the third argument)',
+          code:
+            SDK +
+            "server.registerResource('notes', template, { description: blurb }, cb);",
+          errors: [
+            {
+              messageId: 'dynamicMetadata',
+              data: { kind: 'resource', name: 'notes', key: 'description' },
+            },
+          ],
         },
         {
           // Regression: the scan returned on its first match, so a tool with

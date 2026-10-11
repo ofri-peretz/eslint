@@ -154,12 +154,37 @@ ruleTester.run('require-request-timeout (coverage gaps)', requireRequestTimeout,
     },
     // spread properties are skipped while a real timeout prop still counts
     { code: `generateText({ ...opts, timeout: 5000, prompt: 'x' });` },
-  ]),
-  invalid: xai([
-    // string-literal 'timeout' key is NOT recognized (keyName resolves to null)
+    // (Changed 2026-10-10) a quoted 'timeout' key is the same option; it used
+    // to be reported as missing.
+    { code: `generateText({ 'timeout': 5000, prompt: 'x' });` },
     {
-      code: `generateText({ 'timeout': 5000, prompt: 'x' });`,
-      errors: [{ messageId: 'missingTimeout' }],
+      name: 'a timeoutMs option counts as a request timeout',
+      code: `generateText({ timeoutMs: 5000, prompt: 'x' });`,
     },
   ]),
+  invalid: xai([]),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-vercel-ai-security.md)
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('require-request-timeout (fp-fn audit)', requireRequestTimeout, {
+  valid: xai([
+    {
+      name: 'options in a variable are not inspected, so not reported',
+      code: `
+        const opts = { model, prompt: 'hi', abortSignal: AbortSignal.timeout(30_000) };
+        await generateText(opts);
+      `,
+    },
+    {
+      name: 'a timeout supplied through a spread',
+      code: `await generateText({ ...callSettings, prompt: 'hi' });`,
+    },
+    {
+      name: 'a user function whose name contains generateText is not the SDK',
+      code: `generateTextureAtlas({ size: 512 });`,
+    },
+  ]),
+  invalid: xai([]),
 });

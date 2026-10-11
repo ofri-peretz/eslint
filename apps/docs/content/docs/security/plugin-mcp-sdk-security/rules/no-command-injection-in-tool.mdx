@@ -85,7 +85,42 @@ server.registerTool('run', cfg, async (args) => { execSync(args.cmd); });
 
 // ❌ spawn picks the binary too — the argv array does not help here
 server.registerTool('run', cfg, async ({ bin }) => { spawn(bin, argv); });
+
+// ❌ a shell's `-c` script is a command line
+server.registerTool('run', cfg, async ({ command }) => { spawn('sh', ['-c', command]); });
+
+// ❌ promisified, renamed, from execa, or behind a named handler — same sink
+const execAsync = promisify(exec);
+async function runHandler({ cmd }) { await execAsync(cmd); await execaCommand(cmd); }
+server.registerTool('run', cfg, runHandler);
+
+// ❌ the low-level Server: the arguments are request.params.arguments
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  const { arguments: args } = request.params;
+  execSync(String(args?.cmd));
+});
 ```
+
+## How sinks and arguments are recognised
+
+- **Sinks are resolved to their module**, never matched by name: an
+  `exec`/`execSync`/`execFile`/`execFileSync`/`spawn`/`spawnSync`/`fork` bound
+  to `child_process` (named, default, namespace, `require`, or
+  `require('child_process').exec`), the same wrapped in `util.promisify`, and
+  `execa`/`execaSync`/`execaCommand`/`execaCommandSync`/`execaNode`.
+  `ISSUE_KEY.exec(key)` is a RegExp and `db.exec(sql)` is a database; neither
+  is reported.
+- **Tool arguments** are the handler's first parameter (destructured or whole)
+  for `registerTool`/`tool`, `request.params.arguments` for
+  `setRequestHandler(CallToolRequestSchema)` / `setRequestHandler('tools/call')`,
+  and a body declaration that destructures or reads straight off one of those
+  (`const { cmd } = args`, `const c = args.cmd`).
+- **A shell script position** — the element after `-c`, `-lc`, `/c` or
+  `-Command` when the file is `sh`, `bash`, `zsh`, `cmd.exe`, `powershell`,
+  `pwsh`… — is a command position too.
+- **A closed set is the allowlist.** An argument whose input schema is
+  `z.enum([...])`, `z.literal(...)` or `z.nativeEnum(...)` is not reported:
+  the SDK rejects anything outside the set before the handler runs.
 
 ## ✅ Correct
 
@@ -115,9 +150,12 @@ does not involve a shell, so there is no metacharacter to escape.
   well be unsafe, but this rule cannot show it came from the model, and
   guessing is what earns a security rule its false-positive reputation.
 - **A computed member.** `args[key]` is not statically a name.
+- **A value computed from an argument.** `const c = cmd.trim(); exec(c)` is a
+  new value; following it is data-flow analysis this rule does not do.
 - **A sink outside any tool handler.** The handler is the taint boundary; a
   sink elsewhere in the file is `node-security`'s question.
-- **A file that never imports `@modelcontextprotocol/sdk`.**
+- **A file that imports no MCP server package** (`@modelcontextprotocol/sdk`,
+  the v2 `@modelcontextprotocol/*` packages, `mcp-handler`).
 
 ## When Not To Use It
 

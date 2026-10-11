@@ -1,6 +1,6 @@
 ---
 title: no-decode-without-verify
-description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+description: 'The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:'
 tags: ['security', 'jwt']
 category: security
 severity: medium
@@ -10,8 +10,8 @@ autofix: false
 
 > Disallow trusting decoded JWT payload without signature verification
 
-
 <!-- @rule-summary -->
+
 The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:
 <!-- @/rule-summary -->
 
@@ -29,13 +29,13 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-345](https://cwe.mitre.org/data/definitions/345.html) [OWASP:A08](https://owasp.org/Top10/A08_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
-| **Issue Description** | Specific vulnerability | `Insufficient Verification of Data Authenticity detected` |
-| **Severity & Compliance** | Impact assessment | `HIGH` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A08_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                                                       |
+| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Risk Standards**        | Security benchmarks    | [CWE-345](https://cwe.mitre.org/data/definitions/345.html) [OWASP:A08](https://owasp.org/Top10/A08_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
+| **Issue Description**     | Specific vulnerability | `Insufficient Verification of Data Authenticity detected`                                                                                                                                                                                                     |
+| **Severity & Compliance** | Impact assessment      | `HIGH`                                                                                                                                                                                                                                                        |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                                                          |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A08_2021-Injection/)                                                                                                                                                                                                   |
 
 ## Rule Details
 
@@ -65,17 +65,35 @@ const { sub } = jwt.verify(token, secret, { algorithms: ['RS256'] });
 // jose library with verification
 import { jwtVerify } from 'jose';
 const { payload } = await jwtVerify(token, key);
+
+// Reading only time claims — the client-side refresh check
+const { exp } = jwtDecode(token);
+if (Date.now() >= exp * 1000) refresh();
+
+// Reading the header's kid to pick the JWKS key, then verifying
+const decoded = jwt.decode(token, { complete: true });
+const key = await client.getSigningKey(decoded.header.kid);
+jwt.verify(token, key.getPublicKey(), { algorithms: ['RS256'] });
+
+// Not JWT decodes: a TextDecoder, jose's base64url codec
+const decoder = new TextDecoder();
+decoder.decode(bytes);
+base64url.decode(process.env.JWT_SECRET_B64);
 ```
+
+`header.kid` is exempt by default: a forged kid only selects a key the
+signature then fails against. `header.alg` and `header.jku` are not — choosing
+those from the token is the attack. `allowHeaderInspection: true` exempts every
+read of `.header`.
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowHeaderInspection` | `boolean` | `false` | Allow decode() for reading header before verification |
-| `trustedSanitizers` | `string[]` | `[]` | Extra function names to treat as sanitizers |
-| `trustedAnnotations` | `string[]` | `["@decoded-header-only","@verified-separately"]` | Extra JSDoc annotations to treat as safe markers |
-| `strictMode` | `boolean` | `false` | Disable false-positive suppression — report even sanitized input |
-
+| Option                  | Type       | Default                                           | Description                                                                                                    |
+| ----------------------- | ---------- | ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `allowHeaderInspection` | `boolean`  | `false`                                           | Allow decode() whose result is only read at `.header` (any header field). `header.kid` alone is always allowed |
+| `trustedSanitizers`     | `string[]` | `[]`                                              | Extra function names to treat as sanitizers                                                                    |
+| `trustedAnnotations`    | `string[]` | `["@decoded-header-only","@verified-separately"]` | Extra JSDoc annotations to treat as safe markers                                                               |
+| `strictMode`            | `boolean`  | `false`                                           | Disable false-positive suppression — report even sanitized input                                               |
 
 ```javascript
 {

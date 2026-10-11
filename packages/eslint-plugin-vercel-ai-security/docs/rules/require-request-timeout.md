@@ -24,7 +24,7 @@ This rule identifies AI SDK calls that don't have timeout or abort signal config
 | **OWASP LLM**      | [LLM04: Model Denial of Service](https://owasp.org/www-project-top-10-for-large-language-model-applications/) |
 | **CWE**            | [CWE-400: Uncontrolled Resource Consumption](https://cwe.mitre.org/data/definitions/400.html)                 |
 | **CVSS**           | 5.0                                                                                                           |
-| **Config Default** | `warn` (recommended), `error` (strict)                                                                        |
+| **Config Default** | `off` (recommended), `error` (strict)                                                                         |
 
 ## 🔍 What This Rule Detects
 
@@ -81,6 +81,14 @@ Missing timeouts can cause:
 - **Resource exhaustion** - Threads/connections blocked
 - **Cost explosion** - Long-running requests accumulate costs
 - **Poor UX** - Users wait forever
+
+## 🔄 Changes in the 2026-10-10 FP/FN audit
+
+- `generateText(opts)` with options built elsewhere is no longer reported (the
+  options may carry a timeout); a call with no options at all still is.
+- A spread in the options may carry the timeout and counts.
+- Now `off` in `recommended`; it duplicated `require-abort-signal` on the same calls.
+- **Options:** the documented `defaultOptions` now apply. Earlier versions read `context.options` and silently ran a shorter hard-coded list instead.
 
 ## Known False Negatives
 

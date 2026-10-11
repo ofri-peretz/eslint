@@ -10,8 +10,8 @@ autofix: false
 
 > Disallow JWT "none" algorithm which bypasses signature verification (CVE-2022-23540)
 
-
 <!-- @rule-summary -->
+
 This rule detects attempts to use the none algorithm which completely bypasses JWT signature verification
 <!-- @/rule-summary -->
 
@@ -60,13 +60,12 @@ jwt.verify(token, secret, { algorithms: ['HS256'] });
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `false` | Allow "none" algorithm in test files |
-| `trustedSanitizers` | `string[]` | `[]` | Extra function names to treat as sanitizers |
-| `trustedAnnotations` | `string[]` | `[]` | Extra JSDoc annotations to treat as safe markers |
-| `strictMode` | `boolean` | `false` | Disable false-positive suppression — report even sanitized input |
-
+| Option               | Type       | Default | Description                                                      |
+| -------------------- | ---------- | ------- | ---------------------------------------------------------------- |
+| `allowInTests`       | `boolean`  | `false` | Allow "none" algorithm in test files                             |
+| `trustedSanitizers`  | `string[]` | `[]`    | Extra function names to treat as sanitizers                      |
+| `trustedAnnotations` | `string[]` | `[]`    | Extra JSDoc annotations to treat as safe markers                 |
+| `strictMode`         | `boolean`  | `false` | Disable false-positive suppression — report even sanitized input |
 
 ```javascript
 {
@@ -100,14 +99,13 @@ jwt.verify(token, secret, { algorithm: algo });
 
 **Mitigation**: Use TypeScript strict typing for algorithm options. Implement runtime validation.
 
-### Spread Operator Options
+### Spread of an Unresolvable Value
 
-**Why**: Spread objects are not statically analyzable.
+**Why**: options are read through a same-file `const`, an `as` cast and a spread of such a `const` — `const bad = { algorithm: 'none' }; jwt.sign(p, k, { ...bad })` IS detected. A spread of a call or a parameter cannot be seen.
 
 ```typescript
-// ❌ NOT DETECTED - Algorithm in spread object
-const maliciousOptions = { algorithm: 'none' };
-jwt.verify(token, secret, { ...maliciousOptions });
+// ⚠️ NOT DETECTED - the spread source is a call
+jwt.verify(token, secret, { ...loadOptions() });
 ```
 
 **Mitigation**: Avoid spreading untrusted option objects. Validate options at runtime.
@@ -144,6 +142,7 @@ verifyToken(userToken); // Looks safe, but isn't
 
 - [CVE-2022-23540](https://nvd.nist.gov/vuln/detail/CVE-2022-23540)
 - [RFC 8725 - JWT Best Practices](https://tools.ietf.org/html/rfc8725)
+
 ---
 
-*If this rule caught a real vulnerability in your codebase, [⭐ star the repo](https://github.com/ofri-peretz/eslint) — it keeps the detection logic maintained.*
+_If this rule caught a real vulnerability in your codebase, [⭐ star the repo](https://github.com/ofri-peretz/eslint) — it keeps the detection logic maintained._

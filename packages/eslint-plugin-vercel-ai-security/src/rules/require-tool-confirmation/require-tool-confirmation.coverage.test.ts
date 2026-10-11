@@ -97,38 +97,37 @@ ruleTester.run('require-tool-confirmation (branch coverage)', requireToolConfirm
     {
       code: `generateText({ notTools: { deleteUser: { execute: run } } });`,
     },
-    // Wrapper key is a string literal — toolsKey.type check rejects it.
+    // (Changed 2026-10-10) A quoted `'tools'` key used to be skipped here; it is
+    // the same property, so it is now checked — see the fp-fn audit suite.
+    // (Changed 2026-10-10) A spread inside the tool may carry `needsApproval`
+    // or omit `execute`; the rule cannot see into it, so it stays silent.
     {
-      code: `generateText({ 'tools': { deleteUser: { execute: run } } });`,
+      name: 'a spread in the tool may carry needsApproval, so it stays silent',
+      code: `generateText({ tools: { deleteUser: { ...baseTool } } });`,
+    },
+    // (Changed 2026-10-10) A quoted confirmation key is the same property and
+    // now counts — this was recorded as a known FN.
+    {
+      name: 'a quoted confirmation key counts as confirmation',
+      code: `generateText({ tools: { deleteUser: { 'requiresConfirmation': true, execute: run } } });`,
+    },
+    // A tool() call with no object argument is not a definition this rule reads.
+    {
+      name: 'a tool() call with no object argument is not a definition the rule reads',
+      code: `generateText({ tools: { deleteUser: tool(def) } });`,
+    },
+    // A call to some other factory is not a tool definition.
+    {
+      name: 'a call to another factory is not a tool definition',
+      code: `generateText({ tools: { deleteUser: makeTool({ execute: run }) } });`,
     },
     // Destructive tool defined via the tool() helper CallExpression — assumed handled.
     {
+      name: 'a tool() definition with a confirmation flag is confirmed',
       code: `generateText({ tools: { deleteUser: tool({ requiresConfirmation: true }) } });`,
     },
   ]),
   invalid: xai([
-    // Spread inside the tool definition — skipped by hasConfirmationFlag,
-    // no confirmation prop found, reported.
-    {
-      code: `generateText({ tools: { deleteUser: { ...baseTool } } });`,
-      errors: [
-        {
-          messageId: 'missingConfirmation',
-          data: { toolName: 'deleteUser', operation: 'delete' },
-        },
-      ],
-    },
-    // String-literal confirmation key — keyName resolves to null so the flag
-    // is not recognized (documented FN: only Identifier keys are matched).
-    {
-      code: `generateText({ tools: { deleteUser: { 'requiresConfirmation': true } } });`,
-      errors: [
-        {
-          messageId: 'missingConfirmation',
-          data: { toolName: 'deleteUser', operation: 'delete' },
-        },
-      ],
-    },
     // String-literal tool name — resolved via String(key.value).
     {
       code: `generateText({ tools: { 'deleteUser': { execute: run } } });`,

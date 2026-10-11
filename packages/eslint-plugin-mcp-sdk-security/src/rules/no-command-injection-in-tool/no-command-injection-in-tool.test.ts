@@ -29,7 +29,19 @@ const ruleTester = new RuleTester({
   },
 });
 
+/**
+ * Opens the SDK gate AND binds the sinks.
+ *
+ * The sinks used to be matched by callee name alone, so `ISSUE_KEY.exec(key)`
+ * — a RegExp — was a CRITICAL CWE-78 finding. They are now resolved to
+ * `child_process` (or `execa`), so every fixture that expects a finding has to
+ * import the sink the way real code does. Bare, unbound `execSync(...)` no
+ * longer reports: see "an unbound callee is not proven to be child_process".
+ */
 const SDK =
+  "import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';\n" +
+  "import { exec, execSync, execFile, spawn, fork } from 'node:child_process';\n";
+const SDK_ONLY =
   "import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';\n";
 
 describe('no-command-injection-in-tool', () => {
@@ -144,6 +156,136 @@ describe('no-command-injection-in-tool', () => {
             SDK +
             'server.registerTool("run", cfg, async (args) => { execSync(args[key]); });',
         },
+        // ---- FP fixes, 2026-10.
+        {
+          name: 'RegExp.prototype.exec on a tool argument is not a process sink',
+          code:
+            SDK +
+            'const ISSUE_KEY = /^([A-Z]+)-(\\d+)$/;\n' +
+            'server.registerTool("get_issue", cfg, async ({ key }) => { const m = ISSUE_KEY.exec(key); return m; });',
+        },
+        {
+          name: 'a database exec is not a process sink',
+          code:
+            SDK +
+            "import Database from 'better-sqlite3';\nconst db = new Database('app.db');\n" +
+            'server.registerTool("q", cfg, async ({ query }) => { db.exec(query); });',
+        },
+        {
+          name: 'an unbound callee is not proven to be child_process',
+          code:
+            SDK_ONLY +
+            'server.registerTool("run", cfg, async ({ cmd }) => { execSync(cmd); runner.exec(cmd); });',
+        },
+        {
+          name: 'a local function that happens to be named exec',
+          code:
+            SDK +
+            'function run(cmd) { return cmd; }\nconst execLocal = run;\n' +
+            'server.registerTool("run", cfg, async ({ cmd }) => { execLocal(cmd); });',
+        },
+        {
+          name: 'a non-sink export of child_process',
+          code:
+            SDK +
+            "import * as cp from 'node:child_process';\n" +
+            'server.registerTool("run", cfg, async ({ cmd }) => { cp.ChildProcess(cmd); cp(cmd); });',
+        },
+        {
+          name: 'a binary constrained by z.enum is the allowlist',
+          code:
+            SDK +
+            'server.registerTool("version_of", { inputSchema: { tool: z.enum(["node", "npm"]).describe("x") } }, async ({ tool }) => { execFile(tool, ["--version"]); });',
+        },
+        {
+          name: 'z.literal and z.nativeEnum through a renamed destructure and the whole-args form',
+          code:
+            SDK +
+            'server.registerTool("v", { inputSchema: z.object({ a: z.literal("git"), b: z.nativeEnum(Bins).optional() }) }, async ({ a: bin }) => { execFile(bin); });\n' +
+            'server.tool("w", { a: z.literal("git"), b: z.nativeEnum(Bins) }, async (args) => { execFile(args.b); });',
+        },
+        {
+          name: 'a promisified function that is not a sink',
+          code:
+            SDK +
+            "import { promisify } from 'node:util';\nimport { readFile } from 'node:fs';\nconst read = promisify(readFile);\n" +
+            'const later = promisify();\nconst other = wrap(exec);\n' +
+            'server.registerTool("run", cfg, async ({ cmd }) => { await read(cmd); await later(cmd); await other(cmd); });',
+        },
+        {
+          name: 'a shell invoked with a fixed script',
+          code:
+            SDK +
+            'server.registerTool("run", cfg, async ({ cmd }) => { spawn("sh", ["-c", "ls -la"]); spawn("sh", ["-c"]); spawn("sh", ["-c", `ls ${cmd}`]); });',
+        },
+        {
+          name: 'a tool argument after a flag that is not a shell -c',
+          code:
+            SDK +
+            'server.registerTool("run", cfg, async ({ cmd }) => { spawn("git", ["-c", cmd]); spawn("bash", ["--version", cmd]); spawn("bash", args); spawn(shell, ["-c", cmd]); spawn("bash", [...rest, "-c", ...cmd]); });',
+        },
+        {
+          name: 'a call-tool request field that is not an argument',
+          code:
+            SDK +
+            "import { CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';\n" +
+            'server.setRequestHandler(CallToolRequestSchema, async (request) => { execSync(request.params.name); execSync(request.params); });',
+        },
+        {
+          name: 'a different request schema',
+          code:
+            SDK +
+            "import { ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';\n" +
+            'server.setRequestHandler(ListToolsRequestSchema, async (request) => { execSync(request.params.arguments.cmd); });\n' +
+            'server.setRequestHandler(LocalSchema, async (request) => { execSync(request.params.arguments.cmd); });\n' +
+            'server.setRequestHandler("tools/list", async (request) => { execSync(request.params.arguments.cmd); });',
+        },
+        {
+          name: 'a body declaration that does not come from the arguments',
+          code:
+            SDK +
+            'server.registerTool("run", cfg, async (args) => { const { cmd } = other; const c2 = args.cmd.trim(); const [x] = args.list; let y; execSync(cmd); execSync(c2); execSync(x); });',
+        },
+        {
+          name: 'a promisify cycle does not recurse forever',
+          code:
+            SDK +
+            "import { promisify } from 'node:util';\nconst run = promisify(run);\n" +
+            'server.registerTool("run", cfg, async ({ cmd }) => { run(cmd); });',
+        },
+        {
+          name: 'a computed key in the handler pattern binds nothing',
+          code:
+            SDK +
+            'server.registerTool("run", cfg, async ({ [k]: v }) => { execSync(v); });',
+        },
+        {
+          name: 'a request rest element and a request field outside the arguments',
+          code:
+            SDK +
+            "import { CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';\n" +
+            'server.setRequestHandler(CallToolRequestSchema, async ({ params, ...rest }) => { const m = params.meta; execSync(rest.cmd); execSync(m.cmd); });',
+        },
+        {
+          name: 'setRequestHandler with no arguments, or a handler not in this file',
+          code:
+            SDK +
+            "import { CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';\n" +
+            'server.setRequestHandler();\nserver.setRequestHandler(CallToolRequestSchema, handleCall);',
+        },
+        {
+          name: 'a deeper export path and a non-sink execa export',
+          code:
+            SDK +
+            "import fs from 'node:fs';\nimport { ExecaError } from 'execa';\n" +
+            'server.registerTool("run", cfg, async ({ cmd }) => { fs.promises.exec(cmd); ExecaError(cmd); });',
+        },
+        {
+          name: 'a handler referenced by a name that is not a function',
+          code:
+            SDK +
+            'const handleRun = makeHandler();\nserver.registerTool("run", cfg, handleRun);',
+        },
       ],
       invalid: [],
     });
@@ -207,6 +349,7 @@ describe('no-command-injection-in-tool', () => {
           name: 'the namespaced call form',
           code:
             SDK +
+            "import * as child_process from 'child_process';\n" +
             'server.registerTool("run", cfg, async ({ cmd }) => { child_process.execSync(cmd); });',
           errors: [{ messageId: 'toolArgToShell' }],
         },
@@ -273,10 +416,210 @@ describe('no-command-injection-in-tool', () => {
             { messageId: 'toolArgToShell' },
           ],
         },
+        // ---- FN fixes, 2026-10.
+        {
+          name: 'a rest element nested inside an argument is still the arguments',
+          code:
+            SDK +
+            'server.registerTool("run", cfg, async ({ opts: { ...r } }) => { execSync(r.cmd); });',
+          errors: [
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'r.cmd', sink: 'execSync' },
+            },
+          ],
+        },
+        {
+          name: 'promisify(exec) — the usual async form',
+          code:
+            SDK +
+            "import { promisify } from 'node:util';\nconst execAsync = promisify(exec);\n" +
+            'server.registerTool("run", cfg, async ({ command }) => { await execAsync(command); });',
+          errors: [
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'command', sink: 'exec' },
+            },
+          ],
+        },
+        {
+          name: 'util.promisify of a namespaced sink',
+          code:
+            SDK +
+            "import util from 'util';\nimport cp from 'child_process';\nconst run = util.promisify(cp.exec);\n" +
+            'server.registerTool("run", cfg, async ({ command }) => { await run(command); });',
+          errors: [{ messageId: 'toolArgToShell' }],
+        },
+        {
+          name: 'a renamed import is still the sink',
+          code:
+            SDK +
+            "import { execSync as foo } from 'node:child_process';\n" +
+            'server.registerTool("run", cfg, async ({ bar }) => { foo(bar); });',
+          errors: [
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'bar', sink: 'execSync' },
+            },
+          ],
+        },
+        {
+          name: "require('child_process').exec(cmd)",
+          code:
+            SDK +
+            'server.registerTool("run", cfg, async ({ cmd }) => { require(\'child_process\').exec(cmd); });',
+          errors: [{ messageId: 'toolArgToShell' }],
+        },
+        {
+          name: "spawn('sh', ['-c', cmd]) is a full shell",
+          code:
+            SDK +
+            'server.registerTool("run", cfg, async ({ command }) => { spawn("bash", ["-c", command]); spawn("/bin/sh", ["-lc", command], {}); });',
+          errors: [
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'command', sink: 'spawn' },
+            },
+            { messageId: 'toolArgToShell' },
+          ],
+        },
+        {
+          name: 'cmd.exe /c and powershell -Command',
+          code:
+            SDK +
+            'server.registerTool("run", cfg, async (args) => { execFile("cmd.exe", ["/c", args.cmd]); execFile("C:\\\\Windows\\\\pwsh", ["-NoProfile", "-Command", args.cmd]); });',
+          errors: [
+            { messageId: 'toolArgToShell' },
+            { messageId: 'toolArgToShell' },
+          ],
+        },
+        {
+          name: 'execa and execaCommand',
+          code:
+            SDK +
+            "import { execa, execaCommand } from 'execa';\nimport execaDefault from 'execa';\n" +
+            'server.registerTool("run", cfg, async ({ cmd }) => { await execaCommand(cmd); await execa(cmd); await execaDefault(cmd); await execa("sh", ["-c", cmd]); });',
+          errors: [
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'cmd', sink: 'execaCommand' },
+            },
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'cmd', sink: 'execa' },
+            },
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'cmd', sink: 'execa' },
+            },
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'cmd', sink: 'execa' },
+            },
+          ],
+        },
+        {
+          name: 'a same-file function declaration passed by reference',
+          code:
+            SDK +
+            'async function runHandler({ cmd }) { execSync(cmd); }\n' +
+            'server.registerTool("run", { inputSchema: { cmd: z.string() } }, runHandler);',
+          errors: [{ messageId: 'toolArgToShell' }],
+        },
+        {
+          name: 'a same-file const arrow passed by reference, registered below',
+          code:
+            SDK +
+            'const runHandler = async (args) => { execSync(args.cmd); };\n' +
+            'server.tool("run", "Run", { cmd: z.string() }, runHandler);',
+          errors: [{ messageId: 'toolArgToShell' }],
+        },
+        {
+          name: 'an inline registration inside a by-reference handler uses the innermost',
+          code:
+            SDK +
+            'async function outer({ a }) {\n' +
+            '  server.registerTool("in", cfg, async ({ b }) => { execSync(b); });\n' +
+            '}\n' +
+            'server.registerTool("out", cfg, outer);',
+          errors: [
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'b', sink: 'execSync' },
+            },
+          ],
+        },
+        {
+          name: 'the low-level Server: setRequestHandler(CallToolRequestSchema, …)',
+          code:
+            SDK +
+            "import { CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';\n" +
+            'server.setRequestHandler(CallToolRequestSchema, async (request) => {\n' +
+            '  const { name, arguments: args } = request.params;\n' +
+            '  execSync(String(args?.cmd));\n' +
+            '  execSync(args!.cmd as string);\n' +
+            '  execSync(request.params.arguments.cmd);\n' +
+            '});',
+          errors: [
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'args.cmd', sink: 'execSync' },
+            },
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'args.cmd', sink: 'execSync' },
+            },
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'request.params.arguments.cmd', sink: 'execSync' },
+            },
+          ],
+        },
+        {
+          name: 'a destructured request parameter and a renamed schema import',
+          code:
+            SDK +
+            "import * as types from '@modelcontextprotocol/sdk/types.js';\n" +
+            'server.setRequestHandler(types.CallToolRequestSchema, async ({ params: { arguments: { cmd } } }) => { execSync(cmd); });\n' +
+            'server.setRequestHandler(types.CallToolRequestSchema, async ({ params }) => { const a = params.arguments; const { bin } = params.arguments; execSync(a.cmd); spawn(bin); });',
+          errors: [
+            { messageId: 'toolArgToShell' },
+            { messageId: 'toolArgToShell' },
+            { messageId: 'toolArgToShell' },
+          ],
+        },
+        {
+          name: "SDK v2: setRequestHandler('tools/call', …)",
+          code:
+            "import { Server } from '@modelcontextprotocol/server';\n" +
+            "import { execSync } from 'node:child_process';\n" +
+            "server.setRequestHandler('tools/call', async (request) => { execSync(request.params.arguments.cmd); });",
+          errors: [{ messageId: 'toolArgToShell' }],
+        },
+        {
+          name: 'arguments destructured in the body of a tool handler',
+          code:
+            SDK +
+            'server.registerTool("run", cfg, async (args) => { const { cmd, opts: { bin } } = args; const c = args.cmd; const all = args; execSync(cmd); spawn(bin); execSync(c); execSync(all.cmd); });',
+          errors: [
+            { messageId: 'toolArgToShell' },
+            { messageId: 'toolArgToShell' },
+            { messageId: 'toolArgToShell' },
+            { messageId: 'toolArgToShell' },
+          ],
+        },
+        {
+          name: 'a free-form string schema is not a closed set',
+          code:
+            SDK +
+            'server.registerTool("run", { inputSchema: { cmd: z.string(), mode: z.enum(["a"]) } }, async ({ cmd }) => { execSync(cmd); });',
+          errors: [{ messageId: 'toolArgToShell' }],
+        },
         {
           name: 'require() opens the same gate',
           code:
             "const { McpServer } = require('@modelcontextprotocol/sdk/server/mcp.js');\n" +
+            "const { execSync } = require('child_process');\n" +
             'server.registerTool("run", cfg, async ({ cmd }) => { execSync(cmd); });',
           errors: [{ messageId: 'toolArgToShell' }],
         },

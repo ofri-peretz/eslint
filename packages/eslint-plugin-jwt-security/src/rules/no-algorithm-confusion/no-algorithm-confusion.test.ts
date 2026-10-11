@@ -185,3 +185,54 @@ jwtVerify(token, publicKey, { algorithms: ['HS256'] });`,
     );
   });
 });
+
+// ---------------------------------------------------------------------------
+// FP/FN audit 2026-10
+// ---------------------------------------------------------------------------
+describe('no-algorithm-confusion — audit 2026-10', () => {
+  ruleTester.run('mixed algorithm families', noAlgorithmConfusion, {
+    valid: [
+      {
+        name: 'an HMAC-only list with a key nothing marks as public',
+        code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, foo, { algorithms: ['HS256', 'HS512'] });`,
+      },
+      {
+        name: 'an asymmetric-only list with any key',
+        code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, foo, { algorithms: ['RS256', 'ES256', 'EdDSA'] });`,
+      },
+      {
+        name: 'unresolvable options say nothing about algorithms',
+        code: `import jwt from 'jsonwebtoken';
+export const f = (t, k, o) => jwt.verify(t, k, o);`,
+      },
+    ],
+    invalid: [
+      {
+        // CVE-2015-9235's shape. The key's NAME is irrelevant: a whitelist
+        // that admits both HMAC and RSA lets the attacker pick HS256 and sign
+        // with whatever key material the verifier holds.
+        name: 'FP-12/FN: HS* mixed with RS* — the key name does not matter',
+        code: `import jwt from 'jsonwebtoken';
+const cert = fs.readFileSync('/etc/keys/jwtRS256.key.pub');
+jwt.verify(token, cert, { algorithms: ['RS256', 'HS256'] });`,
+        errors: [{ messageId: 'algorithmConfusion' }],
+      },
+      {
+        name: 'FP-1/FN: a mixed list inside a const options object',
+        code: `import jwt from 'jsonwebtoken';
+const opts = { algorithms: ['ES256', 'HS384'] };
+jwt.verify(token, foo, opts);`,
+        errors: [{ messageId: 'algorithmConfusion' }],
+      },
+      {
+        name: 'a public key with HS* in a const options object',
+        code: `import jwt from 'jsonwebtoken';
+const opts = { algorithms: ['HS256'] };
+jwt.verify(token, publicKey, opts);`,
+        errors: [{ messageId: 'algorithmConfusion' }],
+      },
+    ],
+  });
+});

@@ -30,6 +30,12 @@ This rule ensures tokens have the `iat` claim for freshness validation. Most lib
 ```javascript
 // Explicitly disables iat
 jwt.sign(payload, secret, { noTimestamp: true });
+
+// jose does NOT add iat unless asked
+await new SignJWT({ sub })
+  .setProtectedHeader({ alg: 'ES256' })
+  .setExpirationTime('1h')
+  .sign(key);
 ```
 
 ### ✅ Correct
@@ -40,7 +46,24 @@ jwt.sign(payload, secret);
 
 // Explicit iat in payload
 jwt.sign({ sub: 'user', iat: Math.floor(Date.now() / 1000) }, secret);
+
+// noTimestamp: false keeps iat (it is the default, made explicit)
+jwt.sign(payload, secret, { noTimestamp: false });
+
+// jose with setIssuedAt()
+await new SignJWT({ sub })
+  .setProtectedHeader({ alg: 'ES256' })
+  .setIssuedAt()
+  .sign(key);
 ```
+
+## Options
+
+| Option               | Type       | Default | Description                                                      |
+| -------------------- | ---------- | ------- | ---------------------------------------------------------------- |
+| `trustedSanitizers`  | `string[]` | `[]`    | Extra function names to treat as sanitizers                      |
+| `trustedAnnotations` | `string[]` | `[]`    | Extra JSDoc annotations to treat as safe markers                 |
+| `strictMode`         | `boolean`  | `false` | Disable false-positive suppression — report even sanitized input |
 
 <WhenNotToUse />
 
@@ -50,23 +73,14 @@ jwt.sign({ sub: 'user', iat: Math.floor(Date.now() / 1000) }, secret);
 
 The following patterns are **not detected** due to static analysis limitations:
 
-### Options from Variable
+### Options from Variables, Casts and Spreads
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `trustedSanitizers` | `string[]` | `[]` | Extra function names to treat as sanitizers |
-| `trustedAnnotations` | `string[]` | `[]` | Extra JSDoc annotations to treat as safe markers |
-| `strictMode` | `boolean` | `false` | Disable false-positive suppression — report even sanitized input |
-
-**Why**: Variable contents are not analyzed.
+**What is read**: an inline object, a same-file `const`, an `as` / `satisfies` cast, and a spread of such a `const`. Options from a parameter, an import or a call cannot be seen.
 
 ```typescript
-// ❌ NOT DETECTED - noTimestamp in variable
-const opts = { noTimestamp: true };
-jwt.sign(payload, secret, opts);
+// ⚠️ NOT DETECTED - options built elsewhere
+jwt.sign(payload, secret, getSignOptions());
 ```
-
-**Mitigation**: Use inline options. Use TypeScript types forbidding `noTimestamp: true`.
 
 ### Payload Without iat When noTimestamp Is Not Used
 
@@ -91,17 +105,12 @@ sign({ sub: 'user' }, secret); // No iat and none added by library
 
 **Mitigation**: Verify library behavior. Add explicit `iat` in payload.
 
-### Spread Options
-
-**Why**: Spread properties hide the actual options at lint time.
+### Spread of an Unresolvable Value
 
 ```typescript
-// ❌ NOT DETECTED - noTimestamp in spread
-const baseOpts = { noTimestamp: true };
-jwt.sign(payload, secret, { ...baseOpts, expiresIn: '1h' });
+// ⚠️ NOT DETECTED - the spread source is a call
+jwt.sign(payload, secret, { ...getSignOptions() });
 ```
-
-**Mitigation**: Avoid spreading sign options. Specify options explicitly.
 
 ## Further Reading
 

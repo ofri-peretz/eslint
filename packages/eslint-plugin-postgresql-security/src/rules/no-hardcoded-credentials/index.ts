@@ -10,69 +10,12 @@ import {
   TSESTree,
   formatLLMMessage,
   MessageIcons,
-  resolveModuleBinding,
-  unwrapTypeSyntax,
   staticString,
 } from '@interlace/eslint-devkit';
 import { NoHardcodedCredentialsOptions } from '../../types';
 import { PG_PROTOCOLS } from '../../constants';
-import { fileUsesPostgres, PG_MODULES } from '../../utils';
-
-const PG_MODULE_SET: ReadonlySet<string> = new Set(PG_MODULES);
-
-/**
- * Is this `new` callee a PostgreSQL client constructor?
- *
- * The rule used to ask whether the callee was SPELLED `Pool` or `Client`, which
- * is two defects at once. It reported `new Client({ password: 'x' })` on a test
- * double imported from `../test/fake-transport` — no database within reach —
- * and it missed `new pg.Pool(...)`, the namespace spelling, because that callee
- * is a MemberExpression with no `.name` at all.
- *
- * `resolveModuleBinding` answers the question that matters: what did this
- * identifier import?
- */
-function isPgClientConstructor(
-  callee: TSESTree.Node,
-  scope: TSESLint.Scope.Scope,
-): boolean {
-  const binding = resolveModuleBinding(callee, scope);
-  if (binding === undefined) return false;
-  const parts = binding.module.split('/');
-  const root = binding.module.startsWith('@') ? parts.slice(0, 2).join('/') : parts[0];
-  if (!PG_MODULE_SET.has(root)) return false;
-  const [exported] = binding.path;
-  return exported === undefined || exported === 'Pool' || exported === 'Client';
-}
-
-/**
- * The expression a value really holds, following a written-once local binding.
- *
- * Every real application declares its connection config above the constructor,
- * and hoisting a secret into a named constant reads as MORE careful than
- * inlining it. The rule read neither: it only looked at an object literal
- * written at the call site, with literal values written in place.
- */
-function effectiveValue(
-  node: TSESTree.Node,
-  scope: TSESLint.Scope.Scope,
-  depth = 0,
-): TSESTree.Node {
-  if (depth > 4) return node;
-  const bare = unwrapTypeSyntax(node);
-  if (bare !== node) return effectiveValue(bare, scope, depth + 1);
-  if (node.type !== AST_NODE_TYPES.Identifier) return node;
-
-  for (let current: TSESLint.Scope.Scope | null = scope; current; current = current.upper) {
-    const variable = current.set.get(node.name);
-    if (variable === undefined) continue;
-    if (variable.references.filter((ref) => ref.isWrite()).length !== 1) return node;
-    const def = variable.defs.find((d) => d.type === 'Variable');
-    const init = def === undefined ? null : (def.node as TSESTree.VariableDeclarator).init;
-    return init == null ? node : effectiveValue(init, scope, depth + 1);
-  }
-  return node;
-}
+import { fileUsesPostgres } from '../../utils';
+import { connectionConfigArguments, effectiveValue } from '../../utils/connection-config';
 
 /** The name a property key denotes, including a computed string literal. */
 function propertyKeyName(prop: TSESTree.Property): string | null {
@@ -95,13 +38,6 @@ function property(
   );
 }
 
-/** The string a node holds, when it folds to a plain string literal. */
-function stringValue(node: TSESTree.Node, scope: TSESLint.Scope.Scope): string | null {
-  const value = effectiveValue(node, scope);
-  return staticString(value) !== null
-    ? staticString(value)
-    : null;
-}
 
 /**
  * Does this DSN actually carry a secret?
@@ -116,7 +52,7 @@ function stringValue(node: TSESTree.Node, scope: TSESLint.Scope.Scope): string |
  * The credential is the PASSWORD in the userinfo, so that is what gets parsed
  * out. A username alone is not a secret.
  */
-function dsnPassword(dsn: string): string | null {
+function parseDsnWithPassword(dsn: string): URL | null {
   if (!PG_PROTOCOLS.some((protocol) => dsn.startsWith(protocol))) return null;
   let parsed: URL;
   try {
@@ -125,8 +61,11 @@ function dsnPassword(dsn: string): string | null {
     // A DSN too malformed to parse discloses nothing this rule can name.
     return null;
   }
-  return parsed.password === '' ? null : parsed.password;
+  return parsed.password === '' ? null : parsed;
 }
+
+/** Hosts that only ever reach the developer's own machine. */
+const LOOPBACK_HOSTS: ReadonlySet<string> = new Set(['localhost', '127.0.0.1', '[::1]']);
 
 export const noHardcodedCredentials: TSESLint.RuleModule<
   'noHardcodedCredentials',
@@ -164,51 +103,96 @@ export const noHardcodedCredentials: TSESLint.RuleModule<
     // the cheap path — a file with no database in it does no work.
     if (!fileUsesPostgres(context.sourceCode.ast)) return {};
 
+    /**
+     * String literals already judged as the DSN of a config site — so the
+     * file-wide DSN sweep below does not report the same literal twice.
+     */
+    const consumed = new Set<TSESTree.Node>();
+    /** Every literal in the file that spells a DSN, judged at `Program:exit`. */
+    const dsnLiterals: TSESTree.Node[] = [];
+
+    /** The string a node folds to, recording the literal it came from. */
+    const stringValue = (node: TSESTree.Node, scope: TSESLint.Scope.Scope): string | null => {
+      const value = effectiveValue(node, scope);
+      const text = staticString(value);
+      if (text !== null) consumed.add(value);
+      return text;
+    };
+
+    const checkConfig = (argument: TSESTree.Node, scope: TSESLint.Scope.Scope): void => {
+      // `new Client('postgres://app:pw@host/db')` — the DSN passed bare.
+      const bare = stringValue(argument, scope);
+      if (bare !== null) {
+        if (parseDsnWithPassword(bare) !== null) {
+          context.report({ node: argument, messageId: 'noHardcodedCredentials' });
+        }
+        return;
+      }
+
+      const config = effectiveValue(argument, scope);
+      if (config.type !== AST_NODE_TYPES.ObjectExpression) return;
+
+      // `connectionString: 'postgres://app:pw@host/db'`
+      const connectionString = property(config, 'connectionString');
+      if (connectionString !== undefined) {
+        const dsn = stringValue(connectionString.value, scope);
+        if (dsn !== null && parseDsnWithPassword(dsn) !== null) {
+          context.report({
+            node: connectionString.value,
+            messageId: 'noHardcodedCredentials',
+          });
+        }
+      }
+
+      // `password: 'p4ssw0rd'`
+      //
+      // An EMPTY password is deliberately not a finding: `password: ''` is how
+      // a unix-socket or trust-authentication setup is written, and it
+      // discloses nothing. The old rule reported any Literal at all, which
+      // made `password: ''` and `password: null` CRITICAL findings.
+      const password = property(config, 'password');
+      if (password !== undefined) {
+        const secret = stringValue(password.value, scope);
+        if (secret !== null && secret !== '') {
+          context.report({ node: password.value, messageId: 'noHardcodedCredentials' });
+        }
+      }
+    };
+
+    const checkCall = (node: TSESTree.NewExpression | TSESTree.CallExpression): void => {
+      const scope = context.sourceCode.getScope(node);
+      for (const argument of connectionConfigArguments(node, scope)) checkConfig(argument, scope);
+    };
+
+    const collectDsn = (node: TSESTree.Literal | TSESTree.TemplateLiteral): void => {
+      const text = staticString(node);
+      if (text !== null && PG_PROTOCOLS.some((protocol) => text.startsWith(protocol))) {
+        dsnLiterals.push(node);
+      }
+    };
+
     return {
-      NewExpression(node: TSESTree.NewExpression) {
-        const scope = context.sourceCode.getScope(node);
-        if (!isPgClientConstructor(node.callee, scope)) return;
+      // pg `new Pool/Client`, postgres.js `postgres(…)`, pg-promise `pgp(…)`.
+      NewExpression: checkCall,
+      CallExpression: checkCall,
 
-        const [firstArgument] = node.arguments;
-        if (firstArgument === undefined) return;
+      Literal: collectDsn,
+      TemplateLiteral: collectDsn,
 
-        const config = effectiveValue(firstArgument, scope);
-
-        // `new Client('postgres://app:pw@host/db')` — the DSN passed bare.
-        const staticText2 = staticString(config);
-        if (staticText2 !== null) {
-          if (dsnPassword(staticText2) !== null) {
-            context.report({ node: firstArgument, messageId: 'noHardcodedCredentials' });
-          }
-          return;
-        }
-
-        if (config.type !== AST_NODE_TYPES.ObjectExpression) return;
-
-        // `connectionString: 'postgres://app:pw@host/db'`
-        const connectionString = property(config, 'connectionString');
-        if (connectionString !== undefined) {
-          const dsn = stringValue(connectionString.value, scope);
-          if (dsn !== null && dsnPassword(dsn) !== null) {
-            context.report({
-              node: connectionString.value,
-              messageId: 'noHardcodedCredentials',
-            });
-          }
-        }
-
-        // `password: 'p4ssw0rd'`
-        //
-        // An EMPTY password is deliberately not a finding: `password: ''` is how
-        // a unix-socket or trust-authentication setup is written, and it
-        // discloses nothing. The old rule reported any Literal at all, which
-        // made `password: ''` and `password: null` CRITICAL findings.
-        const password = property(config, 'password');
-        if (password !== undefined) {
-          const secret = stringValue(password.value, scope);
-          if (secret !== null && secret !== '') {
-            context.report({ node: password.value, messageId: 'noHardcodedCredentials' });
-          }
+      /**
+       * A DSN with a password ANYWHERE in the file. The module gate opens on a
+       * bare DSN precisely so a config module that holds one — and imports no
+       * driver — is linted; yet only constructor arguments were ever read, so
+       * `export const DATABASE_URL = 'postgres://admin:…@db.prod/app'` was never
+       * reported. Loopback hosts are skipped: that is a local container's
+       * throwaway default, not a deployed secret.
+       */
+      'Program:exit'() {
+        for (const node of dsnLiterals) {
+          if (consumed.has(node)) continue;
+          const parsed = parseDsnWithPassword(staticString(node) as string);
+          if (parsed === null || LOOPBACK_HOSTS.has(parsed.hostname)) continue;
+          context.report({ node, messageId: 'noHardcodedCredentials' });
         }
       },
     };

@@ -85,3 +85,65 @@ signJWT(payload, key, { noTimestamp: true });`,
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// FP/FN audit 2026-10
+// ---------------------------------------------------------------------------
+describe('require-issued-at — audit 2026-10', () => {
+  ruleTester.run('noTimestamp false and jose', requireIssuedAt, {
+    valid: [
+      {
+        name: 'FP-11: noTimestamp: false KEEPS iat',
+        code: `import jwt from 'jsonwebtoken';
+jwt.sign({ sub }, key, { expiresIn: '1h', noTimestamp: false });`,
+      },
+      {
+        name: 'FN-9: a jose builder that calls setIssuedAt()',
+        code: `import { SignJWT } from 'jose';
+await new SignJWT({ sub }).setProtectedHeader({ alg: 'ES256' }).setIssuedAt().setExpirationTime('1h').sign(key);`,
+      },
+      {
+        name: 'FN-9: a jose builder whose claims carry iat',
+        code: `import { SignJWT } from 'jose';
+await new SignJWT({ sub, iat: now }).setProtectedHeader({ alg: 'ES256' }).sign(key);`,
+      },
+      {
+        name: 'FN-9: a jose builder in a const that sets iat in its own statement',
+        code: `import { SignJWT } from 'jose';
+const b = new SignJWT({ sub });
+b.setIssuedAt();
+await b.sign(key);`,
+      },
+      {
+        name: 'FN-9: claims that cannot be seen may carry iat',
+        code: `import { SignJWT } from 'jose';
+export const f = (claims, key) => new SignJWT(claims).sign(key);`,
+      },
+      {
+        name: 'a JWS builder carries no claim set',
+        code: `import { CompactSign } from 'jose';
+await new CompactSign(bytes).setProtectedHeader({ alg: 'ES256' }).sign(key);`,
+      },
+    ],
+    invalid: [
+      {
+        name: 'FN-9: jose does not add iat unless setIssuedAt() is called',
+        code: `import { SignJWT } from 'jose';
+await new SignJWT({ sub }).setProtectedHeader({ alg: 'ES256' }).setExpirationTime('1h').sign(key);`,
+        errors: [{ messageId: 'missingIssuedAt' }],
+      },
+      {
+        name: 'FN-9: a jose builder with no claims at all',
+        code: `import { SignJWT } from 'jose';
+await new SignJWT().sign(key);`,
+        errors: [{ messageId: 'missingIssuedAt' }],
+      },
+      {
+        name: 'noTimestamp chosen at runtime may drop iat',
+        code: `import jwt from 'jsonwebtoken';
+jwt.sign({ sub }, key, { noTimestamp: legacy });`,
+        errors: [{ messageId: 'missingIssuedAt' }],
+      },
+    ],
+  });
+});

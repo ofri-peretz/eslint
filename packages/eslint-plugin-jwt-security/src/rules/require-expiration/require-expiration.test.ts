@@ -239,6 +239,13 @@ ruleTester.run('require-expiration — jose builder', requireExpiration, {
       code: `import * as jose from 'jose';\nconst claims = { sub: id };\nnew jose.SignJWT(claims).setIssuedAt().sign(privateKey);`,
       errors: [{ messageId: 'missingExpiration', suggestions: 1 }],
     },
+    // FN: a reused builder. Only calls BEFORE this .sign() configure it; an
+    // expiry set afterwards applies to the next sign, not this one. (PR #1188 review)
+    {
+      name: 'a builder signed before its expiry is set is missing expiration',
+      code: `import { SignJWT } from 'jose';\nconst builder = new SignJWT({ sub: id });\nawait builder.sign(key);\nbuilder.setExpirationTime('1h');`,
+      errors: [{ messageId: 'missingExpiration', suggestions: 1 }],
+    },
     // Claims object present at the root but carrying no exp.
     {
       code: `import { SignJWT } from 'jose';\nnew SignJWT({ sub: id }).setProtectedHeader({ alg }).sign(key);`,
@@ -303,3 +310,107 @@ const logoutToken = await new jose.SignJWT(claims)
     ],
   },
 );
+
+// ---------------------------------------------------------------------------
+// FP/FN audit 2026-10
+// ---------------------------------------------------------------------------
+ruleTester.run('require-expiration (audit 2026-10)', requireExpiration, {
+  valid: [
+    {
+      name: 'FP-1: sign options in a same-file const',
+      code: `import jwt from 'jsonwebtoken';
+const signOptions = { algorithm: 'RS256', expiresIn: '15m' };
+jwt.sign({ sub }, key, signOptions);`,
+    },
+    {
+      name: 'FP-1: sign options behind an as-cast (@types/jsonwebtoken StringValue)',
+      code: `import jwt, { type SignOptions } from 'jsonwebtoken';
+jwt.sign({ sub }, key, { expiresIn: process.env.JWT_EXPIRES_IN } as SignOptions);`,
+    },
+    {
+      name: 'FP-1: unresolvable sign options stay silent',
+      code: `import jwt from 'jsonwebtoken';
+export const issue = (sub, key, opts) => jwt.sign({ sub }, key, opts);`,
+    },
+    {
+      name: 'FP-2: NestJS sign(payload, { expiresIn }) — options are the second argument',
+      code: `import { JwtService } from '@nestjs/jwt';
+class AuthService {
+  constructor(private readonly jwtService: JwtService) {}
+  refresh(sub) { return this.jwtService.sign({ sub }, { secret: process.env.R, expiresIn: '7d' }); }
+}`,
+    },
+    {
+      name: 'FP-2: NestJS sign(payload) takes expiresIn from JwtModule signOptions',
+      code: `import { JwtService } from '@nestjs/jwt';
+class AuthService {
+  constructor(private readonly jwtService: JwtService) {}
+  login(sub) { return { access_token: this.jwtService.sign({ sub }) }; }
+}`,
+    },
+    {
+      name: 'FN-3: signAsync(payload) merges module signOptions',
+      code: `import { JwtService } from '@nestjs/jwt';
+export const login = (jwtService, sub) => jwtService.signAsync({ sub });`,
+    },
+    {
+      name: 'FP-3: a node:crypto Sign object is not a JWT signer',
+      code: `import jwt from 'jsonwebtoken';
+import { createSign } from 'node:crypto';
+export function signPolicy(policy, privateKey) {
+  const signer = createSign('RSA-SHA1');
+  signer.update(policy);
+  return signer.sign(privateKey, 'base64');
+}`,
+    },
+    {
+      name: 'FP-3: WebCrypto subtle.sign is not a JWT signer',
+      code: `import { SignJWT } from 'jose';
+export const mac = (key, data) => crypto.subtle.sign('HMAC', key, data);`,
+    },
+    {
+      name: 'FP-13: a jose builder held in a const, expiry set in its own statement',
+      code: `import { SignJWT } from 'jose';
+const builder = new SignJWT({ sub }).setProtectedHeader({ alg: 'ES256' });
+builder.setExpirationTime('1h');
+await builder.sign(key);`,
+    },
+  ],
+  invalid: [
+    {
+      name: 'a const sign-options object that lacks expiresIn still reports',
+      code: `import jwt from 'jsonwebtoken';
+const signOptions = { algorithm: 'RS256' };
+jwt.sign({ sub }, key, signOptions);`,
+      errors: [{ messageId: 'missingExpiration', suggestions: 1 }],
+    },
+    {
+      name: 'a jose builder held in a const with no expiry anywhere still reports',
+      code: `import { SignJWT } from 'jose';
+const builder = new SignJWT({ sub }).setProtectedHeader({ alg: 'ES256' });
+builder.setIssuedAt();
+const unused = builder;
+await builder.sign(key);`,
+      errors: [{ messageId: 'missingExpiration', suggestions: 1 }],
+    },
+    {
+      name: 'a builder from a non-jose constructor still reports',
+      code: `import { SignJWT } from 'jose';
+new (pick())({ sub }).sign(key);`,
+      errors: [{ messageId: 'missingExpiration', suggestions: 1 }],
+    },
+    {
+      name: 'a builder const that refers to itself resolves to nothing',
+      code: `import { SignJWT } from 'jose';
+const b = b.setProtectedHeader({ alg });
+b.setIssuedAt().sign(key);`,
+      errors: [{ messageId: 'missingExpiration', suggestions: 1 }],
+    },
+    {
+      name: 'a builder whose root is a parameter still reports',
+      code: `import { SignJWT } from 'jose';
+export const f = (b, key) => b.setProtectedHeader({ alg }).sign(key);`,
+      errors: [{ messageId: 'missingExpiration', suggestions: 1 }],
+    },
+  ],
+});

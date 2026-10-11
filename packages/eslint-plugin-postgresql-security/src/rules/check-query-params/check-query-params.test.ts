@@ -6,7 +6,7 @@
  * Standard: Engineering Standards §5 (side-by-side), §6 (≥5 valid + ≥5 invalid), §8 (RuleTester at describe level)
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
-import { describe, it, afterAll } from 'vitest';
+import { describe, it, afterAll, expect } from 'vitest';
 import parser from '@typescript-eslint/parser';
 import { checkQueryParams } from './index';
 
@@ -51,6 +51,7 @@ describe('check-query-params', () => {
         },
         // Array operations are safe
         {
+          name: 'an array literal is not a query call',
           code: `const arr = [1, 2, 3];`,
         },
         // Non-targeted method calls are safe
@@ -82,5 +83,24 @@ describe('check-query-params', () => {
         },
       ]),
     });
+  });
+});
+
+/** FP/FN review 2026-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md). */
+describe('check-query-params — fp/fn review 2026-10', () => {
+  it('the message carries the counts it was given', async () => {
+    const { Linter } = await import('eslint');
+    const linter = new Linter({ configType: 'flat' });
+    const [message] = linter.verify(
+      "import { Pool } from 'pg';\npool.query('SELECT * FROM t WHERE a = $1 AND b = $2', [a]);",
+      {
+        files: ['**/*.ts'],
+        languageOptions: { parser: parser as never },
+        plugins: { pg: { rules: { 'check-query-params': checkQueryParams } } as never },
+        rules: { 'pg/check-query-params': 'error' },
+      },
+      'q.ts',
+    );
+    expect(message.message).toContain('2 placeholder(s), 1 value(s)');
   });
 });

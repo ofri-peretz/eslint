@@ -12,10 +12,25 @@
  */
 
 import type { TSESLint } from '@interlace/eslint-devkit';
-import { TSESTree, createRule, formatLLMMessage, MessageIcons, namesOneOf, propertyName } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  TSESTree,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  namesOneOf,
+  objectKeyName,
+  propertyName,
+  resolveModuleBinding,
+} from '@interlace/eslint-devkit';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
+import { calleeName, lookupVariable, unwrap } from '../../utils/sdk';
 
-type MessageIds = 'unsafeOutputExecution' | 'unsafeOutputInSQL' | 'unsafeOutputInHTML';
+type MessageIds =
+  | 'unsafeOutputExecution'
+  | 'unsafeOutputInSQL'
+  | 'unsafeOutputInHTML'
+  | 'unsafeOutputInRequest';
 
 export interface Options {
   /** Variable patterns that suggest AI output */
@@ -72,6 +87,18 @@ export const noUnsafeOutputHandling = createRule<RuleOptions, MessageIds>({
         fix: 'Use textContent or sanitize HTML: element.textContent = aiOutput',
         documentationLink: 'https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html',
       }),
+      unsafeOutputInRequest: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'AI-Chosen Request URL',
+        cwe: 'CWE-918',
+        owasp: 'A10:2021',
+        cvss: 8.6,
+        description: 'Model-controlled value chooses the URL passed to fetch(). This can lead to Server-Side Request Forgery.',
+        severity: 'HIGH',
+        compliance: ['SOC2'],
+        fix: 'Fix the host and pass model input only as a path or query value, or check the URL against an allow-list',
+        documentationLink: 'https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html',
+      }),
     },
     schema: [
       {
@@ -99,55 +126,34 @@ export const noUnsafeOutputHandling = createRule<RuleOptions, MessageIds>({
         'llmOutput',
         'llmResponse',
         'modelOutput',
-        'textContent',
         '.text',
       ],
     },
   ],
-  create(context) {
+  create(context, [options]) {
     // Every rule in this plugin is Vercel-AI-specific, and none of them knew
     // it: over 107,384 files, 91% of this plugin's findings were in files with
     // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
     // the cheap path — a file without the SDK does no work.
     if (!fileUsesVercelAi(context.sourceCode.ast)) return {};
 
-    const [options = {}] = context.options;
-    const aiOutputPatterns = options.aiOutputPatterns ?? [
-      'result.text', 'response.text', 'completion', 'generated',
-      'aiOutput', 'aiResponse', 'llmOutput', '.text',
-    ];
+    // Merged with `defaultOptions` before `create` runs.
+    const { aiOutputPatterns } = options as Required<Options>;
 
     const sourceCode = context.sourceCode;
 
-    // Dangerous execution functions
-    const dangerousFunctions = ['eval', 'Function', 'execSync', 'exec', 'spawn', 'execFile'];
-    
-    // SQL execution patterns
-    const sqlPatterns = ['query', 'execute', 'run', 'raw'];
-    
     /**
-     * Variables locally bound to the result of a known AI SDK call.
-     * Tracks the idiomatic `const { text } = await generateText(...)` and
-     * `const result = await streamText(...)` patterns. Without this, the
-     * heuristic pattern match (`result.text`, `aiOutput`, …) missed every
-     * destructured-`text` case (real FN found by the OWASP-LLM02 corpus).
+     * Variables locally bound to model output: the result of a known AI SDK
+     * call (`const { text } = await generateText(...)`), a property awaited off
+     * one (`const code = await result.text`), or the parameters of a tool's
+     * `execute` — which the SDK fills from the model's tool call.
      *
      * Keyed on the resolved scope variable, not the name: `text` is one of the
      * most common identifiers there is, so a name set reports any unrelated
-     * `text` parameter in a file that happens to also destructure one from an
-     * AI call.
+     * `text` parameter in a file that happens to also destructure one.
      */
     const aiBoundVariables = new Set<TSESLint.Scope.Variable>();
 
-    /**
-     * Whether an identifier is a read of a binding holding AI output.
-     *
-     * Asks the tracked variables which identifiers refer to them, rather than
-     * resolving the identifier back to a variable — scope analysis has already
-     * linked the two, and going this direction has no unresolved case to
-     * handle. A shadowing `text` is a different variable, so its identifier is
-     * simply not among these references.
-     */
     function isAIBound(node: TSESTree.Node): boolean {
       if (node.type !== 'Identifier') return false;
       for (const variable of aiBoundVariables) {
@@ -175,46 +181,42 @@ export const noUnsafeOutputHandling = createRule<RuleOptions, MessageIds>({
       return false;
     }
 
+    /** Structurally model output: a bound variable, a property of one, or a string method on one. */
+    function isBoundOutput(node: TSESTree.Node): boolean {
+      if (isAIBound(node)) return true;
+      if (node.type === 'MemberExpression') return isBoundOutput(node.object);
+      // `text.trim()`, `result.text.replace(...)` — still the model's string.
+      return (
+        node.type === 'CallExpression' &&
+        node.callee.type === 'MemberExpression' &&
+        isBoundOutput(node.callee.object)
+      );
+    }
+
     /**
-     * Check if a node likely contains AI output
+     * Model output, or a value whose name matches a configured output pattern.
+     * The name patterns only ever narrow a resolved sink, and they apply only
+     * to plain references: a call (`DOMPurify.sanitize(result.text)`,
+     * `truncate(result.text)`) transforms its input and is not the output.
      */
     function isLikelyAIOutput(node: TSESTree.Node): boolean {
-      // Direct member access into a tracked variable: `result.text`, `out.text`
-      if (node.type === 'MemberExpression' && isAIBound(node.object)) {
-        return true;
-      }
-      // Bare reference to a tracked variable (covers destructured `text` from
-      // `const { text } = await generateText(...)`).
-      if (isAIBound(node)) {
-        return true;
-      }
-      // Original heuristic — still useful for `result.text`-shaped source even
-      // when scope tracking missed the binding.
+      if (isBoundOutput(node)) return true;
+      if (node.type !== 'Identifier' && node.type !== 'MemberExpression') return false;
       const text = sourceCode.getText(node);
       return aiOutputPatterns.some((pattern: string) => text.includes(pattern));
     }
 
     /**
-     * Check an interpolated string for AI output.
-     *
-     * Descends into the *parts* that carry values — a template literal's
-     * `${...}` expressions and the operands of a `+` chain — instead of
-     * pattern-matching the node's whole source text. Text matching only ever
-     * caught `db.query(`... ${result.text}`)`; the tracked-binding case
-     * `const { text } = await generateText(...); db.query(`... ${text}`)`
-     * fell through, because the source reads `text` while the patterns look
-     * for `.text`. The eval and innerHTML branches already consulted
-     * aiBoundNames directly, so only the SQL branch had this gap.
+     * Check an interpolated string for AI output: a template literal's `${...}`
+     * expressions and the operands of a `+` chain, rather than the node's
+     * whole source text.
      */
     function containsAIOutput(node: TSESTree.Node): boolean {
       if (node.type === 'TemplateLiteral') {
         return node.expressions.some(containsAIOutput);
       }
       if (node.type === 'BinaryExpression') {
-        // `+` only. Nested chains parse left-associatively: `'a' + b + c` is
-        // `('a' + b) + c`. Any other operator — `db.query(rows > limit)` — is a
-        // comparison or arithmetic, not a query being built out of a value, so
-        // there is nothing interpolated to report.
+        // `+` only: any other operator compares or computes, it builds no string.
         return (
           node.operator === '+' &&
           (containsAIOutput(node.left) || containsAIOutput(node.right))
@@ -223,56 +225,142 @@ export const noUnsafeOutputHandling = createRule<RuleOptions, MessageIds>({
       return isLikelyAIOutput(node);
     }
 
+    /** A global the file does not redeclare (`eval`, `Function`, `fetch`). */
+    function isGlobal(node: TSESTree.Node, name: string): boolean {
+      return (
+        node.type === 'Identifier' &&
+        node.name === name &&
+        !lookupVariable(name, sourceCode.getScope(node))?.defs.length
+      );
+    }
+
+    /** `child_process`'s exec family or `vm`'s compilers, resolved through imports/requires. */
+    function isCodeExecutionCallee(callee: TSESTree.Node): boolean {
+      if (isGlobal(callee, 'eval') || isGlobal(callee, 'Function')) return true;
+      const binding = resolveModuleBinding(callee, sourceCode.getScope(callee));
+      if (binding) {
+        const fn = binding.path[binding.path.length - 1];
+        return (
+          (binding.module === 'child_process' && CHILD_PROCESS_SINKS.has(fn)) ||
+          (binding.module === 'vm' && VM_SINKS.has(fn))
+        );
+      }
+      // An undeclared `execSync(...)` — a snippet or a global — keeps the
+      // historical behaviour; a declared one must resolve to child_process.
+      return (
+        callee.type === 'Identifier' &&
+        CHILD_PROCESS_SINKS.has(callee.name) &&
+        !lookupVariable(callee.name, sourceCode.getScope(callee))?.defs.length
+      );
+    }
+
+    /** Is this a tool's `execute`, whose parameters the model fills? */
+    function isToolExecute(node: TSESTree.Property): boolean {
+      if (objectKeyName(node) !== 'execute') return false;
+      if (
+        node.value.type !== 'ArrowFunctionExpression' &&
+        node.value.type !== 'FunctionExpression'
+      ) {
+        return false;
+      }
+      const definition = node.parent as TSESTree.ObjectExpression;
+      const owner = definition.parent;
+      if (
+        owner.type === 'CallExpression' &&
+        TOOL_FACTORIES.has(calleeName(owner.callee) as string)
+      ) {
+        return true;
+      }
+      return definition.properties.some(
+        (prop) =>
+          prop.type === 'Property' && SCHEMA_KEYS.has(objectKeyName(prop) as string),
+      );
+    }
+
+    /** Model output choosing the request target: the whole URL, or its leading part. */
+    function choosesRequestTarget(node: TSESTree.Node): boolean {
+      if (node.type === 'TemplateLiteral') {
+        return (
+          node.quasis[0].value.raw === '' &&
+          isBoundOutput(node.expressions[0])
+        );
+      }
+      return isBoundOutput(node);
+    }
+
+    function reportExecution(node: TSESTree.Node, callee: TSESTree.Node, args: TSESTree.CallExpressionArgument[]) {
+      for (const arg of args) {
+        if (containsAIOutput(arg)) {
+          context.report({
+            node: arg,
+            messageId: 'unsafeOutputExecution',
+            data: {
+              variable: sourceCode.getText(arg),
+              function: sourceCode.getText(callee),
+            },
+          });
+        }
+      }
+    }
+
     return {
-      // Track `const r = await generateText(...)` / `const { text } = ...` shapes
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
-        if (!node.init || !isAISDKCall(node.init)) return;
-        // Covers `const r = ...` and every binding in `const { text, usage } = ...`
-        // without walking the pattern by hand.
+        if (!node.init) return;
+        // `const r = await generateText(...)`, `const code = await r.text`
+        // where `r` already holds model output, or
+        // `const out = (await generateText(...)).text`.
+        const init = unwrap(node.init);
+        const bound =
+          isAISDKCall(node.init) ||
+          (init.type === 'MemberExpression' &&
+            (isBoundOutput(init.object) || isAISDKCall(init.object)));
+        if (!bound) return;
         for (const variable of sourceCode.getDeclaredVariables(node)) {
           aiBoundVariables.add(variable);
         }
       },
 
-      // Check for eval() and similar with AI output
-      CallExpression(node: TSESTree.CallExpression) {
-        const callee = sourceCode.getText(node.callee);
-        
-        // Check dangerous execution functions
-        const isDangerous = dangerousFunctions.some(fn => callee.includes(fn));
-        if (isDangerous) {
-          for (const arg of node.arguments) {
-            if (isLikelyAIOutput(arg)) {
-              context.report({
-                node: arg,
-                messageId: 'unsafeOutputExecution',
-                data: { 
-                  variable: sourceCode.getText(arg),
-                  function: callee,
-                },
-              });
-            }
-          }
-        }
-
-        // Check SQL query functions
-        const isSQLFunction = sqlPatterns.some(fn => callee.includes(fn));
-        if (isSQLFunction) {
-          for (const arg of node.arguments) {
-            if (arg.type === 'TemplateLiteral' || arg.type === 'BinaryExpression') {
-              // Check if template/concatenation includes AI output
-              if (containsAIOutput(arg)) {
-                context.report({
-                  node: arg,
-                  messageId: 'unsafeOutputInSQL',
-                });
-              }
-            }
-          }
+      Property(node: TSESTree.Property) {
+        if (!isToolExecute(node)) return;
+        for (const variable of sourceCode.getDeclaredVariables(node.value)) {
+          aiBoundVariables.add(variable);
         }
       },
 
-      // Check for innerHTML assignment
+      NewExpression(node: TSESTree.NewExpression) {
+        // `new Function(code)`, `new vm.Script(code)`
+        const isFunction = isGlobal(node.callee, 'Function');
+        const binding = resolveModuleBinding(node.callee, sourceCode.getScope(node));
+        if (isFunction || (binding?.module === 'vm' && binding.path[0] === 'Script')) {
+          reportExecution(node, node.callee, node.arguments);
+        }
+      },
+
+      CallExpression(node: TSESTree.CallExpression) {
+        if (isCodeExecutionCallee(node.callee)) {
+          reportExecution(node, node.callee, node.arguments);
+          return;
+        }
+
+        const name = calleeName(node.callee);
+
+        if (isGlobal(node.callee, 'fetch')) {
+          const [target] = node.arguments;
+          if (target && choosesRequestTarget(target)) {
+            context.report({ node: target, messageId: 'unsafeOutputInRequest' });
+          }
+          return;
+        }
+
+        if (!SQL_SINKS.has(name as string)) return;
+        const [query] = node.arguments;
+        // The query string itself — interpolated, concatenated, or passed whole.
+        // Values in a later bind-parameter array are the safe path.
+        if (query && containsAIOutput(query)) {
+          context.report({ node: query, messageId: 'unsafeOutputInSQL' });
+        }
+      },
+
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
         if (node.left.type === 'MemberExpression') {
           const prop = node.left.property;
@@ -286,6 +374,46 @@ export const noUnsafeOutputHandling = createRule<RuleOptions, MessageIds>({
           }
         }
       },
+
+      // React: <div dangerouslySetInnerHTML={{ __html: aiOutput }} />
+      JSXAttribute(node: TSESTree.JSXAttribute) {
+        if (node.name.name !== 'dangerouslySetInnerHTML') return;
+        const container = node.value;
+        if (
+          container?.type !== AST_NODE_TYPES.JSXExpressionContainer ||
+          container.expression.type !== AST_NODE_TYPES.ObjectExpression
+        ) {
+          return;
+        }
+        for (const prop of container.expression.properties) {
+          if (
+            prop.type === AST_NODE_TYPES.Property &&
+            objectKeyName(prop) === '__html' &&
+            isLikelyAIOutput(prop.value)
+          ) {
+            context.report({ node: prop.value, messageId: 'unsafeOutputInHTML' });
+          }
+        }
+      },
     };
   },
 });
+
+/** `child_process` functions that run a command or file. */
+const CHILD_PROCESS_SINKS = new Set([
+  'exec', 'execSync', 'execFile', 'execFileSync', 'spawn', 'spawnSync', 'fork',
+]);
+
+/** `vm` functions that compile or run source text. */
+const VM_SINKS = new Set(['runInNewContext', 'runInThisContext', 'runInContext', 'compileFunction']);
+
+/** Query methods that take raw SQL as their first argument. */
+const SQL_SINKS = new Set([
+  'query', 'execute', 'raw', 'run', 'unsafe', '$queryRawUnsafe', '$executeRawUnsafe',
+]);
+
+/** Factories that wrap a tool definition. */
+const TOOL_FACTORIES = new Set(['tool', 'dynamicTool']);
+
+/** Keys that mark an object literal as a tool definition. */
+const SCHEMA_KEYS = new Set(['inputSchema', 'parameters']);

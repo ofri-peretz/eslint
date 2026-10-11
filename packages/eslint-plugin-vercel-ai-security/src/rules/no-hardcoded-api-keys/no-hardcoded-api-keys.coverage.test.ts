@@ -60,14 +60,25 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-hardcoded-api-keys (branch coverage)', noHardcodedApiKeys, {
   valid: xai([
-    // Computed MemberExpression key — key is neither Identifier nor Literal,
-    // so keyName resolves to null and the Property handler bails out.
+    // Computed key with a GENERIC long value — the holder's name is unknown,
+    // so the name-gated generic check cannot apply.
     {
+      name: 'a generic long value under a computed key has no holder name to gate on',
       code: `
         const config = {
-          [settings.keyName]: 'sk-abcdefghijklmnopqrstuvwxyz123456',
+          [settings.keyName]: 'abcdefghijklmnopqrstuvwxyz123456',
         };
       `,
+    },
+    // A literal that is neither a property value nor a declarator init.
+    {
+      name: 'a generic literal that is not a property value or declarator init is not reported',
+      code: `useKey('abcdefghijklmnopqrstuvwxyz123456');`,
+    },
+    // A declarator whose id is a pattern names no holder.
+    {
+      name: 'a destructuring pattern names no holder for the generic check',
+      code: `const [apiKey] = 'abcdefghijklmnopqrstuvwxyz123456';`,
     },
     // Spread element in provider options — non-Property entries are skipped.
     {
@@ -87,6 +98,18 @@ ruleTester.run('no-hardcoded-api-keys (branch coverage)', noHardcodedApiKeys, {
     },
   ]),
   invalid: xai([
+    // (Moved 2026-10-10) A computed key holding a PROVIDER-SHAPED key used to
+    // be skipped because the holder's name was unknown. The `sk-…` shape alone
+    // is the evidence, so it is reported.
+    {
+      name: 'a provider-shaped key is reported even under a computed key',
+      code: `
+        const config = {
+          [settings.keyName]: 'sk-abcdefghijklmnopqrstuvwxyz123456',
+        };
+      `,
+      errors: [{ messageId: 'hardcodedApiKey' }],
+    },
     // String-literal snake_case key — Literal key path via String(key.value).
     {
       code: `

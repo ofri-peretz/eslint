@@ -270,3 +270,117 @@ ruleTester.run('no-dynamic-system-prompt (computed key collision)', noDynamicSys
   ]),
   invalid: xai([]),
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FP/FN audit 2026-10-10: a prompt built only from constants (or today's date)
+// is static; a system prompt read straight out of the request body is the
+// injection this rule exists for.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('no-dynamic-system-prompt (fp-fn audit)', noDynamicSystemPrompt, {
+  valid: xai([
+    {
+      name: 'template literal of module constants',
+      code: `
+        const BASE_PROMPT = 'You are Acme support.';
+        const TOOL_RULES = \`Only call tools when needed.\`;
+        await generateText({ model, system: \`\${BASE_PROMPT}\\n\\n\${TOOL_RULES}\`, prompt: 'hi' });
+      `,
+    },
+    {
+      name: "today's date in the system prompt",
+      code: `
+        const BASE_PROMPT = 'You are Acme support.';
+        await generateText({ model, system: \`\${BASE_PROMPT} Today is \${new Date().toISOString()}.\`, prompt: 'hi' });
+        await generateText({ model, system: \`Now: \${Date.now()} / \${new Date()}\`, prompt: 'hi' });
+        await generateText({ model, system: new Date().toDateString(), prompt: 'hi' });
+      `,
+    },
+    {
+      name: 'concatenation of constants, through a constant built from constants',
+      code: `
+        const A = 'You are Acme support. ';
+        const B = A + 'Be brief.';
+        await generateText({ model, system: B + \`\${A}\` + 42, prompt: 'hi' });
+      `,
+    },
+    {
+      name: 'a .json() on something other than the handler parameter is not the request',
+      code: `
+        export async function POST(req) {
+          const { system } = await loadConfig().json();
+          return streamText({ model, system, prompt: 'hello' });
+        }
+      `,
+    },
+    {
+      name: 'a variable that is not read from the request is not reported',
+      code: `
+        export async function POST(req) {
+          const persona = lookupPersona();
+          return streamText({ model, system: persona, prompt: 'hello' });
+        }
+      `,
+    },
+  ]),
+  invalid: xai([
+    {
+      name: 'system destructured straight out of await req.json()',
+      code: `
+        export async function POST(req) {
+          const { messages, system } = await req.json();
+          const result = streamText({ model, system, messages: convertToModelMessages(messages) });
+          return result.toUIMessageStreamResponse();
+        }
+      `,
+      errors: [{ messageId: 'userControlledSystemPrompt' }],
+    },
+    {
+      name: 'a member of the parsed body',
+      code: `
+        export async function POST(request) {
+          const body = await request.json();
+          return streamText({ model, instructions: body.systemPrompt, prompt: 'hello' });
+        }
+      `,
+      errors: [{ messageId: 'userControlledSystemPrompt' }],
+    },
+    {
+      name: 'type assertions and non-null assertions do not hide the request',
+      code: `
+        export async function POST(req: Request) {
+          const { system } = (await req.json()) as { system: string };
+          const body = (await req.json()) satisfies unknown;
+          await generateText({ model, system: system!, prompt: 'a' });
+          return streamText({ model, system: body.system, prompt: 'b' });
+        }
+      `,
+      errors: [{ messageId: 'userControlledSystemPrompt' }, { messageId: 'userControlledSystemPrompt' }],
+    },
+    {
+      name: 'Express req.body',
+      code: `
+        app.post('/chat', async (req, res) => {
+          const result = await generateText({ model, system: req.body.system, prompt: req.body.prompt });
+          res.json(result.text);
+        });
+      `,
+      errors: [{ messageId: 'userControlledSystemPrompt' }],
+    },
+    {
+      name: 'a let binding can be reassigned, so it is not a constant',
+      code: `
+        let BASE = 'You are Acme support.';
+        await generateText({ model, system: \`\${BASE}\`, prompt: 'hi' });
+      `,
+      errors: [{ messageId: 'dynamicSystemPrompt' }],
+    },
+    {
+      name: 'a constant holding a call result is still dynamic',
+      code: `
+        const PERSONA = loadPersona();
+        await generateText({ model, system: \`You are \${PERSONA}\`, prompt: 'hi' });
+      `,
+      errors: [{ messageId: 'dynamicSystemPrompt' }],
+    },
+  ]),
+});

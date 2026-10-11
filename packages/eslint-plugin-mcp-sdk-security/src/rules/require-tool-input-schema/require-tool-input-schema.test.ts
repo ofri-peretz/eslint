@@ -130,90 +130,357 @@ ruleTester.run('require-tool-input-schema', requireToolInputSchema, {
         server.registerTool('read_file', { description: 'x' }, handler);
       `,
     },
-  ],
-
-  invalid: [
-    // Was pinned as valid — "computed member call, server['tool'](...) is not
-    // matched". `server['registerTool']` registers the same tool, still with
-    // no input schema.
+    // ---- Moved from `invalid` (FP fix, 2026-10). The SDK calls a tool that
+    // declares no inputSchema as `handler(extra)` — v1 `executeToolHandler`,
+    // v2 `createToolExecutor` — so no client argument can reach it. These
+    // registrations were reported as "receives unvalidated client-supplied
+    // arguments", which is false for every one of them.
     {
-      name: 'a subscripted registerTool with no input schema',
+      name: 'a zero-argument tool registered with no schema',
       code: `
         ${IMPORT}
-        server['registerTool']('read_file', { description: 'x' }, handler);
+        server.registerTool('get_time', { title: 'Time', description: 'Server time' }, async () => ({ content: [] }));
       `,
-      errors: [{ messageId: 'missingInputSchema' }],
     },
-    // The core case: registered with a config that carries no inputSchema
     {
-      name: 'a tool registered with no input schema takes whatever the model sends',
+      name: 'a legacy zero-argument tool',
       code: `
         ${IMPORT}
-        server.registerTool('read_file', { description: 'Read a file' }, handler);
+        server.tool('list_projects', async () => ({ content: [] }));
       `,
-      errors: [{ messageId: 'missingInputSchema' }],
     },
-    // Armed via require() rather than import
     {
+      name: 'a legacy zero-argument tool with a description',
       code: `
-        const { McpServer } = require('@modelcontextprotocol/sdk/server/mcp.js');
-        server.registerTool('read_file', { description: 'Read a file' }, handler);
+        ${IMPORT}
+        server.tool('list_projects', 'List projects', async () => ({ content: [] }));
       `,
-      errors: [{ messageId: 'missingInputSchema' }],
     },
-    // Legacy arity: name + inline callback, no schema
     {
+      name: 'a legacy zero-argument tool with annotations',
+      code: `
+        ${IMPORT}
+        server.tool('whoami', { readOnlyHint: true }, async () => ({ content: [] }));
+      `,
+    },
+    {
+      name: 'an unused first parameter is not a read (was: legacy arity, inline callback)',
       code: `
         ${IMPORT}
         server.tool('read_file', async (args) => ({ content: [] }));
       `,
-      errors: [{ messageId: 'missingInputSchema' }],
     },
-    // Legacy arity: name + function expression
     {
+      name: 'a function expression that never reads its parameter',
       code: `
         ${IMPORT}
         server.tool('read_file', function (args) { return {}; });
       `,
-      errors: [{ messageId: 'missingInputSchema' }],
     },
-    // Legacy arity: name + handler passed by identifier
     {
+      name: 'a handler not visible in this file cannot be judged (was: legacy arity, handler by identifier)',
       code: `
         ${IMPORT}
         server.tool('read_file', handler);
       `,
-      errors: [{ messageId: 'missingInputSchema' }],
     },
-    // Computed key cannot declare the schema — still a finding
     {
+      name: 'a registerTool handler not visible in this file',
       code: `
         ${IMPORT}
-        server.registerTool('read_file', { [key]: schema }, handler);
+        server.registerTool('read_file', { description: 'Read a file' }, handler);
       `,
-      errors: [{ messageId: 'missingInputSchema' }],
     },
-    // Non-matching literal key
     {
+      name: 'reading the request context the SDK actually passes',
       code: `
         ${IMPORT}
-        server.registerTool('read_file', { 'description': 'x' }, handler);
+        server.registerTool('whoami', { description: 'x' }, async ({ authInfo, signal, sessionId }) => ({ content: [authInfo, signal, sessionId] }));
       `,
-      errors: [{ messageId: 'missingInputSchema' }],
     },
-    // Registration ordered before the import — Program:exit makes order irrelevant
     {
+      name: 'reading a context key through the whole parameter',
       code: `
+        ${IMPORT}
+        server.registerTool('whoami', { description: 'x' }, async (ctx) => ctx.authInfo?.clientId);
+      `,
+    },
+    {
+      name: 'a v2 ServerContext read',
+      code: `
+        import { McpServer } from '@modelcontextprotocol/server';
+        server.registerTool('whoami', { description: 'x' }, async ({ mcpReq, http }) => [mcpReq, http]);
+      `,
+    },
+    {
+      name: 'a computed read on the context is not a named argument',
+      code: `
+        ${IMPORT}
+        server.registerTool('whoami', { description: 'x' }, async (ctx) => ctx[key]);
+      `,
+    },
+    {
+      name: 'the parameter passed along whole is not a named read',
+      code: `
+        ${IMPORT}
+        server.registerTool('whoami', { description: 'x' }, async (ctx) => log(ctx));
+      `,
+    },
+    {
+      name: 'a rest or computed pattern names no argument',
+      code: `
+        ${IMPORT}
+        server.registerTool('whoami', { description: 'x' }, async ({ [k]: v, ...rest }) => [v, rest]);
+      `,
+    },
+    {
+      name: 'a defaulted context destructure',
+      code: `
+        ${IMPORT}
+        server.registerTool('whoami', { description: 'x' }, async ({ signal } = {}) => signal);
+      `,
+    },
+    {
+      name: 'a non-pattern first parameter',
+      code: `
+        ${IMPORT}
+        server.registerTool('whoami', { description: 'x' }, async ([first]) => first);
+      `,
+    },
+    {
+      name: 'a declared schema',
+      code: `
+        ${IMPORT}
+        server.registerTool('read_file', { inputSchema: { path: z.string() } }, async ({ path }) => path);
+      `,
+    },
+    {
+      name: 'an explicit inputSchema after a spread',
+      code: `
+        ${IMPORT}
+        server.registerTool('read_file', { ...base, inputSchema: { path: z.string() } }, async ({ path }) => path);
+      `,
+    },
+    {
+      name: 'a legacy schema held in a variable',
+      code: `
+        ${IMPORT}
+        server.tool('read_file', ReadShape, async ({ path }) => path);
+      `,
+    },
+    {
+      name: 'a legacy object that is neither clearly a shape nor annotations',
+      code: `
+        ${IMPORT}
+        server.tool('read_file', { path: PathSchema }, async ({ path }) => path);
+      `,
+    },
+    {
+      name: 'a legacy object with a spread cannot be classified',
+      code: `
+        ${IMPORT}
+        server.tool('read_file', { ...base }, async ({ path }) => path);
+      `,
+    },
+    {
+      name: 'a legacy description and shape',
+      code: `
+        ${IMPORT}
+        server.tool('read_file', 'Read', { path: z.string() }, async ({ path }) => path);
+      `,
+    },
+    {
+      name: 'a handler referenced by name that is not a function',
+      code: `
+        ${IMPORT}
+        const handler = makeHandler();
         server.registerTool('read_file', { description: 'x' }, handler);
+      `,
+    },
+  ],
+
+  invalid: [
+    // Every report now needs a handler that visibly expects arguments: the
+    // SDK passes the request context there, so the arguments it reads were
+    // never declared, never validated, and never arrive.
+    {
+      name: 'a subscripted registerTool whose handler reads an argument',
+      code: `
+        ${IMPORT}
+        server['registerTool']('read_file', { description: 'x' }, async ({ path }) => read(path));
+      `,
+      errors: [
+        {
+          messageId: 'missingInputSchema',
+          data: { tool: 'read_file', arg: 'path' },
+        },
+      ],
+    },
+    {
+      name: 'a handler destructuring an argument with no schema declared',
+      code: `
+        ${IMPORT}
+        server.registerTool('read_file', { description: 'Read a file' }, async ({ path }) => read(path));
+      `,
+      errors: [{ messageId: 'missingInputSchema' }],
+    },
+    {
+      name: 'armed via require() rather than import',
+      code: `
+        const { McpServer } = require('@modelcontextprotocol/sdk/server/mcp.js');
+        server.registerTool('read_file', { description: 'Read a file' }, async ({ path }) => read(path));
+      `,
+      errors: [{ messageId: 'missingInputSchema' }],
+    },
+    {
+      name: 'legacy arity: name + inline callback reading an argument',
+      code: `
+        ${IMPORT}
+        server.tool('read_file', async (args) => read(args.path));
+      `,
+      errors: [
+        {
+          messageId: 'missingInputSchema',
+          data: { tool: 'read_file', arg: 'args.path' },
+        },
+      ],
+    },
+    {
+      name: 'legacy arity: name + function expression destructuring',
+      code: `
+        ${IMPORT}
+        server.tool('read_file', function ({ path }) { return read(path); });
+      `,
+      errors: [{ messageId: 'missingInputSchema' }],
+    },
+    {
+      name: 'legacy description form whose handler reads an argument',
+      code: `
+        ${IMPORT}
+        server.tool('read_file', 'Read a file', async ({ path }) => read(path));
+      `,
+      errors: [{ messageId: 'missingInputSchema' }],
+    },
+    {
+      name: 'legacy annotations form whose handler reads an argument',
+      code: `
+        ${IMPORT}
+        server.tool('read_file', { readOnlyHint: true }, async ({ path }) => read(path));
+      `,
+      errors: [{ messageId: 'missingInputSchema' }],
+    },
+    {
+      name: 'a handler declaring (args, extra) — extra is always undefined without a schema',
+      code: `
+        ${IMPORT}
+        server.registerTool('whoami', { description: 'x' }, async (_args, extra) => extra.sessionId);
+      `,
+      errors: [
+        {
+          messageId: 'missingInputSchema',
+          data: { tool: 'whoami', arg: '_args' },
+        },
+      ],
+    },
+    {
+      name: 'a two-parameter handler with a destructured first parameter',
+      code: `
+        ${IMPORT}
+        server.registerTool('whoami', { description: 'x' }, async ({}, extra) => extra);
+      `,
+      errors: [
+        {
+          messageId: 'missingInputSchema',
+          data: { tool: 'whoami', arg: 'args' },
+        },
+      ],
+    },
+    {
+      name: 'a same-file function declaration passed by reference',
+      code: `
+        ${IMPORT}
+        async function readHandler({ path }) { return read(path); }
+        server.registerTool('read_file', { description: 'x' }, readHandler);
+      `,
+      errors: [{ messageId: 'missingInputSchema' }],
+    },
+    {
+      name: 'a same-file const arrow passed by reference',
+      code: `
+        ${IMPORT}
+        const readHandler = async (args) => read(args.path);
+        server.registerTool('read_file', { description: 'x' }, readHandler);
+      `,
+      errors: [{ messageId: 'missingInputSchema' }],
+    },
+    {
+      name: 'a renamed and defaulted destructure is still an argument read',
+      code: `
+        ${IMPORT}
+        server.registerTool('read_file', { description: 'x' }, async ({ path: p = '.' } = {}) => read(p));
+      `,
+      errors: [
+        {
+          messageId: 'missingInputSchema',
+          data: { tool: 'read_file', arg: 'path' },
+        },
+      ],
+    },
+    {
+      name: 'a subscripted argument read',
+      code: `
+        ${IMPORT}
+        server.registerTool('read_file', { description: 'x' }, async (args) => read(args['path']));
+      `,
+      errors: [
+        {
+          messageId: 'missingInputSchema',
+          data: { tool: 'read_file', arg: 'args.path' },
+        },
+      ],
+    },
+    {
+      name: 'a computed key cannot declare the schema',
+      code: `
+        ${IMPORT}
+        server.registerTool('read_file', { [key]: schema }, async ({ path }) => read(path));
+      `,
+      errors: [{ messageId: 'missingInputSchema' }],
+    },
+    {
+      name: 'a non-matching literal key',
+      code: `
+        ${IMPORT}
+        server.registerTool('read_file', { 'description': 'x' }, async ({ path }) => read(path));
+      `,
+      errors: [{ messageId: 'missingInputSchema' }],
+    },
+    {
+      name: 'registration ordered before the import',
+      code: `
+        server.registerTool('read_file', { description: 'x' }, async ({ path }) => read(path));
         ${IMPORT}
       `,
       errors: [{ messageId: 'missingInputSchema' }],
     },
-    // Non-literal tool name falls back to "unknown" in the message data
     {
+      name: 'a non-literal tool name falls back to "unknown"',
       code: `
         ${IMPORT}
-        server.registerTool(toolName, { description: 'x' }, handler);
+        server.registerTool(toolName, { description: 'x' }, async ({ path }) => read(path));
+      `,
+      errors: [
+        {
+          messageId: 'missingInputSchema',
+          data: { tool: 'unknown', arg: 'path' },
+        },
+      ],
+    },
+    {
+      name: 'an SDK v2 server',
+      code: `
+        import { McpServer } from '@modelcontextprotocol/server';
+        server.registerTool('read_file', { description: 'x' }, async ({ path }) => read(path));
       `,
       errors: [{ messageId: 'missingInputSchema' }],
     },

@@ -13,6 +13,7 @@
 
 import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
+import { declaresOption, sdkCallName } from '../../utils/sdk';
 
 type MessageIds = 'missingMaxTokens';
 
@@ -75,56 +76,28 @@ export const requireMaxTokens = createRule<RuleOptions, MessageIds>({
       targetFunctions: ['generateText', 'streamText', 'generateObject', 'streamObject'],
     },
   ],
-  create(context) {
+  create(context, [options]) {
     // Every rule in this plugin is Vercel-AI-specific, and none of them knew
     // it: over 107,384 files, 91% of this plugin's findings were in files with
     // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
     // the cheap path — a file without the SDK does no work.
     if (!fileUsesVercelAi(context.sourceCode.ast)) return {};
 
-    const [options = {}] = context.options;
-    const targetFunctions = options.targetFunctions ?? [
-      'generateText', 'streamText', 'generateObject', 'streamObject',
-    ];
-
-    const sourceCode = context.sourceCode;
+    // Merged with `defaultOptions` before `create` runs.
+    const { targetFunctions } = options as Required<Options>;
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
-        const callee = sourceCode.getText(node.callee);
-        
-        // Check if this is a target AI function
-        const matchedFunction = targetFunctions.find((fn: string) => callee.includes(fn));
-        if (!matchedFunction) {
-          return;
-        }
+        const matchedFunction = sdkCallName(node, targetFunctions);
+        if (!matchedFunction) return;
 
-        // Check first argument (options object)
+        // Options built elsewhere are not inspected — absence is not provable.
         const optionsArg = node.arguments[0];
-        if (!optionsArg || optionsArg.type !== 'ObjectExpression') {
-          return;
-        }
+        if (!optionsArg || optionsArg.type !== 'ObjectExpression') return;
 
-        // Check if a token limit is present: maxTokens (v4) or maxOutputTokens (v5+ rename).
-        // Both spellings also appear snake_cased — the raw provider APIs use that
-        // form (OpenAI Responses `max_output_tokens`, Anthropic `max_tokens`), and
-        // options often reach the SDK straight from a provider-shaped config object.
-        const hasMaxTokens = optionsArg.properties.some(prop => {
-          if (prop.type !== 'Property') return false;
-          const keyName = prop.key.type === 'Identifier'
-            ? prop.key.name
-            : prop.key.type === 'Literal'
-              ? String(prop.key.value)
-              : null;
-          return (
-            keyName === 'maxTokens' ||
-            keyName === 'max_tokens' ||
-            keyName === 'maxOutputTokens' ||
-            keyName === 'max_output_tokens'
-          );
-        });
-
-        if (!hasMaxTokens) {
+        // maxTokens (v4) or maxOutputTokens (v5+), also snake_cased as the raw
+        // provider APIs spell them. A spread may carry either, so it counts.
+        if (!declaresOption(optionsArg, TOKEN_LIMIT_KEYS)) {
           context.report({
             node,
             messageId: 'missingMaxTokens',
@@ -135,3 +108,5 @@ export const requireMaxTokens = createRule<RuleOptions, MessageIds>({
     };
   },
 });
+
+const TOKEN_LIMIT_KEYS = ['maxTokens', 'max_tokens', 'maxOutputTokens', 'max_output_tokens'];

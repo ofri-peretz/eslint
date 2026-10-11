@@ -1,6 +1,6 @@
 ---
 title: no-hardcoded-secret
-description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+description: 'The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:'
 tags: ['security', 'jwt']
 category: security
 severity: critical
@@ -10,8 +10,8 @@ autofix: false
 
 > Disallow hardcoded secrets in JWT sign/verify operations
 
-
 <!-- @rule-summary -->
+
 The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:
 <!-- @/rule-summary -->
 
@@ -24,7 +24,7 @@ The rule provides LLM-optimized error messages (Compact 2-line format) with acti
 | **CWE Reference** | [CWE-798](https://cwe.mitre.org/data/definitions/798.html) |
 | **Severity**      | Critical                                                   |
 | **Auto-Fix**      | ❌ No auto-fix available                                   |
-| **Category**   | Security |
+| **Category**      | Security                                                   |
 | **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                    |
 | **Best For**      | Protecting JWT secrets from source code exposure           |
 
@@ -39,13 +39,13 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component                 | Purpose                | Example                                                                                                                                                                                                                         |
-| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                                                       |
+| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Risk Standards**        | Security benchmarks    | [CWE-798](https://cwe.mitre.org/data/definitions/798.html) [OWASP:A04](https://owasp.org/Top10/A04_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
-| **Issue Description**     | Specific vulnerability | `Hardcoded Credentials detected`                                                                                                                                                                                                |
-| **Severity & Compliance** | Impact assessment      | `CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001,NIST-CSF]`                                                                                                                                                                          |
-| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                            |
-| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A04_2021-Injection/)                                                                                                                                                                     |
+| **Issue Description**     | Specific vulnerability | `Hardcoded Credentials detected`                                                                                                                                                                                                                              |
+| **Severity & Compliance** | Impact assessment      | `CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001,NIST-CSF]`                                                                                                                                                                                                        |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                                                          |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A04_2021-Injection/)                                                                                                                                                                                                   |
 
 ## Rule Details
 
@@ -62,6 +62,21 @@ jwt.verify(token, 'my-secret-key');
 
 // Template literal
 jwt.sign(payload, `static-secret`);
+
+// A fallback that ships the literal the moment the env var is unset
+jwt.sign(payload, process.env.JWT_SECRET || 'secret');
+const SECRET = process.env.JWT_SECRET ?? 'changeme';
+
+// jose: the byte key, inline or one const away, including SignJWT(...).sign(key)
+const key = new TextEncoder().encode('secret');
+await new SignJWT(claims).setProtectedHeader({ alg: 'HS256' }).sign(key);
+
+// Config-object APIs
+JwtModule.register({ secret: 'secretKey' }); // @nestjs/jwt
+this.jwtService.sign(payload, { secret: 'secretKey' }); // @nestjs/jwt per call
+expressjwt({ secret: 'shhhhhhared-secret', algorithms: ['HS256'] }); // express-jwt
+new JwtStrategy({ secretOrKey: 'secret', jwtFromRequest }, verify); // passport-jwt
+createSigner({ key: 'secret' }); // fast-jwt
 ```
 
 ### ✅ Correct
@@ -75,7 +90,18 @@ jwt.sign(payload, config.jwtSecret);
 
 // Function call
 jwt.sign(payload, getSecretFromVault());
+
+// A PEM PUBLIC key or certificate is published on purpose — not a secret
+const IDP_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----\n…\n-----END PUBLIC KEY-----`;
+jwt.verify(token, IDP_PUBLIC_KEY, { algorithms: ['ES256'] });
+
+// Test files are skipped: a fixture token signed with 'test-secret' ships nothing
 ```
+
+Calls that only share a method name are not JWT calls: a `createSign()` /
+`createVerify()` object from `node:crypto`, WebCrypto's `crypto.subtle`, and a
+`this.<member>` whose declared type is imported from a non-JWT module (an
+injected `HashingService`) are skipped.
 
 ## Known False Negatives
 
@@ -131,15 +157,14 @@ jwt.sign(payload, config.secret); // Member expression treated as safe
 
 **Mitigation**: Enable `strictMode: true` option to treat all non-env sources as suspicious.
 
-### Variable Re-assignment
+### Reassignable Bindings
 
-**Why**: The rule checks the immediate argument, not variable history.
+**Why**: the key is read through a same-file `const` (including `const SECRET = process.env.JWT_SECRET || 'secret'`), but a `let` / `var` can be reassigned, so its initial value proves nothing.
 
 ```typescript
-// ❌ NOT DETECTED - Indirect reference
+// ⚠️ NOT DETECTED - a let can be reassigned
 let key = 'my-secret-key';
-const actualKey = key;
-jwt.sign(payload, actualKey); // Identifier treated as safe
+jwt.sign(payload, key);
 ```
 
 **Mitigation**: Use const bindings and avoid variable reassignment for secrets.
@@ -151,9 +176,9 @@ jwt.sign(payload, actualKey); // Identifier treated as safe
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `envPatterns` | `string[]` | `[]` | Patterns that indicate safe environment variable usage |
-| `trustedSanitizers` | `string[]` | `[]` | Extra function names to treat as sanitizers |
-| `trustedAnnotations` | `string[]` | `[]` | Extra JSDoc annotations to treat as safe markers |
-| `strictMode` | `boolean` | `false` | Disable false-positive suppression — report even sanitized input |
+| Option               | Type       | Default | Description                                                      |
+| -------------------- | ---------- | ------- | ---------------------------------------------------------------- |
+| `envPatterns`        | `string[]` | `[]`    | Patterns that indicate safe environment variable usage           |
+| `trustedSanitizers`  | `string[]` | `[]`    | Extra function names to treat as sanitizers                      |
+| `trustedAnnotations` | `string[]` | `[]`    | Extra JSDoc annotations to treat as safe markers                 |
+| `strictMode`         | `boolean`  | `false` | Disable false-positive suppression — report even sanitized input |

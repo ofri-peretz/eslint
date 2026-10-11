@@ -72,6 +72,13 @@ Unvalidated AI output can:
 - **Damage reputation** - Incorrect information attributed to your brand
 - **Violate regulations** - False claims in regulated industries
 
+## 🔄 Changes in the 2026-10-10 FP/FN audit
+
+- AI output is a `.text` / `.content` / `.output` property by exact name;
+  `err.message` is not AI output. Display calls are matched by whole word of the
+  call chain.
+- **Options:** the documented `defaultOptions` now apply. Earlier versions read `context.options` and silently ran a shorter hard-coded list instead.
+
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
