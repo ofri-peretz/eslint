@@ -271,3 +271,64 @@ ruleTester.run('no-algorithm-none — module gate', noAlgorithmNone, {
     },
   ],
 });
+
+// ---------------------------------------------------------------------------
+// FP/FN audit 2026-10
+// ---------------------------------------------------------------------------
+describe('no-algorithm-none — audit 2026-10', () => {
+  ruleTester.run('structural options resolution', noAlgorithmNone, {
+    valid: [
+      {
+        name: 'a resolved const with secure algorithms',
+        code: `import jwt from 'jsonwebtoken';
+const opts = { algorithms: ['RS256'] };
+jwt.verify(token, key, opts);`,
+      },
+      {
+        name: 'express-jwt with secure algorithms',
+        code: `import { expressjwt } from 'express-jwt';
+expressjwt({ secret: process.env.S, algorithms: ['HS256'] });`,
+      },
+    ],
+    invalid: [
+      {
+        name: "FP-1/FN: 'none' in a same-file const options object",
+        code: `import jwt from 'jsonwebtoken';
+const verifyOpts = { algorithms: ['HS256', 'none'] };
+jwt.verify(token, key, verifyOpts);`,
+        errors: [{ messageId: 'algorithmNoneInArray' }],
+      },
+      {
+        name: "FP-1/FN: 'none' behind an as-cast",
+        code: `import jwt, { type SignOptions } from 'jsonwebtoken';
+jwt.sign({ sub }, '', { algorithm: 'none' } as SignOptions);`,
+        errors: [{ messageId: 'algorithmNone' }],
+      },
+      {
+        name: "FP-1/FN: 'none' inside a spread const",
+        code: `import jwt from 'jsonwebtoken';
+const base = { algorithm: 'none' };
+jwt.sign({ sub }, key, { ...base, expiresIn: '1h' });`,
+        errors: [{ messageId: 'algorithmNone' }],
+      },
+      {
+        name: "FN-3: NestJS per-call algorithm 'none'",
+        code: `import { JwtService } from '@nestjs/jwt';
+export const f = (svc, p) => svc.signAsync(p, { secret: s, algorithm: 'none' });`,
+        errors: [{ messageId: 'algorithmNone' }],
+      },
+      {
+        name: "FN-4: express-jwt allowing 'none'",
+        code: `import { expressjwt } from 'express-jwt';
+expressjwt({ secret: process.env.S, algorithms: ['HS256', 'none'] });`,
+        errors: [{ messageId: 'algorithmNoneInArray' }],
+      },
+      {
+        name: "FN-4: a fast-jwt signer with algorithm 'none'",
+        code: `import { createSigner } from 'fast-jwt';
+const sign = createSigner({ key: process.env.K, algorithm: 'none' });`,
+        errors: [{ messageId: 'algorithmNone' }],
+      },
+    ],
+  });
+});

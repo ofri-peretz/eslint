@@ -141,3 +141,71 @@ jwt.sign(payload, 'fifteen_chars!!');`,
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// FP/FN audit 2026-10
+// ---------------------------------------------------------------------------
+describe('no-weak-secret — audit 2026-10', () => {
+  ruleTester.run('structural key resolution', noWeakSecret, {
+    valid: [
+      {
+        name: 'FP-9: a fixture secret in a test file',
+        filename: 'src/auth/auth.middleware.test.ts',
+        code: `import jwt from 'jsonwebtoken';
+jwt.sign({ sub: 'u1' }, 'test-secret');`,
+      },
+      {
+        name: "FP-3: a node:crypto Sign object's 'base64' encoding is not a secret",
+        code: `import jwt from 'jsonwebtoken';
+import { createSign } from 'node:crypto';
+const signer = createSign('RSA-SHA1');
+signer.sign(privateKey, 'base64');`,
+      },
+      {
+        name: 'a long fallback is not weak',
+        code: `import jwt from 'jsonwebtoken';
+jwt.sign(p, process.env.S || 'a-sufficiently-long-and-random-secret-value-32');`,
+      },
+    ],
+    invalid: [
+      {
+        name: 'FN-1: a weak || fallback behind an env var',
+        code: `import jwt from 'jsonwebtoken';
+jwt.sign({ sub }, process.env.JWT_SECRET || 'secret');`,
+        errors: [{ messageId: 'weakSecret' }],
+      },
+      {
+        name: 'FN-1: a weak secret one const away',
+        code: `import jwt from 'jsonwebtoken';
+const JWT_SECRET = 'short';
+jwt.sign({ sub }, JWT_SECRET);`,
+        errors: [{ messageId: 'shortSecret' }],
+      },
+      {
+        name: "FN-2: jose's SignJWT(...).sign(key) with a weak byte key",
+        code: `import { SignJWT } from 'jose';
+await new SignJWT({ sub }).setProtectedHeader({ alg: 'HS256' }).sign(new TextEncoder().encode('secret'));`,
+        errors: [{ messageId: 'weakSecret' }],
+      },
+      {
+        name: 'FN-3: a NestJS per-call secret that is short',
+        code: `import { JwtService } from '@nestjs/jwt';
+export const f = (svc, p) => svc.sign(p, { secret: 'tiny', expiresIn: '1h' });`,
+        errors: [{ messageId: 'shortSecret' }],
+      },
+      {
+        name: 'FN-4: express-jwt with a short secret',
+        code: `import { expressjwt } from 'express-jwt';
+expressjwt({ secret: 'shhhhhhared-secret', algorithms: ['HS256'] });`,
+        errors: [{ messageId: 'shortSecret' }],
+      },
+      {
+        name: 'a hex byte key resolved through a const keeps its encoding',
+        code: `import jwt from 'jsonwebtoken';
+const HEX = '00112233445566778899aabbccddeeff';
+jwt.sign(p, Buffer.from(HEX, 'hex'));`,
+        errors: [{ messageId: 'shortSecret' }],
+      },
+    ],
+  });
+});

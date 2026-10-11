@@ -91,3 +91,54 @@ jwtVerify(token, key, { issuer: 'auth.example.com' });`,
     });
   });
 });
+
+// FP/FN audit 2026-10 — see require-algorithm-whitelist for the full resolution matrix.
+describe('require-audience-validation — options resolution (audit 2026-10)', () => {
+  ruleTester.run('options resolution', requireAudienceValidation, {
+    valid: [
+      {
+        name: 'FP-1: options in a same-file const',
+        code: `import jwt from 'jsonwebtoken';
+const opts = { audience: 'x' };
+jwt.verify(token, key, opts);`,
+      },
+      {
+        name: 'FP-1: options behind an as-cast',
+        code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, key, { audience: 'x' } as VerifyOptions);`,
+      },
+      {
+        name: 'FP-1: a spread of a resolvable const',
+        code: `import jwt from 'jsonwebtoken';
+const base = { audience: 'x' };
+jwt.verify(token, key, { ...base, maxAge: '1h' });`,
+      },
+      {
+        name: 'FP-1: an unresolvable options value stays silent',
+        code: `import jwt from 'jsonwebtoken';
+export const check = (token, key, opts) => jwt.verify(token, key, opts);`,
+      },
+      {
+        name: 'FP-2: NestJS options are the second argument and merge with the module',
+        code: `import { JwtService } from '@nestjs/jwt';
+export const check = (jwtService, token) => jwtService.verify(token, { secret: s });`,
+      },
+      {
+        name: 'FP-3: a node:crypto Verify object is not a JWT client',
+        code: `import jwt from 'jsonwebtoken';
+import { createVerify } from 'node:crypto';
+const verifier = createVerify('RSA-SHA256');
+verifier.verify(pub, sig, 'base64');`,
+      },
+    ],
+    invalid: [
+      {
+        name: 'a const that lacks audience still reports',
+        code: `import jwt from 'jsonwebtoken';
+const opts = { algorithms: ['RS256'] };
+jwt.verify(token, key, opts);`,
+        errors: [{ messageId: 'missingAudienceValidation' }],
+      },
+    ],
+  });
+});

@@ -11,8 +11,9 @@
  * @see OWASP ASI02: Tool Misuse & Exploitation
  */
 
-import { TSESTree, createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, TSESTree, createRule, formatLLMMessage, MessageIcons, isTestFilePath, objectKeyName } from '@interlace/eslint-devkit';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
+import { declaresOption, optionValue, sdkCallName } from '../../utils/sdk';
 
 type MessageIds = 'missingInputSchema' | 'emptyToolsObject';
 
@@ -75,101 +76,70 @@ export const requireToolSchema = createRule<RuleOptions, MessageIds>({
       allowInTests: false,
     },
   ],
-  create(context) {
+  create(context, [options]) {
     // Every rule in this plugin is Vercel-AI-specific, and none of them knew
     // it: over 107,384 files, 91% of this plugin's findings were in files with
     // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
     // the cheap path — a file without the SDK does no work.
     if (!fileUsesVercelAi(context.sourceCode.ast)) return {};
 
-    const [options = {}] = context.options;
-    const allowInTests = options.allowInTests ?? false;
+    // Merged with `defaultOptions` before `create` runs.
+    const { allowInTests } = options as Required<Options>;
 
     const sourceCode = context.sourceCode;
-    const filename = context.filename;
 
     // Skip test files if allowed
-    if (allowInTests && isTestFilePath(filename)) {
+    if (allowInTests && isTestFilePath(context.filename)) {
       return {};
     }
 
-    // Vercel AI SDK functions that use tools
-    const functionsWithTools = ['generateText', 'streamText', 'generateObject', 'streamObject'];
+    /** The key a tool sits under in a `tools: { … }` object, if any. */
+    function toolKey(node: TSESTree.Node): string | null {
+      const parent = node.parent;
+      return parent?.type === AST_NODE_TYPES.Property ? objectKeyName(parent) : null;
+    }
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
         const callee = sourceCode.getText(node.callee);
-        
-        // Check if this is a target AI function or a tool() helper
-        const isAIFunction = functionsWithTools.some(fn => callee.includes(fn));
         const isToolHelper = callee === 'tool' || callee.endsWith('.tool');
-        
-        if (isToolHelper) {
-          // Check tool() helper for inputSchema
-          const toolArg = node.arguments[0];
-          if (toolArg && toolArg.type === 'ObjectExpression') {
-            const hasInputSchema = toolArg.properties.some(prop => {
-              if (prop.type !== 'Property') return false;
-              const keyName = prop.key.type === 'Identifier' ? prop.key.name : null;
-              return keyName === 'inputSchema' || keyName === 'parameters';
-            });
 
-            if (!hasInputSchema) {
-              context.report({
-                node: toolArg,
-                messageId: 'missingInputSchema',
-                data: { toolName: 'unnamed tool' },
-              });
-            }
+        if (isToolHelper) {
+          // inputSchema (v5+) or parameters (v4); a spread may supply either.
+          const toolArg = node.arguments[0];
+          if (toolArg?.type === AST_NODE_TYPES.ObjectExpression && !declaresOption(toolArg, SCHEMA_KEYS)) {
+            context.report({
+              node: toolArg,
+              messageId: 'missingInputSchema',
+              data: { toolName: toolKey(node) ?? 'unnamed tool' },
+            });
           }
           return;
         }
 
-        if (!isAIFunction) return;
+        if (!sdkCallName(node)) return;
 
-        // Check for tools property in AI function call
         const optionsArg = node.arguments[0];
-        if (!optionsArg || optionsArg.type !== 'ObjectExpression') return;
+        if (optionsArg?.type !== AST_NODE_TYPES.ObjectExpression) return;
 
-        const toolsProp = optionsArg.properties.find(prop => {
-          if (prop.type !== 'Property') return false;
-          const keyName = prop.key.type === 'Identifier' ? prop.key.name : null;
-          return keyName === 'tools';
-        }) as TSESTree.Property | undefined;
+        const tools = optionValue(optionsArg, 'tools');
+        if (tools?.type !== AST_NODE_TYPES.ObjectExpression) return;
 
-        if (!toolsProp) return;
-
-        // Check each tool in the tools object
-        if (toolsProp.value.type === 'ObjectExpression') {
-          for (const toolDef of toolsProp.value.properties) {
-            if (toolDef.type !== 'Property') continue;
-            
-            const toolName = toolDef.key.type === 'Identifier' 
-              ? toolDef.key.name 
-              : toolDef.key.type === 'Literal' 
-                ? String(toolDef.key.value)
-                : 'unknown';
-
-            // Check if tool value is an object with inputSchema
-            if (toolDef.value.type === 'ObjectExpression') {
-              const hasInputSchema = toolDef.value.properties.some(prop => {
-                if (prop.type !== 'Property') return false;
-                const keyName = prop.key.type === 'Identifier' ? prop.key.name : null;
-                return keyName === 'inputSchema' || keyName === 'parameters';
-              });
-
-              if (!hasInputSchema) {
-                context.report({
-                  node: toolDef.value,
-                  messageId: 'missingInputSchema',
-                  data: { toolName },
-                });
-              }
-            }
-            // If it's a CallExpression (tool() helper), it will be checked separately
+        // Object-literal tools here; tool(...) values are checked by the branch above.
+        for (const toolDef of tools.properties) {
+          if (toolDef.type !== AST_NODE_TYPES.Property) continue;
+          if (toolDef.value.type !== AST_NODE_TYPES.ObjectExpression) continue;
+          if (!declaresOption(toolDef.value, SCHEMA_KEYS)) {
+            context.report({
+              node: toolDef.value,
+              messageId: 'missingInputSchema',
+              data: { toolName: objectKeyName(toolDef) ?? 'unknown' },
+            });
           }
         }
       },
     };
   },
 });
+
+const SCHEMA_KEYS = ['inputSchema', 'parameters'];

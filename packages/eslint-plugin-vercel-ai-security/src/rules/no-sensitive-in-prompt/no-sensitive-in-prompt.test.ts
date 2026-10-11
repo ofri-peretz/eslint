@@ -264,8 +264,10 @@ ruleTester.run('no-sensitive-in-prompt (coverage gaps)', noSensitiveInPrompt, {
     { code: `generateText({ ...opts });` },
     // computed key — the name genuinely isn't statically known
     { code: `generateText({ [k]: password });` },
-    // computed member access — property is not an Identifier
-    { code: `generateText({ prompt: user['password'] });` },
+    // (Moved 2026-10-10) `user['password']` is the same property as
+    // `user.password`; it used to be skipped and is now in the audit invalid suite.
+    // computed member access with a runtime key names no property
+    { code: `generateText({ prompt: user[field] });` },
     // member access to a non-sensitive property
     { code: `generateText({ prompt: user.displayName });` },
     // concatenation of two non-sensitive operands
@@ -330,4 +332,52 @@ ruleTester.run('no-sensitive-in-prompt (computed key collision)', noSensitiveInP
     },
   ]),
   invalid: xai([]),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FP/FN audit 2026-10-10: whole-word name matching (`businessName` has no
+// `ssn` word; `maxTokens` is a count of tokens, not a token), and the v5 chat
+// shape — `messages: [...]` — is searched too.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('no-sensitive-in-prompt (fp-fn audit)', noSensitiveInPrompt, {
+  valid: xai([
+    {
+      name: '"businessName" contains the letters s-s-n, not the word ssn',
+      code: `await generateText({ model, prompt: \`Write a tagline for \${biz.businessName}, a \${biz.industry} company.\` });`,
+    },
+    {
+      name: 'token COUNTS are not tokens',
+      code: `
+        const maxTokens = 200;
+        await generateText({ model, prompt: \`Summarize in under \${maxTokens} tokens.\` });
+        await generateText({ model, prompt: \`Explain why this run used \${usage.totalTokens} tokens.\` });
+      `,
+    },
+    {
+      name: 'a messages array with no sensitive values',
+      code: `await streamText({ model, messages: [...history, { ...base, role: 'user', content: question }, , ] });`,
+    },
+  ]),
+  invalid: xai([
+    {
+      name: 'a password interpolated into a chat message',
+      code: `
+        await streamText({
+          model,
+          messages: [...history, { role: 'user', content: \`My login is \${user.email} / \${user.password}\` }],
+        });
+      `,
+      errors: [{ messageId: 'sensitiveInPrompt' }],
+    },
+    {
+      name: 'secrets spread into the messages array',
+      code: `await streamText({ model, messages: [...secretNotes] });`,
+      errors: [{ messageId: 'sensitiveInPrompt' }],
+    },
+    {
+      name: 'a bracketed property is the same property',
+      code: `generateText({ prompt: user['password'] });`,
+      errors: [{ messageId: 'sensitiveInPrompt' }],
+    },
+  ]),
 });

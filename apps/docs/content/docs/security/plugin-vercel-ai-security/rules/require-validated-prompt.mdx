@@ -115,6 +115,17 @@ Prompt injection is the #1 security risk for LLM applications according to OWASP
 - [`no-sensitive-in-prompt`](./no-sensitive-in-prompt) - Prevent sensitive data in prompts
 - [`no-dynamic-system-prompt`](./no-dynamic-system-prompt) - Prevent dynamic system prompts
 
+## 🔄 Changes in the 2026-10-10 FP/FN audit
+
+- User input is recognised by shape: a value read from the request body or
+  query string (see `no-dynamic-system-prompt`), whatever it is named.
+- Name patterns are matched as the name's **head noun**, by whole word:
+  `userInput` and `searchQuery` match; `inputTokens` and `queryTimeout` do not.
+  `req.body` / `request.body` match as member paths.
+- A value parsed through a schema (`.parse`, `.safeParse`, `.parseAsync`, …) or
+  bound from a configured validator call is validated.
+- **Options:** the documented `defaultOptions` now apply. Earlier versions read `context.options` and silently ran a shorter hard-coded list instead.
+
 <WhenNotToUse />
 
 <FalseNegativeCTA />

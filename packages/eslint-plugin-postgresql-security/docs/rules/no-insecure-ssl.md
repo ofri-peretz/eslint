@@ -85,32 +85,14 @@ const client = new Client({
 
 The following patterns are **not detected** due to static analysis limitations:
 
-### Options from Variable
+### Also checked (since 2026-10)
 
-**Why**: Variable contents are not analyzed.
-
-```typescript
-// ❌ NOT DETECTED - SSL options from variable
-const sslOpts = { rejectUnauthorized: false };
-const client = new Client({ ssl: sslOpts });
-```
-
-**Mitigation**: Use inline SSL configuration. Create TypeScript types forbidding `rejectUnauthorized: false`.
-
-### Environment Variable Controlling SSL
-
-**Why**: Environment variable values are not known at lint time.
-
-```typescript
-// ❌ NOT DETECTED - SSL disabled based on env var
-const ssl =
-  process.env.NODE_ENV === 'development'
-    ? { rejectUnauthorized: false } // Might leak to production!
-    : true;
-const client = new Client({ ssl });
-```
-
-**Mitigation**: Never conditionally disable SSL. Use separate connection configs per environment.
+- Every branch of a conditional `ssl` value — `ssl: isProd ? {
+  rejectUnauthorized: false } : false`, the widely copied Heroku snippet,
+  disables verification in exactly the environment that matters.
+- postgres.js `postgres(url, { ssl })` and pg-promise `pgp({ ssl })`.
+- A config returned from a function in the same file, and a config object
+  declared with pg's `PoolConfig` / `ClientConfig` type (or `satisfies` it).
 
 ### Configuration Object from File
 

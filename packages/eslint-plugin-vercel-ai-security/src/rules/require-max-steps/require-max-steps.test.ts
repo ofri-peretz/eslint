@@ -175,12 +175,11 @@ ruleTester.run('require-max-steps', requireMaxSteps, {
         });
       `,
     },
-  ]),
-
-  invalid: xai([
-    // generateText with tools but no maxSteps
+    // (Changed 2026-10-10) Tools with no step option used to be reported. With
+    // no maxSteps/stopWhen the SDK runs exactly ONE step (v4 maxSteps: 1,
+    // v5+ stopWhen: stepCountIs(1)), so the loop the message warned about
+    // cannot happen — this is the safest configuration there is.
     {
-      name: 'tools with no step ceiling can loop until the budget is gone',
       code: `
         await generateText({
           model: openai('gpt-4'),
@@ -190,9 +189,7 @@ ruleTester.run('require-max-steps', requireMaxSteps, {
           },
         });
       `,
-      errors: [{ messageId: 'missingMaxSteps' }],
     },
-    // streamText with tools but no maxSteps
     {
       code: `
         await streamText({
@@ -204,9 +201,7 @@ ruleTester.run('require-max-steps', requireMaxSteps, {
           },
         });
       `,
-      errors: [{ messageId: 'missingMaxSteps' }],
     },
-    // Tools with spread elements but no maxSteps
     {
       code: `
         await generateText({
@@ -214,9 +209,10 @@ ruleTester.run('require-max-steps', requireMaxSteps, {
           tools: { helper: helperTool },
         });
       `,
-      errors: [{ messageId: 'missingMaxSteps' }],
     },
   ]),
+
+  invalid: xai([]),
 });
 
 
@@ -233,14 +229,11 @@ ruleTester.run('require-max-steps (coverage gaps)', requireMaxSteps, {
     { code: `generateText({ tools: myTools, 'maxSteps': 3 });` },
     // snake_case max_steps also accepted
     { code: `generateText({ tools: myTools, max_steps: 3 });` },
+    // (Changed 2026-10-10) a computed key sets no known step option, so the
+    // SDK default of one step applies — no longer reported.
+    { code: `generateText({ tools: myTools, [getKey()]: 3 });` },
   ]),
-  invalid: xai([
-    // computed key resolves to null — maxSteps not found
-    {
-      code: `generateText({ tools: myTools, [getKey()]: 3 });`,
-      errors: [{ messageId: 'missingMaxSteps' }],
-    },
-  ]),
+  invalid: xai([]),
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -283,15 +276,14 @@ ruleTester.run('require-max-steps (AI SDK v4 + v5 option names)', requireMaxStep
         });
       `,
     },
-    // v5+: any StopCondition terminates the loop, not just stepCountIs
-    { code: `generateText({ tools: myTools, stopWhen: hasToolCall('answer') });` },
+    // (Changed 2026-10-10) `stopWhen: hasToolCall('answer')` alone moved to
+    // invalid: it stops only if the model ever calls that tool, so it bounds
+    // nothing. It is covered in the fp-fn audit suite below.
     // v5+: string-literal key
     { code: `generateText({ tools: myTools, 'stopWhen': stepCountIs(3) });` },
     // v4 spelling still accepted
     { code: `generateText({ tools: myTools, maxSteps: 3 });` },
-  ]),
-  invalid: xai([
-    // v5+ call with tools and no bound at all is still reported
+    // (Changed 2026-10-10) no step option means the one-step default — valid.
     {
       code: `
         await generateText({
@@ -301,12 +293,83 @@ ruleTester.run('require-max-steps (AI SDK v4 + v5 option names)', requireMaxStep
           maxOutputTokens: 4096,
         });
       `,
-      errors: [{ messageId: 'missingMaxSteps' }],
     },
-    // near-miss key must not be mistaken for the real option
+    { code: `generateText({ tools: myTools, stopWhenever: stepCountIs(3) });` },
+  ]),
+  invalid: xai([]),
+});
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FP/FN audit 2026-10-10: report UNBOUNDED step configurations, not absent ones.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('require-max-steps (fp-fn audit)', requireMaxSteps, {
+  valid: xai([
     {
-      code: `generateText({ tools: myTools, stopWhenever: stepCountIs(3) });`,
-      errors: [{ messageId: 'missingMaxSteps' }],
+      name: 'tools with no step option run a single step (SDK default) — not reported',
+      code: `const { toolCalls } = await generateText({ model, tools: { getWeather }, prompt: 'Weather in Paris?' });`,
+    },
+    {
+      name: 'hasToolCall combined with a step count is bounded',
+      code: `await generateText({ model, tools, stopWhen: [hasToolCall('done'), stepCountIs(20)] });`,
+    },
+    {
+      name: 'a custom stop condition is not provably unbounded',
+      code: `await generateText({ model, tools, stopWhen: myCondition });`,
+    },
+    {
+      name: 'a step count from server config is bounded',
+      code: `await generateText({ model, tools, maxSteps: config.maxSteps });`,
+    },
+    {
+      name: 'an unrelated function named like the SDK is not checked',
+      code: `generateTextureAtlas({ tools, stopWhen: hasToolCall('x') });`,
+    },
+  ]),
+  invalid: xai([
+    {
+      name: 'hasToolCall alone never bounds the loop',
+      code: `await generateText({ model, tools: { getWeather }, stopWhen: hasToolCall('finalAnswer'), prompt: 'research' });`,
+      errors: [{ messageId: 'unboundedSteps' }],
+    },
+    {
+      name: 'an array of only hasToolCall conditions never bounds the loop',
+      code: `await generateText({ model, tools, stopWhen: [hasToolCall('a'), hasToolCall('b')] });`,
+      errors: [{ messageId: 'unboundedSteps' }],
+    },
+    {
+      name: 'maxSteps taken from the request body',
+      code: `
+        export async function POST(req) {
+          const body = await req.json();
+          return streamText({ model, tools, maxSteps: body.maxSteps, prompt: 'x' });
+        }
+      `,
+      errors: [{ messageId: 'unboundedSteps' }],
+    },
+    {
+      name: 'stepCountIs with a request-chosen count',
+      code: `
+        export async function POST(req) {
+          const { steps } = await req.json();
+          return streamText({ model, tools, stopWhen: stepCountIs(steps) });
+        }
+      `,
+      errors: [{ messageId: 'unboundedSteps' }],
+    },
+    {
+      name: 'a stop condition taken from the request body',
+      code: `
+        export async function POST(req) {
+          return streamText({ model, tools, stopWhen: req.body.stopWhen });
+        }
+      `,
+      errors: [{ messageId: 'unboundedSteps' }],
+    },
+    {
+      name: 'maxSteps: Infinity',
+      code: `await generateText({ model, tools, maxSteps: Infinity });`,
+      errors: [{ messageId: 'unboundedSteps' }],
     },
   ]),
 });

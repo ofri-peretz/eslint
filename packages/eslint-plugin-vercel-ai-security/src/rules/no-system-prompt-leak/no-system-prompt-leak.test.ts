@@ -147,3 +147,51 @@ ruleTester.run('no-system-prompt-leak', noSystemPromptLeak, {
     },
   ]),
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FP/FN audit 2026-10-10: a returned object with a `model` is SDK options, not
+// a response; a response payload leaks through its KEYS (`system`,
+// `instructions`) whatever the value is named, nested or JSON-stringified.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('no-system-prompt-leak (fp-fn audit)', noSystemPromptLeak, {
+  valid: xai([
+    {
+      name: 'a server-side helper that assembles streamText options',
+      code: `
+        const SYSTEM_PROMPT = 'You are Acme support.';
+        function buildChatOptions(messages) {
+          return { model: openai('gpt-4o'), system: SYSTEM_PROMPT, tools, messages };
+        }
+      `,
+    },
+    {
+      name: 'a response whose nested objects carry no prompt',
+      code: `Response.json({ meta: { model: 'gpt-4o', usage: result.usage } });`,
+    },
+    {
+      name: 'a plain Response with a non-JSON body',
+      code: `new Response(stream); new Response(JSON.stringify(payload)); new Headers(JSON.stringify({ a: 1 })); new Response(render()); new Response((getRenderer())());`,
+    },
+  ]),
+  invalid: xai([
+    {
+      name: 'a nested system key under a neutral variable name',
+      code: `
+        const persona = 'You are Acme support. Internal discount code is ACME50.';
+        export async function GET() {
+          return Response.json({ config: { model: 'gpt-4o', system: persona } });
+        }
+      `,
+      errors: [{ messageId: 'systemPromptLeak' }],
+    },
+    {
+      name: 'a JSON-stringified Response body',
+      code: `
+        export async function GET2() {
+          return new Response(JSON.stringify({ systemPrompt: SYSTEM_PROMPT }));
+        }
+      `,
+      errors: [{ messageId: 'systemPromptLeak' }],
+    },
+  ]),
+});

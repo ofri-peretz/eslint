@@ -1,6 +1,6 @@
 ---
 title: require-max-steps
-description: "This rule identifies AI SDK calls that use tools but don't specify a step limit (maxSteps or stopWhen)"
+description: "This rule identifies tool-calling AI SDK calls whose step limit does not bound the loop: a hasToolCall-only stopWhen, Infinity, or a limit read from the request"
 tags: ['security', 'ai']
 category: security
 severity: medium
@@ -14,86 +14,72 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 
 <RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
-> Prevents infinite tool calling loops in multi-step agents.
+> Prevents unbounded tool calling loops in multi-step agents.
 
 ## 📊 Rule Details
 
 | Property           | Value                                                                                                       |
 | ------------------ | ----------------------------------------------------------------------------------------------------------- |
-| **Type**           | suggestion                                                                                                  |
-| **Severity**       | 🟡 HIGH                                                                                                     |
+| **Type**           | problem                                                                                                     |
+| **Severity**       | 🟡 MEDIUM                                                                                                   |
 | **OWASP LLM**      | [LLM10: Unbounded Consumption](https://owasp.org/www-project-top-10-for-large-language-model-applications/) |
 | **CWE**            | [CWE-834: Excessive Iteration](https://cwe.mitre.org/data/definitions/834.html)                             |
 | **CVSS**           | 6.5                                                                                                         |
-| **Config Default** | `warn` (recommended), `error` (strict)                                                                      |
+| **Config Default** | `off` (recommended), `error` (strict)                                                                       |
 
 ## 🔍 What This Rule Detects
 
-This rule identifies AI SDK calls that use tools but don't specify a step limit. Without limits, AI agents can enter infinite loops calling tools repeatedly.
+`generateText` / `streamText` with `tools` run **one step** unless told otherwise:
+AI SDK v4 defaults to `maxSteps: 1`, and v5+ defaults to `stopWhen: stepCountIs(1)`.
+A call with tools and no step option therefore cannot loop, and this rule does
+**not** report it.
 
-Both idioms satisfy the rule:
+The rule reports a step setting that is present but does not bound the loop:
 
-- **AI SDK v4**: `maxSteps: 5`
-- **AI SDK v5+**: `stopWhen: stepCountIs(5)` (v5 removed `maxSteps` in favor of `stopWhen`; some templates use `isStepCount`)
+- `stopWhen: hasToolCall('done')` — alone, or an array of only `hasToolCall(...)`
+  conditions. It stops only if the model ever calls that tool.
+- `maxSteps: Infinity`.
+- `maxSteps`, `stopWhen`, or the count passed to `stepCountIs(...)` /
+  `isStepCount(...)`, read from the request (`await req.json()`, `req.body`,
+  `searchParams.get(...)`) — the caller chooses the budget.
+
+> **Changed in the 2026-10-10 FP/FN audit.** Earlier versions reported every
+> tool call without `maxSteps`/`stopWhen` — the SDK's single-step default, the
+> safest configuration there is — and accepted any `stopWhen`, including the
+> unbounded ones above.
 
 ## ❌ Incorrect Code
 
 ```typescript
-// Tools without maxSteps
-await generateText({
-  model: openai('gpt-4'),
-  prompt: 'Research and summarize',
-  tools: {
-    search: searchTool,
-    summarize: summarizeTool,
-  },
-});
+// Stops only if the model calls finalAnswer
+await generateText({ model, tools, stopWhen: hasToolCall('finalAnswer'), prompt: 'research' });
 
-// Multi-tool agent without limit
-await streamText({
-  model: anthropic('claude-3'),
-  prompt: 'Complete the task',
-  tools: { search, write, deploy },
-});
+// The caller chooses the step budget
+export async function POST(req: Request) {
+  const body = await req.json();
+  return streamText({ model, tools, maxSteps: body.maxSteps, prompt: 'x' });
+}
+
+export async function PUT(req: Request) {
+  const { steps } = await req.json();
+  return streamText({ model, tools, stopWhen: stepCountIs(steps) });
+}
 ```
 
 ## ✅ Correct Code
 
 ```typescript
-// With maxSteps limit (AI SDK v4)
-await generateText({
-  model: openai('gpt-4'),
-  prompt: 'Research and summarize',
-  tools: {
-    search: searchTool,
-    summarize: summarizeTool,
-  },
-  maxSteps: 5,
-});
+// No step option: the SDK runs a single step
+await generateText({ model, tools: { getWeather }, prompt: 'Weather in Paris?' });
 
-// Bounded agent (AI SDK v4)
-await streamText({
-  model: anthropic('claude-3'),
-  prompt: 'Complete the task',
-  tools: { search, write, deploy },
-  maxSteps: 10,
-});
+// AI SDK v5+
+await streamText({ model, messages, tools: { getWeather }, stopWhen: stepCountIs(5) });
 
-// AI SDK v5+: stopWhen replaces maxSteps
-await streamText({
-  model: 'openai/gpt-5',
-  messages,
-  tools: { getWeather },
-  stopWhen: stepCountIs(5),
-});
+// hasToolCall bounded by a step count
+await generateText({ model, tools, stopWhen: [hasToolCall('finalize'), stepCountIs(20)] });
 
-// stopWhen also accepts an array of conditions
-await generateText({
-  model: openai('gpt-4'),
-  prompt: 'Complete the task',
-  tools: { search, write },
-  stopWhen: [stepCountIs(10), hasToolCall('finalize')],
-});
+// AI SDK v4
+await generateText({ model, tools, maxSteps: 5 });
 ```
 
 ## ⚙️ Options
@@ -124,64 +110,24 @@ Unbounded tool loops can cause:
 
 The following patterns are **not detected** due to static analysis limitations:
 
-### stopWhen Without a Step-Count Condition
+### Custom Stop Conditions
 
-**Why**: Any `stopWhen` property satisfies the rule — the rule does not statically verify that the condition actually bounds step count.
+**Why**: A stop condition the rule cannot read (`stopWhen: myCondition`) may or
+may not bound the loop; the rule does not guess.
 
-```typescript
-// ❌ NOT FLAGGED - stopWhen present but only stops on a tool call
-await generateText({ tools, stopWhen: hasToolCall('finalize') });
-```
+**Mitigation**: Combine custom conditions with `stepCountIs(n)` in an array.
 
-**Mitigation**: Include a `stepCountIs(n)` condition in `stopWhen` (alone or in an array).
+### Request Values Passed Through Another Variable
 
-### Options from Variable
+**Why**: The rule follows a value one declaration back to the request body
+(`const { steps } = await req.json()`). A second hop
+(`const n = body.steps; stopWhen: stepCountIs(n)`) is data flow, which this
+plugin does not do.
 
-**Why**: Options stored in variables are not analyzed.
+### Options from Variable, Wrappers, ToolLoopAgent
 
-```typescript
-// ❌ NOT DETECTED - Options from variable
-const opts = { model: openai('gpt-4'), tools, prompt: 'Hello' }; // No maxSteps
-await generateText(opts);
-```
-
-**Mitigation**: Use inline options. Always specify maxSteps with tools.
-
-### Tools from Variable
-
-**Why**: Tools added from variables may not trigger detection.
-
-```typescript
-// ❌ NOT DETECTED - Tools from variable
-const tools = getToolset();
-await generateText({ ..., tools }); // Has tools, needs maxSteps
-```
-
-**Mitigation**: Always set maxSteps when using tools.
-
-### Conditional Tool Usage
-
-**Why**: Conditionally added tools may not be detected.
-
-```typescript
-// ❌ NOT DETECTED - Conditional tools
-const options = { model, prompt };
-if (useTools) options.tools = toolset; // maxSteps also needed!
-await generateText(options);
-```
-
-**Mitigation**: Set maxSteps whenever tools may be used.
-
-### Wrapper Functions
-
-**Why**: Custom wrappers may hide tool usage.
-
-```typescript
-// ❌ NOT DETECTED - Wrapper with tools
-await myAgentGenerate(prompt); // Wrapper adds tools internally
-```
-
-**Mitigation**: Apply rule to wrapper implementations.
+**Why**: Options stored in variables, wrappers that add tools internally, and
+`new ToolLoopAgent({ ... })` (which defaults to 20 steps) are not analyzed.
 
 ## 📚 References
 

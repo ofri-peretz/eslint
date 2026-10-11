@@ -152,3 +152,20 @@ ruleTester.run('require-abort-signal (coverage gaps)', requireAbortSignal, {
     },
   ]),
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-vercel-ai-security.md)
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('require-abort-signal (fp-fn audit)', requireAbortSignal, {
+  valid: xai([
+    {
+      name: 'an abortSignal supplied through a spread',
+      code: `streamText({ model, ...requestOptions, prompt: 'hi' });`,
+    },
+    {
+      name: 'a user function whose name contains streamText is not the SDK',
+      code: `streamTextToFile({ path: 'out.txt' });`,
+    },
+  ]),
+  invalid: xai([]),
+});

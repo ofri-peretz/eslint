@@ -128,3 +128,23 @@ ruleTester.run('require-embedding-validation', requireEmbeddingValidation, {
     },
   ]),
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FP/FN audit 2026-10-10: store operations and embedding calls are matched by
+// whole word of the call chain — `addressService` is not an `add`.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('require-embedding-validation (fp-fn audit)', requireEmbeddingValidation, {
+  valid: xai([
+    {
+      name: 'a call whose name merely contains "add"',
+      code: `await addressService.lookup({ vector: await embed(q) });`,
+    },
+  ]),
+  invalid: xai([
+    {
+      name: 'embedMany written straight to a store',
+      code: `await vectorStore.upsert({ values: await embedMany(chunks) });`,
+      errors: [{ messageId: 'unvalidatedEmbedding' }],
+    },
+  ]),
+});

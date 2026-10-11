@@ -54,11 +54,21 @@ npm install eslint-plugin-mcp-sdk-security --save-dev
 
 ## ⚙️ Configuration Presets
 
-| Preset | Description |
-| :--- | :--- |
-| `recommended` | Enables every rule at `error`. |
-| `strict` | Same set as `recommended`; reserved for rules that are not yet safe by default. |
-| `minimal` | Same set as `recommended`; reserved for a reduced high-signal subset. |
+| Preset | Rules (all at `error`) | Description |
+| :--- | :--- | :--- |
+| `minimal` | `no-command-injection-in-tool`, `require-tool-input-schema` | Only the rules whose every finding is a defect by construction. |
+| `recommended` | `no-command-injection-in-tool`, `no-unvalidated-tool-args`, `require-tool-input-schema` | The default. Adds the schema/handler contract check. |
+| `strict` | `no-command-injection-in-tool`, `no-tool-description-injection`, `no-unvalidated-tool-args`, `require-tool-input-schema` | Every rule. Adds `no-tool-description-injection`, which also reports a description imported from another module, because this file cannot see its text. |
+
+Supported servers: `@modelcontextprotocol/sdk` (v1), the v2 split packages
+(`@modelcontextprotocol/server`, `client`, `core`, `node`, `express`, `hono`,
+`fastify`), and `mcp-handler` / `@vercel/mcp-adapter`. Every rule stays silent
+in a file that imports none of them.
+
+`no-command-injection-in-tool` reports a tool argument used *as* the command.
+A command *built* from one (`` execSync(`git log ${ref}`) ``) is
+[`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security)'s
+`no-shell-injection`, so install both to cover both shapes.
 
 ## Usage
 
@@ -122,10 +132,10 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) fo
 <!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
 | Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| [no-command-injection-in-tool](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-command-injection-in-tool?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-mcp-sdk-security) | CWE-78 | A03:2021 |  | Disallow an MCP tool argument being used directly as the command in a child_process call. | 🟢 |  |  |  |  |  |
+| [no-command-injection-in-tool](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-command-injection-in-tool?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-mcp-sdk-security) | CWE-78 | A03:2021 |  | Disallow an MCP tool argument being used directly as the command in a child_process call. | 🟢 | 💼 |  |  |  |  |
 | [no-tool-description-injection](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-tool-description-injection?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-mcp-sdk-security) | CWE-1427 | A03:2021 |  | Require MCP tool descriptions and titles to be static text, since they reach the model as instructions. | 🟢 |  |  |  |  |  |
-| [no-unvalidated-tool-args](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-unvalidated-tool-args?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-mcp-sdk-security) | CWE-20 | A03:2021 |  | Disallow a tool handler reading an argument its declared input schema does not include. | 🟢 |  |  |  |  |  |
-| [require-tool-input-schema](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/require-tool-input-schema?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-mcp-sdk-security) | CWE-20 | A03:2021 |  | Require an input schema when registering an MCP tool | 🟢 |  |  |  |  |  |
+| [no-unvalidated-tool-args](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-unvalidated-tool-args?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-mcp-sdk-security) | CWE-20 | A03:2021 |  | Disallow a tool handler reading an argument its declared input schema does not include. | 🟢 | 💼 |  |  |  |  |
+| [require-tool-input-schema](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/require-tool-input-schema?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-mcp-sdk-security) | CWE-20 | A03:2021 |  | Require an input schema when an MCP tool handler reads arguments. | 🟢 | 💼 |  |  |  |  |
 <!-- AUTO-GENERATED:RULES_TABLE:END -->
 <!-- INTERLACE:STAR_CTA:START -->
 ## ⭐ Support & follow

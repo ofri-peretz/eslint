@@ -62,6 +62,21 @@ jwt.verify(token, 'my-secret-key');
 
 // Template literal
 jwt.sign(payload, `static-secret`);
+
+// A fallback that ships the literal the moment the env var is unset
+jwt.sign(payload, process.env.JWT_SECRET || 'secret');
+const SECRET = process.env.JWT_SECRET ?? 'changeme';
+
+// jose: the byte key, inline or one const away, including SignJWT(...).sign(key)
+const key = new TextEncoder().encode('secret');
+await new SignJWT(claims).setProtectedHeader({ alg: 'HS256' }).sign(key);
+
+// Config-object APIs
+JwtModule.register({ secret: 'secretKey' }); // @nestjs/jwt
+this.jwtService.sign(payload, { secret: 'secretKey' }); // @nestjs/jwt per call
+expressjwt({ secret: 'shhhhhhared-secret', algorithms: ['HS256'] }); // express-jwt
+new JwtStrategy({ secretOrKey: 'secret', jwtFromRequest }, verify); // passport-jwt
+createSigner({ key: 'secret' }); // fast-jwt
 ```
 
 ### ✅ Correct
@@ -75,7 +90,18 @@ jwt.sign(payload, config.jwtSecret);
 
 // Function call
 jwt.sign(payload, getSecretFromVault());
+
+// A PEM PUBLIC key or certificate is published on purpose — not a secret
+const IDP_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----\n…\n-----END PUBLIC KEY-----`;
+jwt.verify(token, IDP_PUBLIC_KEY, { algorithms: ['ES256'] });
+
+// Test files are skipped: a fixture token signed with 'test-secret' ships nothing
 ```
+
+Calls that only share a method name are not JWT calls: a `createSign()` /
+`createVerify()` object from `node:crypto`, WebCrypto's `crypto.subtle`, and a
+`this.<member>` whose declared type is imported from a non-JWT module (an
+injected `HashingService`) are skipped.
 
 ## Known False Negatives
 
@@ -131,15 +157,14 @@ jwt.sign(payload, config.secret); // Member expression treated as safe
 
 **Mitigation**: Enable `strictMode: true` option to treat all non-env sources as suspicious.
 
-### Variable Re-assignment
+### Reassignable Bindings
 
-**Why**: The rule checks the immediate argument, not variable history.
+**Why**: the key is read through a same-file `const` (including `const SECRET = process.env.JWT_SECRET || 'secret'`), but a `let` / `var` can be reassigned, so its initial value proves nothing.
 
 ```typescript
-// ❌ NOT DETECTED - Indirect reference
+// ⚠️ NOT DETECTED - a let can be reassigned
 let key = 'my-secret-key';
-const actualKey = key;
-jwt.sign(payload, actualKey); // Identifier treated as safe
+jwt.sign(payload, key);
 ```
 
 **Mitigation**: Use const bindings and avoid variable reassignment for secrets.

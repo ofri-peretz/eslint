@@ -10,8 +10,10 @@
  * @see OWASP LLM07: System Prompt Leakage
  */
 
-import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, TSESTree, createRule, formatLLMMessage, MessageIcons, memberPath, nameHasWord, objectKeyName, propertyName } from '@interlace/eslint-devkit';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
+import { isSystemPromptProp } from '../../utils/prompt-props';
+import { optionValue } from '../../utils/sdk';
 
 type MessageIds = 'systemPromptLeak';
 
@@ -70,61 +72,56 @@ export const noSystemPromptLeak = createRule<RuleOptions, MessageIds>({
       ],
     },
   ],
-  create(context) {
+  create(context, [options]) {
     // Every rule in this plugin is Vercel-AI-specific, and none of them knew
     // it: over 107,384 files, 91% of this plugin's findings were in files with
     // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
     // the cheap path — a file without the SDK does no work.
     if (!fileUsesVercelAi(context.sourceCode.ast)) return {};
 
-    const [options = {}] = context.options;
-    const systemPromptPatterns = options.systemPromptPatterns ?? [
-      'systemPrompt', 'system_prompt', 'SYSTEM_PROMPT',
-      'systemMessage', 'instructions', 'agentPrompt',
-    ];
+    // Merged with `defaultOptions` before `create` runs.
+    const { systemPromptPatterns } = options as Required<Options>;
 
     const sourceCode = context.sourceCode;
 
-    /**
-     * Check if identifier matches system prompt pattern
-     */
+    /** Whole words: `SYSTEM_PROMPT`, `config.systemPrompt`, `AI_INSTRUCTIONS`. */
     function isSystemPromptVariable(name: string): boolean {
-      const lowerName = name.toLowerCase();
-      return systemPromptPatterns.some((pattern: string) => 
-        lowerName.includes(pattern.toLowerCase())
-      );
+      return systemPromptPatterns.some((pattern: string) => nameHasWord(name, pattern));
     }
 
-    /**
-     * Find system prompt variables in an expression
-     */
     function findSystemPromptVar(node: TSESTree.Node): string | null {
       if (node.type === 'Identifier' && isSystemPromptVariable(node.name)) {
         return node.name;
       }
-      if (node.type === 'MemberExpression' && node.property.type === 'Identifier') {
-        if (isSystemPromptVariable(node.property.name)) {
-          return sourceCode.getText(node);
-        }
+      if (node.type === 'MemberExpression') {
+        const name = propertyName(node);
+        if (name !== null && isSystemPromptVariable(name)) return sourceCode.getText(node);
       }
       return null;
     }
 
     /**
-     * Check object properties for system prompt leaks
+     * Report properties that carry a system prompt. In a response payload the
+     * KEY is evidence too (`{ system: persona }` leaks whatever `persona` is
+     * called), and nested objects are part of the payload.
      */
-    function checkObjectForLeaks(node: TSESTree.ObjectExpression): void {
+    function checkObjectForLeaks(node: TSESTree.ObjectExpression, inResponse: boolean): void {
       for (const prop of node.properties) {
         if (prop.type !== 'Property') continue;
-        
-        // Check if property value contains system prompt
-        const leakedVar = findSystemPromptVar(prop.value);
-        if (leakedVar) {
+        const key = objectKeyName(prop);
+        const leaked =
+          findSystemPromptVar(prop.value) ??
+          (inResponse && key !== null && (isSystemPromptProp(key) || isSystemPromptVariable(key))
+            ? key
+            : null);
+        if (leaked) {
           context.report({
             node: prop,
             messageId: 'systemPromptLeak',
-            data: { variable: leakedVar },
+            data: { variable: leaked },
           });
+        } else if (inResponse && prop.value.type === 'ObjectExpression') {
+          checkObjectForLeaks(prop.value, true);
         }
       }
     }
@@ -133,12 +130,14 @@ export const noSystemPromptLeak = createRule<RuleOptions, MessageIds>({
       // Check return statements in functions
       ReturnStatement(node: TSESTree.ReturnStatement) {
         if (!node.argument) return;
-        
-        // Check if returning an object with system prompt
+
+        // An object with a `model` is AI SDK call options handed to
+        // generateText/streamText on the server — not a response.
         if (node.argument.type === 'ObjectExpression') {
-          checkObjectForLeaks(node.argument);
+          if (optionValue(node.argument, 'model')) return;
+          checkObjectForLeaks(node.argument, false);
         }
-        
+
         // Check if returning system prompt directly
         const leakedVar = findSystemPromptVar(node.argument);
         if (leakedVar) {
@@ -150,16 +149,26 @@ export const noSystemPromptLeak = createRule<RuleOptions, MessageIds>({
         }
       },
 
-      // Check Response.json() calls
+      // Response.json / NextResponse.json / res.json / res.send
       CallExpression(node: TSESTree.CallExpression) {
         const callee = sourceCode.getText(node.callee);
-        
-        // Check for Response.json, res.json, res.send patterns
         if (!callee.match(/\.(json|send)\s*$/)) return;
 
         const arg = node.arguments[0];
         if (arg && arg.type === 'ObjectExpression') {
-          checkObjectForLeaks(arg);
+          checkObjectForLeaks(arg, true);
+        }
+      },
+
+      // new Response(JSON.stringify({ ... }))
+      NewExpression(node: TSESTree.NewExpression) {
+        if (node.callee.type !== AST_NODE_TYPES.Identifier || node.callee.name !== 'Response') return;
+        const body = node.arguments[0];
+        if (body?.type !== AST_NODE_TYPES.CallExpression) return;
+        if (memberPath(body.callee)?.join('.') !== 'JSON.stringify') return;
+        const payload = body.arguments[0];
+        if (payload?.type === AST_NODE_TYPES.ObjectExpression) {
+          checkObjectForLeaks(payload, true);
         }
       },
     };

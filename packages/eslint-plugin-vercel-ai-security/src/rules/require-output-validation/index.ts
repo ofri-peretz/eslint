@@ -10,8 +10,9 @@
  * @see OWASP LLM09: Misinformation
  */
 
-import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { TSESTree, createRule, formatLLMMessage, MessageIcons, nameHasWord, propertyName } from '@interlace/eslint-devkit';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
+import { calleeChain } from '../../utils/sdk';
 
 type MessageIds = 'unvalidatedOutput';
 
@@ -79,78 +80,65 @@ export const requireOutputValidation = createRule<RuleOptions, MessageIds>({
       ],
     },
   ],
-  create(context) {
+  create(context, [options]) {
     // Every rule in this plugin is Vercel-AI-specific, and none of them knew
     // it: over 107,384 files, 91% of this plugin's findings were in files with
     // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
     // the cheap path — a file without the SDK does no work.
     if (!fileUsesVercelAi(context.sourceCode.ast)) return {};
 
-    const [options = {}] = context.options;
-    const displayPatterns = options.displayPatterns ?? [
-      'render', 'display', 'show', 'send', 'respond',
-    ];
-
-    const sourceCode = context.sourceCode;
-
-    // AI output property patterns
-    const aiOutputPatterns = ['.text', '.content', '.message', '.response', '.output'];
+    // Merged with `defaultOptions` before `create` runs.
+    const { displayPatterns } = options as Required<Options>;
 
     // Track variables that hold AI results
     const aiResultVariables = new Set<string>();
 
     /**
-     * Check if expression accesses AI output
+     * `x.text`, `x.content`, `x.output` — by exact property name. `.message`
+     * and `.response` were dropped: `err.message` is an exception and
+     * `result.response` is the SDK's response metadata, not model output.
      */
+    function isOutputProperty(node: TSESTree.Node): boolean {
+      return (
+        node.type === 'MemberExpression' &&
+        AI_OUTPUT_PROPERTIES.has(propertyName(node) as string)
+      );
+    }
+
     function isAIOutput(node: TSESTree.Node): boolean {
-      if (node.type === 'MemberExpression') {
-        const text = sourceCode.getText(node);
-        return aiOutputPatterns.some(pattern => text.includes(pattern));
-      }
-      if (node.type === 'Identifier' && aiResultVariables.has(node.name)) {
-        return true;
-      }
-      return false;
+      return (
+        isOutputProperty(node) ||
+        (node.type === 'Identifier' && aiResultVariables.has(node.name))
+      );
     }
 
     return {
       // Track AI result assignments
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
         if (node.id.type !== 'Identifier') return;
-        if (!node.init) return;
-        
-        // Check if init is AI result access
-        if (node.init.type === 'MemberExpression') {
-          const text = sourceCode.getText(node.init);
-          if (aiOutputPatterns.some(pattern => text.includes(pattern))) {
-            aiResultVariables.add(node.id.name);
-          }
+        if (node.init && isOutputProperty(node.init)) {
+          aiResultVariables.add(node.id.name);
         }
       },
 
       CallExpression(node: TSESTree.CallExpression) {
-        const callee = sourceCode.getText(node.callee);
-        
-        // Check if this is a display operation
-        const isDisplay = displayPatterns.some(pattern => 
-          callee.toLowerCase().includes(pattern.toLowerCase())
-        );
-        if (!isDisplay) return;
+        // Whole words of the call chain: `res.status(200).send` sends;
+        // `showcaseItems` does not show.
+        const chain = calleeChain(node.callee);
+        if (!displayPatterns.some((pattern: string) => nameHasWord(chain, pattern))) return;
 
-        // Check arguments for unvalidated AI output
+        // NOTE: `isAIOutput` only matches MemberExpression/Identifier nodes,
+        // so a wrapped call like `render(validate(result.text))` never
+        // reaches here — validated output is inherently not flagged.
         for (const arg of node.arguments) {
-          // NOTE: `isAIOutput` only matches MemberExpression/Identifier nodes,
-          // so a wrapped call like `render(validate(result.text))` never
-          // reaches here — validated output is inherently not flagged.
           if (isAIOutput(arg)) {
             context.report({
               node: arg,
               messageId: 'unvalidatedOutput',
-              data: { method: callee },
+              data: { method: calleeText(node) },
             });
           }
 
-          // Check if argument is an object with AI output
           if (arg.type === 'ObjectExpression') {
             for (const prop of arg.properties) {
               if (prop.type !== 'Property') continue;
@@ -158,7 +146,7 @@ export const requireOutputValidation = createRule<RuleOptions, MessageIds>({
                 context.report({
                   node: prop.value,
                   messageId: 'unvalidatedOutput',
-                  data: { method: callee },
+                  data: { method: calleeText(node) },
                 });
               }
             }
@@ -166,5 +154,11 @@ export const requireOutputValidation = createRule<RuleOptions, MessageIds>({
         }
       },
     };
+
+    function calleeText(node: TSESTree.CallExpression): string {
+      return context.sourceCode.getText(node.callee);
+    }
   },
 });
+
+const AI_OUTPUT_PROPERTIES = new Set(['text', 'content', 'output']);

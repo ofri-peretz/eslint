@@ -13,6 +13,7 @@
 
 import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
+import { declaresOption, sdkCallName } from '../../utils/sdk';
 
 type MessageIds = 'missingAbortSignal';
 
@@ -65,42 +66,26 @@ export const requireAbortSignal = createRule<RuleOptions, MessageIds>({
       targetFunctions: ['streamText', 'streamObject'],
     },
   ],
-  create(context) {
+  create(context, [options]) {
     // Every rule in this plugin is Vercel-AI-specific, and none of them knew
     // it: over 107,384 files, 91% of this plugin's findings were in files with
     // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
     // the cheap path — a file without the SDK does no work.
     if (!fileUsesVercelAi(context.sourceCode.ast)) return {};
 
-    const [options = {}] = context.options;
-    const targetFunctions = options.targetFunctions ?? ['streamText', 'streamObject'];
-
-    const sourceCode = context.sourceCode;
+    // Merged with `defaultOptions` before `create` runs.
+    const { targetFunctions } = options as Required<Options>;
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
-        const callee = sourceCode.getText(node.callee);
-        
-        // Check if this is a target streaming function
-        const matchedFunction = targetFunctions.find((fn: string) => callee.includes(fn));
+        const matchedFunction = sdkCallName(node, targetFunctions);
         if (!matchedFunction) return;
 
-        // Check first argument (options object)
         const optionsArg = node.arguments[0];
         if (!optionsArg || optionsArg.type !== 'ObjectExpression') return;
 
-        // Check if abortSignal is present
-        const hasAbortSignal = optionsArg.properties.some(prop => {
-          if (prop.type !== 'Property') return false;
-          const keyName = prop.key.type === 'Identifier' 
-            ? prop.key.name 
-            : prop.key.type === 'Literal' 
-              ? String(prop.key.value)
-              : null;
-          return keyName === 'abortSignal' || keyName === 'signal';
-        });
-
-        if (!hasAbortSignal) {
+        // A spread may carry the signal, so it counts.
+        if (!declaresOption(optionsArg, ['abortSignal', 'signal'])) {
           context.report({
             node,
             messageId: 'missingAbortSignal',

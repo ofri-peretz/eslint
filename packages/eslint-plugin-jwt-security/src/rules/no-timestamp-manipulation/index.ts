@@ -22,13 +22,15 @@ import {
 } from '@interlace/eslint-devkit';
 import {
   isSignOperation,
-  getOptionsArgument,
-  hasOption,
+  isVerifyOperation,
+  jwtConfigOf,
+  resolveCallOptions,
   getOptionValue,
 } from '../../utils';
+import type { ResolvedObject } from '../../utils';
 import type { JwtRuleOptions } from '../../types';
 
-type MessageIds = 'timestampDisabled' | 'noTimestampTrue';
+type MessageIds = 'timestampDisabled' | 'noTimestampTrue' | 'ignoreExpiration';
 
 type RuleOptions = [JwtRuleOptions?];
 
@@ -68,6 +70,16 @@ export const noTimestampManipulation = createRule<RuleOptions, MessageIds>({
         documentationLink:
           'https://securitypattern.com/post/jwt-back-to-the-future',
       }),
+      ignoreExpiration: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Expiration Check Disabled',
+        cwe: 'CWE-613',
+        description:
+          'ignoreExpiration:true accepts expired tokens, so a stolen token never stops working',
+        severity: 'HIGH',
+        fix: 'Remove ignoreExpiration; refresh the token instead of accepting an expired one',
+        documentationLink: 'https://tools.ietf.org/html/rfc8725',
+      }),
     },
     schema: [
       {
@@ -100,28 +112,65 @@ export const noTimestampManipulation = createRule<RuleOptions, MessageIds>({
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    const sourceCode = context.sourceCode;
+
+    /** Report `options[name]` when it is the literal `true`. */
+    const reportLiteralTrue = (
+      options: ResolvedObject,
+      name: string,
+      messageId: MessageIds,
+    ): void => {
+      const value = getOptionValue(options, name);
+      if (value?.type === 'Literal' && value.value === true) {
+        context.report({ node: value, messageId });
+      }
+    };
+
+    /**
+     * passport-jwt's `new Strategy({ ignoreExpiration })` and fast-jwt's
+     * `createVerifier({ ignoreExpiration })` take the same switch in a config
+     * object.
+     */
+    const checkConfig = (
+      node: TSESTree.CallExpression | TSESTree.NewExpression,
+    ): void => {
+      const config = jwtConfigOf(node, sourceCode);
+      if (config !== null) {
+        reportLiteralTrue(
+          config.options,
+          'ignoreExpiration',
+          'ignoreExpiration',
+        );
+      }
+    };
+
     return {
       CallExpression(node: TSESTree.CallExpression) {
-        if (!isSignOperation(node)) {
+        checkConfig(node);
+
+        // Options resolved structurally: a const, an `as` cast, a spread.
+        if (isSignOperation(node, sourceCode)) {
+          const options = resolveCallOptions(node, sourceCode);
+          if (options !== null) {
+            reportLiteralTrue(options, 'noTimestamp', 'noTimestampTrue');
+          }
           return;
         }
 
-        const optionsArg = getOptionsArgument(node, 2);
-        if (!optionsArg) {
-          return;
-        }
-
-        // Check for noTimestamp: true
-        if (hasOption(optionsArg, 'noTimestamp')) {
-          const value = getOptionValue(optionsArg, 'noTimestamp');
-          if (value?.type === 'Literal' && value.value === true) {
-            context.report({
-              node: value,
-              messageId: 'noTimestampTrue',
-            });
+        /*
+         * The verify-side twin of `noTimestamp`. `ignoreExpiration: true`
+         * accepts a token whose `exp` has passed, which turns every leaked
+         * token into a permanent one. It is copied from answers to "jwt
+         * expired" errors and then shipped.
+         */
+        if (isVerifyOperation(node, sourceCode)) {
+          const options = resolveCallOptions(node, sourceCode);
+          if (options !== null) {
+            reportLiteralTrue(options, 'ignoreExpiration', 'ignoreExpiration');
           }
         }
       },
+      NewExpression: checkConfig,
     };
   },
 });

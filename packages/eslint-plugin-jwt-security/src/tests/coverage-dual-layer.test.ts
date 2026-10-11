@@ -9,15 +9,14 @@
  *
  * Layer 1: RuleTester fixtures through the real parser.
  * Layer 2: raw unit tests — helpers called as plain functions, plus
- *          createWithMockContext (from @interlace/eslint-devkit) invoking
- *          rule listeners directly with synthetic AST nodes for
- *          parser-unreachable branches.
+ *          rule listeners invoked directly where a parser cannot reach a
+ *          branch (none remain after the 2026-10 audit removed the
+ *          mock-context guards along with the code they covered).
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, expect, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
 import type { TSESTree } from '@interlace/eslint-devkit';
-import { createWithMockContext } from '@interlace/eslint-devkit';
 import { noAlgorithmConfusion } from '../rules/no-algorithm-confusion';
 import { noAlgorithmNone } from '../rules/no-algorithm-none';
 import { noDecodeWithoutVerify } from '../rules/no-decode-without-verify';
@@ -321,98 +320,8 @@ describe('coverage (unit): extractAlgorithms skips holes and non-strings', () =>
   });
 });
 
-// ---------------------------------------------------------------------------
-// Layer 2 — no-hardcoded-secret: parser-unreachable guards inside
-// resolveConstLiteralValue(). A real ESLint context always exposes
-// sourceCode.getScope, and a scope-manager 'Variable' def always hangs off a
-// VariableDeclaration parent — these defensive branches need a mock context
-// and synthetic scope objects.
-// ---------------------------------------------------------------------------
-describe('coverage (unit): no-hardcoded-secret defensive scope guards', () => {
-  const makeSignCall = (
-    secretArg: Record<string, unknown>,
-  ): TSESTree.CallExpression =>
-    ({
-      type: 'CallExpression',
-      callee: {
-        type: 'MemberExpression',
-        object: { type: 'Identifier', name: 'jwt' },
-        property: { type: 'Identifier', name: 'sign' },
-        computed: false,
-      },
-      arguments: [{ type: 'ObjectExpression', properties: [] }, secretArg],
-    }) as unknown as TSESTree.CallExpression;
-
-  it('treats the secret as unresolvable when sourceCode.getScope is absent', () => {
-    const { listeners, reports, context } =
-      createWithMockContext(noHardcodedSecret);
-    (context.sourceCode as { getScope?: unknown }).getScope = undefined;
-
-    const secretId = { type: 'Identifier', name: 'SECRET' };
-    (listeners.CallExpression as (n: TSESTree.CallExpression) => void)(
-      makeSignCall(secretId),
-    );
-
-    // getScope?.() -> undefined -> ?? null -> early null: identifier cannot
-    // be resolved to a literal, so it is treated as a safe key source.
-    expect(reports).toHaveLength(0);
-  });
-
-  it('returns null when the resolved def has no parent declaration', () => {
-    const { listeners, reports, context } =
-      createWithMockContext(noHardcodedSecret);
-    const secretId = { type: 'Identifier', name: 'SECRET' };
-    const scope = {
-      variables: [],
-      childScopes: [],
-      references: [
-        {
-          identifier: secretId,
-          resolved: {
-            defs: [{ type: 'Variable', parent: undefined, node: {} }],
-          },
-        },
-      ],
-    };
-    (context.sourceCode as { getScope?: unknown }).getScope = () => scope;
-
-    (listeners.CallExpression as (n: TSESTree.CallExpression) => void)(
-      makeSignCall(secretId),
-    );
-
-    // decl?.type is undefined -> not a VariableDeclaration -> null -> safe.
-    expect(reports).toHaveLength(0);
-  });
-
-  it('returns null when the def parent is not a VariableDeclaration', () => {
-    const { listeners, reports, context } =
-      createWithMockContext(noHardcodedSecret);
-    const secretId = { type: 'Identifier', name: 'SECRET' };
-    const scope = {
-      variables: [],
-      childScopes: [],
-      references: [
-        {
-          identifier: secretId,
-          resolved: {
-            defs: [
-              {
-                type: 'Variable',
-                parent: { type: 'ExpressionStatement' },
-                node: { init: { type: 'Literal', value: 'x' } },
-              },
-            ],
-          },
-        },
-      ],
-    };
-    (context.sourceCode as { getScope?: unknown }).getScope = () => scope;
-
-    (listeners.CallExpression as (n: TSESTree.CallExpression) => void)(
-      makeSignCall(secretId),
-    );
-
-    // parent.type mismatch -> null -> identifier treated as safe key source.
-    expect(reports).toHaveLength(0);
-  });
-});
+// (Audit 2026-10: the Layer 2 block that stood here exercised the defensive
+// scope guards inside no-hardcoded-secret's private `resolveConstLiteralValue`.
+// That function is gone — key resolution now goes through the shared,
+// scope-manager-backed `keyLiterals` in src/utils, covered by the rule tests
+// themselves — so there is no longer a guard for a mock context to reach.)

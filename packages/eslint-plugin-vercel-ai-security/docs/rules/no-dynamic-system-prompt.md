@@ -106,6 +106,17 @@ Dynamic system prompts enable attackers to:
 - [`no-system-prompt-leak`](./no-system-prompt-leak.md) - Prevent system prompt exposure
 - [`require-validated-prompt`](./require-validated-prompt.md) - Validate user prompts
 
+## 🔄 Changes in the 2026-10-10 FP/FN audit
+
+- A template or `+` chain built only from string constants (`const` bindings
+  with literal initialisers) and the current date (`new Date()`, `Date.now()`
+  and methods on them) is static and no longer reported.
+- A system prompt read straight from the request — destructured from
+  `await req.json()`, `req.body.x`, `body.x` where `body = await req.json()`, or
+  `searchParams.get(...)` — is reported with the new message
+  `userControlledSystemPrompt`, even with no template around it.
+- **Options:** the documented `defaultOptions` now apply. Earlier versions read `context.options` and silently ran a shorter hard-coded list instead.
+
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:

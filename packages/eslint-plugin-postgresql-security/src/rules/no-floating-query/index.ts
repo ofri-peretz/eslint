@@ -13,6 +13,7 @@ import {
 } from '@interlace/eslint-devkit';
 import { NoFloatingQueryOptions } from '../../types';
 import { fileUsesPostgres } from '../../utils';
+import { isNonPgQueryObject } from '../../utils/query-call';
 
 /**
  * Positions that pass the promise straight through without consuming it.
@@ -148,6 +149,18 @@ export const noFloatingQuery: TSESLint.RuleModule<'noFloatingQuery', NoFloatingQ
         ) {
           return;
         }
+
+        // With a callback, node-postgres returns `undefined` — there is no
+        // promise to float. `pool.query(text, values, (err, res) => …)` is the
+        // driver's own documented callback API.
+        const last = node.arguments.at(-1);
+        if (
+          last?.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+          last?.type === AST_NODE_TYPES.FunctionExpression
+        ) {
+          return;
+        }
+        if (isNonPgQueryObject(node.arguments[0])) return;
 
         const { root, rejectionHandled } = promiseChain(node);
 

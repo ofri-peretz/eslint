@@ -164,7 +164,8 @@ function runCallListener(node: unknown) {
 
 describe('require-audit-logging — synthetic AST', () => {
   it('reports when the call node has no parent at all', () => {
-    const node = { type: 'CallExpression', callee: { type: 'Identifier', name: 'generateText' }, parent: null };
+    const node = { type: 'CallExpression', callee: { type: 'Identifier', name: 'generateText' },
+      arguments: [], parent: null };
     const reports = runCallListener(node);
     expect(reports).toHaveLength(1);
     expect(reports[0]).toMatchObject({
@@ -178,6 +179,7 @@ describe('require-audit-logging — synthetic AST', () => {
     const node = {
       type: 'CallExpression',
       callee: { type: 'Identifier', name: 'generateText' },
+      arguments: [],
       parent: stmt,
     };
     const reports = runCallListener(node);
@@ -194,6 +196,7 @@ describe('require-audit-logging — synthetic AST', () => {
     const node = {
       type: 'CallExpression',
       callee: { type: 'Identifier', name: 'generateText' },
+      arguments: [],
       parent: stmt,
     };
     const reports = runCallListener(node);

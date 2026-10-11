@@ -53,6 +53,11 @@ jwt.sign(payload, 'changeme');
 
 // Short secrets (<32 characters)
 jwt.sign(payload, 'shortkey');
+
+// The same literals one const away, behind an env fallback, or in bytes
+jwt.sign(payload, process.env.JWT_SECRET || 'secret');
+await new SignJWT(claims).setProtectedHeader({ alg: 'HS256' }).sign(new TextEncoder().encode('secret'));
+expressjwt({ secret: 'shhhhhhared-secret', algorithms: ['HS256'] });
 ```
 
 ### ✅ Correct
@@ -66,6 +71,9 @@ jwt.sign(payload, 'ThisIsAVeryStrongSecretThatIs32Ch+');
 
 // Generated secret
 jwt.sign(payload, crypto.randomBytes(32).toString('hex'));
+
+// Test files are skipped; node:crypto Sign objects are not JWT signers
+signer.sign(privateKey, 'base64'); // 'base64' is an encoding, not a secret
 ```
 
 ## Options
@@ -94,14 +102,17 @@ jwt.sign(payload, crypto.randomBytes(32).toString('hex'));
 
 The following patterns are **not detected** due to static analysis limitations:
 
-### Variable References
+### Reassignable Bindings
 
-**Why**: Only literal string secrets are analyzed for length/weakness.
+**Why**: the secret is read through a same-file `const`, an `||` / `??` fallback and a byte wrapper, but a `let` / `var` can be reassigned.
 
 ```typescript
-// ❌ NOT DETECTED - Secret from variable
 const weakSecret = 'abc';
-jwt.sign(payload, weakSecret); // Variable not analyzed
+jwt.sign(payload, weakSecret); // ❌ detected through the const
+
+// ⚠️ NOT DETECTED - a let can be reassigned
+let secret = 'abc';
+jwt.sign(payload, secret);
 ```
 
 **Mitigation**: Use environment variables. Apply TypeScript branded types for validated secrets.

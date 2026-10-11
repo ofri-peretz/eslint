@@ -13,8 +13,9 @@
 import { AST_NODE_TYPES, TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { isSystemPromptProp, getStaticPropName } from '../../utils/prompt-props';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
+import { isDateValue, isRequestDerived, isStaticText, sdkCallName } from '../../utils/sdk';
 
-type MessageIds = 'dynamicSystemPrompt';
+type MessageIds = 'dynamicSystemPrompt' | 'userControlledSystemPrompt';
 
 export interface Options {
   /** Allow template literals with only static parts */
@@ -46,6 +47,18 @@ export const noDynamicSystemPrompt = createRule<RuleOptions, MessageIds>({
         fix: 'Use a static system prompt defined as a constant. Avoid template literals or concatenation.',
         documentationLink: 'https://owasp.org/www-project-top-10-for-large-language-model-applications/',
       }),
+      userControlledSystemPrompt: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'User-Controlled System Prompt',
+        cwe: 'CWE-74',
+        owasp: 'A03:2021',
+        cvss: 8.0,
+        description: 'System prompt is read straight from the request body. The caller can replace the agent\'s instructions.',
+        severity: 'HIGH',
+        compliance: ['SOC2'],
+        fix: 'Keep the system prompt server-side; let the request select from a fixed set of prompts by id',
+        documentationLink: 'https://owasp.org/www-project-top-10-for-large-language-model-applications/',
+      }),
     },
     schema: [
       {
@@ -65,58 +78,39 @@ export const noDynamicSystemPrompt = createRule<RuleOptions, MessageIds>({
       allowStaticTemplates: true,
     },
   ],
-  create(context) {
+  create(context, [options]) {
     // Every rule in this plugin is Vercel-AI-specific, and none of them knew
     // it: over 107,384 files, 91% of this plugin's findings were in files with
     // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
     // the cheap path — a file without the SDK does no work.
     if (!fileUsesVercelAi(context.sourceCode.ast)) return {};
 
-    const [options = {}] = context.options;
-    const allowStaticTemplates = options.allowStaticTemplates ?? true;
+    // Merged with `defaultOptions` before `create` runs.
+    const { allowStaticTemplates } = options as Required<Options>;
 
     const sourceCode = context.sourceCode;
 
-    // Vercel AI SDK functions
-    const aiSDKFunctions = ['generateText', 'streamText', 'generateObject', 'streamObject'];
-
     /**
-     * Check if a node represents dynamic content
+     * Does this value vary at runtime? Templates and concatenations are
+     * dynamic only when a part is — `${BASE_PROMPT}` over a string constant,
+     * or `${new Date().toISOString()}`, is fixed by the source.
      */
     function isDynamicContent(node: TSESTree.Node): boolean {
-      // Template literal with expressions
+      const scope = sourceCode.getScope(node);
       if (node.type === 'TemplateLiteral') {
-        if (node.expressions.length > 0) {
-          return true;
-        }
-        return !allowStaticTemplates;
+        if (node.expressions.length === 0) return !allowStaticTemplates;
+        return !isStaticText(node, scope);
       }
-      
-      // Binary expression (concatenation)
       if (node.type === 'BinaryExpression' && node.operator === '+') {
-        return true;
+        return !isStaticText(node, scope);
       }
-      
-      // Call expression (function result)
-      if (node.type === 'CallExpression') {
-        return true;
-      }
-      
-      // Await expression
-      if (node.type === 'AwaitExpression') {
-        return true;
-      }
-      
-      return false;
+      if (node.type === 'CallExpression') return !isDateValue(node);
+      return node.type === 'AwaitExpression';
     }
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
-        const callee = sourceCode.getText(node.callee);
-        
-        // Check if this is an AI SDK function
-        const isAIFunction = aiSDKFunctions.some(fn => callee.includes(fn));
-        if (!isAIFunction) return;
+        if (!sdkCallName(node)) return;
 
         // Check first argument (options object)
         const optionsArg = node.arguments[0];
@@ -129,11 +123,17 @@ export const noDynamicSystemPrompt = createRule<RuleOptions, MessageIds>({
           const keyName = getStaticPropName(prop);
           if (!isSystemPromptProp(keyName)) continue;
 
-          // Check if system prompt is dynamic
           if (isDynamicContent(prop.value)) {
             context.report({
               node: prop.value,
               messageId: 'dynamicSystemPrompt',
+            });
+          } else if (isRequestDerived(prop.value, sourceCode.getScope(prop.value))) {
+            // A bare reference to the request body — no template to see,
+            // but the caller still writes the agent's instructions.
+            context.report({
+              node: prop.value,
+              messageId: 'userControlledSystemPrompt',
             });
           }
         }

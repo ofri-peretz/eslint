@@ -60,6 +60,21 @@ jwt.sign(payload, secret, { expiresIn: '1h' });
 
 // exp in payload
 jwt.sign({ sub: 'user', exp: Math.floor(Date.now() / 1000) + 3600 }, secret);
+
+// options in a const, behind a cast
+const signOptions = { algorithm: 'RS256', expiresIn: '15m' };
+jwt.sign(payload, key, signOptions);
+jwt.sign(payload, key, { expiresIn: process.env.JWT_EXPIRES_IN } as SignOptions);
+
+// @nestjs/jwt: options are the second argument; a bare sign(payload) /
+// signAsync(payload) takes expiresIn from JwtModule.register({ signOptions })
+this.jwtService.sign(payload, { secret, expiresIn: '7d' });
+this.jwtService.signAsync(payload);
+
+// jose: expiry set on the builder, inline or in its own statement
+const builder = new SignJWT(claims).setProtectedHeader({ alg: 'ES256' });
+builder.setExpirationTime('1h');
+await builder.sign(key);
 ```
 
 ## Options
@@ -113,14 +128,13 @@ jwt.sign({ ...baseClaims, sub: userId }, secret);
 
 **Mitigation**: Always include `expiresIn` in options, not just `exp` in payload.
 
-### Variable Payload Reference
+### Payloads and Options Built Elsewhere
 
-**Why**: Variable contents are not tracked across assignments.
+**Why**: a payload or options object in a same-file `const` is read (`const opts = { expiresIn: '1h' }` satisfies the rule). Options from a parameter, an import or a call cannot be seen, so the rule stays silent on them; a payload from a parameter is still reported when no `expiresIn` is visible.
 
 ```typescript
-// ❌ NOT DETECTED - Payload from variable
-const payload = { sub: 'user' }; // No exp
-jwt.sign(payload, secret); // Variable reference not analyzed
+// ⚠️ NOT DETECTED - options built elsewhere may carry expiresIn
+jwt.sign(payload, secret, getSignOptions());
 ```
 
 **Mitigation**: Use inline objects with TypeScript interfaces that require `exp`.

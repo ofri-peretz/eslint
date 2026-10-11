@@ -19,13 +19,14 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
-  staticString,
 } from '@interlace/eslint-devkit';
 import {
-  byteKeyLiteral,
+  isPublicKeyMaterial,
   isSignOperation,
   isSignatureVerifyOperation,
-  isEnvVariable,
+  jwtConfigOf,
+  keyLiterals,
+  keyNodesOf,
 } from '../../utils';
 import type { NoHardcodedSecretOptions } from '../../types';
 
@@ -35,6 +36,12 @@ type RuleOptions = [NoHardcodedSecretOptions?];
 
 export const noHardcodedSecret = createRule<RuleOptions, MessageIds>({
   name: 'no-hardcoded-secret',
+  /**
+   * A test that signs a fixture token with `'test-secret'` is not shipping a
+   * credential. Matches `require-expiration` and `no-decode-without-verify`,
+   * which skip test files for the same reason.
+   */
+  skipTestFiles: true,
   meta: {
     type: 'problem',
     docs: {
@@ -104,135 +111,65 @@ export const noHardcodedSecret = createRule<RuleOptions, MessageIds>({
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    /**
-     * Check if a node is a hardcoded string literal
-     */
-    // oxlint-disable-next-line consistent-function-scoping
-    // A quoted string and a no-substitution template literal are one thing;
-    // `staticString` answers for both, which made the separate template arm
-    // that used to sit here unreachable.
-    const isHardcodedString = (node: TSESTree.Node): boolean =>
-      staticString(node) !== null;
+    const sourceCode = context.sourceCode;
 
     /**
-     * Resolve an Identifier node to its initializer (one frame of indirection).
-     * Closes the audit FN where `const SECRET = 'x'; jwt.sign(p, SECRET)`
-     * was treated as safe — the literal-via-const pattern hides the
-     * hardcoded secret behind one declaration. See benchmarks/AUDIT_PATTERNS.md
-     * §3.2 ("Indirection through one level of variable").
+     * Report each key position that can receive a hardcoded string.
+     *
+     * `keyLiterals` reads the key STRUCTURALLY: a literal, a same-file const,
+     * both arms of `||` / `??` (the `process.env.JWT_SECRET || 'secret'`
+     * fallback that ships the literal the moment the variable is unset), and
+     * the byte wrappers jose is fed (`new TextEncoder().encode('…')`,
+     * `Buffer.from('…')`). An env var, a call, an await, a member read or a
+     * parameter yields nothing — there is no literal to point at.
+     *
+     * PEM PUBLIC key material is skipped: a public key is published on
+     * purpose, and pinning an identity provider's verification key is not a
+     * CWE-798 credential. A private key PEM is still reported.
      */
-    const resolveConstLiteralValue = (
-      node: TSESTree.Node,
-    ): TSESTree.Node | null => {
-      if (node.type !== 'Identifier') return null;
-      // `sourceCode.getScope(node)` landed in ESLint 8.37 and this package's
-      // declared floor is 8.40, so it is always present — the optional call and
-      // null fallback that used to guard it were unreachable branches that no
-      // test could cover.
-      const scope = context.sourceCode.getScope(node);
-      const variable = scope.references.find(
-        (r) => r.identifier === node,
-      )?.resolved;
-      const def = variable?.defs[0];
-      if (!def || def.type !== 'Variable') return null;
-      const decl = def.parent;
-      if (decl?.type !== 'VariableDeclaration' || decl.kind !== 'const')
-        return null;
-      return def.node.init ?? null;
-    };
-
-    /**
-     * Check if node is a safe key source
-     */
-    const isSafeKeySource = (node: TSESTree.Node): boolean => {
-      // Environment variable
-      if (isEnvVariable(node)) {
-        return true;
-      }
-
-      // Function call (getSecret(), loadKey(), etc.) — but NOT a call that
-      // just wraps a literal in bytes. `new TextEncoder().encode('secret')` is
-      // how jose is handed a symmetric key, and treating it as a safe source
-      // meant the documented way to hardcode a jose HMAC secret was invisible.
-      if (node.type === 'CallExpression') {
-        const inner = byteKeyLiteral(node);
-        return (
-          inner === null || !isHardcodedStringOrResolvedConst(inner.literal)
+    const checkKeys = (keys: TSESTree.Node[]): void => {
+      for (const key of keys) {
+        const hardcoded = keyLiterals(key, sourceCode).some(
+          ({ literal }) => !isPublicKeyMaterial(literal),
         );
-      }
-
-      // await expression (async key loading)
-      if (node.type === 'AwaitExpression') {
-        return true;
-      }
-
-      // Variable reference: resolve `const X = ...` one level. If X is a
-      // hardcoded literal, treat as unsafe — fall through to the
-      // hardcoded check. Otherwise (env var, call, identifier chain)
-      // it's safe.
-      if (node.type === 'Identifier') {
-        const init = resolveConstLiteralValue(node);
-        if (init && isHardcodedString(init)) {
-          // Unsafe — let the caller's `isHardcodedString` (with the
-          // resolved init) flag it.
-          return false;
+        if (hardcoded) {
+          // The report points at the key expression — the thing the author
+          // has to replace — not at a literal that may sit in a const above.
+          context.report({ node: key, messageId: 'hardcodedSecret' });
         }
-        return true;
       }
-
-      // Member expression but not literal (config.secret, etc.)
-      if (node.type === 'MemberExpression' && !isHardcodedString(node)) {
-        return true;
-      }
-
-      return false;
     };
 
     /**
-     * Like isHardcodedString but resolves single-level `const X = '...'`
-     * indirection so the caller fires on `const SECRET = 'x'; jwt.sign(p, SECRET)`.
+     * Config-object APIs: `JwtModule.register({ secret })`,
+     * `expressjwt({ secret })`, passport-jwt's `new Strategy({ secretOrKey })`,
+     * fast-jwt's `createSigner({ key })`.
      */
-    const isHardcodedStringOrResolvedConst = (node: TSESTree.Node): boolean => {
-      if (isHardcodedString(node)) return true;
-      const init = resolveConstLiteralValue(node);
-      return init ? isHardcodedString(init) : false;
+    const checkConfig = (
+      node: TSESTree.CallExpression | TSESTree.NewExpression,
+    ): boolean => {
+      const config = jwtConfigOf(node, sourceCode);
+      if (config === null) return false;
+      checkKeys(config.keys);
+      return true;
     };
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
+        if (checkConfig(node)) {
+          return;
+        }
         // Check both sign and verify operations
-        if (!isSignOperation(node) && !isSignatureVerifyOperation(node)) {
+        if (
+          !isSignOperation(node, sourceCode) &&
+          !isSignatureVerifyOperation(node, sourceCode)
+        ) {
           return;
         }
-
-        // Secret/key is the second argument
-        if (node.arguments.length < 2) {
-          return;
-        }
-
-        const secretArg = node.arguments[1];
-
-        // Skip if safe source
-        if (isSafeKeySource(secretArg)) {
-          return;
-        }
-
-        /*
-         * Flag hardcoded strings (also follows single-frame `const X = '...'`).
-         *
-         * `byteKeyLiteral` unwraps `new TextEncoder().encode('…')` and
-         * `Buffer.from('…')` so the literal inside is judged the same as one
-         * written directly. The report still points at the whole expression,
-         * because that is the thing the author has to replace.
-         */
-        const literal = byteKeyLiteral(secretArg)?.literal ?? secretArg;
-        if (isHardcodedStringOrResolvedConst(literal)) {
-          context.report({
-            node: secretArg,
-            messageId: 'hardcodedSecret',
-          });
-        }
+        // jose's `.sign(key)`, NestJS's `{ secret }`, or the second argument.
+        checkKeys(keyNodesOf(node, sourceCode));
       },
+      NewExpression: checkConfig,
     };
   },
 });

@@ -11,10 +11,11 @@
  * @see OWASP LLM10: Unbounded Consumption
  */
 
-import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
+import { calleeName, isRequestDerived, optionValue, sdkCallName } from '../../utils/sdk';
 
-type MessageIds = 'missingMaxSteps';
+type MessageIds = 'unboundedSteps';
 
 export interface Options {
   /** Default max steps to suggest */
@@ -29,21 +30,21 @@ export const requireMaxSteps = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/require-max-steps.md',
-      description: 'Require maxSteps limit for multi-step tool calling to prevent infinite loops',
+      description: 'Disallow unbounded multi-step tool loops (hasToolCall-only stop conditions, request-controlled step limits)',
       cwe: 'CWE-834',
       cvss: 6.5,
     },
     messages: {
-      missingMaxSteps: formatLLMMessage({
+      unboundedSteps: formatLLMMessage({
         icon: MessageIcons.WARNING,
-        issueName: 'Missing Step Limit in Multi-Step Tool Calling',
+        issueName: 'Unbounded Multi-Step Tool Loop',
         cwe: 'CWE-834',
         owasp: 'A05:2021',
         cvss: 6.5,
-        description: '{{function}} with tools is missing a step limit. Without a limit, tool calls can loop indefinitely.',
+        description: '{{function}} with tools sets a step limit that does not bound the loop ({{reason}}).',
         severity: 'MEDIUM',
         compliance: ['SOC2'],
-        fix: 'Add a step limit: {{function}}({ ..., stopWhen: stepCountIs(5) }) (v5+) or maxSteps: 5 (v4)',
+        fix: 'Bound the loop with a server-side constant: stopWhen: [hasToolCall(...), stepCountIs(20)] (v5+) or maxSteps: 20 (v4)',
         documentationLink: 'https://sdk.vercel.ai/docs/ai-sdk-core/tools-and-tool-calling#multi-step-calls-using-stopwhen',
       }),
     },
@@ -75,51 +76,69 @@ export const requireMaxSteps = createRule<RuleOptions, MessageIds>({
 
     const sourceCode = context.sourceCode;
 
-    // Vercel AI SDK functions that support tools
-    const functionsWithTools = ['generateText', 'streamText'];
+    /**
+     * Why this step setting fails to bound the loop, or `null` if it does.
+     *
+     * Absent settings are NOT reported: with no `maxSteps` / `stopWhen` the SDK
+     * runs exactly one step (v4 `maxSteps: 1`, v5+ `stopWhen: stepCountIs(1)`).
+     */
+    function unboundedReason(key: string, value: TSESTree.Node): string | null {
+      const scope = sourceCode.getScope(value);
+      if (isRequestDerived(value, scope)) return `${key} comes from the request`;
+      if (value.type === AST_NODE_TYPES.Identifier && value.name === 'Infinity') {
+        return `${key} is Infinity`;
+      }
+      if (key !== 'stopWhen') return null;
+
+      const conditions = value.type === AST_NODE_TYPES.ArrayExpression ? value.elements : [value];
+      const named = conditions.map((c) =>
+        c?.type === AST_NODE_TYPES.CallExpression ? calleeName(c.callee) : null,
+      );
+      if (named.every((name) => name === 'hasToolCall')) {
+        return 'hasToolCall only stops if the model calls that tool';
+      }
+      for (const condition of conditions) {
+        if (
+          condition?.type === AST_NODE_TYPES.CallExpression &&
+          STEP_COUNTERS.has(calleeName(condition.callee) as string) &&
+          condition.arguments.some((arg) => isRequestDerived(arg, scope))
+        ) {
+          return 'the step count comes from the request';
+        }
+      }
+      return null;
+    }
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
-        const callee = sourceCode.getText(node.callee);
-        
-        // Check if this is a target AI function
-        const matchedFunction = functionsWithTools.find(fn => callee.includes(fn));
+        const matchedFunction = sdkCallName(node, FUNCTIONS_WITH_TOOLS);
         if (!matchedFunction) return;
 
-        // Check first argument (options object)
         const optionsArg = node.arguments[0];
-        if (!optionsArg || optionsArg.type !== 'ObjectExpression') return;
+        if (optionsArg?.type !== AST_NODE_TYPES.ObjectExpression) return;
+        if (!optionValue(optionsArg, 'tools')) return;
 
-        // Check if tools property exists
-        const hasTools = optionsArg.properties.some(prop => {
-          if (prop.type !== 'Property') return false;
-          const keyName = prop.key.type === 'Identifier' ? prop.key.name : null;
-          return keyName === 'tools';
-        });
-
-        // Only check for maxSteps if tools are present
-        if (!hasTools) return;
-
-        // Check if a step limit is present: maxSteps (v4) or stopWhen (v5+, e.g. stopWhen: stepCountIs(5))
-        const hasMaxSteps = optionsArg.properties.some(prop => {
-          if (prop.type !== 'Property') return false;
-          const keyName = prop.key.type === 'Identifier'
-            ? prop.key.name
-            : prop.key.type === 'Literal'
-              ? String(prop.key.value)
-              : null;
-          // ponytail: any stopWhen counts — statically proving it bounds steps (arrays, custom conditions) isn't worth it; documented FN
-          return keyName === 'maxSteps' || keyName === 'max_steps' || keyName === 'stopWhen';
-        });
-
-        if (!hasMaxSteps) {
-          context.report({
-            node,
-            messageId: 'missingMaxSteps',
-            data: { function: matchedFunction },
-          });
+        for (const key of STEP_KEYS) {
+          const value = optionValue(optionsArg, key);
+          const reason = value && unboundedReason(key, value);
+          if (reason) {
+            context.report({
+              node: value,
+              messageId: 'unboundedSteps',
+              data: { function: matchedFunction, reason },
+            });
+          }
         }
       },
     };
   },
 });
+
+/** SDK functions that run the tool loop. */
+const FUNCTIONS_WITH_TOOLS = ['generateText', 'streamText'];
+
+/** Option names that set the step limit, v4 and v5+. */
+const STEP_KEYS = ['maxSteps', 'max_steps', 'stopWhen'];
+
+/** Stop conditions that count steps (`isStepCount` is the v7 name). */
+const STEP_COUNTERS = new Set(['stepCountIs', 'isStepCount']);

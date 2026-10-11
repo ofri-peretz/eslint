@@ -101,15 +101,32 @@ pool.connect((err, client, done) => {
 
 ### Client Passed to Functions
 
-**Why**: When the client is passed to another function, the rule can't track if that function releases it.
+**Why**: When the client is handed to another function and this function runs
+no query on it itself, the helper owns the lifetime (the `withClient(client,
+work)` wrapper) and the rule abstains. A function that runs `client.query(...)`
+itself and also lends the client to a helper is its owner, and IS checked.
 
 ```typescript
-// ❌ NOT DETECTED
+// ❌ NOT DETECTED — ownership handed off
 async function query() {
   const client = await pool.connect();
   await executeQueries(client); // Does this release? Rule can't tell
 }
+
+// ✅ DETECTED (since 2026-10) — this function owns the transaction
+async function signup(name) {
+  const client = await pool.connect();
+  await client.query('BEGIN');
+  await insertUser(client, name);
+  await client.query('COMMIT'); // never released
+}
 ```
+
+### Which receivers count as a pool
+
+A `new Pool()` in the same file, a binding or `this.x` declared with pg's
+`Pool` type (an injected pool), or any `.connect()` whose result then runs
+`.query(...)` — the pool checkout shape, whatever the pool is called.
 
 ### Thrown Exceptions Before Release
 

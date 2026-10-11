@@ -64,37 +64,34 @@ jwt.verify(token, secret, {
 
 The following patterns are **not detected** due to static analysis limitations:
 
-### Options from Variable
+### Options from Variables, Casts and Spreads
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `knownAudiences` | `string[]` | `[]` | Known valid audiences to suggest |
-| `trustedSanitizers` | `string[]` | `[]` | Extra function names to treat as sanitizers |
-| `trustedAnnotations` | `string[]` | `[]` | Extra JSDoc annotations to treat as safe markers |
-| `strictMode` | `boolean` | `false` | Disable false-positive suppression — report even sanitized input |
-
-
-**Why**: Variable contents are not analyzed.
+**What is read**: options are resolved structurally — an inline object, a same-file `const`, an `as` / `satisfies` cast, and a spread of such a `const`. NestJS `JwtService` calls are read at the second argument, where `@nestjs/jwt` takes them.
 
 ```typescript
-// ❌ NOT DETECTED - Options from variable
-const opts = { issuer: 'auth.example.com' }; // Missing audience
-jwt.verify(token, secret, opts);
+const verifyOptions = { algorithms: ['RS256'], audience: 'api://orders' };
+jwt.verify(token, key, verifyOptions); // ✅ read through the const
+jwt.verify(token, key, { ...verifyOptions, complete: true }); // ✅ spread of a const
+jwt.verify(token, key, { ...verifyOptions } as VerifyOptions); // ✅ through the cast
 ```
 
-**Mitigation**: Use inline options. Create TypeScript types requiring `audience`.
-
-### Spread Options
-
-**Why**: Spread properties hide the actual options at lint time.
+**What is not**: options from a parameter, an import, a function call, or a spread of one of those cannot be seen. The rule stays **silent** rather than report an option it cannot prove is missing. NestJS per-call options merge over `JwtModule` `verifyOptions` in another file, so they are treated the same way.
 
 ```typescript
-// ❌ NOT DETECTED - audience may be missing in base
-const baseOpts = getVerifyOptions(); // No audience
-jwt.verify(token, secret, { ...baseOpts });
+// ⚠️ NOT DETECTED - options built elsewhere
+jwt.verify(token, key, getVerifyOptions());
 ```
 
-**Mitigation**: Always specify audience explicitly. Avoid spreading untrusted options.
+**Mitigation**: Keep verify options in a module-level `const` in the file that verifies.
+
+### Spread of an Unresolvable Value
+
+**Why**: `{ ...getDefaults() }` may carry the option where this file cannot see it, so a missing option is not reported. A spread of a same-file `const` is read (see above).
+
+```typescript
+// ⚠️ NOT DETECTED - the spread source is a call
+jwt.verify(token, key, { ...getVerifyOptions() });
+```
 
 ### Runtime Audience Configuration
 

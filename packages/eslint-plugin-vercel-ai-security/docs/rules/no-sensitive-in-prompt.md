@@ -98,6 +98,15 @@ Sending sensitive data to LLMs can result in:
 - [`no-hardcoded-api-keys`](./no-hardcoded-api-keys.md) - Prevent hardcoded credentials
 - [`require-output-filtering`](./require-output-filtering.md) - Filter sensitive tool output
 
+## 🔄 Changes in the 2026-10-10 FP/FN audit
+
+- Names are matched by whole word: `businessName` has no `ssn` word, and
+  `maxTokens` / `totalTokens` are counts of tokens, not tokens.
+- `messages: [...]` is searched: array elements, spread elements, and the values
+  of message objects (`{ role, content: \`… ${user.password}\` }`).
+- `user['password']` is the same property as `user.password`.
+- **Options:** the documented `defaultOptions` now apply. Earlier versions read `context.options` and silently ran a shorter hard-coded list instead.
+
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:

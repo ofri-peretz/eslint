@@ -20,9 +20,15 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
-  objectKeyName,
 } from '@interlace/eslint-devkit';
-import { isSignOperation, getOptionsArgument, hasOption } from '../../utils';
+import {
+  isSignOperation,
+  joseBuilderChain,
+  resolveCallOptions,
+  resolveObject,
+  getOptionValue,
+  hasOption,
+} from '../../utils';
 import type { JwtRuleOptions } from '../../types';
 
 type MessageIds = 'missingIssuedAt';
@@ -86,61 +92,80 @@ export const requireIssuedAt = createRule<RuleOptions, MessageIds>({
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    /**
-     * Check if payload contains iat claim
-     */
-    // oxlint-disable-next-line consistent-function-scoping
-    const payloadHasIat = (payloadNode: TSESTree.Node): boolean => {
-      if (payloadNode.type !== 'ObjectExpression') {
-        return false;
-      }
+    const sourceCode = context.sourceCode;
 
-      return payloadNode.properties.some(
-        (prop) =>
-          // `{ ['iat']: … }` satisfies this requirement exactly as `{ iat: … }`
-          // does; demanding an Identifier key reported a token that HAS an iat.
-          prop.type === 'Property' && objectKeyName(prop) === 'iat',
+    /**
+     * Whether the claims carry `iat` — or may, where this file cannot see.
+     *
+     * `{ ['iat']: … }` satisfies this requirement exactly as `{ iat: … }`
+     * does; demanding an Identifier key reported a token that HAS an iat.
+     */
+    const claimsHaveIat = (
+      claims: TSESTree.Node | undefined,
+      opaqueCounts: boolean,
+    ): boolean => {
+      const resolved = resolveObject(claims, sourceCode);
+      return (
+        resolved !== null &&
+        ((opaqueCounts && resolved.opaque) || hasOption(resolved, 'iat'))
       );
     };
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
         // Only check sign operations
-        if (!isSignOperation(node)) {
+        if (!isSignOperation(node, sourceCode)) {
           return;
         }
 
-        // Need at least payload argument
-        if (node.arguments.length < 1) {
+        /*
+         * jose does NOT add `iat` on its own — unlike jsonwebtoken, which
+         * adds it unless told `noTimestamp: true`. So for a `new
+         * SignJWT(claims)` builder the claim has to be there explicitly:
+         * `.setIssuedAt()` on the chain (or on the builder's const), or an
+         * `iat` in the claims. JWS builders carry no claim set at all.
+         */
+        const chain = joseBuilderChain(node, sourceCode);
+        if (chain !== null) {
+          // Claims this file cannot see may carry iat, so they stay silent.
+          if (
+            chain.kind === 'SignJWT' &&
+            !chain.calls.has('setIssuedAt') &&
+            !claimsHaveIat(chain.builder.arguments[0], true)
+          ) {
+            context.report({ node, messageId: 'missingIssuedAt' });
+          }
           return;
         }
 
-        const payloadArg = node.arguments[0];
-        const optionsArg = getOptionsArgument(node, 2);
-
-        // Check if payload has iat claim
-        if (payloadHasIat(payloadArg)) {
+        // Check if payload has iat claim. (jsonwebtoken's `noTimestamp: true`
+        // strips iat whatever the payload says, so an opaque payload proves
+        // nothing here.)
+        if (claimsHaveIat(node.arguments[0], false)) {
           return;
         }
 
-        // Check if options has noTimestamp: false (meaning iat IS added)
-        // jsonwebtoken adds iat by default unless noTimestamp: true
-        if (optionsArg && hasOption(optionsArg, 'noTimestamp')) {
-          // If noTimestamp is explicitly set, we flag it (they're disabling iat)
+        /*
+         * jsonwebtoken adds iat by default, so only a `noTimestamp` that may
+         * be `true` drops it. The literal `false` KEEPS iat (it is the
+         * default, made explicit) and is not a finding; a runtime value may
+         * be either and still is. `no-timestamp-manipulation` owns the
+         * literal-`true` case too — this rule reports it as the missing claim.
+         */
+        const options = resolveCallOptions(node, sourceCode);
+        if (options === null) {
+          return;
+        }
+        const noTimestamp = getOptionValue(options, 'noTimestamp');
+        if (
+          noTimestamp !== undefined &&
+          !(noTimestamp.type === 'Literal' && noTimestamp.value === false)
+        ) {
           context.report({
-            node: optionsArg,
+            node,
             messageId: 'missingIssuedAt',
           });
-          return;
         }
-
-        // For explicit payload objects without iat we intentionally do not
-        // report — jsonwebtoken adds iat by default. (A dead empty `if` that
-        // re-checked !payloadHasIat(payloadArg) — always true after the early
-        // return above — was removed as unreachable-by-construction.)
-
-        // Note: jsonwebtoken adds iat by default, so we don't flag by default
-        // This rule primarily catches explicit noTimestamp: true usage
       },
     };
   },

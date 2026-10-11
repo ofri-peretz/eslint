@@ -179,7 +179,7 @@ describe('no-hardcoded-credentials', () => {
         // Written twice — what reaches the constructor is not knowable.
         "let config = { password: 'dev-only' };\nconfig = production;\nnew Pool(config);",
         // No arguments, and a non-object non-string argument.
-        'new Pool();',
+        { name: 'a pool with no config carries no credential', code: 'new Pool();' },
         'new Pool(loadConfig());',
         // A computed key that is not a static string names nothing knowable.
         "new Pool({ [KEY]: 'secret' });",
@@ -236,5 +236,63 @@ describe('no-hardcoded-credentials', () => {
       valid: ["import { Client } from 'some-other-db';\nnew Client({ password: 'x' });"],
       invalid: [],
     });
+  });
+});
+
+/** FP/FN review 2026-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md). */
+describe('no-hardcoded-credentials — fp/fn review 2026-10', () => {
+  ruleTester.run('CRED-1: a DSN with a password anywhere in the file', noHardcodedCredentials, {
+    valid: [
+      // Local development / test containers.
+      { name: 'a loopback test-container DSN is a throwaway default', code: "export const DATABASE_URL = 'postgres://postgres:postgres@localhost:5432/app_test';" },
+      { name: 'a 127.0.0.1 DSN is a local default', code: "export const DATABASE_URL = 'postgresql://u:p@127.0.0.1/app';" },
+      { name: 'an IPv6 loopback DSN is a local default', code: "export const DATABASE_URL = 'postgres://u:p@[::1]:5432/app';" },
+      // No password, or not a DSN.
+      { name: 'a DSN with no password carries no secret', code: "export const DATABASE_URL = 'postgres://app@db.internal:5432/orders';" },
+      { name: 'a non-postgres URL is not a DSN', code: "export const DOCS = 'see https://u:p@example.com';" },
+      { name: 'an unparseable DSN discloses nothing nameable', code: "export const BROKEN = 'postgres://[::1';" },
+      { name: 'a DSN assembled from interpolated values is not hardcoded', code: 'export const DSN = `postgres://${user}:${pass}@db.example.com/app`;' },
+    ],
+    invalid: [
+      {
+        name: 'a config module holding the production DSN',
+        code: "export const DATABASE_URL = 'postgres://admin:Pr0dS3cret!@db.internal.example.com:5432/app';",
+        errors: [{ messageId: 'noHardcodedCredentials' }],
+      },
+      {
+        name: 'a knex-style config object with a DSN',
+        code: "export default { client: 'pg', connection: 'postgresql://app:hunter2@10.0.0.5:5432/app' };",
+        errors: [{ messageId: 'noHardcodedCredentials' }],
+      },
+      {
+        name: 'a template literal without interpolation',
+        code: 'export const DATABASE_URL = `postgres://admin:Pr0dS3cret@db.example.com/app`;',
+        errors: [{ messageId: 'noHardcodedCredentials' }],
+      },
+    ],
+  });
+
+  ruleTester.run('CRED-2: postgres.js and pg-promise factories', noHardcodedCredentials, {
+    valid: [
+      { name: 'postgres.js password from the environment is not hardcoded', code: "import postgres from 'postgres';\nexport const sql = postgres({ host: 'db.example.com', password: process.env.PGPASSWORD });" },
+      { name: 'a pg-promise DSN from the environment is not hardcoded', code: "import pgPromise from 'pg-promise';\nexport const db = pgPromise()(process.env.DATABASE_URL);" },
+    ],
+    invalid: [
+      {
+        name: 'postgres.js DSN',
+        code: "import postgres from 'postgres';\nexport const sql = postgres('postgres://admin:Pr0dS3cret@db.example.com:5432/app');",
+        errors: [{ messageId: 'noHardcodedCredentials' }],
+      },
+      {
+        name: 'postgres.js options object',
+        code: "import postgres from 'postgres';\nexport const sql = postgres({ host: 'db.example.com', username: 'admin', password: 'Pr0dS3cret' });",
+        errors: [{ messageId: 'noHardcodedCredentials' }],
+      },
+      {
+        name: 'pg-promise options object',
+        code: "import pgPromise from 'pg-promise';\nexport const db = pgPromise()({ host: 'db.example.com', user: 'admin', password: 'Pr0dS3cret' });",
+        errors: [{ messageId: 'noHardcodedCredentials' }],
+      },
+    ],
   });
 });

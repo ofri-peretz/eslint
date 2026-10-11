@@ -37,22 +37,45 @@
  * `node-security`, which keeps the two from reporting the same line — the
  * taxonomy contract's hard rule.
  *
+ * ## What counts as a sink, and as a tool argument
+ *
+ * A sink is resolved to its module, never matched by name: `exec` imported
+ * (or required, or namespaced) from `child_process`, the same through
+ * `util.promisify`, and `execa` / `execaCommand`. `ISSUE_KEY.exec(key)` is a
+ * RegExp and `db.exec(sql)` is a database; neither runs a process.
+ *
+ * A tool argument is a binding the SDK fills from the model's call: the
+ * handler's first parameter (destructured or whole) for `registerTool` /
+ * `tool`, `request.params.arguments` for `setRequestHandler(CallToolRequestSchema)`
+ * / `'tools/call'`, and a body declaration destructured straight off one of
+ * those. A key the input schema restricts to `z.enum` / `z.literal` /
+ * `z.nativeEnum` is the allowlist, and is not reported.
+ *
  * @see https://modelcontextprotocol.io/docs/concepts/tools
  */
 
 import {
   TSESTree,
+  TSESLint,
   createRule,
   formatLLMMessage,
   MessageIcons,
   propertyName,
+  resolveModuleBinding,
+  staticString,
 } from '@interlace/eslint-devkit';
 import { fileUsesMcpSdk } from '../../utils/mcp-evidence';
+import {
+  constInitializer,
+  isClosedSetSchema,
+  propertyKey,
+  readRegistration,
+  resolveFunction,
+  schemaFields,
+  type FunctionNode,
+} from '../../utils/tool-registration';
 
 type MessageIds = 'toolArgToShell';
-
-const REGISTER_TOOL = 'registerTool';
-const LEGACY_TOOL = 'tool';
 
 /**
  * `child_process` entry points whose first argument names what gets run.
@@ -71,6 +94,54 @@ const PROCESS_SINKS = new Set([
   'fork',
 ]);
 
+/** `execa` exports; the default export is `execa` itself. */
+const EXECA_SINKS = new Set([
+  'execa',
+  'execaSync',
+  'execaCommand',
+  'execaCommandSync',
+  'execaNode',
+]);
+
+/** Sinks taking `(file, argv)` — where `('sh', ['-c', x])` makes `x` a script. */
+const ARGV_SINKS = new Set([
+  'spawn',
+  'spawnSync',
+  'execFile',
+  'execFileSync',
+  'execa',
+  'execaSync',
+]);
+
+const SHELLS = new Set([
+  'sh',
+  'bash',
+  'zsh',
+  'dash',
+  'ksh',
+  'fish',
+  'cmd',
+  'cmd.exe',
+  'powershell',
+  'powershell.exe',
+  'pwsh',
+  'pwsh.exe',
+]);
+
+/** The flag after which a shell's next argument is a script to run. */
+const SHELL_SCRIPT_FLAGS = new Set([
+  '-c',
+  '-lc',
+  '-ic',
+  '/c',
+  '/C',
+  '-Command',
+  '-command',
+]);
+
+/** The request path, from a call-tool handler's parameter, to the arguments. */
+const CALL_TOOL_ARGS_PATH = ['params', 'arguments'];
+
 /**
  * Is this expression built by concatenation or interpolation?
  *
@@ -82,6 +153,51 @@ export function isBuiltString(node: TSESTree.Node): boolean {
   if (node.type === 'TemplateLiteral') return node.expressions.length > 0;
   if (node.type === 'BinaryExpression' && node.operator === '+') return true;
   return false;
+}
+
+/**
+ * The tool-argument bindings in scope inside one handler.
+ *
+ *   - `direct`: local name → the top-level argument key it was read from.
+ *   - `roots`: local name → the property path from it to the arguments
+ *     object. `[]` means the name IS the arguments object (`args`, a rest
+ *     element); `['params', 'arguments']` is a call-tool request.
+ */
+interface ArgBindings {
+  direct: Map<string, string>;
+  roots: Map<string, string[]>;
+}
+
+/**
+ * Bind the names `pattern` introduces, given the path from the value it
+ * destructures to the arguments object.
+ */
+function bindPattern(
+  pattern: TSESTree.Node,
+  toArgs: readonly string[],
+  into: ArgBindings,
+  topKey?: string,
+): void {
+  if (pattern.type === 'AssignmentPattern') pattern = pattern.left;
+  if (pattern.type === 'Identifier') {
+    if (topKey !== undefined && toArgs.length === 0)
+      into.direct.set(pattern.name, topKey);
+    else into.roots.set(pattern.name, [...toArgs]);
+    return;
+  }
+  if (pattern.type !== 'ObjectPattern') return;
+  for (const prop of pattern.properties) {
+    if (prop.type === 'RestElement') {
+      // `{ ...rest }` of the arguments is still the arguments; `rest.cmd` is
+      // as model-controlled as `args.cmd`. A rest of the request is not.
+      if (toArgs.length === 0) bindPattern(prop.argument, [], into);
+      continue;
+    }
+    const key = propertyKey(prop);
+    if (key === undefined) continue;
+    if (toArgs.length === 0) bindPattern(prop.value, [], into, topKey ?? key);
+    else if (key === toArgs[0]) bindPattern(prop.value, toArgs.slice(1), into);
+  }
 }
 
 /**
@@ -100,57 +216,101 @@ export function handlerArgNames(handler: TSESTree.Node): {
   direct: Set<string>;
   objects: Set<string>;
 } {
-  const direct = new Set<string>();
-  const objects = new Set<string>();
-
+  const bindings: ArgBindings = { direct: new Map(), roots: new Map() };
   if (
-    handler.type !== 'ArrowFunctionExpression' &&
-    handler.type !== 'FunctionExpression' &&
-    handler.type !== 'FunctionDeclaration'
+    (handler.type === 'ArrowFunctionExpression' ||
+      handler.type === 'FunctionExpression' ||
+      handler.type === 'FunctionDeclaration') &&
+    handler.params[0] !== undefined
   ) {
-    return { direct, objects };
+    bindPattern(handler.params[0], [], bindings);
   }
-
-  const first = handler.params[0];
-  if (first === undefined) return { direct, objects };
-
-  if (first.type === 'Identifier') {
-    objects.add(first.name);
-    return { direct, objects };
-  }
-
-  if (first.type === 'ObjectPattern') {
-    collectPatternNames(first, direct, objects);
-  }
-  return { direct, objects };
+  return {
+    direct: new Set(bindings.direct.keys()),
+    objects: new Set(bindings.roots.keys()),
+  };
 }
 
-/**
- * Every identifier an object pattern binds, following nesting and defaults.
- *
- * A rest element is sorted into `objects`, not `direct`: `{ ...rest }` binds an
- * *object*, so `rest` is never itself a command, while `rest.cmd` is exactly as
- * attacker-controlled as `args.cmd`.
- */
-function collectPatternNames(
-  pattern: TSESTree.ObjectPattern,
-  into: Set<string>,
-  objects: Set<string>,
-): void {
-  for (const prop of pattern.properties) {
-    if (prop.type === 'RestElement') {
-      // In a parameter position the grammar only permits `{ ...name }`, so the
-      // argument is always a plain Identifier. No guard, because there is no
-      // input that reaches its other arm.
-      objects.add((prop.argument as TSESTree.Identifier).name);
-      continue;
+/** `x as T`, `x!`, `<T>x`, `a?.b` and `String(x)` — the same value. */
+function unwrap(node: TSESTree.Node): TSESTree.Node {
+  for (;;) {
+    if (
+      node.type === 'TSAsExpression' ||
+      node.type === 'TSNonNullExpression' ||
+      node.type === 'TSTypeAssertion' ||
+      node.type === 'ChainExpression'
+    ) {
+      node = node.expression;
+    } else if (
+      node.type === 'CallExpression' &&
+      node.callee.type === 'Identifier' &&
+      node.callee.name === 'String' &&
+      node.arguments.length === 1
+    ) {
+      node = node.arguments[0]!;
+    } else {
+      return node;
     }
-    let value: TSESTree.Node = prop.value;
-    if (value.type === 'AssignmentPattern') value = value.left;
-    if (value.type === 'Identifier') into.add(value.name);
-    else if (value.type === 'ObjectPattern')
-      collectPatternNames(value, into, objects);
   }
+}
+
+/** `a.b.c` → `{ root: 'a', path: ['b', 'c'] }`; `undefined` if not a plain chain. */
+function memberChain(
+  node: TSESTree.Node,
+): { root: string; path: string[] } | undefined {
+  const path: string[] = [];
+  let current = unwrap(node);
+  while (current.type === 'MemberExpression') {
+    const key = propertyName(current);
+    if (key === null) return undefined;
+    path.unshift(key);
+    current = unwrap(current.object);
+  }
+  return current.type === 'Identifier'
+    ? { root: current.name, path }
+    : undefined;
+}
+
+const startsWith = (path: readonly string[], prefix: readonly string[]) =>
+  prefix.every((segment, i) => path[i] === segment);
+
+/**
+ * Extend `bindings` with a body declaration destructured or read straight off
+ * a binding — `const { name, arguments: args } = request.params`,
+ * `const { cmd } = args`, `const c = args.cmd`. The initializer has to be a
+ * plain property path from a parameter-bound name; a call (`args.cmd.trim()`)
+ * is a new value and is not followed.
+ */
+function bindDeclarator(
+  declarator: TSESTree.VariableDeclarator,
+  bindings: ArgBindings,
+): void {
+  const chain =
+    declarator.init === null ? undefined : memberChain(declarator.init);
+  const toArgs = chain && bindings.roots.get(chain.root);
+  if (toArgs === undefined) return;
+  if (startsWith(toArgs, chain!.path)) {
+    bindPattern(declarator.id, toArgs.slice(chain!.path.length), bindings);
+  } else if (startsWith(chain!.path, toArgs)) {
+    const inside = chain!.path.slice(toArgs.length);
+    // `const c = args.cmd` is `const { cmd: c } = args`.
+    bindPattern(declarator.id, [], bindings, inside[0]);
+  }
+}
+
+/** Is `node` the SDK's call-tool request schema, or v2's `'tools/call'`? */
+function isCallToolMethod(
+  node: TSESTree.Node | undefined,
+  scope: TSESLint.Scope.Scope,
+): boolean {
+  if (node === undefined) return false;
+  if (staticString(node) === 'tools/call') return true;
+  const binding = resolveModuleBinding(node, scope);
+  return (
+    binding !== undefined &&
+    binding.module.startsWith('@modelcontextprotocol/') &&
+    binding.path[binding.path.length - 1] === 'CallToolRequestSchema'
+  );
 }
 
 export const noCommandInjectionInTool = createRule<[], MessageIds>({
@@ -188,109 +348,197 @@ export const noCommandInjectionInTool = createRule<[], MessageIds>({
     // replaces saw ESM and `require()` only, so import-equals and dynamic
     // `import()` files ran no rule at all.
     if (!fileUsesMcpSdk(context.sourceCode.ast)) return {};
-    /** Handler bodies, with the argument names each one binds. */
-    const handlers: Array<{
-      range: readonly [number, number];
-      direct: Set<string>;
-      objects: Set<string>;
-    }> = [];
-    const candidates: Array<{
-      node: TSESTree.Node;
-      arg: string;
-      sink: string;
-    }> = [];
 
-    /**
-     * The *innermost* handler enclosing this node, if any.
-     *
-     * `handlers` is filled in traversal order, so an outer registration is
-     * pushed before an inner one. Taking the first match would pick the outer
-     * handler, whose parameter names are not the ones in scope at the sink —
-     * so an inner handler's argument reaching a sink would be silently
-     * skipped. Narrowest range wins.
-     */
+    /** Handler functions, how their first parameter maps to the arguments. */
+    const handlers: Array<{
+      fn: FunctionNode;
+      toArgs: string[];
+      /** Argument keys the schema restricts to a closed set of values. */
+      closed: Set<string>;
+      bindings?: ArgBindings;
+    }> = [];
+    const declarators: TSESTree.VariableDeclarator[] = [];
+    const candidates: Array<{ node: TSESTree.Node; sink: string }> = [];
+
+    /** The `child_process` / `execa` export this callee resolves to. */
+    function sinkOf(
+      callee: TSESTree.Node,
+      scope: TSESLint.Scope.Scope,
+      seen: Set<TSESTree.Node> = new Set(),
+    ): string | undefined {
+      // `const run = promisify(run)` must not recurse forever.
+      if (seen.has(callee)) return undefined;
+      seen.add(callee);
+      const binding = resolveModuleBinding(callee, scope);
+      if (binding !== undefined) {
+        const [name, extra] = binding.path;
+        if (extra !== undefined) return undefined;
+        if (binding.module === 'child_process')
+          return name !== undefined && PROCESS_SINKS.has(name)
+            ? name
+            : undefined;
+        if (binding.module === 'execa')
+          return name === undefined
+            ? 'execa'
+            : EXECA_SINKS.has(name)
+              ? name
+              : undefined;
+        return undefined;
+      }
+      // `const run = promisify(exec)` / `util.promisify(cp.exec)`.
+      if (callee.type !== 'Identifier') return undefined;
+      const init = constInitializer(callee, scope);
+      if (init?.type !== 'CallExpression') return undefined;
+      const wrapper = resolveModuleBinding(init.callee, scope);
+      const wrapped = init.arguments[0];
+      if (
+        wrapper?.module !== 'util' ||
+        wrapper.path.join('.') !== 'promisify' ||
+        wrapped === undefined
+      )
+        return undefined;
+      return sinkOf(wrapped, scope, seen);
+    }
+
+    /** The positions in a sink call that name what runs. */
+    function commandPositions(
+      node: TSESTree.CallExpression,
+      sink: string,
+    ): TSESTree.Node[] {
+      const positions: TSESTree.Node[] = [];
+      const [file, argv] = node.arguments;
+      if (file === undefined) return positions;
+      positions.push(file);
+      // `spawn('sh', ['-c', x])` — `x` is a shell script.
+      const shell = staticString(file)?.split(/[\\/]/).pop();
+      if (
+        ARGV_SINKS.has(sink) &&
+        shell !== undefined &&
+        SHELLS.has(shell) &&
+        argv?.type === 'ArrayExpression'
+      ) {
+        const flag = argv.elements.findIndex(
+          (el) => el !== null && SHELL_SCRIPT_FLAGS.has(staticString(el) ?? ''),
+        );
+        const script = flag === -1 ? undefined : argv.elements[flag + 1];
+        if (script && script.type !== 'SpreadElement') positions.push(script);
+      }
+      return positions;
+    }
+
+    /** The narrowest handler whose function encloses `node`. */
     function enclosingHandler(node: TSESTree.Node) {
-      // ESLint visits CallExpression top-down, so `handlers` is ordered
-      // outermost-first. The *last* enclosing match is therefore the innermost
-      // one, and no size comparison is needed — a comparison here would carry
-      // an arm no traversal order can reach.
       let innermost: (typeof handlers)[number] | undefined;
       for (const h of handlers) {
-        if (node.range[0] >= h.range[0] && node.range[1] <= h.range[1])
+        const [start, end] = h.fn.range;
+        if (node.range[0] < start || node.range[1] > end) continue;
+        if (
+          innermost === undefined ||
+          end - start < innermost.fn.range[1] - innermost.fn.range[0]
+        )
           innermost = h;
       }
       return innermost;
     }
 
+    function bindingsOf(handler: (typeof handlers)[number]): ArgBindings {
+      if (handler.bindings) return handler.bindings;
+      const bindings: ArgBindings = { direct: new Map(), roots: new Map() };
+      const first = handler.fn.params[0];
+      if (first !== undefined) bindPattern(first, handler.toArgs, bindings);
+      // Declarations are visited in source order, so a binding a later one
+      // depends on is already in place.
+      for (const declarator of declarators) {
+        if (enclosingHandler(declarator) === handler)
+          bindDeclarator(declarator, bindings);
+      }
+      handler.bindings = bindings;
+      return bindings;
+    }
+
+    /** `cmd` / `args.cmd` / `request.params.arguments.cmd`, or `undefined`. */
+    function argumentRead(
+      expression: TSESTree.Node,
+      bindings: ArgBindings,
+    ): { text: string; key: string } | undefined {
+      const node = unwrap(expression);
+      if (node.type === 'Identifier') {
+        const key = bindings.direct.get(node.name);
+        return key === undefined ? undefined : { text: node.name, key };
+      }
+      const chain = memberChain(node);
+      const toArgs = chain && bindings.roots.get(chain.root);
+      if (
+        toArgs === undefined ||
+        chain!.path.length !== toArgs.length + 1 ||
+        !startsWith(chain!.path, toArgs)
+      )
+        return undefined;
+      return {
+        text: [chain!.root, ...chain!.path].join('.'),
+        key: chain!.path[toArgs.length]!,
+      };
+    }
+
     return {
+      VariableDeclarator(node: TSESTree.VariableDeclarator) {
+        declarators.push(node);
+      },
+
       CallExpression(node: TSESTree.CallExpression) {
-        // Collect tool handlers.
-        if (
-          node.callee.type === 'MemberExpression' &&
-          (propertyName(node.callee) === REGISTER_TOOL ||
-            propertyName(node.callee) === LEGACY_TOOL)
-        ) {
-          const handler = node.arguments[node.arguments.length - 1];
-          if (handler !== undefined) {
-            const { direct, objects } = handlerArgNames(handler);
-            if (direct.size > 0 || objects.size > 0) {
-              handlers.push({ range: handler.range, direct, objects });
+        const scope = context.sourceCode.getScope(node);
+
+        // Tool handlers.
+        const registration = readRegistration(node);
+        if (registration !== undefined) {
+          const fn = resolveFunction(registration.handler, scope);
+          if (fn !== undefined) {
+            const closed = new Set<string>();
+            const fields =
+              registration.schema.kind === 'schema'
+                ? schemaFields(registration.schema.node)
+                : undefined;
+            for (const [key, value] of fields?.fields ?? []) {
+              if (isClosedSetSchema(value)) closed.add(key);
             }
+            handlers.push({ fn, toArgs: [], closed });
           }
+        } else if (
+          node.callee.type === 'MemberExpression' &&
+          propertyName(node.callee) === 'setRequestHandler' &&
+          isCallToolMethod(node.arguments[0], scope)
+        ) {
+          const fn = resolveFunction(node.arguments[1], scope);
+          if (fn !== undefined)
+            handlers.push({
+              fn,
+              toArgs: CALL_TOOL_ARGS_PATH,
+              closed: new Set(),
+            });
         }
 
-        // Collect process sinks. Judged at Program:exit, because the handler
-        // that encloses a sink may be registered further down the file.
-        const sinkName =
-          node.callee.type === 'Identifier'
-            ? node.callee.name
-            : node.callee.type === 'MemberExpression' &&
-                !node.callee.computed &&
-                node.callee.property.type === 'Identifier'
-              ? node.callee.property.name
-              : undefined;
-        if (sinkName === undefined || !PROCESS_SINKS.has(sinkName)) return;
-
-        const commandArg = node.arguments[0];
-        if (commandArg === undefined) return;
-        // Concatenated / interpolated commands belong to
-        // node-security/no-shell-injection. See isBuiltString.
-        if (isBuiltString(commandArg)) return;
-
-        candidates.push({ node: commandArg, arg: '', sink: sinkName });
+        // Process sinks. Judged at Program:exit, because the handler that
+        // encloses a sink may be registered further down the file.
+        const sink = sinkOf(node.callee, scope);
+        if (sink === undefined) return;
+        for (const position of commandPositions(node, sink)) {
+          // Concatenated / interpolated commands belong to
+          // node-security/no-shell-injection. See isBuiltString.
+          if (!isBuiltString(position))
+            candidates.push({ node: position, sink });
+        }
       },
 
       'Program:exit'() {
         for (const candidate of candidates) {
           const handler = enclosingHandler(candidate.node);
           if (handler === undefined) continue;
-
-          const command = candidate.node;
-          let argName: string | undefined;
-
-          // `execSync(cmd)` where `cmd` was destructured from the tool args.
-          if (
-            command.type === 'Identifier' &&
-            handler.direct.has(command.name)
-          ) {
-            argName = command.name;
-          }
-          // `execSync(args.cmd)` where `args` is the whole tool-args object.
-          if (
-            command.type === 'MemberExpression' &&
-            !command.computed &&
-            command.object.type === 'Identifier' &&
-            handler.objects.has(command.object.name) &&
-            command.property.type === 'Identifier'
-          ) {
-            argName = `${command.object.name}.${command.property.name}`;
-          }
-
-          if (argName === undefined) continue;
+          const read = argumentRead(candidate.node, bindingsOf(handler));
+          if (read === undefined || handler.closed.has(read.key)) continue;
           context.report({
-            node: command,
+            node: candidate.node,
             messageId: 'toolArgToShell',
-            data: { arg: argName, sink: candidate.sink },
+            data: { arg: read.text, sink: candidate.sink },
           });
         }
       },

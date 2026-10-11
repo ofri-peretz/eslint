@@ -18,7 +18,7 @@ Ensures the number of placeholders in SQL queries matches the provided parameter
 
 Ensures the number of placeholders in SQL queries matches the provided parameters.
 
-⚠️ This rule **errors** by default in the `recommended` config.
+⚠️ This rule **warns** by default in the `recommended` config.
 
 ## Quick Summary
 

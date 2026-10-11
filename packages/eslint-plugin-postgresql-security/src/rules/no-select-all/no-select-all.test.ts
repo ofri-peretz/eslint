@@ -193,7 +193,7 @@ describe('no-select-all — regression locks', () => {
       // Not the sink.
       "pool.on('error', (e) => console.error('SELECT * FROM pool', e));",
       "pool.query(123);",
-      "pool.query();",
+      { name: 'a query call with no arguments has no statement to read', code: "pool.query();" },
     ]),
     invalid: [],
   });
@@ -230,5 +230,47 @@ describe('no-select-all — unreadable statements abstain', () => {
       ]),
     ],
     invalid: [],
+  });
+});
+
+/** FP/FN review 2026-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md). */
+describe('no-select-all — fp/fn review 2026-10', () => {
+  ruleTester.run('SA-1: * over a relation whose columns are already explicit', noSelectAll, {
+    valid: pg([
+      {
+// @found harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md)
+ name: 'FP: SELECT * over a CTE that lists its columns is explicit one level down', code: "const pool = new Pool();\npool.query(`WITH recent AS (SELECT id, total FROM orders WHERE created_at > now() - interval '1 day') SELECT * FROM recent ORDER BY total DESC`);" },
+      {
+// @found reasoned during the 2026-10-10 FP/FN audit, not seen in real code
+ name: 'FP: SELECT * over the second of two CTEs is explicit one level down', code: "const pool = new Pool();\npool.query('WITH a AS (SELECT id FROM t), b AS (SELECT id FROM u) SELECT * FROM b');" },
+      {
+// @found reasoned during the 2026-10-10 FP/FN audit, not seen in real code
+ name: 'FP: SELECT * over a recursive CTE with a column list is explicit', code: "const pool = new Pool();\npool.query('WITH RECURSIVE tree(id) AS (SELECT id FROM n WHERE p IS NULL UNION ALL SELECT n.id FROM n JOIN tree ON n.p = tree.id) SELECT * FROM tree');" },
+      {
+// @found harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md)
+ name: 'FP: SELECT * over a derived table that lists its columns is explicit', code: "const pool = new Pool();\npool.query('SELECT * FROM (SELECT id, email FROM users WHERE active) AS u WHERE u.id = $1', [id]);" },
+    ]),
+    invalid: pg([
+      {
+        name: 'a CTE that itself selects *',
+        code: "const pool = new Pool();\npool.query('WITH r AS (SELECT * FROM orders) SELECT id FROM r');",
+        errors: [{ messageId: 'noSelectAll' }],
+      },
+      {
+        name: 'a table that merely shares a CTE-like name',
+        code: "const pool = new Pool();\npool.query('WITH recent AS (SELECT id FROM o) SELECT * FROM orders');",
+        errors: [{ messageId: 'noSelectAll' }],
+      },
+      {
+        name: 'a derived table that selects *',
+        code: "const pool = new Pool();\npool.query('SELECT * FROM (SELECT * FROM users) AS u');",
+        errors: [{ messageId: 'noSelectAll' }],
+      },
+      {
+        name: 'a plain table',
+        code: "const pool = new Pool();\npool.query('SELECT * FROM users WHERE id = $1', [id]);",
+        errors: [{ messageId: 'noSelectAll' }],
+      },
+    ]),
   });
 });

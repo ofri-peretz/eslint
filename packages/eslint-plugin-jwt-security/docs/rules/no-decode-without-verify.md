@@ -65,13 +65,32 @@ const { sub } = jwt.verify(token, secret, { algorithms: ['RS256'] });
 // jose library with verification
 import { jwtVerify } from 'jose';
 const { payload } = await jwtVerify(token, key);
+
+// Reading only time claims — the client-side refresh check
+const { exp } = jwtDecode(token);
+if (Date.now() >= exp * 1000) refresh();
+
+// Reading the header's kid to pick the JWKS key, then verifying
+const decoded = jwt.decode(token, { complete: true });
+const key = await client.getSigningKey(decoded.header.kid);
+jwt.verify(token, key.getPublicKey(), { algorithms: ['RS256'] });
+
+// Not JWT decodes: a TextDecoder, jose's base64url codec
+const decoder = new TextDecoder();
+decoder.decode(bytes);
+base64url.decode(process.env.JWT_SECRET_B64);
 ```
+
+`header.kid` is exempt by default: a forged kid only selects a key the
+signature then fails against. `header.alg` and `header.jku` are not — choosing
+those from the token is the attack. `allowHeaderInspection: true` exempts every
+read of `.header`.
 
 ## Options
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
-| `allowHeaderInspection` | `boolean` | `false` | Allow decode() for reading header before verification |
+| `allowHeaderInspection` | `boolean` | `false` | Allow decode() whose result is only read at `.header` (any header field). `header.kid` alone is always allowed |
 | `trustedSanitizers` | `string[]` | `[]` | Extra function names to treat as sanitizers |
 | `trustedAnnotations` | `string[]` | `["@decoded-header-only","@verified-separately"]` | Extra JSDoc annotations to treat as safe markers |
 | `strictMode` | `boolean` | `false` | Disable false-positive suppression — report even sanitized input |

@@ -32,6 +32,31 @@ import type { TSESTree } from '@typescript-eslint/utils';
  */
 export const MCP_SDK_PACKAGE = '@modelcontextprotocol/sdk';
 
+/**
+ * Every package a file can get an MCP `McpServer`, `Server` or `Client` from.
+ *
+ * v1 shipped one package. v2 split it — `server`, `client` and the shared
+ * `core` schemas, plus per-framework adapters (`node`, `express`, `hono`,
+ * `fastify`) — and Vercel's `mcp-handler` (published earlier as
+ * `@vercel/mcp-adapter`) hands an `McpServer` to a callback without the file
+ * importing the SDK at all. Matching only the v1 root left every v2 and
+ * `mcp-handler` server with no rule running. Listed explicitly rather than as
+ * the `@modelcontextprotocol` scope, which also holds the inspector and the
+ * reference servers.
+ */
+export const MCP_PACKAGES: readonly string[] = [
+  MCP_SDK_PACKAGE,
+  '@modelcontextprotocol/server',
+  '@modelcontextprotocol/client',
+  '@modelcontextprotocol/core',
+  '@modelcontextprotocol/node',
+  '@modelcontextprotocol/express',
+  '@modelcontextprotocol/hono',
+  '@modelcontextprotocol/fastify',
+  'mcp-handler',
+  '@vercel/mcp-adapter',
+];
+
 export const fileUsesMcpSdk: (ast: TSESTree.Program) => boolean = createModuleEvidence({
-  packages: [MCP_SDK_PACKAGE],
+  packages: [...MCP_PACKAGES],
 });

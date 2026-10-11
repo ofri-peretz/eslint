@@ -221,3 +221,201 @@ ruleTester.run('no-unsafe-output-handling (SQL interpolation)', noUnsafeOutputHa
     },
   ]),
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-vercel-ai-security.md)
+// Sinks are matched by exact, resolved callee; a tool's `execute` parameters
+// are model-chosen by the SDK's contract, so they count as model output.
+// ─────────────────────────────────────────────────────────────────────────────
+const jsx = { parserOptions: { ecmaFeatures: { jsx: true } } };
+ruleTester.run('no-unsafe-output-handling (fp-fn audit)', noUnsafeOutputHandling, {
+  valid: xai([
+    {
+      name: 'RegExp#exec parses model output; it executes nothing',
+      code: `
+        const result = await generateText({ prompt: 'x' });
+        const fence = /\`\`\`json([\\s\\S]*?)\`\`\`/.exec(result.text);
+        const pattern = /Answer: (.*)/;
+        const m = pattern.exec(result.text);
+      `,
+    },
+    {
+      name: 'sanitized HTML assigned to innerHTML',
+      code: `
+        const result = await generateText({ prompt: 'x' });
+        el.innerHTML = DOMPurify.sanitize(result.text);
+      `,
+    },
+    {
+      name: 'a function whose name merely contains "eval" is not eval',
+      code: `
+        const result = await generateText({ prompt: 'x' });
+        const score = await evaluateAnswer(result.text, 'rubric');
+      `,
+    },
+    {
+      name: 'a function whose name merely contains "run" is not a SQL sink',
+      code: `
+        const result = await generateText({ prompt: 'x' });
+        const preview = truncate(\`\${result.text}\`, 120);
+      `,
+    },
+    {
+      name: 'a tool that fetches a fixed host with the model input as a query value is not SSRF',
+      code: `
+        const weather = tool({
+          inputSchema,
+          execute: async ({ city }) => fetch(\`https://api.weather.example/v1?q=\${city}\`),
+        });
+      `,
+    },
+    {
+      name: 'a tool parameter bound as a query parameter is not SQL injection',
+      code: `
+        const lookup = tool({
+          inputSchema,
+          execute: async ({ id }) => db.query('SELECT * FROM t WHERE id = $1', [id]),
+        });
+      `,
+    },
+    {
+      name: 'an execute() that is not a tool definition does not seed model output',
+      code: `
+        const job = { execute: async ({ command }) => execSync(command) };
+      `,
+    },
+    {
+      name: 'exec imported from a module other than child_process is not a shell sink',
+      code: `
+        import { exec } from './my-runner';
+        const { text } = await generateText({ prompt: 'x' });
+        exec(text);
+      `,
+    },
+    {
+      name: 'a local function named Function is not the Function constructor',
+      code: `
+        function Function(x) { return x; }
+        const { text } = await generateText({ prompt: 'x' });
+        new Function(text);
+      `,
+    },
+    {
+      name: 'dangerouslySetInnerHTML with non-model content',
+      code: `export const A = () => <div dangerouslySetInnerHTML={{ __html: staticHtml }} />;`,
+      languageOptions: jsx,
+    },
+    {
+      name: 'a dangerouslySetInnerHTML value that is not an object literal is not inspected',
+      code: `export const A = () => <div dangerouslySetInnerHTML={html} />;`,
+      languageOptions: jsx,
+    },
+  ]),
+  invalid: xai([
+    {
+      name: 'tool execute runs a model-chosen shell command',
+      code: `
+        import { execSync } from 'node:child_process';
+        const runCommand = tool({
+          description: 'Run a shell command',
+          inputSchema: z.object({ command: z.string() }),
+          execute: async ({ command }) => execSync(command).toString(),
+        });
+      `,
+      errors: [{ messageId: 'unsafeOutputExecution' }],
+    },
+    {
+      name: 'method-form execute interpolates model input into a shell command',
+      code: `
+        import * as cp from 'child_process';
+        const tools = {
+          list: tool({ inputSchema, async execute({ dir }) { return cp.exec(\`ls \${dir}\`); } }),
+        };
+      `,
+      errors: [{ messageId: 'unsafeOutputExecution' }],
+    },
+    {
+      name: 'object-literal tool (has inputSchema) passes model SQL to sql.unsafe',
+      code: `
+        const tools = {
+          queryDb: { inputSchema, execute: async ({ q }) => sql.unsafe(q) },
+        };
+      `,
+      errors: [{ messageId: 'unsafeOutputInSQL' }],
+    },
+    {
+      name: 'tool fetches a model-chosen URL (SSRF)',
+      code: `
+        const fetchUrl = tool({ inputSchema, execute: async ({ url }) => (await fetch(url)).text() });
+      `,
+      errors: [{ messageId: 'unsafeOutputInRequest' }],
+    },
+    {
+      name: 'tool fetches a URL whose host the model chooses',
+      code: `
+        const fetchUrl = dynamicTool({ inputSchema, execute: async ({ host }) => fetch(\`\${host}/admin\`) });
+      `,
+      errors: [{ messageId: 'unsafeOutputInRequest' }],
+    },
+    {
+      name: 'new Function on model output',
+      code: `
+        const { text } = await generateText({ prompt: 'x' });
+        const fn = new Function(text);
+      `,
+      errors: [{ messageId: 'unsafeOutputExecution' }],
+    },
+    {
+      name: 'node:vm on model output',
+      code: `
+        import vm from 'node:vm';
+        const { text } = await generateText({ prompt: 'x' });
+        vm.runInNewContext(text);
+        new vm.Script(text);
+      `,
+      errors: [{ messageId: 'unsafeOutputExecution' }, { messageId: 'unsafeOutputExecution' }],
+    },
+    {
+      name: 'v5 streamText result awaited into a variable, then eval-ed',
+      code: `
+        const r = streamText({ prompt: 'write js' });
+        const code = await r.text;
+        eval(code);
+      `,
+      errors: [{ messageId: 'unsafeOutputExecution' }],
+    },
+    {
+      name: 'a property read straight off the awaited call',
+      code: `
+        const out = (await generateText({ prompt: 'x' })).text;
+        eval(out);
+      `,
+      errors: [{ messageId: 'unsafeOutputExecution' }],
+    },
+    {
+      name: 'a string method on model output is still model output',
+      code: `
+        const { text } = await generateText({ prompt: 'x' });
+        eval(text.trim());
+      `,
+      errors: [{ messageId: 'unsafeOutputExecution' }],
+    },
+    {
+      name: 'model output rendered through dangerouslySetInnerHTML',
+      code: `
+        const result = await generateText({ prompt: 'x' });
+        export const A = () => <div dangerouslySetInnerHTML={{ __html: result.text }} />;
+      `,
+      languageOptions: jsx,
+      errors: [{ messageId: 'unsafeOutputInHTML' }],
+    },
+    {
+      name: 'model SQL passed as the whole query string',
+      code: `
+        const { text } = await generateText({ prompt: 'write sql' });
+        await db.query(text);
+      `,
+      errors: [{ messageId: 'unsafeOutputInSQL' }],
+    },
+  ]),
+});

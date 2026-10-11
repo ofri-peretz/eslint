@@ -6,6 +6,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 import plugin, {
   rules,
@@ -60,14 +62,75 @@ describe('eslint-plugin-mcp-sdk-security', () => {
     expect(Object.keys(strictRules).length).toBe(Object.keys(rules).length);
   });
 
-  it('keeps the new rule out of minimal and recommended until its FP profile is measured', () => {
-    // Plan §1.6: promotion is a deliberate act, not a side effect of adding a
-    // rule. This lock is what makes "not yet promoted" a decision on the record
-    // rather than an oversight.
+  it('keeps no-tool-description-injection out of minimal and recommended', () => {
+    // Promotion is a deliberate act, not a side effect of adding a rule. This
+    // rule still reports a description imported from another module (the file
+    // cannot see its text), so it stays strict-only. no-unvalidated-tool-args
+    // and no-command-injection-in-tool were promoted after the 2026-10 FP/FN
+    // review (benchmarks/audits/2026-10-10-fp-fn-mcp-sdk-security.md).
     for (const preset of ['minimal', 'recommended'] as const) {
       expect(configs[preset].rules?.['mcp-sdk-security/no-tool-description-injection']).toBeUndefined();
-      expect(configs[preset].rules?.['mcp-sdk-security/no-unvalidated-tool-args']).toBeUndefined();
     }
+  });
+
+  it('pins the exact rule set of every preset', () => {
+    const ids = (preset: keyof typeof configs) =>
+      Object.keys(configs[preset].rules ?? {}).sort();
+    expect(ids('minimal')).toEqual([
+      'mcp-sdk-security/no-command-injection-in-tool',
+      'mcp-sdk-security/require-tool-input-schema',
+    ]);
+    expect(ids('recommended')).toEqual([
+      'mcp-sdk-security/no-command-injection-in-tool',
+      'mcp-sdk-security/no-unvalidated-tool-args',
+      'mcp-sdk-security/require-tool-input-schema',
+    ]);
+  });
+
+  /**
+   * README ↔ config lock. The README once said `recommended` "Enables every
+   * rule at `error`" while it shipped one rule — so a user following the
+   * README got neither what it promised nor the CWE-78 coverage. Both README
+   * surfaces that describe the presets are parsed and compared to `configs`.
+   */
+  describe('README agrees with the shipped presets', () => {
+    const readme = readFileSync(join(__dirname, '..', 'README.md'), 'utf8');
+    const ruleNames = (cell: string) =>
+      [...cell.matchAll(/`([a-z0-9-]+)`/g)].map((m) => m[1]).sort();
+    const configured = (preset: keyof typeof configs) =>
+      Object.keys(configs[preset].rules ?? {})
+        .map((id) => id.replace('mcp-sdk-security/', ''))
+        .sort();
+
+    it.each(['minimal', 'recommended', 'strict'] as const)(
+      'the preset table lists exactly the %s rules',
+      (preset) => {
+        const row = readme
+          .split('\n')
+          .find((line) => line.startsWith(`| \`${preset}\` |`));
+        expect(row, `no README preset row for ${preset}`).toBeDefined();
+        const rulesCell = row!.split('|')[2]!;
+        expect(ruleNames(rulesCell)).toEqual(configured(preset));
+      },
+    );
+
+    it('the rules table marks 💼 on exactly the recommended rules', () => {
+      const table = readme.slice(
+        readme.indexOf('<!-- AUTO-GENERATED:RULES_TABLE:START'),
+        readme.indexOf('<!-- AUTO-GENERATED:RULES_TABLE:END'),
+      );
+      const rows = table.split('\n').filter((line) => line.startsWith('| ['));
+      expect(rows).toHaveLength(Object.keys(rules).length);
+      const marked = rows
+        .filter((row) => row.split('|')[7]!.includes('💼'))
+        .map((row) => /^\| \[([a-z0-9-]+)\]/.exec(row)![1])
+        .sort();
+      expect(marked).toEqual(configured('recommended'));
+    });
+
+    it('does not claim recommended enables every rule', () => {
+      expect(readme).not.toMatch(/Enables every rule/);
+    });
   });
 
   it('default-exports the plugin with its configs attached', () => {

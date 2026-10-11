@@ -32,10 +32,10 @@ export { requireToolInputSchema } from './rules/require-tool-input-schema';
 /**
  * MCP SDK security rules.
  *
- * 0.1.x scope — the tool-registration surface. A tool registered without an
- * input schema hands its handler unvalidated client-supplied arguments, which
- * is the entry point for the tool-poisoning and argument-injection classes.
- * Transport auth, resource path traversal and tool-output handling follow.
+ * Scope — the tool-registration surface: tool arguments reaching a process,
+ * handlers reading arguments no schema declares, and model-facing
+ * descriptions built at runtime. Transport auth, resource path traversal and
+ * tool-output handling follow.
  */
 export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[]>> = {
   // CWE-78: OS Command Injection
@@ -67,47 +67,64 @@ export const plugin: TSESLint.FlatConfig.Plugin = {
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
 
-/** Minimal configuration — for gradual adoption. */
-const minimalConfig: TSESLint.FlatConfig.Config = {
-  plugins: {
-    'mcp-sdk-security': plugin,
-  },
-  rules: {
-    'mcp-sdk-security/require-tool-input-schema': 'error',
-  },
-} satisfies TSESLint.FlatConfig.Config;
+/**
+ * Preset membership — decided by measured false-positive profile, not by
+ * "every rule on".
+ *
+ *   - `minimal`: the two rules whose every finding is a defect by
+ *     construction — a tool argument naming the process that runs, and a
+ *     schema-less handler reading arguments the SDK never passes it.
+ *   - `recommended`: adds `no-unvalidated-tool-args` — a destructured key the
+ *     schema does not declare is stripped (or, on a loose schema, passed
+ *     through unvalidated); no false positive was found in the 2026-10
+ *     FP/FN review.
+ *   - `strict`: everything, adding `no-tool-description-injection`. A
+ *     description imported from another module is reported because this
+ *     file cannot see it; that is correct for a strict preset and too noisy
+ *     for the default.
+ *
+ * README.md's preset table and rules-table 💼 column are locked to these lists
+ * by `src/index.test.ts`.
+ */
+const minimalRules: TSESLint.FlatConfig.Rules = {
+  'mcp-sdk-security/no-command-injection-in-tool': 'error',
+  'mcp-sdk-security/require-tool-input-schema': 'error',
+};
 
-/** Recommended configuration — the balanced default. */
-const recommendedConfig: TSESLint.FlatConfig.Config = {
-  plugins: {
-    'mcp-sdk-security': plugin,
-  },
-  rules: {
-    'mcp-sdk-security/require-tool-input-schema': 'error',
-  },
-} satisfies TSESLint.FlatConfig.Config;
+const recommendedRules: TSESLint.FlatConfig.Rules = {
+  'mcp-sdk-security/no-command-injection-in-tool': 'error',
+  'mcp-sdk-security/no-unvalidated-tool-args': 'error',
+  'mcp-sdk-security/require-tool-input-schema': 'error',
+};
 
 /**
- * Strict configuration — everything on.
- *
- * Derived from `rules` rather than hand-listed, so a new rule cannot be added
- * to the plugin and silently left out of the preset it is supposed to join.
- * Promotion to `minimal` / `recommended` stays manual and waits on a measured
- * false-positive profile.
+ * Strict is derived from `rules` rather than hand-listed, so a new rule cannot
+ * be added to the plugin and silently left out of the preset it is supposed to
+ * join. Promotion to `minimal` / `recommended` stays manual and waits on a
+ * measured false-positive profile.
  */
-const strictConfig: TSESLint.FlatConfig.Config = {
-  plugins: {
-    'mcp-sdk-security': plugin,
-  },
-  rules: Object.fromEntries(
-    Object.keys(rules).map((ruleName) => [`mcp-sdk-security/${ruleName}`, 'error']),
-  ),
-} satisfies TSESLint.FlatConfig.Config;
+const strictRules: TSESLint.FlatConfig.Rules = Object.fromEntries(
+  Object.keys(rules).map((ruleName) => [`mcp-sdk-security/${ruleName}`, 'error']),
+);
 
-export const configs = {
-  minimal: minimalConfig,
-  recommended: recommendedConfig,
-  strict: strictConfig,
+// Written as inline objects so scripts/sync-readme-rules.ts can read
+// `recommended: { … rules: recommendedRules }` to fill the README's 💼 column.
+export const configs: Record<
+  'minimal' | 'recommended' | 'strict',
+  TSESLint.FlatConfig.Config
+> = {
+  minimal: {
+    plugins: { 'mcp-sdk-security': plugin },
+    rules: minimalRules,
+  },
+  recommended: {
+    plugins: { 'mcp-sdk-security': plugin },
+    rules: recommendedRules,
+  },
+  strict: {
+    plugins: { 'mcp-sdk-security': plugin },
+    rules: strictRules,
+  },
 };
 
 export default {

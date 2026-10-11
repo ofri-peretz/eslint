@@ -21,6 +21,7 @@ import {
   MessageIcons,
   hasSafeAnnotation,
   namesOneOf,
+  objectKeyName,
   propertyName,
 } from '@interlace/eslint-devkit';
 import { isDecodeOperation } from '../../utils';
@@ -121,7 +122,8 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] ?? {};
-    const { trustedAnnotations = [] } = options;
+    const { trustedAnnotations = [], allowHeaderInspection = false } = options;
+    const sourceCode = context.sourceCode;
 
     /**
      * Check if this is a jwt-decode import usage
@@ -158,7 +160,36 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
     };
 
     /**
-     * Is every use of this decoded value a read of a time claim?
+     * Is this member read one that carries no authority?
+     *
+     * - A time claim (`exp`, `iat`, `nbf`): reading them from an unverified
+     *   token is the documented safe use of `decode`.
+     * - `header.kid`: choosing WHICH key to verify with, from a JWKS, by the
+     *   token's own key id is the jsonwebtoken + jwks-rsa flow. The verify
+     *   that follows checks the signature against that key, so a forged kid
+     *   only selects a key that will then fail. `header.alg` / `header.jku`
+     *   are NOT exempt by default — choosing those from the token is the
+     *   attack — unless `allowHeaderInspection` opts every header read in.
+     */
+    const isAllowedRead = (member: TSESTree.MemberExpression): boolean => {
+      const name = propertyName(member);
+      if (namesOneOf(name, TIME_CLAIMS)) return true;
+      if (name !== 'header') return false;
+      if (allowHeaderInspection) return true;
+      const next = member.parent;
+      return next.type === 'MemberExpression' && propertyName(next) === 'kid';
+    };
+
+    /** `const { exp, iat: issuedAt } = decode(t)` — only time claims. */
+    const destructuresOnlyTimeClaims = (pattern: TSESTree.ObjectPattern) =>
+      pattern.properties.every(
+        (prop) =>
+          prop.type === 'Property' &&
+          namesOneOf(objectKeyName(prop), TIME_CLAIMS),
+      );
+
+    /**
+     * Is every use of this decoded value a read that carries no authority?
      *
      * `jwt.decode()` cannot be replaced by `verify()` when there is no key to
      * verify with — which is exactly the situation a client is in when it wants
@@ -171,31 +202,36 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
      * Anything else — reading `sub`, `role`, `scope`, or passing the object on —
      * still reports, because those are claims an attacker would want to forge.
      */
-    const readsOnlyTimeClaims = (node: TSESTree.CallExpression): boolean => {
+    const readsOnlyAllowedClaims = (node: TSESTree.CallExpression): boolean => {
       const outer = skipTypeWrappers(node);
       // ESLint sets `parent` on every visited node, so no undefined guard here
       // (or on the reference parents below) — an unreachable branch no test
       // could ever hit is worse than the crash it pretends to prevent.
       const parent = outer.parent!;
 
-      // decode(token).exp
+      // decode(token).exp / decode(token, { complete: true }).header.kid
       if (parent.type === 'MemberExpression' && parent.object === outer) {
-        // `has(null)` is already false for a runtime-keyed member, so no
-        // `?? ''` sentinel — its empty-string arm is a branch no input reaches.
-        return namesOneOf(propertyName(parent), TIME_CLAIMS);
+        return isAllowedRead(parent);
+      }
+
+      if (parent.type !== 'VariableDeclarator') {
+        return false;
+      }
+
+      // const { exp } = jwtDecode(token) — the frontend refresh check.
+      if (parent.id.type === 'ObjectPattern') {
+        return destructuresOnlyTimeClaims(parent.id);
       }
 
       // const decoded = decode(token); ... decoded.exp
-      if (
-        parent.type !== 'VariableDeclarator' ||
-        parent.id.type !== 'Identifier'
-      ) {
+      if (parent.id.type !== 'Identifier') {
         return false;
       }
       const [variable] = context.sourceCode.getDeclaredVariables(parent);
       // A decoded value that is never read establishes nothing — "safe" here
-      // means "demonstrably reads only a time claim", not "no evidence found".
-      let sawTimeClaim = false;
+      // means "demonstrably reads only an allowed claim", not "no evidence
+      // found".
+      let sawAllowedRead = false;
       const allUsesAllowed = variable!.references.every((reference) => {
         const use = skipTypeWrappers(reference.identifier);
         const useParent = use.parent!;
@@ -213,16 +249,16 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
         ) {
           return true;
         }
-        const isTimeClaimRead =
+        const isAllowed =
           useParent.type === 'MemberExpression' &&
           useParent.object === use &&
-          namesOneOf(propertyName(useParent), TIME_CLAIMS);
-        if (isTimeClaimRead) {
-          sawTimeClaim = true;
+          isAllowedRead(useParent);
+        if (isAllowed) {
+          sawAllowedRead = true;
         }
-        return isTimeClaimRead;
+        return isAllowed;
       });
-      return allUsesAllowed && sawTimeClaim;
+      return allUsesAllowed && sawAllowedRead;
     };
 
     /**
@@ -401,12 +437,12 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
     return {
       CallExpression(node: TSESTree.CallExpression) {
         // Check for jwt.decode() pattern
-        if (isDecodeOperation(node)) {
+        if (isDecodeOperation(node, sourceCode)) {
           // Check for safe annotations
           if (hasSafeAnnotation(node, context, trustedAnnotations)) {
             return;
           }
-          if (readsOnlyTimeClaims(node)) {
+          if (readsOnlyAllowedClaims(node)) {
             return;
           }
           const [tokenArgument] = node.arguments;

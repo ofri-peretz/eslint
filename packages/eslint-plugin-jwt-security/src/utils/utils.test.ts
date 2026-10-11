@@ -13,7 +13,6 @@ import {
   isSignOperation,
   isVerifyOperation,
   isDecodeOperation,
-  getOptionsArgument,
   SENSITIVE_PAYLOAD_FIELDS,
   SYMMETRIC_ALGORITHMS,
   SECURE_ALGORITHMS,
@@ -502,22 +501,6 @@ describe('JWT Utils', () => {
     it('isDecodeOperation detects decode calls', () => {
       expect(isDecodeOperation(mockCallExpression('decode'))).toBe(true);
       expect(isDecodeOperation(mockCallExpression('other'))).toBe(false);
-    });
-  });
-
-  describe('getOptionsArgument', () => {
-    it('should return options object at default index', () => {
-      const options = mockObjectExpression({});
-      const call = {
-        ...mockCallExpression('verify'),
-        arguments: [mockLiteral('token'), mockLiteral('secret'), options],
-      } as unknown as TSESTree.CallExpression;
-      expect(getOptionsArgument(call)).toBe(options);
-    });
-
-    it('should return undefined if no options', () => {
-      const call = mockCallExpression('verify');
-      expect(getOptionsArgument(call)).toBeUndefined();
     });
   });
 

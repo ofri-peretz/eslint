@@ -23,7 +23,7 @@ import {
 } from '@interlace/eslint-devkit';
 import {
   isSignatureVerifyOperation,
-  getOptionsArgument,
+  resolveCallOptions,
   hasOption,
 } from '../../utils';
 import type { RequireAlgorithmWhitelistOptions } from '../../types';
@@ -103,10 +103,11 @@ export const requireAlgorithmWhitelist = createRule<RuleOptions, MessageIds>({
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    const sourceCode = context.sourceCode;
     return {
       CallExpression(node: TSESTree.CallExpression) {
         // Only check verify operations
-        if (!isSignatureVerifyOperation(node)) {
+        if (!isSignatureVerifyOperation(node, sourceCode)) {
           return;
         }
 
@@ -115,10 +116,13 @@ export const requireAlgorithmWhitelist = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        const optionsArg = getOptionsArgument(node, 2);
-
-        // No options at all - definitely missing algorithms
-        if (!optionsArg) {
+        /*
+         * Options are resolved structurally (a same-file const, an `as` cast,
+         * a spread of such a const). `null` means there are none — or the
+         * slot holds a callback — so nothing can pin the algorithm.
+         */
+        const options = resolveCallOptions(node, sourceCode);
+        if (options === null) {
           context.report({
             node,
             messageId: 'missingAlgorithmWhitelist',
@@ -141,12 +145,15 @@ export const requireAlgorithmWhitelist = createRule<RuleOptions, MessageIds>({
          * catch. Accepting the typo silenced the rule at exactly the moment it
          * mattered, and the author had every reason to believe they were
          * covered.
+         *
+         * An OPAQUE options value — a parameter, an import, a call, NestJS
+         * module defaults — may carry `algorithms` where this file cannot see
+         * it, so it is not reported: an option this rule cannot prove missing
+         * is not a finding.
          */
-        const hasAlgorithms = hasOption(optionsArg, 'algorithms');
-
-        if (!hasAlgorithms) {
+        if (!hasOption(options, 'algorithms') && !options.opaque) {
           context.report({
-            node: optionsArg,
+            node: node.arguments[2]!,
             messageId: 'missingAlgorithmWhitelist',
           });
         }

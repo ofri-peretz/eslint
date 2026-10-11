@@ -43,6 +43,11 @@ jwt.verify(token, publicKey, { algorithms: ['HS256'] });
 // Any symmetric algorithm with public key
 jwt.verify(token, getPublicKey(), { algorithms: ['HS384'] });
 jwt.verify(token, jwksKey, { algorithms: ['HS512'] });
+
+// HMAC and asymmetric algorithms in ONE whitelist (CVE-2015-9235's shape).
+// Reported whatever the key is called: the attacker picks HS256 and the
+// verifier HMACs with the key material it holds for RS256.
+jwt.verify(token, cert, { algorithms: ['RS256', 'HS256'] });
 ```
 
 ### ✅ Correct

@@ -10,74 +10,15 @@ import {
   TSESTree,
   formatLLMMessage,
   MessageIcons,
-  resolveModuleBinding,
-  unwrapTypeSyntax,
   staticString,
 } from '@interlace/eslint-devkit';
 import { NoInsecureSslOptions } from '../../types';
-import { fileUsesPostgres, PG_MODULES } from '../../utils';
-
-const PG_MODULE_SET: ReadonlySet<string> = new Set(PG_MODULES);
-
-/**
- * Is this `new` callee a PostgreSQL client constructor?
- *
- * The rule used to ask whether the callee was SPELLED `Pool` or `Client`, which
- * is two defects at once. It reported `new Pool(...)` from `generic-pool` — a
- * worker pool with no TLS and no database, whose `ssl` key means nothing — and
- * it missed `new pg.Pool(...)`, the namespace spelling, because that callee is
- * a MemberExpression with no `.name` at all.
- *
- * `resolveModuleBinding` answers the question that actually matters: what did
- * this identifier import? A `Pool` from `pg` is one; a `Pool` from anywhere
- * else is not, however it is spelled.
- */
-function isPgClientConstructor(
-  callee: TSESTree.Node,
-  scope: TSESLint.Scope.Scope,
-): boolean {
-  const binding = resolveModuleBinding(callee, scope);
-  if (binding === undefined) return false;
-  // Compared on the package ROOT, so `pg/lib/client` and `@vercel/postgres/edge`
-  // count as their package.
-  const parts = binding.module.split('/');
-  const root = binding.module.startsWith('@') ? parts.slice(0, 2).join('/') : parts[0];
-  if (!PG_MODULE_SET.has(root)) return false;
-  // `import { Pool } from 'pg'`            -> path ['Pool']
-  // `import pg from 'pg'; new pg.Pool()`   -> path ['Pool'] via the member walk
-  // `const Pool = require('pg-pool')`      -> path [], the module IS the ctor
-  const [exported] = binding.path;
-  return exported === undefined || exported === 'Pool' || exported === 'Client';
-}
-
-/**
- * The expression a value really holds, following a written-once local binding.
- *
- * Every real application builds its connection config one binding away from the
- * constructor — `const config = {...}; new Pool(config)` — and the rule read
- * only a config object written inline at the call site. Six of the seven
- * vulnerable fixtures in this rule's corpus were missed for that one reason.
- */
-function effectiveValue(
-  node: TSESTree.Node,
-  scope: TSESLint.Scope.Scope,
-  depth = 0,
-): TSESTree.Node {
-  if (depth > 4) return node;
-  const bare = unwrapTypeSyntax(node);
-  if (bare !== node) return effectiveValue(bare, scope, depth + 1);
-  if (node.type !== AST_NODE_TYPES.Identifier) return node;
-
-  for (let current: TSESLint.Scope.Scope | null = scope; current; current = current.upper) {
-    const variable = current.set.get(node.name);
-    if (variable === undefined) continue;
-    if (variable.references.filter((ref) => ref.isWrite()).length !== 1) return node;
-    const def = variable.defs.find((d) => d.type === 'Variable');
-    const init = def === undefined ? null : (def.node as TSESTree.VariableDeclarator).init;
-    return init == null ? node : effectiveValue(init, scope, depth + 1);
-  }
-  return node;
-}
+import { fileUsesPostgres } from '../../utils';
+import {
+  connectionConfigArguments,
+  effectiveValue,
+  typedConnectionConfig,
+} from '../../utils/connection-config';
 
 /**
  * The name a property key denotes, or `null` when it cannot be known statically.
@@ -183,53 +124,89 @@ export const noInsecureSsl: TSESLint.RuleModule<
     // the cheap path — a file with no database in it does no work.
     if (!fileUsesPostgres(context.sourceCode.ast)) return {};
 
-    return {
-      NewExpression(node: TSESTree.NewExpression) {
-        const scope = context.sourceCode.getScope(node);
-        if (!isPgClientConstructor(node.callee, scope)) return;
+    /**
+     * One finding per insecure property, however many routes reach it — a
+     * typed `const config: PoolConfig` that is ALSO passed to `new Pool(config)`
+     * is one defect, not two.
+     */
+    const reported = new Set<TSESTree.Node>();
+    const report = (node: TSESTree.Node): void => {
+      if (reported.has(node)) return;
+      reported.add(node);
+      context.report({ node, messageId: 'noInsecureSsl' });
+    };
 
-        const [firstArgument] = node.arguments;
-        if (firstArgument === undefined) return;
+    /**
+     * Every object an `ssl` value can evaluate to. `isProd ? { rejectUnauthorized:
+     * false } : false` — the Heroku snippet — disables verification in exactly
+     * the environment that matters, and the rule read only a bare object.
+     */
+    const sslBranches = (node: TSESTree.Node, scope: TSESLint.Scope.Scope): TSESTree.Node[] => {
+      const value = effectiveValue(node, scope);
+      if (value.type === AST_NODE_TYPES.ConditionalExpression) {
+        return [...sslBranches(value.consequent, scope), ...sslBranches(value.alternate, scope)];
+      }
+      if (value.type === AST_NODE_TYPES.LogicalExpression) {
+        return [...sslBranches(value.left, scope), ...sslBranches(value.right, scope)];
+      }
+      return [value];
+    };
 
-        const config = effectiveValue(firstArgument, scope);
+    const checkConfig = (argument: TSESTree.Node, scope: TSESLint.Scope.Scope): void => {
+      const config = effectiveValue(argument, scope);
 
-        // `new Client('postgres://…?sslmode=no-verify')` — the DSN passed bare.
-        const staticText2 = staticString(config);
-        if (staticText2 !== null) {
-          if (dsnSkipsVerification(staticText2)) {
-            context.report({ node: firstArgument, messageId: 'noInsecureSsl' });
-          }
+      // `new Client('postgres://…?sslmode=no-verify')` — the DSN passed bare.
+      const dsnText = staticString(config);
+      if (dsnText !== null) {
+        if (dsnSkipsVerification(dsnText)) report(argument);
+        return;
+      }
+
+      if (config.type !== AST_NODE_TYPES.ObjectExpression) return;
+
+      // `connectionString: 'postgres://…?sslmode=no-verify'`
+      const connectionString = property(config, 'connectionString');
+      if (connectionString !== undefined) {
+        const dsn = effectiveValue(connectionString.value, scope);
+        if (
+          dsn.type === AST_NODE_TYPES.Literal &&
+          typeof dsn.value === 'string' &&
+          dsnSkipsVerification(dsn.value)
+        ) {
+          report(connectionString.value);
           return;
         }
+      }
 
-        if (config.type !== AST_NODE_TYPES.ObjectExpression) return;
+      const ssl = property(config, 'ssl');
+      if (ssl === undefined) return;
 
-        // `connectionString: 'postgres://…?sslmode=no-verify'`
-        const connectionString = property(config, 'connectionString');
-        if (connectionString !== undefined) {
-          const dsn = effectiveValue(connectionString.value, scope);
-          if (
-            dsn.type === AST_NODE_TYPES.Literal &&
-            typeof dsn.value === 'string' &&
-            dsnSkipsVerification(dsn.value)
-          ) {
-            context.report({ node: connectionString.value, messageId: 'noInsecureSsl' });
-            return;
-          }
+      for (const branch of sslBranches(ssl.value, scope)) {
+        if (branch.type !== AST_NODE_TYPES.ObjectExpression) continue;
+        const rejectUnauthorized = property(branch, 'rejectUnauthorized');
+        if (
+          rejectUnauthorized !== undefined &&
+          disablesVerification(rejectUnauthorized.value, scope)
+        ) {
+          report(rejectUnauthorized);
         }
+      }
+    };
 
-        const ssl = property(config, 'ssl');
-        if (ssl === undefined) return;
+    const checkCall = (node: TSESTree.NewExpression | TSESTree.CallExpression): void => {
+      const scope = context.sourceCode.getScope(node);
+      for (const argument of connectionConfigArguments(node, scope)) checkConfig(argument, scope);
+    };
 
-        const sslValue = effectiveValue(ssl.value, scope);
-        if (sslValue.type !== AST_NODE_TYPES.ObjectExpression) return;
-
-        const rejectUnauthorized = property(sslValue, 'rejectUnauthorized');
-        if (rejectUnauthorized === undefined) return;
-
-        if (disablesVerification(rejectUnauthorized.value, scope)) {
-          context.report({ node: rejectUnauthorized, messageId: 'noInsecureSsl' });
-        }
+    return {
+      NewExpression: checkCall,
+      // postgres.js `postgres(url, opts)` and pg-promise `pgp(opts)`.
+      CallExpression: checkCall,
+      // `export const config: PoolConfig = { … }` — consumed in another file.
+      VariableDeclarator(node: TSESTree.VariableDeclarator) {
+        const scope = context.sourceCode.getScope(node);
+        const config = typedConnectionConfig(node, scope);
+        if (config !== null) checkConfig(config, scope);
       },
     };
   },

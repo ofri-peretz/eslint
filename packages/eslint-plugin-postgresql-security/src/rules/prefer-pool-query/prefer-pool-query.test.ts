@@ -140,7 +140,7 @@ describe('prefer-pool-query — regression locks', () => {
       "async function f() { const c = await pool.connect(); doSomething(c); c.release(); }",
       "async function f() { const c = await pool.connect(); const fn = c.query; c.release(); }",
       // Not a checkout.
-      "async function f() { const c = await pool.other(); }",
+      { name: 'a method other than connect() is not a checkout', code: "async function f() { const c = await pool.other(); }" },
     ]),
     invalid: [],
   });

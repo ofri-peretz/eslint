@@ -109,6 +109,17 @@ Exposing system prompts allows attackers to:
 
 - [`no-dynamic-system-prompt`](./no-dynamic-system-prompt) - Prevent dynamic system prompts
 
+## 🔄 Changes in the 2026-10-10 FP/FN audit
+
+- A returned object with a `model` property is AI SDK call options assembled on
+  the server, not a response, and is not reported.
+- In a response payload (`Response.json`, `res.json`, `res.send`,
+  `new Response(JSON.stringify(...))`) a `system` / `instructions` /
+  `systemPrompt` KEY is reported whatever its value is named, including in
+  nested objects.
+- Names are matched by whole word.
+- **Options:** the documented `defaultOptions` now apply. Earlier versions read `context.options` and silently ran a shorter hard-coded list instead.
+
 <WhenNotToUse />
 
 <FalseNegativeCTA />

@@ -238,7 +238,7 @@ describe('no-insecure-ssl', () => {
         "new Client({ connectionString: 'postgres://app@h:5432/db?sslmode=verify-full' });",
         "new Client({ connectionString: 'postgres://app@h:5432/db' });",
         "new Client('postgres://app@h:5432/db');",
-        'new Client({ connectionString: process.env.DATABASE_URL });',
+        { name: 'a connection string from the environment carries no sslmode', code: 'new Client({ connectionString: process.env.DATABASE_URL });' },
         // A non-string first argument that is not an object either.
         'new Client(42);',
       ]),
@@ -289,5 +289,87 @@ describe('no-insecure-ssl', () => {
         },
       ],
     });
+  });
+});
+
+/** FP/FN review 2026-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md). */
+describe('no-insecure-ssl — fp/fn review 2026-10', () => {
+  ruleTester.run('SSL-1: a conditional ssl value', noInsecureSsl, {
+    valid: pg([
+      { name: 'a conditional ssl whose object branch verifies is safe', code: "new Pool({ ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: true, ca } : false });" },
+      { name: 'an && ssl whose object verifies is safe', code: "new Pool({ ssl: useTls && { rejectUnauthorized: true } });" },
+      { name: 'a conditional ssl whose branches cannot be read is not judged', code: 'new Pool({ ssl: isProd ? sslOptions : false });' },
+    ]),
+    invalid: pg([
+      {
+        name: 'the Heroku snippet: verification off exactly in production',
+        code: "const isProd = process.env.NODE_ENV === 'production';\nnew Pool({ connectionString: process.env.DATABASE_URL, ssl: isProd ? { rejectUnauthorized: false } : false });",
+        errors: [{ messageId: 'noInsecureSsl' }],
+      },
+      {
+        name: 'the && spelling',
+        code: "new Pool({ ssl: process.env.DATABASE_SSL === 'true' && { rejectUnauthorized: false } });",
+        errors: [{ messageId: 'noInsecureSsl' }],
+      },
+      {
+        name: 'the || fallback and a nested branch',
+        code: "new Pool({ ssl: custom || (strict ? { rejectUnauthorized: true } : { rejectUnauthorized: false }) });",
+        errors: [{ messageId: 'noInsecureSsl' }],
+      },
+    ]),
+  });
+
+  ruleTester.run('SSL-2: configs not written inline in new Pool()', noInsecureSsl, {
+    valid: [
+      { name: 'postgres.js ssl: require verifies', code: "import postgres from 'postgres';\nexport const sql = postgres(process.env.DATABASE_URL, { ssl: 'require' });" },
+      { name: 'postgres.js ssl with rejectUnauthorized true is safe', code: "import postgres from 'postgres';\nexport const sql = postgres(process.env.DATABASE_URL, { ssl: { rejectUnauthorized: true } });" },
+      { name: 'pg-promise ssl with rejectUnauthorized true is safe', code: "import pgPromise from 'pg-promise';\nconst pgp = pgPromise();\nexport const db = pgp({ ssl: { rejectUnauthorized: true } });" },
+      // A non-pg factory and a non-pg annotation.
+      { name: 'a factory from another package is not a pg-promise database', code: "import pgPromise from 'pg-promise';\nimport { other } from 'x';\nconst make = other();\nmake({ ssl: { rejectUnauthorized: false } });" },
+      { name: 'an ioredis-typed options object is not a pg config', code: "import { Pool } from 'pg';\nimport type { RedisOptions } from 'ioredis';\nconst o: RedisOptions = { tls: { rejectUnauthorized: false } };" },
+      { name: 'a generic type annotation is not a pg config type', code: "import { Pool } from 'pg';\nconst o: Partial<X> = { ssl: { rejectUnauthorized: false } };" },
+      { name: 'an unresolved PoolConfig name is not proven to be pg', code: "import { Pool } from 'pg';\nconst o: PoolConfig = { ssl: { rejectUnauthorized: false } };" },
+      { name: 'a declaration with no initialiser has no config to read', code: "import { Pool } from 'pg';\nlet o: import('pg').PoolConfig;" },
+      // A local function that does not simply return a config.
+      { name: 'a local function that returns nothing yields no config', code: "import { Pool } from 'pg';\nfunction cfg() { log(); }\nnew Pool(cfg());" },
+      { name: 'a computed callee is not a local config factory', code: "import { Pool } from 'pg';\nnew Pool(cfgs[0]());" },
+    ],
+    invalid: [
+      {
+        name: 'postgres.js options',
+        code: "import postgres from 'postgres';\nexport const sql = postgres(process.env.DATABASE_URL, { ssl: { rejectUnauthorized: false } });",
+        errors: [{ messageId: 'noInsecureSsl' }],
+      },
+      {
+        name: 'pg-promise database factory',
+        code: "import pgPromise from 'pg-promise';\nconst pgp = pgPromise();\nexport const db = pgp({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });",
+        errors: [{ messageId: 'noInsecureSsl' }],
+      },
+      {
+        name: 'pg-promise factory called inline',
+        code: "import pgPromise from 'pg-promise';\nexport const db = pgPromise()({ ssl: { rejectUnauthorized: false } });",
+        errors: [{ messageId: 'noInsecureSsl' }],
+      },
+      {
+        name: 'a config returned from a local function',
+        code: "import { Pool, PoolConfig } from 'pg';\nfunction dbConfig(): PoolConfig { return { connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }; }\nexport const pool = new Pool(dbConfig());",
+        errors: [{ messageId: 'noInsecureSsl' }],
+      },
+      {
+        name: 'a config from a local arrow',
+        code: "import { Pool } from 'pg';\nconst dbConfig = () => ({ ssl: { rejectUnauthorized: false } });\nexport const pool = new Pool(dbConfig());",
+        errors: [{ messageId: 'noInsecureSsl' }],
+      },
+      {
+        name: 'an exported config typed as pg PoolConfig, reported once even when also passed to new Pool',
+        code: "import { Pool, type PoolConfig } from 'pg';\nexport const config: PoolConfig = { ssl: { rejectUnauthorized: false } };\nexport const pool = new Pool(config);",
+        errors: [{ messageId: 'noInsecureSsl' }],
+      },
+      {
+        name: 'pg.ClientConfig via satisfies',
+        code: "import pg from 'pg';\nexport const config = { ssl: { rejectUnauthorized: false } } satisfies pg.ClientConfig;",
+        errors: [{ messageId: 'noInsecureSsl' }],
+      },
+    ],
   });
 });

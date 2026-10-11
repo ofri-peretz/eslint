@@ -97,6 +97,13 @@ Unbounded token consumption can cause:
 - [`require-max-steps`](./require-max-steps.md) - Limit multi-step tool calling
 - [`require-abort-signal`](./require-abort-signal.md) - Enable cancellation
 
+## 🔄 Changes in the 2026-10-10 FP/FN audit
+
+- A spread in the options (`...LIMITS`) may carry the limit and counts; SDK calls
+  are matched by exact name (`generateTextureAtlas` is not `generateText`).
+- Now `warn` in `recommended` (CVSS 6.5).
+- **Options:** the documented `defaultOptions` now apply. Earlier versions read `context.options` and silently ran a shorter hard-coded list instead.
+
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:

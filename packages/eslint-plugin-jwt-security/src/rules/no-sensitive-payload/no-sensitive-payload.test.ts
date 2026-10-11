@@ -317,3 +317,62 @@ jwt.sign({ customSecret: 'value' }, secret);`,
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// FP/FN audit 2026-10
+// ---------------------------------------------------------------------------
+describe('no-sensitive-payload — audit 2026-10', () => {
+  ruleTester.run('structural payload resolution', noSensitivePayload, {
+    valid: [
+      {
+        name: 'a jose builder with harmless claims',
+        code: `import { SignJWT } from 'jose';
+await new SignJWT({ sub: user.id }).setProtectedHeader({ alg: 'ES256' }).sign(key);`,
+      },
+      {
+        name: 'a payload from a parameter cannot be seen',
+        code: `import jwt from 'jsonwebtoken';
+export const f = (payload) => jwt.sign(payload, key);`,
+      },
+      {
+        name: 'passwordChangedAt is a timestamp, not a password',
+        code: `import jwt from 'jsonwebtoken';
+jwt.sign({ sub, passwordChangedAt: t }, key);`,
+      },
+    ],
+    invalid: [
+      {
+        name: 'FN-6: the payload built in a const one statement up',
+        code: `import jwt from 'jsonwebtoken';
+const payload = { sub: user.id, password: user.password };
+jwt.sign(payload, key);`,
+        errors: [{ messageId: 'sensitivePayloadField' }],
+      },
+      {
+        name: 'FN-6: a password hash is still sensitive',
+        code: `import jwt from 'jsonwebtoken';
+jwt.sign({ sub: user.id, passwordHash: user.passwordHash }, key);`,
+        errors: [{ messageId: 'sensitivePayloadField' }],
+      },
+      {
+        name: 'FN-6: a spread of a resolvable const',
+        code: `import jwt from 'jsonwebtoken';
+const extra = { ssn: user.ssn };
+jwt.sign({ sub, ...extra }, key);`,
+        errors: [{ messageId: 'sensitivePayloadField' }],
+      },
+      {
+        name: "FN-2: jose's claims live in the SignJWT constructor",
+        code: `import { SignJWT } from 'jose';
+await new SignJWT({ sub: user.id, password: user.password }).setProtectedHeader({ alg: 'HS256' }).sign(key);`,
+        errors: [{ messageId: 'sensitivePayloadField' }],
+      },
+      {
+        name: 'FN-3: NestJS signAsync payload',
+        code: `import { JwtService } from '@nestjs/jwt';
+export const f = (svc, user) => svc.signAsync({ sub: user.id, password: user.password });`,
+        errors: [{ messageId: 'sensitivePayloadField' }],
+      },
+    ],
+  });
+});

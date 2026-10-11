@@ -9,12 +9,14 @@
  *
  * Library detection, pattern matching, and common helpers.
  */
-import type { TSESTree } from '@interlace/eslint-devkit';
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
   AST_NODE_TYPES,
   createModuleEvidence,
   objectKeyName,
   propertyName,
+  staticString,
+  unwrapTypeSyntax,
 } from '@interlace/eslint-devkit';
 
 /*
@@ -34,6 +36,11 @@ export const JWT_LIBRARIES = {
   NESTJS_JWT: '@nestjs/jwt',
   JWKS_RSA: 'jwks-rsa',
   JWT_DECODE: 'jwt-decode',
+  // Both take their key and algorithms in a config object rather than a
+  // `sign`/`verify` call, so they are read by `jwtConfigOf`, not the method
+  // matcher. Listing them also makes their own bindings count as JWT roots.
+  PASSPORT_JWT: 'passport-jwt',
+  FAST_JWT: 'fast-jwt',
 } as const;
 
 export type JwtLibrary = (typeof JWT_LIBRARIES)[keyof typeof JWT_LIBRARIES];
@@ -148,14 +155,27 @@ export const SENSITIVE_PAYLOAD_FIELDS = new Set([
   'routingnumber',
   'routing_number',
   'routing-number',
+  // A password hash is still the password's verifier, and a token is readable
+  // by anyone holding it. Exact compounds, not a substring match: the valid
+  // `emailVerified` case shows what substring matching would report.
+  'passwordhash',
+  'password_hash',
+  'hashedpassword',
+  'hashed_password',
+  'passworddigest',
+  'password_digest',
 ]);
 
 /**
  * JWT method patterns for different operations
  */
 export const JWT_METHODS = {
-  SIGN: new Set(['sign', 'signJWT', 'SignJWT']),
-  VERIFY: new Set(['verify', 'verifyJWT', 'jwtVerify']),
+  // `signAsync` / `verifyAsync` are @nestjs/jwt's documented spellings. They
+  // are only safe to match because `resolveCallOptions` knows NestJS takes its
+  // options as the SECOND argument and merges them over module defaults —
+  // matching the names without that would report every NestJS app.
+  SIGN: new Set(['sign', 'signJWT', 'SignJWT', 'signAsync']),
+  VERIFY: new Set(['verify', 'verifyJWT', 'jwtVerify', 'verifyAsync']),
   // `decodeJwt` is jose's actual export. The set listed `decodeJWT` — an
   // all-caps spelling no JWT library ships — so every `decodeJwt(token)` call
   // in a file importing jose went unreported, despite jose being a listed
@@ -508,6 +528,7 @@ function calleeIsForeign(node: TSESTree.CallExpression): boolean {
 export function isJwtLibraryCall(
   node: TSESTree.CallExpression,
   targetMethods: Set<string>,
+  sourceCode?: SourceCodeLike,
 ): boolean {
   if (!fileImportsJwtLibrary(node)) {
     return false;
@@ -516,6 +537,11 @@ export function isJwtLibraryCall(
     return false;
   }
   if (calleeIsForeign(node)) {
+    return false;
+  }
+  // The scope-aware receiver checks need the rule's SourceCode. Every rule
+  // passes it; only the mock-node unit tests call without one.
+  if (sourceCode !== undefined && receiverIsForeignValue(node, sourceCode)) {
     return false;
   }
 
@@ -559,9 +585,7 @@ export function isStringLiteral(
 /**
  * Extract algorithm from options object
  */
-export function extractAlgorithms(
-  optionsNode: TSESTree.ObjectExpression,
-): string[] {
+export function extractAlgorithms(optionsNode: OptionsLike): string[] {
   const algorithms: string[] = [];
 
   for (const prop of optionsNode.properties) {
@@ -610,7 +634,7 @@ export function extractAlgorithms(
  * Check if options object has a specific property set
  */
 export function hasOption(
-  optionsNode: TSESTree.ObjectExpression,
+  optionsNode: OptionsLike,
   optionName: string,
 ): boolean {
   return optionsNode.properties.some(
@@ -625,15 +649,18 @@ export function hasOption(
  * Get the value of a specific option from options object
  */
 export function getOptionValue(
-  optionsNode: TSESTree.ObjectExpression,
+  optionsNode: OptionsLike,
   optionName: string,
 ): TSESTree.Node | undefined {
+  // Last one wins, exactly as it does at runtime: `{ ...base, maxAge: '1h' }`
+  // overrides whatever `base` said.
+  let found: TSESTree.Node | undefined;
   for (const prop of optionsNode.properties) {
     if (prop.type === 'Property' && objectKeyName(prop) === optionName) {
-      return prop.value;
+      found = prop.value;
     }
   }
-  return undefined;
+  return found;
 }
 
 /**
@@ -737,15 +764,21 @@ export function isEnvVariable(node: TSESTree.Node): boolean {
 /**
  * Check if this call looks like a JWT sign operation
  */
-export function isSignOperation(node: TSESTree.CallExpression): boolean {
-  return isJwtLibraryCall(node, JWT_METHODS.SIGN);
+export function isSignOperation(
+  node: TSESTree.CallExpression,
+  sourceCode?: SourceCodeLike,
+): boolean {
+  return isJwtLibraryCall(node, JWT_METHODS.SIGN, sourceCode);
 }
 
 /**
  * Check if this call looks like a JWT verify operation
  */
-export function isVerifyOperation(node: TSESTree.CallExpression): boolean {
-  return isJwtLibraryCall(node, JWT_METHODS.VERIFY);
+export function isVerifyOperation(
+  node: TSESTree.CallExpression,
+  sourceCode?: SourceCodeLike,
+): boolean {
+  return isJwtLibraryCall(node, JWT_METHODS.VERIFY, sourceCode);
 }
 
 /**
@@ -757,31 +790,19 @@ export function isVerifyOperation(node: TSESTree.CallExpression): boolean {
  */
 export function isSignatureVerifyOperation(
   node: TSESTree.CallExpression,
+  sourceCode?: SourceCodeLike,
 ): boolean {
-  return isJwtLibraryCall(node, SIGNATURE_VERIFY as Set<string>);
+  return isJwtLibraryCall(node, SIGNATURE_VERIFY as Set<string>, sourceCode);
 }
 
 /**
  * Check if this call looks like a JWT decode operation (no verification)
  */
-export function isDecodeOperation(node: TSESTree.CallExpression): boolean {
-  return isJwtLibraryCall(node, JWT_METHODS.DECODE);
-}
-
-/**
- * Get the options argument from a JWT call
- * For jwt.verify(token, secret, options) -> returns options
- * For jwt.sign(payload, secret, options) -> returns options
- */
-export function getOptionsArgument(
+export function isDecodeOperation(
   node: TSESTree.CallExpression,
-  optionsIndex = 2,
-): TSESTree.ObjectExpression | undefined {
-  const arg = node.arguments[optionsIndex];
-  if (arg && arg.type === 'ObjectExpression') {
-    return arg;
-  }
-  return undefined;
+  sourceCode?: SourceCodeLike,
+): boolean {
+  return isJwtLibraryCall(node, JWT_METHODS.DECODE, sourceCode);
 }
 
 // `isTestFile` used to live here. It is now `isTestFilePath` in
@@ -789,3 +810,631 @@ export function getOptionsArgument(
 // substring anywhere in the path, so a repo checked out under `~/test/`
 // disabled the rule for every file in it. Locked by
 // rule-creation/skip-test-files.test.ts.
+
+/* ===========================================================================
+ * STRUCTURAL RESOLUTION
+ *
+ * Everything below answers one question: what does this call site say, once
+ * the spellings TypeScript and ordinary refactoring introduce are seen
+ * through? It follows a same-file `const` binding, strips `as` / `satisfies`,
+ * and flattens a spread of such a const. It never follows a value through a
+ * function call, a parameter or an import — that is data flow, and a rule
+ * that guesses there trades a false positive for a false negative it cannot
+ * see. What it cannot resolve it marks OPAQUE, and a rule asking "is option X
+ * missing?" must stay silent on an opaque answer.
+ * ======================================================================== */
+
+/** The slice of `SourceCode` these helpers use. */
+export type SourceCodeLike = Pick<TSESLint.SourceCode, 'getScope'>;
+
+/** Anything with object-literal properties: an ObjectExpression or a `ResolvedObject`. */
+export interface OptionsLike {
+  readonly properties: readonly TSESTree.ObjectLiteralElement[];
+}
+
+/** An object whose visible properties are known, and whether any part was not. */
+export interface ResolvedObject extends OptionsLike {
+  readonly properties: TSESTree.Property[];
+  /** Some part of the value could not be seen (a parameter, an import, a call…). */
+  readonly opaque: boolean;
+}
+
+/** What a name in this file is bound to. */
+type Binding =
+  | {
+      kind: 'const';
+      init: TSESTree.Expression;
+      variable: TSESLint.Scope.Variable;
+    }
+  | { kind: 'function' }
+  | { kind: 'other' }
+  | { kind: 'unbound' };
+
+/** Bounds every recursive walk; resolution is a lookup, not a solver. */
+const MAX_RESOLUTION_DEPTH = 4;
+
+function findVariable(
+  sourceCode: SourceCodeLike,
+  node: TSESTree.Identifier,
+): TSESLint.Scope.Variable | null {
+  for (
+    let scope: TSESLint.Scope.Scope | null = sourceCode.getScope(node);
+    scope !== null;
+    scope = scope.upper
+  ) {
+    const variable = scope.set.get(node.name);
+    if (variable !== undefined) return variable;
+  }
+  return null;
+}
+
+/**
+ * The binding an identifier refers to.
+ *
+ * Only a single `const x = <init>` with a plain identifier target counts as
+ * resolvable: `let`/`var` can be reassigned, a destructured const is a read of
+ * something else, and a parameter or import is supplied from outside.
+ */
+function bindingOf(
+  sourceCode: SourceCodeLike,
+  node: TSESTree.Identifier,
+): Binding {
+  const variable = findVariable(sourceCode, node);
+  // A configured global (`crypto`, `window`) has a variable but no definition.
+  const def = variable?.defs[0];
+  if (def === undefined) return { kind: 'unbound' };
+  if (def.type === 'FunctionName') return { kind: 'function' };
+  if (
+    def.type === 'Variable' &&
+    def.parent.kind === 'const' &&
+    def.node.id.type === AST_NODE_TYPES.Identifier &&
+    def.node.init !== null
+  ) {
+    return { kind: 'const', init: def.node.init, variable: variable! };
+  }
+  return { kind: 'other' };
+}
+
+/** `{ properties }` of an object literal, with resolvable spreads flattened in. */
+function flattenObject(
+  object: TSESTree.ObjectExpression,
+  sourceCode: SourceCodeLike,
+  depth: number,
+): ResolvedObject {
+  const properties: TSESTree.Property[] = [];
+  let opaque = false;
+  for (const element of object.properties) {
+    if (element.type === AST_NODE_TYPES.Property) {
+      properties.push(element);
+      continue;
+    }
+    const spread = resolveObject(element.argument, sourceCode, depth + 1);
+    // `...cond && extra` or a spread of a string: nothing we can read.
+    if (spread === null) {
+      opaque = true;
+      continue;
+    }
+    properties.push(...spread.properties);
+    opaque ||= spread.opaque;
+  }
+  return { properties, opaque };
+}
+
+/**
+ * Resolve an expression that should be an options object.
+ *
+ * - `null`: the expression is definitely NOT an options object (a callback,
+ *   a string, a number) — or there is no expression at all.
+ * - `{ opaque: true }`: it may be one, but its contents are not visible here.
+ * - `{ opaque: false }`: every property it can carry is in `properties`.
+ */
+export function resolveObject(
+  node: TSESTree.Node | undefined,
+  sourceCode: SourceCodeLike,
+  depth = 0,
+): ResolvedObject | null {
+  if (node === undefined || depth > MAX_RESOLUTION_DEPTH) return null;
+  const value = unwrapTypeSyntax(node);
+  switch (value.type) {
+    case AST_NODE_TYPES.ObjectExpression:
+      return flattenObject(value, sourceCode, depth);
+    case AST_NODE_TYPES.Identifier: {
+      const binding = bindingOf(sourceCode, value);
+      if (binding.kind === 'const') {
+        return resolveObject(binding.init, sourceCode, depth + 1);
+      }
+      // `function onVerified(err, decoded) {}` passed as the callback.
+      if (binding.kind === 'function') return null;
+      return { properties: [], opaque: true };
+    }
+    case AST_NODE_TYPES.ArrowFunctionExpression:
+    case AST_NODE_TYPES.FunctionExpression:
+    case AST_NODE_TYPES.Literal:
+    case AST_NODE_TYPES.TemplateLiteral:
+      return null;
+    default:
+      return { properties: [], opaque: true };
+  }
+}
+
+/**
+ * The method a call names, or `null` for a dynamic `x[m]()`.
+ *
+ * Only reached for calls `isJwtLibraryCall` already accepted, whose callee is
+ * always an Identifier or a MemberExpression.
+ */
+function calledName(node: TSESTree.CallExpression): string | null {
+  return node.callee.type === AST_NODE_TYPES.Identifier
+    ? node.callee.name
+    : propertyName(node.callee as TSESTree.MemberExpression);
+}
+
+/** Root of a member chain: `this.a.b` -> `this`, `x.y.z` -> `x`. */
+function chainRoot(node: TSESTree.Node): TSESTree.Node {
+  let current = node;
+  while (current.type === AST_NODE_TYPES.MemberExpression) {
+    current = current.object;
+  }
+  return current;
+}
+
+/**
+ * The module a `this.<member>` is typed from, when the class declares it.
+ *
+ * `constructor(private readonly hashing: HashingService)` and
+ * `private readonly jwt: JwtService` are TYPE ANNOTATIONS — structural facts
+ * about the binding, not guesses from its name. The type name is then looked
+ * up among this file's imports, so `HashingService` from `./hashing.service`
+ * resolves to a relative (foreign) module and `JwtService` from `@nestjs/jwt`
+ * resolves to a JWT library. Anything else — no annotation, a union, a type
+ * that is not imported — answers `null` and leaves the call alone.
+ */
+function thisMemberTypeSource(
+  member: TSESTree.MemberExpression,
+): string | null {
+  const name = propertyName(member);
+  // `Program.parent` is `null` in ESLint's tree, so the walk ends on a falsy
+  // parent rather than on `undefined`.
+  let classBody: TSESTree.Node | null | undefined = member.parent;
+  while (classBody && classBody.type !== AST_NODE_TYPES.ClassBody) {
+    classBody = classBody.parent;
+  }
+  if (!classBody) return null;
+
+  let annotation: TSESTree.TypeNode | undefined;
+  for (const element of classBody.body) {
+    if (
+      element.type === AST_NODE_TYPES.PropertyDefinition &&
+      objectKeyName(element) === name
+    ) {
+      annotation = element.typeAnnotation?.typeAnnotation;
+    }
+    if (
+      element.type === AST_NODE_TYPES.MethodDefinition &&
+      element.kind === 'constructor'
+    ) {
+      for (const param of element.value.params) {
+        if (
+          param.type === AST_NODE_TYPES.TSParameterProperty &&
+          param.parameter.type === AST_NODE_TYPES.Identifier &&
+          param.parameter.name === name
+        ) {
+          annotation = param.parameter.typeAnnotation?.typeAnnotation;
+        }
+      }
+    }
+  }
+  if (
+    annotation?.type !== AST_NODE_TYPES.TSTypeReference ||
+    annotation.typeName.type !== AST_NODE_TYPES.Identifier
+  ) {
+    return null;
+  }
+  const typeName = annotation.typeName.name;
+  for (const stmt of programOf(member).body) {
+    const source = bindingSourceOf(stmt, typeName);
+    if (source !== null) return source;
+  }
+  return null;
+}
+
+function programOf(node: TSESTree.Node): TSESTree.Program {
+  let root = node;
+  while (root.parent) root = root.parent;
+  return root as TSESTree.Program;
+}
+
+/** Whether a module specifier belongs to a JWT library. */
+function isJwtSource(source: string): boolean {
+  return JWT_LIBRARY_ROOTS.has(packageRootOf(source));
+}
+
+/**
+ * Platform namespaces whose `sign` / `verify` / `decode` are not JWT APIs.
+ *
+ * `subtle` is WebCrypto's `SubtleCrypto` (`crypto.subtle.verify('HMAC', …)`),
+ * and `base64url` is jose's own codec namespace — `base64url.decode(secret)`
+ * decodes bytes, not a token.
+ */
+const NON_JWT_NAMESPACES: ReadonlySet<string> = new Set([
+  'subtle',
+  'base64url',
+]);
+
+/** The export name an imported identifier was bound from, if any. */
+function importedNameOf(
+  sourceCode: SourceCodeLike,
+  node: TSESTree.Identifier,
+): string | null {
+  const def = findVariable(sourceCode, node)?.defs[0];
+  return def?.node.type === AST_NODE_TYPES.ImportSpecifier &&
+    def.node.imported.type === AST_NODE_TYPES.Identifier
+    ? def.node.imported.name
+    : null;
+}
+
+/**
+ * Scope-aware receiver rejection — the half of the gate that needs bindings.
+ *
+ * A receiver is rejected only on STRUCTURAL evidence that it is not a JWT
+ * client: a `const` built by a call or construction whose callee comes from a
+ * non-JWT module or is a platform constructor (`createSign()` from
+ * `node:crypto`, `new TextDecoder()`), a `this.<member>` whose declared type is
+ * imported from a non-JWT module, the WebCrypto global, or jose's codec
+ * namespace. A receiver nothing can be said about is left alone, because a
+ * JWT client is very often injected without a resolvable type.
+ */
+function receiverIsForeignValue(
+  node: TSESTree.CallExpression,
+  sourceCode: SourceCodeLike,
+): boolean {
+  if (node.callee.type !== AST_NODE_TYPES.MemberExpression) return false;
+  const receiver = node.callee.object;
+
+  const namespace =
+    receiver.type === AST_NODE_TYPES.MemberExpression
+      ? propertyName(receiver)
+      : receiver.type === AST_NODE_TYPES.Identifier
+        ? importedNameOf(sourceCode, receiver)
+        : null;
+  if (namespace !== null && NON_JWT_NAMESPACES.has(namespace)) return true;
+
+  const root = chainRoot(receiver);
+  if (root.type === AST_NODE_TYPES.ThisExpression) {
+    // `this.verify()` names no member to look up.
+    if (receiver.type !== AST_NODE_TYPES.MemberExpression) return false;
+    const source = thisMemberTypeSource(innermostMember(receiver));
+    return source !== null && !isJwtSource(source);
+  }
+  if (root.type !== AST_NODE_TYPES.Identifier) return false;
+
+  const binding = bindingOf(sourceCode, root);
+  // The WebCrypto global. Node's `crypto` module, when imported, is already
+  // rejected as a foreign import by `receiverIsForeignImport`.
+  if (binding.kind === 'unbound') return root.name === 'crypto';
+  if (binding.kind !== 'const') return false;
+  return valueIsForeign(binding.init);
+}
+
+/** `this.a.b.c` -> `this.a`: the member read straight off `this`. */
+function innermostMember(
+  member: TSESTree.MemberExpression,
+): TSESTree.MemberExpression {
+  let current = member;
+  while (current.object.type === AST_NODE_TYPES.MemberExpression) {
+    current = current.object;
+  }
+  return current;
+}
+
+/** Was this value produced by something that is demonstrably not a JWT library? */
+function valueIsForeign(init: TSESTree.Expression): boolean {
+  let value = unwrapTypeSyntax(init);
+  if (value.type === AST_NODE_TYPES.AwaitExpression) value = value.argument;
+  if (
+    value.type !== AST_NODE_TYPES.CallExpression &&
+    value.type !== AST_NODE_TYPES.NewExpression
+  ) {
+    return false;
+  }
+  // `const crypto = require('crypto')` inside a function body.
+  const required = requireSpecifierOf(value);
+  if (required !== null) return !isJwtSource(required);
+  const callee = chainRoot(value.callee);
+  if (callee.type !== AST_NODE_TYPES.Identifier) return false;
+  if (
+    value.type === AST_NODE_TYPES.NewExpression &&
+    NON_JWT_CONSTRUCTORS.has(callee.name)
+  ) {
+    return true;
+  }
+  for (const stmt of programOf(value).body) {
+    const source = bindingSourceOf(stmt, callee.name);
+    if (source !== null) return !isJwtSource(source);
+  }
+  return false;
+}
+
+/**
+ * Whether a call is shaped like `@nestjs/jwt`'s `JwtService`.
+ *
+ * NestJS takes `sign(payload, options?)` / `verify(token, options?)` — the
+ * options are the SECOND argument — and merges them over the module's
+ * `signOptions` / `verifyOptions`, which live in a different file. Three
+ * structural signals, any one sufficient:
+ *
+ * - the async spellings, which only `JwtService` has;
+ * - a `this.<member>` declared with a type imported from `@nestjs/jwt`;
+ * - exactly two arguments, the second an object literal that is not a key
+ *   (`{ key, passphrase }` is jsonwebtoken's encrypted-key form and `kty`
+ *   marks a JWK, both of which ARE the key).
+ */
+export function isNestJwtShape(
+  node: TSESTree.CallExpression,
+  sourceCode: SourceCodeLike,
+): boolean {
+  const name = calledName(node);
+  if (name === 'signAsync' || name === 'verifyAsync') return true;
+  if (
+    node.callee.type === AST_NODE_TYPES.MemberExpression &&
+    node.callee.object.type === AST_NODE_TYPES.MemberExpression &&
+    node.callee.object.object.type === AST_NODE_TYPES.ThisExpression &&
+    thisMemberTypeSource(node.callee.object) === JWT_LIBRARIES.NESTJS_JWT
+  ) {
+    return true;
+  }
+  if (node.arguments.length !== 2) return false;
+  const second = resolveObject(node.arguments[1], sourceCode);
+  return (
+    second !== null &&
+    !second.opaque &&
+    !['key', 'passphrase', 'kty'].some((key) => hasOption(second, key))
+  );
+}
+
+/**
+ * The options a sign/verify call passes, resolved.
+ *
+ * jsonwebtoken and jose put options third. A NestJS-shaped call puts them
+ * second and merges them over module defaults this file cannot see, so its
+ * answer is always opaque: a property it shows is real, a property it lacks
+ * may still be set on the module.
+ */
+export function resolveCallOptions(
+  node: TSESTree.CallExpression,
+  sourceCode: SourceCodeLike,
+): ResolvedObject | null {
+  if (isNestJwtShape(node, sourceCode)) {
+    const own = resolveObject(node.arguments[1], sourceCode);
+    return { properties: own === null ? [] : own.properties, opaque: true };
+  }
+  return resolveObject(node.arguments[2], sourceCode);
+}
+
+/** The jose builder a trailing `.sign(key)` hangs off: `new SignJWT(claims)`. */
+const JOSE_SIGN_BUILDERS: ReadonlySet<string> = new Set([
+  'SignJWT',
+  'CompactSign',
+  'FlattenedSign',
+  'GeneralSign',
+]);
+
+/** A jose builder and every method called on it before `.sign(key)`. */
+export interface JoseBuilderChain {
+  /** `new SignJWT(claims)` and friends. */
+  readonly builder: TSESTree.NewExpression;
+  /** The constructor's name: `SignJWT`, `CompactSign`, … */
+  readonly kind: string;
+  /** Methods called on the chain (`setExpirationTime`, `setIssuedAt`, …). */
+  readonly calls: ReadonlySet<string | null>;
+}
+
+/**
+ * `new SignJWT(claims).setX().sign(key)` -> the builder, and what was set on it.
+ *
+ * Also follows a builder held in a `const`, collecting the methods called on
+ * that binding in its own statements:
+ * `const jwt = new SignJWT(claims); jwt.setExpirationTime('1h'); jwt.sign(key)`.
+ * That is a structural read of one binding's uses, not data flow.
+ */
+export function joseBuilderChain(
+  node: TSESTree.CallExpression,
+  sourceCode: SourceCodeLike,
+): JoseBuilderChain | null {
+  if (node.callee.type !== AST_NODE_TYPES.MemberExpression) return null;
+  const calls = new Set<string | null>();
+  let current: TSESTree.Node = node.callee.object;
+  let hops = 0;
+  while (current.type !== AST_NODE_TYPES.NewExpression) {
+    if (current.type === AST_NODE_TYPES.CallExpression) {
+      if (current.callee.type === AST_NODE_TYPES.MemberExpression) {
+        calls.add(propertyName(current.callee));
+      }
+      current = current.callee;
+    } else if (current.type === AST_NODE_TYPES.MemberExpression) {
+      current = current.object;
+    } else if (
+      current.type === AST_NODE_TYPES.Identifier &&
+      hops++ < MAX_RESOLUTION_DEPTH
+    ) {
+      const binding = bindingOf(sourceCode, current);
+      if (binding.kind !== 'const') return null;
+      for (const reference of binding.variable.references) {
+        const use = reference.identifier.parent!;
+        if (
+          use.type === AST_NODE_TYPES.MemberExpression &&
+          use.parent.type === AST_NODE_TYPES.CallExpression
+        ) {
+          calls.add(propertyName(use));
+        }
+      }
+      current = binding.init;
+    } else {
+      return null;
+    }
+  }
+  const kind =
+    current.callee.type === AST_NODE_TYPES.Identifier
+      ? current.callee.name
+      : current.callee.type === AST_NODE_TYPES.MemberExpression
+        ? propertyName(current.callee)
+        : null;
+  return kind !== null && JOSE_SIGN_BUILDERS.has(kind)
+    ? { builder: current, kind, calls }
+    : null;
+}
+
+/** Option names that carry key material, per API. */
+const KEY_OPTION_NAMES: readonly string[] = [
+  'secret',
+  'privateKey',
+  'publicKey',
+];
+
+/**
+ * Every node that holds the key for a sign/verify call.
+ *
+ * - jose's builder: `.sign(key)` — the only argument.
+ * - NestJS: `secret` / `privateKey` / `publicKey` in the options object.
+ * - jsonwebtoken / jose verify: the second argument.
+ */
+export function keyNodesOf(
+  node: TSESTree.CallExpression,
+  sourceCode: SourceCodeLike,
+): TSESTree.Node[] {
+  if (joseBuilderChain(node, sourceCode) !== null) {
+    return node.arguments.slice(0, 1);
+  }
+  if (isNestJwtShape(node, sourceCode)) {
+    const options = resolveObject(node.arguments[1], sourceCode);
+    return keyValuesOf(options, KEY_OPTION_NAMES);
+  }
+  return node.arguments.slice(1, 2);
+}
+
+function keyValuesOf(
+  options: ResolvedObject | null,
+  names: readonly string[],
+): TSESTree.Node[] {
+  if (options === null) return [];
+  return options.properties
+    .filter((prop) => names.includes(objectKeyName(prop) ?? ''))
+    .map((prop) => prop.value);
+}
+
+/** A string literal (or byte-wrapped one) that could become the key. */
+export interface KeyLiteral {
+  readonly literal: TSESTree.Literal | TSESTree.TemplateLiteral;
+  readonly encoding?: string;
+}
+
+/**
+ * Every static string that can reach the key position, structurally.
+ *
+ * Follows a same-file `const`, both arms of `||` / `??` / `&&` (the
+ * `process.env.JWT_SECRET || 'secret'` fallback that ships the literal the
+ * moment the variable is unset), `as` casts, and the byte wrappers jose is
+ * fed (`new TextEncoder().encode('…')`, `Buffer.from('…', 'hex')`).
+ */
+export function keyLiterals(
+  node: TSESTree.Node,
+  sourceCode: SourceCodeLike,
+  depth = 0,
+): KeyLiteral[] {
+  if (depth > MAX_RESOLUTION_DEPTH) return [];
+  const value = unwrapTypeSyntax(node);
+  if (staticString(value) !== null) {
+    return [{ literal: value as TSESTree.Literal | TSESTree.TemplateLiteral }];
+  }
+  if (value.type === AST_NODE_TYPES.LogicalExpression) {
+    return [
+      ...keyLiterals(value.left, sourceCode, depth + 1),
+      ...keyLiterals(value.right, sourceCode, depth + 1),
+    ];
+  }
+  if (value.type === AST_NODE_TYPES.Identifier) {
+    const binding = bindingOf(sourceCode, value);
+    return binding.kind === 'const'
+      ? keyLiterals(binding.init, sourceCode, depth + 1)
+      : [];
+  }
+  const bytes = byteKeyLiteral(value);
+  if (bytes === null) return [];
+  return keyLiterals(bytes.literal, sourceCode, depth + 1).map((found) => ({
+    literal: found.literal,
+    encoding: bytes.encoding,
+  }));
+}
+
+/**
+ * PEM public-key material is not a secret.
+ *
+ * Pinning an identity provider's public verification key in source is common
+ * and harmless; CWE-798 is about credentials, and a public key is published
+ * on purpose.
+ */
+const PUBLIC_PEM =
+  /-----BEGIN (?:RSA |EC )?PUBLIC KEY-----|-----BEGIN CERTIFICATE-----/;
+
+export function isPublicKeyMaterial(literal: KeyLiteral['literal']): boolean {
+  // `keyLiterals` only yields static strings, so this always has a value.
+  return PUBLIC_PEM.test(staticString(literal)!);
+}
+
+/** A JWT library configured through an object rather than a sign/verify call. */
+export interface JwtConfig {
+  /** The resolved config object. */
+  readonly options: ResolvedObject;
+  /** Nodes holding key material in that object. */
+  readonly keys: TSESTree.Node[];
+}
+
+/**
+ * Package -> the option names that hold its key.
+ *
+ * - `JwtModule.register({ secret })` from `@nestjs/jwt`
+ * - `expressjwt({ secret })` (or v6's default `jwt({ secret })`) from `express-jwt`
+ * - `new Strategy({ secretOrKey })` from `passport-jwt`
+ * - `createSigner({ key })` / `createVerifier({ key })` from `fast-jwt`
+ */
+const CONFIG_KEY_OPTIONS: ReadonlyMap<string, readonly string[]> = new Map<
+  string,
+  readonly string[]
+>([
+  [JWT_LIBRARIES.NESTJS_JWT, KEY_OPTION_NAMES],
+  [JWT_LIBRARIES.EXPRESS_JWT, ['secret']],
+  [JWT_LIBRARIES.PASSPORT_JWT, ['secretOrKey']],
+  [JWT_LIBRARIES.FAST_JWT, ['key']],
+]);
+
+/**
+ * Read a JWT library's config-object API, identified by import binding.
+ *
+ * The callee's root must be bound by an import or `require` of one of the
+ * packages above — a structural fact, not a name match. For `@nestjs/jwt`
+ * only `JwtModule.register(...)` is a config call.
+ */
+export function jwtConfigOf(
+  node: TSESTree.CallExpression | TSESTree.NewExpression,
+  sourceCode: SourceCodeLike,
+): JwtConfig | null {
+  const root = chainRoot(node.callee);
+  if (root.type !== AST_NODE_TYPES.Identifier) return null;
+  let source: string | null = null;
+  for (const stmt of programOf(node).body) {
+    source ??= bindingSourceOf(stmt, root.name);
+  }
+  const keyNames =
+    source === null ? undefined : CONFIG_KEY_OPTIONS.get(packageRootOf(source));
+  if (keyNames === undefined) return null;
+  if (
+    source === JWT_LIBRARIES.NESTJS_JWT &&
+    (node.callee.type !== AST_NODE_TYPES.MemberExpression ||
+      propertyName(node.callee) !== 'register')
+  ) {
+    return null;
+  }
+  const options = resolveObject(node.arguments[0], sourceCode);
+  if (options === null) return null;
+  return { options, keys: keyValuesOf(options, keyNames) };
+}

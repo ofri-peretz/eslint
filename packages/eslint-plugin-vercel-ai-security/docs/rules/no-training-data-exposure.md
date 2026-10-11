@@ -24,7 +24,7 @@ This rule identifies code patterns where user data might be sent to LLM training
 | **OWASP LLM**      | [LLM03: Training Data Poisoning](https://owasp.org/www-project-top-10-for-large-language-model-applications/) |
 | **CWE**            | [CWE-359: Privacy Violation](https://cwe.mitre.org/data/definitions/359.html)                                 |
 | **CVSS**           | 7.0                                                                                                           |
-| **Config Default** | `warn` (recommended), `error` (strict)                                                                        |
+| **Config Default** | `off` (recommended), `error` (strict)                                                                         |
 
 ## 🔍 What This Rule Detects
 
@@ -66,7 +66,7 @@ await generateText({
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
-| `trainingPatterns` | `string[]` | `["train","training","finetune","fine-tune","fine_tune","feedback","improve","learn"]` | Patterns suggesting training endpoints |
+| `trainingPatterns` | `string[]` | `["train","training","finetune","fine-tune","fine_tune"]` | Patterns suggesting training endpoints |
 
 ## 🛡️ Why This Matters
 
@@ -76,6 +76,17 @@ Exposing user data to training can:
 - **Data poisoning** - Malicious data taints model
 - **Compliance violations** - GDPR, CCPA violations
 - **IP leakage** - Proprietary information exposed
+
+## 🔄 Changes in the 2026-10-10 FP/FN audit
+
+- URLs are matched by whole path segment (`/v1/fine_tuning/jobs`,
+  `/api/train/model`), not substring: `/trainers` and `/training-schedule` are
+  not reported.
+- `feedback`, `improve` and `learn` were removed from the defaults: a
+  thumbs-up/down `/api/feedback` endpoint and `showFeedback: true` are product
+  features, not training opt-ins. Flag names are matched by whole word.
+- Now `off` in `recommended`: the rule has no tie to a provider setting.
+- **Options:** the documented `defaultOptions` now apply. Earlier versions read `context.options` and silently ran a shorter hard-coded list instead.
 
 ## Known False Negatives
 

@@ -18,7 +18,7 @@ Ensures query promises are awaited or handled.
 
 Ensures query promises are awaited or handled.
 
-⚠️ This rule **errors** by default in the `recommended` config.
+⚠️ This rule **warns** by default in the `recommended` config.
 
 ## Quick Summary
 
@@ -56,6 +56,12 @@ pool
 // Assigned for later
 const promise = client.query('SELECT 1');
 await promise;
+
+// Callback API — node-postgres returns undefined, there is no promise
+pool.query('SELECT * FROM users WHERE id = $1', [id], (err, res) => done(err, res));
+
+// Not a pg QueryConfig: supertest / superagent's query-string builder
+request(app).get('/users').query({ page: 2 }).end(done);
 ```
 
 ## Error Message Format

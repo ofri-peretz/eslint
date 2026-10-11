@@ -251,21 +251,43 @@ ruleTester.run('require-tool-schema', requireToolSchema, {
       `,
       errors: [{ messageId: 'missingInputSchema' }],
     },
-    // Tool with spread element in its value — spread is not Property, ignored, but tool itself missing schema
-    {
-      code: `
-        await generateText({
-          prompt: 'Hello',
-          tools: {
-            weather: {
-              ...baseToolDef,
-              execute: async () => ({}),
-            },
-          },
-        });
-      `,
-      errors: [{ messageId: 'missingInputSchema' }],
-    },
   ]),
 });
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FP/FN audit 2026-10-10: a spread may supply the schema, so it is not proof
+// of absence; a tool() inside tools is named by its key.
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('require-tool-schema (fp-fn audit)', requireToolSchema, {
+  valid: xai([
+    {
+      name: 'schema supplied through a spread of a shared base definition',
+      code: `
+        const baseTool = { inputSchema: z.object({ id: z.string() }) };
+        await streamText({ tools: { getOrder: tool({ ...baseTool, description: 'Get order', execute: async ({ id }) => ({ id }) }) } });
+      `,
+    },
+    {
+      // (Moved 2026-10-10 from invalid) the object-literal shape of the same case.
+      name: 'schema supplied through a spread in an object-literal tool',
+      code: `
+        await generateText({
+          prompt: 'Hello',
+          tools: { weather: { ...baseToolDef, execute: async () => ({}) } },
+        });
+      `,
+    },
+    {
+      name: 'a user function whose name contains generateText is not the SDK',
+      code: `generateTextureAtlas({ tools: { a: { execute: run } } });`,
+    },
+  ]),
+  invalid: xai([
+    {
+      name: 'a tool() with no schema is named by its key in the tools object',
+      code: `await streamText({ tools: { lookupUser: tool({ description: 'x', execute: async () => ({}) }) } });`,
+      errors: [{ messageId: 'missingInputSchema', data: { toolName: 'lookupUser' } }],
+    },
+  ]),
+});

@@ -18,7 +18,7 @@ Prevents INSERT/UPDATE/DELETE queries inside loops (N+1 query anti-pattern).
 
 Prevents INSERT/UPDATE/DELETE queries inside loops (N+1 query anti-pattern).
 
-⚠️ This rule **errors** by default in the `recommended` config.
+⚠️ This rule **warns** by default in the `recommended` config.
 
 ## Quick Summary
 
@@ -124,10 +124,16 @@ async function insertUsers(users: User[], i = 0): Promise<void> {
 
 ### Promise.all with Mapping
 
-**Why**: The rule only detects direct `.map()` callbacks, not when wrapped in `Promise.all`.
+A row-WRITING statement (INSERT / UPDATE / DELETE / MERGE) inside `.map()`,
+`.flatMap()` or an `Array.from(xs, mapper)` mapper is reported whatever
+consumes the array (since 2026-10). Reads in
+`Promise.all(ids.map(…))` stay quiet: that is the deliberate concurrency
+trade-off. A loop over chunks of an already-batched statement (`unnest(…)`,
+`jsonb_to_recordset(…)`, pg-format `%L`) is the remediation and is not
+reported, nor is keyset pagination with `LIMIT` in `for (;;)`.
 
 ```typescript
-// ❌ NOT DETECTED - Array.from pattern
+// ❌ REPORTED (since 2026-10) - Array.from pattern
 const queries = Array.from(users, (u) =>
   client.query('INSERT INTO users VALUES ($1)', [u.id]),
 );

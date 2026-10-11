@@ -99,6 +99,11 @@ Unhandled AI errors can cause:
 - [`require-audit-logging`](./require-audit-logging.md) - Log AI operations
 - [`require-abort-signal`](./require-abort-signal.md) - Enable cancellation
 
+## 🔄 Changes in the 2026-10-10 FP/FN audit
+
+- `streamText` / `streamObject` do not throw; an `onError` option is their error
+  handling and satisfies the rule.
+
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:

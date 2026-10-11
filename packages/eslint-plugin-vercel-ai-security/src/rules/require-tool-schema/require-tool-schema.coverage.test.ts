@@ -73,9 +73,18 @@ ruleTester.run('require-tool-schema (branch coverage)', requireToolSchema, {
     {
       code: `generateText({ ...defaults, tools: { a: { inputSchema: s, execute: run } } });`,
     },
-    // String-literal 'tools' key — not found by the Identifier-only lookup.
+    // (Changed 2026-10-10) Spread-only tool() config — the spread may carry
+    // the schema, so it is no longer reported (was invalid).
     {
-      code: `generateText({ 'tools': { a: { execute: run } } });`,
+      code: `const t = tool({ ...base });`,
+    },
+    // (Changed 2026-10-10) A quoted 'inputSchema' key is the same property;
+    // these were recorded as documented FPs and are now recognised.
+    {
+      code: `const t = tool({ 'inputSchema': schema });`,
+    },
+    {
+      code: `generateText({ tools: { myTool: { 'inputSchema': schema } } });`,
     },
     // tools value that is not an object literal.
     {
@@ -83,16 +92,11 @@ ruleTester.run('require-tool-schema (branch coverage)', requireToolSchema, {
     },
   ]),
   invalid: xai([
-    // tool() helper with spread-only config — no inputSchema found.
+    // (Changed 2026-10-10) A quoted 'tools' key is the same option; it used
+    // to be skipped (was valid).
     {
-      code: `const t = tool({ ...base });`,
-      errors: [{ messageId: 'missingInputSchema', data: { toolName: 'unnamed tool' } }],
-    },
-    // String-literal 'inputSchema' key in tool() config — keyName resolves to
-    // null so the schema is not recognized (documented FN).
-    {
-      code: `const t = tool({ 'inputSchema': schema });`,
-      errors: [{ messageId: 'missingInputSchema', data: { toolName: 'unnamed tool' } }],
+      code: `generateText({ 'tools': { a: { execute: run } } });`,
+      errors: [{ messageId: 'missingInputSchema', data: { toolName: 'a' } }],
     },
     // String-literal tool name — resolved via String(key.value).
     {
@@ -103,12 +107,6 @@ ruleTester.run('require-tool-schema (branch coverage)', requireToolSchema, {
     {
       code: `generateText({ tools: { [cfg.name]: { execute: run } } });`,
       errors: [{ messageId: 'missingInputSchema', data: { toolName: 'unknown' } }],
-    },
-    // String-literal 'inputSchema' key inside a tool definition — not
-    // recognized, tool reported (documented FN).
-    {
-      code: `generateText({ tools: { myTool: { 'inputSchema': schema } } });`,
-      errors: [{ messageId: 'missingInputSchema', data: { toolName: 'myTool' } }],
     },
   ]),
 });

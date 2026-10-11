@@ -24,7 +24,7 @@ Get weather
 | **OWASP Agentic**  | [ASI02: Tool Misuse & Exploitation](https://owasp.org)                              |
 | **CWE**            | [CWE-20: Improper Input Validation](https://cwe.mitre.org/data/definitions/20.html) |
 | **CVSS**           | 7.0                                                                                 |
-| **Config Default** | `warn` (recommended), `error` (strict)                                              |
+| **Config Default** | `error` (recommended, strict)                                                       |
 
 ## 🔍 What This Rule Detects
 
@@ -90,6 +90,12 @@ Without input validation, AI agents can:
 
 - [`require-tool-confirmation`](./require-tool-confirmation.md) - Require confirmation for destructive tools
 - [`require-output-filtering`](./require-output-filtering.md) - Filter tool output
+
+## 🔄 Changes in the 2026-10-10 FP/FN audit
+
+- A spread in a tool definition may supply the schema and counts; quoted
+  `'inputSchema'` / `'tools'` keys are the same properties.
+- A `tool()` without a schema is named by its key in the `tools` object.
 
 ## Known False Negatives
 

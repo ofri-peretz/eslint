@@ -25,7 +25,7 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 | **OWASP Agentic**  | [ASI04: Data Exfiltration](https://owasp.org)                                    |
 | **CWE**            | [CWE-200: Information Exposure](https://cwe.mitre.org/data/definitions/200.html) |
 | **CVSS**           | 6.5                                                                              |
-| **Config Default** | `warn` (recommended), `error` (strict)                                           |
+| **Config Default** | `off` (recommended), `error` (strict)                                            |
 
 ## 🔍 What This Rule Detects
 
@@ -88,7 +88,7 @@ const tools = {
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
-| `dataSourcePatterns` | `string[]` | `["query","find","select","fetch","get","read","load","database","db","sql","mongo","prisma","supabase"]` | Patterns suggesting data sources |
+| `dataSourcePatterns` | `string[]` | `["query","find","select","aggregate","database","db","sql","mongo","prisma","supabase"]` | Patterns suggesting data sources |
 | `filterFunctions` | `string[]` | `["filter","sanitize","redact","mask","clean","filterSensitive","removePII","scrub"]` | Functions considered safe filters |
 
 ## 🛡️ Why This Matters
@@ -104,6 +104,17 @@ Unfiltered tool output can expose:
 
 - [`no-sensitive-in-prompt`](./no-sensitive-in-prompt) - Prevent sensitive input
 - [`require-tool-schema`](./require-tool-schema) - Validate tool inputs
+
+## 🔄 Changes in the 2026-10-10 FP/FN audit
+
+- A data source is a **member call** whose call chain has a data-access word
+  (`db.user.findUnique`, `supabase.from('t').select`, `prisma.x.findMany`).
+  `get`, `fetch`, `read` and `load` were removed from the defaults: they matched
+  `getWeather(city)` and the RAG guide's `findRelevantContent(question)`.
+- Block-bodied and method-form `execute`s are checked: a `return` of a
+  data-source call, or of a variable initialised from one in the same function.
+- Now `off` in `recommended`.
+- **Options:** the documented `defaultOptions` now apply. Earlier versions read `context.options` and silently ran a shorter hard-coded list instead.
 
 <WhenNotToUse />
 

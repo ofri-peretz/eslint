@@ -186,3 +186,52 @@ ruleTester.run('require-rag-content-validation (computed key collision)', requir
   ]),
   invalid: xai([]),
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FP/FN audit 2026-10-10: RAG calls are matched by whole word of the call
+// chain (`researchTopic` has no `search` word), and `context` is not a default
+// RAG word (`getRequestContext()` retrieves no documents).
+// ─────────────────────────────────────────────────────────────────────────────
+ruleTester.run('require-rag-content-validation (fp-fn audit)', requireRagContentValidation, {
+  valid: xai([
+    {
+      name: 'a call whose name merely contains "search"',
+      code: `
+        const notes = await researchTopic(topic);
+        await generateText({ model, prompt: \`Notes: \${notes}\` });
+      `,
+    },
+    {
+      name: 'a request context is not retrieved content',
+      code: `
+        const ctx = getRequestContext();
+        await generateText({ model, prompt: \`Locale: \${ctx}\` });
+      `,
+    },
+    {
+      name: 'a user function whose name contains generateText is not the SDK',
+      code: `
+        const docs = await vectorStore.search(q);
+        generateTextureAtlas({ prompt: docs });
+      `,
+    },
+  ]),
+  invalid: xai([
+    {
+      name: 'a store chosen at runtime is still searched',
+      code: `
+        const hits = await stores[kind].search(q);
+        await generateText({ model, prompt: \`\${hits}\` });
+      `,
+      errors: [{ messageId: 'unsanitizedRagContent' }],
+    },
+    {
+      name: 'retrieved docs filtered with Array#filter are still unvalidated content',
+      code: `
+        const docs = (await vectorStore.similaritySearch(question, 8)).filter((d) => d.score > 0.8);
+        await generateText({ model, prompt: \`\${docs}\` });
+      `,
+      errors: [{ messageId: 'unsanitizedRagContent' }],
+    },
+  ]),
+});

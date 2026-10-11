@@ -59,6 +59,7 @@ describe('no-unsafe-search-path', () => {
         },
         // Environment variable usage is safe (padding case 4)
         {
+          name: 'an environment read is not a search_path statement',
           code: `const safe3 = process.env.DB_HOST;`,
         },
         // Environment variable usage is safe (padding case 5)
@@ -82,5 +83,78 @@ describe('no-unsafe-search-path', () => {
         },
       ]),
     });
+  });
+});
+
+/** FP/FN review 2026-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md). */
+describe('no-unsafe-search-path — fp/fn review 2026-10', () => {
+  ruleTester.run('SP-1: validated by an asserts helper before the sink', noUnsafeSearchPath, {
+    valid: pg([
+      {
+// @found harness-reproduced FP/FN audit 2026-10-10 (benchmarks/audits/2026-10-10-fp-fn-postgresql-security.md)
+ name: 'FP: an asserts helper called before the sink is an allowlist guard', code: "function assertSchemaName(s: string): asserts s is string { if (!/^tenant_[a-z0-9_]+$/.test(s)) throw new Error('bad'); }\nexport async function f(client, tenantSchema: string) { assertSchemaName(tenantSchema); await client.query(`SET search_path TO ${tenantSchema}, public`); }" },
+      {
+// @found reasoned during the 2026-10-10 FP/FN audit, not seen in real code
+ name: 'FP: an asserts arrow helper called before the sink is an allowlist guard', code: "const assertSchema = (s: string): asserts s is 'a' | 'b' => { if (s !== 'a' && s !== 'b') throw new Error('bad'); };\nexport async function f(client, t: string) { assertSchema(t); await client.query(`SET search_path TO ${t}`); }" },
+    ]),
+    invalid: pg([
+      {
+        name: 'an asserts helper called AFTER the sink',
+        code: "function assertSchemaName(s: string): asserts s { }\nexport async function f(client, t: string) { await client.query(`SET search_path TO ${t}`); assertSchemaName(t); }",
+        errors: [{ messageId: 'noUnsafeSearchPath' }],
+      },
+      {
+        name: 'a helper with no asserts signature proves nothing',
+        code: "function check(s: string): boolean { return /^[a-z]+$/.test(s); }\nexport async function f(client, t: string) { check(t); await client.query(`SET search_path TO ${t}`); }",
+        errors: [{ messageId: 'noUnsafeSearchPath' }],
+      },
+      {
+        name: 'an asserts helper about a DIFFERENT argument position',
+        code: "function assertOk(a: unknown, s: string): asserts a { }\nexport async function f(client, t: string) { assertOk('x', t); await client.query(`SET search_path TO ${t}`); }",
+        errors: [{ messageId: 'noUnsafeSearchPath' }],
+      },
+      {
+        name: 'an imported helper cannot be read',
+        code: "import { assertSchemaName } from './guards';\nexport async function f(client, t: string) { assertSchemaName(t); await client.query(`SET search_path TO ${t}`); }",
+        errors: [{ messageId: 'noUnsafeSearchPath' }],
+      },
+    ]),
+  });
+
+  ruleTester.run('SP-3: set_config and per-connection options', noUnsafeSearchPath, {
+    valid: pg([
+      { name: 'set_config with a constant bound value is safe', code: "client.query(\"SELECT set_config('search_path', $1, false)\", ['tenant_a']);" },
+      { name: 'set_config with a literal schema is safe', code: "client.query(\"SELECT set_config('search_path', 'public', true)\");" },
+      { name: 'set_config of a different setting is not search_path', code: "client.query(\"SELECT set_config('statement_timeout', $1, true)\", [ms]);" },
+      { name: 'set_config with no values array has nothing to judge', code: "client.query(\"SELECT set_config('search_path', $1, false)\");" },
+      { name: 'set_config with a values array that cannot be read is not judged', code: "client.query(\"SELECT set_config('search_path', $1, false)\", values);" },
+      { name: 'a constant search_path pool option is safe', code: "new Pool({ options: '-c search_path=tenant_a,public' });" },
+      { name: 'a non-string options expression is not a search_path option', code: "new Pool({ options: -1 * x });" },
+      { name: 'a dynamic option for a different setting is not search_path', code: "new Pool({ options: `-c statement_timeout=${ms}` });" },
+      { name: 'an options binding that cannot be read is not judged', code: 'new Pool({ options });' },
+      { name: 'a pool config that cannot be read is not judged', code: 'new Pool(config);' },
+    ]),
+    invalid: pg([
+      {
+        name: 'set_config with a bound value from the request',
+        code: "client.query(\"SELECT set_config('search_path', $1, false)\", [req.headers['x-tenant']]);",
+        errors: [{ messageId: 'noUnsafeSearchPath' }],
+      },
+      {
+        name: 'set_config in a config object',
+        code: "client.query({ text: \"SELECT set_config('search_path', $1, true)\", values: [tenant] });",
+        errors: [{ messageId: 'noUnsafeSearchPath' }],
+      },
+      {
+        name: 'the concatenated option',
+        code: "new Pool({ options: '-c search_path=' + tenant });",
+        errors: [{ messageId: 'noUnsafeSearchPath' }],
+      },
+      {
+        name: 'a pool per tenant with a dynamic search_path option',
+        code: "export const tenantPool = (req) => new Pool({ options: `-c search_path=${req.headers['x-tenant']}` });",
+        errors: [{ messageId: 'noUnsafeSearchPath' }],
+      },
+    ]),
   });
 });

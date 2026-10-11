@@ -104,14 +104,13 @@ jwt.verify(token, secret, { algorithm: algo });
 
 **Mitigation**: Use TypeScript strict typing for algorithm options. Implement runtime validation.
 
-### Spread Operator Options
+### Spread of an Unresolvable Value
 
-**Why**: Spread objects are not statically analyzable.
+**Why**: options are read through a same-file `const`, an `as` cast and a spread of such a `const` — `const bad = { algorithm: 'none' }; jwt.sign(p, k, { ...bad })` IS detected. A spread of a call or a parameter cannot be seen.
 
 ```typescript
-// ❌ NOT DETECTED - Algorithm in spread object
-const maliciousOptions = { algorithm: 'none' };
-jwt.verify(token, secret, { ...maliciousOptions });
+// ⚠️ NOT DETECTED - the spread source is a call
+jwt.verify(token, secret, { ...loadOptions() });
 ```
 
 **Mitigation**: Avoid spreading untrusted option objects. Validate options at runtime.

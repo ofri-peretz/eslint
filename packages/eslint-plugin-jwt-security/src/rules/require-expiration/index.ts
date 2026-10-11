@@ -20,9 +20,13 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
-  propertyName,
 } from '@interlace/eslint-devkit';
-import { isSignOperation, getOptionsArgument, hasOption } from '../../utils';
+import {
+  isSignOperation,
+  joseBuilderChain,
+  resolveCallOptions,
+  hasOption,
+} from '../../utils';
 import type { RequireExpirationOptions } from '../../types';
 
 type MessageIds = 'missingExpiration' | 'addExpiration';
@@ -149,7 +153,8 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
       node: TSESTree.Identifier,
     ): TSESTree.Node | null => {
       let variable: TSESLint.Scope.Variable | null = null;
-      let scope: TSESLint.Scope.Scope | null = context.sourceCode.getScope(node);
+      let scope: TSESLint.Scope.Scope | null =
+        context.sourceCode.getScope(node);
       while (scope !== null && variable === null) {
         variable =
           scope.variables.find((candidate) => candidate.name === node.name) ??
@@ -167,47 +172,18 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
         : null;
     };
 
-    const JWS_ONLY_BUILDERS = new Set(['FlattenedSign', 'CompactSign', 'GeneralSign']);
+    const sourceCode = context.sourceCode;
 
-    const chainSetsExpiration = (node: TSESTree.CallExpression): boolean => {
-      let current: TSESTree.Node = node;
-      while (current.type === 'CallExpression' || current.type === 'MemberExpression') {
-        if (
-          current.type === 'CallExpression' &&
-          current.callee.type === 'MemberExpression' &&
-          propertyName(current.callee) === 'setExpirationTime'
-        ) {
-          return true;
-        }
-        current =
-          current.type === 'CallExpression' ? current.callee : current.object;
-      }
-      // Reached the root of the chain.
-      if (current.type !== 'NewExpression') {
-        return false;
-      }
-      const ctor =
-        current.callee.type === 'Identifier'
-          ? current.callee.name
-          : current.callee.type === 'MemberExpression' &&
-              current.callee.property.type === 'Identifier'
-            ? current.callee.property.name
-            : null;
-      // A JWS builder signs arbitrary bytes and carries no claim set, so
-      // "missing exp" cannot be true of it.
-      if (ctor !== null && JWS_ONLY_BUILDERS.has(ctor)) {
-        return true;
-      }
-      // `new SignJWT(payload)` holds the claims the trailing `.sign(key)` does
-      // not — auth0 declares `exp: now + 60` on that object two lines above.
-      const claims = current.arguments[0];
-      return claims !== undefined && payloadHasExp(claims);
-    };
+    const JWS_ONLY_BUILDERS = new Set([
+      'FlattenedSign',
+      'CompactSign',
+      'GeneralSign',
+    ]);
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
         // Only check sign operations
-        if (!isSignOperation(node)) {
+        if (!isSignOperation(node, sourceCode)) {
           return;
         }
 
@@ -216,22 +192,63 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        const payloadArg = node.arguments[0];
-        const optionsArg = getOptionsArgument(node, 2);
+        /*
+         * jose's fluent builder sets the expiry on the chain — or, when the
+         * builder is held in a `const`, in a statement of its own — and its
+         * claims live in the constructor, not in `.sign(key)`'s argument.
+         */
+        const chain = joseBuilderChain(node, sourceCode);
+        if (chain !== null) {
+          // A JWS builder signs arbitrary bytes and carries no claim set, so
+          // "missing exp" cannot be true of it.
+          if (
+            JWS_ONLY_BUILDERS.has(chain.kind) ||
+            chain.calls.has('setExpirationTime')
+          ) {
+            return;
+          }
+          // `new SignJWT(payload)` holds the claims the trailing `.sign(key)`
+          // does not — auth0 declares `exp: now + 60` on that object two
+          // lines above.
+          const claims = chain.builder.arguments[0];
+          if (claims !== undefined && payloadHasExp(claims)) {
+            return;
+          }
+        } else {
+          const payloadArg = node.arguments[0];
 
-        // Check if payload has exp claim
-        if (payloadHasExp(payloadArg)) {
-          return;
-        }
+          // Check if payload has exp claim
+          if (payloadHasExp(payloadArg)) {
+            return;
+          }
 
-        // jose's fluent builder sets expiry earlier in the chain.
-        if (chainSetsExpiration(node)) {
-          return;
-        }
+          /*
+           * `this.jwtService.sign(payload)` — one argument on a plain
+           * receiver. No JWT library's sign takes a payload alone except
+           * @nestjs/jwt, which applies `JwtModule.register({ signOptions })`
+           * from another file. A chained receiver (`builder().sign(key)`) is
+           * a jose-style builder this rule could not resolve, and stays a
+           * finding.
+           */
+          if (
+            node.arguments.length === 1 &&
+            node.callee.type === AST_NODE_TYPES.MemberExpression &&
+            node.callee.object.type !== AST_NODE_TYPES.CallExpression &&
+            node.callee.object.type !== AST_NODE_TYPES.NewExpression
+          ) {
+            return;
+          }
 
-        // Check if options has expiresIn
-        if (optionsArg && hasOption(optionsArg, 'expiresIn')) {
-          return;
+          // Options resolved structurally: a const, an `as` cast, a spread,
+          // NestJS's second argument. An opaque value may set expiresIn where
+          // this file cannot see it.
+          const options = resolveCallOptions(node, sourceCode);
+          if (
+            options !== null &&
+            (hasOption(options, 'expiresIn') || options.opaque)
+          ) {
+            return;
+          }
         }
 
         // Report missing expiration — suggest adding expiresIn to the options object

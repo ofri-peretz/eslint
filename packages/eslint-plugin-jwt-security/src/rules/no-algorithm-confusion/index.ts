@@ -24,8 +24,9 @@ import {
 } from '@interlace/eslint-devkit';
 import {
   isSignatureVerifyOperation,
-  getOptionsArgument,
+  resolveCallOptions,
   extractAlgorithms,
+  SECURE_ALGORITHMS,
 } from '../../utils';
 import type { NoAlgorithmConfusionOptions } from '../../types';
 
@@ -159,7 +160,7 @@ export const noAlgorithmConfusion = createRule<RuleOptions, MessageIds>({
     return {
       CallExpression(node: TSESTree.CallExpression) {
         // Only check verify operations
-        if (!isSignatureVerifyOperation(node)) {
+        if (!isSignatureVerifyOperation(node, sourceCode)) {
           return;
         }
 
@@ -168,47 +169,57 @@ export const noAlgorithmConfusion = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        const keyArg = node.arguments[1];
-        const optionsArg = getOptionsArgument(node, 2);
-
-        // Check if key looks like a public key
-        if (!looksLikePublicKey(keyArg)) {
+        // Options resolved structurally: a const, an `as` cast, a spread.
+        const options = resolveCallOptions(node, sourceCode);
+        if (options === null) {
           return;
         }
 
-        // If there are options, check the algorithms
-        if (optionsArg) {
-          const algorithms = extractAlgorithms(optionsArg);
-          const symmetricAlg = hasSymmetricAlgorithm(algorithms);
-
-          if (symmetricAlg) {
-            // Find the algorithm node for precise error location
-            for (const prop of optionsArg.properties) {
-              if (
-                prop.type === 'Property' &&
-                // @vocabulary JOSE / RFC 7519 header and jsonwebtoken option names
-                // `objectKeyName`, not `key.name`: requiring an Identifier key
-                // missed `{ ['alg']: … }` and `{ 'alg': … }`, which name the
-                // same option and are what a bundler and ordinary hand-written
-                // JS respectively produce.
-                ['algorithms', 'algorithm', 'alg'].includes(
-                  objectKeyName(prop) ?? '',
-                )
-              ) {
-                context.report({
-                  node: prop.value,
-                  messageId: 'algorithmConfusion',
-                  data: { algorithm: symmetricAlg },
-                });
-                return;
-              }
-            }
-          }
+        const algorithms = extractAlgorithms(options);
+        const symmetricAlg = hasSymmetricAlgorithm(algorithms);
+        if (!symmetricAlg) {
+          return;
         }
 
-        // If no options specified but key looks like public key,
-        // and we're in verify, flag as potential issue
-        // (verification without explicit algorithm with public key is risky)
+        /*
+         * Two ways in, and only the first is independent of naming.
+         *
+         * 1. The whitelist admits BOTH an HMAC and an asymmetric algorithm.
+         *    That is CVE-2015-9235's configuration: the attacker picks HS*,
+         *    and the verifier HMACs with whatever key material it holds for
+         *    RS* or ES*. The key's name says nothing either way — `cert`, `foo`
+         *    and `publicKey` are equally exploitable — so this is decided from
+         *    the list alone.
+         * 2. An HMAC-only list with a key that looks public (a PEM header, a
+         *    `getPublicKey()` call, a `.pem` path …).
+         */
+        const mixesFamilies = algorithms.some((alg) =>
+          SECURE_ALGORITHMS.has(alg),
+        );
+        if (!mixesFamilies && !looksLikePublicKey(node.arguments[1])) {
+          return;
+        }
+
+        // Find the algorithm node for precise error location
+        for (const prop of options.properties) {
+          if (
+            // @vocabulary JOSE / RFC 7519 header and jsonwebtoken option names
+            // `objectKeyName`, not `key.name`: requiring an Identifier key
+            // missed `{ ['alg']: … }` and `{ 'alg': … }`, which name the
+            // same option and are what a bundler and ordinary hand-written
+            // JS respectively produce.
+            ['algorithms', 'algorithm', 'alg'].includes(
+              objectKeyName(prop) ?? '',
+            )
+          ) {
+            context.report({
+              node: prop.value,
+              messageId: 'algorithmConfusion',
+              data: { algorithm: symmetricAlg },
+            });
+            return;
+          }
+        }
       },
     };
   },

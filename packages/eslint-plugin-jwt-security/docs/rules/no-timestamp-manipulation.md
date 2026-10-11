@@ -29,6 +29,10 @@ This rule detects `noTimestamp: true` which disables automatic `iat` (issued at)
 ```javascript
 // Disables iat - enables replay attacks
 jwt.sign(payload, secret, { noTimestamp: true });
+
+// Accepts expired tokens - a leaked token never stops working
+jwt.verify(token, secret, { algorithms: ['HS256'], ignoreExpiration: true });
+new JwtStrategy({ secretOrKey, jwtFromRequest, ignoreExpiration: true }, verify); // passport-jwt
 ```
 
 ### ✅ Correct
@@ -55,36 +59,28 @@ From LightSEC 2025 research:
 
 The following patterns are **not detected** due to static analysis limitations:
 
-### Options Object from Variable
+### Options from Variables, Casts and Spreads
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `trustedSanitizers` | `string[]` | `[]` | Extra function names to treat as sanitizers |
-| `trustedAnnotations` | `string[]` | `[]` | Extra JSDoc annotations to treat as safe markers |
-| `strictMode` | `boolean` | `false` | Disable false-positive suppression — report even sanitized input |
-
-
-**Why**: Variable contents are not analyzed.
+**What is read**: an inline object, a same-file `const`, an `as` / `satisfies` cast, and a spread of such a `const`.
 
 ```typescript
-// ❌ NOT DETECTED - Options from variable
 const opts = { noTimestamp: true };
-jwt.sign(payload, secret, opts); // Variable not analyzed
+jwt.sign(payload, secret, opts); // ❌ detected through the const
 ```
 
-**Mitigation**: Use inline options objects. Use TypeScript to forbid `noTimestamp: true`.
-
-### Spread Options Object
-
-**Why**: Spread properties are not visible at lint time.
+**What is not**: options from a parameter, an import or a call.
 
 ```typescript
-// ❌ NOT DETECTED - noTimestamp in spread
-const baseOpts = { noTimestamp: true };
-jwt.sign(payload, secret, { ...baseOpts, expiresIn: '1h' });
+// ⚠️ NOT DETECTED - options built elsewhere
+jwt.sign(payload, secret, getSignOptions());
 ```
 
-**Mitigation**: Avoid spreading sign options. Build options explicitly.
+### Spread of an Unresolvable Value
+
+```typescript
+// ⚠️ NOT DETECTED - the spread source is a call
+jwt.sign(payload, secret, { ...getSignOptions() });
+```
 
 ### Dynamic Boolean Values
 

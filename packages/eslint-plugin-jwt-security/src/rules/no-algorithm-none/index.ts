@@ -26,8 +26,10 @@ import {
 import {
   isSignatureVerifyOperation,
   isSignOperation,
-  getOptionsArgument,
+  jwtConfigOf,
+  resolveCallOptions,
 } from '../../utils';
+import type { ResolvedObject } from '../../utils';
 import type { NoAlgorithmNoneOptions } from '../../types';
 
 /**
@@ -177,14 +179,12 @@ export const noAlgorithmNone = createRule<RuleOptions, MessageIds>({
     /**
      * Check options object for 'none' algorithm
      */
-    const checkOptionsForNone = (
-      optionsNode: TSESTree.ObjectExpression,
-    ): void => {
-      for (const prop of optionsNode.properties) {
-        if (prop.type !== 'Property') {
-          continue;
-        }
+    const sourceCode = context.sourceCode;
 
+    const checkOptionsForNone = (optionsNode: ResolvedObject): void => {
+      // Resolved options carry only real properties: spreads of a resolvable
+      // const are already flattened in, and the rest marked opaque.
+      for (const prop of optionsNode.properties) {
         // See no-algorithm-confusion: the key may be bare, quoted or computed,
         // and all three name the same JWT option.
         const keyName = objectKeyName(prop);
@@ -238,24 +238,44 @@ export const noAlgorithmNone = createRule<RuleOptions, MessageIds>({
       }
     };
 
+    /**
+     * Config-object APIs name the algorithm too: `expressjwt({ algorithms })`,
+     * `new Strategy({ algorithms })` from passport-jwt, fast-jwt's
+     * `createSigner({ algorithm })`.
+     */
+    const checkConfig = (
+      node: TSESTree.CallExpression | TSESTree.NewExpression,
+    ): void => {
+      const config = jwtConfigOf(node, sourceCode);
+      if (config !== null) {
+        checkOptionsForNone(config.options);
+      }
+    };
+
     return {
       CallExpression(node: TSESTree.CallExpression) {
         // NOTE: a bare `jwt.decode(...)` is deliberately NOT reported here —
         // see the PARTITION note at the top of this file. It belongs to
         // `no-decode-without-verify`, which is the rule that carries the
         // exemptions for it.
+        checkConfig(node);
 
         // Check both verify and sign operations
-        if (!isSignatureVerifyOperation(node) && !isSignOperation(node)) {
+        if (
+          !isSignatureVerifyOperation(node, sourceCode) &&
+          !isSignOperation(node, sourceCode)
+        ) {
           return;
         }
 
-        // Get options argument (usually 3rd argument)
-        const optionsArg = getOptionsArgument(node, 2);
-        if (optionsArg) {
-          checkOptionsForNone(optionsArg);
+        // Options are resolved structurally: a const, an `as` cast, a spread,
+        // or NestJS's second argument.
+        const options = resolveCallOptions(node, sourceCode);
+        if (options !== null) {
+          checkOptionsForNone(options);
         }
       },
+      NewExpression: checkConfig,
     };
   },
 });

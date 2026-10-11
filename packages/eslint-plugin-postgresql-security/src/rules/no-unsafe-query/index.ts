@@ -12,6 +12,10 @@ import {
   MessageIcons,
   isStaticExpression,
   staticString,
+  propertyName,
+  objectKeyName,
+  resolveModuleBinding,
+  unwrapTypeSyntax,
 } from '@interlace/eslint-devkit';
 import { NoUnsafeQueryOptions } from '../../types';
 import { fileUsesPostgres } from '../../utils';
@@ -22,9 +26,30 @@ import { fileUsesPostgres } from '../../utils';
  * `query` alone was the whole sink list, and `pool.execute(...)` — the spelling
  * every `mysql2`-shaped codebase carries over to `pg`, and the one node-postgres
  * itself accepts on a prepared statement — walked straight past the rule.
- * Exact membership against a closed API surface, never a substring.
+ *
+ * pg-promise (`db.any/one/none/…`) and postgres.js (`sql.unsafe`) are in the
+ * module gate's package list, yet their query methods were never sinks: the
+ * gate opened and the rule then looked only at `.query`. Every name here is an
+ * exact member of one of those closed API surfaces, and a call is reported
+ * only when its first argument is ALSO a SQL statement built from a raw value,
+ * so `list.any((x) => …)` stays out.
  */
-const SQL_SINK_METHODS: ReadonlySet<string> = new Set(['query', 'execute']);
+const SQL_SINK_METHODS: ReadonlySet<string> = new Set([
+  'query',
+  'execute',
+  // pg-promise
+  'none',
+  'one',
+  'oneOrNone',
+  'many',
+  'manyOrNone',
+  'any',
+  'result',
+  'multi',
+  'multiResult',
+  // postgres.js — the documented raw-SQL escape hatch
+  'unsafe',
+]);
 
 /**
  * SQL statements, recognised by a verb **and** its companion keyword.
@@ -47,17 +72,35 @@ const SQL_STATEMENTS: readonly RegExp[] = [
   /^\s*replace\s+into\b/i,
   /^\s*merge\s+into\b/i,
   /^\s*with\b[\s\S]*\bas\s*\(/i,
-  /^\s*copy\b[\s\S]*\bfrom\b/i,
+  // `COPY … TO '<path>'` writes a server-side file; requiring FROM let the
+  // write direction through every rule in the plugin.
+  /^\s*copy\b[\s\S]*\b(?:from|to)\b/i,
   /^\s*grant\b[\s\S]*\bon\b/i,
   /^\s*(create|drop|alter|truncate)\s+(table|index|view|schema|database|sequence|materialized|type|function|trigger|role|user|extension)\b/i,
   // A bare projection has no FROM clause at all — `SELECT 1`,
   // `SELECT nextval('s')`, `SELECT pg_sleep(1)` — and pg codebases are full of
-  // them. Demanding the companion here DID cost recall: the rule's own
-  // coverage suite caught `let q = 'SELECT 1'; q += ` AND id = ${id}`` going
-  // silent. Anchored, with required whitespace after the verb, so `event:` and
+  // them. Anchored, with required whitespace after the verb, so `event:` and
   // `'selected: ' + n` still stay out.
   /^\s*select\s/i,
+  // Statements whose operand is the whole statement: `CALL proc(…)`,
+  // `LISTEN ch`, `NOTIFY ch, 'payload'`. Each is anchored to the statement's
+  // exact grammar so an English sentence starting with the same word is not one.
+  /^\s*call\s+[\w".]+\s*\(/i,
+  /^\s*(?:un)?listen\s+[\w"*]*\s*(?:;|$)/i,
+  /^\s*notify\s+[\w"]*\s*(?:,|;|$)/i,
 ];
+
+/** Methods on the pg API (Client, the module itself) that quote what they are given. */
+const PG_ESCAPER_METHODS: ReadonlySet<string> = new Set(['escapeIdentifier', 'escapeLiteral']);
+
+/** Global conversions whose result is a number — digits, never SQL. */
+const NUMBER_CONVERSIONS: ReadonlySet<string> = new Set(['Number', 'parseInt', 'parseFloat']);
+
+/** Global namespaces every member of which returns a number. */
+const NUMBER_NAMESPACES: ReadonlySet<string> = new Set(['Math', 'Number']);
+
+/** Array methods whose callback produces each element of the result. */
+const MAPPING_METHODS: ReadonlySet<string> = new Set(['map', 'flatMap', 'from']);
 
 /** The literal text of a string expression, ignoring every interpolated value. */
 function staticText(node: TSESTree.Node): string {
@@ -70,44 +113,24 @@ function staticText(node: TSESTree.Node): string {
   return staticString(node) ?? '';
 }
 
+/**
+ * The static text a string expression ENDS with — what sits immediately in
+ * front of whatever is appended next. `'$' + i` ends with nothing static, so
+ * `'$' + i + id` does not put `$` in front of `id`.
+ */
+function trailingText(node: TSESTree.Node): string {
+  if (node.type === AST_NODE_TYPES.TemplateLiteral) {
+    return (node.quasis.at(-1) as TSESTree.TemplateElement).value.raw;
+  }
+  if (node.type === AST_NODE_TYPES.BinaryExpression && node.operator === '+') {
+    return trailingText(node.right);
+  }
+  return staticString(node) ?? '';
+}
+
 /** Whether the static half of an expression reads as a SQL statement. */
 function looksLikeSqlStatement(text: string): boolean {
   return SQL_STATEMENTS.some((pattern) => pattern.test(text));
-}
-
-/**
- * Is some interpolated part a value this file cannot prove constant?
- *
- * `const TABLE = 'users'; db.query(`SELECT * FROM ${TABLE}`)` was reported as an
- * injection. Nothing there can change: the interpolation folds to a literal
- * written three lines up. `isStaticExpression` resolves the binding rather than
- * assuming that interpolation means danger.
- *
- * A part that is a CALL is deliberately not raw. `'… ORDER BY ' +
- * escapeIdentifier(req.query.sort)` and `client.escapeLiteral(x)` are the
- * DOCUMENTED remediations for this very weakness, and reporting them would hand
- * a developer their own fix as the finding. Locally-defined builders still get
- * caught — `effectiveExpression` substitutes their returned string before this
- * ever runs, so the real query is what gets judged.
- */
-function hasRawPart(
-  node: TSESTree.TemplateLiteral | TSESTree.BinaryExpression,
-  scope: TSESLint.Scope.Scope,
-): boolean {
-  const parts: TSESTree.Node[] =
-    node.type === AST_NODE_TYPES.TemplateLiteral
-      ? [...node.expressions]
-      : [node.left as TSESTree.Node, node.right];
-  return parts.some((part) => {
-    if (part.type === AST_NODE_TYPES.CallExpression) return false;
-    if (
-      part.type === AST_NODE_TYPES.BinaryExpression ||
-      part.type === AST_NODE_TYPES.TemplateLiteral
-    ) {
-      return hasRawPart(part, scope);
-    }
-    return !isStaticExpression({ node: part, scope });
-  });
 }
 
 /** The variable a name resolves to, walking outward from `scope`. */
@@ -122,6 +145,277 @@ function resolveVariable(
   return null;
 }
 
+/** Is `name` the JavaScript global, not a binding this file declared? */
+function isGlobal(name: string, scope: TSESLint.Scope.Scope): boolean {
+  const variable = resolveVariable(name, scope);
+  return variable === null || variable.defs.length === 0;
+}
+
+/** The initialiser of a `const`-like binding — declared once, never reassigned. */
+function singleInit(
+  variable: TSESLint.Scope.Variable | null,
+): TSESTree.Expression | null {
+  if (variable === null) return null;
+  if (variable.references.filter((ref) => ref.isWrite()).length !== 1) return null;
+  const def = variable.defs.find((d) => d.type === 'Variable');
+  if (def === undefined) return null;
+  return (def.node as TSESTree.VariableDeclarator).init ?? null;
+}
+
+/**
+ * Is this the static text right before an interpolation a bind-parameter
+ * prefix — a single `$`, not the `$$` that opens a dollar-quoted body?
+ */
+function endsWithPlaceholderPrefix(text: string): boolean {
+  return text.endsWith('$') && !text.endsWith('$$');
+}
+
+/**
+ * Could this expression be a bind-parameter INDEX?
+ *
+ * `` `AND name = $${params.length}` `` and `` `$${i + 1}` `` are how every
+ * dynamic-filter builder numbers its placeholders: the values go in the bound
+ * array, and only the `N` of `$N` is interpolated. The shapes accepted are the
+ * ones that number things — a counter, `.length`, `.push(…)` (which returns
+ * the new length), and arithmetic over those — not request data, a string, or
+ * a member such as `req.query.n`.
+ */
+function isIndexShaped(node: TSESTree.Node): boolean {
+  switch (node.type) {
+    case AST_NODE_TYPES.Literal:
+      return typeof node.value === 'number';
+    case AST_NODE_TYPES.Identifier:
+    case AST_NODE_TYPES.UpdateExpression:
+      return true;
+    case AST_NODE_TYPES.MemberExpression:
+      return propertyName(node) === 'length';
+    case AST_NODE_TYPES.CallExpression:
+      return (
+        node.callee.type === AST_NODE_TYPES.MemberExpression &&
+        propertyName(node.callee) === 'push'
+      );
+    case AST_NODE_TYPES.BinaryExpression:
+      return (
+        (node.operator === '+' || node.operator === '-' || node.operator === '*') &&
+        isIndexShaped(node.left as TSESTree.Node) &&
+        isIndexShaped(node.right)
+      );
+    default:
+      return false;
+  }
+}
+
+/** Is `expression` a placeholder index, given the static text in front of it? */
+function isPlaceholderIndex(textBefore: string, expression: TSESTree.Node): boolean {
+  return endsWithPlaceholderPrefix(textBefore) && isIndexShaped(expression);
+}
+
+/**
+ * Does this string expression produce ONLY placeholders and fixed text?
+ *
+ * The callback of `ids.map((_, i) => `$${i + 1}`)` or
+ * `rows.map((r, i) => `($${2 * i + 1}, $${2 * i + 2})`)` — the IN-list and
+ * multi-row VALUES idioms.
+ */
+function isPlaceholderOnly(node: TSESTree.Node): boolean {
+  if (staticString(node) !== null) return true;
+  if (node.type === AST_NODE_TYPES.TemplateLiteral) {
+    return node.expressions.every((expression, i) =>
+      isPlaceholderIndex(node.quasis[i].value.raw, expression),
+    );
+  }
+  if (node.type === AST_NODE_TYPES.BinaryExpression && node.operator === '+') {
+    const left = node.left as TSESTree.Node;
+    return (
+      isPlaceholderOnly(left) &&
+      (isPlaceholderOnly(node.right) || isPlaceholderIndex(trailingText(left), node.right))
+    );
+  }
+  return false;
+}
+
+/** The expression a callback returns, from a concise body or a trailing `return`. */
+function callbackResult(fn: TSESTree.Node): TSESTree.Node | null {
+  if (
+    fn.type !== AST_NODE_TYPES.ArrowFunctionExpression &&
+    fn.type !== AST_NODE_TYPES.FunctionExpression
+  ) {
+    return null;
+  }
+  if (fn.body.type !== AST_NODE_TYPES.BlockStatement) return fn.body;
+  const last = fn.body.body.at(-1);
+  return last?.type === AST_NODE_TYPES.ReturnStatement ? last.argument : null;
+}
+
+/** Is this `<arr>.map(cb)` / `Array.from(x, cb)` with a placeholder-only callback? */
+function isPlaceholderList(node: TSESTree.Node, scope: TSESLint.Scope.Scope): boolean {
+  if (node.type === AST_NODE_TYPES.Identifier) {
+    // `const tuples = rows.map(…); tuples.join(', ')`
+    const init = singleInit(resolveVariable(node.name, scope));
+    return init !== null && init.type === AST_NODE_TYPES.CallExpression && isPlaceholderList(init, scope);
+  }
+  if (
+    node.type !== AST_NODE_TYPES.CallExpression ||
+    node.callee.type !== AST_NODE_TYPES.MemberExpression
+  ) {
+    return false;
+  }
+  const method = propertyName(node.callee);
+  if (method === null || !MAPPING_METHODS.has(method)) return false;
+  const mapper = node.arguments.at(-1);
+  const result = mapper === undefined ? null : callbackResult(mapper);
+  return result !== null && isPlaceholderOnly(result);
+}
+
+/**
+ * Is this call one that can only produce safe text?
+ *
+ * Every call used to be exempt, so `${req.body.ids.join(',')}`,
+ * `${email.trim()}` and `${String(name)}` — real injections — were silent.
+ * Only a CLOSED list now qualifies, each item recognised by where it comes
+ * from rather than by what a variable is called:
+ *
+ *   - pg's own quoting API: `client.escapeIdentifier(x)`, `escapeLiteral`, or
+ *     either imported by name from a module;
+ *   - anything exported by `pg-format` (`format`, `format.ident`, …);
+ *   - pg-promise's formatting namespace, `<pgp>.as.<fn>(x)`;
+ *   - the global number conversions and `Math.*` / `Number.*`;
+ *   - a placeholder list, `<arr>.map(cb).join(sep)`, whose callback returns
+ *     only `$N` placeholders and fixed text;
+ *   - a call the devkit already proves static (`path.join` over constants).
+ */
+function isSafeCall(call: TSESTree.CallExpression, scope: TSESLint.Scope.Scope): boolean {
+  const { callee } = call;
+
+  if (callee.type === AST_NODE_TYPES.Identifier) {
+    if (NUMBER_CONVERSIONS.has(callee.name) && isGlobal(callee.name, scope)) return true;
+  } else if (callee.type === AST_NODE_TYPES.MemberExpression) {
+    const method = propertyName(callee);
+    if (method !== null && PG_ESCAPER_METHODS.has(method)) return true;
+    if (
+      callee.object.type === AST_NODE_TYPES.Identifier &&
+      NUMBER_NAMESPACES.has(callee.object.name) &&
+      isGlobal(callee.object.name, scope)
+    ) {
+      return true;
+    }
+    if (
+      callee.object.type === AST_NODE_TYPES.MemberExpression &&
+      propertyName(callee.object) === 'as'
+    ) {
+      return true;
+    }
+    if (method === 'join' && isPlaceholderList(callee.object, scope)) return true;
+  }
+
+  const binding = resolveModuleBinding(callee, scope);
+  if (binding !== undefined) {
+    if (binding.module === 'pg-format') return true;
+    const exported = binding.path.at(-1);
+    if (exported !== undefined && PG_ESCAPER_METHODS.has(exported)) return true;
+  }
+
+  return isStaticExpression({ node: call, scope });
+}
+
+/**
+ * Does `obj.prop` read a constant?
+ *
+ * `const TABLES = { users: 'app_users' } as const` and `enum Schema { Public =
+ * 'public' }` are how codebases avoid magic table names, and both were
+ * reported as injections because a member access was never folded.
+ */
+function isConstantMember(node: TSESTree.MemberExpression, scope: TSESLint.Scope.Scope): boolean {
+  const key = propertyName(node);
+  if (key === null || node.object.type !== AST_NODE_TYPES.Identifier) return false;
+  const variable = resolveVariable(node.object.name, scope);
+  if (variable === null) return false;
+
+  const enumDef = variable.defs.find((d) => d.type === 'TSEnumName');
+  if (enumDef !== undefined) {
+    const declaration = enumDef.node as TSESTree.TSEnumDeclaration;
+    const member = declaration.body.members.find(
+      (m) => m.id.type === AST_NODE_TYPES.Identifier && m.id.name === key,
+    );
+    return (
+      member !== undefined &&
+      (member.initializer === undefined || member.initializer.type === AST_NODE_TYPES.Literal)
+    );
+  }
+
+  const init = unwrapTypeSyntax(singleInit(variable));
+  if (init === null || init.type !== AST_NODE_TYPES.ObjectExpression) return false;
+  const property = init.properties.find(
+    (p): p is TSESTree.Property =>
+      p.type === AST_NODE_TYPES.Property && objectKeyName(p) === key,
+  );
+  return property !== undefined && isStaticExpression({ node: property.value, scope });
+}
+
+/**
+ * Is this interpolated value one the file cannot prove safe?
+ *
+ * @param self the binding being assembled, when the value is `q` in
+ *   `q = q + …` — its earlier text is judged from its own recorded fragments.
+ */
+function isRawValue(
+  value: TSESTree.Node,
+  scope: TSESLint.Scope.Scope,
+  self: TSESLint.Scope.Variable | null,
+): boolean {
+  const part = unwrapTypeSyntax(value);
+  if (
+    part.type === AST_NODE_TYPES.BinaryExpression ||
+    part.type === AST_NODE_TYPES.TemplateLiteral
+  ) {
+    return hasRawPart(part, scope, self);
+  }
+  if (isStaticExpression({ node: part, scope })) return false;
+  if (part.type === AST_NODE_TYPES.CallExpression) return !isSafeCall(part, scope);
+  if (part.type === AST_NODE_TYPES.MemberExpression) return !isConstantMember(part, scope);
+  if (part.type === AST_NODE_TYPES.Identifier) {
+    const variable = resolveVariable(part.name, scope);
+    if (variable !== null && variable === self) return false;
+    // A `const` bound to a call is judged exactly as the call written inline:
+    // `const placeholders = ids.map(…).join(', ')` and
+    // `const col = escapeIdentifier(sort)` used to be reported only because
+    // the safe expression was extracted into a variable first.
+    const init = unwrapTypeSyntax(singleInit(variable));
+    return init === null || init.type !== AST_NODE_TYPES.CallExpression || !isSafeCall(init, scope);
+  }
+  return true;
+}
+
+/**
+ * Is some interpolated part a value this file cannot prove safe?
+ *
+ * `const TABLE = 'users'; db.query(`SELECT * FROM ${TABLE}`)` was reported as an
+ * injection. Nothing there can change: the interpolation folds to a literal
+ * written three lines up. `isStaticExpression` resolves the binding rather than
+ * assuming that interpolation means danger.
+ *
+ * An interpolation right after a lone `$` that is shaped like an index is a
+ * bind-parameter NUMBER (`$${params.length}`), not data.
+ */
+function hasRawPart(
+  node: TSESTree.TemplateLiteral | TSESTree.BinaryExpression,
+  scope: TSESLint.Scope.Scope,
+  self: TSESLint.Scope.Variable | null,
+): boolean {
+  if (node.type === AST_NODE_TYPES.TemplateLiteral) {
+    return node.expressions.some(
+      (expression, i) =>
+        !isPlaceholderIndex(node.quasis[i].value.raw, expression) &&
+        isRawValue(expression, scope, self),
+    );
+  }
+  const left = node.left as TSESTree.Node;
+  if (isPlaceholderIndex(trailingText(left), node.right)) {
+    return isRawValue(left, scope, self);
+  }
+  return isRawValue(left, scope, self) || isRawValue(node.right, scope, self);
+}
+
 /**
  * The expression a sink argument really holds.
  *
@@ -130,23 +424,16 @@ function resolveVariable(
  *   const build = (t) => `SELECT * FROM logs WHERE tag = '${t}'`;
  *   db.query(build(req.query.tag));            // was completely silent
  *
- * The sink saw a `CallExpression`, which is neither a concatenation nor a
- * template, so the entire injection disappeared. Substituting the builder's
- * returned string makes the real query visible to every gate below.
- *
  * Only when the callee resolves HERE and its body is visibly an interpolated
- * string. An IMPORTED call — `format('SELECT * FROM %I', table)`,
- * `escapeIdentifier(x)` — does not resolve, so the documented fixes stay quiet.
- * Escapers come from libraries; builders are written in the file.
+ * string, or ends by returning a binding (whose recorded fragments are then
+ * judged). An IMPORTED call — `format('SELECT * FROM %I', table)` — does not
+ * resolve, so the documented fixes stay quiet.
  */
 function effectiveExpression(
   node: TSESTree.Node,
   scope: TSESLint.Scope.Scope | null,
 ): TSESTree.Node {
   // node-postgres also takes a config object: `db.query({ text, values })`.
-  // The SQL is interpolated exactly as it is in the string form, and it went
-  // straight past a rule that only ever read the first argument as a string.
-  // The same gap was found independently on `no-transaction-on-pool`.
   if (node.type === AST_NODE_TYPES.ObjectExpression) {
     const text = node.properties.find(
       (prop): prop is TSESTree.Property =>
@@ -159,17 +446,19 @@ function effectiveExpression(
     return text === undefined ? node : effectiveExpression(text.value, scope);
   }
 
+  // `client.query(new Cursor(text))` / `new QueryStream(text)` — the statement
+  // is the constructor's first argument.
+  if (node.type === AST_NODE_TYPES.NewExpression) {
+    const [first] = node.arguments;
+    return first === undefined ? node : effectiveExpression(first, scope);
+  }
+
   // `const config = { text: … }; db.query(config)` — the config object one
-  // binding above the sink. Restricted to an ObjectExpression initialiser on
-  // purpose: a STRING binding is handled by the `fragments` map instead, which
-  // also accumulates the `+=` builder shape that a single init cannot express.
+  // binding above the sink. A STRING binding is handled by the `fragments`
+  // map instead, which also accumulates the `+=` builder shape.
   if (node.type === AST_NODE_TYPES.Identifier) {
-    const variable = resolveVariable(node.name, scope);
-    if (variable === null) return node;
-    if (variable.references.filter((ref) => ref.isWrite()).length !== 1) return node;
-    const def = variable.defs.find((d) => d.type === 'Variable');
-    const init = def === undefined ? null : (def.node as TSESTree.VariableDeclarator).init;
-    return init != null && init.type === AST_NODE_TYPES.ObjectExpression
+    const init = singleInit(resolveVariable(node.name, scope));
+    return init !== null && init.type === AST_NODE_TYPES.ObjectExpression
       ? effectiveExpression(init, scope)
       : node;
   }
@@ -187,11 +476,6 @@ function effectiveExpression(
 
 /**
  * The function a callee name resolves to, when it is written in THIS file.
- *
- * `singleAssignedInit` alone covered only `const build = () => …`. A plain
- * `function build(t) { … }` is a `FunctionName` definition with no initialiser,
- * so it resolved to nothing and the most ordinary builder spelling of all went
- * unread.
  *
  * An `ImportBinding` deliberately resolves to nothing. That is what keeps
  * `format(…)` and `escapeIdentifier(…)` — the documented remediations — quiet:
@@ -223,34 +507,39 @@ function functionImplementation(
 /**
  * The string a function body evaluates to.
  *
- * A concise arrow (`(t) => `SELECT …${t}``) is the shape the reference
- * implementation handles, and it is the RARER one. Every builder written the
- * ordinary way —
+ * A single `return <string>` is read directly. A body of any length that ENDS
+ * in `return <binding>` — the ordinary builder,
  *
- *   function build(t) { return 'SELECT * FROM logs WHERE tag = ' + t; }
- *   const build = (t) => { return `SELECT … ${t}`; };
+ *   function build(f) { let q = 'SELECT …'; if (f.a) q += ` AND a = '${f.a}'`; return q; }
  *
- * — has a BlockStatement body, so the substitution never happened and the
- * injection stayed silent. The rule's own adversarial suite is what surfaced
- * this; the corpus fixture only ever used the concise form.
- *
- * A block with more than one statement, or whose `return` is not the last
- * statement, is not read: the string could be reassigned in between, and
- * guessing is how a precise rule becomes a noisy one.
+ * — returns the binding, whose fragments were recorded statement by statement
+ * as the body was walked. A template returned after other statements is still
+ * not read: its interpolations could be reassigned in between.
  */
 function returnedExpression(body: TSESTree.Node): TSESTree.Node | null {
   if (body.type === AST_NODE_TYPES.BlockStatement) {
-    const [only] = body.body;
-    if (body.body.length !== 1 || only.type !== AST_NODE_TYPES.ReturnStatement) {
-      return null;
-    }
-    return only.argument === null ? null : returnedExpression(only.argument);
+    const last = body.body.at(-1);
+    if (last?.type !== AST_NODE_TYPES.ReturnStatement || last.argument === null) return null;
+    if (last.argument.type === AST_NODE_TYPES.Identifier) return last.argument;
+    return body.body.length === 1 ? returnedExpression(last.argument) : null;
   }
   return body.type === AST_NODE_TYPES.TemplateLiteral ||
-    body.type === AST_NODE_TYPES.BinaryExpression
+    body.type === AST_NODE_TYPES.BinaryExpression ||
+    body.type === AST_NODE_TYPES.Identifier
     ? body
     : null;
 }
+
+/** The leftmost operand of a `+` chain — `q` in `q + a + b`. */
+function leftmostOperand(node: TSESTree.Node): TSESTree.Node {
+  let current = node;
+  while (current.type === AST_NODE_TYPES.BinaryExpression && current.operator === '+') {
+    current = current.left as TSESTree.Node;
+  }
+  return current;
+}
+
+type FragmentKey = TSESLint.Scope.Variable | string;
 
 export const noUnsafeQuery: TSESLint.RuleModule<
   'noUnsafeQuery' | 'unsafeTemplateLiteral',
@@ -297,26 +586,31 @@ export const noUnsafeQuery: TSESLint.RuleModule<
   },
   defaultOptions: [],
   create(context) {
+    const { sourceCode } = context;
+
     // Every rule here is PostgreSQL-specific, and none of them knew it: over
     // 108,838 files, 94% of this plugin's findings were in files with no
     // PostgreSQL client at all. Registering no visitors is both the gate and
-    // the cheap path — a file with no database in it does no work.
-    if (!fileUsesPostgres(context.sourceCode.ast)) return {};
+    // the cheap path — a file with no database in it does no work. A file that
+    // reaches PostgreSQL only through a local `./db` wrapper is deliberately
+    // left to `secure-coding`: the SDK-evidence gate is a contract shared with
+    // the sibling SQL plugins (benchmarks/__tests__/sdk-gate-coverage.lock).
+    if (!fileUsesPostgres(sourceCode.ast)) return {};
 
     /**
      * Every string-valued fragment written into a local binding, in source
-     * order.
-     *
-     * The old map stored only a KIND (`'concat' | 'template'`), which threw away
-     * the statement text — so a `+=` builder could never be tested for being SQL
-     * at all, and the fragments could not be judged together. Keeping the nodes
-     * lets the sink re-read the whole assembled query:
+     * order, keyed by the BINDING (not its name — `sql` declared in one
+     * function used to taint a `sql` parameter in the next).
      *
      *   let q = "SELECT * FROM products WHERE 1=1";
      *   q += ` AND name = '${name}'`;      // ← alone, not a SQL statement
      *   db.query(q);                       // ← together, plainly one
      */
-    const fragments = new Map<string, TSESTree.Node[]>();
+    const fragments = new Map<FragmentKey, TSESTree.Node[]>();
+
+    /** The binding an identifier names, or its bare name when it names none. */
+    const keyFor = (id: TSESTree.Identifier): FragmentKey =>
+      resolveVariable(id.name, sourceCode.getScope(id)) ?? `global:${id.name}`;
 
     /** Is this expression a string being BUILT out of parts, rather than written? */
     const isBuilt = (node: TSESTree.Node): boolean =>
@@ -331,7 +625,7 @@ export const noUnsafeQuery: TSESLint.RuleModule<
 
     /**
      * Report when the fragments together form a SQL statement built out of at
-     * least one value this file cannot prove constant.
+     * least one value this file cannot prove safe.
      *
      * All three conditions are required, and each one is a false positive the
      * rule used to ship:
@@ -342,23 +636,25 @@ export const noUnsafeQuery: TSESLint.RuleModule<
     const reportIfUnsafe = (
       reportNode: TSESTree.Node,
       parts: readonly TSESTree.Node[],
-      scope: TSESLint.Scope.Scope,
+      self: FragmentKey | null,
     ): void => {
+      const selfVariable = typeof self === 'string' ? null : self;
       let kind: 'concat' | 'template' | null = null;
       let raw = false;
       let text = '';
 
       for (const part of parts) {
         text += staticText(part);
+        const scope = sourceCode.getScope(part);
         if (part.type === AST_NODE_TYPES.BinaryExpression && part.operator === '+') {
           kind = 'concat';
-          if (hasRawPart(part, scope)) raw = true;
+          if (hasRawPart(part, scope, selfVariable)) raw = true;
         } else if (
           part.type === AST_NODE_TYPES.TemplateLiteral &&
           part.expressions.length > 0
         ) {
           kind = 'template';
-          if (hasRawPart(part, scope)) raw = true;
+          if (hasRawPart(part, scope, selfVariable)) raw = true;
         }
       }
 
@@ -372,32 +668,47 @@ export const noUnsafeQuery: TSESLint.RuleModule<
     };
 
     return {
-      // Track variable declarations that hold query text:
-      // const query = "SELECT..." + userId;
-      // const query = `SELECT...${email}`;
-      // let query = "SELECT ...";            ← the seed of a `+=` builder
+      // const query = "SELECT..." + userId;   let query = "SELECT ...";
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
         if (
           node.id.type === AST_NODE_TYPES.Identifier &&
           node.init &&
           isStringish(node.init)
         ) {
-          fragments.set(node.id.name, [node.init]);
+          fragments.set(keyFor(node.id), [node.init]);
         }
       },
 
-      // Track augmented assignment: query += " AND ..." + var
-      // or: query += `...${var}`
+      // query += " AND ..." + var   ·   query = `...${var}`   ·   q = q + "..."
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
-        if (node.operator !== '+=' || node.left.type !== AST_NODE_TYPES.Identifier) {
+        if (node.left.type !== AST_NODE_TYPES.Identifier) return;
+        const key = keyFor(node.left);
+
+        if (node.operator === '+=') {
+          const existing = fragments.get(key);
+          if (existing === undefined) fragments.set(key, [node.right]);
+          else existing.push(node.right);
           return;
         }
-        const existing = fragments.get(node.left.name);
-        if (existing === undefined) {
-          fragments.set(node.left.name, [node.right]);
+        if (node.operator !== '=') return;
+
+        if (!isStringish(node.right)) {
+          // Overwritten with something that is not query text: whatever was
+          // recorded before no longer reaches the sink.
+          fragments.delete(key);
           return;
         }
-        existing.push(node.right);
+        const head = leftmostOperand(node.right);
+        const existing = fragments.get(key);
+        if (
+          existing !== undefined &&
+          head.type === AST_NODE_TYPES.Identifier &&
+          keyFor(head) === key
+        ) {
+          existing.push(node.right);
+        } else {
+          fragments.set(key, [node.right]);
+        }
       },
 
       CallExpression(node: TSESTree.CallExpression) {
@@ -414,19 +725,21 @@ export const noUnsafeQuery: TSESLint.RuleModule<
           return;
         }
 
-        const scope = context.sourceCode.getScope(node);
+        const scope = sourceCode.getScope(node);
 
         // The query written at the sink, or the one a LOCAL builder returns.
         const expression = effectiveExpression(queryArg, scope);
         if (isBuilt(expression)) {
-          reportIfUnsafe(queryArg, [expression], scope);
+          reportIfUnsafe(queryArg, [expression], null);
           return;
         }
 
-        // Otherwise the query was assembled into a binding: db.query(sql)
-        if (queryArg.type === AST_NODE_TYPES.Identifier) {
-          const parts = fragments.get(queryArg.name);
-          if (parts !== undefined) reportIfUnsafe(queryArg, parts, scope);
+        // Otherwise the query was assembled into a binding: db.query(sql),
+        // db.query({ text }), or a builder's `return q`.
+        if (expression.type === AST_NODE_TYPES.Identifier) {
+          const key = keyFor(expression);
+          const parts = fragments.get(key);
+          if (parts !== undefined) reportIfUnsafe(queryArg, parts, key);
         }
       },
     };

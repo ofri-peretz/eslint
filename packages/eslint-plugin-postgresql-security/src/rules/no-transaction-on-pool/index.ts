@@ -18,6 +18,7 @@ import {
 } from '@interlace/eslint-devkit';
 import { NoTransactionOnPoolOptions } from '../../types';
 import { fileUsesPostgres, PG_MODULES } from '../../utils';
+import { isDeclaredPgPool } from '../../utils/pool-receiver';
 
 const PG_MODULE_SET: ReadonlySet<string> = new Set(PG_MODULES);
 
@@ -93,6 +94,59 @@ function statementText(node: TSESTree.Node): string | null {
 /** Whether a statement opens, closes or checkpoints a transaction. */
 function isTransactionStatement(text: string): boolean {
   return TRANSACTION_STATEMENTS.some((pattern) => pattern.test(text));
+}
+
+/**
+ * Is the whole transaction in this one string — `BEGIN; …; COMMIT`?
+ *
+ * A single simple-protocol query runs on ONE connection, atomically; there is
+ * nothing for the pool to split.
+ */
+function isSelfContainedTransaction(text: string): boolean {
+  const statements = text
+    .split(';')
+    .map((statement) => statement.trim())
+    .filter((statement) => statement !== '');
+  return (
+    statements.length > 1 &&
+    /^(?:begin|start\s+transaction)\b/i.test(statements[0]) &&
+    /^(?:commit|end|rollback)\b/i.test(statements[statements.length - 1])
+  );
+}
+
+/**
+ * Does this file check a client out of `receiver` and keep it —
+ * `const c = await receiver.connect()`? A pg `Client#connect` resolves to
+ * nothing, so a kept checkout is a Pool's.
+ */
+function handsOutClients(
+  receiver: TSESTree.Node,
+  scope: TSESLint.Scope.Scope,
+): boolean {
+  if (receiver.type !== AST_NODE_TYPES.Identifier) return false;
+  for (
+    let current: TSESLint.Scope.Scope | null = scope;
+    current;
+    current = current.upper
+  ) {
+    const variable = current.set.get(receiver.name);
+    if (variable === undefined) continue;
+    return variable.references.some((ref) => {
+      const member = ref.identifier.parent;
+      const call = member?.parent;
+      const kept =
+        call?.parent?.type === AST_NODE_TYPES.AwaitExpression
+          ? call.parent.parent
+          : undefined;
+      return (
+        member?.type === AST_NODE_TYPES.MemberExpression &&
+        propertyName(member) === 'connect' &&
+        call?.type === AST_NODE_TYPES.CallExpression &&
+        kept?.type === AST_NODE_TYPES.VariableDeclarator
+      );
+    });
+  }
+  return false;
 }
 
 export const noTransactionOnPool: TSESLint.RuleModule<
@@ -256,8 +310,15 @@ export const noTransactionOnPool: TSESLint.RuleModule<
 
         const text = statementText(queryArg);
         if (text === null || !isTransactionStatement(text)) return;
+        if (isSelfContainedTransaction(text)) return;
 
-        if (isPool(node.callee.object, context.sourceCode.getScope(node))) {
+        const scope = context.sourceCode.getScope(node);
+        const receiver = node.callee.object;
+        if (
+          isPool(receiver, scope) ||
+          isDeclaredPgPool(receiver, scope) ||
+          handsOutClients(receiver, scope)
+        ) {
           context.report({ node: queryArg, messageId: 'noTransactionOnPool' });
         }
       },

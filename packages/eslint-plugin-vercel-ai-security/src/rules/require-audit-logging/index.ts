@@ -10,8 +10,9 @@
  * @see OWASP ASI10: Logging & Monitoring
  */
 
-import { TSESTree, createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
+import { TSESTree, createRule, formatLLMMessage, MessageIcons, isTestFilePath, memberPath } from '@interlace/eslint-devkit';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
+import { optionValue, sdkCallName } from '../../utils/sdk';
 
 type MessageIds = 'missingAuditLogging';
 
@@ -64,56 +65,56 @@ export const requireAuditLogging = createRule<RuleOptions, MessageIds>({
       allowInTests: true,
     },
   ],
-  create(context) {
+  create(context, [options]) {
     // Every rule in this plugin is Vercel-AI-specific, and none of them knew
     // it: over 107,384 files, 91% of this plugin's findings were in files with
     // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
     // the cheap path — a file without the SDK does no work.
     if (!fileUsesVercelAi(context.sourceCode.ast)) return {};
 
-    const [options = {}] = context.options;
-    const allowInTests = options.allowInTests ?? true;
-
-    const sourceCode = context.sourceCode;
-    const filename = context.filename;
+    // Merged with `defaultOptions` before `create` runs.
+    const { allowInTests } = options as Required<Options>;
 
     // Skip test files if allowed
-    if (allowInTests && isTestFilePath(filename)) {
+    if (allowInTests && isTestFilePath(context.filename)) {
       return {};
     }
 
-    // Vercel AI SDK functions
-    const aiSDKFunctions = ['generateText', 'streamText', 'generateObject', 'streamObject'];
-
-    // Logging patterns
-    const loggingPatterns = [
-      'log', 'logger', 'console', 'winston', 'pino', 'bunyan',
-      'debug', 'info', 'warn', 'error', 'trace',
-    ];
-
     /**
-     * Check if a statement is a logging call
+     * A logging call by shape: rooted at a logger (`console.log`,
+     * `logger.info`, `log(...)`), or a member call to a log-level method
+     * (`this.audit.warn`). Exact segments — `showDialog()` and
+     * `getUserInfo()` contain "log" and "info" but log nothing.
      */
     function isLoggingStatement(node: TSESTree.Node): boolean {
       if (node.type !== 'ExpressionStatement') return false;
       if (node.expression.type !== 'CallExpression') return false;
-      
-      const callee = sourceCode.getText(node.expression.callee);
-      return loggingPatterns.some((pattern: string) => 
-        callee.toLowerCase().includes(pattern.toLowerCase())
+      const path = memberPath(node.expression.callee);
+      if (path === null) return false;
+      return (
+        LOGGER_ROOTS.has(path[0].toLowerCase()) ||
+        (path.length > 1 && LOG_LEVELS.has(path[path.length - 1]))
       );
     }
 
-    /**
-     * Check if there's logging nearby (within 3 statements)
-     */
-    function hasNearbyLogging(node: TSESTree.CallExpression): boolean {
-      const parent = node.parent;
-      if (!parent) return false;
+    /** OpenTelemetry tracing turned on for the call: the SDK's own audit trail. */
+    function hasTelemetry(node: TSESTree.CallExpression): boolean {
+      const optionsArg = node.arguments[0];
+      if (optionsArg?.type !== 'ObjectExpression') return false;
+      return ['experimental_telemetry', 'telemetry'].some((key) => {
+        const value = optionValue(optionsArg, key);
+        return (
+          value?.type === 'ObjectExpression' &&
+          optionValue(value, 'isEnabled')?.type === 'Literal' &&
+          (optionValue(value, 'isEnabled') as TSESTree.Literal).value === true
+        );
+      });
+    }
 
+    function hasNearbyLogging(node: TSESTree.CallExpression): boolean {
       // Find the statement containing this call
       let statement: TSESTree.Node | null = node;
-      while (statement && statement.type !== 'ExpressionStatement' && 
+      while (statement && statement.type !== 'ExpressionStatement' &&
              statement.type !== 'VariableDeclaration' &&
              statement.type !== 'ReturnStatement') {
         statement = statement.parent ?? null;
@@ -126,9 +127,8 @@ export const requireAuditLogging = createRule<RuleOptions, MessageIds>({
         return false;
       }
 
-      const statements = block.type === 'BlockStatement' ? block.body : block.body;
+      const statements = block.body;
       const idx = statements.indexOf(statement as TSESTree.Statement);
-      if (idx === -1) return false;
 
       // Check 3 statements before
       for (let i = Math.max(0, idx - 3); i < idx; i++) {
@@ -140,14 +140,10 @@ export const requireAuditLogging = createRule<RuleOptions, MessageIds>({
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
-        const callee = sourceCode.getText(node.callee);
-        
-        // Check if this is an AI SDK function
-        const matchedFunction = aiSDKFunctions.find(fn => callee.includes(fn));
+        const matchedFunction = sdkCallName(node);
         if (!matchedFunction) return;
 
-        // Check for nearby logging
-        if (!hasNearbyLogging(node)) {
+        if (!hasTelemetry(node) && !hasNearbyLogging(node)) {
           context.report({
             node,
             messageId: 'missingAuditLogging',
@@ -158,3 +154,9 @@ export const requireAuditLogging = createRule<RuleOptions, MessageIds>({
     };
   },
 });
+
+/** Logger objects, matched as the first segment of the callee path. */
+const LOGGER_ROOTS = new Set(['log', 'logger', 'console', 'debug', 'winston', 'pino', 'bunyan', 'audit']);
+
+/** Log-level methods, matched as the last segment of a member call. */
+const LOG_LEVELS = new Set(['log', 'info', 'warn', 'error', 'debug', 'trace', 'fatal', 'audit']);

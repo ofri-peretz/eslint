@@ -77,7 +77,7 @@ await generateObject({
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
-| `ragPatterns` | `string[]` | `["search","retrieve","query","vectorStore","embeddings","similaritySearch","findSimilar","getDocuments","fetchDocs","documents","chunks","passages","context"]` | Patterns suggesting RAG operations |
+| `ragPatterns` | `string[]` | `["search","retrieve","query","vectorStore","embeddings","similaritySearch","findSimilar","getDocuments","fetchDocs","documents","chunks","passages"]` | Patterns suggesting RAG operations |
 | `validatorFunctions` | `string[]` | `["validate","sanitize","filter","clean","verify","validateRag","sanitizeContent","filterDocs"]` | Functions that validate RAG content |
 
 ## 🛡️ Why This Matters
@@ -93,6 +93,12 @@ Poisoned RAG content can:
 
 - [`require-validated-prompt`](./require-validated-prompt.md) - Validate user prompts
 - [`no-dynamic-system-prompt`](./no-dynamic-system-prompt.md) - Static system prompts
+
+## 🔄 Changes in the 2026-10-10 FP/FN audit
+
+- RAG calls and validators are matched by whole word of the call chain
+  (`researchTopic` is not a `search`); `context` was removed from the defaults.
+- **Options:** the documented `defaultOptions` now apply. Earlier versions read `context.options` and silently ran a shorter hard-coded list instead.
 
 ## Known False Negatives
 

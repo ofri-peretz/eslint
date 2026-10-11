@@ -10,7 +10,7 @@
  * @see OWASP LLM03: Training Data Poisoning
  */
 
-import { TSESTree, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { TSESTree, createRule, formatLLMMessage, MessageIcons, nameHasWord, objectKeyName } from '@interlace/eslint-devkit';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
 
 type MessageIds = 'trainingDataExposure';
@@ -62,75 +62,54 @@ export const noTrainingDataExposure = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [
     {
-      trainingPatterns: [
-        'train', 'training', 'finetune', 'fine-tune', 'fine_tune',
-        'feedback', 'improve', 'learn',
-      ],
+      // Whole words of a flag name. `feedback`, `improve` and `learn` were
+      // dropped: `showFeedback`, `improveContrast` and `learnMore` are UI
+      // flags, and none of them says anything about model training.
+      trainingPatterns: ['train', 'training', 'finetune', 'fine-tune', 'fine_tune'],
     },
   ],
-  create(context) {
+  create(context, [options]) {
     // Every rule in this plugin is Vercel-AI-specific, and none of them knew
     // it: over 107,384 files, 91% of this plugin's findings were in files with
     // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
     // the cheap path — a file without the SDK does no work.
     if (!fileUsesVercelAi(context.sourceCode.ast)) return {};
 
-    const [options = {}] = context.options;
-    const trainingPatterns = options.trainingPatterns ?? [
-      'train', 'training', 'finetune', 'feedback',
-    ];
-
-
-
-    /**
-     * Check if identifier suggests training
-     */
-    function isTrainingRelated(name: string): boolean {
-      const lowerName = name.toLowerCase();
-      return trainingPatterns.some((pattern: string) => 
-        lowerName.includes(pattern.toLowerCase())
-      );
-    }
+    // Merged with `defaultOptions` before `create` runs.
+    const { trainingPatterns } = options as Required<Options>;
 
     return {
-      // Check for training-related properties
+      // Training flags like { training: true, allowTraining: true }
       Property(node: TSESTree.Property) {
-        const keyName = node.key.type === 'Identifier' 
-          ? node.key.name 
-          : node.key.type === 'Literal' 
-            ? String(node.key.value)
-            : null;
-
-        if (!keyName) return;
-
-        // Check for training flags like { training: true, allowTraining: true }
-        if (isTrainingRelated(keyName)) {
-          if (node.value.type === 'Literal' && node.value.value === true) {
-            context.report({
-              node,
-              messageId: 'trainingDataExposure',
-              data: { pattern: keyName },
-            });
-          }
-        }
+        const keyName = objectKeyName(node);
+        if (keyName === null) return;
+        if (node.value.type !== 'Literal' || node.value.value !== true) return;
+        if (!trainingPatterns.some((pattern: string) => nameHasWord(keyName, pattern))) return;
+        context.report({
+          node,
+          messageId: 'trainingDataExposure',
+          data: { pattern: keyName },
+        });
       },
 
-      // Check for training endpoint URLs
+      // Training endpoints, matched by whole path segment: `/v1/fine_tuning/jobs`
+      // and `/api/train/model`, not `/trainers` or `/training-schedule`.
       Literal(node: TSESTree.Literal) {
         if (typeof node.value !== 'string') return;
-        
-        const value = node.value.toLowerCase();
-        if (value.includes('/train') || 
-            value.includes('/finetune') || 
-            value.includes('/fine-tune') ||
-            value.includes('/feedback')) {
-          context.report({
-            node,
-            messageId: 'trainingDataExposure',
-            data: { pattern: node.value },
-          });
-        }
+        const path = node.value.toLowerCase().split(/[?#]/)[0];
+        if (!path.split('/').slice(1).some((segment) => TRAINING_SEGMENTS.has(segment))) return;
+        context.report({
+          node,
+          messageId: 'trainingDataExposure',
+          data: { pattern: node.value },
+        });
       },
     };
   },
 });
+
+/** URL path segments of training / fine-tuning endpoints. */
+const TRAINING_SEGMENTS = new Set([
+  'train', 'training', 'finetune', 'finetunes', 'fine-tune', 'fine-tunes',
+  'fine_tune', 'fine_tunes', 'fine-tuning', 'fine_tuning',
+]);

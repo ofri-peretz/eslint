@@ -183,10 +183,15 @@ ruleTester.run('no-decode-without-verify (corpus)', noDecodeWithoutVerify, {
      audit(d);`,
       errors: [{ messageId: 'decodeWithoutVerify' }],
     },
-    // A destructuring declarator has no single binding to follow.
+    // A destructuring declarator that pulls an authority claim. (Audit
+    // 2026-10: this case used to be `const { exp } = jwt.decode(token)` and
+    // was reported only because a destructuring pattern was not followed —
+    // an implementation limit, not a judgement. Destructuring nothing but time
+    // claims is the frontend refresh check and is now valid; pulling `sub`
+    // alongside `exp` keeps the recall this case was guarding.)
     {
       code: `import jwt from 'jsonwebtoken';
-     const { exp } = jwt.decode(token);`,
+     const { exp, sub } = jwt.decode(token);`,
       errors: [{ messageId: 'decodeWithoutVerify' }],
     },
     // A computed claim read cannot be checked statically.
@@ -203,19 +208,23 @@ ruleTester.run('no-decode-without-verify (corpus)', noDecodeWithoutVerify, {
 // `new TextDecoder().decode(bytes)` shares a method name with JWT decoding and
 // nothing else — auth0's express-openid-connect has exactly this line in
 // lib/appSession.js:92, reported as decoding a token without verifying it.
-ruleTester.run('no-decode-without-verify — built-in receivers', noDecodeWithoutVerify, {
-  valid: [
-    `import jwt from 'jsonwebtoken';\nconst cleartext = new TextDecoder().decode(plaintext);`,
-    `import jwt from 'jsonwebtoken';\nconst p = new URLSearchParams(q).toString();`,
-  ],
-  invalid: [
-    // The real thing still reports, in the same file shape.
-    {
-      code: `import jwt from 'jsonwebtoken';\nconst claims = jwt.decode(token);\nuse(claims.sub);`,
-      errors: [{ messageId: 'decodeWithoutVerify' }],
-    },
-  ],
-});
+ruleTester.run(
+  'no-decode-without-verify — built-in receivers',
+  noDecodeWithoutVerify,
+  {
+    valid: [
+      `import jwt from 'jsonwebtoken';\nconst cleartext = new TextDecoder().decode(plaintext);`,
+      `import jwt from 'jsonwebtoken';\nconst p = new URLSearchParams(q).toString();`,
+    ],
+    invalid: [
+      // The real thing still reports, in the same file shape.
+      {
+        code: `import jwt from 'jsonwebtoken';\nconst claims = jwt.decode(token);\nuse(claims.sub);`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+    ],
+  },
+);
 
 // ---------------------------------------------------------------------------
 // PROVENANCE — a token read off a token-endpoint grant response is not
@@ -407,3 +416,136 @@ function f(grant) {
     ],
   },
 );
+
+// ---------------------------------------------------------------------------
+// FP/FN audit 2026-10
+// ---------------------------------------------------------------------------
+describe('no-decode-without-verify — audit 2026-10', () => {
+  ruleTester.run(
+    'time claims, header kid, non-JWT receivers',
+    noDecodeWithoutVerify,
+    {
+      valid: [
+        {
+          name: 'FP-5: a destructured exp is a time-claim read',
+          code: `import { jwtDecode } from 'jwt-decode';
+export function isTokenExpired(token) {
+  const { exp } = jwtDecode(token);
+  return Date.now() >= exp * 1000;
+}`,
+        },
+        {
+          name: 'FP-5: destructuring several time claims, one renamed',
+          code: `import { jwtDecode } from 'jwt-decode';
+const { exp, iat: issuedAt, 'nbf': notBefore } = jwtDecode(token);`,
+        },
+        {
+          name: 'FP-6: decoding the header to pick the JWKS key by kid',
+          code: `import jwt from 'jsonwebtoken';
+export async function verifyToken(token) {
+  const decoded = jwt.decode(token, { complete: true });
+  if (!decoded) throw new Error('malformed');
+  const key = await client.getSigningKey(decoded.header.kid);
+  return jwt.verify(token, key.getPublicKey(), { algorithms: ['RS256'] });
+}`,
+        },
+        {
+          name: 'FP-6: reading kid straight off the decode call',
+          code: `import jwt from 'jsonwebtoken';
+const kid = jwt.decode(token, { complete: true }).header.kid;`,
+        },
+        {
+          name: 'FP-6: allowHeaderInspection permits any header read',
+          code: `import jwt from 'jsonwebtoken';
+const decoded = jwt.decode(token, { complete: true });
+const alg = decoded.header.alg;`,
+          options: [{ allowHeaderInspection: true }],
+        },
+        {
+          name: 'FP-6: allowHeaderInspection permits reading the header object itself',
+          code: `import jwt from 'jsonwebtoken';
+const header = jwt.decode(token, { complete: true }).header;`,
+          options: [{ allowHeaderInspection: true }],
+        },
+        {
+          name: 'FP-7: a TextDecoder held in a const',
+          code: `import { jwtVerify } from 'jose';
+const decoder = new TextDecoder();
+export const text = (bytes) => decoder.decode(bytes, { stream: true });`,
+        },
+        {
+          name: "FP-7: jose's base64url codec",
+          code: `import { base64url, jwtVerify } from 'jose';
+const secret = base64url.decode(process.env.JWT_SECRET_B64);`,
+        },
+        {
+          name: "FP-7: jose's base64url codec through a namespace import",
+          code: `import * as jose from 'jose';
+const secret = jose.base64url.decode(process.env.JWT_SECRET_B64);`,
+        },
+      ],
+      invalid: [
+        {
+          name: 'FP-5 keeps recall: destructuring an authority claim',
+          code: `import { jwtDecode } from 'jwt-decode';
+const { exp, role } = jwtDecode(token);`,
+          errors: [{ messageId: 'decodeWithoutVerify' }],
+        },
+        {
+          name: 'FP-5 keeps recall: a rest element passes the claims on',
+          code: `import { jwtDecode } from 'jwt-decode';
+const { exp, ...claims } = jwtDecode(token);`,
+          errors: [{ messageId: 'decodeWithoutVerify' }],
+        },
+        {
+          name: 'an array-destructured decode has no claim name to check',
+          code: `import { jwtDecode } from 'jwt-decode';
+const [first] = jwtDecode(token);`,
+          errors: [{ messageId: 'decodeWithoutVerify' }],
+        },
+        {
+          name: 'FP-5 keeps recall: a computed destructuring key names nothing',
+          code: `import { jwtDecode } from 'jwt-decode';
+const { [claim]: value } = jwtDecode(token);`,
+          errors: [{ messageId: 'decodeWithoutVerify' }],
+        },
+        {
+          name: 'FP-6 keeps recall: header.alg without the option',
+          code: `import jwt from 'jsonwebtoken';
+const decoded = jwt.decode(token, { complete: true });
+const alg = decoded.header.alg;`,
+          errors: [{ messageId: 'decodeWithoutVerify' }],
+        },
+        {
+          name: 'FP-6 keeps recall: the payload read next to the kid',
+          code: `import jwt from 'jsonwebtoken';
+const decoded = jwt.decode(token, { complete: true });
+const kid = decoded.header.kid;
+const sub = decoded.payload.sub;`,
+          errors: [{ messageId: 'decodeWithoutVerify' }],
+        },
+        {
+          name: 'FP-6 keeps recall: a bare header with the option off',
+          code: `import jwt from 'jsonwebtoken';
+const header = jwt.decode(token, { complete: true }).header;`,
+          errors: [{ messageId: 'decodeWithoutVerify' }],
+        },
+        {
+          name: 'FP-6 keeps recall: a decoded value only checked for presence reads nothing',
+          code: `import jwt from 'jsonwebtoken';
+const decoded = jwt.decode(token, { complete: true });
+if (!decoded) throw new Error('x');`,
+          errors: [{ messageId: 'decodeWithoutVerify' }],
+        },
+        {
+          name: 'FP-7 keeps recall: a const built by a JWT library still decodes',
+          code: `import jwt from 'jsonwebtoken';
+import { createDecoder } from 'fast-jwt';
+const d = createDecoder();
+d.decode(token).role;`,
+          errors: [{ messageId: 'decodeWithoutVerify' }],
+        },
+      ],
+    },
+  );
+});

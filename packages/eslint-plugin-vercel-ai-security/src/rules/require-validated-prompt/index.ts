@@ -11,9 +11,10 @@
  * @see https://owasp.org/www-project-top-10-for-large-language-model-applications/
  */
 
-import { AST_NODE_TYPES, TSESTree, createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, TSESTree, createRule, formatLLMMessage, MessageIcons, isTestFilePath, memberPath, propertyName } from '@interlace/eslint-devkit';
 import { isSystemPromptProp, getStaticPropName } from '../../utils/prompt-props';
 import { fileUsesVercelAi } from '../../utils/vercel-ai-evidence';
+import { calleeName, isRequestDerived, lookupVariable, nameEndsWithWords, sdkCallName, unwrap } from '../../utils/sdk';
 
 type MessageIds = 'unsafePrompt' | 'unsafeSystemPrompt';
 
@@ -113,152 +114,111 @@ export const requireValidatedPrompt = createRule<RuleOptions, MessageIds>({
       allowInTests: false,
     },
   ],
-  create(context) {
+  create(context, [options]) {
     // Every rule in this plugin is Vercel-AI-specific, and none of them knew
     // it: over 107,384 files, 91% of this plugin's findings were in files with
     // no `ai` / `@ai-sdk` import. Registering no visitors is both the gate and
     // the cheap path — a file without the SDK does no work.
     if (!fileUsesVercelAi(context.sourceCode.ast)) return {};
 
-    const [options = {}] = context.options;
-    const validatorFunctions = options.validatorFunctions ?? [
-      'validateInput', 'sanitizeInput', 'validatePrompt', 'sanitizePrompt',
-    ];
-    const userInputPatterns = options.userInputPatterns ?? [
-      'userInput', 'userPrompt', 'userMessage', 'userQuery', 'userContent',
-      'input', 'query', 'message', 'req.body', 'request.body',
-    ];
-    const allowInTests = options.allowInTests ?? false;
+    // Merged with `defaultOptions` before `create` runs.
+    const { validatorFunctions, userInputPatterns, allowInTests } = options as Required<Options>;
 
     const sourceCode = context.sourceCode;
-    const filename = context.filename;
 
     // Skip test files if allowed
-    if (allowInTests && isTestFilePath(filename)) {
+    if (allowInTests && isTestFilePath(context.filename)) {
       return {};
     }
 
-    // Vercel AI SDK function names
-    const vercelAIFunctions = [
-      'generateText',
-      'streamText', 
-      'generateObject',
-      'streamObject',
-    ];
+    // `req.body` / `request.body` are member PATHS; the rest are name head nouns.
+    const pathPatterns = userInputPatterns
+      .filter((p: string) => p.includes('.'))
+      .map((p: string) => p.split('.'));
+    const namePatterns = userInputPatterns.filter((p: string) => !p.includes('.'));
 
-    /**
-     * Check if a node is a call to a validation function
-     */
+    /** A configured validator, or a schema parse (`schema.parse(x)`, `safeParse`, `parseAsync`). */
     function isValidatedCall(node: TSESTree.Node): boolean {
-      if (node.type !== 'CallExpression') return false;
-      
-      const callee = sourceCode.getText(node.callee);
-      return validatorFunctions.some((v: string) => callee.includes(v));
+      const target = unwrap(node);
+      if (target.type !== AST_NODE_TYPES.CallExpression) return false;
+      const name = calleeName(target.callee) as string;
+      return validatorFunctions.includes(name) || SCHEMA_PARSERS.has(name);
     }
 
-    /**
-     * Check if an identifier suggests user input
-     */
-    function isUserInput(node: TSESTree.Node): boolean {
-      const text = sourceCode.getText(node);
-      return userInputPatterns.some((pattern: string) => text.includes(pattern));
+    /** Bound from a validator call: `const safe = validateInput(x)`, `const { q } = schema.parse(...)`. */
+    function isValidatedBinding(node: TSESTree.Identifier): boolean {
+      const def = lookupVariable(node.name, sourceCode.getScope(node))?.defs[0];
+      return def?.type === 'Variable' && def.node.init !== null && isValidatedCall(def.node.init);
     }
 
-    /**
-     * Check if a node contains unsafe user input
-     */
-    function hasUnsafeUserInput(node: TSESTree.Node): { unsafe: boolean; input?: string } {
-      // If it's validated, it's safe
-      if (isValidatedCall(node)) {
-        return { unsafe: false };
-      }
+    function nameLooksLikeInput(name: string): boolean {
+      return namePatterns.some((pattern: string) => nameEndsWithWords(name, pattern));
+    }
 
-      // Check for template literals with user input
+    function pathLooksLikeInput(node: TSESTree.MemberExpression): boolean {
+      const path = memberPath(node);
+      return (
+        path !== null &&
+        pathPatterns.some((pattern: string[]) => pattern.every((part, i) => path[i] === part))
+      );
+    }
+
+    /** The user input this value carries, by shape first and by head noun second. */
+    function findUserInput(node: TSESTree.Node): string | null {
       if (node.type === 'TemplateLiteral') {
         for (const expr of node.expressions) {
-          const result = hasUnsafeUserInput(expr);
-          if (result.unsafe) return result;
+          const found = findUserInput(expr);
+          if (found) return found;
         }
+        return null;
       }
-
-      // Check identifiers
-      if (node.type === 'Identifier') {
-        if (isUserInput(node)) {
-          return { unsafe: true, input: node.name };
-        }
-      }
-
-      // Check member expressions
-      if (node.type === 'MemberExpression') {
-        const text = sourceCode.getText(node);
-        if (isUserInput(node)) {
-          return { unsafe: true, input: text };
-        }
-      }
-
-      // Check binary expressions (concatenation)
       if (node.type === 'BinaryExpression') {
-        const leftResult = hasUnsafeUserInput(node.left);
-        if (leftResult.unsafe) return leftResult;
-        const rightResult = hasUnsafeUserInput(node.right);
-        if (rightResult.unsafe) return rightResult;
+        return findUserInput(node.left) ?? findUserInput(node.right);
       }
-
-      return { unsafe: false };
-    }
-
-    /**
-     * Check generateText/streamText call for unsafe prompts
-     */
-    function checkAICall(node: TSESTree.CallExpression): void {
-      const callee = sourceCode.getText(node.callee);
-      
-      // Get which function is being called
-      const matchedFunction = vercelAIFunctions.find(fn => callee.includes(fn));
-      if (!matchedFunction) {
-        return;
+      if (node.type === 'Identifier') {
+        if (isValidatedBinding(node)) return null;
+        const unsafe =
+          isRequestDerived(node, sourceCode.getScope(node)) || nameLooksLikeInput(node.name);
+        return unsafe ? node.name : null;
       }
-
-      // Check first argument (options object)
-      const optionsArg = node.arguments[0];
-      if (!optionsArg || optionsArg.type !== 'ObjectExpression') {
-        return;
+      if (node.type === 'MemberExpression') {
+        const unsafe =
+          isRequestDerived(node, sourceCode.getScope(node)) ||
+          pathLooksLikeInput(node) ||
+          nameLooksLikeInput(propertyName(node) ?? '');
+        return unsafe ? sourceCode.getText(node) : null;
       }
-
-      // Check for unsafe prompt property
-      for (const prop of optionsArg.properties) {
-        if (prop.type !== AST_NODE_TYPES.Property) continue;
-        
-        const keyName = getStaticPropName(prop);
-
-        if (keyName === 'prompt') {
-          const result = hasUnsafeUserInput(prop.value);
-          if (result.unsafe) {
-            context.report({
-              node: prop.value,
-              messageId: 'unsafePrompt',
-              data: { 
-                input: result.input || 'user input',
-                function: matchedFunction,
-              },
-            });
-          }
-        }
-
-        if (isSystemPromptProp(keyName)) {
-          const result = hasUnsafeUserInput(prop.value);
-          if (result.unsafe) {
-            context.report({
-              node: prop.value,
-              messageId: 'unsafeSystemPrompt',
-            });
-          }
-        }
-      }
+      // Calls are not inspected: a validator makes the value safe, and any
+      // other call transforms its input into something this rule cannot see.
+      return null;
     }
 
     return {
-      CallExpression: checkAICall,
+      CallExpression(node: TSESTree.CallExpression) {
+        const matchedFunction = sdkCallName(node);
+        if (!matchedFunction) return;
+
+        const optionsArg = node.arguments[0];
+        if (!optionsArg || optionsArg.type !== 'ObjectExpression') return;
+
+        for (const prop of optionsArg.properties) {
+          if (prop.type !== AST_NODE_TYPES.Property) continue;
+          const keyName = getStaticPropName(prop);
+          const isPrompt = keyName === 'prompt';
+          if (!isPrompt && !isSystemPromptProp(keyName)) continue;
+
+          const input = findUserInput(prop.value);
+          if (!input) continue;
+          context.report(
+            isPrompt
+              ? { node: prop.value, messageId: 'unsafePrompt', data: { input, function: matchedFunction } }
+              : { node: prop.value, messageId: 'unsafeSystemPrompt' },
+          );
+        }
+      },
     };
   },
 });
+
+/** Schema-validation methods (Zod, Valibot, Yup, ArkType). */
+const SCHEMA_PARSERS = new Set(['parse', 'safeParse', 'parseAsync', 'safeParseAsync', 'validateSync']);

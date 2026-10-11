@@ -22,7 +22,7 @@ import {
   formatLLMMessage,
   MessageIcons,
 } from '@interlace/eslint-devkit';
-import { isVerifyOperation, getOptionsArgument, hasOption } from '../../utils';
+import { isVerifyOperation, resolveCallOptions, hasOption } from '../../utils';
 import type { JwtRuleOptions } from '../../types';
 
 type MessageIds = 'missingMaxAge';
@@ -86,9 +86,10 @@ export const requireMaxAge = createRule<RuleOptions, MessageIds>({
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    const sourceCode = context.sourceCode;
     return {
       CallExpression(node: TSESTree.CallExpression) {
-        if (!isVerifyOperation(node)) {
+        if (!isVerifyOperation(node, sourceCode)) {
           return;
         }
 
@@ -96,10 +97,11 @@ export const requireMaxAge = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        const optionsArg = getOptionsArgument(node, 2);
+        // Resolved structurally: a same-file const, an `as` cast, a spread.
+        const options = resolveCallOptions(node, sourceCode);
 
         // No options at all
-        if (!optionsArg) {
+        if (options === null) {
           context.report({
             node,
             messageId: 'missingMaxAge',
@@ -107,13 +109,20 @@ export const requireMaxAge = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        // Check for maxAge option
+        /*
+         * `maxAge` is jsonwebtoken's spelling and `maxTokenAge` is jose's.
+         *
+         * `clockTolerance` used to count too, and it is the opposite of a max
+         * age: it WIDENS the exp/nbf window by that many seconds and caps
+         * nothing. Accepting it certified a verify with no age limit at all.
+         */
         if (
-          !hasOption(optionsArg, 'maxAge') &&
-          !hasOption(optionsArg, 'clockTolerance')
+          !hasOption(options, 'maxAge') &&
+          !hasOption(options, 'maxTokenAge') &&
+          !options.opaque
         ) {
           context.report({
-            node: optionsArg,
+            node: node.arguments[2]!,
             messageId: 'missingMaxAge',
           });
         }
