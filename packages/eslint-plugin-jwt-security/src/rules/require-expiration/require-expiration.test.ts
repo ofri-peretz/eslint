@@ -239,6 +239,13 @@ ruleTester.run('require-expiration — jose builder', requireExpiration, {
       code: `import * as jose from 'jose';\nconst claims = { sub: id };\nnew jose.SignJWT(claims).setIssuedAt().sign(privateKey);`,
       errors: [{ messageId: 'missingExpiration', suggestions: 1 }],
     },
+    // FN: a reused builder. Only calls BEFORE this .sign() configure it; an
+    // expiry set afterwards applies to the next sign, not this one. (PR #1188 review)
+    {
+      name: 'a builder signed before its expiry is set is missing expiration',
+      code: `import { SignJWT } from 'jose';\nconst builder = new SignJWT({ sub: id });\nawait builder.sign(key);\nbuilder.setExpirationTime('1h');`,
+      errors: [{ messageId: 'missingExpiration', suggestions: 1 }],
+    },
     // Claims object present at the root but carrying no exp.
     {
       code: `import { SignJWT } from 'jose';\nnew SignJWT({ sub: id }).setProtectedHeader({ alg }).sign(key);`,

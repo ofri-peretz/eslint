@@ -255,6 +255,14 @@ jwt.sign({ sub }, process.env.JWT_SECRET ?? 'changeme', { expiresIn: '1h' });`,
         errors: [{ messageId: 'hardcodedSecret' }],
       },
       {
+        // Locked on purpose (PR #1188 review): when the guard is truthy the
+        // right-hand literal IS the signing key, so it ships in the bundle.
+        name: 'a guarded && literal is still a hardcoded key',
+        code: `import jwt from 'jsonwebtoken';
+jwt.sign({ sub }, FEATURE_FLAG && 'hardcoded-key', { expiresIn: '1h' });`,
+        errors: [{ messageId: 'hardcodedSecret' }],
+      },
+      {
         name: 'FN-1: the fallback held in a module-level const',
         code: `import jwt from 'jsonwebtoken';
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';

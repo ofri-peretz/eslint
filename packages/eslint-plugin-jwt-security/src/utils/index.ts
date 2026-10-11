@@ -1261,7 +1261,10 @@ export function joseBuilderChain(
       if (binding.kind !== 'const') return null;
       for (const reference of binding.variable.references) {
         const use = reference.identifier.parent!;
+        // Only calls before this `.sign()` configure it; a setter written
+        // after it applies to the next sign of a reused builder.
         if (
+          reference.identifier.range[0] < node.range[0] &&
           use.type === AST_NODE_TYPES.MemberExpression &&
           use.parent.type === AST_NODE_TYPES.CallExpression
         ) {
@@ -1347,6 +1350,9 @@ export function keyLiterals(
     return [{ literal: value as TSESTree.Literal | TSESTree.TemplateLiteral }];
   }
   if (value.type === AST_NODE_TYPES.LogicalExpression) {
+    // `||` / `??`: the right side is the fallback key when the left is absent.
+    // `&&`: the right side is the key whenever the guard is truthy — still a
+    // literal that ships in the bundle, so it is reported too.
     return [
       ...keyLiterals(value.left, sourceCode, depth + 1),
       ...keyLiterals(value.right, sourceCode, depth + 1),
