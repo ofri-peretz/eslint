@@ -10,8 +10,8 @@ autofix: false
 
 > Prevent storing sensitive data in JWT payload which is only base64-encoded
 
-
 <!-- @rule-summary -->
+
 JWT payloads are NOT encrypted, only base64-encoded
 <!-- @/rule-summary -->
 
@@ -44,7 +44,9 @@ jwt.sign({ sub: user.id, passwordHash: user.passwordHash }, secret);
 // The payload one const away, a spread of a const, jose's constructor claims
 const payload = { sub: user.id, password: user.password };
 jwt.sign(payload, secret);
-await new SignJWT({ sub: user.id, password: user.password }).setProtectedHeader({ alg: 'HS256' }).sign(key);
+await new SignJWT({ sub: user.id, password: user.password })
+  .setProtectedHeader({ alg: 'HS256' })
+  .sign(key);
 ```
 
 ### ✅ Correct
@@ -57,13 +59,12 @@ jwt.sign({ userId: 'abc123', permissions: ['read'] }, secret);
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `additionalSensitiveFields` | `string[]` | `[]` | Additional field names to flag as sensitive |
-| `trustedSanitizers` | `string[]` | `[]` | Extra function names to treat as sanitizers |
-| `trustedAnnotations` | `string[]` | `[]` | Extra JSDoc annotations to treat as safe markers |
-| `strictMode` | `boolean` | `false` | Disable false-positive suppression — report even sanitized input |
-
+| Option                      | Type       | Default | Description                                                      |
+| --------------------------- | ---------- | ------- | ---------------------------------------------------------------- |
+| `additionalSensitiveFields` | `string[]` | `[]`    | Additional field names to flag as sensitive                      |
+| `trustedSanitizers`         | `string[]` | `[]`    | Extra function names to treat as sanitizers                      |
+| `trustedAnnotations`        | `string[]` | `[]`    | Extra JSDoc annotations to treat as safe markers                 |
+| `strictMode`                | `boolean`  | `false` | Disable false-positive suppression — report even sanitized input |
 
 ```javascript
 {
@@ -95,7 +96,9 @@ jwt.sign({ [field]: 'secret123' }, secret); // Property name unknown
 
 ```typescript
 // ⚠️ NOT DETECTED - the spread source is a parameter
-function issue(user) { return jwt.sign({ ...user, role: 'admin' }, secret); }
+function issue(user) {
+  return jwt.sign({ ...user, role: 'admin' }, secret);
+}
 ```
 
 **Mitigation**: Explicitly pick/omit fields before signing. Use `pick()` utilities.
@@ -141,7 +144,9 @@ jwt.sign(
 
 ```typescript
 // ⚠️ NOT DETECTED - payload from a parameter
-function issue(payload) { return jwt.sign(payload, secret); }
+function issue(payload) {
+  return jwt.sign(payload, secret);
+}
 ```
 
 **Mitigation**: Use inline objects. Apply TypeScript types that exclude sensitive fields.

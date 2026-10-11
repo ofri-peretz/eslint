@@ -10,8 +10,8 @@ autofix: false
 
 > Require explicit algorithm specification in JWT verify operations
 
-
 <!-- @rule-summary -->
+
 This rule enforces explicit algorithm specification in verify() calls
 <!-- @/rule-summary -->
 
@@ -44,13 +44,12 @@ jwt.verify(token, secret, { algorithm: 'RS256' });
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `recommendedAlgorithms` | `string[]` | `["RS256","ES256"]` | Algorithms to suggest in auto-fix |
-| `trustedSanitizers` | `string[]` | `[]` | Extra function names to treat as sanitizers |
-| `trustedAnnotations` | `string[]` | `[]` | Extra JSDoc annotations to treat as safe markers |
-| `strictMode` | `boolean` | `false` | Disable false-positive suppression — report even sanitized input |
-
+| Option                  | Type       | Default             | Description                                                      |
+| ----------------------- | ---------- | ------------------- | ---------------------------------------------------------------- |
+| `recommendedAlgorithms` | `string[]` | `["RS256","ES256"]` | Algorithms to suggest in auto-fix                                |
+| `trustedSanitizers`     | `string[]` | `[]`                | Extra function names to treat as sanitizers                      |
+| `trustedAnnotations`    | `string[]` | `[]`                | Extra JSDoc annotations to treat as safe markers                 |
+| `strictMode`            | `boolean`  | `false`             | Disable false-positive suppression — report even sanitized input |
 
 ```javascript
 {

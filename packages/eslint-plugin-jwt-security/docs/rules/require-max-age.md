@@ -10,8 +10,8 @@ autofix: false
 
 > Require maxAge option in verify operations to enforce token freshness
 
-
 <!-- @rule-summary -->
+
 This rule mandates maxAge in verify operations
 <!-- @/rule-summary -->
 
@@ -46,6 +46,14 @@ await jwtVerify(token, JWKS, { algorithms: ['RS256'], maxTokenAge: '15m' });
 
 `clockTolerance` does not satisfy this rule: it widens the `exp` / `nbf`
 window and caps nothing.
+
+## Options
+
+| Option               | Type       | Default | Description                                                      |
+| -------------------- | ---------- | ------- | ---------------------------------------------------------------- |
+| `trustedSanitizers`  | `string[]` | `[]`    | Extra function names to treat as sanitizers                      |
+| `trustedAnnotations` | `string[]` | `[]`    | Extra JSDoc annotations to treat as safe markers                 |
+| `strictMode`         | `boolean`  | `false` | Disable false-positive suppression — report even sanitized input |
 
 ## Known False Negatives
 

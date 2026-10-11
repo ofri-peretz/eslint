@@ -1,6 +1,6 @@
 ---
 title: no-hardcoded-secret
-description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+description: 'The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:'
 tags: ['security', 'jwt']
 category: security
 severity: critical
@@ -10,8 +10,8 @@ autofix: false
 
 > Disallow hardcoded secrets in JWT sign/verify operations
 
-
 <!-- @rule-summary -->
+
 The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:
 <!-- @/rule-summary -->
 
@@ -24,7 +24,7 @@ The rule provides LLM-optimized error messages (Compact 2-line format) with acti
 | **CWE Reference** | [CWE-798](https://cwe.mitre.org/data/definitions/798.html) |
 | **Severity**      | Critical                                                   |
 | **Auto-Fix**      | ❌ No auto-fix available                                   |
-| **Category**   | Security |
+| **Category**      | Security                                                   |
 | **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                    |
 | **Best For**      | Protecting JWT secrets from source code exposure           |
 
@@ -39,13 +39,13 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component                 | Purpose                | Example                                                                                                                                                                                                                         |
-| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                                                       |
+| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Risk Standards**        | Security benchmarks    | [CWE-798](https://cwe.mitre.org/data/definitions/798.html) [OWASP:A04](https://owasp.org/Top10/A04_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
-| **Issue Description**     | Specific vulnerability | `Hardcoded Credentials detected`                                                                                                                                                                                                |
-| **Severity & Compliance** | Impact assessment      | `CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001,NIST-CSF]`                                                                                                                                                                          |
-| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                            |
-| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A04_2021-Injection/)                                                                                                                                                                     |
+| **Issue Description**     | Specific vulnerability | `Hardcoded Credentials detected`                                                                                                                                                                                                                              |
+| **Severity & Compliance** | Impact assessment      | `CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001,NIST-CSF]`                                                                                                                                                                                                        |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                                                          |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A04_2021-Injection/)                                                                                                                                                                                                   |
 
 ## Rule Details
 
@@ -176,9 +176,9 @@ jwt.sign(payload, key);
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `envPatterns` | `string[]` | `[]` | Patterns that indicate safe environment variable usage |
-| `trustedSanitizers` | `string[]` | `[]` | Extra function names to treat as sanitizers |
-| `trustedAnnotations` | `string[]` | `[]` | Extra JSDoc annotations to treat as safe markers |
-| `strictMode` | `boolean` | `false` | Disable false-positive suppression — report even sanitized input |
+| Option               | Type       | Default | Description                                                      |
+| -------------------- | ---------- | ------- | ---------------------------------------------------------------- |
+| `envPatterns`        | `string[]` | `[]`    | Patterns that indicate safe environment variable usage           |
+| `trustedSanitizers`  | `string[]` | `[]`    | Extra function names to treat as sanitizers                      |
+| `trustedAnnotations` | `string[]` | `[]`    | Extra JSDoc annotations to treat as safe markers                 |
+| `strictMode`         | `boolean`  | `false` | Disable false-positive suppression — report even sanitized input |

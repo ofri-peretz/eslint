@@ -1,6 +1,6 @@
 ---
 title: no-timestamp-manipulation
-description: "This rule detects noTimestamp: true which disables automatic iat (issued at) claim generation"
+description: 'This rule detects noTimestamp: true which disables automatic iat (issued at) claim generation'
 tags: ['security', 'jwt']
 category: security
 severity: medium
@@ -10,8 +10,8 @@ autofix: false
 
 > Prevent disabling automatic timestamp generation which enables replay attacks
 
-
 <!-- @rule-summary -->
+
 This rule detects noTimestamp: true which disables automatic iat (issued at) claim generation
 <!-- @/rule-summary -->
 
@@ -32,7 +32,10 @@ jwt.sign(payload, secret, { noTimestamp: true });
 
 // Accepts expired tokens - a leaked token never stops working
 jwt.verify(token, secret, { algorithms: ['HS256'], ignoreExpiration: true });
-new JwtStrategy({ secretOrKey, jwtFromRequest, ignoreExpiration: true }, verify); // passport-jwt
+new JwtStrategy(
+  { secretOrKey, jwtFromRequest, ignoreExpiration: true },
+  verify,
+); // passport-jwt
 ```
 
 ### ✅ Correct
@@ -54,6 +57,14 @@ From LightSEC 2025 research:
 2. Device signs tokens with future `iat` timestamps
 3. Tokens are stored for later use
 4. Years later, the tokens become valid and can impersonate the device
+
+## Options
+
+| Option               | Type       | Default | Description                                                      |
+| -------------------- | ---------- | ------- | ---------------------------------------------------------------- |
+| `trustedSanitizers`  | `string[]` | `[]`    | Extra function names to treat as sanitizers                      |
+| `trustedAnnotations` | `string[]` | `[]`    | Extra JSDoc annotations to treat as safe markers                 |
+| `strictMode`         | `boolean`  | `false` | Disable false-positive suppression — report even sanitized input |
 
 ## Known False Negatives
 

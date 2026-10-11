@@ -32,7 +32,10 @@ This rule ensures tokens have the `iat` claim for freshness validation. Most lib
 jwt.sign(payload, secret, { noTimestamp: true });
 
 // jose does NOT add iat unless asked
-await new SignJWT({ sub }).setProtectedHeader({ alg: 'ES256' }).setExpirationTime('1h').sign(key);
+await new SignJWT({ sub })
+  .setProtectedHeader({ alg: 'ES256' })
+  .setExpirationTime('1h')
+  .sign(key);
 ```
 
 ### ✅ Correct
@@ -48,8 +51,19 @@ jwt.sign({ sub: 'user', iat: Math.floor(Date.now() / 1000) }, secret);
 jwt.sign(payload, secret, { noTimestamp: false });
 
 // jose with setIssuedAt()
-await new SignJWT({ sub }).setProtectedHeader({ alg: 'ES256' }).setIssuedAt().sign(key);
+await new SignJWT({ sub })
+  .setProtectedHeader({ alg: 'ES256' })
+  .setIssuedAt()
+  .sign(key);
 ```
+
+## Options
+
+| Option               | Type       | Default | Description                                                      |
+| -------------------- | ---------- | ------- | ---------------------------------------------------------------- |
+| `trustedSanitizers`  | `string[]` | `[]`    | Extra function names to treat as sanitizers                      |
+| `trustedAnnotations` | `string[]` | `[]`    | Extra JSDoc annotations to treat as safe markers                 |
+| `strictMode`         | `boolean`  | `false` | Disable false-positive suppression — report even sanitized input |
 
 <WhenNotToUse />
 

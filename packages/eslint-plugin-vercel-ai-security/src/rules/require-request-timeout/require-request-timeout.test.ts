@@ -157,6 +157,10 @@ ruleTester.run('require-request-timeout (coverage gaps)', requireRequestTimeout,
     // (Changed 2026-10-10) a quoted 'timeout' key is the same option; it used
     // to be reported as missing.
     { code: `generateText({ 'timeout': 5000, prompt: 'x' });` },
+    {
+      name: 'a timeoutMs option counts as a request timeout',
+      code: `generateText({ timeoutMs: 5000, prompt: 'x' });`,
+    },
   ]),
   invalid: xai([]),
 });

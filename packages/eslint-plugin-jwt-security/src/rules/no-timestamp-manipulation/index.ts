@@ -74,6 +74,9 @@ export const noTimestampManipulation = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Expiration Check Disabled',
         cwe: 'CWE-613',
+        // CWE-613's catalogue default (5.4) is MEDIUM; a token that never
+        // expires is the rule's own 7.5 / HIGH.
+        cvss: 7.5,
         description:
           'ignoreExpiration:true accepts expired tokens, so a stolen token never stops working',
         severity: 'HIGH',

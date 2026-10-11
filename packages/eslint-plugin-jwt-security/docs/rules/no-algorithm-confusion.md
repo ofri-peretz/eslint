@@ -10,8 +10,8 @@ autofix: false
 
 > Prevent algorithm confusion attacks using symmetric algorithms with asymmetric keys
 
-
 <!-- @rule-summary -->
+
 This rule detects algorithm confusion attacks where symmetric algorithms (HS256, HS384, HS512) are used with asymmetr...
 <!-- @/rule-summary -->
 
@@ -24,7 +24,7 @@ This rule detects algorithm confusion attacks where symmetric algorithms (HS256,
 | **CWE Reference** | [CWE-347](https://cwe.mitre.org/data/definitions/347.html)                 |
 | **Severity**      | Critical                                                                   |
 | **Auto-Fix**      | ❌ No auto-fix available                                                   |
-| **Category**   | Security |
+| **Category**      | Security                                                                   |
 | **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                    |
 | **Best For**      | Protecting asymmetric JWT verification from algorithm substitution attacks |
 
@@ -129,9 +129,9 @@ jwt.verify(token, config.key, { algorithms: ['HS256'] }); // Key type unknown
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `symmetricAlgorithms` | `string[]` | `["HS256","HS384","HS512"]` | Algorithms to flag when used with public keys |
-| `trustedSanitizers` | `string[]` | `[]` | Extra function names to treat as sanitizers |
-| `trustedAnnotations` | `string[]` | `[]` | Extra JSDoc annotations to treat as safe markers |
-| `strictMode` | `boolean` | `false` | Disable false-positive suppression — report even sanitized input |
+| Option                | Type       | Default                     | Description                                                      |
+| --------------------- | ---------- | --------------------------- | ---------------------------------------------------------------- |
+| `symmetricAlgorithms` | `string[]` | `["HS256","HS384","HS512"]` | Algorithms to flag when used with public keys                    |
+| `trustedSanitizers`   | `string[]` | `[]`                        | Extra function names to treat as sanitizers                      |
+| `trustedAnnotations`  | `string[]` | `[]`                        | Extra JSDoc annotations to treat as safe markers                 |
+| `strictMode`          | `boolean`  | `false`                     | Disable false-positive suppression — report even sanitized input |

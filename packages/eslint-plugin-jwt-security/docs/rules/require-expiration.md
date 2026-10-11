@@ -1,6 +1,6 @@
 ---
 title: require-expiration
-description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+description: 'The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:'
 tags: ['security', 'jwt']
 category: security
 severity: medium
@@ -10,8 +10,8 @@ autofix: false
 
 > Require expiration claim (exp) or expiresIn option in JWT signing
 
-
 <!-- @rule-summary -->
+
 The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:
 <!-- @/rule-summary -->
 
@@ -29,13 +29,13 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-613](https://cwe.mitre.org/data/definitions/613.html) [OWASP:A07](https://owasp.org/Top10/A07_2021-Injection/) [CVSS:5.4](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
-| **Issue Description** | Specific vulnerability | `Insufficient Session Expiration detected` |
-| **Severity & Compliance** | Impact assessment | `MEDIUM` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A07_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                                                       |
+| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Risk Standards**        | Security benchmarks    | [CWE-613](https://cwe.mitre.org/data/definitions/613.html) [OWASP:A07](https://owasp.org/Top10/A07_2021-Injection/) [CVSS:5.4](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
+| **Issue Description**     | Specific vulnerability | `Insufficient Session Expiration detected`                                                                                                                                                                                                                    |
+| **Severity & Compliance** | Impact assessment      | `MEDIUM`                                                                                                                                                                                                                                                      |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                                                          |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A07_2021-Injection/)                                                                                                                                                                                                   |
 
 ## Rule Details
 
@@ -78,13 +78,12 @@ await builder.sign(key);
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `maxExpirationSeconds` | `integer` | `86400` | Maximum allowed expiration time in seconds (24h default) |
-| `trustedSanitizers` | `string[]` | `[]` | Extra function names to treat as sanitizers |
-| `trustedAnnotations` | `string[]` | `[]` | Extra JSDoc annotations to treat as safe markers |
-| `strictMode` | `boolean` | `false` | Disable false-positive suppression — report even sanitized input |
-
+| Option                 | Type       | Default | Description                                                      |
+| ---------------------- | ---------- | ------- | ---------------------------------------------------------------- |
+| `maxExpirationSeconds` | `integer`  | `86400` | Maximum allowed expiration time in seconds (24h default)         |
+| `trustedSanitizers`    | `string[]` | `[]`    | Extra function names to treat as sanitizers                      |
+| `trustedAnnotations`   | `string[]` | `[]`    | Extra JSDoc annotations to treat as safe markers                 |
+| `strictMode`           | `boolean`  | `false` | Disable false-positive suppression — report even sanitized input |
 
 ```javascript
 {

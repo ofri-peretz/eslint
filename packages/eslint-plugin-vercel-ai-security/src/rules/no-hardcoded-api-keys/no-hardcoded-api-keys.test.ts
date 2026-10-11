@@ -347,7 +347,7 @@ ruleTester.run('no-hardcoded-api-keys (fp-fn audit)', noHardcodedApiKeys, {
     },
     {
       name: 'Groq / Hugging Face / AWS key shapes',
-      code: `const k = ['gsk_AbCdEf0123456789AbCdEf0123', 'hf_AbCdEf0123456789AbCdEf0123', 'AKIAABCDEFGHIJKLMNOP'];`,
+      code: `const k = ['gsk_AbCdEf0123456789AbCdEf0123', 'hf_AbCdEf0123456789AbCdEf0123', 'AKIAIOSFODNN7EXAMPLE'];`,
       errors: [{ messageId: 'hardcodedApiKey' }, { messageId: 'hardcodedApiKey' }, { messageId: 'hardcodedApiKey' }],
     },
   ]),

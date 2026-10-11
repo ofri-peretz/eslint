@@ -1,6 +1,6 @@
 ---
 title: no-weak-secret
-description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+description: 'The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:'
 tags: ['security', 'jwt']
 category: security
 severity: critical
@@ -10,8 +10,8 @@ autofix: false
 
 > Require strong secrets (256+ bits) for HMAC-based JWT signing
 
-
 <!-- @rule-summary -->
+
 The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:
 <!-- @/rule-summary -->
 
@@ -29,13 +29,13 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-326](https://cwe.mitre.org/data/definitions/326.html) [OWASP:A04](https://owasp.org/Top10/A04_2021-Injection/) [CVSS:5.9](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
-| **Issue Description** | Specific vulnerability | `Inadequate Encryption Strength detected` |
-| **Severity & Compliance** | Impact assessment | `MEDIUM` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A04_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                                                       |
+| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Risk Standards**        | Security benchmarks    | [CWE-326](https://cwe.mitre.org/data/definitions/326.html) [OWASP:A04](https://owasp.org/Top10/A04_2021-Injection/) [CVSS:5.9](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
+| **Issue Description**     | Specific vulnerability | `Inadequate Encryption Strength detected`                                                                                                                                                                                                                     |
+| **Severity & Compliance** | Impact assessment      | `MEDIUM`                                                                                                                                                                                                                                                      |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                                                          |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A04_2021-Injection/)                                                                                                                                                                                                   |
 
 ## Rule Details
 
@@ -56,7 +56,9 @@ jwt.sign(payload, 'shortkey');
 
 // The same literals one const away, behind an env fallback, or in bytes
 jwt.sign(payload, process.env.JWT_SECRET || 'secret');
-await new SignJWT(claims).setProtectedHeader({ alg: 'HS256' }).sign(new TextEncoder().encode('secret'));
+await new SignJWT(claims)
+  .setProtectedHeader({ alg: 'HS256' })
+  .sign(new TextEncoder().encode('secret'));
 expressjwt({ secret: 'shhhhhhared-secret', algorithms: ['HS256'] });
 ```
 
@@ -78,13 +80,12 @@ signer.sign(privateKey, 'base64'); // 'base64' is an encoding, not a secret
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `minSecretLength` | `integer` | `32` | Minimum secret length in characters |
-| `trustedSanitizers` | `string[]` | `[]` | Extra function names to treat as sanitizers |
-| `trustedAnnotations` | `string[]` | `[]` | Extra JSDoc annotations to treat as safe markers |
-| `strictMode` | `boolean` | `false` | Disable false-positive suppression — report even sanitized input |
-
+| Option               | Type       | Default | Description                                                      |
+| -------------------- | ---------- | ------- | ---------------------------------------------------------------- |
+| `minSecretLength`    | `integer`  | `32`    | Minimum secret length in characters                              |
+| `trustedSanitizers`  | `string[]` | `[]`    | Extra function names to treat as sanitizers                      |
+| `trustedAnnotations` | `string[]` | `[]`    | Extra JSDoc annotations to treat as safe markers                 |
+| `strictMode`         | `boolean`  | `false` | Disable false-positive suppression — report even sanitized input |
 
 ```javascript
 {
