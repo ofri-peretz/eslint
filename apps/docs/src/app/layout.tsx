@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     template: '%s | ESLint Interlace',
   },
   description:
-    'Comprehensive ESLint plugins for security vulnerabilities, code quality, and architecture governance in JavaScript and TypeScript projects.',
+    'ESLint plugins that find security bugs in JavaScript and TypeScript, including the bugs AI coding tools write. Free and open source.',
   keywords: [
     'ESLint',
     'security',
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
         url: '/og-image.jpg?v=1.1', // Cache buster to force social platforms to re-fetch
         width: 1200,
         height: 630,
-        alt: 'Interlace ESLint - Enterprise Node.js Security',
+        alt: 'interlace eslint: security and quality ESLint plugins for JavaScript and TypeScript',
         type: 'image/jpeg',
       },
     ],

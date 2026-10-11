@@ -146,16 +146,16 @@ describe('Homepage: Structure Lock', () => {
       expect(homepageSource).toContain('DOCS PREVIEW');
     });
 
-    it('contains SECURITY section via Two Pillars', () => {
+    it('contains SECURITY section (Security and code quality)', () => {
       expect(homepageSource).toContain('Security Pillar');
     });
 
-    it('contains QUALITY section via Two Pillars', () => {
+    it('contains QUALITY section (Security and code quality)', () => {
       expect(homepageSource).toContain('Quality Pillar');
     });
 
-    it('contains SOCIAL PROOF section (renamed from COMMUNITY in 2026-05 diet)', () => {
-      expect(homepageSource).toContain('Trusted by developers');
+    it('contains SOCIAL PROOF section, headed for what it is — DEV features, not a user count', () => {
+      expect(homepageSource).toContain('Featured on DEV');
     });
 
     it('contains WHAT IT CATCHES section (replaces PLUGIN MARQUEE in 2026-05 diet)', () => {
@@ -292,20 +292,17 @@ describe('HeroSection: Structure Lock', () => {
   });
 
   describe('Content Structure', () => {
-    it('contains main headline text', () => {
-      expect(heroSource).toContain('Secure your code');
-    });
-
-    it('contains gradient headline text', () => {
-      expect(heroSource).toContain('your style');
-    });
-
-    it('contains security badge', () => {
-      expect(heroSource).toContain('Enterprise-Grade Security');
+    // Plain-language hero (2026-10-11). The banned slogans are asserted
+    // ABSENT in homepage-plain-language-lock.test.ts.
+    it('contains main headline text — what it is, in one sentence', () => {
+      expect(heroSource).toContain(
+        'ESLint plugins that find security bugs in JavaScript and TypeScript',
+      );
     });
 
     it('contains subheadline text', () => {
-      expect(heroSource).toContain('plugin ecosystem');
+      expect(heroSource).toContain('Including the bugs AI coding tools write.');
+      expect(heroSource).toContain('Free and open source.');
     });
 
     it('contains Get Started CTA', () => {
@@ -840,8 +837,8 @@ describe('Homepage: Visual Identity Lock', () => {
   });
 
   describe('Section Structure', () => {
-    it('has Two Pillars section', () => {
-      expect(homepageSource).toContain('Two Pillars of Excellence');
+    it('has Security and code quality section', () => {
+      expect(homepageSource).toContain('Security and code quality');
     });
 
     it('has How it works section (surfaces Concepts corpus — Philosophy / AST / Detect→Understand→Fix)', () => {
@@ -857,8 +854,8 @@ describe('Homepage: Visual Identity Lock', () => {
       );
     });
 
-    it('has Our edges section (Compatibility / Benchmarks / AI Leverage — replaces generic "Why" grid in 2026-05-10 edges pass)', () => {
-      expect(homepageSource).toContain('Our edges');
+    it('has Why use these section (Compatibility / Benchmarks / AI Leverage — replaces generic "Why" grid in 2026-05-10 edges pass)', () => {
+      expect(homepageSource).toContain('Why use these');
       expect(homepageSource).toContain(
         '/docs/getting-started/concepts/compatibility',
       );
@@ -870,11 +867,11 @@ describe('Homepage: Visual Identity Lock', () => {
       );
     });
 
-    // Runtime-portability card lives inside "Our edges" — its copy must
+    // Runtime-portability card lives inside "Why use these" — its copy must
     // namedrop ESLint, Oxlint, AND the TSC native plugin host. The card is
     // the second user-facing surface (after the hero strip) where the
     // engine-portability story lands. Wording drift here is a regression.
-    it('Our edges grid contains the Runtime Portability card with all three engines named (ESLint + Oxlint + TSC native)', () => {
+    it('Why use these grid contains the Runtime Portability card with all three engines named (ESLint + Oxlint + TSC native)', () => {
       expect(homepageSource).toContain('Runtime Portability');
       expect(homepageSource).toContain(
         '/docs/getting-started/concepts/runtime-portability',
@@ -891,7 +888,8 @@ describe('Homepage: Visual Identity Lock', () => {
     });
 
     it('has Final CTA section', () => {
-      expect(homepageSource).toContain('Ready to Level Up?');
+      expect(homepageSource).toContain('Get started');
+      expect(homepageSource).toContain('Install your first plugin');
     });
 
     it("has What's next pair under final CTA (UX_PHILOSOPHY §4 — compare / CWE matrix)", () => {
