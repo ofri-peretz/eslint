@@ -334,7 +334,12 @@ function wrapperOf(expr: TSESTree.Node, module: ModuleRef): Wrapper | null {
       return null;
     }
     // `soleReturn` answered, so the factory is a function.
-    const [param] = (factory.node as TSESTree.ArrowFunctionExpression).params;
+    const [param] = (
+      factory.node as
+        | TSESTree.FunctionDeclaration
+        | TSESTree.FunctionExpression
+        | TSESTree.ArrowFunctionExpression
+    ).params;
     if (
       (param as TSESTree.Identifier | undefined)?.name !==
       built.arguments[0].name

@@ -9,8 +9,8 @@
  *
  * Another file of the same project is parsed with the parser ESLint is
  * already using (falling back to `@typescript-eslint/parser` from the project
- * being linted), and the parse is cached per absolute path for the life of the
- * process. A file that cannot be found, read or parsed answers `null` — the
+ * being linted), and the parse is cached per absolute path and mtime, so a
+ * long-running ESLint (IDE, watch mode) re-reads a file that changed. A file that cannot be found, read or parsed answers `null` — the
  * caller abstains. Nothing here throws.
  *
  * The one question asked across a file boundary: which PACKAGE does an export
@@ -58,7 +58,10 @@ const RESOLUTION_SUFFIXES = [
   '/index.cjs',
 ];
 
-const parsed = new Map<string, TSESTree.Program | null>();
+const parsed = new Map<
+  string,
+  { mtimeMs: number; program: TSESTree.Program | null }
+>();
 
 /** `@typescript-eslint/parser` from the project being linted, if installed. */
 function fallbackParser(): unknown {
@@ -106,19 +109,22 @@ export function parseSource(
   );
 }
 
-/** Read and parse a file once per process. */
+/** Read and parse a file once per version on disk. */
 export function parseFileCached(
   filePath: string,
   parser: unknown,
 ): TSESTree.Program | null {
-  if (parsed.has(filePath)) return parsed.get(filePath)!;
+  const mtimeMs =
+    fs.statSync(filePath, { throwIfNoEntry: false })?.mtimeMs ?? -1;
+  const cached = parsed.get(filePath);
+  if (cached?.mtimeMs === mtimeMs) return cached.program;
   let program: TSESTree.Program | null = null;
   try {
     program = parseSource(fs.readFileSync(filePath, 'utf8'), filePath, parser);
   } catch {
     program = null;
   }
-  parsed.set(filePath, program);
+  parsed.set(filePath, { mtimeMs, program });
   return program;
 }
 
