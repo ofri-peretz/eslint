@@ -390,6 +390,27 @@ const REPOS_HASH = createHash('sha256')
 if (SHARD === null) {
   const workers = Math.max(1, Math.min(12, os.availableParallelism() - 2));
   say(`  ${workers} workers\n`);
+  /**
+   * Repo-shards are a deterministic `index % 20` slice of an unsorted repo
+   * list (see `REPO_SHARD` above), not a slice balanced by file count. Shards
+   * 3, 7 and 18 each drew one of this corpus's largest monorepos —
+   * elastic/kibana, fastify/fastify, n8n-io/n8n, directus/directus,
+   * lobehub/lobe-chat, outline/outline — and ended up with ~112,000 files
+   * against the other seventeen shards' much smaller share. Each forked
+   * worker inherited V8's default old-space ceiling (~4GB, observed in the
+   * #1196 job log), and two of those workers aborted with "JavaScript heap
+   * out of memory" partway through — a clean V8 abort, not an OS OOM-kill,
+   * so raising the ceiling is the direct fix rather than a workaround.
+   *
+   * Sized from the runner's actual memory rather than a hardcoded constant,
+   * so it still makes sense if GitHub changes the hosted runner's spec: give
+   * every worker an even share of whatever is left after reserving 3GB for
+   * the OS, this coordinator process, and git/disk I/O headroom.
+   */
+  const WORKER_HEAP_MB = Math.max(
+    2048,
+    Math.floor((os.totalmem() / (1024 * 1024) - 3072) / workers),
+  );
   const merged = new Map<
     string,
     { count: number; repos: Set<string>; samples: string[] }
@@ -412,7 +433,10 @@ if (SHARD === null) {
           ],
           {
             execPath: process.execPath,
-            execArgv: process.execArgv,
+            execArgv: [
+              ...process.execArgv,
+              `--max-old-space-size=${WORKER_HEAP_MB}`,
+            ],
             stdio: ['ignore', 'pipe', 'inherit', 'ipc'],
           },
         );
