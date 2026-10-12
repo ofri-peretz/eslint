@@ -292,17 +292,34 @@ function returnsFetchResponse(
   const resolved = resolveSymbol(symbol.module, type.typeName.name);
   // Unresolved: the platform's own Response only when nothing in the module
   // binds that name — a local `interface Response`, or an import whose module
-  // cannot be read, is something else.
+  // cannot be read, or a type parameter of the function, is something else.
   if (resolved === null) {
     return (
       type.typeName.name === 'Response' &&
-      !bindsName(symbol.module, type.typeName.name)
+      !bindsName(symbol.module, type.typeName.name) &&
+      !typeParameterBinds(symbol.node, type.typeName.name)
     );
   }
   return (
     resolved.kind === 'external' &&
     FETCH_RESPONSE_PACKAGES.has(resolved.source.split('/')[0]!)
   );
+}
+
+/**
+ * Whether `name` is a type parameter in scope at `node` — declared by the
+ * function itself (`function f<Response>(): Promise<Response>`) or by an
+ * enclosing function, method or class. Such a name is that parameter, never
+ * the platform global it happens to share a spelling with.
+ */
+function typeParameterBinds(node: TSESTree.Node, name: string): boolean {
+  for (let n: TSESTree.Node | undefined = node; n; n = n.parent) {
+    const params = (
+      n as { typeParameters?: TSESTree.TSTypeParameterDeclaration }
+    ).typeParameters?.params;
+    if (params?.some((p) => p.name.name === name)) return true;
+  }
+  return false;
 }
 
 type ResolvedSymbolLike = NonNullable<ReturnType<typeof resolveSymbol>>;

@@ -377,6 +377,32 @@ export async function f() {
         errors: decodeError,
       })),
       {
+        // @found PR #1195 review (CodeRabbit, utils/provenance.ts:299)
+        name: 'FN: a type parameter named Response is not the platform Response',
+        filename: FILE,
+        code: `import { decodeJwt } from 'jose';
+async function getReq<Response>(): Promise<Response> {
+  if (cached) return cached;
+  return readIncoming();
+}
+export async function f() {
+  return decodeJwt((await getReq()).token).sub;
+}`,
+        errors: decodeError,
+      },
+      {
+        name: 'a bare generic Response return is not the platform Response',
+        filename: FILE,
+        code: `import { decodeJwt } from 'jose';
+function getReq<Response>(): Response {
+  return readIncoming();
+}
+export function f() {
+  return decodeJwt(getReq().token).sub;
+}`,
+        errors: decodeError,
+      },
+      {
         // @found PR #1195 review (CodeRabbit, utils/provenance.ts:293)
         name: 'FN: a local interface named Response is not the platform Response',
         filename: FILE,
