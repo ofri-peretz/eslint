@@ -1,24 +1,24 @@
 name: Oxlint Parity Gate
 
 # Verifies that every Interlace plugin works correctly when loaded via
-# oxlint's JS-plugin runtime. Four checks, split across two surfaces:
+# oxlint's JS-plugin runtime. Checks, split across two surfaces:
 #
-#   Per-PR (light, fast — ~1m parity job):
-#     1. Static portability audit (unguarded type-aware/TS-bridge usage = fail).
-#     2. Shim drift check (generator output matches on-disk).
-#     3. Runtime smoke test — actually require()s every shim, asserts the
+#   Per-PR (static-audit, no build):
+#     1. Runtime probe of every oxlint API surface our rules use.
+#     2. Static portability audit (unguarded type-aware/TS-bridge usage = fail).
+#     3. Shim drift check (generator output matches on-disk).
+#
+#   Weekly + workflow_dispatch:
+#     4. Runtime smoke test — actually require()s every shim, asserts the
 #        rule-name set matches the snapshot baked into the manifest.
-#     4. Finding-level parity bench (CACHED) — full corpus, but only re-runs
-#        fixtures whose inputs changed since the last green run (cache at
-#        `.agent/oxlint-parity-cache.json`). On a typical docs/config PR
-#        ~20–30s; only rule-touching PRs re-run the affected rules.
+#     5. Finding-level parity bench over benchmarks/corpus, UNCACHED (`--ci`).
+#     6. Re-harvest fixtures from upstream RuleTester suites and run the same
+#        bench over them (deep-parity).
 #
-#   Weekly + workflow_dispatch (deep, ~4m):
-#     5. Re-harvest fixtures from upstream RuleTester suites (catches new
-#        rule cases added since last harvest).
-#     6. Full finding-level parity bench against the re-harvested corpus,
-#        no cache short-circuits. Catches fixture drift + cache poisoning
-#        that the per-PR cached run could miss.
+# CI never reads `.agent/oxlint-parity-cache.json`. That cache is written by
+# local runs and committed; trusting it here meant a `pass` recorded on one
+# machine, under a key that did not cover every input, stood in for a run.
+# The bench takes ~20s, so the cache bought CI nothing worth that.
 #
 # The runtime smoke test catches the class of bug we hit during the
 # Turborepo migration: shims pointing at a stale dist path that loads
@@ -117,13 +117,11 @@ jobs:
   # runner slot (20 concurrent, account-wide) for signal the weekly cron and the
   # static audit already cover between them.
   runtime-and-parity:
-    name: Runtime smoke + parity (cached)
+    name: Runtime smoke + parity
     needs: gate
     if: needs.gate.outputs.run == 'true' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
-    # ~1–2m typical: build (cached/filtered) + shim smoke + cached parity bench.
-    # The cache at `.agent/oxlint-parity-cache.json` short-circuits unchanged
-    # fixtures so a docs-only PR runs the parity step in seconds.
+    # ~1–2m typical: build (filtered) + shim smoke + ~20s parity bench.
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -153,14 +151,12 @@ jobs:
         # JS-plugin host and exposes the rule-name set the manifest declares.
         # Catches the "shims point at stale dist" class of bug.
         run: npm run oxlint:shims:verify
-      - name: Finding-level parity bench (cached)
-        # Same script as the weekly deep bench, but `--cached` consults
-        # `.agent/oxlint-parity-cache.json` and skips fixtures whose
-        # (rule, fixture-hash, eslint-config-hash) tuple matches the last
-        # green run. Cache misses = only the changed rules re-run. The
-        # weekly schedule re-runs the full uncached bench to catch drift
-        # in the cache itself.
-        run: npm run ilb:oxlint-parity:cached
+      - name: Finding-level parity bench
+        # `--ci`, not `--cached`. `--cached` trusted a committed, locally
+        # written cache, and until 2026-10 it also never exited non-zero: run
+        # 38154358916 printed two unexplained lock-file divergences and passed.
+        # Locked by scripts/__tests__/oxlint-parity-cache.lock.test.ts.
+        run: npm run ilb:oxlint-parity:ci
       - name: Upload parity result artifact
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -173,10 +169,9 @@ jobs:
     name: Deep parity (re-harvest + full bench)
     needs: gate
     # Only runs on the weekly schedule and on-demand via workflow_dispatch.
-    # Skipped on PRs entirely — the per-PR `runtime-and-parity` job uses the
-    # cached variant of the same script for fast feedback. This job exists
-    # to catch (a) new fixtures added upstream via re-harvest, and (b) cache
-    # poisoning in `.agent/oxlint-parity-cache.json`.
+    # Skipped on PRs entirely. `runtime-and-parity` covers benchmarks/corpus;
+    # this job covers fixtures re-harvested from the upstream RuleTester
+    # suites, which that corpus does not.
     if: needs.gate.outputs.run == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
@@ -200,8 +195,8 @@ jobs:
         # `:full` script invokes `:harvest` then `--ci` (no cache). The
         # harvest regenerates ./harvested-fixtures from the current upstream
         # RuleTester suites; the bench then runs every fixture through both
-        # engines and diffs. Captures cache poisoning + new-upstream-rule
-        # coverage gaps that the per-PR cached run by design skips.
+        # engines and diffs. Captures new-upstream-rule coverage gaps that
+        # benchmarks/corpus does not hold.
         run: npm run ilb:oxlint-parity:full
       - name: Upload parity result artifact
         if: always()

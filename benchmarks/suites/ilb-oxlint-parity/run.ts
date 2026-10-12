@@ -17,13 +17,13 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import crypto from 'node:crypto';
 import { execSync, execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { getToolchain } from '../../lib/toolchain.ts';
 import { capturePreregistration } from '../../lib/preregister.ts';
 import { corpusSlug } from '../../lib/corpus-slug.ts';
+import { computeParityCacheKey } from './cache-key.ts';
 
 const require = createRequire(import.meta.url);
 
@@ -673,71 +673,17 @@ function applyAllowlist(diffResult) {
 
 // ── Cache key ─────────────────────────────────────────────────────────
 
-// Compute a cache key that captures everything that could change parity:
-//   - every plugin's source index + every rule file (the plugin behavior)
-//   - oxlint runtime bundle hashes (the linter behavior)
-//   - the corpus contents (what we lint)
-//   - the active plugin set (PLUGINS) and threshold
-//
+// What the key covers, and why each input is there, lives in cache-key.ts.
 // If this hash matches a cached pass, --cached mode skips the bench. CI mode
 // (`--ci`) ignores the cache and always runs.
 function computeCacheKey() {
-  const h = crypto.createHash('sha256');
-  // Plugin sources
-  for (const short of [...PLUGINS].sort()) {
-    const pkgDir = path.join(
-      REPO_ROOT,
-      'packages',
-      `eslint-plugin-${short}`,
-      'src',
-    );
-    if (!fs.existsSync(pkgDir)) continue;
-    const walk = (dir: string): string[] => {
-      const out: string[] = [];
-      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-        const full = path.join(dir, e.name);
-        if (e.isDirectory()) out.push(...walk(full));
-        else if (
-          e.isFile() &&
-          e.name.endsWith('.ts') &&
-          !/\.(test|spec)\.ts$/.test(e.name)
-        )
-          out.push(full);
-      }
-      return out;
-    };
-    for (const f of walk(pkgDir).sort()) {
-      h.update(`${short}/${path.relative(pkgDir, f)}\n`);
-      h.update(fs.readFileSync(f));
-    }
-  }
-  // Oxlint runtime bundles
-  for (const f of ['plugins.js', 'plugins-dev.js', 'lint.js', 'bindings.js']) {
-    const full = path.join(REPO_ROOT, 'node_modules', 'oxlint', 'dist', f);
-    if (fs.existsSync(full)) h.update(fs.readFileSync(full));
-  }
-  // Corpus
-  if (fs.existsSync(CORPUS)) {
-    const walk = (dir: string): string[] => {
-      const out: string[] = [];
-      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-        const full = path.join(dir, e.name);
-        if (e.isDirectory()) out.push(...walk(full));
-        else if (e.isFile() && /\.(js|ts|jsx|tsx)$/.test(e.name))
-          out.push(full);
-      }
-      return out;
-    };
-    const stat = fs.statSync(CORPUS);
-    const files = stat.isDirectory() ? walk(CORPUS).sort() : [CORPUS];
-    for (const f of files) {
-      h.update(`fixture:${path.relative(REPO_ROOT, f)}\n`);
-      h.update(fs.readFileSync(f));
-    }
-  }
-  // Plugin set + threshold
-  h.update(JSON.stringify({ PLUGINS: [...PLUGINS].sort(), THRESHOLD }));
-  return h.digest('hex');
+  return computeParityCacheKey({
+    repoRoot: REPO_ROOT,
+    plugins: PLUGINS,
+    corpus: CORPUS,
+    threshold: THRESHOLD,
+    eslintConfig: ESLINT_CONFIG,
+  });
 }
 
 function readCache() {
@@ -1007,7 +953,16 @@ function main() {
     writeCache({ ...meta, ...Object.fromEntries(runs) });
   }
 
-  if (CI) {
+  /*
+   * `--cached` gates too. It used to be `if (CI)` alone, so a `--cached` run
+   * that MISSED the cache, ran the bench and failed it still exited 0 — the
+   * failure was written to the cache file and nowhere else. That is how the
+   * scheduled "Runtime smoke + parity (cached)" job went green on 2026-10-11
+   * (run 38154358916) while printing two unexplained node-security/lock-file
+   * divergences. A cache hit exits 0 above; a miss is a real run and is judged
+   * like one.
+   */
+  if (CI || CACHED) {
     if (jsPluginCrashes.length > 0) {
       console.log(`  ✗ FAIL — a JS plugin rule crashed under oxlint.`);
       process.exit(1);
