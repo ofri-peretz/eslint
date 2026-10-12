@@ -29,6 +29,16 @@
  *   tsx scripts/ilb-regression-check.ts --baseline X.json   # vs custom baseline
  *   tsx scripts/ilb-regression-check.ts --update-baseline   # write current as new baseline
  *   tsx scripts/ilb-regression-check.ts --strict            # warnings also fail
+ *   tsx scripts/ilb-regression-check.ts --expect-repos a,b  # the summary must hold these
+ *   tsx scripts/ilb-regression-check.ts --expect-repos a,b --summary-only
+ *                                     # only that check — the non-advisory half in CI
+ *
+ * The baseline is a ratchet, so --update-baseline refuses two things unless
+ * told otherwise:
+ *   - a run that covers fewer repos than the baseline it replaces
+ *     (a 3-repo smoke run overwriting the 22-repo corpus)  → --allow-shrink
+ *   - a run that regresses past a hard threshold          → --accept-regressions
+ * Either override is a deliberate re-record; say why in the PR that commits it.
  */
 
 import fs from 'node:fs';
@@ -39,8 +49,6 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
 const RESULTS_DIR = path.join(ROOT, 'benchmark-results');
 const BENCH_RESULTS = path.join(ROOT, 'benchmarks/results');
-const DEFAULT_BASELINE = path.join(RESULTS_DIR, 'baseline.json');
-const LLM_BASELINE = path.join(RESULTS_DIR, 'baseline-llm.json');
 
 const args = process.argv.slice(2);
 const opt = (name: string): string | undefined => {
@@ -51,9 +59,21 @@ const opt = (name: string): string | undefined => {
 };
 const flag = (name: string): boolean => args.includes(`--${name}`);
 
-const baselinePath = opt('baseline') ?? DEFAULT_BASELINE;
+// --results-dir exists so the ratchet can be exercised against a scratch tree
+// (scripts/__tests__/ilb-baseline-ratchet.lock.test.ts) without touching the
+// committed baseline.
+const resultsDir = path.resolve(opt('results-dir') ?? RESULTS_DIR);
+const baselinePath = opt('baseline') ?? path.join(resultsDir, 'baseline.json');
+const llmBaselinePath = path.join(resultsDir, 'baseline-llm.json');
 const STRICT = flag('strict');
 const UPDATE_BASELINE = flag('update-baseline');
+const ALLOW_SHRINK = flag('allow-shrink');
+const ACCEPT_REGRESSIONS = flag('accept-regressions');
+const SUMMARY_ONLY = flag('summary-only');
+const EXPECT_REPOS = (opt('expect-repos') ?? '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
 
 const THRESHOLDS = {
   msPerFileRegressionPct: 25,
@@ -118,15 +138,15 @@ interface LlmBaseline {
 // ---------------------------------------------------------------------------
 
 function loadLatestWildSummary(): { path: string; data: WildSummary } | null {
-  if (!fs.existsSync(RESULTS_DIR)) return null;
+  if (!fs.existsSync(resultsDir)) return null;
   const dirs = fs
-    .readdirSync(RESULTS_DIR)
+    .readdirSync(resultsDir)
     .filter((e) => /^\d{4}-\d{2}-\d{2}$/.test(e))
-    .filter((e) => fs.statSync(path.join(RESULTS_DIR, e)).isDirectory())
+    .filter((e) => fs.statSync(path.join(resultsDir, e)).isDirectory())
     .toSorted()
     .toReversed();
   for (const d of dirs) {
-    const p = path.join(RESULTS_DIR, d, 'summary.json');
+    const p = path.join(resultsDir, d, 'summary.json');
     if (fs.existsSync(p)) return { path: p, data: JSON.parse(fs.readFileSync(p, 'utf-8')) as WildSummary };
   }
   return null;
@@ -207,11 +227,40 @@ const currentLlmFix = loadJson<LlmFixResult>(
   path.join(BENCH_RESULTS, 'ilb-llm-fix', 'latest.json'),
 );
 
+/*
+ * "Latest dated directory" falls back to whatever summary is committed when
+ * this run produced none. In CI that is exactly what happened from the Turbo
+ * migration (2026-05-11) on: every `tsx scripts/ilb-wild.ts` died with
+ * `tsx: command not found`, the loop swallowed it, and the check compared the
+ * committed 2026-08-03 summary against the committed 2026-05-03 baseline —
+ * the same two files every week, measuring nothing. --expect-repos is how a
+ * caller says which run it is checking.
+ */
+if (EXPECT_REPOS.length > 0) {
+  const succeeded = new Set(current.data.repos.filter((r) => r.success).map((r) => r.repo));
+  const missing = EXPECT_REPOS.filter((r) => !succeeded.has(r));
+  if (missing.length > 0) {
+    console.error(
+      `❌ ${path.relative(ROOT, current.path)} has no successful result for: ${missing.join(', ')}.`,
+    );
+    console.error('   Either ILB-Wild did not run for them or the summary is not from this run.');
+    console.error('   Refusing to compare numbers that were not measured.');
+    process.exit(2);
+  }
+}
+if (SUMMARY_ONLY) {
+  console.log(
+    `✅ ${path.relative(ROOT, current.path)} holds a successful result for every expected repo (${EXPECT_REPOS.join(', ') || 'none named'}).`,
+  );
+  process.exit(0);
+}
+
 // ---------------------------------------------------------------------------
 // UPDATE BASELINE MODE
 // ---------------------------------------------------------------------------
 
-if (UPDATE_BASELINE) {
+function writeBaseline(): void {
+  if (!current) return;
   // Add per-rule snapshot for backfire detection (Gap H).
   const dataWithPerRule = current.data as WildSummary & { perRuleWildHits?: Record<string, number> };
   dataWithPerRule.perRuleWildHits = aggregatePerRuleHits(path.dirname(current.path));
@@ -225,11 +274,16 @@ if (UPDATE_BASELINE) {
   if (currentLlmTokens) llmBaseline.llmTokens = currentLlmTokens;
   if (currentLlmFix) llmBaseline.llmFix = currentLlmFix;
   if (Object.keys(llmBaseline).length > 0) {
-    fs.writeFileSync(LLM_BASELINE, JSON.stringify(llmBaseline, null, 2));
-    console.log(`✅ LLM baseline updated: ${path.relative(ROOT, LLM_BASELINE)}`);
+    fs.writeFileSync(llmBaselinePath, JSON.stringify(llmBaseline, null, 2));
+    console.log(`✅ LLM baseline updated: ${path.relative(ROOT, llmBaselinePath)}`);
   } else {
     console.log('   (no LLM bench results found — skipping LLM baseline)');
   }
+}
+
+// Nothing to ratchet against yet: the first baseline is a bootstrap.
+if (UPDATE_BASELINE && !fs.existsSync(baselinePath)) {
+  writeBaseline();
   process.exit(0);
 }
 
@@ -240,7 +294,7 @@ if (!fs.existsSync(baselinePath)) {
 }
 
 const baseline = JSON.parse(fs.readFileSync(baselinePath, 'utf-8')) as WildSummary;
-const llmBaseline = loadJson<LlmBaseline>(LLM_BASELINE);
+const llmBaseline = loadJson<LlmBaseline>(llmBaselinePath);
 
 // ---------------------------------------------------------------------------
 // COMPARISON
@@ -492,6 +546,37 @@ if (fails.length) {
 }
 
 if (ruleDeltaSection) console.log(ruleDeltaSection);
+
+/*
+ * The ratchet. --update-baseline used to overwrite unconditionally, so the
+ * baseline could move backwards two ways: a run that regressed became the new
+ * floor, and a smoke run over 3 repos replaced the 22-repo corpus — after
+ * which the other 19 repos were "new repo (no baseline)" forever and never
+ * compared again. Both are refused unless explicitly overridden.
+ */
+if (UPDATE_BASELINE) {
+  const covered = new Set(cur.repos.filter((r) => r.success).map((r) => r.repo));
+  const dropped = base.repos.filter((r) => r.success && !covered.has(r.repo)).map((r) => r.repo);
+  if (dropped.length > 0 && !ALLOW_SHRINK) {
+    console.error(
+      `\n🚫 Baseline NOT updated: this run has no successful result for ${dropped.length} repo(s) the baseline covers:`,
+    );
+    console.error(`   ${dropped.join(', ')}`);
+    console.error('   Run the full corpus (`npm run ilb:wild`) first, or pass --allow-shrink if the');
+    console.error('   corpus itself shrank on purpose.');
+    process.exit(2);
+  }
+  if (fails.length > 0 && !ACCEPT_REGRESSIONS) {
+    console.error(
+      `\n🚫 Baseline NOT updated: ${fails.length} hard regression(s) above would become the new floor.`,
+    );
+    console.error('   Fix them, or pass --accept-regressions and justify the re-record in the PR.');
+    process.exit(1);
+  }
+  console.log('');
+  writeBaseline();
+  process.exit(0);
+}
 
 const hardFail = fails.length > 0;
 const softFail = STRICT && warns.length > 0;
