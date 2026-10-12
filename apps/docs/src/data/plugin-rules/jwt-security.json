@@ -160,7 +160,7 @@
       "description": "This rule ensures tokens have the iat claim for freshness validation",
       "typeStatus": "unaware",
       "recommended": false,
-      "warns": false,
+      "warns": true,
       "fixable": false,
       "hasSuggestions": false,
       "deprecated": false,
@@ -199,5 +199,5 @@
     }
   ],
   "totalRules": 13,
-  "lastSynced": "2026-08-15T18:33:15.704Z"
+  "lastSynced": "2026-10-12T02:31:19.936Z"
 }
