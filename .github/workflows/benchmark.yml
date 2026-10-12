@@ -354,6 +354,10 @@ jobs:
           IFS=',' read -ra REPOS <<< "$ILB_REPOS"
           failed=()
           for r in "${REPOS[@]}"; do
+            # `sst, vercel-ai` is a natural way to type the input; ilb-wild
+            # matches names exactly. Repo names hold no whitespace.
+            r="${r//[[:space:]]/}"
+            [[ -z "$r" ]] && continue
             echo "::group::ilb:wild --repo $r"
             if ! npx tsx scripts/ilb-wild.ts --repo "$r" --runs 1; then
               echo "::error::ILB-Wild failed for $r"

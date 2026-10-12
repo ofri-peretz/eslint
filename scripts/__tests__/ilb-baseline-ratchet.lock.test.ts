@@ -213,6 +213,14 @@ describe('benchmark.yml ILB-Wild job', () => {
     expect(body).not.toMatch(/continue-on-error/);
   });
 
+  it('strips whitespace from each repo name before passing it to ilb-wild', () => {
+    // `sst, vercel-ai` would otherwise hand ` vercel-ai` to an exact-match
+    // lookup and fail a valid repo.
+    const loop = wf.slice(wf.indexOf('for r in "${REPOS[@]}"'));
+    const body = loop.slice(0, loop.indexOf('npx tsx scripts/ilb-wild.ts'));
+    expect(body).toContain('r="${r//[[:space:]]/}"');
+  });
+
   it('has no update_baseline input that writes to a runner and discards the file', () => {
     expect(runLines.join('\n')).not.toMatch(/update_baseline/);
     expect(runLines.join('\n')).not.toMatch(/--update-baseline/);
