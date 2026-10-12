@@ -3333,6 +3333,12 @@
       "require-url-validation",
       "require-websocket-wss"
     ],
+    "cli-floor": [
+      "no-console-in-command",
+      "no-prompt-without-flag",
+      "require-command-description",
+      "require-command-example"
+    ],
     "conventions": [
       "analytics-event-naming",
       "consistent-existence-index-check",
@@ -3514,9 +3520,20 @@
       "no-unreadable-iife"
     ],
     "mcp-sdk-security": [
+      "no-code-injection-in-tool",
       "no-command-injection-in-tool",
+      "no-credential-leak-in-tool",
+      "no-duplicate-tool-name",
+      "no-path-traversal-in-tool",
+      "no-predictable-session-id",
+      "no-shared-stateless-transport",
+      "no-sql-injection-in-tool",
+      "no-ssrf-in-tool",
       "no-tool-description-injection",
+      "no-untrusted-stdio-command",
+      "no-untrusted-tool-metadata-in-prompt",
       "no-unvalidated-tool-args",
+      "require-http-transport-hardening",
       "require-tool-input-schema"
     ],
     "modernization": [
@@ -3879,6 +3896,12 @@
     ],
     "sqlite-security": [
       "no-unsafe-query"
+    ],
+    "supabase-security": [
+      "no-dynamic-rpc-name",
+      "no-public-storage-bucket",
+      "no-service-role-key-in-client",
+      "require-auth-error-check"
     ],
     "typeorm-security": [
       "no-hardcoded-credentials",
