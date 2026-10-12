@@ -3,5 +3,5 @@
   "name": "Server-Side Request Forgery (SSRF)",
   "owasp": "A10:2021",
   "severity": "HIGH",
-  "expectedPlugins": ["eslint-plugin-node-security"]
+  "expectedPlugins": ["eslint-plugin-node-security", "eslint-plugin-mcp-sdk-security"]
 }

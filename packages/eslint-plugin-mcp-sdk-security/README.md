@@ -54,24 +54,49 @@ npm install eslint-plugin-mcp-sdk-security --save-dev
 
 ## ⚙️ Configuration Presets
 
-| Preset | Rules (all at `error`) | Description |
+| Preset | Rules (`error`, except `no-duplicate-tool-name` at `warn`) | Description |
 | :--- | :--- | :--- |
 | `minimal` | `no-command-injection-in-tool`, `require-tool-input-schema` | Only the rules whose every finding is a defect by construction. |
-| `recommended` | `no-command-injection-in-tool`, `no-tool-description-injection`, `no-unvalidated-tool-args`, `require-tool-input-schema` | The default. Adds the schema/handler contract check and dynamic-description detection. |
-| `strict` | `no-command-injection-in-tool`, `no-tool-description-injection`, `no-unvalidated-tool-args`, `require-tool-input-schema` | Every rule. Where a new rule lands before its false-positive profile is measured. |
+| `recommended` | `no-code-injection-in-tool`, `no-command-injection-in-tool`, `no-credential-leak-in-tool`, `no-duplicate-tool-name`, `no-path-traversal-in-tool`, `no-predictable-session-id`, `no-shared-stateless-transport`, `no-sql-injection-in-tool`, `no-ssrf-in-tool`, `no-tool-description-injection`, `no-untrusted-stdio-command`, `no-untrusted-tool-metadata-in-prompt`, `no-unvalidated-tool-args`, `require-http-transport-hardening`, `require-tool-input-schema` | The default. Every rule, each at `error` from CVSS 7.0 up and `warn` below. |
+| `strict` | `no-code-injection-in-tool`, `no-command-injection-in-tool`, `no-credential-leak-in-tool`, `no-duplicate-tool-name`, `no-path-traversal-in-tool`, `no-predictable-session-id`, `no-shared-stateless-transport`, `no-sql-injection-in-tool`, `no-ssrf-in-tool`, `no-tool-description-injection`, `no-untrusted-stdio-command`, `no-untrusted-tool-metadata-in-prompt`, `no-unvalidated-tool-args`, `require-http-transport-hardening`, `require-tool-input-schema` | Every rule, at its `recommended` level. Where a new rule lands before its false-positive profile is measured. |
 
 Supported servers: `@modelcontextprotocol/sdk` (v1), the v2 split packages
 (`@modelcontextprotocol/server`, `client`, `core`, `node`, `express`, `hono`,
 `fastify`), and `mcp-handler` / `@vercel/mcp-adapter`. Every rule stays silent
 in a file that imports none of them.
 
-`no-command-injection-in-tool` follows a tool argument inside its handler —
-used *as* the command, built into it (`` execSync(`git log ${ref}`) ``), or
-derived from it (`const c = cmd.trim()`) — into `child_process`, `execa` and
-zx / execa `$` templates. Outside MCP tool handlers, pair it with
-[`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security)'s
-`no-shell-injection`; on an interpolated command inside a handler both may
-report.
+What the rules cover:
+
+- **Tool handlers** — a tool argument, `request.params.arguments` or a
+  `ResourceTemplate` variable reaching a process (`no-command-injection-in-tool`),
+  a file path (`no-path-traversal-in-tool`), a request host (`no-ssrf-in-tool`),
+  SQL text (`no-sql-injection-in-tool`) or `eval` / `vm`
+  (`no-code-injection-in-tool`); the environment or the caller's token in a
+  result, or that token forwarded upstream (`no-credential-leak-in-tool`); the
+  schema/handler contract (`require-tool-input-schema`,
+  `no-unvalidated-tool-args`); one name registered twice
+  (`no-duplicate-tool-name`).
+- **Model-facing text** — a tool, prompt or resource description built from
+  text a client, a remote service or a file controls
+  (`no-tool-description-injection`).
+- **HTTP transports** — DNS-rebinding protection, `allowedHosts` and
+  authentication (`require-http-transport-hardening`), a stateless transport
+  or server shared across requests (`no-shared-stateless-transport`,
+  CVE-2026-25536), and predictable session IDs (`no-predictable-session-id`).
+- **Clients** — a server's tool metadata written into an LLM prompt
+  (`no-untrusted-tool-metadata-in-prompt`), and a stdio server command taken
+  from a tool argument, a network response or project config
+  (`no-untrusted-stdio-command`).
+
+Each taint rule follows the value inside its handler — used directly, built
+into a string, or derived — and resolves sinks to the module that defines them.
+Tool handlers are this plugin's scope, so on the same line it may report
+alongside [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security)
+(`no-shell-injection`, `detect-non-literal-fs-filename`, `no-ssrf`,
+`detect-eval-with-expression`) or
+[`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding)
+(`no-sql-injection`), which cover the same sinks outside MCP handlers. Each
+rule's doc states its overlap.
 
 ## Usage
 
@@ -135,9 +160,20 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) fo
 <!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
 | Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| [no-code-injection-in-tool](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-code-injection-in-tool?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-mcp-sdk-security) | CWE-95 | A03:2021 |  | Disallow an MCP tool argument reaching eval, new Function or a vm context as code. | 🟢 | 💼 |  |  |  |  |
 | [no-command-injection-in-tool](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-command-injection-in-tool?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-mcp-sdk-security) | CWE-78 | A03:2021 |  | Disallow an MCP tool argument choosing the command a child_process call runs. | 🟢 | 💼 |  |  |  |  |
-| [no-tool-description-injection](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-tool-description-injection?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-mcp-sdk-security) | CWE-1427 | A03:2021 |  | Require MCP tool descriptions and titles to be static text, since they reach the model as instructions. | 🟢 | 💼 |  |  |  |  |
+| [no-credential-leak-in-tool](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-credential-leak-in-tool?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-mcp-sdk-security) | CWE-200 | A01:2021 |  | Disallow an MCP tool returning the server's environment or the caller's token, or forwarding that token ups… | 🟢 | 💼 |  |  |  |  |
+| [no-duplicate-tool-name](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-duplicate-tool-name?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-mcp-sdk-security) | CWE-694 | A04:2021 |  | Disallow registering or listing two MCP tools with the same name on one server. | 🟢 |  | ⚠️ |  |  |  |
+| [no-path-traversal-in-tool](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-path-traversal-in-tool?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-mcp-sdk-security) | CWE-22 | A01:2021 |  | Disallow an MCP tool argument choosing the file an fs call reads, writes or deletes without a containment c… | 🟢 | 💼 |  |  |  |  |
+| [no-predictable-session-id](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-predictable-session-id?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-mcp-sdk-security) | CWE-330 | A02:2021 |  | Disallow an MCP sessionIdGenerator that returns a counter, a timestamp, Math.random() or a constant. | 🟢 | 💼 |  |  |  |  |
+| [no-shared-stateless-transport](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-shared-stateless-transport?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-mcp-sdk-security) | CWE-488 | A04:2021 |  | Disallow sharing one stateless Streamable HTTP transport or one MCP server across requests. | 🟢 | 💼 |  |  |  |  |
+| [no-sql-injection-in-tool](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-sql-injection-in-tool?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-mcp-sdk-security) | CWE-89 | A03:2021 |  | Disallow an MCP tool argument reaching the text of a SQL query instead of its parameters. | 🟢 | 💼 |  |  |  |  |
+| [no-ssrf-in-tool](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-ssrf-in-tool?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-mcp-sdk-security) | CWE-918 | A10:2021 |  | Disallow an MCP tool argument choosing the host an outbound HTTP request is sent to. | 🟢 | 💼 |  |  |  |  |
+| [no-tool-description-injection](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-tool-description-injection?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-mcp-sdk-security) | CWE-1427 | A03:2021 |  | Disallow MCP tool, prompt and resource descriptions built from text a client, a remote service or a file co… | 🟢 | 💼 |  |  |  |  |
+| [no-untrusted-stdio-command](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-untrusted-stdio-command?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-mcp-sdk-security) | CWE-78 | A03:2021 |  | Disallow an MCP client spawning a stdio server whose command comes from a tool argument, a network response… | 🟢 | 💼 |  |  |  |  |
+| [no-untrusted-tool-metadata-in-prompt](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-untrusted-tool-metadata-in-prompt?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-mcp-sdk-security) | CWE-1427 | A03:2021 |  | Disallow an MCP client writing a server's tool, prompt or resource metadata into an LLM prompt instead of i… | 🟢 | 💼 |  |  |  |  |
 | [no-unvalidated-tool-args](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/no-unvalidated-tool-args?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-mcp-sdk-security) | CWE-20 | A03:2021 |  | Disallow a tool handler reading an argument its declared input schema does not include. | 🟢 | 💼 |  |  |  |  |
+| [require-http-transport-hardening](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/require-http-transport-hardening?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-mcp-sdk-security) | CWE-346 | A05:2021 |  | Require an MCP HTTP server transport to validate the Host header and a network-reachable MCP server to auth… | 🟢 | 💼 |  |  |  |  |
 | [require-tool-input-schema](https://eslint.interlace.tools/docs/security/plugin-mcp-sdk-security/rules/require-tool-input-schema?utm_source=github&utm_medium=referral&utm_campaign=eslint-plugin-mcp-sdk-security) | CWE-20 | A03:2021 |  | Require an input schema when an MCP tool handler reads arguments. | 🟢 | 💼 |  |  |  |  |
 <!-- AUTO-GENERATED:RULES_TABLE:END -->
 <!-- INTERLACE:STAR_CTA:START -->

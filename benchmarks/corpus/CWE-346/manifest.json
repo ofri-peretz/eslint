@@ -1,17 +1,19 @@
 {
   "cwe": "CWE-346",
-  "name": "Origin Validation Error (postMessage wildcard)",
+  "name": "Origin Validation Error (postMessage wildcard, MCP DNS rebinding)",
   "owasp": "A01:2021",
   "severity": "HIGH",
-  "expectedPlugins": ["eslint-plugin-browser-security"],
+  "expectedPlugins": ["eslint-plugin-browser-security", "eslint-plugin-mcp-sdk-security"],
   "fixtures": {
     "vulnerable": [
       { "file": "iframe-wildcard.js", "description": "iframe.contentWindow.postMessage(data, '*')" },
-      { "file": "window-parent-wildcard.js", "description": "window.parent.postMessage(data, '*')" }
+      { "file": "window-parent-wildcard.js", "description": "window.parent.postMessage(data, '*')" },
+      { "file": "mcp-transport-no-rebinding-protection.js", "description": "MCP StreamableHTTPServerTransport built without enableDnsRebindingProtection + allowedHosts, and no app-level Host validation" }
     ],
     "safe": [
       { "file": "explicit-origin.js", "description": "postMessage with explicit https origin" },
-      { "file": "self-origin.js", "description": "postMessage with location.origin" }
+      { "file": "self-origin.js", "description": "postMessage with location.origin" },
+      { "file": "mcp-transport-host-validation.js", "description": "MCP StreamableHTTPServerTransport with enableDnsRebindingProtection: true and an explicit allowedHosts list" }
     ]
   }
 }

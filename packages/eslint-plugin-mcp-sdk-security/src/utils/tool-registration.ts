@@ -100,8 +100,12 @@ export function resolveFunction(
   if (node === undefined) return undefined;
   if (isFunctionNode(node)) return node;
   if (node.type !== 'Identifier') return undefined;
-  const def = lookupVariable(node.name, scope)?.defs[0];
-  if (def?.type === 'FunctionName') return def.node as FunctionNode;
+  const variable = lookupVariable(node.name, scope);
+  // The implementation, never an overload signature or a `declare function`:
+  // both are bodiless TSDeclareFunction nodes, and following one crashed every
+  // rule that reads a helper's body.
+  if (variable?.defs[0]?.type === 'FunctionName')
+    return variable.defs.map((def) => def.node).find(isFunctionNode);
   const init = constInitializer(node, scope);
   return isFunctionNode(init) ? init : undefined;
 }

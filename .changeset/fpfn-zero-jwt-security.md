@@ -15,9 +15,9 @@ Fixes the seven items the 2026-10 audit had deferred (benchmarks/audits/2026-10-
 - `no-algorithm-confusion` no longer decides a key is public from its NAME. Evidence is structural: a PEM public key, `createPublicKey()`, jose's `importSPKI` / `createRemoteJWKSet`, a jwks-rsa signing key, a `.pub` file read. Mixed HS*/asymmetric whitelists are still reported for any key.
 - `require-issued-at` no longer reports `noTimestamp: true`; `no-timestamp-manipulation` owns it.
 - `no-timestamp-manipulation` has a new `maxClockToleranceSeconds` option (default 300) and reports a numeric `clockTolerance` above it.
-- `require-expiration` reads the package's `JwtModule.register` / `registerAsync` (in `*.module.ts`, cross-file) for a NestJS `sign(payload)`, and reports when no registration sets `signOptions.expiresIn`.
+- `require-expiration` reads the package's `JwtModule.register` / `registerAsync` (in `*.module.ts`, cross-file) for a NestJS `sign(payload)`, and reports only when a registration it can read is confirmed to omit `signOptions.expiresIn`; an unknown module configuration (no registration found, or one it cannot read) produces no finding.
 - `no-sensitive-payload` reports a spread of an object it cannot see into the claims (`{ ...user }`, a DB row) as whole-record exposure (CWE-200). With type information it reports only when the spread's type declares a sensitive field.
-- `no-decode-without-verify` exempts a decoded token only on back-channel provenance (a `fetch()` response body, an axios/got/ky/undici response, an openid-client grant, including one reached through a relative module such as `require('./client')`) instead of field and variable names. `data.id_token` from `await request.json()` is now reported.
+- `no-decode-without-verify` exempts a decoded token on back-channel provenance (a `fetch()` response body, an axios/got/ky/undici response, an openid-client grant, including one reached through a relative module such as `require('./client')`) instead of variable names. Reads of only `exp`, `iat`, `nbf` or `header.kid` stay exempt by the field read, since none of them is trusted as identity. `data.id_token` from `await request.json()` is now reported.
 
 **Upgrade notes.**
 

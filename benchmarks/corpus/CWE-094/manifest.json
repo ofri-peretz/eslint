@@ -3,15 +3,17 @@
   "name": "Improper Control of Generation of Code (Code Injection)",
   "owasp": "A03:2021",
   "severity": "CRITICAL",
-  "expectedPlugins": ["eslint-plugin-node-security"],
+  "expectedPlugins": ["eslint-plugin-node-security", "eslint-plugin-mcp-sdk-security"],
   "fixtures": {
     "vulnerable": [
       { "file": "vm2-run-user-code.js", "description": "require('vm2') NodeVM running request-supplied code" },
-      { "file": "vm-run-user-string.js", "description": "vm.runInNewContext on a user-supplied string" }
+      { "file": "vm-run-user-string.js", "description": "vm.runInNewContext on a user-supplied string" },
+      { "file": "mcp-tool-eval-expression.js", "description": "MCP calculator tool evals its argument (CWE-95)" }
     ],
     "safe": [
       { "file": "vm-literal-script.js", "description": "vm.runInNewContext with a fully literal script string" },
-      { "file": "worker-isolation.js", "description": "worker_threads isolation running a fixed module, no eval on input" }
+      { "file": "worker-isolation.js", "description": "worker_threads isolation running a fixed module, no eval on input" },
+      { "file": "mcp-tool-arithmetic-parser.js", "description": "MCP calculator tool maps a z.enum operator to server-owned functions" }
     ]
   }
 }

@@ -482,6 +482,17 @@ mcp-sdk-security	no-command-injection-in-tool	unaware
 mcp-sdk-security	no-tool-description-injection	unaware	
 mcp-sdk-security	no-unvalidated-tool-args	unaware	
 mcp-sdk-security	require-tool-input-schema	unaware	
+mcp-sdk-security	no-code-injection-in-tool	unaware	
+mcp-sdk-security	no-credential-leak-in-tool	unaware	
+mcp-sdk-security	no-duplicate-tool-name	unaware	
+mcp-sdk-security	no-path-traversal-in-tool	unaware	
+mcp-sdk-security	no-predictable-session-id	unaware	
+mcp-sdk-security	no-shared-stateless-transport	unaware	
+mcp-sdk-security	no-sql-injection-in-tool	unaware	
+mcp-sdk-security	no-ssrf-in-tool	unaware	
+mcp-sdk-security	no-untrusted-stdio-command	unaware	
+mcp-sdk-security	no-untrusted-tool-metadata-in-prompt	unaware	
+mcp-sdk-security	require-http-transport-hardening	unaware	
 openai-security	no-browser-api-key-exposure	unaware	
 openai-security	no-hardcoded-api-key	unaware	
 openai-security	no-untrusted-content-in-prompt	unaware	

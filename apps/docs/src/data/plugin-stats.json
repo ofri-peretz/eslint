@@ -41,6 +41,14 @@
       "published": true
     },
     {
+      "name": "eslint-plugin-mcp-sdk-security",
+      "rules": 15,
+      "description": "ESLint plugin for Model Context Protocol (MCP) SDK security — follows tool arguments into shells, file paths, URLs, SQL and eval; catches credential leaks, untrusted text in model-facing descriptions and prompts, unhardened HTTP transports, shared stateless servers, predictable session ids, untrusted stdio commands and schema/handler drift",
+      "category": "security",
+      "version": "0.5.0",
+      "published": true
+    },
+    {
       "name": "eslint-plugin-jwt-security",
       "rules": 13,
       "description": "ESLint plugin for JWT security — detects algorithm confusion (CVE-2022-23540), alg:none, weak or hardcoded secrets, and decode-without-verify",
@@ -70,14 +78,6 @@
       "description": "ESLint plugin for drizzle-orm — detects SQL injection in raw queries built with string concatenation or template literals",
       "category": "security",
       "version": "0.3.8",
-      "published": true
-    },
-    {
-      "name": "eslint-plugin-mcp-sdk-security",
-      "rules": 4,
-      "description": "ESLint plugin for Model Context Protocol (MCP) SDK security — catches tools registered without an input schema, handlers reading arguments the schema never declared, model-visible descriptions built from dynamic text, and tool arguments reaching a shell",
-      "category": "security",
-      "version": "0.5.0",
       "published": true
     },
     {
@@ -257,8 +257,8 @@
       "published": true
     }
   ],
-  "totalRules": 486,
+  "totalRules": 497,
   "totalPlugins": 32,
   "allPluginsCount": 32,
-  "generatedAt": "2026-10-11"
+  "generatedAt": "2026-10-12"
 }

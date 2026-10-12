@@ -1,0 +1,150 @@
+---
+title: no-duplicate-tool-name
+description: "Disallow registering or listing two MCP tools with the same name on one server."
+tags: ['security', 'mcp']
+category: security
+severity: medium
+cwe: CWE-694
+autofix: false
+type_aware: false
+type_aware_status: unaware
+---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+**CWE:** [CWE-694](https://cwe.mitre.org/data/definitions/694.html)
+**OWASP:** [A04:2021 – Insecure Design](https://owasp.org/Top10/A04_2021-Insecure_Design/)
+
+Detects two `registerTool` / `tool` calls that give one server the same static name, and a `tools/list` response that lists two tools with one name. This rule is part of [`eslint-plugin-mcp-sdk-security`](https://www.npmjs.com/package/eslint-plugin-mcp-sdk-security).
+
+💼 This rule is set to **warn** in the `recommended` and `strict` configs.
+
+## Quick Summary
+
+| Aspect            | Details                                                                                                          |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-694](https://cwe.mitre.org/data/definitions/694.html) (Use of Multiple Resources with Duplicate Identifier) |
+| **Severity**      | Medium (CVSS 5.3)                                                                                                |
+| **Auto-Fix**      | ❌ No auto-fix available                                                                                         |
+| **Category**      | Security                                                                                                         |
+
+## Why this matters
+
+A tool's name is the identifier a client calls. Two tools with one name never
+both exist, and what happens instead depends on the server class:
+
+- **`McpServer`** throws `Tool X is already registered` at startup. The
+  duplicate either crashes the server, or, when the second registration sits
+  behind a `try`/`catch` or a conditional factory, silently keeps the FIRST
+  handler while the author believes the second one runs. A "safe" read-only
+  variant registered second never takes effect.
+- **The low-level `Server`** has no such check. Its `tools/list` response
+  shows clients two tools with one name and two descriptions, and which one a
+  `tools/call` reaches is decided by the call handler alone. The model picks
+  a tool by its description; the server runs a different one.
+
+## ❌ Incorrect
+
+```ts
+// ❌ the second registration throws, or is swallowed and never runs
+server.registerTool('search', { description: 'Search docs' }, searchDocs);
+server.registerTool('search', { description: 'Search code' }, searchCode);
+
+// ❌ the legacy tool() and registerTool() share one namespace
+server.tool('ping', async () => ({ content: [] }));
+server.registerTool('ping', cfg, ping);
+
+// ❌ behind a try/catch: the server starts, and forceDeploy is never reachable
+server.registerTool('deploy', cfg, safeDeploy);
+try {
+  server.registerTool('deploy', cfg, forceDeploy);
+} catch (e) {
+  log(e);
+}
+
+// ❌ the low-level Server lists two tools with one name
+server.setRequestHandler(ListToolsRequestSchema, async () => ({
+  tools: [
+    { name: 'query', description: 'Read-only query', inputSchema },
+    { name: 'query', description: 'Run any SQL', inputSchema },
+  ],
+}));
+```
+
+## How duplicates are recognised
+
+- **Registrations** are `registerTool` and the legacy `tool()`, read as the
+  other rules in this plugin read them. The name is the first argument: a
+  literal, or a `const` it resolves to (in this file or a relative module).
+- **The same server** means the receiver is a plain identifier and both calls
+  resolve, through the scope manager, to the same variable. `this.server` or
+  `getServer()` is not compared.
+- **Both calls must run.** On the path from either call up to their lowest
+  common ancestor there may be no `if` / `else` branch, ternary branch,
+  `switch` case, right operand of `&&` / `||` / `??`, loop body, `catch` block
+  or function boundary. Registrations in two branches, two factories or a
+  loop are alternatives, not duplicates.
+- **Listings** are `setRequestHandler(ListToolsRequestSchema, …)` (resolved to
+  the SDK export) and v2's `'tools/list'`. The handler (inline, or a same-file
+  function) returns `{ tools: [...] }`, inline or a same-file `const` array,
+  whose elements are tool objects inline or held in `const`s. Two elements
+  with the same static `name` are reported.
+
+The later occurrence is reported, and the message names the line of the
+earlier one.
+
+## ✅ Correct
+
+```ts
+// ✅ one name per tool
+server.registerTool('search_docs', { description: 'Search docs' }, searchDocs);
+server.registerTool('search_code', { description: 'Search code' }, searchCode);
+
+// ✅ alternatives: only one branch registers
+if (readOnly) server.registerTool('files', readOnlyConfig, readFiles);
+else server.registerTool('files', readWriteConfig, editFiles);
+
+// ✅ one table drives both tools/list and tools/call
+const TOOLS = {
+  query: { description: 'Read-only query', inputSchema, run: query },
+};
+server.setRequestHandler(ListToolsRequestSchema, async () => ({
+  tools: Object.entries(TOOLS).map(([name, t]) => ({
+    name,
+    description: t.description,
+    inputSchema: t.inputSchema,
+  })),
+}));
+```
+
+## What this rule deliberately does not report
+
+- **Duplicate `case` labels in a `tools/call` switch.** That is core ESLint's
+  [`no-duplicate-case`](https://eslint.org/docs/latest/rules/no-duplicate-case);
+  `switch` statements are out of scope here.
+- **Alternatives.** The same name in an `if` / `else`, a ternary, a `switch`,
+  a loop, a `catch` or two separate functions.
+- **Two different servers.** The same name on two server variables is two
+  tools.
+- **Dynamic names**, receivers that are not a plain variable, and tool lists
+  the rule cannot read (built by a call, or defined in another module).
+- **A file that imports no MCP package.**
+
+## Relationship to `node-security` and `secure-coding`
+
+There is no overlap. Neither plugin knows that a tool name is an MCP
+identifier; this is an MCP-SDK-specific rule.
+
+## When Not To Use It
+
+A test that deliberately registers a duplicate to assert the SDK throws can
+disable this rule for that line. The rule has no options.
+
+## Further Reading
+
+- [CWE-694: Use of Multiple Resources with Duplicate Identifier](https://cwe.mitre.org/data/definitions/694.html)
+- [OWASP A04:2021 – Insecure Design](https://owasp.org/Top10/A04_2021-Insecure_Design/)
+- [MCP: Tools](https://modelcontextprotocol.io/specification/2025-06-18/server/tools)
+- [ESLint: no-duplicate-case](https://eslint.org/docs/latest/rules/no-duplicate-case)

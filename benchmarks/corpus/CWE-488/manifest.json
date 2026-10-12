@@ -1,0 +1,23 @@
+{
+  "cwe": "CWE-488",
+  "name": "Exposure of Data Element to Wrong Session (shared stateless MCP transport, CVE-2026-25536)",
+  "owasp": "A04:2021",
+  "severity": "HIGH",
+  "expectedPlugins": [
+    "eslint-plugin-mcp-sdk-security"
+  ],
+  "fixtures": {
+    "vulnerable": [
+      {
+        "file": "mcp-shared-server-stateless.js",
+        "description": "Module-level McpServer connected to a per-request stateless Streamable HTTP transport"
+      }
+    ],
+    "safe": [
+      {
+        "file": "mcp-server-per-request-stateless.js",
+        "description": "SDK stateless pattern: a getServer() factory and a fresh transport per request, both closed on response close"
+      }
+    ]
+  }
+}

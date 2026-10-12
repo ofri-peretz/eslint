@@ -87,11 +87,30 @@ export type Taint =
       closed?: ReadonlySet<string>;
     };
 
-/** The argument object a tool handler's first parameter receives. */
+/** The argument object one of a handler's parameters receives. */
 export interface HandlerRoot {
   toArgs: readonly string[];
   closed: ReadonlySet<string>;
+  /**
+   * Which parameter receives it — the first by default. A `ResourceTemplate`
+   * callback is `(uri, variables, extra)`, and the request context a tool
+   * handler gets (`extra`) sits after its arguments.
+   */
+  param?: number;
 }
+
+/**
+ * A rule's own say over one expression, asked before the built-in following.
+ *
+ * Returns the taint the expression carries, `null` for "carries nothing", or
+ * `undefined` to let the flow decide. `follow` continues the same bounded,
+ * cycle-guarded question one hop further, so a hook can say "`path.join(a, b)`
+ * carries whatever `a` or `b` carries" without re-implementing the walk.
+ */
+export type FlowIntercept = (
+  node: TSESTree.Node,
+  follow: (next: TSESTree.Node) => Taint | null,
+) => Taint | null | undefined;
 
 /** Read `key` off a tainted value. `null` key = a computed/element read. */
 export function memberStep(t: Taint, key: string | null): Taint | null {
@@ -157,7 +176,7 @@ export function throughPattern(
 }
 
 /** Every value a function can return, not looking inside nested functions. */
-function returnedExpressions(fn: FunctionNode): TSESTree.Node[] {
+export function returnedExpressions(fn: FunctionNode): TSESTree.Node[] {
   if (fn.body.type !== 'BlockStatement') return [fn.body];
   const found: TSESTree.Node[] = [];
   const visit = (node: TSESTree.Node): void => {
@@ -202,6 +221,7 @@ const PATTERN_PARTS: ReadonlySet<string> = new Set([
 export function createFlow(
   sourceCode: Readonly<TSESLint.SourceCode>,
   handlerRoot: (fn: TSESTree.Node) => HandlerRoot | undefined,
+  intercept?: FlowIntercept,
 ): (node: TSESTree.Node) => Taint | null {
   const active = new Set<TSESTree.Node>();
 
@@ -218,13 +238,13 @@ export function createFlow(
     if (def?.type === 'Parameter') {
       const fn = def.node as FunctionNode;
       const root = handlerRoot(fn);
-      const first = fn.params[0];
-      if (root === undefined || first === undefined) return null;
-      const t = throughPattern(first, def.name, {
+      const param = root && fn.params[root.param ?? 0];
+      if (param === undefined) return null;
+      const t = throughPattern(param, def.name, {
         kind: 'object',
         text: '',
-        toArgs: root.toArgs,
-        closed: root.closed,
+        toArgs: root!.toArgs,
+        closed: root!.closed,
       });
       // A parameter-bound name is cited by its own name.
       return t ? { ...t, text: node.name } : null;
@@ -301,11 +321,15 @@ export function createFlow(
       const arg = node.arguments[i];
       if (variable && arg) bound.set(variable, taint(arg, depth + 1, env));
     });
+    // A value wins; failing that, a helper that hands back the arguments
+    // object (`argsOf(args).cmd`) still carries it to the member read.
+    let object: Taint | null = null;
     for (const expression of returnedExpressions(fn)) {
-      const t = asValue(taint(expression, depth + 1, bound));
-      if (t) return t;
+      const t = taint(expression, depth + 1, bound);
+      if (t?.kind === 'value') return t;
+      object ??= t;
     }
-    return null;
+    return object;
   }
 
   function taint(node: TSESTree.Node, depth: number, env: Env): Taint | null {
@@ -335,6 +359,8 @@ export function createFlow(
   }
 
   function compute(node: TSESTree.Node, depth: number, env: Env): Taint | null {
+    const decided = intercept?.(node, (next) => taint(next, depth + 1, env));
+    if (decided !== undefined) return decided;
     switch (node.type) {
       case 'Identifier':
         return ofIdentifier(node, depth, env);

@@ -53,10 +53,25 @@ export const MCP_PACKAGES: readonly string[] = [
   '@modelcontextprotocol/express',
   '@modelcontextprotocol/hono',
   '@modelcontextprotocol/fastify',
+  // v2's home for the deprecated HTTP+SSE server transport.
+  '@modelcontextprotocol/server-legacy',
   'mcp-handler',
   '@vercel/mcp-adapter',
 ];
 
-export const fileUsesMcpSdk: (ast: TSESTree.Program) => boolean = createModuleEvidence({
-  packages: [...MCP_PACKAGES],
-});
+export const fileUsesMcpSdk: (ast: TSESTree.Program) => boolean =
+  createModuleEvidence({
+    packages: [...MCP_PACKAGES],
+  });
+
+/**
+ * Is `module` one of the MCP packages above, or a subpath of one?
+ *
+ * `@modelcontextprotocol/sdk/server/streamableHttp.js` and
+ * `@modelcontextprotocol/node` both qualify; `mcp-handler-extras` does not.
+ */
+export function isMcpModule(module: string): boolean {
+  return MCP_PACKAGES.some(
+    (pkg) => module === pkg || module.startsWith(`${pkg}/`),
+  );
+}

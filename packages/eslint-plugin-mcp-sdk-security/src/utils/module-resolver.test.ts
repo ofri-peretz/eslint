@@ -8,6 +8,7 @@ import * as parser from '@typescript-eslint/parser';
 import { join } from 'node:path';
 import {
   MAX_RESOLVE_DEPTH,
+  resolveCalleeFunction,
   parseModule,
   resolveExport,
   resolveIdentifier,
@@ -99,5 +100,32 @@ describe('resolveExport', () => {
     ).toEqual({
       kind: 'unknown',
     });
+  });
+});
+
+describe('resolveCalleeFunction', () => {
+  it('abstains when the imported module cannot be parsed', () => {
+    const ast = parser.parseForESLint(
+      "import { registerNoteResource } from './session-resource';\nregisterNoteResource();",
+      { sourceType: 'module', range: true, filePath: SERVER },
+    );
+    const scope = ast.scopeManager!.scopes.find((s) => s.type === 'module')!;
+    const call = (
+      ast.ast.body[1] as unknown as { expression: { callee: never } }
+    ).expression;
+    expect(
+      resolveCalleeFunction(
+        call.callee,
+        { scope: scope as never, file: SERVER },
+        {},
+      ),
+    ).toBeUndefined();
+    expect(
+      resolveCalleeFunction(
+        call.callee,
+        { scope: scope as never, file: SERVER },
+        parser,
+      ),
+    ).toBeDefined();
   });
 });

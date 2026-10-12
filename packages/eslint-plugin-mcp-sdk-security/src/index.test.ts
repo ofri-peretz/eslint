@@ -13,26 +13,49 @@ import plugin, {
   rules,
   configs,
   plugin as namedPlugin,
+  noCodeInjectionInTool,
   noCommandInjectionInTool,
+  noCredentialLeakInTool,
+  noDuplicateToolName,
+  noPathTraversalInTool,
+  noPredictableSessionId,
+  noSharedStatelessTransport,
+  noSqlInjectionInTool,
+  noSsrfInTool,
   noToolDescriptionInjection,
+  noUntrustedStdioCommand,
+  noUntrustedToolMetadataInPrompt,
   noUnvalidatedToolArgs,
+  requireHttpTransportHardening,
   requireToolInputSchema,
 } from './index';
 
+/** Every rule id, in order, with the module it must be wired to. */
+const WIRING = {
+  'no-code-injection-in-tool': noCodeInjectionInTool,
+  'no-command-injection-in-tool': noCommandInjectionInTool,
+  'no-credential-leak-in-tool': noCredentialLeakInTool,
+  'no-duplicate-tool-name': noDuplicateToolName,
+  'no-path-traversal-in-tool': noPathTraversalInTool,
+  'no-predictable-session-id': noPredictableSessionId,
+  'no-shared-stateless-transport': noSharedStatelessTransport,
+  'no-sql-injection-in-tool': noSqlInjectionInTool,
+  'no-ssrf-in-tool': noSsrfInTool,
+  'no-tool-description-injection': noToolDescriptionInjection,
+  'no-untrusted-stdio-command': noUntrustedStdioCommand,
+  'no-untrusted-tool-metadata-in-prompt': noUntrustedToolMetadataInPrompt,
+  'no-unvalidated-tool-args': noUnvalidatedToolArgs,
+  'require-http-transport-hardening': requireHttpTransportHardening,
+  'require-tool-input-schema': requireToolInputSchema,
+} as const;
+
 describe('eslint-plugin-mcp-sdk-security', () => {
   it('exposes every rule under its documented id', () => {
-    expect(Object.keys(rules).sort()).toEqual([
-      'no-command-injection-in-tool',
-      'no-tool-description-injection',
-      'no-unvalidated-tool-args',
-      'require-tool-input-schema',
-    ]);
+    expect(Object.keys(rules).sort()).toEqual(Object.keys(WIRING));
     // Reference equality, not just presence: a rule id can be wired to the
     // wrong module and every id-based assertion still passes.
-    expect(rules['require-tool-input-schema']).toBe(requireToolInputSchema);
-    expect(rules['no-unvalidated-tool-args']).toBe(noUnvalidatedToolArgs);
-    expect(rules['no-tool-description-injection']).toBe(noToolDescriptionInjection);
-    expect(rules['no-command-injection-in-tool']).toBe(noCommandInjectionInTool);
+    for (const [id, rule] of Object.entries(WIRING))
+      expect(rules[id]).toBe(rule);
   });
 
   it('names itself for the oxlint loader', () => {
@@ -41,34 +64,57 @@ describe('eslint-plugin-mcp-sdk-security', () => {
   });
 
   it('ships minimal, recommended and strict configs', () => {
-    expect(Object.keys(configs).sort()).toEqual(['minimal', 'recommended', 'strict']);
+    expect(Object.keys(configs).sort()).toEqual([
+      'minimal',
+      'recommended',
+      'strict',
+    ]);
   });
 
   it('enables the rule under the mcp-sdk-security namespace in every config', () => {
     for (const config of Object.values(configs)) {
       expect(config.plugins).toHaveProperty('mcp-sdk-security');
-      expect(config.rules?.['mcp-sdk-security/require-tool-input-schema']).toBe('error');
+      expect(config.rules?.['mcp-sdk-security/require-tool-input-schema']).toBe(
+        'error',
+      );
     }
   });
 
-  it('turns every rule on in strict, by name', () => {
+  it('turns every rule on in strict, by name, at its recommended level', () => {
     // Derived from `rules`, so this fails the moment a rule is added to the
     // plugin and not to the preset. A count comparison would not: it passes if
     // strict drops one rule and picks up any other mcp-sdk-security key.
     const strictRules = configs.strict.rules ?? {};
+    const recommended = configs.recommended.rules ?? {};
     for (const ruleName of Object.keys(rules)) {
-      expect(strictRules[`mcp-sdk-security/${ruleName}`]).toBe('error');
+      const id = `mcp-sdk-security/${ruleName}`;
+      expect(strictRules[id]).toBe(recommended[id] ?? 'error');
     }
     expect(Object.keys(strictRules).length).toBe(Object.keys(rules).length);
   });
 
+  it('sets each rule to error at CVSS 7.0 and above, warn below (new rules)', () => {
+    // The 2026-10 missing-detections rules follow the plugin's severity
+    // policy; require-tool-input-schema (5.3) predates it and stays in minimal.
+    const recommended = configs.recommended.rules ?? {};
+    for (const [ruleName, rule] of Object.entries(rules)) {
+      if (ruleName === 'require-tool-input-schema') continue;
+      const cvss = (rule.meta.docs as { cvss: number }).cvss;
+      expect(recommended[`mcp-sdk-security/${ruleName}`], ruleName).toBe(
+        cvss >= 7 ? 'error' : 'warn',
+      );
+    }
+  });
+
   it('keeps no-tool-description-injection out of minimal', () => {
-    // Promoted to recommended after the zero-deferral pass: it now resolves
-    // consts and relative imports and reports only text it can show is
-    // dynamic (benchmarks/audits/2026-10-10-fp-fn-mcp-sdk-security.md). It
-    // still reports a description returned by a call, which minimal — "every
-    // finding is a defect by construction" — does not accept.
-    expect(configs.minimal.rules?.['mcp-sdk-security/no-tool-description-injection']).toBeUndefined();
+    // In recommended since the zero-deferral pass. Since the 2026-10-11
+    // real-code scan it reports only text followed back to a client, a remote
+    // service or a file's contents (benchmarks/audits/2026-10-10-fp-fn-mcp-sdk-security.md).
+    // It stays out of minimal until that narrowed rule has a measured
+    // false-positive profile of its own.
+    expect(
+      configs.minimal.rules?.['mcp-sdk-security/no-tool-description-injection'],
+    ).toBeUndefined();
   });
 
   it('pins the exact rule set of every preset', () => {
@@ -78,12 +124,9 @@ describe('eslint-plugin-mcp-sdk-security', () => {
       'mcp-sdk-security/no-command-injection-in-tool',
       'mcp-sdk-security/require-tool-input-schema',
     ]);
-    expect(ids('recommended')).toEqual([
-      'mcp-sdk-security/no-command-injection-in-tool',
-      'mcp-sdk-security/no-tool-description-injection',
-      'mcp-sdk-security/no-unvalidated-tool-args',
-      'mcp-sdk-security/require-tool-input-schema',
-    ]);
+    expect(ids('recommended')).toEqual(
+      Object.keys(WIRING).map((id) => `mcp-sdk-security/${id}`),
+    );
   });
 
   /**
@@ -113,7 +156,27 @@ describe('eslint-plugin-mcp-sdk-security', () => {
       },
     );
 
-    it('the rules table marks 💼 on exactly the recommended rules', () => {
+    it('the rules table marks ⚠️ on exactly the rules recommended at warn', () => {
+      const table = readme.slice(
+        readme.indexOf('<!-- AUTO-GENERATED:RULES_TABLE:START'),
+        readme.indexOf('<!-- AUTO-GENERATED:RULES_TABLE:END'),
+      );
+      const warned = table
+        .split('\n')
+        .filter(
+          (line) =>
+            line.startsWith('| [') && line.split('|')[8]!.includes('⚠️'),
+        )
+        .map((row) => /^\| \[([a-z0-9-]+)\]/.exec(row)![1])
+        .sort();
+      const atWarn = Object.entries(configs.recommended.rules ?? {})
+        .filter(([, level]) => level === 'warn')
+        .map(([id]) => id.replace('mcp-sdk-security/', ''))
+        .sort();
+      expect(warned).toEqual(atWarn);
+    });
+
+    it('the rules table marks 💼 on exactly the rules recommended at error', () => {
       const table = readme.slice(
         readme.indexOf('<!-- AUTO-GENERATED:RULES_TABLE:START'),
         readme.indexOf('<!-- AUTO-GENERATED:RULES_TABLE:END'),
@@ -124,7 +187,12 @@ describe('eslint-plugin-mcp-sdk-security', () => {
         .filter((row) => row.split('|')[7]!.includes('💼'))
         .map((row) => /^\| \[([a-z0-9-]+)\]/.exec(row)![1])
         .sort();
-      expect(marked).toEqual(configured('recommended'));
+      // A rule recommended at `warn` carries ⚠️ instead (asserted above).
+      const atError = Object.entries(configs.recommended.rules ?? {})
+        .filter(([, level]) => level === 'error')
+        .map(([id]) => id.replace('mcp-sdk-security/', ''))
+        .sort();
+      expect(marked).toEqual(atError);
     });
 
     it('does not claim recommended enables every rule', () => {
