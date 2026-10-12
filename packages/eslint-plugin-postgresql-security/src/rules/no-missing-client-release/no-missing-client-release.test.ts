@@ -433,6 +433,31 @@ describe('no-missing-client-release — fp/fn review 2026-10', () => {
         code: "const pool = new Pool();\nexport async function f(id) { const client = await pool.connect(); try { await client.query('SELECT 1', [id]); } catch (err) { console.error(err); } await client.query('SELECT 2'); client.release(); }",
         errors: [{ messageId: 'releaseNotGuaranteed' }],
       },
+      {
+        name: 'a continue in the try skips the release after it',
+        code: "const pool = new Pool();\nexport async function f(ids) { for (const id of ids) { const client = await pool.connect(); try { if (!id) continue; await client.query('SELECT 1', [id]); } catch (err) { console.error(err); } client.release(); } }",
+        errors: [{ messageId: 'releaseNotGuaranteed' }],
+      },
+      {
+        name: 'a break in the try skips the release after it',
+        code: "const pool = new Pool();\nexport async function f(ids) { while (ids.length) { const client = await pool.connect(); try { if (!ids[0]) break; await client.query('SELECT 1', [ids.shift()]); } catch (err) { console.error(err); } client.release(); } }",
+        errors: [{ messageId: 'releaseNotGuaranteed' }],
+      },
+      {
+        name: 'a catch that continues without releasing skips the release after the try',
+        code: "const pool = new Pool();\nexport async function f(ids) { for (const id of ids) { const client = await pool.connect(); try { await client.query('SELECT 1', [id]); } catch (err) { continue; } client.release(); } }",
+        errors: [{ messageId: 'releaseNotGuaranteed' }],
+      },
+      {
+        name: 'a catch that can return before its own release leaks on that path',
+        code: "const pool = new Pool();\nexport async function f(id, skip) { const client = await pool.connect(); try { await client.query('SELECT 1', [id]); } catch (err) { if (skip) return null; client.release(err); throw err; } client.release(); }",
+        errors: [{ messageId: 'releaseNotGuaranteed' }],
+      },
+      {
+        name: 'a catch that releases only conditionally before rethrowing leaks on the other branch',
+        code: "const pool = new Pool();\nexport async function f(id) { const client = await pool.connect(); try { await client.query('SELECT 1', [id]); } catch (err) { if (err.fatal) client.release(err); throw err; } client.release(); }",
+        errors: [{ messageId: 'releaseNotGuaranteed' }],
+      },
     ]),
   });
 });

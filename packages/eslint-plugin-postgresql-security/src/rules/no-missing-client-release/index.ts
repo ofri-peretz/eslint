@@ -196,14 +196,24 @@ function isInCatchOf(
   return false;
 }
 
+/** Statements that leave a block somewhere other than its next statement. */
+const JUMPS: readonly TSESTree.Node['type'][] = [
+  AST_NODE_TYPES.ReturnStatement,
+  AST_NODE_TYPES.ThrowStatement,
+  AST_NODE_TYPES.BreakStatement,
+  AST_NODE_TYPES.ContinueStatement,
+];
+
 /**
  * Is this release the statement right after a `try … catch`, reached by every
  * path out of it that does not release on its own?
  *
- * The query succeeding falls out of the `try` block into it. The query
- * throwing falls out of the `catch` into it too when the catch swallows the
- * error; a catch that rethrows or returns never gets here, so it has to
- * release on its own.
+ * The query succeeding falls out of the `try` block into it, unless the try
+ * returns, breaks or continues first (a throw goes to the catch). The query
+ * throwing falls out of the `catch` into it too when the catch has no jump in
+ * it at all. A catch that can rethrow, return, break or continue never gets
+ * here on that path, so it has to release on its own — as a direct statement,
+ * before anything in it can jump.
  */
 function releaseAfterTry(
   release: TSESTree.Node,
@@ -215,15 +225,25 @@ function releaseAfterTry(
   if (
     previous?.type !== AST_NODE_TYPES.TryStatement ||
     previous.handler === null ||
-    containsReturn(previous.block)
+    contains(previous.block, [
+      AST_NODE_TYPES.ReturnStatement,
+      AST_NODE_TYPES.BreakStatement,
+      AST_NODE_TYPES.ContinueStatement,
+    ])
   ) {
     return false;
   }
-  const swallows = !contains(previous.handler, [
-    AST_NODE_TYPES.ReturnStatement,
-    AST_NODE_TYPES.ThrowStatement,
-  ]);
-  return swallows || releases.some((other) => isInCatchOf(other, previous));
+  const catchBody = previous.handler.body;
+  if (!contains(catchBody, JUMPS)) return true;
+  return releases.some((other) => {
+    const inCatch = enclosingBlock(other);
+    return (
+      inCatch?.block === catchBody &&
+      !catchBody.body
+        .slice(0, inCatch.index)
+        .some((statement) => contains(statement, JUMPS))
+    );
+  });
 }
 
 /**
