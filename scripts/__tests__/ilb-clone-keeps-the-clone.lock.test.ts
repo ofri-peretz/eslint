@@ -158,12 +158,19 @@ describe('cloneRepo never deletes a clone it cannot replace', () => {
     expect(existsSync(join(dir, 'MINE.txt'))).toBe(true);
   });
 
-  it('re-pins an existing clone in place, keeping its files', () => {
-    const dir = existingClone(shaB);
+  it('re-pins a clean existing clone in place, rather than replacing it', () => {
+    // No local work here: a clone holding any goes to the staging path instead
+    // (checkout carries an edit to a file both commits share). A marker in the
+    // clone's own .git/config survives an in-place re-pin and nothing else.
+    const dir = dirOf();
+    git('clone', '--quiet', url, dir);
+    git('-C', dir, 'checkout', '--quiet', '--detach', shaB);
+    git('-C', dir, 'config', 'ilb.marker', 'original');
 
     expect(cloneRepo(spec(shaA), bench)).toBe(dir);
     expect(head(dir)).toBe(shaA);
-    expect(existsSync(join(dir, 'MINE.txt'))).toBe(true);
+    expect(git('-C', dir, 'config', 'ilb.marker')).toBe('original');
+    expect(leftovers()).toEqual([]);
   });
 
   it('puts the old clone back if the replacement cannot be moved into place', () => {
