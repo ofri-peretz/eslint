@@ -11,6 +11,7 @@ autofix: false
 > **Keywords:** SQL injection, CWE-89, OWASP A03:2021, Prisma, $queryRaw, $executeRaw, $queryRawUnsafe, identifier injection, ORDER BY injection, allowlist
 
 <!-- @rule-summary -->
+
 Disallow interpolating table, column or sort identifiers into a Prisma $queryRaw / $executeRaw template, where bind parameters cannot reach them.
 <!-- @/rule-summary -->
 
@@ -24,24 +25,24 @@ a `$queryRaw` or `$executeRaw` template. This rule is part of [`eslint-plugin-pr
 
 ## Quick Summary
 
-| Aspect            | Details                                                                          |
-| ----------------- | -------------------------------------------------------------------------------- |
-| **CWE Reference** | [CWE-89](https://cwe.mitre.org/data/definitions/89.html) (SQL Injection)          |
-| **Severity**      | Critical (CVSS 9.8)                                                              |
-| **Auto-Fix**      | ❌ No auto-fix available                                                         |
-| **Category**      | Security                                                                         |
+| Aspect            | Details                                                                  |
+| ----------------- | ------------------------------------------------------------------------ |
+| **CWE Reference** | [CWE-89](https://cwe.mitre.org/data/definitions/89.html) (SQL Injection) |
+| **Severity**      | Critical (CVSS 9.8)                                                      |
+| **Auto-Fix**      | ❌ No auto-fix available                                                 |
+| **Category**      | Security                                                                 |
 
 ## Why this matters
 
 Prisma ships both spellings and names one of them "Unsafe":
 
 ```ts
-await prisma.$queryRawUnsafe(`SELECT * FROM ${table}`);  // flagged by no-unsafe-query
-await prisma.$queryRaw`SELECT * FROM ${table}`;          // flagged by this rule
+await prisma.$queryRawUnsafe(`SELECT * FROM ${table}`); // flagged by no-unsafe-query
+await prisma.$queryRaw`SELECT * FROM ${table}`; // flagged by this rule
 ```
 
 A developer who moves from the first line to the second — exactly what the
-`Unsafe` suffix tells them to do — parameterizes every *value* in the query and
+`Unsafe` suffix tells them to do — parameterizes every _value_ in the query and
 leaves the identifier hole wide open. The migration feels like a fix. Nothing
 in Prisma's own tooling says otherwise.
 
@@ -79,16 +80,18 @@ await prisma.$executeRaw`UPDATE ${table} SET active = ${flag}`;
 await prisma.$queryRaw`SELECT * FROM users WHERE id = ${id} LIMIT ${n}`;
 
 // ✅ let the query builder type it — no raw SQL, nothing to get wrong
-const column = ({ name: 'name', created: 'created_at' })[input] ?? 'id';
-await prisma.user.findMany({ orderBy: { [column]: dir === 'desc' ? 'desc' : 'asc' } });
+const column = { name: 'name', created: 'created_at' }[input] ?? 'id';
+await prisma.user.findMany({
+  orderBy: { [column]: dir === 'desc' ? 'desc' : 'asc' },
+});
 ```
 
 ### If you must build the SQL yourself
 
-An allowlist makes the *query* safe, but it does not make the *line* lint-clean:
+An allowlist makes the _query_ safe, but it does not make the _line_ lint-clean:
 
 ```ts
-const column = ({ name: 'name', created: 'created_at' })[input] ?? 'id';
+const column = { name: 'name', created: 'created_at' }[input] ?? 'id';
 // eslint-disable-next-line prisma-security/no-unsafe-query -- column comes from a closed allowlist
 await prisma.$queryRawUnsafe(`SELECT * FROM users ORDER BY ${column}`);
 ```
@@ -138,6 +141,14 @@ disable it on that line with a reason rather than switching the rule off:
 // eslint-disable-next-line prisma-security/no-raw-identifier-interpolation -- TABLE is a module constant
 await prisma.$queryRaw`SELECT * FROM ${TABLE}`;
 ```
+
+## What is an identifier hole (2026-10 review)
+
+The tag is matched through its import — `import { sql as q } from '@prisma/client'`
+still checks ``q`…` ``. `Prisma.sql` fragments are checked like `$queryRaw`. A hole is not reported when it holds something
+the driver renders itself: a nested `Prisma.sql` fragment, `Prisma.join`, `Prisma.empty`, or `Prisma.raw()` over fixed text, or a value the file proves fixed (a literal,
+a constant, a closed literal-union type). A query RESULT is not a table and
+is still reported. Test files are skipped.
 
 ## Further Reading
 

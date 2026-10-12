@@ -11,6 +11,7 @@ autofix: false
 > **Keywords:** unscoped mutation, mass deletion, CWE-284, OWASP A01:2021, Prisma, @prisma/client, bulk delete, bulk update
 
 <!-- @rule-summary -->
+
 Require a `where` filter on Prisma bulk mutations, so deleteMany and updateMany cannot rewrite or delete every row in the table.
 <!-- @/rule-summary -->
 
@@ -75,6 +76,15 @@ A filter built elsewhere (`prisma.user.deleteMany(buildFilter(req.query))`) cann
 Disable this rule in maintenance scripts, seeders, and test fixtures whose job is
 to clear a table. Prefer a scoped `eslint-disable-next-line` on the specific call
 over switching the rule off for the whole project.
+
+## How a mutation is recognised (2026-10 review)
+
+The receiver is judged by where it is written — an import of the driver, a
+client built from it, a transaction handle it passes to a callback, a typed
+parameter or class member, or a relative module that exports one — never by
+its name. A `Map` or `Set` is never a table; an untraceable client reports when the call reads a model off it (`db.user.deleteMany()`).
+
+Test files are skipped.
 
 ## Further reading
 

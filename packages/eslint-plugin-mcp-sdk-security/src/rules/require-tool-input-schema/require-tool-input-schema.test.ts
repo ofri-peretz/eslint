@@ -537,3 +537,41 @@ ruleTester.run('require-tool-input-schema', requireToolInputSchema, {
     },
   ],
 });
+
+describe('1.0 independent review (2026-10-12)', () => {
+  ruleTester.run('review', requireToolInputSchema, {
+    valid: [
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: a method reading only the request context
+        name: 'precision lock: a class method handler that reads only the request context',
+        code:
+          "import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';\n" +
+          'class S {\n  server = new McpServer({ name: "x", version: "1" });\n' +
+          '  constructor() { this.server.registerTool("whoami", { description: "w" }, this.who.bind(this)); }\n' +
+          '  async who(foo) { return { content: [{ type: "text", text: String(foo.sessionId) }] }; }\n}',
+      },
+    ],
+    invalid: [
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: handlers passed as bound methods were never read
+        name: 'FN: a class method handler, passed bound, that reads arguments with no schema',
+        code:
+          "import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';\n" +
+          'class S {\n  server = new McpServer({ name: "x", version: "1" });\n' +
+          '  constructor() { this.server.registerTool("read", { description: "r" }, this.read.bind(this)); this.server.tool("list", this.list); }\n' +
+          '  async read({ path }) { return { content: [] }; }\n' +
+          '  list = async ({ dir }) => ({ content: [] });\n}',
+        errors: [
+          {
+            messageId: 'missingInputSchema',
+            data: { tool: 'read', arg: 'path' },
+          },
+          {
+            messageId: 'missingInputSchema',
+            data: { tool: 'list', arg: 'dir' },
+          },
+        ],
+      },
+    ],
+  });
+});

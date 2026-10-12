@@ -69,7 +69,7 @@ import { fileUsesMcpSdk } from '../../utils/mcp-evidence';
 import { valueResolverFor } from '../../utils/module-resolver';
 import { createHandlerCollector } from '../../utils/tool-handlers';
 import { constInitializer, propertyKey } from '../../utils/tool-registration';
-import { createFlow } from '../../utils/value-flow';
+import { createFlow, flowOptionsFor } from '../../utils/value-flow';
 
 type MessageIds = 'toolArgToShell';
 
@@ -367,8 +367,11 @@ export const noCommandInjectionInTool = createRule<[], MessageIds>({
       },
 
       'Program:exit'() {
-        const carries = createFlow(context.sourceCode, (fn) =>
-          handlers.roots.get(fn),
+        const carries = createFlow(
+          context.sourceCode,
+          (fn) => handlers.roots.get(fn),
+          undefined,
+          flowOptionsFor(context),
         );
         for (const candidate of candidates) {
           const taint = carries(candidate.node);

@@ -21,6 +21,19 @@
  * The rule must stay in a driver-scoped plugin: it keys on driver method
  * names, not language primitives, so it does not belong in the code-agnostic
  * plugins (`secure-coding`, `node-security`, `browser-security`).
+ *
+ * ## What is reported (2026-10 FP/FN review)
+ *
+ * An interpolated or concatenated value is reported only when the file cannot
+ * prove it safe — see `sql-safety.ts`. `${TABLE}` bound to a literal, a `?`
+ * placeholder list, a ternary between two keywords and the driver's own
+ * escapers are no longer findings; a parameter, request data or an unknown
+ * call still is.
+ *
+ * A receiver is classified by where it is written (`driver-origin.ts`), never
+ * by its name: a receiver provably from ANOTHER library (`/re/.exec`,
+ * `child_process.exec`, a GraphQL client's `query`) is never a sink, and the
+ * SQL-keyword gate is waived for a receiver proven to be the driver itself.
  */
 
 // AST_NODE_TYPES must come from the local shim, not upstream. It is an enum —
@@ -29,13 +42,48 @@
 // "Cannot find module '@typescript-eslint/utils'" on a clean install. Types are
 // erased at compile time and stay safe to import from upstream.
 import { AST_NODE_TYPES } from '../ast-node-types';
-import { propertyName } from '../ast/spellings';
+import { objectKeyName, propertyName } from '../ast/spellings';
+import { unwrapTypeSyntax } from '../ast/type-syntax';
 import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
 import { formatLLMMessage, MessageIcons } from '../messaging';
 import { createModuleEvidence } from './module-evidence';
+import { isTestFilePath } from './rule-creator';
+import { createOriginClassifier, isFunctionNode } from './driver-origin';
+import { isRequestPayload } from './request-source';
+import { createSqlSafety, sqlStaticText } from './sql-safety';
+import {
+  type SqlHole,
+  isQuoted,
+  isRequestDerived,
+  isValuePosition,
+  sqlHoles,
+} from './sql-position';
+import {
+  type Env,
+  envOf,
+  follow,
+  importSpecifierOf,
+  lookup,
+  returnedValues,
+  valueAt,
+} from './value-follow';
 
 /** Message ids every rule built by this factory reports. */
 export type SqlInjectionMessageIds = 'noUnsafeQuery' | 'unsafeTemplateLiteral';
+
+/** A raw-SQL fragment sink: a method whose argument at `arg` is SQL text. */
+export interface SqlFragmentSink {
+  /** Method name, e.g. `whereRaw`. */
+  readonly name: string;
+  /** Argument index holding the SQL text. Default `0`. */
+  readonly arg?: number;
+  /**
+   * Only on a receiver PROVEN to come from the plugin's modules. For a name
+   * other libraries also use (`raw`), so a same-named method of an unrelated
+   * object is never a sink.
+   */
+  readonly requireDriverReceiver?: boolean;
+}
 
 export interface SqlInjectionRuleConfig {
   /**
@@ -57,8 +105,58 @@ export interface SqlInjectionRuleConfig {
       readonly confidence: 'high' | 'medium' | 'low';
     };
   };
-  /** Method names treated as raw-SQL sinks, e.g. `['query']` or `['query', 'raw', 'execute']`. */
+  /**
+   * Method names that execute a whole SQL STATEMENT passed as argument 0,
+   * e.g. `['query']` or `['prepare', 'exec']`. Subject to the keyword gate
+   * when `requireSqlKeywords` is set and the receiver is not proven to be the
+   * driver.
+   */
   readonly methods: readonly string[];
+  /**
+   * Methods that take a raw SQL FRAGMENT — `whereRaw`, `orderByRaw`,
+   * `Sequelize.literal`, `sql.raw` — never keyword-gated: a fragment carries
+   * no statement verb.
+   */
+  readonly fragmentMethods?: readonly (string | SqlFragmentSink)[];
+  /**
+   * Functions imported from the plugin's modules whose argument 0 is a raw
+   * SQL fragment — objection's `raw('…')`.
+   */
+  readonly fragmentFunctions?: readonly string[];
+  /**
+   * Functions imported from the plugin's modules that take a callback
+   * returning a raw SQL fragment, whose first parameter is the column alias
+   * the driver substitutes — TypeORM's `Raw((alias) => \`${alias} > 1\`)`.
+   */
+  readonly aliasCallbacks?: readonly string[];
+  /**
+   * Methods whose result is a prepared statement or a query builder, whose
+   * own methods take bound VALUES — better-sqlite3's `db.prepare(sql)` then
+   * `.get(id)`, Drizzle's `db.insert(t)` then `.values(row)`. Request data
+   * handed to one of those is a parameter, not SQL text.
+   */
+  readonly statementFactories?: readonly string[];
+  /**
+   * Properties of a query-options object that hold the statement text —
+   * mysql2's `query({ sql, values })`.
+   */
+  readonly sqlTextProperties?: readonly string[];
+  /**
+   * Driver functions whose result is escaped SQL text (`escape`, `escapeId`,
+   * `format`). A member call of that name on a receiver not provably from
+   * another library, or a binding imported under that name from the modules.
+   */
+  readonly escapers?: readonly string[];
+  /**
+   * Standalone escaping libraries for this driver whose `escapers` count too —
+   * `sqlstring`, the escaper mysql and mysql2 are built on.
+   */
+  readonly escaperModules?: readonly string[];
+  /**
+   * Members of the driver whose result is a parameterised fragment rather
+   * than text (`Prisma.join`, `sql.identifier`, `knex.ref`).
+   */
+  readonly fragmentFactories?: readonly string[];
   /**
    * Modules whose API these sinks belong to. **The rule stays silent in a file
    * that loads none of them** — by `import`, `require`, `await import()` or
@@ -76,15 +174,26 @@ export interface SqlInjectionRuleConfig {
    * scan, nothing to go stale, and a file that does not import the driver is
    * one this rule genuinely has nothing to say about.
    *
+   * One exception keeps that partition: a sink the code-agnostic
+   * `secure-coding/no-sql-injection` does not own (anything but `query` /
+   * `execute`) also reports in a file that reaches the driver only through a
+   * RELATIVE import, when its receiver is read from disk and proven to be the
+   * driver's — `import prisma from './lib/prisma'; prisma.$queryRawUnsafe(…)`.
+   *
    * Matched against the specifier's package root, so `'mysql2/promise'`
    * matches `'mysql2'` and `'@prisma/client/edge'` matches `'@prisma/client'`.
    */
   readonly modules: readonly string[];
   /**
-   * Require SQL keywords in the *static* part of the string before reporting.
-   * Precision guard for broad sink lists (`.raw()`, `.execute()` are not
-   * SQL-only names). `false` keeps the historical pg behaviour: any
-   * interpolation into a sink is a finding.
+   * `"…"` delimits a string in this driver's default dialect (MySQL), not an
+   * identifier — so `= "${x}"` is a value position.
+   */
+  readonly doubleQuotedStrings?: boolean;
+  /**
+   * Require the *static* part of a STATEMENT sink's text to read as a SQL
+   * statement (`SELECT … FROM`, `INSERT INTO`, `UPDATE … SET` …) before
+   * reporting, unless the receiver is proven to be the driver. Precision
+   * guard for names other libraries share (`.get()`, `.run()`, `.execute()`).
    */
   readonly requireSqlKeywords: boolean;
   /** Remediation line in the emitted message. */
@@ -93,23 +202,43 @@ export interface SqlInjectionRuleConfig {
   readonly documentationLink: string;
 }
 
-const SQL_KEYWORDS =
-  /\b(?:select|insert|update|delete|drop|alter|truncate|union|from|where|values|set)\b/i;
+/**
+ * SQL statements, recognised by a verb **and** its companion keyword — the
+ * same shapes `postgresql-security/no-unsafe-query` recognises, plus the
+ * SQLite / MySQL statements that have no companion (`PRAGMA`, `SHOW`).
+ */
+const SQL_STATEMENTS: readonly RegExp[] = [
+  /^[\s(]*select\b[\s\S]*\bfrom\b/i,
+  /^[\s(]*select\s/i,
+  /^\s*insert\s+(?:or\s+\w+\s+|ignore\s+)?into\b/i,
+  /^\s*update\b[\s\S]*\bset\b/i,
+  /^\s*delete\s+from\b/i,
+  /^\s*(?:replace|merge)\s+into\b/i,
+  /^\s*with\b[\s\S]*\bas\s*\(/i,
+  /^\s*(?:create|drop|alter|truncate)\s+(?:unique\s+|temp(?:orary)?\s+|or\s+replace\s+)*(?:table|index|view|schema|database|sequence|trigger|function|procedure|user|role)\b/i,
+  /^\s*(?:pragma|attach|detach|vacuum|analyze|reindex|show|describe|explain)\b/i,
+  /^\s*call\s+[\w".`]+\s*\(/i,
+];
+
+/** Statement sinks `secure-coding/no-sql-injection` owns in driver-free files. */
+const PARTITION_SHARED_SINKS: ReadonlySet<string> = new Set([
+  'query',
+  'execute',
+]);
+
+/** Whether a string's static half reads as a SQL statement. */
+export function looksLikeSqlStatement(text: string): boolean {
+  return SQL_STATEMENTS.some((pattern) => pattern.test(text));
+}
 
 type UnsafeKind = 'concat' | 'template';
-
-const FUNCTION_TYPES = new Set<string>([
-  AST_NODE_TYPES.FunctionDeclaration,
-  AST_NODE_TYPES.FunctionExpression,
-  AST_NODE_TYPES.ArrowFunctionExpression,
-]);
 
 /** Nearest enclosing function of `node`, or `undefined` at module top level. */
 function enclosingFunction(
   node: TSESTree.Node,
 ): TSESTree.FunctionLike | undefined {
   for (let n = node.parent; n; n = n.parent) {
-    if (FUNCTION_TYPES.has(n.type)) return n as TSESTree.FunctionLike;
+    if (isFunctionNode(n)) return n;
   }
   return undefined;
 }
@@ -144,59 +273,32 @@ function callableName(fn: TSESTree.FunctionLike): string | undefined {
   return undefined;
 }
 
-/** Literal text of a string expression, ignoring interpolated/concatenated values. */
-function staticText(node: TSESTree.Node): string {
-  if (node.type === AST_NODE_TYPES.TemplateLiteral) {
-    return node.quasis.map((q) => q.value.raw).join(' ');
-  }
-  if (node.type === AST_NODE_TYPES.BinaryExpression) {
-    return `${staticText(node.left)} ${staticText(node.right)}`;
-  }
-  if (node.type === AST_NODE_TYPES.Literal && typeof node.value === 'string') {
-    return node.value;
-  }
-  return '';
-}
-
-/** Classify an expression as unsafe SQL construction, or `false` if it is not. */
-function classify(
-  node: TSESTree.Node,
-  requireSqlKeywords: boolean,
-): UnsafeKind | false {
-  let kind: UnsafeKind | false = false;
-  // Concatenation: "SELECT ... " + value
-  if (node.type === AST_NODE_TYPES.BinaryExpression && node.operator === '+') {
-    kind = 'concat';
-  }
-  // Interpolation: `SELECT ... ${value}`
-  if (
-    node.type === AST_NODE_TYPES.TemplateLiteral &&
-    node.expressions.length > 0
-  ) {
-    kind = 'template';
-  }
-  if (kind === false) return false;
-  // `+` is also numeric addition. Without at least one string literal in the
-  // expression there is no evidence this builds SQL at all, and an ungated
-  // instance would report `db.query(1 + offset)`. Templates are exempt: a
-  // template literal is always a string.
-  if (kind === 'concat' && staticText(node).trim() === '') return false;
-  if (requireSqlKeywords && !SQL_KEYWORDS.test(staticText(node))) return false;
-  return kind;
-}
-
 /**
  * Build a CWE-89 rule for the given sinks and remediation copy.
  *
- * Detects four shapes: direct concatenation into a sink, direct
- * interpolation into a sink, a variable tainted by either (including via
- * `+=`) that is later passed to a sink, and either of those passed to a
- * same-file helper that forwards the argument into a sink.
+ * Detects: an unproven value concatenated or interpolated into a sink's SQL
+ * text, directly or through a binding (including `+=` builders and a local
+ * function that returns the text); request data passed as the SQL text
+ * itself; and either of those passed to a same-file helper that forwards the
+ * argument into a sink.
  */
 export function createSqlInjectionRule(
   config: SqlInjectionRuleConfig,
 ): TSESLint.RuleModule<SqlInjectionMessageIds, []> {
-  const sinks = new Set(config.methods);
+  const statementSinks = new Set(config.methods);
+  const fragmentSinks = new Map<string, Required<SqlFragmentSink>>();
+  for (const sink of config.fragmentMethods ?? []) {
+    const spec = typeof sink === 'string' ? { name: sink } : sink;
+    fragmentSinks.set(spec.name, {
+      name: spec.name,
+      arg: spec.arg ?? 0,
+      requireDriverReceiver: spec.requireDriverReceiver ?? false,
+    });
+  }
+  const fragmentFunctions = new Set(config.fragmentFunctions ?? []);
+  const aliasCallbacks = new Set(config.aliasCallbacks ?? []);
+  const sqlTextProperties = new Set(config.sqlTextProperties ?? []);
+  const statementFactories = new Set(config.statementFactories ?? []);
 
   /**
    * Whether the file loads one of this rule's own modules, in any of the forms
@@ -212,6 +314,14 @@ export function createSqlInjectionRule(
    * `require` that a local binding has shadowed.
    */
   const usesModule = createModuleEvidence({ packages: config.modules });
+  const originOf = createOriginClassifier(config.modules);
+  const safety = createSqlSafety({
+    origin: originOf,
+    escapers: new Set(config.escapers ?? []),
+    fragmentFactories: new Set(config.fragmentFactories ?? []),
+    modules: config.modules,
+    escaperModules: config.escaperModules,
+  });
 
   return {
     meta: {
@@ -261,12 +371,12 @@ export function createSqlInjectionRule(
     },
     defaultOptions: [],
     create(context) {
-      const tainted = new Map<string, UnsafeKind>();
-      // Variables seeded with SQL-looking text. A dynamic-query builder puts
-      // the keywords in the seed (`let sql = 'SELECT * FROM t WHERE 1=1'`)
-      // and the injection in the appended fragment (`sql += ` AND n =
-      // ${n}``), which carries no keyword of its own.
-      const sqlish = new Set<string>();
+      // BENCHMARK-CRITERIA §B1: a security rule self-skips test files. A test
+      // that wipes a fixture table or builds a throwaway statement is not the
+      // shipped attack surface.
+      if (isTestFilePath(context.filename)) return {};
+
+      const env: Env = envOf(context);
       // Same-file query helpers: name -> index of the parameter this file was
       // observed handing to a real sink. `pool.query(sql, params)` inside
       // `const q = (sql, params) => …` makes `q` a sink at argument 0.
@@ -289,26 +399,211 @@ export function createSqlInjectionRule(
         name: string;
         index: number;
         arg: TSESTree.Node;
-        kind: UnsafeKind | undefined;
       }[] = [];
 
       /**
        * Whether this file imports the SDK these sinks belong to.
        *
        * Set once from the Program node — which ESLint visits before any of its
-       * children — so every visitor below can read it. Gating inside `report`
-       * rather than at each call site covers the deferred wrapper findings
-       * flushed at `Program:exit` too.
+       * children — so every visitor below can read it.
        */
       let ownsFile = false;
 
+      /**
+       * Is `node` — a sink's SQL argument — an unproven value spliced into
+       * SQL? Returns the kind of construction, or `false`.
+       *
+       * @param gate require the text to read as a SQL statement.
+       */
+      const judge = (
+        node: TSESTree.Node,
+        gate: boolean,
+        depth = 0,
+      ): UnsafeKind | false => {
+        const arg = unwrapTypeSyntax(node);
+        if (
+          arg.type === AST_NODE_TYPES.TemplateLiteral ||
+          (arg.type === AST_NODE_TYPES.BinaryExpression && arg.operator === '+')
+        ) {
+          if (
+            arg.type === AST_NODE_TYPES.TemplateLiteral &&
+            arg.expressions.length === 0
+          ) {
+            return false;
+          }
+          const kind: UnsafeKind =
+            arg.type === AST_NODE_TYPES.TemplateLiteral ? 'template' : 'concat';
+          const text = sqlStaticText(arg);
+          // `+` is also numeric addition. Without static text there is no
+          // evidence this builds SQL at all.
+          if (kind === 'concat' && text.trim() === '') return false;
+          if (gate && !looksLikeSqlStatement(text)) return false;
+          return sqlHoles(arg).some(isUnsafeHole) ? kind : false;
+        }
+        if (depth > 2) return false;
+        if (arg.type === AST_NODE_TYPES.Identifier) {
+          return judgeBinding(arg, gate, depth);
+        }
+        if (arg.type === AST_NODE_TYPES.CallExpression) {
+          // A builder written in this file: `db.query(build(req.query.tag))`.
+          const target = follow(valueAt(arg.callee, env));
+          if (target.env !== env || !isFunctionNode(target.node)) return false;
+          for (const result of returnedValues(target.node) ?? []) {
+            const kind = judge(result, gate, depth + 1);
+            if (kind) return kind;
+          }
+        }
+        return false;
+      };
+
+      /**
+       * A hole is a finding when the file cannot prove it fixed AND — in a
+       * fragment position, where no bind parameter exists — it is traced to
+       * the request. See `sql-position.ts`.
+       */
+      const isUnsafeHole = ({ expression, preceding }: SqlHole): boolean =>
+        !safety.isSafe(valueAt(expression, env), isQuoted(preceding)) &&
+        (isValuePosition(preceding, config.doubleQuotedStrings) ||
+          isRequestDerived(expression, env));
+
+      /**
+       * A binding handed to a sink: judged by every write it receives — its
+       * initialiser and each `=` / `+=` — and by the SQL text they add up to.
+       */
+      const judgeBinding = (
+        node: TSESTree.Identifier,
+        gate: boolean,
+        depth: number,
+      ): UnsafeKind | false => {
+        const variable = lookup(node.name, env.scopeOf(node));
+        // A parameter is the wrapper shape; anything else written in the file
+        // is judged by what is written to it.
+        if (
+          variable === null ||
+          !variable.defs.some((def) => def.type === 'Variable') ||
+          variable.defs.some((def) => def.type === 'Parameter')
+        ) {
+          return false;
+        }
+        const writes = variable.references
+          .filter((r) => r.isWrite() && r.writeExpr)
+          .map((r) => r.writeExpr as TSESTree.Node);
+        const text = writes.map(sqlStaticText).join(' ');
+        if (gate && !looksLikeSqlStatement(text)) return false;
+        for (const write of writes) {
+          const kind = judge(write, false, depth + 1);
+          if (kind) return kind;
+        }
+        return false;
+      };
+
+      /** Is this sink argument request data handed over as the SQL text itself? */
+      const isRequestText = (node: TSESTree.Node): boolean => {
+        let cursor = unwrapTypeSyntax(node);
+        // `String(x)` hands its argument through unchanged.
+        while (
+          cursor.type === AST_NODE_TYPES.CallExpression &&
+          cursor.callee.type === AST_NODE_TYPES.Identifier &&
+          cursor.callee.name === 'String' &&
+          cursor.arguments.length === 1
+        ) {
+          cursor = unwrapTypeSyntax(cursor.arguments[0]);
+        }
+        // `req.body.sql`, `body.sql` where `body = await req.json()`, `body`.
+        for (let link: TSESTree.Node = cursor; ; link = link.object) {
+          if (isRequestPayload(link, env)) return true;
+          if (link.type !== AST_NODE_TYPES.MemberExpression) return false;
+        }
+      };
+
       const report = (node: TSESTree.Node, kind: UnsafeKind): void => {
-        if (!ownsFile) return;
         context.report({
           node,
           messageId:
             kind === 'template' ? 'unsafeTemplateLiteral' : 'noUnsafeQuery',
         });
+      };
+
+      /**
+       * Whether the sink being judged is called on the handle itself
+       * (`pool.query(…)`), not on a builder or prepared statement one call
+       * further down (`db.prepare(sql).get(id)`, `db.insert(t).values(row)`),
+       * whose arguments are bound values rather than SQL text.
+       */
+      let requestTextSink = true;
+
+      /**
+       * Is this receiver a prepared statement or a query builder — the result
+       * of `db.prepare(sql)` / `db.insert(t)` — whose methods take bound
+       * values rather than SQL text?
+       */
+      const isStatementObject = (receiver: TSESTree.Node): boolean => {
+        const value = unwrapTypeSyntax(follow(valueAt(receiver, env)).node);
+        return (
+          value.type === AST_NODE_TYPES.CallExpression &&
+          value.callee.type === AST_NODE_TYPES.MemberExpression &&
+          statementFactories.has(propertyName(value.callee) ?? '')
+        );
+      };
+
+      /** Judge one sink argument and report it. */
+      const check = (arg: TSESTree.Node, gate: boolean): void => {
+        let text = unwrapTypeSyntax(arg);
+        if (
+          text.type === AST_NODE_TYPES.ObjectExpression &&
+          sqlTextProperties.size > 0
+        ) {
+          const property = text.properties.find(
+            (p): p is TSESTree.Property =>
+              p.type === AST_NODE_TYPES.Property &&
+              sqlTextProperties.has(objectKeyName(p) ?? ''),
+          );
+          if (property === undefined) return;
+          text = property.value as TSESTree.Expression;
+        }
+        const kind = judge(text, gate);
+        if (kind) {
+          report(text, kind);
+          return;
+        }
+        if (requestTextSink && isRequestText(text)) report(text, 'concat');
+      };
+
+      /** The name a callee identifier is imported under from the plugin's modules. */
+      const importedName = (callee: TSESTree.Identifier): string | null => {
+        const variable = lookup(callee.name, env.scopeOf(callee));
+        const specifier =
+          variable === null ? null : importSpecifierOf(variable);
+        return specifier !== null &&
+          config.modules.some(
+            (m) =>
+              specifier.source === m || specifier.source.startsWith(`${m}/`),
+          )
+          ? specifier.name
+          : null;
+      };
+
+      /**
+       * `Raw((alias) => \`${alias} = '${x}'\`)` — every hole but the alias the
+       * driver substitutes must be safe.
+       */
+      const checkAliasCallback = (node: TSESTree.CallExpression): void => {
+        const callback = node.arguments[0];
+        if (!callback || !isFunctionNode(callback)) return;
+        const alias = callback.params[0];
+        for (const result of returnedValues(callback) ?? []) {
+          const text = unwrapTypeSyntax(result);
+          if (text.type !== AST_NODE_TYPES.TemplateLiteral) continue;
+          const unsafe = sqlHoles(text).some(
+            (hole) =>
+              !(
+                hole.expression.type === AST_NODE_TYPES.Identifier &&
+                alias?.type === AST_NODE_TYPES.Identifier &&
+                hole.expression.name === alias.name
+              ) && isUnsafeHole(hole),
+          );
+          if (unsafe) report(text, 'template');
+        }
       };
 
       return {
@@ -326,60 +621,41 @@ export function createSqlInjectionRule(
             definitions.set(name, (definitions.get(name) ?? 0) + 1);
         },
 
-        // const query = "SELECT ..." + userId;
-        // const query = `SELECT ...${email}`;
-        VariableDeclarator(node: TSESTree.VariableDeclarator) {
-          if (node.id.type === AST_NODE_TYPES.Identifier && node.init) {
-            const kind = classify(node.init, config.requireSqlKeywords);
-            if (kind) tainted.set(node.id.name, kind);
-            if (SQL_KEYWORDS.test(staticText(node.init)))
-              sqlish.add(node.id.name);
-          }
-        },
-
-        // query += ` AND name = '${name}'`;
-        AssignmentExpression(node: TSESTree.AssignmentExpression) {
-          if (
-            node.operator === '+=' &&
-            node.left.type === AST_NODE_TYPES.Identifier
-          ) {
-            // Skip the keyword gate when the target was already seeded with
-            // SQL — the fragment alone rarely contains a keyword.
-            const gate =
-              config.requireSqlKeywords && !sqlish.has(node.left.name);
-            const kind = classify(node.right, gate);
-            if (kind) tainted.set(node.left.name, kind);
-            // A variable can acquire its SQL-ness here rather than at its
-            // declaration (`let sql = ''; sql += 'SELECT …${id}'`). Without
-            // this, the wrapper path's `sqlish` guard dropped that variable
-            // while the direct-sink path still reported it — the same code
-            // flagged at `pool.query(sql)` and silent at `q(sql)`.
-            if (SQL_KEYWORDS.test(staticText(node.right)))
-              sqlish.add(node.left.name);
-          }
-        },
-
         CallExpression(node: TSESTree.CallExpression) {
           // The name this call is written with: `db.query(…)` and
           // `db['query'](…)` both -> `query`, `q(…)` -> `q`. A method chosen at
           // RUNTIME (`db[verb](…)`) names nothing and stays out of reach, as
           // does an immediately invoked expression.
-          const isMember = node.callee.type === AST_NODE_TYPES.MemberExpression;
+          const callee = node.callee;
+          const isMember = callee.type === AST_NODE_TYPES.MemberExpression;
           const calleeName = isMember
-            ? (propertyName(node.callee as TSESTree.MemberExpression) ??
-              undefined)
-            : node.callee.type === AST_NODE_TYPES.Identifier
-              ? node.callee.name
+            ? (propertyName(callee) ?? undefined)
+            : callee.type === AST_NODE_TYPES.Identifier
+              ? callee.name
               : undefined;
           if (calleeName === undefined) return;
 
+          if (!isMember && ownsFile) {
+            const imported = importedName(callee as TSESTree.Identifier);
+            if (imported !== null && fragmentFunctions.has(imported)) {
+              requestTextSink = true;
+              if (node.arguments[0]) check(node.arguments[0], false);
+              return;
+            }
+            if (imported !== null && aliasCallbacks.has(imported)) {
+              checkAliasCallback(node);
+              return;
+            }
+          }
+
+          const fragment = isMember ? fragmentSinks.get(calleeName) : undefined;
           // A driver sink is always a *method* call. A bare `query(…)` is some
           // local function that happens to share the name, and stays a mere
           // wrapper candidate — matching it as a sink would report every
           // project with its own free-standing `query()` helper.
-          if (!isMember || !sinks.has(calleeName)) {
+          if (!isMember || (!statementSinks.has(calleeName) && !fragment)) {
             // Not a driver method. Bank it in case the callee turns out to be
-            // a local wrapper — the keyword gate is forced on here regardless
+            // a local wrapper — the keyword gate is forced on there regardless
             // of `requireSqlKeywords`, because "this identifier reaches a
             // sink" is weaker evidence than a literal driver call, and an
             // ungated instance would otherwise start reporting
@@ -387,16 +663,28 @@ export function createSqlInjectionRule(
             // `log` helper over `pool.query`.
             for (const [index, arg] of node.arguments.entries()) {
               if (arg.type === AST_NODE_TYPES.SpreadElement) continue;
-              const kind = classify(arg, true);
-              if (kind) pending.push({ name: calleeName, index, arg, kind });
-              else if (arg.type === AST_NODE_TYPES.Identifier)
-                pending.push({ name: calleeName, index, arg, kind: undefined });
+              pending.push({ name: calleeName, index, arg });
             }
             return;
           }
 
-          const queryArg = node.arguments[0];
-          if (!queryArg) return;
+          const receiver = originOf(
+            valueAt((callee as TSESTree.MemberExpression).object, env),
+          );
+          // A method of another library that shares the name: `/re/.exec`,
+          // `cp.exec`, `new Map().get`, a GraphQL client's `query`.
+          if (receiver === 'foreign') return;
+          if (fragment?.requireDriverReceiver && receiver !== 'ours') return;
+          if (
+            !ownsFile &&
+            !(receiver === 'ours' && !PARTITION_SHARED_SINKS.has(calleeName))
+          ) {
+            return;
+          }
+
+          const queryArg = node.arguments[fragment?.arg ?? 0];
+          if (!queryArg || queryArg.type === AST_NODE_TYPES.SpreadElement)
+            return;
 
           // A sink fed straight from a parameter is the wrapper shape:
           // `(sql, params) => pool.query(sql, params)`. Record which argument
@@ -416,38 +704,30 @@ export function createSqlInjectionRule(
             }
           }
 
-          const direct = classify(queryArg, config.requireSqlKeywords);
-          if (direct) {
-            report(queryArg, direct);
-            return;
-          }
-
-          if (queryArg.type === AST_NODE_TYPES.Identifier) {
-            const taint = tainted.get(queryArg.name);
-            if (taint) report(queryArg, taint);
-          }
+          const gate =
+            fragment === undefined &&
+            config.requireSqlKeywords &&
+            receiver !== 'ours';
+          requestTextSink = !isStatementObject(
+            (callee as TSESTree.MemberExpression).object,
+          );
+          check(queryArg, gate);
         },
 
         'Program:exit'() {
+          if (!ownsFile) return;
           // How many definitions of each name were proven to be wrappers.
           const proven = new Map<string, number>();
           for (const name of wrapperFns.values())
             proven.set(name, (proven.get(name) ?? 0) + 1);
 
-          for (const { name, index, arg, kind } of pending) {
+          for (const { name, index, arg } of pending) {
             if (wrappers.get(name) !== index) continue;
             // Every definition of this name must be a wrapper, or we cannot
             // tell which one a call site meant.
             if (definitions.get(name) !== proven.get(name)) continue;
-            if (kind) {
-              report(arg, kind);
-              continue;
-            }
-            // Tainted variable handed to the wrapper. `sqlish` keeps the
-            // forced keyword gate honest for the identifier path too.
-            const varName = (arg as TSESTree.Identifier).name;
-            const taint = tainted.get(varName);
-            if (taint && sqlish.has(varName)) report(arg, taint);
+            const kind = judge(arg, true);
+            if (kind) report(unwrapTypeSyntax(arg), kind);
           }
         },
       };

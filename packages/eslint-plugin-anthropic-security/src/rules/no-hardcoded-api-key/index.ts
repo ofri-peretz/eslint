@@ -24,7 +24,21 @@ export const noHardcodedApiKey = createSdkApiKeyRule({
   vendor: 'Anthropic',
   /** Covers the base SDK and the agent SDK, which share the client options. */
   modules: ['@anthropic-ai'],
-  keyProps: ['apiKey', 'authToken'],
+  /**
+   * Every credential option the published clients take: the API key and OAuth
+   * token, the webhook signing key, the Bedrock / AWS secret pair and session
+   * token, and the Vertex access token (`@anthropic-ai/*` 0.115, `client.ts`).
+   * The AWS *access key id* is left out: it identifies, the secret authenticates.
+   */
+  keyProps: [
+    'apiKey',
+    'authToken',
+    'webhookKey',
+    'awsSecretKey',
+    'awsSecretAccessKey',
+    'awsSessionToken',
+    'accessToken',
+  ],
   fixTemplate: 'new Anthropic({ {{prop}}: process.env.ANTHROPIC_API_KEY })',
   docsUrl:
     'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-anthropic-security/docs/rules/no-hardcoded-api-key.md',

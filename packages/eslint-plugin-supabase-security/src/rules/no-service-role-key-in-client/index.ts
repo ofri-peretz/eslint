@@ -14,16 +14,98 @@
  */
 
 import {
+  TSESLint,
   TSESTree,
+  createModuleListMatcher,
   createRule,
+  followConst,
   formatLLMMessage,
+  isCredentialShaped,
   MessageIcons,
   propertyName,
+  readObjectProperty,
+  resolveObjectLiteral,
+  resolveSdkExport,
+  sdkExportName,
 } from '@interlace/eslint-devkit';
 
-import { fileUsesSupabase } from '../../utils/supabase-evidence';
+import {
+  fileUsesSupabase,
+  SUPABASE_SCOPE,
+} from '../../utils/supabase-evidence';
 
-type MessageIds = 'publicPrefix' | 'inClientComponent';
+type MessageIds =
+  | 'publicPrefix'
+  | 'inClientComponent'
+  | 'inBrowserClient'
+  | 'hardcodedServiceRole';
+
+type SourceCode = Readonly<TSESLint.SourceCode>;
+
+/** SvelteKit's public environment modules — everything they export reaches the client. */
+const SVELTEKIT_STATIC_PUBLIC = '$env/static/public';
+const SVELTEKIT_DYNAMIC_PUBLIC = '$env/dynamic/public';
+
+/** Does a binding come from a `@supabase/*` package? */
+const ownsSupabase = createModuleListMatcher([SUPABASE_SCOPE]);
+
+/** Does a binding come from SvelteKit's dynamic public environment? */
+const ownsDynamicPublicEnv = (specifier: string): boolean =>
+  specifier === SVELTEKIT_DYNAMIC_PUBLIC;
+
+/**
+ * Factories whose client only ever runs in the browser: `@supabase/ssr`'s
+ * `createBrowserClient` and the auth-helpers generation before it. A key they
+ * receive ships in the bundle whether or not the file says `'use client'`.
+ * Matched on the export the callee resolves to, not the local name.
+ */
+const BROWSER_FACTORIES = new Set([
+  'createBrowserClient',
+  'createBrowserSupabaseClient',
+  'createClientComponentClient',
+  'createPagesBrowserClient',
+]);
+
+/**
+ * The name a module exports a binding under — for `$env/static/public` that
+ * is the environment variable itself, whatever the import renames it to.
+ */
+function exportedName(specifier: TSESTree.ImportSpecifier): string {
+  return specifier.imported.type === 'Identifier'
+    ? specifier.imported.name
+    : String(specifier.imported.value);
+}
+
+/** The claims a Supabase JWT carries in its payload, if the string is one. */
+function jwtRole(value: string): { role?: unknown; iss?: unknown } | undefined {
+  const parts = value.split('.');
+  if (parts.length !== 3 || !parts[0]!.startsWith('eyJ')) return undefined;
+  try {
+    // `atob`, not `Buffer`: the plugin also runs in the browser playground.
+    const json = atob(parts[1]!.replace(/-/g, '+').replace(/_/g, '/'));
+    const payload: unknown = JSON.parse(json);
+    return typeof payload === 'object' && payload !== null
+      ? (payload as { role?: unknown; iss?: unknown })
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Is this string a working service-role key?
+ *
+ * Read off the value itself: a legacy key is a JWT whose payload says
+ * `"role":"service_role"`, and a current one is an `sb_secret_` key. Excluded
+ * are the local-development keys every `supabase start` prints (issuer
+ * `supabase-demo`, public by design) and stand-ins that are not key-shaped
+ * (`sb_secret_xyz`).
+ */
+export function isServiceRoleKey(value: string): boolean {
+  if (value.startsWith('sb_secret_')) return isCredentialShaped(value);
+  const payload = jwtRole(value);
+  return payload?.role === 'service_role' && payload.iss !== 'supabase-demo';
+}
 
 /**
  * The name says what the key is. Supabase's own docs, dashboard and CLI all call
@@ -117,6 +199,32 @@ export const noServiceRoleKeyInClient = createRule<[], MessageIds>({
         fix: 'Read the service_role key from an unprefixed server-only variable (`SUPABASE_SERVICE_ROLE_KEY`) and use the anon key in the browser, which RLS is designed to constrain',
         documentationLink: 'https://supabase.com/docs/guides/api/api-keys',
       }),
+      inBrowserClient: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Supabase service_role Key Given to a Browser Client',
+        cwe: 'CWE-798',
+        owasp: 'A02:2021',
+        cvss: 9.8,
+        description:
+          "`{{factory}}` builds a client that runs in the browser, and it receives `{{name}}` — service_role bypasses Row Level Security entirely, and a browser client's key ships to every visitor",
+        severity: 'CRITICAL',
+        compliance: ['SOC2', 'PCI-DSS', 'ISO27001', 'GDPR'],
+        fix: 'Give the browser client the anon (publishable) key; keep service_role in a server-only module',
+        documentationLink: 'https://supabase.com/docs/guides/api/api-keys',
+      }),
+      hardcodedServiceRole: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Supabase service_role Key Hardcoded',
+        cwe: 'CWE-798',
+        owasp: 'A02:2021',
+        cvss: 9.8,
+        description:
+          'This string is a service_role key (a JWT whose role claim is service_role, or an sb_secret_ key) — committed, it is readable by anyone with the repository and by every bundle that includes this module, and it bypasses Row Level Security entirely',
+        severity: 'CRITICAL',
+        compliance: ['SOC2', 'PCI-DSS', 'ISO27001', 'GDPR'],
+        fix: 'Rotate the key in the Supabase dashboard, then read it from an unprefixed server-only environment variable',
+        documentationLink: 'https://supabase.com/docs/guides/api/api-keys',
+      }),
       inClientComponent: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Supabase service_role Key Read in a Client Component',
@@ -137,6 +245,19 @@ export const noServiceRoleKeyInClient = createRule<[], MessageIds>({
   create(context) {
     const program = context.sourceCode.ast;
     if (!fileUsesSupabase(program)) return {};
+    const sourceCode: SourceCode = context.sourceCode;
+
+    /*
+     * A literal service-role key is reported wherever it sits, server-only
+     * module or not: it is committed either way.
+     */
+    const literalVisitor = {
+      Literal(node: TSESTree.Literal): void {
+        if (typeof node.value === 'string' && isServiceRoleKey(node.value)) {
+          context.report({ node, messageId: 'hardcodedServiceRole' });
+        }
+      },
+    };
 
     /*
      * A module that imports `server-only` cannot be reached from the client — the
@@ -144,13 +265,45 @@ export const noServiceRoleKeyInClient = createRule<[], MessageIds>({
      * thing to do, so the rule abstains rather than reporting the one file that
      * has already done it right.
      */
-    if (importsServerOnly(program)) return {};
+    if (importsServerOnly(program)) return literalVisitor;
 
     const isClientComponent = hasUseClientDirective(program);
 
+    /**
+     * SvelteKit: `env.PUBLIC_…` on the `env` from `$env/dynamic/public` — the
+     * module only exposes `PUBLIC_` variables, and only to be read client-side.
+     */
+    function dynamicPublicEnvName(
+      node: TSESTree.MemberExpression,
+    ): string | undefined {
+      const binding = resolveSdkExport(node, sourceCode, ownsDynamicPublicEnv);
+      return binding !== undefined && binding.path.length === 2
+        ? sdkExportName(binding)
+        : undefined;
+    }
+
+    /**
+     * The service-role variable an argument reads, directly or through a const
+     * — or, for the auth-helpers factories that take an options object, under
+     * its `supabaseKey`.
+     */
+    function serviceRoleRead(node: TSESTree.Node): string | undefined {
+      const options = resolveObjectLiteral(node, sourceCode);
+      if (options !== undefined) {
+        const read = readObjectProperty(options, 'supabaseKey', sourceCode);
+        return read.kind === 'value' ? serviceRoleRead(read.node) : undefined;
+      }
+      const value = followConst(node, sourceCode);
+      if (value.type !== 'MemberExpression') return undefined;
+      const name = envVarName(value);
+      return name !== undefined && SERVICE_ROLE.test(name) ? name : undefined;
+    }
+
     return {
+      ...literalVisitor,
+
       MemberExpression(node): void {
-        const name = envVarName(node);
+        const name = envVarName(node) ?? dynamicPublicEnvName(node);
         if (name === undefined || !SERVICE_ROLE.test(name)) return;
 
         const prefix = PUBLIC_PREFIXES.find((candidate) =>
@@ -169,6 +322,49 @@ export const noServiceRoleKeyInClient = createRule<[], MessageIds>({
             node,
             messageId: 'inClientComponent',
             data: { name },
+          });
+        }
+      },
+
+      /*
+       * SvelteKit: `import { PUBLIC_…SERVICE_ROLE… } from '$env/static/public'`
+       * — the import itself is the publication. The imported (exported) name is
+       * the variable's name in the environment, whatever it is renamed to here.
+       */
+      ImportDeclaration(node): void {
+        if (node.source.value !== SVELTEKIT_STATIC_PUBLIC) return;
+        for (const specifier of node.specifiers) {
+          if (specifier.type !== 'ImportSpecifier') continue;
+          const variable = exportedName(specifier);
+          if (!SERVICE_ROLE.test(variable)) continue;
+          context.report({
+            node: specifier,
+            messageId: 'publicPrefix',
+            data: { name: variable, prefix: 'PUBLIC_' },
+          });
+        }
+      },
+
+      /*
+       * `createBrowserClient(url, process.env.SUPABASE_SERVICE_ROLE_KEY)` — no
+       * prefix and no directive, but the factory only builds browser clients.
+       */
+      CallExpression(node): void {
+        const binding = resolveSdkExport(node.callee, sourceCode, ownsSupabase);
+        if (binding === undefined) return;
+        const factory = sdkExportName(binding);
+        if (!BROWSER_FACTORIES.has(factory)) return;
+        for (const argument of node.arguments) {
+          // Only the unprefixed / no-directive case is new; the others report
+          // at the read itself.
+          const name = serviceRoleRead(argument);
+          if (name === undefined) continue;
+          if (PUBLIC_PREFIXES.some((p) => name.startsWith(p))) continue;
+          if (isClientComponent) continue;
+          context.report({
+            node: argument,
+            messageId: 'inBrowserClient',
+            data: { factory, name },
           });
         }
       },

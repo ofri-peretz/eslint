@@ -96,8 +96,7 @@ describe('no-raw-identifier-interpolation', () => {
           // The client is very often re-exported, so the base identifier
           // carries no information — the $-prefixed property is the gate.
           name: 'a locally re-exported client still reports',
-          code:
-            "import { db } from '@/lib/db';\nawait db.$queryRaw`SELECT * FROM ${table}`;",
+          code: "import { db } from '@/lib/db';\nawait db.$queryRaw`SELECT * FROM ${table}`;",
           errors: [{ messageId: 'identifierInterpolation' }],
         },
         {
@@ -112,5 +111,61 @@ describe('no-raw-identifier-interpolation', () => {
         },
       ],
     });
+  });
+});
+
+/**
+ * FP/FN review 2026-10-12 (benchmarks/audits/2026-10-12-fp-fn-prisma-security.md).
+ * Bindings are named `foo` / `bar` so no verdict can rest on a name.
+ */
+describe('no-raw-identifier-interpolation — fp/fn review 2026-10', () => {
+  const P =
+    "import { PrismaClient, Prisma } from '@prisma/client';\nconst foo = new PrismaClient();\n";
+  ruleTester.run('fp-fn review 2026-10', noRawIdentifierInterpolation, {
+    valid: [
+      {
+        // @found prisma-security FP/FN review 2026-10-12, synthetic probe (direction as a fragment)
+        name: 'FP: a sort direction chosen between two Prisma.sql fragments',
+        code:
+          P +
+          'export const h = (bar) => { const baz = bar.query.desc ? Prisma.sql`DESC` : Prisma.sql`ASC`; return foo.$queryRaw`SELECT * FROM "User" ORDER BY "name" ${baz}`; };',
+      },
+      {
+        // @found prisma-security FP/FN review 2026-10-12, synthetic probe (Prisma.raw of a literal union)
+        name: 'FP: Prisma.raw over a value typed as a closed set',
+        code:
+          P +
+          "export const h = (bar: 'asc' | 'desc') => foo.$queryRaw`SELECT * FROM \"User\" ORDER BY name ${Prisma.raw(bar)}`;",
+      },
+      {
+        name: 'Prisma.join and Prisma.empty are parameterised',
+        code:
+          P +
+          'export const h = (bar: number[], baz) => foo.$queryRaw`SELECT * FROM "User" WHERE id IN (${Prisma.join(bar)}) ${baz ? Prisma.sql`AND a = ${baz}` : Prisma.empty}`;',
+      },
+      {
+        name: "a member tag on another library's object",
+        code:
+          P +
+          "import { createBuilder } from 'some-builder';\nconst bar = createBuilder();\nexport const h = (baz) => bar.sql`SELECT * FROM ${baz}`;",
+      },
+    ],
+    invalid: [
+      {
+        // @found prisma-security FP/FN review 2026-10-12, synthetic probe (Prisma.sql fragment)
+        name: 'FN: a Prisma.sql fragment with an identifier hole',
+        code:
+          P +
+          'export const h = (bar) => Prisma.sql`SELECT * FROM ${bar.query.t}`;',
+        errors: [{ messageId: 'identifierInterpolation' }],
+      },
+      {
+        name: 'the client is recognised however it is named',
+        code:
+          P +
+          'export const h = (bar) => foo.$queryRaw`SELECT * FROM "User" ORDER BY ${bar.query.col}`;',
+        errors: [{ messageId: 'identifierInterpolation' }],
+      },
+    ],
   });
 });

@@ -5,6 +5,9 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, afterAll } from 'vitest';
 import * as parser from '@typescript-eslint/parser';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 import { noUnsafeQuery } from './index';
 
 RuleTester.afterAll = afterAll;
@@ -78,5 +81,69 @@ describe('no-unsafe-query', () => {
         },
       ],
     });
+  });
+});
+
+/**
+ * FP/FN review 2026-10-12 (benchmarks/audits/2026-10-12-fp-fn-prisma-security.md).
+ * Bindings are named `foo` / `bar` so no verdict can rest on a name.
+ */
+describe('no-unsafe-query — fp/fn review 2026-10', () => {
+  const P =
+    "import { PrismaClient, Prisma } from '@prisma/client';\nconst foo = new PrismaClient();\n";
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'prisma-uq-'));
+  fs.writeFileSync(
+    path.join(dir, 'prisma.ts'),
+    "import { PrismaClient } from '@prisma/client';\nconst g = globalThis as unknown as { prisma?: PrismaClient };\nexport const prisma = g.prisma ?? new PrismaClient();\nexport default prisma;\n",
+  );
+  const ROUTE = path.join(dir, 'route.ts');
+
+  ruleTester.run('fp-fn review 2026-10', noUnsafeQuery, {
+    valid: [
+      {
+        name: 'Prisma.raw over fixed text',
+        code:
+          P +
+          'const bar = \'DESC\';\nfoo.$queryRaw`SELECT * FROM "User" ORDER BY name ${Prisma.raw(bar)}`;',
+      },
+      {
+        name: '$queryRawUnsafe with positional parameters',
+        code:
+          P +
+          'export const h = (bar) => foo.$queryRawUnsafe(\'SELECT * FROM "User" WHERE name = $1\', bar.query.n);',
+      },
+    ],
+    invalid: [
+      {
+        // @found prisma-security FP/FN review 2026-10-12, synthetic probe (Prisma.raw)
+        name: 'FN: Prisma.raw over interpolated text',
+        code:
+          P +
+          'export const h = (bar) => foo.$queryRaw(Prisma.raw(`SELECT * FROM "User" WHERE id = ${bar.params.id}`));',
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        // @found prisma-security FP/FN review 2026-10-12, synthetic probe (Prisma.raw of request data)
+        name: 'FN: Prisma.raw over a request value',
+        code:
+          P +
+          'export const h = (bar) => foo.$queryRaw`SELECT * FROM ${Prisma.raw(String(bar.query.table))}`;',
+        errors: [{ messageId: 'noUnsafeQuery' }],
+      },
+      {
+        // @found prisma-security FP/FN review 2026-10-12, synthetic probe (client from lib/prisma)
+        name: 'FN: the client from a relative lib/prisma module, in a file that never imports Prisma',
+        filename: ROUTE,
+        code: "import foo from './prisma';\nexport async function POST(bar: Request) { const baz = await bar.json(); return foo.$queryRawUnsafe(`SELECT * FROM \"User\" WHERE email = '${baz.email}'`); }",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        // @found prisma-security FP/FN review 2026-10-12, synthetic probe (request text as the statement)
+        name: 'FN: request data handed over as the whole statement',
+        code:
+          P + 'export const h = (bar) => foo.$executeRawUnsafe(bar.body.sql);',
+        errors: [{ messageId: 'noUnsafeQuery' }],
+      },
+    ],
   });
 });

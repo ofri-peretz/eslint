@@ -35,11 +35,16 @@ export const noUnsafeQuery = createSqlInjectionRule({
   // Only files importing Sequelize's own query API.
   // Method names alone are shared across drivers; the import is the evidence.
   modules: ['sequelize', 'sequelize-typescript', '@nestjs/sequelize'],
-  methods: ['query', 'literal'],
-  // Both names are unambiguous inside a Sequelize codebase, and this plugin
-  // is only installed by Sequelize users — so no keyword gate, which would
-  // otherwise miss `literal(`${sortColumn}`)` (no SQL keyword of its own).
-  requireSqlKeywords: false,
+  methods: ['query'],
+  // `Sequelize.literal(…)` splices its argument in verbatim wherever it is
+  // used — `where`, `attributes`, `order` — so it is a FRAGMENT sink, never
+  // keyword-gated (`literal(\`${sortColumn}\`)` has no SQL keyword of its own).
+  fragmentMethods: ['literal'],
+  // `sequelize.escape(v)` returns a quoted SQL literal.
+  escapers: ['escape'],
+  // `query` is also a GraphQL / HTTP client method. The statement gate applies
+  // only when the receiver cannot be traced to Sequelize.
+  requireSqlKeywords: true,
   fix: 'Pass values via `replacements` or `bind` instead of interpolating them into the SQL string.',
   documentationLink: 'https://sequelize.org/docs/v7/querying/raw-queries/',
 });

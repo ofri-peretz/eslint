@@ -11,6 +11,7 @@ autofix: false
 > **Keywords:** command injection, CWE-78, MCP, Model Context Protocol, tool handler, child_process, execSync, spawn, agent security, RCE
 
 <!-- @rule-summary -->
+
 Disallow an MCP tool argument choosing the command a child_process call runs.
 <!-- @/rule-summary -->
 
@@ -23,12 +24,12 @@ Detects a tool handler's own parameter — used as, built into, or derived into 
 
 ## Quick Summary
 
-| Aspect            | Details                                                                          |
-| ----------------- | -------------------------------------------------------------------------------- |
-| **CWE Reference** | [CWE-78](https://cwe.mitre.org/data/definitions/78.html) (OS Command Injection)   |
-| **Severity**      | Critical (CVSS 9.8)                                                              |
-| **Auto-Fix**      | ❌ No auto-fix available                                                         |
-| **Category**      | Security                                                                         |
+| Aspect            | Details                                                                         |
+| ----------------- | ------------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-78](https://cwe.mitre.org/data/definitions/78.html) (OS Command Injection) |
+| **Severity**      | Critical (CVSS 9.8)                                                             |
+| **Auto-Fix**      | ❌ No auto-fix available                                                        |
+| **Category**      | Security                                                                        |
 
 ## Why this matters
 
@@ -43,27 +44,31 @@ on the host.
 
 ## Relationship to `node-security/no-shell-injection`
 
-`no-shell-injection` is shape-based: it reports `` exec(`git ${cmd}`) `` because
+`no-shell-injection` is shape-based: it reports ``exec(`git ${cmd}`)`` because
 the interpolation is visible, and declines `exec(cmd)` because proving what
 `cmd` holds needs value following. Inside an MCP tool handler the source is
 known — the handler's own parameter — so this rule follows it and reports every
 shape that lets it choose what runs:
 
 ```ts
-server.registerTool('run', { inputSchema: { cmd: z.string() } },
+server.registerTool(
+  'run',
+  { inputSchema: { cmd: z.string() } },
   async ({ cmd }) => {
-    execSync(cmd);                      // the argument IS the command
-    execSync(`ls ${cmd}`);              // built from it
-    const c = cmd.trim(); execSync(c);  // derived from it
-  });
+    execSync(cmd); // the argument IS the command
+    execSync(`ls ${cmd}`); // built from it
+    const c = cmd.trim();
+    execSync(c); // derived from it
+  },
+);
 ```
 
-| Shape | This rule | `node-security/no-shell-injection` |
-|---|---|---|
-| `execSync(cmd)` — argument is the command | ✅ | — |
-| `` execSync(`ls ${cmd}`) `` — built from the argument | ✅ | ✅ |
-| `const c = cmd.trim(); execSync(c)` — derived from it | ✅ | — |
-| `execSync('ls -la')` — static | — | — |
+| Shape                                                 | This rule | `node-security/no-shell-injection` |
+| ----------------------------------------------------- | --------- | ---------------------------------- |
+| `execSync(cmd)` — argument is the command             | ✅        | —                                  |
+| ``execSync(`ls ${cmd}`)`` — built from the argument   | ✅        | ✅                                 |
+| `const c = cmd.trim(); execSync(c)` — derived from it | ✅        | —                                  |
+| `execSync('ls -la')` — static                         | —         | —                                  |
 
 On the interpolated line both plugins may report. Tool handlers are this
 plugin's own scope, so it reports them rather than leave a gap for servers that
@@ -73,20 +78,31 @@ do not install `node-security` (owner decision, 2026-10).
 
 ```ts
 // ❌ destructured argument names the command
-server.registerTool('run', cfg, async ({ cmd }) => { execSync(cmd); });
+server.registerTool('run', cfg, async ({ cmd }) => {
+  execSync(cmd);
+});
 
 // ❌ same thing through the whole-args object
-server.registerTool('run', cfg, async (args) => { execSync(args.cmd); });
+server.registerTool('run', cfg, async (args) => {
+  execSync(args.cmd);
+});
 
 // ❌ spawn picks the binary too — the argv array does not help here
-server.registerTool('run', cfg, async ({ bin }) => { spawn(bin, argv); });
+server.registerTool('run', cfg, async ({ bin }) => {
+  spawn(bin, argv);
+});
 
 // ❌ a shell's `-c` script is a command line
-server.registerTool('run', cfg, async ({ command }) => { spawn('sh', ['-c', command]); });
+server.registerTool('run', cfg, async ({ command }) => {
+  spawn('sh', ['-c', command]);
+});
 
 // ❌ promisified, renamed, from execa, or behind a named handler — same sink
 const execAsync = promisify(exec);
-async function runHandler({ cmd }) { await execAsync(cmd); await execaCommand(cmd); }
+async function runHandler({ cmd }) {
+  await execAsync(cmd);
+  await execaCommand(cmd);
+}
 server.registerTool('run', cfg, runHandler);
 
 // ❌ the low-level Server: the arguments are request.params.arguments
@@ -115,6 +131,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   destructuring, member and element reads, `await`, string derivations
   (`.trim()`, `.split()`, `.slice()`, `.toLowerCase()`, `.join()`, `String()`,
   template literals, `+`) and the return value of a same-file helper.
+- **Into helpers, elements and parsed arguments (1.0).** A same-file
+  function or class method (`this.run(args.cmd)`) the handler calls carries
+  what its callers pass it, so a sink inside the helper is reported — an
+  object literal it is given is read field by field. Each element of an
+  argument array is the argument (`for (const p of paths)`,
+  `paths.map((p) => …)`), and a Zod `Schema.parse(args)` /
+  `safeParse(args).data` hands the arguments back: parsing checks their shape,
+  not their text. A key the parsing schema restricts to `z.enum` / `z.literal`
+  / `z.nativeEnum` stays the allowlist. Callers are found by resolving the
+  callee, never by a name.
 - **A shell script position** — the element after `-c`, `-lc`, `/c` or
   `-Command` when the file is `sh`, `bash`, `zsh`, `cmd.exe`, `powershell`,
   `pwsh`… — is a command position too, and so is every argv element when the
@@ -135,7 +161,7 @@ const ALLOWED = { list: 'ls', disk: 'df' } as const;
 server.registerTool('run', cfg, async ({ op, target }) => {
   const binary = ALLOWED[op];
   if (!binary) throw new Error('unsupported operation');
-  execFile(binary, [target]);   // user data is an argv element, never the command
+  execFile(binary, [target]); // user data is an argv element, never the command
 });
 ```
 
@@ -155,8 +181,9 @@ does not involve a shell, so there is no metacharacter to escape.
 - **A value the argument only selects.** `execSync(lookup(cmd))`,
   `ALLOWED[cmd]`, or `cmd.length > 3 ? 'ls' : 'pwd'` — an arbitrary call, a
   lookup or a comparison yields a value the code chose, not the argument's text.
-- **A sink outside any tool handler.** The handler is the taint boundary; a
-  sink elsewhere in the file is `node-security`'s question.
+- **A sink no tool argument reaches** — outside every handler and every
+  same-file helper a handler passes an argument to. That is `node-security`'s
+  question.
 - **A file that imports no MCP server package** (`@modelcontextprotocol/sdk`,
   the v2 `@modelcontextprotocol/*` packages, `mcp-handler`).
 

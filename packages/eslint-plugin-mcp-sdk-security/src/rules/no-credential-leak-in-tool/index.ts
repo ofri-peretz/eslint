@@ -62,6 +62,7 @@ import {
 } from '../../utils/tool-registration';
 import {
   createFlow,
+  flowOptionsFor,
   returnedExpressions,
   type Taint,
 } from '../../utils/value-flow';
@@ -215,8 +216,11 @@ export const noCredentialLeakInTool = createRule<[], MessageIds>({
           ...contextRoots.roots.keys(),
         ]);
         // The argument flow: which `process.env[name]` an argument picks.
-        const fromArgs = createFlow(sourceCode, (fn) =>
-          argumentRoots.roots.get(fn),
+        const fromArgs = createFlow(
+          sourceCode,
+          (fn) => argumentRoots.roots.get(fn),
+          undefined,
+          flowOptionsFor(context),
         );
         // The context flow: `authInfo` and the token on it.
         const fromContext = createFlow(
@@ -239,6 +243,7 @@ export const noCredentialLeakInTool = createRule<[], MessageIds>({
               ? { kind: 'value', text: t.text, key: TOKEN_KEY }
               : t;
           },
+          flowOptionsFor(context),
         );
 
         /** The token, if `node` (or anything inside its literals) carries it. */

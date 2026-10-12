@@ -70,12 +70,17 @@ import {
   resolveModuleBinding,
   staticString,
 } from '@interlace/eslint-devkit';
+import { createInstanceResolver } from '../../utils/instances';
 import { fileUsesMcpSdk, isMcpModule } from '../../utils/mcp-evidence';
 import { valueResolverFor } from '../../utils/module-resolver';
 import { mcpExport } from '../../utils/tool-handlers';
+import { exits } from '../../utils/guards';
 import {
+  constInitializer,
   isFunctionNode,
+  lookupVariable,
   propertyKey,
+  resolveFunction,
   type FunctionNode,
 } from '../../utils/tool-registration';
 
@@ -155,6 +160,21 @@ const AUTH_EXPORTS = new Set([
 /** Hosts `createMcpExpressApp` guards with `localhostHostValidation`. */
 // @vocabulary MCP SDK createMcpExpressApp localhost hosts
 const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '::1']);
+
+/** Constructions whose `.listen(port)` with no host binds every interface. */
+// @vocabulary Express app / Node http(s) server
+const DEFAULT_ALL_INTERFACES: Readonly<Record<string, string>> = {
+  express: '',
+  http: 'createServer',
+  https: 'createServer',
+};
+
+/** What Node binds when `listen()` is given no host. */
+const DEFAULT_LISTEN_HOST = '::';
+
+/** Request members a header is read through: `req.headers`, `req.get()`, `c.req.header()`. */
+// @vocabulary Node IncomingMessage / Express Request / Hono HonoRequest header API
+const REQUEST_HEADER_READS = new Set(['headers', 'header', 'get']);
 
 /** Hosts that bind every interface. */
 // @vocabulary IPv4 / IPv6 unspecified addresses
@@ -251,6 +271,76 @@ export const requireHttpTransportHardening = createRule<[], MessageIds>({
     if (!fileUsesMcpSdk(context.sourceCode.ast)) return {};
     const sourceCode = context.sourceCode;
     const resolve = valueResolverFor(context);
+    const builtBy = createInstanceResolver(context);
+
+    /**
+     * The app variables a bind serves: the `listen` receiver (and the app a
+     * `http.createServer(app)` wraps), or the variable a factory's app is
+     * stored in.
+     */
+    function appVariables(bind: TSESTree.Node): TSESLint.Scope.Variable[] {
+      const found: TSESLint.Scope.Variable[] = [];
+      const add = (node: TSESTree.Node | null | undefined): void => {
+        if (node?.type === 'CallExpression') {
+          // `http.createServer(app)` serves `app`.
+          for (const arg of node.arguments) add(arg);
+          return;
+        }
+        if (node?.type !== 'Identifier') return;
+        const variable = lookupVariable(node.name, sourceCode.getScope(node));
+        if (variable === undefined || found.includes(variable)) return;
+        found.push(variable);
+        const def = variable.defs[0];
+        if (def?.type === 'Variable') add(def.node.init);
+      };
+      if (
+        bind.type === 'CallExpression' &&
+        bind.callee.type === 'MemberExpression'
+      )
+        add(bind.callee.object);
+      else if (bind.parent?.type === 'VariableDeclarator') add(bind.parent.id);
+      return found;
+    }
+
+    /**
+     * Is the app handed to code this file cannot see — `setupAuth(app)` from
+     * another module — which may mount the auth middleware? Passing it to
+     * `http(s).createServer` is only serving it.
+     */
+    function appEscapes(bind: TSESTree.Node): boolean {
+      return appVariables(bind).some((variable) =>
+        variable.references.some((ref) => {
+          const call = ref.identifier.parent;
+          if (
+            call?.type !== 'CallExpression' ||
+            !call.arguments.includes(ref.identifier as TSESTree.Identifier)
+          )
+            return false;
+          // A same-file function is visible: its `.use(…)` calls already count.
+          if (resolveFunction(call.callee, sourceCode.getScope(call)))
+            return false;
+          const callee = resolveModuleBinding(
+            call.callee,
+            sourceCode.getScope(call),
+          );
+          return !(
+            callee !== undefined &&
+            DEFAULT_ALL_INTERFACES[callee.module] === callee.path.join('.')
+          );
+        }),
+      );
+    }
+
+    /** Is this receiver an Express app or a Node http(s) server? */
+    function listensOnAllByDefault(receiver: TSESTree.Node): boolean {
+      const app = builtBy(receiver);
+      if (app === undefined) return false;
+      // `createMcpExpressApp()` returns an Express app: its `host` option
+      // picks the Host validation, not the interface `listen` binds.
+      if (isMcpModule(app.module))
+        return app.path[app.path.length - 1] === 'createMcpExpressApp';
+      return DEFAULT_ALL_INTERFACES[app.module] === app.path.join('.');
+    }
 
     const unhardened: Array<{
       node: TSESTree.NewExpression;
@@ -266,7 +356,140 @@ export const requireHttpTransportHardening = createRule<[], MessageIds>({
     let customUse = false;
     /** Explicit all-interfaces binds: the node to report and its host. */
     const binds: Array<{ node: TSESTree.Node; host: string }> = [];
+    /** `createMcpExpressApp({ host: '0.0.0.0' })` with no `allowedHosts`. */
+    const openFactories: Array<{
+      node: TSESTree.CallExpression;
+      factory: string;
+      host: string;
+    }> = [];
     const handleRequestCalls: TSESTree.CallExpression[] = [];
+    /**
+     * Calls that hand a request to the MCP transport: `transport.handleRequest`
+     * and a node handler built by an SDK adapter (`toNodeHandler(…)`).
+     */
+    const serveCalls: TSESTree.Node[] = [];
+
+    /** Is `node` read off the request parameter `request` (`req.headers`, `c.req`)? */
+    function rootedAt(
+      node: TSESTree.Node,
+      request: TSESLint.Scope.Variable,
+    ): boolean {
+      let current = node;
+      while (current.type === 'MemberExpression') current = current.object;
+      return (
+        current.type === 'Identifier' &&
+        lookupVariable(current.name, sourceCode.getScope(current)) === request
+      );
+    }
+
+    /**
+     * Does `test` read a request header — directly or through the bindings
+     * it is computed from? Headers are where a non-ambient credential (a
+     * bearer token, an API key) travels.
+     */
+    function readsHeader(
+      test: TSESTree.Node,
+      request: TSESLint.Scope.Variable,
+    ): boolean {
+      const seen = new Set<TSESLint.Scope.Variable>();
+      const visit = (node: TSESTree.Node): boolean => {
+        // A callback runs as part of the expression; another function does not.
+        if (isFunctionNode(node) && node.parent?.type !== 'CallExpression')
+          return false;
+        if (
+          node.type === 'MemberExpression' &&
+          REQUEST_HEADER_READS.has(propertyName(node) ?? '') &&
+          rootedAt(node.object, request)
+        )
+          return true;
+        if (node.type === 'Identifier') {
+          const variable = lookupVariable(node.name, sourceCode.getScope(node));
+          if (variable === undefined || seen.has(variable)) return false;
+          seen.add(variable);
+          return variable.defs.some(
+            (def) =>
+              def.type === 'Variable' &&
+              def.node.init !== null &&
+              visit(def.node.init),
+          );
+        }
+        for (const [key, value] of Object.entries(node)) {
+          if (key === 'parent') continue;
+          for (const child of Array.isArray(value) ? value : [value])
+            if (
+              child !== null &&
+              typeof child === 'object' &&
+              typeof (child as TSESTree.Node).type === 'string' &&
+              visit(child as TSESTree.Node)
+            )
+              return true;
+        }
+        return false;
+      };
+      return visit(test);
+    }
+
+    /**
+     * Is this serve call behind an inline credential check — an `if` that
+     * reads a request header and returns (or throws) before the call?
+     */
+    function gatedInline(call: TSESTree.Node): boolean {
+      // The request is the first parameter of an enclosing function — the
+      // route handler, with any callbacks (`als.run(ctx, () => …)`) between.
+      const requests: TSESLint.Scope.Variable[] = [];
+      for (
+        let node: TSESTree.Node | undefined = call.parent;
+        node;
+        node = node.parent
+      ) {
+        if (!isFunctionNode(node)) continue;
+        // `app.post('/mcp', requireBearerAuth({ verifier }), handler)`.
+        if (registrationsOf(node).some(behindSdkAuth)) return true;
+        const param = node.params[0];
+        if (param?.type !== 'Identifier') continue;
+        // A parameter always declares its own variable on the function.
+        requests.push(
+          sourceCode
+            .getDeclaredVariables(node)
+            .find((v) => v.defs[0]?.name === param)!,
+        );
+      }
+      let child: TSESTree.Node = call;
+      for (
+        let node: TSESTree.Node | undefined = call.parent;
+        node;
+        node = node.parent
+      ) {
+        if (node.type === 'BlockStatement')
+          for (const statement of node.body) {
+            if (statement === child) break;
+            if (
+              statement.type === 'IfStatement' &&
+              exits(statement.consequent) &&
+              requests.some((request) => readsHeader(statement.test, request))
+            )
+              return true;
+          }
+        child = node;
+      }
+      return false;
+    }
+
+    /** Is an SDK auth middleware (`requireBearerAuth(…)`) mounted on this route? */
+    function behindSdkAuth(route: TSESTree.CallExpression): boolean {
+      return route.arguments.some(
+        (arg) =>
+          arg.type === 'CallExpression' &&
+          AUTH_EXPORTS.has(
+            mcpExport(arg.callee, sourceCode.getScope(arg)) ?? '',
+          ),
+      );
+    }
+
+    /** Does every call that serves the transport check a credential first? */
+    function servedBehindCredentialCheck(): boolean {
+      return serveCalls.length > 0 && serveCalls.every(gatedInline);
+    }
 
     /** A static host string, read inline or through a const. */
     function hostOf(node: TSESTree.Node): string | null {
@@ -414,6 +637,8 @@ export const requireHttpTransportHardening = createRule<[], MessageIds>({
         const index = HTTP_TRANSPORTS.get(transport);
         if (index === undefined) return;
         constructsTransport = true;
+        // An SSE session starts where its transport is built (the GET route).
+        if (transport === 'SSEServerTransport') serveCalls.push(node);
         // SDK v2: the transport has no rebinding option; the app is judged.
         if (
           !TRANSPORT_OPTION_PACKAGES.some(
@@ -441,6 +666,15 @@ export const requireHttpTransportHardening = createRule<[], MessageIds>({
       CallExpression(node: TSESTree.CallExpression) {
         const scope = sourceCode.getScope(node);
         noteRawApp(node, scope);
+        // `nodeHandler(req, res)` where `nodeHandler = toNodeHandler(…)`.
+        if (node.callee.type === 'Identifier') {
+          const init = constInitializer(node.callee, scope);
+          if (
+            init?.type === 'CallExpression' &&
+            mcpExport(init.callee, scope) !== undefined
+          )
+            serveCalls.push(node);
+        }
         const name = mcpExport(node.callee, scope);
         if (name !== undefined) {
           if (HOST_VALIDATORS.has(name)) validatesHost = true;
@@ -450,11 +684,7 @@ export const requireHttpTransportHardening = createRule<[], MessageIds>({
             const state = expressAppState(node);
             if (state.kind === 'guarded') validatesHost = true;
             else if (state.kind === 'allInterfaces') {
-              context.report({
-                node,
-                messageId: 'allInterfacesWithoutAllowedHosts',
-                data: { factory: name, host: state.host },
-              });
+              openFactories.push({ node, factory: name, host: state.host });
               binds.push({ node, host: state.host });
             }
           }
@@ -471,20 +701,48 @@ export const requireHttpTransportHardening = createRule<[], MessageIds>({
             customUse = true;
         } else if (method === 'handleRequest') {
           handleRequestCalls.push(node);
+          serveCalls.push(node);
+        } else if (method === 'handlePostMessage') {
+          // The legacy SSE transport's POST route.
+          serveCalls.push(node);
         } else if (method === 'listen') {
           // `listen(port, host, …)` or `listen({ port, host })`.
           const [first, second] = node.arguments;
           const options =
             first?.type === 'ObjectExpression' ? readOptions(first) : null;
-          const hostNode = options === null ? second : options.get('host');
+          const hostNode =
+            first?.type === 'ObjectExpression'
+              ? options?.get('host')
+              : second !== undefined && !isFunctionNode(second)
+                ? second
+                : undefined;
           const host = hostNode === undefined ? null : hostOf(hostNode);
           if (host !== null && ALL_INTERFACE_HOSTS.has(host))
             binds.push({ node, host });
+          // No host at all: an Express app or a Node `http` server binds
+          // every interface (`::`). Fastify defaults to localhost and is not
+          // matched; an options object that cannot be read is abstained on.
+          else if (
+            hostNode === undefined &&
+            (first?.type !== 'ObjectExpression' || options !== null) &&
+            listensOnAllByDefault(node.callee.object)
+          )
+            binds.push({ node, host: DEFAULT_LISTEN_HOST });
         }
       },
 
       'Program:exit'() {
-        if (!validatesHost) {
+        // A bearer token or API key is not sent by a browser on its own, so a
+        // rebound page cannot get past a credential check: rebinding is moot.
+        const gated = servedBehindCredentialCheck();
+        if (!gated)
+          for (const { node, factory, host } of openFactories)
+            context.report({
+              node,
+              messageId: 'allInterfacesWithoutAllowedHosts',
+              data: { factory, host },
+            });
+        if (!validatesHost && !gated) {
           for (const { node, transport } of unhardened)
             context.report({
               node,
@@ -504,12 +762,14 @@ export const requireHttpTransportHardening = createRule<[], MessageIds>({
           !constructsTransport ||
           binds.length === 0 ||
           authenticates ||
+          gated ||
           customUse ||
           routeHasMiddleware()
         )
           return;
         for (const { node, host } of binds)
-          context.report({ node, messageId: 'missingAuth', data: { host } });
+          if (!appEscapes(node))
+            context.report({ node, messageId: 'missingAuth', data: { host } });
       },
     };
   },

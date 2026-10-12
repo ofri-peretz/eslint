@@ -64,6 +64,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   propertyName,
+  resolveModuleBinding,
   staticString,
 } from '@interlace/eslint-devkit';
 import { fsExport } from '../../utils/fs-module';
@@ -95,6 +96,7 @@ import {
 } from '../../utils/tool-registration';
 import {
   createFlow,
+  flowOptionsFor,
   memberStep,
   type HandlerRoot,
   type Taint,
@@ -273,6 +275,67 @@ const ROUTE_METHODS = new Set([
   'route',
   'on',
 ]);
+
+/** `path` exports whose result stays under their first argument. */
+const PATH_BUILDERS = new Set(['join', 'resolve']);
+
+/**
+ * Is this path anchored to the server's own code — `__dirname`,
+ * `import.meta.url` / `.dirname`, and fixed segments joined onto them? A file
+ * there ships with the server, so its text is the developer's, as much as a
+ * string literal is. A static path relative to the working directory is not:
+ * a stdio server's working directory is often the user's project.
+ */
+function isPackagePath(
+  node: TSESTree.Node | undefined,
+  scopeOf: (node: TSESTree.Node) => TSESLint.Scope.Scope,
+  depth = 0,
+): boolean {
+  if (node === undefined || depth > 8) return false;
+  const value = unwrapTypeOnly(node);
+  const anchored = (n: TSESTree.Node | undefined): boolean =>
+    isPackagePath(n, scopeOf, depth + 1);
+  switch (value.type) {
+    case 'Identifier': {
+      if (value.name === '__dirname' || value.name === '__filename')
+        return !lookupVariable(value.name, scopeOf(value))?.defs.length;
+      return anchored(constInitializer(value, scopeOf(value)));
+    }
+    case 'MemberExpression':
+      // `import.meta.url`, `import.meta.dirname`, `import.meta.filename`.
+      return value.object.type === 'MetaProperty';
+    case 'TemplateLiteral':
+      return (
+        value.quasis[0]!.value.raw === '' &&
+        value.expressions.length === 1 &&
+        anchored(value.expressions[0])
+      );
+    case 'NewExpression':
+      // `new URL('./x.md', import.meta.url)`.
+      return (
+        value.callee.type === 'Identifier' &&
+        value.callee.name === 'URL' &&
+        !lookupVariable('URL', scopeOf(value))?.defs.length &&
+        value.arguments.length === 2 &&
+        staticString(value.arguments[0]) !== null &&
+        anchored(value.arguments[1])
+      );
+    case 'CallExpression': {
+      const binding = resolveModuleBinding(value.callee, scopeOf(value));
+      const [first, ...rest] = value.arguments;
+      if (binding?.module === 'url')
+        return binding.path.join('.') === 'fileURLToPath' && anchored(first);
+      return (
+        binding?.module === 'path' &&
+        PATH_BUILDERS.has(binding.path[binding.path.length - 1] ?? '') &&
+        anchored(first) &&
+        rest.every((part) => staticString(part) !== null)
+      );
+    }
+    default:
+      return false;
+  }
+}
 
 /** A request object's members are what the client sent. */
 const REQUEST_ROOT: HandlerRoot = { toArgs: [], closed: new Set() };
@@ -536,7 +599,8 @@ export const noToolDescriptionInjection = createRule<[], MessageIds>({
         return { kind: 'object', text: '', toArgs: [] };
       const fsName = fsExport(node.callee, scope);
       if (fsName !== undefined)
-        return FILE_READS.has(fsName)
+        return FILE_READS.has(fsName) &&
+          !isPackagePath(node.arguments[0], (n) => sourceCode.getScope(n))
           ? { kind: 'value', text: `${fsName}()`, key: undefined }
           : null;
       if (node.callee.type !== 'MemberExpression') return undefined;
@@ -572,7 +636,10 @@ export const noToolDescriptionInjection = createRule<[], MessageIds>({
       while (value.type === 'AwaitExpression') value = value.argument;
       if (value.type !== 'CallExpression') return undefined;
       const fsName = fsExport(value.callee, resolved.site.scope);
-      return fsName !== undefined && FILE_READS.has(fsName)
+      const scopeOf = (n: TSESTree.Node) => scopeAt(resolved.site.scope, n);
+      return fsName !== undefined &&
+        FILE_READS.has(fsName) &&
+        !isPackagePath(value.arguments[0], scopeOf)
         ? { kind: 'value', text: node.name, key: undefined }
         : undefined;
     }
@@ -601,6 +668,9 @@ export const noToolDescriptionInjection = createRule<[], MessageIds>({
               ? sourceCall(node, sourceCode.getScope(node), follow)
               : undefined;
           },
+          // Helpers are judged at each call site below, where the message can
+          // name what the caller passed.
+          { ...flowOptionsFor(context), followCallers: false },
         );
         const value = (node: TSESTree.Node): Taint | null => {
           const t = carries(node);

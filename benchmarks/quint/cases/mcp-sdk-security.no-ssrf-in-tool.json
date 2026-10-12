@@ -1,0 +1,2940 @@
+{
+  "command": "node benchmarks/quint/generate.mjs mcp-sdk-security.no-ssrf-in-tool",
+  "model": "benchmarks/quint/models/mcp-sdk-security.no-ssrf-in-tool.qnt",
+  "quint": "@informalsystems/quint@0.33.0",
+  "seed": "0x1d10",
+  "samples": 8000,
+  "dimensions": ["source", "shape", "guard", "sink", "binding"],
+  "cases": [
+    [
+      "ServerConst/ConcatOpenOrigin/HostnameAllowlist/AxiosConfig/Inline",
+      false
+    ],
+    [
+      "ServerConst/ConcatOpenOrigin/HostnameAllowlist/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ConcatOpenOrigin/HostnameAllowlist/AxiosConfig/ViaHelperSink",
+      false
+    ],
+    [
+      "ServerConst/ConcatOpenOrigin/HostnameAllowlist/AxiosConfig/ViaLet",
+      false
+    ],
+    ["ServerConst/ConcatOpenOrigin/HostnameAllowlist/AxiosGet/Inline", false],
+    [
+      "ServerConst/ConcatOpenOrigin/HostnameAllowlist/AxiosGet/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ConcatOpenOrigin/HostnameAllowlist/AxiosGet/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/ConcatOpenOrigin/HostnameAllowlist/AxiosGet/ViaLet", false],
+    ["ServerConst/ConcatOpenOrigin/HostnameAllowlist/Fetch/Inline", false],
+    [
+      "ServerConst/ConcatOpenOrigin/HostnameAllowlist/Fetch/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ConcatOpenOrigin/HostnameAllowlist/Fetch/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/ConcatOpenOrigin/HostnameAllowlist/Fetch/ViaLet", false],
+    ["ServerConst/ConcatOpenOrigin/HostnameAllowlist/GotDefault/Inline", false],
+    [
+      "ServerConst/ConcatOpenOrigin/HostnameAllowlist/GotDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ConcatOpenOrigin/HostnameAllowlist/GotDefault/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/ConcatOpenOrigin/HostnameAllowlist/GotDefault/ViaLet", false],
+    ["ServerConst/ConcatOpenOrigin/HostnameAllowlist/HttpsGet/Inline", false],
+    [
+      "ServerConst/ConcatOpenOrigin/HostnameAllowlist/HttpsGet/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ConcatOpenOrigin/HostnameAllowlist/HttpsGet/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/ConcatOpenOrigin/HostnameAllowlist/HttpsGet/ViaLet", false],
+    [
+      "ServerConst/ConcatOpenOrigin/HostnameAllowlist/UndiciRequest/Inline",
+      false
+    ],
+    [
+      "ServerConst/ConcatOpenOrigin/HostnameAllowlist/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ConcatOpenOrigin/HostnameAllowlist/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    [
+      "ServerConst/ConcatOpenOrigin/HostnameAllowlist/UndiciRequest/ViaLet",
+      false
+    ],
+    ["ServerConst/ConcatOpenOrigin/IsValidUrlHelper/AxiosConfig/Inline", false],
+    [
+      "ServerConst/ConcatOpenOrigin/IsValidUrlHelper/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ConcatOpenOrigin/IsValidUrlHelper/AxiosConfig/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/ConcatOpenOrigin/IsValidUrlHelper/AxiosConfig/ViaLet", false],
+    ["ServerConst/ConcatOpenOrigin/IsValidUrlHelper/AxiosGet/Inline", false],
+    [
+      "ServerConst/ConcatOpenOrigin/IsValidUrlHelper/AxiosGet/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ConcatOpenOrigin/IsValidUrlHelper/AxiosGet/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/ConcatOpenOrigin/IsValidUrlHelper/AxiosGet/ViaLet", false],
+    ["ServerConst/ConcatOpenOrigin/IsValidUrlHelper/Fetch/Inline", false],
+    [
+      "ServerConst/ConcatOpenOrigin/IsValidUrlHelper/Fetch/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ConcatOpenOrigin/IsValidUrlHelper/Fetch/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/ConcatOpenOrigin/IsValidUrlHelper/Fetch/ViaLet", false],
+    ["ServerConst/ConcatOpenOrigin/IsValidUrlHelper/GotDefault/Inline", false],
+    [
+      "ServerConst/ConcatOpenOrigin/IsValidUrlHelper/GotDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ConcatOpenOrigin/IsValidUrlHelper/GotDefault/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/ConcatOpenOrigin/IsValidUrlHelper/GotDefault/ViaLet", false],
+    ["ServerConst/ConcatOpenOrigin/IsValidUrlHelper/HttpsGet/Inline", false],
+    [
+      "ServerConst/ConcatOpenOrigin/IsValidUrlHelper/HttpsGet/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ConcatOpenOrigin/IsValidUrlHelper/HttpsGet/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/ConcatOpenOrigin/IsValidUrlHelper/HttpsGet/ViaLet", false],
+    [
+      "ServerConst/ConcatOpenOrigin/IsValidUrlHelper/UndiciRequest/Inline",
+      false
+    ],
+    [
+      "ServerConst/ConcatOpenOrigin/IsValidUrlHelper/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ConcatOpenOrigin/IsValidUrlHelper/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    [
+      "ServerConst/ConcatOpenOrigin/IsValidUrlHelper/UndiciRequest/ViaLet",
+      false
+    ],
+    ["ServerConst/ConcatOpenOrigin/NoGuard/AxiosConfig/Inline", false],
+    ["ServerConst/ConcatOpenOrigin/NoGuard/AxiosConfig/ViaHelperReturn", false],
+    ["ServerConst/ConcatOpenOrigin/NoGuard/AxiosConfig/ViaHelperSink", false],
+    ["ServerConst/ConcatOpenOrigin/NoGuard/AxiosConfig/ViaLet", false],
+    ["ServerConst/ConcatOpenOrigin/NoGuard/AxiosGet/Inline", false],
+    ["ServerConst/ConcatOpenOrigin/NoGuard/AxiosGet/ViaHelperReturn", false],
+    ["ServerConst/ConcatOpenOrigin/NoGuard/AxiosGet/ViaHelperSink", false],
+    ["ServerConst/ConcatOpenOrigin/NoGuard/AxiosGet/ViaLet", false],
+    ["ServerConst/ConcatOpenOrigin/NoGuard/Fetch/Inline", false],
+    ["ServerConst/ConcatOpenOrigin/NoGuard/Fetch/ViaHelperReturn", false],
+    ["ServerConst/ConcatOpenOrigin/NoGuard/Fetch/ViaHelperSink", false],
+    ["ServerConst/ConcatOpenOrigin/NoGuard/Fetch/ViaLet", false],
+    ["ServerConst/ConcatOpenOrigin/NoGuard/GotDefault/Inline", false],
+    ["ServerConst/ConcatOpenOrigin/NoGuard/GotDefault/ViaHelperReturn", false],
+    ["ServerConst/ConcatOpenOrigin/NoGuard/GotDefault/ViaHelperSink", false],
+    ["ServerConst/ConcatOpenOrigin/NoGuard/GotDefault/ViaLet", false],
+    ["ServerConst/ConcatOpenOrigin/NoGuard/HttpsGet/Inline", false],
+    ["ServerConst/ConcatOpenOrigin/NoGuard/HttpsGet/ViaHelperReturn", false],
+    ["ServerConst/ConcatOpenOrigin/NoGuard/HttpsGet/ViaHelperSink", false],
+    ["ServerConst/ConcatOpenOrigin/NoGuard/HttpsGet/ViaLet", false],
+    ["ServerConst/ConcatOpenOrigin/NoGuard/UndiciRequest/Inline", false],
+    [
+      "ServerConst/ConcatOpenOrigin/NoGuard/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/ConcatOpenOrigin/NoGuard/UndiciRequest/ViaHelperSink", false],
+    ["ServerConst/ConcatOpenOrigin/NoGuard/UndiciRequest/ViaLet", false],
+    ["ServerConst/ConcatOpenOrigin/ProtocolCheck/AxiosConfig/Inline", false],
+    [
+      "ServerConst/ConcatOpenOrigin/ProtocolCheck/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ConcatOpenOrigin/ProtocolCheck/AxiosConfig/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/ConcatOpenOrigin/ProtocolCheck/AxiosConfig/ViaLet", false],
+    ["ServerConst/ConcatOpenOrigin/ProtocolCheck/AxiosGet/Inline", false],
+    [
+      "ServerConst/ConcatOpenOrigin/ProtocolCheck/AxiosGet/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ConcatOpenOrigin/ProtocolCheck/AxiosGet/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/ConcatOpenOrigin/ProtocolCheck/AxiosGet/ViaLet", false],
+    ["ServerConst/ConcatOpenOrigin/ProtocolCheck/Fetch/ViaHelperReturn", false],
+    ["ServerConst/ConcatOpenOrigin/ProtocolCheck/Fetch/ViaHelperSink", false],
+    ["ServerConst/ConcatOpenOrigin/ProtocolCheck/Fetch/ViaLet", false],
+    ["ServerConst/ConcatOpenOrigin/ProtocolCheck/GotDefault/Inline", false],
+    [
+      "ServerConst/ConcatOpenOrigin/ProtocolCheck/GotDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ConcatOpenOrigin/ProtocolCheck/GotDefault/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/ConcatOpenOrigin/ProtocolCheck/GotDefault/ViaLet", false],
+    ["ServerConst/ConcatOpenOrigin/ProtocolCheck/HttpsGet/Inline", false],
+    [
+      "ServerConst/ConcatOpenOrigin/ProtocolCheck/HttpsGet/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/ConcatOpenOrigin/ProtocolCheck/HttpsGet/ViaLet", false],
+    ["ServerConst/ConcatOpenOrigin/ProtocolCheck/UndiciRequest/Inline", false],
+    [
+      "ServerConst/ConcatOpenOrigin/ProtocolCheck/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/ConcatOpenOrigin/ProtocolCheck/UndiciRequest/ViaLet", false],
+    ["ServerConst/ConcatOpenOrigin/SchemeOnly/AxiosConfig/Inline", false],
+    [
+      "ServerConst/ConcatOpenOrigin/SchemeOnly/AxiosConfig/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/ConcatOpenOrigin/SchemeOnly/AxiosConfig/ViaLet", false],
+    ["ServerConst/ConcatOpenOrigin/SchemeOnly/AxiosGet/Inline", false],
+    ["ServerConst/ConcatOpenOrigin/SchemeOnly/AxiosGet/ViaHelperReturn", false],
+    ["ServerConst/ConcatOpenOrigin/SchemeOnly/AxiosGet/ViaHelperSink", false],
+    ["ServerConst/ConcatOpenOrigin/SchemeOnly/AxiosGet/ViaLet", false],
+    ["ServerConst/ConcatOpenOrigin/SchemeOnly/Fetch/Inline", false],
+    ["ServerConst/ConcatOpenOrigin/SchemeOnly/Fetch/ViaHelperReturn", false],
+    ["ServerConst/ConcatOpenOrigin/SchemeOnly/Fetch/ViaHelperSink", false],
+    ["ServerConst/ConcatOpenOrigin/SchemeOnly/Fetch/ViaLet", false],
+    ["ServerConst/ConcatOpenOrigin/SchemeOnly/GotDefault/Inline", false],
+    [
+      "ServerConst/ConcatOpenOrigin/SchemeOnly/GotDefault/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/ConcatOpenOrigin/SchemeOnly/GotDefault/ViaHelperSink", false],
+    ["ServerConst/ConcatOpenOrigin/SchemeOnly/GotDefault/ViaLet", false],
+    ["ServerConst/ConcatOpenOrigin/SchemeOnly/HttpsGet/Inline", false],
+    ["ServerConst/ConcatOpenOrigin/SchemeOnly/HttpsGet/ViaHelperReturn", false],
+    ["ServerConst/ConcatOpenOrigin/SchemeOnly/HttpsGet/ViaHelperSink", false],
+    ["ServerConst/ConcatOpenOrigin/SchemeOnly/HttpsGet/ViaLet", false],
+    ["ServerConst/ConcatOpenOrigin/SchemeOnly/UndiciRequest/Inline", false],
+    [
+      "ServerConst/ConcatOpenOrigin/SchemeOnly/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ConcatOpenOrigin/SchemeOnly/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/ConcatOpenOrigin/SchemeOnly/UndiciRequest/ViaLet", false],
+    ["ServerConst/ConcatOpenOrigin/SomeCallback/AxiosConfig/Inline", false],
+    [
+      "ServerConst/ConcatOpenOrigin/SomeCallback/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ConcatOpenOrigin/SomeCallback/AxiosConfig/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/ConcatOpenOrigin/SomeCallback/AxiosConfig/ViaLet", false],
+    ["ServerConst/ConcatOpenOrigin/SomeCallback/AxiosGet/Inline", false],
+    [
+      "ServerConst/ConcatOpenOrigin/SomeCallback/AxiosGet/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/ConcatOpenOrigin/SomeCallback/AxiosGet/ViaHelperSink", false],
+    ["ServerConst/ConcatOpenOrigin/SomeCallback/AxiosGet/ViaLet", false],
+    ["ServerConst/ConcatOpenOrigin/SomeCallback/Fetch/Inline", false],
+    ["ServerConst/ConcatOpenOrigin/SomeCallback/Fetch/ViaHelperReturn", false],
+    ["ServerConst/ConcatOpenOrigin/SomeCallback/Fetch/ViaHelperSink", false],
+    ["ServerConst/ConcatOpenOrigin/SomeCallback/Fetch/ViaLet", false],
+    ["ServerConst/ConcatOpenOrigin/SomeCallback/GotDefault/Inline", false],
+    [
+      "ServerConst/ConcatOpenOrigin/SomeCallback/GotDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ConcatOpenOrigin/SomeCallback/GotDefault/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/ConcatOpenOrigin/SomeCallback/GotDefault/ViaLet", false],
+    ["ServerConst/ConcatOpenOrigin/SomeCallback/HttpsGet/Inline", false],
+    [
+      "ServerConst/ConcatOpenOrigin/SomeCallback/HttpsGet/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/ConcatOpenOrigin/SomeCallback/HttpsGet/ViaHelperSink", false],
+    ["ServerConst/ConcatOpenOrigin/SomeCallback/HttpsGet/ViaLet", false],
+    ["ServerConst/ConcatOpenOrigin/SomeCallback/UndiciRequest/Inline", false],
+    [
+      "ServerConst/ConcatOpenOrigin/SomeCallback/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ConcatOpenOrigin/SomeCallback/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/ConcatOpenOrigin/SomeCallback/UndiciRequest/ViaLet", false],
+    ["ServerConst/HostInterp/HostnameAllowlist/AxiosConfig/Inline", false],
+    [
+      "ServerConst/HostInterp/HostnameAllowlist/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/HostInterp/HostnameAllowlist/AxiosConfig/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/HostInterp/HostnameAllowlist/AxiosConfig/ViaLet", false],
+    ["ServerConst/HostInterp/HostnameAllowlist/AxiosGet/Inline", false],
+    [
+      "ServerConst/HostInterp/HostnameAllowlist/AxiosGet/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/HostInterp/HostnameAllowlist/AxiosGet/ViaHelperSink", false],
+    ["ServerConst/HostInterp/HostnameAllowlist/AxiosGet/ViaLet", false],
+    ["ServerConst/HostInterp/HostnameAllowlist/Fetch/Inline", false],
+    ["ServerConst/HostInterp/HostnameAllowlist/Fetch/ViaHelperReturn", false],
+    ["ServerConst/HostInterp/HostnameAllowlist/Fetch/ViaHelperSink", false],
+    ["ServerConst/HostInterp/HostnameAllowlist/Fetch/ViaLet", false],
+    ["ServerConst/HostInterp/HostnameAllowlist/GotDefault/Inline", false],
+    [
+      "ServerConst/HostInterp/HostnameAllowlist/GotDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/HostInterp/HostnameAllowlist/GotDefault/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/HostInterp/HostnameAllowlist/GotDefault/ViaLet", false],
+    ["ServerConst/HostInterp/HostnameAllowlist/HttpsGet/Inline", false],
+    [
+      "ServerConst/HostInterp/HostnameAllowlist/HttpsGet/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/HostInterp/HostnameAllowlist/HttpsGet/ViaHelperSink", false],
+    ["ServerConst/HostInterp/HostnameAllowlist/HttpsGet/ViaLet", false],
+    ["ServerConst/HostInterp/HostnameAllowlist/UndiciRequest/Inline", false],
+    [
+      "ServerConst/HostInterp/HostnameAllowlist/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/HostInterp/HostnameAllowlist/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/HostInterp/HostnameAllowlist/UndiciRequest/ViaLet", false],
+    [
+      "ServerConst/HostInterp/IsValidUrlHelper/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/HostInterp/IsValidUrlHelper/AxiosConfig/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/HostInterp/IsValidUrlHelper/AxiosConfig/ViaLet", false],
+    ["ServerConst/HostInterp/IsValidUrlHelper/AxiosGet/Inline", false],
+    ["ServerConst/HostInterp/IsValidUrlHelper/AxiosGet/ViaHelperReturn", false],
+    ["ServerConst/HostInterp/IsValidUrlHelper/AxiosGet/ViaHelperSink", false],
+    ["ServerConst/HostInterp/IsValidUrlHelper/AxiosGet/ViaLet", false],
+    ["ServerConst/HostInterp/IsValidUrlHelper/Fetch/Inline", false],
+    ["ServerConst/HostInterp/IsValidUrlHelper/Fetch/ViaHelperReturn", false],
+    ["ServerConst/HostInterp/IsValidUrlHelper/Fetch/ViaHelperSink", false],
+    ["ServerConst/HostInterp/IsValidUrlHelper/Fetch/ViaLet", false],
+    ["ServerConst/HostInterp/IsValidUrlHelper/GotDefault/Inline", false],
+    [
+      "ServerConst/HostInterp/IsValidUrlHelper/GotDefault/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/HostInterp/IsValidUrlHelper/GotDefault/ViaHelperSink", false],
+    ["ServerConst/HostInterp/IsValidUrlHelper/GotDefault/ViaLet", false],
+    ["ServerConst/HostInterp/IsValidUrlHelper/HttpsGet/Inline", false],
+    ["ServerConst/HostInterp/IsValidUrlHelper/HttpsGet/ViaHelperReturn", false],
+    ["ServerConst/HostInterp/IsValidUrlHelper/HttpsGet/ViaHelperSink", false],
+    ["ServerConst/HostInterp/IsValidUrlHelper/HttpsGet/ViaLet", false],
+    ["ServerConst/HostInterp/IsValidUrlHelper/UndiciRequest/Inline", false],
+    [
+      "ServerConst/HostInterp/IsValidUrlHelper/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/HostInterp/IsValidUrlHelper/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/HostInterp/IsValidUrlHelper/UndiciRequest/ViaLet", false],
+    ["ServerConst/HostInterp/NoGuard/AxiosConfig/Inline", false],
+    ["ServerConst/HostInterp/NoGuard/AxiosConfig/ViaHelperReturn", false],
+    ["ServerConst/HostInterp/NoGuard/AxiosConfig/ViaHelperSink", false],
+    ["ServerConst/HostInterp/NoGuard/AxiosConfig/ViaLet", false],
+    ["ServerConst/HostInterp/NoGuard/AxiosGet/Inline", false],
+    ["ServerConst/HostInterp/NoGuard/AxiosGet/ViaHelperReturn", false],
+    ["ServerConst/HostInterp/NoGuard/AxiosGet/ViaHelperSink", false],
+    ["ServerConst/HostInterp/NoGuard/AxiosGet/ViaLet", false],
+    ["ServerConst/HostInterp/NoGuard/Fetch/Inline", false],
+    ["ServerConst/HostInterp/NoGuard/Fetch/ViaHelperReturn", false],
+    ["ServerConst/HostInterp/NoGuard/Fetch/ViaHelperSink", false],
+    ["ServerConst/HostInterp/NoGuard/Fetch/ViaLet", false],
+    ["ServerConst/HostInterp/NoGuard/GotDefault/Inline", false],
+    ["ServerConst/HostInterp/NoGuard/GotDefault/ViaHelperSink", false],
+    ["ServerConst/HostInterp/NoGuard/GotDefault/ViaLet", false],
+    ["ServerConst/HostInterp/NoGuard/HttpsGet/Inline", false],
+    ["ServerConst/HostInterp/NoGuard/HttpsGet/ViaHelperReturn", false],
+    ["ServerConst/HostInterp/NoGuard/HttpsGet/ViaHelperSink", false],
+    ["ServerConst/HostInterp/NoGuard/HttpsGet/ViaLet", false],
+    ["ServerConst/HostInterp/NoGuard/UndiciRequest/Inline", false],
+    ["ServerConst/HostInterp/NoGuard/UndiciRequest/ViaHelperReturn", false],
+    ["ServerConst/HostInterp/NoGuard/UndiciRequest/ViaHelperSink", false],
+    ["ServerConst/HostInterp/NoGuard/UndiciRequest/ViaLet", false],
+    ["ServerConst/HostInterp/ProtocolCheck/AxiosConfig/Inline", false],
+    ["ServerConst/HostInterp/ProtocolCheck/AxiosConfig/ViaHelperReturn", false],
+    ["ServerConst/HostInterp/ProtocolCheck/AxiosConfig/ViaHelperSink", false],
+    ["ServerConst/HostInterp/ProtocolCheck/AxiosConfig/ViaLet", false],
+    ["ServerConst/HostInterp/ProtocolCheck/AxiosGet/Inline", false],
+    ["ServerConst/HostInterp/ProtocolCheck/AxiosGet/ViaHelperReturn", false],
+    ["ServerConst/HostInterp/ProtocolCheck/AxiosGet/ViaHelperSink", false],
+    ["ServerConst/HostInterp/ProtocolCheck/AxiosGet/ViaLet", false],
+    ["ServerConst/HostInterp/ProtocolCheck/Fetch/Inline", false],
+    ["ServerConst/HostInterp/ProtocolCheck/Fetch/ViaHelperReturn", false],
+    ["ServerConst/HostInterp/ProtocolCheck/Fetch/ViaLet", false],
+    ["ServerConst/HostInterp/ProtocolCheck/GotDefault/Inline", false],
+    ["ServerConst/HostInterp/ProtocolCheck/GotDefault/ViaHelperReturn", false],
+    ["ServerConst/HostInterp/ProtocolCheck/GotDefault/ViaHelperSink", false],
+    ["ServerConst/HostInterp/ProtocolCheck/GotDefault/ViaLet", false],
+    ["ServerConst/HostInterp/ProtocolCheck/HttpsGet/Inline", false],
+    ["ServerConst/HostInterp/ProtocolCheck/HttpsGet/ViaHelperReturn", false],
+    ["ServerConst/HostInterp/ProtocolCheck/HttpsGet/ViaHelperSink", false],
+    ["ServerConst/HostInterp/ProtocolCheck/HttpsGet/ViaLet", false],
+    ["ServerConst/HostInterp/ProtocolCheck/UndiciRequest/Inline", false],
+    [
+      "ServerConst/HostInterp/ProtocolCheck/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/HostInterp/ProtocolCheck/UndiciRequest/ViaHelperSink", false],
+    ["ServerConst/HostInterp/ProtocolCheck/UndiciRequest/ViaLet", false],
+    ["ServerConst/HostInterp/SchemeOnly/AxiosConfig/Inline", false],
+    ["ServerConst/HostInterp/SchemeOnly/AxiosConfig/ViaHelperReturn", false],
+    ["ServerConst/HostInterp/SchemeOnly/AxiosConfig/ViaHelperSink", false],
+    ["ServerConst/HostInterp/SchemeOnly/AxiosConfig/ViaLet", false],
+    ["ServerConst/HostInterp/SchemeOnly/AxiosGet/Inline", false],
+    ["ServerConst/HostInterp/SchemeOnly/AxiosGet/ViaHelperReturn", false],
+    ["ServerConst/HostInterp/SchemeOnly/AxiosGet/ViaHelperSink", false],
+    ["ServerConst/HostInterp/SchemeOnly/AxiosGet/ViaLet", false],
+    ["ServerConst/HostInterp/SchemeOnly/Fetch/Inline", false],
+    ["ServerConst/HostInterp/SchemeOnly/Fetch/ViaHelperReturn", false],
+    ["ServerConst/HostInterp/SchemeOnly/Fetch/ViaHelperSink", false],
+    ["ServerConst/HostInterp/SchemeOnly/Fetch/ViaLet", false],
+    ["ServerConst/HostInterp/SchemeOnly/GotDefault/Inline", false],
+    ["ServerConst/HostInterp/SchemeOnly/GotDefault/ViaHelperReturn", false],
+    ["ServerConst/HostInterp/SchemeOnly/GotDefault/ViaHelperSink", false],
+    ["ServerConst/HostInterp/SchemeOnly/GotDefault/ViaLet", false],
+    ["ServerConst/HostInterp/SchemeOnly/HttpsGet/Inline", false],
+    ["ServerConst/HostInterp/SchemeOnly/HttpsGet/ViaHelperReturn", false],
+    ["ServerConst/HostInterp/SchemeOnly/HttpsGet/ViaHelperSink", false],
+    ["ServerConst/HostInterp/SchemeOnly/HttpsGet/ViaLet", false],
+    ["ServerConst/HostInterp/SchemeOnly/UndiciRequest/Inline", false],
+    ["ServerConst/HostInterp/SchemeOnly/UndiciRequest/ViaHelperReturn", false],
+    ["ServerConst/HostInterp/SchemeOnly/UndiciRequest/ViaHelperSink", false],
+    ["ServerConst/HostInterp/SchemeOnly/UndiciRequest/ViaLet", false],
+    ["ServerConst/HostInterp/SomeCallback/AxiosConfig/Inline", false],
+    ["ServerConst/HostInterp/SomeCallback/AxiosConfig/ViaHelperReturn", false],
+    ["ServerConst/HostInterp/SomeCallback/AxiosConfig/ViaHelperSink", false],
+    ["ServerConst/HostInterp/SomeCallback/AxiosConfig/ViaLet", false],
+    ["ServerConst/HostInterp/SomeCallback/AxiosGet/Inline", false],
+    ["ServerConst/HostInterp/SomeCallback/AxiosGet/ViaHelperReturn", false],
+    ["ServerConst/HostInterp/SomeCallback/AxiosGet/ViaHelperSink", false],
+    ["ServerConst/HostInterp/SomeCallback/AxiosGet/ViaLet", false],
+    ["ServerConst/HostInterp/SomeCallback/Fetch/Inline", false],
+    ["ServerConst/HostInterp/SomeCallback/Fetch/ViaHelperReturn", false],
+    ["ServerConst/HostInterp/SomeCallback/Fetch/ViaHelperSink", false],
+    ["ServerConst/HostInterp/SomeCallback/Fetch/ViaLet", false],
+    ["ServerConst/HostInterp/SomeCallback/GotDefault/Inline", false],
+    ["ServerConst/HostInterp/SomeCallback/GotDefault/ViaHelperReturn", false],
+    ["ServerConst/HostInterp/SomeCallback/GotDefault/ViaHelperSink", false],
+    ["ServerConst/HostInterp/SomeCallback/GotDefault/ViaLet", false],
+    ["ServerConst/HostInterp/SomeCallback/HttpsGet/Inline", false],
+    ["ServerConst/HostInterp/SomeCallback/HttpsGet/ViaHelperReturn", false],
+    ["ServerConst/HostInterp/SomeCallback/HttpsGet/ViaHelperSink", false],
+    ["ServerConst/HostInterp/SomeCallback/HttpsGet/ViaLet", false],
+    ["ServerConst/HostInterp/SomeCallback/UndiciRequest/Inline", false],
+    [
+      "ServerConst/HostInterp/SomeCallback/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/HostInterp/SomeCallback/UndiciRequest/ViaHelperSink", false],
+    ["ServerConst/HostInterp/SomeCallback/UndiciRequest/ViaLet", false],
+    ["ServerConst/NewUrlRelative/HostnameAllowlist/AxiosConfig/Inline", false],
+    [
+      "ServerConst/NewUrlRelative/HostnameAllowlist/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NewUrlRelative/HostnameAllowlist/AxiosConfig/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NewUrlRelative/HostnameAllowlist/AxiosConfig/ViaLet", false],
+    ["ServerConst/NewUrlRelative/HostnameAllowlist/AxiosGet/Inline", false],
+    [
+      "ServerConst/NewUrlRelative/HostnameAllowlist/AxiosGet/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NewUrlRelative/HostnameAllowlist/AxiosGet/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NewUrlRelative/HostnameAllowlist/AxiosGet/ViaLet", false],
+    ["ServerConst/NewUrlRelative/HostnameAllowlist/Fetch/Inline", false],
+    [
+      "ServerConst/NewUrlRelative/HostnameAllowlist/Fetch/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/NewUrlRelative/HostnameAllowlist/Fetch/ViaHelperSink", false],
+    ["ServerConst/NewUrlRelative/HostnameAllowlist/Fetch/ViaLet", false],
+    ["ServerConst/NewUrlRelative/HostnameAllowlist/GotDefault/Inline", false],
+    [
+      "ServerConst/NewUrlRelative/HostnameAllowlist/GotDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NewUrlRelative/HostnameAllowlist/GotDefault/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NewUrlRelative/HostnameAllowlist/GotDefault/ViaLet", false],
+    ["ServerConst/NewUrlRelative/HostnameAllowlist/HttpsGet/Inline", false],
+    [
+      "ServerConst/NewUrlRelative/HostnameAllowlist/HttpsGet/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NewUrlRelative/HostnameAllowlist/HttpsGet/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NewUrlRelative/HostnameAllowlist/HttpsGet/ViaLet", false],
+    [
+      "ServerConst/NewUrlRelative/HostnameAllowlist/UndiciRequest/Inline",
+      false
+    ],
+    [
+      "ServerConst/NewUrlRelative/HostnameAllowlist/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NewUrlRelative/HostnameAllowlist/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    [
+      "ServerConst/NewUrlRelative/HostnameAllowlist/UndiciRequest/ViaLet",
+      false
+    ],
+    ["ServerConst/NewUrlRelative/IsValidUrlHelper/AxiosConfig/Inline", false],
+    [
+      "ServerConst/NewUrlRelative/IsValidUrlHelper/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NewUrlRelative/IsValidUrlHelper/AxiosConfig/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NewUrlRelative/IsValidUrlHelper/AxiosConfig/ViaLet", false],
+    ["ServerConst/NewUrlRelative/IsValidUrlHelper/AxiosGet/Inline", false],
+    [
+      "ServerConst/NewUrlRelative/IsValidUrlHelper/AxiosGet/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NewUrlRelative/IsValidUrlHelper/AxiosGet/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NewUrlRelative/IsValidUrlHelper/AxiosGet/ViaLet", false],
+    ["ServerConst/NewUrlRelative/IsValidUrlHelper/Fetch/Inline", false],
+    [
+      "ServerConst/NewUrlRelative/IsValidUrlHelper/Fetch/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/NewUrlRelative/IsValidUrlHelper/Fetch/ViaHelperSink", false],
+    ["ServerConst/NewUrlRelative/IsValidUrlHelper/Fetch/ViaLet", false],
+    ["ServerConst/NewUrlRelative/IsValidUrlHelper/GotDefault/Inline", false],
+    [
+      "ServerConst/NewUrlRelative/IsValidUrlHelper/GotDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NewUrlRelative/IsValidUrlHelper/GotDefault/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NewUrlRelative/IsValidUrlHelper/GotDefault/ViaLet", false],
+    [
+      "ServerConst/NewUrlRelative/IsValidUrlHelper/HttpsGet/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NewUrlRelative/IsValidUrlHelper/HttpsGet/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NewUrlRelative/IsValidUrlHelper/HttpsGet/ViaLet", false],
+    ["ServerConst/NewUrlRelative/IsValidUrlHelper/UndiciRequest/Inline", false],
+    [
+      "ServerConst/NewUrlRelative/IsValidUrlHelper/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NewUrlRelative/IsValidUrlHelper/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NewUrlRelative/IsValidUrlHelper/UndiciRequest/ViaLet", false],
+    ["ServerConst/NewUrlRelative/NoGuard/AxiosConfig/Inline", false],
+    ["ServerConst/NewUrlRelative/NoGuard/AxiosConfig/ViaHelperReturn", false],
+    ["ServerConst/NewUrlRelative/NoGuard/AxiosConfig/ViaHelperSink", false],
+    ["ServerConst/NewUrlRelative/NoGuard/AxiosConfig/ViaLet", false],
+    ["ServerConst/NewUrlRelative/NoGuard/AxiosGet/Inline", false],
+    ["ServerConst/NewUrlRelative/NoGuard/AxiosGet/ViaHelperReturn", false],
+    ["ServerConst/NewUrlRelative/NoGuard/AxiosGet/ViaHelperSink", false],
+    ["ServerConst/NewUrlRelative/NoGuard/AxiosGet/ViaLet", false],
+    ["ServerConst/NewUrlRelative/NoGuard/Fetch/Inline", false],
+    ["ServerConst/NewUrlRelative/NoGuard/Fetch/ViaHelperReturn", false],
+    ["ServerConst/NewUrlRelative/NoGuard/Fetch/ViaHelperSink", false],
+    ["ServerConst/NewUrlRelative/NoGuard/Fetch/ViaLet", false],
+    ["ServerConst/NewUrlRelative/NoGuard/GotDefault/Inline", false],
+    ["ServerConst/NewUrlRelative/NoGuard/GotDefault/ViaHelperReturn", false],
+    ["ServerConst/NewUrlRelative/NoGuard/GotDefault/ViaHelperSink", false],
+    ["ServerConst/NewUrlRelative/NoGuard/GotDefault/ViaLet", false],
+    ["ServerConst/NewUrlRelative/NoGuard/HttpsGet/Inline", false],
+    ["ServerConst/NewUrlRelative/NoGuard/HttpsGet/ViaHelperReturn", false],
+    ["ServerConst/NewUrlRelative/NoGuard/HttpsGet/ViaHelperSink", false],
+    ["ServerConst/NewUrlRelative/NoGuard/HttpsGet/ViaLet", false],
+    ["ServerConst/NewUrlRelative/NoGuard/UndiciRequest/Inline", false],
+    ["ServerConst/NewUrlRelative/NoGuard/UndiciRequest/ViaHelperReturn", false],
+    ["ServerConst/NewUrlRelative/NoGuard/UndiciRequest/ViaHelperSink", false],
+    ["ServerConst/NewUrlRelative/NoGuard/UndiciRequest/ViaLet", false],
+    ["ServerConst/NewUrlRelative/ProtocolCheck/AxiosConfig/Inline", false],
+    [
+      "ServerConst/NewUrlRelative/ProtocolCheck/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NewUrlRelative/ProtocolCheck/AxiosConfig/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NewUrlRelative/ProtocolCheck/AxiosConfig/ViaLet", false],
+    ["ServerConst/NewUrlRelative/ProtocolCheck/AxiosGet/Inline", false],
+    [
+      "ServerConst/NewUrlRelative/ProtocolCheck/AxiosGet/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/NewUrlRelative/ProtocolCheck/AxiosGet/ViaHelperSink", false],
+    ["ServerConst/NewUrlRelative/ProtocolCheck/AxiosGet/ViaLet", false],
+    ["ServerConst/NewUrlRelative/ProtocolCheck/Fetch/Inline", false],
+    ["ServerConst/NewUrlRelative/ProtocolCheck/Fetch/ViaHelperReturn", false],
+    ["ServerConst/NewUrlRelative/ProtocolCheck/Fetch/ViaHelperSink", false],
+    ["ServerConst/NewUrlRelative/ProtocolCheck/Fetch/ViaLet", false],
+    ["ServerConst/NewUrlRelative/ProtocolCheck/GotDefault/Inline", false],
+    [
+      "ServerConst/NewUrlRelative/ProtocolCheck/GotDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NewUrlRelative/ProtocolCheck/GotDefault/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NewUrlRelative/ProtocolCheck/GotDefault/ViaLet", false],
+    ["ServerConst/NewUrlRelative/ProtocolCheck/HttpsGet/Inline", false],
+    [
+      "ServerConst/NewUrlRelative/ProtocolCheck/HttpsGet/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/NewUrlRelative/ProtocolCheck/HttpsGet/ViaHelperSink", false],
+    ["ServerConst/NewUrlRelative/ProtocolCheck/HttpsGet/ViaLet", false],
+    ["ServerConst/NewUrlRelative/ProtocolCheck/UndiciRequest/Inline", false],
+    [
+      "ServerConst/NewUrlRelative/ProtocolCheck/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NewUrlRelative/ProtocolCheck/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NewUrlRelative/ProtocolCheck/UndiciRequest/ViaLet", false],
+    ["ServerConst/NewUrlRelative/SchemeOnly/AxiosConfig/Inline", false],
+    [
+      "ServerConst/NewUrlRelative/SchemeOnly/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/NewUrlRelative/SchemeOnly/AxiosConfig/ViaHelperSink", false],
+    ["ServerConst/NewUrlRelative/SchemeOnly/AxiosConfig/ViaLet", false],
+    ["ServerConst/NewUrlRelative/SchemeOnly/AxiosGet/Inline", false],
+    ["ServerConst/NewUrlRelative/SchemeOnly/AxiosGet/ViaHelperReturn", false],
+    ["ServerConst/NewUrlRelative/SchemeOnly/AxiosGet/ViaHelperSink", false],
+    ["ServerConst/NewUrlRelative/SchemeOnly/AxiosGet/ViaLet", false],
+    ["ServerConst/NewUrlRelative/SchemeOnly/Fetch/Inline", false],
+    ["ServerConst/NewUrlRelative/SchemeOnly/Fetch/ViaHelperReturn", false],
+    ["ServerConst/NewUrlRelative/SchemeOnly/Fetch/ViaHelperSink", false],
+    ["ServerConst/NewUrlRelative/SchemeOnly/Fetch/ViaLet", false],
+    ["ServerConst/NewUrlRelative/SchemeOnly/GotDefault/Inline", false],
+    ["ServerConst/NewUrlRelative/SchemeOnly/GotDefault/ViaHelperReturn", false],
+    ["ServerConst/NewUrlRelative/SchemeOnly/GotDefault/ViaHelperSink", false],
+    ["ServerConst/NewUrlRelative/SchemeOnly/GotDefault/ViaLet", false],
+    ["ServerConst/NewUrlRelative/SchemeOnly/HttpsGet/Inline", false],
+    ["ServerConst/NewUrlRelative/SchemeOnly/HttpsGet/ViaHelperReturn", false],
+    ["ServerConst/NewUrlRelative/SchemeOnly/HttpsGet/ViaHelperSink", false],
+    ["ServerConst/NewUrlRelative/SchemeOnly/HttpsGet/ViaLet", false],
+    ["ServerConst/NewUrlRelative/SchemeOnly/UndiciRequest/Inline", false],
+    [
+      "ServerConst/NewUrlRelative/SchemeOnly/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NewUrlRelative/SchemeOnly/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NewUrlRelative/SchemeOnly/UndiciRequest/ViaLet", false],
+    ["ServerConst/NewUrlRelative/SomeCallback/AxiosConfig/Inline", false],
+    [
+      "ServerConst/NewUrlRelative/SomeCallback/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NewUrlRelative/SomeCallback/AxiosConfig/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NewUrlRelative/SomeCallback/AxiosConfig/ViaLet", false],
+    ["ServerConst/NewUrlRelative/SomeCallback/AxiosGet/Inline", false],
+    ["ServerConst/NewUrlRelative/SomeCallback/AxiosGet/ViaHelperReturn", false],
+    ["ServerConst/NewUrlRelative/SomeCallback/AxiosGet/ViaHelperSink", false],
+    ["ServerConst/NewUrlRelative/SomeCallback/AxiosGet/ViaLet", false],
+    ["ServerConst/NewUrlRelative/SomeCallback/Fetch/Inline", false],
+    ["ServerConst/NewUrlRelative/SomeCallback/Fetch/ViaHelperReturn", false],
+    ["ServerConst/NewUrlRelative/SomeCallback/Fetch/ViaHelperSink", false],
+    ["ServerConst/NewUrlRelative/SomeCallback/Fetch/ViaLet", false],
+    ["ServerConst/NewUrlRelative/SomeCallback/GotDefault/Inline", false],
+    [
+      "ServerConst/NewUrlRelative/SomeCallback/GotDefault/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/NewUrlRelative/SomeCallback/GotDefault/ViaHelperSink", false],
+    ["ServerConst/NewUrlRelative/SomeCallback/GotDefault/ViaLet", false],
+    ["ServerConst/NewUrlRelative/SomeCallback/HttpsGet/Inline", false],
+    ["ServerConst/NewUrlRelative/SomeCallback/HttpsGet/ViaHelperReturn", false],
+    ["ServerConst/NewUrlRelative/SomeCallback/HttpsGet/ViaHelperSink", false],
+    ["ServerConst/NewUrlRelative/SomeCallback/HttpsGet/ViaLet", false],
+    ["ServerConst/NewUrlRelative/SomeCallback/UndiciRequest/Inline", false],
+    [
+      "ServerConst/NewUrlRelative/SomeCallback/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NewUrlRelative/SomeCallback/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NewUrlRelative/SomeCallback/UndiciRequest/ViaLet", false],
+    ["ServerConst/NewUrlWhole/HostnameAllowlist/AxiosConfig/Inline", false],
+    [
+      "ServerConst/NewUrlWhole/HostnameAllowlist/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NewUrlWhole/HostnameAllowlist/AxiosConfig/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NewUrlWhole/HostnameAllowlist/AxiosConfig/ViaLet", false],
+    ["ServerConst/NewUrlWhole/HostnameAllowlist/AxiosGet/Inline", false],
+    [
+      "ServerConst/NewUrlWhole/HostnameAllowlist/AxiosGet/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/NewUrlWhole/HostnameAllowlist/AxiosGet/ViaHelperSink", false],
+    ["ServerConst/NewUrlWhole/HostnameAllowlist/AxiosGet/ViaLet", false],
+    ["ServerConst/NewUrlWhole/HostnameAllowlist/Fetch/Inline", false],
+    ["ServerConst/NewUrlWhole/HostnameAllowlist/Fetch/ViaHelperReturn", false],
+    ["ServerConst/NewUrlWhole/HostnameAllowlist/Fetch/ViaHelperSink", false],
+    ["ServerConst/NewUrlWhole/HostnameAllowlist/Fetch/ViaLet", false],
+    ["ServerConst/NewUrlWhole/HostnameAllowlist/GotDefault/Inline", false],
+    [
+      "ServerConst/NewUrlWhole/HostnameAllowlist/GotDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NewUrlWhole/HostnameAllowlist/GotDefault/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NewUrlWhole/HostnameAllowlist/GotDefault/ViaLet", false],
+    ["ServerConst/NewUrlWhole/HostnameAllowlist/HttpsGet/Inline", false],
+    [
+      "ServerConst/NewUrlWhole/HostnameAllowlist/HttpsGet/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/NewUrlWhole/HostnameAllowlist/HttpsGet/ViaHelperSink", false],
+    ["ServerConst/NewUrlWhole/HostnameAllowlist/HttpsGet/ViaLet", false],
+    ["ServerConst/NewUrlWhole/HostnameAllowlist/UndiciRequest/Inline", false],
+    [
+      "ServerConst/NewUrlWhole/HostnameAllowlist/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NewUrlWhole/HostnameAllowlist/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NewUrlWhole/HostnameAllowlist/UndiciRequest/ViaLet", false],
+    ["ServerConst/NewUrlWhole/IsValidUrlHelper/AxiosConfig/Inline", false],
+    [
+      "ServerConst/NewUrlWhole/IsValidUrlHelper/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NewUrlWhole/IsValidUrlHelper/AxiosConfig/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NewUrlWhole/IsValidUrlHelper/AxiosConfig/ViaLet", false],
+    ["ServerConst/NewUrlWhole/IsValidUrlHelper/AxiosGet/Inline", false],
+    [
+      "ServerConst/NewUrlWhole/IsValidUrlHelper/AxiosGet/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/NewUrlWhole/IsValidUrlHelper/AxiosGet/ViaHelperSink", false],
+    ["ServerConst/NewUrlWhole/IsValidUrlHelper/AxiosGet/ViaLet", false],
+    ["ServerConst/NewUrlWhole/IsValidUrlHelper/Fetch/Inline", false],
+    ["ServerConst/NewUrlWhole/IsValidUrlHelper/Fetch/ViaHelperReturn", false],
+    ["ServerConst/NewUrlWhole/IsValidUrlHelper/Fetch/ViaHelperSink", false],
+    ["ServerConst/NewUrlWhole/IsValidUrlHelper/Fetch/ViaLet", false],
+    [
+      "ServerConst/NewUrlWhole/IsValidUrlHelper/GotDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NewUrlWhole/IsValidUrlHelper/GotDefault/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NewUrlWhole/IsValidUrlHelper/GotDefault/ViaLet", false],
+    ["ServerConst/NewUrlWhole/IsValidUrlHelper/HttpsGet/Inline", false],
+    [
+      "ServerConst/NewUrlWhole/IsValidUrlHelper/HttpsGet/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/NewUrlWhole/IsValidUrlHelper/HttpsGet/ViaHelperSink", false],
+    ["ServerConst/NewUrlWhole/IsValidUrlHelper/HttpsGet/ViaLet", false],
+    ["ServerConst/NewUrlWhole/IsValidUrlHelper/UndiciRequest/Inline", false],
+    [
+      "ServerConst/NewUrlWhole/IsValidUrlHelper/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NewUrlWhole/IsValidUrlHelper/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NewUrlWhole/IsValidUrlHelper/UndiciRequest/ViaLet", false],
+    ["ServerConst/NewUrlWhole/NoGuard/AxiosConfig/Inline", false],
+    ["ServerConst/NewUrlWhole/NoGuard/AxiosConfig/ViaHelperReturn", false],
+    ["ServerConst/NewUrlWhole/NoGuard/AxiosConfig/ViaHelperSink", false],
+    ["ServerConst/NewUrlWhole/NoGuard/AxiosConfig/ViaLet", false],
+    ["ServerConst/NewUrlWhole/NoGuard/AxiosGet/Inline", false],
+    ["ServerConst/NewUrlWhole/NoGuard/AxiosGet/ViaHelperReturn", false],
+    ["ServerConst/NewUrlWhole/NoGuard/AxiosGet/ViaHelperSink", false],
+    ["ServerConst/NewUrlWhole/NoGuard/AxiosGet/ViaLet", false],
+    ["ServerConst/NewUrlWhole/NoGuard/Fetch/Inline", false],
+    ["ServerConst/NewUrlWhole/NoGuard/Fetch/ViaHelperReturn", false],
+    ["ServerConst/NewUrlWhole/NoGuard/Fetch/ViaHelperSink", false],
+    ["ServerConst/NewUrlWhole/NoGuard/Fetch/ViaLet", false],
+    ["ServerConst/NewUrlWhole/NoGuard/GotDefault/Inline", false],
+    ["ServerConst/NewUrlWhole/NoGuard/GotDefault/ViaHelperReturn", false],
+    ["ServerConst/NewUrlWhole/NoGuard/GotDefault/ViaHelperSink", false],
+    ["ServerConst/NewUrlWhole/NoGuard/GotDefault/ViaLet", false],
+    ["ServerConst/NewUrlWhole/NoGuard/HttpsGet/Inline", false],
+    ["ServerConst/NewUrlWhole/NoGuard/HttpsGet/ViaHelperReturn", false],
+    ["ServerConst/NewUrlWhole/NoGuard/HttpsGet/ViaHelperSink", false],
+    ["ServerConst/NewUrlWhole/NoGuard/HttpsGet/ViaLet", false],
+    ["ServerConst/NewUrlWhole/NoGuard/UndiciRequest/Inline", false],
+    ["ServerConst/NewUrlWhole/NoGuard/UndiciRequest/ViaHelperReturn", false],
+    ["ServerConst/NewUrlWhole/NoGuard/UndiciRequest/ViaHelperSink", false],
+    ["ServerConst/NewUrlWhole/NoGuard/UndiciRequest/ViaLet", false],
+    ["ServerConst/NewUrlWhole/ProtocolCheck/AxiosConfig/Inline", false],
+    [
+      "ServerConst/NewUrlWhole/ProtocolCheck/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/NewUrlWhole/ProtocolCheck/AxiosConfig/ViaHelperSink", false],
+    ["ServerConst/NewUrlWhole/ProtocolCheck/AxiosConfig/ViaLet", false],
+    ["ServerConst/NewUrlWhole/ProtocolCheck/AxiosGet/Inline", false],
+    ["ServerConst/NewUrlWhole/ProtocolCheck/AxiosGet/ViaHelperReturn", false],
+    ["ServerConst/NewUrlWhole/ProtocolCheck/AxiosGet/ViaHelperSink", false],
+    ["ServerConst/NewUrlWhole/ProtocolCheck/AxiosGet/ViaLet", false],
+    ["ServerConst/NewUrlWhole/ProtocolCheck/Fetch/Inline", false],
+    ["ServerConst/NewUrlWhole/ProtocolCheck/Fetch/ViaHelperReturn", false],
+    ["ServerConst/NewUrlWhole/ProtocolCheck/Fetch/ViaHelperSink", false],
+    ["ServerConst/NewUrlWhole/ProtocolCheck/Fetch/ViaLet", false],
+    ["ServerConst/NewUrlWhole/ProtocolCheck/GotDefault/Inline", false],
+    ["ServerConst/NewUrlWhole/ProtocolCheck/GotDefault/ViaHelperReturn", false],
+    ["ServerConst/NewUrlWhole/ProtocolCheck/GotDefault/ViaHelperSink", false],
+    ["ServerConst/NewUrlWhole/ProtocolCheck/GotDefault/ViaLet", false],
+    ["ServerConst/NewUrlWhole/ProtocolCheck/HttpsGet/Inline", false],
+    ["ServerConst/NewUrlWhole/ProtocolCheck/HttpsGet/ViaHelperReturn", false],
+    ["ServerConst/NewUrlWhole/ProtocolCheck/HttpsGet/ViaHelperSink", false],
+    ["ServerConst/NewUrlWhole/ProtocolCheck/HttpsGet/ViaLet", false],
+    ["ServerConst/NewUrlWhole/ProtocolCheck/UndiciRequest/Inline", false],
+    [
+      "ServerConst/NewUrlWhole/ProtocolCheck/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NewUrlWhole/ProtocolCheck/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NewUrlWhole/ProtocolCheck/UndiciRequest/ViaLet", false],
+    ["ServerConst/NewUrlWhole/SchemeOnly/AxiosConfig/Inline", false],
+    ["ServerConst/NewUrlWhole/SchemeOnly/AxiosConfig/ViaHelperReturn", false],
+    ["ServerConst/NewUrlWhole/SchemeOnly/AxiosConfig/ViaHelperSink", false],
+    ["ServerConst/NewUrlWhole/SchemeOnly/AxiosConfig/ViaLet", false],
+    ["ServerConst/NewUrlWhole/SchemeOnly/AxiosGet/ViaHelperReturn", false],
+    ["ServerConst/NewUrlWhole/SchemeOnly/AxiosGet/ViaHelperSink", false],
+    ["ServerConst/NewUrlWhole/SchemeOnly/AxiosGet/ViaLet", false],
+    ["ServerConst/NewUrlWhole/SchemeOnly/Fetch/Inline", false],
+    ["ServerConst/NewUrlWhole/SchemeOnly/Fetch/ViaHelperReturn", false],
+    ["ServerConst/NewUrlWhole/SchemeOnly/Fetch/ViaHelperSink", false],
+    ["ServerConst/NewUrlWhole/SchemeOnly/Fetch/ViaLet", false],
+    ["ServerConst/NewUrlWhole/SchemeOnly/GotDefault/Inline", false],
+    ["ServerConst/NewUrlWhole/SchemeOnly/GotDefault/ViaHelperReturn", false],
+    ["ServerConst/NewUrlWhole/SchemeOnly/GotDefault/ViaHelperSink", false],
+    ["ServerConst/NewUrlWhole/SchemeOnly/GotDefault/ViaLet", false],
+    ["ServerConst/NewUrlWhole/SchemeOnly/HttpsGet/Inline", false],
+    ["ServerConst/NewUrlWhole/SchemeOnly/HttpsGet/ViaHelperReturn", false],
+    ["ServerConst/NewUrlWhole/SchemeOnly/HttpsGet/ViaHelperSink", false],
+    ["ServerConst/NewUrlWhole/SchemeOnly/HttpsGet/ViaLet", false],
+    ["ServerConst/NewUrlWhole/SchemeOnly/UndiciRequest/Inline", false],
+    ["ServerConst/NewUrlWhole/SchemeOnly/UndiciRequest/ViaHelperReturn", false],
+    ["ServerConst/NewUrlWhole/SchemeOnly/UndiciRequest/ViaHelperSink", false],
+    ["ServerConst/NewUrlWhole/SchemeOnly/UndiciRequest/ViaLet", false],
+    ["ServerConst/NewUrlWhole/SomeCallback/AxiosConfig/Inline", false],
+    ["ServerConst/NewUrlWhole/SomeCallback/AxiosConfig/ViaHelperReturn", false],
+    ["ServerConst/NewUrlWhole/SomeCallback/AxiosConfig/ViaHelperSink", false],
+    ["ServerConst/NewUrlWhole/SomeCallback/AxiosConfig/ViaLet", false],
+    ["ServerConst/NewUrlWhole/SomeCallback/AxiosGet/Inline", false],
+    ["ServerConst/NewUrlWhole/SomeCallback/AxiosGet/ViaHelperReturn", false],
+    ["ServerConst/NewUrlWhole/SomeCallback/AxiosGet/ViaLet", false],
+    ["ServerConst/NewUrlWhole/SomeCallback/Fetch/Inline", false],
+    ["ServerConst/NewUrlWhole/SomeCallback/Fetch/ViaHelperReturn", false],
+    ["ServerConst/NewUrlWhole/SomeCallback/Fetch/ViaHelperSink", false],
+    ["ServerConst/NewUrlWhole/SomeCallback/Fetch/ViaLet", false],
+    ["ServerConst/NewUrlWhole/SomeCallback/GotDefault/Inline", false],
+    ["ServerConst/NewUrlWhole/SomeCallback/GotDefault/ViaHelperReturn", false],
+    ["ServerConst/NewUrlWhole/SomeCallback/GotDefault/ViaHelperSink", false],
+    ["ServerConst/NewUrlWhole/SomeCallback/GotDefault/ViaLet", false],
+    ["ServerConst/NewUrlWhole/SomeCallback/HttpsGet/Inline", false],
+    ["ServerConst/NewUrlWhole/SomeCallback/HttpsGet/ViaHelperReturn", false],
+    ["ServerConst/NewUrlWhole/SomeCallback/HttpsGet/ViaHelperSink", false],
+    ["ServerConst/NewUrlWhole/SomeCallback/HttpsGet/ViaLet", false],
+    ["ServerConst/NewUrlWhole/SomeCallback/UndiciRequest/Inline", false],
+    [
+      "ServerConst/NewUrlWhole/SomeCallback/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/NewUrlWhole/SomeCallback/UndiciRequest/ViaHelperSink", false],
+    ["ServerConst/NewUrlWhole/SomeCallback/UndiciRequest/ViaLet", false],
+    ["ServerConst/PathAfterOrigin/HostnameAllowlist/AxiosConfig/Inline", false],
+    [
+      "ServerConst/PathAfterOrigin/HostnameAllowlist/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/PathAfterOrigin/HostnameAllowlist/AxiosConfig/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/PathAfterOrigin/HostnameAllowlist/AxiosConfig/ViaLet", false],
+    ["ServerConst/PathAfterOrigin/HostnameAllowlist/AxiosGet/Inline", false],
+    [
+      "ServerConst/PathAfterOrigin/HostnameAllowlist/AxiosGet/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/PathAfterOrigin/HostnameAllowlist/AxiosGet/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/PathAfterOrigin/HostnameAllowlist/AxiosGet/ViaLet", false],
+    ["ServerConst/PathAfterOrigin/HostnameAllowlist/Fetch/Inline", false],
+    [
+      "ServerConst/PathAfterOrigin/HostnameAllowlist/Fetch/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/PathAfterOrigin/HostnameAllowlist/Fetch/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/PathAfterOrigin/HostnameAllowlist/Fetch/ViaLet", false],
+    ["ServerConst/PathAfterOrigin/HostnameAllowlist/GotDefault/Inline", false],
+    [
+      "ServerConst/PathAfterOrigin/HostnameAllowlist/GotDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/PathAfterOrigin/HostnameAllowlist/GotDefault/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/PathAfterOrigin/HostnameAllowlist/GotDefault/ViaLet", false],
+    ["ServerConst/PathAfterOrigin/HostnameAllowlist/HttpsGet/Inline", false],
+    [
+      "ServerConst/PathAfterOrigin/HostnameAllowlist/HttpsGet/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/PathAfterOrigin/HostnameAllowlist/HttpsGet/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/PathAfterOrigin/HostnameAllowlist/HttpsGet/ViaLet", false],
+    [
+      "ServerConst/PathAfterOrigin/HostnameAllowlist/UndiciRequest/Inline",
+      false
+    ],
+    [
+      "ServerConst/PathAfterOrigin/HostnameAllowlist/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/PathAfterOrigin/HostnameAllowlist/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    [
+      "ServerConst/PathAfterOrigin/HostnameAllowlist/UndiciRequest/ViaLet",
+      false
+    ],
+    ["ServerConst/PathAfterOrigin/IsValidUrlHelper/AxiosConfig/Inline", false],
+    [
+      "ServerConst/PathAfterOrigin/IsValidUrlHelper/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/PathAfterOrigin/IsValidUrlHelper/AxiosConfig/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/PathAfterOrigin/IsValidUrlHelper/AxiosConfig/ViaLet", false],
+    ["ServerConst/PathAfterOrigin/IsValidUrlHelper/AxiosGet/Inline", false],
+    [
+      "ServerConst/PathAfterOrigin/IsValidUrlHelper/AxiosGet/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/PathAfterOrigin/IsValidUrlHelper/AxiosGet/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/PathAfterOrigin/IsValidUrlHelper/AxiosGet/ViaLet", false],
+    ["ServerConst/PathAfterOrigin/IsValidUrlHelper/Fetch/Inline", false],
+    [
+      "ServerConst/PathAfterOrigin/IsValidUrlHelper/Fetch/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/PathAfterOrigin/IsValidUrlHelper/Fetch/ViaHelperSink", false],
+    ["ServerConst/PathAfterOrigin/IsValidUrlHelper/Fetch/ViaLet", false],
+    ["ServerConst/PathAfterOrigin/IsValidUrlHelper/GotDefault/Inline", false],
+    [
+      "ServerConst/PathAfterOrigin/IsValidUrlHelper/GotDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/PathAfterOrigin/IsValidUrlHelper/GotDefault/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/PathAfterOrigin/IsValidUrlHelper/GotDefault/ViaLet", false],
+    ["ServerConst/PathAfterOrigin/IsValidUrlHelper/HttpsGet/Inline", false],
+    [
+      "ServerConst/PathAfterOrigin/IsValidUrlHelper/HttpsGet/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/PathAfterOrigin/IsValidUrlHelper/HttpsGet/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/PathAfterOrigin/IsValidUrlHelper/HttpsGet/ViaLet", false],
+    [
+      "ServerConst/PathAfterOrigin/IsValidUrlHelper/UndiciRequest/Inline",
+      false
+    ],
+    [
+      "ServerConst/PathAfterOrigin/IsValidUrlHelper/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/PathAfterOrigin/IsValidUrlHelper/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    [
+      "ServerConst/PathAfterOrigin/IsValidUrlHelper/UndiciRequest/ViaLet",
+      false
+    ],
+    ["ServerConst/PathAfterOrigin/NoGuard/AxiosConfig/Inline", false],
+    ["ServerConst/PathAfterOrigin/NoGuard/AxiosConfig/ViaHelperReturn", false],
+    ["ServerConst/PathAfterOrigin/NoGuard/AxiosConfig/ViaHelperSink", false],
+    ["ServerConst/PathAfterOrigin/NoGuard/AxiosConfig/ViaLet", false],
+    ["ServerConst/PathAfterOrigin/NoGuard/AxiosGet/Inline", false],
+    ["ServerConst/PathAfterOrigin/NoGuard/AxiosGet/ViaHelperReturn", false],
+    ["ServerConst/PathAfterOrigin/NoGuard/AxiosGet/ViaHelperSink", false],
+    ["ServerConst/PathAfterOrigin/NoGuard/AxiosGet/ViaLet", false],
+    ["ServerConst/PathAfterOrigin/NoGuard/Fetch/Inline", false],
+    ["ServerConst/PathAfterOrigin/NoGuard/Fetch/ViaHelperReturn", false],
+    ["ServerConst/PathAfterOrigin/NoGuard/Fetch/ViaHelperSink", false],
+    ["ServerConst/PathAfterOrigin/NoGuard/Fetch/ViaLet", false],
+    ["ServerConst/PathAfterOrigin/NoGuard/GotDefault/Inline", false],
+    ["ServerConst/PathAfterOrigin/NoGuard/GotDefault/ViaHelperReturn", false],
+    ["ServerConst/PathAfterOrigin/NoGuard/GotDefault/ViaHelperSink", false],
+    ["ServerConst/PathAfterOrigin/NoGuard/GotDefault/ViaLet", false],
+    ["ServerConst/PathAfterOrigin/NoGuard/HttpsGet/Inline", false],
+    ["ServerConst/PathAfterOrigin/NoGuard/HttpsGet/ViaHelperReturn", false],
+    ["ServerConst/PathAfterOrigin/NoGuard/HttpsGet/ViaHelperSink", false],
+    ["ServerConst/PathAfterOrigin/NoGuard/HttpsGet/ViaLet", false],
+    ["ServerConst/PathAfterOrigin/NoGuard/UndiciRequest/Inline", false],
+    [
+      "ServerConst/PathAfterOrigin/NoGuard/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/PathAfterOrigin/NoGuard/UndiciRequest/ViaHelperSink", false],
+    ["ServerConst/PathAfterOrigin/NoGuard/UndiciRequest/ViaLet", false],
+    ["ServerConst/PathAfterOrigin/ProtocolCheck/AxiosConfig/Inline", false],
+    [
+      "ServerConst/PathAfterOrigin/ProtocolCheck/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/PathAfterOrigin/ProtocolCheck/AxiosConfig/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/PathAfterOrigin/ProtocolCheck/AxiosConfig/ViaLet", false],
+    [
+      "ServerConst/PathAfterOrigin/ProtocolCheck/AxiosGet/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/PathAfterOrigin/ProtocolCheck/AxiosGet/ViaHelperSink", false],
+    ["ServerConst/PathAfterOrigin/ProtocolCheck/AxiosGet/ViaLet", false],
+    ["ServerConst/PathAfterOrigin/ProtocolCheck/Fetch/Inline", false],
+    ["ServerConst/PathAfterOrigin/ProtocolCheck/Fetch/ViaHelperReturn", false],
+    ["ServerConst/PathAfterOrigin/ProtocolCheck/Fetch/ViaHelperSink", false],
+    ["ServerConst/PathAfterOrigin/ProtocolCheck/Fetch/ViaLet", false],
+    ["ServerConst/PathAfterOrigin/ProtocolCheck/GotDefault/Inline", false],
+    [
+      "ServerConst/PathAfterOrigin/ProtocolCheck/GotDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/PathAfterOrigin/ProtocolCheck/GotDefault/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/PathAfterOrigin/ProtocolCheck/GotDefault/ViaLet", false],
+    ["ServerConst/PathAfterOrigin/ProtocolCheck/HttpsGet/Inline", false],
+    [
+      "ServerConst/PathAfterOrigin/ProtocolCheck/HttpsGet/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/PathAfterOrigin/ProtocolCheck/HttpsGet/ViaHelperSink", false],
+    ["ServerConst/PathAfterOrigin/ProtocolCheck/HttpsGet/ViaLet", false],
+    ["ServerConst/PathAfterOrigin/ProtocolCheck/UndiciRequest/Inline", false],
+    [
+      "ServerConst/PathAfterOrigin/ProtocolCheck/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/PathAfterOrigin/ProtocolCheck/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/PathAfterOrigin/ProtocolCheck/UndiciRequest/ViaLet", false],
+    ["ServerConst/PathAfterOrigin/SchemeOnly/AxiosConfig/Inline", false],
+    [
+      "ServerConst/PathAfterOrigin/SchemeOnly/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/PathAfterOrigin/SchemeOnly/AxiosConfig/ViaHelperSink", false],
+    ["ServerConst/PathAfterOrigin/SchemeOnly/AxiosConfig/ViaLet", false],
+    ["ServerConst/PathAfterOrigin/SchemeOnly/AxiosGet/Inline", false],
+    ["ServerConst/PathAfterOrigin/SchemeOnly/AxiosGet/ViaHelperReturn", false],
+    ["ServerConst/PathAfterOrigin/SchemeOnly/AxiosGet/ViaHelperSink", false],
+    ["ServerConst/PathAfterOrigin/SchemeOnly/AxiosGet/ViaLet", false],
+    ["ServerConst/PathAfterOrigin/SchemeOnly/Fetch/Inline", false],
+    ["ServerConst/PathAfterOrigin/SchemeOnly/Fetch/ViaHelperReturn", false],
+    ["ServerConst/PathAfterOrigin/SchemeOnly/Fetch/ViaHelperSink", false],
+    ["ServerConst/PathAfterOrigin/SchemeOnly/Fetch/ViaLet", false],
+    ["ServerConst/PathAfterOrigin/SchemeOnly/GotDefault/Inline", false],
+    [
+      "ServerConst/PathAfterOrigin/SchemeOnly/GotDefault/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/PathAfterOrigin/SchemeOnly/GotDefault/ViaHelperSink", false],
+    ["ServerConst/PathAfterOrigin/SchemeOnly/GotDefault/ViaLet", false],
+    ["ServerConst/PathAfterOrigin/SchemeOnly/HttpsGet/Inline", false],
+    ["ServerConst/PathAfterOrigin/SchemeOnly/HttpsGet/ViaHelperReturn", false],
+    ["ServerConst/PathAfterOrigin/SchemeOnly/HttpsGet/ViaHelperSink", false],
+    ["ServerConst/PathAfterOrigin/SchemeOnly/HttpsGet/ViaLet", false],
+    [
+      "ServerConst/PathAfterOrigin/SchemeOnly/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/PathAfterOrigin/SchemeOnly/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/PathAfterOrigin/SomeCallback/AxiosConfig/Inline", false],
+    [
+      "ServerConst/PathAfterOrigin/SomeCallback/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/PathAfterOrigin/SomeCallback/AxiosConfig/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/PathAfterOrigin/SomeCallback/AxiosConfig/ViaLet", false],
+    ["ServerConst/PathAfterOrigin/SomeCallback/AxiosGet/Inline", false],
+    [
+      "ServerConst/PathAfterOrigin/SomeCallback/AxiosGet/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/PathAfterOrigin/SomeCallback/AxiosGet/ViaHelperSink", false],
+    ["ServerConst/PathAfterOrigin/SomeCallback/AxiosGet/ViaLet", false],
+    ["ServerConst/PathAfterOrigin/SomeCallback/Fetch/Inline", false],
+    ["ServerConst/PathAfterOrigin/SomeCallback/Fetch/ViaHelperReturn", false],
+    ["ServerConst/PathAfterOrigin/SomeCallback/Fetch/ViaHelperSink", false],
+    ["ServerConst/PathAfterOrigin/SomeCallback/Fetch/ViaLet", false],
+    ["ServerConst/PathAfterOrigin/SomeCallback/GotDefault/Inline", false],
+    [
+      "ServerConst/PathAfterOrigin/SomeCallback/GotDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/PathAfterOrigin/SomeCallback/GotDefault/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/PathAfterOrigin/SomeCallback/GotDefault/ViaLet", false],
+    ["ServerConst/PathAfterOrigin/SomeCallback/HttpsGet/Inline", false],
+    [
+      "ServerConst/PathAfterOrigin/SomeCallback/HttpsGet/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/PathAfterOrigin/SomeCallback/HttpsGet/ViaHelperSink", false],
+    ["ServerConst/PathAfterOrigin/SomeCallback/HttpsGet/ViaLet", false],
+    ["ServerConst/PathAfterOrigin/SomeCallback/UndiciRequest/Inline", false],
+    [
+      "ServerConst/PathAfterOrigin/SomeCallback/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/PathAfterOrigin/SomeCallback/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/PathAfterOrigin/SomeCallback/UndiciRequest/ViaLet", false],
+    [
+      "ServerConst/QueryAfterOrigin/HostnameAllowlist/AxiosConfig/Inline",
+      false
+    ],
+    [
+      "ServerConst/QueryAfterOrigin/HostnameAllowlist/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/QueryAfterOrigin/HostnameAllowlist/AxiosConfig/ViaHelperSink",
+      false
+    ],
+    [
+      "ServerConst/QueryAfterOrigin/HostnameAllowlist/AxiosConfig/ViaLet",
+      false
+    ],
+    ["ServerConst/QueryAfterOrigin/HostnameAllowlist/AxiosGet/Inline", false],
+    [
+      "ServerConst/QueryAfterOrigin/HostnameAllowlist/AxiosGet/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/QueryAfterOrigin/HostnameAllowlist/AxiosGet/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/QueryAfterOrigin/HostnameAllowlist/AxiosGet/ViaLet", false],
+    ["ServerConst/QueryAfterOrigin/HostnameAllowlist/Fetch/Inline", false],
+    [
+      "ServerConst/QueryAfterOrigin/HostnameAllowlist/Fetch/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/QueryAfterOrigin/HostnameAllowlist/Fetch/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/QueryAfterOrigin/HostnameAllowlist/Fetch/ViaLet", false],
+    ["ServerConst/QueryAfterOrigin/HostnameAllowlist/GotDefault/Inline", false],
+    [
+      "ServerConst/QueryAfterOrigin/HostnameAllowlist/GotDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/QueryAfterOrigin/HostnameAllowlist/GotDefault/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/QueryAfterOrigin/HostnameAllowlist/GotDefault/ViaLet", false],
+    ["ServerConst/QueryAfterOrigin/HostnameAllowlist/HttpsGet/Inline", false],
+    [
+      "ServerConst/QueryAfterOrigin/HostnameAllowlist/HttpsGet/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/QueryAfterOrigin/HostnameAllowlist/HttpsGet/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/QueryAfterOrigin/HostnameAllowlist/HttpsGet/ViaLet", false],
+    [
+      "ServerConst/QueryAfterOrigin/HostnameAllowlist/UndiciRequest/Inline",
+      false
+    ],
+    [
+      "ServerConst/QueryAfterOrigin/HostnameAllowlist/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/QueryAfterOrigin/HostnameAllowlist/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    [
+      "ServerConst/QueryAfterOrigin/HostnameAllowlist/UndiciRequest/ViaLet",
+      false
+    ],
+    ["ServerConst/QueryAfterOrigin/IsValidUrlHelper/AxiosConfig/Inline", false],
+    [
+      "ServerConst/QueryAfterOrigin/IsValidUrlHelper/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/QueryAfterOrigin/IsValidUrlHelper/AxiosConfig/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/QueryAfterOrigin/IsValidUrlHelper/AxiosConfig/ViaLet", false],
+    ["ServerConst/QueryAfterOrigin/IsValidUrlHelper/AxiosGet/Inline", false],
+    [
+      "ServerConst/QueryAfterOrigin/IsValidUrlHelper/AxiosGet/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/QueryAfterOrigin/IsValidUrlHelper/AxiosGet/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/QueryAfterOrigin/IsValidUrlHelper/AxiosGet/ViaLet", false],
+    ["ServerConst/QueryAfterOrigin/IsValidUrlHelper/Fetch/Inline", false],
+    [
+      "ServerConst/QueryAfterOrigin/IsValidUrlHelper/Fetch/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/QueryAfterOrigin/IsValidUrlHelper/Fetch/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/QueryAfterOrigin/IsValidUrlHelper/Fetch/ViaLet", false],
+    ["ServerConst/QueryAfterOrigin/IsValidUrlHelper/GotDefault/Inline", false],
+    [
+      "ServerConst/QueryAfterOrigin/IsValidUrlHelper/GotDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/QueryAfterOrigin/IsValidUrlHelper/GotDefault/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/QueryAfterOrigin/IsValidUrlHelper/GotDefault/ViaLet", false],
+    ["ServerConst/QueryAfterOrigin/IsValidUrlHelper/HttpsGet/Inline", false],
+    [
+      "ServerConst/QueryAfterOrigin/IsValidUrlHelper/HttpsGet/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/QueryAfterOrigin/IsValidUrlHelper/HttpsGet/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/QueryAfterOrigin/IsValidUrlHelper/HttpsGet/ViaLet", false],
+    [
+      "ServerConst/QueryAfterOrigin/IsValidUrlHelper/UndiciRequest/Inline",
+      false
+    ],
+    [
+      "ServerConst/QueryAfterOrigin/IsValidUrlHelper/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/QueryAfterOrigin/IsValidUrlHelper/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    [
+      "ServerConst/QueryAfterOrigin/IsValidUrlHelper/UndiciRequest/ViaLet",
+      false
+    ],
+    ["ServerConst/QueryAfterOrigin/NoGuard/AxiosConfig/Inline", false],
+    ["ServerConst/QueryAfterOrigin/NoGuard/AxiosConfig/ViaHelperReturn", false],
+    ["ServerConst/QueryAfterOrigin/NoGuard/AxiosConfig/ViaHelperSink", false],
+    ["ServerConst/QueryAfterOrigin/NoGuard/AxiosConfig/ViaLet", false],
+    ["ServerConst/QueryAfterOrigin/NoGuard/AxiosGet/Inline", false],
+    ["ServerConst/QueryAfterOrigin/NoGuard/AxiosGet/ViaHelperReturn", false],
+    ["ServerConst/QueryAfterOrigin/NoGuard/AxiosGet/ViaHelperSink", false],
+    ["ServerConst/QueryAfterOrigin/NoGuard/Fetch/Inline", false],
+    ["ServerConst/QueryAfterOrigin/NoGuard/Fetch/ViaHelperReturn", false],
+    ["ServerConst/QueryAfterOrigin/NoGuard/Fetch/ViaHelperSink", false],
+    ["ServerConst/QueryAfterOrigin/NoGuard/GotDefault/Inline", false],
+    ["ServerConst/QueryAfterOrigin/NoGuard/GotDefault/ViaHelperReturn", false],
+    ["ServerConst/QueryAfterOrigin/NoGuard/GotDefault/ViaHelperSink", false],
+    ["ServerConst/QueryAfterOrigin/NoGuard/GotDefault/ViaLet", false],
+    ["ServerConst/QueryAfterOrigin/NoGuard/HttpsGet/Inline", false],
+    ["ServerConst/QueryAfterOrigin/NoGuard/HttpsGet/ViaHelperReturn", false],
+    ["ServerConst/QueryAfterOrigin/NoGuard/HttpsGet/ViaHelperSink", false],
+    ["ServerConst/QueryAfterOrigin/NoGuard/HttpsGet/ViaLet", false],
+    [
+      "ServerConst/QueryAfterOrigin/NoGuard/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/QueryAfterOrigin/NoGuard/UndiciRequest/ViaHelperSink", false],
+    ["ServerConst/QueryAfterOrigin/NoGuard/UndiciRequest/ViaLet", false],
+    ["ServerConst/QueryAfterOrigin/ProtocolCheck/AxiosConfig/Inline", false],
+    [
+      "ServerConst/QueryAfterOrigin/ProtocolCheck/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/QueryAfterOrigin/ProtocolCheck/AxiosConfig/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/QueryAfterOrigin/ProtocolCheck/AxiosConfig/ViaLet", false],
+    ["ServerConst/QueryAfterOrigin/ProtocolCheck/AxiosGet/Inline", false],
+    [
+      "ServerConst/QueryAfterOrigin/ProtocolCheck/AxiosGet/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/QueryAfterOrigin/ProtocolCheck/AxiosGet/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/QueryAfterOrigin/ProtocolCheck/AxiosGet/ViaLet", false],
+    ["ServerConst/QueryAfterOrigin/ProtocolCheck/Fetch/Inline", false],
+    ["ServerConst/QueryAfterOrigin/ProtocolCheck/Fetch/ViaHelperReturn", false],
+    ["ServerConst/QueryAfterOrigin/ProtocolCheck/Fetch/ViaHelperSink", false],
+    ["ServerConst/QueryAfterOrigin/ProtocolCheck/Fetch/ViaLet", false],
+    ["ServerConst/QueryAfterOrigin/ProtocolCheck/GotDefault/Inline", false],
+    [
+      "ServerConst/QueryAfterOrigin/ProtocolCheck/GotDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/QueryAfterOrigin/ProtocolCheck/GotDefault/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/QueryAfterOrigin/ProtocolCheck/GotDefault/ViaLet", false],
+    ["ServerConst/QueryAfterOrigin/ProtocolCheck/HttpsGet/Inline", false],
+    [
+      "ServerConst/QueryAfterOrigin/ProtocolCheck/HttpsGet/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/QueryAfterOrigin/ProtocolCheck/HttpsGet/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/QueryAfterOrigin/ProtocolCheck/HttpsGet/ViaLet", false],
+    ["ServerConst/QueryAfterOrigin/ProtocolCheck/UndiciRequest/Inline", false],
+    [
+      "ServerConst/QueryAfterOrigin/ProtocolCheck/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/QueryAfterOrigin/ProtocolCheck/UndiciRequest/ViaLet", false],
+    ["ServerConst/QueryAfterOrigin/SchemeOnly/AxiosConfig/Inline", false],
+    [
+      "ServerConst/QueryAfterOrigin/SchemeOnly/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/QueryAfterOrigin/SchemeOnly/AxiosConfig/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/QueryAfterOrigin/SchemeOnly/AxiosConfig/ViaLet", false],
+    ["ServerConst/QueryAfterOrigin/SchemeOnly/AxiosGet/Inline", false],
+    ["ServerConst/QueryAfterOrigin/SchemeOnly/AxiosGet/ViaHelperReturn", false],
+    ["ServerConst/QueryAfterOrigin/SchemeOnly/AxiosGet/ViaHelperSink", false],
+    ["ServerConst/QueryAfterOrigin/SchemeOnly/AxiosGet/ViaLet", false],
+    ["ServerConst/QueryAfterOrigin/SchemeOnly/Fetch/Inline", false],
+    ["ServerConst/QueryAfterOrigin/SchemeOnly/Fetch/ViaHelperReturn", false],
+    ["ServerConst/QueryAfterOrigin/SchemeOnly/Fetch/ViaHelperSink", false],
+    ["ServerConst/QueryAfterOrigin/SchemeOnly/Fetch/ViaLet", false],
+    ["ServerConst/QueryAfterOrigin/SchemeOnly/GotDefault/Inline", false],
+    [
+      "ServerConst/QueryAfterOrigin/SchemeOnly/GotDefault/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/QueryAfterOrigin/SchemeOnly/GotDefault/ViaHelperSink", false],
+    ["ServerConst/QueryAfterOrigin/SchemeOnly/GotDefault/ViaLet", false],
+    ["ServerConst/QueryAfterOrigin/SchemeOnly/HttpsGet/Inline", false],
+    ["ServerConst/QueryAfterOrigin/SchemeOnly/HttpsGet/ViaHelperReturn", false],
+    ["ServerConst/QueryAfterOrigin/SchemeOnly/HttpsGet/ViaHelperSink", false],
+    ["ServerConst/QueryAfterOrigin/SchemeOnly/HttpsGet/ViaLet", false],
+    ["ServerConst/QueryAfterOrigin/SchemeOnly/UndiciRequest/Inline", false],
+    [
+      "ServerConst/QueryAfterOrigin/SchemeOnly/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/QueryAfterOrigin/SchemeOnly/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/QueryAfterOrigin/SchemeOnly/UndiciRequest/ViaLet", false],
+    ["ServerConst/QueryAfterOrigin/SomeCallback/AxiosConfig/Inline", false],
+    [
+      "ServerConst/QueryAfterOrigin/SomeCallback/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/QueryAfterOrigin/SomeCallback/AxiosConfig/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/QueryAfterOrigin/SomeCallback/AxiosConfig/ViaLet", false],
+    ["ServerConst/QueryAfterOrigin/SomeCallback/AxiosGet/Inline", false],
+    [
+      "ServerConst/QueryAfterOrigin/SomeCallback/AxiosGet/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/QueryAfterOrigin/SomeCallback/AxiosGet/ViaHelperSink", false],
+    ["ServerConst/QueryAfterOrigin/SomeCallback/AxiosGet/ViaLet", false],
+    ["ServerConst/QueryAfterOrigin/SomeCallback/Fetch/Inline", false],
+    ["ServerConst/QueryAfterOrigin/SomeCallback/Fetch/ViaHelperReturn", false],
+    ["ServerConst/QueryAfterOrigin/SomeCallback/Fetch/ViaHelperSink", false],
+    ["ServerConst/QueryAfterOrigin/SomeCallback/Fetch/ViaLet", false],
+    ["ServerConst/QueryAfterOrigin/SomeCallback/GotDefault/Inline", false],
+    [
+      "ServerConst/QueryAfterOrigin/SomeCallback/GotDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/QueryAfterOrigin/SomeCallback/GotDefault/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/QueryAfterOrigin/SomeCallback/GotDefault/ViaLet", false],
+    ["ServerConst/QueryAfterOrigin/SomeCallback/HttpsGet/Inline", false],
+    [
+      "ServerConst/QueryAfterOrigin/SomeCallback/HttpsGet/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/QueryAfterOrigin/SomeCallback/HttpsGet/ViaHelperSink", false],
+    ["ServerConst/QueryAfterOrigin/SomeCallback/HttpsGet/ViaLet", false],
+    ["ServerConst/QueryAfterOrigin/SomeCallback/UndiciRequest/Inline", false],
+    [
+      "ServerConst/QueryAfterOrigin/SomeCallback/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/QueryAfterOrigin/SomeCallback/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/QueryAfterOrigin/SomeCallback/UndiciRequest/ViaLet", false],
+    ["ServerConst/Whole/HostnameAllowlist/AxiosConfig/Inline", false],
+    ["ServerConst/Whole/HostnameAllowlist/AxiosConfig/ViaHelperReturn", false],
+    ["ServerConst/Whole/HostnameAllowlist/AxiosConfig/ViaHelperSink", false],
+    ["ServerConst/Whole/HostnameAllowlist/AxiosConfig/ViaLet", false],
+    ["ServerConst/Whole/HostnameAllowlist/AxiosGet/Inline", false],
+    ["ServerConst/Whole/HostnameAllowlist/AxiosGet/ViaHelperReturn", false],
+    ["ServerConst/Whole/HostnameAllowlist/AxiosGet/ViaHelperSink", false],
+    ["ServerConst/Whole/HostnameAllowlist/AxiosGet/ViaLet", false],
+    ["ServerConst/Whole/HostnameAllowlist/Fetch/Inline", false],
+    ["ServerConst/Whole/HostnameAllowlist/Fetch/ViaHelperReturn", false],
+    ["ServerConst/Whole/HostnameAllowlist/Fetch/ViaHelperSink", false],
+    ["ServerConst/Whole/HostnameAllowlist/Fetch/ViaLet", false],
+    ["ServerConst/Whole/HostnameAllowlist/GotDefault/Inline", false],
+    ["ServerConst/Whole/HostnameAllowlist/GotDefault/ViaHelperReturn", false],
+    ["ServerConst/Whole/HostnameAllowlist/GotDefault/ViaHelperSink", false],
+    ["ServerConst/Whole/HostnameAllowlist/HttpsGet/Inline", false],
+    ["ServerConst/Whole/HostnameAllowlist/HttpsGet/ViaHelperReturn", false],
+    ["ServerConst/Whole/HostnameAllowlist/HttpsGet/ViaHelperSink", false],
+    ["ServerConst/Whole/HostnameAllowlist/HttpsGet/ViaLet", false],
+    ["ServerConst/Whole/HostnameAllowlist/UndiciRequest/Inline", false],
+    [
+      "ServerConst/Whole/HostnameAllowlist/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/Whole/HostnameAllowlist/UndiciRequest/ViaHelperSink", false],
+    ["ServerConst/Whole/HostnameAllowlist/UndiciRequest/ViaLet", false],
+    ["ServerConst/Whole/IsValidUrlHelper/AxiosConfig/Inline", false],
+    ["ServerConst/Whole/IsValidUrlHelper/AxiosConfig/ViaHelperReturn", false],
+    ["ServerConst/Whole/IsValidUrlHelper/AxiosConfig/ViaHelperSink", false],
+    ["ServerConst/Whole/IsValidUrlHelper/AxiosConfig/ViaLet", false],
+    ["ServerConst/Whole/IsValidUrlHelper/AxiosGet/Inline", false],
+    ["ServerConst/Whole/IsValidUrlHelper/AxiosGet/ViaHelperReturn", false],
+    ["ServerConst/Whole/IsValidUrlHelper/AxiosGet/ViaHelperSink", false],
+    ["ServerConst/Whole/IsValidUrlHelper/AxiosGet/ViaLet", false],
+    ["ServerConst/Whole/IsValidUrlHelper/Fetch/Inline", false],
+    ["ServerConst/Whole/IsValidUrlHelper/Fetch/ViaHelperReturn", false],
+    ["ServerConst/Whole/IsValidUrlHelper/Fetch/ViaHelperSink", false],
+    ["ServerConst/Whole/IsValidUrlHelper/Fetch/ViaLet", false],
+    ["ServerConst/Whole/IsValidUrlHelper/GotDefault/Inline", false],
+    ["ServerConst/Whole/IsValidUrlHelper/GotDefault/ViaHelperReturn", false],
+    ["ServerConst/Whole/IsValidUrlHelper/GotDefault/ViaHelperSink", false],
+    ["ServerConst/Whole/IsValidUrlHelper/GotDefault/ViaLet", false],
+    ["ServerConst/Whole/IsValidUrlHelper/HttpsGet/Inline", false],
+    ["ServerConst/Whole/IsValidUrlHelper/HttpsGet/ViaHelperReturn", false],
+    ["ServerConst/Whole/IsValidUrlHelper/HttpsGet/ViaHelperSink", false],
+    ["ServerConst/Whole/IsValidUrlHelper/HttpsGet/ViaLet", false],
+    ["ServerConst/Whole/IsValidUrlHelper/UndiciRequest/Inline", false],
+    ["ServerConst/Whole/IsValidUrlHelper/UndiciRequest/ViaHelperReturn", false],
+    ["ServerConst/Whole/IsValidUrlHelper/UndiciRequest/ViaHelperSink", false],
+    ["ServerConst/Whole/IsValidUrlHelper/UndiciRequest/ViaLet", false],
+    ["ServerConst/Whole/NoGuard/AxiosConfig/Inline", false],
+    ["ServerConst/Whole/NoGuard/AxiosConfig/ViaHelperReturn", false],
+    ["ServerConst/Whole/NoGuard/AxiosConfig/ViaHelperSink", false],
+    ["ServerConst/Whole/NoGuard/AxiosConfig/ViaLet", false],
+    ["ServerConst/Whole/NoGuard/AxiosGet/Inline", false],
+    ["ServerConst/Whole/NoGuard/AxiosGet/ViaHelperReturn", false],
+    ["ServerConst/Whole/NoGuard/AxiosGet/ViaHelperSink", false],
+    ["ServerConst/Whole/NoGuard/AxiosGet/ViaLet", false],
+    ["ServerConst/Whole/NoGuard/Fetch/Inline", false],
+    ["ServerConst/Whole/NoGuard/Fetch/ViaHelperSink", false],
+    ["ServerConst/Whole/NoGuard/Fetch/ViaLet", false],
+    ["ServerConst/Whole/NoGuard/GotDefault/Inline", false],
+    ["ServerConst/Whole/NoGuard/GotDefault/ViaHelperReturn", false],
+    ["ServerConst/Whole/NoGuard/GotDefault/ViaHelperSink", false],
+    ["ServerConst/Whole/NoGuard/GotDefault/ViaLet", false],
+    ["ServerConst/Whole/NoGuard/HttpsGet/Inline", false],
+    ["ServerConst/Whole/NoGuard/HttpsGet/ViaHelperReturn", false],
+    ["ServerConst/Whole/NoGuard/HttpsGet/ViaHelperSink", false],
+    ["ServerConst/Whole/NoGuard/HttpsGet/ViaLet", false],
+    ["ServerConst/Whole/NoGuard/UndiciRequest/Inline", false],
+    ["ServerConst/Whole/NoGuard/UndiciRequest/ViaHelperReturn", false],
+    ["ServerConst/Whole/NoGuard/UndiciRequest/ViaHelperSink", false],
+    ["ServerConst/Whole/NoGuard/UndiciRequest/ViaLet", false],
+    ["ServerConst/Whole/ProtocolCheck/AxiosConfig/Inline", false],
+    ["ServerConst/Whole/ProtocolCheck/AxiosConfig/ViaHelperReturn", false],
+    ["ServerConst/Whole/ProtocolCheck/AxiosConfig/ViaLet", false],
+    ["ServerConst/Whole/ProtocolCheck/AxiosGet/Inline", false],
+    ["ServerConst/Whole/ProtocolCheck/AxiosGet/ViaHelperReturn", false],
+    ["ServerConst/Whole/ProtocolCheck/AxiosGet/ViaHelperSink", false],
+    ["ServerConst/Whole/ProtocolCheck/AxiosGet/ViaLet", false],
+    ["ServerConst/Whole/ProtocolCheck/Fetch/Inline", false],
+    ["ServerConst/Whole/ProtocolCheck/Fetch/ViaHelperReturn", false],
+    ["ServerConst/Whole/ProtocolCheck/Fetch/ViaHelperSink", false],
+    ["ServerConst/Whole/ProtocolCheck/Fetch/ViaLet", false],
+    ["ServerConst/Whole/ProtocolCheck/GotDefault/Inline", false],
+    ["ServerConst/Whole/ProtocolCheck/GotDefault/ViaHelperReturn", false],
+    ["ServerConst/Whole/ProtocolCheck/GotDefault/ViaHelperSink", false],
+    ["ServerConst/Whole/ProtocolCheck/GotDefault/ViaLet", false],
+    ["ServerConst/Whole/ProtocolCheck/HttpsGet/Inline", false],
+    ["ServerConst/Whole/ProtocolCheck/HttpsGet/ViaHelperReturn", false],
+    ["ServerConst/Whole/ProtocolCheck/HttpsGet/ViaHelperSink", false],
+    ["ServerConst/Whole/ProtocolCheck/HttpsGet/ViaLet", false],
+    ["ServerConst/Whole/ProtocolCheck/UndiciRequest/Inline", false],
+    ["ServerConst/Whole/ProtocolCheck/UndiciRequest/ViaHelperReturn", false],
+    ["ServerConst/Whole/ProtocolCheck/UndiciRequest/ViaHelperSink", false],
+    ["ServerConst/Whole/ProtocolCheck/UndiciRequest/ViaLet", false],
+    ["ServerConst/Whole/SchemeOnly/AxiosConfig/Inline", false],
+    ["ServerConst/Whole/SchemeOnly/AxiosConfig/ViaHelperReturn", false],
+    ["ServerConst/Whole/SchemeOnly/AxiosConfig/ViaHelperSink", false],
+    ["ServerConst/Whole/SchemeOnly/AxiosConfig/ViaLet", false],
+    ["ServerConst/Whole/SchemeOnly/AxiosGet/Inline", false],
+    ["ServerConst/Whole/SchemeOnly/AxiosGet/ViaHelperReturn", false],
+    ["ServerConst/Whole/SchemeOnly/AxiosGet/ViaHelperSink", false],
+    ["ServerConst/Whole/SchemeOnly/AxiosGet/ViaLet", false],
+    ["ServerConst/Whole/SchemeOnly/Fetch/Inline", false],
+    ["ServerConst/Whole/SchemeOnly/Fetch/ViaHelperReturn", false],
+    ["ServerConst/Whole/SchemeOnly/Fetch/ViaHelperSink", false],
+    ["ServerConst/Whole/SchemeOnly/Fetch/ViaLet", false],
+    ["ServerConst/Whole/SchemeOnly/GotDefault/Inline", false],
+    ["ServerConst/Whole/SchemeOnly/GotDefault/ViaHelperReturn", false],
+    ["ServerConst/Whole/SchemeOnly/GotDefault/ViaHelperSink", false],
+    ["ServerConst/Whole/SchemeOnly/GotDefault/ViaLet", false],
+    ["ServerConst/Whole/SchemeOnly/HttpsGet/Inline", false],
+    ["ServerConst/Whole/SchemeOnly/HttpsGet/ViaHelperReturn", false],
+    ["ServerConst/Whole/SchemeOnly/HttpsGet/ViaHelperSink", false],
+    ["ServerConst/Whole/SchemeOnly/HttpsGet/ViaLet", false],
+    ["ServerConst/Whole/SchemeOnly/UndiciRequest/Inline", false],
+    ["ServerConst/Whole/SchemeOnly/UndiciRequest/ViaHelperReturn", false],
+    ["ServerConst/Whole/SchemeOnly/UndiciRequest/ViaHelperSink", false],
+    ["ServerConst/Whole/SchemeOnly/UndiciRequest/ViaLet", false],
+    ["ServerConst/Whole/SomeCallback/AxiosConfig/Inline", false],
+    ["ServerConst/Whole/SomeCallback/AxiosConfig/ViaHelperReturn", false],
+    ["ServerConst/Whole/SomeCallback/AxiosConfig/ViaHelperSink", false],
+    ["ServerConst/Whole/SomeCallback/AxiosConfig/ViaLet", false],
+    ["ServerConst/Whole/SomeCallback/AxiosGet/Inline", false],
+    ["ServerConst/Whole/SomeCallback/AxiosGet/ViaHelperReturn", false],
+    ["ServerConst/Whole/SomeCallback/AxiosGet/ViaHelperSink", false],
+    ["ServerConst/Whole/SomeCallback/AxiosGet/ViaLet", false],
+    ["ServerConst/Whole/SomeCallback/Fetch/Inline", false],
+    ["ServerConst/Whole/SomeCallback/Fetch/ViaHelperReturn", false],
+    ["ServerConst/Whole/SomeCallback/Fetch/ViaHelperSink", false],
+    ["ServerConst/Whole/SomeCallback/Fetch/ViaLet", false],
+    ["ServerConst/Whole/SomeCallback/GotDefault/Inline", false],
+    ["ServerConst/Whole/SomeCallback/GotDefault/ViaHelperReturn", false],
+    ["ServerConst/Whole/SomeCallback/GotDefault/ViaHelperSink", false],
+    ["ServerConst/Whole/SomeCallback/GotDefault/ViaLet", false],
+    ["ServerConst/Whole/SomeCallback/HttpsGet/Inline", false],
+    ["ServerConst/Whole/SomeCallback/HttpsGet/ViaHelperReturn", false],
+    ["ServerConst/Whole/SomeCallback/HttpsGet/ViaHelperSink", false],
+    ["ServerConst/Whole/SomeCallback/HttpsGet/ViaLet", false],
+    ["ServerConst/Whole/SomeCallback/UndiciRequest/Inline", false],
+    ["ServerConst/Whole/SomeCallback/UndiciRequest/ViaHelperReturn", false],
+    ["ServerConst/Whole/SomeCallback/UndiciRequest/ViaHelperSink", false],
+    ["ServerConst/Whole/SomeCallback/UndiciRequest/ViaLet", false],
+    ["ToolArg/ConcatOpenOrigin/HostnameAllowlist/AxiosConfig/Inline", false],
+    [
+      "ToolArg/ConcatOpenOrigin/HostnameAllowlist/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/ConcatOpenOrigin/HostnameAllowlist/AxiosConfig/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/ConcatOpenOrigin/HostnameAllowlist/AxiosConfig/ViaLet", false],
+    ["ToolArg/ConcatOpenOrigin/HostnameAllowlist/AxiosGet/Inline", false],
+    [
+      "ToolArg/ConcatOpenOrigin/HostnameAllowlist/AxiosGet/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/ConcatOpenOrigin/HostnameAllowlist/AxiosGet/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/ConcatOpenOrigin/HostnameAllowlist/AxiosGet/ViaLet", false],
+    ["ToolArg/ConcatOpenOrigin/HostnameAllowlist/Fetch/Inline", false],
+    ["ToolArg/ConcatOpenOrigin/HostnameAllowlist/Fetch/ViaHelperReturn", false],
+    ["ToolArg/ConcatOpenOrigin/HostnameAllowlist/Fetch/ViaHelperSink", false],
+    ["ToolArg/ConcatOpenOrigin/HostnameAllowlist/Fetch/ViaLet", false],
+    ["ToolArg/ConcatOpenOrigin/HostnameAllowlist/GotDefault/Inline", false],
+    [
+      "ToolArg/ConcatOpenOrigin/HostnameAllowlist/GotDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/ConcatOpenOrigin/HostnameAllowlist/GotDefault/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/ConcatOpenOrigin/HostnameAllowlist/GotDefault/ViaLet", false],
+    ["ToolArg/ConcatOpenOrigin/HostnameAllowlist/HttpsGet/Inline", false],
+    [
+      "ToolArg/ConcatOpenOrigin/HostnameAllowlist/HttpsGet/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/ConcatOpenOrigin/HostnameAllowlist/HttpsGet/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/ConcatOpenOrigin/HostnameAllowlist/HttpsGet/ViaLet", false],
+    ["ToolArg/ConcatOpenOrigin/HostnameAllowlist/UndiciRequest/Inline", false],
+    [
+      "ToolArg/ConcatOpenOrigin/HostnameAllowlist/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/ConcatOpenOrigin/HostnameAllowlist/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/ConcatOpenOrigin/HostnameAllowlist/UndiciRequest/ViaLet", false],
+    ["ToolArg/ConcatOpenOrigin/IsValidUrlHelper/AxiosConfig/Inline", true],
+    [
+      "ToolArg/ConcatOpenOrigin/IsValidUrlHelper/AxiosConfig/ViaHelperReturn",
+      true
+    ],
+    [
+      "ToolArg/ConcatOpenOrigin/IsValidUrlHelper/AxiosConfig/ViaHelperSink",
+      true
+    ],
+    ["ToolArg/ConcatOpenOrigin/IsValidUrlHelper/AxiosConfig/ViaLet", true],
+    ["ToolArg/ConcatOpenOrigin/IsValidUrlHelper/AxiosGet/Inline", true],
+    [
+      "ToolArg/ConcatOpenOrigin/IsValidUrlHelper/AxiosGet/ViaHelperReturn",
+      true
+    ],
+    ["ToolArg/ConcatOpenOrigin/IsValidUrlHelper/AxiosGet/ViaHelperSink", true],
+    ["ToolArg/ConcatOpenOrigin/IsValidUrlHelper/AxiosGet/ViaLet", true],
+    ["ToolArg/ConcatOpenOrigin/IsValidUrlHelper/Fetch/Inline", true],
+    ["ToolArg/ConcatOpenOrigin/IsValidUrlHelper/Fetch/ViaHelperReturn", true],
+    ["ToolArg/ConcatOpenOrigin/IsValidUrlHelper/Fetch/ViaHelperSink", true],
+    ["ToolArg/ConcatOpenOrigin/IsValidUrlHelper/Fetch/ViaLet", true],
+    ["ToolArg/ConcatOpenOrigin/IsValidUrlHelper/GotDefault/Inline", true],
+    [
+      "ToolArg/ConcatOpenOrigin/IsValidUrlHelper/GotDefault/ViaHelperReturn",
+      true
+    ],
+    ["ToolArg/ConcatOpenOrigin/IsValidUrlHelper/GotDefault/ViaLet", true],
+    ["ToolArg/ConcatOpenOrigin/IsValidUrlHelper/HttpsGet/Inline", true],
+    [
+      "ToolArg/ConcatOpenOrigin/IsValidUrlHelper/HttpsGet/ViaHelperReturn",
+      true
+    ],
+    ["ToolArg/ConcatOpenOrigin/IsValidUrlHelper/HttpsGet/ViaHelperSink", true],
+    ["ToolArg/ConcatOpenOrigin/IsValidUrlHelper/HttpsGet/ViaLet", true],
+    ["ToolArg/ConcatOpenOrigin/IsValidUrlHelper/UndiciRequest/Inline", true],
+    [
+      "ToolArg/ConcatOpenOrigin/IsValidUrlHelper/UndiciRequest/ViaHelperReturn",
+      true
+    ],
+    [
+      "ToolArg/ConcatOpenOrigin/IsValidUrlHelper/UndiciRequest/ViaHelperSink",
+      true
+    ],
+    ["ToolArg/ConcatOpenOrigin/IsValidUrlHelper/UndiciRequest/ViaLet", true],
+    ["ToolArg/ConcatOpenOrigin/NoGuard/AxiosConfig/Inline", true],
+    ["ToolArg/ConcatOpenOrigin/NoGuard/AxiosConfig/ViaHelperReturn", true],
+    ["ToolArg/ConcatOpenOrigin/NoGuard/AxiosConfig/ViaHelperSink", true],
+    ["ToolArg/ConcatOpenOrigin/NoGuard/AxiosConfig/ViaLet", true],
+    ["ToolArg/ConcatOpenOrigin/NoGuard/AxiosGet/Inline", true],
+    ["ToolArg/ConcatOpenOrigin/NoGuard/AxiosGet/ViaHelperReturn", true],
+    ["ToolArg/ConcatOpenOrigin/NoGuard/AxiosGet/ViaHelperSink", true],
+    ["ToolArg/ConcatOpenOrigin/NoGuard/AxiosGet/ViaLet", true],
+    ["ToolArg/ConcatOpenOrigin/NoGuard/Fetch/Inline", true],
+    ["ToolArg/ConcatOpenOrigin/NoGuard/Fetch/ViaHelperReturn", true],
+    ["ToolArg/ConcatOpenOrigin/NoGuard/Fetch/ViaHelperSink", true],
+    ["ToolArg/ConcatOpenOrigin/NoGuard/Fetch/ViaLet", true],
+    ["ToolArg/ConcatOpenOrigin/NoGuard/GotDefault/Inline", true],
+    ["ToolArg/ConcatOpenOrigin/NoGuard/GotDefault/ViaHelperReturn", true],
+    ["ToolArg/ConcatOpenOrigin/NoGuard/GotDefault/ViaHelperSink", true],
+    ["ToolArg/ConcatOpenOrigin/NoGuard/GotDefault/ViaLet", true],
+    ["ToolArg/ConcatOpenOrigin/NoGuard/HttpsGet/ViaHelperReturn", true],
+    ["ToolArg/ConcatOpenOrigin/NoGuard/HttpsGet/ViaHelperSink", true],
+    ["ToolArg/ConcatOpenOrigin/NoGuard/HttpsGet/ViaLet", true],
+    ["ToolArg/ConcatOpenOrigin/NoGuard/UndiciRequest/Inline", true],
+    ["ToolArg/ConcatOpenOrigin/NoGuard/UndiciRequest/ViaHelperReturn", true],
+    ["ToolArg/ConcatOpenOrigin/NoGuard/UndiciRequest/ViaHelperSink", true],
+    ["ToolArg/ConcatOpenOrigin/NoGuard/UndiciRequest/ViaLet", true],
+    ["ToolArg/ConcatOpenOrigin/ProtocolCheck/AxiosConfig/Inline", true],
+    [
+      "ToolArg/ConcatOpenOrigin/ProtocolCheck/AxiosConfig/ViaHelperReturn",
+      true
+    ],
+    ["ToolArg/ConcatOpenOrigin/ProtocolCheck/AxiosConfig/ViaHelperSink", true],
+    ["ToolArg/ConcatOpenOrigin/ProtocolCheck/AxiosConfig/ViaLet", true],
+    ["ToolArg/ConcatOpenOrigin/ProtocolCheck/AxiosGet/Inline", true],
+    ["ToolArg/ConcatOpenOrigin/ProtocolCheck/AxiosGet/ViaHelperReturn", true],
+    ["ToolArg/ConcatOpenOrigin/ProtocolCheck/AxiosGet/ViaHelperSink", true],
+    ["ToolArg/ConcatOpenOrigin/ProtocolCheck/AxiosGet/ViaLet", true],
+    ["ToolArg/ConcatOpenOrigin/ProtocolCheck/Fetch/Inline", true],
+    ["ToolArg/ConcatOpenOrigin/ProtocolCheck/Fetch/ViaHelperReturn", true],
+    ["ToolArg/ConcatOpenOrigin/ProtocolCheck/Fetch/ViaHelperSink", true],
+    ["ToolArg/ConcatOpenOrigin/ProtocolCheck/Fetch/ViaLet", true],
+    ["ToolArg/ConcatOpenOrigin/ProtocolCheck/GotDefault/Inline", true],
+    ["ToolArg/ConcatOpenOrigin/ProtocolCheck/GotDefault/ViaHelperReturn", true],
+    ["ToolArg/ConcatOpenOrigin/ProtocolCheck/GotDefault/ViaHelperSink", true],
+    ["ToolArg/ConcatOpenOrigin/ProtocolCheck/GotDefault/ViaLet", true],
+    ["ToolArg/ConcatOpenOrigin/ProtocolCheck/HttpsGet/ViaHelperReturn", true],
+    ["ToolArg/ConcatOpenOrigin/ProtocolCheck/HttpsGet/ViaHelperSink", true],
+    ["ToolArg/ConcatOpenOrigin/ProtocolCheck/HttpsGet/ViaLet", true],
+    ["ToolArg/ConcatOpenOrigin/ProtocolCheck/UndiciRequest/Inline", true],
+    [
+      "ToolArg/ConcatOpenOrigin/ProtocolCheck/UndiciRequest/ViaHelperReturn",
+      true
+    ],
+    [
+      "ToolArg/ConcatOpenOrigin/ProtocolCheck/UndiciRequest/ViaHelperSink",
+      true
+    ],
+    ["ToolArg/ConcatOpenOrigin/ProtocolCheck/UndiciRequest/ViaLet", true],
+    ["ToolArg/ConcatOpenOrigin/SchemeOnly/AxiosConfig/Inline", true],
+    ["ToolArg/ConcatOpenOrigin/SchemeOnly/AxiosConfig/ViaHelperReturn", true],
+    ["ToolArg/ConcatOpenOrigin/SchemeOnly/AxiosConfig/ViaHelperSink", true],
+    ["ToolArg/ConcatOpenOrigin/SchemeOnly/AxiosConfig/ViaLet", true],
+    ["ToolArg/ConcatOpenOrigin/SchemeOnly/AxiosGet/Inline", true],
+    ["ToolArg/ConcatOpenOrigin/SchemeOnly/AxiosGet/ViaHelperReturn", true],
+    ["ToolArg/ConcatOpenOrigin/SchemeOnly/AxiosGet/ViaHelperSink", true],
+    ["ToolArg/ConcatOpenOrigin/SchemeOnly/AxiosGet/ViaLet", true],
+    ["ToolArg/ConcatOpenOrigin/SchemeOnly/Fetch/Inline", true],
+    ["ToolArg/ConcatOpenOrigin/SchemeOnly/Fetch/ViaHelperReturn", true],
+    ["ToolArg/ConcatOpenOrigin/SchemeOnly/Fetch/ViaHelperSink", true],
+    ["ToolArg/ConcatOpenOrigin/SchemeOnly/Fetch/ViaLet", true],
+    ["ToolArg/ConcatOpenOrigin/SchemeOnly/GotDefault/Inline", true],
+    ["ToolArg/ConcatOpenOrigin/SchemeOnly/GotDefault/ViaHelperReturn", true],
+    ["ToolArg/ConcatOpenOrigin/SchemeOnly/GotDefault/ViaHelperSink", true],
+    ["ToolArg/ConcatOpenOrigin/SchemeOnly/GotDefault/ViaLet", true],
+    ["ToolArg/ConcatOpenOrigin/SchemeOnly/HttpsGet/Inline", true],
+    ["ToolArg/ConcatOpenOrigin/SchemeOnly/HttpsGet/ViaHelperReturn", true],
+    ["ToolArg/ConcatOpenOrigin/SchemeOnly/HttpsGet/ViaHelperSink", true],
+    ["ToolArg/ConcatOpenOrigin/SchemeOnly/HttpsGet/ViaLet", true],
+    ["ToolArg/ConcatOpenOrigin/SchemeOnly/UndiciRequest/Inline", true],
+    ["ToolArg/ConcatOpenOrigin/SchemeOnly/UndiciRequest/ViaHelperReturn", true],
+    ["ToolArg/ConcatOpenOrigin/SchemeOnly/UndiciRequest/ViaHelperSink", true],
+    ["ToolArg/ConcatOpenOrigin/SchemeOnly/UndiciRequest/ViaLet", true],
+    ["ToolArg/ConcatOpenOrigin/SomeCallback/AxiosConfig/Inline", false],
+    [
+      "ToolArg/ConcatOpenOrigin/SomeCallback/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    ["ToolArg/ConcatOpenOrigin/SomeCallback/AxiosConfig/ViaHelperSink", false],
+    ["ToolArg/ConcatOpenOrigin/SomeCallback/AxiosConfig/ViaLet", false],
+    ["ToolArg/ConcatOpenOrigin/SomeCallback/AxiosGet/Inline", false],
+    ["ToolArg/ConcatOpenOrigin/SomeCallback/AxiosGet/ViaHelperReturn", false],
+    ["ToolArg/ConcatOpenOrigin/SomeCallback/AxiosGet/ViaHelperSink", false],
+    ["ToolArg/ConcatOpenOrigin/SomeCallback/AxiosGet/ViaLet", false],
+    ["ToolArg/ConcatOpenOrigin/SomeCallback/Fetch/Inline", false],
+    ["ToolArg/ConcatOpenOrigin/SomeCallback/Fetch/ViaHelperReturn", false],
+    ["ToolArg/ConcatOpenOrigin/SomeCallback/Fetch/ViaHelperSink", false],
+    ["ToolArg/ConcatOpenOrigin/SomeCallback/Fetch/ViaLet", false],
+    ["ToolArg/ConcatOpenOrigin/SomeCallback/GotDefault/Inline", false],
+    ["ToolArg/ConcatOpenOrigin/SomeCallback/GotDefault/ViaHelperReturn", false],
+    ["ToolArg/ConcatOpenOrigin/SomeCallback/GotDefault/ViaHelperSink", false],
+    ["ToolArg/ConcatOpenOrigin/SomeCallback/GotDefault/ViaLet", false],
+    ["ToolArg/ConcatOpenOrigin/SomeCallback/HttpsGet/ViaHelperReturn", false],
+    ["ToolArg/ConcatOpenOrigin/SomeCallback/HttpsGet/ViaHelperSink", false],
+    ["ToolArg/ConcatOpenOrigin/SomeCallback/HttpsGet/ViaLet", false],
+    ["ToolArg/ConcatOpenOrigin/SomeCallback/UndiciRequest/Inline", false],
+    [
+      "ToolArg/ConcatOpenOrigin/SomeCallback/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/ConcatOpenOrigin/SomeCallback/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/ConcatOpenOrigin/SomeCallback/UndiciRequest/ViaLet", false],
+    ["ToolArg/HostInterp/HostnameAllowlist/AxiosConfig/Inline", false],
+    ["ToolArg/HostInterp/HostnameAllowlist/AxiosConfig/ViaHelperReturn", false],
+    ["ToolArg/HostInterp/HostnameAllowlist/AxiosConfig/ViaHelperSink", false],
+    ["ToolArg/HostInterp/HostnameAllowlist/AxiosConfig/ViaLet", false],
+    ["ToolArg/HostInterp/HostnameAllowlist/AxiosGet/Inline", false],
+    ["ToolArg/HostInterp/HostnameAllowlist/AxiosGet/ViaHelperReturn", false],
+    ["ToolArg/HostInterp/HostnameAllowlist/AxiosGet/ViaHelperSink", false],
+    ["ToolArg/HostInterp/HostnameAllowlist/AxiosGet/ViaLet", false],
+    ["ToolArg/HostInterp/HostnameAllowlist/Fetch/Inline", false],
+    ["ToolArg/HostInterp/HostnameAllowlist/Fetch/ViaHelperReturn", false],
+    ["ToolArg/HostInterp/HostnameAllowlist/Fetch/ViaLet", false],
+    ["ToolArg/HostInterp/HostnameAllowlist/GotDefault/Inline", false],
+    ["ToolArg/HostInterp/HostnameAllowlist/GotDefault/ViaHelperReturn", false],
+    ["ToolArg/HostInterp/HostnameAllowlist/GotDefault/ViaHelperSink", false],
+    ["ToolArg/HostInterp/HostnameAllowlist/GotDefault/ViaLet", false],
+    ["ToolArg/HostInterp/HostnameAllowlist/HttpsGet/Inline", false],
+    ["ToolArg/HostInterp/HostnameAllowlist/HttpsGet/ViaHelperReturn", false],
+    ["ToolArg/HostInterp/HostnameAllowlist/HttpsGet/ViaHelperSink", false],
+    ["ToolArg/HostInterp/HostnameAllowlist/HttpsGet/ViaLet", false],
+    ["ToolArg/HostInterp/HostnameAllowlist/UndiciRequest/Inline", false],
+    [
+      "ToolArg/HostInterp/HostnameAllowlist/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    ["ToolArg/HostInterp/HostnameAllowlist/UndiciRequest/ViaHelperSink", false],
+    ["ToolArg/HostInterp/HostnameAllowlist/UndiciRequest/ViaLet", false],
+    ["ToolArg/HostInterp/IsValidUrlHelper/AxiosConfig/Inline", true],
+    ["ToolArg/HostInterp/IsValidUrlHelper/AxiosConfig/ViaHelperReturn", true],
+    ["ToolArg/HostInterp/IsValidUrlHelper/AxiosConfig/ViaHelperSink", true],
+    ["ToolArg/HostInterp/IsValidUrlHelper/AxiosConfig/ViaLet", true],
+    ["ToolArg/HostInterp/IsValidUrlHelper/AxiosGet/Inline", true],
+    ["ToolArg/HostInterp/IsValidUrlHelper/AxiosGet/ViaHelperReturn", true],
+    ["ToolArg/HostInterp/IsValidUrlHelper/AxiosGet/ViaHelperSink", true],
+    ["ToolArg/HostInterp/IsValidUrlHelper/AxiosGet/ViaLet", true],
+    ["ToolArg/HostInterp/IsValidUrlHelper/Fetch/Inline", true],
+    ["ToolArg/HostInterp/IsValidUrlHelper/Fetch/ViaHelperReturn", true],
+    ["ToolArg/HostInterp/IsValidUrlHelper/Fetch/ViaHelperSink", true],
+    ["ToolArg/HostInterp/IsValidUrlHelper/Fetch/ViaLet", true],
+    ["ToolArg/HostInterp/IsValidUrlHelper/GotDefault/Inline", true],
+    ["ToolArg/HostInterp/IsValidUrlHelper/GotDefault/ViaHelperReturn", true],
+    ["ToolArg/HostInterp/IsValidUrlHelper/GotDefault/ViaHelperSink", true],
+    ["ToolArg/HostInterp/IsValidUrlHelper/GotDefault/ViaLet", true],
+    ["ToolArg/HostInterp/IsValidUrlHelper/HttpsGet/Inline", true],
+    ["ToolArg/HostInterp/IsValidUrlHelper/HttpsGet/ViaHelperReturn", true],
+    ["ToolArg/HostInterp/IsValidUrlHelper/HttpsGet/ViaHelperSink", true],
+    ["ToolArg/HostInterp/IsValidUrlHelper/HttpsGet/ViaLet", true],
+    ["ToolArg/HostInterp/IsValidUrlHelper/UndiciRequest/Inline", true],
+    ["ToolArg/HostInterp/IsValidUrlHelper/UndiciRequest/ViaHelperReturn", true],
+    ["ToolArg/HostInterp/IsValidUrlHelper/UndiciRequest/ViaHelperSink", true],
+    ["ToolArg/HostInterp/IsValidUrlHelper/UndiciRequest/ViaLet", true],
+    ["ToolArg/HostInterp/NoGuard/AxiosConfig/Inline", true],
+    ["ToolArg/HostInterp/NoGuard/AxiosConfig/ViaHelperReturn", true],
+    ["ToolArg/HostInterp/NoGuard/AxiosConfig/ViaHelperSink", true],
+    ["ToolArg/HostInterp/NoGuard/AxiosConfig/ViaLet", true],
+    ["ToolArg/HostInterp/NoGuard/AxiosGet/Inline", true],
+    ["ToolArg/HostInterp/NoGuard/AxiosGet/ViaHelperReturn", true],
+    ["ToolArg/HostInterp/NoGuard/AxiosGet/ViaHelperSink", true],
+    ["ToolArg/HostInterp/NoGuard/AxiosGet/ViaLet", true],
+    ["ToolArg/HostInterp/NoGuard/Fetch/Inline", true],
+    ["ToolArg/HostInterp/NoGuard/Fetch/ViaHelperReturn", true],
+    ["ToolArg/HostInterp/NoGuard/Fetch/ViaHelperSink", true],
+    ["ToolArg/HostInterp/NoGuard/Fetch/ViaLet", true],
+    ["ToolArg/HostInterp/NoGuard/GotDefault/Inline", true],
+    ["ToolArg/HostInterp/NoGuard/GotDefault/ViaHelperReturn", true],
+    ["ToolArg/HostInterp/NoGuard/GotDefault/ViaHelperSink", true],
+    ["ToolArg/HostInterp/NoGuard/GotDefault/ViaLet", true],
+    ["ToolArg/HostInterp/NoGuard/HttpsGet/Inline", true],
+    ["ToolArg/HostInterp/NoGuard/HttpsGet/ViaHelperReturn", true],
+    ["ToolArg/HostInterp/NoGuard/HttpsGet/ViaHelperSink", true],
+    ["ToolArg/HostInterp/NoGuard/HttpsGet/ViaLet", true],
+    ["ToolArg/HostInterp/NoGuard/UndiciRequest/Inline", true],
+    ["ToolArg/HostInterp/NoGuard/UndiciRequest/ViaHelperReturn", true],
+    ["ToolArg/HostInterp/NoGuard/UndiciRequest/ViaHelperSink", true],
+    ["ToolArg/HostInterp/NoGuard/UndiciRequest/ViaLet", true],
+    ["ToolArg/HostInterp/ProtocolCheck/AxiosConfig/Inline", true],
+    ["ToolArg/HostInterp/ProtocolCheck/AxiosConfig/ViaHelperReturn", true],
+    ["ToolArg/HostInterp/ProtocolCheck/AxiosConfig/ViaHelperSink", true],
+    ["ToolArg/HostInterp/ProtocolCheck/AxiosConfig/ViaLet", true],
+    ["ToolArg/HostInterp/ProtocolCheck/AxiosGet/Inline", true],
+    ["ToolArg/HostInterp/ProtocolCheck/AxiosGet/ViaHelperReturn", true],
+    ["ToolArg/HostInterp/ProtocolCheck/AxiosGet/ViaHelperSink", true],
+    ["ToolArg/HostInterp/ProtocolCheck/AxiosGet/ViaLet", true],
+    ["ToolArg/HostInterp/ProtocolCheck/Fetch/Inline", true],
+    ["ToolArg/HostInterp/ProtocolCheck/Fetch/ViaHelperReturn", true],
+    ["ToolArg/HostInterp/ProtocolCheck/Fetch/ViaHelperSink", true],
+    ["ToolArg/HostInterp/ProtocolCheck/Fetch/ViaLet", true],
+    ["ToolArg/HostInterp/ProtocolCheck/GotDefault/Inline", true],
+    ["ToolArg/HostInterp/ProtocolCheck/GotDefault/ViaHelperReturn", true],
+    ["ToolArg/HostInterp/ProtocolCheck/GotDefault/ViaHelperSink", true],
+    ["ToolArg/HostInterp/ProtocolCheck/GotDefault/ViaLet", true],
+    ["ToolArg/HostInterp/ProtocolCheck/HttpsGet/Inline", true],
+    ["ToolArg/HostInterp/ProtocolCheck/HttpsGet/ViaHelperReturn", true],
+    ["ToolArg/HostInterp/ProtocolCheck/HttpsGet/ViaHelperSink", true],
+    ["ToolArg/HostInterp/ProtocolCheck/HttpsGet/ViaLet", true],
+    ["ToolArg/HostInterp/ProtocolCheck/UndiciRequest/Inline", true],
+    ["ToolArg/HostInterp/ProtocolCheck/UndiciRequest/ViaHelperReturn", true],
+    ["ToolArg/HostInterp/ProtocolCheck/UndiciRequest/ViaHelperSink", true],
+    ["ToolArg/HostInterp/ProtocolCheck/UndiciRequest/ViaLet", true],
+    ["ToolArg/HostInterp/SchemeOnly/AxiosConfig/Inline", true],
+    ["ToolArg/HostInterp/SchemeOnly/AxiosConfig/ViaHelperSink", true],
+    ["ToolArg/HostInterp/SchemeOnly/AxiosConfig/ViaLet", true],
+    ["ToolArg/HostInterp/SchemeOnly/AxiosGet/Inline", true],
+    ["ToolArg/HostInterp/SchemeOnly/AxiosGet/ViaHelperReturn", true],
+    ["ToolArg/HostInterp/SchemeOnly/AxiosGet/ViaHelperSink", true],
+    ["ToolArg/HostInterp/SchemeOnly/AxiosGet/ViaLet", true],
+    ["ToolArg/HostInterp/SchemeOnly/Fetch/Inline", true],
+    ["ToolArg/HostInterp/SchemeOnly/Fetch/ViaHelperReturn", true],
+    ["ToolArg/HostInterp/SchemeOnly/Fetch/ViaHelperSink", true],
+    ["ToolArg/HostInterp/SchemeOnly/Fetch/ViaLet", true],
+    ["ToolArg/HostInterp/SchemeOnly/GotDefault/Inline", true],
+    ["ToolArg/HostInterp/SchemeOnly/GotDefault/ViaHelperReturn", true],
+    ["ToolArg/HostInterp/SchemeOnly/GotDefault/ViaHelperSink", true],
+    ["ToolArg/HostInterp/SchemeOnly/GotDefault/ViaLet", true],
+    ["ToolArg/HostInterp/SchemeOnly/HttpsGet/Inline", true],
+    ["ToolArg/HostInterp/SchemeOnly/HttpsGet/ViaHelperReturn", true],
+    ["ToolArg/HostInterp/SchemeOnly/HttpsGet/ViaHelperSink", true],
+    ["ToolArg/HostInterp/SchemeOnly/HttpsGet/ViaLet", true],
+    ["ToolArg/HostInterp/SchemeOnly/UndiciRequest/Inline", true],
+    ["ToolArg/HostInterp/SchemeOnly/UndiciRequest/ViaHelperReturn", true],
+    ["ToolArg/HostInterp/SchemeOnly/UndiciRequest/ViaHelperSink", true],
+    ["ToolArg/HostInterp/SchemeOnly/UndiciRequest/ViaLet", true],
+    ["ToolArg/HostInterp/SomeCallback/AxiosConfig/Inline", false],
+    ["ToolArg/HostInterp/SomeCallback/AxiosConfig/ViaHelperReturn", false],
+    ["ToolArg/HostInterp/SomeCallback/AxiosConfig/ViaHelperSink", false],
+    ["ToolArg/HostInterp/SomeCallback/AxiosConfig/ViaLet", false],
+    ["ToolArg/HostInterp/SomeCallback/AxiosGet/Inline", false],
+    ["ToolArg/HostInterp/SomeCallback/AxiosGet/ViaHelperReturn", false],
+    ["ToolArg/HostInterp/SomeCallback/AxiosGet/ViaHelperSink", false],
+    ["ToolArg/HostInterp/SomeCallback/AxiosGet/ViaLet", false],
+    ["ToolArg/HostInterp/SomeCallback/Fetch/Inline", false],
+    ["ToolArg/HostInterp/SomeCallback/Fetch/ViaHelperReturn", false],
+    ["ToolArg/HostInterp/SomeCallback/Fetch/ViaHelperSink", false],
+    ["ToolArg/HostInterp/SomeCallback/Fetch/ViaLet", false],
+    ["ToolArg/HostInterp/SomeCallback/GotDefault/Inline", false],
+    ["ToolArg/HostInterp/SomeCallback/GotDefault/ViaHelperReturn", false],
+    ["ToolArg/HostInterp/SomeCallback/GotDefault/ViaHelperSink", false],
+    ["ToolArg/HostInterp/SomeCallback/GotDefault/ViaLet", false],
+    ["ToolArg/HostInterp/SomeCallback/HttpsGet/Inline", false],
+    ["ToolArg/HostInterp/SomeCallback/HttpsGet/ViaHelperReturn", false],
+    ["ToolArg/HostInterp/SomeCallback/HttpsGet/ViaHelperSink", false],
+    ["ToolArg/HostInterp/SomeCallback/HttpsGet/ViaLet", false],
+    ["ToolArg/HostInterp/SomeCallback/UndiciRequest/Inline", false],
+    ["ToolArg/HostInterp/SomeCallback/UndiciRequest/ViaHelperReturn", false],
+    ["ToolArg/HostInterp/SomeCallback/UndiciRequest/ViaHelperSink", false],
+    ["ToolArg/HostInterp/SomeCallback/UndiciRequest/ViaLet", false],
+    ["ToolArg/NewUrlRelative/HostnameAllowlist/AxiosConfig/Inline", false],
+    [
+      "ToolArg/NewUrlRelative/HostnameAllowlist/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/NewUrlRelative/HostnameAllowlist/AxiosConfig/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/NewUrlRelative/HostnameAllowlist/AxiosConfig/ViaLet", false],
+    ["ToolArg/NewUrlRelative/HostnameAllowlist/AxiosGet/Inline", false],
+    [
+      "ToolArg/NewUrlRelative/HostnameAllowlist/AxiosGet/ViaHelperReturn",
+      false
+    ],
+    ["ToolArg/NewUrlRelative/HostnameAllowlist/AxiosGet/ViaHelperSink", false],
+    ["ToolArg/NewUrlRelative/HostnameAllowlist/AxiosGet/ViaLet", false],
+    ["ToolArg/NewUrlRelative/HostnameAllowlist/Fetch/Inline", false],
+    ["ToolArg/NewUrlRelative/HostnameAllowlist/Fetch/ViaHelperReturn", false],
+    ["ToolArg/NewUrlRelative/HostnameAllowlist/Fetch/ViaHelperSink", false],
+    ["ToolArg/NewUrlRelative/HostnameAllowlist/Fetch/ViaLet", false],
+    ["ToolArg/NewUrlRelative/HostnameAllowlist/GotDefault/Inline", false],
+    [
+      "ToolArg/NewUrlRelative/HostnameAllowlist/GotDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/NewUrlRelative/HostnameAllowlist/GotDefault/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/NewUrlRelative/HostnameAllowlist/GotDefault/ViaLet", false],
+    ["ToolArg/NewUrlRelative/HostnameAllowlist/HttpsGet/Inline", false],
+    [
+      "ToolArg/NewUrlRelative/HostnameAllowlist/HttpsGet/ViaHelperReturn",
+      false
+    ],
+    ["ToolArg/NewUrlRelative/HostnameAllowlist/HttpsGet/ViaHelperSink", false],
+    ["ToolArg/NewUrlRelative/HostnameAllowlist/HttpsGet/ViaLet", false],
+    ["ToolArg/NewUrlRelative/HostnameAllowlist/UndiciRequest/Inline", false],
+    [
+      "ToolArg/NewUrlRelative/HostnameAllowlist/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/NewUrlRelative/HostnameAllowlist/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/NewUrlRelative/HostnameAllowlist/UndiciRequest/ViaLet", false],
+    ["ToolArg/NewUrlRelative/IsValidUrlHelper/AxiosConfig/Inline", false],
+    [
+      "ToolArg/NewUrlRelative/IsValidUrlHelper/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/NewUrlRelative/IsValidUrlHelper/AxiosConfig/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/NewUrlRelative/IsValidUrlHelper/AxiosConfig/ViaLet", false],
+    ["ToolArg/NewUrlRelative/IsValidUrlHelper/AxiosGet/Inline", false],
+    ["ToolArg/NewUrlRelative/IsValidUrlHelper/AxiosGet/ViaHelperReturn", false],
+    ["ToolArg/NewUrlRelative/IsValidUrlHelper/AxiosGet/ViaHelperSink", false],
+    ["ToolArg/NewUrlRelative/IsValidUrlHelper/AxiosGet/ViaLet", false],
+    ["ToolArg/NewUrlRelative/IsValidUrlHelper/Fetch/Inline", false],
+    ["ToolArg/NewUrlRelative/IsValidUrlHelper/Fetch/ViaHelperSink", false],
+    ["ToolArg/NewUrlRelative/IsValidUrlHelper/Fetch/ViaLet", false],
+    ["ToolArg/NewUrlRelative/IsValidUrlHelper/GotDefault/Inline", false],
+    [
+      "ToolArg/NewUrlRelative/IsValidUrlHelper/GotDefault/ViaHelperReturn",
+      false
+    ],
+    ["ToolArg/NewUrlRelative/IsValidUrlHelper/GotDefault/ViaHelperSink", false],
+    ["ToolArg/NewUrlRelative/IsValidUrlHelper/GotDefault/ViaLet", false],
+    ["ToolArg/NewUrlRelative/IsValidUrlHelper/HttpsGet/Inline", false],
+    ["ToolArg/NewUrlRelative/IsValidUrlHelper/HttpsGet/ViaHelperReturn", false],
+    ["ToolArg/NewUrlRelative/IsValidUrlHelper/HttpsGet/ViaHelperSink", false],
+    ["ToolArg/NewUrlRelative/IsValidUrlHelper/HttpsGet/ViaLet", false],
+    ["ToolArg/NewUrlRelative/IsValidUrlHelper/UndiciRequest/Inline", false],
+    [
+      "ToolArg/NewUrlRelative/IsValidUrlHelper/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/NewUrlRelative/IsValidUrlHelper/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/NewUrlRelative/IsValidUrlHelper/UndiciRequest/ViaLet", false],
+    ["ToolArg/NewUrlRelative/NoGuard/AxiosConfig/Inline", false],
+    ["ToolArg/NewUrlRelative/NoGuard/AxiosConfig/ViaHelperReturn", false],
+    ["ToolArg/NewUrlRelative/NoGuard/AxiosConfig/ViaHelperSink", false],
+    ["ToolArg/NewUrlRelative/NoGuard/AxiosConfig/ViaLet", false],
+    ["ToolArg/NewUrlRelative/NoGuard/AxiosGet/Inline", false],
+    ["ToolArg/NewUrlRelative/NoGuard/AxiosGet/ViaHelperReturn", false],
+    ["ToolArg/NewUrlRelative/NoGuard/AxiosGet/ViaHelperSink", false],
+    ["ToolArg/NewUrlRelative/NoGuard/AxiosGet/ViaLet", false],
+    ["ToolArg/NewUrlRelative/NoGuard/Fetch/Inline", false],
+    ["ToolArg/NewUrlRelative/NoGuard/Fetch/ViaHelperReturn", false],
+    ["ToolArg/NewUrlRelative/NoGuard/Fetch/ViaHelperSink", false],
+    ["ToolArg/NewUrlRelative/NoGuard/Fetch/ViaLet", false],
+    ["ToolArg/NewUrlRelative/NoGuard/GotDefault/Inline", false],
+    ["ToolArg/NewUrlRelative/NoGuard/GotDefault/ViaHelperReturn", false],
+    ["ToolArg/NewUrlRelative/NoGuard/GotDefault/ViaHelperSink", false],
+    ["ToolArg/NewUrlRelative/NoGuard/GotDefault/ViaLet", false],
+    ["ToolArg/NewUrlRelative/NoGuard/HttpsGet/Inline", false],
+    ["ToolArg/NewUrlRelative/NoGuard/HttpsGet/ViaHelperReturn", false],
+    ["ToolArg/NewUrlRelative/NoGuard/HttpsGet/ViaHelperSink", false],
+    ["ToolArg/NewUrlRelative/NoGuard/HttpsGet/ViaLet", false],
+    ["ToolArg/NewUrlRelative/NoGuard/UndiciRequest/Inline", false],
+    ["ToolArg/NewUrlRelative/NoGuard/UndiciRequest/ViaHelperReturn", false],
+    ["ToolArg/NewUrlRelative/NoGuard/UndiciRequest/ViaHelperSink", false],
+    ["ToolArg/NewUrlRelative/NoGuard/UndiciRequest/ViaLet", false],
+    ["ToolArg/NewUrlRelative/ProtocolCheck/AxiosConfig/Inline", false],
+    ["ToolArg/NewUrlRelative/ProtocolCheck/AxiosConfig/ViaHelperReturn", false],
+    ["ToolArg/NewUrlRelative/ProtocolCheck/AxiosConfig/ViaHelperSink", false],
+    ["ToolArg/NewUrlRelative/ProtocolCheck/AxiosConfig/ViaLet", false],
+    ["ToolArg/NewUrlRelative/ProtocolCheck/AxiosGet/Inline", false],
+    ["ToolArg/NewUrlRelative/ProtocolCheck/AxiosGet/ViaHelperReturn", false],
+    ["ToolArg/NewUrlRelative/ProtocolCheck/AxiosGet/ViaHelperSink", false],
+    ["ToolArg/NewUrlRelative/ProtocolCheck/AxiosGet/ViaLet", false],
+    ["ToolArg/NewUrlRelative/ProtocolCheck/Fetch/Inline", false],
+    ["ToolArg/NewUrlRelative/ProtocolCheck/Fetch/ViaHelperReturn", false],
+    ["ToolArg/NewUrlRelative/ProtocolCheck/Fetch/ViaHelperSink", false],
+    ["ToolArg/NewUrlRelative/ProtocolCheck/Fetch/ViaLet", false],
+    ["ToolArg/NewUrlRelative/ProtocolCheck/GotDefault/Inline", false],
+    ["ToolArg/NewUrlRelative/ProtocolCheck/GotDefault/ViaHelperReturn", false],
+    ["ToolArg/NewUrlRelative/ProtocolCheck/GotDefault/ViaHelperSink", false],
+    ["ToolArg/NewUrlRelative/ProtocolCheck/GotDefault/ViaLet", false],
+    ["ToolArg/NewUrlRelative/ProtocolCheck/HttpsGet/Inline", false],
+    ["ToolArg/NewUrlRelative/ProtocolCheck/HttpsGet/ViaHelperReturn", false],
+    ["ToolArg/NewUrlRelative/ProtocolCheck/HttpsGet/ViaHelperSink", false],
+    ["ToolArg/NewUrlRelative/ProtocolCheck/HttpsGet/ViaLet", false],
+    ["ToolArg/NewUrlRelative/ProtocolCheck/UndiciRequest/Inline", false],
+    [
+      "ToolArg/NewUrlRelative/ProtocolCheck/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    ["ToolArg/NewUrlRelative/ProtocolCheck/UndiciRequest/ViaHelperSink", false],
+    ["ToolArg/NewUrlRelative/ProtocolCheck/UndiciRequest/ViaLet", false],
+    ["ToolArg/NewUrlRelative/SchemeOnly/AxiosConfig/Inline", false],
+    ["ToolArg/NewUrlRelative/SchemeOnly/AxiosConfig/ViaHelperReturn", false],
+    ["ToolArg/NewUrlRelative/SchemeOnly/AxiosConfig/ViaHelperSink", false],
+    ["ToolArg/NewUrlRelative/SchemeOnly/AxiosConfig/ViaLet", false],
+    ["ToolArg/NewUrlRelative/SchemeOnly/AxiosGet/Inline", false],
+    ["ToolArg/NewUrlRelative/SchemeOnly/AxiosGet/ViaHelperReturn", false],
+    ["ToolArg/NewUrlRelative/SchemeOnly/AxiosGet/ViaHelperSink", false],
+    ["ToolArg/NewUrlRelative/SchemeOnly/AxiosGet/ViaLet", false],
+    ["ToolArg/NewUrlRelative/SchemeOnly/Fetch/Inline", false],
+    ["ToolArg/NewUrlRelative/SchemeOnly/Fetch/ViaHelperReturn", false],
+    ["ToolArg/NewUrlRelative/SchemeOnly/Fetch/ViaHelperSink", false],
+    ["ToolArg/NewUrlRelative/SchemeOnly/Fetch/ViaLet", false],
+    ["ToolArg/NewUrlRelative/SchemeOnly/GotDefault/Inline", false],
+    ["ToolArg/NewUrlRelative/SchemeOnly/GotDefault/ViaHelperReturn", false],
+    ["ToolArg/NewUrlRelative/SchemeOnly/GotDefault/ViaHelperSink", false],
+    ["ToolArg/NewUrlRelative/SchemeOnly/GotDefault/ViaLet", false],
+    ["ToolArg/NewUrlRelative/SchemeOnly/HttpsGet/Inline", false],
+    ["ToolArg/NewUrlRelative/SchemeOnly/HttpsGet/ViaHelperReturn", false],
+    ["ToolArg/NewUrlRelative/SchemeOnly/HttpsGet/ViaHelperSink", false],
+    ["ToolArg/NewUrlRelative/SchemeOnly/HttpsGet/ViaLet", false],
+    ["ToolArg/NewUrlRelative/SchemeOnly/UndiciRequest/Inline", false],
+    ["ToolArg/NewUrlRelative/SchemeOnly/UndiciRequest/ViaHelperReturn", false],
+    ["ToolArg/NewUrlRelative/SchemeOnly/UndiciRequest/ViaHelperSink", false],
+    ["ToolArg/NewUrlRelative/SchemeOnly/UndiciRequest/ViaLet", false],
+    ["ToolArg/NewUrlRelative/SomeCallback/AxiosConfig/Inline", false],
+    ["ToolArg/NewUrlRelative/SomeCallback/AxiosConfig/ViaHelperReturn", false],
+    ["ToolArg/NewUrlRelative/SomeCallback/AxiosConfig/ViaHelperSink", false],
+    ["ToolArg/NewUrlRelative/SomeCallback/AxiosConfig/ViaLet", false],
+    ["ToolArg/NewUrlRelative/SomeCallback/AxiosGet/Inline", false],
+    ["ToolArg/NewUrlRelative/SomeCallback/AxiosGet/ViaHelperReturn", false],
+    ["ToolArg/NewUrlRelative/SomeCallback/AxiosGet/ViaHelperSink", false],
+    ["ToolArg/NewUrlRelative/SomeCallback/AxiosGet/ViaLet", false],
+    ["ToolArg/NewUrlRelative/SomeCallback/Fetch/ViaHelperReturn", false],
+    ["ToolArg/NewUrlRelative/SomeCallback/Fetch/ViaHelperSink", false],
+    ["ToolArg/NewUrlRelative/SomeCallback/Fetch/ViaLet", false],
+    ["ToolArg/NewUrlRelative/SomeCallback/GotDefault/Inline", false],
+    ["ToolArg/NewUrlRelative/SomeCallback/GotDefault/ViaHelperReturn", false],
+    ["ToolArg/NewUrlRelative/SomeCallback/GotDefault/ViaHelperSink", false],
+    ["ToolArg/NewUrlRelative/SomeCallback/GotDefault/ViaLet", false],
+    ["ToolArg/NewUrlRelative/SomeCallback/HttpsGet/Inline", false],
+    ["ToolArg/NewUrlRelative/SomeCallback/HttpsGet/ViaHelperReturn", false],
+    ["ToolArg/NewUrlRelative/SomeCallback/HttpsGet/ViaHelperSink", false],
+    ["ToolArg/NewUrlRelative/SomeCallback/HttpsGet/ViaLet", false],
+    ["ToolArg/NewUrlRelative/SomeCallback/UndiciRequest/Inline", false],
+    [
+      "ToolArg/NewUrlRelative/SomeCallback/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    ["ToolArg/NewUrlRelative/SomeCallback/UndiciRequest/ViaHelperSink", false],
+    ["ToolArg/NewUrlRelative/SomeCallback/UndiciRequest/ViaLet", false],
+    ["ToolArg/NewUrlWhole/HostnameAllowlist/AxiosConfig/Inline", false],
+    [
+      "ToolArg/NewUrlWhole/HostnameAllowlist/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    ["ToolArg/NewUrlWhole/HostnameAllowlist/AxiosConfig/ViaHelperSink", false],
+    ["ToolArg/NewUrlWhole/HostnameAllowlist/AxiosConfig/ViaLet", false],
+    ["ToolArg/NewUrlWhole/HostnameAllowlist/AxiosGet/Inline", false],
+    ["ToolArg/NewUrlWhole/HostnameAllowlist/AxiosGet/ViaHelperReturn", false],
+    ["ToolArg/NewUrlWhole/HostnameAllowlist/AxiosGet/ViaHelperSink", false],
+    ["ToolArg/NewUrlWhole/HostnameAllowlist/AxiosGet/ViaLet", false],
+    ["ToolArg/NewUrlWhole/HostnameAllowlist/Fetch/Inline", false],
+    ["ToolArg/NewUrlWhole/HostnameAllowlist/Fetch/ViaHelperReturn", false],
+    ["ToolArg/NewUrlWhole/HostnameAllowlist/Fetch/ViaHelperSink", false],
+    ["ToolArg/NewUrlWhole/HostnameAllowlist/Fetch/ViaLet", false],
+    ["ToolArg/NewUrlWhole/HostnameAllowlist/GotDefault/Inline", false],
+    ["ToolArg/NewUrlWhole/HostnameAllowlist/GotDefault/ViaHelperReturn", false],
+    ["ToolArg/NewUrlWhole/HostnameAllowlist/GotDefault/ViaHelperSink", false],
+    ["ToolArg/NewUrlWhole/HostnameAllowlist/GotDefault/ViaLet", false],
+    ["ToolArg/NewUrlWhole/HostnameAllowlist/HttpsGet/Inline", false],
+    ["ToolArg/NewUrlWhole/HostnameAllowlist/HttpsGet/ViaHelperReturn", false],
+    ["ToolArg/NewUrlWhole/HostnameAllowlist/HttpsGet/ViaHelperSink", false],
+    ["ToolArg/NewUrlWhole/HostnameAllowlist/HttpsGet/ViaLet", false],
+    ["ToolArg/NewUrlWhole/HostnameAllowlist/UndiciRequest/Inline", false],
+    [
+      "ToolArg/NewUrlWhole/HostnameAllowlist/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/NewUrlWhole/HostnameAllowlist/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/NewUrlWhole/HostnameAllowlist/UndiciRequest/ViaLet", false],
+    ["ToolArg/NewUrlWhole/IsValidUrlHelper/AxiosConfig/Inline", true],
+    ["ToolArg/NewUrlWhole/IsValidUrlHelper/AxiosConfig/ViaHelperReturn", true],
+    ["ToolArg/NewUrlWhole/IsValidUrlHelper/AxiosConfig/ViaHelperSink", true],
+    ["ToolArg/NewUrlWhole/IsValidUrlHelper/AxiosConfig/ViaLet", true],
+    ["ToolArg/NewUrlWhole/IsValidUrlHelper/AxiosGet/Inline", true],
+    ["ToolArg/NewUrlWhole/IsValidUrlHelper/AxiosGet/ViaHelperReturn", true],
+    ["ToolArg/NewUrlWhole/IsValidUrlHelper/AxiosGet/ViaLet", true],
+    ["ToolArg/NewUrlWhole/IsValidUrlHelper/Fetch/Inline", true],
+    ["ToolArg/NewUrlWhole/IsValidUrlHelper/Fetch/ViaHelperReturn", true],
+    ["ToolArg/NewUrlWhole/IsValidUrlHelper/Fetch/ViaHelperSink", true],
+    ["ToolArg/NewUrlWhole/IsValidUrlHelper/Fetch/ViaLet", true],
+    ["ToolArg/NewUrlWhole/IsValidUrlHelper/GotDefault/Inline", true],
+    ["ToolArg/NewUrlWhole/IsValidUrlHelper/GotDefault/ViaHelperReturn", true],
+    ["ToolArg/NewUrlWhole/IsValidUrlHelper/GotDefault/ViaHelperSink", true],
+    ["ToolArg/NewUrlWhole/IsValidUrlHelper/GotDefault/ViaLet", true],
+    ["ToolArg/NewUrlWhole/IsValidUrlHelper/HttpsGet/Inline", true],
+    ["ToolArg/NewUrlWhole/IsValidUrlHelper/HttpsGet/ViaHelperReturn", true],
+    ["ToolArg/NewUrlWhole/IsValidUrlHelper/HttpsGet/ViaHelperSink", true],
+    ["ToolArg/NewUrlWhole/IsValidUrlHelper/HttpsGet/ViaLet", true],
+    ["ToolArg/NewUrlWhole/IsValidUrlHelper/UndiciRequest/Inline", true],
+    [
+      "ToolArg/NewUrlWhole/IsValidUrlHelper/UndiciRequest/ViaHelperReturn",
+      true
+    ],
+    ["ToolArg/NewUrlWhole/IsValidUrlHelper/UndiciRequest/ViaHelperSink", true],
+    ["ToolArg/NewUrlWhole/IsValidUrlHelper/UndiciRequest/ViaLet", true],
+    ["ToolArg/NewUrlWhole/NoGuard/AxiosConfig/Inline", true],
+    ["ToolArg/NewUrlWhole/NoGuard/AxiosConfig/ViaHelperReturn", true],
+    ["ToolArg/NewUrlWhole/NoGuard/AxiosConfig/ViaHelperSink", true],
+    ["ToolArg/NewUrlWhole/NoGuard/AxiosConfig/ViaLet", true],
+    ["ToolArg/NewUrlWhole/NoGuard/AxiosGet/Inline", true],
+    ["ToolArg/NewUrlWhole/NoGuard/AxiosGet/ViaHelperReturn", true],
+    ["ToolArg/NewUrlWhole/NoGuard/AxiosGet/ViaHelperSink", true],
+    ["ToolArg/NewUrlWhole/NoGuard/AxiosGet/ViaLet", true],
+    ["ToolArg/NewUrlWhole/NoGuard/Fetch/Inline", true],
+    ["ToolArg/NewUrlWhole/NoGuard/Fetch/ViaHelperReturn", true],
+    ["ToolArg/NewUrlWhole/NoGuard/Fetch/ViaHelperSink", true],
+    ["ToolArg/NewUrlWhole/NoGuard/Fetch/ViaLet", true],
+    ["ToolArg/NewUrlWhole/NoGuard/GotDefault/Inline", true],
+    ["ToolArg/NewUrlWhole/NoGuard/GotDefault/ViaHelperReturn", true],
+    ["ToolArg/NewUrlWhole/NoGuard/GotDefault/ViaHelperSink", true],
+    ["ToolArg/NewUrlWhole/NoGuard/GotDefault/ViaLet", true],
+    ["ToolArg/NewUrlWhole/NoGuard/HttpsGet/Inline", true],
+    ["ToolArg/NewUrlWhole/NoGuard/HttpsGet/ViaHelperReturn", true],
+    ["ToolArg/NewUrlWhole/NoGuard/HttpsGet/ViaHelperSink", true],
+    ["ToolArg/NewUrlWhole/NoGuard/HttpsGet/ViaLet", true],
+    ["ToolArg/NewUrlWhole/NoGuard/UndiciRequest/Inline", true],
+    ["ToolArg/NewUrlWhole/NoGuard/UndiciRequest/ViaHelperReturn", true],
+    ["ToolArg/NewUrlWhole/NoGuard/UndiciRequest/ViaHelperSink", true],
+    ["ToolArg/NewUrlWhole/NoGuard/UndiciRequest/ViaLet", true],
+    ["ToolArg/NewUrlWhole/ProtocolCheck/AxiosConfig/Inline", true],
+    ["ToolArg/NewUrlWhole/ProtocolCheck/AxiosConfig/ViaHelperReturn", true],
+    ["ToolArg/NewUrlWhole/ProtocolCheck/AxiosConfig/ViaHelperSink", true],
+    ["ToolArg/NewUrlWhole/ProtocolCheck/AxiosConfig/ViaLet", true],
+    ["ToolArg/NewUrlWhole/ProtocolCheck/AxiosGet/Inline", true],
+    ["ToolArg/NewUrlWhole/ProtocolCheck/AxiosGet/ViaHelperReturn", true],
+    ["ToolArg/NewUrlWhole/ProtocolCheck/AxiosGet/ViaHelperSink", true],
+    ["ToolArg/NewUrlWhole/ProtocolCheck/AxiosGet/ViaLet", true],
+    ["ToolArg/NewUrlWhole/ProtocolCheck/Fetch/Inline", true],
+    ["ToolArg/NewUrlWhole/ProtocolCheck/Fetch/ViaHelperReturn", true],
+    ["ToolArg/NewUrlWhole/ProtocolCheck/Fetch/ViaHelperSink", true],
+    ["ToolArg/NewUrlWhole/ProtocolCheck/Fetch/ViaLet", true],
+    ["ToolArg/NewUrlWhole/ProtocolCheck/GotDefault/Inline", true],
+    ["ToolArg/NewUrlWhole/ProtocolCheck/GotDefault/ViaHelperReturn", true],
+    ["ToolArg/NewUrlWhole/ProtocolCheck/GotDefault/ViaHelperSink", true],
+    ["ToolArg/NewUrlWhole/ProtocolCheck/GotDefault/ViaLet", true],
+    ["ToolArg/NewUrlWhole/ProtocolCheck/HttpsGet/Inline", true],
+    ["ToolArg/NewUrlWhole/ProtocolCheck/HttpsGet/ViaHelperReturn", true],
+    ["ToolArg/NewUrlWhole/ProtocolCheck/HttpsGet/ViaHelperSink", true],
+    ["ToolArg/NewUrlWhole/ProtocolCheck/HttpsGet/ViaLet", true],
+    ["ToolArg/NewUrlWhole/ProtocolCheck/UndiciRequest/Inline", true],
+    ["ToolArg/NewUrlWhole/ProtocolCheck/UndiciRequest/ViaHelperReturn", true],
+    ["ToolArg/NewUrlWhole/ProtocolCheck/UndiciRequest/ViaHelperSink", true],
+    ["ToolArg/NewUrlWhole/ProtocolCheck/UndiciRequest/ViaLet", true],
+    ["ToolArg/NewUrlWhole/SchemeOnly/AxiosConfig/Inline", true],
+    ["ToolArg/NewUrlWhole/SchemeOnly/AxiosConfig/ViaHelperReturn", true],
+    ["ToolArg/NewUrlWhole/SchemeOnly/AxiosConfig/ViaHelperSink", true],
+    ["ToolArg/NewUrlWhole/SchemeOnly/AxiosConfig/ViaLet", true],
+    ["ToolArg/NewUrlWhole/SchemeOnly/AxiosGet/Inline", true],
+    ["ToolArg/NewUrlWhole/SchemeOnly/AxiosGet/ViaHelperReturn", true],
+    ["ToolArg/NewUrlWhole/SchemeOnly/AxiosGet/ViaHelperSink", true],
+    ["ToolArg/NewUrlWhole/SchemeOnly/AxiosGet/ViaLet", true],
+    ["ToolArg/NewUrlWhole/SchemeOnly/Fetch/Inline", true],
+    ["ToolArg/NewUrlWhole/SchemeOnly/Fetch/ViaHelperReturn", true],
+    ["ToolArg/NewUrlWhole/SchemeOnly/Fetch/ViaHelperSink", true],
+    ["ToolArg/NewUrlWhole/SchemeOnly/Fetch/ViaLet", true],
+    ["ToolArg/NewUrlWhole/SchemeOnly/GotDefault/Inline", true],
+    ["ToolArg/NewUrlWhole/SchemeOnly/GotDefault/ViaHelperReturn", true],
+    ["ToolArg/NewUrlWhole/SchemeOnly/GotDefault/ViaHelperSink", true],
+    ["ToolArg/NewUrlWhole/SchemeOnly/GotDefault/ViaLet", true],
+    ["ToolArg/NewUrlWhole/SchemeOnly/HttpsGet/Inline", true],
+    ["ToolArg/NewUrlWhole/SchemeOnly/HttpsGet/ViaHelperReturn", true],
+    ["ToolArg/NewUrlWhole/SchemeOnly/HttpsGet/ViaHelperSink", true],
+    ["ToolArg/NewUrlWhole/SchemeOnly/HttpsGet/ViaLet", true],
+    ["ToolArg/NewUrlWhole/SchemeOnly/UndiciRequest/Inline", true],
+    ["ToolArg/NewUrlWhole/SchemeOnly/UndiciRequest/ViaHelperReturn", true],
+    ["ToolArg/NewUrlWhole/SchemeOnly/UndiciRequest/ViaHelperSink", true],
+    ["ToolArg/NewUrlWhole/SchemeOnly/UndiciRequest/ViaLet", true],
+    ["ToolArg/NewUrlWhole/SomeCallback/AxiosConfig/Inline", false],
+    ["ToolArg/NewUrlWhole/SomeCallback/AxiosConfig/ViaHelperReturn", false],
+    ["ToolArg/NewUrlWhole/SomeCallback/AxiosConfig/ViaHelperSink", false],
+    ["ToolArg/NewUrlWhole/SomeCallback/AxiosConfig/ViaLet", false],
+    ["ToolArg/NewUrlWhole/SomeCallback/AxiosGet/Inline", false],
+    ["ToolArg/NewUrlWhole/SomeCallback/AxiosGet/ViaHelperReturn", false],
+    ["ToolArg/NewUrlWhole/SomeCallback/AxiosGet/ViaHelperSink", false],
+    ["ToolArg/NewUrlWhole/SomeCallback/AxiosGet/ViaLet", false],
+    ["ToolArg/NewUrlWhole/SomeCallback/Fetch/Inline", false],
+    ["ToolArg/NewUrlWhole/SomeCallback/Fetch/ViaHelperReturn", false],
+    ["ToolArg/NewUrlWhole/SomeCallback/Fetch/ViaHelperSink", false],
+    ["ToolArg/NewUrlWhole/SomeCallback/Fetch/ViaLet", false],
+    ["ToolArg/NewUrlWhole/SomeCallback/GotDefault/Inline", false],
+    ["ToolArg/NewUrlWhole/SomeCallback/GotDefault/ViaHelperReturn", false],
+    ["ToolArg/NewUrlWhole/SomeCallback/GotDefault/ViaHelperSink", false],
+    ["ToolArg/NewUrlWhole/SomeCallback/GotDefault/ViaLet", false],
+    ["ToolArg/NewUrlWhole/SomeCallback/HttpsGet/Inline", false],
+    ["ToolArg/NewUrlWhole/SomeCallback/HttpsGet/ViaHelperReturn", false],
+    ["ToolArg/NewUrlWhole/SomeCallback/HttpsGet/ViaHelperSink", false],
+    ["ToolArg/NewUrlWhole/SomeCallback/HttpsGet/ViaLet", false],
+    ["ToolArg/NewUrlWhole/SomeCallback/UndiciRequest/Inline", false],
+    ["ToolArg/NewUrlWhole/SomeCallback/UndiciRequest/ViaHelperReturn", false],
+    ["ToolArg/NewUrlWhole/SomeCallback/UndiciRequest/ViaHelperSink", false],
+    ["ToolArg/NewUrlWhole/SomeCallback/UndiciRequest/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/HostnameAllowlist/AxiosConfig/Inline", false],
+    [
+      "ToolArg/PathAfterOrigin/HostnameAllowlist/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/PathAfterOrigin/HostnameAllowlist/AxiosConfig/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/PathAfterOrigin/HostnameAllowlist/AxiosConfig/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/HostnameAllowlist/AxiosGet/Inline", false],
+    [
+      "ToolArg/PathAfterOrigin/HostnameAllowlist/AxiosGet/ViaHelperReturn",
+      false
+    ],
+    ["ToolArg/PathAfterOrigin/HostnameAllowlist/AxiosGet/ViaHelperSink", false],
+    ["ToolArg/PathAfterOrigin/HostnameAllowlist/AxiosGet/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/HostnameAllowlist/Fetch/Inline", false],
+    ["ToolArg/PathAfterOrigin/HostnameAllowlist/Fetch/ViaHelperReturn", false],
+    ["ToolArg/PathAfterOrigin/HostnameAllowlist/Fetch/ViaHelperSink", false],
+    ["ToolArg/PathAfterOrigin/HostnameAllowlist/Fetch/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/HostnameAllowlist/GotDefault/Inline", false],
+    [
+      "ToolArg/PathAfterOrigin/HostnameAllowlist/GotDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/PathAfterOrigin/HostnameAllowlist/GotDefault/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/PathAfterOrigin/HostnameAllowlist/GotDefault/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/HostnameAllowlist/HttpsGet/Inline", false],
+    [
+      "ToolArg/PathAfterOrigin/HostnameAllowlist/HttpsGet/ViaHelperReturn",
+      false
+    ],
+    ["ToolArg/PathAfterOrigin/HostnameAllowlist/HttpsGet/ViaHelperSink", false],
+    ["ToolArg/PathAfterOrigin/HostnameAllowlist/HttpsGet/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/HostnameAllowlist/UndiciRequest/Inline", false],
+    [
+      "ToolArg/PathAfterOrigin/HostnameAllowlist/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/PathAfterOrigin/HostnameAllowlist/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/PathAfterOrigin/HostnameAllowlist/UndiciRequest/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/IsValidUrlHelper/AxiosConfig/Inline", false],
+    [
+      "ToolArg/PathAfterOrigin/IsValidUrlHelper/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/PathAfterOrigin/IsValidUrlHelper/AxiosConfig/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/PathAfterOrigin/IsValidUrlHelper/AxiosConfig/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/IsValidUrlHelper/AxiosGet/Inline", false],
+    [
+      "ToolArg/PathAfterOrigin/IsValidUrlHelper/AxiosGet/ViaHelperReturn",
+      false
+    ],
+    ["ToolArg/PathAfterOrigin/IsValidUrlHelper/AxiosGet/ViaHelperSink", false],
+    ["ToolArg/PathAfterOrigin/IsValidUrlHelper/AxiosGet/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/IsValidUrlHelper/Fetch/ViaHelperReturn", false],
+    ["ToolArg/PathAfterOrigin/IsValidUrlHelper/Fetch/ViaHelperSink", false],
+    ["ToolArg/PathAfterOrigin/IsValidUrlHelper/Fetch/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/IsValidUrlHelper/GotDefault/Inline", false],
+    [
+      "ToolArg/PathAfterOrigin/IsValidUrlHelper/GotDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/PathAfterOrigin/IsValidUrlHelper/GotDefault/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/PathAfterOrigin/IsValidUrlHelper/GotDefault/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/IsValidUrlHelper/HttpsGet/Inline", false],
+    [
+      "ToolArg/PathAfterOrigin/IsValidUrlHelper/HttpsGet/ViaHelperReturn",
+      false
+    ],
+    ["ToolArg/PathAfterOrigin/IsValidUrlHelper/HttpsGet/ViaHelperSink", false],
+    ["ToolArg/PathAfterOrigin/IsValidUrlHelper/HttpsGet/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/IsValidUrlHelper/UndiciRequest/Inline", false],
+    [
+      "ToolArg/PathAfterOrigin/IsValidUrlHelper/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/PathAfterOrigin/IsValidUrlHelper/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/PathAfterOrigin/IsValidUrlHelper/UndiciRequest/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/NoGuard/AxiosConfig/Inline", false],
+    ["ToolArg/PathAfterOrigin/NoGuard/AxiosConfig/ViaHelperReturn", false],
+    ["ToolArg/PathAfterOrigin/NoGuard/AxiosConfig/ViaHelperSink", false],
+    ["ToolArg/PathAfterOrigin/NoGuard/AxiosConfig/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/NoGuard/AxiosGet/Inline", false],
+    ["ToolArg/PathAfterOrigin/NoGuard/AxiosGet/ViaHelperReturn", false],
+    ["ToolArg/PathAfterOrigin/NoGuard/AxiosGet/ViaHelperSink", false],
+    ["ToolArg/PathAfterOrigin/NoGuard/AxiosGet/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/NoGuard/Fetch/Inline", false],
+    ["ToolArg/PathAfterOrigin/NoGuard/Fetch/ViaHelperReturn", false],
+    ["ToolArg/PathAfterOrigin/NoGuard/Fetch/ViaHelperSink", false],
+    ["ToolArg/PathAfterOrigin/NoGuard/Fetch/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/NoGuard/GotDefault/Inline", false],
+    ["ToolArg/PathAfterOrigin/NoGuard/GotDefault/ViaHelperReturn", false],
+    ["ToolArg/PathAfterOrigin/NoGuard/GotDefault/ViaHelperSink", false],
+    ["ToolArg/PathAfterOrigin/NoGuard/GotDefault/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/NoGuard/HttpsGet/Inline", false],
+    ["ToolArg/PathAfterOrigin/NoGuard/HttpsGet/ViaHelperSink", false],
+    ["ToolArg/PathAfterOrigin/NoGuard/HttpsGet/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/NoGuard/UndiciRequest/Inline", false],
+    ["ToolArg/PathAfterOrigin/NoGuard/UndiciRequest/ViaHelperReturn", false],
+    ["ToolArg/PathAfterOrigin/NoGuard/UndiciRequest/ViaHelperSink", false],
+    ["ToolArg/PathAfterOrigin/NoGuard/UndiciRequest/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/ProtocolCheck/AxiosConfig/Inline", false],
+    [
+      "ToolArg/PathAfterOrigin/ProtocolCheck/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    ["ToolArg/PathAfterOrigin/ProtocolCheck/AxiosConfig/ViaHelperSink", false],
+    ["ToolArg/PathAfterOrigin/ProtocolCheck/AxiosConfig/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/ProtocolCheck/AxiosGet/Inline", false],
+    ["ToolArg/PathAfterOrigin/ProtocolCheck/AxiosGet/ViaHelperReturn", false],
+    ["ToolArg/PathAfterOrigin/ProtocolCheck/AxiosGet/ViaHelperSink", false],
+    ["ToolArg/PathAfterOrigin/ProtocolCheck/AxiosGet/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/ProtocolCheck/Fetch/Inline", false],
+    ["ToolArg/PathAfterOrigin/ProtocolCheck/Fetch/ViaHelperReturn", false],
+    ["ToolArg/PathAfterOrigin/ProtocolCheck/Fetch/ViaHelperSink", false],
+    ["ToolArg/PathAfterOrigin/ProtocolCheck/Fetch/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/ProtocolCheck/GotDefault/Inline", false],
+    ["ToolArg/PathAfterOrigin/ProtocolCheck/GotDefault/ViaHelperReturn", false],
+    ["ToolArg/PathAfterOrigin/ProtocolCheck/GotDefault/ViaHelperSink", false],
+    ["ToolArg/PathAfterOrigin/ProtocolCheck/GotDefault/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/ProtocolCheck/HttpsGet/Inline", false],
+    ["ToolArg/PathAfterOrigin/ProtocolCheck/HttpsGet/ViaHelperReturn", false],
+    ["ToolArg/PathAfterOrigin/ProtocolCheck/HttpsGet/ViaHelperSink", false],
+    ["ToolArg/PathAfterOrigin/ProtocolCheck/HttpsGet/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/ProtocolCheck/UndiciRequest/Inline", false],
+    [
+      "ToolArg/PathAfterOrigin/ProtocolCheck/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/PathAfterOrigin/ProtocolCheck/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/PathAfterOrigin/ProtocolCheck/UndiciRequest/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/SchemeOnly/AxiosConfig/Inline", false],
+    ["ToolArg/PathAfterOrigin/SchemeOnly/AxiosConfig/ViaHelperReturn", false],
+    ["ToolArg/PathAfterOrigin/SchemeOnly/AxiosConfig/ViaHelperSink", false],
+    ["ToolArg/PathAfterOrigin/SchemeOnly/AxiosConfig/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/SchemeOnly/AxiosGet/Inline", false],
+    ["ToolArg/PathAfterOrigin/SchemeOnly/AxiosGet/ViaHelperReturn", false],
+    ["ToolArg/PathAfterOrigin/SchemeOnly/AxiosGet/ViaHelperSink", false],
+    ["ToolArg/PathAfterOrigin/SchemeOnly/AxiosGet/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/SchemeOnly/Fetch/Inline", false],
+    ["ToolArg/PathAfterOrigin/SchemeOnly/Fetch/ViaHelperReturn", false],
+    ["ToolArg/PathAfterOrigin/SchemeOnly/Fetch/ViaHelperSink", false],
+    ["ToolArg/PathAfterOrigin/SchemeOnly/Fetch/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/SchemeOnly/GotDefault/Inline", false],
+    ["ToolArg/PathAfterOrigin/SchemeOnly/GotDefault/ViaHelperReturn", false],
+    ["ToolArg/PathAfterOrigin/SchemeOnly/GotDefault/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/SchemeOnly/HttpsGet/Inline", false],
+    ["ToolArg/PathAfterOrigin/SchemeOnly/HttpsGet/ViaHelperReturn", false],
+    ["ToolArg/PathAfterOrigin/SchemeOnly/HttpsGet/ViaHelperSink", false],
+    ["ToolArg/PathAfterOrigin/SchemeOnly/HttpsGet/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/SchemeOnly/UndiciRequest/Inline", false],
+    ["ToolArg/PathAfterOrigin/SchemeOnly/UndiciRequest/ViaHelperReturn", false],
+    ["ToolArg/PathAfterOrigin/SchemeOnly/UndiciRequest/ViaHelperSink", false],
+    ["ToolArg/PathAfterOrigin/SchemeOnly/UndiciRequest/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/SomeCallback/AxiosConfig/Inline", false],
+    ["ToolArg/PathAfterOrigin/SomeCallback/AxiosConfig/ViaHelperReturn", false],
+    ["ToolArg/PathAfterOrigin/SomeCallback/AxiosConfig/ViaHelperSink", false],
+    ["ToolArg/PathAfterOrigin/SomeCallback/AxiosConfig/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/SomeCallback/AxiosGet/Inline", false],
+    ["ToolArg/PathAfterOrigin/SomeCallback/AxiosGet/ViaHelperReturn", false],
+    ["ToolArg/PathAfterOrigin/SomeCallback/AxiosGet/ViaHelperSink", false],
+    ["ToolArg/PathAfterOrigin/SomeCallback/AxiosGet/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/SomeCallback/Fetch/Inline", false],
+    ["ToolArg/PathAfterOrigin/SomeCallback/Fetch/ViaHelperReturn", false],
+    ["ToolArg/PathAfterOrigin/SomeCallback/Fetch/ViaHelperSink", false],
+    ["ToolArg/PathAfterOrigin/SomeCallback/Fetch/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/SomeCallback/GotDefault/Inline", false],
+    ["ToolArg/PathAfterOrigin/SomeCallback/GotDefault/ViaHelperReturn", false],
+    ["ToolArg/PathAfterOrigin/SomeCallback/GotDefault/ViaHelperSink", false],
+    ["ToolArg/PathAfterOrigin/SomeCallback/GotDefault/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/SomeCallback/HttpsGet/Inline", false],
+    ["ToolArg/PathAfterOrigin/SomeCallback/HttpsGet/ViaHelperReturn", false],
+    ["ToolArg/PathAfterOrigin/SomeCallback/HttpsGet/ViaHelperSink", false],
+    ["ToolArg/PathAfterOrigin/SomeCallback/HttpsGet/ViaLet", false],
+    ["ToolArg/PathAfterOrigin/SomeCallback/UndiciRequest/Inline", false],
+    [
+      "ToolArg/PathAfterOrigin/SomeCallback/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    ["ToolArg/PathAfterOrigin/SomeCallback/UndiciRequest/ViaHelperSink", false],
+    ["ToolArg/PathAfterOrigin/SomeCallback/UndiciRequest/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/HostnameAllowlist/AxiosConfig/Inline", false],
+    [
+      "ToolArg/QueryAfterOrigin/HostnameAllowlist/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/QueryAfterOrigin/HostnameAllowlist/AxiosConfig/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/QueryAfterOrigin/HostnameAllowlist/AxiosConfig/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/HostnameAllowlist/AxiosGet/Inline", false],
+    [
+      "ToolArg/QueryAfterOrigin/HostnameAllowlist/AxiosGet/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/QueryAfterOrigin/HostnameAllowlist/AxiosGet/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/QueryAfterOrigin/HostnameAllowlist/AxiosGet/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/HostnameAllowlist/Fetch/Inline", false],
+    ["ToolArg/QueryAfterOrigin/HostnameAllowlist/Fetch/ViaHelperReturn", false],
+    ["ToolArg/QueryAfterOrigin/HostnameAllowlist/Fetch/ViaHelperSink", false],
+    ["ToolArg/QueryAfterOrigin/HostnameAllowlist/Fetch/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/HostnameAllowlist/GotDefault/Inline", false],
+    [
+      "ToolArg/QueryAfterOrigin/HostnameAllowlist/GotDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/QueryAfterOrigin/HostnameAllowlist/GotDefault/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/QueryAfterOrigin/HostnameAllowlist/GotDefault/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/HostnameAllowlist/HttpsGet/Inline", false],
+    [
+      "ToolArg/QueryAfterOrigin/HostnameAllowlist/HttpsGet/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/QueryAfterOrigin/HostnameAllowlist/HttpsGet/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/QueryAfterOrigin/HostnameAllowlist/HttpsGet/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/HostnameAllowlist/UndiciRequest/Inline", false],
+    [
+      "ToolArg/QueryAfterOrigin/HostnameAllowlist/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/QueryAfterOrigin/HostnameAllowlist/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/QueryAfterOrigin/HostnameAllowlist/UndiciRequest/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/IsValidUrlHelper/AxiosConfig/Inline", false],
+    [
+      "ToolArg/QueryAfterOrigin/IsValidUrlHelper/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/QueryAfterOrigin/IsValidUrlHelper/AxiosConfig/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/QueryAfterOrigin/IsValidUrlHelper/AxiosConfig/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/IsValidUrlHelper/AxiosGet/Inline", false],
+    [
+      "ToolArg/QueryAfterOrigin/IsValidUrlHelper/AxiosGet/ViaHelperReturn",
+      false
+    ],
+    ["ToolArg/QueryAfterOrigin/IsValidUrlHelper/AxiosGet/ViaHelperSink", false],
+    ["ToolArg/QueryAfterOrigin/IsValidUrlHelper/AxiosGet/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/IsValidUrlHelper/Fetch/Inline", false],
+    ["ToolArg/QueryAfterOrigin/IsValidUrlHelper/Fetch/ViaHelperReturn", false],
+    ["ToolArg/QueryAfterOrigin/IsValidUrlHelper/Fetch/ViaHelperSink", false],
+    ["ToolArg/QueryAfterOrigin/IsValidUrlHelper/Fetch/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/IsValidUrlHelper/GotDefault/Inline", false],
+    [
+      "ToolArg/QueryAfterOrigin/IsValidUrlHelper/GotDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/QueryAfterOrigin/IsValidUrlHelper/GotDefault/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/QueryAfterOrigin/IsValidUrlHelper/GotDefault/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/IsValidUrlHelper/HttpsGet/Inline", false],
+    [
+      "ToolArg/QueryAfterOrigin/IsValidUrlHelper/HttpsGet/ViaHelperReturn",
+      false
+    ],
+    ["ToolArg/QueryAfterOrigin/IsValidUrlHelper/HttpsGet/ViaHelperSink", false],
+    ["ToolArg/QueryAfterOrigin/IsValidUrlHelper/HttpsGet/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/IsValidUrlHelper/UndiciRequest/Inline", false],
+    [
+      "ToolArg/QueryAfterOrigin/IsValidUrlHelper/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/QueryAfterOrigin/IsValidUrlHelper/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/QueryAfterOrigin/IsValidUrlHelper/UndiciRequest/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/NoGuard/AxiosConfig/Inline", false],
+    ["ToolArg/QueryAfterOrigin/NoGuard/AxiosConfig/ViaHelperReturn", false],
+    ["ToolArg/QueryAfterOrigin/NoGuard/AxiosConfig/ViaHelperSink", false],
+    ["ToolArg/QueryAfterOrigin/NoGuard/AxiosConfig/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/NoGuard/AxiosGet/Inline", false],
+    ["ToolArg/QueryAfterOrigin/NoGuard/AxiosGet/ViaHelperReturn", false],
+    ["ToolArg/QueryAfterOrigin/NoGuard/AxiosGet/ViaHelperSink", false],
+    ["ToolArg/QueryAfterOrigin/NoGuard/AxiosGet/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/NoGuard/Fetch/Inline", false],
+    ["ToolArg/QueryAfterOrigin/NoGuard/Fetch/ViaHelperReturn", false],
+    ["ToolArg/QueryAfterOrigin/NoGuard/Fetch/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/NoGuard/GotDefault/Inline", false],
+    ["ToolArg/QueryAfterOrigin/NoGuard/GotDefault/ViaHelperReturn", false],
+    ["ToolArg/QueryAfterOrigin/NoGuard/GotDefault/ViaHelperSink", false],
+    ["ToolArg/QueryAfterOrigin/NoGuard/GotDefault/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/NoGuard/HttpsGet/Inline", false],
+    ["ToolArg/QueryAfterOrigin/NoGuard/HttpsGet/ViaHelperReturn", false],
+    ["ToolArg/QueryAfterOrigin/NoGuard/HttpsGet/ViaHelperSink", false],
+    ["ToolArg/QueryAfterOrigin/NoGuard/HttpsGet/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/NoGuard/UndiciRequest/Inline", false],
+    ["ToolArg/QueryAfterOrigin/NoGuard/UndiciRequest/ViaHelperReturn", false],
+    ["ToolArg/QueryAfterOrigin/NoGuard/UndiciRequest/ViaHelperSink", false],
+    ["ToolArg/QueryAfterOrigin/NoGuard/UndiciRequest/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/ProtocolCheck/AxiosConfig/Inline", false],
+    [
+      "ToolArg/QueryAfterOrigin/ProtocolCheck/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    ["ToolArg/QueryAfterOrigin/ProtocolCheck/AxiosConfig/ViaHelperSink", false],
+    ["ToolArg/QueryAfterOrigin/ProtocolCheck/AxiosConfig/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/ProtocolCheck/AxiosGet/Inline", false],
+    ["ToolArg/QueryAfterOrigin/ProtocolCheck/AxiosGet/ViaHelperReturn", false],
+    ["ToolArg/QueryAfterOrigin/ProtocolCheck/AxiosGet/ViaHelperSink", false],
+    ["ToolArg/QueryAfterOrigin/ProtocolCheck/AxiosGet/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/ProtocolCheck/Fetch/Inline", false],
+    ["ToolArg/QueryAfterOrigin/ProtocolCheck/Fetch/ViaHelperReturn", false],
+    ["ToolArg/QueryAfterOrigin/ProtocolCheck/Fetch/ViaHelperSink", false],
+    ["ToolArg/QueryAfterOrigin/ProtocolCheck/Fetch/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/ProtocolCheck/GotDefault/Inline", false],
+    [
+      "ToolArg/QueryAfterOrigin/ProtocolCheck/GotDefault/ViaHelperReturn",
+      false
+    ],
+    ["ToolArg/QueryAfterOrigin/ProtocolCheck/GotDefault/ViaHelperSink", false],
+    ["ToolArg/QueryAfterOrigin/ProtocolCheck/GotDefault/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/ProtocolCheck/HttpsGet/Inline", false],
+    ["ToolArg/QueryAfterOrigin/ProtocolCheck/HttpsGet/ViaHelperReturn", false],
+    ["ToolArg/QueryAfterOrigin/ProtocolCheck/HttpsGet/ViaHelperSink", false],
+    ["ToolArg/QueryAfterOrigin/ProtocolCheck/HttpsGet/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/ProtocolCheck/UndiciRequest/Inline", false],
+    [
+      "ToolArg/QueryAfterOrigin/ProtocolCheck/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/QueryAfterOrigin/ProtocolCheck/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/QueryAfterOrigin/ProtocolCheck/UndiciRequest/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/SchemeOnly/AxiosConfig/Inline", false],
+    ["ToolArg/QueryAfterOrigin/SchemeOnly/AxiosConfig/ViaHelperReturn", false],
+    ["ToolArg/QueryAfterOrigin/SchemeOnly/AxiosConfig/ViaHelperSink", false],
+    ["ToolArg/QueryAfterOrigin/SchemeOnly/AxiosConfig/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/SchemeOnly/AxiosGet/Inline", false],
+    ["ToolArg/QueryAfterOrigin/SchemeOnly/AxiosGet/ViaHelperReturn", false],
+    ["ToolArg/QueryAfterOrigin/SchemeOnly/AxiosGet/ViaHelperSink", false],
+    ["ToolArg/QueryAfterOrigin/SchemeOnly/AxiosGet/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/SchemeOnly/Fetch/Inline", false],
+    ["ToolArg/QueryAfterOrigin/SchemeOnly/Fetch/ViaHelperReturn", false],
+    ["ToolArg/QueryAfterOrigin/SchemeOnly/Fetch/ViaHelperSink", false],
+    ["ToolArg/QueryAfterOrigin/SchemeOnly/Fetch/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/SchemeOnly/GotDefault/Inline", false],
+    ["ToolArg/QueryAfterOrigin/SchemeOnly/GotDefault/ViaHelperReturn", false],
+    ["ToolArg/QueryAfterOrigin/SchemeOnly/GotDefault/ViaHelperSink", false],
+    ["ToolArg/QueryAfterOrigin/SchemeOnly/GotDefault/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/SchemeOnly/HttpsGet/Inline", false],
+    ["ToolArg/QueryAfterOrigin/SchemeOnly/HttpsGet/ViaHelperReturn", false],
+    ["ToolArg/QueryAfterOrigin/SchemeOnly/HttpsGet/ViaHelperSink", false],
+    ["ToolArg/QueryAfterOrigin/SchemeOnly/HttpsGet/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/SchemeOnly/UndiciRequest/Inline", false],
+    [
+      "ToolArg/QueryAfterOrigin/SchemeOnly/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    ["ToolArg/QueryAfterOrigin/SchemeOnly/UndiciRequest/ViaHelperSink", false],
+    ["ToolArg/QueryAfterOrigin/SchemeOnly/UndiciRequest/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/SomeCallback/AxiosConfig/Inline", false],
+    [
+      "ToolArg/QueryAfterOrigin/SomeCallback/AxiosConfig/ViaHelperReturn",
+      false
+    ],
+    ["ToolArg/QueryAfterOrigin/SomeCallback/AxiosConfig/ViaHelperSink", false],
+    ["ToolArg/QueryAfterOrigin/SomeCallback/AxiosConfig/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/SomeCallback/AxiosGet/ViaHelperReturn", false],
+    ["ToolArg/QueryAfterOrigin/SomeCallback/AxiosGet/ViaHelperSink", false],
+    ["ToolArg/QueryAfterOrigin/SomeCallback/AxiosGet/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/SomeCallback/Fetch/Inline", false],
+    ["ToolArg/QueryAfterOrigin/SomeCallback/Fetch/ViaHelperReturn", false],
+    ["ToolArg/QueryAfterOrigin/SomeCallback/Fetch/ViaHelperSink", false],
+    ["ToolArg/QueryAfterOrigin/SomeCallback/Fetch/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/SomeCallback/GotDefault/Inline", false],
+    ["ToolArg/QueryAfterOrigin/SomeCallback/GotDefault/ViaHelperReturn", false],
+    ["ToolArg/QueryAfterOrigin/SomeCallback/GotDefault/ViaHelperSink", false],
+    ["ToolArg/QueryAfterOrigin/SomeCallback/GotDefault/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/SomeCallback/HttpsGet/Inline", false],
+    ["ToolArg/QueryAfterOrigin/SomeCallback/HttpsGet/ViaHelperReturn", false],
+    ["ToolArg/QueryAfterOrigin/SomeCallback/HttpsGet/ViaHelperSink", false],
+    ["ToolArg/QueryAfterOrigin/SomeCallback/HttpsGet/ViaLet", false],
+    ["ToolArg/QueryAfterOrigin/SomeCallback/UndiciRequest/Inline", false],
+    [
+      "ToolArg/QueryAfterOrigin/SomeCallback/UndiciRequest/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/QueryAfterOrigin/SomeCallback/UndiciRequest/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/QueryAfterOrigin/SomeCallback/UndiciRequest/ViaLet", false],
+    ["ToolArg/Whole/HostnameAllowlist/AxiosConfig/Inline", false],
+    ["ToolArg/Whole/HostnameAllowlist/AxiosConfig/ViaHelperReturn", false],
+    ["ToolArg/Whole/HostnameAllowlist/AxiosConfig/ViaHelperSink", false],
+    ["ToolArg/Whole/HostnameAllowlist/AxiosConfig/ViaLet", false],
+    ["ToolArg/Whole/HostnameAllowlist/AxiosGet/Inline", false],
+    ["ToolArg/Whole/HostnameAllowlist/AxiosGet/ViaHelperReturn", false],
+    ["ToolArg/Whole/HostnameAllowlist/AxiosGet/ViaHelperSink", false],
+    ["ToolArg/Whole/HostnameAllowlist/AxiosGet/ViaLet", false],
+    ["ToolArg/Whole/HostnameAllowlist/Fetch/Inline", false],
+    ["ToolArg/Whole/HostnameAllowlist/Fetch/ViaHelperReturn", false],
+    ["ToolArg/Whole/HostnameAllowlist/Fetch/ViaHelperSink", false],
+    ["ToolArg/Whole/HostnameAllowlist/Fetch/ViaLet", false],
+    ["ToolArg/Whole/HostnameAllowlist/GotDefault/Inline", false],
+    ["ToolArg/Whole/HostnameAllowlist/GotDefault/ViaHelperReturn", false],
+    ["ToolArg/Whole/HostnameAllowlist/GotDefault/ViaHelperSink", false],
+    ["ToolArg/Whole/HostnameAllowlist/GotDefault/ViaLet", false],
+    ["ToolArg/Whole/HostnameAllowlist/HttpsGet/Inline", false],
+    ["ToolArg/Whole/HostnameAllowlist/HttpsGet/ViaHelperReturn", false],
+    ["ToolArg/Whole/HostnameAllowlist/HttpsGet/ViaHelperSink", false],
+    ["ToolArg/Whole/HostnameAllowlist/HttpsGet/ViaLet", false],
+    ["ToolArg/Whole/HostnameAllowlist/UndiciRequest/Inline", false],
+    ["ToolArg/Whole/HostnameAllowlist/UndiciRequest/ViaHelperReturn", false],
+    ["ToolArg/Whole/HostnameAllowlist/UndiciRequest/ViaLet", false],
+    ["ToolArg/Whole/IsValidUrlHelper/AxiosConfig/Inline", true],
+    ["ToolArg/Whole/IsValidUrlHelper/AxiosConfig/ViaHelperReturn", true],
+    ["ToolArg/Whole/IsValidUrlHelper/AxiosConfig/ViaHelperSink", true],
+    ["ToolArg/Whole/IsValidUrlHelper/AxiosConfig/ViaLet", true],
+    ["ToolArg/Whole/IsValidUrlHelper/AxiosGet/Inline", true],
+    ["ToolArg/Whole/IsValidUrlHelper/AxiosGet/ViaHelperReturn", true],
+    ["ToolArg/Whole/IsValidUrlHelper/AxiosGet/ViaHelperSink", true],
+    ["ToolArg/Whole/IsValidUrlHelper/AxiosGet/ViaLet", true],
+    ["ToolArg/Whole/IsValidUrlHelper/Fetch/Inline", true],
+    ["ToolArg/Whole/IsValidUrlHelper/Fetch/ViaHelperReturn", true],
+    ["ToolArg/Whole/IsValidUrlHelper/Fetch/ViaHelperSink", true],
+    ["ToolArg/Whole/IsValidUrlHelper/Fetch/ViaLet", true],
+    ["ToolArg/Whole/IsValidUrlHelper/GotDefault/Inline", true],
+    ["ToolArg/Whole/IsValidUrlHelper/GotDefault/ViaHelperReturn", true],
+    ["ToolArg/Whole/IsValidUrlHelper/GotDefault/ViaHelperSink", true],
+    ["ToolArg/Whole/IsValidUrlHelper/GotDefault/ViaLet", true],
+    ["ToolArg/Whole/IsValidUrlHelper/HttpsGet/Inline", true],
+    ["ToolArg/Whole/IsValidUrlHelper/HttpsGet/ViaHelperReturn", true],
+    ["ToolArg/Whole/IsValidUrlHelper/HttpsGet/ViaHelperSink", true],
+    ["ToolArg/Whole/IsValidUrlHelper/HttpsGet/ViaLet", true],
+    ["ToolArg/Whole/IsValidUrlHelper/UndiciRequest/Inline", true],
+    ["ToolArg/Whole/IsValidUrlHelper/UndiciRequest/ViaHelperReturn", true],
+    ["ToolArg/Whole/IsValidUrlHelper/UndiciRequest/ViaHelperSink", true],
+    ["ToolArg/Whole/IsValidUrlHelper/UndiciRequest/ViaLet", true],
+    ["ToolArg/Whole/NoGuard/AxiosConfig/Inline", true],
+    ["ToolArg/Whole/NoGuard/AxiosConfig/ViaHelperReturn", true],
+    ["ToolArg/Whole/NoGuard/AxiosConfig/ViaHelperSink", true],
+    ["ToolArg/Whole/NoGuard/AxiosConfig/ViaLet", true],
+    ["ToolArg/Whole/NoGuard/AxiosGet/Inline", true],
+    ["ToolArg/Whole/NoGuard/AxiosGet/ViaHelperReturn", true],
+    ["ToolArg/Whole/NoGuard/AxiosGet/ViaHelperSink", true],
+    ["ToolArg/Whole/NoGuard/AxiosGet/ViaLet", true],
+    ["ToolArg/Whole/NoGuard/Fetch/Inline", true],
+    ["ToolArg/Whole/NoGuard/Fetch/ViaHelperReturn", true],
+    ["ToolArg/Whole/NoGuard/Fetch/ViaHelperSink", true],
+    ["ToolArg/Whole/NoGuard/Fetch/ViaLet", true],
+    ["ToolArg/Whole/NoGuard/GotDefault/Inline", true],
+    ["ToolArg/Whole/NoGuard/GotDefault/ViaHelperReturn", true],
+    ["ToolArg/Whole/NoGuard/GotDefault/ViaHelperSink", true],
+    ["ToolArg/Whole/NoGuard/GotDefault/ViaLet", true],
+    ["ToolArg/Whole/NoGuard/HttpsGet/Inline", true],
+    ["ToolArg/Whole/NoGuard/HttpsGet/ViaHelperReturn", true],
+    ["ToolArg/Whole/NoGuard/HttpsGet/ViaHelperSink", true],
+    ["ToolArg/Whole/NoGuard/HttpsGet/ViaLet", true],
+    ["ToolArg/Whole/NoGuard/UndiciRequest/Inline", true],
+    ["ToolArg/Whole/NoGuard/UndiciRequest/ViaHelperReturn", true],
+    ["ToolArg/Whole/NoGuard/UndiciRequest/ViaHelperSink", true],
+    ["ToolArg/Whole/NoGuard/UndiciRequest/ViaLet", true],
+    ["ToolArg/Whole/ProtocolCheck/AxiosConfig/Inline", true],
+    ["ToolArg/Whole/ProtocolCheck/AxiosConfig/ViaHelperReturn", true],
+    ["ToolArg/Whole/ProtocolCheck/AxiosConfig/ViaHelperSink", true],
+    ["ToolArg/Whole/ProtocolCheck/AxiosConfig/ViaLet", true],
+    ["ToolArg/Whole/ProtocolCheck/AxiosGet/Inline", true],
+    ["ToolArg/Whole/ProtocolCheck/AxiosGet/ViaHelperSink", true],
+    ["ToolArg/Whole/ProtocolCheck/AxiosGet/ViaLet", true],
+    ["ToolArg/Whole/ProtocolCheck/Fetch/Inline", true],
+    ["ToolArg/Whole/ProtocolCheck/Fetch/ViaHelperReturn", true],
+    ["ToolArg/Whole/ProtocolCheck/Fetch/ViaHelperSink", true],
+    ["ToolArg/Whole/ProtocolCheck/Fetch/ViaLet", true],
+    ["ToolArg/Whole/ProtocolCheck/GotDefault/Inline", true],
+    ["ToolArg/Whole/ProtocolCheck/GotDefault/ViaHelperReturn", true],
+    ["ToolArg/Whole/ProtocolCheck/GotDefault/ViaHelperSink", true],
+    ["ToolArg/Whole/ProtocolCheck/GotDefault/ViaLet", true],
+    ["ToolArg/Whole/ProtocolCheck/HttpsGet/Inline", true],
+    ["ToolArg/Whole/ProtocolCheck/HttpsGet/ViaHelperReturn", true],
+    ["ToolArg/Whole/ProtocolCheck/HttpsGet/ViaHelperSink", true],
+    ["ToolArg/Whole/ProtocolCheck/HttpsGet/ViaLet", true],
+    ["ToolArg/Whole/ProtocolCheck/UndiciRequest/Inline", true],
+    ["ToolArg/Whole/ProtocolCheck/UndiciRequest/ViaHelperReturn", true],
+    ["ToolArg/Whole/ProtocolCheck/UndiciRequest/ViaHelperSink", true],
+    ["ToolArg/Whole/ProtocolCheck/UndiciRequest/ViaLet", true],
+    ["ToolArg/Whole/SchemeOnly/AxiosConfig/Inline", true],
+    ["ToolArg/Whole/SchemeOnly/AxiosConfig/ViaHelperReturn", true],
+    ["ToolArg/Whole/SchemeOnly/AxiosConfig/ViaHelperSink", true],
+    ["ToolArg/Whole/SchemeOnly/AxiosConfig/ViaLet", true],
+    ["ToolArg/Whole/SchemeOnly/AxiosGet/Inline", true],
+    ["ToolArg/Whole/SchemeOnly/AxiosGet/ViaHelperReturn", true],
+    ["ToolArg/Whole/SchemeOnly/AxiosGet/ViaHelperSink", true],
+    ["ToolArg/Whole/SchemeOnly/AxiosGet/ViaLet", true],
+    ["ToolArg/Whole/SchemeOnly/Fetch/Inline", true],
+    ["ToolArg/Whole/SchemeOnly/Fetch/ViaHelperReturn", true],
+    ["ToolArg/Whole/SchemeOnly/Fetch/ViaHelperSink", true],
+    ["ToolArg/Whole/SchemeOnly/Fetch/ViaLet", true],
+    ["ToolArg/Whole/SchemeOnly/GotDefault/Inline", true],
+    ["ToolArg/Whole/SchemeOnly/GotDefault/ViaHelperReturn", true],
+    ["ToolArg/Whole/SchemeOnly/GotDefault/ViaHelperSink", true],
+    ["ToolArg/Whole/SchemeOnly/GotDefault/ViaLet", true],
+    ["ToolArg/Whole/SchemeOnly/HttpsGet/Inline", true],
+    ["ToolArg/Whole/SchemeOnly/HttpsGet/ViaHelperReturn", true],
+    ["ToolArg/Whole/SchemeOnly/HttpsGet/ViaHelperSink", true],
+    ["ToolArg/Whole/SchemeOnly/HttpsGet/ViaLet", true],
+    ["ToolArg/Whole/SchemeOnly/UndiciRequest/Inline", true],
+    ["ToolArg/Whole/SchemeOnly/UndiciRequest/ViaHelperReturn", true],
+    ["ToolArg/Whole/SchemeOnly/UndiciRequest/ViaHelperSink", true],
+    ["ToolArg/Whole/SchemeOnly/UndiciRequest/ViaLet", true],
+    ["ToolArg/Whole/SomeCallback/AxiosConfig/Inline", false],
+    ["ToolArg/Whole/SomeCallback/AxiosConfig/ViaHelperReturn", false],
+    ["ToolArg/Whole/SomeCallback/AxiosConfig/ViaHelperSink", false],
+    ["ToolArg/Whole/SomeCallback/AxiosConfig/ViaLet", false],
+    ["ToolArg/Whole/SomeCallback/AxiosGet/Inline", false],
+    ["ToolArg/Whole/SomeCallback/AxiosGet/ViaHelperReturn", false],
+    ["ToolArg/Whole/SomeCallback/AxiosGet/ViaHelperSink", false],
+    ["ToolArg/Whole/SomeCallback/AxiosGet/ViaLet", false],
+    ["ToolArg/Whole/SomeCallback/Fetch/Inline", false],
+    ["ToolArg/Whole/SomeCallback/Fetch/ViaHelperReturn", false],
+    ["ToolArg/Whole/SomeCallback/Fetch/ViaHelperSink", false],
+    ["ToolArg/Whole/SomeCallback/Fetch/ViaLet", false],
+    ["ToolArg/Whole/SomeCallback/GotDefault/Inline", false],
+    ["ToolArg/Whole/SomeCallback/GotDefault/ViaHelperReturn", false],
+    ["ToolArg/Whole/SomeCallback/GotDefault/ViaHelperSink", false],
+    ["ToolArg/Whole/SomeCallback/GotDefault/ViaLet", false],
+    ["ToolArg/Whole/SomeCallback/HttpsGet/Inline", false],
+    ["ToolArg/Whole/SomeCallback/HttpsGet/ViaHelperReturn", false],
+    ["ToolArg/Whole/SomeCallback/HttpsGet/ViaHelperSink", false],
+    ["ToolArg/Whole/SomeCallback/HttpsGet/ViaLet", false],
+    ["ToolArg/Whole/SomeCallback/UndiciRequest/Inline", false],
+    ["ToolArg/Whole/SomeCallback/UndiciRequest/ViaHelperReturn", false],
+    ["ToolArg/Whole/SomeCallback/UndiciRequest/ViaHelperSink", false],
+    ["ToolArg/Whole/SomeCallback/UndiciRequest/ViaLet", false]
+  ]
+}

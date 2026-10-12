@@ -281,3 +281,29 @@ describe('no-credential-leak-in-tool', () => {
     ],
   });
 });
+
+describe('1.0 independent review (2026-10-12)', () => {
+  ruleTester.run('review', noCredentialLeakInTool, {
+    valid: [
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: a helper given the server's own key, not the caller's token
+        name: 'precision lock: a request helper whose callers pass the server credential',
+        code:
+          SDK +
+          'async function call(foo) { return fetch(API, { headers: { Authorization: `Bearer ${foo}` } }); }\n' +
+          'server.registerTool("t", schema, async ({ q }, extra) => { await call(process.env.API_KEY); return { content: [] }; });',
+      },
+    ],
+    invalid: [
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: the token forwarded through a same-file helper
+        name: 'FN: the caller token forwarded through a same-file request helper',
+        code:
+          SDK +
+          'async function call(foo) { return fetch(API, { headers: { Authorization: `Bearer ${foo}` } }); }\n' +
+          'server.registerTool("t", schema, async ({ q }, extra) => { await call(extra.authInfo.token); return { content: [] }; });',
+        errors: [passthrough('foo', 'fetch')],
+      },
+    ],
+  });
+});

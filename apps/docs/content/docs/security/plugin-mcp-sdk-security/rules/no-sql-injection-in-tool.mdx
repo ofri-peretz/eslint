@@ -81,13 +81,27 @@ server.registerTool('list', cfg, async ({ sort }) =>
   `query` / `execute`, `better-sqlite3` `prepare` / `exec`, `sqlite3`,
   `node:sqlite`, `sqlite` and `duckdb` `run` / `get` / `all` / `each` / `exec` /
   `prepare`, `postgres` `sql.unsafe`, `@neondatabase/serverless`,
-  `@vercel/postgres`, `mssql` `query` / `batch`, and `@libsql/client`
-  `execute` / `executeMultiple`.
+  `@vercel/postgres`, `mssql` `query` / `batch`, `@libsql/client`
+  `execute` / `executeMultiple`, and the raw escape hatches of the ORMs:
+  Prisma `$queryRawUnsafe` / `$executeRawUnsafe` on a `PrismaClient`, `knex`
+  `raw` and Sequelize `query`. The `prisma-security`, `knex-security` and
+  `sequelize-security` plugins report these by shape; this rule knows the
+  text is the tool argument.
 - **The SQL text** is the first argument, or the `text` / `sql` field of a
   query-config object.
 - **Arguments** are tool arguments, `request.params.arguments` and
   `ResourceTemplate` variables, followed through bindings, templates,
   concatenation, string derivations and same-file helpers.
+- **Into helpers, elements and parsed arguments (1.0).** A same-file
+  function or class method (`this.run(args.cmd)`) the handler calls carries
+  what its callers pass it, so a sink inside the helper is reported — an
+  object literal it is given is read field by field. Each element of an
+  argument array is the argument (`for (const p of paths)`,
+  `paths.map((p) => …)`), and a Zod `Schema.parse(args)` /
+  `safeParse(args).data` hands the arguments back: parsing checks their shape,
+  not their text. A key the parsing schema restricts to `z.enum` / `z.literal`
+  / `z.nativeEnum` stays the allowlist. Callers are found by resolving the
+  callee, never by a name.
 
 ## ✅ Correct
 
@@ -118,8 +132,9 @@ server.registerTool(
   is not followed.
 - **A receiver whose construction is not visible** — a parameter, `this.db`, a
   package-level export this file does not build.
-- **ORMs and query builders** (`knex.raw`, Prisma, Sequelize, TypeORM), which
-  have their own plugins.
+- **ORM query APIs other than the raw escape hatches** — TypeORM, query-builder
+  chains (`knex('t').whereRaw(…)`) and Prisma's tagged `$queryRaw` — which have
+  their own plugins.
 - **A file that imports no MCP server package.**
 
 ## When Not To Use It

@@ -100,16 +100,62 @@ const SQL_STATEMENTS: readonly RegExp[] = [
 ];
 
 /** Methods on the pg API (Client, the module itself) that quote what they are given. */
-const PG_ESCAPER_METHODS: ReadonlySet<string> = new Set(['escapeIdentifier', 'escapeLiteral']);
+const PG_ESCAPER_METHODS: ReadonlySet<string> = new Set([
+  'escapeIdentifier',
+  'escapeLiteral',
+]);
 
 /** Global conversions whose result is a number — digits, never SQL. */
-const NUMBER_CONVERSIONS: ReadonlySet<string> = new Set(['Number', 'parseInt', 'parseFloat']);
+const NUMBER_CONVERSIONS: ReadonlySet<string> = new Set([
+  'Number',
+  'parseInt',
+  'parseFloat',
+]);
 
 /** Global namespaces every member of which returns a number. */
 const NUMBER_NAMESPACES: ReadonlySet<string> = new Set(['Math', 'Number']);
 
+/**
+ * Pure text methods: the result holds only characters of the receiver and the
+ * arguments, so it is as safe as they are. `'a'.trim()`, `['a', 'b'].join()`.
+ */
+const PURE_TEXT_METHODS: ReadonlySet<string> = new Set([
+  'trim',
+  'trimStart',
+  'trimEnd',
+  'toLowerCase',
+  'toUpperCase',
+  'join',
+  'slice',
+  'substring',
+  'padStart',
+  'padEnd',
+  'toString',
+  'toFixed',
+  'concat',
+]);
+
+/** Methods that change an array or object in place. */
+const MUTATING_METHODS: ReadonlySet<string> = new Set([
+  'push',
+  'unshift',
+  'splice',
+  'fill',
+  'copyWithin',
+  'set',
+  'add',
+  'assign',
+]);
+
+/** How far a value is followed through bindings and helper returns. */
+const MAX_VALUE_HOPS = 8;
+
 /** Array methods whose callback produces each element of the result. */
-const MAPPING_METHODS: ReadonlySet<string> = new Set(['map', 'flatMap', 'from']);
+const MAPPING_METHODS: ReadonlySet<string> = new Set([
+  'map',
+  'flatMap',
+  'from',
+]);
 
 /** The literal text of a string expression, ignoring every interpolated value. */
 function staticText(node: TSESTree.Node): string {
@@ -165,7 +211,8 @@ function singleInit(
   variable: TSESLint.Scope.Variable | null,
 ): TSESTree.Expression | null {
   if (variable === null) return null;
-  if (variable.references.filter((ref) => ref.isWrite()).length !== 1) return null;
+  if (variable.references.filter((ref) => ref.isWrite()).length !== 1)
+    return null;
   const def = variable.defs.find((d) => d.type === 'Variable');
   if (def === undefined) return null;
   return (def.node as TSESTree.VariableDeclarator).init ?? null;
@@ -189,7 +236,10 @@ function endsWithPlaceholderPrefix(text: string): boolean {
  * the new length), and arithmetic over those — not request data, a string, or
  * a member such as `req.query.n`.
  */
-function isIndexShaped(node: TSESTree.Node, scope: TSESLint.Scope.Scope): boolean {
+function isIndexShaped(
+  node: TSESTree.Node,
+  scope: TSESLint.Scope.Scope,
+): boolean {
   return isNumeric(unwrapTypeSyntax(node), scope, new Set());
 }
 
@@ -215,7 +265,10 @@ const INDEX_PARAMETER: ReadonlyMap<string, number> = new Map([
  * argument an array method passes to its callback?
  */
 function isNumericParameter(name: TSESTree.Identifier): boolean {
-  if (name.typeAnnotation?.typeAnnotation.type === AST_NODE_TYPES.TSNumberKeyword) return true;
+  if (
+    name.typeAnnotation?.typeAnnotation.type === AST_NODE_TYPES.TSNumberKeyword
+  )
+    return true;
   const fn = name.parent;
   const call = fn?.parent;
   if (
@@ -232,15 +285,22 @@ function isNumericParameter(name: TSESTree.Identifier): boolean {
 }
 
 /** The nearest enclosing function parameter spelled `name`, or `null`. */
-function enclosingParameter(node: TSESTree.Identifier): TSESTree.Identifier | null {
-  for (let current: TSESTree.Node | undefined = node.parent; current; current = current.parent) {
+function enclosingParameter(
+  node: TSESTree.Identifier,
+): TSESTree.Identifier | null {
+  for (
+    let current: TSESTree.Node | undefined = node.parent;
+    current;
+    current = current.parent
+  ) {
     if (
       current.type === AST_NODE_TYPES.ArrowFunctionExpression ||
       current.type === AST_NODE_TYPES.FunctionExpression ||
       current.type === AST_NODE_TYPES.FunctionDeclaration
     ) {
       const param = current.params.find(
-        (p): p is TSESTree.Identifier => p.type === AST_NODE_TYPES.Identifier && p.name === node.name,
+        (p): p is TSESTree.Identifier =>
+          p.type === AST_NODE_TYPES.Identifier && p.name === node.name,
       );
       if (param !== undefined) return param;
     }
@@ -249,7 +309,18 @@ function enclosingParameter(node: TSESTree.Identifier): TSESTree.Identifier | nu
 }
 
 /** Arithmetic whose result is a number whatever its operands are. */
-const NUMERIC_OPERATORS: ReadonlySet<string> = new Set(['-', '*', '%', '**', '|', '&', '^', '<<', '>>', '>>>']);
+const NUMERIC_OPERATORS: ReadonlySet<string> = new Set([
+  '-',
+  '*',
+  '%',
+  '**',
+  '|',
+  '&',
+  '^',
+  '<<',
+  '>>',
+  '>>>',
+]);
 
 /**
  * Is this expression a NUMBER — so `$${expr}` can only print a placeholder
@@ -269,7 +340,9 @@ function isNumeric(
     case AST_NODE_TYPES.UpdateExpression:
       return true;
     case AST_NODE_TYPES.UnaryExpression:
-      return node.operator === '+' || node.operator === '-' || node.operator === '~';
+      return (
+        node.operator === '+' || node.operator === '-' || node.operator === '~'
+      );
     case AST_NODE_TYPES.MemberExpression:
       return propertyName(node) === 'length';
     case AST_NODE_TYPES.CallExpression:
@@ -281,7 +354,8 @@ function isNumeric(
     case AST_NODE_TYPES.BinaryExpression:
       if (node.operator === '+') {
         return (
-          isNumeric(node.left as TSESTree.Node, scope, seen) && isNumeric(node.right, scope, seen)
+          isNumeric(node.left as TSESTree.Node, scope, seen) &&
+          isNumeric(node.right, scope, seen)
         );
       }
       return NUMERIC_OPERATORS.has(node.operator);
@@ -293,7 +367,10 @@ function isNumeric(
 }
 
 /** `Number(x)`, `parseInt(x)`, `Math.floor(x)` — a global number conversion. */
-function isNumberConversion(call: TSESTree.CallExpression, scope: TSESLint.Scope.Scope): boolean {
+function isNumberConversion(
+  call: TSESTree.CallExpression,
+  scope: TSESLint.Scope.Scope,
+): boolean {
   const { callee } = call;
   if (callee.type === AST_NODE_TYPES.Identifier) {
     return NUMBER_CONVERSIONS.has(callee.name) && isGlobal(callee.name, scope);
@@ -320,16 +397,23 @@ function isNumericBinding(
   if (seen.has(variable)) return true;
   seen.add(variable);
   const [def] = variable.defs;
-  if (def.type === 'Parameter') return isNumericParameter(def.name as TSESTree.Identifier);
+  if (def.type === 'Parameter')
+    return isNumericParameter(def.name as TSESTree.Identifier);
   if (def.type !== 'Variable') return false;
   const declarator = def.node as TSESTree.VariableDeclarator;
-  if (declarator.id.type === AST_NODE_TYPES.Identifier &&
-    declarator.id.typeAnnotation?.typeAnnotation.type === AST_NODE_TYPES.TSNumberKeyword) {
+  if (
+    declarator.id.type === AST_NODE_TYPES.Identifier &&
+    declarator.id.typeAnnotation?.typeAnnotation.type ===
+      AST_NODE_TYPES.TSNumberKeyword
+  ) {
     return true;
   }
   // A `for…in` key is a string; a `for…of` element is whatever the list holds.
   const loop = declarator.parent.parent;
-  if (loop?.type === AST_NODE_TYPES.ForInStatement || loop?.type === AST_NODE_TYPES.ForOfStatement) {
+  if (
+    loop?.type === AST_NODE_TYPES.ForInStatement ||
+    loop?.type === AST_NODE_TYPES.ForOfStatement
+  ) {
     return false;
   }
   const writes = variable.references.filter((reference) => reference.isWrite());
@@ -338,10 +422,22 @@ function isNumericBinding(
     writes.every((write) => {
       const parent = write.identifier.parent;
       if (parent?.type === AST_NODE_TYPES.UpdateExpression) return true;
-      if (parent?.type === AST_NODE_TYPES.AssignmentExpression && parent.operator !== '=') {
-        return parent.operator !== '+=' || isNumeric(parent.right, write.from, seen);
+      if (
+        parent?.type === AST_NODE_TYPES.AssignmentExpression &&
+        parent.operator !== '='
+      ) {
+        return (
+          parent.operator !== '+=' || isNumeric(parent.right, write.from, seen)
+        );
       }
-      return write.writeExpr != null && isNumeric(unwrapTypeSyntax(write.writeExpr as TSESTree.Node), write.from, seen);
+      return (
+        write.writeExpr != null &&
+        isNumeric(
+          unwrapTypeSyntax(write.writeExpr as TSESTree.Node),
+          write.from,
+          seen,
+        )
+      );
     })
   );
 }
@@ -352,7 +448,9 @@ function isPlaceholderIndex(
   expression: TSESTree.Node,
   scope: TSESLint.Scope.Scope,
 ): boolean {
-  return endsWithPlaceholderPrefix(textBefore) && isIndexShaped(expression, scope);
+  return (
+    endsWithPlaceholderPrefix(textBefore) && isIndexShaped(expression, scope)
+  );
 }
 
 /**
@@ -362,7 +460,10 @@ function isPlaceholderIndex(
  * `rows.map((r, i) => `($${2 * i + 1}, $${2 * i + 2})`)` — the IN-list and
  * multi-row VALUES idioms.
  */
-function isPlaceholderOnly(node: TSESTree.Node, scope: TSESLint.Scope.Scope): boolean {
+function isPlaceholderOnly(
+  node: TSESTree.Node,
+  scope: TSESLint.Scope.Scope,
+): boolean {
   if (staticString(node) !== null) return true;
   if (node.type === AST_NODE_TYPES.TemplateLiteral) {
     return node.expressions.every((expression, i) =>
@@ -394,12 +495,16 @@ function callbackResult(fn: TSESTree.Node): TSESTree.Node | null {
 }
 
 /** Is this `<arr>.map(cb)` / `Array.from(x, cb)` with a placeholder-only callback? */
-function isPlaceholderList(node: TSESTree.Node, scope: TSESLint.Scope.Scope): boolean {
+function isPlaceholderList(
+  node: TSESTree.Node,
+  scope: TSESLint.Scope.Scope,
+): boolean {
   if (node.type === AST_NODE_TYPES.Identifier) {
     const variable = resolveVariable(node.name, scope);
     const init = unwrapTypeSyntax(singleInit(variable));
     // `const tuples = rows.map(…); tuples.join(', ')`
-    if (init?.type === AST_NODE_TYPES.CallExpression) return isPlaceholderList(init, scope);
+    if (init?.type === AST_NODE_TYPES.CallExpression)
+      return isPlaceholderList(init, scope);
     // `const sets = []; sets.push(`name = $${values.length}`); sets.join(', ')`
     return (
       variable !== null &&
@@ -421,7 +526,10 @@ function isPlaceholderList(node: TSESTree.Node, scope: TSESLint.Scope.Scope): bo
 }
 
 /** Is this text fixed, or built only of placeholder indexes and safe values? */
-function isFixedText(node: TSESTree.Node, scope: TSESLint.Scope.Scope): boolean {
+function isFixedText(
+  node: TSESTree.Node,
+  scope: TSESLint.Scope.Scope,
+): boolean {
   if (staticString(node) !== null) return true;
   return (
     (node.type === AST_NODE_TYPES.TemplateLiteral ||
@@ -458,7 +566,10 @@ function isFixedTextList(
   return variable.references.every((reference) => {
     if (reference.isWrite()) return true;
     const member = reference.identifier.parent;
-    if (member?.type !== AST_NODE_TYPES.MemberExpression || member.object !== reference.identifier) {
+    if (
+      member?.type !== AST_NODE_TYPES.MemberExpression ||
+      member.object !== reference.identifier
+    ) {
       return false;
     }
     const method = propertyName(member);
@@ -469,7 +580,8 @@ function isFixedTextList(
       call?.type === AST_NODE_TYPES.CallExpression &&
       call.arguments.every(
         (argument) =>
-          argument.type !== AST_NODE_TYPES.SpreadElement && isFixedText(argument, reference.from),
+          argument.type !== AST_NODE_TYPES.SpreadElement &&
+          isFixedText(argument, reference.from),
       )
     );
   });
@@ -480,12 +592,16 @@ function isFixedTextList(
  * `for (const col of ['name', 'email'])`, or over a `const COLUMNS = [...]`?
  * Each pass sees one of those constants.
  */
-function isFixedLoopElement(variable: TSESLint.Scope.Variable, scope: TSESLint.Scope.Scope): boolean {
+function isFixedLoopElement(
+  variable: TSESLint.Scope.Variable,
+  scope: TSESLint.Scope.Scope,
+): boolean {
   const def = variable.defs[0];
   if (def?.type !== 'Variable') return false;
   const declaration = def.node.parent as TSESTree.VariableDeclaration;
   const loop = declaration.parent;
-  if (loop?.type !== AST_NODE_TYPES.ForOfStatement || loop.left !== declaration) return false;
+  if (loop?.type !== AST_NODE_TYPES.ForOfStatement || loop.left !== declaration)
+    return false;
   const right = unwrapTypeSyntax(loop.right);
   const list =
     right.type === AST_NODE_TYPES.Identifier
@@ -519,13 +635,34 @@ function isFixedLoopElement(variable: TSESLint.Scope.Variable, scope: TSESLint.S
  *     only `$N` placeholders and fixed text;
  *   - a call the devkit already proves static (`path.join` over constants).
  */
-function isSafeCall(call: TSESTree.CallExpression, scope: TSESLint.Scope.Scope): boolean {
+function isSafeCall(
+  call: TSESTree.CallExpression,
+  scope: TSESLint.Scope.Scope,
+  depth = 0,
+): boolean {
   const { callee } = call;
+  const argsSafe = (): boolean =>
+    call.arguments.every((a) => !isRawValue(a, scope, null, depth + 1));
 
   if (callee.type === AST_NODE_TYPES.Identifier) {
-    if (NUMBER_CONVERSIONS.has(callee.name) && isGlobal(callee.name, scope)) return true;
+    if (NUMBER_CONVERSIONS.has(callee.name) && isGlobal(callee.name, scope))
+      return true;
+    // `String(x)` is exactly as safe as `x`.
+    if (callee.name === 'String' && isGlobal('String', scope) && argsSafe())
+      return true;
+    // A same-file helper is as safe as everything it can return.
+    if (call.arguments.length === 0 && helperReturnsSafe(callee, scope, depth))
+      return true;
   } else if (callee.type === AST_NODE_TYPES.MemberExpression) {
     const method = propertyName(callee);
+    if (
+      method !== null &&
+      PURE_TEXT_METHODS.has(method) &&
+      !isRawValue(callee.object, scope, null, depth + 1) &&
+      argsSafe()
+    ) {
+      return true;
+    }
     if (method !== null && PG_ESCAPER_METHODS.has(method)) return true;
     if (
       callee.object.type === AST_NODE_TYPES.Identifier &&
@@ -540,7 +677,8 @@ function isSafeCall(call: TSESTree.CallExpression, scope: TSESLint.Scope.Scope):
     ) {
       return true;
     }
-    if (method === 'join' && isPlaceholderList(callee.object, scope)) return true;
+    if (method === 'join' && isPlaceholderList(callee.object, scope))
+      return true;
   }
 
   const binding = resolveModuleBinding(callee, scope);
@@ -553,6 +691,153 @@ function isSafeCall(call: TSESTree.CallExpression, scope: TSESLint.Scope.Scope):
   return isStaticExpression({ node: call, scope });
 }
 
+/** Every expression a function body can return (not those of nested functions). */
+function returnExpressions(
+  fn:
+    | TSESTree.FunctionDeclaration
+    | TSESTree.FunctionExpression
+    | TSESTree.ArrowFunctionExpression,
+): TSESTree.Node[] {
+  const body = fn.body;
+  if (body.type !== AST_NODE_TYPES.BlockStatement) return [body];
+  const found: TSESTree.Node[] = [];
+  const visit = (node: TSESTree.Node): void => {
+    if (node.type === AST_NODE_TYPES.ReturnStatement) {
+      if (node.argument !== null) found.push(node.argument);
+      return;
+    }
+    if (
+      node.type === AST_NODE_TYPES.FunctionDeclaration ||
+      node.type === AST_NODE_TYPES.FunctionExpression ||
+      node.type === AST_NODE_TYPES.ArrowFunctionExpression
+    ) {
+      return;
+    }
+    for (const key of Object.keys(node) as (keyof typeof node)[]) {
+      if (key === 'parent') continue;
+      const child = node[key] as unknown;
+      if (Array.isArray(child)) {
+        for (const c of child)
+          if (c && typeof (c as TSESTree.Node).type === 'string')
+            visit(c as TSESTree.Node);
+      } else if (child && typeof (child as TSESTree.Node).type === 'string') {
+        visit(child as TSESTree.Node);
+      }
+    }
+  };
+  visit(body);
+  return found;
+}
+
+/**
+ * Is a zero-argument call to a function written in this file safe because
+ * everything it can return is? `const pick = () => format('%L', v)`.
+ */
+function helperReturnsSafe(
+  callee: TSESTree.Identifier,
+  scope: TSESLint.Scope.Scope,
+  depth: number,
+): boolean {
+  if (depth >= MAX_VALUE_HOPS) return false;
+  const variable = resolveVariable(callee.name, scope);
+  if (variable === null) return false;
+  const fn = functionImplementation(variable);
+  if (fn === null || fn.async || fn.generator) return false;
+  const returns = returnExpressions(fn);
+  if (returns.length === 0) return false;
+  // The function's own scope is a child of the scope that declares it (one
+  // level further down for a named function expression, which first opens a
+  // scope for its own name).
+  const inner = variable.scope.childScopes
+    .flatMap((child) => [child, ...child.childScopes])
+    .find((child) => child.block === fn && child.type === 'function')!;
+  return returns.every((r) => !isRawValue(r, inner, null, depth + 1));
+}
+
+/**
+ * Every value a local binding can hold: its initialiser and the right-hand
+ * side of every `=` / `+=` written to it. `null` when the binding is not a
+ * plain local variable (a parameter, an import, a destructured name) or a
+ * write cannot be read — then nothing is known about it.
+ */
+function writtenValues(
+  variable: TSESLint.Scope.Variable,
+): TSESTree.Node[] | null {
+  if (variable.defs.length !== 1 || variable.defs[0]!.type !== 'Variable')
+    return null;
+  const declarator = variable.defs[0]!.node as TSESTree.VariableDeclarator;
+  if (declarator.id.type !== AST_NODE_TYPES.Identifier) return null;
+  const values: TSESTree.Node[] = [];
+  for (const ref of variable.references) {
+    if (!ref.isWrite()) continue;
+    const parent = ref.identifier.parent;
+    if (parent?.type === AST_NODE_TYPES.UpdateExpression) continue; // `n++` stays numeric
+    if (
+      parent?.type === AST_NODE_TYPES.AssignmentExpression &&
+      parent.operator !== '=' &&
+      parent.operator !== '+='
+    ) {
+      continue; // `-=`, `*=` … produce numbers
+    }
+    // eslint-scope records the written expression on every write except
+    // `++`/`--` (skipped above) — including `for (v of xs)`, where it is `xs`.
+    values.push(ref.writeExpr as TSESTree.Node);
+  }
+  // Strings cannot change after they are written; arrays and objects can. A
+  // container that is mutated (`sets.push(k)`, `row[k] = v`) or handed to
+  // another function holds values its initialiser does not show.
+  const container = values.some((v) => {
+    const u = unwrapTypeSyntax(v);
+    return (
+      u.type === AST_NODE_TYPES.ArrayExpression ||
+      u.type === AST_NODE_TYPES.ObjectExpression
+    );
+  });
+  if (
+    container &&
+    variable.references.some(
+      (ref) =>
+        !ref.isWrite() &&
+        ref.identifier.type === AST_NODE_TYPES.Identifier &&
+        changesOrEscapes(ref.identifier),
+    )
+  ) {
+    return null;
+  }
+  return values;
+}
+
+/** Is this read of a container one that can change what it holds? */
+function changesOrEscapes(id: TSESTree.Identifier): boolean {
+  const parent = id.parent;
+  if (parent.type === AST_NODE_TYPES.MemberExpression && parent.object === id) {
+    const outer = parent.parent;
+    if (
+      outer?.type === AST_NODE_TYPES.AssignmentExpression &&
+      outer.left === parent
+    )
+      return true;
+    if (
+      outer?.type === AST_NODE_TYPES.CallExpression &&
+      outer.callee === parent
+    ) {
+      const method = propertyName(parent);
+      return method === null || MUTATING_METHODS.has(method);
+    }
+    return false;
+  }
+  if (
+    parent.type === AST_NODE_TYPES.CallExpression ||
+    parent.type === AST_NODE_TYPES.NewExpression
+  ) {
+    return parent.arguments.includes(id);
+  }
+  return (
+    parent.type === AST_NODE_TYPES.SpreadElement ||
+    parent.type === AST_NODE_TYPES.ReturnStatement
+  );
+}
+
 /**
  * Does `obj.prop` read a constant?
  *
@@ -560,9 +845,13 @@ function isSafeCall(call: TSESTree.CallExpression, scope: TSESLint.Scope.Scope):
  * 'public' }` are how codebases avoid magic table names, and both were
  * reported as injections because a member access was never folded.
  */
-function isConstantMember(node: TSESTree.MemberExpression, scope: TSESLint.Scope.Scope): boolean {
+function isConstantMember(
+  node: TSESTree.MemberExpression,
+  scope: TSESLint.Scope.Scope,
+): boolean {
   const key = propertyName(node);
-  if (key === null || node.object.type !== AST_NODE_TYPES.Identifier) return false;
+  if (key === null || node.object.type !== AST_NODE_TYPES.Identifier)
+    return false;
   const variable = resolveVariable(node.object.name, scope);
   if (variable === null) return false;
 
@@ -574,17 +863,33 @@ function isConstantMember(node: TSESTree.MemberExpression, scope: TSESLint.Scope
     );
     return (
       member !== undefined &&
-      (member.initializer === undefined || member.initializer.type === AST_NODE_TYPES.Literal)
+      (member.initializer === undefined ||
+        member.initializer.type === AST_NODE_TYPES.Literal)
     );
   }
 
   const init = unwrapTypeSyntax(singleInit(variable));
-  if (init === null || init.type !== AST_NODE_TYPES.ObjectExpression) return false;
+  if (init === null || init.type !== AST_NODE_TYPES.ObjectExpression)
+    return false;
+  // `o.c = req.body.c` after `const o = { c: 'a' }` changes what `o.c` reads.
+  if (
+    variable.references.some(
+      (ref) =>
+        !ref.isWrite() &&
+        ref.identifier.type === AST_NODE_TYPES.Identifier &&
+        changesOrEscapes(ref.identifier),
+    )
+  ) {
+    return false;
+  }
   const property = init.properties.find(
     (p): p is TSESTree.Property =>
       p.type === AST_NODE_TYPES.Property && objectKeyName(p) === key,
   );
-  return property !== undefined && isStaticExpression({ node: property.value, scope });
+  return (
+    property !== undefined &&
+    isStaticExpression({ node: property.value, scope })
+  );
 }
 
 /**
@@ -597,17 +902,36 @@ function isRawValue(
   value: TSESTree.Node,
   scope: TSESLint.Scope.Scope,
   self: TSESLint.Scope.Variable | null,
+  depth = 0,
 ): boolean {
   const part = unwrapTypeSyntax(value);
   if (
     part.type === AST_NODE_TYPES.BinaryExpression ||
     part.type === AST_NODE_TYPES.TemplateLiteral
   ) {
-    return hasRawPart(part, scope, self);
+    return hasRawPart(part, scope, self, depth);
   }
   if (isStaticExpression({ node: part, scope })) return false;
-  if (part.type === AST_NODE_TYPES.CallExpression) return !isSafeCall(part, scope);
-  if (part.type === AST_NODE_TYPES.MemberExpression) return !isConstantMember(part, scope);
+  if (part.type === AST_NODE_TYPES.CallExpression)
+    return !isSafeCall(part, scope, depth);
+  if (part.type === AST_NODE_TYPES.ArrayExpression) {
+    return part.elements.some(
+      (e) =>
+        e === null ||
+        e.type === AST_NODE_TYPES.SpreadElement ||
+        isRawValue(e, scope, null, depth + 1),
+    );
+  }
+  if (part.type === AST_NODE_TYPES.MemberExpression) {
+    // The length of a value this file can see is a number.
+    if (
+      propertyName(part) === 'length' &&
+      !isRawValue(part.object, scope, null, depth + 1)
+    ) {
+      return false;
+    }
+    return !isConstantMember(part, scope);
+  }
   if (part.type === AST_NODE_TYPES.Identifier) {
     const variable = resolveVariable(part.name, scope);
     if (variable !== null && variable === self) return false;
@@ -617,7 +941,19 @@ function isRawValue(
     // `const col = escapeIdentifier(sort)` used to be reported only because
     // the safe expression was extracted into a variable first.
     const init = unwrapTypeSyntax(singleInit(variable));
-    return init === null || init.type !== AST_NODE_TYPES.CallExpression || !isSafeCall(init, scope);
+    if (
+      init !== null &&
+      init.type === AST_NODE_TYPES.CallExpression &&
+      isSafeCall(init, scope, depth)
+    ) {
+      return false;
+    }
+    // A local binding — `const` or a `let` written several times — is as safe
+    // as every value it can hold: `let v = ''; v = format('%L', x);`.
+    if (variable === null || depth >= MAX_VALUE_HOPS) return true;
+    const values = writtenValues(variable);
+    if (values === null || values.length === 0) return true;
+    return values.some((w) => isRawValue(w, scope, variable, depth + 1));
   }
   return true;
 }
@@ -637,19 +973,23 @@ function hasRawPart(
   node: TSESTree.TemplateLiteral | TSESTree.BinaryExpression,
   scope: TSESLint.Scope.Scope,
   self: TSESLint.Scope.Variable | null,
+  depth = 0,
 ): boolean {
   if (node.type === AST_NODE_TYPES.TemplateLiteral) {
     return node.expressions.some(
       (expression, i) =>
         !isPlaceholderIndex(node.quasis[i].value.raw, expression, scope) &&
-        isRawValue(expression, scope, self),
+        isRawValue(expression, scope, self, depth),
     );
   }
   const left = node.left as TSESTree.Node;
   if (isPlaceholderIndex(trailingText(left), node.right, scope)) {
-    return isRawValue(left, scope, self);
+    return isRawValue(left, scope, self, depth);
   }
-  return isRawValue(left, scope, self) || isRawValue(node.right, scope, self);
+  return (
+    isRawValue(left, scope, self, depth) ||
+    isRawValue(node.right, scope, self, depth)
+  );
 }
 
 /**
@@ -677,7 +1017,8 @@ function effectiveExpression(
         ((prop.key.type === AST_NODE_TYPES.Identifier &&
           !prop.computed &&
           prop.key.name === 'text') ||
-          (prop.key.type === AST_NODE_TYPES.Literal && prop.key.value === 'text')),
+          (prop.key.type === AST_NODE_TYPES.Literal &&
+            prop.key.value === 'text')),
     );
     return text === undefined ? node : effectiveExpression(text.value, scope);
   }
@@ -719,15 +1060,22 @@ function effectiveExpression(
  */
 function functionImplementation(
   variable: TSESLint.Scope.Variable,
-): TSESTree.FunctionDeclaration | TSESTree.FunctionExpression | TSESTree.ArrowFunctionExpression | null {
-  const def = variable.defs.find((d) => d.type === 'FunctionName' || d.type === 'Variable');
+):
+  | TSESTree.FunctionDeclaration
+  | TSESTree.FunctionExpression
+  | TSESTree.ArrowFunctionExpression
+  | null {
+  const def = variable.defs.find(
+    (d) => d.type === 'FunctionName' || d.type === 'Variable',
+  );
   if (def === undefined) return null;
   if (def.type === 'FunctionName') {
     return def.node as TSESTree.FunctionDeclaration;
   }
   // A binding written more than once has no knowable implementation at the
   // sink — the call could reach either one.
-  if (variable.references.filter((ref) => ref.isWrite()).length !== 1) return null;
+  if (variable.references.filter((ref) => ref.isWrite()).length !== 1)
+    return null;
   const init = (def.node as TSESTree.VariableDeclarator).init;
   if (
     init === null ||
@@ -755,7 +1103,8 @@ function functionImplementation(
 function returnedExpression(body: TSESTree.Node): TSESTree.Node | null {
   if (body.type === AST_NODE_TYPES.BlockStatement) {
     const last = body.body.at(-1);
-    if (last?.type !== AST_NODE_TYPES.ReturnStatement || last.argument === null) return null;
+    if (last?.type !== AST_NODE_TYPES.ReturnStatement || last.argument === null)
+      return null;
     if (last.argument.type === AST_NODE_TYPES.Identifier) return last.argument;
     return body.body.length === 1 ? returnedExpression(last.argument) : null;
   }
@@ -776,7 +1125,10 @@ function importedBuilderResult(
   scope: TSESLint.Scope.Scope,
   env: Env,
 ): Value | null {
-  if (node.type !== AST_NODE_TYPES.CallExpression || node.callee.type !== AST_NODE_TYPES.Identifier) {
+  if (
+    node.type !== AST_NODE_TYPES.CallExpression ||
+    node.callee.type !== AST_NODE_TYPES.Identifier
+  ) {
     return null;
   }
   const variable = resolveVariable(node.callee.name, scope);
@@ -806,7 +1158,8 @@ function writtenFragments(variable: TSESLint.Scope.Variable): TSESTree.Node[] {
     const appends =
       assignment?.type === AST_NODE_TYPES.AssignmentExpression &&
       (assignment.operator === '+=' ||
-        leftmostOperand(value) !== value && isSameBinding(leftmostOperand(value), variable));
+        (leftmostOperand(value) !== value &&
+          isSameBinding(leftmostOperand(value), variable)));
     if (!isStringText(value)) parts = [];
     else if (appends) parts.push(value);
     else parts = [value];
@@ -815,7 +1168,10 @@ function writtenFragments(variable: TSESLint.Scope.Variable): TSESTree.Node[] {
 }
 
 /** Does this identifier refer to `variable`? */
-function isSameBinding(node: TSESTree.Node, variable: TSESLint.Scope.Variable): boolean {
+function isSameBinding(
+  node: TSESTree.Node,
+  variable: TSESLint.Scope.Variable,
+): boolean {
   return variable.references.some((reference) => reference.identifier === node);
 }
 
@@ -831,7 +1187,10 @@ function isStringText(node: TSESTree.Node): boolean {
 /** The leftmost operand of a `+` chain — `q` in `q + a + b`. */
 function leftmostOperand(node: TSESTree.Node): TSESTree.Node {
   let current = node;
-  while (current.type === AST_NODE_TYPES.BinaryExpression && current.operator === '+') {
+  while (
+    current.type === AST_NODE_TYPES.BinaryExpression &&
+    current.operator === '+'
+  ) {
     current = current.left as TSESTree.Node;
   }
   return current;
@@ -851,7 +1210,8 @@ export const noUnsafeQuery: TSESLint.RuleModule<
     // whole-run formatter cannot see them. See docs/META_HYGIENE.md for
     // the fleet-wide audit and tracker P1 #5 for the rollout plan.
     docs: {
-      description: 'Prevent SQL injection by disallowing string concatenation or unsafe template literals in queries.',
+      description:
+        'Prevent SQL injection by disallowing string concatenation or unsafe template literals in queries.',
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-postgresql-security/docs/rules/no-unsafe-query.md',
       // CWE / CVSS surfaces in the formatter (devkit augments RuleMetaDataDocs).
       cwe: 'CWE-89',
@@ -869,15 +1229,18 @@ export const noUnsafeQuery: TSESLint.RuleModule<
         compliance: ['SOC2', 'PCI-DSS', 'NIST-CSF'],
         effort: 'high',
         fix: 'Use parameterized queries ($1, $2) instead of string concatenation.',
-        documentationLink: 'https://node-postgres.com/features/queries#parameterized-queries',
+        documentationLink:
+          'https://node-postgres.com/features/queries#parameterized-queries',
       }),
       unsafeTemplateLiteral: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'SQL Injection Risk',
-        description: 'Unsafe SQL query construction detected (template literal).',
+        description:
+          'Unsafe SQL query construction detected (template literal).',
         severity: 'CRITICAL',
         fix: 'Use parameterized queries ($1, $2) instead of interpolating values.',
-        documentationLink: 'https://owasp.org/www-community/attacks/SQL_Injection',
+        documentationLink:
+          'https://owasp.org/www-community/attacks/SQL_Injection',
       }),
     },
     schema: [],
@@ -913,14 +1276,15 @@ export const noUnsafeQuery: TSESLint.RuleModule<
 
     /** Is this expression a string being BUILT out of parts, rather than written? */
     const isBuilt = (node: TSESTree.Node): boolean =>
-      (node.type === AST_NODE_TYPES.TemplateLiteral && node.expressions.length > 0) ||
+      (node.type === AST_NODE_TYPES.TemplateLiteral &&
+        node.expressions.length > 0) ||
       (node.type === AST_NODE_TYPES.BinaryExpression && node.operator === '+');
 
     /** Does this expression contribute text to a SQL string? */
     const isStringish = (node: TSESTree.Node): boolean =>
       isBuilt(node) ||
       node.type === AST_NODE_TYPES.TemplateLiteral ||
-      (staticString(node) !== null);
+      staticString(node) !== null;
 
     /**
      * Report when the fragments together form a SQL statement built out of at
@@ -936,7 +1300,8 @@ export const noUnsafeQuery: TSESLint.RuleModule<
       reportNode: TSESTree.Node,
       parts: readonly TSESTree.Node[],
       self: FragmentKey | null,
-      scopeOf: (node: TSESTree.Node) => TSESLint.Scope.Scope = (node) => sourceCode.getScope(node),
+      scopeOf: (node: TSESTree.Node) => TSESLint.Scope.Scope = (node) =>
+        sourceCode.getScope(node),
     ): void => {
       const selfVariable = typeof self === 'string' ? null : self;
       let kind: 'concat' | 'template' | null = null;
@@ -946,7 +1311,10 @@ export const noUnsafeQuery: TSESLint.RuleModule<
       for (const part of parts) {
         text += staticText(part);
         const scope = scopeOf(part);
-        if (part.type === AST_NODE_TYPES.BinaryExpression && part.operator === '+') {
+        if (
+          part.type === AST_NODE_TYPES.BinaryExpression &&
+          part.operator === '+'
+        ) {
           kind = 'concat';
           if (hasRawPart(part, scope, selfVariable)) raw = true;
         } else if (
@@ -963,7 +1331,8 @@ export const noUnsafeQuery: TSESLint.RuleModule<
 
       context.report({
         node: reportNode,
-        messageId: kind === 'template' ? 'unsafeTemplateLiteral' : 'noUnsafeQuery',
+        messageId:
+          kind === 'template' ? 'unsafeTemplateLiteral' : 'noUnsafeQuery',
       });
     };
 
@@ -1021,7 +1390,10 @@ export const noUnsafeQuery: TSESLint.RuleModule<
         }
 
         const [queryArg] = node.arguments;
-        if (queryArg === undefined || queryArg.type === AST_NODE_TYPES.SpreadElement) {
+        if (
+          queryArg === undefined ||
+          queryArg.type === AST_NODE_TYPES.SpreadElement
+        ) {
           return;
         }
 
@@ -1034,9 +1406,17 @@ export const noUnsafeQuery: TSESLint.RuleModule<
           if (isBuilt(result)) {
             reportIfUnsafe(queryArg, [result], null, builderEnv.scopeOf);
           } else if (result.type === AST_NODE_TYPES.Identifier) {
-            const variable = resolveVariable(result.name, builderEnv.scopeOf(result));
+            const variable = resolveVariable(
+              result.name,
+              builderEnv.scopeOf(result),
+            );
             if (variable !== null) {
-              reportIfUnsafe(queryArg, writtenFragments(variable), variable, builderEnv.scopeOf);
+              reportIfUnsafe(
+                queryArg,
+                writtenFragments(variable),
+                variable,
+                builderEnv.scopeOf,
+              );
             }
           }
           return;

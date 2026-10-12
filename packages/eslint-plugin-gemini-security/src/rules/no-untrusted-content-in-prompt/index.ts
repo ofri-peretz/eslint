@@ -23,9 +23,26 @@ export const noUntrustedContentInPrompt = createSystemPromptInjectionRule({
   ruleName: 'no-untrusted-content-in-prompt',
   vendor: 'Gemini',
   modules: ['@google/generative-ai', '@google/genai'],
-  requestPaths: ['generateContent', 'generateContentStream'],
+  requestPaths: [
+    'generateContent',
+    'generateContentStream',
+    // `@google/generative-ai` fixes the instruction when the model is made,
+    // not per request.
+    'getGenerativeModel',
+    'startChat',
+    // `@google/genai`: chats, cached contexts and Live sessions carry it in
+    // `config`, as `models.generateContent` does.
+    'chats.create',
+    'caches.create',
+    'live.connect',
+    'sendMessage',
+    'sendMessageStream',
+  ],
   systemPromptProps: ['systemInstruction'],
+  // `@google/genai` puts `systemInstruction` under `config`.
+  nestedOptionKeys: ['config'],
   docsUrl:
     'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-gemini-security/docs/rules/no-untrusted-content-in-prompt.md',
-  documentationLink: 'https://ai.google.dev/gemini-api/docs/system-instructions',
+  documentationLink:
+    'https://ai.google.dev/gemini-api/docs/system-instructions',
 });

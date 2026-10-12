@@ -31,9 +31,10 @@ export const noMassAssignment = createMassAssignmentRule({
       confidence: 'high',
     },
   },
-  methods: ['values', 'set'],
-  payloadKeys: [],
-  receiverPattern: /^(db|database|drizzle|tx|trx)$|[Dd]b$/,
+  // `onConflictDoUpdate({ set: req.body })` is the upsert's update half.
+  methods: ['values', 'set', 'onConflictDoUpdate', 'onDuplicateKeyUpdate'],
+  payloadKeys: ['set'],
+  distinctiveShape: 'builder-chain',
   modules: ['drizzle-orm'],
   fix: 'Name the columns you accept — `.values({ name: req.body.name })` — or validate into a typed object first. Drizzle writes every key present on the object.',
   documentationLink: 'https://orm.drizzle.team/docs/insert',

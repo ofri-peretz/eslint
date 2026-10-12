@@ -1,0 +1,2951 @@
+{
+  "command": "node benchmarks/quint/generate.mjs mcp-sdk-security.no-path-traversal-in-tool",
+  "model": "benchmarks/quint/models/mcp-sdk-security.no-path-traversal-in-tool.qnt",
+  "quint": "@informalsystems/quint@0.33.0",
+  "seed": "0x1d10",
+  "samples": 8000,
+  "dimensions": ["source", "transform", "guard", "sink", "binding"],
+  "cases": [
+    ["ServerConst/Basename/EndsWithLookalike/FsExtra/Inline", false],
+    ["ServerConst/Basename/EndsWithLookalike/FsExtra/ViaHelperReturn", false],
+    ["ServerConst/Basename/EndsWithLookalike/FsExtra/ViaHelperSink", false],
+    ["ServerConst/Basename/EndsWithLookalike/FsExtra/ViaLet", false],
+    ["ServerConst/Basename/EndsWithLookalike/PromisesNamespace/Inline", false],
+    [
+      "ServerConst/Basename/EndsWithLookalike/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/Basename/EndsWithLookalike/PromisesNamespace/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/Basename/EndsWithLookalike/PromisesNamespace/ViaLet", false],
+    ["ServerConst/Basename/EndsWithLookalike/ReadFileNamed/Inline", false],
+    [
+      "ServerConst/Basename/EndsWithLookalike/ReadFileNamed/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/Basename/EndsWithLookalike/ReadFileNamed/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/Basename/EndsWithLookalike/ReadFileNamed/ViaLet", false],
+    [
+      "ServerConst/Basename/EndsWithLookalike/ReadFileSyncDefault/Inline",
+      false
+    ],
+    [
+      "ServerConst/Basename/EndsWithLookalike/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/Basename/EndsWithLookalike/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    [
+      "ServerConst/Basename/EndsWithLookalike/ReadFileSyncDefault/ViaLet",
+      false
+    ],
+    ["ServerConst/Basename/EndsWithLookalike/RequireWrite/Inline", false],
+    [
+      "ServerConst/Basename/EndsWithLookalike/RequireWrite/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/Basename/EndsWithLookalike/RequireWrite/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/Basename/EndsWithLookalike/RequireWrite/ViaLet", false],
+    ["ServerConst/Basename/EndsWithLookalike/StoreLookalike/Inline", false],
+    [
+      "ServerConst/Basename/EndsWithLookalike/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/Basename/EndsWithLookalike/StoreLookalike/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/Basename/EndsWithLookalike/StoreLookalike/ViaLet", false],
+    ["ServerConst/Basename/ExistsLookalike/FsExtra/Inline", false],
+    ["ServerConst/Basename/ExistsLookalike/FsExtra/ViaHelperReturn", false],
+    ["ServerConst/Basename/ExistsLookalike/FsExtra/ViaHelperSink", false],
+    ["ServerConst/Basename/ExistsLookalike/FsExtra/ViaLet", false],
+    ["ServerConst/Basename/ExistsLookalike/PromisesNamespace/Inline", false],
+    [
+      "ServerConst/Basename/ExistsLookalike/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/Basename/ExistsLookalike/PromisesNamespace/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/Basename/ExistsLookalike/PromisesNamespace/ViaLet", false],
+    ["ServerConst/Basename/ExistsLookalike/ReadFileNamed/Inline", false],
+    [
+      "ServerConst/Basename/ExistsLookalike/ReadFileNamed/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/Basename/ExistsLookalike/ReadFileNamed/ViaHelperSink", false],
+    ["ServerConst/Basename/ExistsLookalike/ReadFileNamed/ViaLet", false],
+    ["ServerConst/Basename/ExistsLookalike/ReadFileSyncDefault/Inline", false],
+    [
+      "ServerConst/Basename/ExistsLookalike/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/Basename/ExistsLookalike/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/Basename/ExistsLookalike/ReadFileSyncDefault/ViaLet", false],
+    ["ServerConst/Basename/ExistsLookalike/RequireWrite/Inline", false],
+    [
+      "ServerConst/Basename/ExistsLookalike/RequireWrite/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/Basename/ExistsLookalike/RequireWrite/ViaHelperSink", false],
+    ["ServerConst/Basename/ExistsLookalike/RequireWrite/ViaLet", false],
+    ["ServerConst/Basename/ExistsLookalike/StoreLookalike/Inline", false],
+    [
+      "ServerConst/Basename/ExistsLookalike/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/Basename/ExistsLookalike/StoreLookalike/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/Basename/ExistsLookalike/StoreLookalike/ViaLet", false],
+    ["ServerConst/Basename/NoGuard/FsExtra/Inline", false],
+    ["ServerConst/Basename/NoGuard/FsExtra/ViaHelperReturn", false],
+    ["ServerConst/Basename/NoGuard/FsExtra/ViaHelperSink", false],
+    ["ServerConst/Basename/NoGuard/FsExtra/ViaLet", false],
+    ["ServerConst/Basename/NoGuard/PromisesNamespace/Inline", false],
+    ["ServerConst/Basename/NoGuard/PromisesNamespace/ViaHelperReturn", false],
+    ["ServerConst/Basename/NoGuard/PromisesNamespace/ViaHelperSink", false],
+    ["ServerConst/Basename/NoGuard/PromisesNamespace/ViaLet", false],
+    ["ServerConst/Basename/NoGuard/ReadFileNamed/Inline", false],
+    ["ServerConst/Basename/NoGuard/ReadFileNamed/ViaHelperReturn", false],
+    ["ServerConst/Basename/NoGuard/ReadFileNamed/ViaHelperSink", false],
+    ["ServerConst/Basename/NoGuard/ReadFileNamed/ViaLet", false],
+    ["ServerConst/Basename/NoGuard/ReadFileSyncDefault/Inline", false],
+    ["ServerConst/Basename/NoGuard/ReadFileSyncDefault/ViaHelperReturn", false],
+    ["ServerConst/Basename/NoGuard/ReadFileSyncDefault/ViaHelperSink", false],
+    ["ServerConst/Basename/NoGuard/ReadFileSyncDefault/ViaLet", false],
+    ["ServerConst/Basename/NoGuard/RequireWrite/Inline", false],
+    ["ServerConst/Basename/NoGuard/RequireWrite/ViaHelperReturn", false],
+    ["ServerConst/Basename/NoGuard/RequireWrite/ViaHelperSink", false],
+    ["ServerConst/Basename/NoGuard/RequireWrite/ViaLet", false],
+    ["ServerConst/Basename/NoGuard/StoreLookalike/Inline", false],
+    ["ServerConst/Basename/NoGuard/StoreLookalike/ViaHelperReturn", false],
+    ["ServerConst/Basename/NoGuard/StoreLookalike/ViaHelperSink", false],
+    ["ServerConst/Basename/NoGuard/StoreLookalike/ViaLet", false],
+    ["ServerConst/Basename/NonExiting/FsExtra/Inline", false],
+    ["ServerConst/Basename/NonExiting/FsExtra/ViaHelperReturn", false],
+    ["ServerConst/Basename/NonExiting/FsExtra/ViaHelperSink", false],
+    ["ServerConst/Basename/NonExiting/FsExtra/ViaLet", false],
+    ["ServerConst/Basename/NonExiting/PromisesNamespace/Inline", false],
+    [
+      "ServerConst/Basename/NonExiting/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/Basename/NonExiting/PromisesNamespace/ViaHelperSink", false],
+    ["ServerConst/Basename/NonExiting/PromisesNamespace/ViaLet", false],
+    ["ServerConst/Basename/NonExiting/ReadFileNamed/Inline", false],
+    ["ServerConst/Basename/NonExiting/ReadFileNamed/ViaHelperReturn", false],
+    ["ServerConst/Basename/NonExiting/ReadFileNamed/ViaHelperSink", false],
+    ["ServerConst/Basename/NonExiting/ReadFileNamed/ViaLet", false],
+    ["ServerConst/Basename/NonExiting/ReadFileSyncDefault/Inline", false],
+    [
+      "ServerConst/Basename/NonExiting/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/Basename/NonExiting/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/Basename/NonExiting/ReadFileSyncDefault/ViaLet", false],
+    ["ServerConst/Basename/NonExiting/RequireWrite/Inline", false],
+    ["ServerConst/Basename/NonExiting/RequireWrite/ViaHelperReturn", false],
+    ["ServerConst/Basename/NonExiting/RequireWrite/ViaHelperSink", false],
+    ["ServerConst/Basename/NonExiting/RequireWrite/ViaLet", false],
+    ["ServerConst/Basename/NonExiting/StoreLookalike/Inline", false],
+    ["ServerConst/Basename/NonExiting/StoreLookalike/ViaHelperReturn", false],
+    ["ServerConst/Basename/NonExiting/StoreLookalike/ViaHelperSink", false],
+    ["ServerConst/Basename/NonExiting/StoreLookalike/ViaLet", false],
+    ["ServerConst/Basename/RelativeExit/FsExtra/Inline", false],
+    ["ServerConst/Basename/RelativeExit/FsExtra/ViaHelperReturn", false],
+    ["ServerConst/Basename/RelativeExit/FsExtra/ViaHelperSink", false],
+    ["ServerConst/Basename/RelativeExit/FsExtra/ViaLet", false],
+    ["ServerConst/Basename/RelativeExit/PromisesNamespace/Inline", false],
+    [
+      "ServerConst/Basename/RelativeExit/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/Basename/RelativeExit/PromisesNamespace/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/Basename/RelativeExit/PromisesNamespace/ViaLet", false],
+    ["ServerConst/Basename/RelativeExit/ReadFileNamed/Inline", false],
+    ["ServerConst/Basename/RelativeExit/ReadFileNamed/ViaHelperReturn", false],
+    ["ServerConst/Basename/RelativeExit/ReadFileNamed/ViaHelperSink", false],
+    ["ServerConst/Basename/RelativeExit/ReadFileNamed/ViaLet", false],
+    ["ServerConst/Basename/RelativeExit/ReadFileSyncDefault/Inline", false],
+    [
+      "ServerConst/Basename/RelativeExit/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/Basename/RelativeExit/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/Basename/RelativeExit/ReadFileSyncDefault/ViaLet", false],
+    ["ServerConst/Basename/RelativeExit/RequireWrite/Inline", false],
+    ["ServerConst/Basename/RelativeExit/RequireWrite/ViaHelperReturn", false],
+    ["ServerConst/Basename/RelativeExit/RequireWrite/ViaHelperSink", false],
+    ["ServerConst/Basename/RelativeExit/RequireWrite/ViaLet", false],
+    ["ServerConst/Basename/RelativeExit/StoreLookalike/Inline", false],
+    ["ServerConst/Basename/RelativeExit/StoreLookalike/ViaHelperReturn", false],
+    ["ServerConst/Basename/RelativeExit/StoreLookalike/ViaHelperSink", false],
+    ["ServerConst/Basename/StartsWithExit/FsExtra/Inline", false],
+    ["ServerConst/Basename/StartsWithExit/FsExtra/ViaHelperReturn", false],
+    ["ServerConst/Basename/StartsWithExit/FsExtra/ViaHelperSink", false],
+    ["ServerConst/Basename/StartsWithExit/FsExtra/ViaLet", false],
+    ["ServerConst/Basename/StartsWithExit/PromisesNamespace/Inline", false],
+    [
+      "ServerConst/Basename/StartsWithExit/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/Basename/StartsWithExit/PromisesNamespace/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/Basename/StartsWithExit/PromisesNamespace/ViaLet", false],
+    ["ServerConst/Basename/StartsWithExit/ReadFileNamed/Inline", false],
+    [
+      "ServerConst/Basename/StartsWithExit/ReadFileNamed/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/Basename/StartsWithExit/ReadFileNamed/ViaHelperSink", false],
+    ["ServerConst/Basename/StartsWithExit/ReadFileNamed/ViaLet", false],
+    ["ServerConst/Basename/StartsWithExit/ReadFileSyncDefault/Inline", false],
+    [
+      "ServerConst/Basename/StartsWithExit/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/Basename/StartsWithExit/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/Basename/StartsWithExit/ReadFileSyncDefault/ViaLet", false],
+    ["ServerConst/Basename/StartsWithExit/RequireWrite/Inline", false],
+    ["ServerConst/Basename/StartsWithExit/RequireWrite/ViaHelperReturn", false],
+    ["ServerConst/Basename/StartsWithExit/RequireWrite/ViaHelperSink", false],
+    ["ServerConst/Basename/StartsWithExit/RequireWrite/ViaLet", false],
+    ["ServerConst/Basename/StartsWithExit/StoreLookalike/Inline", false],
+    [
+      "ServerConst/Basename/StartsWithExit/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/Basename/StartsWithExit/StoreLookalike/ViaHelperSink", false],
+    ["ServerConst/Basename/StartsWithExit/StoreLookalike/ViaLet", false],
+    ["ServerConst/JoinRoot/EndsWithLookalike/FsExtra/Inline", false],
+    ["ServerConst/JoinRoot/EndsWithLookalike/FsExtra/ViaHelperReturn", false],
+    ["ServerConst/JoinRoot/EndsWithLookalike/FsExtra/ViaHelperSink", false],
+    ["ServerConst/JoinRoot/EndsWithLookalike/FsExtra/ViaLet", false],
+    ["ServerConst/JoinRoot/EndsWithLookalike/PromisesNamespace/Inline", false],
+    [
+      "ServerConst/JoinRoot/EndsWithLookalike/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/JoinRoot/EndsWithLookalike/PromisesNamespace/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/JoinRoot/EndsWithLookalike/PromisesNamespace/ViaLet", false],
+    ["ServerConst/JoinRoot/EndsWithLookalike/ReadFileNamed/Inline", false],
+    [
+      "ServerConst/JoinRoot/EndsWithLookalike/ReadFileNamed/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/JoinRoot/EndsWithLookalike/ReadFileNamed/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/JoinRoot/EndsWithLookalike/ReadFileNamed/ViaLet", false],
+    [
+      "ServerConst/JoinRoot/EndsWithLookalike/ReadFileSyncDefault/Inline",
+      false
+    ],
+    [
+      "ServerConst/JoinRoot/EndsWithLookalike/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/JoinRoot/EndsWithLookalike/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    [
+      "ServerConst/JoinRoot/EndsWithLookalike/ReadFileSyncDefault/ViaLet",
+      false
+    ],
+    ["ServerConst/JoinRoot/EndsWithLookalike/RequireWrite/Inline", false],
+    [
+      "ServerConst/JoinRoot/EndsWithLookalike/RequireWrite/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/JoinRoot/EndsWithLookalike/RequireWrite/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/JoinRoot/EndsWithLookalike/RequireWrite/ViaLet", false],
+    ["ServerConst/JoinRoot/EndsWithLookalike/StoreLookalike/Inline", false],
+    [
+      "ServerConst/JoinRoot/EndsWithLookalike/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/JoinRoot/EndsWithLookalike/StoreLookalike/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/JoinRoot/EndsWithLookalike/StoreLookalike/ViaLet", false],
+    ["ServerConst/JoinRoot/ExistsLookalike/FsExtra/Inline", false],
+    ["ServerConst/JoinRoot/ExistsLookalike/FsExtra/ViaHelperReturn", false],
+    ["ServerConst/JoinRoot/ExistsLookalike/FsExtra/ViaHelperSink", false],
+    ["ServerConst/JoinRoot/ExistsLookalike/FsExtra/ViaLet", false],
+    ["ServerConst/JoinRoot/ExistsLookalike/PromisesNamespace/Inline", false],
+    [
+      "ServerConst/JoinRoot/ExistsLookalike/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/JoinRoot/ExistsLookalike/PromisesNamespace/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/JoinRoot/ExistsLookalike/PromisesNamespace/ViaLet", false],
+    ["ServerConst/JoinRoot/ExistsLookalike/ReadFileNamed/Inline", false],
+    [
+      "ServerConst/JoinRoot/ExistsLookalike/ReadFileNamed/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/JoinRoot/ExistsLookalike/ReadFileNamed/ViaHelperSink", false],
+    ["ServerConst/JoinRoot/ExistsLookalike/ReadFileNamed/ViaLet", false],
+    ["ServerConst/JoinRoot/ExistsLookalike/ReadFileSyncDefault/Inline", false],
+    [
+      "ServerConst/JoinRoot/ExistsLookalike/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/JoinRoot/ExistsLookalike/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/JoinRoot/ExistsLookalike/ReadFileSyncDefault/ViaLet", false],
+    ["ServerConst/JoinRoot/ExistsLookalike/RequireWrite/Inline", false],
+    [
+      "ServerConst/JoinRoot/ExistsLookalike/RequireWrite/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/JoinRoot/ExistsLookalike/RequireWrite/ViaHelperSink", false],
+    ["ServerConst/JoinRoot/ExistsLookalike/RequireWrite/ViaLet", false],
+    ["ServerConst/JoinRoot/ExistsLookalike/StoreLookalike/Inline", false],
+    [
+      "ServerConst/JoinRoot/ExistsLookalike/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/JoinRoot/ExistsLookalike/StoreLookalike/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/JoinRoot/ExistsLookalike/StoreLookalike/ViaLet", false],
+    ["ServerConst/JoinRoot/NoGuard/FsExtra/Inline", false],
+    ["ServerConst/JoinRoot/NoGuard/FsExtra/ViaHelperReturn", false],
+    ["ServerConst/JoinRoot/NoGuard/FsExtra/ViaHelperSink", false],
+    ["ServerConst/JoinRoot/NoGuard/FsExtra/ViaLet", false],
+    ["ServerConst/JoinRoot/NoGuard/PromisesNamespace/Inline", false],
+    ["ServerConst/JoinRoot/NoGuard/PromisesNamespace/ViaHelperReturn", false],
+    ["ServerConst/JoinRoot/NoGuard/PromisesNamespace/ViaHelperSink", false],
+    ["ServerConst/JoinRoot/NoGuard/PromisesNamespace/ViaLet", false],
+    ["ServerConst/JoinRoot/NoGuard/ReadFileNamed/Inline", false],
+    ["ServerConst/JoinRoot/NoGuard/ReadFileNamed/ViaHelperReturn", false],
+    ["ServerConst/JoinRoot/NoGuard/ReadFileNamed/ViaHelperSink", false],
+    ["ServerConst/JoinRoot/NoGuard/ReadFileNamed/ViaLet", false],
+    ["ServerConst/JoinRoot/NoGuard/ReadFileSyncDefault/Inline", false],
+    ["ServerConst/JoinRoot/NoGuard/ReadFileSyncDefault/ViaHelperReturn", false],
+    ["ServerConst/JoinRoot/NoGuard/ReadFileSyncDefault/ViaHelperSink", false],
+    ["ServerConst/JoinRoot/NoGuard/ReadFileSyncDefault/ViaLet", false],
+    ["ServerConst/JoinRoot/NoGuard/RequireWrite/Inline", false],
+    ["ServerConst/JoinRoot/NoGuard/RequireWrite/ViaHelperReturn", false],
+    ["ServerConst/JoinRoot/NoGuard/RequireWrite/ViaHelperSink", false],
+    ["ServerConst/JoinRoot/NoGuard/RequireWrite/ViaLet", false],
+    ["ServerConst/JoinRoot/NoGuard/StoreLookalike/Inline", false],
+    ["ServerConst/JoinRoot/NoGuard/StoreLookalike/ViaHelperReturn", false],
+    ["ServerConst/JoinRoot/NoGuard/StoreLookalike/ViaHelperSink", false],
+    ["ServerConst/JoinRoot/NoGuard/StoreLookalike/ViaLet", false],
+    ["ServerConst/JoinRoot/NonExiting/FsExtra/Inline", false],
+    ["ServerConst/JoinRoot/NonExiting/FsExtra/ViaHelperReturn", false],
+    ["ServerConst/JoinRoot/NonExiting/FsExtra/ViaHelperSink", false],
+    ["ServerConst/JoinRoot/NonExiting/FsExtra/ViaLet", false],
+    ["ServerConst/JoinRoot/NonExiting/PromisesNamespace/Inline", false],
+    [
+      "ServerConst/JoinRoot/NonExiting/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/JoinRoot/NonExiting/PromisesNamespace/ViaHelperSink", false],
+    ["ServerConst/JoinRoot/NonExiting/PromisesNamespace/ViaLet", false],
+    ["ServerConst/JoinRoot/NonExiting/ReadFileNamed/Inline", false],
+    ["ServerConst/JoinRoot/NonExiting/ReadFileNamed/ViaHelperReturn", false],
+    ["ServerConst/JoinRoot/NonExiting/ReadFileNamed/ViaHelperSink", false],
+    ["ServerConst/JoinRoot/NonExiting/ReadFileNamed/ViaLet", false],
+    ["ServerConst/JoinRoot/NonExiting/ReadFileSyncDefault/Inline", false],
+    [
+      "ServerConst/JoinRoot/NonExiting/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/JoinRoot/NonExiting/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/JoinRoot/NonExiting/ReadFileSyncDefault/ViaLet", false],
+    ["ServerConst/JoinRoot/NonExiting/RequireWrite/Inline", false],
+    ["ServerConst/JoinRoot/NonExiting/RequireWrite/ViaHelperReturn", false],
+    ["ServerConst/JoinRoot/NonExiting/RequireWrite/ViaHelperSink", false],
+    ["ServerConst/JoinRoot/NonExiting/RequireWrite/ViaLet", false],
+    ["ServerConst/JoinRoot/NonExiting/StoreLookalike/Inline", false],
+    ["ServerConst/JoinRoot/NonExiting/StoreLookalike/ViaHelperReturn", false],
+    ["ServerConst/JoinRoot/NonExiting/StoreLookalike/ViaHelperSink", false],
+    ["ServerConst/JoinRoot/NonExiting/StoreLookalike/ViaLet", false],
+    ["ServerConst/JoinRoot/RelativeExit/FsExtra/Inline", false],
+    ["ServerConst/JoinRoot/RelativeExit/FsExtra/ViaHelperSink", false],
+    ["ServerConst/JoinRoot/RelativeExit/FsExtra/ViaLet", false],
+    ["ServerConst/JoinRoot/RelativeExit/PromisesNamespace/Inline", false],
+    [
+      "ServerConst/JoinRoot/RelativeExit/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/JoinRoot/RelativeExit/PromisesNamespace/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/JoinRoot/RelativeExit/PromisesNamespace/ViaLet", false],
+    ["ServerConst/JoinRoot/RelativeExit/ReadFileNamed/Inline", false],
+    ["ServerConst/JoinRoot/RelativeExit/ReadFileNamed/ViaHelperReturn", false],
+    ["ServerConst/JoinRoot/RelativeExit/ReadFileNamed/ViaHelperSink", false],
+    ["ServerConst/JoinRoot/RelativeExit/ReadFileNamed/ViaLet", false],
+    ["ServerConst/JoinRoot/RelativeExit/ReadFileSyncDefault/Inline", false],
+    [
+      "ServerConst/JoinRoot/RelativeExit/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/JoinRoot/RelativeExit/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/JoinRoot/RelativeExit/ReadFileSyncDefault/ViaLet", false],
+    ["ServerConst/JoinRoot/RelativeExit/RequireWrite/Inline", false],
+    ["ServerConst/JoinRoot/RelativeExit/RequireWrite/ViaHelperReturn", false],
+    ["ServerConst/JoinRoot/RelativeExit/RequireWrite/ViaHelperSink", false],
+    ["ServerConst/JoinRoot/RelativeExit/RequireWrite/ViaLet", false],
+    ["ServerConst/JoinRoot/RelativeExit/StoreLookalike/Inline", false],
+    ["ServerConst/JoinRoot/RelativeExit/StoreLookalike/ViaHelperReturn", false],
+    ["ServerConst/JoinRoot/RelativeExit/StoreLookalike/ViaHelperSink", false],
+    ["ServerConst/JoinRoot/RelativeExit/StoreLookalike/ViaLet", false],
+    ["ServerConst/JoinRoot/StartsWithExit/FsExtra/Inline", false],
+    ["ServerConst/JoinRoot/StartsWithExit/FsExtra/ViaHelperReturn", false],
+    ["ServerConst/JoinRoot/StartsWithExit/FsExtra/ViaHelperSink", false],
+    ["ServerConst/JoinRoot/StartsWithExit/FsExtra/ViaLet", false],
+    ["ServerConst/JoinRoot/StartsWithExit/PromisesNamespace/Inline", false],
+    [
+      "ServerConst/JoinRoot/StartsWithExit/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/JoinRoot/StartsWithExit/PromisesNamespace/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/JoinRoot/StartsWithExit/PromisesNamespace/ViaLet", false],
+    ["ServerConst/JoinRoot/StartsWithExit/ReadFileNamed/Inline", false],
+    [
+      "ServerConst/JoinRoot/StartsWithExit/ReadFileNamed/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/JoinRoot/StartsWithExit/ReadFileNamed/ViaHelperSink", false],
+    ["ServerConst/JoinRoot/StartsWithExit/ReadFileNamed/ViaLet", false],
+    ["ServerConst/JoinRoot/StartsWithExit/ReadFileSyncDefault/Inline", false],
+    [
+      "ServerConst/JoinRoot/StartsWithExit/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/JoinRoot/StartsWithExit/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/JoinRoot/StartsWithExit/ReadFileSyncDefault/ViaLet", false],
+    ["ServerConst/JoinRoot/StartsWithExit/RequireWrite/Inline", false],
+    ["ServerConst/JoinRoot/StartsWithExit/RequireWrite/ViaHelperReturn", false],
+    ["ServerConst/JoinRoot/StartsWithExit/RequireWrite/ViaHelperSink", false],
+    ["ServerConst/JoinRoot/StartsWithExit/RequireWrite/ViaLet", false],
+    ["ServerConst/JoinRoot/StartsWithExit/StoreLookalike/Inline", false],
+    [
+      "ServerConst/JoinRoot/StartsWithExit/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/JoinRoot/StartsWithExit/StoreLookalike/ViaHelperSink", false],
+    ["ServerConst/JoinRoot/StartsWithExit/StoreLookalike/ViaLet", false],
+    ["ServerConst/NoTransform/EndsWithLookalike/FsExtra/Inline", false],
+    [
+      "ServerConst/NoTransform/EndsWithLookalike/FsExtra/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/NoTransform/EndsWithLookalike/FsExtra/ViaHelperSink", false],
+    ["ServerConst/NoTransform/EndsWithLookalike/FsExtra/ViaLet", false],
+    [
+      "ServerConst/NoTransform/EndsWithLookalike/PromisesNamespace/Inline",
+      false
+    ],
+    [
+      "ServerConst/NoTransform/EndsWithLookalike/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NoTransform/EndsWithLookalike/PromisesNamespace/ViaHelperSink",
+      false
+    ],
+    [
+      "ServerConst/NoTransform/EndsWithLookalike/PromisesNamespace/ViaLet",
+      false
+    ],
+    ["ServerConst/NoTransform/EndsWithLookalike/ReadFileNamed/Inline", false],
+    [
+      "ServerConst/NoTransform/EndsWithLookalike/ReadFileNamed/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NoTransform/EndsWithLookalike/ReadFileNamed/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NoTransform/EndsWithLookalike/ReadFileNamed/ViaLet", false],
+    [
+      "ServerConst/NoTransform/EndsWithLookalike/ReadFileSyncDefault/Inline",
+      false
+    ],
+    [
+      "ServerConst/NoTransform/EndsWithLookalike/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NoTransform/EndsWithLookalike/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    [
+      "ServerConst/NoTransform/EndsWithLookalike/ReadFileSyncDefault/ViaLet",
+      false
+    ],
+    ["ServerConst/NoTransform/EndsWithLookalike/RequireWrite/Inline", false],
+    [
+      "ServerConst/NoTransform/EndsWithLookalike/RequireWrite/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NoTransform/EndsWithLookalike/RequireWrite/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NoTransform/EndsWithLookalike/RequireWrite/ViaLet", false],
+    ["ServerConst/NoTransform/EndsWithLookalike/StoreLookalike/Inline", false],
+    [
+      "ServerConst/NoTransform/EndsWithLookalike/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NoTransform/EndsWithLookalike/StoreLookalike/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NoTransform/EndsWithLookalike/StoreLookalike/ViaLet", false],
+    ["ServerConst/NoTransform/ExistsLookalike/FsExtra/Inline", false],
+    ["ServerConst/NoTransform/ExistsLookalike/FsExtra/ViaHelperReturn", false],
+    ["ServerConst/NoTransform/ExistsLookalike/FsExtra/ViaHelperSink", false],
+    ["ServerConst/NoTransform/ExistsLookalike/FsExtra/ViaLet", false],
+    ["ServerConst/NoTransform/ExistsLookalike/PromisesNamespace/Inline", false],
+    [
+      "ServerConst/NoTransform/ExistsLookalike/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NoTransform/ExistsLookalike/PromisesNamespace/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NoTransform/ExistsLookalike/PromisesNamespace/ViaLet", false],
+    [
+      "ServerConst/NoTransform/ExistsLookalike/ReadFileNamed/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NoTransform/ExistsLookalike/ReadFileNamed/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NoTransform/ExistsLookalike/ReadFileNamed/ViaLet", false],
+    [
+      "ServerConst/NoTransform/ExistsLookalike/ReadFileSyncDefault/Inline",
+      false
+    ],
+    [
+      "ServerConst/NoTransform/ExistsLookalike/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NoTransform/ExistsLookalike/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    [
+      "ServerConst/NoTransform/ExistsLookalike/ReadFileSyncDefault/ViaLet",
+      false
+    ],
+    ["ServerConst/NoTransform/ExistsLookalike/RequireWrite/Inline", false],
+    [
+      "ServerConst/NoTransform/ExistsLookalike/RequireWrite/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NoTransform/ExistsLookalike/RequireWrite/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NoTransform/ExistsLookalike/RequireWrite/ViaLet", false],
+    ["ServerConst/NoTransform/ExistsLookalike/StoreLookalike/Inline", false],
+    [
+      "ServerConst/NoTransform/ExistsLookalike/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NoTransform/ExistsLookalike/StoreLookalike/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NoTransform/ExistsLookalike/StoreLookalike/ViaLet", false],
+    ["ServerConst/NoTransform/NoGuard/FsExtra/Inline", false],
+    ["ServerConst/NoTransform/NoGuard/FsExtra/ViaHelperReturn", false],
+    ["ServerConst/NoTransform/NoGuard/FsExtra/ViaHelperSink", false],
+    ["ServerConst/NoTransform/NoGuard/FsExtra/ViaLet", false],
+    ["ServerConst/NoTransform/NoGuard/PromisesNamespace/Inline", false],
+    [
+      "ServerConst/NoTransform/NoGuard/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/NoTransform/NoGuard/PromisesNamespace/ViaHelperSink", false],
+    ["ServerConst/NoTransform/NoGuard/PromisesNamespace/ViaLet", false],
+    ["ServerConst/NoTransform/NoGuard/ReadFileNamed/Inline", false],
+    ["ServerConst/NoTransform/NoGuard/ReadFileNamed/ViaHelperReturn", false],
+    ["ServerConst/NoTransform/NoGuard/ReadFileNamed/ViaHelperSink", false],
+    ["ServerConst/NoTransform/NoGuard/ReadFileNamed/ViaLet", false],
+    ["ServerConst/NoTransform/NoGuard/ReadFileSyncDefault/Inline", false],
+    [
+      "ServerConst/NoTransform/NoGuard/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NoTransform/NoGuard/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NoTransform/NoGuard/ReadFileSyncDefault/ViaLet", false],
+    ["ServerConst/NoTransform/NoGuard/RequireWrite/Inline", false],
+    ["ServerConst/NoTransform/NoGuard/RequireWrite/ViaHelperReturn", false],
+    ["ServerConst/NoTransform/NoGuard/RequireWrite/ViaHelperSink", false],
+    ["ServerConst/NoTransform/NoGuard/RequireWrite/ViaLet", false],
+    ["ServerConst/NoTransform/NoGuard/StoreLookalike/Inline", false],
+    ["ServerConst/NoTransform/NoGuard/StoreLookalike/ViaHelperReturn", false],
+    ["ServerConst/NoTransform/NoGuard/StoreLookalike/ViaHelperSink", false],
+    ["ServerConst/NoTransform/NoGuard/StoreLookalike/ViaLet", false],
+    ["ServerConst/NoTransform/NonExiting/FsExtra/Inline", false],
+    ["ServerConst/NoTransform/NonExiting/FsExtra/ViaHelperReturn", false],
+    ["ServerConst/NoTransform/NonExiting/FsExtra/ViaHelperSink", false],
+    ["ServerConst/NoTransform/NonExiting/FsExtra/ViaLet", false],
+    ["ServerConst/NoTransform/NonExiting/PromisesNamespace/Inline", false],
+    [
+      "ServerConst/NoTransform/NonExiting/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NoTransform/NonExiting/PromisesNamespace/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NoTransform/NonExiting/PromisesNamespace/ViaLet", false],
+    ["ServerConst/NoTransform/NonExiting/ReadFileNamed/Inline", false],
+    ["ServerConst/NoTransform/NonExiting/ReadFileNamed/ViaHelperReturn", false],
+    ["ServerConst/NoTransform/NonExiting/ReadFileNamed/ViaHelperSink", false],
+    ["ServerConst/NoTransform/NonExiting/ReadFileNamed/ViaLet", false],
+    ["ServerConst/NoTransform/NonExiting/ReadFileSyncDefault/Inline", false],
+    [
+      "ServerConst/NoTransform/NonExiting/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NoTransform/NonExiting/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NoTransform/NonExiting/ReadFileSyncDefault/ViaLet", false],
+    ["ServerConst/NoTransform/NonExiting/RequireWrite/Inline", false],
+    ["ServerConst/NoTransform/NonExiting/RequireWrite/ViaHelperReturn", false],
+    ["ServerConst/NoTransform/NonExiting/RequireWrite/ViaHelperSink", false],
+    ["ServerConst/NoTransform/NonExiting/RequireWrite/ViaLet", false],
+    ["ServerConst/NoTransform/NonExiting/StoreLookalike/Inline", false],
+    [
+      "ServerConst/NoTransform/NonExiting/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/NoTransform/NonExiting/StoreLookalike/ViaHelperSink", false],
+    ["ServerConst/NoTransform/NonExiting/StoreLookalike/ViaLet", false],
+    ["ServerConst/NoTransform/RelativeExit/FsExtra/Inline", false],
+    ["ServerConst/NoTransform/RelativeExit/FsExtra/ViaHelperReturn", false],
+    ["ServerConst/NoTransform/RelativeExit/FsExtra/ViaHelperSink", false],
+    ["ServerConst/NoTransform/RelativeExit/FsExtra/ViaLet", false],
+    ["ServerConst/NoTransform/RelativeExit/PromisesNamespace/Inline", false],
+    [
+      "ServerConst/NoTransform/RelativeExit/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NoTransform/RelativeExit/PromisesNamespace/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NoTransform/RelativeExit/PromisesNamespace/ViaLet", false],
+    ["ServerConst/NoTransform/RelativeExit/ReadFileNamed/Inline", false],
+    [
+      "ServerConst/NoTransform/RelativeExit/ReadFileNamed/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/NoTransform/RelativeExit/ReadFileNamed/ViaHelperSink", false],
+    ["ServerConst/NoTransform/RelativeExit/ReadFileNamed/ViaLet", false],
+    ["ServerConst/NoTransform/RelativeExit/ReadFileSyncDefault/Inline", false],
+    [
+      "ServerConst/NoTransform/RelativeExit/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/NoTransform/RelativeExit/ReadFileSyncDefault/ViaLet", false],
+    ["ServerConst/NoTransform/RelativeExit/RequireWrite/Inline", false],
+    [
+      "ServerConst/NoTransform/RelativeExit/RequireWrite/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/NoTransform/RelativeExit/RequireWrite/ViaHelperSink", false],
+    ["ServerConst/NoTransform/RelativeExit/RequireWrite/ViaLet", false],
+    ["ServerConst/NoTransform/RelativeExit/StoreLookalike/Inline", false],
+    [
+      "ServerConst/NoTransform/RelativeExit/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NoTransform/RelativeExit/StoreLookalike/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NoTransform/RelativeExit/StoreLookalike/ViaLet", false],
+    ["ServerConst/NoTransform/StartsWithExit/FsExtra/Inline", false],
+    ["ServerConst/NoTransform/StartsWithExit/FsExtra/ViaHelperReturn", false],
+    ["ServerConst/NoTransform/StartsWithExit/FsExtra/ViaHelperSink", false],
+    ["ServerConst/NoTransform/StartsWithExit/FsExtra/ViaLet", false],
+    ["ServerConst/NoTransform/StartsWithExit/PromisesNamespace/Inline", false],
+    [
+      "ServerConst/NoTransform/StartsWithExit/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NoTransform/StartsWithExit/PromisesNamespace/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NoTransform/StartsWithExit/PromisesNamespace/ViaLet", false],
+    ["ServerConst/NoTransform/StartsWithExit/ReadFileNamed/Inline", false],
+    [
+      "ServerConst/NoTransform/StartsWithExit/ReadFileNamed/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NoTransform/StartsWithExit/ReadFileNamed/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NoTransform/StartsWithExit/ReadFileNamed/ViaLet", false],
+    [
+      "ServerConst/NoTransform/StartsWithExit/ReadFileSyncDefault/Inline",
+      false
+    ],
+    [
+      "ServerConst/NoTransform/StartsWithExit/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NoTransform/StartsWithExit/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    [
+      "ServerConst/NoTransform/StartsWithExit/ReadFileSyncDefault/ViaLet",
+      false
+    ],
+    ["ServerConst/NoTransform/StartsWithExit/RequireWrite/Inline", false],
+    [
+      "ServerConst/NoTransform/StartsWithExit/RequireWrite/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NoTransform/StartsWithExit/RequireWrite/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NoTransform/StartsWithExit/RequireWrite/ViaLet", false],
+    [
+      "ServerConst/NoTransform/StartsWithExit/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/NoTransform/StartsWithExit/StoreLookalike/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/NoTransform/StartsWithExit/StoreLookalike/ViaLet", false],
+    ["ServerConst/ResolveRoot/EndsWithLookalike/FsExtra/Inline", false],
+    [
+      "ServerConst/ResolveRoot/EndsWithLookalike/FsExtra/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/ResolveRoot/EndsWithLookalike/FsExtra/ViaHelperSink", false],
+    ["ServerConst/ResolveRoot/EndsWithLookalike/FsExtra/ViaLet", false],
+    [
+      "ServerConst/ResolveRoot/EndsWithLookalike/PromisesNamespace/Inline",
+      false
+    ],
+    [
+      "ServerConst/ResolveRoot/EndsWithLookalike/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ResolveRoot/EndsWithLookalike/PromisesNamespace/ViaHelperSink",
+      false
+    ],
+    [
+      "ServerConst/ResolveRoot/EndsWithLookalike/PromisesNamespace/ViaLet",
+      false
+    ],
+    ["ServerConst/ResolveRoot/EndsWithLookalike/ReadFileNamed/Inline", false],
+    [
+      "ServerConst/ResolveRoot/EndsWithLookalike/ReadFileNamed/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ResolveRoot/EndsWithLookalike/ReadFileNamed/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/ResolveRoot/EndsWithLookalike/ReadFileNamed/ViaLet", false],
+    [
+      "ServerConst/ResolveRoot/EndsWithLookalike/ReadFileSyncDefault/Inline",
+      false
+    ],
+    [
+      "ServerConst/ResolveRoot/EndsWithLookalike/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ResolveRoot/EndsWithLookalike/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    [
+      "ServerConst/ResolveRoot/EndsWithLookalike/ReadFileSyncDefault/ViaLet",
+      false
+    ],
+    ["ServerConst/ResolveRoot/EndsWithLookalike/RequireWrite/Inline", false],
+    [
+      "ServerConst/ResolveRoot/EndsWithLookalike/RequireWrite/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ResolveRoot/EndsWithLookalike/RequireWrite/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/ResolveRoot/EndsWithLookalike/RequireWrite/ViaLet", false],
+    ["ServerConst/ResolveRoot/EndsWithLookalike/StoreLookalike/Inline", false],
+    [
+      "ServerConst/ResolveRoot/EndsWithLookalike/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ResolveRoot/EndsWithLookalike/StoreLookalike/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/ResolveRoot/EndsWithLookalike/StoreLookalike/ViaLet", false],
+    ["ServerConst/ResolveRoot/ExistsLookalike/FsExtra/Inline", false],
+    ["ServerConst/ResolveRoot/ExistsLookalike/FsExtra/ViaHelperReturn", false],
+    ["ServerConst/ResolveRoot/ExistsLookalike/FsExtra/ViaHelperSink", false],
+    ["ServerConst/ResolveRoot/ExistsLookalike/FsExtra/ViaLet", false],
+    ["ServerConst/ResolveRoot/ExistsLookalike/PromisesNamespace/Inline", false],
+    [
+      "ServerConst/ResolveRoot/ExistsLookalike/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ResolveRoot/ExistsLookalike/PromisesNamespace/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/ResolveRoot/ExistsLookalike/PromisesNamespace/ViaLet", false],
+    ["ServerConst/ResolveRoot/ExistsLookalike/ReadFileNamed/Inline", false],
+    [
+      "ServerConst/ResolveRoot/ExistsLookalike/ReadFileNamed/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ResolveRoot/ExistsLookalike/ReadFileNamed/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/ResolveRoot/ExistsLookalike/ReadFileNamed/ViaLet", false],
+    [
+      "ServerConst/ResolveRoot/ExistsLookalike/ReadFileSyncDefault/Inline",
+      false
+    ],
+    [
+      "ServerConst/ResolveRoot/ExistsLookalike/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ResolveRoot/ExistsLookalike/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    [
+      "ServerConst/ResolveRoot/ExistsLookalike/ReadFileSyncDefault/ViaLet",
+      false
+    ],
+    ["ServerConst/ResolveRoot/ExistsLookalike/RequireWrite/Inline", false],
+    [
+      "ServerConst/ResolveRoot/ExistsLookalike/RequireWrite/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ResolveRoot/ExistsLookalike/RequireWrite/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/ResolveRoot/ExistsLookalike/RequireWrite/ViaLet", false],
+    ["ServerConst/ResolveRoot/ExistsLookalike/StoreLookalike/Inline", false],
+    [
+      "ServerConst/ResolveRoot/ExistsLookalike/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ResolveRoot/ExistsLookalike/StoreLookalike/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/ResolveRoot/ExistsLookalike/StoreLookalike/ViaLet", false],
+    ["ServerConst/ResolveRoot/NoGuard/FsExtra/Inline", false],
+    ["ServerConst/ResolveRoot/NoGuard/FsExtra/ViaHelperReturn", false],
+    ["ServerConst/ResolveRoot/NoGuard/FsExtra/ViaHelperSink", false],
+    ["ServerConst/ResolveRoot/NoGuard/FsExtra/ViaLet", false],
+    ["ServerConst/ResolveRoot/NoGuard/PromisesNamespace/Inline", false],
+    [
+      "ServerConst/ResolveRoot/NoGuard/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/ResolveRoot/NoGuard/PromisesNamespace/ViaHelperSink", false],
+    ["ServerConst/ResolveRoot/NoGuard/PromisesNamespace/ViaLet", false],
+    ["ServerConst/ResolveRoot/NoGuard/ReadFileNamed/Inline", false],
+    ["ServerConst/ResolveRoot/NoGuard/ReadFileNamed/ViaHelperReturn", false],
+    ["ServerConst/ResolveRoot/NoGuard/ReadFileNamed/ViaHelperSink", false],
+    ["ServerConst/ResolveRoot/NoGuard/ReadFileNamed/ViaLet", false],
+    ["ServerConst/ResolveRoot/NoGuard/ReadFileSyncDefault/Inline", false],
+    [
+      "ServerConst/ResolveRoot/NoGuard/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ResolveRoot/NoGuard/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/ResolveRoot/NoGuard/ReadFileSyncDefault/ViaLet", false],
+    ["ServerConst/ResolveRoot/NoGuard/RequireWrite/Inline", false],
+    ["ServerConst/ResolveRoot/NoGuard/RequireWrite/ViaHelperReturn", false],
+    ["ServerConst/ResolveRoot/NoGuard/RequireWrite/ViaHelperSink", false],
+    ["ServerConst/ResolveRoot/NoGuard/RequireWrite/ViaLet", false],
+    ["ServerConst/ResolveRoot/NoGuard/StoreLookalike/Inline", false],
+    ["ServerConst/ResolveRoot/NoGuard/StoreLookalike/ViaHelperReturn", false],
+    ["ServerConst/ResolveRoot/NoGuard/StoreLookalike/ViaHelperSink", false],
+    ["ServerConst/ResolveRoot/NoGuard/StoreLookalike/ViaLet", false],
+    ["ServerConst/ResolveRoot/NonExiting/FsExtra/Inline", false],
+    ["ServerConst/ResolveRoot/NonExiting/FsExtra/ViaHelperReturn", false],
+    ["ServerConst/ResolveRoot/NonExiting/FsExtra/ViaHelperSink", false],
+    ["ServerConst/ResolveRoot/NonExiting/FsExtra/ViaLet", false],
+    ["ServerConst/ResolveRoot/NonExiting/PromisesNamespace/Inline", false],
+    [
+      "ServerConst/ResolveRoot/NonExiting/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ResolveRoot/NonExiting/PromisesNamespace/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/ResolveRoot/NonExiting/PromisesNamespace/ViaLet", false],
+    ["ServerConst/ResolveRoot/NonExiting/ReadFileNamed/Inline", false],
+    ["ServerConst/ResolveRoot/NonExiting/ReadFileNamed/ViaHelperReturn", false],
+    ["ServerConst/ResolveRoot/NonExiting/ReadFileNamed/ViaHelperSink", false],
+    ["ServerConst/ResolveRoot/NonExiting/ReadFileNamed/ViaLet", false],
+    ["ServerConst/ResolveRoot/NonExiting/ReadFileSyncDefault/Inline", false],
+    [
+      "ServerConst/ResolveRoot/NonExiting/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ResolveRoot/NonExiting/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/ResolveRoot/NonExiting/ReadFileSyncDefault/ViaLet", false],
+    ["ServerConst/ResolveRoot/NonExiting/RequireWrite/Inline", false],
+    ["ServerConst/ResolveRoot/NonExiting/RequireWrite/ViaHelperReturn", false],
+    ["ServerConst/ResolveRoot/NonExiting/RequireWrite/ViaHelperSink", false],
+    ["ServerConst/ResolveRoot/NonExiting/RequireWrite/ViaLet", false],
+    ["ServerConst/ResolveRoot/NonExiting/StoreLookalike/Inline", false],
+    [
+      "ServerConst/ResolveRoot/NonExiting/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/ResolveRoot/NonExiting/StoreLookalike/ViaHelperSink", false],
+    ["ServerConst/ResolveRoot/NonExiting/StoreLookalike/ViaLet", false],
+    ["ServerConst/ResolveRoot/RelativeExit/FsExtra/Inline", false],
+    ["ServerConst/ResolveRoot/RelativeExit/FsExtra/ViaHelperReturn", false],
+    ["ServerConst/ResolveRoot/RelativeExit/FsExtra/ViaHelperSink", false],
+    ["ServerConst/ResolveRoot/RelativeExit/FsExtra/ViaLet", false],
+    ["ServerConst/ResolveRoot/RelativeExit/PromisesNamespace/Inline", false],
+    [
+      "ServerConst/ResolveRoot/RelativeExit/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ResolveRoot/RelativeExit/PromisesNamespace/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/ResolveRoot/RelativeExit/PromisesNamespace/ViaLet", false],
+    ["ServerConst/ResolveRoot/RelativeExit/ReadFileNamed/Inline", false],
+    [
+      "ServerConst/ResolveRoot/RelativeExit/ReadFileNamed/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/ResolveRoot/RelativeExit/ReadFileNamed/ViaHelperSink", false],
+    ["ServerConst/ResolveRoot/RelativeExit/ReadFileNamed/ViaLet", false],
+    ["ServerConst/ResolveRoot/RelativeExit/ReadFileSyncDefault/Inline", false],
+    [
+      "ServerConst/ResolveRoot/RelativeExit/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ResolveRoot/RelativeExit/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/ResolveRoot/RelativeExit/ReadFileSyncDefault/ViaLet", false],
+    ["ServerConst/ResolveRoot/RelativeExit/RequireWrite/Inline", false],
+    [
+      "ServerConst/ResolveRoot/RelativeExit/RequireWrite/ViaHelperReturn",
+      false
+    ],
+    ["ServerConst/ResolveRoot/RelativeExit/RequireWrite/ViaHelperSink", false],
+    ["ServerConst/ResolveRoot/RelativeExit/RequireWrite/ViaLet", false],
+    ["ServerConst/ResolveRoot/RelativeExit/StoreLookalike/Inline", false],
+    [
+      "ServerConst/ResolveRoot/RelativeExit/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ResolveRoot/RelativeExit/StoreLookalike/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/ResolveRoot/RelativeExit/StoreLookalike/ViaLet", false],
+    ["ServerConst/ResolveRoot/StartsWithExit/FsExtra/Inline", false],
+    ["ServerConst/ResolveRoot/StartsWithExit/FsExtra/ViaHelperReturn", false],
+    ["ServerConst/ResolveRoot/StartsWithExit/FsExtra/ViaHelperSink", false],
+    ["ServerConst/ResolveRoot/StartsWithExit/FsExtra/ViaLet", false],
+    ["ServerConst/ResolveRoot/StartsWithExit/PromisesNamespace/Inline", false],
+    [
+      "ServerConst/ResolveRoot/StartsWithExit/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ResolveRoot/StartsWithExit/PromisesNamespace/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/ResolveRoot/StartsWithExit/PromisesNamespace/ViaLet", false],
+    ["ServerConst/ResolveRoot/StartsWithExit/ReadFileNamed/Inline", false],
+    [
+      "ServerConst/ResolveRoot/StartsWithExit/ReadFileNamed/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ResolveRoot/StartsWithExit/ReadFileNamed/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/ResolveRoot/StartsWithExit/ReadFileNamed/ViaLet", false],
+    [
+      "ServerConst/ResolveRoot/StartsWithExit/ReadFileSyncDefault/Inline",
+      false
+    ],
+    [
+      "ServerConst/ResolveRoot/StartsWithExit/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ResolveRoot/StartsWithExit/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    [
+      "ServerConst/ResolveRoot/StartsWithExit/ReadFileSyncDefault/ViaLet",
+      false
+    ],
+    ["ServerConst/ResolveRoot/StartsWithExit/RequireWrite/Inline", false],
+    [
+      "ServerConst/ResolveRoot/StartsWithExit/RequireWrite/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ResolveRoot/StartsWithExit/RequireWrite/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/ResolveRoot/StartsWithExit/RequireWrite/ViaLet", false],
+    ["ServerConst/ResolveRoot/StartsWithExit/StoreLookalike/Inline", false],
+    [
+      "ServerConst/ResolveRoot/StartsWithExit/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    [
+      "ServerConst/ResolveRoot/StartsWithExit/StoreLookalike/ViaHelperSink",
+      false
+    ],
+    ["ServerConst/ResolveRoot/StartsWithExit/StoreLookalike/ViaLet", false],
+    ["TemplateVar/Basename/EndsWithLookalike/FsExtra/Inline", false],
+    ["TemplateVar/Basename/EndsWithLookalike/FsExtra/ViaHelperReturn", false],
+    ["TemplateVar/Basename/EndsWithLookalike/FsExtra/ViaHelperSink", false],
+    ["TemplateVar/Basename/EndsWithLookalike/FsExtra/ViaLet", false],
+    ["TemplateVar/Basename/EndsWithLookalike/PromisesNamespace/Inline", false],
+    [
+      "TemplateVar/Basename/EndsWithLookalike/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/Basename/EndsWithLookalike/PromisesNamespace/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/Basename/EndsWithLookalike/PromisesNamespace/ViaLet", false],
+    ["TemplateVar/Basename/EndsWithLookalike/ReadFileNamed/Inline", false],
+    [
+      "TemplateVar/Basename/EndsWithLookalike/ReadFileNamed/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/Basename/EndsWithLookalike/ReadFileNamed/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/Basename/EndsWithLookalike/ReadFileNamed/ViaLet", false],
+    [
+      "TemplateVar/Basename/EndsWithLookalike/ReadFileSyncDefault/Inline",
+      false
+    ],
+    [
+      "TemplateVar/Basename/EndsWithLookalike/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/Basename/EndsWithLookalike/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    [
+      "TemplateVar/Basename/EndsWithLookalike/ReadFileSyncDefault/ViaLet",
+      false
+    ],
+    ["TemplateVar/Basename/EndsWithLookalike/RequireWrite/Inline", false],
+    [
+      "TemplateVar/Basename/EndsWithLookalike/RequireWrite/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/Basename/EndsWithLookalike/RequireWrite/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/Basename/EndsWithLookalike/RequireWrite/ViaLet", false],
+    ["TemplateVar/Basename/EndsWithLookalike/StoreLookalike/Inline", false],
+    [
+      "TemplateVar/Basename/EndsWithLookalike/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/Basename/EndsWithLookalike/StoreLookalike/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/Basename/EndsWithLookalike/StoreLookalike/ViaLet", false],
+    ["TemplateVar/Basename/ExistsLookalike/FsExtra/Inline", false],
+    ["TemplateVar/Basename/ExistsLookalike/FsExtra/ViaHelperReturn", false],
+    ["TemplateVar/Basename/ExistsLookalike/FsExtra/ViaHelperSink", false],
+    ["TemplateVar/Basename/ExistsLookalike/FsExtra/ViaLet", false],
+    ["TemplateVar/Basename/ExistsLookalike/PromisesNamespace/Inline", false],
+    [
+      "TemplateVar/Basename/ExistsLookalike/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/Basename/ExistsLookalike/PromisesNamespace/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/Basename/ExistsLookalike/PromisesNamespace/ViaLet", false],
+    ["TemplateVar/Basename/ExistsLookalike/ReadFileNamed/Inline", false],
+    [
+      "TemplateVar/Basename/ExistsLookalike/ReadFileNamed/ViaHelperReturn",
+      false
+    ],
+    ["TemplateVar/Basename/ExistsLookalike/ReadFileNamed/ViaHelperSink", false],
+    ["TemplateVar/Basename/ExistsLookalike/ReadFileNamed/ViaLet", false],
+    ["TemplateVar/Basename/ExistsLookalike/ReadFileSyncDefault/Inline", false],
+    [
+      "TemplateVar/Basename/ExistsLookalike/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/Basename/ExistsLookalike/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/Basename/ExistsLookalike/ReadFileSyncDefault/ViaLet", false],
+    ["TemplateVar/Basename/ExistsLookalike/RequireWrite/Inline", false],
+    [
+      "TemplateVar/Basename/ExistsLookalike/RequireWrite/ViaHelperReturn",
+      false
+    ],
+    ["TemplateVar/Basename/ExistsLookalike/RequireWrite/ViaHelperSink", false],
+    ["TemplateVar/Basename/ExistsLookalike/RequireWrite/ViaLet", false],
+    ["TemplateVar/Basename/ExistsLookalike/StoreLookalike/Inline", false],
+    [
+      "TemplateVar/Basename/ExistsLookalike/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/Basename/ExistsLookalike/StoreLookalike/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/Basename/ExistsLookalike/StoreLookalike/ViaLet", false],
+    ["TemplateVar/Basename/NoGuard/FsExtra/Inline", false],
+    ["TemplateVar/Basename/NoGuard/FsExtra/ViaHelperReturn", false],
+    ["TemplateVar/Basename/NoGuard/FsExtra/ViaHelperSink", false],
+    ["TemplateVar/Basename/NoGuard/FsExtra/ViaLet", false],
+    ["TemplateVar/Basename/NoGuard/PromisesNamespace/Inline", false],
+    ["TemplateVar/Basename/NoGuard/PromisesNamespace/ViaHelperReturn", false],
+    ["TemplateVar/Basename/NoGuard/PromisesNamespace/ViaHelperSink", false],
+    ["TemplateVar/Basename/NoGuard/PromisesNamespace/ViaLet", false],
+    ["TemplateVar/Basename/NoGuard/ReadFileNamed/Inline", false],
+    ["TemplateVar/Basename/NoGuard/ReadFileNamed/ViaHelperReturn", false],
+    ["TemplateVar/Basename/NoGuard/ReadFileNamed/ViaHelperSink", false],
+    ["TemplateVar/Basename/NoGuard/ReadFileNamed/ViaLet", false],
+    ["TemplateVar/Basename/NoGuard/ReadFileSyncDefault/Inline", false],
+    ["TemplateVar/Basename/NoGuard/ReadFileSyncDefault/ViaHelperReturn", false],
+    ["TemplateVar/Basename/NoGuard/ReadFileSyncDefault/ViaHelperSink", false],
+    ["TemplateVar/Basename/NoGuard/ReadFileSyncDefault/ViaLet", false],
+    ["TemplateVar/Basename/NoGuard/RequireWrite/Inline", false],
+    ["TemplateVar/Basename/NoGuard/RequireWrite/ViaHelperReturn", false],
+    ["TemplateVar/Basename/NoGuard/RequireWrite/ViaHelperSink", false],
+    ["TemplateVar/Basename/NoGuard/RequireWrite/ViaLet", false],
+    ["TemplateVar/Basename/NoGuard/StoreLookalike/Inline", false],
+    ["TemplateVar/Basename/NoGuard/StoreLookalike/ViaHelperReturn", false],
+    ["TemplateVar/Basename/NoGuard/StoreLookalike/ViaHelperSink", false],
+    ["TemplateVar/Basename/NoGuard/StoreLookalike/ViaLet", false],
+    ["TemplateVar/Basename/NonExiting/FsExtra/Inline", false],
+    ["TemplateVar/Basename/NonExiting/FsExtra/ViaHelperReturn", false],
+    ["TemplateVar/Basename/NonExiting/FsExtra/ViaHelperSink", false],
+    ["TemplateVar/Basename/NonExiting/FsExtra/ViaLet", false],
+    ["TemplateVar/Basename/NonExiting/PromisesNamespace/Inline", false],
+    [
+      "TemplateVar/Basename/NonExiting/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    ["TemplateVar/Basename/NonExiting/PromisesNamespace/ViaHelperSink", false],
+    ["TemplateVar/Basename/NonExiting/PromisesNamespace/ViaLet", false],
+    ["TemplateVar/Basename/NonExiting/ReadFileNamed/Inline", false],
+    ["TemplateVar/Basename/NonExiting/ReadFileNamed/ViaHelperReturn", false],
+    ["TemplateVar/Basename/NonExiting/ReadFileNamed/ViaHelperSink", false],
+    ["TemplateVar/Basename/NonExiting/ReadFileNamed/ViaLet", false],
+    ["TemplateVar/Basename/NonExiting/ReadFileSyncDefault/Inline", false],
+    [
+      "TemplateVar/Basename/NonExiting/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/Basename/NonExiting/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/Basename/NonExiting/ReadFileSyncDefault/ViaLet", false],
+    ["TemplateVar/Basename/NonExiting/RequireWrite/Inline", false],
+    ["TemplateVar/Basename/NonExiting/RequireWrite/ViaHelperReturn", false],
+    ["TemplateVar/Basename/NonExiting/RequireWrite/ViaHelperSink", false],
+    ["TemplateVar/Basename/NonExiting/RequireWrite/ViaLet", false],
+    ["TemplateVar/Basename/NonExiting/StoreLookalike/Inline", false],
+    ["TemplateVar/Basename/NonExiting/StoreLookalike/ViaHelperReturn", false],
+    ["TemplateVar/Basename/NonExiting/StoreLookalike/ViaHelperSink", false],
+    ["TemplateVar/Basename/NonExiting/StoreLookalike/ViaLet", false],
+    ["TemplateVar/Basename/RelativeExit/FsExtra/Inline", false],
+    ["TemplateVar/Basename/RelativeExit/FsExtra/ViaHelperReturn", false],
+    ["TemplateVar/Basename/RelativeExit/FsExtra/ViaHelperSink", false],
+    ["TemplateVar/Basename/RelativeExit/FsExtra/ViaLet", false],
+    ["TemplateVar/Basename/RelativeExit/PromisesNamespace/Inline", false],
+    [
+      "TemplateVar/Basename/RelativeExit/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/Basename/RelativeExit/PromisesNamespace/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/Basename/RelativeExit/PromisesNamespace/ViaLet", false],
+    ["TemplateVar/Basename/RelativeExit/ReadFileNamed/Inline", false],
+    ["TemplateVar/Basename/RelativeExit/ReadFileNamed/ViaHelperReturn", false],
+    ["TemplateVar/Basename/RelativeExit/ReadFileNamed/ViaHelperSink", false],
+    ["TemplateVar/Basename/RelativeExit/ReadFileNamed/ViaLet", false],
+    ["TemplateVar/Basename/RelativeExit/ReadFileSyncDefault/Inline", false],
+    [
+      "TemplateVar/Basename/RelativeExit/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/Basename/RelativeExit/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/Basename/RelativeExit/ReadFileSyncDefault/ViaLet", false],
+    ["TemplateVar/Basename/RelativeExit/RequireWrite/Inline", false],
+    ["TemplateVar/Basename/RelativeExit/RequireWrite/ViaHelperReturn", false],
+    ["TemplateVar/Basename/RelativeExit/RequireWrite/ViaHelperSink", false],
+    ["TemplateVar/Basename/RelativeExit/RequireWrite/ViaLet", false],
+    ["TemplateVar/Basename/RelativeExit/StoreLookalike/Inline", false],
+    ["TemplateVar/Basename/RelativeExit/StoreLookalike/ViaHelperReturn", false],
+    ["TemplateVar/Basename/RelativeExit/StoreLookalike/ViaHelperSink", false],
+    ["TemplateVar/Basename/RelativeExit/StoreLookalike/ViaLet", false],
+    ["TemplateVar/Basename/StartsWithExit/FsExtra/Inline", false],
+    ["TemplateVar/Basename/StartsWithExit/FsExtra/ViaHelperReturn", false],
+    ["TemplateVar/Basename/StartsWithExit/FsExtra/ViaHelperSink", false],
+    ["TemplateVar/Basename/StartsWithExit/FsExtra/ViaLet", false],
+    ["TemplateVar/Basename/StartsWithExit/PromisesNamespace/Inline", false],
+    [
+      "TemplateVar/Basename/StartsWithExit/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/Basename/StartsWithExit/PromisesNamespace/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/Basename/StartsWithExit/PromisesNamespace/ViaLet", false],
+    ["TemplateVar/Basename/StartsWithExit/ReadFileNamed/Inline", false],
+    [
+      "TemplateVar/Basename/StartsWithExit/ReadFileNamed/ViaHelperReturn",
+      false
+    ],
+    ["TemplateVar/Basename/StartsWithExit/ReadFileNamed/ViaHelperSink", false],
+    ["TemplateVar/Basename/StartsWithExit/ReadFileNamed/ViaLet", false],
+    ["TemplateVar/Basename/StartsWithExit/ReadFileSyncDefault/Inline", false],
+    [
+      "TemplateVar/Basename/StartsWithExit/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/Basename/StartsWithExit/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/Basename/StartsWithExit/ReadFileSyncDefault/ViaLet", false],
+    ["TemplateVar/Basename/StartsWithExit/RequireWrite/Inline", false],
+    ["TemplateVar/Basename/StartsWithExit/RequireWrite/ViaHelperReturn", false],
+    ["TemplateVar/Basename/StartsWithExit/RequireWrite/ViaHelperSink", false],
+    ["TemplateVar/Basename/StartsWithExit/RequireWrite/ViaLet", false],
+    ["TemplateVar/Basename/StartsWithExit/StoreLookalike/Inline", false],
+    [
+      "TemplateVar/Basename/StartsWithExit/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    ["TemplateVar/Basename/StartsWithExit/StoreLookalike/ViaHelperSink", false],
+    ["TemplateVar/Basename/StartsWithExit/StoreLookalike/ViaLet", false],
+    ["TemplateVar/JoinRoot/EndsWithLookalike/FsExtra/Inline", true],
+    ["TemplateVar/JoinRoot/EndsWithLookalike/FsExtra/ViaHelperReturn", true],
+    ["TemplateVar/JoinRoot/EndsWithLookalike/FsExtra/ViaHelperSink", true],
+    ["TemplateVar/JoinRoot/EndsWithLookalike/FsExtra/ViaLet", true],
+    ["TemplateVar/JoinRoot/EndsWithLookalike/PromisesNamespace/Inline", true],
+    [
+      "TemplateVar/JoinRoot/EndsWithLookalike/PromisesNamespace/ViaHelperReturn",
+      true
+    ],
+    [
+      "TemplateVar/JoinRoot/EndsWithLookalike/PromisesNamespace/ViaHelperSink",
+      true
+    ],
+    ["TemplateVar/JoinRoot/EndsWithLookalike/PromisesNamespace/ViaLet", true],
+    ["TemplateVar/JoinRoot/EndsWithLookalike/ReadFileNamed/Inline", true],
+    [
+      "TemplateVar/JoinRoot/EndsWithLookalike/ReadFileNamed/ViaHelperReturn",
+      true
+    ],
+    [
+      "TemplateVar/JoinRoot/EndsWithLookalike/ReadFileNamed/ViaHelperSink",
+      true
+    ],
+    ["TemplateVar/JoinRoot/EndsWithLookalike/ReadFileNamed/ViaLet", true],
+    ["TemplateVar/JoinRoot/EndsWithLookalike/ReadFileSyncDefault/Inline", true],
+    [
+      "TemplateVar/JoinRoot/EndsWithLookalike/ReadFileSyncDefault/ViaHelperReturn",
+      true
+    ],
+    [
+      "TemplateVar/JoinRoot/EndsWithLookalike/ReadFileSyncDefault/ViaHelperSink",
+      true
+    ],
+    ["TemplateVar/JoinRoot/EndsWithLookalike/ReadFileSyncDefault/ViaLet", true],
+    ["TemplateVar/JoinRoot/EndsWithLookalike/RequireWrite/Inline", true],
+    [
+      "TemplateVar/JoinRoot/EndsWithLookalike/RequireWrite/ViaHelperReturn",
+      true
+    ],
+    ["TemplateVar/JoinRoot/EndsWithLookalike/RequireWrite/ViaHelperSink", true],
+    ["TemplateVar/JoinRoot/EndsWithLookalike/RequireWrite/ViaLet", true],
+    ["TemplateVar/JoinRoot/EndsWithLookalike/StoreLookalike/Inline", false],
+    [
+      "TemplateVar/JoinRoot/EndsWithLookalike/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/JoinRoot/EndsWithLookalike/StoreLookalike/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/JoinRoot/EndsWithLookalike/StoreLookalike/ViaLet", false],
+    ["TemplateVar/JoinRoot/ExistsLookalike/FsExtra/Inline", true],
+    ["TemplateVar/JoinRoot/ExistsLookalike/FsExtra/ViaHelperReturn", true],
+    ["TemplateVar/JoinRoot/ExistsLookalike/FsExtra/ViaHelperSink", true],
+    ["TemplateVar/JoinRoot/ExistsLookalike/FsExtra/ViaLet", true],
+    ["TemplateVar/JoinRoot/ExistsLookalike/PromisesNamespace/Inline", true],
+    [
+      "TemplateVar/JoinRoot/ExistsLookalike/PromisesNamespace/ViaHelperReturn",
+      true
+    ],
+    [
+      "TemplateVar/JoinRoot/ExistsLookalike/PromisesNamespace/ViaHelperSink",
+      true
+    ],
+    ["TemplateVar/JoinRoot/ExistsLookalike/PromisesNamespace/ViaLet", true],
+    ["TemplateVar/JoinRoot/ExistsLookalike/ReadFileNamed/Inline", true],
+    [
+      "TemplateVar/JoinRoot/ExistsLookalike/ReadFileNamed/ViaHelperReturn",
+      true
+    ],
+    ["TemplateVar/JoinRoot/ExistsLookalike/ReadFileNamed/ViaHelperSink", true],
+    ["TemplateVar/JoinRoot/ExistsLookalike/ReadFileNamed/ViaLet", true],
+    ["TemplateVar/JoinRoot/ExistsLookalike/ReadFileSyncDefault/Inline", true],
+    [
+      "TemplateVar/JoinRoot/ExistsLookalike/ReadFileSyncDefault/ViaHelperReturn",
+      true
+    ],
+    [
+      "TemplateVar/JoinRoot/ExistsLookalike/ReadFileSyncDefault/ViaHelperSink",
+      true
+    ],
+    ["TemplateVar/JoinRoot/ExistsLookalike/ReadFileSyncDefault/ViaLet", true],
+    ["TemplateVar/JoinRoot/ExistsLookalike/RequireWrite/Inline", true],
+    ["TemplateVar/JoinRoot/ExistsLookalike/RequireWrite/ViaHelperReturn", true],
+    ["TemplateVar/JoinRoot/ExistsLookalike/RequireWrite/ViaHelperSink", true],
+    ["TemplateVar/JoinRoot/ExistsLookalike/RequireWrite/ViaLet", true],
+    ["TemplateVar/JoinRoot/ExistsLookalike/StoreLookalike/Inline", false],
+    [
+      "TemplateVar/JoinRoot/ExistsLookalike/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/JoinRoot/ExistsLookalike/StoreLookalike/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/JoinRoot/ExistsLookalike/StoreLookalike/ViaLet", false],
+    ["TemplateVar/JoinRoot/NoGuard/FsExtra/Inline", true],
+    ["TemplateVar/JoinRoot/NoGuard/FsExtra/ViaHelperReturn", true],
+    ["TemplateVar/JoinRoot/NoGuard/FsExtra/ViaHelperSink", true],
+    ["TemplateVar/JoinRoot/NoGuard/FsExtra/ViaLet", true],
+    ["TemplateVar/JoinRoot/NoGuard/PromisesNamespace/Inline", true],
+    ["TemplateVar/JoinRoot/NoGuard/PromisesNamespace/ViaHelperReturn", true],
+    ["TemplateVar/JoinRoot/NoGuard/PromisesNamespace/ViaHelperSink", true],
+    ["TemplateVar/JoinRoot/NoGuard/PromisesNamespace/ViaLet", true],
+    ["TemplateVar/JoinRoot/NoGuard/ReadFileNamed/ViaHelperReturn", true],
+    ["TemplateVar/JoinRoot/NoGuard/ReadFileNamed/ViaHelperSink", true],
+    ["TemplateVar/JoinRoot/NoGuard/ReadFileNamed/ViaLet", true],
+    ["TemplateVar/JoinRoot/NoGuard/ReadFileSyncDefault/Inline", true],
+    ["TemplateVar/JoinRoot/NoGuard/ReadFileSyncDefault/ViaHelperReturn", true],
+    ["TemplateVar/JoinRoot/NoGuard/ReadFileSyncDefault/ViaHelperSink", true],
+    ["TemplateVar/JoinRoot/NoGuard/ReadFileSyncDefault/ViaLet", true],
+    ["TemplateVar/JoinRoot/NoGuard/RequireWrite/Inline", true],
+    ["TemplateVar/JoinRoot/NoGuard/RequireWrite/ViaHelperReturn", true],
+    ["TemplateVar/JoinRoot/NoGuard/RequireWrite/ViaHelperSink", true],
+    ["TemplateVar/JoinRoot/NoGuard/RequireWrite/ViaLet", true],
+    ["TemplateVar/JoinRoot/NoGuard/StoreLookalike/Inline", false],
+    ["TemplateVar/JoinRoot/NoGuard/StoreLookalike/ViaHelperReturn", false],
+    ["TemplateVar/JoinRoot/NoGuard/StoreLookalike/ViaHelperSink", false],
+    ["TemplateVar/JoinRoot/NoGuard/StoreLookalike/ViaLet", false],
+    ["TemplateVar/JoinRoot/NonExiting/FsExtra/Inline", true],
+    ["TemplateVar/JoinRoot/NonExiting/FsExtra/ViaHelperReturn", true],
+    ["TemplateVar/JoinRoot/NonExiting/FsExtra/ViaHelperSink", true],
+    ["TemplateVar/JoinRoot/NonExiting/FsExtra/ViaLet", true],
+    ["TemplateVar/JoinRoot/NonExiting/PromisesNamespace/Inline", true],
+    ["TemplateVar/JoinRoot/NonExiting/PromisesNamespace/ViaHelperReturn", true],
+    ["TemplateVar/JoinRoot/NonExiting/PromisesNamespace/ViaHelperSink", true],
+    ["TemplateVar/JoinRoot/NonExiting/PromisesNamespace/ViaLet", true],
+    ["TemplateVar/JoinRoot/NonExiting/ReadFileNamed/Inline", true],
+    ["TemplateVar/JoinRoot/NonExiting/ReadFileNamed/ViaHelperReturn", true],
+    ["TemplateVar/JoinRoot/NonExiting/ReadFileNamed/ViaHelperSink", true],
+    ["TemplateVar/JoinRoot/NonExiting/ReadFileNamed/ViaLet", true],
+    ["TemplateVar/JoinRoot/NonExiting/ReadFileSyncDefault/Inline", true],
+    [
+      "TemplateVar/JoinRoot/NonExiting/ReadFileSyncDefault/ViaHelperReturn",
+      true
+    ],
+    ["TemplateVar/JoinRoot/NonExiting/ReadFileSyncDefault/ViaHelperSink", true],
+    ["TemplateVar/JoinRoot/NonExiting/ReadFileSyncDefault/ViaLet", true],
+    ["TemplateVar/JoinRoot/NonExiting/RequireWrite/Inline", true],
+    ["TemplateVar/JoinRoot/NonExiting/RequireWrite/ViaHelperReturn", true],
+    ["TemplateVar/JoinRoot/NonExiting/RequireWrite/ViaHelperSink", true],
+    ["TemplateVar/JoinRoot/NonExiting/RequireWrite/ViaLet", true],
+    ["TemplateVar/JoinRoot/NonExiting/StoreLookalike/Inline", false],
+    ["TemplateVar/JoinRoot/NonExiting/StoreLookalike/ViaHelperReturn", false],
+    ["TemplateVar/JoinRoot/NonExiting/StoreLookalike/ViaHelperSink", false],
+    ["TemplateVar/JoinRoot/NonExiting/StoreLookalike/ViaLet", false],
+    ["TemplateVar/JoinRoot/RelativeExit/FsExtra/Inline", false],
+    ["TemplateVar/JoinRoot/RelativeExit/FsExtra/ViaHelperReturn", false],
+    ["TemplateVar/JoinRoot/RelativeExit/FsExtra/ViaHelperSink", false],
+    ["TemplateVar/JoinRoot/RelativeExit/FsExtra/ViaLet", false],
+    ["TemplateVar/JoinRoot/RelativeExit/PromisesNamespace/Inline", false],
+    [
+      "TemplateVar/JoinRoot/RelativeExit/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/JoinRoot/RelativeExit/PromisesNamespace/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/JoinRoot/RelativeExit/PromisesNamespace/ViaLet", false],
+    ["TemplateVar/JoinRoot/RelativeExit/ReadFileNamed/Inline", false],
+    ["TemplateVar/JoinRoot/RelativeExit/ReadFileNamed/ViaHelperReturn", false],
+    ["TemplateVar/JoinRoot/RelativeExit/ReadFileNamed/ViaHelperSink", false],
+    ["TemplateVar/JoinRoot/RelativeExit/ReadFileNamed/ViaLet", false],
+    ["TemplateVar/JoinRoot/RelativeExit/ReadFileSyncDefault/Inline", false],
+    [
+      "TemplateVar/JoinRoot/RelativeExit/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/JoinRoot/RelativeExit/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/JoinRoot/RelativeExit/ReadFileSyncDefault/ViaLet", false],
+    ["TemplateVar/JoinRoot/RelativeExit/RequireWrite/Inline", false],
+    ["TemplateVar/JoinRoot/RelativeExit/RequireWrite/ViaHelperReturn", false],
+    ["TemplateVar/JoinRoot/RelativeExit/RequireWrite/ViaHelperSink", false],
+    ["TemplateVar/JoinRoot/RelativeExit/RequireWrite/ViaLet", false],
+    ["TemplateVar/JoinRoot/RelativeExit/StoreLookalike/Inline", false],
+    ["TemplateVar/JoinRoot/RelativeExit/StoreLookalike/ViaHelperReturn", false],
+    ["TemplateVar/JoinRoot/RelativeExit/StoreLookalike/ViaHelperSink", false],
+    ["TemplateVar/JoinRoot/RelativeExit/StoreLookalike/ViaLet", false],
+    ["TemplateVar/JoinRoot/StartsWithExit/FsExtra/Inline", false],
+    ["TemplateVar/JoinRoot/StartsWithExit/FsExtra/ViaHelperReturn", false],
+    ["TemplateVar/JoinRoot/StartsWithExit/FsExtra/ViaHelperSink", false],
+    ["TemplateVar/JoinRoot/StartsWithExit/FsExtra/ViaLet", false],
+    ["TemplateVar/JoinRoot/StartsWithExit/PromisesNamespace/Inline", false],
+    [
+      "TemplateVar/JoinRoot/StartsWithExit/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/JoinRoot/StartsWithExit/PromisesNamespace/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/JoinRoot/StartsWithExit/PromisesNamespace/ViaLet", false],
+    ["TemplateVar/JoinRoot/StartsWithExit/ReadFileNamed/Inline", false],
+    [
+      "TemplateVar/JoinRoot/StartsWithExit/ReadFileNamed/ViaHelperReturn",
+      false
+    ],
+    ["TemplateVar/JoinRoot/StartsWithExit/ReadFileNamed/ViaHelperSink", false],
+    ["TemplateVar/JoinRoot/StartsWithExit/ReadFileNamed/ViaLet", false],
+    ["TemplateVar/JoinRoot/StartsWithExit/ReadFileSyncDefault/Inline", false],
+    [
+      "TemplateVar/JoinRoot/StartsWithExit/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/JoinRoot/StartsWithExit/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/JoinRoot/StartsWithExit/ReadFileSyncDefault/ViaLet", false],
+    ["TemplateVar/JoinRoot/StartsWithExit/RequireWrite/Inline", false],
+    ["TemplateVar/JoinRoot/StartsWithExit/RequireWrite/ViaHelperReturn", false],
+    ["TemplateVar/JoinRoot/StartsWithExit/RequireWrite/ViaHelperSink", false],
+    ["TemplateVar/JoinRoot/StartsWithExit/RequireWrite/ViaLet", false],
+    ["TemplateVar/JoinRoot/StartsWithExit/StoreLookalike/Inline", false],
+    [
+      "TemplateVar/JoinRoot/StartsWithExit/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    ["TemplateVar/JoinRoot/StartsWithExit/StoreLookalike/ViaHelperSink", false],
+    ["TemplateVar/JoinRoot/StartsWithExit/StoreLookalike/ViaLet", false],
+    ["TemplateVar/NoTransform/EndsWithLookalike/FsExtra/Inline", true],
+    ["TemplateVar/NoTransform/EndsWithLookalike/FsExtra/ViaHelperReturn", true],
+    ["TemplateVar/NoTransform/EndsWithLookalike/FsExtra/ViaHelperSink", true],
+    ["TemplateVar/NoTransform/EndsWithLookalike/FsExtra/ViaLet", true],
+    [
+      "TemplateVar/NoTransform/EndsWithLookalike/PromisesNamespace/Inline",
+      true
+    ],
+    [
+      "TemplateVar/NoTransform/EndsWithLookalike/PromisesNamespace/ViaHelperReturn",
+      true
+    ],
+    [
+      "TemplateVar/NoTransform/EndsWithLookalike/PromisesNamespace/ViaHelperSink",
+      true
+    ],
+    [
+      "TemplateVar/NoTransform/EndsWithLookalike/PromisesNamespace/ViaLet",
+      true
+    ],
+    ["TemplateVar/NoTransform/EndsWithLookalike/ReadFileNamed/Inline", true],
+    [
+      "TemplateVar/NoTransform/EndsWithLookalike/ReadFileNamed/ViaHelperReturn",
+      true
+    ],
+    [
+      "TemplateVar/NoTransform/EndsWithLookalike/ReadFileNamed/ViaHelperSink",
+      true
+    ],
+    ["TemplateVar/NoTransform/EndsWithLookalike/ReadFileNamed/ViaLet", true],
+    [
+      "TemplateVar/NoTransform/EndsWithLookalike/ReadFileSyncDefault/Inline",
+      true
+    ],
+    [
+      "TemplateVar/NoTransform/EndsWithLookalike/ReadFileSyncDefault/ViaHelperReturn",
+      true
+    ],
+    [
+      "TemplateVar/NoTransform/EndsWithLookalike/ReadFileSyncDefault/ViaHelperSink",
+      true
+    ],
+    [
+      "TemplateVar/NoTransform/EndsWithLookalike/ReadFileSyncDefault/ViaLet",
+      true
+    ],
+    ["TemplateVar/NoTransform/EndsWithLookalike/RequireWrite/Inline", true],
+    [
+      "TemplateVar/NoTransform/EndsWithLookalike/RequireWrite/ViaHelperReturn",
+      true
+    ],
+    [
+      "TemplateVar/NoTransform/EndsWithLookalike/RequireWrite/ViaHelperSink",
+      true
+    ],
+    ["TemplateVar/NoTransform/EndsWithLookalike/RequireWrite/ViaLet", true],
+    ["TemplateVar/NoTransform/EndsWithLookalike/StoreLookalike/Inline", false],
+    [
+      "TemplateVar/NoTransform/EndsWithLookalike/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/NoTransform/EndsWithLookalike/StoreLookalike/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/NoTransform/EndsWithLookalike/StoreLookalike/ViaLet", false],
+    ["TemplateVar/NoTransform/ExistsLookalike/FsExtra/Inline", true],
+    ["TemplateVar/NoTransform/ExistsLookalike/FsExtra/ViaHelperReturn", true],
+    ["TemplateVar/NoTransform/ExistsLookalike/FsExtra/ViaHelperSink", true],
+    ["TemplateVar/NoTransform/ExistsLookalike/FsExtra/ViaLet", true],
+    ["TemplateVar/NoTransform/ExistsLookalike/PromisesNamespace/Inline", true],
+    [
+      "TemplateVar/NoTransform/ExistsLookalike/PromisesNamespace/ViaHelperReturn",
+      true
+    ],
+    [
+      "TemplateVar/NoTransform/ExistsLookalike/PromisesNamespace/ViaHelperSink",
+      true
+    ],
+    ["TemplateVar/NoTransform/ExistsLookalike/PromisesNamespace/ViaLet", true],
+    ["TemplateVar/NoTransform/ExistsLookalike/ReadFileNamed/Inline", true],
+    [
+      "TemplateVar/NoTransform/ExistsLookalike/ReadFileNamed/ViaHelperReturn",
+      true
+    ],
+    [
+      "TemplateVar/NoTransform/ExistsLookalike/ReadFileNamed/ViaHelperSink",
+      true
+    ],
+    ["TemplateVar/NoTransform/ExistsLookalike/ReadFileNamed/ViaLet", true],
+    [
+      "TemplateVar/NoTransform/ExistsLookalike/ReadFileSyncDefault/Inline",
+      true
+    ],
+    [
+      "TemplateVar/NoTransform/ExistsLookalike/ReadFileSyncDefault/ViaHelperReturn",
+      true
+    ],
+    [
+      "TemplateVar/NoTransform/ExistsLookalike/ReadFileSyncDefault/ViaHelperSink",
+      true
+    ],
+    [
+      "TemplateVar/NoTransform/ExistsLookalike/ReadFileSyncDefault/ViaLet",
+      true
+    ],
+    ["TemplateVar/NoTransform/ExistsLookalike/RequireWrite/Inline", true],
+    [
+      "TemplateVar/NoTransform/ExistsLookalike/RequireWrite/ViaHelperReturn",
+      true
+    ],
+    [
+      "TemplateVar/NoTransform/ExistsLookalike/RequireWrite/ViaHelperSink",
+      true
+    ],
+    ["TemplateVar/NoTransform/ExistsLookalike/RequireWrite/ViaLet", true],
+    ["TemplateVar/NoTransform/ExistsLookalike/StoreLookalike/Inline", false],
+    [
+      "TemplateVar/NoTransform/ExistsLookalike/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/NoTransform/ExistsLookalike/StoreLookalike/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/NoTransform/ExistsLookalike/StoreLookalike/ViaLet", false],
+    ["TemplateVar/NoTransform/NoGuard/FsExtra/Inline", true],
+    ["TemplateVar/NoTransform/NoGuard/FsExtra/ViaHelperReturn", true],
+    ["TemplateVar/NoTransform/NoGuard/FsExtra/ViaHelperSink", true],
+    ["TemplateVar/NoTransform/NoGuard/FsExtra/ViaLet", true],
+    ["TemplateVar/NoTransform/NoGuard/PromisesNamespace/Inline", true],
+    ["TemplateVar/NoTransform/NoGuard/PromisesNamespace/ViaHelperReturn", true],
+    ["TemplateVar/NoTransform/NoGuard/PromisesNamespace/ViaHelperSink", true],
+    ["TemplateVar/NoTransform/NoGuard/PromisesNamespace/ViaLet", true],
+    ["TemplateVar/NoTransform/NoGuard/ReadFileNamed/Inline", true],
+    ["TemplateVar/NoTransform/NoGuard/ReadFileNamed/ViaHelperReturn", true],
+    ["TemplateVar/NoTransform/NoGuard/ReadFileNamed/ViaHelperSink", true],
+    ["TemplateVar/NoTransform/NoGuard/ReadFileNamed/ViaLet", true],
+    ["TemplateVar/NoTransform/NoGuard/ReadFileSyncDefault/Inline", true],
+    [
+      "TemplateVar/NoTransform/NoGuard/ReadFileSyncDefault/ViaHelperReturn",
+      true
+    ],
+    ["TemplateVar/NoTransform/NoGuard/ReadFileSyncDefault/ViaHelperSink", true],
+    ["TemplateVar/NoTransform/NoGuard/ReadFileSyncDefault/ViaLet", true],
+    ["TemplateVar/NoTransform/NoGuard/RequireWrite/Inline", true],
+    ["TemplateVar/NoTransform/NoGuard/RequireWrite/ViaHelperReturn", true],
+    ["TemplateVar/NoTransform/NoGuard/RequireWrite/ViaHelperSink", true],
+    ["TemplateVar/NoTransform/NoGuard/RequireWrite/ViaLet", true],
+    ["TemplateVar/NoTransform/NoGuard/StoreLookalike/Inline", false],
+    ["TemplateVar/NoTransform/NoGuard/StoreLookalike/ViaHelperReturn", false],
+    ["TemplateVar/NoTransform/NoGuard/StoreLookalike/ViaHelperSink", false],
+    ["TemplateVar/NoTransform/NoGuard/StoreLookalike/ViaLet", false],
+    ["TemplateVar/NoTransform/NonExiting/FsExtra/Inline", true],
+    ["TemplateVar/NoTransform/NonExiting/FsExtra/ViaHelperReturn", true],
+    ["TemplateVar/NoTransform/NonExiting/FsExtra/ViaHelperSink", true],
+    ["TemplateVar/NoTransform/NonExiting/FsExtra/ViaLet", true],
+    ["TemplateVar/NoTransform/NonExiting/PromisesNamespace/Inline", true],
+    [
+      "TemplateVar/NoTransform/NonExiting/PromisesNamespace/ViaHelperReturn",
+      true
+    ],
+    [
+      "TemplateVar/NoTransform/NonExiting/PromisesNamespace/ViaHelperSink",
+      true
+    ],
+    ["TemplateVar/NoTransform/NonExiting/PromisesNamespace/ViaLet", true],
+    ["TemplateVar/NoTransform/NonExiting/ReadFileNamed/Inline", true],
+    ["TemplateVar/NoTransform/NonExiting/ReadFileNamed/ViaHelperReturn", true],
+    ["TemplateVar/NoTransform/NonExiting/ReadFileNamed/ViaHelperSink", true],
+    ["TemplateVar/NoTransform/NonExiting/ReadFileNamed/ViaLet", true],
+    ["TemplateVar/NoTransform/NonExiting/ReadFileSyncDefault/Inline", true],
+    [
+      "TemplateVar/NoTransform/NonExiting/ReadFileSyncDefault/ViaHelperReturn",
+      true
+    ],
+    [
+      "TemplateVar/NoTransform/NonExiting/ReadFileSyncDefault/ViaHelperSink",
+      true
+    ],
+    ["TemplateVar/NoTransform/NonExiting/ReadFileSyncDefault/ViaLet", true],
+    ["TemplateVar/NoTransform/NonExiting/RequireWrite/Inline", true],
+    ["TemplateVar/NoTransform/NonExiting/RequireWrite/ViaHelperReturn", true],
+    ["TemplateVar/NoTransform/NonExiting/RequireWrite/ViaHelperSink", true],
+    ["TemplateVar/NoTransform/NonExiting/RequireWrite/ViaLet", true],
+    ["TemplateVar/NoTransform/NonExiting/StoreLookalike/Inline", false],
+    [
+      "TemplateVar/NoTransform/NonExiting/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    ["TemplateVar/NoTransform/NonExiting/StoreLookalike/ViaHelperSink", false],
+    ["TemplateVar/NoTransform/NonExiting/StoreLookalike/ViaLet", false],
+    ["TemplateVar/NoTransform/RelativeExit/FsExtra/Inline", false],
+    ["TemplateVar/NoTransform/RelativeExit/FsExtra/ViaHelperReturn", false],
+    ["TemplateVar/NoTransform/RelativeExit/FsExtra/ViaHelperSink", false],
+    ["TemplateVar/NoTransform/RelativeExit/FsExtra/ViaLet", false],
+    ["TemplateVar/NoTransform/RelativeExit/PromisesNamespace/Inline", false],
+    [
+      "TemplateVar/NoTransform/RelativeExit/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/NoTransform/RelativeExit/PromisesNamespace/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/NoTransform/RelativeExit/PromisesNamespace/ViaLet", false],
+    ["TemplateVar/NoTransform/RelativeExit/ReadFileNamed/Inline", false],
+    [
+      "TemplateVar/NoTransform/RelativeExit/ReadFileNamed/ViaHelperReturn",
+      false
+    ],
+    ["TemplateVar/NoTransform/RelativeExit/ReadFileNamed/ViaHelperSink", false],
+    ["TemplateVar/NoTransform/RelativeExit/ReadFileNamed/ViaLet", false],
+    ["TemplateVar/NoTransform/RelativeExit/ReadFileSyncDefault/Inline", false],
+    [
+      "TemplateVar/NoTransform/RelativeExit/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/NoTransform/RelativeExit/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/NoTransform/RelativeExit/ReadFileSyncDefault/ViaLet", false],
+    ["TemplateVar/NoTransform/RelativeExit/RequireWrite/Inline", false],
+    [
+      "TemplateVar/NoTransform/RelativeExit/RequireWrite/ViaHelperReturn",
+      false
+    ],
+    ["TemplateVar/NoTransform/RelativeExit/RequireWrite/ViaHelperSink", false],
+    ["TemplateVar/NoTransform/RelativeExit/RequireWrite/ViaLet", false],
+    ["TemplateVar/NoTransform/RelativeExit/StoreLookalike/Inline", false],
+    [
+      "TemplateVar/NoTransform/RelativeExit/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/NoTransform/RelativeExit/StoreLookalike/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/NoTransform/RelativeExit/StoreLookalike/ViaLet", false],
+    ["TemplateVar/NoTransform/StartsWithExit/FsExtra/Inline", false],
+    ["TemplateVar/NoTransform/StartsWithExit/FsExtra/ViaHelperReturn", false],
+    ["TemplateVar/NoTransform/StartsWithExit/FsExtra/ViaHelperSink", false],
+    ["TemplateVar/NoTransform/StartsWithExit/FsExtra/ViaLet", false],
+    ["TemplateVar/NoTransform/StartsWithExit/PromisesNamespace/Inline", false],
+    [
+      "TemplateVar/NoTransform/StartsWithExit/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/NoTransform/StartsWithExit/PromisesNamespace/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/NoTransform/StartsWithExit/PromisesNamespace/ViaLet", false],
+    ["TemplateVar/NoTransform/StartsWithExit/ReadFileNamed/Inline", false],
+    [
+      "TemplateVar/NoTransform/StartsWithExit/ReadFileNamed/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/NoTransform/StartsWithExit/ReadFileNamed/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/NoTransform/StartsWithExit/ReadFileNamed/ViaLet", false],
+    [
+      "TemplateVar/NoTransform/StartsWithExit/ReadFileSyncDefault/Inline",
+      false
+    ],
+    [
+      "TemplateVar/NoTransform/StartsWithExit/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/NoTransform/StartsWithExit/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    [
+      "TemplateVar/NoTransform/StartsWithExit/ReadFileSyncDefault/ViaLet",
+      false
+    ],
+    ["TemplateVar/NoTransform/StartsWithExit/RequireWrite/Inline", false],
+    [
+      "TemplateVar/NoTransform/StartsWithExit/RequireWrite/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/NoTransform/StartsWithExit/RequireWrite/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/NoTransform/StartsWithExit/RequireWrite/ViaLet", false],
+    ["TemplateVar/NoTransform/StartsWithExit/StoreLookalike/Inline", false],
+    [
+      "TemplateVar/NoTransform/StartsWithExit/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/NoTransform/StartsWithExit/StoreLookalike/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/NoTransform/StartsWithExit/StoreLookalike/ViaLet", false],
+    ["TemplateVar/ResolveRoot/EndsWithLookalike/FsExtra/Inline", true],
+    ["TemplateVar/ResolveRoot/EndsWithLookalike/FsExtra/ViaHelperReturn", true],
+    ["TemplateVar/ResolveRoot/EndsWithLookalike/FsExtra/ViaHelperSink", true],
+    ["TemplateVar/ResolveRoot/EndsWithLookalike/FsExtra/ViaLet", true],
+    [
+      "TemplateVar/ResolveRoot/EndsWithLookalike/PromisesNamespace/Inline",
+      true
+    ],
+    [
+      "TemplateVar/ResolveRoot/EndsWithLookalike/PromisesNamespace/ViaHelperReturn",
+      true
+    ],
+    [
+      "TemplateVar/ResolveRoot/EndsWithLookalike/PromisesNamespace/ViaHelperSink",
+      true
+    ],
+    [
+      "TemplateVar/ResolveRoot/EndsWithLookalike/PromisesNamespace/ViaLet",
+      true
+    ],
+    ["TemplateVar/ResolveRoot/EndsWithLookalike/ReadFileNamed/Inline", true],
+    [
+      "TemplateVar/ResolveRoot/EndsWithLookalike/ReadFileNamed/ViaHelperReturn",
+      true
+    ],
+    [
+      "TemplateVar/ResolveRoot/EndsWithLookalike/ReadFileNamed/ViaHelperSink",
+      true
+    ],
+    ["TemplateVar/ResolveRoot/EndsWithLookalike/ReadFileNamed/ViaLet", true],
+    [
+      "TemplateVar/ResolveRoot/EndsWithLookalike/ReadFileSyncDefault/Inline",
+      true
+    ],
+    [
+      "TemplateVar/ResolveRoot/EndsWithLookalike/ReadFileSyncDefault/ViaHelperReturn",
+      true
+    ],
+    [
+      "TemplateVar/ResolveRoot/EndsWithLookalike/ReadFileSyncDefault/ViaHelperSink",
+      true
+    ],
+    [
+      "TemplateVar/ResolveRoot/EndsWithLookalike/ReadFileSyncDefault/ViaLet",
+      true
+    ],
+    ["TemplateVar/ResolveRoot/EndsWithLookalike/RequireWrite/Inline", true],
+    [
+      "TemplateVar/ResolveRoot/EndsWithLookalike/RequireWrite/ViaHelperReturn",
+      true
+    ],
+    [
+      "TemplateVar/ResolveRoot/EndsWithLookalike/RequireWrite/ViaHelperSink",
+      true
+    ],
+    ["TemplateVar/ResolveRoot/EndsWithLookalike/RequireWrite/ViaLet", true],
+    ["TemplateVar/ResolveRoot/EndsWithLookalike/StoreLookalike/Inline", false],
+    [
+      "TemplateVar/ResolveRoot/EndsWithLookalike/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/ResolveRoot/EndsWithLookalike/StoreLookalike/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/ResolveRoot/EndsWithLookalike/StoreLookalike/ViaLet", false],
+    ["TemplateVar/ResolveRoot/ExistsLookalike/FsExtra/Inline", true],
+    ["TemplateVar/ResolveRoot/ExistsLookalike/FsExtra/ViaHelperReturn", true],
+    ["TemplateVar/ResolveRoot/ExistsLookalike/FsExtra/ViaHelperSink", true],
+    ["TemplateVar/ResolveRoot/ExistsLookalike/FsExtra/ViaLet", true],
+    ["TemplateVar/ResolveRoot/ExistsLookalike/PromisesNamespace/Inline", true],
+    [
+      "TemplateVar/ResolveRoot/ExistsLookalike/PromisesNamespace/ViaHelperReturn",
+      true
+    ],
+    [
+      "TemplateVar/ResolveRoot/ExistsLookalike/PromisesNamespace/ViaHelperSink",
+      true
+    ],
+    ["TemplateVar/ResolveRoot/ExistsLookalike/PromisesNamespace/ViaLet", true],
+    ["TemplateVar/ResolveRoot/ExistsLookalike/ReadFileNamed/Inline", true],
+    [
+      "TemplateVar/ResolveRoot/ExistsLookalike/ReadFileNamed/ViaHelperReturn",
+      true
+    ],
+    [
+      "TemplateVar/ResolveRoot/ExistsLookalike/ReadFileNamed/ViaHelperSink",
+      true
+    ],
+    ["TemplateVar/ResolveRoot/ExistsLookalike/ReadFileNamed/ViaLet", true],
+    [
+      "TemplateVar/ResolveRoot/ExistsLookalike/ReadFileSyncDefault/Inline",
+      true
+    ],
+    [
+      "TemplateVar/ResolveRoot/ExistsLookalike/ReadFileSyncDefault/ViaHelperReturn",
+      true
+    ],
+    [
+      "TemplateVar/ResolveRoot/ExistsLookalike/ReadFileSyncDefault/ViaHelperSink",
+      true
+    ],
+    [
+      "TemplateVar/ResolveRoot/ExistsLookalike/ReadFileSyncDefault/ViaLet",
+      true
+    ],
+    ["TemplateVar/ResolveRoot/ExistsLookalike/RequireWrite/Inline", true],
+    [
+      "TemplateVar/ResolveRoot/ExistsLookalike/RequireWrite/ViaHelperReturn",
+      true
+    ],
+    [
+      "TemplateVar/ResolveRoot/ExistsLookalike/RequireWrite/ViaHelperSink",
+      true
+    ],
+    ["TemplateVar/ResolveRoot/ExistsLookalike/RequireWrite/ViaLet", true],
+    ["TemplateVar/ResolveRoot/ExistsLookalike/StoreLookalike/Inline", false],
+    [
+      "TemplateVar/ResolveRoot/ExistsLookalike/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/ResolveRoot/ExistsLookalike/StoreLookalike/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/ResolveRoot/ExistsLookalike/StoreLookalike/ViaLet", false],
+    ["TemplateVar/ResolveRoot/NoGuard/FsExtra/Inline", true],
+    ["TemplateVar/ResolveRoot/NoGuard/FsExtra/ViaHelperReturn", true],
+    ["TemplateVar/ResolveRoot/NoGuard/FsExtra/ViaHelperSink", true],
+    ["TemplateVar/ResolveRoot/NoGuard/FsExtra/ViaLet", true],
+    ["TemplateVar/ResolveRoot/NoGuard/PromisesNamespace/Inline", true],
+    ["TemplateVar/ResolveRoot/NoGuard/PromisesNamespace/ViaHelperReturn", true],
+    ["TemplateVar/ResolveRoot/NoGuard/PromisesNamespace/ViaHelperSink", true],
+    ["TemplateVar/ResolveRoot/NoGuard/PromisesNamespace/ViaLet", true],
+    ["TemplateVar/ResolveRoot/NoGuard/ReadFileNamed/Inline", true],
+    ["TemplateVar/ResolveRoot/NoGuard/ReadFileNamed/ViaHelperReturn", true],
+    ["TemplateVar/ResolveRoot/NoGuard/ReadFileNamed/ViaHelperSink", true],
+    ["TemplateVar/ResolveRoot/NoGuard/ReadFileNamed/ViaLet", true],
+    ["TemplateVar/ResolveRoot/NoGuard/ReadFileSyncDefault/Inline", true],
+    [
+      "TemplateVar/ResolveRoot/NoGuard/ReadFileSyncDefault/ViaHelperReturn",
+      true
+    ],
+    ["TemplateVar/ResolveRoot/NoGuard/ReadFileSyncDefault/ViaHelperSink", true],
+    ["TemplateVar/ResolveRoot/NoGuard/ReadFileSyncDefault/ViaLet", true],
+    ["TemplateVar/ResolveRoot/NoGuard/RequireWrite/Inline", true],
+    ["TemplateVar/ResolveRoot/NoGuard/RequireWrite/ViaHelperReturn", true],
+    ["TemplateVar/ResolveRoot/NoGuard/RequireWrite/ViaHelperSink", true],
+    ["TemplateVar/ResolveRoot/NoGuard/RequireWrite/ViaLet", true],
+    ["TemplateVar/ResolveRoot/NoGuard/StoreLookalike/Inline", false],
+    ["TemplateVar/ResolveRoot/NoGuard/StoreLookalike/ViaHelperReturn", false],
+    ["TemplateVar/ResolveRoot/NoGuard/StoreLookalike/ViaHelperSink", false],
+    ["TemplateVar/ResolveRoot/NoGuard/StoreLookalike/ViaLet", false],
+    ["TemplateVar/ResolveRoot/NonExiting/FsExtra/Inline", true],
+    ["TemplateVar/ResolveRoot/NonExiting/FsExtra/ViaHelperReturn", true],
+    ["TemplateVar/ResolveRoot/NonExiting/FsExtra/ViaHelperSink", true],
+    ["TemplateVar/ResolveRoot/NonExiting/FsExtra/ViaLet", true],
+    ["TemplateVar/ResolveRoot/NonExiting/PromisesNamespace/Inline", true],
+    [
+      "TemplateVar/ResolveRoot/NonExiting/PromisesNamespace/ViaHelperReturn",
+      true
+    ],
+    [
+      "TemplateVar/ResolveRoot/NonExiting/PromisesNamespace/ViaHelperSink",
+      true
+    ],
+    ["TemplateVar/ResolveRoot/NonExiting/PromisesNamespace/ViaLet", true],
+    ["TemplateVar/ResolveRoot/NonExiting/ReadFileNamed/Inline", true],
+    ["TemplateVar/ResolveRoot/NonExiting/ReadFileNamed/ViaHelperReturn", true],
+    ["TemplateVar/ResolveRoot/NonExiting/ReadFileNamed/ViaHelperSink", true],
+    ["TemplateVar/ResolveRoot/NonExiting/ReadFileNamed/ViaLet", true],
+    ["TemplateVar/ResolveRoot/NonExiting/ReadFileSyncDefault/Inline", true],
+    [
+      "TemplateVar/ResolveRoot/NonExiting/ReadFileSyncDefault/ViaHelperReturn",
+      true
+    ],
+    [
+      "TemplateVar/ResolveRoot/NonExiting/ReadFileSyncDefault/ViaHelperSink",
+      true
+    ],
+    ["TemplateVar/ResolveRoot/NonExiting/ReadFileSyncDefault/ViaLet", true],
+    ["TemplateVar/ResolveRoot/NonExiting/RequireWrite/Inline", true],
+    ["TemplateVar/ResolveRoot/NonExiting/RequireWrite/ViaHelperReturn", true],
+    ["TemplateVar/ResolveRoot/NonExiting/RequireWrite/ViaHelperSink", true],
+    ["TemplateVar/ResolveRoot/NonExiting/RequireWrite/ViaLet", true],
+    ["TemplateVar/ResolveRoot/NonExiting/StoreLookalike/Inline", false],
+    [
+      "TemplateVar/ResolveRoot/NonExiting/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    ["TemplateVar/ResolveRoot/NonExiting/StoreLookalike/ViaHelperSink", false],
+    ["TemplateVar/ResolveRoot/NonExiting/StoreLookalike/ViaLet", false],
+    ["TemplateVar/ResolveRoot/RelativeExit/FsExtra/Inline", false],
+    ["TemplateVar/ResolveRoot/RelativeExit/FsExtra/ViaHelperReturn", false],
+    ["TemplateVar/ResolveRoot/RelativeExit/FsExtra/ViaHelperSink", false],
+    ["TemplateVar/ResolveRoot/RelativeExit/FsExtra/ViaLet", false],
+    ["TemplateVar/ResolveRoot/RelativeExit/PromisesNamespace/Inline", false],
+    [
+      "TemplateVar/ResolveRoot/RelativeExit/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/ResolveRoot/RelativeExit/PromisesNamespace/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/ResolveRoot/RelativeExit/PromisesNamespace/ViaLet", false],
+    ["TemplateVar/ResolveRoot/RelativeExit/ReadFileNamed/Inline", false],
+    [
+      "TemplateVar/ResolveRoot/RelativeExit/ReadFileNamed/ViaHelperReturn",
+      false
+    ],
+    ["TemplateVar/ResolveRoot/RelativeExit/ReadFileNamed/ViaHelperSink", false],
+    ["TemplateVar/ResolveRoot/RelativeExit/ReadFileNamed/ViaLet", false],
+    ["TemplateVar/ResolveRoot/RelativeExit/ReadFileSyncDefault/Inline", false],
+    [
+      "TemplateVar/ResolveRoot/RelativeExit/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/ResolveRoot/RelativeExit/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/ResolveRoot/RelativeExit/ReadFileSyncDefault/ViaLet", false],
+    ["TemplateVar/ResolveRoot/RelativeExit/RequireWrite/Inline", false],
+    [
+      "TemplateVar/ResolveRoot/RelativeExit/RequireWrite/ViaHelperReturn",
+      false
+    ],
+    ["TemplateVar/ResolveRoot/RelativeExit/RequireWrite/ViaHelperSink", false],
+    ["TemplateVar/ResolveRoot/RelativeExit/RequireWrite/ViaLet", false],
+    ["TemplateVar/ResolveRoot/RelativeExit/StoreLookalike/Inline", false],
+    [
+      "TemplateVar/ResolveRoot/RelativeExit/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/ResolveRoot/RelativeExit/StoreLookalike/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/ResolveRoot/RelativeExit/StoreLookalike/ViaLet", false],
+    ["TemplateVar/ResolveRoot/StartsWithExit/FsExtra/Inline", false],
+    ["TemplateVar/ResolveRoot/StartsWithExit/FsExtra/ViaHelperReturn", false],
+    ["TemplateVar/ResolveRoot/StartsWithExit/FsExtra/ViaHelperSink", false],
+    ["TemplateVar/ResolveRoot/StartsWithExit/FsExtra/ViaLet", false],
+    ["TemplateVar/ResolveRoot/StartsWithExit/PromisesNamespace/Inline", false],
+    [
+      "TemplateVar/ResolveRoot/StartsWithExit/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/ResolveRoot/StartsWithExit/PromisesNamespace/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/ResolveRoot/StartsWithExit/PromisesNamespace/ViaLet", false],
+    ["TemplateVar/ResolveRoot/StartsWithExit/ReadFileNamed/Inline", false],
+    [
+      "TemplateVar/ResolveRoot/StartsWithExit/ReadFileNamed/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/ResolveRoot/StartsWithExit/ReadFileNamed/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/ResolveRoot/StartsWithExit/ReadFileNamed/ViaLet", false],
+    [
+      "TemplateVar/ResolveRoot/StartsWithExit/ReadFileSyncDefault/Inline",
+      false
+    ],
+    [
+      "TemplateVar/ResolveRoot/StartsWithExit/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/ResolveRoot/StartsWithExit/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    [
+      "TemplateVar/ResolveRoot/StartsWithExit/ReadFileSyncDefault/ViaLet",
+      false
+    ],
+    ["TemplateVar/ResolveRoot/StartsWithExit/RequireWrite/Inline", false],
+    [
+      "TemplateVar/ResolveRoot/StartsWithExit/RequireWrite/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/ResolveRoot/StartsWithExit/RequireWrite/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/ResolveRoot/StartsWithExit/RequireWrite/ViaLet", false],
+    ["TemplateVar/ResolveRoot/StartsWithExit/StoreLookalike/Inline", false],
+    [
+      "TemplateVar/ResolveRoot/StartsWithExit/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    [
+      "TemplateVar/ResolveRoot/StartsWithExit/StoreLookalike/ViaHelperSink",
+      false
+    ],
+    ["TemplateVar/ResolveRoot/StartsWithExit/StoreLookalike/ViaLet", false],
+    ["ToolArg/Basename/EndsWithLookalike/FsExtra/Inline", false],
+    ["ToolArg/Basename/EndsWithLookalike/FsExtra/ViaHelperReturn", false],
+    ["ToolArg/Basename/EndsWithLookalike/FsExtra/ViaHelperSink", false],
+    ["ToolArg/Basename/EndsWithLookalike/FsExtra/ViaLet", false],
+    ["ToolArg/Basename/EndsWithLookalike/PromisesNamespace/Inline", false],
+    [
+      "ToolArg/Basename/EndsWithLookalike/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/Basename/EndsWithLookalike/PromisesNamespace/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/Basename/EndsWithLookalike/PromisesNamespace/ViaLet", false],
+    ["ToolArg/Basename/EndsWithLookalike/ReadFileNamed/Inline", false],
+    ["ToolArg/Basename/EndsWithLookalike/ReadFileNamed/ViaHelperReturn", false],
+    ["ToolArg/Basename/EndsWithLookalike/ReadFileNamed/ViaHelperSink", false],
+    ["ToolArg/Basename/EndsWithLookalike/ReadFileNamed/ViaLet", false],
+    ["ToolArg/Basename/EndsWithLookalike/ReadFileSyncDefault/Inline", false],
+    [
+      "ToolArg/Basename/EndsWithLookalike/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/Basename/EndsWithLookalike/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/Basename/EndsWithLookalike/ReadFileSyncDefault/ViaLet", false],
+    ["ToolArg/Basename/EndsWithLookalike/RequireWrite/Inline", false],
+    ["ToolArg/Basename/EndsWithLookalike/RequireWrite/ViaHelperReturn", false],
+    ["ToolArg/Basename/EndsWithLookalike/RequireWrite/ViaHelperSink", false],
+    ["ToolArg/Basename/EndsWithLookalike/RequireWrite/ViaLet", false],
+    ["ToolArg/Basename/EndsWithLookalike/StoreLookalike/Inline", false],
+    [
+      "ToolArg/Basename/EndsWithLookalike/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    ["ToolArg/Basename/EndsWithLookalike/StoreLookalike/ViaHelperSink", false],
+    ["ToolArg/Basename/EndsWithLookalike/StoreLookalike/ViaLet", false],
+    ["ToolArg/Basename/ExistsLookalike/FsExtra/Inline", false],
+    ["ToolArg/Basename/ExistsLookalike/FsExtra/ViaHelperReturn", false],
+    ["ToolArg/Basename/ExistsLookalike/FsExtra/ViaHelperSink", false],
+    ["ToolArg/Basename/ExistsLookalike/FsExtra/ViaLet", false],
+    ["ToolArg/Basename/ExistsLookalike/PromisesNamespace/Inline", false],
+    [
+      "ToolArg/Basename/ExistsLookalike/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    ["ToolArg/Basename/ExistsLookalike/PromisesNamespace/ViaHelperSink", false],
+    ["ToolArg/Basename/ExistsLookalike/PromisesNamespace/ViaLet", false],
+    ["ToolArg/Basename/ExistsLookalike/ReadFileNamed/Inline", false],
+    ["ToolArg/Basename/ExistsLookalike/ReadFileNamed/ViaHelperReturn", false],
+    ["ToolArg/Basename/ExistsLookalike/ReadFileNamed/ViaHelperSink", false],
+    ["ToolArg/Basename/ExistsLookalike/ReadFileNamed/ViaLet", false],
+    ["ToolArg/Basename/ExistsLookalike/ReadFileSyncDefault/Inline", false],
+    [
+      "ToolArg/Basename/ExistsLookalike/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/Basename/ExistsLookalike/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/Basename/ExistsLookalike/ReadFileSyncDefault/ViaLet", false],
+    ["ToolArg/Basename/ExistsLookalike/RequireWrite/Inline", false],
+    ["ToolArg/Basename/ExistsLookalike/RequireWrite/ViaHelperReturn", false],
+    ["ToolArg/Basename/ExistsLookalike/RequireWrite/ViaHelperSink", false],
+    ["ToolArg/Basename/ExistsLookalike/RequireWrite/ViaLet", false],
+    ["ToolArg/Basename/ExistsLookalike/StoreLookalike/Inline", false],
+    ["ToolArg/Basename/ExistsLookalike/StoreLookalike/ViaHelperReturn", false],
+    ["ToolArg/Basename/ExistsLookalike/StoreLookalike/ViaHelperSink", false],
+    ["ToolArg/Basename/ExistsLookalike/StoreLookalike/ViaLet", false],
+    ["ToolArg/Basename/NoGuard/FsExtra/Inline", false],
+    ["ToolArg/Basename/NoGuard/FsExtra/ViaHelperReturn", false],
+    ["ToolArg/Basename/NoGuard/FsExtra/ViaHelperSink", false],
+    ["ToolArg/Basename/NoGuard/FsExtra/ViaLet", false],
+    ["ToolArg/Basename/NoGuard/PromisesNamespace/Inline", false],
+    ["ToolArg/Basename/NoGuard/PromisesNamespace/ViaHelperReturn", false],
+    ["ToolArg/Basename/NoGuard/PromisesNamespace/ViaHelperSink", false],
+    ["ToolArg/Basename/NoGuard/PromisesNamespace/ViaLet", false],
+    ["ToolArg/Basename/NoGuard/ReadFileNamed/Inline", false],
+    ["ToolArg/Basename/NoGuard/ReadFileNamed/ViaHelperReturn", false],
+    ["ToolArg/Basename/NoGuard/ReadFileNamed/ViaHelperSink", false],
+    ["ToolArg/Basename/NoGuard/ReadFileNamed/ViaLet", false],
+    ["ToolArg/Basename/NoGuard/ReadFileSyncDefault/Inline", false],
+    ["ToolArg/Basename/NoGuard/ReadFileSyncDefault/ViaHelperReturn", false],
+    ["ToolArg/Basename/NoGuard/ReadFileSyncDefault/ViaHelperSink", false],
+    ["ToolArg/Basename/NoGuard/ReadFileSyncDefault/ViaLet", false],
+    ["ToolArg/Basename/NoGuard/RequireWrite/Inline", false],
+    ["ToolArg/Basename/NoGuard/RequireWrite/ViaHelperReturn", false],
+    ["ToolArg/Basename/NoGuard/RequireWrite/ViaHelperSink", false],
+    ["ToolArg/Basename/NoGuard/RequireWrite/ViaLet", false],
+    ["ToolArg/Basename/NoGuard/StoreLookalike/Inline", false],
+    ["ToolArg/Basename/NoGuard/StoreLookalike/ViaHelperReturn", false],
+    ["ToolArg/Basename/NoGuard/StoreLookalike/ViaHelperSink", false],
+    ["ToolArg/Basename/NoGuard/StoreLookalike/ViaLet", false],
+    ["ToolArg/Basename/NonExiting/FsExtra/Inline", false],
+    ["ToolArg/Basename/NonExiting/FsExtra/ViaHelperReturn", false],
+    ["ToolArg/Basename/NonExiting/FsExtra/ViaHelperSink", false],
+    ["ToolArg/Basename/NonExiting/FsExtra/ViaLet", false],
+    ["ToolArg/Basename/NonExiting/PromisesNamespace/Inline", false],
+    ["ToolArg/Basename/NonExiting/PromisesNamespace/ViaHelperReturn", false],
+    ["ToolArg/Basename/NonExiting/PromisesNamespace/ViaHelperSink", false],
+    ["ToolArg/Basename/NonExiting/PromisesNamespace/ViaLet", false],
+    ["ToolArg/Basename/NonExiting/ReadFileNamed/Inline", false],
+    ["ToolArg/Basename/NonExiting/ReadFileNamed/ViaHelperReturn", false],
+    ["ToolArg/Basename/NonExiting/ReadFileNamed/ViaHelperSink", false],
+    ["ToolArg/Basename/NonExiting/ReadFileNamed/ViaLet", false],
+    ["ToolArg/Basename/NonExiting/ReadFileSyncDefault/Inline", false],
+    ["ToolArg/Basename/NonExiting/ReadFileSyncDefault/ViaHelperReturn", false],
+    ["ToolArg/Basename/NonExiting/ReadFileSyncDefault/ViaHelperSink", false],
+    ["ToolArg/Basename/NonExiting/ReadFileSyncDefault/ViaLet", false],
+    ["ToolArg/Basename/NonExiting/RequireWrite/Inline", false],
+    ["ToolArg/Basename/NonExiting/RequireWrite/ViaHelperReturn", false],
+    ["ToolArg/Basename/NonExiting/RequireWrite/ViaHelperSink", false],
+    ["ToolArg/Basename/NonExiting/RequireWrite/ViaLet", false],
+    ["ToolArg/Basename/NonExiting/StoreLookalike/Inline", false],
+    ["ToolArg/Basename/NonExiting/StoreLookalike/ViaHelperReturn", false],
+    ["ToolArg/Basename/NonExiting/StoreLookalike/ViaHelperSink", false],
+    ["ToolArg/Basename/NonExiting/StoreLookalike/ViaLet", false],
+    ["ToolArg/Basename/RelativeExit/FsExtra/Inline", false],
+    ["ToolArg/Basename/RelativeExit/FsExtra/ViaHelperReturn", false],
+    ["ToolArg/Basename/RelativeExit/FsExtra/ViaHelperSink", false],
+    ["ToolArg/Basename/RelativeExit/FsExtra/ViaLet", false],
+    ["ToolArg/Basename/RelativeExit/PromisesNamespace/Inline", false],
+    ["ToolArg/Basename/RelativeExit/PromisesNamespace/ViaHelperReturn", false],
+    ["ToolArg/Basename/RelativeExit/PromisesNamespace/ViaHelperSink", false],
+    ["ToolArg/Basename/RelativeExit/PromisesNamespace/ViaLet", false],
+    ["ToolArg/Basename/RelativeExit/ReadFileNamed/Inline", false],
+    ["ToolArg/Basename/RelativeExit/ReadFileNamed/ViaHelperReturn", false],
+    ["ToolArg/Basename/RelativeExit/ReadFileNamed/ViaHelperSink", false],
+    ["ToolArg/Basename/RelativeExit/ReadFileNamed/ViaLet", false],
+    ["ToolArg/Basename/RelativeExit/ReadFileSyncDefault/Inline", false],
+    [
+      "ToolArg/Basename/RelativeExit/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    ["ToolArg/Basename/RelativeExit/ReadFileSyncDefault/ViaHelperSink", false],
+    ["ToolArg/Basename/RelativeExit/ReadFileSyncDefault/ViaLet", false],
+    ["ToolArg/Basename/RelativeExit/RequireWrite/Inline", false],
+    ["ToolArg/Basename/RelativeExit/RequireWrite/ViaHelperReturn", false],
+    ["ToolArg/Basename/RelativeExit/RequireWrite/ViaHelperSink", false],
+    ["ToolArg/Basename/RelativeExit/RequireWrite/ViaLet", false],
+    ["ToolArg/Basename/RelativeExit/StoreLookalike/Inline", false],
+    ["ToolArg/Basename/RelativeExit/StoreLookalike/ViaHelperReturn", false],
+    ["ToolArg/Basename/RelativeExit/StoreLookalike/ViaHelperSink", false],
+    ["ToolArg/Basename/RelativeExit/StoreLookalike/ViaLet", false],
+    ["ToolArg/Basename/StartsWithExit/FsExtra/Inline", false],
+    ["ToolArg/Basename/StartsWithExit/FsExtra/ViaHelperReturn", false],
+    ["ToolArg/Basename/StartsWithExit/FsExtra/ViaHelperSink", false],
+    ["ToolArg/Basename/StartsWithExit/FsExtra/ViaLet", false],
+    ["ToolArg/Basename/StartsWithExit/PromisesNamespace/Inline", false],
+    [
+      "ToolArg/Basename/StartsWithExit/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    ["ToolArg/Basename/StartsWithExit/PromisesNamespace/ViaHelperSink", false],
+    ["ToolArg/Basename/StartsWithExit/PromisesNamespace/ViaLet", false],
+    ["ToolArg/Basename/StartsWithExit/ReadFileNamed/Inline", false],
+    ["ToolArg/Basename/StartsWithExit/ReadFileNamed/ViaHelperReturn", false],
+    ["ToolArg/Basename/StartsWithExit/ReadFileNamed/ViaHelperSink", false],
+    ["ToolArg/Basename/StartsWithExit/ReadFileNamed/ViaLet", false],
+    ["ToolArg/Basename/StartsWithExit/ReadFileSyncDefault/Inline", false],
+    [
+      "ToolArg/Basename/StartsWithExit/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/Basename/StartsWithExit/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/Basename/StartsWithExit/ReadFileSyncDefault/ViaLet", false],
+    ["ToolArg/Basename/StartsWithExit/RequireWrite/Inline", false],
+    ["ToolArg/Basename/StartsWithExit/RequireWrite/ViaHelperReturn", false],
+    ["ToolArg/Basename/StartsWithExit/RequireWrite/ViaHelperSink", false],
+    ["ToolArg/Basename/StartsWithExit/RequireWrite/ViaLet", false],
+    ["ToolArg/Basename/StartsWithExit/StoreLookalike/Inline", false],
+    ["ToolArg/Basename/StartsWithExit/StoreLookalike/ViaHelperReturn", false],
+    ["ToolArg/Basename/StartsWithExit/StoreLookalike/ViaHelperSink", false],
+    ["ToolArg/Basename/StartsWithExit/StoreLookalike/ViaLet", false],
+    ["ToolArg/JoinRoot/EndsWithLookalike/FsExtra/Inline", true],
+    ["ToolArg/JoinRoot/EndsWithLookalike/FsExtra/ViaHelperReturn", true],
+    ["ToolArg/JoinRoot/EndsWithLookalike/FsExtra/ViaHelperSink", true],
+    ["ToolArg/JoinRoot/EndsWithLookalike/FsExtra/ViaLet", true],
+    ["ToolArg/JoinRoot/EndsWithLookalike/PromisesNamespace/Inline", true],
+    [
+      "ToolArg/JoinRoot/EndsWithLookalike/PromisesNamespace/ViaHelperReturn",
+      true
+    ],
+    [
+      "ToolArg/JoinRoot/EndsWithLookalike/PromisesNamespace/ViaHelperSink",
+      true
+    ],
+    ["ToolArg/JoinRoot/EndsWithLookalike/PromisesNamespace/ViaLet", true],
+    ["ToolArg/JoinRoot/EndsWithLookalike/ReadFileNamed/Inline", true],
+    ["ToolArg/JoinRoot/EndsWithLookalike/ReadFileNamed/ViaHelperReturn", true],
+    ["ToolArg/JoinRoot/EndsWithLookalike/ReadFileNamed/ViaHelperSink", true],
+    ["ToolArg/JoinRoot/EndsWithLookalike/ReadFileNamed/ViaLet", true],
+    ["ToolArg/JoinRoot/EndsWithLookalike/ReadFileSyncDefault/Inline", true],
+    [
+      "ToolArg/JoinRoot/EndsWithLookalike/ReadFileSyncDefault/ViaHelperReturn",
+      true
+    ],
+    [
+      "ToolArg/JoinRoot/EndsWithLookalike/ReadFileSyncDefault/ViaHelperSink",
+      true
+    ],
+    ["ToolArg/JoinRoot/EndsWithLookalike/ReadFileSyncDefault/ViaLet", true],
+    ["ToolArg/JoinRoot/EndsWithLookalike/RequireWrite/Inline", true],
+    ["ToolArg/JoinRoot/EndsWithLookalike/RequireWrite/ViaHelperReturn", true],
+    ["ToolArg/JoinRoot/EndsWithLookalike/RequireWrite/ViaHelperSink", true],
+    ["ToolArg/JoinRoot/EndsWithLookalike/RequireWrite/ViaLet", true],
+    ["ToolArg/JoinRoot/EndsWithLookalike/StoreLookalike/Inline", false],
+    [
+      "ToolArg/JoinRoot/EndsWithLookalike/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    ["ToolArg/JoinRoot/EndsWithLookalike/StoreLookalike/ViaHelperSink", false],
+    ["ToolArg/JoinRoot/EndsWithLookalike/StoreLookalike/ViaLet", false],
+    ["ToolArg/JoinRoot/ExistsLookalike/FsExtra/Inline", true],
+    ["ToolArg/JoinRoot/ExistsLookalike/FsExtra/ViaHelperReturn", true],
+    ["ToolArg/JoinRoot/ExistsLookalike/FsExtra/ViaHelperSink", true],
+    ["ToolArg/JoinRoot/ExistsLookalike/FsExtra/ViaLet", true],
+    ["ToolArg/JoinRoot/ExistsLookalike/PromisesNamespace/Inline", true],
+    [
+      "ToolArg/JoinRoot/ExistsLookalike/PromisesNamespace/ViaHelperReturn",
+      true
+    ],
+    ["ToolArg/JoinRoot/ExistsLookalike/PromisesNamespace/ViaHelperSink", true],
+    ["ToolArg/JoinRoot/ExistsLookalike/PromisesNamespace/ViaLet", true],
+    ["ToolArg/JoinRoot/ExistsLookalike/ReadFileNamed/Inline", true],
+    ["ToolArg/JoinRoot/ExistsLookalike/ReadFileNamed/ViaHelperReturn", true],
+    ["ToolArg/JoinRoot/ExistsLookalike/ReadFileNamed/ViaHelperSink", true],
+    ["ToolArg/JoinRoot/ExistsLookalike/ReadFileNamed/ViaLet", true],
+    ["ToolArg/JoinRoot/ExistsLookalike/ReadFileSyncDefault/Inline", true],
+    [
+      "ToolArg/JoinRoot/ExistsLookalike/ReadFileSyncDefault/ViaHelperReturn",
+      true
+    ],
+    [
+      "ToolArg/JoinRoot/ExistsLookalike/ReadFileSyncDefault/ViaHelperSink",
+      true
+    ],
+    ["ToolArg/JoinRoot/ExistsLookalike/ReadFileSyncDefault/ViaLet", true],
+    ["ToolArg/JoinRoot/ExistsLookalike/RequireWrite/Inline", true],
+    ["ToolArg/JoinRoot/ExistsLookalike/RequireWrite/ViaHelperReturn", true],
+    ["ToolArg/JoinRoot/ExistsLookalike/RequireWrite/ViaHelperSink", true],
+    ["ToolArg/JoinRoot/ExistsLookalike/RequireWrite/ViaLet", true],
+    ["ToolArg/JoinRoot/ExistsLookalike/StoreLookalike/ViaHelperReturn", false],
+    ["ToolArg/JoinRoot/ExistsLookalike/StoreLookalike/ViaHelperSink", false],
+    ["ToolArg/JoinRoot/ExistsLookalike/StoreLookalike/ViaLet", false],
+    ["ToolArg/JoinRoot/NoGuard/FsExtra/Inline", true],
+    ["ToolArg/JoinRoot/NoGuard/FsExtra/ViaHelperReturn", true],
+    ["ToolArg/JoinRoot/NoGuard/FsExtra/ViaHelperSink", true],
+    ["ToolArg/JoinRoot/NoGuard/FsExtra/ViaLet", true],
+    ["ToolArg/JoinRoot/NoGuard/PromisesNamespace/Inline", true],
+    ["ToolArg/JoinRoot/NoGuard/PromisesNamespace/ViaHelperReturn", true],
+    ["ToolArg/JoinRoot/NoGuard/PromisesNamespace/ViaHelperSink", true],
+    ["ToolArg/JoinRoot/NoGuard/PromisesNamespace/ViaLet", true],
+    ["ToolArg/JoinRoot/NoGuard/ReadFileNamed/Inline", true],
+    ["ToolArg/JoinRoot/NoGuard/ReadFileNamed/ViaHelperReturn", true],
+    ["ToolArg/JoinRoot/NoGuard/ReadFileNamed/ViaHelperSink", true],
+    ["ToolArg/JoinRoot/NoGuard/ReadFileNamed/ViaLet", true],
+    ["ToolArg/JoinRoot/NoGuard/ReadFileSyncDefault/Inline", true],
+    ["ToolArg/JoinRoot/NoGuard/ReadFileSyncDefault/ViaHelperReturn", true],
+    ["ToolArg/JoinRoot/NoGuard/ReadFileSyncDefault/ViaHelperSink", true],
+    ["ToolArg/JoinRoot/NoGuard/ReadFileSyncDefault/ViaLet", true],
+    ["ToolArg/JoinRoot/NoGuard/RequireWrite/Inline", true],
+    ["ToolArg/JoinRoot/NoGuard/RequireWrite/ViaHelperReturn", true],
+    ["ToolArg/JoinRoot/NoGuard/RequireWrite/ViaHelperSink", true],
+    ["ToolArg/JoinRoot/NoGuard/RequireWrite/ViaLet", true],
+    ["ToolArg/JoinRoot/NoGuard/StoreLookalike/Inline", false],
+    ["ToolArg/JoinRoot/NoGuard/StoreLookalike/ViaHelperReturn", false],
+    ["ToolArg/JoinRoot/NoGuard/StoreLookalike/ViaHelperSink", false],
+    ["ToolArg/JoinRoot/NoGuard/StoreLookalike/ViaLet", false],
+    ["ToolArg/JoinRoot/NonExiting/FsExtra/Inline", true],
+    ["ToolArg/JoinRoot/NonExiting/FsExtra/ViaHelperReturn", true],
+    ["ToolArg/JoinRoot/NonExiting/FsExtra/ViaHelperSink", true],
+    ["ToolArg/JoinRoot/NonExiting/FsExtra/ViaLet", true],
+    ["ToolArg/JoinRoot/NonExiting/PromisesNamespace/Inline", true],
+    ["ToolArg/JoinRoot/NonExiting/PromisesNamespace/ViaHelperReturn", true],
+    ["ToolArg/JoinRoot/NonExiting/PromisesNamespace/ViaHelperSink", true],
+    ["ToolArg/JoinRoot/NonExiting/PromisesNamespace/ViaLet", true],
+    ["ToolArg/JoinRoot/NonExiting/ReadFileNamed/Inline", true],
+    ["ToolArg/JoinRoot/NonExiting/ReadFileNamed/ViaHelperReturn", true],
+    ["ToolArg/JoinRoot/NonExiting/ReadFileNamed/ViaHelperSink", true],
+    ["ToolArg/JoinRoot/NonExiting/ReadFileNamed/ViaLet", true],
+    ["ToolArg/JoinRoot/NonExiting/ReadFileSyncDefault/Inline", true],
+    ["ToolArg/JoinRoot/NonExiting/ReadFileSyncDefault/ViaHelperReturn", true],
+    ["ToolArg/JoinRoot/NonExiting/ReadFileSyncDefault/ViaHelperSink", true],
+    ["ToolArg/JoinRoot/NonExiting/ReadFileSyncDefault/ViaLet", true],
+    ["ToolArg/JoinRoot/NonExiting/RequireWrite/Inline", true],
+    ["ToolArg/JoinRoot/NonExiting/RequireWrite/ViaHelperReturn", true],
+    ["ToolArg/JoinRoot/NonExiting/RequireWrite/ViaHelperSink", true],
+    ["ToolArg/JoinRoot/NonExiting/RequireWrite/ViaLet", true],
+    ["ToolArg/JoinRoot/NonExiting/StoreLookalike/Inline", false],
+    ["ToolArg/JoinRoot/NonExiting/StoreLookalike/ViaHelperReturn", false],
+    ["ToolArg/JoinRoot/NonExiting/StoreLookalike/ViaHelperSink", false],
+    ["ToolArg/JoinRoot/NonExiting/StoreLookalike/ViaLet", false],
+    ["ToolArg/JoinRoot/RelativeExit/FsExtra/Inline", false],
+    ["ToolArg/JoinRoot/RelativeExit/FsExtra/ViaHelperReturn", false],
+    ["ToolArg/JoinRoot/RelativeExit/FsExtra/ViaHelperSink", false],
+    ["ToolArg/JoinRoot/RelativeExit/FsExtra/ViaLet", false],
+    ["ToolArg/JoinRoot/RelativeExit/PromisesNamespace/Inline", false],
+    ["ToolArg/JoinRoot/RelativeExit/PromisesNamespace/ViaHelperReturn", false],
+    ["ToolArg/JoinRoot/RelativeExit/PromisesNamespace/ViaHelperSink", false],
+    ["ToolArg/JoinRoot/RelativeExit/PromisesNamespace/ViaLet", false],
+    ["ToolArg/JoinRoot/RelativeExit/ReadFileNamed/Inline", false],
+    ["ToolArg/JoinRoot/RelativeExit/ReadFileNamed/ViaHelperReturn", false],
+    ["ToolArg/JoinRoot/RelativeExit/ReadFileNamed/ViaHelperSink", false],
+    ["ToolArg/JoinRoot/RelativeExit/ReadFileNamed/ViaLet", false],
+    ["ToolArg/JoinRoot/RelativeExit/ReadFileSyncDefault/Inline", false],
+    [
+      "ToolArg/JoinRoot/RelativeExit/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    ["ToolArg/JoinRoot/RelativeExit/ReadFileSyncDefault/ViaHelperSink", false],
+    ["ToolArg/JoinRoot/RelativeExit/ReadFileSyncDefault/ViaLet", false],
+    ["ToolArg/JoinRoot/RelativeExit/RequireWrite/Inline", false],
+    ["ToolArg/JoinRoot/RelativeExit/RequireWrite/ViaHelperReturn", false],
+    ["ToolArg/JoinRoot/RelativeExit/RequireWrite/ViaHelperSink", false],
+    ["ToolArg/JoinRoot/RelativeExit/RequireWrite/ViaLet", false],
+    ["ToolArg/JoinRoot/RelativeExit/StoreLookalike/Inline", false],
+    ["ToolArg/JoinRoot/RelativeExit/StoreLookalike/ViaHelperReturn", false],
+    ["ToolArg/JoinRoot/RelativeExit/StoreLookalike/ViaHelperSink", false],
+    ["ToolArg/JoinRoot/RelativeExit/StoreLookalike/ViaLet", false],
+    ["ToolArg/JoinRoot/StartsWithExit/FsExtra/Inline", false],
+    ["ToolArg/JoinRoot/StartsWithExit/FsExtra/ViaHelperReturn", false],
+    ["ToolArg/JoinRoot/StartsWithExit/FsExtra/ViaHelperSink", false],
+    ["ToolArg/JoinRoot/StartsWithExit/FsExtra/ViaLet", false],
+    ["ToolArg/JoinRoot/StartsWithExit/PromisesNamespace/Inline", false],
+    [
+      "ToolArg/JoinRoot/StartsWithExit/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    ["ToolArg/JoinRoot/StartsWithExit/PromisesNamespace/ViaHelperSink", false],
+    ["ToolArg/JoinRoot/StartsWithExit/PromisesNamespace/ViaLet", false],
+    ["ToolArg/JoinRoot/StartsWithExit/ReadFileNamed/Inline", false],
+    ["ToolArg/JoinRoot/StartsWithExit/ReadFileNamed/ViaHelperReturn", false],
+    ["ToolArg/JoinRoot/StartsWithExit/ReadFileNamed/ViaHelperSink", false],
+    ["ToolArg/JoinRoot/StartsWithExit/ReadFileNamed/ViaLet", false],
+    ["ToolArg/JoinRoot/StartsWithExit/ReadFileSyncDefault/Inline", false],
+    [
+      "ToolArg/JoinRoot/StartsWithExit/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/JoinRoot/StartsWithExit/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/JoinRoot/StartsWithExit/ReadFileSyncDefault/ViaLet", false],
+    ["ToolArg/JoinRoot/StartsWithExit/RequireWrite/Inline", false],
+    ["ToolArg/JoinRoot/StartsWithExit/RequireWrite/ViaHelperReturn", false],
+    ["ToolArg/JoinRoot/StartsWithExit/RequireWrite/ViaHelperSink", false],
+    ["ToolArg/JoinRoot/StartsWithExit/RequireWrite/ViaLet", false],
+    ["ToolArg/JoinRoot/StartsWithExit/StoreLookalike/Inline", false],
+    ["ToolArg/JoinRoot/StartsWithExit/StoreLookalike/ViaHelperReturn", false],
+    ["ToolArg/JoinRoot/StartsWithExit/StoreLookalike/ViaHelperSink", false],
+    ["ToolArg/JoinRoot/StartsWithExit/StoreLookalike/ViaLet", false],
+    ["ToolArg/NoTransform/EndsWithLookalike/FsExtra/Inline", true],
+    ["ToolArg/NoTransform/EndsWithLookalike/FsExtra/ViaHelperReturn", true],
+    ["ToolArg/NoTransform/EndsWithLookalike/FsExtra/ViaHelperSink", true],
+    ["ToolArg/NoTransform/EndsWithLookalike/FsExtra/ViaLet", true],
+    ["ToolArg/NoTransform/EndsWithLookalike/PromisesNamespace/Inline", true],
+    [
+      "ToolArg/NoTransform/EndsWithLookalike/PromisesNamespace/ViaHelperReturn",
+      true
+    ],
+    [
+      "ToolArg/NoTransform/EndsWithLookalike/PromisesNamespace/ViaHelperSink",
+      true
+    ],
+    ["ToolArg/NoTransform/EndsWithLookalike/PromisesNamespace/ViaLet", true],
+    ["ToolArg/NoTransform/EndsWithLookalike/ReadFileNamed/Inline", true],
+    [
+      "ToolArg/NoTransform/EndsWithLookalike/ReadFileNamed/ViaHelperReturn",
+      true
+    ],
+    ["ToolArg/NoTransform/EndsWithLookalike/ReadFileNamed/ViaHelperSink", true],
+    ["ToolArg/NoTransform/EndsWithLookalike/ReadFileNamed/ViaLet", true],
+    ["ToolArg/NoTransform/EndsWithLookalike/ReadFileSyncDefault/Inline", true],
+    [
+      "ToolArg/NoTransform/EndsWithLookalike/ReadFileSyncDefault/ViaHelperReturn",
+      true
+    ],
+    [
+      "ToolArg/NoTransform/EndsWithLookalike/ReadFileSyncDefault/ViaHelperSink",
+      true
+    ],
+    ["ToolArg/NoTransform/EndsWithLookalike/ReadFileSyncDefault/ViaLet", true],
+    ["ToolArg/NoTransform/EndsWithLookalike/RequireWrite/Inline", true],
+    [
+      "ToolArg/NoTransform/EndsWithLookalike/RequireWrite/ViaHelperReturn",
+      true
+    ],
+    ["ToolArg/NoTransform/EndsWithLookalike/RequireWrite/ViaHelperSink", true],
+    ["ToolArg/NoTransform/EndsWithLookalike/RequireWrite/ViaLet", true],
+    ["ToolArg/NoTransform/EndsWithLookalike/StoreLookalike/Inline", false],
+    [
+      "ToolArg/NoTransform/EndsWithLookalike/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/NoTransform/EndsWithLookalike/StoreLookalike/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/NoTransform/EndsWithLookalike/StoreLookalike/ViaLet", false],
+    ["ToolArg/NoTransform/ExistsLookalike/FsExtra/Inline", true],
+    ["ToolArg/NoTransform/ExistsLookalike/FsExtra/ViaHelperReturn", true],
+    ["ToolArg/NoTransform/ExistsLookalike/FsExtra/ViaHelperSink", true],
+    ["ToolArg/NoTransform/ExistsLookalike/FsExtra/ViaLet", true],
+    ["ToolArg/NoTransform/ExistsLookalike/PromisesNamespace/Inline", true],
+    [
+      "ToolArg/NoTransform/ExistsLookalike/PromisesNamespace/ViaHelperReturn",
+      true
+    ],
+    [
+      "ToolArg/NoTransform/ExistsLookalike/PromisesNamespace/ViaHelperSink",
+      true
+    ],
+    ["ToolArg/NoTransform/ExistsLookalike/PromisesNamespace/ViaLet", true],
+    ["ToolArg/NoTransform/ExistsLookalike/ReadFileNamed/Inline", true],
+    ["ToolArg/NoTransform/ExistsLookalike/ReadFileNamed/ViaHelperReturn", true],
+    ["ToolArg/NoTransform/ExistsLookalike/ReadFileNamed/ViaHelperSink", true],
+    ["ToolArg/NoTransform/ExistsLookalike/ReadFileNamed/ViaLet", true],
+    ["ToolArg/NoTransform/ExistsLookalike/ReadFileSyncDefault/Inline", true],
+    [
+      "ToolArg/NoTransform/ExistsLookalike/ReadFileSyncDefault/ViaHelperReturn",
+      true
+    ],
+    [
+      "ToolArg/NoTransform/ExistsLookalike/ReadFileSyncDefault/ViaHelperSink",
+      true
+    ],
+    ["ToolArg/NoTransform/ExistsLookalike/ReadFileSyncDefault/ViaLet", true],
+    ["ToolArg/NoTransform/ExistsLookalike/RequireWrite/Inline", true],
+    ["ToolArg/NoTransform/ExistsLookalike/RequireWrite/ViaHelperReturn", true],
+    ["ToolArg/NoTransform/ExistsLookalike/RequireWrite/ViaHelperSink", true],
+    ["ToolArg/NoTransform/ExistsLookalike/RequireWrite/ViaLet", true],
+    ["ToolArg/NoTransform/ExistsLookalike/StoreLookalike/Inline", false],
+    [
+      "ToolArg/NoTransform/ExistsLookalike/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    ["ToolArg/NoTransform/ExistsLookalike/StoreLookalike/ViaHelperSink", false],
+    ["ToolArg/NoTransform/ExistsLookalike/StoreLookalike/ViaLet", false],
+    ["ToolArg/NoTransform/NoGuard/FsExtra/Inline", true],
+    ["ToolArg/NoTransform/NoGuard/FsExtra/ViaHelperReturn", true],
+    ["ToolArg/NoTransform/NoGuard/FsExtra/ViaHelperSink", true],
+    ["ToolArg/NoTransform/NoGuard/FsExtra/ViaLet", true],
+    ["ToolArg/NoTransform/NoGuard/PromisesNamespace/Inline", true],
+    ["ToolArg/NoTransform/NoGuard/PromisesNamespace/ViaHelperReturn", true],
+    ["ToolArg/NoTransform/NoGuard/PromisesNamespace/ViaHelperSink", true],
+    ["ToolArg/NoTransform/NoGuard/PromisesNamespace/ViaLet", true],
+    ["ToolArg/NoTransform/NoGuard/ReadFileNamed/Inline", true],
+    ["ToolArg/NoTransform/NoGuard/ReadFileNamed/ViaHelperReturn", true],
+    ["ToolArg/NoTransform/NoGuard/ReadFileNamed/ViaHelperSink", true],
+    ["ToolArg/NoTransform/NoGuard/ReadFileNamed/ViaLet", true],
+    ["ToolArg/NoTransform/NoGuard/ReadFileSyncDefault/Inline", true],
+    ["ToolArg/NoTransform/NoGuard/ReadFileSyncDefault/ViaHelperReturn", true],
+    ["ToolArg/NoTransform/NoGuard/ReadFileSyncDefault/ViaHelperSink", true],
+    ["ToolArg/NoTransform/NoGuard/ReadFileSyncDefault/ViaLet", true],
+    ["ToolArg/NoTransform/NoGuard/RequireWrite/Inline", true],
+    ["ToolArg/NoTransform/NoGuard/RequireWrite/ViaHelperReturn", true],
+    ["ToolArg/NoTransform/NoGuard/RequireWrite/ViaHelperSink", true],
+    ["ToolArg/NoTransform/NoGuard/RequireWrite/ViaLet", true],
+    ["ToolArg/NoTransform/NoGuard/StoreLookalike/Inline", false],
+    ["ToolArg/NoTransform/NoGuard/StoreLookalike/ViaHelperReturn", false],
+    ["ToolArg/NoTransform/NoGuard/StoreLookalike/ViaHelperSink", false],
+    ["ToolArg/NoTransform/NoGuard/StoreLookalike/ViaLet", false],
+    ["ToolArg/NoTransform/NonExiting/FsExtra/Inline", true],
+    ["ToolArg/NoTransform/NonExiting/FsExtra/ViaHelperReturn", true],
+    ["ToolArg/NoTransform/NonExiting/FsExtra/ViaHelperSink", true],
+    ["ToolArg/NoTransform/NonExiting/FsExtra/ViaLet", true],
+    ["ToolArg/NoTransform/NonExiting/PromisesNamespace/Inline", true],
+    ["ToolArg/NoTransform/NonExiting/PromisesNamespace/ViaHelperReturn", true],
+    ["ToolArg/NoTransform/NonExiting/PromisesNamespace/ViaHelperSink", true],
+    ["ToolArg/NoTransform/NonExiting/PromisesNamespace/ViaLet", true],
+    ["ToolArg/NoTransform/NonExiting/ReadFileNamed/Inline", true],
+    ["ToolArg/NoTransform/NonExiting/ReadFileNamed/ViaHelperReturn", true],
+    ["ToolArg/NoTransform/NonExiting/ReadFileNamed/ViaHelperSink", true],
+    ["ToolArg/NoTransform/NonExiting/ReadFileNamed/ViaLet", true],
+    ["ToolArg/NoTransform/NonExiting/ReadFileSyncDefault/Inline", true],
+    [
+      "ToolArg/NoTransform/NonExiting/ReadFileSyncDefault/ViaHelperReturn",
+      true
+    ],
+    ["ToolArg/NoTransform/NonExiting/ReadFileSyncDefault/ViaHelperSink", true],
+    ["ToolArg/NoTransform/NonExiting/ReadFileSyncDefault/ViaLet", true],
+    ["ToolArg/NoTransform/NonExiting/RequireWrite/Inline", true],
+    ["ToolArg/NoTransform/NonExiting/RequireWrite/ViaHelperReturn", true],
+    ["ToolArg/NoTransform/NonExiting/RequireWrite/ViaHelperSink", true],
+    ["ToolArg/NoTransform/NonExiting/RequireWrite/ViaLet", true],
+    ["ToolArg/NoTransform/NonExiting/StoreLookalike/Inline", false],
+    ["ToolArg/NoTransform/NonExiting/StoreLookalike/ViaHelperReturn", false],
+    ["ToolArg/NoTransform/NonExiting/StoreLookalike/ViaHelperSink", false],
+    ["ToolArg/NoTransform/NonExiting/StoreLookalike/ViaLet", false],
+    ["ToolArg/NoTransform/RelativeExit/FsExtra/Inline", false],
+    ["ToolArg/NoTransform/RelativeExit/FsExtra/ViaHelperReturn", false],
+    ["ToolArg/NoTransform/RelativeExit/FsExtra/ViaHelperSink", false],
+    ["ToolArg/NoTransform/RelativeExit/FsExtra/ViaLet", false],
+    ["ToolArg/NoTransform/RelativeExit/PromisesNamespace/Inline", false],
+    [
+      "ToolArg/NoTransform/RelativeExit/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    ["ToolArg/NoTransform/RelativeExit/PromisesNamespace/ViaHelperSink", false],
+    ["ToolArg/NoTransform/RelativeExit/PromisesNamespace/ViaLet", false],
+    ["ToolArg/NoTransform/RelativeExit/ReadFileNamed/Inline", false],
+    ["ToolArg/NoTransform/RelativeExit/ReadFileNamed/ViaHelperReturn", false],
+    ["ToolArg/NoTransform/RelativeExit/ReadFileNamed/ViaHelperSink", false],
+    ["ToolArg/NoTransform/RelativeExit/ReadFileNamed/ViaLet", false],
+    ["ToolArg/NoTransform/RelativeExit/ReadFileSyncDefault/Inline", false],
+    [
+      "ToolArg/NoTransform/RelativeExit/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/NoTransform/RelativeExit/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/NoTransform/RelativeExit/ReadFileSyncDefault/ViaLet", false],
+    ["ToolArg/NoTransform/RelativeExit/RequireWrite/Inline", false],
+    ["ToolArg/NoTransform/RelativeExit/RequireWrite/ViaHelperReturn", false],
+    ["ToolArg/NoTransform/RelativeExit/RequireWrite/ViaHelperSink", false],
+    ["ToolArg/NoTransform/RelativeExit/RequireWrite/ViaLet", false],
+    ["ToolArg/NoTransform/RelativeExit/StoreLookalike/Inline", false],
+    ["ToolArg/NoTransform/RelativeExit/StoreLookalike/ViaHelperReturn", false],
+    ["ToolArg/NoTransform/RelativeExit/StoreLookalike/ViaHelperSink", false],
+    ["ToolArg/NoTransform/RelativeExit/StoreLookalike/ViaLet", false],
+    ["ToolArg/NoTransform/StartsWithExit/FsExtra/Inline", false],
+    ["ToolArg/NoTransform/StartsWithExit/FsExtra/ViaHelperReturn", false],
+    ["ToolArg/NoTransform/StartsWithExit/FsExtra/ViaHelperSink", false],
+    ["ToolArg/NoTransform/StartsWithExit/FsExtra/ViaLet", false],
+    ["ToolArg/NoTransform/StartsWithExit/PromisesNamespace/Inline", false],
+    [
+      "ToolArg/NoTransform/StartsWithExit/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/NoTransform/StartsWithExit/PromisesNamespace/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/NoTransform/StartsWithExit/PromisesNamespace/ViaLet", false],
+    ["ToolArg/NoTransform/StartsWithExit/ReadFileNamed/Inline", false],
+    ["ToolArg/NoTransform/StartsWithExit/ReadFileNamed/ViaHelperReturn", false],
+    ["ToolArg/NoTransform/StartsWithExit/ReadFileNamed/ViaHelperSink", false],
+    ["ToolArg/NoTransform/StartsWithExit/ReadFileNamed/ViaLet", false],
+    ["ToolArg/NoTransform/StartsWithExit/ReadFileSyncDefault/Inline", false],
+    [
+      "ToolArg/NoTransform/StartsWithExit/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/NoTransform/StartsWithExit/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/NoTransform/StartsWithExit/ReadFileSyncDefault/ViaLet", false],
+    ["ToolArg/NoTransform/StartsWithExit/RequireWrite/Inline", false],
+    ["ToolArg/NoTransform/StartsWithExit/RequireWrite/ViaHelperReturn", false],
+    ["ToolArg/NoTransform/StartsWithExit/RequireWrite/ViaHelperSink", false],
+    ["ToolArg/NoTransform/StartsWithExit/RequireWrite/ViaLet", false],
+    ["ToolArg/NoTransform/StartsWithExit/StoreLookalike/Inline", false],
+    [
+      "ToolArg/NoTransform/StartsWithExit/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    ["ToolArg/NoTransform/StartsWithExit/StoreLookalike/ViaHelperSink", false],
+    ["ToolArg/NoTransform/StartsWithExit/StoreLookalike/ViaLet", false],
+    ["ToolArg/ResolveRoot/EndsWithLookalike/FsExtra/Inline", true],
+    ["ToolArg/ResolveRoot/EndsWithLookalike/FsExtra/ViaHelperReturn", true],
+    ["ToolArg/ResolveRoot/EndsWithLookalike/FsExtra/ViaHelperSink", true],
+    ["ToolArg/ResolveRoot/EndsWithLookalike/FsExtra/ViaLet", true],
+    ["ToolArg/ResolveRoot/EndsWithLookalike/PromisesNamespace/Inline", true],
+    [
+      "ToolArg/ResolveRoot/EndsWithLookalike/PromisesNamespace/ViaHelperReturn",
+      true
+    ],
+    [
+      "ToolArg/ResolveRoot/EndsWithLookalike/PromisesNamespace/ViaHelperSink",
+      true
+    ],
+    ["ToolArg/ResolveRoot/EndsWithLookalike/PromisesNamespace/ViaLet", true],
+    ["ToolArg/ResolveRoot/EndsWithLookalike/ReadFileNamed/Inline", true],
+    [
+      "ToolArg/ResolveRoot/EndsWithLookalike/ReadFileNamed/ViaHelperReturn",
+      true
+    ],
+    ["ToolArg/ResolveRoot/EndsWithLookalike/ReadFileNamed/ViaHelperSink", true],
+    ["ToolArg/ResolveRoot/EndsWithLookalike/ReadFileNamed/ViaLet", true],
+    ["ToolArg/ResolveRoot/EndsWithLookalike/ReadFileSyncDefault/Inline", true],
+    [
+      "ToolArg/ResolveRoot/EndsWithLookalike/ReadFileSyncDefault/ViaHelperReturn",
+      true
+    ],
+    [
+      "ToolArg/ResolveRoot/EndsWithLookalike/ReadFileSyncDefault/ViaHelperSink",
+      true
+    ],
+    ["ToolArg/ResolveRoot/EndsWithLookalike/ReadFileSyncDefault/ViaLet", true],
+    ["ToolArg/ResolveRoot/EndsWithLookalike/RequireWrite/Inline", true],
+    [
+      "ToolArg/ResolveRoot/EndsWithLookalike/RequireWrite/ViaHelperReturn",
+      true
+    ],
+    ["ToolArg/ResolveRoot/EndsWithLookalike/RequireWrite/ViaHelperSink", true],
+    ["ToolArg/ResolveRoot/EndsWithLookalike/RequireWrite/ViaLet", true],
+    ["ToolArg/ResolveRoot/EndsWithLookalike/StoreLookalike/Inline", false],
+    [
+      "ToolArg/ResolveRoot/EndsWithLookalike/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/ResolveRoot/EndsWithLookalike/StoreLookalike/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/ResolveRoot/EndsWithLookalike/StoreLookalike/ViaLet", false],
+    ["ToolArg/ResolveRoot/ExistsLookalike/FsExtra/Inline", true],
+    ["ToolArg/ResolveRoot/ExistsLookalike/FsExtra/ViaHelperReturn", true],
+    ["ToolArg/ResolveRoot/ExistsLookalike/FsExtra/ViaHelperSink", true],
+    ["ToolArg/ResolveRoot/ExistsLookalike/FsExtra/ViaLet", true],
+    ["ToolArg/ResolveRoot/ExistsLookalike/PromisesNamespace/Inline", true],
+    [
+      "ToolArg/ResolveRoot/ExistsLookalike/PromisesNamespace/ViaHelperReturn",
+      true
+    ],
+    [
+      "ToolArg/ResolveRoot/ExistsLookalike/PromisesNamespace/ViaHelperSink",
+      true
+    ],
+    ["ToolArg/ResolveRoot/ExistsLookalike/PromisesNamespace/ViaLet", true],
+    ["ToolArg/ResolveRoot/ExistsLookalike/ReadFileNamed/Inline", true],
+    ["ToolArg/ResolveRoot/ExistsLookalike/ReadFileNamed/ViaHelperReturn", true],
+    ["ToolArg/ResolveRoot/ExistsLookalike/ReadFileNamed/ViaHelperSink", true],
+    ["ToolArg/ResolveRoot/ExistsLookalike/ReadFileNamed/ViaLet", true],
+    ["ToolArg/ResolveRoot/ExistsLookalike/ReadFileSyncDefault/Inline", true],
+    [
+      "ToolArg/ResolveRoot/ExistsLookalike/ReadFileSyncDefault/ViaHelperReturn",
+      true
+    ],
+    [
+      "ToolArg/ResolveRoot/ExistsLookalike/ReadFileSyncDefault/ViaHelperSink",
+      true
+    ],
+    ["ToolArg/ResolveRoot/ExistsLookalike/ReadFileSyncDefault/ViaLet", true],
+    ["ToolArg/ResolveRoot/ExistsLookalike/RequireWrite/Inline", true],
+    ["ToolArg/ResolveRoot/ExistsLookalike/RequireWrite/ViaHelperReturn", true],
+    ["ToolArg/ResolveRoot/ExistsLookalike/RequireWrite/ViaHelperSink", true],
+    ["ToolArg/ResolveRoot/ExistsLookalike/RequireWrite/ViaLet", true],
+    ["ToolArg/ResolveRoot/ExistsLookalike/StoreLookalike/Inline", false],
+    [
+      "ToolArg/ResolveRoot/ExistsLookalike/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    ["ToolArg/ResolveRoot/ExistsLookalike/StoreLookalike/ViaHelperSink", false],
+    ["ToolArg/ResolveRoot/ExistsLookalike/StoreLookalike/ViaLet", false],
+    ["ToolArg/ResolveRoot/NoGuard/FsExtra/Inline", true],
+    ["ToolArg/ResolveRoot/NoGuard/FsExtra/ViaHelperReturn", true],
+    ["ToolArg/ResolveRoot/NoGuard/FsExtra/ViaHelperSink", true],
+    ["ToolArg/ResolveRoot/NoGuard/FsExtra/ViaLet", true],
+    ["ToolArg/ResolveRoot/NoGuard/PromisesNamespace/Inline", true],
+    ["ToolArg/ResolveRoot/NoGuard/PromisesNamespace/ViaHelperReturn", true],
+    ["ToolArg/ResolveRoot/NoGuard/PromisesNamespace/ViaHelperSink", true],
+    ["ToolArg/ResolveRoot/NoGuard/PromisesNamespace/ViaLet", true],
+    ["ToolArg/ResolveRoot/NoGuard/ReadFileNamed/Inline", true],
+    ["ToolArg/ResolveRoot/NoGuard/ReadFileNamed/ViaHelperReturn", true],
+    ["ToolArg/ResolveRoot/NoGuard/ReadFileNamed/ViaHelperSink", true],
+    ["ToolArg/ResolveRoot/NoGuard/ReadFileNamed/ViaLet", true],
+    ["ToolArg/ResolveRoot/NoGuard/ReadFileSyncDefault/Inline", true],
+    ["ToolArg/ResolveRoot/NoGuard/ReadFileSyncDefault/ViaHelperReturn", true],
+    ["ToolArg/ResolveRoot/NoGuard/ReadFileSyncDefault/ViaHelperSink", true],
+    ["ToolArg/ResolveRoot/NoGuard/ReadFileSyncDefault/ViaLet", true],
+    ["ToolArg/ResolveRoot/NoGuard/RequireWrite/Inline", true],
+    ["ToolArg/ResolveRoot/NoGuard/RequireWrite/ViaHelperReturn", true],
+    ["ToolArg/ResolveRoot/NoGuard/RequireWrite/ViaHelperSink", true],
+    ["ToolArg/ResolveRoot/NoGuard/RequireWrite/ViaLet", true],
+    ["ToolArg/ResolveRoot/NoGuard/StoreLookalike/Inline", false],
+    ["ToolArg/ResolveRoot/NoGuard/StoreLookalike/ViaHelperReturn", false],
+    ["ToolArg/ResolveRoot/NoGuard/StoreLookalike/ViaHelperSink", false],
+    ["ToolArg/ResolveRoot/NoGuard/StoreLookalike/ViaLet", false],
+    ["ToolArg/ResolveRoot/NonExiting/FsExtra/Inline", true],
+    ["ToolArg/ResolveRoot/NonExiting/FsExtra/ViaHelperReturn", true],
+    ["ToolArg/ResolveRoot/NonExiting/FsExtra/ViaHelperSink", true],
+    ["ToolArg/ResolveRoot/NonExiting/FsExtra/ViaLet", true],
+    ["ToolArg/ResolveRoot/NonExiting/PromisesNamespace/Inline", true],
+    ["ToolArg/ResolveRoot/NonExiting/PromisesNamespace/ViaHelperReturn", true],
+    ["ToolArg/ResolveRoot/NonExiting/PromisesNamespace/ViaHelperSink", true],
+    ["ToolArg/ResolveRoot/NonExiting/PromisesNamespace/ViaLet", true],
+    ["ToolArg/ResolveRoot/NonExiting/ReadFileNamed/Inline", true],
+    ["ToolArg/ResolveRoot/NonExiting/ReadFileNamed/ViaHelperReturn", true],
+    ["ToolArg/ResolveRoot/NonExiting/ReadFileNamed/ViaLet", true],
+    ["ToolArg/ResolveRoot/NonExiting/ReadFileSyncDefault/Inline", true],
+    [
+      "ToolArg/ResolveRoot/NonExiting/ReadFileSyncDefault/ViaHelperReturn",
+      true
+    ],
+    ["ToolArg/ResolveRoot/NonExiting/ReadFileSyncDefault/ViaHelperSink", true],
+    ["ToolArg/ResolveRoot/NonExiting/ReadFileSyncDefault/ViaLet", true],
+    ["ToolArg/ResolveRoot/NonExiting/RequireWrite/Inline", true],
+    ["ToolArg/ResolveRoot/NonExiting/RequireWrite/ViaHelperReturn", true],
+    ["ToolArg/ResolveRoot/NonExiting/RequireWrite/ViaHelperSink", true],
+    ["ToolArg/ResolveRoot/NonExiting/RequireWrite/ViaLet", true],
+    ["ToolArg/ResolveRoot/NonExiting/StoreLookalike/Inline", false],
+    ["ToolArg/ResolveRoot/NonExiting/StoreLookalike/ViaHelperReturn", false],
+    ["ToolArg/ResolveRoot/NonExiting/StoreLookalike/ViaHelperSink", false],
+    ["ToolArg/ResolveRoot/NonExiting/StoreLookalike/ViaLet", false],
+    ["ToolArg/ResolveRoot/RelativeExit/FsExtra/Inline", false],
+    ["ToolArg/ResolveRoot/RelativeExit/FsExtra/ViaHelperReturn", false],
+    ["ToolArg/ResolveRoot/RelativeExit/FsExtra/ViaHelperSink", false],
+    ["ToolArg/ResolveRoot/RelativeExit/FsExtra/ViaLet", false],
+    ["ToolArg/ResolveRoot/RelativeExit/PromisesNamespace/Inline", false],
+    [
+      "ToolArg/ResolveRoot/RelativeExit/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    ["ToolArg/ResolveRoot/RelativeExit/PromisesNamespace/ViaHelperSink", false],
+    ["ToolArg/ResolveRoot/RelativeExit/PromisesNamespace/ViaLet", false],
+    ["ToolArg/ResolveRoot/RelativeExit/ReadFileNamed/Inline", false],
+    ["ToolArg/ResolveRoot/RelativeExit/ReadFileNamed/ViaHelperReturn", false],
+    ["ToolArg/ResolveRoot/RelativeExit/ReadFileNamed/ViaHelperSink", false],
+    ["ToolArg/ResolveRoot/RelativeExit/ReadFileNamed/ViaLet", false],
+    ["ToolArg/ResolveRoot/RelativeExit/ReadFileSyncDefault/Inline", false],
+    [
+      "ToolArg/ResolveRoot/RelativeExit/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/ResolveRoot/RelativeExit/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/ResolveRoot/RelativeExit/ReadFileSyncDefault/ViaLet", false],
+    ["ToolArg/ResolveRoot/RelativeExit/RequireWrite/Inline", false],
+    ["ToolArg/ResolveRoot/RelativeExit/RequireWrite/ViaHelperReturn", false],
+    ["ToolArg/ResolveRoot/RelativeExit/RequireWrite/ViaHelperSink", false],
+    ["ToolArg/ResolveRoot/RelativeExit/RequireWrite/ViaLet", false],
+    ["ToolArg/ResolveRoot/RelativeExit/StoreLookalike/Inline", false],
+    ["ToolArg/ResolveRoot/RelativeExit/StoreLookalike/ViaHelperReturn", false],
+    ["ToolArg/ResolveRoot/RelativeExit/StoreLookalike/ViaHelperSink", false],
+    ["ToolArg/ResolveRoot/RelativeExit/StoreLookalike/ViaLet", false],
+    ["ToolArg/ResolveRoot/StartsWithExit/FsExtra/Inline", false],
+    ["ToolArg/ResolveRoot/StartsWithExit/FsExtra/ViaHelperReturn", false],
+    ["ToolArg/ResolveRoot/StartsWithExit/FsExtra/ViaHelperSink", false],
+    ["ToolArg/ResolveRoot/StartsWithExit/FsExtra/ViaLet", false],
+    ["ToolArg/ResolveRoot/StartsWithExit/PromisesNamespace/Inline", false],
+    [
+      "ToolArg/ResolveRoot/StartsWithExit/PromisesNamespace/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/ResolveRoot/StartsWithExit/PromisesNamespace/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/ResolveRoot/StartsWithExit/PromisesNamespace/ViaLet", false],
+    ["ToolArg/ResolveRoot/StartsWithExit/ReadFileNamed/Inline", false],
+    ["ToolArg/ResolveRoot/StartsWithExit/ReadFileNamed/ViaHelperReturn", false],
+    ["ToolArg/ResolveRoot/StartsWithExit/ReadFileNamed/ViaHelperSink", false],
+    ["ToolArg/ResolveRoot/StartsWithExit/ReadFileNamed/ViaLet", false],
+    ["ToolArg/ResolveRoot/StartsWithExit/ReadFileSyncDefault/Inline", false],
+    [
+      "ToolArg/ResolveRoot/StartsWithExit/ReadFileSyncDefault/ViaHelperReturn",
+      false
+    ],
+    [
+      "ToolArg/ResolveRoot/StartsWithExit/ReadFileSyncDefault/ViaHelperSink",
+      false
+    ],
+    ["ToolArg/ResolveRoot/StartsWithExit/ReadFileSyncDefault/ViaLet", false],
+    ["ToolArg/ResolveRoot/StartsWithExit/RequireWrite/Inline", false],
+    ["ToolArg/ResolveRoot/StartsWithExit/RequireWrite/ViaHelperReturn", false],
+    ["ToolArg/ResolveRoot/StartsWithExit/RequireWrite/ViaHelperSink", false],
+    ["ToolArg/ResolveRoot/StartsWithExit/RequireWrite/ViaLet", false],
+    ["ToolArg/ResolveRoot/StartsWithExit/StoreLookalike/Inline", false],
+    [
+      "ToolArg/ResolveRoot/StartsWithExit/StoreLookalike/ViaHelperReturn",
+      false
+    ],
+    ["ToolArg/ResolveRoot/StartsWithExit/StoreLookalike/ViaHelperSink", false],
+    ["ToolArg/ResolveRoot/StartsWithExit/StoreLookalike/ViaLet", false]
+  ]
+}

@@ -77,6 +77,16 @@ server.registerTool('run', cfg, async ({ code }) =>
 - **Arguments** are tool arguments, `request.params.arguments` and
   `ResourceTemplate` variables, followed through bindings, templates,
   concatenation, string derivations and same-file helpers.
+- **Into helpers, elements and parsed arguments (1.0).** A same-file
+  function or class method (`this.run(args.cmd)`) the handler calls carries
+  what its callers pass it, so a sink inside the helper is reported — an
+  object literal it is given is read field by field. Each element of an
+  argument array is the argument (`for (const p of paths)`,
+  `paths.map((p) => …)`), and a Zod `Schema.parse(args)` /
+  `safeParse(args).data` hands the arguments back: parsing checks their shape,
+  not their text. A key the parsing schema restricts to `z.enum` / `z.literal`
+  / `z.nativeEnum` stays the allowlist. Callers are found by resolving the
+  callee, never by a name.
 
 ## ✅ Correct
 

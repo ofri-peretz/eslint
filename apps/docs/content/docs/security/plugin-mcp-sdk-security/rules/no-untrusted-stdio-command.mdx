@@ -119,7 +119,8 @@ new StdioClientTransport({ command: 'npx', args: ['-y', args.pkg] });
 - **Values are followed within the file**: bindings, destructuring, member
   reads, `await`, string derivations, a same-file helper's return, `for…of`
   and `.map` / `.forEach` / `.flatMap` over an untrusted value, and
-  `Object.entries` / `Object.values` / `Object.keys` of one.
+  `Object.entries` / `Object.values` / `Object.keys` of one. A same-file
+  launch helper's parameter carries what its callers pass it.
 
 ## ✅ Correct
 

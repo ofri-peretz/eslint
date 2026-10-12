@@ -109,15 +109,29 @@ raw.post('/mcp', (req, res) =>
   no options (default `127.0.0.1`), a loopback host (`127.0.0.1`,
   `localhost`, `::1`), or any `allowedHosts`.
 - **`missingAuth`** reports the bind call when the file constructs an MCP HTTP
-  transport and binds every interface explicitly (`.listen(port, '0.0.0.0')`,
+  transport and binds every interface — explicitly (`.listen(port, '0.0.0.0')`,
   `.listen(port, '::')`, `.listen({ host: '0.0.0.0' })`, or the
-  `createMcpExpressApp` call above), and none of these is present:
+  `createMcpExpressApp` call above), or implicitly: `.listen(port)` with no
+  host on an `express()` app, an app from `createMcpExpressApp()` (its `host`
+  option picks the Host validation, not the interface — and a network caller
+  can send `Host: 127.0.0.1` itself), or a Node `http(s).createServer(…)`
+  server binds `::` — and none of these is present:
   - a call to an SDK auth export: `requireBearerAuth`, `mcpAuthRouter`,
     `mcpAuthMetadataRouter`;
   - a `.use(...)` passed custom middleware: an identifier or an inline
     function (`app.use(express.json())` is a factory call and does not count);
   - a route whose handler calls `.handleRequest(` registered with more than a
     path and a handler (`app.post('/mcp', checkAuth, handler)`).
+  - an inline credential check: every call that serves the transport
+    (`transport.handleRequest(…)`, or a handler built by an SDK adapter such as
+    `toNodeHandler(…)`) comes after an `if` that reads a request header
+    (`req.headers…`, `req.get(…)`, `c.req.header(…)`, directly or through the
+    bindings it is computed from) and returns or throws.
+- **A credential check also answers DNS rebinding.** A browser does not send a
+  bearer token or an API key header on its own, so a rebound page cannot get
+  past the inline check above: `missingRebindingProtection`,
+  `appWithoutHostValidation` and `allInterfacesWithoutAllowedHosts` are not
+  reported for a file whose transport is served only behind one.
 
 ## ✅ Correct
 
@@ -156,14 +170,14 @@ entries match how clients connect.
 - **`allowedOrigins` alone.** It is not accepted as a substitute for
   `allowedHosts`: the transport skips the Origin check when the header is
   absent, and a same-origin `GET` from a rebound page sends none.
-- **An implicit all-interfaces bind.** `app.listen(3000)` with no host also
-  binds every interface on Node, but `missingAuth` needs the bind to be
-  explicit, to keep the check conservative.
-- **Auth in another module (a known false positive).** `missingAuth` only sees
-  this file. If the middleware is mounted elsewhere (a shared `server.ts` that
-  mounts this router), the rule still reports. To resolve it, mount the auth
-  middleware in this file, on the MCP route or through `app.use(...)`, where a
-  reader of the route can see it.
+- **A bind whose host it cannot place**: a host from a variable it cannot
+  read, a Fastify app (Fastify listens on `localhost` unless told otherwise),
+  or an app this file does not build.
+- **An app handed to code this file cannot see.** When the app (or the Node
+  server wrapping it) is passed to a function from another module —
+  `mountAuth(app)` — that function may mount the auth middleware, so
+  `missingAuth` abstains. A same-file function is read instead: its `.use(…)`
+  calls count. (Before 1.0 this was a documented false positive.)
 - **Test files** — `*.test.ts`, `*.spec.ts`, and files under `test/`,
   `tests/`, `e2e/`, `fixtures/`, `__tests__/` and similar (the devkit's shared
   test-file predicate). A server bound for one assertion is not a deployment.

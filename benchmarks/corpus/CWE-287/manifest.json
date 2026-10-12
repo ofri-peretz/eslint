@@ -8,11 +8,11 @@
     "vulnerable": [
       {
         "file": "supabase-auth-error-discarded.ts",
-        "description": "`getUser()` destructured without `error`, so a forged token reads as an anonymous request"
+        "description": "`getUser()` without `error`, and the always-truthy `data` container tested — a failed authentication takes the signed-in branch"
       },
       {
         "file": "supabase-session-error-discarded.ts",
-        "description": "The same omission on `getSession()`"
+        "description": "`getSession()` without `error`, and the session dereferenced with no check"
       }
     ],
     "safe": [
@@ -23,6 +23,14 @@
       {
         "file": "supabase-auth-result-not-destructured.ts",
         "description": "The result kept whole and its error read off the object — the decoy for a rule keyed on the next line rather than on the binding"
+      },
+      {
+        "file": "supabase-auth-identity-guarded.ts",
+        "description": "`error` not bound, but `data.user` guarded — fail-closed, the documented pattern"
+      },
+      {
+        "file": "supabase-session-handed-to-caller.ts",
+        "description": "`error` not bound, but the session returned to the caller, which decides"
       }
     ]
   }

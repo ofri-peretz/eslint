@@ -15,12 +15,15 @@
  */
 
 import {
+  TSESLint,
   TSESTree,
   createRule,
+  followConst,
   formatLLMMessage,
   MessageIcons,
-  objectKeyName,
   propertyName,
+  readObjectProperty,
+  resolveObjectLiteral,
 } from '@interlace/eslint-devkit';
 
 import { fileUsesSupabase } from '../../utils/supabase-evidence';
@@ -30,18 +33,23 @@ type MessageIds = 'publicBucket';
 /** `createBucket` and `updateBucket` both take the same options object. */
 const BUCKET_METHODS = new Set(['createBucket', 'updateBucket']);
 
-/** The `public: true` property in an options object literal, if it is there. */
-function publicProperty(
+/**
+ * The `public: true` an options object sets, if it sets one — written inline,
+ * held in a const, or brought in by a same-file spread. The last write wins, as
+ * at runtime: `{ public: true, ...opts }` is whatever `opts` says, and an
+ * unreadable `opts` is no evidence either way.
+ */
+function publicFlag(
   options: TSESTree.ObjectExpression,
-): TSESTree.Property | undefined {
-  for (const property of options.properties) {
-    // A spread carries options this node cannot see; not evidence either way.
-    if (property.type !== 'Property') continue;
-    if (objectKeyName(property) !== 'public') continue;
-    if (property.value.type === 'Literal' && property.value.value === true)
-      return property;
-  }
-  return undefined;
+  sourceCode: Readonly<TSESLint.SourceCode>,
+): TSESTree.Node | undefined {
+  const read = readObjectProperty(options, 'public', sourceCode);
+  if (read.kind !== 'value') return undefined;
+  const value = followConst(read.node, sourceCode);
+  if (value.type !== 'Literal' || value.value !== true) return undefined;
+  // Report the `public: true` property where it is written — a read value is
+  // always a property's value.
+  return read.node.parent!;
 }
 
 export const noPublicStorageBucket = createRule<[], MessageIds>({
@@ -84,8 +92,10 @@ export const noPublicStorageBucket = createRule<[], MessageIds>({
         if (method === null || !BUCKET_METHODS.has(method)) return;
 
         for (const argument of node.arguments) {
-          if (argument.type !== 'ObjectExpression') continue;
-          const flagged = publicProperty(argument);
+          if (argument.type === 'SpreadElement') continue;
+          const options = resolveObjectLiteral(argument, context.sourceCode);
+          if (options === undefined) continue;
+          const flagged = publicFlag(options, context.sourceCode);
           if (flagged !== undefined) {
             context.report({
               node: flagged,

@@ -11,6 +11,7 @@ autofix: false
 > **Keywords:** cleartext transmission, TLS, SSL, CWE-319, CWE-295, OWASP A02:2021, mysql2 / mysql, mysql, rejectUnauthorized, certificate validation, man in the middle
 
 <!-- @rule-summary -->
+
 Require TLS on mysql2 / mysql connections, so queries and credentials are not sent in cleartext and the server is authenticated.
 <!-- @/rule-summary -->
 
@@ -23,12 +24,12 @@ Detects mysql2 / mysql connection configuration that turns TLS off, or that keep
 
 ## Quick Summary
 
-| Aspect            | Details                                                                          |
-| ----------------- | -------------------------------------------------------------------------------- |
+| Aspect            | Details                                                                                                      |
+| ----------------- | ------------------------------------------------------------------------------------------------------------ |
 | **CWE Reference** | [CWE-319](https://cwe.mitre.org/data/definitions/319.html) (Cleartext Transmission of Sensitive Information) |
-| **Severity**      | High (CVSS 7.4)                                                                  |
-| **Auto-Fix**      | ❌ No auto-fix available                                                         |
-| **Category**      | Security                                                                         |
+| **Severity**      | High (CVSS 7.4)                                                                                              |
+| **Auto-Fix**      | ❌ No auto-fix available                                                                                     |
+| **Category**      | Security                                                                                                     |
 
 ## Why this matters
 
@@ -39,7 +40,7 @@ path — a shared VPC, a misconfigured load balancer, a compromised sidecar.
 
 The second failure is subtler and more common. `rejectUnauthorized: false`
 leaves encryption on, so a packet capture looks fine, but the client no longer
-checks *who* it is talking to. It will happily complete a handshake with an
+checks _who_ it is talking to. It will happily complete a handshake with an
 attacker who answered in the database's place, hand over the credentials, and
 proxy every query. This is why the two cases are reported separately: the fix
 for the first is "turn TLS on", and the fix for the second is "supply the CA",
@@ -70,7 +71,11 @@ const c3 = mysql.createConnection('mysql://app@db.internal/app?ssl=false');
 import mysql from 'mysql2/promise';
 
 // ✅ CA supplied
-const c = mysql.createConnection({ host, user, ssl: { ca: fs.readFileSync(caPath) } });
+const c = mysql.createConnection({
+  host,
+  user,
+  ssl: { ca: fs.readFileSync(caPath) },
+});
 
 // ✅ the bundled RDS CA
 const c2 = mysql.createConnection({ host, user, ssl: 'Amazon RDS' });
@@ -108,6 +113,19 @@ export default [
   },
 ];
 ```
+
+## How a connection config is read (2026-10 review)
+
+- **Another library's options are not a connection.** An object handed to
+  another package — `new https.Agent({ host, rejectUnauthorized: false })`,
+  `axios.create({ … })` — is that package's to judge, even in a file that
+  imports the driver.
+
+- **Values are followed, not skipped.** A ternary or `||` / `??` arm, a
+  constant bound earlier and a value exported from a relative module are
+  read; one written elsewhere is reported at the property that uses it.
+
+Test files are skipped.
 
 ## Further Reading
 

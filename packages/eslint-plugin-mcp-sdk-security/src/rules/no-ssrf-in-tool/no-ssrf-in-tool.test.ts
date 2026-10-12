@@ -373,3 +373,201 @@ describe('no-ssrf-in-tool', () => {
     ],
   });
 });
+
+describe('1.0 independent review (2026-10-12)', () => {
+  ruleTester.run('review', noSsrfInTool, {
+    valid: [
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: an allowlist written as a .some callback
+        name: 'FP: the hostname checked against an allowlist inside a .some callback',
+        code:
+          SDK +
+          'const ALLOWED = ["api.github.com"];\n' +
+          'server.registerTool("f", cfg, async ({ url }) => {\n' +
+          '  const foo = new URL(url);\n  const bar = foo.hostname;\n' +
+          '  if (!ALLOWED.some((d) => bar === d || bar.endsWith(`.${d}`))) throw new Error("blocked");\n' +
+          '  return fetch(foo);\n});',
+      },
+      {
+        // @found modelcontextprotocol/typescript-sdk:examples/server-quickstart/src/index.ts:19
+        name: 'precision lock: a request helper whose callers fix the origin',
+        code:
+          SDK +
+          'const BASE = "https://api.weather.gov";\n' +
+          'async function makeRequest(foo) { const r = await fetch(foo, { headers: {} }); return r.json(); }\n' +
+          'server.registerTool("alerts", cfg, async ({ state }) => makeRequest(`${BASE}/alerts?area=${state}`));',
+      },
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: a same-file allowlist predicate
+        name: 'precision lock: a same-file predicate that checks the hostname',
+        code:
+          SDK +
+          'const ALLOWED = new Set(["api.github.com"]);\n' +
+          'function allowed(foo) { return ALLOWED.has(new URL(foo).hostname); }\n' +
+          'function sameApi(foo) { return foo.startsWith("https://api.github.com/"); }\n' +
+          'server.registerTool("f", cfg, async ({ url }) => { if (!allowed(url)) throw new Error("no"); return fetch(url); });\n' +
+          'server.registerTool("g", cfg, async ({ url }) => { if (!sameApi(url)) throw new Error("no"); return fetch(url); });',
+      },
+    ],
+    invalid: [
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: "https only" is not a host check
+        name: 'FN: a scheme-only startsWith check',
+        code:
+          SDK +
+          'server.registerTool("f", cfg, async ({ url }) => {\n' +
+          '  if (!url.startsWith("https://")) throw new Error("https only");\n' +
+          '  return fetch(url);\n});',
+        errors: [err('url', 'fetch')],
+      },
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: URL syntax validation is not an allowlist
+        name: 'FN: a same-file predicate that only parses the URL',
+        code:
+          SDK +
+          'function isValidUrl(foo) { try { new URL(foo); return true; } catch { return false; } }\n' +
+          'server.registerTool("f", cfg, async ({ url }) => {\n' +
+          '  if (!isValidUrl(url)) throw new Error("invalid");\n' +
+          '  return fetch(url);\n});',
+        errors: [err('url', 'fetch')],
+      },
+      {
+        // @found modelcontextprotocol/servers:src/everything/tools/gzip-file-as-resource.ts:197
+        name: 'real code: the allowlist applies only when configured, and the default is empty',
+        code:
+          SDK +
+          "const ALLOWED = (process.env.ALLOWED ?? '').split(',').filter((d) => d.length > 0);\n" +
+          'function validate(foo) {\n' +
+          '  const u = new URL(foo);\n' +
+          '  if (ALLOWED.length > 0) {\n' +
+          '    const domain = u.hostname;\n' +
+          '    if (!ALLOWED.some((d) => domain === d)) throw new Error("blocked");\n' +
+          '  }\n  return u;\n}\n' +
+          'async function fetchSafely(bar) { return fetch(bar); }\n' +
+          'server.registerTool("gzip", cfg, async ({ data }) => fetchSafely(validate(data)));',
+        errors: [err('data', 'fetch')],
+      },
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: class-based server and request helper
+        name: 'FN: a request helper, and a class method, given the tool URL',
+        code:
+          SDK +
+          'async function get(foo) { const r = await fetch(foo); return r.text(); }\n' +
+          'server.registerTool("a", cfg, async ({ url }) => get(url));\n' +
+          'class Fetcher {\n' +
+          '  constructor() { server.registerTool("b", cfg, async (args) => this.fetchIt(args.url)); }\n' +
+          '  async fetchIt(bar) { return axios.get(bar); }\n}',
+        errors: [err('url', 'fetch'), err('args.url', 'axios.get')],
+      },
+    ],
+  });
+});
+
+describe('1.0 review: helper call sites and predicate shapes', () => {
+  ruleTester.run('shapes', noSsrfInTool, {
+    valid: [
+      {
+        name: 'precision lock: helper call sites with no argument, a spread, or a host check before the call',
+        code:
+          SDK +
+          'async function get(foo) { return fetch(foo); }\n' +
+          'server.registerTool("f", cfg, async ({ url }) => {\n' +
+          '  await get(); await get(...parts);\n' +
+          '  if (!ALLOWED.has(new URL(url).hostname)) throw new Error("no");\n' +
+          '  return get(url);\n});',
+      },
+      {
+        name: 'precision lock: a startsWith prefix this file cannot read is treated as a check',
+        code:
+          SDK +
+          'server.registerTool("f", cfg, async ({ url }) => { if (!url.startsWith(env.PREFIX)) throw new Error("no"); return fetch(url); });',
+      },
+    ],
+    invalid: [
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic
+        name: 'FN: a destructured helper parameter, and a predicate that reads no host',
+        code:
+          SDK +
+          'async function getIt({ u }) { return fetch(u); }\n' +
+          'function present(foo) { return foo[k] !== undefined && foo.length > 0; }\n' +
+          'server.registerTool("f", cfg, async ({ url }) => { if (!present(url)) throw new Error("no"); return getIt({ u: url }); });',
+        errors: [err('u', 'fetch')],
+      },
+    ],
+  });
+});
+
+describe('1.0 review: origin shapes the Quint model found', () => {
+  ruleTester.run('origins', noSsrfInTool, {
+    valid: [
+      {
+        // @found benchmarks/quint/models/mcp-sdk-security.no-ssrf-in-tool.qnt (ToolArg/PathAfterOrigin/any/ViaLet, …/ViaHelperReturn, AxiosGet/Inline)
+        name: 'FP: a fixed-origin URL bound through a let, returned by a helper, or wrapped in String() / .href',
+        code:
+          SDK +
+          'function pick(a) { return a; }\n' +
+          'server.registerTool("f", cfg, async ({ id }) => {\n' +
+          '  let v = "fixed";\n  v = `${API}/items/${id}`;\n  await fetch(v);\n' +
+          '  await fetch(pick(`${API}/search?q=${id}`));\n' +
+          '  await axios.get(String(new URL("/v1/" + id, API)));\n' +
+          '  await fetch(new URL(`/v1/${id}`, API).href);\n});',
+      },
+    ],
+    invalid: [
+      {
+        // @found benchmarks/quint/models/mcp-sdk-security.no-ssrf-in-tool.qnt (ToolArg/Whole/SchemeOnly/AxiosGet/any)
+        name: 'FN: a scheme-only check on a converted URL, and an open origin through a let and String()',
+        code:
+          SDK +
+          'server.registerTool("f", cfg, async ({ url }) => {\n' +
+          '  if (!String(url).startsWith("https://")) throw new Error("https");\n' +
+          '  let v = API;\n  v = url;\n  await axios.get(String(v));\n});',
+        errors: [err('url', 'axios.get')],
+      },
+    ],
+  });
+});
+
+describe('1.0 review: URL wrappers and let writes', () => {
+  ruleTester.run('wrappers', noSsrfInTool, {
+    valid: [
+      {
+        name: 'precision lock: awaited, optional-chained and toString() fixed-origin URLs, and a let with no initialiser',
+        code:
+          SDK +
+          'async function build(a) { return new URL(`/v1/${a}`, API); }\n' +
+          'server.registerTool("f", cfg, async ({ id }) => {\n' +
+          '  await fetch(await build(id));\n' +
+          '  const u = new URL(`/v1/${id}`, API);\n' +
+          '  await fetch(u?.href);\n  await fetch(u.toString());\n' +
+          '  let w;\n  w = `${API}/x/${id}`;\n  await fetch(w);\n});\n' +
+          'function hostOk(a) { if (!ALLOWED.has(new URL(a).hostname)) throw new Error("no"); return a; }\n' +
+          'server.registerTool("g", cfg, async ({ url }) => fetch(`${hostOk(url)}`));',
+      },
+    ],
+    invalid: [
+      {
+        // `parts[k]()` — a computed call on an argument — is not followed: the
+        // call may return anything.
+        name: 'recall lock: an emptiness check, a computed member, a destructured let and a += write leave the origin to the argument',
+        code:
+          SDK +
+          "import { makeUrl } from 'url-kit';\n" +
+          'server.registerTool("f", cfg, async ({ url, parts }) => {\n' +
+          '  if (String(url) === "") throw new Error("empty");\n' +
+          '  await fetch(url);\n' +
+          '  await fetch(parts[k]);\n' +
+          '  let { href } = new URL(url);\n  await fetch(href);\n' +
+          '  let s = "";\n  s += url;\n  await fetch(s);\n' +
+          '  await fetch(makeUrl(url).toString(1));\n  await fetch(parts[k]());\n});',
+        errors: [
+          err('url', 'fetch'),
+          err('parts', 'fetch'),
+          err('url.href', 'fetch'),
+          err('url', 'fetch'),
+        ],
+      },
+    ],
+  });
+});

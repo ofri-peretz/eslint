@@ -34,21 +34,27 @@ describe('require-tls', () => {
       valid: [
         {
           name: 'CA supplied',
-          code: DRIVER + "const c = mysql.createConnection({ host, user, ssl: { ca } });",
+          code:
+            DRIVER +
+            'const c = mysql.createConnection({ host, user, ssl: { ca } });',
         },
         {
           name: 'named RDS bundle',
-          code: DRIVER + "const c = mysql.createConnection({ host, user, ssl: 'Amazon RDS' });",
+          code:
+            DRIVER +
+            "const c = mysql.createConnection({ host, user, ssl: 'Amazon RDS' });",
         },
         {
           name: 'verification explicitly on',
           code:
             DRIVER +
-            "const c = mysql.createConnection({ host, ssl: { rejectUnauthorized: true } });",
+            'const c = mysql.createConnection({ host, ssl: { rejectUnauthorized: true } });',
         },
         {
           name: 'flag comes from the environment',
-          code: DRIVER + "const c = mysql.createConnection({ host, ssl: process.env.TLS && {} });",
+          code:
+            DRIVER +
+            'const c = mysql.createConnection({ host, ssl: process.env.TLS && {} });',
         },
         {
           name: 'no mysql import — not this plugin’s file',
@@ -56,7 +62,9 @@ describe('require-tls', () => {
         },
         {
           name: 'an https agent is node-security’s business, not ours',
-          code: DRIVER + "const agent = new https.Agent({ rejectUnauthorized: false });",
+          code:
+            DRIVER +
+            'const agent = new https.Agent({ rejectUnauthorized: false });',
         },
       ],
       invalid: [],
@@ -69,29 +77,37 @@ describe('require-tls', () => {
       invalid: [
         {
           name: 'ssl false',
-          code: DRIVER + "const c = mysql.createConnection({ host, user, ssl: false });",
+          code:
+            DRIVER +
+            'const c = mysql.createConnection({ host, user, ssl: false });',
           errors: [{ messageId: 'tlsDisabled' }],
         },
         {
           name: 'verification switched off under ssl',
           code:
             DRIVER +
-            "const c = mysql.createConnection({ host, ssl: { rejectUnauthorized: false } });",
+            'const c = mysql.createConnection({ host, ssl: { rejectUnauthorized: false } });',
           errors: [{ messageId: 'certificateValidationDisabled' }],
         },
         {
           name: 'verification hoisted to the top level',
-          code: DRIVER + "const c = mysql.createConnection({ database: 'app', rejectUnauthorized: false });",
+          code:
+            DRIVER +
+            "const c = mysql.createConnection({ database: 'app', rejectUnauthorized: false });",
           errors: [{ messageId: 'certificateValidationDisabled' }],
         },
         {
           name: 'ssl=false in the connection URL',
-          code: DRIVER + "const c = mysql.createConnection('mysql://u:p@h/db?ssl=false');",
+          code:
+            DRIVER +
+            "const c = mysql.createConnection('mysql://u:p@h/db?ssl=false');",
           errors: [{ messageId: 'tlsDisabled' }],
         },
         {
           name: 'pool config with connectionLimit',
-          code: DRIVER + "const pool = mysql.createPool({ connectionLimit: 10, ssl: false });",
+          code:
+            DRIVER +
+            'const pool = mysql.createPool({ connectionLimit: 10, ssl: false });',
           errors: [{ messageId: 'tlsDisabled' }],
         },
         // Regression: `modules` no longer lists 'mysql2/promise' explicitly —
@@ -105,10 +121,70 @@ describe('require-tls', () => {
         },
         {
           name: 'a URL fragment does not hide the parameter',
-          code: DRIVER + "const c = mysql.createConnection('mysql://u:p@h/db?sslmode=disable#frag');",
+          code:
+            DRIVER +
+            "const c = mysql.createConnection('mysql://u:p@h/db?sslmode=disable#frag');",
           errors: [{ messageId: 'tlsDisabled' }],
         },
       ],
     });
+  });
+});
+
+/**
+ * FP/FN review 2026-10-12 (benchmarks/audits/2026-10-12-fp-fn-mysql-security.md).
+ * Bindings are named `foo` / `bar` so no verdict can rest on a name.
+ */
+describe('require-tls — fp/fn review 2026-10', () => {
+  ruleTester.run('fp-fn review 2026-10', requireTls, {
+    valid: [
+      {
+        // @found mysql-security FP/FN review 2026-10-12, synthetic probe (an HTTPS agent beside the pool)
+        name: "FP: another library's TLS options in a file that also imports mysql2",
+        code:
+          DRIVER +
+          "import https from 'node:https';\nexport const foo = new https.Agent({ host: 'api.example.com', rejectUnauthorized: false });",
+      },
+      {
+        // @found mysql-security FP/FN review 2026-10-12, synthetic probe (BENCHMARK-CRITERIA B1)
+        name: 'FP: a test file pointing at a local database',
+        filename: '/repo/__tests__/db.spec.ts',
+        code:
+          DRIVER +
+          "mysql.createPool({ host: 'localhost', ssl: { rejectUnauthorized: false } });",
+      },
+      {
+        name: 'a TLS value decided at runtime stays unread',
+        code:
+          DRIVER +
+          "mysql.createPool({ host: 'db', ssl: process.env.DB_SSL === '1' ? { ca: foo } : undefined });",
+      },
+    ],
+    invalid: [
+      {
+        // @found mysql-security FP/FN review 2026-10-12, synthetic probe (conditional ssl)
+        name: 'FN: verification switched off in one arm of a ternary',
+        code:
+          DRIVER +
+          "const foo = process.env.NODE_ENV === 'production';\nmysql.createPool({ host: 'db', ssl: foo ? { rejectUnauthorized: false } : undefined });",
+        errors: [{ messageId: 'certificateValidationDisabled' }],
+      },
+      {
+        // @found mysql-security FP/FN review 2026-10-12, synthetic probe (ssl options bound first)
+        name: 'FN: the TLS options are bound to a constant first',
+        code:
+          DRIVER +
+          "const foo = { rejectUnauthorized: false };\nmysql.createPool({ host: 'db', ssl: foo });",
+        errors: [{ messageId: 'certificateValidationDisabled' }],
+      },
+      {
+        // @found mysql-security FP/FN review 2026-10-12, synthetic probe (ssl flag bound first)
+        name: 'FN: TLS turned off through a constant',
+        code:
+          DRIVER +
+          "const foo = false;\nmysql.createPool({ host: 'db', ssl: foo });",
+        errors: [{ messageId: 'tlsDisabled' }],
+      },
+    ],
   });
 });

@@ -11,6 +11,7 @@ autofix: false
 > **Keywords:** mass assignment, CWE-915, OWASP A04:2021, Sequelize, sequelize, req.body, privilege escalation, over-posting, allowlist, isAdmin
 
 <!-- @rule-summary -->
+
 Disallow writing an inbound request object straight to the database through Sequelize, which lets the caller set every column the model exposes.
 <!-- @/rule-summary -->
 
@@ -23,12 +24,12 @@ Detects an inbound request object — or a spread of one — reaching a Sequeliz
 
 ## Quick Summary
 
-| Aspect            | Details                                                                          |
-| ----------------- | -------------------------------------------------------------------------------- |
+| Aspect            | Details                                                                                                                                     |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | **CWE Reference** | [CWE-915](https://cwe.mitre.org/data/definitions/915.html) (Improperly Controlled Modification of Dynamically-Determined Object Attributes) |
-| **Severity**      | High (CVSS 8.1)                                                                  |
-| **Auto-Fix**      | ❌ No auto-fix available                                                         |
-| **Category**      | Security                                                                         |
+| **Severity**      | High (CVSS 8.1)                                                                                                                             |
+| **Auto-Fix**      | ❌ No auto-fix available                                                                                                                    |
+| **Category**      | Security                                                                                                                                    |
 
 ## Why this matters
 
@@ -36,7 +37,7 @@ Detects an inbound request object — or a spread of one — reaching a Sequeliz
 await User.create(req.body);
 ```
 
-That line updates the fields the endpoint is *about*. It also updates every
+That line updates the fields the endpoint is _about_. It also updates every
 other column on the model: `role`, `isAdmin`, `ownerId`, `emailVerified`,
 `credits`, `stripeCustomerId`. None of them appear in the diff, which is why
 this passes review — the vulnerability is in what the code does not say.
@@ -73,7 +74,7 @@ await User.create(req.body, { fields: ['name', 'email'] });
 
 - **A payload that names its fields.** `{ name: req.body.name }` reads one value
   out of the request; it is the fix, and it is silent. Note that a named field
-  *beside* a spread does not help — `{ ...req.body, updatedAt }` still carries
+  _beside_ a spread does not help — `{ ...req.body, updatedAt }` still carries
   everything the spread brought.
 - **An object that merely has a `body` or `query` key.** `form.body` and
   `config.query` are ordinary application objects. The chain has to bottom out
@@ -102,6 +103,27 @@ construct yourself — disable it there with a reason:
 // eslint-disable-next-line sequelize-security/no-mass-assignment -- payload is built in-process, not from a request
 await User.create(req.body);
 ```
+
+## How the request and the write are recognised (2026-10 review)
+
+Neither is decided by a variable's name.
+
+- **The request** is where a handler receives it: `p.body`, `p.query`,
+  `p.params` or `p.payload` (and Koa's `p.request.body`) on a function
+  parameter, `await p.json()` / `await p.formData()` on the Fetch `Request`,
+  `JSON.parse(event.body)`, a parameter decorated with `@Body()` / `@Query()` /
+  `@Param()` (NestJS, routing-controllers), a handler that destructures
+  `({ body })`, a local alias of any of these, and the `...rest` of a
+  destructured payload. The request copied onto an entity with
+  `Object.assign(entity, req.body)` before the write is reported too.
+- **The write** is judged by where its receiver is written — an import of the
+  driver, a client built from it, a transaction handle it passes to a
+  callback, a parameter or class member typed with its types, a model class
+  that extends its base, or a relative module that exports one. A `Map`, a
+  `Headers`, a crypto hash or another library's client is never a write;
+  an untraceable receiver is not reported: `cache.create(req.body)` and `User.create(req.body)` are the same program when neither name resolves.
+
+Test files are skipped.
 
 ## Further Reading
 

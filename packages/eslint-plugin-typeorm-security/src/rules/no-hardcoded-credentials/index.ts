@@ -27,10 +27,39 @@ export const noHardcodedCredentials = createHardcodedCredentialsRule({
       confidence: 'high',
     },
   },
-  modules: ['typeorm'],
-  connectionKeys: ['extra','type','entities','synchronize','options'],
-  urlSchemes: ['postgres','postgresql','mysql','mariadb'],
+  modules: ['typeorm', '@nestjs/typeorm'],
+  connectionKeys: ['extra', 'type', 'entities', 'synchronize', 'options'],
+  urlSchemes: ['postgres', 'postgresql', 'mysql', 'mariadb'],
+  configShapes: [
+    {
+      // ormconfig.js: `{ type: 'mysql', entities, … }`, no typeorm import.
+      key: 'type',
+      values: [
+        'mysql',
+        'mariadb',
+        'postgres',
+        'cockroachdb',
+        'sqlite',
+        'better-sqlite3',
+        'mssql',
+        'oracle',
+        'sap',
+        'spanner',
+        'aurora-mysql',
+        'aurora-postgres',
+      ],
+      with: [
+        'entities',
+        'synchronize',
+        'migrations',
+        'subscribers',
+        'migrationsRun',
+      ],
+    },
+  ],
   fix: 'Read the password from the environment — `password: process.env.DB_PASSWORD` — and keep the value in your secret manager, never in the repo.',
-  urlFix: 'Keep the secret out of the URL: build the config from discrete fields with `password: process.env.DB_PASSWORD`, or inject the whole URL as `process.env.DATABASE_URL`.',
-  documentationLink: 'https://owasp.org/www-community/vulnerabilities/Use_of_hard-coded_password',
+  urlFix:
+    'Keep the secret out of the URL: build the config from discrete fields with `password: process.env.DB_PASSWORD`, or inject the whole URL as `process.env.DATABASE_URL`.',
+  documentationLink:
+    'https://owasp.org/www-community/vulnerabilities/Use_of_hard-coded_password',
 });

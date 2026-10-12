@@ -198,8 +198,13 @@ describe('createSqlInjectionRule', () => {
           errors: [{ messageId: 'unsafeTemplateLiteral' }],
         },
         {
+          // The hole used to sit in a fragment position (`give me ${x}`),
+          // which since the 2026-10 review needs the value traced to the
+          // request. The intent — an ungated instance reports text with no
+          // SQL keyword — is kept with a hole in a VALUE position (inside a
+          // quoted literal), where any unproven value is a finding.
           name: 'no SQL keywords still reports when ungated',
-          code: 'db.query(`give me ${everything}`);',
+          code: "db.query(`give me '${everything}'`);",
           errors: [{ messageId: 'unsafeTemplateLiteral' }],
         },
         {

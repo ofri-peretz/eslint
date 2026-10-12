@@ -21,6 +21,8 @@ export const noBrowserApiKeyExposure = createBrowserEscapeHatchRule({
   vendor: 'Anthropic',
   /** Covers the base SDK and the agent SDK, which share the client options. */
   modules: ['@anthropic-ai'],
+  /** Anthropic takes an API key or an OAuth bearer token; both are credentials. */
+  credentialProps: ['apiKey', 'authToken'],
   docsUrl:
     'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-anthropic-security/docs/rules/no-browser-api-key-exposure.md',
   documentationLink: 'https://docs.anthropic.com/en/api/getting-started',

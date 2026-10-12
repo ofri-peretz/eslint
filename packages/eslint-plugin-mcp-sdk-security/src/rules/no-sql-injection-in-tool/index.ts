@@ -65,7 +65,7 @@ import {
 import { fileUsesMcpSdk } from '../../utils/mcp-evidence';
 import { valueResolverFor } from '../../utils/module-resolver';
 import { createHandlerCollector } from '../../utils/tool-handlers';
-import { createFlow } from '../../utils/value-flow';
+import { createFlow, flowOptionsFor } from '../../utils/value-flow';
 
 type MessageIds = 'toolArgToSql';
 
@@ -115,6 +115,14 @@ export const DRIVERS: Readonly<Record<string, Driver>> = {
     builds: new Set(['createClient']),
     sinks: new Set(['execute', 'executeMultiple']),
   },
+  // The ORMs' raw escape hatches: the tagged `$queryRaw` / `sql` forms bind
+  // their interpolations; these take a SQL string.
+  '@prisma/client': {
+    builds: new Set(['PrismaClient']),
+    sinks: new Set(['$queryRawUnsafe', '$executeRawUnsafe']),
+  },
+  knex: { builds: new Set(['', 'knex']), sinks: new Set(['raw']) },
+  sequelize: { builds: new Set(['Sequelize']), sinks: new Set(['query']) },
 };
 
 /**
@@ -216,8 +224,11 @@ export const noSqlInjectionInTool = createRule<[], MessageIds>({
       },
 
       'Program:exit'() {
-        const carries = createFlow(context.sourceCode, (fn) =>
-          handlers.roots.get(fn),
+        const carries = createFlow(
+          context.sourceCode,
+          (fn) => handlers.roots.get(fn),
+          undefined,
+          flowOptionsFor(context),
         );
         for (const { node, sink } of candidates) {
           const taint = carries(node);

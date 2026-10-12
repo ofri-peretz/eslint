@@ -10,34 +10,124 @@
  * PostgREST. When that name is computed, the caller chooses which database
  * function runs — and Supabase projects routinely expose privileged helpers
  * (`delete_user`, `grant_admin`) alongside the intended one.
- * Reads the call, not the dataflow: a name held in a variable reports even when a
- * closed allowlist produced it. That is a known cost of staying AST-structural —
- * the alternative is inferring provenance — and it is written into the fix text
- * and the rule doc rather than left for a user to discover.
+ * A name the file pins to a closed set is not computed by the caller: a const,
+ * a ternary between literals, a lookup in a same-file object of literals, or a
+ * parameter whose declared type is a union of string literals. Those are
+ * followed (bounded, same file). Anything else — a `string` parameter, a
+ * request field, a reassigned `let` — reports.
  *
  * @see https://supabase.com/docs/reference/javascript/rpc
  */
 
 import {
+  TSESLint,
   TSESTree,
   createRule,
+  followConst,
   formatLLMMessage,
   MessageIcons,
   propertyName,
+  readObjectProperty,
+  resolveObjectLiteral,
+  variableOf,
 } from '@interlace/eslint-devkit';
 
 import { fileUsesSupabase } from '../../utils/supabase-evidence';
 
 type MessageIds = 'dynamicRpcName';
 
+type SourceCode = Readonly<TSESLint.SourceCode>;
+
+/** How many links a name is followed through before the rule gives up. */
+const MAX_HOPS = 8;
+
 /**
- * A template literal with no `${}` is a literal: `` `get_user` `` is exactly as
- * fixed as `'get_user'`, so it is not a finding.
+ * A TypeScript type that admits only string literals: `'a' | 'b'`, directly
+ * or through a same-file `type Kind = …` alias.
  */
-function isFixedString(node: TSESTree.Node): boolean {
-  if (node.type === 'Literal') return typeof node.value === 'string';
-  if (node.type === 'TemplateLiteral') return node.expressions.length === 0;
+function isStringLiteralUnion(
+  type: TSESTree.TypeNode,
+  sourceCode: SourceCode,
+  hops: number,
+): boolean {
+  if (hops <= 0) return false;
+  if (type.type === 'TSLiteralType') {
+    return (
+      type.literal.type === 'Literal' && typeof type.literal.value === 'string'
+    );
+  }
+  if (type.type === 'TSUnionType') {
+    return type.types.every((member) =>
+      isStringLiteralUnion(member, sourceCode, hops - 1),
+    );
+  }
+  if (type.type === 'TSTypeReference' && type.typeName.type === 'Identifier') {
+    const definition = variableOf(type.typeName, sourceCode)?.defs[0];
+    const alias = definition?.node as TSESTree.Node | undefined;
+    return (
+      alias?.type === 'TSTypeAliasDeclaration' &&
+      isStringLiteralUnion(alias.typeAnnotation, sourceCode, hops - 1)
+    );
+  }
   return false;
+}
+
+/**
+ * Is this function name one of a set the file fixes?
+ *
+ * `'get_user'` and `` `get_user` `` are; so is `alt ? 'match_v2' : 'match_v1'`,
+ * `RPC[kind]` over `const RPC = { a: 'x', b: 'y' }`, a template whose every
+ * interpolation is itself fixed, and a parameter typed `'a_fn' | 'b_fn'` —
+ * whatever the caller passes, the compiler holds it to that list.
+ */
+function isFixedName(
+  node: TSESTree.Node,
+  sourceCode: SourceCode,
+  hops: number = MAX_HOPS,
+): boolean {
+  if (hops <= 0) return false;
+  const current = followConst(node, sourceCode);
+  const fixed = (child: TSESTree.Node) =>
+    isFixedName(child, sourceCode, hops - 1);
+
+  switch (current.type) {
+    case 'Literal':
+      return typeof current.value === 'string';
+    case 'TemplateLiteral':
+      // Inside a template a number or boolean is as fixed as a string:
+      // `` `stats_v${2}` `` names one function.
+      return current.expressions.every((part) => {
+        const value = followConst(part, sourceCode);
+        return value.type === 'Literal' || fixed(part);
+      });
+    case 'ConditionalExpression':
+      return fixed(current.consequent) && fixed(current.alternate);
+    case 'MemberExpression': {
+      const table = resolveObjectLiteral(current.object, sourceCode);
+      if (table === undefined) return false;
+      const key = propertyName(current);
+      if (key !== null) {
+        const read = readObjectProperty(table, key, sourceCode);
+        return read.kind === 'value' && fixed(read.node);
+      }
+      // `RPC[kind]` — whichever key is chosen, every value is fixed.
+      return table.properties.every(
+        (property) => property.type === 'Property' && fixed(property.value),
+      );
+    }
+    case 'Identifier': {
+      const definition = variableOf(current, sourceCode)?.defs[0];
+      if (definition?.type !== 'Parameter') return false;
+      const annotation = (definition.name as TSESTree.Identifier).typeAnnotation
+        ?.typeAnnotation;
+      return (
+        annotation !== undefined &&
+        isStringLiteralUnion(annotation, sourceCode, hops - 1)
+      );
+    }
+    default:
+      return false;
+  }
 }
 
 export const noDynamicRpcName = createRule<[], MessageIds>({
@@ -61,7 +151,7 @@ export const noDynamicRpcName = createRule<[], MessageIds>({
           '`.rpc()` receives a computed name, so the caller decides which Postgres function executes rather than the code doing so',
         severity: 'HIGH',
         compliance: ['SOC2', 'ISO27001'],
-        fix: 'Name the function at the call: `if (kind === "profile") return db.rpc("get_user_profile", args);`. A name held in a variable still reports even when an allowlist produced it — this rule reads the call, not where the value came from. For a reviewed allowlist, disable the line with the reason.',
+        fix: 'Name the function at the call: `db.rpc("get_user_profile", args)`. To choose between functions, pick from a closed set the file fixes — a ternary between literals, a lookup in a const object of literal names, or a parameter typed as a union of string literals — never a `string` the caller supplies.',
         documentationLink: 'https://supabase.com/docs/reference/javascript/rpc',
       }),
     },
@@ -81,7 +171,7 @@ export const noDynamicRpcName = createRule<[], MessageIds>({
         if (name === undefined) return;
         // A spread is unreadable from here, not evidence of a computed name.
         if (name.type === 'SpreadElement') return;
-        if (isFixedString(name)) return;
+        if (isFixedName(name, context.sourceCode)) return;
 
         context.report({ node: name, messageId: 'dynamicRpcName' });
       },

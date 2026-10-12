@@ -11,6 +11,9 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, afterAll } from 'vitest';
 import * as parser from '@typescript-eslint/parser';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 import { noMassAssignment } from './index';
 
 RuleTester.afterAll = afterAll;
@@ -25,8 +28,12 @@ const ruleTester = new RuleTester({
   },
 });
 
-/** The module gate: without this import the rule must stay silent. */
-const DRIVER = `import { Sequelize } from 'sequelize';\n`;
+/**
+ * The module gate, and a model. `model` used to be left undeclared and
+ * recognised by its NAME (`/[Mm]odel$/`); it is now a model because it is
+ * defined on the Sequelize instance — `foo` would do exactly as well.
+ */
+const DRIVER = `import { Sequelize } from 'sequelize';\nconst sequelize = new Sequelize('sqlite::memory:');\nconst model = sequelize.define('User', {});\n`;
 
 describe('no-mass-assignment', () => {
   ruleTester.run('no-mass-assignment', noMassAssignment, {
@@ -68,6 +75,87 @@ describe('no-mass-assignment', () => {
         name: 'spreading the request carries every key it happens to hold',
         code: DRIVER + `await model.create({ ...req.body });`,
         errors: [{ messageId: 'untrustedSpread' }],
+      },
+    ],
+  });
+});
+
+/**
+ * FP/FN review 2026-10-12 (benchmarks/audits/2026-10-12-fp-fn-sequelize-security.md).
+ * Bindings are named `foo` / `bar` so no verdict can rest on a name.
+ */
+describe('no-mass-assignment — fp/fn review 2026-10', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sequelize-ma-'));
+  // The sequelize-cli models/index.js shape: models attached in a loop the walk
+  // cannot read, from a module that loads Sequelize itself.
+  fs.writeFileSync(
+    path.join(dir, 'models.js'),
+    "const { Sequelize } = require('sequelize');\nconst db = {};\nconst sequelize = new Sequelize(process.env.DATABASE_URL);\nfor (const m of []) db[m.name] = m;\ndb.sequelize = sequelize;\nmodule.exports = db;\n",
+  );
+  const ROUTE = path.join(dir, 'routes.js');
+  const S =
+    "import { Sequelize, Model, DataTypes } from 'sequelize';\nconst foo = new Sequelize('sqlite::memory:');\nclass Bar extends Model {}\nBar.init({ title: DataTypes.STRING }, { sequelize: foo });\n";
+
+  ruleTester.run('fp-fn review 2026-10', noMassAssignment, {
+    valid: [
+      {
+        // @found sequelize-security FP/FN review 2026-10-12, synthetic probe (fields allowlist)
+        name: "FP: Sequelize's own `fields` allowlist",
+        code:
+          DRIVER +
+          "const UserModel = sequelize.define('U', {});\nexport const h = (req) => UserModel.create(req.body, { fields: ['name'] });",
+      },
+      {
+        // @found sequelize-security FP/FN review 2026-10-12, synthetic probe (URLSearchParams.set)
+        name: 'FP: URLSearchParams.set with a request value',
+        code:
+          S +
+          "export const h = (req) => { const db = new URL('https://x').searchParams; db.set('q', req.query); };",
+      },
+    ],
+    invalid: [
+      {
+        // @found sequelize-security FP/FN review 2026-10-12, synthetic probe (class extends Model)
+        name: 'FN: a model class that extends Model, named anything',
+        code: S + 'export const h = (baz) => Bar.create(baz.body);',
+        errors: [{ messageId: 'untrustedPayload' }],
+      },
+      {
+        // @found sequelize-security FP/FN review 2026-10-12, synthetic probe (instance update / set)
+        name: 'FN: an instance found through the model',
+        code:
+          S +
+          'export async function h(baz) { const qux = await Bar.findByPk(1); await qux.update(baz.body); qux.set(baz.body); }',
+        errors: [
+          { messageId: 'untrustedPayload' },
+          { messageId: 'untrustedPayload' },
+        ],
+      },
+      {
+        // @found sequelize-security FP/FN review 2026-10-12, synthetic probe (bulkCreate / build)
+        name: 'FN: bulkCreate and build',
+        code:
+          S +
+          'export const h = (baz) => { Bar.bulkCreate(baz.body); return Bar.build(baz.body); };',
+        errors: [
+          { messageId: 'untrustedPayload' },
+          { messageId: 'untrustedPayload' },
+        ],
+      },
+      {
+        // @found sequelize-security FP/FN review 2026-10-12, synthetic probe (Object.assign onto an instance)
+        name: 'FN: the request copied onto a model instance before save()',
+        code:
+          S +
+          'export async function h(baz) { const qux = await Bar.findByPk(1); Object.assign(qux, baz.body); await qux.save(); }',
+        errors: [{ messageId: 'untrustedPayload' }],
+      },
+      {
+        // @found sequelize-security FP/FN review 2026-10-12, synthetic probe (sequelize-cli models)
+        name: "FN: a model read off sequelize-cli's models/index.js",
+        filename: ROUTE,
+        code: "const { User: foo } = require('./models');\nmodule.exports = (bar) => foo.create(bar.body);",
+        errors: [{ messageId: 'untrustedPayload' }],
       },
     ],
   });
