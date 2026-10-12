@@ -33,8 +33,11 @@ export const noUnscopedMutation = createUnscopedMutationRule({
   },
   methods: ['del', 'delete', 'update'],
   argumentRole: 'table',
+  distinctiveShape: 'table-call',
+  // Knex's migration and seed contracts: a backfill in `up()` and the
+  // `del()` that starts every seed are the module's purpose.
+  migrationExports: ['up', 'down', 'seed'],
   modules: ['knex'],
-  receiverPattern: /^(knex|db|database|qb|builder|tx|trx)$|[Kk]nex$|[Dd]b$/,
   scopeMethods: [
     // Knex spells the same clause many ways, and any one of them scopes the
     // query. A missing variant is a false positive on correct code, so the

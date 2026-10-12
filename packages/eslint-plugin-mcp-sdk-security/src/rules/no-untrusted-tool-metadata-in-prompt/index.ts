@@ -63,6 +63,7 @@ import { fileUsesMcpSdk, isMcpModule } from '../../utils/mcp-evidence';
 import { lookupVariable, resolveFunction } from '../../utils/tool-registration';
 import {
   createFlow,
+  flowOptionsFor,
   returnedExpressions,
   throughPattern,
   type HandlerRoot,
@@ -306,6 +307,7 @@ export const noUntrustedToolMetadataInPrompt = createRule<[], MessageIds>({
             }
             return null;
           },
+          flowOptionsFor(context),
         );
 
         /** The first metadata-carrying value inside a request field. */

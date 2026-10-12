@@ -28,9 +28,28 @@ export const noUnsafeQuery = createSqlInjectionRule({
   },
   // Only files importing better-sqlite3 / node:sqlite statements.
   // Method names alone are shared across drivers; the import is the evidence.
-  modules: ['sqlite3', 'better-sqlite3', 'node:sqlite', 'bun:sqlite'],
-  methods: ['prepare', 'exec', 'run', 'all', 'get'],
+  // `sqlite` is the promise wrapper over sqlite3; `@libsql/client` is the
+  // SQLite fork Turso ships, whose `execute()` takes the statement or
+  // `{ sql, args }`.
+  modules: [
+    'sqlite3',
+    'better-sqlite3',
+    'node:sqlite',
+    'bun:sqlite',
+    'sqlite',
+    '@libsql/client',
+  ],
+  // sqlite3 adds `each`; bun:sqlite adds `query`; libsql adds `execute`.
+  methods: ['prepare', 'exec', 'run', 'all', 'get', 'each', 'query', 'execute'],
+  // better-sqlite3's `db.pragma('table_info(…)')` takes PRAGMA text without
+  // the verb, so it is a fragment: never keyword-gated.
+  fragmentMethods: ['pragma'],
+  sqlTextProperties: ['sql'],
+  // `db.prepare(sql)` / bun's `db.query(sql)` return a Statement whose
+  // `.get(id)` / `.run(id)` / `.all(id)` take bound values, not SQL.
+  statementFactories: ['prepare', 'query'],
   requireSqlKeywords: true,
   fix: 'Use bound parameters (`?` or `:name`) and pass values to `.run()` / `.get()` / `.all()` instead of interpolating them.',
-  documentationLink: 'https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md#binding-parameters',
+  documentationLink:
+    'https://github.com/WiseLibs/better-sqlite3/blob/master/docs/api.md#binding-parameters',
 });

@@ -31,7 +31,13 @@ export const noHardcodedApiKey = createSdkApiKeyRule({
   // inside an options literal. Both client shapes are shown instead.
   fixTemplate:
     'new GoogleGenerativeAI(process.env.GEMINI_API_KEY) — or new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })',
-  positionalKeyConstructors: ['GoogleGenerativeAI'],
+  // Every `@google/generative-ai` class that takes the key positionally —
+  // the server-side file and cache managers included.
+  positionalKeyConstructors: [
+    'GoogleGenerativeAI',
+    'GoogleAIFileManager',
+    'GoogleAICacheManager',
+  ],
   docsUrl:
     'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-gemini-security/docs/rules/no-hardcoded-api-key.md',
   documentationLink: 'https://ai.google.dev/gemini-api/docs/api-key',

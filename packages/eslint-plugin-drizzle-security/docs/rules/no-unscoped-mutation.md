@@ -11,6 +11,7 @@ autofix: false
 > **Keywords:** unscoped mutation, mass deletion, CWE-284, OWASP A01:2021, Drizzle, drizzle-orm, bulk delete, bulk update
 
 <!-- @rule-summary -->
+
 Require a chained `.where()` on Drizzle delete and update builders, so a bulk mutation cannot rewrite or delete every row in the table.
 <!-- @/rule-summary -->
 
@@ -54,10 +55,7 @@ await db.delete(users).returning();
 ```ts
 await db.delete(users).where(eq(users.id, id));
 
-await db
-  .update(users)
-  .set({ active: false })
-  .where(eq(users.id, id));
+await db.update(users).set({ active: false }).where(eq(users.id, id));
 ```
 
 ## Known limitations
@@ -70,6 +68,15 @@ treated as present, so the rule stays silent rather than guessing.
 Disable this rule in maintenance scripts, seeders, and test fixtures whose job is
 to clear a table. Prefer a scoped `eslint-disable-next-line` on the specific call
 over switching the rule off for the whole project.
+
+## How a mutation is recognised (2026-10 review)
+
+The receiver is judged by where it is written — an import of the driver, a
+client built from it, a transaction handle it passes to a callback, a typed
+parameter or class member, or a relative module that exports one — never by
+its name. A `Map` or `Set` is never a table; an untraceable handle reports when its argument is a table the driver built (`db.delete(users)`).
+
+Test files are skipped.
 
 ## Further reading
 

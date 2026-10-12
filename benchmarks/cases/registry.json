@@ -4313,6 +4313,7 @@
     {
       "id": "ILB-0146",
       "added": "2026-09-09",
+      "retired": "2026-10-12 FP/FN audit: the case's code is fail-closed. On failure getUser() resolves { data: { user: null } }, so `if (!data.user) throw` takes the deny branch — the documented Supabase pattern, not an authentication bypass. The rule no longer reports a guarded identity; the unsafe shape (testing the always-truthy `data` container) is ILB-0165, and this shape is pinned silent as ILB-0166.",
       "title": "Supabase auth failure read as an anonymous request",
       "rationale": "`getUser()` reports a missing, expired or forged token by RETURNING `error`, not by throwing. Destructuring only `data` makes an authentication failure and an anonymous request indistinguishable, because `user` is null on both paths — so a downstream `if (!user)` guard cannot tell them apart.",
       "cwe": "CWE-287",
@@ -4795,6 +4796,54 @@
         }
       ],
       "kind": "defect",
+      "peers": []
+    },
+    {
+      "id": "ILB-0165",
+      "added": "2026-10-12",
+      "title": "Supabase auth result trusted through its always-truthy container",
+      "rationale": "`getUser()` resolves `{ data: { user: null }, error }` on a missing, expired or forged token. `data` is an object on both paths, so a branch on `data` instead of `data.user` (or `error`) grants the authenticated path to a failed authentication.",
+      "cwe": "CWE-287",
+      "severity": {
+        "cvss": 7.5,
+        "vector": null,
+        "source": "rule meta (supabase-security/require-auth-error-check)"
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import { createClient } from '@supabase/supabase-js';\nexport async function route() {\n  const { data } = await db.auth.getUser();\n  if (data) return 'admin-panel';\n  return 'login';\n}",
+      "coverage": [
+        {
+          "rule": "supabase-security/require-auth-error-check",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-supabase-security/src/rules/require-auth-error-check/require-auth-error-check.test.ts"
+        }
+      ],
+      "kind": "defect",
+      "peers": []
+    },
+    {
+      "id": "ILB-0166",
+      "added": "2026-10-12",
+      "title": "Supabase auth identity guarded fail-closed without reading error",
+      "rationale": "On failure the identity is null, so `if (!user)` denies: the documented Supabase pattern is fail-closed, and reporting it as CWE-287 is a false positive (found in supabase/supabase examples and vercel/nextjs-subscription-payments).",
+      "cwe": "CWE-287",
+      "severity": {
+        "cvss": 7.5,
+        "vector": null,
+        "source": "rule meta (supabase-security/require-auth-error-check)"
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import { createClient } from '@supabase/supabase-js';\nexport async function getServerSideProps() {\n  const { data: { user } } = await supabase.auth.getUser();\n  if (!user) return { redirect: { destination: '/login', permanent: false } };\n  return { props: { user } };\n}",
+      "coverage": [
+        {
+          "rule": "supabase-security/require-auth-error-check",
+          "expect": "silent",
+          "evidence": "packages/eslint-plugin-supabase-security/src/rules/require-auth-error-check/require-auth-error-check.test.ts"
+        }
+      ],
+      "kind": "false-positive",
       "peers": []
     }
   ]

@@ -1,7 +1,7 @@
 ---
 title: no-browser-api-key-exposure
 description: "Forbid dangerouslyAllowBrowser, which exposes the Anthropic API key to the client"
-tags: ['security','anthropic']
+tags: ['security', 'anthropic']
 category: security
 severity: high
 cwe: CWE-522
@@ -27,6 +27,16 @@ The Anthropic SDK refuses to run in a browser by default. `dangerouslyAllowBrows
 This rule is that warning, enforced.
 
 The rule is gated on the SDK being imported, so it stays silent in files that do not construct the client. An explicit `dangerouslyAllowBrowser: false` is the safe choice already made and reports nothing. A spread (`{ ...base }`) or a runtime-decided value (`{ dangerouslyAllowBrowser: isBrowser }`) is treated as unreadable rather than guessed at.
+
+## When the flag is not a leak
+
+The flag is reported when it ships the **app's own** credential: a literal, an environment read (`import.meta.env.VITE_…` and `NEXT_PUBLIC_…` are inlined into the bundle), an imported or build-time-defined constant, or no key at all (the SDK then falls back to the environment variable). It stays silent when the browser obtains the credential per session, because then nothing of the app's ships:
+
+- a token provider — `azureADTokenProvider` (the SDK turns the flag on itself when one is passed);
+- a key-provider function (`apiKey: async () => …`);
+- a key that is a parameter (the visitor's own key, bring-your-own-key) or the result of an `await` or call — an ephemeral token fetched from your server, which is how OpenAI's Realtime docs tell browser clients to authenticate.
+
+A mixture still ships: `userKey || import.meta.env.VITE_KEY` reports, because the fallback is the app's key. The flag and the options are followed through same-file consts, and only a client bound to this SDK counts — the same flag on another vendor's client in the same file is that vendor's plugin's finding.
 
 ## Incorrect
 

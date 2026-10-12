@@ -28,9 +28,32 @@ export const noHardcodedCredentials = createHardcodedCredentialsRule({
     },
   },
   modules: ['knex'],
-  connectionKeys: ['connection','client','searchPath'],
-  urlSchemes: ['postgres','postgresql','mysql'],
+  connectionKeys: ['connection', 'client', 'searchPath'],
+  urlSchemes: ['postgres', 'postgresql', 'mysql'],
+  configShapes: [
+    {
+      // knexfile.js: `{ client: 'pg', connection: … }`, no knex import.
+      key: 'client',
+      values: [
+        'pg',
+        'postgres',
+        'postgresql',
+        'pgnative',
+        'mysql',
+        'mysql2',
+        'sqlite3',
+        'better-sqlite3',
+        'mssql',
+        'oracledb',
+        'cockroachdb',
+        'redshift',
+      ],
+      with: ['connection'],
+    },
+  ],
   fix: 'Read the password from the environment — `password: process.env.DB_PASSWORD` — and keep the value in your secret manager, never in the repo.',
-  urlFix: 'Keep the secret out of the URL: build the config from discrete fields with `password: process.env.DB_PASSWORD`, or inject the whole URL as `process.env.DATABASE_URL`.',
-  documentationLink: 'https://owasp.org/www-community/vulnerabilities/Use_of_hard-coded_password',
+  urlFix:
+    'Keep the secret out of the URL: build the config from discrete fields with `password: process.env.DB_PASSWORD`, or inject the whole URL as `process.env.DATABASE_URL`.',
+  documentationLink:
+    'https://owasp.org/www-community/vulnerabilities/Use_of_hard-coded_password',
 });

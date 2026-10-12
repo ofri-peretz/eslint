@@ -657,3 +657,243 @@ describe('require-http-transport-hardening', () => {
     },
   );
 });
+
+describe('1.0 independent review (2026-10-12)', () => {
+  const EXPRESS = "import express from 'express';\n";
+  const ROUTE =
+    "app.post('/mcp', async (req, res) => { await transport.handleRequest(req, res, req.body); });\n";
+  ruleTester.run('review', requireHttpTransportHardening, {
+    valid: [
+      {
+        // @found benborla/mcp-server-mysql:index.ts:552
+        name: 'FP: an inline bearer check before handleRequest is authentication',
+        code:
+          EXPRESS +
+          STREAMABLE +
+          'const app = express();\napp.use(express.json());\n' +
+          "app.post('/mcp', async (req, res) => {\n" +
+          '  if (!req.get("Authorization") || !req.get("Authorization")?.endsWith(KEY)) { res.status(401).end(); return; }\n' +
+          '  const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });\n' +
+          '  await transport.handleRequest(req, res, req.body);\n});\n' +
+          'app.listen(PORT);',
+      },
+      {
+        // @found upstash/context7:packages/mcp/src/index.ts:385
+        name: 'FP: an SDK v2 node handler behind a credential check computed from headers, through a callback',
+        code:
+          EXPRESS +
+          "import { toNodeHandler } from '@modelcontextprotocol/node';\n" +
+          "import { createMcpHandler } from '@modelcontextprotocol/server';\n" +
+          'const app = express();\n' +
+          'const mcpHandler = createMcpHandler(() => server);\n' +
+          'const nodeHandler = toNodeHandler(mcpHandler);\n' +
+          'const handle = async (req, res) => {\n' +
+          '  const mode = effectiveMode(req.headers.authorization);\n' +
+          '  const auth = await observe({ mode }, () => evaluate(mode));\n' +
+          '  if (!auth.allowed) { res.status(401).json({}); return; }\n' +
+          '  await als.run(ctx, async () => { await nodeHandler(req, res, req.body); });\n};\n' +
+          "app.post('/mcp', handle);\napp.listen(PORT);",
+      },
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, the documented "auth in another module" false positive
+        name: 'FP: the app is handed to a setup function this file cannot see',
+        code:
+          EXPRESS +
+          HARDENED_TRANSPORT +
+          "import { mountAuth } from './auth';\n" +
+          'const app = express();\nmountAuth(app);\n' +
+          ROUTE +
+          "app.listen(3000, '0.0.0.0');",
+      },
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: Fastify listens on localhost by default
+        name: 'precision lock: a Fastify app is not an implicit all-interfaces bind',
+        code:
+          "import Fastify from 'fastify';\n" +
+          HARDENED_TRANSPORT +
+          'const app = Fastify();\n' +
+          "app.post('/mcp', async (req, reply) => transport.handleRequest(req.raw, reply.raw, req.body));\n" +
+          'app.listen({ port: 3000 });',
+      },
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: a header check needs to exit to gate
+        name: 'recall boundary: a request check that does not exit, or that reads the body, is not authentication',
+        code:
+          EXPRESS +
+          HARDENED_TRANSPORT +
+          'const app = express();\n' +
+          "app.post('/mcp', async (req, res) => {\n" +
+          '  if (!req.headers.authorization) console.warn("anonymous");\n' +
+          '  if (!req.body) return;\n' +
+          '  await transport.handleRequest(req, res, req.body);\n});\n' +
+          "app.listen(3000, '127.0.0.1');",
+      },
+    ],
+    invalid: [
+      {
+        // @found modelcontextprotocol/typescript-sdk:examples/repl/server.ts:309
+        name: 'real code: createMcpExpressApp() validates Host for localhost, but listen(port) still binds every interface',
+        code:
+          "import { createMcpExpressApp } from '@modelcontextprotocol/express';\n" +
+          "import { NodeStreamableHTTPServerTransport } from '@modelcontextprotocol/node';\n" +
+          'const app = createMcpExpressApp();\n' +
+          "app.post('/mcp', async (req, res) => {\n" +
+          '  const transport = new NodeStreamableHTTPServerTransport({ sessionIdGenerator: () => randomUUID() });\n' +
+          '  await transport.handleRequest(req, res, req.body);\n});\n' +
+          'app.listen(port, () => console.error(`listening on http://127.0.0.1:${port}/mcp`));',
+        errors: [missingAuth('::')],
+      },
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: Node binds every interface when listen() gets no host
+        name: 'FN: an Express app listening with no host, and no auth',
+        code:
+          EXPRESS +
+          HARDENED_TRANSPORT +
+          'const app = express();\n' +
+          ROUTE +
+          'app.listen(3000);',
+        errors: [missingAuth('::')],
+      },
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic
+        name: 'FN: a Node http server wrapping the app, listening with only a callback',
+        code:
+          EXPRESS +
+          "import http from 'node:http';\n" +
+          HARDENED_TRANSPORT +
+          'const app = express();\n' +
+          ROUTE +
+          'const httpServer = http.createServer(app);\nhttpServer.listen(PORT, () => console.log("up"));',
+        errors: [missingAuth('::')],
+      },
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: a check that does not exit protects nothing
+        name: 'recall lock: a header read in a check that does not exit leaves the rebinding finding',
+        code:
+          EXPRESS +
+          STREAMABLE +
+          'const app = express();\n' +
+          "app.post('/mcp', async (req, res) => {\n" +
+          '  if (!req.headers.authorization) console.warn("anonymous");\n' +
+          '  const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });\n' +
+          '  await transport.handleRequest(req, res, req.body);\n});',
+        errors: [rebinding('StreamableHTTPServerTransport')],
+      },
+    ],
+  });
+});
+
+describe('1.0 review: which app a bind serves, and what reads a header', () => {
+  const EXPRESS = "import express from 'express';\n";
+  ruleTester.run('app shapes', requireHttpTransportHardening, {
+    valid: [
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: allInterfacesWithoutAllowedHosts is a rebinding finding too
+        name: 'FP: createMcpExpressApp on every interface, serving the transport only behind a bearer check',
+        code:
+          EXPRESS_APP +
+          STREAMABLE +
+          "const app = createMcpExpressApp({ host: '0.0.0.0' });\n" +
+          "app.post('/mcp', async (req, res) => {\n" +
+          '  if (req.headers.authorization !== `Bearer ${KEY}`) { res.status(401).end(); return; }\n' +
+          '  const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });\n' +
+          '  await transport.handleRequest(req, res, req.body);\n});\n' +
+          "app.listen(3000, '0.0.0.0');",
+      },
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: the Hono spelling of an inline key check
+        name: 'FP: a Hono route that checks c.req.header() before serving the transport',
+        code:
+          "import { Hono } from 'hono';\n" +
+          STREAMABLE +
+          'const app = new Hono();\n' +
+          "app.post('/mcp', async (c) => {\n" +
+          "  if (c.req.header('x-api-key') !== KEY) return c.text('no', 401);\n" +
+          '  const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });\n' +
+          '  return transport.handleRequest(c.req.raw);\n});',
+      },
+      {
+        name: 'precision lock: the app handed to a same-file setup function that mounts auth middleware',
+        code:
+          EXPRESS +
+          HARDENED_TRANSPORT +
+          'function setup(a) { a.use(checkToken); }\n' +
+          'const app = express();\nsetup(app);\n' +
+          "app.post('/mcp', (req, res) => transport.handleRequest(req, res));\n" +
+          "app.listen(3000, '0.0.0.0');",
+      },
+    ],
+    invalid: [
+      {
+        name: 'recall lock: the app handed to a same-file function that mounts no auth is still visible',
+        code:
+          EXPRESS +
+          HARDENED_TRANSPORT +
+          'function setup(a) { a.set("trust proxy", 1); }\n' +
+          'const app = express();\nsetup(app);\n' +
+          "app.post('/mcp', (req, res) => transport.handleRequest(req, res));\n" +
+          "app.listen(3000, '0.0.0.0');",
+        errors: [missingAuth('0.0.0.0')],
+      },
+      {
+        name: 'recall lock: an app passed in as a parameter and bound to every interface, and an unassigned factory app',
+        code:
+          EXPRESS +
+          EXPRESS_APP +
+          HARDENED_TRANSPORT +
+          "function start(app) { app.listen(3000, '0.0.0.0'); }\n" +
+          "createMcpExpressApp({ host: '0.0.0.0' }).listen(3000);",
+        errors: [
+          missingAuth('0.0.0.0'),
+          allInterfaces('0.0.0.0'),
+          missingAuth('::'),
+          missingAuth('0.0.0.0'),
+        ],
+      },
+      {
+        name: 'recall lock: a header read only inside a function that is not called in the test is no credential check',
+        code:
+          EXPRESS +
+          STREAMABLE +
+          'const app = express();\n' +
+          "app.post('/mcp', async (req, res) => {\n" +
+          '  const check = () => req.headers.authorization;\n' +
+          '  if (!check) return;\n' +
+          '  const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });\n' +
+          '  await transport.handleRequest(req, res, req.body);\n});',
+        errors: [rebinding('StreamableHTTPServerTransport')],
+      },
+    ],
+  });
+});
+
+describe('1.0 review: SSE routes and route middleware', () => {
+  ruleTester.run('sse', requireHttpTransportHardening, {
+    valid: [
+      {
+        // @found benchmarks/quint/models/mcp-sdk-security.require-http-transport-hardening.qnt (V1Sse/NoOptions/RawExpress/any/BearerMiddleware)
+        name: 'FP: an SSE server whose GET and POST routes both sit behind requireBearerAuth',
+        code:
+          "import express from 'express';\n" +
+          SSE +
+          AUTH +
+          'const app = express();\nconst transports = {};\n' +
+          "app.get('/sse', express.json(), requireBearerAuth({ verifier }), async (req, res) => { const t = new SSEServerTransport('/messages', res); transports[t.sessionId] = t; });\n" +
+          "app.post('/messages', requireBearerAuth({ verifier }), async (req, res) => { await transports[String(req.query.sessionId)].handlePostMessage(req, res, req.body); });",
+      },
+    ],
+    invalid: [
+      {
+        name: 'recall lock: an SSE POST route with no credential check keeps the rebinding finding',
+        code:
+          "import express from 'express';\n" +
+          SSE +
+          AUTH +
+          'const app = express();\nconst transports = {};\n' +
+          "app.get('/sse', requireBearerAuth({ verifier }), async (req, res) => { const t = new SSEServerTransport('/messages', res); transports[t.sessionId] = t; });\n" +
+          "app.post('/messages', express.json(), async (req, res) => { await transports[String(req.query.sessionId)].handlePostMessage(req, res, req.body); });",
+        errors: [rebinding('SSEServerTransport')],
+      },
+    ],
+  });
+});

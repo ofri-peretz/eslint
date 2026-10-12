@@ -58,7 +58,7 @@ import { fileUsesMcpSdk } from '../../utils/mcp-evidence';
 import { valueResolverFor } from '../../utils/module-resolver';
 import { createHandlerCollector } from '../../utils/tool-handlers';
 import { lookupVariable } from '../../utils/tool-registration';
-import { createFlow } from '../../utils/value-flow';
+import { createFlow, flowOptionsFor } from '../../utils/value-flow';
 
 type MessageIds = 'toolArgToCode';
 
@@ -170,8 +170,11 @@ export const noCodeInjectionInTool = createRule<[], MessageIds>({
       NewExpression: collect,
 
       'Program:exit'() {
-        const carries = createFlow(context.sourceCode, (fn) =>
-          handlers.roots.get(fn),
+        const carries = createFlow(
+          context.sourceCode,
+          (fn) => handlers.roots.get(fn),
+          undefined,
+          flowOptionsFor(context),
         );
         for (const { node, sink } of candidates) {
           const inner = node.type === 'SpreadElement' ? node.argument : node;

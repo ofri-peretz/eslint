@@ -80,11 +80,19 @@ within the file, comes from one of these sources:
 | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **A client**          | Tool arguments and `ResourceTemplate` variables; `request.params` of a `setRequestHandler` handler; the request object of a route on an app built by `express`, `hono` or `fastify` (`req.body`, `await c.req.json()`) |
 | **A remote service**  | The response of `fetch`, `axios`, `got`, `undici`, `node-fetch` or `http(s)`, and its `.json()` / `.text()`                                                                                                            |
-| **A file's contents** | `readFile` / `readFileSync` (here, or in the relative module a name is imported from), and `JSON.parse` of any of these                                                                                                |
+| **A file's contents** | `readFile` / `readFileSync` (here, or in the relative module a name is imported from), and `JSON.parse` of any of these — unless the path is anchored to the server's own code (see below)                             |
 
 A directory listing, a `stat`, a counter, a constant, a config value, an
 imported value from a module that does not read a file, and a call this rule
 cannot see into are all server-local, and are not reported.
+
+A file beside the server's own code ships with it, and its text is the
+developer's as much as a string literal is: a path built from `__dirname`,
+`__filename`, `import.meta.url` / `.dirname` / `.filename` (through
+`path.join` / `path.resolve` with fixed segments, a template, `new URL(…,
+import.meta.url)` or `fileURLToPath`) is not a source. A path relative to the
+working directory still is: a stdio server's working directory is often the
+user's project.
 
 ### Call-site resolution
 

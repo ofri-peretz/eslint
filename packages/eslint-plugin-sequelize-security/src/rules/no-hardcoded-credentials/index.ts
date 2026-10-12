@@ -27,10 +27,38 @@ export const noHardcodedCredentials = createHardcodedCredentialsRule({
       confidence: 'high',
     },
   },
-  modules: ['sequelize','sequelize-typescript'],
-  connectionKeys: ['dialectOptions','dialect','replication'],
-  urlSchemes: ['postgres','postgresql','mysql','mariadb'],
+  modules: ['sequelize', 'sequelize-typescript', '@nestjs/sequelize'],
+  connectionKeys: ['dialectOptions', 'dialect', 'replication'],
+  urlSchemes: ['postgres', 'postgresql', 'mysql', 'mariadb'],
+  // `new Sequelize(database, username, password, options)`.
+  positionalPassword: 2,
+  configShapes: [
+    {
+      // sequelize-cli config/config.js: `{ dialect: 'mysql', username, … }`.
+      key: 'dialect',
+      values: [
+        'mysql',
+        'postgres',
+        'sqlite',
+        'mariadb',
+        'mssql',
+        'db2',
+        'snowflake',
+        'oracle',
+      ],
+      with: [
+        'username',
+        'password',
+        'database',
+        'host',
+        'dialectOptions',
+        'use_env_variable',
+      ],
+    },
+  ],
   fix: 'Read the password from the environment — `password: process.env.DB_PASSWORD` — and keep the value in your secret manager, never in the repo.',
-  urlFix: 'Keep the secret out of the URL: build the config from discrete fields with `password: process.env.DB_PASSWORD`, or inject the whole URL as `process.env.DATABASE_URL`.',
-  documentationLink: 'https://owasp.org/www-community/vulnerabilities/Use_of_hard-coded_password',
+  urlFix:
+    'Keep the secret out of the URL: build the config from discrete fields with `password: process.env.DB_PASSWORD`, or inject the whole URL as `process.env.DATABASE_URL`.',
+  documentationLink:
+    'https://owasp.org/www-community/vulnerabilities/Use_of_hard-coded_password',
 });

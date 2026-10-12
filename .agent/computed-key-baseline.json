@@ -10,13 +10,11 @@
     "(spelling-contrast cases)": "Three rules left this list without a code change: react-class-to-hooks and no-direct-mutation-state were FIXED, while no-improper-type-validation was never blind \u2014 its case deliberately mixes `bag[\"k\"]` with `bag.k`, and the rewrite normalised both, matching a guard the case exists to keep unmatched. The probe now skips a case containing both spellings of the same member."
   },
   "rules": [
-    "anthropic-security/no-hardcoded-api-key",
     "browser-security/no-jwt-in-storage",
     "browser-security/no-missing-security-headers",
     "browser-security/no-sensitive-localstorage",
     "browser-security/no-sensitive-sessionstorage",
     "browser-security/no-unsafe-eval-csp",
-    "gemini-security/no-disabled-safety-settings",
     "lambda-security/no-exposed-error-details",
     "lambda-security/no-user-controlled-requests",
     "mongodb-security/require-schema-validation",
@@ -29,8 +27,6 @@
     "node-security/no-math-random-crypto",
     "node-security/no-static-iv",
     "node-security/no-unbounded-decompression",
-    "openai-security/no-browser-api-key-exposure",
-    "openai-security/no-hardcoded-api-key",
     "operability/no-verbose-error-messages",
     "operability/require-code-minification",
     "react-features/default-props-match-prop-types",

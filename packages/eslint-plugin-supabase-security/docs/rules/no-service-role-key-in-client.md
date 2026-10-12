@@ -33,10 +33,12 @@ Nothing at the call site distinguishes the two keys. The difference is one ident
 
 ## Rule details
 
-The rule fires only in files that import a `@supabase/*` package, and reports two independent shapes:
+The rule fires only in files that import a `@supabase/*` package, and reports four independent shapes:
 
-1. **A service-role variable behind a public prefix.** `NEXT_PUBLIC_`, `VITE_`, `PUBLIC_`, `REACT_APP_`, `GATSBY_`, `NUXT_PUBLIC_`, `EXPO_PUBLIC_`. These prefixes exist to inline a value into the client bundle at build time, so the combination is wrong regardless of where the file sits.
+1. **A service-role variable behind a public prefix.** `NEXT_PUBLIC_`, `VITE_`, `PUBLIC_`, `REACT_APP_`, `GATSBY_`, `NUXT_PUBLIC_`, `EXPO_PUBLIC_`. These prefixes exist to inline a value into the client bundle at build time, so the combination is wrong regardless of where the file sits. SvelteKit's public environment counts the same way: a service-role export imported from `$env/static/public`, or read off the `env` of `$env/dynamic/public`.
 2. **A service-role variable read in a client component.** A module with a `'use client'` directive ships to the browser, so anything it reads goes with it.
+3. **A service-role variable given to a browser client.** `createBrowserClient` (`@supabase/ssr`) and the auth-helpers browser factories (`createBrowserSupabaseClient`, `createClientComponentClient`, `createPagesBrowserClient`) build a client that only ever runs in the browser, so the key ships whether or not the file says `'use client'`. The factory is matched through its import, and the key is followed through a same-file `const` and the `supabaseKey` option.
+4. **A service-role key written into source.** A JWT whose payload says `"role":"service_role"`, or an `sb_secret_` key, is reported wherever it sits — `server-only` module included, because it is committed either way. The local-development keys `supabase start` prints (issuer `supabase-demo`) and stand-ins that are not key-shaped (`sb_secret_xyz`) are not.
 
 It matches on the property read off `process.env` / `import.meta.env` — never on a variable name. Rename every identifier in the file to `foo` and the rule still fires.
 

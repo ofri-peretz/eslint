@@ -93,8 +93,16 @@ const chainShape = createUnscopedMutationRule({
   documentationLink: 'https://example.test/docs',
 });
 
-/** Opens the import gate for every fixture below. */
-const D = "import x from 'test-orm';\n";
+/**
+ * Opens the import gate for every fixture below, and binds each receiver the
+ * fixtures use to the driver import. The receivers used to be undeclared and
+ * matched by NAME (`receiverPattern`); a rename then changed the verdict. They
+ * are now traced to `x`, the driver import, which is what makes them handles.
+ */
+const D =
+  "import x from 'test-orm';\n" +
+  'const prisma = x();\nconst db = x();\nconst knex = x;\n' +
+  'class User extends x.Model {}\nconst user = new User();\n';
 
 describe('createUnscopedMutationRule', () => {
   describe('options-object scope', () => {

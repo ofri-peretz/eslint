@@ -145,21 +145,21 @@ function bindsRequire(node: TSESTree.Node): boolean {
  * }
  * ```
  */
-export function createModuleEvidence(
+/**
+ * Build the "is this specifier one of mine?" test a probe compares against.
+ *
+ * Compared on the **package root**, so `pg/lib/client` and
+ * `@ai-sdk/openai/edge` count. A relative or absolute specifier is never a
+ * package and is rejected outright — otherwise `'./pg'` would satisfy the
+ * gate in a repo that has no `pg` at all.
+ */
+function createSpecifierMatcher(
   config: ModuleEvidenceConfig,
-): (ast: TSESTree.Program) => boolean {
+): (raw: string) => boolean {
   const packages = new Set(config.packages ?? []);
   const scopes = new Set(config.scopes ?? []);
   const prefixes = config.prefixes ?? [];
-  const extra = config.extraEvidence;
-
-  /**
-   * Compared on the **package root**, so `pg/lib/client` and
-   * `@ai-sdk/openai/edge` count. A relative or absolute specifier is never a
-   * package and is rejected outright — otherwise `'./pg'` would satisfy the
-   * gate in a repo that has no `pg` at all.
-   */
-  const owns = (raw: string): boolean => {
+  return (raw: string): boolean => {
     const specifier = normalizeSpecifier(raw);
     if (specifier.startsWith('.') || specifier.startsWith('/')) return false;
     if (specifier.startsWith('@')) {
@@ -171,6 +171,13 @@ export function createModuleEvidence(
     const root = specifier.split('/')[0];
     return packages.has(root) || prefixes.some((p) => root.startsWith(p));
   };
+}
+
+export function createModuleEvidence(
+  config: ModuleEvidenceConfig,
+): (ast: TSESTree.Program) => boolean {
+  const extra = config.extraEvidence;
+  const owns = createSpecifierMatcher(config);
 
   const dynamicLoadSpecifier = (
     node: TSESTree.Node,
@@ -287,12 +294,29 @@ export function createModuleEvidence(
 export function createModuleListEvidence(
   modules: readonly string[],
 ): (ast: TSESTree.Program) => boolean {
+  return createModuleEvidence(moduleListConfig(modules));
+}
+
+/** A bare scope (`'@anthropic-ai'`) is a scope match, anything else a package. */
+function moduleListConfig(modules: readonly string[]): ModuleEvidenceConfig {
   const isBareScope = (m: string): boolean =>
     m.startsWith('@') && !m.includes('/');
-  return createModuleEvidence({
+  return {
     packages: modules.filter((m) => !isBareScope(m)),
     scopes: modules.filter(isBareScope),
-  });
+  };
+}
+
+/**
+ * The specifier test {@link createModuleListEvidence} opens its gate with,
+ * for a rule that must also ask *which* binding came from the SDK — the probe
+ * answers "does this file load it?", this answers "did this name come from it?".
+ * Same normalisation (Deno `npm:` / `deno.land/x`), same package-root match.
+ */
+export function createModuleListMatcher(
+  modules: readonly string[],
+): (specifier: string) => boolean {
+  return createSpecifierMatcher(moduleListConfig(modules));
 }
 
 /**

@@ -75,3 +75,96 @@ describe('no-unsafe-query', () => {
     });
   });
 });
+
+/**
+ * FP/FN review 2026-10-12 (benchmarks/audits/2026-10-12-fp-fn-typeorm-security.md).
+ * Bindings are named `foo` / `bar` so no verdict can rest on a name.
+ */
+describe('no-unsafe-query — fp/fn review 2026-10', () => {
+  const T =
+    "import { DataSource, Raw, Brackets } from 'typeorm';\nconst foo = new DataSource({ type: 'postgres' });\n";
+  ruleTester.run('fp-fn review 2026-10', noUnsafeQuery, {
+    valid: [
+      {
+        // @found typeorm-security FP/FN review 2026-10-12, synthetic probe (fixed id list)
+        name: 'FP: a fixed list joined into IN (…)',
+        code:
+          T +
+          'foo.query(`SELECT * FROM "user" WHERE id IN (${[1, 2].join(\',\')})`);',
+      },
+      {
+        // @found typeorm-security FP/FN review 2026-10-12, synthetic probe (another client's query)
+        name: "FP: a GraphQL client's query() in a file that imports TypeORM",
+        code:
+          T +
+          "import { GraphQLClient } from 'graphql-request';\nconst bar = new GraphQLClient('https://x');\nexport const h = (baz) => bar.query(`{ user(id: ${baz}) { name } }`);",
+      },
+      {
+        name: 'query-builder parameters are the fix',
+        code:
+          T +
+          "export const h = (bar) => foo.getRepository('User').createQueryBuilder('u').where('u.name = :name', { name: bar.query.n }).andWhere(new Brackets((w) => { w.where('u.a = :a', { a: 1 }); })).getMany();",
+      },
+      {
+        name: "Raw() whose only hole is TypeORM's own alias",
+        code:
+          T +
+          "export const h = (bar) => foo.getRepository('User').find({ where: { name: Raw((baz) => `${baz} = :n`, { n: bar.query.n }) } });",
+      },
+      {
+        name: 'an ORDER BY target composed from a caller-supplied value',
+        code:
+          T +
+          "export const h = (bar: { sort: string }) => foo.getRepository('User').createQueryBuilder('u').orderBy(`u.${bar.sort}`).getMany();",
+      },
+    ],
+    invalid: [
+      {
+        // @found typeorm-security FP/FN review 2026-10-12, synthetic probe (QueryBuilder.where)
+        name: 'FN: a value interpolated into QueryBuilder.where()',
+        code:
+          T +
+          "export const h = (bar) => foo.getRepository('User').createQueryBuilder('u').where(`u.name = '${bar.query.n}'`).getMany();",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        // @found typeorm-security FP/FN review 2026-10-12, synthetic probe (andWhere through a bound builder)
+        name: 'FN: andWhere() on a builder bound to a constant',
+        code:
+          T +
+          'export const h = (bar: { id: string }) => { const baz = foo.createQueryBuilder(); baz.andWhere(`u.id = ${bar.id}`); return baz; };',
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        // @found typeorm-security FP/FN review 2026-10-12, synthetic probe (join condition)
+        name: 'FN: the condition argument of leftJoinAndSelect()',
+        code:
+          T +
+          "export const h = (bar) => foo.createQueryBuilder().leftJoinAndSelect('u.photos', 'p', `p.kind = '${bar.query.k}'`);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        // @found typeorm-security FP/FN review 2026-10-12, synthetic probe (orderBy from the request)
+        name: 'FN: orderBy() with a column taken from the request',
+        code:
+          T +
+          'export const h = (bar) => foo.createQueryBuilder().orderBy(`u.${bar.query.sort}`);',
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        // @found typeorm-security FP/FN review 2026-10-12, synthetic probe (Raw operator)
+        name: 'FN: a value spliced into a Raw() find operator',
+        code:
+          T +
+          "export const h = (bar: { n: string }) => foo.getRepository('User').find({ where: { name: Raw((baz) => `${baz} = '${bar.n}'`) } });",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        // @found typeorm-security FP/FN review 2026-10-12, synthetic probe (renamed Raw import)
+        name: 'FN: a renamed Raw import is still Raw',
+        code: "import { DataSource, Raw as qux } from 'typeorm';\nexport const h = (bar: { n: string }) => ({ name: qux((baz) => `${baz} = '${bar.n}'`) });",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+    ],
+  });
+});

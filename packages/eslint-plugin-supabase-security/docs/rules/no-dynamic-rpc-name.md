@@ -25,9 +25,16 @@ This is the same shape as a dynamic `require()`: the danger is not the arguments
 
 ## Rule details
 
-Fires only in files importing a `@supabase/*` package. Reports `.rpc(x)` where `x` is not a fixed string.
+Fires only in files importing a `@supabase/*` package. Reports `.rpc(x)` where `x` is not one of a set of names this file fixes.
 
-A template literal with no interpolation is a fixed string — `` `get_profile` `` is exactly as fixed as `'get_profile'` — and is not reported. A spread is unreadable from the call site and is left alone.
+Fixed, and not reported — followed within the file, bounded:
+
+- a string literal, and a template literal whose every interpolation is itself fixed or a number / boolean literal (`` `get_profile` ``, `` `stats_v${V}` `` with `const V = 2`);
+- a `const` holding one, and a ternary between fixed names;
+- a lookup in a same-file object of literal names (`RPC[kind]`, `RPC.single`), including an `as const` table;
+- a parameter whose declared type is a union of string literals (`name: 'get_a' | 'get_b'`), directly or through a same-file `type` alias — whatever a caller passes, the compiler holds it to that list.
+
+A `string` parameter, a request field, a reassigned `let`, a table with a computed or spread entry, and anything imported are not fixed, and report. A spread argument is unreadable from the call site and is left alone.
 
 ## Incorrect
 
@@ -50,22 +57,19 @@ if (kind === 'profile') return db.rpc('get_user_profile', { id });
 return db.rpc('get_user_orders', { id });
 ```
 
-## Known limitation
+## Choosing between functions safely
 
-The rule reads the **call**, not where the value came from. A name held in a variable reports even when a closed allowlist produced it:
-
-```ts
-const FN = { profile: 'get_user_profile' } as const;
-const fn = FN[kind];
-await db.rpc(fn, { id }); // still reported
-```
-
-That code is safe, and the report is a false positive. It is the cost of staying AST-structural — the alternative is inferring provenance, which this repo does not do because the inference is wrong often enough to make the rule untrustworthy. For a reviewed allowlist, disable the line and say why:
+Pick from a closed set the file can see, and the rule stays silent:
 
 ```ts
-// eslint-disable-next-line supabase-security/no-dynamic-rpc-name -- name comes from the FN allowlist above
-await db.rpc(fn, { id });
+const FN = { profile: 'get_user_profile', orders: 'get_user_orders' } as const;
+
+export async function load(kind: keyof typeof FN, id: string) {
+  return db.rpc(FN[kind], { id });
+}
 ```
+
+A generic wrapper that takes the name as a `string` is still reported: nothing at the call constrains what a caller passes. Narrow the parameter's type to a union of the function names, or move the choice into the wrapper.
 
 ## Further reading
 

@@ -18,6 +18,29 @@ const ruleTester = new RuleTester({
 
 const IMPORT = `import { createClient } from '@supabase/supabase-js';`;
 
+/**
+ * Supabase JWTs and secret keys are assembled at test time, so this file holds
+ * no literal a secret scanner would read as a live key. The signature is not
+ * a signature; only the payload's claims matter to the rule.
+ */
+const b64url = (text: string): string =>
+  btoa(text).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const jwt = (claims: Record<string, unknown>): string =>
+  [
+    b64url('{"alg":"HS256","typ":"JWT"}'),
+    b64url(JSON.stringify(claims)),
+    'bm90LWEtc2lnbmF0dXJl',
+  ].join('.');
+const SERVICE_JWT = jwt({
+  iss: 'supabase',
+  ref: 'abcdefghij',
+  role: 'service_role',
+});
+const ANON_JWT = jwt({ iss: 'supabase', ref: 'abcdefghij', role: 'anon' });
+const DEMO_SERVICE_JWT = jwt({ iss: 'supabase-demo', role: 'service_role' });
+const SECRET_KEY = ['sb', 'secret', 'Zx9Qw2Lm8Rt4Yv6Np0Kc3Hd5'].join('_');
+const SSR = `import { createBrowserClient } from '@supabase/ssr';`;
+
 ruleTester.run('no-service-role-key-in-client', noServiceRoleKeyInClient, {
   valid: [
     {
@@ -114,6 +137,48 @@ ruleTester.run('no-service-role-key-in-client', noServiceRoleKeyInClient, {
         'use client';
         export const admin = createClient(url, process.env.SUPABASE_SERVICE_ROLE_KEY);
       `,
+    },
+    // 2026-10-12 FP/FN audit: the new paths, and what they stay silent on.
+    {
+      name: 'the anon JWT and a publishable key are public by design',
+      code: `${IMPORT}\nexport const a = createClient('https://abcdefghij.supabase.co', '${ANON_JWT}');\nexport const b = createClient('https://abcdefghij.supabase.co', 'sb_publishable_Zx9Qw2Lm8Rt4Yv6Np0Kc3Hd5');`,
+    },
+    {
+      name: "the local-development service key every 'supabase start' prints",
+      code: `${IMPORT}\nexport const local = createClient('http://127.0.0.1:54321', '${DEMO_SERVICE_JWT}');`,
+    },
+    {
+      name: 'secret-key stand-ins in tests',
+      // @found supabase/supabase:examples/edge-functions/supabase/functions/unit-testing/tests/utils/supabase_env.ts:12
+      code: `${IMPORT}\nexport const env = { secretKeys: { default: 'sb_secret_xy' } };\nstubEnv('SUPABASE_SECRET_KEY', 'sb_secret_abcdefghijklmnop');`,
+    },
+    {
+      name: 'strings that are not JWTs or not JSON payloads',
+      code: `${IMPORT}\nexport const a = ['eyJ.only-two', 'eyJhbGciOiJIUzI1NiJ9.!!!.sig', 'eyJhbGciOiJIUzI1NiJ9.bnVsbA.sig', 'abc.def.ghi', 42];`,
+    },
+    {
+      name: 'a browser client given the anon key',
+      code: `${SSR}\nexport const db = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);`,
+    },
+    {
+      name: 'a browser client given a literal URL and the anon key',
+      code: `${SSR}\nexport const db = createBrowserClient('https://abcdefghij.supabase.co', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);`,
+    },
+    {
+      name: 'a server client may hold service_role',
+      code: `import { createServerClient } from '@supabase/ssr';\nexport const db = createServerClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { cookies });`,
+    },
+    {
+      name: 'a local function named like the factory is not it',
+      code: `${IMPORT}\nfunction createBrowserClient(a, b) { return [a, b]; }\ncreateBrowserClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);`,
+    },
+    {
+      name: 'SvelteKit public env without the service key, and the private env',
+      code: `${IMPORT}\nimport { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';\nimport { SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';\nimport def from '$env/static/public';\nimport { env } from '$env/dynamic/public';\nexport const url = env.PUBLIC_SUPABASE_URL;`,
+    },
+    {
+      name: 'a deeper member of the dynamic env object is not a variable',
+      code: `${IMPORT}\nimport { env } from '$env/dynamic/public';\nexport const x = env.SERVICE_ROLE.length;`,
     },
   ],
   invalid: [
@@ -234,6 +299,80 @@ ruleTester.run('no-service-role-key-in-client', noServiceRoleKeyInClient, {
         export const db = createClient(url, process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY);
       `,
       errors: [{ messageId: 'publicPrefix' }],
+    },
+    // 2026-10-12 FP/FN audit — the paths the env-read-only reader missed.
+    {
+      name: 'FN: a browser client given service_role, no prefix, no directive',
+      // @found synthetic: 2026-10-12 SDK-usage snippet (benchmarks/audits/2026-10-12-fp-fn-supabase-security.md)
+      code: `${SSR}\nexport const foo = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);`,
+      errors: [
+        {
+          messageId: 'inBrowserClient',
+          data: {
+            factory: 'createBrowserClient',
+            name: 'SUPABASE_SERVICE_ROLE_KEY',
+          },
+        },
+      ],
+    },
+    {
+      name: 'a prefixed key in a browser client reports once, at the read',
+      code: `${SSR}\nexport const db = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY);`,
+      errors: [{ messageId: 'publicPrefix' }],
+    },
+    {
+      name: 'a browser client in a client component reports once, at the read',
+      code: `'use client';\n${SSR}\nexport const db = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);`,
+      errors: [{ messageId: 'inClientComponent' }],
+    },
+    {
+      name: 'FN: the auth-helpers browser factory, the key through a const, renamed',
+      // @found synthetic: 2026-10-12 SDK-usage snippet (benchmarks/audits/2026-10-12-fp-fn-supabase-security.md)
+      code: `import { createPagesBrowserClient as bar } from '@supabase/auth-helpers-nextjs';\nconst baz = process.env.SUPABASE_SERVICE_ROLE_KEY;\nexport const foo = bar({ supabaseUrl: process.env.SUPABASE_URL, supabaseKey: baz });\nexport const qux = bar(process.env.SUPABASE_URL, baz);\nexport const quux = bar({ supabaseUrl: 'u' });`,
+      errors: [
+        { messageId: 'inBrowserClient' },
+        { messageId: 'inBrowserClient' },
+      ],
+    },
+    {
+      name: 'FN: SvelteKit public static env carrying the service key',
+      // @found synthetic: 2026-10-12 SDK-usage snippet (benchmarks/audits/2026-10-12-fp-fn-supabase-security.md)
+      code: `${IMPORT}\nimport { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_SERVICE_ROLE_KEY as foo } from '$env/static/public';\nexport const a = createClient(PUBLIC_SUPABASE_URL, foo);`,
+      errors: [
+        {
+          messageId: 'publicPrefix',
+          data: { name: 'PUBLIC_SUPABASE_SERVICE_ROLE_KEY', prefix: 'PUBLIC_' },
+        },
+      ],
+    },
+    {
+      name: 'FN: SvelteKit public static env, quoted export name',
+      // @found synthetic: 2026-10-12 SDK-usage snippet (benchmarks/audits/2026-10-12-fp-fn-supabase-security.md)
+      code: `${IMPORT}\nimport { 'PUBLIC_SUPABASE_SERVICE_ROLE_KEY' as foo } from '$env/static/public';\nexport const a = createClient('u', foo);`,
+      errors: [{ messageId: 'publicPrefix' }],
+    },
+    {
+      name: 'FN: SvelteKit public dynamic env carrying the service key',
+      // @found synthetic: 2026-10-12 SDK-usage snippet (benchmarks/audits/2026-10-12-fp-fn-supabase-security.md)
+      code: `${IMPORT}\nimport { env } from '$env/dynamic/public';\nexport const a = createClient(env.PUBLIC_SUPABASE_URL, env.PUBLIC_SUPABASE_SERVICE_ROLE_KEY);`,
+      errors: [
+        {
+          messageId: 'publicPrefix',
+          data: { name: 'PUBLIC_SUPABASE_SERVICE_ROLE_KEY', prefix: 'PUBLIC_' },
+        },
+      ],
+    },
+    {
+      name: 'FN: a service_role JWT written into source',
+      // @found synthetic: 2026-10-12 SDK-usage snippet (benchmarks/audits/2026-10-12-fp-fn-supabase-security.md)
+      code: `${IMPORT}\nexport const admin = createClient('https://abcdefghij.supabase.co', '${SERVICE_JWT}');`,
+      errors: [{ messageId: 'hardcodedServiceRole' }],
+    },
+    {
+      name: 'FN: an sb_secret_ key written into source, even in a server-only module',
+      // @found synthetic: 2026-10-12 SDK-usage snippet (benchmarks/audits/2026-10-12-fp-fn-supabase-security.md)
+      code: `import 'server-only';\n${IMPORT}\nexport const admin = createClient('https://abcdefghij.supabase.co', '${SECRET_KEY}');`,
+      errors: [{ messageId: 'hardcodedServiceRole' }],
     },
   ],
 });

@@ -1,7 +1,7 @@
 ---
 title: no-browser-api-key-exposure
 description: Forbid dangerouslyAllowBrowser, which exposes the OpenAI API key to the client
-tags: ['security','openai']
+tags: ['security', 'openai']
 category: security
 severity: high
 cwe: CWE-522
@@ -20,7 +20,17 @@ autofix: false
 
 The flag exists to let the SDK run in a browser. That means the API key is shipped to every visitor and readable in devtools or the network tab. A leaked key is billable by whoever finds it, and rotating it requires a deploy.
 
-The rule fires only in files importing `openai` or `@openai/`, and only when the flag is literally `true` — a variable or spread could be `false`, so those are left alone.
+The rule fires only in files importing `openai` or `@openai/`, and only when the flag is `true` — written inline or held in a const. A runtime-decided value or an unreadable spread could be `false`, so those are left alone. The Realtime WebSocket client (`new OpenAIRealtimeWebSocket({ dangerouslyAllowBrowser: true }, client)`) is covered too.
+
+## When the flag is not a leak
+
+The flag is reported when it ships the **app's own** credential: a literal, an environment read (`import.meta.env.VITE_…` and `NEXT_PUBLIC_…` are inlined into the bundle), an imported or build-time-defined constant, or no key at all (the SDK then falls back to the environment variable). It stays silent when the browser obtains the credential per session, because then nothing of the app's ships:
+
+- a token provider — `azureADTokenProvider` (the SDK turns the flag on itself when one is passed);
+- a key-provider function (`apiKey: async () => …`);
+- a key that is a parameter (the visitor's own key, bring-your-own-key) or the result of an `await` or call — an ephemeral token fetched from your server, which is how OpenAI's Realtime docs tell browser clients to authenticate.
+
+A mixture still ships: `userKey || import.meta.env.VITE_KEY` reports, because the fallback is the app's key. The flag and the options are followed through same-file consts, and only a client bound to this SDK counts — the same flag on another vendor's client in the same file is that vendor's plugin's finding.
 
 ## Incorrect
 

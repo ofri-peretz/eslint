@@ -90,8 +90,10 @@ export function constInitializer(
  *
  * An inline function is itself. An identifier is followed **once**, to a
  * function declaration or a `const` initialised with a function in this file —
- * the "handlers live in named functions" layout. Anything else (an import, a
- * factory call, a parameter) is not visible here and returns `undefined`.
+ * the "handlers live in named functions" layout. `this.handle` is the method of
+ * that name in the class `this` belongs to, and `f.bind(thisArg)` is `f`.
+ * Anything else (an import, a factory call, a parameter) is not visible here
+ * and returns `undefined`.
  */
 export function resolveFunction(
   node: TSESTree.Node | undefined,
@@ -99,6 +101,13 @@ export function resolveFunction(
 ): FunctionNode | undefined {
   if (node === undefined) return undefined;
   if (isFunctionNode(node)) return node;
+  if (node.type === 'MemberExpression') return classMethodOf(node);
+  if (
+    node.type === 'CallExpression' &&
+    node.callee.type === 'MemberExpression' &&
+    memberKey(node.callee.property, node.callee.computed) === 'bind'
+  )
+    return resolveFunction(node.callee.object, scope);
   if (node.type !== 'Identifier') return undefined;
   const variable = lookupVariable(node.name, scope);
   // The implementation, never an overload signature or a `declare function`:
@@ -108,6 +117,52 @@ export function resolveFunction(
     return variable.defs.map((def) => def.node).find(isFunctionNode);
   const init = constInitializer(node, scope);
   return isFunctionNode(init) ? init : undefined;
+}
+
+/** The class body whose instance `this` is at `node`, or `undefined`. */
+function thisClass(node: TSESTree.Node): TSESTree.ClassBody | undefined {
+  for (let current = node.parent; current; current = current.parent) {
+    if (current.type === 'ClassBody') return current;
+    // A plain function rebinds `this`, unless it is the class member itself.
+    if (
+      (current.type === 'FunctionExpression' ||
+        current.type === 'FunctionDeclaration') &&
+      current.parent?.type !== 'MethodDefinition' &&
+      current.parent?.type !== 'PropertyDefinition'
+    )
+      return undefined;
+  }
+  return undefined;
+}
+
+/** The name a non-computed member or class key spells (`#x` for a private one). */
+function memberKey(key: TSESTree.Node, computed: boolean): string | undefined {
+  if (computed) return undefined;
+  if (key.type === 'PrivateIdentifier') return `#${key.name}`;
+  return key.type === 'Identifier' ? key.name : undefined;
+}
+
+/**
+ * The function `this.name` denotes — a method, or a class field holding a
+ * function — in the class `this` is an instance of. Only that class body is
+ * searched, so a same-named method of another class is never it.
+ */
+export function classMethodOf(
+  node: TSESTree.MemberExpression,
+): FunctionNode | undefined {
+  if (node.object.type !== 'ThisExpression') return undefined;
+  const name = memberKey(node.property, node.computed);
+  const body = name === undefined ? undefined : thisClass(node);
+  for (const member of body?.body ?? []) {
+    if (
+      (member.type !== 'MethodDefinition' &&
+        member.type !== 'PropertyDefinition') ||
+      memberKey(member.key, member.computed) !== name
+    )
+      continue;
+    return isFunctionNode(member.value) ? member.value : undefined;
+  }
+  return undefined;
 }
 
 /**

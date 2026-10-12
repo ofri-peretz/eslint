@@ -20,9 +20,10 @@ import * as parser from '@typescript-eslint/parser';
 
 import {
   createMassAssignmentRule,
-  isUntrustedSource,
   classifyPayload,
 } from './mass-assignment-rule';
+import { isRequestPayload } from './request-source';
+import { moduleEnv, parseModule, type Env } from './value-follow';
 import type { TSESTree } from '@typescript-eslint/utils';
 
 RuleTester.afterAll = afterAll;
@@ -30,11 +31,42 @@ RuleTester.it = it;
 RuleTester.itOnly = it.only;
 RuleTester.describe = describe;
 
-const exprOf = (code: string): TSESTree.Node =>
-  (parser.parse(code, { range: true }).body[0] as TSESTree.ExpressionStatement)
-    .expression as TSESTree.Node;
+/**
+ * The value of the LAST expression statement in `code`, with the scope
+ * analysis it must be read in. The request is now recognised by where a value
+ * comes from, so the unit tests need bindings, not bare expressions.
+ */
+const valueOf = (code: string): { node: TSESTree.Node; env: Env } => {
+  const module = parseModule(code, '/virtual/test.ts', parser);
+  if (module === null) throw new Error(`unparseable: ${code}`);
+  const env = moduleEnv(module, parser);
+  let last: TSESTree.Node | undefined;
+  const visit = (node: TSESTree.Node): void => {
+    if (node.type === 'ExpressionStatement') last = node.expression;
+    for (const [key, child] of Object.entries(node)) {
+      if (key === 'parent') continue;
+      for (const c of Array.isArray(child) ? child : [child]) {
+        if (c && typeof c === 'object' && typeof c.type === 'string') visit(c);
+      }
+    }
+  };
+  visit(module.ast);
+  return { node: last as TSESTree.Node, env };
+};
 
-describe('isUntrustedSource', () => {
+const isPayload = (code: string): boolean => {
+  const { node, env } = valueOf(code);
+  return isRequestPayload(node, env);
+};
+
+/**
+ * Replaces the former `isUntrustedSource` suite. That predicate decided a
+ * request by the NAME of the object (`req`, `request`, `ctx`, `context`,
+ * `event`); the cases below keep every intent it pinned, restated
+ * structurally — a handler PARAMETER (or a name the file never declares) is a
+ * request holder, a local object literal is not, whatever either is called.
+ */
+describe('isRequestPayload', () => {
   it('matches the request surfaces that are wholly caller-controlled', () => {
     for (const code of [
       'req.body',
@@ -44,78 +76,77 @@ describe('isUntrustedSource', () => {
       'ctx.request.body',
       'event.body',
       'context.request.query',
+      '(req) => { req.body; }',
+      // The rename litmus: the parameter is the evidence, not its name.
+      '(foo) => { foo.body; }',
+      '(foo) => { foo.request.body; }',
     ]) {
-      expect(isUntrustedSource(exprOf(code)), code).toBe(true);
+      expect(isPayload(code), code).toBe(true);
     }
   });
 
-  it('requires the chain to bottom out in a request identifier', () => {
-    // Same property name, ordinary object — the base is what decides.
-    expect(isUntrustedSource(exprOf('form.body'))).toBe(false);
-    expect(isUntrustedSource(exprOf('config.params'))).toBe(false);
-    expect(isUntrustedSource(exprOf('options.query'))).toBe(false);
+  it('requires the base to be a request holder, not a local object', () => {
+    // Same property name, ordinary object — where the base comes from decides.
+    expect(isPayload('const form = { body: {} }; form.body;')).toBe(false);
+    expect(isPayload('const config = { params: [] }; config.params;')).toBe(
+      false,
+    );
+    expect(isPayload('const options = makeOptions(); options.query;')).toBe(
+      false,
+    );
   });
 
   it('does not treat `data` as a request surface', () => {
     // `ctx.data` and `context.data` are ordinary application state in several
     // frameworks; keying on them would report code with no request in it.
-    expect(isUntrustedSource(exprOf('ctx.data'))).toBe(false);
-    expect(isUntrustedSource(exprOf('context.data'))).toBe(false);
+    expect(isPayload('ctx.data')).toBe(false);
+    expect(isPayload('context.data')).toBe(false);
   });
 
   it('ignores a computed access, which is not statically a name', () => {
-    expect(isUntrustedSource(exprOf('req[key]'))).toBe(false);
+    expect(isPayload('req[key]')).toBe(false);
   });
 
   it('ignores a private field, which cannot be a request surface', () => {
-    // `#body` is the one non-computed property that is not an Identifier, so
-    // it is the only way to reach that guard.
-    const cls = parser.parse(
-      'class A { #body; m(req) { return req.#body; } }',
-      {
-        range: true,
-      },
-    ).body[0] as TSESTree.ClassDeclaration;
-    const method = cls.body.body[1] as TSESTree.MethodDefinition;
-    const ret = method.value.body!.body[0] as TSESTree.ReturnStatement;
-    expect(isUntrustedSource(ret.argument as TSESTree.Node)).toBe(false);
+    expect(isPayload('class A { #body; m(req) { req.#body; } }')).toBe(false);
   });
 
-  it('is false for anything that is not a member expression', () => {
-    expect(isUntrustedSource(exprOf('req'))).toBe(false);
-    expect(isUntrustedSource(exprOf('getBody()'))).toBe(false);
-    expect(isUntrustedSource(exprOf('"body"'))).toBe(false);
+  it('is false for a value that is not read from a request', () => {
+    expect(isPayload('(req) => { req; }')).toBe(false);
+    expect(isPayload('getBody()')).toBe(false);
+    expect(isPayload('"body"')).toBe(false);
   });
 });
 
 describe('classifyPayload', () => {
+  const classify = (code: string) => {
+    const { node, env } = valueOf(code);
+    return classifyPayload(node, env);
+  };
+
   it('reports the object itself and a spread of it, with distinct ids', () => {
-    expect(classifyPayload(exprOf('req.body'))).toBe('untrustedPayload');
-    expect(classifyPayload(exprOf('({ ...req.body })'))).toBe(
-      'untrustedSpread',
-    );
-    expect(classifyPayload(exprOf('({ id, ...req.body })'))).toBe(
-      'untrustedSpread',
-    );
+    expect(classify('req.body')).toBe('untrustedPayload');
+    expect(classify('({ ...req.body })')).toBe('untrustedSpread');
+    expect(classify('({ id, ...req.body })')).toBe('untrustedSpread');
   });
 
   it('stays silent when the payload names its fields — that is the fix', () => {
-    expect(classifyPayload(exprOf('({ name: req.body.name })'))).toBe(false);
-    expect(
-      classifyPayload(
-        exprOf('({ name: req.body.name, email: req.body.email })'),
-      ),
-    ).toBe(false);
+    expect(classify('({ name: req.body.name })')).toBe(false);
+    expect(classify('({ name: req.body.name, email: req.body.email })')).toBe(
+      false,
+    );
   });
 
   it('stays silent for a spread of something trusted', () => {
-    expect(classifyPayload(exprOf('({ ...defaults })'))).toBe(false);
-    expect(classifyPayload(exprOf('({ ...form.body })'))).toBe(false);
+    expect(classify('({ ...defaults })')).toBe(false);
+    expect(classify('const form = { body: {} }; ({ ...form.body });')).toBe(
+      false,
+    );
   });
 
   it('is false for values it cannot classify', () => {
-    expect(classifyPayload(exprOf('payload'))).toBe(false);
-    expect(classifyPayload(exprOf('buildPayload(req)'))).toBe(false);
+    expect(classify('payload')).toBe(false);
+    expect(classify('buildPayload(req)')).toBe(false);
   });
 });
 
@@ -145,7 +176,13 @@ const ruleTester = new RuleTester({
   },
 });
 
-const DRIVER = "import { orm } from 'test-orm';\n";
+/**
+ * Opens the gate and binds `repo` to the driver. Fixtures used to leave `repo`
+ * undeclared and match it by NAME (`receiverPattern`); it is now a handle
+ * because it is written from the driver import.
+ */
+const DRIVER =
+  "import { orm } from 'test-orm';\nconst repo = orm.repository();\n";
 
 describe('createMassAssignmentRule', () => {
   ruleTester.run('rule', rule, {
@@ -199,9 +236,13 @@ describe('createMassAssignmentRule', () => {
         code: 'await repo.create(req.body);',
       },
       {
-        // The base decides, not the property name.
+        // The base decides, not the property name. This fixture used to leave
+        // `form` undeclared and rely on its NAME not being `req`; undeclared,
+        // the two are the same program. Declared as a local object it is
+        // provably not a request.
         name: 'an object that merely has a body key',
-        code: DRIVER + 'await repo.create(form.body);',
+        code:
+          DRIVER + 'const form = { body: {} };\nawait repo.create(form.body);',
       },
       {
         name: 'a payload key that is not this driver’s',
@@ -245,9 +286,13 @@ describe('createMassAssignmentRule', () => {
         errors: [{ messageId: 'untrustedPayload' }],
       },
       {
-        name: 'this.db reads through to the property name',
+        // Was "reads through to the property name": `this.db` qualified by
+        // being spelled `db`. It now qualifies because the class field is
+        // written from the driver.
+        name: 'this.db reads through to the class field that holds the driver',
         code:
-          DRIVER + 'class S { m(req) { return this.db.create(req.body); } }',
+          DRIVER +
+          'class S { db = orm.repository(); m(req) { return this.db.create(req.body); } }',
         errors: [{ messageId: 'untrustedPayload' }],
       },
       {
@@ -267,7 +312,7 @@ describe('createMassAssignmentRule', () => {
       },
       {
         name: 'require() form opens the same gate',
-        code: "const { orm } = require('test-orm');\nawait repo.create(req.body);",
+        code: "const { orm } = require('test-orm');\nconst repo = orm.repository();\nawait repo.create(req.body);",
         errors: [{ messageId: 'untrustedPayload' }],
       },
       {

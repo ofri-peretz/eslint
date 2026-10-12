@@ -32,7 +32,18 @@ const SDK = "import OpenAI from 'openai';";
  * fixture proving both directions is what stops this suite passing with the
  * gate shut on everything.
  */
-const VIOLATION = `const client = new OpenAI({ apiKey: 'sk-proj-hardcoded' });`;
+const VIOLATION = `const client = new OpenAI({ apiKey: 'sk-proj-Zx9Qw2Lm8Rt4Yv6Np0Kc3Hd5Wb7Jf1Gs' });`;
+
+/**
+ * A violation that needs only the gate: the prompt rule matches on the request
+ * path, not on a binding. Since 2026-10-12 the key rule also requires the
+ * callee to be bound to the SDK (an unbound `new X({ apiKey })` is another
+ * vendor's client), so a load form that binds no local name — a re-export, an
+ * import-equals under another name, a lazy import inside a function — cannot
+ * show the gate opening through it. This one can.
+ */
+const GATE_PROBE =
+  "client.chat.completions.create({ messages: [{ role: 'system', content: `Act as ${role}.` }] });";
 
 /** Files that use no the OpenAI SDK at all. */
 const NON_SDK_SOURCES: ReadonlyArray<readonly [string, string]> = [
@@ -94,7 +105,9 @@ describe('the OpenAI SDK module gate', () => {
 
   describe('positive control — the gate must open for real the OpenAI SDK code', () => {
     it('the same violation reports once the file imports the SDK', () => {
-      expect(lint(`${SDK}\n${VIOLATION}`, 'no-hardcoded-api-key').length).toBeGreaterThan(0);
+      expect(
+        lint(`${SDK}\n${VIOLATION}`, 'no-hardcoded-api-key').length,
+      ).toBeGreaterThan(0);
     });
 
     it('and is silent with the import removed', () => {
@@ -123,9 +136,15 @@ describe('the OpenAI SDK module gate', () => {
     ],
     ['a re-export', `export { OpenAI } from 'openai';`],
   ])('the gate opens on %s', (_form, load) => {
-    it('and the same violation reports', () => {
-      expect(lint(`${load}\n${VIOLATION}`, 'no-hardcoded-api-key').length).toBeGreaterThan(0);
+    it('and a gate-only violation reports', () => {
+      expect(
+        lint(`${load}\n${GATE_PROBE}`, 'no-untrusted-content-in-prompt').length,
+      ).toBeGreaterThan(0);
     });
+  });
+
+  it('a gate-only violation is silent with no SDK load at all', () => {
+    expect(lint(GATE_PROBE, 'no-untrusted-content-in-prompt')).toHaveLength(0);
   });
 
   it('but a locally bound `require` parameter is not a module load', () => {

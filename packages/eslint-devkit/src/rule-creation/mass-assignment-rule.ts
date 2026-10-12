@@ -37,11 +37,16 @@
 import { AST_NODE_TYPES } from '../ast-node-types';
 import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
 import { formatLLMMessage, MessageIcons } from '../messaging';
+import { createModuleEvidence } from './module-evidence';
+import { isTestFilePath } from './rule-creator';
+import { createOriginClassifier } from './driver-origin';
+import { isRequestPayload } from './request-source';
 import {
-  driverBindings,
+  chainMethodNames,
   propertyKeyName,
-  receiverBaseName,
+  startsWithTable,
 } from './unscoped-mutation-rule';
+import { type Env, envOf, lookup, valueAt } from './value-follow';
 
 /**
  * Two ids because the shapes read differently at the call site, and a reader
@@ -82,91 +87,90 @@ export interface MassAssignmentRuleConfig {
   /** Driver modules — the plugin-scope gate. */
   readonly modules: readonly string[];
   /**
-   * Names a receiver may have for its call to count as a driver write.
-   *
-   * Carried over from `createUnscopedMutationRule`, and for the same reason:
-   * importing the driver does not make every matching method call in the file
-   * a database write. Without it, `bindings.size === 0` only proves that *some*
-   * driver import exists somewhere in the file, and the method names here are
-   * among the most generic in JavaScript — `Map.prototype.set`, `Headers.set`,
-   * `URLSearchParams.set`, `FormData.set`, and any `cache.create`. One
-   * `req.body` reaching any of those in a file that also imports the ORM would
-   * report.
+   * @deprecated Ignored. The receiver was once matched by NAME against this
+   * pattern; it is now classified by where it is written (`driver-origin.ts`).
+   * Kept so an existing caller still type-checks.
    */
-  readonly receiverPattern: RegExp;
+  readonly receiverPattern?: RegExp;
+  /**
+   * What a write must look like to be reported when its receiver cannot be
+   * traced to the driver (an undeclared name, an untyped parameter, a path
+   * alias the linter cannot read). A receiver PROVEN to be the driver's is
+   * always enough; one proven to be another library's — a `Map`, `Headers`,
+   * a cache client — never is.
+   *
+   *   - `'model-accessor'` — Prisma's `<client>.<model>.create(…)`.
+   *   - `'table-call'` — Knex's `<knex>('users').insert(…)`, or a chain that
+   *     names its table with `.into()` / `.table()` / `.from()`.
+   *   - `'builder-chain'` — Drizzle's `<db>.insert(t).values(…)` /
+   *     `<db>.update(t).set(…)`: the write method follows the statement verb.
+   *
+   * Without one (Sequelize, TypeORM: `Model.create`, `repo.save`), an
+   * untraceable receiver is not reported — `cache.create(req.body)` and
+   * `User.create(req.body)` are the same program when neither name resolves.
+   */
+  readonly distinctiveShape?: 'model-accessor' | 'table-call' | 'builder-chain';
+  /**
+   * An options key that is the driver's own column allowlist — Sequelize's
+   * `create(req.body, { fields: ['name'] })`. Its presence is the fix.
+   */
+  readonly allowlistOption?: string;
   readonly fix: string;
   readonly documentationLink: string;
 }
 
-/** Identifiers that name an inbound HTTP request. */
-const REQUEST_OBJECTS = ['req', 'request', 'ctx', 'context', 'event'] as const;
-
 /**
- * Request properties that are wholly attacker-controlled.
- *
- * `params` is included even though a route param is usually one id: a router
- * that mounts `/:id/:field` puts arbitrary keys there, and spreading it is the
- * same defect. `payload` is Hapi's spelling of `body`.
- *
- * `data` is deliberately absent. `ctx.data` and `context.data` are ordinary
- * application state in several frameworks, so keying on it would report code
- * that never touches a request.
- */
-const UNTRUSTED_PROPS = ['body', 'query', 'params', 'payload'] as const;
-
-/**
- * Does this expression evaluate to attacker-controlled input?
- *
- * Matches `req.body`, `request.query`, `ctx.request.body`, `event.body` — the
- * property must be an untrusted one *and* the chain must bottom out in a
- * request-shaped identifier. Requiring both is what keeps `config.data` and
- * `form.body` out of the findings.
- */
-export function isUntrustedSource(node: TSESTree.Node): boolean {
-  if (node.type !== AST_NODE_TYPES.MemberExpression || node.computed)
-    return false;
-  if (node.property.type !== AST_NODE_TYPES.Identifier) return false;
-  if (
-    !UNTRUSTED_PROPS.includes(
-      node.property.name as (typeof UNTRUSTED_PROPS)[number],
-    )
-  ) {
-    return false;
-  }
-  return baseIsRequest(node.object);
-}
-
-/** Walk a member chain down to its root identifier and test it. */
-function baseIsRequest(node: TSESTree.Node): boolean {
-  let cursor = node;
-  while (cursor.type === AST_NODE_TYPES.MemberExpression)
-    cursor = cursor.object;
-  return (
-    cursor.type === AST_NODE_TYPES.Identifier &&
-    REQUEST_OBJECTS.includes(cursor.name as (typeof REQUEST_OBJECTS)[number])
-  );
-}
-
-/**
- * Classify a payload expression.
- *
- * `false` for anything that names its fields, which is the fix:
- * `{ name: req.body.name }` reads one value out of the request and is not a
- * mass assignment. Only handing over the object itself, or splatting it into
- * one, opens every column.
+ * Classify one write argument: the request payload itself, a spread of it
+ * into an object literal, or neither. The request is recognised by where it
+ * comes from (`request-source.ts`), never by what it is called.
  */
 export function classifyPayload(
   node: TSESTree.Node,
+  env: Env,
+  isOurs: (node: TSESTree.Node) => boolean = () => false,
 ): MassAssignmentMessageIds | false {
-  if (isUntrustedSource(node)) return 'untrustedPayload';
+  if (isRequestPayload(node, env)) return 'untrustedPayload';
+  // `Object.assign(entity, req.body); repo.save(entity)` — the payload was
+  // copied in one statement earlier. (When `entity` is itself the driver's
+  // model instance the `Object.assign` is reported instead.)
+  if (node.type === AST_NODE_TYPES.Identifier) {
+    const variable = lookup(node.name, env.scopeOf(node));
+    const filled = variable?.references.some((reference) => {
+      const call = reference.identifier.parent;
+      if (call === undefined || !isObjectAssign(call)) return false;
+      const args = (call as TSESTree.CallExpression).arguments;
+      return (
+        args[0] === reference.identifier &&
+        !isOurs(reference.identifier) &&
+        args.slice(1).some((source) => isRequestPayload(source, env))
+      );
+    });
+    if (filled === true) return 'untrustedPayload';
+  }
   if (node.type === AST_NODE_TYPES.ObjectExpression) {
     for (const prop of node.properties) {
       if (prop.type !== AST_NODE_TYPES.SpreadElement) continue;
-      if (isUntrustedSource(prop.argument)) return 'untrustedSpread';
+      if (isRequestPayload(prop.argument, env)) return 'untrustedSpread';
     }
   }
   return false;
 }
+
+/** `Object.assign(target, …sources)`. */
+function isObjectAssign(node: TSESTree.Node): boolean {
+  return (
+    node.type === AST_NODE_TYPES.CallExpression &&
+    node.callee.type === AST_NODE_TYPES.MemberExpression &&
+    node.callee.object.type === AST_NODE_TYPES.Identifier &&
+    node.callee.object.name === 'Object' &&
+    !node.callee.computed &&
+    node.callee.property.type === AST_NODE_TYPES.Identifier &&
+    node.callee.property.name === 'assign'
+  );
+}
+
+/** Drizzle statement verbs a write method follows in the chain. */
+const WRITE_VERBS: ReadonlySet<string> = new Set(['insert', 'update']);
 
 /** Build a CWE-915 rule for one driver's write surface. */
 export function createMassAssignmentRule(
@@ -174,6 +178,8 @@ export function createMassAssignmentRule(
 ): TSESLint.RuleModule<MassAssignmentMessageIds, []> {
   const methods = new Set(config.methods);
   const payloadKeys = new Set(config.payloadKeys ?? []);
+  const usesModule = createModuleEvidence({ packages: config.modules });
+  const originOf = createOriginClassifier(config.modules);
 
   return {
     meta: {
@@ -213,15 +219,59 @@ export function createMassAssignmentRule(
     },
     defaultOptions: [],
     create(context) {
-      let bindings = new Set<string>();
+      // BENCHMARK-CRITERIA §B1: a test fixture building a row from a fake
+      // request is not the shipped attack surface.
+      if (isTestFilePath(context.filename)) return {};
+      const env = envOf(context);
+      let ownsFile = false;
+      const isOurs = (node: TSESTree.Node): boolean =>
+        originOf(valueAt(node, env)) === 'ours';
+
+      const hasDistinctiveShape = (node: TSESTree.CallExpression): boolean => {
+        const callee = node.callee as TSESTree.MemberExpression;
+        switch (config.distinctiveShape) {
+          case 'model-accessor':
+            return callee.object.type === AST_NODE_TYPES.MemberExpression;
+          case 'table-call': {
+            const chained = chainMethodNames(node);
+            return (
+              startsWithTable(callee.object) ||
+              ['into', 'table', 'from'].some((m) => chained.has(m))
+            );
+          }
+          case 'builder-chain': {
+            // `.values()` / `.set()` read off `x.insert(t)` / `x.update(t)`.
+            const object = callee.object;
+            return (
+              object.type === AST_NODE_TYPES.CallExpression &&
+              object.callee.type === AST_NODE_TYPES.MemberExpression &&
+              WRITE_VERBS.has(
+                (object.callee.property as TSESTree.Identifier).name,
+              )
+            );
+          }
+          default:
+            return false;
+        }
+      };
 
       return {
         Program(program: TSESTree.Program) {
-          bindings = driverBindings(program, config.modules);
+          ownsFile = usesModule(program);
         },
 
         CallExpression(node: TSESTree.CallExpression) {
-          if (bindings.size === 0) return;
+          // `Object.assign(user, req.body)` onto the driver's own model
+          // instance: every column is set before `save()` is even called.
+          if (isObjectAssign(node)) {
+            const [target, ...sources] = node.arguments;
+            if (target === undefined || !isOurs(target)) return;
+            for (const source of sources) {
+              if (isRequestPayload(source, env))
+                context.report({ node: source, messageId: 'untrustedPayload' });
+            }
+            return;
+          }
           if (
             node.callee.type !== AST_NODE_TYPES.MemberExpression ||
             node.callee.property.type !== AST_NODE_TYPES.Identifier ||
@@ -230,30 +280,51 @@ export function createMassAssignmentRule(
             return;
           }
 
-          // The receiver has to read as a driver handle. See
-          // MassAssignmentRuleConfig#receiverPattern — a file that imports the
-          // ORM is still full of Maps, Headers and caches.
-          const base = receiverBaseName(node.callee);
-          if (base === undefined) return;
-          if (!bindings.has(base) && !config.receiverPattern.test(base)) return;
+          // Where the receiver comes from, never what it is called: a `Map`,
+          // `Headers` or another library's client is not a database write; a
+          // handle traced to the driver is, even through a relative import.
+          const origin = originOf(valueAt(node.callee.object, env));
+          if (origin === 'foreign') return;
+          if (
+            origin === 'unknown' &&
+            !(ownsFile && hasDistinctiveShape(node))
+          ) {
+            return;
+          }
+
+          // Sequelize's `{ fields: [...] }` is the allowlist the fix asks for.
+          if (
+            config.allowlistOption !== undefined &&
+            node.arguments.some(
+              (arg) =>
+                arg.type === AST_NODE_TYPES.ObjectExpression &&
+                arg.properties.some(
+                  (p) =>
+                    p.type === AST_NODE_TYPES.Property &&
+                    propertyKeyName(p) === config.allowlistOption,
+                ),
+            )
+          ) {
+            return;
+          }
 
           for (const arg of node.arguments) {
             if (arg.type === AST_NODE_TYPES.SpreadElement) continue;
 
-            // `User.create(req.body)` / `repo.save({ ...req.body })`
-            const direct = classifyPayload(arg);
+            // The request itself, or spread into the payload literal.
+            const direct = classifyPayload(arg, env, isOurs);
             if (direct) {
               context.report({ node: arg, messageId: direct });
               continue;
             }
 
-            // `prisma.user.update({ where, data: req.body })`
+            // The request nested under a payload key: `{ data: req.body }`.
             if (arg.type !== AST_NODE_TYPES.ObjectExpression) continue;
             for (const prop of arg.properties) {
               if (prop.type !== AST_NODE_TYPES.Property) continue;
               const name = propertyKeyName(prop);
               if (name === undefined || !payloadKeys.has(name)) continue;
-              const nested = classifyPayload(prop.value);
+              const nested = classifyPayload(prop.value, env, isOurs);
               if (nested)
                 context.report({ node: prop.value, messageId: nested });
             }

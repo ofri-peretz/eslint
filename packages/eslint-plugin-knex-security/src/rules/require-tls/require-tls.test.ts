@@ -34,11 +34,15 @@ describe('require-tls', () => {
       valid: [
         {
           name: 'CA supplied',
-          code: DRIVER + "const db = Knex({ client: 'pg', connection: { host, ssl: { ca } } });",
+          code:
+            DRIVER +
+            "const db = Knex({ client: 'pg', connection: { host, ssl: { ca } } });",
         },
         {
           name: 'ssl true',
-          code: DRIVER + "const db = Knex({ client: 'pg', connection: { host, ssl: true } });",
+          code:
+            DRIVER +
+            "const db = Knex({ client: 'pg', connection: { host, ssl: true } });",
         },
         {
           name: 'verification explicitly on',
@@ -48,15 +52,23 @@ describe('require-tls', () => {
         },
         {
           name: 'value comes from config and cannot be resolved',
-          code: DRIVER + "const db = Knex({ client: 'pg', connection: { host, ssl: useTls } });",
+          code:
+            DRIVER +
+            "const db = Knex({ client: 'pg', connection: { host, ssl: useTls } });",
         },
         {
           name: 'sslmode=require in the connection URL',
-          code: DRIVER + "const db = Knex({ client: 'pg', connection: 'postgres://h/db?sslmode=require' });",
+          code:
+            DRIVER +
+            "const db = Knex({ client: 'pg', connection: 'postgres://h/db?sslmode=require' });",
         },
         {
-          name: 'no knex import — not this plugin’s file',
-          code: "const options = { client: 'pg', connection: { host, ssl: false } };",
+          // The fixture that used to sit here, `{ client: 'pg', connection:
+          // { host, ssl: false } }`, is knex's own config contract — a
+          // knexfile, which never imports knex — and moved to `invalid` as the
+          // knexfile FN of the 2026-10 review.
+          name: 'no knex import and no knex config shape — not this plugin’s file',
+          code: 'const options = { host, ssl: false };',
         },
       ],
       invalid: [],
@@ -69,7 +81,9 @@ describe('require-tls', () => {
       invalid: [
         {
           name: 'ssl false inside connection',
-          code: DRIVER + "const db = Knex({ client: 'pg', connection: { host, ssl: false } });",
+          code:
+            DRIVER +
+            "const db = Knex({ client: 'pg', connection: { host, ssl: false } });",
           errors: [{ messageId: 'tlsDisabled' }],
         },
         {
@@ -82,12 +96,15 @@ describe('require-tls', () => {
         {
           name: 'sslmode=disable in the connection URL',
           code:
-            DRIVER + "const db = Knex({ client: 'pg', connection: 'postgres://h/db?sslmode=disable' });",
+            DRIVER +
+            "const db = Knex({ client: 'pg', connection: 'postgres://h/db?sslmode=disable' });",
           errors: [{ messageId: 'tlsDisabled' }],
         },
         {
           name: 'config object built separately from the Knex call',
-          code: DRIVER + "export const config = { client: 'pg', connection: { host, ssl: false } };",
+          code:
+            DRIVER +
+            "export const config = { client: 'pg', connection: { host, ssl: false } };",
           errors: [{ messageId: 'tlsDisabled' }],
         },
       ],
@@ -112,5 +129,43 @@ describe('require-tls', () => {
         },
       ],
     });
+  });
+});
+
+/**
+ * FP/FN review 2026-10-12 (benchmarks/audits/2026-10-12-fp-fn-knex-security.md).
+ * Bindings are named `foo` / `bar` so no verdict can rest on a name.
+ */
+describe('require-tls — fp/fn review 2026-10', () => {
+  ruleTester.run('fp-fn review 2026-10', requireTls, {
+    valid: [
+      {
+        // @found Budibase/budibase:packages/server/src/integrations/tests/utils/postgres.ts:42
+        name: 'FP: a test utility pointing at a local container',
+        filename:
+          '/repo/packages/server/src/integrations/tests/utils/postgres.ts',
+        code:
+          DRIVER +
+          "Knex({ client: 'pg', connection: { host: 'localhost', ssl: false, rejectUnauthorized: false } });",
+      },
+    ],
+    invalid: [
+      {
+        // Moved here from `valid` ("no knex import — not this plugin's file"):
+        // the object is knex's own config contract — a knexfile.
+        // @found knex-security FP/FN review 2026-10-12, synthetic probe (knexfile)
+        name: 'FN: a knexfile — knex config with no knex import',
+        code: "const options = { client: 'pg', connection: { host, ssl: false } };\nmodule.exports = options;",
+        errors: [{ messageId: 'tlsDisabled' }],
+      },
+      {
+        // @found knex-security FP/FN review 2026-10-12, synthetic probe (ssl bound first)
+        name: 'FN: the TLS options are bound to a constant first',
+        code:
+          DRIVER +
+          "const foo = { rejectUnauthorized: false };\nKnex({ client: 'pg', connection: { host, ssl: foo } });",
+        errors: [{ messageId: 'certificateValidationDisabled' }],
+      },
+    ],
   });
 });

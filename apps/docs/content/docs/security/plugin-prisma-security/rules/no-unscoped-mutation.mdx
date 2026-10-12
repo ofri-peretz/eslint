@@ -76,6 +76,15 @@ Disable this rule in maintenance scripts, seeders, and test fixtures whose job i
 to clear a table. Prefer a scoped `eslint-disable-next-line` on the specific call
 over switching the rule off for the whole project.
 
+## How a mutation is recognised (2026-10 review)
+
+The receiver is judged by where it is written — an import of the driver, a
+client built from it, a transaction handle it passes to a callback, a typed
+parameter or class member, or a relative module that exports one — never by
+its name. A `Map` or `Set` is never a table; an untraceable client reports when the call reads a model off it (`db.user.deleteMany()`).
+
+Test files are skipped.
+
 ## Further reading
 
 - [Prisma documentation](https://www.prisma.io/docs/orm/prisma-client/queries/crud#delete-all-records)

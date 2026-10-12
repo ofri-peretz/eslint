@@ -816,17 +816,16 @@ describe('no-tool-description-injection', () => {
           ],
         },
         {
-          name: 'the legacy positional description from a tool argument, and a file read in another module',
+          // The `FILE_DESCRIPTION` half moved to the 1.0 review's valid cases:
+          // that module reads `./description.md` beside itself
+          // (`new URL(…, import.meta.url)`), which ships with the server. The
+          // working-directory read that IS untrusted is `CWD_DESCRIPTION`.
+          name: 'the legacy positional description from a tool argument',
           filename: SERVER,
           code:
             SDK +
-            "import { FILE_DESCRIPTION } from './file-description';\n" +
-            'server.registerTool("x", cfg, async ({ label }) => { server.tool("child", `Child of ${label}`, async () => ({ content: [] })); return { content: [] }; });\n' +
-            'server.registerTool("y", { description: FILE_DESCRIPTION }, h);',
-          errors: [
-            tool('child', 'description', 'label'),
-            tool('y', 'description', 'FILE_DESCRIPTION'),
-          ],
+            'server.registerTool("x", cfg, async ({ label }) => { server.tool("child", `Child of ${label}`, async () => ({ content: [] })); return { content: [] }; });',
+          errors: [tool('child', 'description', 'label')],
         },
       ],
     });
@@ -918,5 +917,106 @@ describe('modelFacingProperties', () => {
 
   it('ignores a numeric key', () => {
     expect(modelFacingProperties(objOf('({ 0: blurb })'))).toEqual([]);
+  });
+});
+
+describe('1.0 independent review (2026-10-12)', () => {
+  const T = (name: string, key: string, source: string) => ({
+    messageId: 'dynamicDescription' as const,
+    data: { tool: name, key, source },
+  });
+  ruleTester.run('review', noToolDescriptionInjection, {
+    valid: [
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: a description file shipped with the server
+        name: 'FP: a description read from a file beside the module (__dirname, import.meta.url)',
+        code:
+          SDK +
+          "import { readFileSync } from 'node:fs';\nimport { readFile } from 'node:fs/promises';\n" +
+          "import { join } from 'node:path';\nimport { fileURLToPath } from 'node:url';\n" +
+          "const foo = readFileSync(join(__dirname, 'descriptions', 'search.md'), 'utf8');\n" +
+          "const bar = await readFile(new URL('./prompts/system.md', import.meta.url), 'utf8');\n" +
+          "const baz = readFileSync(fileURLToPath(new URL('./x.md', import.meta.url)), 'utf8');\n" +
+          'const qux = readFileSync(`${import.meta.dirname}/y.md`, "utf8");\n' +
+          'server.registerTool("a", { description: foo }, h);\nserver.registerTool("b", { description: bar }, h);\n' +
+          'server.registerTool("c", { description: baz }, h);\nserver.registerTool("d", { description: qux }, h);',
+      },
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, moved from invalid ("… and a file read in another module"): that module reads a file beside itself
+        name: 'FP: a description a relative module reads from beside itself',
+        filename: SERVER,
+        code:
+          SDK +
+          "import { FILE_DESCRIPTION } from './file-description';\n" +
+          'server.registerTool("y", { description: FILE_DESCRIPTION }, h);',
+      },
+    ],
+    invalid: [
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: a stdio server's working directory is the user's project
+        name: 'FN kept: a description read relative to the working directory, here or in another module',
+        filename: SERVER,
+        code:
+          SDK +
+          "import { readFileSync } from 'node:fs';\nimport { join } from 'node:path';\n" +
+          "import { CWD_DESCRIPTION } from './file-description';\n" +
+          "server.registerTool('a', { description: readFileSync(join(process.cwd(), 'TOOLS.md'), 'utf8') }, h);\n" +
+          "server.registerTool('b', { description: readFileSync(join(__dirname, userDir, 'x.md'), 'utf8') }, h);\n" +
+          "server.registerTool('c', { description: CWD_DESCRIPTION }, h);",
+        errors: [
+          T('a', 'description', 'readFileSync()'),
+          T('b', 'description', 'readFileSync()'),
+          T('c', 'description', 'CWD_DESCRIPTION'),
+        ],
+      },
+    ],
+  });
+});
+
+describe('1.0 review: what anchors a description file to the server', () => {
+  const T = (name: string, source: string) => ({
+    messageId: 'dynamicDescription' as const,
+    data: { tool: name, key: 'description', source },
+  });
+  ruleTester.run('package paths', noToolDescriptionInjection, {
+    valid: [
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic
+        name: 'FP: __filename, a const path joined onto __dirname, and an as-cast path',
+        code:
+          SDK +
+          "import { readFileSync } from 'node:fs';\nimport { join } from 'node:path';\n" +
+          "const DIR = join(__dirname, 'docs');\nconst FILE = join(DIR, 'a.md');\n" +
+          'server.registerTool("a", { description: readFileSync(__filename, "utf8") }, h);\n' +
+          'server.registerTool("b", { description: readFileSync(FILE as string, "utf8") }, h);',
+      },
+    ],
+    invalid: [
+      {
+        name: 'FN kept: a shadowed __dirname, a cyclic const, no path, a template with more parts, and other URL helpers',
+        code:
+          SDK +
+          "import { readFileSync } from 'node:fs';\nimport { join } from 'node:path';\nimport { pathToFileURL } from 'node:url';\n" +
+          'const A = B;\nconst B = A;\n' +
+          'function load(__dirname) { server.registerTool("a", { description: readFileSync(join(__dirname, "x.md"), "utf8") }, h); }\n' +
+          'server.registerTool("b", { description: readFileSync(A, "utf8") }, h);\n' +
+          'server.registerTool("c", { description: readFileSync() }, h);\n' +
+          'server.registerTool("d", { description: readFileSync(`${__dirname}/${name}.md`, "utf8") }, h);\n' +
+          'server.registerTool("e", { description: readFileSync(pathToFileURL(__dirname), "utf8") }, h);\n' +
+          'server.registerTool("f", { description: readFileSync(new URL(name, import.meta.url), "utf8") }, h);\n' +
+          'server.registerTool("g", { description: readFileSync(process.env.DOC, "utf8") }, h);\n' +
+          'server.registerTool("i", { description: readFileSync(new Local("./x", import.meta.url), "utf8") }, h);',
+        errors: [
+          T('a', 'readFileSync()'),
+          T('b', 'readFileSync()'),
+          T('c', 'readFileSync()'),
+          T('d', 'readFileSync()'),
+          T('e', 'readFileSync()'),
+          T('f', 'readFileSync()'),
+          T('g', 'readFileSync()'),
+          T('i', 'readFileSync()'),
+        ],
+      },
+    ],
   });
 });

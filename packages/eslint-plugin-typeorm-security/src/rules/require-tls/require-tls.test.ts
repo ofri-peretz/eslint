@@ -35,12 +35,15 @@ describe('require-tls', () => {
       valid: [
         {
           name: 'CA supplied',
-          code: DRIVER + "export const ds = new DataSource({ type: 'postgres', ssl: { ca } });",
+          code:
+            DRIVER +
+            "export const ds = new DataSource({ type: 'postgres', ssl: { ca } });",
         },
         {
           name: 'CA supplied through extra',
           code:
-            DRIVER + "export const ds = new DataSource({ type: 'postgres', extra: { ssl: { ca } } });",
+            DRIVER +
+            "export const ds = new DataSource({ type: 'postgres', extra: { ssl: { ca } } });",
         },
         {
           name: 'trustServerCertificate explicitly false is the safe setting',
@@ -50,7 +53,9 @@ describe('require-tls', () => {
         },
         {
           name: 'flag resolved at runtime',
-          code: DRIVER + "export const ds = new DataSource({ type: 'postgres', ssl: sslConfig });",
+          code:
+            DRIVER +
+            "export const ds = new DataSource({ type: 'postgres', ssl: sslConfig });",
         },
         // `mssql` was in `urlSchemes` and never could have matched: SQL Server
         // connection strings have no `sslmode` parameter — its TLS knob is
@@ -58,7 +63,9 @@ describe('require-tls', () => {
         // scheme was phantom coverage, and this case pins that it stays out.
         {
           name: 'an mssql URL is not scanned for sslmode',
-          code: DRIVER + "export const ds = new DataSource({ type: 'mssql', url: 'mssql://h/db?sslmode=disable' });",
+          code:
+            DRIVER +
+            "export const ds = new DataSource({ type: 'mssql', url: 'mssql://h/db?sslmode=disable' });",
         },
         {
           name: 'no typeorm import — not this plugin’s file',
@@ -75,7 +82,9 @@ describe('require-tls', () => {
       invalid: [
         {
           name: 'ssl false',
-          code: DRIVER + "export const ds = new DataSource({ type: 'postgres', ssl: false });",
+          code:
+            DRIVER +
+            "export const ds = new DataSource({ type: 'postgres', ssl: false });",
           errors: [{ messageId: 'tlsDisabled' }],
         },
         {
@@ -101,10 +110,43 @@ describe('require-tls', () => {
         },
         {
           name: 'sslmode=disable in the url option',
-          code: DRIVER + "export const ds = new DataSource({ type: 'postgres', url: 'postgres://h/db?sslmode=disable' });",
+          code:
+            DRIVER +
+            "export const ds = new DataSource({ type: 'postgres', url: 'postgres://h/db?sslmode=disable' });",
           errors: [{ messageId: 'tlsDisabled' }],
         },
       ],
     });
+  });
+});
+
+/**
+ * FP/FN review 2026-10-12 (benchmarks/audits/2026-10-12-fp-fn-typeorm-security.md).
+ * Bindings are named `foo` / `bar` so no verdict can rest on a name.
+ */
+describe('require-tls — fp/fn review 2026-10', () => {
+  ruleTester.run('fp-fn review 2026-10', requireTls, {
+    valid: [
+      {
+        name: 'verification on through the driver passthrough',
+        code:
+          DRIVER +
+          "new DataSource({ type: 'postgres', host: 'db', extra: { ssl: { rejectUnauthorized: true } } });",
+      },
+    ],
+    invalid: [
+      {
+        // @found typeorm-security FP/FN review 2026-10-12, synthetic probe (NestJS forRoot)
+        name: 'FN: TypeOrmModule.forRoot with verification off',
+        code: "import { TypeOrmModule } from '@nestjs/typeorm';\nexport const foo = TypeOrmModule.forRoot({ type: 'postgres', host: 'db', ssl: { rejectUnauthorized: false } });",
+        errors: [{ messageId: 'certificateValidationDisabled' }],
+      },
+      {
+        // @found typeorm-security FP/FN review 2026-10-12, synthetic probe (ormconfig.js)
+        name: 'FN: an ormconfig.js with TLS off',
+        code: "module.exports = { type: 'postgres', host: 'db', ssl: false, entities: ['dist/**/*.entity.js'] };",
+        errors: [{ messageId: 'tlsDisabled' }],
+      },
+    ],
   });
 });

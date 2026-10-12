@@ -47,17 +47,18 @@
  */
 import {
   TSESTree,
+  TSESLint,
   createRule,
   formatLLMMessage,
   MessageIcons,
   propertyName,
   staticString,
 } from '@interlace/eslint-devkit';
-import { createGuards } from '../../utils/guards';
+import { createGuards, isConversion } from '../../utils/guards';
 import { httpRequestOf } from '../../utils/http-clients';
 import { createInstanceResolver } from '../../utils/instances';
 import { fileUsesMcpSdk } from '../../utils/mcp-evidence';
-import { valueResolverFor } from '../../utils/module-resolver';
+import { unwrapTypeOnly, valueResolverFor } from '../../utils/module-resolver';
 import { createHandlerCollector } from '../../utils/tool-handlers';
 import {
   constInitializer,
@@ -65,7 +66,10 @@ import {
   resolveFunction,
 } from '../../utils/tool-registration';
 import {
+  callSitesIn,
   createFlow,
+  flowOptionsFor,
+  returnedExpressions,
   STRING_DERIVING,
   type Taint,
 } from '../../utils/value-flow';
@@ -94,6 +98,16 @@ export function authorityOpen(prefix: string): boolean {
   const rest = prefix.replace(SCHEME, '').replace(/^\/\//, '');
   return !/[^/?#\\][/?#\\]/.test(rest);
 }
+
+/** How many hops one origin question may follow. */
+const MAX_ORIGIN_DEPTH = 12;
+
+/**
+ * Members that read a URL object back as its text.
+ *
+ * @vocabulary WHATWG URL Standard
+ */
+const URL_TEXT_MEMBERS = new Set(['href', 'toString']);
 
 /** A placeholder for fixed text this file cannot read — never a delimiter. */
 const OPAQUE = 'x';
@@ -179,8 +193,12 @@ export const noSsrfInTool = createRule<[], MessageIds>({
               ? null
               : undefined;
           },
+          // A caller that checked the host before passing the URL on hands
+          // the helper a checked value.
+          flowOptionsFor(context, (call, arg) => guards.guarded(call, arg)),
         );
 
+        const callsOf = callSitesIn(sourceCode);
         const value = (node: TSESTree.Node): Taint | null => {
           const t = carries(node);
           return t?.kind === 'value' ? t : null;
@@ -191,7 +209,16 @@ export const noSsrfInTool = createRule<[], MessageIds>({
          * origin is fixed in code (or nothing here is an argument).
          */
         const originOf = (node: TSESTree.Node, depth: number): Taint | null => {
-          if (depth > 8) return null;
+          if (depth > MAX_ORIGIN_DEPTH) return null;
+          node = unwrapTypeOnly(node);
+          if (
+            node.type === 'AwaitExpression' ||
+            node.type === 'ChainExpression'
+          )
+            return originOf(
+              node.type === 'AwaitExpression' ? node.argument : node.expression,
+              depth + 1,
+            );
           const parts = textParts(node);
           if (parts !== undefined) {
             let prefix = '';
@@ -217,11 +244,158 @@ export const noSsrfInTool = createRule<[], MessageIds>({
               ? originOf(base, depth + 1)
               : null;
           }
+          const scope = sourceCode.getScope(node);
+          // `url.href` / `url.toString()` / `String(url)` — the same URL.
+          // The message cites the read as the value flow spells it.
+          const same = (inner: TSESTree.Node): Taint | null =>
+            cite(node, originOf(inner, depth + 1));
+          if (
+            node.type === 'MemberExpression' &&
+            URL_TEXT_MEMBERS.has(propertyName(node) ?? '')
+          )
+            return same(node.object);
+          if (node.type === 'CallExpression') {
+            const { callee } = node;
+            const [first] = node.arguments;
+            if (isConversion(node, scope) && first !== undefined)
+              return same(first);
+            if (
+              callee.type === 'MemberExpression' &&
+              node.arguments.length === 0 &&
+              URL_TEXT_MEMBERS.has(propertyName(callee) ?? '')
+            )
+              return same(callee.object);
+            // A same-file helper: the origin of what it returns.
+            const helper = resolveFunction(callee, scope);
+            if (helper !== undefined) {
+              if (guards.sanitizes(helper)) return null;
+              for (const returned of returnedExpressions(helper)) {
+                const t = cite(node, originOf(returned, depth + 1));
+                if (t) return t;
+              }
+              return null;
+            }
+          }
           if (node.type === 'Identifier') {
-            const init = constInitializer(node, sourceCode.getScope(node));
+            const init = constInitializer(node, scope);
             if (init !== undefined) return originOf(init, depth + 1);
+            const variable = lookupVariable(node.name, scope);
+            const def = variable?.defs[0];
+            // A `let`: the origin of every value written to it.
+            const writes =
+              def?.type === 'Variable' ? plainWrites(variable!) : undefined;
+            if (writes !== undefined) {
+              for (const write of writes) {
+                const t = originOf(write, depth + 1);
+                if (t) return t;
+              }
+              return null;
+            }
+            // A helper's parameter: the origin each caller passes, so
+            // `get(`${API}/items?q=${q}`)` keeps its fixed origin.
+            const fn = def?.type === 'Parameter' ? def.node : undefined;
+            if (
+              fn !== undefined &&
+              handlers.roots.get(fn) === undefined &&
+              'params' in fn
+            ) {
+              const index = fn.params.indexOf(def!.name as TSESTree.Parameter);
+              // A destructured parameter is left to the value flow.
+              if (index < 0) return value(node);
+              for (const call of callsOf(fn)) {
+                const arg = call.arguments[index];
+                if (
+                  arg === undefined ||
+                  arg.type === 'SpreadElement' ||
+                  guards.guarded(call, arg)
+                )
+                  continue;
+                const t = originOf(arg, depth + 1);
+                if (t) return t;
+              }
+              if (callsOf(fn).length > 0) return null;
+            }
           }
           return value(node);
+        };
+
+        /**
+         * An origin taint, cited as the value flow spells `node` (which
+         * follows the same bindings, so it finds the argument too).
+         */
+        const cite = (node: TSESTree.Node, t: Taint | null): Taint | null =>
+          t && [value(node), t].find((x) => x !== null)!;
+
+        /**
+         * Every value a `let` / `var` is given — its initialiser and each plain
+         * `=` assignment — or `undefined` when one is not plain (a
+         * destructuring, `+=`, a loop binding) and the value flow must decide.
+         */
+        const plainWrites = (
+          variable: TSESLint.Scope.Variable,
+        ): TSESTree.Node[] | undefined => {
+          const def = variable.defs[0]!;
+          if (
+            def.node.type !== 'VariableDeclarator' ||
+            def.node.id !== def.name
+          )
+            return undefined;
+          const writes: TSESTree.Node[] = def.node.init ? [def.node.init] : [];
+          for (const ref of variable.references) {
+            if (!ref.isWrite() || ref.identifier === def.name) continue;
+            const parent = ref.identifier.parent;
+            if (
+              parent?.type !== 'AssignmentExpression' ||
+              parent.operator !== '=' ||
+              parent.left !== ref.identifier
+            )
+              return undefined;
+            writes.push(parent.right);
+          }
+          return writes;
+        };
+
+        /** A static `startsWith` prefix that leaves the authority open. */
+        const schemeOnly = (arg: TSESTree.Node): boolean => {
+          const text = staticString(resolve(arg) ?? arg);
+          return text !== null && authorityOpen(text);
+        };
+
+        /** Does this function compare or look up a URL's host anywhere? */
+        const readsHost = (fn: TSESTree.Node): boolean => {
+          let found = false;
+          const visit = (node: TSESTree.Node): void => {
+            if (found) return;
+            if (
+              node.type === 'MemberExpression' &&
+              ORIGIN_MEMBERS.has(propertyName(node) ?? '')
+            ) {
+              found = true;
+              return;
+            }
+            if (
+              node.type === 'CallExpression' &&
+              node.callee.type === 'MemberExpression' &&
+              propertyName(node.callee) === 'startsWith' &&
+              node.arguments[0] !== undefined &&
+              !schemeOnly(node.arguments[0])
+            ) {
+              found = true;
+              return;
+            }
+            for (const [key, value] of Object.entries(node)) {
+              if (key === 'parent') continue;
+              for (const child of Array.isArray(value) ? value : [value])
+                if (
+                  child !== null &&
+                  typeof child === 'object' &&
+                  typeof (child as TSESTree.Node).type === 'string'
+                )
+                  visit(child as TSESTree.Node);
+            }
+          };
+          visit(fn);
+          return found;
         };
 
         const guards = createGuards(
@@ -233,22 +407,40 @@ export const noSsrfInTool = createRule<[], MessageIds>({
           (node, involves) => {
             if (node.type === 'BinaryExpression') {
               if (!COMPARISONS.has(node.operator)) return false;
-              return [node.left, node.right].some(
-                (side) =>
-                  side.type === 'MemberExpression' &&
-                  ORIGIN_MEMBERS.has(propertyName(side) ?? '') &&
-                  involves(side.object),
-              );
+              return [node.left, node.right].some((side) => {
+                // `const host = url.hostname; … host === allowed`.
+                const member =
+                  side.type === 'Identifier'
+                    ? constInitializer(side, sourceCode.getScope(side))
+                    : side;
+                return (
+                  member?.type === 'MemberExpression' &&
+                  ORIGIN_MEMBERS.has(propertyName(member) ?? '') &&
+                  involves(member.object)
+                );
+              });
             }
             if (node.type !== 'CallExpression') return false;
             // Sending the request is not checking where it goes.
             if (httpRequestOf(node, sourceCode.getScope(node), builtBy))
               return false;
+            if (isConversion(node, sourceCode.getScope(node))) return false;
             if (node.callee.type === 'MemberExpression') {
               const method = propertyName(node.callee);
               if (method !== null && STRING_DERIVING.has(method)) return false;
+              // `url.startsWith('https://')` fixes the scheme, not the host.
+              const [prefix] = node.arguments;
+              if (method === 'startsWith' && prefix && schemeOnly(prefix))
+                return false;
               if (involves(node.callee.object)) return true;
             }
+            // A same-file predicate is a host check only if it reads the host:
+            // `isValidUrl(url)` that just parses it is not one.
+            const helper = resolveFunction(
+              node.callee,
+              sourceCode.getScope(node),
+            );
+            if (helper !== undefined && !readsHost(helper)) return false;
             return node.arguments.some(involves);
           },
         );

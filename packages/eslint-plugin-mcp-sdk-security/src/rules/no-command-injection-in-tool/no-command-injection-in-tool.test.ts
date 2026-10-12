@@ -288,8 +288,10 @@ describe('no-command-injection-in-tool', () => {
             '  let n = 0; n++;\n' +
             '  execSync(f); execSync(K); execSync(n); execSync(String()); execSync(cmd.custom()); execSync(cmd[method]());\n' +
             '  execSync("a".concat("b")); execSync(cmd * 1); execSync(extra.sessionId); execSync([, "ls"].join(" "));\n' +
-            '  for (const item of cmd) { execSync(item); }\n' +
             '});',
+          // `for (const item of cmd) { execSync(item); }` moved to the 1.0
+          // review's invalid cases: an element of an argument is the argument
+          // (the rule already said so for `const [x] = cmd`).
         },
         {
           // @found mcp-sdk-security FP/FN audit 2026-10-10, CMD-FN-5 (derived string values)
@@ -298,9 +300,11 @@ describe('no-command-injection-in-tool', () => {
             SDK +
             'function early(x) { if (!x) return; return "ls"; }\n' +
             'function nested(x) { const inner = () => { return x; }; return "pwd"; }\n' +
-            'function picked({ x }) { return x; }\n' +
             'function needsArg(x) { return x; }\n' +
-            'server.registerTool("run", cfg, async ({ cmd }) => { execSync(early(cmd)); execSync(nested(cmd)); execSync(picked({ x: cmd })); execSync(needsArg()); });',
+            'server.registerTool("run", cfg, async ({ cmd }) => { execSync(early(cmd)); execSync(nested(cmd)); execSync(needsArg()); });',
+          // `picked({ x: cmd })` with `function picked({ x }) { return x; }`
+          // moved to the 1.0 review's invalid cases: the object literal's
+          // field IS the argument, read through the destructured parameter.
         },
         {
           // @found modelcontextprotocol/typescript-sdk:examples/guides/clients/oauth.examples.ts:34 (a bodiless declaration crashed the description rule; the shared resolver had the same hole)
@@ -1051,5 +1055,233 @@ describe('handlerArgNames', () => {
     const { direct, objects } = handlerArgNames(fnOf('([a, b]) => {}'));
     expect(direct.size).toBe(0);
     expect(objects.size).toBe(0);
+  });
+});
+
+describe('1.0 independent review (2026-10-12)', () => {
+  const LOW =
+    "import { Server } from '@modelcontextprotocol/sdk/server/index.js';\n" +
+    "import { CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';\n" +
+    "import { z } from 'zod';\n" +
+    "import { exec, execSync, execFileSync } from 'node:child_process';\n" +
+    'const server = new Server({ name: "x", version: "1" }, { capabilities: { tools: {} } });\n';
+  const shell = (arg: string, sink: string) => ({
+    messageId: 'toolArgToShell' as const,
+    data: { arg, sink },
+  });
+  ruleTester.run('review', noCommandInjectionInTool, {
+    valid: [
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: helper flow must stay precise
+        name: 'precision lock: a same-file helper whose callers pass only literals',
+        code:
+          SDK +
+          'function run(foo) { return execSync(foo); }\n' +
+          'server.registerTool("v", cfg, async ({ verbose }) => verbose ? run("node --version") : run("node -v"));',
+      },
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: the closed set survives a Zod parse
+        name: 'precision lock: a z.enum key read after a Zod parse is the allowlist',
+        code:
+          LOW +
+          'const Args = z.object({ tool: z.enum(["ls", "pwd"]) });\nconst Op = z.enum(["a", "b"]);\n' +
+          'server.setRequestHandler(CallToolRequestSchema, async (request) => {\n' +
+          '  const { tool } = Args.parse(request.params.arguments);\n' +
+          '  const parsed = Args.safeParse(request.params.arguments);\n' +
+          '  execFileSync(tool); execFileSync(parsed.data.tool); execFileSync(Op.parse(request.params.arguments.op));\n' +
+          '  return { content: [] };\n});',
+      },
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: `.parse` is followed only on a Zod schema
+        name: 'precision lock: a parse method on something that is not a Zod schema',
+        code:
+          SDK +
+          'const lookup = { parse: (x) => ({ cmd: "ls" }) };\n' +
+          'server.registerTool("r", cfg, async ({ c }) => { const foo = lookup.parse(c); execSync(foo.cmd); execSync(JSON.parse(c).cmd); });',
+      },
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: `this` is resolved to its own class only
+        name: 'recall boundary: a method of another class, and a function that rebinds this',
+        code:
+          SDK +
+          'class Other { run(foo) { execSync(foo); } }\n' +
+          'class Srv {\n' +
+          '  constructor() { server.registerTool("r", cfg, async ({ c }) => { new Other().run(c); (function () { this.run(c); })(); }); }\n' +
+          '  run(foo) { return foo; }\n' +
+          '}',
+      },
+    ],
+    invalid: [
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: the low-level dispatch-to-helper layout
+        name: 'FN: a sink in a same-file helper the setRequestHandler handler calls',
+        code:
+          LOW +
+          'function runGit(foo) { return execSync(`git ${foo}`).toString(); }\n' +
+          'server.setRequestHandler(CallToolRequestSchema, async (request) => {\n' +
+          '  const { name, arguments: bar } = request.params;\n' +
+          '  if (name === "git") return { content: [{ type: "text", text: runGit(String(bar.cmd)) }] };\n' +
+          '  throw new Error("unknown");\n});',
+        errors: [shell('foo', 'execSync')],
+      },
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: class-based servers delegate to methods
+        name: 'FN: a class method reached through this, and a handler bound with .bind(this)',
+        code:
+          SDK +
+          'class Srv {\n' +
+          '  server = new McpServer({ name: "x", version: "1" });\n' +
+          '  constructor() {\n' +
+          '    this.server.registerTool("a", cfg, async (args) => this.runIt(args.cmd));\n' +
+          '    this.server.registerTool("b", cfg, this.handle.bind(this));\n' +
+          '  }\n' +
+          '  runIt(foo) { exec(foo); }\n' +
+          '  #private(bar) { spawn(bar); }\n' +
+          '  async handle({ cmd }) { execSync(cmd); this.#private(cmd); }\n' +
+          '}',
+        errors: [
+          shell('foo', 'exec'),
+          shell('bar', 'spawn'),
+          shell('cmd', 'execSync'),
+        ],
+      },
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: the Server + Zod layout of modelcontextprotocol/servers
+        name: 'FN: arguments read through a Zod parse and safeParse',
+        code:
+          LOW +
+          'const Args = z.object({ command: z.string() }).strict();\n' +
+          'server.setRequestHandler(CallToolRequestSchema, async (request) => {\n' +
+          '  const { command } = Args.parse(request.params.arguments);\n' +
+          '  const parsed = await Args.safeParseAsync(request.params.arguments);\n' +
+          '  exec(command); exec(parsed.data.command);\n' +
+          '  return { content: [] };\n});',
+        errors: [
+          shell('request.params.arguments.command', 'exec'),
+          shell('parsed.data.command', 'exec'),
+        ],
+      },
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, moved from valid ("recall boundary: values that are not derived")
+        name: 'FN: each element of an argument array (for…of, map and forEach callbacks)',
+        code:
+          SDK +
+          'server.registerTool("run", cfg, async ({ cmds }) => {\n' +
+          '  for (const item of cmds) { execSync(item); }\n' +
+          '  cmds.forEach((foo) => exec(foo));\n' +
+          '  await Promise.all(cmds.filter(Boolean).map(async (bar) => execSync(bar)));\n' +
+          '});',
+        errors: [
+          shell('cmds', 'execSync'),
+          shell('foo', 'exec'),
+          shell('bar', 'execSync'),
+        ],
+      },
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, moved from valid ("recall boundary: helpers that … take a destructured parameter")
+        name: 'FN: an object literal handed to a helper, or held in a const',
+        code:
+          SDK +
+          'function picked({ x }) { return x; }\n' +
+          'function runWith(opts) { execSync(opts.command); }\n' +
+          'server.registerTool("run", cfg, async ({ cmd }) => {\n' +
+          '  execSync(picked({ x: cmd }));\n' +
+          '  runWith({ command: cmd, cwd: "/tmp" });\n' +
+          '  const o = { c: cmd }; execSync(o.c);\n' +
+          '});',
+        errors: [
+          shell('cmd', 'execSync'),
+          shell('x', 'execSync'),
+          shell('cmd', 'execSync'),
+        ],
+      },
+    ],
+  });
+});
+
+describe('1.0 review: shapes the helper, element and Zod flows must handle', () => {
+  const ZOD =
+    "import { Server } from '@modelcontextprotocol/sdk/server/index.js';\n" +
+    "import { CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';\n" +
+    "import { exec } from 'node:child_process';\n";
+  const shell = (arg: string, sink: string) => ({
+    messageId: 'toolArgToShell' as const,
+    data: { arg, sink },
+  });
+  ruleTester.run('flow shapes', noCommandInjectionInTool, {
+    valid: [
+      {
+        name: 'recall boundary: a computed this member, a non-function class field and a string-keyed method',
+        code:
+          SDK +
+          'class C {\n  x = 5;\n  "run"(foo) { execSync(foo); }\n' +
+          '  constructor() { server.registerTool("r", cfg, async ({ c }) => { this[k](c); this.x(c); this.run(c); }); }\n}',
+      },
+      {
+        name: 'recall boundary: this outside any class, and an array pattern nested in a destructured parameter',
+        code:
+          SDK +
+          'function f({ a: [b] }) { execSync(b); }\n' +
+          'server.registerTool("r", cfg, async ({ c }) => { this.run(c); f({ a: c }); });',
+      },
+      {
+        name: 'recall boundary: an index parameter, a helper with no matching argument, and an array-pattern helper given an object',
+        code:
+          SDK +
+          'function h(o) { execSync(o.c); }\nfunction k([o]) { execSync(o.c); }\n' +
+          'server.registerTool("r", cfg, async ({ cmds }) => { cmds.forEach((c, i) => execSync(i)); h(); h(...cmds); k([{ c: cmds }]); });',
+      },
+      {
+        name: 'recall boundary: a parse with no input, a non-Zod schema, a factory result, and a self-referencing schema',
+        code:
+          ZOD +
+          "import { z } from 'zod';\nimport * as v from 'valibot';\n" +
+          'const Args = z.object({ c: z.string() });\nconst Other = v.object({});\nconst Loop = Loop.strict();\n' +
+          'server.setRequestHandler(CallToolRequestSchema, async (request) => {\n' +
+          '  const a = request.params.arguments;\n' +
+          '  exec(Args.parse()); exec(Other.parse(a).c); exec(makeSchema().parse(a).c); exec(Loop.parse(a).c);\n' +
+          '  return { content: [] };\n});',
+      },
+    ],
+    invalid: [
+      {
+        name: 'FN shapes: destructured helper parameters with defaults, rest, computed keys and spreads',
+        code:
+          SDK +
+          'function f({ [k]: a, x: y, ...rest, b } = {}) { execSync(b); }\n' +
+          'server.registerTool("r", cfg, async (args) => {\n' +
+          '  const o1 = { b: args.cmd };\n  const o2 = args;\n' +
+          '  f(o1); f(o2); f({ ...args });\n});',
+        errors: [shell('b', 'execSync')],
+      },
+      {
+        name: 'FN shapes: an array-pattern helper parameter, and a map callback with two returns',
+        code:
+          SDK +
+          'function g([a]) { execSync(a); }\n' +
+          'server.registerTool("r", cfg, async ({ cmds }) => {\n' +
+          '  g(cmds);\n' +
+          '  const out = cmds.map((c) => { if (!c) return "ls"; return c; });\n' +
+          '  execSync(out.join(" "));\n});',
+        errors: [shell('a', 'execSync'), shell('c', 'execSync')],
+      },
+      {
+        name: 'FN shapes: a zod/v4 schema, a string schema, a parsed request object and an unresolved field schema',
+        code:
+          ZOD +
+          "import * as z from 'zod/v4';\nimport { Mode } from 'some-package';\n" +
+          'const Req = z.object({ arguments: z.object({ command: z.string() }) });\nconst Args = z.object({ mode: Mode, cmd: z.string() });\n' +
+          'server.setRequestHandler(CallToolRequestSchema, async (request) => {\n' +
+          '  exec(z.string().parse(request.params.arguments.cmd));\n' +
+          '  exec(Req.parse(request.params).arguments.command);\n' +
+          '  exec(Args.parse(request.params.arguments).mode);\n' +
+          '  return { content: [] };\n});',
+        errors: [
+          shell('request.params.arguments.cmd', 'exec'),
+          shell('request.params.arguments.command', 'exec'),
+          shell('request.params.arguments.mode', 'exec'),
+        ],
+      },
+    ],
   });
 });

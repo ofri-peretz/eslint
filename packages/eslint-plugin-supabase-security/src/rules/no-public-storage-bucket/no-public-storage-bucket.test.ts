@@ -57,6 +57,19 @@ ruleTester.run('no-public-storage-bucket', noPublicStorageBucket, {
       name: 'no Supabase import',
       code: `await db.storage.createBucket('a', { public: true });`,
     },
+    // 2026-10-12 FP/FN audit
+    {
+      name: 'a spread after public: true may turn it back off',
+      code: `${IMPORT}\nawait db.storage.createBucket('a', { public: true, ...overrides });`,
+    },
+    {
+      name: 'a spread argument is unreadable',
+      code: `${IMPORT}\nawait db.storage.createBucket(...args);`,
+    },
+    {
+      name: 'a const options object that keeps the bucket private',
+      code: `${IMPORT}\nconst foo = { public: false };\nawait db.storage.createBucket('a', foo);`,
+    },
   ],
   invalid: [
     {
@@ -77,6 +90,18 @@ ruleTester.run('no-public-storage-bucket', noPublicStorageBucket, {
     {
       name: 'still fires with every identifier renamed to foo and bar',
       code: `import { foo } from '@supabase/supabase-js';\nconst bar = foo();\nawait bar.baz.createBucket('qux', { public: true });`,
+      errors: [{ messageId: 'publicBucket' }],
+    },
+    {
+      name: 'FN: the options object held in a const',
+      // @found synthetic: 2026-10-12 SDK-usage snippet (benchmarks/audits/2026-10-12-fp-fn-supabase-security.md)
+      code: `${IMPORT}\nconst foo = { public: true, fileSizeLimit: 1024 };\nawait db.storage.createBucket('a', foo);`,
+      errors: [{ messageId: 'publicBucket' }],
+    },
+    {
+      name: 'FN: public: true arriving through a same-file spread, the flag in a const',
+      // @found synthetic: 2026-10-12 SDK-usage snippet (benchmarks/audits/2026-10-12-fp-fn-supabase-security.md)
+      code: `${IMPORT}\nconst yes = true;\nconst base = { public: yes };\nawait db.storage.updateBucket('a', { ...base, allowedMimeTypes: ['image/png'] });`,
       errors: [{ messageId: 'publicBucket' }],
     },
   ],

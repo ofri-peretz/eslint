@@ -30,7 +30,17 @@ export const noUnsafeQuery = createSqlInjectionRule({
   // Method names alone are shared across drivers; the import is the evidence.
   modules: ['mysql', 'mysql2'],
   methods: ['query', 'execute'],
+  // mysql2's options form: `query({ sql, values, timeout })`.
+  sqlTextProperties: ['sql'],
+  // The driver's own escaping API — `mysql.escape(v)`, `pool.escapeId(col)`,
+  // `mysql.format('… ?? …', [col])`. Its output is quoted text.
+  escapers: ['escape', 'escapeId', 'format'],
+  // `sqlstring` is the escaper both drivers are built on.
+  escaperModules: ['sqlstring'],
+  // MySQL's default sql_mode reads `"…"` as a string literal.
+  doubleQuotedStrings: true,
   requireSqlKeywords: true,
   fix: 'Pass values as a second-argument array with `?` placeholders instead of interpolating them into the SQL string.',
-  documentationLink: 'https://sidorares.github.io/node-mysql2/docs#using-prepared-statements',
+  documentationLink:
+    'https://sidorares.github.io/node-mysql2/docs#using-prepared-statements',
 });

@@ -25,8 +25,19 @@
 
 import type { TSESTree } from '@typescript-eslint/utils';
 import { createRule } from './rule-creator';
-import { createModuleListEvidence } from './module-evidence';
+import {
+  createModuleListEvidence,
+  createModuleListMatcher,
+} from './module-evidence';
 import { formatLLMMessage, MessageIcons } from '../messaging';
+import {
+  createSdkClientMatcher,
+  committedStrings,
+  isCredentialShaped,
+  readObjectProperty,
+  resolveObjectLiteral,
+  sdkExportName,
+} from './sdk-flow';
 
 export interface SdkApiKeyRuleConfig {
   /** Rule id, e.g. `no-hardcoded-api-key`. */
@@ -60,8 +71,11 @@ export interface SdkApiKeyRuleConfig {
   /** Vendor documentation link carried in the message. */
   documentationLink: string;
   /**
-   * Constructors whose *first positional argument* is the key itself, e.g.
-   * `new GoogleGenerativeAI('AIza…')`. Empty for SDKs that only take options.
+   * SDK exports whose *first positional argument* is the key itself, e.g.
+   * `new GoogleGenerativeAI('AIza…')`. Matched against the name the SDK
+   * exports, resolved through the import — `import { GoogleGenerativeAI as G }`
+   * is still `GoogleGenerativeAI` — never against the local identifier.
+   * Empty for SDKs that only take options.
    */
   positionalKeyConstructors?: readonly string[];
 }
@@ -85,6 +99,10 @@ export type KeyVerdict =
 
 /**
  * Whether the client options literal carries an inline credential.
+ *
+ * @deprecated The rule no longer calls this: it follows consts and spreads
+ * (`readObjectProperty`) and rejects placeholder values (`isCredentialShaped`),
+ * neither of which a single-node reader can do. Kept because it is public API.
  *
  * `process.env.OPENAI_API_KEY` and any other non-literal expression are `safe`
  * — reading a key from the environment is the correct pattern. A spread is
@@ -122,6 +140,10 @@ export function readCredential(
 /**
  * The callee name of a `new X(...)` / `X(...)`, if it is statically known.
  * `new pkg.Client()` counts as `Client` — the namespace is not the identity.
+ *
+ * @deprecated The rule no longer calls this: a local identifier is not the
+ * export it binds (`import { GoogleGenerativeAI as G }`), so the positional
+ * check resolves the import instead. Kept because it is public API.
  */
 export function calleeName(node: TSESTree.Node): string | undefined {
   if (node.type === 'Identifier') return node.name;
@@ -136,11 +158,14 @@ export function calleeName(node: TSESTree.Node): string | undefined {
 }
 
 export function createSdkApiKeyRule(config: SdkApiKeyRuleConfig) {
-  const keyProps = new Set(config.keyProps);
   const positional = new Set(config.positionalKeyConstructors ?? []);
   // One probe per rule, not per file: it caches by `Program`, so the walk is
   // paid once however many rules in the plugin ask.
   const usesSdk = createModuleListEvidence(config.modules);
+  // Which calls are SDK client constructions — by binding, not by name.
+  const matcher = createSdkClientMatcher(
+    createModuleListMatcher(config.modules),
+  );
 
   return createRule<[], MessageIds>({
     name: config.ruleName,
@@ -175,53 +200,71 @@ export function createSdkApiKeyRule(config: SdkApiKeyRuleConfig) {
       // on whether the import is written above or below the client, which is
       // what the old two-visitor gate needed a `Program:exit` pass to survive.
       if (!usesSdk(context.sourceCode.ast)) return {};
+      const sourceCode = context.sourceCode;
 
-      function inspect(
-        node: TSESTree.Node,
-        args: readonly TSESTree.Node[],
-      ): void {
-        const first = args[0];
-        if (first === undefined) return;
+      /**
+       * A literal this file commits — directly, through consts, or as a
+       * fallback — shaped like a working credential.
+       */
+      const isHardcodedKey = (node: TSESTree.Node): boolean =>
+        committedStrings(node, sourceCode).some(isCredentialShaped);
+
+      /** The first configured credential option that holds a literal key. */
+      function credentialProp(
+        options: TSESTree.ObjectExpression,
+      ): string | undefined {
+        return config.keyProps.find((prop) => {
+          const read = readObjectProperty(options, prop, sourceCode);
+          return read.kind === 'value' && isHardcodedKey(read.node);
+        });
+      }
+
+      function inspect(node: TSESTree.NewExpression | TSESTree.CallExpression) {
+        // Only an SDK client construction: a callee bound to the SDK, a
+        // same-file subclass or wrapper of one, or `withOptions`. Any other
+        // call with an `apiKey` option is another vendor's client, a test
+        // matcher, or a provider factory another plugin owns.
+        const indices = matcher.optionArguments(node, sourceCode);
+        if (indices.length === 0) return;
 
         // `new GoogleGenerativeAI('AIza…')` — the key is the argument itself.
-        if (first.type === 'Literal') {
-          const name = calleeName(
-            (node as TSESTree.NewExpression | TSESTree.CallExpression).callee,
-          );
+        const first = node.arguments[0];
+        if (positional.size > 0 && first !== undefined && indices.includes(0)) {
+          const binding = matcher.exportOf(node.callee, sourceCode);
           if (
-            name !== undefined &&
-            positional.has(name) &&
-            typeof first.value === 'string' &&
-            first.value.length > 0
+            binding !== undefined &&
+            positional.has(sdkExportName(binding)) &&
+            isHardcodedKey(first)
           ) {
             context.report({
               node,
               messageId: 'hardcodedApiKey',
               data: { prop: POSITIONAL_KEY_LABEL },
             });
+            return;
           }
-          return;
         }
 
-        if (first.type !== 'ObjectExpression') return;
-        const verdict = readCredential(first, keyProps);
-        if (verdict.kind === 'literal') {
-          context.report({
-            node,
-            messageId: 'hardcodedApiKey',
-            data: { prop: verdict.prop },
-          });
+        for (const index of indices) {
+          const argument = node.arguments[index];
+          if (argument === undefined || argument.type === 'SpreadElement')
+            continue;
+          const options = resolveObjectLiteral(argument, sourceCode);
+          const prop = options && credentialProp(options);
+          if (prop !== undefined) {
+            context.report({
+              node,
+              messageId: 'hardcodedApiKey',
+              data: { prop },
+            });
+            return;
+          }
         }
       }
 
       return {
-        NewExpression(node: TSESTree.NewExpression) {
-          inspect(node, node.arguments);
-        },
-
-        CallExpression(node: TSESTree.CallExpression) {
-          inspect(node, node.arguments);
-        },
+        NewExpression: inspect,
+        CallExpression: inspect,
       };
     },
   });

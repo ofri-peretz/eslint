@@ -518,3 +518,155 @@ describe('no-path-traversal-in-tool', () => {
     ],
   });
 });
+
+describe('1.0 independent review (2026-10-12)', () => {
+  const LOW =
+    "import { Server } from '@modelcontextprotocol/sdk/server/index.js';\n" +
+    "import { CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';\n" +
+    "import { z } from 'zod';\n" +
+    "import fs from 'node:fs/promises';\n" +
+    "import path from 'node:path';\n" +
+    "const ROOT = '/srv/data';\n" +
+    'const server = new Server({ name: "x", version: "1" }, { capabilities: { tools: {} } });\n';
+  ruleTester.run('review', noPathTraversalInTool, {
+    valid: [
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: a caller that confines the path hands the helper a checked value
+        name: 'precision lock: the caller checks containment before passing the path to a helper',
+        code:
+          SDK +
+          'async function load(foo) { return fsp.readFile(foo, "utf8"); }\n' +
+          'server.registerTool("read", cfg, async ({ p }) => {\n' +
+          '  const target = path.resolve(ROOT, p);\n' +
+          '  if (!target.startsWith(ROOT + path.sep)) throw new Error("outside");\n' +
+          '  return load(target);\n});',
+      },
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: a sanitising helper on the helper-flow path
+        name: 'precision lock: a helper that confines its parameter before reading',
+        code:
+          SDK +
+          'async function readInside(foo) {\n' +
+          '  const target = path.resolve(ROOT, foo);\n' +
+          '  const rel = path.relative(ROOT, target);\n' +
+          '  if (rel.startsWith("..") || path.isAbsolute(rel)) throw new Error("outside");\n' +
+          '  return fsp.readFile(target, "utf8");\n}\n' +
+          'server.registerTool("read", cfg, async ({ p }) => readInside(p));',
+      },
+    ],
+    invalid: [
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: the Server + Zod layout of the reference filesystem server
+        name: 'FN: a path read after a Zod parse of request.params.arguments',
+        code:
+          LOW +
+          'const ReadArgs = z.object({ path: z.string() });\n' +
+          'server.setRequestHandler(CallToolRequestSchema, async (request) => {\n' +
+          '  const foo = ReadArgs.parse(request.params.arguments);\n' +
+          '  return { content: [{ type: "text", text: await fs.readFile(foo.path, "utf8") }] };\n});',
+        errors: [err('foo.path', 'readFile')],
+      },
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: read_multiple_files
+        name: 'FN: each path of an argument array, in a map callback and a for…of',
+        code:
+          SDK +
+          'server.registerTool("read_many", cfg, async ({ paths }) => {\n' +
+          '  const out = await Promise.all(paths.map((foo) => fsp.readFile(foo, "utf8")));\n' +
+          '  for (const bar of paths) await fsp.readFile(bar, "utf8");\n' +
+          '  return out;\n});',
+        errors: [err('foo', 'readFile'), err('paths', 'readFile')],
+      },
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: helper flow is context-insensitive on purpose
+        name: 'FN: a helper reached unchecked by one caller and checked by another',
+        code:
+          SDK +
+          'async function load(foo) { return fsp.readFile(foo, "utf8"); }\n' +
+          'server.registerTool("a", cfg, async ({ p }) => {\n' +
+          '  const t = path.resolve(ROOT, p);\n' +
+          '  if (!t.startsWith(ROOT + path.sep)) throw new Error("outside");\n' +
+          '  return load(t);\n});\n' +
+          'server.registerTool("b", cfg, async ({ p }) => load(p));',
+        errors: [err('foo', 'readFile')],
+      },
+    ],
+  });
+});
+
+describe('1.0 review: guarded call sites and sanitising helpers', () => {
+  ruleTester.run('guards', noPathTraversalInTool, {
+    valid: [
+      {
+        name: 'precision lock: a guarded call site passing an object literal, and checks inside try and bare blocks',
+        code:
+          SDK +
+          'async function load(o) { return fsp.readFile(o.p, "utf8"); }\n' +
+          'async function inTry(foo) { try { if (!path.resolve(ROOT, foo).startsWith(ROOT + path.sep)) throw new Error("x"); } catch (e) { throw e; } return fsp.readFile(foo); }\n' +
+          'async function inBlock(foo) { { if (!path.resolve(ROOT, foo).startsWith(ROOT + path.sep)) throw new Error("x"); } return fsp.readFile(foo); }\n' +
+          'server.registerTool("read", cfg, async ({ p }) => {\n' +
+          '  const t = path.resolve(ROOT, p);\n' +
+          '  if (!t.startsWith(ROOT + path.sep)) throw new Error("outside");\n' +
+          '  await load({ p: t });\n  await fsp.readFile(await inTry(p));\n  return fsp.readFile(await inBlock(p));\n});',
+      },
+    ],
+    invalid: [
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic
+        name: 'FN: a check nested in a condition does not sanitise the helper',
+        code:
+          SDK +
+          'async function maybe(foo) { if (STRICT) { if (!path.resolve(ROOT, foo).startsWith(ROOT + path.sep)) throw new Error("x"); } return foo; }\n' +
+          'server.registerTool("read", cfg, async ({ p }) => fsp.readFile(await maybe(p)));',
+        errors: [err('p', 'readFile')],
+      },
+    ],
+  });
+});
+
+describe('1.0 review: look-alike guards the Quint model found', () => {
+  ruleTester.run('look-alikes', noPathTraversalInTool, {
+    valid: [],
+    invalid: [
+      {
+        // @found benchmarks/quint/models/mcp-sdk-security.no-path-traversal-in-tool.qnt (ToolArg/NoTransform/EndsWithLookalike/any)
+        name: 'FN: an extension check on a converted value, and an existence probe on a helper result',
+        code:
+          SDK +
+          'function pick(a) { return a; }\n' +
+          'server.registerTool("a", cfg, async ({ p }) => { if (!String(p).endsWith(".md")) throw new Error("md"); return fsp.readFile(p); });\n' +
+          'server.registerTool("b", cfg, async ({ p }) => { if (!existsSync(pick(p))) throw new Error("missing"); return fsp.readFile(pick(p)); });',
+        errors: [err('p', 'readFile'), err('p', 'readFile')],
+      },
+    ],
+  });
+});
+
+describe('1.0 review: same-file predicates in a guard', () => {
+  ruleTester.run('predicates', noPathTraversalInTool, {
+    valid: [
+      {
+        name: 'precision lock: a same-file predicate that makes a containment check, or defers to a validator this file cannot see',
+        code:
+          SDK +
+          "import { looksSafe } from 'validator-pkg';\n" +
+          'function isInside(a) { return path.resolve(ROOT, a).startsWith(ROOT + path.sep); }\n' +
+          'function ok(a) { return looksSafe(a); }\n' +
+          'server.registerTool("r", cfg, async ({ p }) => { if (!isInside(p)) throw new Error("outside"); return fsp.readFile(p); });\n' +
+          'server.registerTool("s", cfg, async ({ p }) => { if (!ok(p)) throw new Error("outside"); return fsp.readFile(p); });',
+      },
+    ],
+    invalid: [
+      {
+        // @found benchmarks/quint/models/mcp-sdk-security.no-path-traversal-in-tool.qnt (a pass-through helper read as a validator)
+        name: 'FN: a same-file function that only transforms or probes the path is no validator',
+        code:
+          SDK +
+          'function pick(a) { return a; }\n' +
+          'function probe(a) { return existsSync(a) && a.trim().length > 0; }\n' +
+          'server.registerTool("r", cfg, async ({ p }) => { if (!pick(p)) throw new Error("empty"); if (!probe(p)) throw new Error("x"); if (String(p) === "") throw new Error("y"); return fsp.readFile(p); });',
+        errors: [err('p', 'readFile')],
+      },
+    ],
+  });
+});

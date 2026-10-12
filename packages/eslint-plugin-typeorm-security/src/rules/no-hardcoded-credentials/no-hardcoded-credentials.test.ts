@@ -32,11 +32,15 @@ describe('no-hardcoded-credentials', () => {
     valid: [
       {
         name: 'a value read from a config object, whose contents this file cannot see',
-        code: DRIVER + `new DataSource({ type: 'postgres', host, database, password: config.dbPassword })`,
+        code:
+          DRIVER +
+          `new DataSource({ type: 'postgres', host, database, password: config.dbPassword })`,
       },
       {
         name: 'the fix — the password comes from the environment',
-        code: DRIVER + `new DataSource({ type: 'postgres', host, database, password: process.env.DB_PASSWORD })`,
+        code:
+          DRIVER +
+          `new DataSource({ type: 'postgres', host, database, password: process.env.DB_PASSWORD })`,
       },
       {
         // Same call shape, no typeorm import: this is somebody else's API.
@@ -47,18 +51,57 @@ describe('no-hardcoded-credentials', () => {
     invalid: [
       {
         name: 'a template literal with no interpolation is still a literal',
-        code: DRIVER + `new DataSource({ type: 'postgres', host, database, password: \`hunter2\` })`,
+        code:
+          DRIVER +
+          `new DataSource({ type: 'postgres', host, database, password: \`hunter2\` })`,
         errors: [{ messageId: 'hardcodedPassword' }],
       },
       {
         name: 'a literal password in the connection config',
-        code: DRIVER + `new DataSource({ type: 'postgres', host, database, password: 'hunter2' })`,
+        code:
+          DRIVER +
+          `new DataSource({ type: 'postgres', host, database, password: 'hunter2' })`,
         errors: [{ messageId: 'hardcodedPassword' }],
       },
       {
         name: 'the password hidden inside a connection URL',
-        code: DRIVER + `new DataSource({ type: 'postgres', url: 'postgres://admin:hunter2@db.internal:5432/app' })`,
+        code:
+          DRIVER +
+          `new DataSource({ type: 'postgres', url: 'postgres://admin:hunter2@db.internal:5432/app' })`,
         errors: [{ messageId: 'credentialsInUrl' }],
+      },
+    ],
+  });
+});
+
+/**
+ * FP/FN review 2026-10-12 (benchmarks/audits/2026-10-12-fp-fn-typeorm-security.md).
+ * Bindings are named `foo` / `bar` so no verdict can rest on a name.
+ */
+describe('no-hardcoded-credentials — fp/fn review 2026-10', () => {
+  ruleTester.run('fp-fn review 2026-10', noHardcodedCredentials, {
+    valid: [
+      {
+        // @found typeorm-security FP/FN review 2026-10-12, synthetic probe (BENCHMARK-CRITERIA B1)
+        name: 'FP: a test data source',
+        filename: '/repo/test/data-source.ts',
+        code:
+          DRIVER +
+          "new DataSource({ type: 'postgres', host: 'localhost', password: 'test' });",
+      },
+    ],
+    invalid: [
+      {
+        // @found nestjs/nest:sample/05-sql-typeorm/src/app.module.ts:12
+        name: 'FN: TypeOrmModule.forRoot in a NestJS module',
+        code: "import { TypeOrmModule } from '@nestjs/typeorm';\nexport const foo = TypeOrmModule.forRoot({ type: 'mysql', host: 'localhost', port: 3306, username: 'root', password: 'root', database: 'test', autoLoadEntities: true, synchronize: true });",
+        errors: [{ messageId: 'hardcodedPassword' }],
+      },
+      {
+        // @found typeorm-security FP/FN review 2026-10-12, synthetic probe (ormconfig.js)
+        name: 'FN: an ormconfig.js with no typeorm import',
+        code: "module.exports = { type: 'mysql', host: 'localhost', username: 'root', password: 'root', database: 'test', entities: ['dist/**/*.entity.js'], synchronize: true };",
+        errors: [{ messageId: 'hardcodedPassword' }],
       },
     ],
   });

@@ -99,12 +99,29 @@ server.registerTool('read', cfg, async ({ p }) => {
   templates, `path.join` / `resolve` / `normalize` / `dirname`, `fs.realpath`,
   `fileURLToPath` and `new URL()`, all of which still point wherever their
   input did. `path.basename(p)` strips every directory and is not followed.
+- **Into helpers, elements and parsed arguments (1.0).** A same-file
+  function or class method (`this.run(args.cmd)`) the handler calls carries
+  what its callers pass it, so a sink inside the helper is reported — an
+  object literal it is given is read field by field. Each element of an
+  argument array is the argument (`for (const p of paths)`,
+  `paths.map((p) => …)`), and a Zod `Schema.parse(args)` /
+  `safeParse(args).data` hands the arguments back: parsing checks their shape,
+  not their text. A key the parsing schema restricts to `z.enum` / `z.literal`
+  / `z.nativeEnum` stays the allowlist. Callers are found by resolving the
+  callee, never by a name.
 - **A containment check** is an `if` whose test checks the value — or a name
   derived from it — with a call: `target.startsWith(root + sep)`,
   `path.relative(root, target)` / `path.isAbsolute(...)`, `ALLOWED.includes(p)`,
   a regex `test`, or a validator — and either exits (`throw` / `return`) before
   the `fs` call or wraps it. A same-file helper that performs such a check
-  before returning sanitises its result. `endsWith`, `existsSync` / `stat` /
+  before every return (at the top of its body, or in a `try` there)
+  sanitises its result; a check nested in another `if` does not. A caller
+  that confines the path before passing it to a helper hands the helper a
+  checked value. A same-file predicate in the test (`if (!isInside(p))`)
+  counts only when its own body makes a check-shaped call; one that only
+  returns or probes the path (`pick(p)`, `existsSync(a)`) does not. A call
+  that is not a check is not searched for one inside it: in
+  `String(p).endsWith('.md')` the conversion is an operand, not a check. `endsWith`, `existsSync` / `stat` /
   `access`, `typeof` and a check that does not exit are not containment.
 - **A closed set is the allowlist.** An argument declared with `z.enum([...])`,
   `z.literal(...)` or `z.nativeEnum(...)` is not reported.

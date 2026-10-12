@@ -36,10 +36,21 @@
 import { AST_NODE_TYPES } from '../ast-node-types';
 import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
 import { formatLLMMessage, MessageIcons } from '../messaging';
-import { driverBindings, propertyKeyName } from './unscoped-mutation-rule';
+import { propertyKeyName } from './unscoped-mutation-rule';
+import { createModuleEvidence } from './module-evidence';
+import { isTestFilePath } from './rule-creator';
+import { createOriginClassifier } from './driver-origin';
+import {
+  type ConfigShape,
+  configShapeEvidence,
+  passedToForeign,
+  possibleValues,
+} from './connection-config';
+import { envOf, valueAt } from './value-follow';
 import {
   looksLikeConnectionConfig,
   inConnectionPosition,
+  within,
 } from './require-tls-rule';
 
 /**
@@ -76,6 +87,17 @@ export interface HardcodedCredentialsRuleConfig {
   readonly connectionKeys?: readonly string[];
   /** URL schemes this driver accepts, e.g. `['postgres', 'postgresql']`. */
   readonly urlSchemes: readonly string[];
+  /**
+   * The driver's config-file contracts — a sequelize-cli `{ dialect:
+   * 'mysql', username }` — that mark a file with no driver import as the
+   * driver's.
+   */
+  readonly configShapes?: readonly ConfigShape[];
+  /**
+   * Argument index of a positional password in the driver's constructor —
+   * `new Sequelize(database, username, password, options)`.
+   */
+  readonly positionalPassword?: number;
   /** Remediation for a literal credential property. */
   readonly fix: string;
   /** Remediation for a credential embedded in a URL. */
@@ -210,6 +232,12 @@ export function createHardcodedCredentialsRule(
     ...(config.connectionKeys ?? []),
   ];
 
+  const usesModule = createModuleEvidence({
+    packages: config.modules,
+    extraEvidence: configShapeEvidence(config.configShapes ?? []),
+  });
+  const originOf = createOriginClassifier(config.modules);
+
   return {
     meta: {
       type: config.meta.type,
@@ -248,23 +276,18 @@ export function createHardcodedCredentialsRule(
     },
     defaultOptions: [],
     create(context) {
-      let bindings = new Set<string>();
+      // BENCHMARK-CRITERIA §B1: a test pointing at a throwaway local database
+      // is not a committed production secret.
+      if (isTestFilePath(context.filename)) return {};
+      const env = envOf(context);
+      let ownsFile = false;
       /**
-       * A nested config is reachable twice — the visitor reaches every
-       * ObjectExpression, and a qualifying parent recurses into it — so
-       * `{ connection: { password: 'x' } }` would otherwise report twice for
-       * one mistake.
+       * Nodes already reported. A credential can be reached twice — once
+       * through its parent config's scan and once from its own visitor.
        */
-      let reported = new WeakSet<TSESTree.Node>();
-      /**
-       * Objects already walked.
-       *
-       * `reported` stops duplicate *diagnostics*; this stops duplicate *work*.
-       * A nested config is reached twice — once by the visitor, once by its
-       * parent's recursion — so without this a depth-N config costs O(N²)
-       * property scans.
-       */
-      let scanned = new WeakSet<TSESTree.ObjectExpression>();
+      const reported = new WeakSet<TSESTree.Node>();
+      /** Objects already scanned, so a nested config is walked once. */
+      const scanned = new WeakSet<TSESTree.ObjectExpression>();
 
       const report = (
         node: TSESTree.Node,
@@ -273,6 +296,41 @@ export function createHardcodedCredentialsRule(
         if (reported.has(node)) return;
         reported.add(node);
         context.report({ node, messageId });
+      };
+
+      /**
+       * Report every literal secret `node` can evaluate to: itself, either
+       * arm of a ternary, the fallback of `process.env.X || 'root'`, or the
+       * constant it names. One written in another module is reported here.
+       */
+      const reportSecrets = (node: TSESTree.Node): void => {
+        for (const value of possibleValues(valueAt(node, env))) {
+          if (!isLiteralSecret(value.node)) continue;
+          // Reported where the connection reads it: a constant declared
+          // elsewhere is reported at this use, not at its declaration.
+          report(
+            value.env === env && within(value.node, node) ? value.node : node,
+            'hardcodedPassword',
+          );
+        }
+      };
+
+      /** Report a connection URL — literal or followed — that embeds a password. */
+      const reportUrl = (node: TSESTree.Node): boolean => {
+        for (const value of possibleValues(valueAt(node, env))) {
+          const url = urlPrefix(value.node);
+          if (
+            url === undefined ||
+            !urlEmbedsCredentials(url, config.urlSchemes)
+          )
+            continue;
+          report(
+            value.env === env && within(value.node, node) ? value.node : node,
+            'credentialsInUrl',
+          );
+          return true;
+        }
+        return false;
       };
 
       /** Scan one already-qualified object for credential keys. */
@@ -289,63 +347,97 @@ export function createHardcodedCredentialsRule(
               name.toLowerCase() as (typeof CREDENTIAL_KEYS)[number],
             )
           ) {
-            if (isLiteralSecret(prop.value))
-              report(prop.value, 'hardcodedPassword');
+            reportSecrets(prop.value);
             continue;
           }
-          // A URL sitting on a connection key carries its own check, because
-          // the credential is inside the string rather than beside it.
-          const url = staticStringValue(prop.value);
-          if (
-            url !== undefined &&
-            urlEmbedsCredentials(url, config.urlSchemes)
-          ) {
-            report(prop.value, 'credentialsInUrl');
-            continue;
-          }
-          // Nested driver config: `{ connection: { … } }`, `{ replication: { … } }`.
-          //
-          // Only connection-named keys are followed. Recursing into *every*
-          // nested object made any credential-ish key anywhere under a config
-          // a finding — a TypeORM `extra: { webhook: { secret: '…' } }` is a
-          // third-party SDK secret, not a database credential, and reporting
-          // it here is both wrong and somebody else's plugin's job.
-          if (
-            prop.value.type === AST_NODE_TYPES.ObjectExpression &&
-            connectionKeys.includes(name)
-          ) {
-            scanConfig(prop.value);
+
+          // `connectionString`, `url`, `uri` — or any value carrying a DSN.
+          if (reportUrl(prop.value)) continue;
+
+          // Recurse into the driver's nested config containers — Knex
+          // `connection: {…}`, Sequelize `replication: { read, write }`,
+          // TypeORM `extra: {…}`. Only connection-named keys, so an unrelated
+          // nested object is not treated as config.
+          if (connectionKeys.includes(name)) {
+            for (const value of possibleValues(valueAt(prop.value, env))) {
+              if (
+                value.env === env &&
+                value.node.type === AST_NODE_TYPES.ObjectExpression
+              ) {
+                scanConfig(value.node);
+              }
+            }
           }
         }
       };
 
       return {
         Program(program: TSESTree.Program) {
-          bindings = driverBindings(program, config.modules);
-          reported = new WeakSet<TSESTree.Node>();
-          scanned = new WeakSet<TSESTree.ObjectExpression>();
+          ownsFile = usesModule(program);
         },
 
         ObjectExpression(node: TSESTree.ObjectExpression) {
-          if (bindings.size === 0) return;
+          if (!ownsFile) return;
           if (!looksLikeConnectionConfig(node, connectionKeys)) return;
+          if (passedToForeign(node, originOf, env)) return;
           scanConfig(node);
+        },
+
+        'CallExpression, NewExpression'(
+          node: TSESTree.CallExpression | TSESTree.NewExpression,
+        ) {
+          if (!ownsFile) return;
+          if (originOf(valueAt(node.callee, env)) !== 'ours') return;
+          // `mysql.createPool(dsn)` — a DSN bound one statement earlier.
+          for (const argument of node.arguments) {
+            if (argument.type !== AST_NODE_TYPES.SpreadElement)
+              reportUrl(argument);
+          }
+          // `new Sequelize('db', 'user', 'hunter2', { … })`
+          const index = config.positionalPassword;
+          if (
+            index !== undefined &&
+            node.type === AST_NODE_TYPES.NewExpression &&
+            node.arguments.length > index
+          ) {
+            reportSecrets(node.arguments[index]);
+          }
         },
 
         'Literal, TemplateLiteral'(
           node: TSESTree.Literal | TSESTree.TemplateLiteral,
         ) {
-          if (bindings.size === 0) return;
-          const value = staticStringValue(node);
+          if (!ownsFile) return;
+          const value = urlPrefix(node);
           if (value === undefined) return;
           if (!urlEmbedsCredentials(value, config.urlSchemes)) return;
-          // Same discipline as require-tls: a bare `const dsn = '…'` is
-          // indistinguishable from a fixture or a doc example. The string has
-          // to be somewhere a driver would read it.
-          if (!inConnectionPosition(node, connectionKeys, bindings)) return;
+          // A bare DSN constant is not reported where it is declared — it may
+          // be a fixture or a doc string. Where a driver reads it, it is.
+          if (
+            !inConnectionPosition(
+              node,
+              connectionKeys,
+              (callee) => originOf(valueAt(callee, env)) === 'ours',
+            )
+          ) {
+            return;
+          }
           report(node, 'credentialsInUrl');
         },
       };
     },
   };
+}
+
+/**
+ * The text a connection URL starts with: a string literal's value, or the
+ * head of a template up to its first hole. `mysql://root:s3cret@${host}/db`
+ * still commits the password in the head.
+ */
+export function urlPrefix(node: TSESTree.Node): string | undefined {
+  const value = staticStringValue(node);
+  if (value !== undefined) return value;
+  if (node.type !== AST_NODE_TYPES.TemplateLiteral) return undefined;
+  const [head] = node.quasis;
+  return head.value.raw;
 }

@@ -77,6 +77,7 @@ import {
 } from '../../utils/tool-registration';
 import {
   createFlow,
+  flowOptionsFor,
   memberStep,
   returnedExpressions,
   throughPattern,
@@ -419,6 +420,7 @@ export const noUntrustedStdioCommand = createRule<[], MessageIds>({
             sourceCode,
             source === 'tool argument' ? roots : () => undefined,
             interceptFor(source),
+            flowOptionsFor(context),
           ),
         }));
 

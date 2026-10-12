@@ -40,3 +40,6 @@ export * from './message-source';
 // spliced into a query the tagged template only parameterizes values in.
 export * from './raw-identifier-rule';
 export * from './module-evidence';
+// Same-file value following and SDK-binding resolution for the three
+// inference-SDK factories above, exported for the plugins that build on them.
+export * from './sdk-flow';

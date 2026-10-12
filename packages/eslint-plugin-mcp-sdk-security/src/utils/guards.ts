@@ -52,6 +52,26 @@ export type CheckPredicate = (
   involves: (n: TSESTree.Node) => boolean,
 ) => boolean;
 
+/** Global conversions whose result is their argument, retyped. */
+const CONVERSIONS: ReadonlySet<string> = new Set([
+  'String',
+  'Number',
+  'Boolean',
+]);
+
+/** Is this `String(x)` / `Number(x)` / `Boolean(x)` — the global, unshadowed? */
+export function isConversion(
+  node: TSESTree.CallExpression,
+  scope: TSESLint.Scope.Scope,
+): boolean {
+  const { callee } = node;
+  return (
+    callee.type === 'Identifier' &&
+    CONVERSIONS.has(callee.name) &&
+    !lookupVariable(callee.name, scope)?.defs.length
+  );
+}
+
 /** Does reaching this statement always leave the function? */
 export function exits(node: TSESTree.Statement): boolean {
   if (node.type === 'ThrowStatement' || node.type === 'ReturnStatement')
@@ -149,8 +169,23 @@ export function createGuards(
     };
     const visited = new Set<Variable>();
     const visit = (current: TSESTree.Node, depth: number): boolean => {
-      if (isFunctionNode(current)) return false;
+      // A callback inside the test — `ALLOWED.some((h) => url.hostname === h)`
+      // — runs as part of it; any other function does not.
+      if (isFunctionNode(current) && current.parent?.type !== 'CallExpression')
+        return false;
       if (isCheck(current, involves)) return true;
+      // A call that is not a check computes a value from its operands that
+      // nothing tests (`String(p).endsWith('.md')`, `existsSync(pick(p))`):
+      // a call inside it is an operand, not a check. Only a callback it is
+      // given runs as part of the test (`ALLOWED.some((h) => u.host === h)`),
+      // and a type conversion is transparent (`Boolean(p.startsWith(root))`).
+      if (
+        current.type === 'CallExpression' &&
+        !isConversion(current, sourceCode.getScope(current))
+      )
+        return current.arguments.some(
+          (arg) => isFunctionNode(arg) && visit(arg, depth),
+        );
       // `const escapes = rel.startsWith('..'); if (escapes) throw …` — the
       // check lives in the initialiser of the name the test reads.
       if (current.type === 'Identifier') {
@@ -210,17 +245,20 @@ export function createGuards(
         .filter((v) => v.defs.some((d) => d.type === 'Parameter')),
     );
     if (params.size === 0 || fn.body.type !== 'BlockStatement') return false;
-    const visit = (node: TSESTree.Node): boolean => {
-      if (isFunctionNode(node)) return false;
-      if (
-        node.type === 'IfStatement' &&
-        exits(node.consequent) &&
-        checks(node.test, params)
-      )
-        return true;
-      return children(node).some(visit);
-    };
-    return fn.body.body.some(visit);
+    // Only a check every return passes through counts: one at the top level
+    // of the body, or of a `try` block there. A check nested in another `if`
+    // (`if (ALLOWED.length > 0) { if (!ok) throw … }`) or a loop is skipped
+    // on some runs, and the value is returned unchecked.
+    const visit = (statements: readonly TSESTree.Statement[]): boolean =>
+      statements.some(
+        (node) =>
+          (node.type === 'IfStatement' &&
+            exits(node.consequent) &&
+            checks(node.test, params)) ||
+          (node.type === 'TryStatement' && visit(node.block.body)) ||
+          (node.type === 'BlockStatement' && visit(node.body)),
+      );
+    return visit(fn.body.body);
   }
 
   return { lineage, guarded, sanitizes };

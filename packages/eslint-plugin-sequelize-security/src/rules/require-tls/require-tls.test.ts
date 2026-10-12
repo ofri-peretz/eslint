@@ -53,11 +53,17 @@ describe('require-tls', () => {
         },
         {
           name: 'sslmode=require in the URL',
-          code: DRIVER + "const db = new Sequelize('postgres://u:p@h/db?sslmode=require');",
+          code:
+            DRIVER +
+            "const db = new Sequelize('postgres://u:p@h/db?sslmode=require');",
         },
         {
-          name: 'no sequelize import — not this plugin’s file',
-          code: "const options = { dialect: 'postgres', dialectOptions: { ssl: false } };",
+          // The fixture that used to sit here, `{ dialect: 'postgres',
+          // dialectOptions: { ssl: false } }`, is Sequelize's own config
+          // contract — a sequelize-cli config, which never imports sequelize —
+          // and moved to `invalid` as an FN of the 2026-10 review.
+          name: 'no sequelize import and no Sequelize config shape — not this plugin’s file',
+          code: "const options = { host: 'db', ssl: false };",
         },
       ],
       invalid: [],
@@ -70,7 +76,9 @@ describe('require-tls', () => {
       invalid: [
         {
           name: 'ssl false at the top level',
-          code: DRIVER + "const db = new Sequelize({ dialect: 'postgres', ssl: false });",
+          code:
+            DRIVER +
+            "const db = new Sequelize({ dialect: 'postgres', ssl: false });",
           errors: [{ messageId: 'tlsDisabled' }],
         },
         {
@@ -83,15 +91,51 @@ describe('require-tls', () => {
         {
           name: 'ssl disabled inside dialectOptions',
           code:
-            DRIVER + "const db = new Sequelize({ dialect: 'mysql', dialectOptions: { ssl: false } });",
+            DRIVER +
+            "const db = new Sequelize({ dialect: 'mysql', dialectOptions: { ssl: false } });",
           errors: [{ messageId: 'tlsDisabled' }],
         },
         {
           name: 'sslmode=disable in the URL',
-          code: DRIVER + "const db = new Sequelize('postgres://u:p@h/db?sslmode=disable');",
+          code:
+            DRIVER +
+            "const db = new Sequelize('postgres://u:p@h/db?sslmode=disable');",
           errors: [{ messageId: 'tlsDisabled' }],
         },
       ],
     });
+  });
+});
+
+/**
+ * FP/FN review 2026-10-12 (benchmarks/audits/2026-10-12-fp-fn-sequelize-security.md).
+ * Bindings are named `foo` / `bar` so no verdict can rest on a name.
+ */
+describe('require-tls — fp/fn review 2026-10', () => {
+  ruleTester.run('fp-fn review 2026-10', requireTls, {
+    valid: [
+      {
+        name: 'verification on in dialectOptions',
+        code:
+          DRIVER +
+          'new Sequelize(process.env.DATABASE_URL, { dialectOptions: { ssl: { require: true, rejectUnauthorized: true } } });',
+      },
+    ],
+    invalid: [
+      {
+        // Moved here from `valid` ("no sequelize import — not this plugin's
+        // file"): `{ dialect, dialectOptions }` is Sequelize's own config.
+        // @found sequelize-security FP/FN review 2026-10-12, synthetic probe (config without import)
+        name: 'FN: a Sequelize config with no sequelize import',
+        code: "const options = { dialect: 'postgres', dialectOptions: { ssl: false } };\nmodule.exports = options;",
+        errors: [{ messageId: 'tlsDisabled' }],
+      },
+      {
+        // @found sequelize-security FP/FN review 2026-10-12, synthetic probe (sequelize-cli config.js)
+        name: 'FN: a sequelize-cli production config with verification off',
+        code: "module.exports = { production: { use_env_variable: 'DATABASE_URL', dialect: 'postgres', dialectOptions: { ssl: { require: true, rejectUnauthorized: false } } } };",
+        errors: [{ messageId: 'certificateValidationDisabled' }],
+      },
+    ],
   });
 });

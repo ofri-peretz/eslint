@@ -23,9 +23,29 @@ export const noUntrustedContentInPrompt = createSystemPromptInjectionRule({
   ruleName: 'no-untrusted-content-in-prompt',
   vendor: 'OpenAI',
   modules: ['openai', '@openai'],
-  requestPaths: ['completions.create', 'completions.parse', 'responses.create', 'responses.stream'],
-  systemPromptProps: ['instructions'],
+  requestPaths: [
+    'completions.create',
+    'completions.parse',
+    'completions.stream',
+    'completions.runTools',
+    'responses.create',
+    'responses.parse',
+    'responses.stream',
+    // The Assistants API: an assistant's standing instructions, and a run's
+    // override / additions to them.
+    'assistants.create',
+    'assistants.update',
+    'runs.create',
+    'runs.createAndPoll',
+    'runs.createAndStream',
+    'runs.stream',
+  ],
+  systemPromptProps: ['instructions', 'additional_instructions'],
+  // The Agents SDK (`@openai/agents`): an agent's `instructions` is its
+  // system prompt, set at construction.
+  promptConstructors: ['Agent', 'RealtimeAgent'],
   docsUrl:
     'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-openai-security/docs/rules/no-untrusted-content-in-prompt.md',
-  documentationLink: 'https://platform.openai.com/docs/guides/prompt-engineering',
+  documentationLink:
+    'https://platform.openai.com/docs/guides/prompt-engineering',
 });

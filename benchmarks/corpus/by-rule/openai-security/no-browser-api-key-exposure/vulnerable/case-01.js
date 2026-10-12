@@ -5,5 +5,7 @@
 //               measure this rule's precision — it passes by construction.
 //               Its value is cross-rule: no OTHER rule may fire on it.
 // This MUST be flagged by openai-security/no-browser-api-key-exposure
-import { Agent } from '@openai/agents';
-const c = new OpenAI({ dangerouslyAllowBrowser: true });
+// 2026-10-12 FP/FN audit: the case this was derived from constructed an
+// `OpenAI` nothing imported; re-derived from the bound Agents SDK case.
+import { OpenAIProvider } from '@openai/agents';
+const c = new OpenAIProvider({ dangerouslyAllowBrowser: true });

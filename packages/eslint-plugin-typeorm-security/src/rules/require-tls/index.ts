@@ -35,9 +35,36 @@ export const requireTls = createRequireTlsRule({
       confidence: 'high',
     },
   },
-  modules: ['typeorm'],
+  modules: ['typeorm', '@nestjs/typeorm'],
   connectionKeys: ['extra', 'type', 'entities', 'synchronize', 'options'],
   urlSchemes: ['postgres', 'postgresql', 'mysql', 'mariadb'],
+  configShapes: [
+    {
+      // ormconfig.js: `{ type: 'mysql', entities, … }`, no typeorm import.
+      key: 'type',
+      values: [
+        'mysql',
+        'mariadb',
+        'postgres',
+        'cockroachdb',
+        'sqlite',
+        'better-sqlite3',
+        'mssql',
+        'oracle',
+        'sap',
+        'spanner',
+        'aurora-mysql',
+        'aurora-postgres',
+      ],
+      with: [
+        'entities',
+        'synchronize',
+        'migrations',
+        'subscribers',
+        'migrationsRun',
+      ],
+    },
+  ],
   fix: 'Keep TLS on and supply the CA — `ssl: { ca: fs.readFileSync(caPath) }`, or `extra: { ssl: { ca } }` for driver passthrough.',
   documentationLink: 'https://typeorm.io/data-source-options',
 });

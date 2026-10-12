@@ -166,3 +166,29 @@ describe('no-code-injection-in-tool', () => {
     ],
   });
 });
+
+describe('1.0 independent review (2026-10-12)', () => {
+  ruleTester.run('review', noCodeInjectionInTool, {
+    valid: [
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: a helper only ever given fixed code
+        name: 'precision lock: an eval helper whose callers pass literals',
+        code:
+          SDK +
+          'function compute(foo) { return eval(foo); }\n' +
+          'server.registerTool("c", cfg, async ({ n }) => ({ content: [{ type: "text", text: String(compute("1 + 1")) }] }));',
+      },
+    ],
+    invalid: [
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: the arguments object handed to a helper declared below
+        name: 'FN: eval in a helper given the whole arguments object',
+        code:
+          SDK +
+          'server.registerTool("calc", cfg, async (foo) => ({ content: [{ type: "text", text: compute(foo) }] }));\n' +
+          'function compute(bar) { return String(eval(bar.expr)); }',
+        errors: [err('foo.expr', 'eval')],
+      },
+    ],
+  });
+});
