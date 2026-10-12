@@ -18,8 +18,8 @@ No preset changes. The new detections can report code that was not reported befo
 - `no-sensitive-in-prompt` reports a whole record in `JSON.stringify(x)`, `String(x)` or `${x}` when its fields include a sensitive one:
   - With `parserOptions.projectService`, the declared property names of `x`'s type decide.
   - Without type information, `x` must resolve in the file to an object literal with a sensitive key, or to a full database row (a Prisma, pg, postgres, mysql2, knex, kysely, drizzle, `@vercel/postgres` or better-sqlite3 read with no column projection).
-  - Field reads and chat history spread into `messages` are not reported.
+  - Field reads and chat history spread into `messages` are not reported as whole-record detections.
 
-Type information is optional and only sharpens these verdicts. Nothing is decided from variable names.
+Type information is optional and only sharpens whole-record verdicts. A field read whose property name is sensitive (`${user.password}`) is still reported by the field-read check.
 
 Full audit: `benchmarks/audits/2026-10-10-fp-fn-vercel-ai-security.md`.
