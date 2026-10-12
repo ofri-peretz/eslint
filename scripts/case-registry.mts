@@ -426,6 +426,9 @@ if (CHECK) {
       BASELINE,
       `${JSON.stringify(
         {
+          // The artefacts-name-their-method lock requires this; writing the
+          // file without it made every --update break that lock.
+          command: 'npm run case-registry -- --update',
           note: 'Case ids verified at least once. Grow-only: losing one is a regression.',
           verified,
         },
