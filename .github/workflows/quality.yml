@@ -418,6 +418,7 @@ jobs:
         uses: google/osv-scanner-action/osv-scanner-action@a345acffa64b0eaede81a3d9aae6141214d9c8fc # v2.6.0
         with:
           scan-args: |-
+            --config=./osv-scanner.toml
             --recursive
             ./
 

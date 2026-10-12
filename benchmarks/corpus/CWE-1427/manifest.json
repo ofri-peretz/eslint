@@ -1,0 +1,23 @@
+{
+  "cwe": "CWE-1427",
+  "name": "Improper Neutralization of Input Used for LLM Prompting (MCP tool poisoning)",
+  "owasp": "A03:2021",
+  "severity": "HIGH",
+  "expectedPlugins": [
+    "eslint-plugin-mcp-sdk-security"
+  ],
+  "fixtures": {
+    "vulnerable": [
+      {
+        "file": "mcp-client-tools-in-system-prompt.js",
+        "description": "MCP client joins listTools() descriptions into an Anthropic system prompt"
+      }
+    ],
+    "safe": [
+      {
+        "file": "mcp-client-tools-parameter.js",
+        "description": "MCP client passes listTools() metadata through the tools parameter"
+      }
+    ]
+  }
+}

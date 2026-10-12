@@ -322,4 +322,24 @@ describe('prevent-double-release — fp/fn review 2026-10', () => {
       },
     ]),
   });
+
+  // The 40-shape table is in ../release-paths.test.ts.
+  ruleTester.run('DR-4: release in the catch, then after the try', preventDoubleRelease, {
+    valid: pg([
+      { name: 'a catch that releases and rethrows never reaches the release after the try', code: "const pool = new Pool();\nexport async function f(id) { const client = await pool.connect(); try { await client.query('SELECT 1', [id]); } catch (err) { client.release(err); throw err; } client.release(); }" },
+      { name: 'a catch that releases and returns never reaches the release after the try', code: "const pool = new Pool();\nexport async function f(id) { const client = await pool.connect(); try { await client.query('SELECT 1', [id]); } catch (err) { client.release(err); return null; } client.release(); }" },
+    ]),
+    invalid: pg([
+      {
+        name: 'a catch that releases and swallows falls through to the release after the try',
+        code: "const pool = new Pool();\nexport async function f(id) { const client = await pool.connect(); try { await client.query('SELECT 1', [id]); } catch (err) { client.release(err); } client.release(); }",
+        errors: [{ messageId: 'doubleRelease' }],
+      },
+      {
+        name: 'a catch that rethrows only sometimes can fall through to the release after the try',
+        code: "const pool = new Pool();\nexport async function f(id) { const client = await pool.connect(); try { await client.query('SELECT 1', [id]); } catch (err) { client.release(err); if (fatal(err)) { throw err; } } client.release(); }",
+        errors: [{ messageId: 'doubleRelease' }],
+      },
+    ]),
+  });
 });

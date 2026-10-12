@@ -1,0 +1,147 @@
+---
+title: no-ssrf-in-tool
+description: "Disallow an MCP tool argument choosing the host an outbound HTTP request is sent to."
+tags: ['security', 'mcp']
+category: security
+severity: high
+cwe: CWE-918
+autofix: false
+type_aware: false
+type_aware_status: unaware
+---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+**CWE:** [CWE-918](https://cwe.mitre.org/data/definitions/918.html)
+**OWASP:** [A10:2021 – Server-Side Request Forgery](https://owasp.org/Top10/A10_2021-Server-Side_Request_Forgery_%28SSRF%29/)
+
+Detects a tool argument that decides the origin of a request sent with `fetch`, `node-fetch`, `undici`, `axios`, `got` or `http(s)`, with no host allowlist check on the way. This rule is part of [`eslint-plugin-mcp-sdk-security`](https://www.npmjs.com/package/eslint-plugin-mcp-sdk-security).
+
+💼 This rule is set to **error** in the `recommended` and `strict` configs.
+
+## Quick Summary
+
+| Aspect            | Details                                                                                  |
+| ----------------- | ---------------------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-918](https://cwe.mitre.org/data/definitions/918.html) (Server-Side Request Forgery) |
+| **Severity**      | High (CVSS 8.6)                                                                          |
+| **Auto-Fix**      | ❌ No auto-fix available                                                                 |
+| **Category**      | Security                                                                                 |
+
+## Why this matters
+
+An MCP server usually runs next to things the model must not reach: the cloud
+metadata endpoint (`169.254.169.254`), an admin port on localhost, a service
+inside the VPC. A tool that fetches a URL the model supplied lets whatever
+steers the model make this server request any of them and read the answer back.
+
+## What decides the origin
+
+Only the part of a URL that picks the host matters. An argument interpolated
+after a fixed origin fills a path or a query and is not reported:
+
+| Shape                                                                  | Reported |
+| ---------------------------------------------------------------------- | -------- |
+| `fetch(url)` — the argument is the URL                                 | ✅       |
+| ``fetch(`https://${host}/status`)`` — it is the host                   | ✅       |
+| `fetch('https://api.example.com' + sub)` — `.evil.io` extends the host | ✅       |
+| ``fetch(`${BASE}${path}`)`` — `@evil.io` lands in the authority        | ✅       |
+| `new URL(target, BASE)` — an absolute URL overrides the base           | ✅       |
+| ``fetch(`https://api.github.com/repos/${owner}`)``                     | —        |
+| ``new URL(`/v1/${id}`, BASE)``                                         | —        |
+
+The cut is the first `/`, `?` or `#` that follows a host character in the fixed
+text before the argument. A base this file cannot read (`process.env.API_URL`)
+followed by `/` fixes the origin; one followed directly by the argument does
+not.
+
+## Relationship to `node-security/no-ssrf`
+
+`node-security/no-ssrf` is source-agnostic. Inside an MCP tool handler the
+source is the handler's own parameter, so this rule follows it, applies the
+origin cut above, and recognises host allowlists. Both may report the same
+line; tool handlers are this plugin's scope (owner decision, 2026-10).
+
+## ❌ Incorrect
+
+```ts
+// ❌ the model picks the URL
+server.registerTool('fetch_url', cfg, async ({ url }) => ({
+  content: [{ type: 'text', text: await (await fetch(url)).text() }],
+}));
+
+// ❌ the model picks the host
+server.registerTool('status', cfg, async ({ host }) =>
+  axios.get(`https://${host}/status`),
+);
+
+// ❌ checking the scheme does not confine the host
+server.registerTool('get', cfg, async ({ url }) => {
+  const u = new URL(url);
+  if (u.protocol !== 'https:') throw new Error('https only');
+  return fetch(u);
+});
+```
+
+## How clients, arguments and checks are recognised
+
+- **Clients are resolved to their module**: the global `fetch` (unless a local
+  binding shadows it), `node-fetch`, `undici`'s `fetch` / `request` / `stream`,
+  `axios` and `got` (called directly, through a verb method, or through an
+  instance from `axios.create()` / `got.extend()`, here or in a relative
+  module), and `http` / `https` `get` / `request`. `cache.get(key)` is not a
+  request. An options object's `url`, `baseURL`, `prefixUrl`, `host` and
+  `hostname` are the target.
+- **Arguments** are tool arguments, `request.params.arguments` and
+  `ResourceTemplate` variables, followed through bindings, string derivations,
+  same-file helpers and `new URL()`.
+- **An allowlist check** is an `if` that tests the URL — `url.hostname`,
+  `url.host` or `url.origin` compared, a call such as
+  `ALLOWED_HOSTS.has(u.hostname)`, `target.startsWith('https://api.example.com/')`
+  or a validator — and exits before the request or wraps it. A same-file helper
+  that checks its parameter before returning sanitises its result. A
+  `protocol` check, a string transform such as `trim()`, or a request made
+  inside the test are not host checks.
+- **A closed set is the allowlist**: `z.enum([...])` and friends.
+
+## ✅ Correct
+
+```ts
+const API_ORIGIN = 'https://api.example.com';
+
+server.registerTool('get_item', cfg, async ({ id }) =>
+  fetch(new URL(`/v1/items/${encodeURIComponent(id)}`, API_ORIGIN)),
+);
+
+const ALLOWED_HOSTS = new Set(['api.example.com', 'docs.example.com']);
+server.registerTool('fetch_doc', cfg, async ({ url }) => {
+  const target = new URL(url);
+  if (target.protocol !== 'https:' || !ALLOWED_HOSTS.has(target.hostname)) {
+    throw new Error('host not allowed');
+  }
+  return fetch(target, { redirect: 'error' });
+});
+```
+
+## What this rule deliberately does not report
+
+- **An argument that only fills a path or query** after a fixed origin.
+- **A URL that is not a tool argument**, or a request outside any tool handler.
+- **A URL checked by a validator this rule cannot see into.**
+- **Redirects.** `fetch` follows them by default; set `redirect: 'error'` (or
+  re-check every hop) when the allowlist matters.
+- **A file that imports no MCP server package.**
+
+## When Not To Use It
+
+A server whose whole purpose is fetching arbitrary URLs for the model (the
+reference `fetch` server) is SSRF by design. Run it isolated from internal
+networks, and disable this rule for that file with a comment saying so.
+
+## Further Reading
+
+- [CWE-918: Server-Side Request Forgery](https://cwe.mitre.org/data/definitions/918.html)
+- [OWASP SSRF Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html)
+- [MCP: Security Best Practices](https://modelcontextprotocol.io/specification/2025-06-18/basic/security_best_practices)

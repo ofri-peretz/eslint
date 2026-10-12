@@ -4501,6 +4501,301 @@
       ],
       "kind": "decoy",
       "peers": []
+    },
+    {
+      "id": "ILB-0154",
+      "added": "2026-10-12",
+      "title": "A tool argument joined onto a root and read from disk",
+      "rationale": "path.join(ROOT, p) still resolves `../../.ssh/id_rsa` outside ROOT; nothing confines the joined path before fs reads it — the EscapeRoute class (CVE-2025-53109 / CVE-2025-53110).",
+      "cwe": "CWE-22",
+      "severity": {
+        "cvss": 7.5,
+        "vector": null,
+        "source": "rule meta (mcp-sdk-security/no-path-traversal-in-tool)"
+      },
+      "references": [
+        {
+          "id": "CVE-2025-53109",
+          "verified": false
+        },
+        {
+          "id": "CVE-2025-53110",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';\nimport { z } from 'zod';\nconst server = new McpServer({ name: 'demo', version: '1.0.0' });\nimport { readFile } from 'node:fs/promises';\nimport path from 'node:path';\nconst ROOT = '/srv/workspace';\nserver.registerTool('read_file', { inputSchema: { p: z.string() } }, async ({ p }) => ({ content: [{ type: 'text', text: await readFile(path.join(ROOT, p), 'utf8') }] }));",
+      "coverage": [
+        {
+          "rule": "mcp-sdk-security/no-path-traversal-in-tool",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-path-traversal-in-tool/no-path-traversal-in-tool.test.ts"
+        }
+      ],
+      "kind": "defect",
+      "peers": []
+    },
+    {
+      "id": "ILB-0155",
+      "added": "2026-10-12",
+      "title": "A tool fetches the URL the model chose",
+      "rationale": "The URL is a tool argument, so a steered model can make the server request the cloud metadata endpoint or an internal admin port and read the answer back.",
+      "cwe": "CWE-918",
+      "severity": {
+        "cvss": 8.6,
+        "vector": null,
+        "source": "rule meta (mcp-sdk-security/no-ssrf-in-tool)"
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';\nimport { z } from 'zod';\nconst server = new McpServer({ name: 'demo', version: '1.0.0' });\nserver.registerTool('fetch_url', { inputSchema: { url: z.string().url() } }, async ({ url }) => ({ content: [{ type: 'text', text: await (await fetch(url)).text() }] }));",
+      "coverage": [
+        {
+          "rule": "mcp-sdk-security/no-ssrf-in-tool",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-ssrf-in-tool/no-ssrf-in-tool.test.ts"
+        }
+      ],
+      "kind": "defect",
+      "peers": []
+    },
+    {
+      "id": "ILB-0156",
+      "added": "2026-10-12",
+      "title": "An SDK v1 Streamable HTTP transport on a raw express app, with no DNS-rebinding protection",
+      "rationale": "The v1 transport leaves enableDnsRebindingProtection off by default, the app is a raw express() with no Host validation, and it listens on every interface: any web page the user opens can rebind its hostname to the server and call its tools.",
+      "cwe": "CWE-346",
+      "severity": {
+        "cvss": 8.1,
+        "vector": null,
+        "source": "rule meta (mcp-sdk-security/require-http-transport-hardening)"
+      },
+      "references": [],
+      "occurrences": [
+        {
+          "repo": "modelcontextprotocol/servers",
+          "path": "src/everything/transports/streamableHttp.ts",
+          "line": 109
+        }
+      ],
+      "code": "import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';\nimport { randomUUID } from 'node:crypto';\nimport express from 'express';\nimport { listenOrExit } from './listen.js';\nconst app = express();\napp.post('/mcp', async (req, res) => {\n  const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: () => randomUUID(), eventStore });\n  await transport.handleRequest(req, res, req.body);\n});\nlistenOrExit(app, PORT, 'listening');",
+      "coverage": [
+        {
+          "rule": "mcp-sdk-security/require-http-transport-hardening",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-mcp-sdk-security/src/rules/require-http-transport-hardening/require-http-transport-hardening.test.ts"
+        }
+      ],
+      "kind": "defect",
+      "peers": []
+    },
+    {
+      "id": "ILB-0157",
+      "added": "2026-10-12",
+      "title": "A tool argument interpolated into pg query text",
+      "rationale": "The SQL text carries the argument, so `x' OR '1'='1` reads every row; parameterisation would keep it in the values array.",
+      "cwe": "CWE-89",
+      "severity": {
+        "cvss": 9.8,
+        "vector": null,
+        "source": "rule meta (mcp-sdk-security/no-sql-injection-in-tool)"
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';\nimport { z } from 'zod';\nconst server = new McpServer({ name: 'demo', version: '1.0.0' });\nimport { Pool } from 'pg';\nconst pool = new Pool();\nserver.registerTool('find_user', { inputSchema: { name: z.string() } }, async ({ name }) => pool.query(`SELECT id FROM users WHERE name = '${name}'`));",
+      "coverage": [
+        {
+          "rule": "mcp-sdk-security/no-sql-injection-in-tool",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-sql-injection-in-tool/no-sql-injection-in-tool.test.ts"
+        }
+      ],
+      "kind": "defect",
+      "peers": []
+    },
+    {
+      "id": "ILB-0158",
+      "added": "2026-10-12",
+      "title": "One stateless transport and server shared by every request",
+      "rationale": "In stateless mode (sessionIdGenerator: undefined) a module-level transport serves every client, so one client's response can be delivered to another (CVE-2026-25536).",
+      "cwe": "CWE-488",
+      "severity": {
+        "cvss": 7.5,
+        "vector": null,
+        "source": "rule meta (mcp-sdk-security/no-shared-stateless-transport)"
+      },
+      "references": [
+        {
+          "id": "CVE-2026-25536",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';\nimport { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';\nconst server = new McpServer({ name: 'demo', version: '1.0.0' });\nconst transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });\nawait server.connect(transport);\napp.post('/mcp', (req, res) => transport.handleRequest(req, res, req.body));",
+      "coverage": [
+        {
+          "rule": "mcp-sdk-security/no-shared-stateless-transport",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-shared-stateless-transport/no-shared-stateless-transport.test.ts"
+        }
+      ],
+      "kind": "defect",
+      "peers": []
+    },
+    {
+      "id": "ILB-0159",
+      "added": "2026-10-12",
+      "title": "A counter as the MCP session id",
+      "rationale": "Session ids are sequential, so any client can guess another's id and attach to its session.",
+      "cwe": "CWE-330",
+      "severity": {
+        "cvss": 7.5,
+        "vector": null,
+        "source": "rule meta (mcp-sdk-security/no-predictable-session-id)"
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';\nlet counter = 0;\nconst transport = new StreamableHTTPServerTransport({ sessionIdGenerator: () => String(counter++) });",
+      "coverage": [
+        {
+          "rule": "mcp-sdk-security/no-predictable-session-id",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-predictable-session-id/no-predictable-session-id.test.ts"
+        }
+      ],
+      "kind": "defect",
+      "peers": []
+    },
+    {
+      "id": "ILB-0160",
+      "added": "2026-10-12",
+      "title": "A calculator tool that evals the expression",
+      "rationale": "The expression is a tool argument and eval runs it with the server's privileges: require('child_process').execSync('id') is a valid expression.",
+      "cwe": "CWE-95",
+      "severity": {
+        "cvss": 9.8,
+        "vector": null,
+        "source": "rule meta (mcp-sdk-security/no-code-injection-in-tool)"
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';\nimport { z } from 'zod';\nconst server = new McpServer({ name: 'demo', version: '1.0.0' });\nserver.registerTool('calc', { inputSchema: { expr: z.string() } }, async ({ expr }) => ({ content: [{ type: 'text', text: String(eval(expr)) }] }));",
+      "coverage": [
+        {
+          "rule": "mcp-sdk-security/no-code-injection-in-tool",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-code-injection-in-tool/no-code-injection-in-tool.test.ts"
+        }
+      ],
+      "kind": "defect",
+      "peers": []
+    },
+    {
+      "id": "ILB-0161",
+      "added": "2026-10-12",
+      "title": "A tool returns the whole process environment to the model",
+      "rationale": "JSON.stringify(process.env) hands every credential the server was started with to the model, its host log, and anything that can steer it.",
+      "cwe": "CWE-526",
+      "severity": {
+        "cvss": 7.5,
+        "vector": null,
+        "source": "rule meta (mcp-sdk-security/no-credential-leak-in-tool)"
+      },
+      "references": [],
+      "occurrences": [
+        {
+          "repo": "modelcontextprotocol/servers",
+          "path": "src/everything/tools/get-env.ts",
+          "line": 34
+        }
+      ],
+      "code": "import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';\nconst name = 'get-env';\nconst config = { title: 'Print Environment Tool', inputSchema: {} };\nexport const registerGetEnvTool = (server) => {\n  server.registerTool(name, config, async () => ({ content: [{ type: 'text', text: JSON.stringify(process.env, null, 2) }] }));\n};",
+      "coverage": [
+        {
+          "rule": "mcp-sdk-security/no-credential-leak-in-tool",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-credential-leak-in-tool/no-credential-leak-in-tool.test.ts"
+        }
+      ],
+      "kind": "defect",
+      "peers": []
+    },
+    {
+      "id": "ILB-0162",
+      "added": "2026-10-12",
+      "title": "An MCP client joins listTools() descriptions into the system prompt",
+      "rationale": "Tool descriptions are written by whoever runs the MCP server; spliced into `system` a poisoned description carries the host's own authority (tool poisoning).",
+      "cwe": "CWE-1427",
+      "severity": {
+        "cvss": 8.6,
+        "vector": null,
+        "source": "rule meta (mcp-sdk-security/no-untrusted-tool-metadata-in-prompt)"
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import { Client } from '@modelcontextprotocol/sdk/client/index.js';\nimport Anthropic from '@anthropic-ai/sdk';\nconst client = new Client({ name: 'host', version: '1.0.0' });\nconst anthropic = new Anthropic();\nconst { tools } = await client.listTools();\nawait anthropic.messages.create({ model: 'm', max_tokens: 1024, messages, system: `You can use:\\n${tools.map((t) => `${t.name}: ${t.description}`).join('\\n')}` });",
+      "coverage": [
+        {
+          "rule": "mcp-sdk-security/no-untrusted-tool-metadata-in-prompt",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-untrusted-tool-metadata-in-prompt/no-untrusted-tool-metadata-in-prompt.test.ts"
+        }
+      ],
+      "kind": "defect",
+      "peers": []
+    },
+    {
+      "id": "ILB-0163",
+      "added": "2026-10-12",
+      "title": "A project-local .mcp.json chooses the command a stdio client spawns",
+      "rationale": "The config is read from the repository the user opened, so the repository author chooses the process the MCP client spawns (the MCPoison / CVE-2025-6514 class).",
+      "cwe": "CWE-78",
+      "severity": {
+        "cvss": 8.8,
+        "vector": null,
+        "source": "rule meta (mcp-sdk-security/no-untrusted-stdio-command)"
+      },
+      "references": [
+        {
+          "id": "CVE-2025-6514",
+          "verified": false
+        }
+      ],
+      "occurrences": [],
+      "code": "import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';\nimport { readFileSync } from 'node:fs';\nconst config = JSON.parse(readFileSync('.mcp.json', 'utf8'));\nfor (const [name, server] of Object.entries(config.mcpServers)) {\n  const transport = new StdioClientTransport({ command: server.command, args: server.args });\n}",
+      "coverage": [
+        {
+          "rule": "mcp-sdk-security/no-untrusted-stdio-command",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-untrusted-stdio-command/no-untrusted-stdio-command.test.ts"
+        }
+      ],
+      "kind": "defect",
+      "peers": []
+    },
+    {
+      "id": "ILB-0164",
+      "added": "2026-10-12",
+      "title": "Two registrations give one server the same tool name",
+      "rationale": "McpServer throws on the second registration, so the server crashes at startup, or behind a try/catch silently keeps the first handler.",
+      "cwe": "CWE-694",
+      "severity": {
+        "cvss": 5.3,
+        "vector": null,
+        "source": "rule meta (mcp-sdk-security/no-duplicate-tool-name)"
+      },
+      "references": [],
+      "occurrences": [],
+      "code": "import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';\nimport { z } from 'zod';\nconst server = new McpServer({ name: 'demo', version: '1.0.0' });\nserver.registerTool('search', { description: 'Search docs' }, searchDocs);\nserver.registerTool('search', { description: 'Search code' }, searchCode);",
+      "coverage": [
+        {
+          "rule": "mcp-sdk-security/no-duplicate-tool-name",
+          "expect": "report",
+          "evidence": "packages/eslint-plugin-mcp-sdk-security/src/rules/no-duplicate-tool-name/no-duplicate-tool-name.test.ts"
+        }
+      ],
+      "kind": "defect",
+      "peers": []
     }
   ]
 }

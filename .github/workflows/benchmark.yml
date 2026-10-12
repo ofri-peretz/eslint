@@ -1,14 +1,18 @@
 name: ILB Benchmark Regression Gate
 
 # Runs ILB-Wild on a small, fast subset of the corpus and compares the
-# resulting scorecard against benchmark-results/baseline.json. PR fails on
-# regression beyond thresholds defined in scripts/ilb-regression-check.ts.
+# resulting scorecard against benchmark-results/baseline.json. The comparison
+# is ADVISORY (see the regression-check step); the job fails only when the
+# smoke run itself does not produce numbers.
 #
-# Full 17-repo corpus runs are intentionally NOT in CI (~30 min, network-
-# heavy). Run those locally before bumping the baseline:
+# Full-corpus runs are intentionally NOT in CI (~30 min, network-heavy), and
+# CI cannot write the baseline (contents: read, protected main). Re-baseline
+# locally, from a full-corpus run, and commit it through a PR:
 #   npm run ilb:wild
-#   tsx scripts/ilb-regression-check.ts --update-baseline
+#   npx tsx scripts/ilb-regression-check.ts --update-baseline
 #   git commit benchmark-results/baseline.json
+# --update-baseline refuses a run that covers fewer repos than the baseline or
+# regresses past a hard threshold; see the script header for the overrides.
 
 # ─────────────────────────────────────────────────────────────────────────────
 # NOT run on pull requests — deliberately.
@@ -30,11 +34,11 @@ on:
         description: 'Repos to bench (comma-sep, default: smoke subset)'
         required: false
         default: 'sst,vercel-ai,lodash'
-      update_baseline:
-        description: 'Commit current results as new baseline'
-        required: false
-        type: boolean
-        default: false
+      # There is deliberately no `update_baseline` input. It existed, wrote
+      # baseline.json on the runner, and the file died with the runner: the job
+      # has `contents: read` and uploads no baseline. It also defaulted to the
+      # 3-repo smoke subset, so had it ever persisted it would have replaced
+      # the 22-repo corpus baseline with 3 repos.
   schedule:
     # Tue 09:00 UTC — inside the 3-7am ET maintenance window year-round.
     # GitHub cron is UTC and does not observe DST, so the slot must be valid at
@@ -337,35 +341,67 @@ jobs:
           restore-keys: |
             ilb-bench-repos-
 
+      # `npx tsx`, not bare `tsx`: a `run:` step does not have node_modules/.bin
+      # on PATH. The bare form died with `tsx: command not found` on every run
+      # from the Turbo migration (2026-05-11) to 2026-10, and the `|| echo
+      # ::warning::` that used to follow it turned that into a green job. A repo
+      # that fails is now a failed step; the loop still finishes the others first.
       - name: Run ILB-Wild on smoke subset
         env:
           ILB_REPOS: ${{ github.event.inputs.repos || 'sst,vercel-ai,lodash' }}
         run: |
-          set -e
+          set -euo pipefail
           IFS=',' read -ra REPOS <<< "$ILB_REPOS"
+          failed=()
           for r in "${REPOS[@]}"; do
+            # `sst, vercel-ai` is a natural way to type the input; ilb-wild
+            # matches names exactly. Repo names hold no whitespace.
+            r="${r//[[:space:]]/}"
+            [[ -z "$r" ]] && continue
             echo "::group::ilb:wild --repo $r"
-            tsx scripts/ilb-wild.ts --repo "$r" --runs 1 || echo "::warning::repo $r failed"
+            if ! npx tsx scripts/ilb-wild.ts --repo "$r" --runs 1; then
+              echo "::error::ILB-Wild failed for $r"
+              failed+=("$r")
+            fi
             echo "::endgroup::"
           done
+          if (( ${#failed[@]} > 0 )); then
+            echo "::error::ILB-Wild produced no result for: ${failed[*]}"
+            exit 1
+          fi
 
       - name: Generate unified scorecard
         run: npx tsx scripts/ilb-scorecard.ts
 
-      - name: Run regression check
-        # The PR job runs ILB-Wild on a 3-repo smoke subset, while the
-        # baseline tracks the full 22-repo corpus. Apples-to-oranges, so
-        # we publish the scorecard as a comment but don't fail the gate
-        # here. Real regression detection happens locally / via
-        # workflow_dispatch with the full corpus before bumping the
-        # baseline.
-        if: github.event.inputs.update_baseline != 'true'
-        continue-on-error: true
-        run: npx tsx scripts/ilb-regression-check.ts
+      # --expect-repos is the half that is NOT advisory: ilb-wild records a
+      # failed clone as `success: false` and exits 0, and the check otherwise
+      # falls back to the newest COMMITTED summary. Without it a run that
+      # measured nothing compares two stale files and looks like a result.
+      - name: Check the summary is this run's
+        env:
+          ILB_REPOS: ${{ github.event.inputs.repos || 'sst,vercel-ai,lodash' }}
+        run: npx tsx scripts/ilb-regression-check.ts --expect-repos "$ILB_REPOS" --summary-only
 
-      - name: Update baseline (workflow_dispatch only)
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.update_baseline == 'true'
-        run: npx tsx scripts/ilb-regression-check.ts --update-baseline
+      - name: Run regression check
+        id: regression
+        # ADVISORY. The smoke subset runs on a GitHub runner; the baseline is a
+        # full-corpus run from a developer machine. ms/file across machines and
+        # corpus-wide aggregates over 3 of 22 repos are not comparable, so a
+        # hard gate here would be red on hardware, not on code. Making it a real
+        # gate needs a baseline produced on the same runner class.
+        continue-on-error: true
+        env:
+          ILB_REPOS: ${{ github.event.inputs.repos || 'sst,vercel-ai,lodash' }}
+        run: npx tsx scripts/ilb-regression-check.ts --expect-repos "$ILB_REPOS"
+
+      # continue-on-error makes the step green; say so out loud instead of
+      # leaving the verdict buried in the log.
+      - name: Surface an advisory regression
+        if: steps.regression.outcome == 'failure'
+        run: |
+          echo "::warning title=ILB-Wild regression (advisory)::The regression check failed against benchmark-results/baseline.json. See the 'Run regression check' step log."
+          echo "### ⚠️ ILB-Wild regression check failed (advisory)" >> "$GITHUB_STEP_SUMMARY"
+          echo "See the **Run regression check** step log for the failing metrics." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload scorecard + summary
         if: always()

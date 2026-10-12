@@ -1,7 +1,7 @@
 {
-  "releaseCount": 770,
+  "releaseCount": 774,
   "packageCount": 37,
-  "entryCount": 2233,
+  "entryCount": 2241,
   "oldestYear": 2024,
   "releases": [
     {
@@ -18627,6 +18627,26 @@
     {
       "package": "eslint-plugin-jwt-security",
       "short": "eslint-plugin-jwt-security",
+      "version": "3.5.0",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "close two false negatives from review; require-issued-at joins recommended",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "close every deferred FP/FN — value flow, cross-file NestJS modules, provenance, no name heuristics",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-jwt-security",
+      "short": "eslint-plugin-jwt-security",
       "version": "2.2.9",
       "date": null,
       "isApp": false,
@@ -18740,6 +18760,51 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-mcp-sdk-security",
+      "short": "eslint-plugin-mcp-sdk-security",
+      "version": "0.6.0",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "follow tool arguments into built commands and $ templates, read imported descriptions and schemas",
+          "pr": null
+        },
+        {
+          "kind": "feature",
+          "title": "add 11 rules for the vulnerability classes the plugin could not detect",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-postgresql-security",
+      "short": "eslint-plugin-postgresql-security",
+      "version": "2.5.0",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "close every deferred FP/FN — cross-file gate, imported pools, configs, builders",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "resolve string-subscript spellings of sinks and pg types",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "stop reporting correct releases after a `try … catch`",
           "pr": null
         }
       ]
@@ -18865,6 +18930,21 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-vercel-ai-security",
+      "short": "eslint-plugin-vercel-ai-security",
+      "version": "2.3.0",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "follow values across same-file hops; close the four deferred FNs; optional type info",
           "pr": null
         }
       ]

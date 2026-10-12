@@ -1,0 +1,114 @@
+---
+title: no-code-injection-in-tool
+description: Disallow an MCP tool argument reaching eval, new Function or a vm context as code.
+tags: ['security', 'mcp']
+category: security
+severity: critical
+cwe: CWE-95
+autofix: false
+---
+
+> **Keywords:** code injection, eval injection, CWE-95, MCP, Model Context Protocol, tool handler, eval, new Function, node:vm, vm2, RCE
+
+<!-- @rule-summary -->
+
+Disallow an MCP tool argument reaching eval, new Function or a vm context as code.
+<!-- @/rule-summary -->
+
+**CWE:** [CWE-95](https://cwe.mitre.org/data/definitions/95.html)
+**OWASP:** [A03:2021 – Injection](https://owasp.org/Top10/A03_2021-Injection/)
+
+Detects a tool argument evaluated as JavaScript by `eval`, `Function`, a string `setTimeout` / `setInterval`, `node:vm` or a `vm2` sandbox. This rule is part of [`eslint-plugin-mcp-sdk-security`](https://www.npmjs.com/package/eslint-plugin-mcp-sdk-security).
+
+💼 This rule is set to **error** in the `recommended` and `strict` configs.
+
+## Quick Summary
+
+| Aspect            | Details                                                                   |
+| ----------------- | ------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-95](https://cwe.mitre.org/data/definitions/95.html) (Eval Injection) |
+| **Severity**      | Critical (CVSS 9.8)                                                       |
+| **Auto-Fix**      | ❌ No auto-fix available                                                  |
+| **Category**      | Security                                                                  |
+
+## Why this matters
+
+"Calculator" and "run a snippet" tools evaluate what the model sends them. The
+model can be steered by anything it has read, so the expression it sends is
+attacker-chosen, and `eval` runs it with the server's full privileges:
+`require('child_process').execSync(...)` is a valid arithmetic expression as
+far as `eval` is concerned. `node:vm` is not a security boundary, and `vm2` was
+discontinued after repeated sandbox escapes.
+
+## Relationship to `node-security/detect-eval-with-expression`
+
+`node-security/detect-eval-with-expression` and `browser-security/no-eval`
+report a non-literal `eval` anywhere. Inside an MCP tool handler the source is
+the handler's own parameter, so this rule follows it — through bindings,
+derivations and same-file helpers — and also covers `vm` and `vm2`. Both may
+report one line; tool handlers are this plugin's scope (owner decision,
+2026-10).
+
+## ❌ Incorrect
+
+```ts
+// ❌ a calculator that evaluates JavaScript
+server.registerTool('calc', cfg, async ({ expr }) => ({
+  content: [{ type: 'text', text: String(eval(expr)) }],
+}));
+
+// ❌ every argument of Function is code
+server.registerTool('fn', cfg, async ({ body }) => new Function('x', body));
+
+// ❌ node:vm is not a sandbox
+server.registerTool('run', cfg, async ({ code }) =>
+  vm.runInNewContext(code, {}),
+);
+```
+
+## How sinks and arguments are recognised
+
+- **Globals** — `eval`, `Function` (called or constructed; every argument is
+  code), and a string passed to `setTimeout` / `setInterval` — count only when
+  no local binding shadows them.
+- **`node:vm`** — `runInNewContext`, `runInThisContext`, `runInContext`,
+  `compileFunction`, `new vm.Script(...)` and `new vm.SourceTextModule(...)` —
+  is resolved to the module, through imports, namespaces and `require()`.
+- **`vm2`** — `run(...)` on an instance built by its `VM` or `NodeVM` class.
+- **Arguments** are tool arguments, `request.params.arguments` and
+  `ResourceTemplate` variables, followed through bindings, templates,
+  concatenation, string derivations and same-file helpers.
+
+## ✅ Correct
+
+```ts
+import { evaluate } from 'mathjs';
+
+// ✅ a grammar that only accepts arithmetic
+server.registerTool('calc', cfg, async ({ expr }) => ({
+  content: [{ type: 'text', text: String(evaluate(expr)) }],
+}));
+
+// ✅ data is parsed, not evaluated
+server.registerTool('load', cfg, async ({ json }) => JSON.parse(json));
+```
+
+## What this rule deliberately does not report
+
+- **A literal or a value that is not a tool argument.**
+- **`setTimeout` with a function**, which evaluates nothing.
+- **A library evaluator** (`mathjs`' `evaluate`, a template engine): whether it
+  is safe depends on its configuration, which this rule cannot see.
+- **A file that imports no MCP server package.**
+
+## When Not To Use It
+
+A tool whose purpose is executing model-written code must run it in a separate
+process or isolate with no host access. Disable this rule for that file with a
+comment naming the isolation.
+
+## Further Reading
+
+- [CWE-95: Eval Injection](https://cwe.mitre.org/data/definitions/95.html)
+- [Node.js: `vm` is not a security mechanism](https://nodejs.org/api/vm.html#vm-executing-javascript)
+- [MCP: Tools](https://modelcontextprotocol.io/docs/concepts/tools)

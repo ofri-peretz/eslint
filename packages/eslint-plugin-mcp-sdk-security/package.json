@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-mcp-sdk-security",
-  "version": "0.5.0",
-  "description": "ESLint plugin for Model Context Protocol (MCP) SDK security \u2014 catches tools registered without an input schema, handlers reading arguments the schema never declared, model-visible descriptions built from dynamic text, and tool arguments reaching a shell.",
+  "version": "0.6.0",
+  "description": "ESLint plugin for Model Context Protocol (MCP) SDK security \u2014 follows tool arguments into shells, file paths, URLs, SQL and eval; catches credential leaks, untrusted text in model-facing descriptions and prompts, unhardened HTTP transports, shared stateless servers, predictable session ids, untrusted stdio commands and schema/handler drift.",
   "type": "commonjs",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",

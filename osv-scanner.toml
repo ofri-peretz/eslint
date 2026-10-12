@@ -1,0 +1,13 @@
+# OSV-Scanner exceptions for the Supply-chain floor (quality.yml). Each one is time-boxed:
+# past `ignoreUntil` the finding fails the gate again, so an exception cannot rot silently.
+
+[[IgnoredVulns]]
+id = "GHSA-vfj7-8cjw-p6xm"
+ignoreUntil = 2026-11-12
+reason = """
+braces <= 3.0.3: stack-exhaustion DoS on deeply nested brace patterns (CVE-2026-93687, high).
+No fixed version exists. Reached only through the private monorepo root's lint tooling
+(root -> eslint-config-next -> ... -> micromatch -> braces); no published package depends on
+it, and the patterns it expands are this repo's own globs, not user input. Revisit when a
+patched braces ships, or by the date above.
+"""

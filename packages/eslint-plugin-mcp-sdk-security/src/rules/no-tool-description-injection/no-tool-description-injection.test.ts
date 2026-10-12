@@ -52,6 +52,13 @@ describe('no-tool-description-injection', () => {
     ruleTester.run('valid', noToolDescriptionInjection, {
       valid: [
         {
+          // @found mcp-sdk-security missing-detections pass 2026-10-11, rule crash on Object.prototype keys
+          name: 'FP: a method named after an Object.prototype member does not crash the rule',
+          code:
+            "import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';\n" +
+            'const id = `${Date.now().toString(36)}`; obj.hasOwnProperty("x"); obj.constructor();',
+        },
+        {
           name: 'a string literal',
           code:
             SDK +
@@ -286,16 +293,25 @@ describe('no-tool-description-injection', () => {
     });
   });
 
-  describe('Invalid — text assembled at runtime', () => {
-    ruleTester.run('invalid', noToolDescriptionInjection, {
-      valid: [],
-      invalid: [
+  /**
+   * Text assembled at runtime from SERVER-LOCAL values. Every case here was
+   * invalid until the 2026-10-11 real-code scan (modelcontextprotocol/servers,
+   * typescript-sdk, mcp-handler, mcp-server-cloudflare): four of its findings
+   * were descriptions built from a directory's filenames, a counter id, and a
+   * helper's parameter — none of them controlled by a client. "Dynamic" is not
+   * the defect; text a client, a remote party or a file's contents controls
+   * is. These stay silent now; the untrusted sources are the invalid block
+   * below.
+   */
+  describe('Valid — server-local text assembled at runtime (was: invalid)', () => {
+    ruleTester.run('server-local', noToolDescriptionInjection, {
+      invalid: [],
+      valid: [
         {
           name: 'an interpolated template',
           code:
             SDK +
             'server.registerTool("search", { description: `Search ${scope}` }, handler);',
-          errors: [{ messageId: 'dynamicDescription' }],
         },
         {
           // The advisory shape: text loaded per tenant, appended to the
@@ -304,42 +320,36 @@ describe('no-tool-description-injection', () => {
           code:
             SDK +
             "server.registerTool('search', { description: tenantBlurb }, handler);",
-          errors: [{ messageId: 'dynamicDescription' }],
         },
         {
           name: 'a call result',
           code:
             SDK +
             "server.registerTool('search', { description: buildDescription() }, handler);",
-          errors: [{ messageId: 'dynamicDescription' }],
         },
         {
           name: 'a member access',
           code:
             SDK +
             "server.registerTool('search', { description: config.blurb }, handler);",
-          errors: [{ messageId: 'dynamicDescription' }],
         },
         {
           name: 'concatenation with a non-literal',
           code:
             SDK +
             "server.registerTool('search', { description: 'Search ' + scope }, handler);",
-          errors: [{ messageId: 'dynamicDescription' }],
         },
         {
           name: 'a dynamic title is the same defect',
           code:
             SDK +
             'server.registerTool("search", { title: `Search ${scope}` }, handler);',
-          errors: [{ messageId: 'dynamicDescription' }],
         },
         {
           name: 'the legacy tool() arity',
           code:
             SDK +
             'server.tool("search", { description: `Search ${scope}` }, handler);',
-          errors: [{ messageId: 'dynamicDescription' }],
         },
         // ---- FN fixes and the limits of the FP fixes, 2026-10.
         {
@@ -347,151 +357,118 @@ describe('no-tool-description-injection', () => {
           code:
             SDK +
             'server.tool("search", `Search ${await loadBlurb()}`, { q: z.string() }, async ({ q }) => q);',
-          errors: [
-            {
-              messageId: 'dynamicDescription',
-              data: { tool: 'search', key: 'description' },
-            },
-          ],
         },
         {
           name: 'the legacy positional description with no schema',
           code:
             SDK +
             'server.tool("search", "Search " + blurb, async () => ({ content: [] }));',
-          errors: [{ messageId: 'dynamicDescription' }],
         },
         {
           name: 'a legacy positional description held in a value this file does not fix',
           code:
             SDK +
             'server.tool("search", blurb, { q: z.string() }, async ({ q }) => q);',
-          errors: [{ messageId: 'dynamicDescription' }],
         },
         {
           name: 'a let binding can be reassigned',
           code:
             SDK +
             "let DESC = 'Search';\nserver.registerTool('search', { description: DESC }, handler);",
-          errors: [{ messageId: 'dynamicDescription' }],
         },
         {
           name: 'a const initialised from a call',
           code:
             SDK +
             "const DESC = loadBlurb();\nserver.registerTool('search', { description: DESC }, handler);",
-          errors: [{ messageId: 'dynamicDescription' }],
         },
         {
           name: 'a destructured const',
           code:
             SDK +
             "const { DESC } = config;\nserver.registerTool('search', { description: DESC }, handler);",
-          errors: [{ messageId: 'dynamicDescription' }],
         },
         {
           name: 'a const object property that is not a literal',
           code:
             SDK +
             "const TOOLS = { search: blurb, ...more };\nserver.registerTool('search', { description: TOOLS.search }, handler);",
-          errors: [{ messageId: 'dynamicDescription' }],
         },
         {
           name: 'a const object property that does not exist, or a computed one',
           code:
             SDK +
             "const TOOLS = { search: 'S' };\nserver.registerTool('search', { title: TOOLS.other, description: TOOLS[k] }, handler);",
-          errors: [
-            { messageId: 'dynamicDescription' },
-            { messageId: 'dynamicDescription' },
-          ],
         },
         {
           name: 'a property of a const that is not an object literal',
           code:
             SDK +
             "const TOOLS = load();\nserver.registerTool('search', { description: TOOLS.search }, handler);",
-          errors: [{ messageId: 'dynamicDescription' }],
         },
         {
           name: 'a joined array with a dynamic element',
           code:
             SDK +
             "server.registerTool('q', { description: ['Query', blurb].join('\\n') }, handler);",
-          errors: [{ messageId: 'dynamicDescription' }],
         },
         {
           name: 'a joined array with a spread or a dynamic separator',
           code:
             SDK +
             "server.registerTool('q', { title: [...lines].join(), description: ['a'].join(sep) }, handler);",
-          errors: [
-            { messageId: 'dynamicDescription' },
-            { messageId: 'dynamicDescription' },
-          ],
         },
         {
           name: 'a join on something that is not an array literal',
           code:
             SDK +
             "server.registerTool('q', { description: lines.join('\\n') }, handler);",
-          errors: [{ messageId: 'dynamicDescription' }],
         },
         {
           name: 'a tagged template that interpolates',
           code:
             SDK +
             "server.registerTool('q', { description: dedent`Search ${blurb}` }, handler);",
-          errors: [{ messageId: 'dynamicDescription' }],
         },
         {
           name: 'a const object key a later spread may override',
           code:
             SDK +
             "const TOOLS = { search: 'S', ...overrides };\nserver.registerTool('search', { description: TOOLS.search }, handler);",
-          errors: [{ messageId: 'dynamicDescription' }],
         },
         {
           name: 'a nested const path that does not exist',
           code:
             SDK +
             "const TOOLS = { search: { d: 'S' } };\nserver.registerTool('search', { description: TOOLS.missing.d }, handler);",
-          errors: [{ messageId: 'dynamicDescription' }],
         },
         {
           name: 'a property of a call result',
           code:
             SDK +
             "server.registerTool('search', { description: load().search }, handler);",
-          errors: [{ messageId: 'dynamicDescription' }],
         },
         {
           name: 'an awaited value',
           code:
             SDK +
             "server.registerTool('search', { description: await loadBlurb() }, handler);",
-          errors: [{ messageId: 'dynamicDescription' }],
         },
         {
           name: 'an array method other than join, and a join with extra arguments',
           code:
             SDK +
             "server.registerTool('search', { title: ['a'].map(f), description: ['a'].join('', extra) }, handler);",
-          errors: [
-            { messageId: 'dynamicDescription' },
-            { messageId: 'dynamicDescription' },
-          ],
         },
         {
           name: 'an ambient declaration has no initializer to read',
           code:
             SDK +
             "declare const DESC: string;\nserver.registerTool('search', { description: DESC }, handler);",
-          errors: [{ messageId: 'dynamicDescription' }],
         },
         {
-          // @found mcp-sdk-security FP/FN audit 2026-10-10, residual 1 (imported description)
-          name: 'FN: a dynamic description imported from another file',
+          // (was: FN, residual 1) every value here is server-local.
+          name: 'server-local descriptions imported from another file',
           filename: SERVER,
           code:
             SDK +
@@ -502,73 +479,26 @@ describe('no-tool-description-injection', () => {
             "server.registerTool('c', { title: ALIAS, description: D.describeTool }, handler);\n" +
             "import describeDefault from './default-fn';\nimport { nsBrand } from './barrel';\n" +
             "server.registerTool('d', { title: describeDefault, description: nsBrand }, handler);",
-          errors: [
-            {
-              messageId: 'dynamicDescription',
-              data: { tool: 'a', key: 'title' },
-            },
-            {
-              messageId: 'dynamicDescription',
-              data: { tool: 'a', key: 'description' },
-            },
-            {
-              messageId: 'dynamicDescription',
-              data: { tool: 'b', key: 'title' },
-            },
-            {
-              messageId: 'dynamicDescription',
-              data: { tool: 'b', key: 'description' },
-            },
-            {
-              messageId: 'dynamicDescription',
-              data: { tool: 'c', key: 'title' },
-            },
-            {
-              messageId: 'dynamicDescription',
-              data: { tool: 'c', key: 'description' },
-            },
-            {
-              messageId: 'dynamicDescription',
-              data: { tool: 'd', key: 'title' },
-            },
-            {
-              messageId: 'dynamicDescription',
-              data: { tool: 'd', key: 'description' },
-            },
-          ],
         },
         {
-          // @found mcp-sdk-security FP/FN audit 2026-10-10, residual 1 (imported description)
-          name: 'FN: a namespace import used as text is not text',
+          // (was: FN, residual 1) a namespace object is not client text.
+          name: 'a namespace import used as text',
           filename: SERVER,
           code:
             SDK +
             "import * as D from './descriptions';\nserver.registerTool('a', { description: D }, handler);",
-          errors: [{ messageId: 'dynamicDescription' }],
         },
         {
           name: 'a dynamic prompt description',
           code:
             SDK +
             "server.registerPrompt('summarize', { description: `Summarize. ${blurb}` }, cb);",
-          errors: [
-            {
-              messageId: 'dynamicMetadata',
-              data: { kind: 'prompt', name: 'summarize', key: 'description' },
-            },
-          ],
         },
         {
           name: 'a dynamic resource description (config is the third argument)',
           code:
             SDK +
             "server.registerResource('notes', template, { description: blurb }, cb);",
-          errors: [
-            {
-              messageId: 'dynamicMetadata',
-              data: { kind: 'resource', name: 'notes', key: 'description' },
-            },
-          ],
         },
         {
           // Regression: the scan returned on its first match, so a tool with
@@ -579,17 +509,12 @@ describe('no-tool-description-injection', () => {
           code:
             SDK +
             'server.registerTool("s", { title: `T ${x}`, description: `D ${y}` }, handler);',
-          errors: [
-            { messageId: 'dynamicDescription' },
-            { messageId: 'dynamicDescription' },
-          ],
         },
         {
           name: 'a quoted key is still a description',
           code:
             SDK +
             'server.registerTool("search", { "description": `Search ${x}` }, handler);',
-          errors: [{ messageId: 'dynamicDescription' }],
         },
         {
           // The tool name is only used for the message; a non-literal name
@@ -598,12 +523,6 @@ describe('no-tool-description-injection', () => {
           code:
             SDK +
             'server.registerTool(toolName, { description: `Search ${x}` }, handler);',
-          errors: [
-            {
-              messageId: 'dynamicDescription',
-              data: { tool: 'unknown', key: 'description' },
-            },
-          ],
         },
         {
           name: 'the SDK import alongside unrelated imports',
@@ -611,14 +530,12 @@ describe('no-tool-description-injection', () => {
             "import { z } from 'zod';\n" +
             SDK +
             'server.registerTool("search", { description: `Search ${x}` }, handler);',
-          errors: [{ messageId: 'dynamicDescription' }],
         },
         {
           name: 'require() opens the same gate',
           code:
             "const { McpServer } = require('@modelcontextprotocol/sdk/server/mcp.js');\n" +
             'server.registerTool("search", { description: `Search ${x}` }, handler);',
-          errors: [{ messageId: 'dynamicDescription' }],
         },
         {
           // Registrations are judged at Program:exit, so an import below them
@@ -627,7 +544,289 @@ describe('no-tool-description-injection', () => {
           code:
             'server.registerTool("search", { description: `Search ${x}` }, handler);\n' +
             SDK,
-          errors: [{ messageId: 'dynamicDescription' }],
+        },
+      ],
+    });
+  });
+  /**
+   * The defect: model-facing text derived from data a client, a remote party
+   * or a file's contents controls. Written test-first against the rule as it
+   * was after the missing-detections pass: every FP case below was reported,
+   * and every untrusted-source case not already caught was missed.
+   */
+  describe('Untrusted sources (2026-10-11 real-code scan)', () => {
+    const tool = (name: string, key: string, source: string) => ({
+      messageId: 'dynamicDescription' as const,
+      data: { tool: name, key, source },
+    });
+    const meta = (kind: string, name: string, key: string, source: string) => ({
+      messageId: 'dynamicMetadata' as const,
+      data: { kind, name, key, source },
+    });
+    ruleTester.run('untrusted', noToolDescriptionInjection, {
+      valid: [
+        {
+          // @found modelcontextprotocol/servers:src/everything/resources/files.ts:49
+          name: 'FP: a description built from a server-side directory listing',
+          code:
+            SDK +
+            "import { readdirSync } from 'node:fs';\nimport { join } from 'node:path';\n" +
+            'export const registerFileResources = (server) => {\n' +
+            '  const docsDir = join(__dirname, "..", "docs");\n' +
+            '  const entries = readdirSync(docsDir);\n' +
+            '  for (const name of entries) {\n' +
+            '    const description = `Static document file exposed from /docs: ${name}`;\n' +
+            '    server.registerResource(name, `demo://doc/${name}`, { mimeType: "text/plain", description }, async (uri) => ({ contents: [] }));\n' +
+            '  }\n' +
+            '};',
+        },
+        {
+          // @found modelcontextprotocol/typescript-sdk:examples/stickynotes/server.ts:40
+          name: 'FP: a description built from a server counter id, through a helper a tool calls',
+          code:
+            SDK +
+            "import * as z from 'zod/v4';\n" +
+            'let nextId = 1;\n' +
+            'function buildServer() {\n' +
+            '  const server = new McpServer({ name: "stickynotes", version: "1.0.0" });\n' +
+            '  const registerNote = (id, text) => {\n' +
+            '    server.registerResource(`note-${id}`, `note:///${id}`, { mimeType: "text/plain", description: `Sticky note #${id}` }, async (uri) => ({ contents: [{ uri: uri.href, text }] }));\n' +
+            '  };\n' +
+            '  for (const [id, text] of notes) registerNote(id, text);\n' +
+            '  server.registerTool("add_note", { description: "Add a note", inputSchema: z.object({ text: z.string() }) }, async ({ text }) => {\n' +
+            '    const id = String(nextId++);\n' +
+            '    registerNote(id, text);\n' +
+            '    return { content: [] };\n' +
+            '  });\n' +
+            '  return server;\n' +
+            '}',
+        },
+        {
+          // @found modelcontextprotocol/servers:src/everything/resources/session.ts:80
+          name: 'FP: a helper forwarding its own parameter, with no caller in the file',
+          code:
+            SDK +
+            'export const registerSessionResource = (server, resource, type, payload) => {\n' +
+            '  const { uri, name, mimeType, description, title } = resource;\n' +
+            '  return server.registerResource(name, uri, { mimeType, description, title }, async () => ({ contents: [] }));\n' +
+            '};',
+        },
+        {
+          // @found modelcontextprotocol/servers:src/everything/tools/gzip-file-as-resource.ts:101
+          name: 'FP: a tool passes a client-chosen NAME to a relative helper that forwards only description and title',
+          filename: SERVER,
+          code:
+            SDK +
+            "import { registerSessionResource } from './session-resource';\n" +
+            'server.registerTool("gzip", cfg, async (args) => {\n' +
+            '  const { name } = args;\n' +
+            '  const resource = <Resource>{ uri: `demo://${name}`, name, mimeType: "application/gzip" };\n' +
+            '  registerSessionResource(server, resource, blob);\n' +
+            '  return { content: [] };\n' +
+            '});',
+        },
+        {
+          name: 'a helper call whose forwarded argument is server-local, and calls that resolve to nothing',
+          filename: SERVER,
+          code:
+            SDK +
+            "import registerDefault, { registerNoteResource, notAFunction } from './session-resource';\n" +
+            "import { missing } from './nope';\nimport { fromPkg } from 'some-package';\n" +
+            'server.registerTool("x", cfg, async (args) => {\n' +
+            '  registerNoteResource(server, args.id, "fixed text");\n' +
+            '  registerDefault(server, SERVER_BLURB);\n' +
+            '  registerNoteResource(server, args.id);\n' +
+            '  notAFunction(args.d); missing(args.d); fromPkg(args.d); (() => 0)(args.d);\n' +
+            '  return { content: [] };\n' +
+            '});',
+        },
+        {
+          name: 'helper shapes that do not trace to a forwarded client value',
+          filename: SERVER,
+          code:
+            SDK +
+            "import * as H from './session-resource';\nimport { reassignable, declaredLater } from './session-resource';\n" +
+            'let mutable = (server, text) => server.registerTool("m", { description: text }, h);\n' +
+            'function computed(server, res) { server.registerTool("c", { description: res[k], title: `Fixed ${CONST}` }, h); }\n' +
+            'function cycle(server) { const a = b.x; const b = a.y; server.registerTool("y", { description: a }, h); }\n' +
+            'function patterned(server, { [k]: v, other = {} }, ...rest) { server.registerTool("p", { description: v, title: rest }, h); }\n' +
+            'function local(server) { const { d } = CONFIG; server.registerTool("l", { description: d }, h); }\n' +
+            'server.setRequestHandler(customSchema, async (req) => { server.registerTool("q", { description: req.params.q }, h); });\n' +
+            "import { ListPromptsRequestSchema } from '@modelcontextprotocol/sdk/types.js';\nserver.setRequestHandler(ListPromptsRequestSchema, handleList);\n" +
+            'server.registerTool("x", cfg, async (args) => {\n' +
+            '  H(server, args.t); reassignable(server, args.t); declaredLater(args.t); mutable(server, args.t);\n' +
+            '  computed(server, args); cycle(server); patterned(server, args, args.t); local(server);\n' +
+            '  return { content: [] };\n' +
+            '});',
+        },
+        {
+          // @found modelcontextprotocol/typescript-sdk:examples/guides/clients/oauth.examples.ts:34 (crash on a bodiless declaration)
+          name: 'FP: a declare-only function is not a helper with a body to read',
+          code:
+            SDK +
+            'declare function onRedirect(server: unknown, url: string): void;\n' +
+            'server.registerTool("x", cfg, async (args) => { onRedirect(server, args.url); return { content: [] }; });',
+        },
+        {
+          name: 'a destructured helper parameter given an untainted object at the call site',
+          code:
+            SDK +
+            'function reg(server, { description } = {}) { server.registerTool("r", { description }, h); }\n' +
+            'server.registerTool("x", cfg, async (args) => { reg(server, SOME_OBJECT); reg(server); return { content: [] }; });',
+        },
+        {
+          name: 'a same-file helper that forwards nothing model-facing from its parameters',
+          code:
+            SDK +
+            'function register(server, value) { const fixed = "Fixed"; server.registerTool("t", { description: fixed, title: value.length > 1 ? "A" : "B" }, h); }\n' +
+            'function other(server) { server.registerTool("u", { description: CONFIGURED }, h); }\n' +
+            'server.registerTool("x", cfg, async (args) => { register(server, args.v); other(server, args.v); return { content: [] }; });',
+        },
+        {
+          name: 'a file read that is not contents (a directory listing, a stat) and a fetch to nowhere',
+          code:
+            SDK +
+            "import { readdirSync, statSync } from 'node:fs';\n" +
+            'server.registerTool("a", { description: readdirSync(DIR).join(", ") }, h);\n' +
+            'server.registerTool("b", { description: String(statSync(F).size) }, h);\n' +
+            'server.registerTool("c", { description: (await cache.get(k)).text() }, h);\n' +
+            'server.registerTool("d", { description: JSON.parse(CONFIG).description }, h);',
+        },
+        {
+          name: 'an app route on something that is not an HTTP framework',
+          code:
+            SDK +
+            "import { Router } from './router';\nconst app = new Router();\n" +
+            'app.post("/t", (req) => server.registerTool("t", { description: req.body.d }, h));\n' +
+            'other.post("/u", (req) => server.registerTool("u", { description: req.body.d }, h));',
+        },
+        {
+          name: 'a description imported from a relative module that does not read a file',
+          filename: SERVER,
+          code:
+            SDK +
+            "import { LOCAL_DESCRIPTION } from './file-description';\nimport { loadBlurb } from './loader';\n" +
+            'server.registerTool("a", { description: LOCAL_DESCRIPTION }, h);\n' +
+            'server.registerTool("b", { description: loadBlurb() }, h);',
+        },
+      ],
+      invalid: [
+        {
+          // Reported before too (as "dynamic"); now reported for the right reason.
+          name: 'a tool registers a resource whose description is a tool argument',
+          code:
+            SDK +
+            'server.registerTool("add_note", cfg, async ({ title, body }) => {\n' +
+            '  server.registerResource(`note-${title}`, `note:///${title}`, { description: `Note: ${title}` }, async () => ({ contents: [] }));\n' +
+            '  return { content: [] };\n' +
+            '});',
+          errors: [meta('resource', 'unknown', 'description', 'title')],
+        },
+        {
+          name: 'a tool registered from a fetched manifest',
+          code:
+            SDK +
+            'const res = await fetch("https://plugins.example.com/manifest.json");\n' +
+            'const manifest = await res.json();\n' +
+            'server.registerTool("plugin", { title: manifest.title, description: manifest.description }, h);',
+          errors: [
+            tool('plugin', 'title', 'manifest.title'),
+            tool('plugin', 'description', 'manifest.description'),
+          ],
+        },
+        {
+          name: "a description read from a file's contents",
+          code:
+            SDK +
+            "import { readFileSync } from 'node:fs';\nimport { readFile } from 'node:fs/promises';\n" +
+            'const text = await readFile("./desc.md", "utf8");\n' +
+            'server.registerTool("a", { description: text }, h);\n' +
+            'server.registerTool("b", { description: JSON.parse(readFileSync("./tools.json", "utf8")).b.description }, h);',
+          errors: [
+            tool('a', 'description', 'readFile()'),
+            tool('b', 'description', 'readFileSync().b.description'),
+          ],
+        },
+        {
+          // Reported before at the helper (as "dynamic"); now at the call that carries the argument.
+          name: 'a tool argument forwarded into a description through a same-file helper',
+          code:
+            SDK +
+            'const registerNote = (server, id, text) => server.registerResource(`note-${id}`, `note:///${id}`, { description: text }, cb);\n' +
+            'server.registerTool("add_note", cfg, async ({ text }) => { registerNote(server, "1", text); return { content: [] }; });',
+          errors: [meta('resource', 'unknown', 'description', 'text')],
+        },
+        {
+          // @found modelcontextprotocol/servers:src/everything/tools/gzip-file-as-resource.ts:101 (the forwarding path, with a client-chosen description)
+          name: 'FN: a tool argument forwarded through a relative helper (object field, positional, default export)',
+          filename: SERVER,
+          code:
+            SDK +
+            "import registerDefault, { registerSessionResource, registerNoteResource } from './session-resource';\n" +
+            'server.registerTool("x", cfg, async (args) => {\n' +
+            '  const resource = { uri: "u", name: "n", description: args.summary };\n' +
+            '  registerSessionResource(server, resource, "");\n' +
+            '  registerSessionResource(server, { uri: "u", name: "n", title: `About ${args.topic}` }, "");\n' +
+            '  registerNoteResource(server, "1", args.body);\n' +
+            '  registerDefault(server, args.blurb);\n' +
+            '  return { content: [] };\n' +
+            '});',
+          errors: [
+            meta('resource', 'unknown', 'description', 'args.summary'),
+            meta('resource', 'unknown', 'title', 'args.topic'),
+            meta('resource', 'unknown', 'description', 'args.body'),
+            meta('prompt', 'p', 'description', 'args.blurb'),
+          ],
+        },
+        {
+          name: 'an overloaded helper is read through its implementation',
+          code:
+            SDK +
+            'function reg(server: unknown): void;\nfunction reg(server: unknown, text: string): void;\n' +
+            'function reg(server: any, text?: string) { server.registerTool("r", { description: text }, h); }\n' +
+            'server.registerTool("x", cfg, async (args) => { reg(server, args.t); return { content: [] }; });',
+          errors: [tool('r', 'description', 'args.t')],
+        },
+        {
+          name: 'the whole arguments object handed to a helper that reads its description field',
+          code:
+            SDK +
+            'function reg(server, meta, { title } = {}) { server.registerTool("r", { description: meta.description, title }, h); }\n' +
+            'server.registerTool("x", cfg, async (args) => { reg(server, args); return { content: [] }; });',
+          errors: [tool('r', 'description', 'args.description')],
+        },
+        {
+          name: 'a request parameter, an HTTP body, a Hono body and axios data',
+          code:
+            SDK +
+            "import express from 'express';\nimport { Hono } from 'hono';\nimport axios from 'axios';\n" +
+            "import { ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';\n" +
+            'server.setRequestHandler(ListToolsRequestSchema, async (request) => { server.registerPrompt("p", { description: request.params.cursor }, cb); return { tools: [] }; });\n' +
+            'const app = express();\n' +
+            'app.post("/tools", (req, res) => { server.registerTool("t", { description: req.body.description }, h); });\n' +
+            'const hono = new Hono();\n' +
+            'hono.post("/tools", async (c) => { const body = await c.req.json(); server.registerTool("u", { description: body.description }, h); });\n' +
+            'const { data } = await axios.get("https://registry.example.com/tool");\n' +
+            'server.registerTool("v", { description: data.description }, h);',
+          errors: [
+            meta('prompt', 'p', 'description', 'request.params.cursor'),
+            tool('t', 'description', 'req.body.description'),
+            tool('u', 'description', 'body.description'),
+            tool('v', 'description', 'data.description'),
+          ],
+        },
+        {
+          name: 'the legacy positional description from a tool argument, and a file read in another module',
+          filename: SERVER,
+          code:
+            SDK +
+            "import { FILE_DESCRIPTION } from './file-description';\n" +
+            'server.registerTool("x", cfg, async ({ label }) => { server.tool("child", `Child of ${label}`, async () => ({ content: [] })); return { content: [] }; });\n' +
+            'server.registerTool("y", { description: FILE_DESCRIPTION }, h);',
+          errors: [
+            tool('child', 'description', 'label'),
+            tool('y', 'description', 'FILE_DESCRIPTION'),
+          ],
         },
       ],
     });

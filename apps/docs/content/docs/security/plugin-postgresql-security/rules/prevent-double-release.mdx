@@ -51,7 +51,7 @@ Releasing a PostgreSQL client twice corrupts the connection pool state:
 | 9   | **Finally + After**         | Release in finally AND after try           |
 | 10  | **Try + After**             | Release in try AND after try statement     |
 | 11  | **If + Finally**            | If-release (no exit) + finally release     |
-| 12  | **Catch + After**           | Release in catch AND after try             |
+| 12  | **Catch + After**           | Release in a catch that falls through AND after try |
 | 13  | **Expression + Sequential** | Ternary/short-circuit release + sequential |
 
 ### ❌ Incorrect
@@ -218,7 +218,8 @@ Calls in opposite branches of one `if`/`else` or `?:` — `if (err) done(err);
 else done();` — run at most once and are not reported (since 2026-10). A
 release at the very end of a `try` block plus one in its `catch` is also one
 release per execution, as is a retry loop that checks out a new client on each
-pass.
+pass. So is a release in a `catch` that rethrows or returns plus one after the
+`try`: the catch path never reaches the second.
 
 > **Workaround**: For any of these patterns, use the **guarded release pattern** shown in the examples above.
 

@@ -390,3 +390,120 @@ export function valueResolverFor(
     return resolved.kind === 'value' ? resolved.node : undefined;
   };
 }
+
+/** A function a call resolves to, and where it lives. */
+export interface FunctionTarget {
+  fn:
+    | TSESTree.ArrowFunctionExpression
+    | TSESTree.FunctionExpression
+    | TSESTree.FunctionDeclaration;
+  site: Site;
+}
+
+function asFunction(
+  node: TSESTree.Node | null | undefined,
+): FunctionTarget['fn'] | undefined {
+  const value = node ? unwrapTypeOnly(node) : undefined;
+  return value?.type === 'ArrowFunctionExpression' ||
+    value?.type === 'FunctionExpression' ||
+    value?.type === 'FunctionDeclaration'
+    ? value
+    : undefined;
+}
+
+/**
+ * The function `name` exports from `file`: `export function f`,
+ * `export const f = () => …`, or `export default function`. Anything else —
+ * a re-export, a non-function, a missing module — is `undefined`.
+ */
+function exportedFunction(
+  file: string,
+  name: string,
+  parser: unknown,
+): FunctionTarget | undefined {
+  const parsed = parseModule(file, parser);
+  if (parsed === undefined) return undefined;
+  const site: Site = { scope: parsed.scope, file };
+  for (const statement of parsed.ast.body) {
+    if (statement.type === 'ExportDefaultDeclaration') {
+      const fn =
+        name === 'default' ? asFunction(statement.declaration) : undefined;
+      if (fn) return { fn, site };
+      continue;
+    }
+    if (statement.type !== 'ExportNamedDeclaration') continue;
+    const declaration = statement.declaration;
+    if (
+      declaration?.type === 'FunctionDeclaration' &&
+      declaration.id?.name === name
+    )
+      return { fn: declaration, site };
+    if (declaration?.type !== 'VariableDeclaration') continue;
+    for (const declarator of declaration.declarations) {
+      const fn = asFunction(declarator.init);
+      if (
+        fn &&
+        declaration.kind === 'const' &&
+        declarator.id.type === 'Identifier' &&
+        declarator.id.name === name
+      )
+        return { fn, site };
+    }
+  }
+  return undefined;
+}
+
+/**
+ * The function a callee names — a same-file function declaration or `const`
+ * arrow, or one exported by a RELATIVE module — or `undefined`.
+ */
+export function resolveCalleeFunction(
+  callee: TSESTree.Node,
+  site: Site,
+  parser: unknown,
+): FunctionTarget | undefined {
+  if (callee.type !== 'Identifier') return undefined;
+  const variable = lookupVariable(callee.name, site.scope);
+  const def = variable?.defs[0];
+  if (def?.type === 'FunctionName') {
+    // The implementation, not an overload signature or a `declare function`
+    // (both are bodiless TSDeclareFunction nodes).
+    for (const each of variable!.defs) {
+      const fn = asFunction(each.node);
+      if (fn) return { fn, site };
+    }
+    return undefined;
+  }
+  if (def?.type === 'Variable') {
+    const fn =
+      def.parent.kind === 'const' ? asFunction(def.node.init) : undefined;
+    return fn && { fn, site };
+  }
+  if (def?.type !== 'ImportBinding' || def.parent.type !== 'ImportDeclaration')
+    return undefined;
+  const file = resolveRelative(site.file, def.parent.source.value);
+  if (file === undefined) return undefined;
+  const spec = def.node;
+  const imported =
+    spec.type === 'ImportDefaultSpecifier'
+      ? 'default'
+      : spec.type === 'ImportSpecifier'
+        ? specName(spec.imported)
+        : undefined;
+  return imported === undefined
+    ? undefined
+    : exportedFunction(file, imported, parser);
+}
+
+/** The innermost scope under `root` whose block contains `node`. */
+export function scopeAt(
+  root: TSESLint.Scope.Scope,
+  node: TSESTree.Node,
+): TSESLint.Scope.Scope {
+  for (const child of root.childScopes) {
+    const [start, end] = child.block.range;
+    if (start <= node.range[0] && node.range[1] <= end)
+      return scopeAt(child, node);
+  }
+  return root;
+}

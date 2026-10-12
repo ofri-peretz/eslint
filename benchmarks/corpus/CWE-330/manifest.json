@@ -1,0 +1,23 @@
+{
+  "cwe": "CWE-330",
+  "name": "Use of Insufficiently Random Values (predictable MCP session IDs)",
+  "owasp": "A02:2021",
+  "severity": "HIGH",
+  "expectedPlugins": [
+    "eslint-plugin-mcp-sdk-security"
+  ],
+  "fixtures": {
+    "vulnerable": [
+      {
+        "file": "mcp-counter-session-id.js",
+        "description": "MCP sessionIdGenerator built from Date.now() and an incrementing counter"
+      }
+    ],
+    "safe": [
+      {
+        "file": "mcp-random-uuid-session-id.js",
+        "description": "MCP sessionIdGenerator returning randomUUID() from node:crypto"
+      }
+    ]
+  }
+}

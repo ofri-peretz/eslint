@@ -1,0 +1,140 @@
+---
+title: no-predictable-session-id
+description: Disallow an MCP sessionIdGenerator that returns a counter, a timestamp, Math.random() or a constant.
+tags: ['security', 'mcp']
+category: security
+severity: high
+cwe: CWE-330
+autofix: false
+---
+
+> **Keywords:** predictable session ID, CWE-330, session hijacking, MCP, Model Context Protocol, sessionIdGenerator, Mcp-Session-Id, Math.random, Date.now, randomUUID
+
+<!-- @rule-summary -->
+
+Disallow an MCP sessionIdGenerator that returns a counter, a timestamp, Math.random() or a constant.
+<!-- @/rule-summary -->
+
+**CWE:** [CWE-330](https://cwe.mitre.org/data/definitions/330.html)
+**OWASP:** [A02:2021 – Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
+
+Detects a Streamable HTTP transport whose `sessionIdGenerator` builds the session ID only from guessable sources, or returns the same value every time. This rule is part of [`eslint-plugin-mcp-sdk-security`](https://www.npmjs.com/package/eslint-plugin-mcp-sdk-security).
+
+💼 This rule is set to **error** in the `strict` config.
+
+## Quick Summary
+
+| Aspect            | Details                                                                                   |
+| ----------------- | ----------------------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-330](https://cwe.mitre.org/data/definitions/330.html) (Insufficiently Random Values) |
+| **Severity**      | High (CVSS 7.5)                                                                           |
+| **Auto-Fix**      | ❌ No auto-fix available                                                                  |
+| **Category**      | Security                                                                                  |
+
+| messageId              | What it reports                                                     |
+| ---------------------- | ------------------------------------------------------------------- |
+| `predictableSessionId` | IDs built only from timestamps, counters, `Math.random()`, literals |
+| `constantSessionId`    | The same ID for every session, so every client shares one session   |
+
+## Why this matters
+
+In stateful mode the `Mcp-Session-Id` header is the only thing that ties a
+request to a session: the server routes the request to whichever transport
+owns that ID. Anyone who can produce a valid ID can send requests into
+another client's session, read its notifications, and call tools under its
+identity. A counter or a timestamp can be guessed from one observed ID, and
+`Math.random()` is a PRNG whose state can be recovered from its outputs. A
+constant puts every client in one session.
+
+## ❌ Incorrect
+
+```ts
+// ❌ a counter
+let n = 0;
+new StreamableHTTPServerTransport({ sessionIdGenerator: () => String(n++) });
+
+// ❌ a timestamp, or Math.random()
+new StreamableHTTPServerTransport({
+  sessionIdGenerator: () => Date.now().toString(36),
+});
+new StreamableHTTPServerTransport({
+  sessionIdGenerator: () => Math.random().toString(36).slice(2),
+});
+
+// ❌ constant: every client shares one session
+new StreamableHTTPServerTransport({ sessionIdGenerator: () => 'session' });
+
+// ❌ random, but computed once at module level: still the same for every session
+const ID = randomUUID();
+new StreamableHTTPServerTransport({ sessionIdGenerator: () => ID });
+```
+
+## How it recognises things
+
+- **Transports are resolved to the SDK**: `StreamableHTTPServerTransport`
+  (v1), `NodeStreamableHTTPServerTransport` (`@modelcontextprotocol/node`) and
+  `WebStandardStreamableHTTPServerTransport` (`@modelcontextprotocol/server`),
+  with their options written inline.
+- **The generator** is an inline function, a method shorthand, or a same-file
+  function passed by name. Every value it returns is classified, and so is the
+  return value of a same-file helper it calls. `sessionIdGenerator: Date.now`
+  passed by reference is reported too.
+- **Predictable sources** are `Date.now()`, `new Date()`, `performance.now()`,
+  `process.hrtime()` / `process.hrtime.bigint()`, `Math.random()`, an update
+  expression (`n++`, `++n`), and literals. Each global counts only when no
+  local binding shadows it. Templates, `+`, `String()`, `Math.floor/round/trunc`
+  and string, number or date methods (`toString`, `toFixed`, `toISOString`,
+  `getTime`, `valueOf`, `slice`, `substring`, `substr`, `padStart`, `padEnd`,
+  `replace`, `replaceAll`, `toUpperCase`, `toLowerCase`, `trim`, `join`) keep a
+  value predictable. A `const` declared inside a function is followed to its
+  initializer. A module-level `const` is evaluated once, so it is constant.
+- **CSPRNG sources** are `randomUUID`, `randomBytes` and `getRandomValues`
+  from `crypto`, the global `crypto.randomUUID()` and
+  `crypto.getRandomValues()`, `v4` and `v7` from `uuid`, and `nanoid` from
+  `nanoid`. A returned value that contains one anywhere is not reported.
+
+## ✅ Correct
+
+```ts
+import { randomUUID } from 'node:crypto';
+
+new StreamableHTTPServerTransport({ sessionIdGenerator: () => randomUUID() });
+new StreamableHTTPServerTransport({ sessionIdGenerator: randomUUID });
+new StreamableHTTPServerTransport({
+  sessionIdGenerator: () => crypto.randomUUID(),
+});
+```
+
+## What this rule deliberately does not report
+
+- **A generator it cannot see into.** An imported function, a method on an
+  object (`ids.next()`), a `let` read without an update, an environment
+  variable, or a conditional. The rule abstains rather than guess.
+- **Options it cannot read**: options in a variable, with a spread, or with a
+  computed key.
+- **A per-request value closed over by the generator**: `const id =
+randomUUID()` inside the route handler is new for each transport.
+- **`SSEServerTransport`**, which generates its own random session ID.
+- **Non-MCP classes of the same name**, and a file that imports no MCP server
+  package.
+
+## Overlap with `node-security` / `secure-coding`
+
+`node-security/no-math-random-crypto` reports `Math.random()` where a nearby
+identifier names a security value, and decides by that name. `secure-coding`
+has no randomness rule. This rule owns the MCP-specific question, whether the
+value this transport hands out as a session ID can be guessed or is shared,
+and decides it from the SDK option rather than a name. It also reports
+counters, timestamps and constants, which no generic rule can tie to a session
+ID. On a `Math.random()` generator both plugins may report.
+
+## When Not To Use It
+
+There is no configuration in which a guessable or shared session ID is
+correct, so this rule has no options.
+
+## Further Reading
+
+- [CWE-330: Use of Insufficiently Random Values](https://cwe.mitre.org/data/definitions/330.html)
+- [MCP: Security best practices, session hijacking](https://modelcontextprotocol.io/specification/2025-06-18/basic/security_best_practices#session-hijacking)
+- [Node.js: `crypto.randomUUID`](https://nodejs.org/api/crypto.html#cryptorandomuuidoptions)

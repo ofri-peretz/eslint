@@ -1,6 +1,6 @@
 ---
 title: no-tool-description-injection
-description: Require MCP tool descriptions and titles to be static text, since they reach the model as instructions.
+description: Disallow MCP tool, prompt and resource descriptions built from text a client, a remote service or a file controls.
 tags: ['security', 'mcp']
 category: security
 severity: high
@@ -12,13 +12,13 @@ autofix: false
 
 <!-- @rule-summary -->
 
-Require MCP tool descriptions and titles to be static text, since they reach the model as instructions.
+Disallow MCP tool, prompt and resource descriptions built from text a client, a remote service or a file controls.
 <!-- @/rule-summary -->
 
 **CWE:** [CWE-1427](https://cwe.mitre.org/data/definitions/1427.html)
 **OWASP:** [A03:2021 – Injection](https://owasp.org/Top10/A03_2021-Injection/)
 
-Detects an MCP tool `description` or `title` that is assembled at runtime rather than written as a literal. This rule is part of [`eslint-plugin-mcp-sdk-security`](https://www.npmjs.com/package/eslint-plugin-mcp-sdk-security).
+Detects an MCP tool, prompt or resource `description` or `title` whose text comes from a client, a remote service or a file's contents. This rule is part of [`eslint-plugin-mcp-sdk-security`](https://www.npmjs.com/package/eslint-plugin-mcp-sdk-security).
 
 💼 This rule is set to **error** in the `recommended` and `strict` configs.
 
@@ -66,20 +66,78 @@ note: prompt-level defences do not help. The injection is not in the user's
 message, so input filtering never sees it. It is in the tool manifest, which is
 assembled once at startup and then trusted for the life of the session.
 
+## "Dynamic" is not the defect
+
+Until the 2026-10-11 real-code scan this rule reported any description it could
+not prove static. Over `modelcontextprotocol/servers`, `typescript-sdk`,
+`vercel/mcp-handler` and `cloudflare/mcp-server-cloudflare` that produced four
+findings, and all four were false positives. Each description was built from a
+value the server owns: a filename from its own `docs/` directory, a counter id,
+or a helper's parameter. The rule now reports only text whose value, followed
+within the file, comes from one of these sources:
+
+| Source                | Shapes followed                                                                                                                                                                                                        |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **A client**          | Tool arguments and `ResourceTemplate` variables; `request.params` of a `setRequestHandler` handler; the request object of a route on an app built by `express`, `hono` or `fastify` (`req.body`, `await c.req.json()`) |
+| **A remote service**  | The response of `fetch`, `axios`, `got`, `undici`, `node-fetch` or `http(s)`, and its `.json()` / `.text()`                                                                                                            |
+| **A file's contents** | `readFile` / `readFileSync` (here, or in the relative module a name is imported from), and `JSON.parse` of any of these                                                                                                |
+
+A directory listing, a `stat`, a counter, a constant, a config value, an
+imported value from a module that does not read a file, and a call this rule
+cannot see into are all server-local, and are not reported.
+
+### Call-site resolution
+
+A helper may forward one of its parameters into a registration:
+
+```ts
+// session.ts
+export const registerSessionResource = (server, resource, payload) => {
+  const { uri, name, description, title } = resource;
+  return server.registerResource(name, uri, { description, title }, read);
+};
+```
+
+Inside the helper, `description` is an opaque parameter, and it is not
+reported there. Where the helper is called, the rule checks the argument in
+that parameter's position, or the field of an object argument the helper
+destructures. This works for a same-file helper and for one imported from a
+relative module:
+
+```ts
+// a tool handler
+registerSessionResource(server, { uri, name: args.name }, blob); // ✅ no description
+registerSessionResource(server, { uri, name, description: args.d }, blob); // ❌ args.d
+```
+
 ## ❌ Incorrect
 
 ```ts
-// ❌ interpolated — whoever controls `scope` controls the instruction
-server.registerTool('search', { description: `Search ${scope}` }, handler);
+// ❌ a tool registers a resource described by its own argument
+server.registerTool('add_note', cfg, async ({ title }) => {
+  server.registerResource(
+    `note-${title}`,
+    uri,
+    { description: `Note: ${title}` },
+    read,
+  );
+});
 
-// ❌ loaded from elsewhere
-server.registerTool('search', { description: tenantBlurb }, handler);
+// ❌ a manifest fetched from a remote service
+const manifest = await (await fetch(MANIFEST_URL)).json();
+server.registerTool('plugin', { description: manifest.description }, handler);
 
-// ❌ built by a function this file cannot see through
-server.registerTool('search', { description: buildDescription() }, handler);
+// ❌ a description read from a file's contents
+server.registerTool(
+  'search',
+  { description: await readFile('./desc.md', 'utf8') },
+  handler,
+);
 
-// ❌ the title reaches the model too
-server.registerTool('search', { title: `Search ${scope}` }, handler);
+// ❌ an HTTP body
+app.post('/tools', (req) =>
+  server.registerTool('t', { description: req.body.description }, h),
+);
 ```
 
 ## ✅ Correct
@@ -92,58 +150,36 @@ server.registerTool(
   handler,
 );
 
-// ✅ a template with no interpolations is still a literal
-server.registerTool(
-  'search',
-  { description: `Search the project docs` },
-  handler,
+// ✅ server-local values: a directory listing, a counter id
+for (const name of readdirSync(DOCS)) {
+  server.registerResource(
+    name,
+    uri(name),
+    { description: `Document: ${name}` },
+    read,
+  );
+}
+server.registerResource(
+  `note-${id}`,
+  uri,
+  { description: `Sticky note #${id}` },
+  read,
 );
 
-// ✅ if it genuinely varies, write one registration per variant
-server.registerTool(
-  'search_docs',
-  { description: 'Search the project docs' },
-  handler,
-);
-server.registerTool(
-  'search_code',
-  { description: 'Search the source tree' },
-  handler,
+// ✅ client text goes in the resource CONTENTS, not its description
+server.registerResource(
+  `note-${id}`,
+  uri,
+  { description: 'A user note' },
+  async () => ({ contents: [{ uri: uri.href, text: noteText }] }),
 );
 ```
 
-That last shape is the real remediation when descriptions differ per
-deployment: keep the text in code, one literal per registration, rather than
-splicing a value in.
-
-A loop over a table of variants looks tidier and does not work here —
-`{ description: source.staticDescription }` is a property lookup, so the rule
-reports it, and correctly: this file cannot see what that table holds. The
-literal has to be at the call site, which is the same reason a `const` holding
-a literal is not resolved either.
-
-## What counts as static
-
-Text the developer wrote, in this file or in a relative module it imports:
-
-- a string literal, and a template, tagged template (`dedent`, `outdent`) or
-  `+` whose every part is static;
-- an array literal of static parts `.join()`ed with a static separator;
-- a `const` bound to any of the above, and a property of a `const` object
-  literal whose value is one (`TOOLS.search.description`), where no spread
-  after the key could override it;
-- a value imported from a **relative** module (`./descriptions`) that is one of
-  the above. The module is read with the parser ESLint is already using;
-  named, default, namespace and re-exported (`export { … } from`,
-  `export * from`) bindings are followed.
-
-The rule reports only text it can show is **dynamic** — a call result, a `let`
-or exported mutable binding, a parameter, a global, an exported function. A
-value it cannot read (a package import, a module that is not there or does not
-export the name, a cycle) is unknown, and is not reported.
-
 ## What this rule deliberately does not report
 
+- **Server-local runtime text** — `t('tools.search')`, `buildDescription()`,
+  `` `Search ${scope}` `` with a config `scope`, a `let`, an imported constant.
+  A value whose provenance this file cannot show is not treated as an attacker's.
 - **A config passed by reference.** `registerTool(name, config, handler)` could
   carry anything; reporting it would be guessing.
 - **A legacy params shape.** In `tool(name, { title: z.string() }, cb)` the
@@ -152,14 +188,9 @@ export the name, a cycle) is unknown, and is not reported.
   an annotations object's `title` are checked.
 - **Any key the model never sees** — `inputSchema`, `annotations` hints, the
   handler. Only `description` and `title` reach the instruction context.
+- **A helper whose forwarded parameter is never given untrusted text**, and a
+  `declare function` or an overload signature, which have no body to read.
 - **A file that imports no MCP server package.**
-
-## What it still reports that you may consider safe
-
-- **A description returned by a call** — `t('tools.search')`,
-  `buildDescription()`. The text exists only at runtime. Write it as a const,
-  or disable the line with the reason. This is why the rule is in
-  `recommended` but not `minimal`.
 
 Prompts (`registerPrompt`) and resources (`registerResource`) are checked the
 same way: their descriptions reach the model through `prompts/list` and
@@ -170,18 +201,8 @@ same way: their descriptions reach the model through `prompts/list` and
 There is no configuration in which handing the model attacker-controlled
 instruction text is correct, so this rule has no options.
 
-If a description genuinely must be assembled — and the inputs are values you
-control, not data anyone else can write — disable it on the line with the
-reason:
-
-```ts
-// eslint-disable-next-line mcp-sdk-security/no-tool-description-injection -- VERSION is a build-time constant
-server.registerTool(
-  'search',
-  { description: `Search the docs (v${VERSION})` },
-  handler,
-);
-```
+If the reported text has been validated against a closed set the server
+owns, choose the description from that set instead of interpolating the value.
 
 ## Further Reading
 
