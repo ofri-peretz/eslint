@@ -1,0 +1,133 @@
+---
+title: no-credential-leak-in-tool
+description: Disallow an MCP tool returning the server's environment or the caller's token, or forwarding that token upstream.
+tags: ['security', 'mcp']
+category: security
+severity: high
+cwe: CWE-200
+autofix: false
+---
+
+> **Keywords:** sensitive data exposure, CWE-200, CWE-526, CWE-441, token passthrough, confused deputy, MCP, Model Context Protocol, process.env, authInfo
+
+<!-- @rule-summary -->
+
+Disallow an MCP tool returning the server's environment or the caller's token, or forwarding that token upstream.
+<!-- @/rule-summary -->
+
+**CWE:** [CWE-200](https://cwe.mitre.org/data/definitions/200.html), [CWE-526](https://cwe.mitre.org/data/definitions/526.html), [CWE-441](https://cwe.mitre.org/data/definitions/441.html)
+**OWASP:** [A01:2021 – Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control/)
+
+Detects `process.env` returned in a tool result, the caller's bearer token (`authInfo.token`) returned to the model, and that token forwarded to another service. This rule is part of [`eslint-plugin-mcp-sdk-security`](https://www.npmjs.com/package/eslint-plugin-mcp-sdk-security).
+
+💼 This rule is set to **error** in the `recommended` and `strict` configs.
+
+## Quick Summary
+
+| Aspect            | Details                                                                                        |
+| ----------------- | ---------------------------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-200](https://cwe.mitre.org/data/definitions/200.html) (Exposure of Sensitive Information) |
+| **Severity**      | High (CVSS 7.5)                                                                                |
+| **Auto-Fix**      | ❌ No auto-fix available                                                                       |
+| **Category**      | Security                                                                                       |
+
+## Why this matters
+
+A tool result is read by the model, written to the host's logs, and can be
+echoed into any later tool call the model is steered into making. Anything a
+handler returns should be treated as published to whoever can influence the
+model.
+
+| Message                      | What it catches                                                                                                                                                                                                                                                      |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `envInResult` (CWE-526)      | `process.env` returned whole — `JSON.stringify(process.env)`, `{ ...process.env }`, `Object.entries(process.env)` — or `process.env[name]` with `name` chosen by a tool argument. Every key the server was started with is one prompt away.                          |
+| `tokenInResult` (CWE-200)    | `authInfo.token` — the bearer token the SDK verified for this request — returned to the model.                                                                                                                                                                       |
+| `tokenPassthrough` (CWE-441) | The same token forwarded in an outbound HTTP request or to an upstream MCP client transport. The MCP authorization spec forbids it: the downstream API trusts a token not issued for it (a confused deputy), and audit trails attribute the call to the wrong party. |
+
+## Relationship to other plugins
+
+None overlap. Neither the tool-result channel nor the SDK's `AuthInfo` exists
+outside MCP, and `node-security` / `secure-coding` have no rule for either.
+
+## ❌ Incorrect
+
+```ts
+// ❌ every credential the server holds, handed to the model
+server.registerTool('debug_env', cfg, async () => ({
+  content: [{ type: 'text', text: JSON.stringify(process.env, null, 2) }],
+}));
+
+// ❌ the model chooses which variable to read
+server.registerTool('get_env', cfg, async ({ name }) => ({
+  content: [{ type: 'text', text: String(process.env[name]) }],
+}));
+
+// ❌ token passthrough
+server.registerTool('list_repos', cfg, async (args, extra) =>
+  fetch('https://api.github.com/user/repos', {
+    headers: { Authorization: `Bearer ${extra.authInfo.token}` },
+  }),
+);
+```
+
+## How results, tokens and requests are recognised
+
+- **Results** are every value a tool handler (or `ResourceTemplate` callback)
+  returns, followed through same-file bindings.
+- **`process.env`** is the global `process` (unless shadowed) or
+  `node:process`'s export. Reading one named variable — `process.env.NODE_ENV`
+  — is not reported: whether it is secret is not something a name can prove.
+- **`authInfo`** is read from the request context the SDK passes each handler:
+  the second parameter when the tool declares an input schema, the first when
+  it does not, and the second of a `setRequestHandler(CallToolRequestSchema)`
+  handler. Its `token` is followed through destructuring, bindings, templates
+  and `JSON.stringify(authInfo)`.
+- **Outbound requests** are the clients `no-ssrf-in-tool` resolves (`fetch`,
+  `axios`, `got`, `undici`, `node-fetch`, `http(s)`), plus the SDK's
+  `StreamableHTTPClientTransport` and `SSEClientTransport`. Every argument is
+  searched, including nested headers objects and arrays.
+
+## ✅ Correct
+
+```ts
+// ✅ report what the token grants, not the token
+server.registerTool('whoami', cfg, async (args, { authInfo }) => ({
+  content: [
+    {
+      type: 'text',
+      text: `${authInfo?.clientId}: ${authInfo?.scopes.join(', ')}`,
+    },
+  ],
+}));
+
+// ✅ call downstream with a credential issued to this server
+server.registerTool('list_repos', cfg, async (args, extra) => {
+  const token = await exchangeForGitHubToken(extra.authInfo);
+  return fetch('https://api.github.com/user/repos', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+});
+```
+
+## What this rule deliberately does not report
+
+- **One named environment variable** in a result.
+- **The variable names** — `Object.keys(process.env)` lists names, not values.
+- **Test files** (`*.test.ts`, `test/`, `e2e/`, `fixtures/`, …): a fixture
+  server reporting its own environment ships nothing.
+- **The server's own credentials** sent downstream (`process.env.SERVICE_TOKEN`).
+- **Other `authInfo` fields** — `clientId`, `scopes`, `expiresAt`.
+- **A token exchanged by a call** this rule cannot see into: the result of
+  that call is a different token.
+- **A file that imports no MCP server package.**
+
+## When Not To Use It
+
+A debugging tool that deliberately reports configuration should return a fixed
+list of non-secret keys instead, so this rule has no options.
+
+## Further Reading
+
+- [MCP Security Best Practices: Token Passthrough](https://modelcontextprotocol.io/specification/2025-06-18/basic/security_best_practices#token-passthrough)
+- [CWE-526: Exposure of Sensitive Information Through Environmental Variables](https://cwe.mitre.org/data/definitions/526.html)
+- [CWE-441: Unintended Proxy or Intermediary (Confused Deputy)](https://cwe.mitre.org/data/definitions/441.html)

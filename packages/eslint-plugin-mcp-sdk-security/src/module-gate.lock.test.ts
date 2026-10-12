@@ -24,7 +24,8 @@ import plugin from './index';
 const RULES = Object.keys(plugin.rules);
 
 /** The SDK import that is the whole difference between the two halves below. */
-const SDK = "import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';";
+const SDK =
+  "import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';";
 
 /**
  * A real violation of `no-command-injection-in-tool`. It appears twice on purpose: once
@@ -95,7 +96,9 @@ describe('MCP SDK module gate', () => {
 
   describe('positive control — the gate must open for real MCP SDK code', () => {
     it('the same violation reports once the file imports the SDK', () => {
-      expect(lint(`${SDK}\n${VIOLATION}`, 'no-command-injection-in-tool').length).toBeGreaterThan(0);
+      expect(
+        lint(`${SDK}\n${VIOLATION}`, 'no-command-injection-in-tool').length,
+      ).toBeGreaterThan(0);
     });
 
     it('and is silent with the import removed', () => {
@@ -115,17 +118,31 @@ describe('MCP SDK module gate', () => {
    * below fails on the two-visitor gate and passes on the devkit probe.
    */
   describe.each([
-    ['CommonJS require', `const McpServer = require('@modelcontextprotocol/sdk/server/mcp.js');`],
-    ['CommonJS destructuring require', `const { McpServer } = require('@modelcontextprotocol/sdk/server/mcp.js');`],
-    ["TypeScript's import-equals", `import McpServerNs = require('@modelcontextprotocol/sdk/server/mcp.js');`],
+    [
+      'CommonJS require',
+      `const McpServer = require('@modelcontextprotocol/sdk/server/mcp.js');`,
+    ],
+    [
+      'CommonJS destructuring require',
+      `const { McpServer } = require('@modelcontextprotocol/sdk/server/mcp.js');`,
+    ],
+    [
+      "TypeScript's import-equals",
+      `import McpServerNs = require('@modelcontextprotocol/sdk/server/mcp.js');`,
+    ],
     [
       'a lazy dynamic import',
       `export async function boot() { const { McpServer } = await import('@modelcontextprotocol/sdk/server/mcp.js'); return McpServer; }`,
     ],
-    ['a re-export', `export { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';`],
+    [
+      'a re-export',
+      `export { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';`,
+    ],
   ])('the gate opens on %s', (_form, load) => {
     it('and the same violation reports', () => {
-      expect(lint(`${load}\n${VIOLATION}`, 'no-command-injection-in-tool').length).toBeGreaterThan(0);
+      expect(
+        lint(`${load}\n${VIOLATION}`, 'no-command-injection-in-tool').length,
+      ).toBeGreaterThan(0);
     });
   });
 
@@ -145,17 +162,22 @@ describe('MCP SDK module gate', () => {
     '@modelcontextprotocol/express',
     '@modelcontextprotocol/hono',
     '@modelcontextprotocol/fastify',
+    '@modelcontextprotocol/server-legacy',
     'mcp-handler',
     '@vercel/mcp-adapter',
   ])('the gate opens on %s', (pkg) => {
     it('and the same violation reports', () => {
       const load = `import { anything } from '${pkg}';`;
-      expect(lint(`${load}\n${VIOLATION}`, 'no-command-injection-in-tool').length).toBeGreaterThan(0);
+      expect(
+        lint(`${load}\n${VIOLATION}`, 'no-command-injection-in-tool').length,
+      ).toBeGreaterThan(0);
     });
 
     it('including a subpath of it', () => {
       const load = `import { anything } from '${pkg}/sub/path.js';`;
-      expect(lint(`${load}\n${VIOLATION}`, 'no-command-injection-in-tool').length).toBeGreaterThan(0);
+      expect(
+        lint(`${load}\n${VIOLATION}`, 'no-command-injection-in-tool').length,
+      ).toBeGreaterThan(0);
     });
   });
 

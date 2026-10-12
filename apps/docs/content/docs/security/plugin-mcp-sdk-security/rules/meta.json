@@ -2,9 +2,20 @@
   "title": "Rules",
   "defaultOpen": false,
   "pages": [
+    "no-code-injection-in-tool",
     "no-command-injection-in-tool",
+    "no-credential-leak-in-tool",
+    "no-duplicate-tool-name",
+    "no-path-traversal-in-tool",
+    "no-predictable-session-id",
+    "no-shared-stateless-transport",
+    "no-sql-injection-in-tool",
+    "no-ssrf-in-tool",
     "no-tool-description-injection",
+    "no-untrusted-stdio-command",
+    "no-untrusted-tool-metadata-in-prompt",
     "no-unvalidated-tool-args",
+    "require-http-transport-hardening",
     "require-tool-input-schema"
   ]
 }

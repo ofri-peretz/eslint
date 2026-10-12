@@ -41,8 +41,8 @@
  * A tool argument is a binding the SDK fills from the model's call: the
  * handler's first parameter (destructured or whole) for `registerTool` /
  * `tool`, `request.params.arguments` for `setRequestHandler(CallToolRequestSchema)`
- * / `'tools/call'`, and a body declaration destructured straight off one of
- * those. Its value is then followed within the file (see `utils/value-flow`):
+ * / `'tools/call'`, a `ResourceTemplate` callback's variables, and a body
+ * declaration destructured straight off one of those (`utils/tool-handlers`). Its value is then followed within the file (see `utils/value-flow`):
  * through `const`/`let` bindings and reassignments, destructuring, member
  * reads, `await`, string derivations (`.trim()`, `.split()`, `String()`,
  * templates, `+`) and the return of a same-file helper. A key the input
@@ -62,21 +62,14 @@ import {
   createRule,
   formatLLMMessage,
   MessageIcons,
-  propertyName,
   resolveModuleBinding,
   staticString,
 } from '@interlace/eslint-devkit';
 import { fileUsesMcpSdk } from '../../utils/mcp-evidence';
 import { valueResolverFor } from '../../utils/module-resolver';
-import {
-  constInitializer,
-  isClosedSetSchema,
-  propertyKey,
-  readRegistration,
-  resolveFunction,
-  schemaFields,
-} from '../../utils/tool-registration';
-import { createFlow, type HandlerRoot } from '../../utils/value-flow';
+import { createHandlerCollector } from '../../utils/tool-handlers';
+import { constInitializer, propertyKey } from '../../utils/tool-registration';
+import { createFlow } from '../../utils/value-flow';
 
 type MessageIds = 'toolArgToShell';
 
@@ -142,9 +135,6 @@ const SHELL_SCRIPT_FLAGS = new Set([
   '-command',
 ]);
 
-/** The request path, from a call-tool handler's parameter, to the arguments. */
-const CALL_TOOL_ARGS_PATH = ['params', 'arguments'];
-
 /** zx / execa template tags, as `module` → export → sink name. */
 const TEMPLATE_SINKS: Readonly<Record<string, ReadonlySet<string>>> = {
   zx: new Set(['$']),
@@ -191,21 +181,6 @@ export function handlerArgNames(handler: TSESTree.Node): {
     visit(handler.params[0], false);
   }
   return { direct, objects };
-}
-
-/** Is `node` the SDK's call-tool request schema, or v2's `'tools/call'`? */
-function isCallToolMethod(
-  node: TSESTree.Node | undefined,
-  scope: TSESLint.Scope.Scope,
-): boolean {
-  if (node === undefined) return false;
-  if (staticString(node) === 'tools/call') return true;
-  const binding = resolveModuleBinding(node, scope);
-  return (
-    binding !== undefined &&
-    binding.module.startsWith('@modelcontextprotocol/') &&
-    binding.path[binding.path.length - 1] === 'CallToolRequestSchema'
-  );
 }
 
 /** Does this options object turn the shell on (`shell: true` / a path)? */
@@ -259,7 +234,7 @@ export const noCommandInjectionInTool = createRule<[], MessageIds>({
     const resolve = valueResolverFor(context);
 
     /** Tool handler functions → the argument object their first parameter gets. */
-    const handlers = new Map<TSESTree.Node, HandlerRoot>();
+    const handlers = createHandlerCollector(context, resolve, 'arguments');
     const candidates: Array<{ node: TSESTree.Node; sink: string }> = [];
 
     /** The `child_process` / `execa` export this callee resolves to. */
@@ -371,33 +346,8 @@ export const noCommandInjectionInTool = createRule<[], MessageIds>({
       CallExpression(node: TSESTree.CallExpression) {
         const scope = context.sourceCode.getScope(node);
 
-        // Tool handlers.
-        const registration = readRegistration(node, resolve);
-        if (registration !== undefined) {
-          const fn = resolveFunction(registration.handler, scope);
-          if (fn !== undefined) {
-            const closed = new Set<string>();
-            const fields =
-              registration.schema.kind === 'schema'
-                ? schemaFields(registration.schema.node)
-                : undefined;
-            for (const [key, value] of fields?.fields ?? []) {
-              if (isClosedSetSchema(resolve(value) ?? value)) closed.add(key);
-            }
-            handlers.set(fn, { toArgs: [], closed });
-          }
-        } else if (
-          node.callee.type === 'MemberExpression' &&
-          propertyName(node.callee) === 'setRequestHandler' &&
-          isCallToolMethod(node.arguments[0], scope)
-        ) {
-          const fn = resolveFunction(node.arguments[1], scope);
-          if (fn !== undefined)
-            handlers.set(fn, {
-              toArgs: CALL_TOOL_ARGS_PATH,
-              closed: new Set(),
-            });
-        }
+        // Tool handlers, and resource-template callbacks.
+        handlers.visit(node);
 
         // Process sinks. Judged at Program:exit, because the handler that
         // binds an argument may be registered further down the file.
@@ -418,7 +368,7 @@ export const noCommandInjectionInTool = createRule<[], MessageIds>({
 
       'Program:exit'() {
         const carries = createFlow(context.sourceCode, (fn) =>
-          handlers.get(fn),
+          handlers.roots.get(fn),
         );
         for (const candidate of candidates) {
           const taint = carries(candidate.node);

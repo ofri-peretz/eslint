@@ -1,6 +1,6 @@
 # FP/FN audit: eslint-plugin-mcp-sdk-security (2026-10-10)
 
-The source review ran against the published 0.4.3, and main was logically identical. Its findings are 6 false positives, 12 false negatives and 1 packaging defect. PR #1188 fixed all 6 FPs, 10 of the 12 FNs and the packaging defect, and deferred 2 FNs and the CMD-FN-7 residual. **The zero-deferral pass (2026-10-11) fixed those 3 and resolved all 3 known residuals. Nothing is deferred.**
+The source review ran against the published 0.4.3, and main was logically identical. Its findings are 6 false positives, 12 false negatives and 1 packaging defect. PR #1188 fixed all 6 FPs, 10 of the 12 FNs and the packaging defect, and deferred 2 FNs and the CMD-FN-7 residual. **The zero-deferral pass (2026-10-11) fixed those 3 and resolved all 3 known residuals, and the missing-detections pass (same day) turned the 10-item backlog into 11 rules. Nothing is deferred or open.**
 
 **How the fixes were made: test-first.** Every new case went into the rule's existing test file. Each batch was run against the unchanged rule first, and failed as expected:
 
@@ -94,7 +94,7 @@ After the fixes: `Tests 375 passed (375)`, coverage 100/100/100/100, `npm run ty
 | CMD-FN-7 residual: zx / execa `$` templates. Reported when the argument is the first token (the binary), after `sh -c`, or under `$({ shell: true })`. A quoted interpolation after the binary stays silent                                        | fixed                                            | `FN: a tool argument as the first token of a zx or execa $ template`; boundary `recall boundary: a zx template quotes an interpolated argument after the binary`                                                                                                                                                                                                                                                                                                                                                       |
 | Residual 1: a description imported from another module was reported unread. It is now read through relative imports (named, default, namespace, `export … from`, `export *`, `export * as`, quoted names), and reported only when provably dynamic | fixed                                            | `FP: static descriptions imported from another file`, `FP: an import that does not resolve is not reported`, `FP: an imported value that cannot be read stays unknown, not dynamic`, `FN: a dynamic description imported from another file`, `FN: a namespace import used as text is not text` (no-tool-description-injection); module-resolver unit tests                                                                                                                                                             |
 | Residual 2: legacy `tool()` object `{ path: PathSchema }` classified `unknown`. Values are now resolved through consts and relative imports: schema calls make it a params shape, literals make it annotations                                     | fixed                                            | `FN: a legacy shape whose schemas are same-file consts`, `FN: a legacy shape whose schemas are imported from a relative module`, `FP: a legacy object whose values resolve to literals is annotations, not a shape` (no-unvalidated-tool-args); `FN: a legacy annotations object whose values are consts declares no schema`, `FP: a legacy shape whose schemas are imported is a schema` (require-tool-input-schema); `FP: a closed-set schema held in a const is still the allowlist` (no-command-injection-in-tool) |
-| Residual 3: `db.exec(sql)` with a tool argument                                                                                                                                                                                                    | **not a defect of this rule (wrong CWE before)** | `FP: a database exec is not a process sink (SQL injection, wrong CWE before)`. Stays silent: it is SQL injection, owned by the backlog's SQL-injection rule (item 4 below)                                                                                                                                                                                                                                                                                                                                             |
+| Residual 3: `db.exec(sql)` with a tool argument                                                                                                                                                                                                    | **not a defect of this rule (wrong CWE before)** | `FP: a database exec is not a process sink (SQL injection, wrong CWE before)`. Stays silent here: it is SQL injection, and `no-sql-injection-in-tool` now reports it (`FN: db.exec(sql) on better-sqlite3 with the argument as the SQL`)                                                                                                                                                                                                                                                                               |
 
 What remains unreported is unreported **by design**, and is pinned by `recall boundary:` cases:
 
@@ -132,17 +132,108 @@ Why each rule sits where it does:
 
 `src/index.ts` now writes `recommended: { … rules: recommendedRules }` inline. That lets `scripts/sync-readme-rules.ts` fill the README 💼 column, which was previously empty for every rule. `src/index.test.ts` locks the README preset table and the 💼 column to `configs`. Against the old README the lock fails 5 of 5.
 
-## Follow-up backlog: missing detections (new rules, out of scope here)
+## Missing detections (2026-10-11): backlog closed
 
-These were carried over from the review and are ranked by value. None is covered by the 4 existing rules.
+The review carried 10 vulnerability classes that none of the 4 rules could see. All 10 are now rules: 11 in total, because item 9 is two distinct client-side classes. Nothing is left open.
 
-1. **Path traversal in tool handlers and `ResourceTemplate` callbacks (CWE-22).** `readFile(path)` / `writeFile(...)` with a tool argument or a template variable. This is the EscapeRoute class (CVE-2025-53109/53110) and the mcp-server-git path CVEs. It can reuse this PR's handler/argument binding and the module-resolved sinks, with `fs` in place of `child_process`.
-2. **SSRF from tool arguments (CWE-918).** `fetch(url)`, `axios`, `got`, `undici` with a tool argument as the URL.
-3. **HTTP transport hardening (CWE-346/306).** `StreamableHTTPServerTransport` / `SSEServerTransport` without `enableDnsRebindingProtection` + `allowedHosts`, which defaults to `false` in SDK 1.27. Also `createMcpExpressApp({ host: '0.0.0.0' })` without `allowedHosts`, and no bearer-auth middleware on the route.
-4. **SQL injection from tool arguments (CWE-89).** ``pool.query(`…${name}`)``, `db.exec(query)`, `db.prepare(sql)`.
-5. **A shared `McpServer` / transport reused across requests in stateless HTTP mode.** This is the cross-client response leak, CVE-2026-25536.
-6. **Predictable session IDs.** `sessionIdGenerator: () => String(n++)`, `Date.now()` or `Math.random()`.
-7. **`eval` / `new Function` / `vm.runIn*` reachable from tool arguments (CWE-95).**
-8. **Secrets in tool results, and token passthrough.** `process.env` returned in `content`, and `extra.authInfo.token` forwarded upstream.
-9. **Client side.** Untrusted `listTools()` descriptions forwarded to an LLM, and `StdioClientTransport({ command })` built from untrusted config (the CVE-2025-6514 class).
-10. **Duplicate tool names in one file.**
+**Test-first.** Each rule's test file was written first and run against a stub rule (`create` returns `{}`). Every invalid case failed:
+
+| Rule                                   | Failures against the stub |
+| -------------------------------------- | ------------------------- |
+| `no-path-traversal-in-tool`            | 60 of 89                  |
+| `no-ssrf-in-tool`                      | 17 of 41                  |
+| `require-http-transport-hardening`     | 23 of 61                  |
+| `no-sql-injection-in-tool`             | 10 of 25                  |
+| `no-shared-stateless-transport`        | 11 of 31                  |
+| `no-predictable-session-id`            | 43 of 77                  |
+| `no-code-injection-in-tool`            | 7 of 17                   |
+| `no-credential-leak-in-tool`           | 12 of 26                  |
+| `no-untrusted-tool-metadata-in-prompt` | 8 of 20                   |
+| `no-untrusted-stdio-command`           | 75 of 105                 |
+| `no-duplicate-tool-name`               | 11 of 26                  |
+
+**The design constraint held.** Evidence comes from AST structure, bounded intra-file value following, relative imports, and the module a binding resolves to. No verdict depends on a variable's name. Library and SDK vocabulary (`sessionIdGenerator`, `allowedHosts`, `AuthInfo.token`, WHATWG `url.hostname`) is matched as API, with a `@vocabulary` note where it is an inline list. Every rule gates on `fileUsesMcpSdk`, and `src/module-gate.lock.test.ts` sweeps all 15 rules.
+
+**Shared infrastructure**, used by the new rules and by `no-command-injection-in-tool`:
+
+- `utils/tool-handlers.ts`: one collector for handler roots. It covers tool arguments, `request.params.arguments`, `ResourceTemplate` variables (newly a source for `no-command-injection-in-tool` too) and the request context's `authInfo`.
+- `utils/instances.ts`: "which export constructed this value", through `const`, `await`, instance methods (`pool.connect()`) and relative imports.
+- `utils/guards.ts`: "was this value checked by an `if` that exits, or wraps the sink", plus same-file sanitising helpers.
+- `utils/http-clients.ts`: outbound requests, resolved by module.
+- `utils/value-flow.ts`: a parameter index on `HandlerRoot`, and an `intercept` hook for rule-specific sources and pass-throughs. A same-file helper that returns the arguments object now carries it (`FN: a same-file helper that returns the arguments object`, no-command-injection-in-tool).
+
+**One existing-rule defect found on the way.** `no-tool-description-injection` looked up `METADATA_CONFIG_INDEX[method]` on a plain object. A `.toString()` call therefore read `Object.prototype.toString`, and the rule crashed with "slot is not iterable" on any MCP file that calls it. It is now a `Map`, and `FP: a method named after an Object.prototype member does not crash the rule` locks it. That case fails on the old code.
+
+| #   | Backlog item                                                                                    | Rule                                   | Preset level | Status | Test names (`FN:` cases, rule test file)                                                                                                                                                                                                                                                                                                                                                                  |
+| --- | ----------------------------------------------------------------------------------------------- | -------------------------------------- | ------------ | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Path traversal: `fs` sinks and `ResourceTemplate` variables (CWE-22)                            | `no-path-traversal-in-tool`            | error (7.5)  | fixed  | `FN: a tool argument joined onto a root and read`, `FN: a resource template variable read from disk`, `FN: the legacy resource() form with a template held in a const`                                                                                                                                                                                                                                    |
+| 2   | SSRF from tool arguments (CWE-918)                                                              | `no-ssrf-in-tool`                      | error (8.6)  | fixed  | `FN: fetch(url) with the URL taken from the tool arguments`, `FN: the argument is the host of an interpolated URL`, `FN: got, undici, node-fetch and https with a tool-argument URL`                                                                                                                                                                                                                      |
+| 3   | HTTP transport hardening: DNS rebinding, `allowedHosts`, host binding, auth (CWE-346 / CWE-306) | `require-http-transport-hardening`     | error (8.1)  | fixed  | `FN: a StreamableHTTPServerTransport without enableDnsRebindingProtection`, `FN: an SSEServerTransport with no options`, `FN: createMcpExpressApp on 0.0.0.0 without allowedHosts`, `FN: an MCP HTTP server bound to all interfaces with no auth middleware`                                                                                                                                              |
+| 4   | SQL injection from tool arguments (CWE-89), including residual 3 (`db.exec(sql)`)               | `no-sql-injection-in-tool`             | error (9.8)  | fixed  | `FN: a pg pool query with the argument interpolated`, `FN: db.exec(sql) on better-sqlite3 with the argument as the SQL`, `FN: a client from pool.connect() and a concatenated ORDER BY`                                                                                                                                                                                                                   |
+| 5   | Shared `McpServer` / transport in stateless mode, CVE-2026-25536 (CWE-488)                      | `no-shared-stateless-transport`        | error (7.5)  | fixed  | `FN: a stateless transport created once at module level`, `FN: a module-level McpServer connected to a per-request stateless transport`                                                                                                                                                                                                                                                                   |
+| 6   | Predictable session IDs (CWE-330)                                                               | `no-predictable-session-id`            | error (7.5)  | fixed  | `FN: a counter as the session id`, `FN: Date.now() as the session id`, `FN: Math.random() as the session id`, `FN: a constant session id shared by every client`                                                                                                                                                                                                                                          |
+| 7   | `eval` / `new Function` / `vm` from tool arguments (CWE-95)                                     | `no-code-injection-in-tool`            | error (9.8)  | fixed  | `FN: a calculator tool that evals the expression`, `FN: new Function and Function() with the argument as the body`, `FN: node:vm run functions, Script and SourceTextModule`                                                                                                                                                                                                                              |
+| 8   | Secrets in tool results, and token passthrough (CWE-200 / CWE-526 / CWE-441)                    | `no-credential-leak-in-tool`           | error (7.5)  | fixed  | `FN: the whole environment returned as text`, `FN: the caller’s token returned to the model`, `FN: the caller’s bearer token forwarded upstream`                                                                                                                                                                                                                                                          |
+| 9a  | Client: untrusted `listTools()` descriptions sent to an LLM (CWE-1427)                          | `no-untrusted-tool-metadata-in-prompt` | error (8.6)  | fixed  | `FN: tool descriptions joined into the system prompt`, `FN: a prompt built in a for…of loop and sent as a user message`                                                                                                                                                                                                                                                                                   |
+| 9b  | Client: `StdioClientTransport` command from untrusted config, the CVE-2025-6514 class (CWE-78)  | `no-untrusted-stdio-command`           | error (8.8)  | fixed  | `FN: a tool argument names the server command a hub tool spawns`, `FN: a project .mcp.json entry chooses the command (Object.entries for-of)`, `FN: a config under process.cwd() read with fs/promises (Object.values for-of)`, `FN: a registry fetched over the network chooses the command`, `FN: a shell -c script taken from project config`, `FN: npx runs whatever package the tool argument names` |
+| 10  | Duplicate tool names in a file (CWE-694)                                                        | `no-duplicate-tool-name`               | warn (5.3)   | fixed  | `FN: two registerTool calls give one server the same name`, `FN: a legacy tool() and a registerTool() with the same name`, `FN: a duplicate behind a try/catch is silently dropped at startup`, `FN: a low-level Server lists two tools with one name`                                                                                                                                                    |
+
+Each rule's doc states its overlap with `node-security` / `secure-coding`, which do not know the MCP handler is the taint source. It also lists, under "What this rule deliberately does not report", the boundaries its valid cases pin. Corpus fixture pairs were added under `benchmarks/corpus/` for CWE-022, CWE-078, CWE-089, CWE-094, CWE-200, CWE-330, CWE-346, CWE-488, CWE-694, CWE-918 and CWE-1427.
+
+### Preset changes (missing detections)
+
+All 11 rules join `recommended` and `strict`, at `error` from CVSS 7.0 up and `warn` below. `strict` now keeps each rule's `recommended` level instead of forcing `error`. `minimal` is unchanged. The new locks are `sets each rule to error at CVSS 7.0 and above, warn below (new rules)` and `the rules table marks ⚠️ on exactly the rules recommended at warn` (index.test).
+
+## Real-world scan (2026-10-11)
+
+All 15 rules, each at `error`, were run with ESLint 9's `Linter` over four public MCP codebases:
+
+- `modelcontextprotocol/servers`
+- `modelcontextprotocol/typescript-sdk`, the v2 monorepo
+- `vercel/mcp-handler`
+- `cloudflare/mcp-server-cloudflare`
+
+The list held 1,114 TypeScript/JavaScript files. 567 of them import an MCP package and were linted: 77 in servers, 465 in typescript-sdk, 15 in mcp-handler and 10 in mcp-server-cloudflare. Findings from other rules, parse errors and unused-disable noise are excluded.
+
+| Rule                               | Findings before | FP  | TP  | Findings after |
+| ---------------------------------- | --------------- | --- | --- | -------------- |
+| `require-http-transport-hardening` | 36              | 34  | 2   | 2              |
+| `no-tool-description-injection`    | 4               | 4   | 0   | 0              |
+| `no-credential-leak-in-tool`       | 2               | 1   | 1   | 1              |
+| every other rule                   | 0               | 0   | 0   | 0              |
+
+The second run (after the fixes below) has exactly the 3 true positives, zero false positives and zero crashes.
+
+**The 3 true positives, kept and locked as invalid cases:**
+
+- `servers:src/everything/transports/sse.ts:71`: correct. An SDK v1 `SSEServerTransport` with no `enableDnsRebindingProtection`/`allowedHosts`, served from a raw `express()` app that listens on `PORT` (every interface) with no Host validation. Lock: `real code: a v1 SSE transport on a raw express app, listening on PORT`.
+- `servers:src/everything/transports/streamableHttp.ts:109`: correct, the same shape for `StreamableHTTPServerTransport`. Lock: `real code: a v1 Streamable HTTP transport on a raw express app, listening on PORT`.
+- `servers:src/everything/tools/get-env.ts:34`: correct. A `get-env` tool returns `JSON.stringify(process.env)` to the model, which is every credential the server process holds. It is a demo server, but the shape is the defect. Lock: `real code: the everything server get-env tool returns the whole environment`.
+
+**The 39 false positives, fixed test-first.** Each case below failed against the rules before the change.
+
+- **`require-http-transport-hardening`, 31 in the SDK's own `test/` and `e2e/` suites.** The rule now sets `skipTestFiles` (the devkit's `isTestFilePath`, the same predicate jwt-security's secret rules use). Locks: `FP: an SDK v2 transport in a test helper`, `FP: createMcpExpressApp on 0.0.0.0 inside a test file`, `FP: a v1 transport in a *.test.ts file`.
+- **`require-http-transport-hardening`, the wrong model for SDK v2.** It made 3 findings in `typescript-sdk/examples/guides/serving/sessions-state-scaling.examples.ts`, and the v2 transports in the test suites hit the same defect. v2 transports have no `enableDnsRebindingProtection` option, because the app validates Host. The rule now:
+  - checks transport options only for v1 (`@modelcontextprotocol/sdk`) and v2's `@modelcontextprotocol/server-legacy` SSE;
+  - reports a v2 setup on the app instead: a hand-built `express()`/`new Hono()`/`fastify()` app that serves the transport with no validator (new messageId `appWithoutHostValidation`), or `createMcpExpressApp`/`createMcpHonoApp`/`createMcpFastifyApp` on every interface with no `allowedHosts`;
+  - abstains when the app is not built in the file.
+
+  Locks: `FP: an SDK v2 transport wired into an Express app passed in as a parameter`, `FP: an SDK v2 transport built at module level with no app in the file`, and the new invalid `SDK v2: a raw express() app …` / `… new Hono() app …` cases. `@modelcontextprotocol/server-legacy` joins the SDK gate.
+
+- **`no-tool-description-injection`, 4.** The rule reported any description it could not prove static.
+  - `servers:src/everything/resources/files.ts:49` built one from a `docs/` directory filename.
+  - `typescript-sdk:examples/stickynotes/server.ts:40` built one from a counter id.
+  - `servers:src/everything/resources/session.ts:80` (description and title) took them from a helper's destructured parameter.
+
+  "Dynamic" is not the defect. The rule now reports only text followed (via `utils/value-flow`) to one of three sources:
+  - a client: tool arguments, `ResourceTemplate` variables, `setRequestHandler` request params, or an express/hono/fastify route's request;
+  - a remote service: an HTTP response and its `.json()`/`.text()`;
+  - a file's contents: `readFile`/`readFileSync` here or in a relative module, plus `JSON.parse` of any of these.
+
+  New call-site resolution covers helpers. When a same-file or relative-imported helper forwards a parameter into a registration's description or title, the argument (or the destructured field of an object argument) is checked where the helper is called. On the real `gzip-file-as-resource.ts` → `registerSessionResource` path the client-chosen value is the `name`, so nothing is reported.
+
+  Locks: `FP: a description built from a server-side directory listing`, `FP: a description built from a server counter id, through a helper a tool calls`, `FP: a helper forwarding its own parameter, with no caller in the file`, `FP: a tool passes a client-chosen NAME to a relative helper that forwards only description and title`, and `FN: a tool argument forwarded through a relative helper (object field, positional, default export)`. The 38 cases that asserted "dynamic ⇒ report" moved to valid under `Valid — server-local text assembled at runtime (was: invalid)`. That includes the two former `FN:` cases for imported descriptions; the untrusted-source cases replace them.
+
+- **`no-credential-leak-in-tool`, 1.** `typescript-sdk:test/e2e/fixtures/stdio-server.ts:37` is a test fixture: the rule now skips test files. It also only listed names with `Object.keys(process.env)`, which is no longer reported anywhere. Locks: `FP: a test fixture server that reports its environment`, `FP: the NAMES of the environment variables are not their values`.
+
+**A crash the scan exposed.** The new call-site resolution followed `declare function onRedirect(…)`, a bodiless `TSDeclareFunction` in `typescript-sdk:examples/guides/clients/oauth.examples.ts:34`, and crashed. The shared `resolveFunction` had the same hole: any taint rule following a `declare function` helper crashed. Both now resolve only to an implementation with a body, which also handles overload signatures. Locks: `FP: a declare-only function is not a helper with a body to read` (no-tool-description-injection), `FP: a declare-only helper has no body to follow` (no-command-injection-in-tool), and `an overloaded helper is read through its implementation`.

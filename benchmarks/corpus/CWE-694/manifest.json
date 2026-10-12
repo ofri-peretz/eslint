@@ -1,0 +1,21 @@
+{
+  "cwe": "CWE-694",
+  "name": "Use of Multiple Resources with Duplicate Identifier (MCP tool names)",
+  "owasp": "A04:2021",
+  "severity": "MEDIUM",
+  "expectedPlugins": ["eslint-plugin-mcp-sdk-security"],
+  "fixtures": {
+    "vulnerable": [
+      {
+        "file": "mcp-duplicate-tool-name.js",
+        "description": "McpServer registers 'deploy' twice; the second registration throws inside a try/catch, so the unguarded first handler stays live"
+      }
+    ],
+    "safe": [
+      {
+        "file": "mcp-unique-tool-names.js",
+        "description": "Distinct tool names, and the two 'deploy' variants registered in alternative if/else branches"
+      }
+    ]
+  }
+}

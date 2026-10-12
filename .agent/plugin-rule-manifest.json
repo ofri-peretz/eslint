@@ -966,23 +966,89 @@
     }
   },
   "eslint-plugin-mcp-sdk-security": {
+    "no-code-injection-in-tool": {
+      "environment": "mcp",
+      "detection": "data-flow-lightweight",
+      "confidence": "enforcement",
+      "notes": "A tool argument reaching eval / Function / setTimeout(string) / node:vm / vm2 run() as code. Globals count only unshadowed; vm exports are module-resolved."
+    },
     "no-command-injection-in-tool": {
       "environment": "mcp",
-      "detection": "structural-pattern",
+      "detection": "data-flow-lightweight",
       "confidence": "enforcement",
-      "notes": "A tool handler parameter reaching a child_process sink as the command. Deliberately skips the concatenated/interpolated shape, which node-security/no-shell-injection already reports — that split is what keeps one line from carrying findings from two plugins."
+      "notes": "A tool argument (or ResourceTemplate variable) reaching the command position of a child_process / execa / zx sink, followed intra-file through bindings, derivations and same-file helpers. Sinks are module-resolved; a z.enum argument is the allowlist."
+    },
+    "no-credential-leak-in-tool": {
+      "environment": "mcp",
+      "detection": "data-flow-lightweight",
+      "confidence": "enforcement",
+      "notes": "process.env returned whole (or indexed by a tool argument) in a tool result, or the request context's authInfo.token returned or forwarded to an outbound request / upstream MCP transport. Test files are skipped."
+    },
+    "no-duplicate-tool-name": {
+      "environment": "mcp",
+      "detection": "structural-api",
+      "confidence": "review-prompt",
+      "notes": "The same static tool name registered twice on one scope-resolved server variable on straight-line paths, or listed twice by a low-level ListTools handler. warn: CVSS 5.3."
+    },
+    "no-path-traversal-in-tool": {
+      "environment": "mcp",
+      "detection": "data-flow-lightweight",
+      "confidence": "enforcement",
+      "notes": "A tool argument or ResourceTemplate variable reaching an fs read/write/delete path through path.join/resolve, realpath, templates; silent behind a containment check (startsWith, path.relative/isAbsolute, allowlist, checking helper)."
+    },
+    "no-predictable-session-id": {
+      "environment": "mcp",
+      "detection": "structural-api",
+      "confidence": "enforcement",
+      "notes": "An MCP transport's sessionIdGenerator built only from Date.now(), Math.random(), a counter or a constant, with no CSPRNG source. Unknown generators abstain."
+    },
+    "no-shared-stateless-transport": {
+      "environment": "mcp",
+      "detection": "structural-api",
+      "confidence": "enforcement",
+      "notes": "A stateless Streamable HTTP transport (sessionIdGenerator undefined) built at module scope, or connected to an McpServer built outside the request function (CVE-2026-25536)."
+    },
+    "no-sql-injection-in-tool": {
+      "environment": "mcp",
+      "detection": "data-flow-lightweight",
+      "confidence": "enforcement",
+      "notes": "A tool argument in the SQL text of a driver call whose receiver is resolved to its construction (pg, mysql2, better-sqlite3, sqlite, postgres, mssql, libsql, duckdb, Neon/Vercel Postgres). Bound parameters and tagged templates are silent."
+    },
+    "no-ssrf-in-tool": {
+      "environment": "mcp",
+      "detection": "data-flow-lightweight",
+      "confidence": "enforcement",
+      "notes": "A tool argument deciding the origin of an outbound fetch/axios/got/undici/http(s) request; an argument after a fixed origin, or a hostname allowlist check, is silent."
     },
     "no-tool-description-injection": {
       "environment": "mcp",
-      "detection": "structural-pattern",
+      "detection": "data-flow-lightweight",
       "confidence": "enforcement",
-      "notes": "Tool descriptions and titles reach the model as instruction text, so they must be static. Reports anything that is not a literal, an interpolation-free template, or a concatenation of those. A const holding a literal is a deliberate false negative."
+      "notes": "A tool/prompt/resource description or title followed back to a client (tool args, request params, an HTTP request), a remote response, or a file's contents. Server-local runtime text is silent since the 2026-10-11 real-code scan; helpers forwarding a parameter are judged at the call site."
+    },
+    "no-untrusted-stdio-command": {
+      "environment": "mcp",
+      "detection": "data-flow-lightweight",
+      "confidence": "enforcement",
+      "notes": "A StdioClientTransport command (or shell script / package-runner package) from a tool argument, a network response, or a project-relative config file."
+    },
+    "no-untrusted-tool-metadata-in-prompt": {
+      "environment": "mcp",
+      "detection": "data-flow-lightweight",
+      "confidence": "enforcement",
+      "notes": "An MCP Client's listTools/listPrompts/listResources text reaching any LLM request field other than its tool definitions (Anthropic, OpenAI, Google GenAI, Vercel AI SDK)."
     },
     "no-unvalidated-tool-args": {
       "environment": "mcp",
       "detection": "structural-pattern",
       "confidence": "enforcement",
       "notes": "Compares the handler destructuring against the declared inputSchema keys. Silent for any schema it cannot statically read, since judging a handler against an invisible shape would report correct code."
+    },
+    "require-http-transport-hardening": {
+      "environment": "mcp",
+      "detection": "structural-api",
+      "confidence": "enforcement",
+      "notes": "SDK v1 transports without enableDnsRebindingProtection + allowedHosts, SDK v2 hand-built apps serving a transport with no Host validation, createMcp*App on all interfaces without allowedHosts, and an all-interfaces server with no auth. Test files are skipped."
     },
     "require-tool-input-schema": {
       "environment": "mcp",

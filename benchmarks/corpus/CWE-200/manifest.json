@@ -1,0 +1,23 @@
+{
+  "cwe": "CWE-200",
+  "name": "Exposure of Sensitive Information (MCP credentials and token passthrough)",
+  "owasp": "A01:2021",
+  "severity": "HIGH",
+  "expectedPlugins": [
+    "eslint-plugin-mcp-sdk-security"
+  ],
+  "fixtures": {
+    "vulnerable": [
+      {
+        "file": "mcp-tool-token-passthrough.js",
+        "description": "MCP tool forwards the caller's authInfo.token to GitHub"
+      }
+    ],
+    "safe": [
+      {
+        "file": "mcp-tool-returns-grants.js",
+        "description": "MCP tool returns the client id and scopes, not the token"
+      }
+    ]
+  }
+}

@@ -1,0 +1,151 @@
+---
+title: no-path-traversal-in-tool
+description: Disallow an MCP tool argument choosing the file an fs call reads, writes or deletes without a containment check.
+tags: ['security', 'mcp']
+category: security
+severity: high
+cwe: CWE-22
+autofix: false
+---
+
+> **Keywords:** path traversal, directory traversal, CWE-22, MCP, Model Context Protocol, tool handler, ResourceTemplate, fs, readFile, EscapeRoute, CVE-2025-53109, CVE-2025-53110
+
+<!-- @rule-summary -->
+
+Disallow an MCP tool argument choosing the file an fs call reads, writes or deletes without a containment check.
+<!-- @/rule-summary -->
+
+**CWE:** [CWE-22](https://cwe.mitre.org/data/definitions/22.html)
+**OWASP:** [A01:2021 – Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control/)
+
+Detects a tool argument or a `ResourceTemplate` variable reaching the path of an `fs` call that reads, writes, lists or removes, with no containment check on the way. This rule is part of [`eslint-plugin-mcp-sdk-security`](https://www.npmjs.com/package/eslint-plugin-mcp-sdk-security).
+
+💼 This rule is set to **error** in the `recommended` and `strict` configs.
+
+## Quick Summary
+
+| Aspect            | Details                                                                   |
+| ----------------- | ------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-22](https://cwe.mitre.org/data/definitions/22.html) (Path Traversal) |
+| **Severity**      | High (CVSS 7.5)                                                           |
+| **Auto-Fix**      | ❌ No auto-fix available                                                  |
+| **Category**      | Security                                                                  |
+
+## Why this matters
+
+Filesystem servers are the most installed kind of MCP server, and the most
+common defect in them is the one behind EscapeRoute (CVE-2025-53109 /
+CVE-2025-53110) and the `mcp-server-git` path CVEs: the tool takes a path,
+joins it onto a root, and hands it to `fs`. `../../.ssh/id_rsa` then reads the
+key. A symlink, or a sibling whose name starts with the root's name
+(`/data-evil` next to `/data`), walks out of a check that only compares
+prefixes.
+
+The path comes from the model's tool call, and the model can be steered by any
+file, page or tool output it has read. A `ResourceTemplate` variable is no
+better: it is parsed out of a URI the client chose.
+
+## Relationship to `node-security/detect-non-literal-fs-filename`
+
+`detect-non-literal-fs-filename` reports any non-literal path anywhere. Inside
+an MCP tool handler the source is known — the handler's own parameter — so this
+rule follows it and also recognises the containment idiom, which a
+source-agnostic rule cannot. Both may report the same line. Tool handlers are
+this plugin's scope (owner decision, 2026-10).
+
+## ❌ Incorrect
+
+```ts
+// ❌ joined onto a root — `../` still walks out
+server.registerTool('read', cfg, async ({ path: p }) =>
+  readFile(path.join(ROOT, p), 'utf8'),
+);
+
+// ❌ a resource template variable is client-chosen too
+server.registerResource(
+  'doc',
+  new ResourceTemplate('docs://{name}', { list: undefined }),
+  {},
+  async (uri, { name }) => ({
+    contents: [
+      { uri: uri.href, text: await readFile(path.join(ROOT, name), 'utf8') },
+    ],
+  }),
+);
+
+// ❌ an extension or existence check is not containment
+server.registerTool('read', cfg, async ({ p }) => {
+  if (!p.endsWith('.md') || !existsSync(path.join(ROOT, p)))
+    throw new Error('no');
+  return readFile(path.join(ROOT, p), 'utf8');
+});
+```
+
+## How sinks, arguments and checks are recognised
+
+- **Sinks are resolved to `fs`**, never matched by name: `readFile`,
+  `writeFile`, `appendFile`, `createReadStream`, `createWriteStream`, `open`,
+  `opendir`, `readdir`, `mkdir`, `rm`, `rmdir`, `unlink`, `truncate`, `chmod`,
+  `chown`, `readlink` and their `Sync` forms take one path; `copyFile`, `cp`,
+  `rename`, `symlink` and `link` take two. They are recognised through `fs`,
+  `fs.promises`, `fs/promises`, `require()`, and the drop-ins `fs-extra` and
+  `graceful-fs`. `store.readFile(p)` is not `fs` and is not reported.
+- **Arguments** are the handler's first parameter for `registerTool` / `tool`,
+  `request.params.arguments` for `setRequestHandler(CallToolRequestSchema)`,
+  and the `variables` parameter of a `registerResource` / `resource` callback
+  registered with an SDK `ResourceTemplate`. A static resource URI is fixed, so
+  its callback is not a source.
+- **The value is followed within the file**: through bindings, destructuring,
+  templates, `path.join` / `resolve` / `normalize` / `dirname`, `fs.realpath`,
+  `fileURLToPath` and `new URL()`, all of which still point wherever their
+  input did. `path.basename(p)` strips every directory and is not followed.
+- **A containment check** is an `if` whose test checks the value — or a name
+  derived from it — with a call: `target.startsWith(root + sep)`,
+  `path.relative(root, target)` / `path.isAbsolute(...)`, `ALLOWED.includes(p)`,
+  a regex `test`, or a validator — and either exits (`throw` / `return`) before
+  the `fs` call or wraps it. A same-file helper that performs such a check
+  before returning sanitises its result. `endsWith`, `existsSync` / `stat` /
+  `access`, `typeof` and a check that does not exit are not containment.
+- **A closed set is the allowlist.** An argument declared with `z.enum([...])`,
+  `z.literal(...)` or `z.nativeEnum(...)` is not reported.
+
+## ✅ Correct
+
+```ts
+server.registerTool('read', cfg, async ({ path: requested }) => {
+  const root = await realpath(ROOT);
+  const target = await realpath(path.resolve(root, requested));
+  const rel = path.relative(root, target);
+  if (rel.startsWith('..') || path.isAbsolute(rel)) {
+    return {
+      isError: true,
+      content: [{ type: 'text', text: 'outside the workspace' }],
+    };
+  }
+  return { content: [{ type: 'text', text: await readFile(target, 'utf8') }] };
+});
+```
+
+`realpath` resolves symlinks first, so the check sees where the path really
+points; `path.relative` has no prefix-collision problem.
+
+## What this rule deliberately does not report
+
+- **A path that is not a tool argument** — a config value, a constant.
+- **An `fs` call outside any tool handler**, which is
+  `node-security/detect-non-literal-fs-filename`'s question.
+- **A path checked by a validator this rule cannot see into.** An imported
+  `isInside(root, p)` in an exiting `if` is trusted to do what its call site
+  says.
+- **A file that imports no MCP server package.**
+
+## When Not To Use It
+
+There is no configuration in which a model-chosen path should reach the
+filesystem unconfined, so this rule has no options.
+
+## Further Reading
+
+- [CWE-22: Path Traversal](https://cwe.mitre.org/data/definitions/22.html)
+- [MCP: Security Best Practices](https://modelcontextprotocol.io/specification/2025-06-18/basic/security_best_practices)
+- [OWASP: Path Traversal](https://owasp.org/www-community/attacks/Path_Traversal)

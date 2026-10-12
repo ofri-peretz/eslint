@@ -1,10 +1,10 @@
 {
   "command": "npm run oxlint:shims",
   "generatedBy": "scripts/generate-oxlint-shims.mjs",
-  "generatedAt": "2026-09-24",
+  "generatedAt": "2026-10-12",
   "totalPlugins": 32,
-  "totalRules": 486,
-  "oxlintCompatible": 486,
+  "totalRules": 497,
+  "oxlintCompatible": 497,
   "oxlintPartial": 0,
   "oxlintBlocked": 0,
   "plugins": [
@@ -1333,10 +1333,58 @@
       "short": "mcp-sdk-security",
       "shim": "tools/oxlint-plugins/interlace-mcp-sdk-security.cjs",
       "subpath": "eslint-plugin-mcp-sdk-security/oxlint",
-      "ruleCount": 4,
+      "ruleCount": 15,
       "rules": [
         {
+          "name": "no-code-injection-in-tool",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
           "name": "no-command-injection-in-tool",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-credential-leak-in-tool",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-duplicate-tool-name",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-path-traversal-in-tool",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-predictable-session-id",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-shared-stateless-transport",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-sql-injection-in-tool",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-ssrf-in-tool",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false
@@ -1348,7 +1396,25 @@
           "isTypeAware": false
         },
         {
+          "name": "no-untrusted-stdio-command",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-untrusted-tool-metadata-in-prompt",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
           "name": "no-unvalidated-tool-args",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-http-transport-hardening",
           "portability": "compatible",
           "blockers": [],
           "isTypeAware": false

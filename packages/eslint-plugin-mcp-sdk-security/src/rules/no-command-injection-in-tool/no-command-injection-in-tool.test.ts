@@ -303,6 +303,14 @@ describe('no-command-injection-in-tool', () => {
             'server.registerTool("run", cfg, async ({ cmd }) => { execSync(early(cmd)); execSync(nested(cmd)); execSync(picked({ x: cmd })); execSync(needsArg()); });',
         },
         {
+          // @found modelcontextprotocol/typescript-sdk:examples/guides/clients/oauth.examples.ts:34 (a bodiless declaration crashed the description rule; the shared resolver had the same hole)
+          name: 'FP: a declare-only helper has no body to follow',
+          code:
+            SDK +
+            'declare function pick(c: string): string;\n' +
+            'server.registerTool("run", cfg, async ({ cmd }) => { execSync(pick(cmd)); });',
+        },
+        {
           name: 'a promisify cycle does not recurse forever',
           code:
             SDK +
@@ -670,6 +678,20 @@ describe('no-command-injection-in-tool', () => {
             SDK +
             'server.registerTool("run", { inputSchema: { cmd: z.string(), mode: z.enum(["a"]) } }, async ({ cmd }) => { execSync(cmd); });',
           errors: [{ messageId: 'toolArgToShell' }],
+        },
+        {
+          // @found mcp-sdk-security missing-detections pass 2026-10-11, a helper returning the arguments object lost them
+          name: 'FN: a same-file helper that returns the arguments object',
+          code:
+            SDK +
+            'function argsOf(a, flag) { if (flag) return 0; return a; }\n' +
+            'server.registerTool("run", cfg, async (args) => { execSync(argsOf(args, false).cmd); });',
+          errors: [
+            {
+              messageId: 'toolArgToShell',
+              data: { arg: 'args.cmd', sink: 'execSync' },
+            },
+          ],
         },
         {
           // Moved from valid ('an interpolated command belongs to
