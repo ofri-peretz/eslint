@@ -3,18 +3,20 @@
   "name": "Authentication Bypass by Capture-replay",
   "owasp": "A07:2021",
   "severity": "MEDIUM",
-  "expectedPlugins": ["eslint-plugin-jwt"],
+  "expectedPlugins": [
+    "eslint-plugin-jwt"
+  ],
   "fixtures": {
     "vulnerable": [
       {
         "file": "signjwt-no-issued-at.js",
-        "description": "jose SignJWT minted without setIssuedAt() — no iat claim"
+        "description": "jose SignJWT minted without setIssuedAt() — no iat, so a verifier cannot bound the token's age"
       }
     ],
     "safe": [
       {
         "file": "signjwt-with-issued-at.js",
-        "description": "jose SignJWT with setIssuedAt() and setExpirationTime()"
+        "description": "jose SignJWT with iat, a unique jti and a 2m lifetime; the verifier pins ES256, bounds age with maxTokenAge and accepts each jti once"
       }
     ]
   }

@@ -354,7 +354,9 @@ function topLevelDeclaration(
         : stmt;
     if (
       (declaration.type === AST_NODE_TYPES.FunctionDeclaration ||
-        declaration.type === AST_NODE_TYPES.ClassDeclaration) &&
+        declaration.type === AST_NODE_TYPES.ClassDeclaration ||
+        declaration.type === AST_NODE_TYPES.TSInterfaceDeclaration ||
+        declaration.type === AST_NODE_TYPES.TSTypeAliasDeclaration) &&
       declaration.id?.name === name
     ) {
       return declaration;
@@ -437,4 +439,16 @@ export function resolveSymbol(
   return target === null
     ? null
     : resolveExport(target, binding.exportName, hops + 1);
+}
+
+/**
+ * Whether a module binds `name` at top level at all — declared there, or
+ * imported (even from a module that cannot be read). A name it binds is that
+ * binding, never the platform global of the same name.
+ */
+export function bindsName(module: ModuleRef, name: string): boolean {
+  return (
+    topLevelDeclaration(module.program, name) !== null ||
+    bindingModule(module.program, name) !== null
+  );
 }

@@ -469,14 +469,53 @@ async function buildRequestObject(authParams, config, audience) {
   return new SignJWT(payload).setProtectedHeader({ alg: config.alg }).sign(key);
 }`,
       },
+    ],
+    invalid: [
       {
-        name: 'a request object that names response_type beside client_id',
+        // PR #1195 review (CodeRabbit): this case used to be VALID. Naming
+        // `response_type` beside `client_id` suppressed EVERY spread, so a
+        // whole user record rode in unreported. Only a spread whose source is
+        // established as the authorization parameters is suppressed now.
+        name: 'a response_type beside client_id does not establish what a spread holds',
         code: `import jwt from 'jsonwebtoken';
 export const requestObject = (params) =>
   jwt.sign({ ...params, client_id: cid, response_type: 'code' }, key, { expiresIn: 60 });`,
+        errors: [{ messageId: 'wholeRecordSpread' }],
       },
-    ],
-    invalid: [
+      {
+        // @found PR #1195 review (CodeRabbit, no-sensitive-payload/index.ts:177-179)
+        name: 'FN: a user record spread beside request-object claims',
+        code: `import jwt from 'jsonwebtoken';
+export const issue = (user) => jwt.sign({ ...user, client_id: cid, response_type: 'code' }, key);`,
+        errors: [{ messageId: 'wholeRecordSpread' }],
+      },
+      {
+        name: 'a call result spread into a signed request object is still a record',
+        code: `import jwt from 'jsonwebtoken';
+export async function build(config, audience) {
+  return jwt.sign({ ...(await loadUser()), client_id: config.clientID, iss: config.clientID, aud: audience }, key);
+}`,
+        errors: [{ messageId: 'wholeRecordSpread' }],
+      },
+      {
+        name: "only the builder's own parameters are taken as the request parameters",
+        code: `import jwt from 'jsonwebtoken';
+export async function build(authParams, config, audience) {
+  return jwt.sign(
+    { ...authParams, ...(await loadUser()), client_id: config.clientID, iss: config.clientID, aud: audience },
+    key,
+  );
+}`,
+        errors: [{ messageId: 'wholeRecordSpread' }],
+      },
+      {
+        name: 'a module-level value spread into a signed request object is not a builder parameter',
+        code: `import jwt from 'jsonwebtoken';
+import { defaults } from './defaults';
+export const build = (config, audience) =>
+  jwt.sign({ ...defaults, client_id: config.clientID, iss: config.clientID, aud: audience }, key);`,
+        errors: [{ messageId: 'wholeRecordSpread' }],
+      },
       {
         name: 'a client_id claim alone does not make a token a request object',
         code: `import jwt from 'jsonwebtoken';
@@ -493,7 +532,7 @@ export const issue = (user) => jwt.sign({ ...user, client_id: cid, iss: issuer, 
         name: 'a JAR request object still may not carry a password',
         code: `import jwt from 'jsonwebtoken';
 export const req = (params) =>
-  jwt.sign({ ...params, client_id: cid, redirect_uri: uri, password: pw }, key);`,
+  jwt.sign({ ...params, client_id: cid, iss: cid, aud, password: pw }, key);`,
         errors: [{ messageId: 'sensitivePayloadField' }],
       },
     ],

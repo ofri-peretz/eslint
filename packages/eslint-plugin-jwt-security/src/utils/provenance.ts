@@ -40,7 +40,7 @@ import {
   resolveTerminal,
 } from './value-flow';
 import type { SourceCodeLike } from './value-flow';
-import { relativeExportModule, resolveSymbol } from './cross-file';
+import { bindsName, relativeExportModule, resolveSymbol } from './cross-file';
 import type { CrossFileContext, ModuleRef } from './cross-file';
 
 /** Packages whose every call result is a response to a request we made. */
@@ -290,7 +290,15 @@ function returnsFetchResponse(
     return false;
   }
   const resolved = resolveSymbol(symbol.module, type.typeName.name);
-  if (resolved === null) return type.typeName.name === 'Response';
+  // Unresolved: the platform's own Response only when nothing in the module
+  // binds that name — a local `interface Response`, or an import whose module
+  // cannot be read, is something else.
+  if (resolved === null) {
+    return (
+      type.typeName.name === 'Response' &&
+      !bindsName(symbol.module, type.typeName.name)
+    );
+  }
   return (
     resolved.kind === 'external' &&
     FETCH_RESPONSE_PACKAGES.has(resolved.source.split('/')[0]!)

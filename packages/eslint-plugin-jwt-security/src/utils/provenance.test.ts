@@ -377,6 +377,49 @@ export async function f() {
         errors: decodeError,
       })),
       {
+        // @found PR #1195 review (CodeRabbit, utils/provenance.ts:293)
+        name: 'FN: a local interface named Response is not the platform Response',
+        filename: FILE,
+        code: `import { decodeJwt } from 'jose';
+interface Response { token: string }
+async function getReq(): Promise<Response> {
+  if (cached) return cached;
+  return readIncoming();
+}
+export async function f() {
+  return decodeJwt((await getReq()).token).sub;
+}`,
+        errors: decodeError,
+      },
+      {
+        name: 'a local type alias named Response is not the platform Response',
+        filename: FILE,
+        code: `import { decodeJwt } from 'jose';
+export type Response = { token: string };
+async function getReq(): Promise<Response> {
+  if (cached) return cached;
+  return readIncoming();
+}
+export async function f() {
+  return decodeJwt((await getReq()).token).sub;
+}`,
+        errors: decodeError,
+      },
+      {
+        name: 'a Response imported from a module that cannot be read is not the platform Response',
+        filename: FILE,
+        code: `import { decodeJwt } from 'jose';
+import type { Response } from './no-such-types';
+async function getReq(): Promise<Response> {
+  if (cached) return cached;
+  return readIncoming();
+}
+export async function f() {
+  return decodeJwt((await getReq()).token).sub;
+}`,
+        errors: decodeError,
+      },
+      {
         name: 'JSON.parse with nothing to parse proves nothing',
         filename: FILE,
         code: `import { decodeJwt } from 'jose';
