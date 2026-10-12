@@ -228,7 +228,14 @@ export function cloneRepo(repo: RepoSpec, benchDir: string): string {
       console.log(`   📂 Cached at ${repo.commit.slice(0, 7)}`);
       return dir;
     }
-    if (isOwnRepo(dir)) {
+    if (!isOwnRepo(dir)) {
+      attempts.push(`in place: ${dir} is not the top of a git repository`);
+    } else if (hasLocalWork(dir)) {
+      // checkout keeps a local edit to a file both commits share, so HEAD would
+      // read as pinned over a tree that is not the commit. Stage a clean one;
+      // swapIntoPlace keeps the edited clone beside it.
+      attempts.push(`in place: ${dir} has local changes`);
+    } else {
       try {
         fetchPin(dir, repo);
         if (isPinnedTo(dir, repo.commit)) {
@@ -241,8 +248,6 @@ export function cloneRepo(repo: RepoSpec, benchDir: string): string {
       } catch (e: any) {
         attempts.push(`in place: ${e.message}`);
       }
-    } else {
-      attempts.push(`in place: ${dir} is not the top of a git repository`);
     }
     console.log(
       `   🔁 Cached clone cannot be re-pinned to ${repo.commit.slice(0, 7)} — cloning a replacement beside it`,
