@@ -29,7 +29,7 @@
       "rules": 19,
       "description": "ESLint plugin for Vercel AI SDK security — detects prompt injection, system-prompt leaks, hardcoded API keys, and unvalidated model output in generateText and streamText",
       "category": "security",
-      "version": "2.2.0",
+      "version": "2.3.0",
       "published": true
     },
     {
@@ -45,7 +45,7 @@
       "rules": 15,
       "description": "ESLint plugin for Model Context Protocol (MCP) SDK security — follows tool arguments into shells, file paths, URLs, SQL and eval; catches credential leaks, untrusted text in model-facing descriptions and prompts, unhardened HTTP transports, shared stateless servers, predictable session ids, untrusted stdio commands and schema/handler drift",
       "category": "security",
-      "version": "0.5.0",
+      "version": "0.6.0",
       "published": true
     },
     {
@@ -53,7 +53,7 @@
       "rules": 13,
       "description": "ESLint plugin for JWT security — detects algorithm confusion (CVE-2022-23540), alg:none, weak or hardcoded secrets, and decode-without-verify",
       "category": "security",
-      "version": "3.4.0",
+      "version": "3.5.0",
       "published": true
     },
     {
@@ -61,7 +61,7 @@
       "rules": 13,
       "description": "ESLint plugin for the pg PostgreSQL driver — detects SQL injection, unreleased clients, floating queries, unsafe search_path, and insecure SSL",
       "category": "security",
-      "version": "2.4.0",
+      "version": "2.5.0",
       "published": true
     },
     {
