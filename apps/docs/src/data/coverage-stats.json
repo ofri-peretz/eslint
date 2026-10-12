@@ -44,6 +44,13 @@
         "category": "security"
       },
       {
+        "name": "eslint-plugin-mcp-sdk-security",
+        "slug": "mcp-sdk-security",
+        "coverage": 85,
+        "status": "production",
+        "category": "security"
+      },
+      {
         "name": "eslint-plugin-jwt-security",
         "slug": "jwt-security",
         "coverage": 85,
@@ -67,13 +74,6 @@
       {
         "name": "eslint-plugin-drizzle-security",
         "slug": "drizzle-security",
-        "coverage": 85,
-        "status": "production",
-        "category": "security"
-      },
-      {
-        "name": "eslint-plugin-mcp-sdk-security",
-        "slug": "mcp-sdk-security",
         "coverage": 85,
         "status": "production",
         "category": "security"
@@ -228,7 +228,7 @@
     "qualityPlugins": 75
   },
   "meta": {
-    "generatedAt": "2026-09-25T01:20:21.264Z",
+    "generatedAt": "2026-10-12T09:46:39.715Z",
     "source": "estimated",
     "ttl": 14400
   }
