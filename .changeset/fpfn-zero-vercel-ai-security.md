@@ -6,7 +6,7 @@ fix(vercel-ai-security): follow values across same-file hops; close the four def
 
 No preset changes. The new detections can report code that was not reported before:
 
-- `no-dynamic-system-prompt`, `require-validated-prompt` and `require-max-steps` now follow a request value through any number of same-file hops: second variables, reassignments, same-file helper returns, and parameters fed from the request. Example: `const persona = body.persona; system: persona`.
+- `no-dynamic-system-prompt`, `require-validated-prompt` and `require-max-steps` now follow a request value through same-file hops (bounded at 16, cycle-guarded): second variables, reassignments, same-file helper returns, and parameters fed from the request. Example: `const persona = body.persona; system: persona`.
 - `no-dynamic-system-prompt` treats a call to a same-file function whose every return is static text as static.
 - `require-rag-content-validation`:
   - Follows retrieved content through `.map` / `.filter` / `.join` / `.slice`, templates and same-file helpers into `prompt` / `system`, for example `docs.map(d => d.pageContent).join()`.
