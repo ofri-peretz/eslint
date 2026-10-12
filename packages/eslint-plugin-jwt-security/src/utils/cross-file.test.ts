@@ -137,4 +137,13 @@ describe('relativeExportModule', () => {
       parseFileCached(path.join(root, 'no-such-file.ts'), tsParser),
     ).toBeNull();
   });
+
+  it('re-reads a file that changed since it was cached (long-running ESLint)', () => {
+    write('edited.ts', "export { client } from 'openid-client';\n");
+    expect(resolve('./edited', 'client')).toBe('openid-client');
+    write('edited.ts', "export { client } from 'axios';\n");
+    const later = new Date(Date.now() + 5_000);
+    fs.utimesSync(path.join(root, 'edited.ts'), later, later);
+    expect(resolve('./edited', 'client')).toBe('axios');
+  });
 });
