@@ -405,3 +405,40 @@ describe('no-missing-client-release — fp/fn review 2026-10', () => {
     ]),
   });
 });
+
+/** Computed-key spellings (check:computed-keys, 2026-10). */
+describe('no-missing-client-release — string-subscript spellings', () => {
+  ruleTester.run('a pool type written as pg["Pool"]', noMissingClientRelease, {
+    valid: [
+      {
+        name: 'an indexed type over a non-pg namespace is not a pg pool',
+        code: "import gp from 'generic-pool';\nexport class Repo { private db: gp['Pool']; async run() { const c = await this['db']['connect'](); } }",
+      },
+      {
+        name: 'an indexed type over a typeof query is not resolved',
+        code: "import pg from 'pg';\nexport class Repo { private db: (typeof pg)['Pool']; async run() { const c = await this['db']['connect'](); } }",
+      },
+      {
+        name: 'an indexed type with a non-literal index is not a pg pool',
+        code: "import pg from 'pg';\nexport class Repo { private db: pg[K]; async run() { const c = await this['db']['connect'](); } }",
+      },
+    ],
+    invalid: [
+      {
+        name: 'a parameter typed with the pg-pool default export',
+        code: "import Pool from 'pg-pool';\nexport async function f(p: Pool) { const c = await p.connect(); }",
+        errors: [{ messageId: 'missingClientRelease' }],
+      },
+      {
+        name: 'a field typed pg[`Pool`] with a template-literal index',
+        code: "import pg from 'pg';\nexport class Repo { private db: pg[`Pool`]; async run() { const c = await this['db']['connect'](); } }",
+        errors: [{ messageId: 'missingClientRelease' }],
+      },
+      {
+        name: 'a field typed pg["Pool"], checked out through this["db"]["connect"]()',
+        code: "import pg from 'pg';\nexport class Repo { private db: pg['Pool']; async run() { const c = await this['db']['connect'](); } }",
+        errors: [{ messageId: 'missingClientRelease' }],
+      },
+    ],
+  });
+});

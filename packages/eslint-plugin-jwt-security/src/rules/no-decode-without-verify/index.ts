@@ -288,7 +288,10 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
           const [tokenArgument] = node.arguments;
           if (
             tokenArgument !== undefined &&
-            fromBackChannel(tokenArgument, sourceCode)
+            fromBackChannel(tokenArgument, sourceCode, {
+              filename: context.filename,
+              parser: context.languageOptions.parser,
+            })
           ) {
             return;
           }

@@ -17,7 +17,7 @@ Fixes the seven items the 2026-10 audit had deferred (benchmarks/audits/2026-10-
 - `no-timestamp-manipulation` has a new `maxClockToleranceSeconds` option (default 300) and reports a numeric `clockTolerance` above it.
 - `require-expiration` reads the package's `JwtModule.register` / `registerAsync` (in `*.module.ts`, cross-file) for a NestJS `sign(payload)`, and reports when no registration sets `signOptions.expiresIn`.
 - `no-sensitive-payload` reports a spread of an object it cannot see into the claims (`{ ...user }`, a DB row) as whole-record exposure (CWE-200). With type information it reports only when the spread's type declares a sensitive field.
-- `no-decode-without-verify` exempts a decoded token only on back-channel provenance (a `fetch()` response body, an axios/got/ky/undici response, an openid-client grant) instead of field and variable names. `data.id_token` from `await request.json()` is now reported.
+- `no-decode-without-verify` exempts a decoded token only on back-channel provenance (a `fetch()` response body, an axios/got/ky/undici response, an openid-client grant, including one reached through a relative module such as `require('./client')`) instead of field and variable names. `data.id_token` from `await request.json()` is now reported.
 
 **Upgrade notes.**
 

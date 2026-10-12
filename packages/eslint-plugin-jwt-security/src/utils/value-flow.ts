@@ -161,6 +161,13 @@ function collectReturns(
   }
 }
 
+/** Every `return` of one function body, not descending into nested functions. */
+export function returnsOf(body: TSESTree.Node): TSESTree.ReturnStatement[] {
+  const out: TSESTree.ReturnStatement[] = [];
+  collectReturns(body, out);
+  return out;
+}
+
 /** Keys that hold structure rather than children. */
 const NON_CHILD_KEYS: ReadonlySet<string> = new Set([
   'parent',
@@ -323,35 +330,73 @@ export function importEqualsSpecifier(
   return String((ref.expression as TSESTree.Literal).value);
 }
 
+/** Where a value was loaded from: the module, and the export it names. */
+export interface OriginBinding {
+  readonly source: string;
+  /** `client` for `const { client } = require('./c')`; null for the whole module. */
+  readonly exportName: string | null;
+}
+
+/** The export an imported identifier names, when it names a single one. */
+function exportNameOf(
+  sourceCode: SourceCodeLike,
+  node: TSESTree.Identifier,
+): string | null {
+  // Reached only after `importSourceOf` found the binding.
+  const def = findVariable(sourceCode, node)!.defs[0]!;
+  if (def.node.type === AST_NODE_TYPES.ImportSpecifier) {
+    const { imported } = def.node;
+    return imported.type === AST_NODE_TYPES.Identifier
+      ? imported.name
+      : String(imported.value);
+  }
+  if (def.node.type !== AST_NODE_TYPES.VariableDeclarator) return null;
+  const path = patternPath(def.node.id, def.name as TSESTree.Identifier);
+  return path?.length === 1 ? path[0]! : null;
+}
+
 /**
- * The module a value was produced by.
+ * The module a value was produced by, and the export it came through.
  *
  * Follows the value to where it was made — a call, a construction, a member
  * read — and then to the binding at the root of that callee chain:
  * `(await client.getSigningKey(kid)).getPublicKey()` -> `client` ->
  * `jwksClient({…})` -> `'jwks-rsa'`.
  */
-export function originModule(
+export function originBinding(
   node: TSESTree.Node,
   sourceCode: SourceCodeLike,
   depth = 0,
-): string | null {
+): OriginBinding | null {
   if (depth > MAX_FLOW_DEPTH) return null;
   const value = resolveTerminal(node, sourceCode);
   switch (value.type) {
-    case AST_NODE_TYPES.Identifier:
-      return importSourceOf(sourceCode, value);
+    case AST_NODE_TYPES.Identifier: {
+      const source = importSourceOf(sourceCode, value);
+      return source === null
+        ? null
+        : { source, exportName: exportNameOf(sourceCode, value) };
+    }
     case AST_NODE_TYPES.CallExpression:
-    case AST_NODE_TYPES.NewExpression:
-      return (
-        requireSpecifier(value) ??
-        originModule(value.callee, sourceCode, depth + 1)
-      );
+    case AST_NODE_TYPES.NewExpression: {
+      const required = requireSpecifier(value);
+      return required !== null
+        ? { source: required, exportName: null }
+        : originBinding(value.callee, sourceCode, depth + 1);
+    }
     case AST_NODE_TYPES.MemberExpression:
-      return originModule(value.object, sourceCode, depth + 1);
+      return originBinding(value.object, sourceCode, depth + 1);
     default:
       return null;
   }
+}
+
+/** The module a value was produced by (see `originBinding`). */
+export function originModule(
+  node: TSESTree.Node,
+  sourceCode: SourceCodeLike,
+): string | null {
+  return originBinding(node, sourceCode)?.source ?? null;
 }
 
 /** The export a callee names: `importSPKI` for `importSPKI()` and `jose.importSPKI()`. */

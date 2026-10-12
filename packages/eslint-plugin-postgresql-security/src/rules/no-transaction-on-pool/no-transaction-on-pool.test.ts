@@ -343,3 +343,22 @@ describe('no-transaction-on-pool — fp/fn review 2026-10', () => {
     },
   );
 });
+
+/** Computed-key spellings (check:computed-keys, 2026-10). */
+describe('no-transaction-on-pool — string-subscript spellings', () => {
+  ruleTester.run('a pool parameter typed pg["Pool"]', noTransactionOnPool, {
+    valid: [
+      {
+        name: 'a parameter typed pg["PoolClient"] is a client',
+        code: "import pg from 'pg';\nexport async function f(client: pg['PoolClient']) { await client['query']('BEGIN'); }",
+      },
+    ],
+    invalid: [
+      {
+        name: 'BEGIN through pool["query"] on a parameter typed pg["Pool"]',
+        code: "import pg from 'pg';\nexport async function f(pool: pg['Pool']) { await pool['query']('BEGIN'); }",
+        errors: [{ messageId: 'noTransactionOnPool' }],
+      },
+    ],
+  });
+});

@@ -14,18 +14,23 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
+  AST_NODE_TYPES,
   createRule,
   formatLLMMessage,
   MessageIcons,
   objectKeyName,
 } from '@interlace/eslint-devkit';
 import {
+  getOptionValue,
+  hasOption,
   isSignOperation,
   joseBuilderChain,
   resolveObject,
   SENSITIVE_PAYLOAD_FIELDS,
 } from '../../utils';
+import type { ResolvedObject } from '../../utils';
 import { mayCarryField } from '../../utils/type-info';
+import { findVariable, resolveTerminal } from '../../utils/value-flow';
 import type { NoSensitivePayloadOptions } from '../../types';
 
 type MessageIds = 'sensitivePayloadField' | 'wholeRecordSpread';
@@ -115,6 +120,42 @@ export const noSensitivePayload = createRule<RuleOptions, MessageIds>({
 
     const sourceCode = context.sourceCode;
 
+    /**
+     * A signed JAR request object (RFC 9101 §4): issued BY the client — `iss`
+     * is the very same expression as its `client_id` claim — to the
+     * authorization server (`aud`). Its claims ARE the authorization request
+     * parameters, which the builder receives as an argument and spreads in.
+     */
+    const isSignedRequestObject = (payload: ResolvedObject): boolean => {
+      const clientId = getOptionValue(payload, 'client_id');
+      const issuer = getOptionValue(payload, 'iss');
+      return (
+        clientId !== undefined &&
+        issuer !== undefined &&
+        hasOption(payload, 'aud') &&
+        sourceCode.getText(issuer) === sourceCode.getText(clientId)
+      );
+    };
+
+    /**
+     * Whether a spread copies the authorization parameters into a signed
+     * request object: its source is a PARAMETER of the builder — the
+     * parameters it was handed to sign. Anything else spread beside them (a
+     * call result, a module value, a database row) is a record like any other
+     * and is still reported.
+     */
+    const isAuthorizationParams = (
+      spread: TSESTree.SpreadElement,
+      payload: ResolvedObject,
+    ): boolean => {
+      if (!isSignedRequestObject(payload)) return false;
+      const source = resolveTerminal(spread.argument, sourceCode);
+      return (
+        source.type === AST_NODE_TYPES.Identifier &&
+        findVariable(sourceCode, source)?.defs[0]?.type === 'Parameter'
+      );
+    };
+
     return {
       CallExpression(node: TSESTree.CallExpression) {
         if (!isSignOperation(node, sourceCode)) {
@@ -146,7 +187,10 @@ export const noSensitivePayload = createRule<RuleOptions, MessageIds>({
          * the spread is reported only when one of them is sensitive.
          */
         for (const spread of payload.opaqueSpreads) {
-          if (mayCarryField(spread.argument, sourceCode, allSensitiveFields)) {
+          if (
+            !isAuthorizationParams(spread, payload) &&
+            mayCarryField(spread.argument, sourceCode, allSensitiveFields)
+          ) {
             context.report({ node: spread, messageId: 'wholeRecordSpread' });
           }
         }

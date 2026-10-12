@@ -24,6 +24,10 @@
       {
         "file": "gcm-decrypt-no-authtag.js",
         "description": "AEAD misuse \u2014 aes-256-gcm decryption without setAuthTag, integrity never checked"
+      },
+      {
+        "file": "verify-mixed-hmac-rsa.js",
+        "description": "jwt.verify whitelist admits HS256 next to RS256 for an RSA public key (algorithm confusion)"
       }
     ],
     "safe": [
@@ -42,6 +46,10 @@
       {
         "file": "gcm-encrypt-authtag.js",
         "description": "aes-256-gcm encryption capturing the auth tag via getAuthTag()"
+      },
+      {
+        "file": "verify-rsa-only.js",
+        "description": "jwt.verify of an RSA public key with RS256 only"
       }
     ]
   }

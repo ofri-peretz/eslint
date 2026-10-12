@@ -5,6 +5,9 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 import { noDecodeWithoutVerify } from './index';
 
 RuleTester.afterAll = afterAll;
@@ -716,3 +719,168 @@ export async function f() {
     ],
   },
 );
+
+// ---------------------------------------------------------------------------
+// Pinned corpus (PR #1192): a grant response whose openid-client origin is
+// one relative module away. auth0/express-openid-connect does
+// `const { client: oidcClient } = require('./client')`, and `./client` does
+// `exports.client = require('openid-client')`.
+// ---------------------------------------------------------------------------
+const relativeOidcClient = (): string => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'jwt-oidc-relative-'));
+  fs.writeFileSync(
+    path.join(dir, 'client.js'),
+    "const client = require('openid-client');\nexports.client = client;\n",
+  );
+  return path.join(dir, 'context.js');
+};
+
+ruleTester.run(
+  'no-decode-without-verify — cross-file provenance',
+  noDecodeWithoutVerify,
+  {
+    valid: [
+      {
+        // @found pinned corpus auth0/express-openid-connect:lib/context.js:184
+        name: 'FP: a token-exchange response from openid-client behind a relative module',
+        filename: relativeOidcClient(),
+        code: `const { decodeJwt } = require('jose');
+const { client: oidcClient } = require('./client');
+function extractActClaim(exchanged) {
+  if (exchanged.access_token) {
+    const decoded = decodeJwt(exchanged.access_token);
+    if (decoded.act) return decoded.act;
+  }
+  return undefined;
+}
+async function tokenExchange(configuration, parameters) {
+  const exchanged = await oidcClient.genericGrantRequest(configuration, grantType, parameters);
+  return extractActClaim(exchanged);
+}`,
+      },
+    ],
+    invalid: [
+      {
+        name: 'a nested destructure of a relative module names no single export to follow',
+        filename: relativeOidcClient(),
+        code: `const { decodeJwt } = require('jose');
+const {
+  client: { genericGrantRequest },
+} = require('./client');
+export async function f(configuration) {
+  const exchanged = await genericGrantRequest(configuration);
+  return decodeJwt(exchanged.access_token).sub;
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+      {
+        name: 'a relative module that cannot be found proves nothing',
+        filename: relativeOidcClient(),
+        code: `const { decodeJwt } = require('jose');
+const { client: oidcClient } = require('./missing');
+export async function f(configuration) {
+  const exchanged = await oidcClient.genericGrantRequest(configuration);
+  return decodeJwt(exchanged.access_token).sub;
+}`,
+        errors: [{ messageId: 'decodeWithoutVerify' }],
+      },
+    ],
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Pinned corpus (PR #1192): a token-endpoint response carried through a
+// Result wrapper. Shopify/cli's `tokenRequest()` POSTs to the token endpoint
+// through `shopifyFetch()` (declared `Promise<Response>`, Response from
+// node-fetch), parses the body, and returns `ok(payload)` / `err(…)`. Callers
+// unwrap it with `.value` or `.mapError(h).valueOrBug()`. The wrapper is read
+// structurally, across files: `ok(v)` builds `new Ok(v)`, `Ok` stores `v` as
+// `value`, and `Err` has no `value` and a `valueOrBug()` that only throws.
+// ---------------------------------------------------------------------------
+const shopifyLike = (): string => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'jwt-result-wrapper-'));
+  fs.writeFileSync(
+    path.join(dir, 'result.ts'),
+    `export const ok = <T,>(value: T): Ok<T> => new Ok(value);
+export const err = <E,>(error: E): Err<E> => new Err(error);
+export class Ok<T> {
+  constructor(readonly value: T) {}
+  isErr(): boolean { return false; }
+  valueOrBug(): T { return this.value; }
+  mapError(_mapper: unknown): Ok<T> { return ok(this.value); }
+}
+export class Err<E> {
+  constructor(readonly error: E) {}
+  isErr(): boolean { return true; }
+  valueOrBug(): never { throw this.error; }
+  mapError(mapper: (e: E) => unknown) { return err(mapper(this.error)); }
+}
+`,
+  );
+  fs.writeFileSync(
+    path.join(dir, 'http.ts'),
+    `import nodeFetch, { Response } from 'node-fetch';
+export async function shopifyFetch(url: string, init?: object): Promise<Response> {
+  return innerFetch(url, init);
+}
+`,
+  );
+  return path.join(dir, 'exchange.ts');
+};
+
+const SHOPIFY_EXCHANGE = `import * as jose from 'jose';
+import { shopifyFetch } from './http.js';
+import { ok, err } from './result.js';
+async function tokenRequest(params) {
+  const res = await shopifyFetch(tokenUrl, { method: 'POST', body: form(params) });
+  try {
+    const responseText = await res.text();
+    const payload = JSON.parse(responseText);
+    if (res.ok) return ok(payload);
+    return err({ error: payload.error, store: params.store });
+  } catch (error) {
+    throw error;
+  }
+}
+function buildIdentityToken(result, existingUserId) {
+  const userId = existingUserId ?? (result.id_token ? jose.decodeJwt(result.id_token).sub : undefined);
+  return { userId };
+}
+export async function refreshAccessToken(current) {
+  const tokenResult = await tokenRequest(refreshParams);
+  const value = tokenResult.mapError(handler).valueOrBug();
+  return buildIdentityToken(value, current.userId);
+}
+export async function exchangeDeviceCode(code) {
+  const tokenResult = await tokenRequest(deviceParams);
+  if (tokenResult.isErr()) return err('failed');
+  return ok(buildIdentityToken(tokenResult.value));
+}`;
+
+ruleTester.run('no-decode-without-verify — Result-wrapped back channel', noDecodeWithoutVerify, {
+  valid: [
+    {
+      // @found pinned corpus Shopify/cli packages/cli-kit/src/private/node/session/exchange.ts:291
+      name: 'FP: a token-endpoint response carried through a Result wrapper',
+      filename: shopifyLike(),
+      code: SHOPIFY_EXCHANGE,
+    },
+  ],
+  invalid: [
+    {
+      name: 'a Result wrapping the incoming request body is still the front channel',
+      filename: shopifyLike(),
+      code: `import * as jose from 'jose';
+import { ok, err } from './result.js';
+function parse(req) {
+  if (req.body) return ok(req.body);
+  return err('missing');
+}
+export function handle(req) {
+  const result = parse(req);
+  return jose.decodeJwt(result.value.id_token).sub;
+}`,
+      errors: [{ messageId: 'decodeWithoutVerify' }],
+    },
+  ],
+});
