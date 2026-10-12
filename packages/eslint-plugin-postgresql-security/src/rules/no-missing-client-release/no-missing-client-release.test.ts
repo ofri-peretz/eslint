@@ -404,6 +404,37 @@ describe('no-missing-client-release — fp/fn review 2026-10', () => {
       },
     ]),
   });
+
+  // The 40-shape table is in ../release-paths.test.ts; these are the ways a
+  // release right after the try still leaks.
+  ruleTester.run('REL-4: a release right after the try covers only what falls through to it', noMissingClientRelease, {
+    valid: pg([
+      { name: 'a catch that logs and swallows falls through to the release after the try', code: "const pool = new Pool();\nexport async function f(id) { const client = await pool.connect(); let rows = []; try { rows = (await client.query('SELECT 1', [id])).rows; } catch (err) { console.error(err); } client.release(); return rows; }" },
+      { name: 'a catch that releases before rethrowing, then a release after the try', code: "const pool = new Pool();\nexport async function f(id) { const client = await pool.connect(); try { await client.query('SELECT 1', [id]); } catch (err) { client.release(err); throw err; } client.release(); }" },
+    ]),
+    invalid: pg([
+      {
+        name: 'an early return in the try skips the release after it',
+        code: "const pool = new Pool();\nexport async function f(id) { const client = await pool.connect(); try { if (!id) return null; await client.query('SELECT 1', [id]); } catch (err) { console.error(err); } client.release(); }",
+        errors: [{ messageId: 'releaseNotGuaranteed' }],
+      },
+      {
+        name: 'a catch that returns without releasing never reaches the release after the try',
+        code: "const pool = new Pool();\nexport async function f(id) { const client = await pool.connect(); try { await client.query('SELECT 1', [id]); } catch (err) { return null; } client.release(); }",
+        errors: [{ messageId: 'releaseNotGuaranteed' }],
+      },
+      {
+        name: 'a try/finally with no catch lets the error past the release after it',
+        code: "const pool = new Pool();\nexport async function f(id) { const client = await pool.connect(); try { await client.query('SELECT 1', [id]); } finally { console.log('done'); } client.release(); }",
+        errors: [{ messageId: 'releaseNotGuaranteed' }],
+      },
+      {
+        name: 'a query between the try and the release can throw past it',
+        code: "const pool = new Pool();\nexport async function f(id) { const client = await pool.connect(); try { await client.query('SELECT 1', [id]); } catch (err) { console.error(err); } await client.query('SELECT 2'); client.release(); }",
+        errors: [{ messageId: 'releaseNotGuaranteed' }],
+      },
+    ]),
+  });
 });
 
 /** Computed-key spellings (check:computed-keys, 2026-10). */

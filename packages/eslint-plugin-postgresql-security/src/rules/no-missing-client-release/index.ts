@@ -124,9 +124,12 @@ function isQueryCall(identifier: TSESTree.Node): boolean {
   );
 }
 
-/** Does this subtree contain a `return`, not counting nested functions? */
-function containsReturn(node: TSESTree.Node): boolean {
-  if (node.type === AST_NODE_TYPES.ReturnStatement) return true;
+/** Does this subtree contain one of these statements, not counting nested functions? */
+function contains(
+  node: TSESTree.Node,
+  types: readonly TSESTree.Node['type'][],
+): boolean {
+  if (types.includes(node.type)) return true;
   if (
     node.type === AST_NODE_TYPES.FunctionDeclaration ||
     node.type === AST_NODE_TYPES.FunctionExpression ||
@@ -142,9 +145,27 @@ function containsReturn(node: TSESTree.Node): boolean {
         typeof child === 'object' &&
         child !== null &&
         typeof (child as TSESTree.Node).type === 'string' &&
-        containsReturn(child as TSESTree.Node),
+        contains(child as TSESTree.Node, types),
     );
   });
+}
+
+const containsReturn = (node: TSESTree.Node): boolean =>
+  contains(node, [AST_NODE_TYPES.ReturnStatement]);
+
+/** The block this release is a direct `client.release();` statement of. */
+function enclosingBlock(
+  release: TSESTree.Node,
+): { block: TSESTree.BlockStatement; index: number } | null {
+  const statement = release.parent?.parent?.parent;
+  const block = statement?.parent;
+  if (
+    statement?.type !== AST_NODE_TYPES.ExpressionStatement ||
+    block?.type !== AST_NODE_TYPES.BlockStatement
+  ) {
+    return null;
+  }
+  return { block, index: block.body.indexOf(statement) };
 }
 
 /**
@@ -152,18 +173,16 @@ function containsReturn(node: TSESTree.Node): boolean {
  * can leave early? Returns that `try`.
  */
 function tryBlockRelease(release: TSESTree.Node): TSESTree.TryStatement | null {
-  const statement = release.parent?.parent?.parent;
-  const block = statement?.parent;
+  const slot = enclosingBlock(release);
   if (
-    statement?.type !== AST_NODE_TYPES.ExpressionStatement ||
-    block?.type !== AST_NODE_TYPES.BlockStatement ||
-    block.parent?.type !== AST_NODE_TYPES.TryStatement ||
-    block.parent.block !== block
+    slot === null ||
+    slot.block.parent?.type !== AST_NODE_TYPES.TryStatement ||
+    slot.block.parent.block !== slot.block
   ) {
     return null;
   }
-  const before = block.body.slice(0, block.body.indexOf(statement));
-  return before.some(containsReturn) ? null : block.parent;
+  const before = slot.block.body.slice(0, slot.index);
+  return before.some(containsReturn) ? null : slot.block.parent;
 }
 
 /** Is this release inside the `catch` clause of `tryStatement`? */
@@ -175,6 +194,36 @@ function isInCatchOf(
     if (current === tryStatement.handler) return true;
   }
   return false;
+}
+
+/**
+ * Is this release the statement right after a `try … catch`, reached by every
+ * path out of it that does not release on its own?
+ *
+ * The query succeeding falls out of the `try` block into it. The query
+ * throwing falls out of the `catch` into it too when the catch swallows the
+ * error; a catch that rethrows or returns never gets here, so it has to
+ * release on its own.
+ */
+function releaseAfterTry(
+  release: TSESTree.Node,
+  releases: readonly TSESTree.Node[],
+): boolean {
+  const slot = enclosingBlock(release);
+  if (slot === null) return false;
+  const previous = slot.block.body[slot.index - 1];
+  if (
+    previous?.type !== AST_NODE_TYPES.TryStatement ||
+    previous.handler === null ||
+    containsReturn(previous.block)
+  ) {
+    return false;
+  }
+  const swallows = !contains(previous.handler, [
+    AST_NODE_TYPES.ReturnStatement,
+    AST_NODE_TYPES.ThrowStatement,
+  ]);
+  return swallows || releases.some((other) => isInCatchOf(other, previous));
 }
 
 /**
@@ -393,8 +442,11 @@ export const noMissingClientRelease: TSESLint.RuleModule<
             releases.some((other) => isInCatchOf(other, tryStatement))
           );
         });
+        // Released right after a `try … catch` covers both paths as long as
+        // the catch falls through to it or releases before it rethrows.
         if (
           !coveredByTryAndCatch &&
+          !releases.some((id) => releaseAfterTry(id, releases)) &&
           !releases.some((id) => isInsideFinally(id))
         ) {
           context.report({
