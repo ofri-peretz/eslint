@@ -2,6 +2,7 @@
  * @provenBy {"file":"benchmarks/lib/clone-repo.ts","find":"'--quiet', `${commit}^{commit}`]","replace":"'--quiet', commit]"}
  * @provenBy {"file":"benchmarks/lib/clone-repo.ts","find":"  const staging = fs.mkdtempSync(","replace":"  if (existed) fs.rmSync(dir, { recursive: true, force: true });\n  const staging = fs.mkdtempSync("}
  * @provenBy {"file":"benchmarks/lib/clone-repo.ts","find":"  if (hasLocalWork(retired)) {","replace":"  if (false) {"}
+ * @provenBy {"file":"benchmarks/lib/clone-repo.ts","find":"    fs.renameSync(retired, dir);\n","replace":""}
  *
  * Lock: the corpus clone helper never destroys a clone it cannot replace, and
  * an annotated-tag pin counts as pinned.
@@ -39,6 +40,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import fs from 'node:fs';
 import { cloneRepo } from '../../benchmarks/lib/clone-repo';
 
 const git = (...args: string[]) =>
@@ -162,6 +164,27 @@ describe('cloneRepo never deletes a clone it cannot replace', () => {
     expect(cloneRepo(spec(shaA), bench)).toBe(dir);
     expect(head(dir)).toBe(shaA);
     expect(existsSync(join(dir, 'MINE.txt'))).toBe(true);
+  });
+
+  it('puts the old clone back if the replacement cannot be moved into place', () => {
+    const dir = existingClone(shaA);
+    writeFileSync(join(dir, 'b.txt'), 'my edit, not the upstream file\n'); // forces the swap path
+    const real = fs.renameSync;
+    const spy = vi.spyOn(fs, 'renameSync').mockImplementation((from, to) => {
+      if (String(from).includes('.ilb-staging-'))
+        throw new Error('EXDEV: simulated');
+      return real(from, to);
+    });
+    try {
+      expect(() => cloneRepo(spec(shaB), bench)).toThrow(/EXDEV/);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(head(dir)).toBe(shaA);
+    expect(readFileSync(join(dir, 'b.txt'), 'utf8')).toBe(
+      'my edit, not the upstream file\n',
+    );
+    expect(leftovers()).toEqual([]);
   });
 
   it('swaps in a replacement only once it is pinned, and keeps an old clone that holds local work', () => {

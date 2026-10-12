@@ -19,9 +19,15 @@ export function resolveBenchDir(fallbackRoot: string): string {
   return path.join(fallbackRoot, '.bench-repos');
 }
 
-export function safeGit(args: string[], opts: { allowFail?: boolean } = {}): string {
+export function safeGit(
+  args: string[],
+  opts: { allowFail?: boolean } = {},
+): string {
   try {
-    return execFileSync('git', args, { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'pipe'] }).toString();
+    return execFileSync('git', args, {
+      encoding: 'utf-8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    }).toString();
   } catch (e: any) {
     if (opts.allowFail) return e.stdout?.toString() || '';
     throw e;
@@ -38,8 +44,13 @@ function git(args: string[]): string {
     }).toString();
   } catch (e: any) {
     const stderr = (e.stderr?.toString() || '').trim();
-    const why = e.code === 'ETIMEDOUT' ? `timed out after ${GIT_TIMEOUT_MS / 60_000} min` : stderr || e.message;
-    throw new Error(`git ${args.filter((a) => a !== '--quiet').join(' ')}: ${why}`);
+    const why =
+      e.code === 'ETIMEDOUT'
+        ? `timed out after ${GIT_TIMEOUT_MS / 60_000} min`
+        : stderr || e.message;
+    throw new Error(
+      `git ${args.filter((a) => a !== '--quiet').join(' ')}: ${why}`,
+    );
   }
 }
 
@@ -54,7 +65,9 @@ const isFullSha = (ref: string): boolean => /^[0-9a-f]{40}$/i.test(ref);
  * applied to that parent repository instead.
  */
 function isOwnRepo(dir: string): boolean {
-  const top = safeGit(['-C', dir, 'rev-parse', '--show-toplevel'], { allowFail: true }).trim();
+  const top = safeGit(['-C', dir, 'rev-parse', '--show-toplevel'], {
+    allowFail: true,
+  }).trim();
   if (!top) return false;
   try {
     return fs.realpathSync(top) === fs.realpathSync(dir);
@@ -77,12 +90,18 @@ function isOwnRepo(dir: string): boolean {
  */
 export function isPinnedTo(dir: string, commit: string): boolean {
   if (!isOwnRepo(dir)) return false;
-  const head = safeGit(['-C', dir, 'rev-parse', '--verify', '--quiet', 'HEAD'], { allowFail: true }).trim();
+  const head = safeGit(
+    ['-C', dir, 'rev-parse', '--verify', '--quiet', 'HEAD'],
+    { allowFail: true },
+  ).trim();
   if (!head) return false;
   if (head === commit) return true;
-  const resolved = safeGit(['-C', dir, 'rev-parse', '--verify', '--quiet', `${commit}^{commit}`], {
-    allowFail: true,
-  }).trim();
+  const resolved = safeGit(
+    ['-C', dir, 'rev-parse', '--verify', '--quiet', `${commit}^{commit}`],
+    {
+      allowFail: true,
+    },
+  ).trim();
   return resolved !== '' && resolved === head;
 }
 
@@ -103,13 +122,39 @@ export function isPinnedTo(dir: string, commit: string): boolean {
  */
 function fetchPin(dir: string, repo: RepoSpec): void {
   if (isFullSha(repo.commit)) {
-    git(['-C', dir, 'fetch', '--depth', '1', '--quiet', repo.repo, repo.commit]);
+    git([
+      '-C',
+      dir,
+      'fetch',
+      '--depth',
+      '1',
+      '--quiet',
+      repo.repo,
+      repo.commit,
+    ]);
   } else {
-    git(['-C', dir, 'fetch', '--depth', '1', '--quiet', '--no-tags', repo.repo, `+${repo.commit}:refs/tags/${repo.commit}`]);
+    git([
+      '-C',
+      dir,
+      'fetch',
+      '--depth',
+      '1',
+      '--quiet',
+      '--no-tags',
+      repo.repo,
+      `+${repo.commit}:refs/tags/${repo.commit}`,
+    ]);
   }
   // No --force: a working tree with local edits refuses, and those edits are
   // somebody's work.
-  git(['-C', dir, 'checkout', '--quiet', '--detach', `${repo.commit}^{commit}`]);
+  git([
+    '-C',
+    dir,
+    'checkout',
+    '--quiet',
+    '--detach',
+    `${repo.commit}^{commit}`,
+  ]);
 }
 
 /** Tracked edits or untracked, NON-ignored files. Ignored build output (node_modules) is not work. */
@@ -123,7 +168,11 @@ function hasLocalWork(dir: string): boolean {
 }
 
 function headOf(dir: string): string {
-  return safeGit(['-C', dir, 'rev-parse', '--short', 'HEAD'], { allowFail: true }).trim() || 'no HEAD';
+  return (
+    safeGit(['-C', dir, 'rev-parse', '--short', 'HEAD'], {
+      allowFail: true,
+    }).trim() || 'no HEAD'
+  );
 }
 
 /**
@@ -138,9 +187,19 @@ function swapIntoPlace(staging: string, dir: string): void {
     fs.renameSync(staging, dir);
     return;
   }
-  const retired = path.join(path.dirname(dir), `.${path.basename(dir)}.ilb-replaced-${Date.now()}`);
+  const retired = path.join(
+    path.dirname(dir),
+    `.${path.basename(dir)}.ilb-replaced-${Date.now()}`,
+  );
   fs.renameSync(dir, retired);
-  fs.renameSync(staging, dir);
+  try {
+    fs.renameSync(staging, dir);
+  } catch (e) {
+    // Put the old clone back: never leave `dir` empty.
+    fs.renameSync(retired, dir);
+    fs.rmSync(staging, { recursive: true, force: true });
+    throw e;
+  }
   if (hasLocalWork(retired)) {
     console.log(`   ⚠️  Previous clone had local changes — kept at ${retired}`);
     return;
@@ -173,7 +232,9 @@ export function cloneRepo(repo: RepoSpec, benchDir: string): string {
       try {
         fetchPin(dir, repo);
         if (isPinnedTo(dir, repo.commit)) {
-          console.log(`   📥 Re-pinned cached clone to ${repo.commit.slice(0, 7)}`);
+          console.log(
+            `   📥 Re-pinned cached clone to ${repo.commit.slice(0, 7)}`,
+          );
           return dir;
         }
         attempts.push(`in place: HEAD is ${headOf(dir)} after checkout`);
@@ -183,12 +244,16 @@ export function cloneRepo(repo: RepoSpec, benchDir: string): string {
     } else {
       attempts.push(`in place: ${dir} is not the top of a git repository`);
     }
-    console.log(`   🔁 Cached clone cannot be re-pinned to ${repo.commit.slice(0, 7)} — cloning a replacement beside it`);
+    console.log(
+      `   🔁 Cached clone cannot be re-pinned to ${repo.commit.slice(0, 7)} — cloning a replacement beside it`,
+    );
   } else {
     console.log(`   ⬇️  Cloning ${repo.name}@${repo.commit.slice(0, 7)}...`);
   }
 
-  const staging = fs.mkdtempSync(path.join(benchDir, `.${repo.name}.ilb-staging-`));
+  const staging = fs.mkdtempSync(
+    path.join(benchDir, `.${repo.name}.ilb-staging-`),
+  );
   try {
     git(['init', '--quiet', staging]);
     fetchPin(staging, repo);
@@ -197,7 +262,11 @@ export function cloneRepo(repo: RepoSpec, benchDir: string): string {
     }
   } catch (e: any) {
     fs.rmSync(staging, { recursive: true, force: true });
-    attempts.push(e.message.startsWith('fresh clone') ? e.message : `fresh clone: ${e.message}`);
+    attempts.push(
+      e.message.startsWith('fresh clone')
+        ? e.message
+        : `fresh clone: ${e.message}`,
+    );
     // Deliberately no HEAD fallback. A benchmark that quietly measures a
     // different commit than the one it reports is worse than one that stops.
     throw new Error(
