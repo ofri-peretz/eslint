@@ -1,0 +1,679 @@
+{
+  "node-security/no-self-signed-certs": {
+    "hits": 8,
+    "avgTimeMs": 20.13,
+    "samples": [
+      {
+        "ruleId": "node-security/no-self-signed-certs",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/modules/messaging/message-import-manager/drivers/smtp/providers/smtp-client.provider.ts",
+        "line": 40,
+        "column": 9,
+        "message": "🔒 CWE-295 OWASP:A02-Security CVSS:7.4 | rejectUnauthorized: false disables TLS certificate validation, enabling man-in-the-middle attacks. Any certificate will be accepted, including self-signed and expired ones. | CRITICAL\n   Fix: Remove "
+      },
+      {
+        "ruleId": "node-security/no-self-signed-certs",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/modules/messaging/message-import-manager/drivers/imap/providers/imap-client.provider.ts",
+        "line": 91,
+        "column": 9,
+        "message": "🔒 CWE-295 OWASP:A02-Security CVSS:7.4 | rejectUnauthorized: false disables TLS certificate validation, enabling man-in-the-middle attacks. Any certificate will be accepted, including self-signed and expired ones. | CRITICAL\n   Fix: Remove "
+      },
+      {
+        "ruleId": "node-security/no-self-signed-certs",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/twenty-orm/global-workspace-datasource/global-workspace-datasource.service.ts",
+        "line": 39,
+        "column": 15,
+        "message": "🔒 CWE-295 OWASP:A02-Security CVSS:7.4 | rejectUnauthorized: false disables TLS certificate validation, enabling man-in-the-middle attacks. Any certificate will be accepted, including self-signed and expired ones. | CRITICAL\n   Fix: Remove "
+      },
+      {
+        "ruleId": "node-security/no-self-signed-certs",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/twenty-orm/global-workspace-datasource/global-workspace-datasource.service.ts",
+        "line": 74,
+        "column": 17,
+        "message": "🔒 CWE-295 OWASP:A02-Security CVSS:7.4 | rejectUnauthorized: false disables TLS certificate validation, enabling man-in-the-middle attacks. Any certificate will be accepted, including self-signed and expired ones. | CRITICAL\n   Fix: Remove "
+      },
+      {
+        "ruleId": "node-security/no-self-signed-certs",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/imap-smtp-caldav-connection/services/imap-smtp-caldav-connection.service.ts",
+        "line": 52,
+        "column": 9,
+        "message": "🔒 CWE-295 OWASP:A02-Security CVSS:7.4 | rejectUnauthorized: false disables TLS certificate validation, enabling man-in-the-middle attacks. Any certificate will be accepted, including self-signed and expired ones. | CRITICAL\n   Fix: Remove "
+      }
+    ]
+  },
+  "node-security/detect-suspicious-dependencies": {
+    "hits": 8,
+    "avgTimeMs": 82.14,
+    "samples": [
+      {
+        "ruleId": "node-security/detect-suspicious-dependencies",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/modules/messaging/message-import-manager/drivers/gmail/utils/parse-gmail-network-error.util.ts",
+        "line": 1,
+        "column": 1,
+        "message": "🔒 CWE-506 OWASP:A08-Software CVSS:9.8 | Suspicious package name detected - possible typosquatting | HIGH\n   Fix: Verify package authenticity on npm registry | https://cwe.mitre.org/data/definitions/506.html"
+      },
+      {
+        "ruleId": "node-security/detect-suspicious-dependencies",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/modules/messaging/message-import-manager/drivers/gmail/utils/parse-gmail-api-error.util.ts",
+        "line": 1,
+        "column": 1,
+        "message": "🔒 CWE-506 OWASP:A08-Software CVSS:9.8 | Suspicious package name detected - possible typosquatting | HIGH\n   Fix: Verify package authenticity on npm registry | https://cwe.mitre.org/data/definitions/506.html"
+      },
+      {
+        "ruleId": "node-security/detect-suspicious-dependencies",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/modules/messaging/message-import-manager/drivers/gmail/utils/is-gmail-network-error.util.ts",
+        "line": 1,
+        "column": 1,
+        "message": "🔒 CWE-506 OWASP:A08-Software CVSS:9.8 | Suspicious package name detected - possible typosquatting | HIGH\n   Fix: Verify package authenticity on npm registry | https://cwe.mitre.org/data/definitions/506.html"
+      },
+      {
+        "ruleId": "node-security/detect-suspicious-dependencies",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/modules/messaging/message-import-manager/drivers/gmail/utils/is-gmail-api-error.util.ts",
+        "line": 1,
+        "column": 1,
+        "message": "🔒 CWE-506 OWASP:A08-Software CVSS:9.8 | Suspicious package name detected - possible typosquatting | HIGH\n   Fix: Verify package authenticity on npm registry | https://cwe.mitre.org/data/definitions/506.html"
+      },
+      {
+        "ruleId": "node-security/detect-suspicious-dependencies",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/modules/messaging/message-import-manager/drivers/gmail/mocks/gmail-api-error-mocks.ts",
+        "line": 1,
+        "column": 1,
+        "message": "🔒 CWE-506 OWASP:A08-Software CVSS:9.8 | Suspicious package name detected - possible typosquatting | HIGH\n   Fix: Verify package authenticity on npm registry | https://cwe.mitre.org/data/definitions/506.html"
+      }
+    ]
+  },
+  "node-security/require-dependency-integrity": {
+    "hits": 1,
+    "avgTimeMs": 44.19,
+    "samples": [
+      {
+        "ruleId": "node-security/require-dependency-integrity",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/utils/render-apollo-playground.util.ts",
+        "line": 8,
+        "column": 10,
+        "message": "🔒 CWE-494 OWASP:A08-Software CVSS:8.1 | External resource loaded without integrity hash - supply chain risk | HIGH\n   Fix: Add integrity=\"sha384-...\" and crossorigin=\"anonymous\" attributes | https://cwe.mitre.org/data/definitions/494.html"
+      }
+    ]
+  },
+  "nestjs-security/no-exposed-private-fields": {
+    "hits": 12,
+    "avgTimeMs": 44.72,
+    "samples": [
+      {
+        "ruleId": "nestjs-security/no-exposed-private-fields",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/metadata-modules/webhook/dtos/webhook.dto.ts",
+        "line": 35,
+        "column": 3,
+        "message": "🔒 CWE-200 OWASP:A01-Broken CVSS:7.5 | Sensitive field \"secret\" may be exposed in API responses | HIGH [GDPR,HIPAA,PCI-DSS,SOC2]\n   Fix: Add @Exclude() decorator or use class-transformer to exclude from responses | https://docs.nestjs.com/t"
+      },
+      {
+        "ruleId": "nestjs-security/no-exposed-private-fields",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/user/user.entity.ts",
+        "line": 69,
+        "column": 3,
+        "message": "🔒 CWE-200 OWASP:A01-Broken CVSS:7.5 | Sensitive field \"passwordHash\" may be exposed in API responses | HIGH [GDPR,HIPAA,PCI-DSS,SOC2]\n   Fix: Add @Exclude() decorator or use class-transformer to exclude from responses | https://docs.nestjs"
+      },
+      {
+        "ruleId": "nestjs-security/no-exposed-private-fields",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/sso/workspace-sso-identity-provider.entity.ts",
+        "line": 82,
+        "column": 3,
+        "message": "🔒 CWE-200 OWASP:A01-Broken CVSS:7.5 | Sensitive field \"clientSecret\" may be exposed in API responses | HIGH [GDPR,HIPAA,PCI-DSS,SOC2]\n   Fix: Add @Exclude() decorator or use class-transformer to exclude from responses | https://docs.nestjs"
+      },
+      {
+        "ruleId": "nestjs-security/no-exposed-private-fields",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/postgres-credentials/postgres-credentials.entity.ts",
+        "line": 22,
+        "column": 3,
+        "message": "🔒 CWE-200 OWASP:A01-Broken CVSS:7.5 | Sensitive field \"passwordHash\" may be exposed in API responses | HIGH [GDPR,HIPAA,PCI-DSS,SOC2]\n   Fix: Add @Exclude() decorator or use class-transformer to exclude from responses | https://docs.nestjs"
+      },
+      {
+        "ruleId": "nestjs-security/no-exposed-private-fields",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/postgres-credentials/dtos/postgres-credentials.dto.ts",
+        "line": 15,
+        "column": 3,
+        "message": "🔒 CWE-200 OWASP:A01-Broken CVSS:7.5 | Sensitive field \"password\" may be exposed in API responses | HIGH [GDPR,HIPAA,PCI-DSS,SOC2]\n   Fix: Add @Exclude() decorator or use class-transformer to exclude from responses | https://docs.nestjs.com"
+      }
+    ]
+  },
+  "nestjs-security/no-missing-validation-pipe": {
+    "hits": 2,
+    "avgTimeMs": 50.63,
+    "samples": [
+      {
+        "ruleId": "nestjs-security/no-missing-validation-pipe",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/metadata-modules/webhook/controllers/webhook.controller.ts",
+        "line": 63,
+        "column": 5,
+        "message": "🔒 CWE-20 OWASP:A06-Insecure CVSS:8.6 | Parameter @Body() updateWebhookDto receives user input without ValidationPipe | HIGH [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Add @UsePipes(ValidationPipe) or use global validation: app.useGlobalPipes(new Va"
+      },
+      {
+        "ruleId": "nestjs-security/no-missing-validation-pipe",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/metadata-modules/view-sort/controllers/view-sort.controller.ts",
+        "line": 97,
+        "column": 13,
+        "message": "🔒 CWE-20 OWASP:A06-Insecure CVSS:8.6 | Parameter @Body() input receives user input without ValidationPipe | HIGH [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Add @UsePipes(ValidationPipe) or use global validation: app.useGlobalPipes(new ValidationPip"
+      }
+    ]
+  },
+  "secure-coding/no-redos-vulnerable-regex": {
+    "hits": 3,
+    "avgTimeMs": 1562.86,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-redos-vulnerable-regex",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/twenty-config/decorators/is-duration.decorator.ts",
+        "line": 12,
+        "column": 7,
+        "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+      },
+      {
+        "ruleId": "secure-coding/no-redos-vulnerable-regex",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/application-logs/utils/parse-application-log-lines.ts",
+        "line": 5,
+        "column": 3,
+        "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+      },
+      {
+        "ruleId": "secure-coding/no-redos-vulnerable-regex",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/application/application-package/utils/parse-available-packages-from-package-json-and-yarn-lock.util.ts",
+        "line": 4,
+        "column": 3,
+        "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+      }
+    ]
+  },
+  "node-security/detect-eval-with-expression": {
+    "hits": 1,
+    "avgTimeMs": 65.22,
+    "samples": [
+      {
+        "ruleId": "node-security/detect-eval-with-expression",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/record-transformer/utils/transform-rich-text.util.ts",
+        "line": 17,
+        "column": 22,
+        "message": "🔒 CWE-95 OWASP:A05-Injection CVSS:9.8 | eval() can be refactored to safer alternative | HIGH [SOC2,PCI-DSS,ISO27001]\n   Fix: Arrow function or regular function | https://owasp.org/www-community/attacks/Code_Injection"
+      }
+    ]
+  },
+  "secure-coding/no-sensitive-data-exposure": {
+    "hits": 7,
+    "avgTimeMs": 91.06,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-sensitive-data-exposure",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/message-queue/message-queue.explorer.ts",
+        "line": 130,
+        "column": 25,
+        "message": "🔒 CWE-532 OWASP:A09-Logging CVSS:5.3 | Sensitive data detected in logs: token | HIGH [GDPR,HIPAA,PCI-DSS,SOC2]\n   Fix: Redact or mask sensitive data before logging/exposing | https://cwe.mitre.org/data/definitions/532.html"
+      },
+      {
+        "ruleId": "secure-coding/no-sensitive-data-exposure",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/enterprise/services/enterprise-plan.service.ts",
+        "line": 93,
+        "column": 9,
+        "message": "🔒 CWE-532 OWASP:A09-Logging CVSS:5.3 | Sensitive data detected in logs: token | HIGH [GDPR,HIPAA,PCI-DSS,SOC2]\n   Fix: Redact or mask sensitive data before logging/exposing | https://cwe.mitre.org/data/definitions/532.html"
+      },
+      {
+        "ruleId": "secure-coding/no-sensitive-data-exposure",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/application/application-oauth/oauth.service.ts",
+        "line": 228,
+        "column": 7,
+        "message": "🔒 CWE-532 OWASP:A09-Logging CVSS:5.3 | Sensitive data detected in logs: token | HIGH [GDPR,HIPAA,PCI-DSS,SOC2]\n   Fix: Redact or mask sensitive data before logging/exposing | https://cwe.mitre.org/data/definitions/532.html"
+      },
+      {
+        "ruleId": "secure-coding/no-sensitive-data-exposure",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/application/application-oauth/oauth.service.ts",
+        "line": 290,
+        "column": 7,
+        "message": "🔒 CWE-532 OWASP:A09-Logging CVSS:5.3 | Sensitive data detected in logs: token | HIGH [GDPR,HIPAA,PCI-DSS,SOC2]\n   Fix: Redact or mask sensitive data before logging/exposing | https://cwe.mitre.org/data/definitions/532.html"
+      },
+      {
+        "ruleId": "secure-coding/no-sensitive-data-exposure",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/application/application-oauth/oauth.service.ts",
+        "line": 360,
+        "column": 9,
+        "message": "🔒 CWE-532 OWASP:A09-Logging CVSS:5.3 | Sensitive data detected in logs: token | HIGH [GDPR,HIPAA,PCI-DSS,SOC2]\n   Fix: Redact or mask sensitive data before logging/exposing | https://cwe.mitre.org/data/definitions/532.html"
+      }
+    ]
+  },
+  "node-security/no-zip-slip": {
+    "hits": 3,
+    "avgTimeMs": 90.6,
+    "samples": [
+      {
+        "ruleId": "node-security/no-zip-slip",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/logic-function/logic-function-drivers/drivers/local.driver.ts",
+        "line": 264,
+        "column": 33,
+        "message": "🔒 CWE-22 OWASP:A01-Broken CVSS:7.5 | Archive entry path used without validation | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Validate paths before extraction | https://snyk.io/research/zip-slip-vulnerability"
+      },
+      {
+        "ruleId": "node-security/no-zip-slip",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/logic-function/logic-function-drivers/drivers/local.driver.ts",
+        "line": 265,
+        "column": 33,
+        "message": "🔒 CWE-22 OWASP:A01-Broken CVSS:7.5 | Archive entry path used without validation | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Validate paths before extraction | https://snyk.io/research/zip-slip-vulnerability"
+      },
+      {
+        "ruleId": "node-security/no-zip-slip",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/application/application-package/utils/extract-tarball-securely.util.ts",
+        "line": 19,
+        "column": 9,
+        "message": "🔒 CWE-22 OWASP:A01-Broken CVSS:7.5 | Archive extraction without path validation | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use safe extraction libraries or validate all paths | https://snyk.io/research/zip-slip-vulnerability"
+      }
+    ]
+  },
+  "node-security/no-arbitrary-file-access": {
+    "hits": 7,
+    "avgTimeMs": 50.5,
+    "samples": [
+      {
+        "ruleId": "node-security/no-arbitrary-file-access",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/file-storage/drivers/local.driver.ts",
+        "line": 125,
+        "column": 11,
+        "message": "🔒 CWE-22 OWASP:A01-Broken CVSS:7.5 | File path from user input - path traversal vulnerability | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Validate and sanitize file paths, use allowlists | https://cwe.mitre.org/data/definitions/22.html"
+      },
+      {
+        "ruleId": "node-security/no-arbitrary-file-access",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/file-storage/drivers/local.driver.ts",
+        "line": 163,
+        "column": 29,
+        "message": "🔒 CWE-22 OWASP:A01-Broken CVSS:7.5 | File path from user input - path traversal vulnerability | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Validate and sanitize file paths, use allowlists | https://cwe.mitre.org/data/definitions/22.html"
+      },
+      {
+        "ruleId": "node-security/no-arbitrary-file-access",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/file-storage/drivers/local.driver.ts",
+        "line": 177,
+        "column": 31,
+        "message": "🔒 CWE-22 OWASP:A01-Broken CVSS:7.5 | File path from user input - path traversal vulnerability | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Validate and sanitize file paths, use allowlists | https://cwe.mitre.org/data/definitions/22.html"
+      },
+      {
+        "ruleId": "node-security/no-arbitrary-file-access",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/file-storage/drivers/local.driver.ts",
+        "line": 179,
+        "column": 15,
+        "message": "🔒 CWE-22 OWASP:A01-Broken CVSS:7.5 | File path from user input - path traversal vulnerability | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Validate and sanitize file paths, use allowlists | https://cwe.mitre.org/data/definitions/22.html"
+      },
+      {
+        "ruleId": "node-security/no-arbitrary-file-access",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/file-storage/drivers/local.driver.ts",
+        "line": 193,
+        "column": 29,
+        "message": "🔒 CWE-22 OWASP:A01-Broken CVSS:7.5 | File path from user input - path traversal vulnerability | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Validate and sanitize file paths, use allowlists | https://cwe.mitre.org/data/definitions/22.html"
+      }
+    ]
+  },
+  "secure-coding/no-hardcoded-credentials": {
+    "hits": 167,
+    "avgTimeMs": 453.48,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-hardcoded-credentials",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/enterprise/constants/enterprise-public-key.constant.ts",
+        "line": 26,
+        "column": 3,
+        "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded JWT token detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.ENTERPRISE_DEV_VALIDITY_TOKEN or secret management service | https://cwe.mitre.or"
+      }
+    ]
+  },
+  "secure-coding/no-unlimited-resource-allocation": {
+    "hits": 1,
+    "avgTimeMs": 103.43,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-unlimited-resource-allocation",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/application/application-package/utils/extract-tarball-securely.util.ts",
+        "line": 19,
+        "column": 9,
+        "message": "🔒 CWE-770 OWASP:A04-Cryptographic CVSS:7.5 | File operations without size limits | MEDIUM\n   Fix: Validate file size before operations — Not a finding if the decompressed bytes are counted against a ceiling downstream | https://nodejs.org/"
+      }
+    ]
+  },
+  "nestjs-security/require-validation-pipe-whitelist": {
+    "hits": 4,
+    "avgTimeMs": 11.45,
+    "samples": [
+      {
+        "ruleId": "nestjs-security/require-validation-pipe-whitelist",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/application/application-oauth/controllers/oauth-token.controller.ts",
+        "line": 42,
+        "column": 13,
+        "message": "🔒 CWE-915 OWASP:A03-Injection CVSS:7.5 | ValidationPipe without whitelist: true validates the DTO but keeps properties the DTO never declared, so extra fields in the request body reach your service layer | HIGH [SOC2]\n   Fix: new Validatio"
+      }
+    ]
+  },
+  "secure-coding/no-graphql-injection": {
+    "hits": 5,
+    "avgTimeMs": 122.69,
+    "samples": []
+  },
+  "secure-coding/no-log-injection": {
+    "hits": 10,
+    "avgTimeMs": 31.08,
+    "samples": []
+  },
+  "postgresql-security/no-unsafe-query": {
+    "hits": 0,
+    "avgTimeMs": 1807.45,
+    "samples": []
+  },
+  "nestjs-security/require-guards": {
+    "hits": 0,
+    "avgTimeMs": 558.7,
+    "samples": []
+  },
+  "secure-coding/no-privilege-escalation": {
+    "hits": 0,
+    "avgTimeMs": 492.63,
+    "samples": []
+  },
+  "secure-coding/no-ldap-injection": {
+    "hits": 0,
+    "avgTimeMs": 410.16,
+    "samples": []
+  },
+  "node-security/no-weak-hash-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 212.19,
+    "samples": []
+  },
+  "node-security/no-timing-unsafe-compare": {
+    "hits": 0,
+    "avgTimeMs": 150.6,
+    "samples": []
+  },
+  "secure-coding/no-homoglyph-identifiers": {
+    "hits": 0,
+    "avgTimeMs": 121.18,
+    "samples": []
+  },
+  "node-security/no-toctou-vulnerability": {
+    "hits": 0,
+    "avgTimeMs": 103.36,
+    "samples": []
+  },
+  "node-security/no-unsafe-buffer-alloc": {
+    "hits": 0,
+    "avgTimeMs": 107.32,
+    "samples": []
+  },
+  "node-security/detect-non-literal-fs-filename": {
+    "hits": 0,
+    "avgTimeMs": 94.71,
+    "samples": []
+  },
+  "node-security/no-buffer-overread": {
+    "hits": 0,
+    "avgTimeMs": 87.76,
+    "samples": []
+  },
+  "secure-coding/no-xxe-injection": {
+    "hits": 0,
+    "avgTimeMs": 83.65,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-deserialization": {
+    "hits": 0,
+    "avgTimeMs": 80.14,
+    "samples": []
+  },
+  "node-security/detect-child-process": {
+    "hits": 0,
+    "avgTimeMs": 83.71,
+    "samples": []
+  },
+  "node-security/no-math-random-crypto": {
+    "hits": 0,
+    "avgTimeMs": 76.4,
+    "samples": []
+  },
+  "secure-coding/no-xpath-injection": {
+    "hits": 0,
+    "avgTimeMs": 76.85,
+    "samples": []
+  },
+  "secure-coding/no-sql-injection": {
+    "hits": 0,
+    "avgTimeMs": 51.5,
+    "samples": []
+  },
+  "node-security/no-data-in-temp-storage": {
+    "hits": 0,
+    "avgTimeMs": 48.59,
+    "samples": []
+  },
+  "nestjs-security/no-permissive-cors": {
+    "hits": 0,
+    "avgTimeMs": 51.96,
+    "samples": []
+  },
+  "secure-coding/no-improper-sanitization": {
+    "hits": 0,
+    "avgTimeMs": 48.85,
+    "samples": []
+  },
+  "nestjs-security/require-throttler": {
+    "hits": 0,
+    "avgTimeMs": 43.27,
+    "samples": []
+  },
+  "node-security/no-static-iv": {
+    "hits": 0,
+    "avgTimeMs": 44.51,
+    "samples": []
+  },
+  "secure-coding/no-fail-open-auth": {
+    "hits": 0,
+    "avgTimeMs": 44.14,
+    "samples": []
+  },
+  "secure-coding/no-weak-password-recovery": {
+    "hits": 0,
+    "avgTimeMs": 41.03,
+    "samples": []
+  },
+  "node-security/no-unbounded-decompression": {
+    "hits": 0,
+    "avgTimeMs": 32.65,
+    "samples": []
+  },
+  "secure-coding/no-template-injection": {
+    "hits": 0,
+    "avgTimeMs": 32.25,
+    "samples": []
+  },
+  "node-security/no-dynamic-command-string": {
+    "hits": 0,
+    "avgTimeMs": 32.43,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-regex-construction": {
+    "hits": 0,
+    "avgTimeMs": 29.69,
+    "samples": []
+  },
+  "node-security/no-deprecated-buffer": {
+    "hits": 0,
+    "avgTimeMs": 28,
+    "samples": []
+  },
+  "node-security/no-cryptojs": {
+    "hits": 0,
+    "avgTimeMs": 29.53,
+    "samples": []
+  },
+  "node-security/no-weak-cipher-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 25.11,
+    "samples": []
+  },
+  "node-security/no-shell-injection": {
+    "hits": 0,
+    "avgTimeMs": 26.46,
+    "samples": []
+  },
+  "node-security/no-ssrf": {
+    "hits": 0,
+    "avgTimeMs": 27.03,
+    "samples": []
+  },
+  "node-security/require-stream-error-handler": {
+    "hits": 0,
+    "avgTimeMs": 26,
+    "samples": []
+  },
+  "node-security/no-unsafe-dynamic-require": {
+    "hits": 0,
+    "avgTimeMs": 27.25,
+    "samples": []
+  },
+  "node-security/no-ecb-mode": {
+    "hits": 0,
+    "avgTimeMs": 18.37,
+    "samples": []
+  },
+  "node-security/no-weak-dh-parameters": {
+    "hits": 0,
+    "avgTimeMs": 21.94,
+    "samples": []
+  },
+  "node-security/no-insecure-http-parser": {
+    "hits": 0,
+    "avgTimeMs": 16.75,
+    "samples": []
+  },
+  "nestjs-security/no-unsafe-multer-filename": {
+    "hits": 0,
+    "avgTimeMs": 16.32,
+    "samples": []
+  },
+  "node-security/no-env-injection": {
+    "hits": 0,
+    "avgTimeMs": 16.59,
+    "samples": []
+  },
+  "node-security/no-dynamic-algorithm-selection": {
+    "hits": 0,
+    "avgTimeMs": 12.93,
+    "samples": []
+  },
+  "nestjs-security/no-unguarded-swagger": {
+    "hits": 0,
+    "avgTimeMs": 13.85,
+    "samples": []
+  },
+  "node-security/require-aead-tag-verification": {
+    "hits": 0,
+    "avgTimeMs": 14.54,
+    "samples": []
+  },
+  "nestjs-security/no-hybrid-app-config-loss": {
+    "hits": 0,
+    "avgTimeMs": 11.78,
+    "samples": []
+  },
+  "nestjs-security/no-res-bypass-serialization": {
+    "hits": 0,
+    "avgTimeMs": 11.27,
+    "samples": []
+  },
+  "postgresql-security/no-insecure-ssl": {
+    "hits": 0,
+    "avgTimeMs": 2.48,
+    "samples": []
+  },
+  "postgresql-security/no-hardcoded-credentials": {
+    "hits": 0,
+    "avgTimeMs": 1.74,
+    "samples": []
+  },
+  "postgresql-security/no-unsafe-copy-from": {
+    "hits": 0,
+    "avgTimeMs": 1.63,
+    "samples": []
+  },
+  "postgresql-security/no-unsafe-search-path": {
+    "hits": 0,
+    "avgTimeMs": 1.72,
+    "samples": []
+  },
+  "postgresql-security/no-transaction-on-pool": {
+    "hits": 0,
+    "avgTimeMs": 1.58,
+    "samples": []
+  },
+  "postgresql-security/prevent-double-release": {
+    "hits": 0,
+    "avgTimeMs": 1.47,
+    "samples": []
+  },
+  "postgresql-security/no-floating-query": {
+    "hits": 0,
+    "avgTimeMs": 1.28,
+    "samples": []
+  },
+  "postgresql-security/no-missing-client-release": {
+    "hits": 0,
+    "avgTimeMs": 1.38,
+    "samples": []
+  },
+  "postgresql-security/check-query-params": {
+    "hits": 0,
+    "avgTimeMs": 1.43,
+    "samples": []
+  },
+  "postgresql-security/no-select-all": {
+    "hits": 0,
+    "avgTimeMs": 1.18,
+    "samples": []
+  },
+  "postgresql-security/prefer-pool-query": {
+    "hits": 0,
+    "avgTimeMs": 1.19,
+    "samples": []
+  },
+  "postgresql-security/no-batch-insert-loop": {
+    "hits": 0,
+    "avgTimeMs": 1.02,
+    "samples": []
+  }
+}

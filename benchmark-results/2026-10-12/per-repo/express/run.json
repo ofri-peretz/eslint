@@ -1,0 +1,39 @@
+{
+  "repo": "express",
+  "meta": {
+    "stars": 69000,
+    "commit": "a3714473feb3d2908add734d340e7755fd85e0a3",
+    "category": "Backend Framework",
+    "plugins": [
+      "express-security",
+      "node-security",
+      "secure-coding"
+    ],
+    "fpEdge": false,
+    "srcGlob": "{index.js,lib/**/*.js,examples/**/*.js}"
+  },
+  "fileCount": 50,
+  "loc": 4910,
+  "timing": {
+    "runsMs": [
+      1464,
+      1467,
+      1326
+    ],
+    "medianMs": 1464,
+    "meanMs": 1419,
+    "stddevMs": 66,
+    "cv": 4.6,
+    "msPerFile": 29.28
+  },
+  "peakRssMb": 326,
+  "findings": {
+    "total": 24,
+    "errors": 20,
+    "warnings": 4,
+    "filesWithFindings": 11,
+    "densityPerKloc": 4.89,
+    "externalDirectives": 0,
+    "parseErrors": 0
+  }
+}

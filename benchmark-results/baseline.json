@@ -1,203 +1,765 @@
 {
   "bench": "ILB-Wild",
   "version": "1.0",
-  "date": "2026-05-03",
+  "date": "2026-10-12",
   "fpCorpusMode": false,
-  "runs": 1,
-  "warmup": 0,
-  "corpusSize": 22,
-  "success": 22,
+  "runs": 3,
+  "warmup": 1,
+  "corpusSize": 23,
+  "success": 23,
   "failed": 0,
   "aggregate": {
-    "totalLoc": 1824028,
-    "totalFindings": 6343,
-    "avgDensityPerKloc": 3.48
+    "totalLoc": 1583495,
+    "totalFindings": 685,
+    "avgDensityPerKloc": 0.43
   },
   "pluginRollup": {
     "browser-security": {
       "reposExercising": 6,
-      "rulesEverFired": 4,
-      "totalRules": 45,
-      "corpusActivationRate": 8.9
-    },
-    "secure-coding": {
-      "reposExercising": 21,
-      "rulesEverFired": 16,
-      "totalRules": 28,
-      "corpusActivationRate": 57.1
+      "rulesEverFired": 8,
+      "totalRules": 46,
+      "corpusActivationRate": 17.4
     },
     "node-security": {
-      "reposExercising": 20,
-      "rulesEverFired": 11,
-      "totalRules": 33,
-      "corpusActivationRate": 33.3
+      "reposExercising": 21,
+      "rulesEverFired": 18,
+      "totalRules": 43,
+      "corpusActivationRate": 41.9
     },
-    "lambda-security": {
-      "reposExercising": 4,
+    "secure-coding": {
+      "reposExercising": 22,
+      "rulesEverFired": 13,
+      "totalRules": 34,
+      "corpusActivationRate": 38.2
+    },
+    "express-security": {
+      "reposExercising": 5,
       "rulesEverFired": 6,
-      "totalRules": 14,
-      "corpusActivationRate": 42.9
+      "totalRules": 28,
+      "corpusActivationRate": 21.4
     },
     "nestjs-security": {
       "reposExercising": 3,
-      "rulesEverFired": 1,
-      "totalRules": 6,
-      "corpusActivationRate": 16.7
-    },
-    "vercel-ai-security": {
-      "reposExercising": 2,
-      "rulesEverFired": 1,
-      "totalRules": 19,
-      "corpusActivationRate": 5.3
-    },
-    "pg": {
-      "reposExercising": 4,
-      "rulesEverFired": 0,
-      "totalRules": 13,
-      "corpusActivationRate": 0
-    },
-    "express-security": {
-      "reposExercising": 4,
-      "rulesEverFired": 0,
+      "rulesEverFired": 3,
       "totalRules": 10,
-      "corpusActivationRate": 0
+      "corpusActivationRate": 30
     },
     "mongodb-security": {
       "reposExercising": 1,
-      "rulesEverFired": 0,
+      "rulesEverFired": 2,
       "totalRules": 16,
+      "corpusActivationRate": 12.5
+    },
+    "postgresql-security": {
+      "reposExercising": 4,
+      "rulesEverFired": 0,
+      "totalRules": 13,
       "corpusActivationRate": 0
     },
-    "jwt": {
+    "vercel-ai-security": {
+      "reposExercising": 2,
+      "rulesEverFired": 2,
+      "totalRules": 19,
+      "corpusActivationRate": 10.5
+    },
+    "jwt-security": {
       "reposExercising": 1,
       "rulesEverFired": 0,
       "totalRules": 13,
       "corpusActivationRate": 0
     },
-    "crypto": {
-      "reposExercising": 1,
-      "rulesEverFired": 0,
-      "totalRules": 11,
-      "corpusActivationRate": 0
+    "lambda-security": {
+      "reposExercising": 4,
+      "rulesEverFired": 7,
+      "totalRules": 14,
+      "corpusActivationRate": 50
     }
   },
   "repos": [
     {
-      "repo": "three.js",
+      "repo": "next.js",
       "success": true,
-      "category": "3D Graphics Engine",
-      "commit": "r170",
-      "fpEdge": true,
-      "loc": 175430,
-      "fileCount": 727,
+      "category": "Full-Stack Framework",
+      "commit": "v15.1.0",
+      "fpEdge": false,
+      "loc": 125311,
+      "fileCount": 918,
       "findings": {
-        "total": 1932,
-        "errors": 439,
-        "warnings": 1493,
-        "filesWithFindings": 187,
-        "densityPerKloc": 11.01,
-        "externalDirectives": 1,
+        "total": 62,
+        "errors": 54,
+        "warnings": 8,
+        "filesWithFindings": 39,
+        "densityPerKloc": 0.49,
+        "externalDirectives": 81,
         "parseErrors": 0
       },
       "timing": {
         "runsMs": [
-          3389
+          8758,
+          8880,
+          8746
         ],
-        "medianMs": 3389,
-        "meanMs": 3389,
-        "stddevMs": 0,
-        "cv": 0,
-        "msPerFile": 4.66
+        "medianMs": 8758,
+        "meanMs": 8795,
+        "stddevMs": 61,
+        "cv": 0.7,
+        "msPerFile": 9.54
       },
-      "peakRssMb": 670,
+      "peakRssMb": 843,
       "pluginCoverage": {
         "browser-security": {
-          "total": 45,
-          "fired": 2,
-          "activationRate": 4.4
-        },
-        "secure-coding": {
-          "total": 28,
-          "fired": 12,
-          "activationRate": 42.9
+          "total": 46,
+          "fired": 4,
+          "activationRate": 8.7
         },
         "node-security": {
-          "total": 33,
-          "fired": 1,
-          "activationRate": 3
+          "total": 43,
+          "fired": 8,
+          "activationRate": 18.6
+        },
+        "secure-coding": {
+          "total": 34,
+          "fired": 3,
+          "activationRate": 8.8
         }
       },
       "firedRuleIds": [
-        "secure-coding/detect-object-injection",
-        "browser-security/detect-mixed-content",
+        "node-security/detect-child-process",
         "browser-security/no-http-urls",
-        "secure-coding/no-unsafe-deserialization",
-        "secure-coding/no-hardcoded-credentials",
-        "node-security/no-buffer-overread",
-        "secure-coding/no-unlimited-resource-allocation",
-        "secure-coding/no-insecure-comparison",
-        "secure-coding/no-unchecked-loop-condition",
+        "node-security/no-math-random-crypto",
+        "secure-coding/no-unsafe-regex-construction",
+        "secure-coding/no-log-injection",
+        "node-security/detect-eval-with-expression",
+        "node-security/no-unsafe-buffer-alloc",
+        "browser-security/require-postmessage-origin-check",
         "secure-coding/no-redos-vulnerable-regex",
-        "secure-coding/no-missing-authentication",
-        "secure-coding/no-xpath-injection",
-        "secure-coding/no-ldap-injection",
-        "secure-coding/no-xxe-injection",
-        "secure-coding/detect-non-literal-regexp"
+        "node-security/no-shell-injection",
+        "node-security/no-toctou-vulnerability",
+        "node-security/detect-non-literal-fs-filename",
+        "browser-security/no-innerhtml",
+        "browser-security/no-incomplete-url-sanitization",
+        "node-security/no-timing-unsafe-compare"
       ]
     },
     {
       "repo": "shadcn-ui",
       "success": true,
       "category": "UI Library",
-      "commit": "main",
+      "commit": "50239387ab580bec9cdf3afc925050e86c3488ed",
       "fpEdge": false,
-      "loc": 22551,
-      "fileCount": 117,
+      "loc": 24293,
+      "fileCount": 121,
       "findings": {
-        "total": 2,
-        "errors": 2,
+        "total": 5,
+        "errors": 5,
         "warnings": 0,
-        "filesWithFindings": 1,
-        "densityPerKloc": 0.09,
+        "filesWithFindings": 5,
+        "densityPerKloc": 0.21,
         "externalDirectives": 0,
-        "parseErrors": 98
+        "parseErrors": 0
       },
       "timing": {
         "runsMs": [
-          1359
+          4306,
+          3564,
+          4259
         ],
-        "medianMs": 1359,
-        "meanMs": 1359,
-        "stddevMs": 0,
-        "cv": 0,
-        "msPerFile": 11.62
+        "medianMs": 4259,
+        "meanMs": 4043,
+        "stddevMs": 339,
+        "cv": 8.4,
+        "msPerFile": 35.2
       },
-      "peakRssMb": 223,
+      "peakRssMb": 541,
       "pluginCoverage": {
         "browser-security": {
-          "total": 45,
+          "total": 46,
           "fired": 0,
           "activationRate": 0
         },
         "secure-coding": {
-          "total": 28,
+          "total": 34,
           "fired": 2,
-          "activationRate": 7.1
+          "activationRate": 5.9
         }
       },
       "firedRuleIds": [
-        "secure-coding/no-hardcoded-credentials",
-        "secure-coding/no-graphql-injection"
+        "secure-coding/no-redos-vulnerable-regex",
+        "secure-coding/no-hardcoded-credentials"
       ]
     },
     {
-      "repo": "sst",
+      "repo": "three.js",
       "success": true,
-      "category": "Serverless Framework",
-      "commit": "dev",
+      "category": "3D Graphics Engine",
+      "commit": "r170",
+      "fpEdge": true,
+      "loc": 107041,
+      "fileCount": 678,
+      "findings": {
+        "total": 17,
+        "errors": 16,
+        "warnings": 1,
+        "filesWithFindings": 10,
+        "densityPerKloc": 0.16,
+        "externalDirectives": 2,
+        "parseErrors": 0
+      },
+      "timing": {
+        "runsMs": [
+          4680,
+          4420,
+          4415
+        ],
+        "medianMs": 4420,
+        "meanMs": 4505,
+        "stddevMs": 124,
+        "cv": 2.7,
+        "msPerFile": 6.52
+      },
+      "peakRssMb": 623,
+      "pluginCoverage": {
+        "browser-security": {
+          "total": 46,
+          "fired": 1,
+          "activationRate": 2.2
+        },
+        "secure-coding": {
+          "total": 34,
+          "fired": 4,
+          "activationRate": 11.8
+        },
+        "node-security": {
+          "total": 43,
+          "fired": 2,
+          "activationRate": 4.7
+        }
+      },
+      "firedRuleIds": [
+        "secure-coding/no-redos-vulnerable-regex",
+        "browser-security/no-eval",
+        "node-security/detect-eval-with-expression",
+        "node-security/no-math-random-crypto",
+        "secure-coding/no-xxe-injection",
+        "secure-coding/no-unsafe-deserialization",
+        "secure-coding/no-xpath-injection"
+      ]
+    },
+    {
+      "repo": "cal.com",
+      "success": true,
+      "category": "Full-Stack SaaS",
+      "commit": "27fc24c9063bec9442552139dd37bdc2e4a82ca8",
       "fpEdge": false,
-      "loc": 66791,
-      "fileCount": 194,
+      "loc": 15960,
+      "fileCount": 328,
+      "findings": {
+        "total": 13,
+        "errors": 3,
+        "warnings": 10,
+        "filesWithFindings": 12,
+        "densityPerKloc": 0.81,
+        "externalDirectives": 7,
+        "parseErrors": 0
+      },
+      "timing": {
+        "runsMs": [
+          2265,
+          2233,
+          2390
+        ],
+        "medianMs": 2265,
+        "meanMs": 2296,
+        "stddevMs": 68,
+        "cv": 3,
+        "msPerFile": 6.91
+      },
+      "peakRssMb": 478,
+      "pluginCoverage": {
+        "browser-security": {
+          "total": 46,
+          "fired": 1,
+          "activationRate": 2.2
+        },
+        "node-security": {
+          "total": 43,
+          "fired": 2,
+          "activationRate": 4.7
+        },
+        "secure-coding": {
+          "total": 34,
+          "fired": 0,
+          "activationRate": 0
+        },
+        "express-security": {
+          "total": 28,
+          "fired": 0,
+          "activationRate": 0
+        }
+      },
+      "firedRuleIds": [
+        "node-security/no-timing-unsafe-compare",
+        "node-security/no-math-random-crypto",
+        "browser-security/no-credentials-in-query-params"
+      ]
+    },
+    {
+      "repo": "express",
+      "success": true,
+      "category": "Backend Framework",
+      "commit": "a3714473feb3d2908add734d340e7755fd85e0a3",
+      "fpEdge": false,
+      "loc": 4910,
+      "fileCount": 50,
+      "findings": {
+        "total": 24,
+        "errors": 20,
+        "warnings": 4,
+        "filesWithFindings": 11,
+        "densityPerKloc": 4.89,
+        "externalDirectives": 0,
+        "parseErrors": 0
+      },
+      "timing": {
+        "runsMs": [
+          1464,
+          1467,
+          1326
+        ],
+        "medianMs": 1464,
+        "meanMs": 1419,
+        "stddevMs": 66,
+        "cv": 4.6,
+        "msPerFile": 29.28
+      },
+      "peakRssMb": 326,
+      "pluginCoverage": {
+        "express-security": {
+          "total": 28,
+          "fired": 5,
+          "activationRate": 17.9
+        },
+        "node-security": {
+          "total": 43,
+          "fired": 0,
+          "activationRate": 0
+        },
+        "secure-coding": {
+          "total": 34,
+          "fired": 1,
+          "activationRate": 2.9
+        }
+      },
+      "firedRuleIds": [
+        "express-security/no-sensitive-data-in-query",
+        "express-security/require-route-authentication",
+        "express-security/require-helmet",
+        "secure-coding/no-improper-sanitization",
+        "express-security/require-csrf-protection",
+        "express-security/require-rate-limiting"
+      ]
+    },
+    {
+      "repo": "nestjs",
+      "success": true,
+      "category": "Backend Framework",
+      "commit": "d69b14a85e100a689499e03190459b3d59ecd87b",
+      "fpEdge": false,
+      "loc": 42158,
+      "fileCount": 596,
+      "findings": {
+        "total": 9,
+        "errors": 0,
+        "warnings": 9,
+        "filesWithFindings": 9,
+        "densityPerKloc": 0.21,
+        "externalDirectives": 14,
+        "parseErrors": 0
+      },
+      "timing": {
+        "runsMs": [
+          2472,
+          2436,
+          2539
+        ],
+        "medianMs": 2472,
+        "meanMs": 2482,
+        "stddevMs": 43,
+        "cv": 1.7,
+        "msPerFile": 4.15
+      },
+      "peakRssMb": 650,
+      "pluginCoverage": {
+        "nestjs-security": {
+          "total": 10,
+          "fired": 0,
+          "activationRate": 0
+        },
+        "node-security": {
+          "total": 43,
+          "fired": 0,
+          "activationRate": 0
+        },
+        "secure-coding": {
+          "total": 34,
+          "fired": 2,
+          "activationRate": 5.9
+        }
+      },
+      "firedRuleIds": [
+        "secure-coding/no-unsafe-deserialization",
+        "secure-coding/no-sensitive-data-exposure"
+      ]
+    },
+    {
+      "repo": "payload",
+      "success": true,
+      "category": "Headless CMS",
+      "commit": "744a8a88d5eefe246fe3c63dc35922539b1eb709",
+      "fpEdge": false,
+      "loc": 67381,
+      "fileCount": 635,
+      "findings": {
+        "total": 16,
+        "errors": 5,
+        "warnings": 11,
+        "filesWithFindings": 8,
+        "densityPerKloc": 0.24,
+        "externalDirectives": 38,
+        "parseErrors": 0
+      },
+      "timing": {
+        "runsMs": [
+          3614,
+          3448,
+          3419
+        ],
+        "medianMs": 3448,
+        "meanMs": 3494,
+        "stddevMs": 86,
+        "cv": 2.5,
+        "msPerFile": 5.43
+      },
+      "peakRssMb": 734,
+      "pluginCoverage": {
+        "node-security": {
+          "total": 43,
+          "fired": 2,
+          "activationRate": 4.7
+        },
+        "secure-coding": {
+          "total": 34,
+          "fired": 4,
+          "activationRate": 11.8
+        },
+        "express-security": {
+          "total": 28,
+          "fired": 0,
+          "activationRate": 0
+        },
+        "mongodb-security": {
+          "total": 16,
+          "fired": 2,
+          "activationRate": 12.5
+        }
+      },
+      "firedRuleIds": [
+        "mongodb-security/no-unbounded-find",
+        "mongodb-security/no-bypass-middleware",
+        "secure-coding/no-improper-sanitization",
+        "node-security/detect-eval-with-expression",
+        "secure-coding/no-redos-vulnerable-regex",
+        "node-security/no-toctou-vulnerability",
+        "secure-coding/no-fail-open-auth",
+        "secure-coding/no-weak-password-recovery"
+      ]
+    },
+    {
+      "repo": "medusa",
+      "success": true,
+      "category": "E-commerce Backend",
+      "commit": "de51a3b99e5b66d6e085e77d91886e5676a9bf3d",
+      "fpEdge": false,
+      "loc": 40755,
+      "fileCount": 710,
+      "findings": {
+        "total": 5,
+        "errors": 2,
+        "warnings": 3,
+        "filesWithFindings": 5,
+        "densityPerKloc": 0.12,
+        "externalDirectives": 1,
+        "parseErrors": 0
+      },
+      "timing": {
+        "runsMs": [
+          3759,
+          3854,
+          3792
+        ],
+        "medianMs": 3792,
+        "meanMs": 3802,
+        "stddevMs": 39,
+        "cv": 1,
+        "msPerFile": 5.34
+      },
+      "peakRssMb": 679,
+      "pluginCoverage": {
+        "node-security": {
+          "total": 43,
+          "fired": 1,
+          "activationRate": 2.3
+        },
+        "secure-coding": {
+          "total": 34,
+          "fired": 2,
+          "activationRate": 5.9
+        },
+        "express-security": {
+          "total": 28,
+          "fired": 1,
+          "activationRate": 3.6
+        },
+        "postgresql-security": {
+          "total": 13,
+          "fired": 0,
+          "activationRate": 0
+        }
+      },
+      "firedRuleIds": [
+        "secure-coding/no-sensitive-data-exposure",
+        "express-security/no-exposed-debug-endpoints",
+        "node-security/no-shell-injection",
+        "secure-coding/no-unlimited-resource-allocation"
+      ]
+    },
+    {
+      "repo": "strapi",
+      "success": true,
+      "category": "Headless CMS",
+      "commit": "c5bc749feeb5b7b4f3d845b52da41277100465a8",
+      "fpEdge": false,
+      "loc": 7342,
+      "fileCount": 77,
+      "findings": {
+        "total": 1,
+        "errors": 0,
+        "warnings": 1,
+        "filesWithFindings": 1,
+        "densityPerKloc": 0.14,
+        "externalDirectives": 3,
+        "parseErrors": 0
+      },
+      "timing": {
+        "runsMs": [
+          1828,
+          1771,
+          1574
+        ],
+        "medianMs": 1771,
+        "meanMs": 1724,
+        "stddevMs": 109,
+        "cv": 6.3,
+        "msPerFile": 23
+      },
+      "peakRssMb": 375,
+      "pluginCoverage": {
+        "node-security": {
+          "total": 43,
+          "fired": 0,
+          "activationRate": 0
+        },
+        "secure-coding": {
+          "total": 34,
+          "fired": 1,
+          "activationRate": 2.9
+        },
+        "express-security": {
+          "total": 28,
+          "fired": 0,
+          "activationRate": 0
+        }
+      },
+      "firedRuleIds": [
+        "secure-coding/no-weak-password-recovery"
+      ]
+    },
+    {
+      "repo": "vercel-ai",
+      "success": true,
+      "category": "AI SDK",
+      "commit": "d57cf11d0e8d06bb3c2e1bcda89ad6a6a5530793",
+      "fpEdge": false,
+      "loc": 159997,
+      "fileCount": 1458,
+      "findings": {
+        "total": 102,
+        "errors": 4,
+        "warnings": 98,
+        "filesWithFindings": 9,
+        "densityPerKloc": 0.64,
+        "externalDirectives": 1,
+        "parseErrors": 0
+      },
+      "timing": {
+        "runsMs": [
+          7246,
+          8240,
+          5788
+        ],
+        "medianMs": 7246,
+        "meanMs": 7091,
+        "stddevMs": 1007,
+        "cv": 14.2,
+        "msPerFile": 4.97
+      },
+      "peakRssMb": 818,
+      "pluginCoverage": {
+        "vercel-ai-security": {
+          "total": 19,
+          "fired": 2,
+          "activationRate": 10.5
+        },
+        "node-security": {
+          "total": 43,
+          "fired": 1,
+          "activationRate": 2.3
+        },
+        "secure-coding": {
+          "total": 34,
+          "fired": 2,
+          "activationRate": 5.9
+        }
+      },
+      "firedRuleIds": [
+        "secure-coding/no-redos-vulnerable-regex",
+        "vercel-ai-security/no-system-prompt-leak",
+        "secure-coding/no-hardcoded-credentials",
+        "node-security/no-unsafe-buffer-alloc",
+        "vercel-ai-security/require-max-tokens"
+      ]
+    },
+    {
+      "repo": "langchain-js",
+      "success": true,
+      "category": "AI Framework",
+      "commit": "38f82942e77bf87c138ded6f08cb875bb6fb9ba7",
+      "fpEdge": false,
+      "loc": 48076,
+      "fileCount": 243,
+      "findings": {
+        "total": 5,
+        "errors": 3,
+        "warnings": 2,
+        "filesWithFindings": 4,
+        "densityPerKloc": 0.1,
+        "externalDirectives": 1,
+        "parseErrors": 0
+      },
+      "timing": {
+        "runsMs": [
+          2635,
+          2563,
+          2493
+        ],
+        "medianMs": 2563,
+        "meanMs": 2564,
+        "stddevMs": 58,
+        "cv": 2.3,
+        "msPerFile": 10.55
+      },
+      "peakRssMb": 642,
+      "pluginCoverage": {
+        "vercel-ai-security": {
+          "total": 19,
+          "fired": 0,
+          "activationRate": 0
+        },
+        "node-security": {
+          "total": 43,
+          "fired": 1,
+          "activationRate": 2.3
+        },
+        "secure-coding": {
+          "total": 34,
+          "fired": 2,
+          "activationRate": 5.9
+        }
+      },
+      "firedRuleIds": [
+        "node-security/no-unsafe-buffer-alloc",
+        "secure-coding/no-redos-vulnerable-regex",
+        "secure-coding/no-sensitive-data-exposure"
+      ]
+    },
+    {
+      "repo": "supabase",
+      "success": true,
+      "category": "Database Platform",
+      "commit": "f0f3784633342072111117cfa4c7d3a32357bcbf",
+      "fpEdge": false,
+      "loc": 90708,
+      "fileCount": 763,
+      "findings": {
+        "total": 5,
+        "errors": 4,
+        "warnings": 1,
+        "filesWithFindings": 5,
+        "densityPerKloc": 0.06,
+        "externalDirectives": 33,
+        "parseErrors": 0
+      },
+      "timing": {
+        "runsMs": [
+          6763,
+          6740,
+          6936
+        ],
+        "medianMs": 6763,
+        "meanMs": 6813,
+        "stddevMs": 87,
+        "cv": 1.3,
+        "msPerFile": 8.86
+      },
+      "peakRssMb": 1031,
+      "pluginCoverage": {
+        "browser-security": {
+          "total": 46,
+          "fired": 5,
+          "activationRate": 10.9
+        },
+        "postgresql-security": {
+          "total": 13,
+          "fired": 0,
+          "activationRate": 0
+        },
+        "jwt-security": {
+          "total": 13,
+          "fired": 0,
+          "activationRate": 0
+        },
+        "node-security": {
+          "total": 43,
+          "fired": 0,
+          "activationRate": 0
+        }
+      },
+      "firedRuleIds": [
+        "browser-security/no-innerhtml",
+        "browser-security/require-blob-url-revocation",
+        "browser-security/require-https-only",
+        "browser-security/no-credentials-in-query-params",
+        "browser-security/no-http-urls"
+      ]
+    },
+    {
+      "repo": "appwrite",
+      "success": true,
+      "category": "BaaS Platform",
+      "commit": "a5fa09b4ceb5945d98244612a3d8d1a780533e93",
+      "fpEdge": false,
+      "loc": 4080,
+      "fileCount": 15,
       "findings": {
         "total": 0,
         "errors": 0,
@@ -205,19 +767,65 @@
         "filesWithFindings": 0,
         "densityPerKloc": 0,
         "externalDirectives": 0,
-        "parseErrors": 187
+        "parseErrors": 0
       },
       "timing": {
         "runsMs": [
-          1395
+          1383,
+          1390,
+          1343
         ],
-        "medianMs": 1395,
-        "meanMs": 1395,
-        "stddevMs": 0,
-        "cv": 0,
-        "msPerFile": 7.19
+        "medianMs": 1383,
+        "meanMs": 1372,
+        "stddevMs": 21,
+        "cv": 1.5,
+        "msPerFile": 92.2
       },
-      "peakRssMb": 221,
+      "peakRssMb": 297,
+      "pluginCoverage": {
+        "node-security": {
+          "total": 43,
+          "fired": 0,
+          "activationRate": 0
+        },
+        "secure-coding": {
+          "total": 34,
+          "fired": 0,
+          "activationRate": 0
+        }
+      },
+      "firedRuleIds": []
+    },
+    {
+      "repo": "sst",
+      "success": true,
+      "category": "Serverless Framework",
+      "commit": "ec2847b92af0763abb7bb8177b8265f046b7443c",
+      "fpEdge": false,
+      "loc": 66817,
+      "fileCount": 194,
+      "findings": {
+        "total": 5,
+        "errors": 5,
+        "warnings": 0,
+        "filesWithFindings": 3,
+        "densityPerKloc": 0.07,
+        "externalDirectives": 0,
+        "parseErrors": 0
+      },
+      "timing": {
+        "runsMs": [
+          2365,
+          2366,
+          2562
+        ],
+        "medianMs": 2366,
+        "meanMs": 2431,
+        "stddevMs": 93,
+        "cv": 3.8,
+        "msPerFile": 12.2
+      },
+      "peakRssMb": 591,
       "pluginCoverage": {
         "lambda-security": {
           "total": 14,
@@ -225,338 +833,52 @@
           "activationRate": 0
         },
         "node-security": {
-          "total": 33,
-          "fired": 0,
-          "activationRate": 0
+          "total": 43,
+          "fired": 3,
+          "activationRate": 7
         },
         "secure-coding": {
-          "total": 28,
+          "total": 34,
           "fired": 0,
           "activationRate": 0
-        }
-      },
-      "firedRuleIds": []
-    },
-    {
-      "repo": "nestjs",
-      "success": true,
-      "category": "Backend Framework",
-      "commit": "master",
-      "fpEdge": false,
-      "loc": 42142,
-      "fileCount": 596,
-      "findings": {
-        "total": 0,
-        "errors": 0,
-        "warnings": 0,
-        "filesWithFindings": 0,
-        "densityPerKloc": 0,
-        "externalDirectives": 0,
-        "parseErrors": 481
-      },
-      "timing": {
-        "runsMs": [
-          1383
-        ],
-        "medianMs": 1383,
-        "meanMs": 1383,
-        "stddevMs": 0,
-        "cv": 0,
-        "msPerFile": 2.32
-      },
-      "peakRssMb": 250,
-      "pluginCoverage": {
-        "nestjs-security": {
-          "total": 6,
-          "fired": 0,
-          "activationRate": 0
-        },
-        "node-security": {
-          "total": 33,
-          "fired": 0,
-          "activationRate": 0
-        },
-        "secure-coding": {
-          "total": 28,
-          "fired": 0,
-          "activationRate": 0
-        }
-      },
-      "firedRuleIds": []
-    },
-    {
-      "repo": "vercel-ai",
-      "success": true,
-      "category": "AI SDK",
-      "commit": "main",
-      "fpEdge": false,
-      "loc": 152090,
-      "fileCount": 1431,
-      "findings": {
-        "total": 5,
-        "errors": 3,
-        "warnings": 2,
-        "filesWithFindings": 2,
-        "densityPerKloc": 0.03,
-        "externalDirectives": 0,
-        "parseErrors": 1327
-      },
-      "timing": {
-        "runsMs": [
-          1673
-        ],
-        "medianMs": 1673,
-        "meanMs": 1673,
-        "stddevMs": 0,
-        "cv": 0,
-        "msPerFile": 1.17
-      },
-      "peakRssMb": 305,
-      "pluginCoverage": {
-        "vercel-ai-security": {
-          "total": 19,
-          "fired": 1,
-          "activationRate": 5.3
-        },
-        "node-security": {
-          "total": 33,
-          "fired": 0,
-          "activationRate": 0
-        },
-        "secure-coding": {
-          "total": 28,
-          "fired": 1,
-          "activationRate": 3.6
-        }
-      },
-      "firedRuleIds": [
-        "vercel-ai-security/require-request-timeout",
-        "secure-coding/no-hardcoded-credentials"
-      ]
-    },
-    {
-      "repo": "react",
-      "success": true,
-      "category": "UI Library (FP corpus)",
-      "commit": "main",
-      "fpEdge": true,
-      "loc": 4539,
-      "fileCount": 37,
-      "findings": {
-        "total": 0,
-        "errors": 0,
-        "warnings": 0,
-        "filesWithFindings": 0,
-        "densityPerKloc": 0,
-        "externalDirectives": 0,
-        "parseErrors": 23
-      },
-      "timing": {
-        "runsMs": [
-          1439
-        ],
-        "medianMs": 1439,
-        "meanMs": 1439,
-        "stddevMs": 0,
-        "cv": 0,
-        "msPerFile": 38.89
-      },
-      "peakRssMb": 207,
-      "pluginCoverage": {
-        "browser-security": {
-          "total": 45,
-          "fired": 0,
-          "activationRate": 0
-        },
-        "secure-coding": {
-          "total": 28,
-          "fired": 0,
-          "activationRate": 0
-        }
-      },
-      "firedRuleIds": []
-    },
-    {
-      "repo": "webpack",
-      "success": true,
-      "category": "Build Tool (FP corpus)",
-      "commit": "main",
-      "fpEdge": true,
-      "loc": 156040,
-      "fileCount": 581,
-      "findings": {
-        "total": 1847,
-        "errors": 857,
-        "warnings": 990,
-        "filesWithFindings": 298,
-        "densityPerKloc": 11.84,
-        "externalDirectives": 25,
-        "parseErrors": 0
-      },
-      "timing": {
-        "runsMs": [
-          3072
-        ],
-        "medianMs": 3072,
-        "meanMs": 3072,
-        "stddevMs": 0,
-        "cv": 0,
-        "msPerFile": 5.29
-      },
-      "peakRssMb": 669,
-      "pluginCoverage": {
-        "node-security": {
-          "total": 33,
-          "fired": 8,
-          "activationRate": 24.2
-        },
-        "secure-coding": {
-          "total": 28,
-          "fired": 15,
-          "activationRate": 53.6
         }
       },
       "firedRuleIds": [
-        "secure-coding/no-hardcoded-credentials",
-        "secure-coding/no-insecure-comparison",
-        "secure-coding/detect-object-injection",
-        "secure-coding/no-graphql-injection",
-        "secure-coding/no-unchecked-loop-condition",
-        "secure-coding/no-unlimited-resource-allocation",
-        "secure-coding/no-redos-vulnerable-regex",
-        "secure-coding/detect-non-literal-regexp",
-        "secure-coding/no-unsafe-regex-construction",
-        "node-security/no-buffer-overread",
-        "secure-coding/no-missing-authentication",
-        "secure-coding/no-unsafe-deserialization",
-        "node-security/no-unsafe-dynamic-require",
-        "secure-coding/no-xxe-injection",
-        "node-security/detect-non-literal-fs-filename",
-        "node-security/no-arbitrary-file-access",
-        "secure-coding/no-xpath-injection",
+        "node-security/no-toctou-vulnerability",
         "node-security/no-zip-slip",
-        "secure-coding/no-ldap-injection",
-        "node-security/no-weak-hash-algorithm",
-        "node-security/detect-eval-with-expression",
-        "node-security/no-ssrf",
-        "secure-coding/no-improper-sanitization"
+        "node-security/require-stream-error-handler"
       ]
-    },
-    {
-      "repo": "lodash",
-      "success": true,
-      "category": "Utility Library (FP corpus)",
-      "commit": "main",
-      "fpEdge": true,
-      "loc": 951,
-      "fileCount": 4,
-      "findings": {
-        "total": 58,
-        "errors": 0,
-        "warnings": 58,
-        "filesWithFindings": 3,
-        "densityPerKloc": 60.99,
-        "externalDirectives": 0,
-        "parseErrors": 0
-      },
-      "timing": {
-        "runsMs": [
-          1269
-        ],
-        "medianMs": 1269,
-        "meanMs": 1269,
-        "stddevMs": 0,
-        "cv": 0,
-        "msPerFile": 317.25
-      },
-      "peakRssMb": 221,
-      "pluginCoverage": {
-        "secure-coding": {
-          "total": 28,
-          "fired": 2,
-          "activationRate": 7.1
-        },
-        "node-security": {
-          "total": 33,
-          "fired": 0,
-          "activationRate": 0
-        }
-      },
-      "firedRuleIds": [
-        "secure-coding/detect-object-injection",
-        "secure-coding/no-insecure-comparison"
-      ]
-    },
-    {
-      "repo": "babel",
-      "success": true,
-      "category": "Compiler (FP corpus)",
-      "commit": "main",
-      "fpEdge": true,
-      "loc": 24416,
-      "fileCount": 41,
-      "findings": {
-        "total": 0,
-        "errors": 0,
-        "warnings": 0,
-        "filesWithFindings": 0,
-        "densityPerKloc": 0,
-        "externalDirectives": 0,
-        "parseErrors": 41
-      },
-      "timing": {
-        "runsMs": [
-          1482
-        ],
-        "medianMs": 1482,
-        "meanMs": 1482,
-        "stddevMs": 0,
-        "cv": 0,
-        "msPerFile": 36.15
-      },
-      "peakRssMb": 212,
-      "pluginCoverage": {
-        "secure-coding": {
-          "total": 28,
-          "fired": 0,
-          "activationRate": 0
-        },
-        "node-security": {
-          "total": 33,
-          "fired": 0,
-          "activationRate": 0
-        }
-      },
-      "firedRuleIds": []
     },
     {
       "repo": "serverless",
       "success": true,
       "category": "Serverless Framework",
-      "commit": "main",
+      "commit": "e0d19d20755233c7297b1c955cc781268fdb0e56",
       "fpEdge": false,
-      "loc": 128881,
+      "loc": 128897,
       "fileCount": 609,
       "findings": {
-        "total": 2399,
-        "errors": 722,
-        "warnings": 1677,
-        "filesWithFindings": 376,
-        "densityPerKloc": 18.61,
+        "total": 106,
+        "errors": 28,
+        "warnings": 78,
+        "filesWithFindings": 51,
+        "densityPerKloc": 0.82,
         "externalDirectives": 0,
         "parseErrors": 0
       },
       "timing": {
         "runsMs": [
-          2930
+          4830,
+          4535,
+          4567
         ],
-        "medianMs": 2930,
-        "meanMs": 2930,
-        "stddevMs": 0,
-        "cv": 0,
-        "msPerFile": 4.81
+        "medianMs": 4567,
+        "meanMs": 4644,
+        "stddevMs": 132,
+        "cv": 2.8,
+        "msPerFile": 7.5
       },
-      "peakRssMb": 565,
+      "peakRssMb": 713,
       "pluginCoverage": {
         "lambda-security": {
           "total": 14,
@@ -564,105 +886,94 @@
           "activationRate": 42.9
         },
         "node-security": {
-          "total": 33,
-          "fired": 10,
-          "activationRate": 30.3
+          "total": 43,
+          "fired": 4,
+          "activationRate": 9.3
         },
         "secure-coding": {
-          "total": 28,
-          "fired": 16,
-          "activationRate": 57.1
+          "total": 34,
+          "fired": 6,
+          "activationRate": 17.6
         }
       },
       "firedRuleIds": [
-        "secure-coding/no-insecure-comparison",
-        "secure-coding/detect-object-injection",
-        "node-security/detect-non-literal-fs-filename",
-        "node-security/no-arbitrary-file-access",
-        "secure-coding/no-hardcoded-credentials",
-        "node-security/detect-child-process",
-        "secure-coding/no-xxe-injection",
-        "node-security/no-buffer-overread",
-        "secure-coding/detect-non-literal-regexp",
-        "secure-coding/no-unsafe-regex-construction",
+        "secure-coding/no-redos-vulnerable-regex",
         "secure-coding/no-unsafe-deserialization",
         "node-security/no-zip-slip",
-        "node-security/no-weak-hash-algorithm",
-        "secure-coding/no-unlimited-resource-allocation",
-        "secure-coding/no-unchecked-loop-condition",
-        "secure-coding/no-improper-sanitization",
-        "node-security/no-ssrf",
-        "secure-coding/no-ldap-injection",
+        "secure-coding/no-fail-open-auth",
+        "lambda-security/no-error-swallowing",
         "secure-coding/no-sensitive-data-exposure",
-        "secure-coding/no-xpath-injection",
+        "node-security/require-stream-error-handler",
         "node-security/no-toctou-vulnerability",
-        "secure-coding/no-redos-vulnerable-regex",
-        "lambda-security/no-overly-permissive-iam-policy",
-        "secure-coding/no-graphql-injection",
-        "lambda-security/no-missing-authorization-check",
-        "node-security/lock-file",
+        "node-security/no-buffer-overread",
         "lambda-security/no-unbounded-batch-processing",
         "lambda-security/require-timeout-handling",
-        "secure-coding/no-missing-authentication",
+        "lambda-security/no-missing-authorization-check",
         "lambda-security/no-exposed-error-details",
-        "node-security/no-unsafe-dynamic-require",
-        "lambda-security/no-exposed-debug-endpoints"
+        "secure-coding/no-unsafe-regex-construction",
+        "secure-coding/no-hardcoded-credentials",
+        "lambda-security/no-overly-permissive-iam-policy"
       ]
     },
     {
       "repo": "aws-lambda-powertools",
       "success": true,
       "category": "Lambda Tooling",
-      "commit": "main",
+      "commit": "d47e092dc571154a221e7886539f8ff40443ca91",
       "fpEdge": false,
-      "loc": 40704,
+      "loc": 40714,
       "fileCount": 260,
       "findings": {
-        "total": 5,
-        "errors": 5,
-        "warnings": 0,
-        "filesWithFindings": 1,
-        "densityPerKloc": 0.12,
+        "total": 38,
+        "errors": 3,
+        "warnings": 35,
+        "filesWithFindings": 12,
+        "densityPerKloc": 0.93,
         "externalDirectives": 0,
-        "parseErrors": 231
+        "parseErrors": 0
       },
       "timing": {
         "runsMs": [
-          1297
+          2428,
+          2142,
+          2095
         ],
-        "medianMs": 1297,
-        "meanMs": 1297,
-        "stddevMs": 0,
-        "cv": 0,
-        "msPerFile": 4.99
+        "medianMs": 2142,
+        "meanMs": 2222,
+        "stddevMs": 147,
+        "cv": 6.6,
+        "msPerFile": 8.24
       },
-      "peakRssMb": 224,
+      "peakRssMb": 509,
       "pluginCoverage": {
         "lambda-security": {
           "total": 14,
-          "fired": 0,
-          "activationRate": 0
+          "fired": 3,
+          "activationRate": 21.4
         },
         "node-security": {
-          "total": 33,
-          "fired": 0,
-          "activationRate": 0
+          "total": 43,
+          "fired": 1,
+          "activationRate": 2.3
         },
         "secure-coding": {
-          "total": 28,
-          "fired": 1,
-          "activationRate": 3.6
+          "total": 34,
+          "fired": 0,
+          "activationRate": 0
         }
       },
       "firedRuleIds": [
-        "secure-coding/no-hardcoded-credentials"
+        "lambda-security/no-error-swallowing",
+        "node-security/no-unbounded-decompression",
+        "lambda-security/no-unbounded-batch-processing",
+        "lambda-security/no-unvalidated-event-body"
       ]
     },
     {
       "repo": "nestjs-typeorm",
       "success": true,
       "category": "NestJS Module",
-      "commit": "master",
+      "commit": "c71e849084b892dfde62bd70318d2983459f69f5",
       "fpEdge": false,
       "loc": 803,
       "fileCount": 16,
@@ -672,37 +983,39 @@
         "warnings": 0,
         "filesWithFindings": 0,
         "densityPerKloc": 0,
-        "externalDirectives": 0,
-        "parseErrors": 12
+        "externalDirectives": 1,
+        "parseErrors": 0
       },
       "timing": {
         "runsMs": [
-          1363
+          1543,
+          1566,
+          1564
         ],
-        "medianMs": 1363,
-        "meanMs": 1363,
-        "stddevMs": 0,
-        "cv": 0,
-        "msPerFile": 85.19
+        "medianMs": 1564,
+        "meanMs": 1558,
+        "stddevMs": 10,
+        "cv": 0.7,
+        "msPerFile": 97.75
       },
-      "peakRssMb": 206,
+      "peakRssMb": 285,
       "pluginCoverage": {
         "nestjs-security": {
-          "total": 6,
+          "total": 10,
           "fired": 0,
           "activationRate": 0
         },
         "node-security": {
-          "total": 33,
+          "total": 43,
           "fired": 0,
           "activationRate": 0
         },
         "secure-coding": {
-          "total": 28,
+          "total": 34,
           "fired": 0,
           "activationRate": 0
         },
-        "pg": {
+        "postgresql-security": {
           "total": 13,
           "fired": 0,
           "activationRate": 0
@@ -714,450 +1027,102 @@
       "repo": "twentyhq",
       "success": true,
       "category": "CRM (NestJS)",
-      "commit": "main",
+      "commit": "2e5ccd9b860bdf046d7b52b4fccdb46404954044",
       "fpEdge": false,
-      "loc": 411003,
-      "fileCount": 4978,
+      "loc": 418887,
+      "fileCount": 5094,
       "findings": {
-        "total": 29,
-        "errors": 25,
-        "warnings": 4,
-        "filesWithFindings": 11,
-        "densityPerKloc": 0.07,
+        "total": 239,
+        "errors": 204,
+        "warnings": 35,
+        "filesWithFindings": 212,
+        "densityPerKloc": 0.57,
         "externalDirectives": 0,
-        "parseErrors": 4787
+        "parseErrors": 0
       },
       "timing": {
         "runsMs": [
-          1825
+          15342,
+          15702,
+          19158
         ],
-        "medianMs": 1825,
-        "meanMs": 1825,
-        "stddevMs": 0,
-        "cv": 0,
-        "msPerFile": 0.37
+        "medianMs": 15702,
+        "meanMs": 16734,
+        "stddevMs": 1720,
+        "cv": 10.3,
+        "msPerFile": 3.08
       },
-      "peakRssMb": 368,
+      "peakRssMb": 1141,
       "pluginCoverage": {
         "nestjs-security": {
-          "total": 6,
-          "fired": 1,
-          "activationRate": 16.7
+          "total": 10,
+          "fired": 3,
+          "activationRate": 30
         },
         "node-security": {
-          "total": 33,
-          "fired": 0,
-          "activationRate": 0
+          "total": 43,
+          "fired": 6,
+          "activationRate": 14
         },
         "secure-coding": {
-          "total": 28,
-          "fired": 4,
-          "activationRate": 14.3
+          "total": 34,
+          "fired": 6,
+          "activationRate": 17.6
         },
-        "pg": {
+        "postgresql-security": {
           "total": 13,
           "fired": 0,
           "activationRate": 0
         }
       },
       "firedRuleIds": [
-        "secure-coding/no-hardcoded-credentials",
-        "nestjs-security/no-exposed-debug-endpoints",
-        "secure-coding/detect-non-literal-regexp",
+        "node-security/no-self-signed-certs",
+        "node-security/detect-suspicious-dependencies",
+        "node-security/require-dependency-integrity",
+        "nestjs-security/no-exposed-private-fields",
+        "nestjs-security/no-missing-validation-pipe",
         "secure-coding/no-redos-vulnerable-regex",
-        "secure-coding/detect-object-injection"
-      ]
-    },
-    {
-      "repo": "langchain-js",
-      "success": true,
-      "category": "AI Framework",
-      "commit": "main",
-      "fpEdge": false,
-      "loc": 47922,
-      "fileCount": 243,
-      "findings": {
-        "total": 2,
-        "errors": 2,
-        "warnings": 0,
-        "filesWithFindings": 2,
-        "densityPerKloc": 0.04,
-        "externalDirectives": 0,
-        "parseErrors": 223
-      },
-      "timing": {
-        "runsMs": [
-          1341
-        ],
-        "medianMs": 1341,
-        "meanMs": 1341,
-        "stddevMs": 0,
-        "cv": 0,
-        "msPerFile": 5.52
-      },
-      "peakRssMb": 224,
-      "pluginCoverage": {
-        "vercel-ai-security": {
-          "total": 19,
-          "fired": 0,
-          "activationRate": 0
-        },
-        "node-security": {
-          "total": 33,
-          "fired": 0,
-          "activationRate": 0
-        },
-        "secure-coding": {
-          "total": 28,
-          "fired": 1,
-          "activationRate": 3.6
-        }
-      },
-      "firedRuleIds": [
-        "secure-coding/no-hardcoded-credentials"
-      ]
-    },
-    {
-      "repo": "payload",
-      "success": true,
-      "category": "Headless CMS",
-      "commit": "main",
-      "fpEdge": false,
-      "loc": 65381,
-      "fileCount": 626,
-      "findings": {
-        "total": 0,
-        "errors": 0,
-        "warnings": 0,
-        "filesWithFindings": 0,
-        "densityPerKloc": 0,
-        "externalDirectives": 0,
-        "parseErrors": 571
-      },
-      "timing": {
-        "runsMs": [
-          1430
-        ],
-        "medianMs": 1430,
-        "meanMs": 1430,
-        "stddevMs": 0,
-        "cv": 0,
-        "msPerFile": 2.28
-      },
-      "peakRssMb": 247,
-      "pluginCoverage": {
-        "node-security": {
-          "total": 33,
-          "fired": 0,
-          "activationRate": 0
-        },
-        "secure-coding": {
-          "total": 28,
-          "fired": 0,
-          "activationRate": 0
-        },
-        "express-security": {
-          "total": 10,
-          "fired": 0,
-          "activationRate": 0
-        },
-        "mongodb-security": {
-          "total": 16,
-          "fired": 0,
-          "activationRate": 0
-        }
-      },
-      "firedRuleIds": []
-    },
-    {
-      "repo": "supabase",
-      "success": true,
-      "category": "Database Platform",
-      "commit": "master",
-      "fpEdge": false,
-      "loc": 295982,
-      "fileCount": 2042,
-      "findings": {
-        "total": 12,
-        "errors": 12,
-        "warnings": 0,
-        "filesWithFindings": 4,
-        "densityPerKloc": 0.04,
-        "externalDirectives": 0,
-        "parseErrors": 1819
-      },
-      "timing": {
-        "runsMs": [
-          1749
-        ],
-        "medianMs": 1749,
-        "meanMs": 1749,
-        "stddevMs": 0,
-        "cv": 0,
-        "msPerFile": 0.86
-      },
-      "peakRssMb": 387,
-      "pluginCoverage": {
-        "browser-security": {
-          "total": 45,
-          "fired": 4,
-          "activationRate": 8.9
-        },
-        "pg": {
-          "total": 13,
-          "fired": 0,
-          "activationRate": 0
-        },
-        "jwt": {
-          "total": 13,
-          "fired": 0,
-          "activationRate": 0
-        },
-        "node-security": {
-          "total": 33,
-          "fired": 0,
-          "activationRate": 0
-        }
-      },
-      "firedRuleIds": [
-        "browser-security/no-clickjacking",
-        "browser-security/no-credentials-in-query-params",
-        "browser-security/detect-mixed-content",
-        "browser-security/no-http-urls"
-      ]
-    },
-    {
-      "repo": "appwrite",
-      "success": true,
-      "category": "BaaS Platform",
-      "commit": "main",
-      "fpEdge": false,
-      "loc": 4080,
-      "fileCount": 15,
-      "findings": {
-        "total": 0,
-        "errors": 0,
-        "warnings": 0,
-        "filesWithFindings": 0,
-        "densityPerKloc": 0,
-        "externalDirectives": 0,
-        "parseErrors": 15
-      },
-      "timing": {
-        "runsMs": [
-          1226
-        ],
-        "medianMs": 1226,
-        "meanMs": 1226,
-        "stddevMs": 0,
-        "cv": 0,
-        "msPerFile": 81.73
-      },
-      "peakRssMb": 209,
-      "pluginCoverage": {
-        "node-security": {
-          "total": 33,
-          "fired": 0,
-          "activationRate": 0
-        },
-        "secure-coding": {
-          "total": 28,
-          "fired": 0,
-          "activationRate": 0
-        },
-        "crypto": {
-          "total": 11,
-          "fired": 0,
-          "activationRate": 0
-        }
-      },
-      "firedRuleIds": []
-    },
-    {
-      "repo": "strapi",
-      "success": true,
-      "category": "Headless CMS",
-      "commit": "main",
-      "fpEdge": false,
-      "loc": 7342,
-      "fileCount": 77,
-      "findings": {
-        "total": 0,
-        "errors": 0,
-        "warnings": 0,
-        "filesWithFindings": 0,
-        "densityPerKloc": 0,
-        "externalDirectives": 0,
-        "parseErrors": 72
-      },
-      "timing": {
-        "runsMs": [
-          1350
-        ],
-        "medianMs": 1350,
-        "meanMs": 1350,
-        "stddevMs": 0,
-        "cv": 0,
-        "msPerFile": 17.53
-      },
-      "peakRssMb": 212,
-      "pluginCoverage": {
-        "node-security": {
-          "total": 33,
-          "fired": 0,
-          "activationRate": 0
-        },
-        "secure-coding": {
-          "total": 28,
-          "fired": 0,
-          "activationRate": 0
-        },
-        "express-security": {
-          "total": 10,
-          "fired": 0,
-          "activationRate": 0
-        }
-      },
-      "firedRuleIds": []
-    },
-    {
-      "repo": "cal.com",
-      "success": true,
-      "category": "Full-Stack SaaS",
-      "commit": "main",
-      "fpEdge": false,
-      "loc": 10235,
-      "fileCount": 196,
-      "findings": {
-        "total": 15,
-        "errors": 13,
-        "warnings": 2,
-        "filesWithFindings": 13,
-        "densityPerKloc": 1.47,
-        "externalDirectives": 0,
-        "parseErrors": 124
-      },
-      "timing": {
-        "runsMs": [
-          1454
-        ],
-        "medianMs": 1454,
-        "meanMs": 1454,
-        "stddevMs": 0,
-        "cv": 0,
-        "msPerFile": 7.42
-      },
-      "peakRssMb": 263,
-      "pluginCoverage": {
-        "browser-security": {
-          "total": 45,
-          "fired": 0,
-          "activationRate": 0
-        },
-        "node-security": {
-          "total": 33,
-          "fired": 1,
-          "activationRate": 3
-        },
-        "secure-coding": {
-          "total": 28,
-          "fired": 2,
-          "activationRate": 7.1
-        },
-        "express-security": {
-          "total": 10,
-          "fired": 0,
-          "activationRate": 0
-        }
-      },
-      "firedRuleIds": [
+        "node-security/detect-eval-with-expression",
+        "secure-coding/no-sensitive-data-exposure",
+        "node-security/no-zip-slip",
+        "node-security/no-arbitrary-file-access",
         "secure-coding/no-hardcoded-credentials",
-        "node-security/lock-file",
-        "secure-coding/no-sensitive-data-exposure"
-      ]
-    },
-    {
-      "repo": "medusa",
-      "success": true,
-      "category": "E-commerce Backend",
-      "commit": "develop",
-      "fpEdge": false,
-      "loc": 40632,
-      "fileCount": 709,
-      "findings": {
-        "total": 2,
-        "errors": 0,
-        "warnings": 2,
-        "filesWithFindings": 1,
-        "densityPerKloc": 0.05,
-        "externalDirectives": 0,
-        "parseErrors": 619
-      },
-      "timing": {
-        "runsMs": [
-          1422
-        ],
-        "medianMs": 1422,
-        "meanMs": 1422,
-        "stddevMs": 0,
-        "cv": 0,
-        "msPerFile": 2.01
-      },
-      "peakRssMb": 259,
-      "pluginCoverage": {
-        "node-security": {
-          "total": 33,
-          "fired": 0,
-          "activationRate": 0
-        },
-        "secure-coding": {
-          "total": 28,
-          "fired": 1,
-          "activationRate": 3.6
-        },
-        "express-security": {
-          "total": 10,
-          "fired": 0,
-          "activationRate": 0
-        },
-        "pg": {
-          "total": 13,
-          "fired": 0,
-          "activationRate": 0
-        }
-      },
-      "firedRuleIds": [
-        "secure-coding/no-insecure-comparison"
+        "secure-coding/no-unlimited-resource-allocation",
+        "nestjs-security/require-validation-pipe-whitelist",
+        "secure-coding/no-graphql-injection",
+        "secure-coding/no-log-injection"
       ]
     },
     {
       "repo": "serverless-api-gateway-caching",
       "success": true,
       "category": "Serverless Plugin",
-      "commit": "develop",
+      "commit": "542120f7483ab1ee8213ce7499b60d62b9635aa8",
       "fpEdge": false,
       "loc": 802,
       "fileCount": 6,
       "findings": {
-        "total": 32,
-        "errors": 6,
-        "warnings": 26,
-        "filesWithFindings": 4,
-        "densityPerKloc": 39.9,
+        "total": 0,
+        "errors": 0,
+        "warnings": 0,
+        "filesWithFindings": 0,
+        "densityPerKloc": 0,
         "externalDirectives": 0,
         "parseErrors": 0
       },
       "timing": {
         "runsMs": [
-          1229
+          1354,
+          1299,
+          1428
         ],
-        "medianMs": 1229,
-        "meanMs": 1229,
-        "stddevMs": 0,
-        "cv": 0,
-        "msPerFile": 204.83
+        "medianMs": 1354,
+        "meanMs": 1360,
+        "stddevMs": 53,
+        "cv": 3.9,
+        "msPerFile": 225.67
       },
-      "peakRssMb": 220,
+      "peakRssMb": 263,
       "pluginCoverage": {
         "lambda-security": {
           "total": 14,
@@ -1165,226 +1130,387 @@
           "activationRate": 0
         },
         "node-security": {
-          "total": 33,
+          "total": 43,
           "fired": 0,
           "activationRate": 0
         },
         "secure-coding": {
-          "total": 28,
-          "fired": 6,
-          "activationRate": 21.4
+          "total": 34,
+          "fired": 0,
+          "activationRate": 0
         }
       },
-      "firedRuleIds": [
-        "secure-coding/no-hardcoded-credentials",
-        "secure-coding/no-insecure-comparison",
-        "secure-coding/no-unchecked-loop-condition",
-        "secure-coding/no-unsafe-deserialization",
-        "secure-coding/detect-object-injection",
-        "secure-coding/no-unlimited-resource-allocation"
-      ]
+      "firedRuleIds": []
     },
     {
-      "repo": "next.js",
+      "repo": "react",
       "success": true,
-      "category": "Full-Stack Framework",
-      "commit": "v15.1.0",
-      "fpEdge": false,
-      "loc": 125311,
-      "fileCount": 918,
+      "category": "UI Library (FP corpus)",
+      "commit": "d5736f098edee62c44f27b053e6e48f5fa443803",
+      "fpEdge": true,
+      "loc": 4539,
+      "fileCount": 37,
       "findings": {
-        "total": 3,
-        "errors": 3,
+        "total": 0,
+        "errors": 0,
         "warnings": 0,
-        "filesWithFindings": 2,
-        "densityPerKloc": 0.02,
-        "externalDirectives": 3,
-        "parseErrors": 802
+        "filesWithFindings": 0,
+        "densityPerKloc": 0,
+        "externalDirectives": 4,
+        "parseErrors": 0
       },
       "timing": {
         "runsMs": [
-          2445
+          1710,
+          1928,
+          1234
         ],
-        "medianMs": 2445,
-        "meanMs": 2445,
-        "stddevMs": 0,
-        "cv": 0,
-        "msPerFile": 2.66
+        "medianMs": 1710,
+        "meanMs": 1624,
+        "stddevMs": 290,
+        "cv": 17.8,
+        "msPerFile": 46.22
       },
-      "peakRssMb": 305,
+      "peakRssMb": 301,
       "pluginCoverage": {
         "browser-security": {
-          "total": 45,
-          "fired": 3,
-          "activationRate": 6.7
-        },
-        "node-security": {
-          "total": 33,
+          "total": 46,
           "fired": 0,
           "activationRate": 0
         },
         "secure-coding": {
-          "total": 28,
+          "total": 34,
+          "fired": 0,
+          "activationRate": 0
+        }
+      },
+      "firedRuleIds": []
+    },
+    {
+      "repo": "webpack",
+      "success": true,
+      "category": "Build Tool (FP corpus)",
+      "commit": "b29de5fcd3d22cff32b807b4a58ed02134852c20",
+      "fpEdge": true,
+      "loc": 158661,
+      "fileCount": 587,
+      "findings": {
+        "total": 31,
+        "errors": 25,
+        "warnings": 6,
+        "filesWithFindings": 20,
+        "densityPerKloc": 0.2,
+        "externalDirectives": 25,
+        "parseErrors": 0
+      },
+      "timing": {
+        "runsMs": [
+          7941,
+          4904,
+          4726
+        ],
+        "medianMs": 4904,
+        "meanMs": 5857,
+        "stddevMs": 1475,
+        "cv": 25.2,
+        "msPerFile": 8.35
+      },
+      "peakRssMb": 788,
+      "pluginCoverage": {
+        "node-security": {
+          "total": 43,
+          "fired": 5,
+          "activationRate": 11.6
+        },
+        "secure-coding": {
+          "total": 34,
+          "fired": 3,
+          "activationRate": 8.8
+        }
+      },
+      "firedRuleIds": [
+        "secure-coding/no-redos-vulnerable-regex",
+        "secure-coding/no-unsafe-regex-construction",
+        "node-security/no-dynamic-algorithm-selection",
+        "node-security/detect-eval-with-expression",
+        "node-security/no-unsafe-buffer-alloc",
+        "node-security/no-unsafe-dynamic-require",
+        "node-security/require-stream-error-handler",
+        "secure-coding/no-xxe-injection"
+      ]
+    },
+    {
+      "repo": "lodash",
+      "success": true,
+      "category": "Utility Library (FP corpus)",
+      "commit": "a02353279093cca0fea1c8cc468ffbf03bb3485b",
+      "fpEdge": true,
+      "loc": 951,
+      "fileCount": 4,
+      "findings": {
+        "total": 0,
+        "errors": 0,
+        "warnings": 0,
+        "filesWithFindings": 0,
+        "densityPerKloc": 0,
+        "externalDirectives": 0,
+        "parseErrors": 0
+      },
+      "timing": {
+        "runsMs": [
+          1392,
+          1248,
+          1175
+        ],
+        "medianMs": 1248,
+        "meanMs": 1272,
+        "stddevMs": 90,
+        "cv": 7.1,
+        "msPerFile": 312
+      },
+      "peakRssMb": 257,
+      "pluginCoverage": {
+        "secure-coding": {
+          "total": 34,
+          "fired": 0,
+          "activationRate": 0
+        },
+        "node-security": {
+          "total": 43,
+          "fired": 0,
+          "activationRate": 0
+        }
+      },
+      "firedRuleIds": []
+    },
+    {
+      "repo": "babel",
+      "success": true,
+      "category": "Compiler (FP corpus)",
+      "commit": "3b4cbdcfb7f974cad9bc11681353bf515cd72559",
+      "fpEdge": true,
+      "loc": 24412,
+      "fileCount": 41,
+      "findings": {
+        "total": 2,
+        "errors": 1,
+        "warnings": 1,
+        "filesWithFindings": 2,
+        "densityPerKloc": 0.08,
+        "externalDirectives": 30,
+        "parseErrors": 0
+      },
+      "timing": {
+        "runsMs": [
+          2282,
+          1950,
+          2302
+        ],
+        "medianMs": 2282,
+        "meanMs": 2178,
+        "stddevMs": 161,
+        "cv": 7.4,
+        "msPerFile": 55.66
+      },
+      "peakRssMb": 501,
+      "pluginCoverage": {
+        "secure-coding": {
+          "total": 34,
+          "fired": 2,
+          "activationRate": 5.9
+        },
+        "node-security": {
+          "total": 43,
           "fired": 0,
           "activationRate": 0
         }
       },
       "firedRuleIds": [
-        "browser-security/no-clickjacking",
-        "browser-security/detect-mixed-content",
-        "browser-security/no-http-urls"
+        "secure-coding/no-sensitive-data-exposure",
+        "secure-coding/no-unsafe-regex-construction"
       ]
     }
   ],
   "perRuleWildHits": {
-    "secure-coding/no-hardcoded-credentials": 646,
-    "node-security/detect-child-process": 3,
-    "lambda-security/no-env-logging": 0,
-    "node-security/lock-file": 48,
-    "secure-coding/no-graphql-injection": 56,
-    "secure-coding/no-unlimited-resource-allocation": 474,
-    "lambda-security/no-secrets-in-env": 0,
-    "node-security/no-buffer-overread": 136,
-    "secure-coding/no-xpath-injection": 25,
-    "node-security/no-zip-slip": 15,
-    "secure-coding/no-unsafe-deserialization": 148,
-    "lambda-security/no-hardcoded-credentials-sdk": 0,
-    "secure-coding/detect-object-injection": 3484,
-    "lambda-security/no-user-controlled-requests": 0,
-    "lambda-security/no-unvalidated-event-body": 0,
-    "secure-coding/no-unchecked-loop-condition": 239,
-    "secure-coding/no-ldap-injection": 4,
-    "secure-coding/no-improper-sanitization": 17,
+    "secure-coding/no-ldap-injection": 0,
+    "secure-coding/no-hardcoded-credentials": 170,
     "secure-coding/no-privilege-escalation": 0,
-    "secure-coding/no-weak-password-recovery": 0,
-    "secure-coding/no-missing-authentication": 12,
-    "secure-coding/no-xxe-injection": 22,
-    "secure-coding/detect-non-literal-regexp": 47,
-    "secure-coding/no-insecure-comparison": 623,
-    "node-security/detect-non-literal-fs-filename": 84,
-    "node-security/no-toctou-vulnerability": 1,
-    "node-security/detect-eval-with-expression": 1,
-    "node-security/no-static-iv": 0,
-    "node-security/no-ecb-mode": 0,
-    "node-security/no-weak-hash-algorithm": 14,
-    "node-security/no-weak-cipher-algorithm": 0,
-    "lambda-security/no-exposed-debug-endpoints": 1,
-    "lambda-security/no-missing-authorization-check": 16,
-    "secure-coding/no-sensitive-data-exposure": 9,
-    "lambda-security/no-permissive-cors-response": 0,
+    "node-security/no-math-random-crypto": 7,
+    "node-security/no-weak-hash-algorithm": 0,
+    "secure-coding/no-sensitive-data-exposure": 16,
+    "node-security/no-unsafe-buffer-alloc": 9,
+    "secure-coding/no-graphql-injection": 5,
+    "node-security/no-timing-unsafe-compare": 11,
+    "secure-coding/no-unsafe-deserialization": 10,
+    "node-security/detect-non-literal-fs-filename": 6,
+    "secure-coding/no-xpath-injection": 2,
+    "node-security/no-toctou-vulnerability": 7,
+    "node-security/no-buffer-overread": 1,
+    "node-security/detect-child-process": 2,
+    "secure-coding/no-improper-sanitization": 15,
+    "secure-coding/no-unlimited-resource-allocation": 3,
+    "secure-coding/no-xxe-injection": 3,
+    "node-security/detect-eval-with-expression": 10,
+    "secure-coding/no-homoglyph-identifiers": 0,
+    "node-security/no-zip-slip": 14,
+    "secure-coding/no-fail-open-auth": 2,
+    "node-security/require-dependency-integrity": 1,
+    "node-security/no-ssrf": 0,
+    "secure-coding/no-redos-vulnerable-regex": 43,
     "node-security/no-data-in-temp-storage": 0,
-    "secure-coding/no-redos-vulnerable-regex": 46,
-    "lambda-security/no-exposed-error-details": 1,
-    "node-security/no-ssrf": 11,
-    "node-security/no-arbitrary-file-access": 47,
-    "lambda-security/no-unbounded-batch-processing": 12,
-    "lambda-security/no-permissive-cors-middy": 0,
-    "node-security/detect-suspicious-dependencies": 0,
-    "lambda-security/require-timeout-handling": 10,
-    "secure-coding/no-unsafe-regex-construction": 38,
-    "lambda-security/no-overly-permissive-iam-policy": 27,
-    "node-security/no-cryptojs": 0,
-    "node-security/no-unsafe-dynamic-require": 5,
-    "node-security/require-dependency-integrity": 0,
+    "secure-coding/no-unsafe-regex-construction": 7,
+    "node-security/no-static-iv": 0,
+    "node-security/no-arbitrary-file-access": 7,
+    "secure-coding/no-weak-password-recovery": 2,
     "node-security/no-deprecated-buffer": 0,
-    "lambda-security/no-error-swallowing": 0,
-    "browser-security/no-clickjacking": 3,
-    "browser-security/no-innerhtml": 0,
-    "browser-security/no-postmessage-innerhtml": 0,
-    "browser-security/no-credentials-in-query-params": 4,
-    "express-security/no-exposed-debug-endpoints": 0,
-    "browser-security/no-sensitive-localstorage": 0,
+    "node-security/no-unbounded-decompression": 3,
+    "node-security/detect-suspicious-dependencies": 8,
+    "secure-coding/no-sql-injection": 0,
+    "secure-coding/no-log-injection": 14,
+    "node-security/no-cryptojs": 0,
+    "node-security/no-unsafe-dynamic-require": 1,
+    "node-security/require-stream-error-handler": 7,
+    "node-security/no-dynamic-command-string": 0,
+    "node-security/no-shell-injection": 6,
+    "secure-coding/no-template-injection": 0,
+    "node-security/no-weak-dh-parameters": 0,
+    "node-security/no-env-injection": 0,
+    "node-security/no-weak-cipher-algorithm": 0,
+    "node-security/no-self-signed-certs": 8,
+    "node-security/no-ecb-mode": 0,
+    "node-security/require-aead-tag-verification": 0,
+    "node-security/no-insecure-http-parser": 0,
+    "node-security/no-dynamic-algorithm-selection": 1,
+    "lambda-security/no-error-swallowing": 57,
+    "lambda-security/no-unbounded-batch-processing": 15,
+    "lambda-security/no-unvalidated-event-body": 25,
+    "lambda-security/no-hardcoded-credentials-sdk": 0,
+    "lambda-security/no-missing-authorization-check": 5,
+    "lambda-security/no-secrets-in-env": 0,
+    "lambda-security/no-user-controlled-requests": 0,
+    "lambda-security/no-exposed-debug-endpoints": 0,
+    "lambda-security/require-timeout-handling": 3,
+    "lambda-security/no-permissive-cors-response": 0,
+    "lambda-security/no-env-logging": 0,
+    "lambda-security/no-exposed-error-details": 1,
+    "lambda-security/no-permissive-cors-middy": 0,
+    "lambda-security/no-overly-permissive-iam-policy": 3,
+    "sort-keys": 0,
+    "browser-security/no-credentials-in-query-params": 3,
+    "browser-security/no-http-urls": 22,
+    "express-security/require-helmet": 5,
+    "browser-security/no-innerhtml": 5,
+    "browser-security/no-eval": 1,
     "browser-security/no-websocket-eval": 0,
-    "express-security/require-helmet": 0,
-    "browser-security/no-http-urls": 5,
-    "browser-security/no-filereader-innerhtml": 0,
+    "browser-security/no-postmessage-innerhtml": 0,
     "browser-security/no-websocket-innerhtml": 0,
-    "browser-security/no-unsafe-inline-csp": 0,
+    "browser-security/no-filereader-innerhtml": 0,
     "browser-security/no-worker-message-innerhtml": 0,
-    "browser-security/no-insecure-redirects": 0,
-    "browser-security/no-eval": 0,
-    "browser-security/no-postmessage-wildcard-origin": 0,
-    "browser-security/require-blob-url-revocation": 0,
     "browser-security/no-unsafe-eval-csp": 0,
-    "express-security/require-csrf-protection": 0,
-    "express-security/no-permissive-cors": 0,
-    "express-security/require-express-body-parser-limits": 0,
-    "express-security/no-graphql-introspection-production": 0,
-    "browser-security/require-postmessage-origin-check": 0,
-    "browser-security/no-sensitive-indexeddb": 0,
-    "express-security/no-express-unsafe-regex-route": 0,
-    "browser-security/require-websocket-wss": 0,
-    "browser-security/no-sensitive-cookie-js": 0,
-    "express-security/no-insecure-cookie-options": 0,
-    "browser-security/no-jwt-in-storage": 0,
-    "express-security/require-rate-limiting": 0,
-    "browser-security/no-insecure-websocket": 0,
-    "browser-security/require-https-only": 0,
-    "browser-security/no-sensitive-sessionstorage": 0,
-    "express-security/no-cors-credentials-wildcard": 0,
-    "browser-security/no-dynamic-service-worker-url": 0,
-    "browser-security/detect-mixed-content": 5,
-    "browser-security/no-unvalidated-deeplinks": 0,
+    "browser-security/no-unencrypted-transmission": 0,
+    "browser-security/require-https-only": 1,
+    "browser-security/no-insecure-redirects": 0,
+    "browser-security/no-sensitive-localstorage": 0,
+    "browser-security/no-disabled-certificate-validation": 0,
     "browser-security/no-client-side-auth-logic": 0,
-    "browser-security/require-cookie-secure-attrs": 0,
-    "browser-security/no-cookie-auth-tokens": 0,
+    "browser-security/no-unsafe-inline-csp": 0,
+    "browser-security/require-postmessage-origin-check": 3,
+    "browser-security/no-postmessage-wildcard-origin": 0,
+    "browser-security/no-incomplete-url-sanitization": 1,
+    "browser-security/require-blob-url-revocation": 1,
+    "browser-security/no-jwt-in-storage": 0,
+    "browser-security/no-sensitive-indexeddb": 0,
+    "browser-security/no-sensitive-sessionstorage": 0,
     "browser-security/no-allow-arbitrary-loads": 0,
+    "browser-security/no-sensitive-cookie-js": 0,
+    "browser-security/no-dynamic-service-worker-url": 0,
+    "browser-security/require-websocket-wss": 0,
+    "browser-security/no-cookie-auth-tokens": 0,
+    "browser-security/detect-mixed-content": 0,
+    "express-security/no-permissive-cors": 0,
+    "browser-security/no-insecure-websocket": 0,
+    "express-security/require-csrf-protection": 1,
+    "browser-security/no-unvalidated-deeplinks": 0,
+    "express-security/no-exposed-debug-endpoints": 1,
+    "browser-security/require-cookie-secure-attrs": 0,
+    "express-security/require-express-body-parser-limits": 0,
+    "express-security/no-insecure-cookie-options": 0,
+    "express-security/require-rate-limiting": 1,
+    "express-security/no-graphql-introspection-production": 0,
+    "express-security/require-query-type-guard": 0,
+    "express-security/no-user-controlled-render-locals": 0,
+    "express-security/no-host-header-in-links": 0,
+    "express-security/no-user-controlled-redirect": 0,
+    "express-security/no-sensitive-data-in-query": 1,
+    "express-security/require-route-authentication": 2,
+    "express-security/no-express-unsafe-regex-route": 0,
+    "express-security/no-static-root-exposure": 0,
+    "express-security/no-error-details-in-response": 0,
+    "express-security/require-case-insensitive-path-guard": 0,
+    "express-security/no-cors-credentials-wildcard": 0,
+    "express-security/no-unsafe-csp-directives": 0,
+    "express-security/require-strict-transport-security": 0,
+    "express-security/no-disabled-helmet-protections": 0,
+    "express-security/no-client-controlled-authorization": 0,
+    "express-security/no-permissive-trust-proxy": 0,
+    "express-security/no-idor-resource-access": 0,
     "vercel-ai-security/require-validated-prompt": 0,
     "vercel-ai-security/no-hardcoded-api-keys": 0,
-    "vercel-ai-security/no-training-data-exposure": 0,
-    "vercel-ai-security/require-rag-content-validation": 0,
-    "vercel-ai-security/no-sensitive-in-prompt": 0,
-    "vercel-ai-security/no-system-prompt-leak": 0,
-    "vercel-ai-security/require-request-timeout": 2,
     "vercel-ai-security/no-unsafe-output-handling": 0,
+    "vercel-ai-security/no-sensitive-in-prompt": 0,
+    "vercel-ai-security/require-rag-content-validation": 0,
     "vercel-ai-security/require-tool-confirmation": 0,
-    "vercel-ai-security/require-output-filtering": 0,
-    "vercel-ai-security/require-tool-schema": 0,
+    "vercel-ai-security/require-max-tokens": 97,
+    "vercel-ai-security/no-system-prompt-leak": 2,
     "vercel-ai-security/no-dynamic-system-prompt": 0,
-    "vercel-ai-security/require-max-tokens": 0,
-    "vercel-ai-security/require-max-steps": 0,
-    "pg/prevent-double-release": 0,
-    "pg/no-unsafe-query": 0,
-    "pg/no-unsafe-copy-from": 0,
-    "pg/no-unsafe-search-path": 0,
-    "pg/prefer-pool-query": 0,
-    "pg/no-batch-insert-loop": 0,
-    "pg/no-missing-client-release": 0,
-    "pg/check-query-params": 0,
-    "pg/no-transaction-on-pool": 0,
-    "pg/no-select-all": 0,
-    "pg/no-floating-query": 0,
-    "pg/no-insecure-ssl": 0,
-    "pg/no-hardcoded-credentials": 0,
+    "vercel-ai-security/require-tool-schema": 0,
+    "postgresql-security/no-unsafe-query": 0,
+    "postgresql-security/no-insecure-ssl": 0,
+    "postgresql-security/no-hardcoded-credentials": 0,
+    "postgresql-security/no-transaction-on-pool": 0,
+    "postgresql-security/no-unsafe-copy-from": 0,
+    "postgresql-security/no-unsafe-search-path": 0,
+    "postgresql-security/no-missing-client-release": 0,
+    "postgresql-security/check-query-params": 0,
+    "postgresql-security/no-floating-query": 0,
+    "postgresql-security/no-select-all": 0,
+    "postgresql-security/prevent-double-release": 0,
+    "postgresql-security/no-batch-insert-loop": 0,
+    "postgresql-security/prefer-pool-query": 0,
     "nestjs-security/require-guards": 0,
-    "nestjs-security/no-missing-validation-pipe": 0,
-    "nestjs-security/no-exposed-private-fields": 0,
-    "nestjs-security/no-exposed-debug-endpoints": 2,
+    "nestjs-security/no-permissive-cors": 0,
+    "nestjs-security/no-missing-validation-pipe": 2,
+    "nestjs-security/no-exposed-private-fields": 12,
     "nestjs-security/require-throttler": 0,
-    "nestjs-security/require-class-validator": 0,
-    "mongodb-security/no-hardcoded-connection-string": 0,
+    "nestjs-security/no-unguarded-swagger": 0,
+    "nestjs-security/no-unsafe-multer-filename": 0,
+    "nestjs-security/no-hybrid-app-config-loss": 0,
+    "nestjs-security/no-res-bypass-serialization": 0,
+    "nestjs-security/require-validation-pipe-whitelist": 4,
+    "mongodb-security/no-unbounded-find": 4,
+    "mongodb-security/no-bypass-middleware": 6,
     "mongodb-security/no-unsafe-query": 0,
+    "mongodb-security/require-tls-connection": 0,
     "mongodb-security/no-select-sensitive-fields": 0,
-    "mongodb-security/no-unsafe-populate": 0,
     "mongodb-security/no-operator-injection": 0,
     "mongodb-security/no-unsafe-regex-query": 0,
+    "mongodb-security/no-debug-mode-production": 0,
+    "mongodb-security/no-hardcoded-connection-string": 0,
     "mongodb-security/no-unsafe-where": 0,
-    "mongodb-security/require-tls-connection": 0,
     "mongodb-security/no-hardcoded-credentials": 0,
     "mongodb-security/require-auth-mechanism": 0,
-    "mongodb-security/no-unbounded-find": 0,
-    "mongodb-security/no-debug-mode-production": 0,
-    "mongodb-security/no-bypass-middleware": 0,
+    "mongodb-security/no-unsafe-populate": 0,
     "mongodb-security/require-schema-validation": 0,
     "camelcase": 0,
-    "jwt/no-sensitive-payload": 0,
-    "jwt/no-algorithm-none": 0,
-    "jwt/no-decode-without-verify": 0,
-    "jwt/no-algorithm-confusion": 0,
-    "jwt/no-weak-secret": 0,
-    "jwt/no-hardcoded-secret": 0,
-    "jwt/require-expiration": 0,
-    "jwt/require-algorithm-whitelist": 0,
-    "jwt/no-timestamp-manipulation": 0
+    "jwt-security/no-algorithm-none": 0,
+    "jwt-security/no-weak-secret": 0,
+    "jwt-security/no-hardcoded-secret": 0,
+    "jwt-security/no-timestamp-manipulation": 0,
+    "jwt-security/no-sensitive-payload": 0,
+    "jwt-security/no-decode-without-verify": 0,
+    "jwt-security/no-algorithm-confusion": 0,
+    "jwt-security/require-expiration": 0,
+    "jwt-security/require-algorithm-whitelist": 0,
+    "jwt-security/require-issued-at": 0
   }
 }

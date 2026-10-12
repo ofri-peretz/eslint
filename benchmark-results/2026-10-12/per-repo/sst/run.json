@@ -1,0 +1,39 @@
+{
+  "repo": "sst",
+  "meta": {
+    "stars": 22000,
+    "commit": "ec2847b92af0763abb7bb8177b8265f046b7443c",
+    "category": "Serverless Framework",
+    "plugins": [
+      "lambda-security",
+      "node-security",
+      "secure-coding"
+    ],
+    "fpEdge": false,
+    "srcGlob": "platform/src/**/*.ts"
+  },
+  "fileCount": 194,
+  "loc": 66817,
+  "timing": {
+    "runsMs": [
+      2365,
+      2366,
+      2562
+    ],
+    "medianMs": 2366,
+    "meanMs": 2431,
+    "stddevMs": 93,
+    "cv": 3.8,
+    "msPerFile": 12.2
+  },
+  "peakRssMb": 591,
+  "findings": {
+    "total": 5,
+    "errors": 5,
+    "warnings": 0,
+    "filesWithFindings": 3,
+    "densityPerKloc": 0.07,
+    "externalDirectives": 0,
+    "parseErrors": 0
+  }
+}

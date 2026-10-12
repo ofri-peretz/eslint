@@ -1,0 +1,306 @@
+[
+  {
+    "ruleId": "lambda-security/no-error-swallowing",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/tracer/src/Tracer.ts",
+    "line": 343,
+    "column": 7,
+    "message": "⚠️ CWE-390 OWASP:A10-Mishandling CVSS:5 | Catch block swallows error without logging. Security incidents may go undetected. | MEDIUM\n   Fix: Log the error with context: console.error(\"Operation failed\", { error, awsRequestId: context.awsReq"
+  },
+  {
+    "ruleId": "node-security/no-unbounded-decompression",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/parser/src/schemas/cloudwatch.ts",
+    "line": 70,
+    "column": 30,
+    "message": "🔒 CWE-409 OWASP:A04-Cryptographic CVSS:7.5 | zlib.gunzipSync() buffers the whole decompressed result in memory with no maxOutputLength cap. A few KB of crafted input can expand to gigabytes and exhaust the heap (decompression bomb). | HIGH"
+  },
+  {
+    "ruleId": "node-security/no-unbounded-decompression",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/parser/src/helpers/index.ts",
+    "line": 9,
+    "column": 23,
+    "message": "🔒 CWE-409 OWASP:A04-Cryptographic CVSS:7.5 | zlib.gunzipSync() buffers the whole decompressed result in memory with no maxOutputLength cap. A few KB of crafted input can expand to gigabytes and exhaust the heap (decompression bomb). | HIGH"
+  },
+  {
+    "ruleId": "lambda-security/no-error-swallowing",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/parser/src/helpers/index.ts",
+    "line": 59,
+    "column": 9,
+    "message": "⚠️ CWE-390 OWASP:A10-Mishandling CVSS:5 | Catch block swallows error without logging. Security incidents may go undetected. | MEDIUM\n   Fix: Log the error with context: console.error(\"Operation failed\", { error, awsRequestId: context.awsReq"
+  },
+  {
+    "ruleId": "lambda-security/no-error-swallowing",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/parameters/src/ssm/SSMProvider.ts",
+    "line": 794,
+    "column": 9,
+    "message": "⚠️ CWE-390 OWASP:A10-Mishandling CVSS:5 | Catch block swallows error without logging. Security incidents may go undetected. | MEDIUM\n   Fix: Log the error with context: console.error(\"Operation failed\", { error, awsRequestId: context.awsReq"
+  },
+  {
+    "ruleId": "lambda-security/no-error-swallowing",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/parameters/src/base/transformValue.ts",
+    "line": 77,
+    "column": 5,
+    "message": "⚠️ CWE-390 OWASP:A10-Mishandling CVSS:5 | Catch block swallows error without logging. Security incidents may go undetected. | MEDIUM\n   Fix: Log the error with context: console.error(\"Operation failed\", { error, awsRequestId: context.awsReq"
+  },
+  {
+    "ruleId": "lambda-security/no-error-swallowing",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/logger/src/Logger.ts",
+    "line": 1080,
+    "column": 9,
+    "message": "⚠️ CWE-390 OWASP:A10-Mishandling CVSS:5 | Catch block swallows error without logging. Security incidents may go undetected. | MEDIUM\n   Fix: Log the error with context: console.error(\"Operation failed\", { error, awsRequestId: context.awsReq"
+  },
+  {
+    "ruleId": "lambda-security/no-unbounded-batch-processing",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/kafka/src/consumer.ts",
+    "line": 32,
+    "column": 15,
+    "message": "⚠️ CWE-770 OWASP:A04-Cryptographic CVSS:5.5 | Processing event.records without size check. Large batches may cause timeout or memory exhaustion. | MEDIUM\n   Fix: Validate batch size before processing: if (event.Records.length > MAX_BATCH) t"
+  },
+  {
+    "ruleId": "lambda-security/no-unbounded-batch-processing",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/kafka/src/consumer.ts",
+    "line": 33,
+    "column": 20,
+    "message": "⚠️ CWE-770 OWASP:A04-Cryptographic CVSS:5.5 | Processing event.records without size check. Large batches may cause timeout or memory exhaustion. | MEDIUM\n   Fix: Validate batch size before processing: if (event.Records.length > MAX_BATCH) t"
+  },
+  {
+    "ruleId": "lambda-security/no-unbounded-batch-processing",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/kafka/src/consumer.ts",
+    "line": 269,
+    "column": 46,
+    "message": "⚠️ CWE-770 OWASP:A04-Cryptographic CVSS:5.5 | Processing event.records without size check. Large batches may cause timeout or memory exhaustion. | MEDIUM\n   Fix: Validate batch size before processing: if (event.Records.length > MAX_BATCH) t"
+  },
+  {
+    "ruleId": "lambda-security/no-error-swallowing",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/jmespath/src/utils.ts",
+    "line": 286,
+    "column": 7,
+    "message": "⚠️ CWE-390 OWASP:A10-Mishandling CVSS:5 | Catch block swallows error without logging. Security incidents may go undetected. | MEDIUM\n   Fix: Log the error with context: console.error(\"Operation failed\", { error, awsRequestId: context.awsReq"
+  },
+  {
+    "ruleId": "node-security/no-unbounded-decompression",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/jmespath/src/PowertoolsFunctions.ts",
+    "line": 46,
+    "column": 26,
+    "message": "🔒 CWE-409 OWASP:A04-Cryptographic CVSS:7.5 | zlib.gunzipSync() buffers the whole decompressed result in memory with no maxOutputLength cap. A few KB of crafted input can expand to gigabytes and exhaust the heap (decompression bomb). | HIGH"
+  },
+  {
+    "ruleId": "lambda-security/no-error-swallowing",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/idempotency/src/IdempotencyHandler.ts",
+    "line": 201,
+    "column": 9,
+    "message": "⚠️ CWE-390 OWASP:A10-Mishandling CVSS:5 | Catch block swallows error without logging. Security incidents may go undetected. | MEDIUM\n   Fix: Log the error with context: console.error(\"Operation failed\", { error, awsRequestId: context.awsReq"
+  },
+  {
+    "ruleId": "lambda-security/no-unvalidated-event-body",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/event-handler/src/http/utils.ts",
+    "line": 105,
+    "column": 6,
+    "message": "🔒 CWE-20 OWASP:A06-Insecure CVSS:8 | Lambda handler uses event.headers without validation. This can lead to injection attacks. | HIGH [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Validate event input using Middy validator, Zod, or Joi before use | ht"
+  },
+  {
+    "ruleId": "lambda-security/no-unvalidated-event-body",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/event-handler/src/http/utils.ts",
+    "line": 105,
+    "column": 40,
+    "message": "🔒 CWE-20 OWASP:A06-Insecure CVSS:8 | Lambda handler uses event.headers without validation. This can lead to injection attacks. | HIGH [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Validate event input using Middy validator, Zod, or Joi before use | ht"
+  },
+  {
+    "ruleId": "lambda-security/no-unvalidated-event-body",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/event-handler/src/http/utils.ts",
+    "line": 106,
+    "column": 6,
+    "message": "🔒 CWE-20 OWASP:A06-Insecure CVSS:8 | Lambda handler uses event.multiValueHeaders without validation. This can lead to injection attacks. | HIGH [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Validate event input using Middy validator, Zod, or Joi befor"
+  },
+  {
+    "ruleId": "lambda-security/no-unvalidated-event-body",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/event-handler/src/http/utils.ts",
+    "line": 106,
+    "column": 50,
+    "message": "🔒 CWE-20 OWASP:A06-Insecure CVSS:8 | Lambda handler uses event.multiValueHeaders without validation. This can lead to injection attacks. | HIGH [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Validate event input using Middy validator, Zod, or Joi befor"
+  },
+  {
+    "ruleId": "lambda-security/no-unvalidated-event-body",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/event-handler/src/http/utils.ts",
+    "line": 109,
+    "column": 6,
+    "message": "🔒 CWE-20 OWASP:A06-Insecure CVSS:8 | Lambda handler uses event.body without validation. This can lead to injection attacks. | HIGH [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Validate event input using Middy validator, Zod, or Joi before use | https"
+  },
+  {
+    "ruleId": "lambda-security/no-unvalidated-event-body",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/event-handler/src/http/utils.ts",
+    "line": 109,
+    "column": 38,
+    "message": "🔒 CWE-20 OWASP:A06-Insecure CVSS:8 | Lambda handler uses event.body without validation. This can lead to injection attacks. | HIGH [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Validate event input using Middy validator, Zod, or Joi before use | https"
+  },
+  {
+    "ruleId": "lambda-security/no-unvalidated-event-body",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/event-handler/src/http/utils.ts",
+    "line": 110,
+    "column": 6,
+    "message": "🔒 CWE-20 OWASP:A06-Insecure CVSS:8 | Lambda handler uses event.pathParameters without validation. This can lead to injection attacks. | HIGH [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Validate event input using Middy validator, Zod, or Joi before u"
+  },
+  {
+    "ruleId": "lambda-security/no-unvalidated-event-body",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/event-handler/src/http/utils.ts",
+    "line": 110,
+    "column": 48,
+    "message": "🔒 CWE-20 OWASP:A06-Insecure CVSS:8 | Lambda handler uses event.pathParameters without validation. This can lead to injection attacks. | HIGH [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Validate event input using Middy validator, Zod, or Joi before u"
+  },
+  {
+    "ruleId": "lambda-security/no-unvalidated-event-body",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/event-handler/src/http/utils.ts",
+    "line": 111,
+    "column": 6,
+    "message": "🔒 CWE-20 OWASP:A06-Insecure CVSS:8 | Lambda handler uses event.queryStringParameters without validation. This can lead to injection attacks. | HIGH [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Validate event input using Middy validator, Zod, or Joi b"
+  },
+  {
+    "ruleId": "lambda-security/no-unvalidated-event-body",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/event-handler/src/http/utils.ts",
+    "line": 112,
+    "column": 16,
+    "message": "🔒 CWE-20 OWASP:A06-Insecure CVSS:8 | Lambda handler uses event.queryStringParameters without validation. This can lead to injection attacks. | HIGH [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Validate event input using Middy validator, Zod, or Joi b"
+  },
+  {
+    "ruleId": "lambda-security/no-unvalidated-event-body",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/event-handler/src/http/utils.ts",
+    "line": 113,
+    "column": 6,
+    "message": "🔒 CWE-20 OWASP:A06-Insecure CVSS:8 | Lambda handler uses event.multiValueQueryStringParameters without validation. This can lead to injection attacks. | HIGH [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Validate event input using Middy validator, Zod"
+  },
+  {
+    "ruleId": "lambda-security/no-unvalidated-event-body",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/event-handler/src/http/utils.ts",
+    "line": 114,
+    "column": 16,
+    "message": "🔒 CWE-20 OWASP:A06-Insecure CVSS:8 | Lambda handler uses event.multiValueQueryStringParameters without validation. This can lead to injection attacks. | HIGH [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Validate event input using Middy validator, Zod"
+  },
+  {
+    "ruleId": "lambda-security/no-unvalidated-event-body",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/event-handler/src/http/utils.ts",
+    "line": 131,
+    "column": 14,
+    "message": "🔒 CWE-20 OWASP:A06-Insecure CVSS:8 | Lambda handler uses event.rawPath without validation. This can lead to injection attacks. | HIGH [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Validate event input using Middy validator, Zod, or Joi before use | ht"
+  },
+  {
+    "ruleId": "lambda-security/no-unvalidated-event-body",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/event-handler/src/http/utils.ts",
+    "line": 132,
+    "column": 14,
+    "message": "🔒 CWE-20 OWASP:A06-Insecure CVSS:8 | Lambda handler uses event.rawQueryString without validation. This can lead to injection attacks. | HIGH [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Validate event input using Middy validator, Zod, or Joi before u"
+  },
+  {
+    "ruleId": "lambda-security/no-unvalidated-event-body",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/event-handler/src/http/utils.ts",
+    "line": 133,
+    "column": 14,
+    "message": "🔒 CWE-20 OWASP:A06-Insecure CVSS:8 | Lambda handler uses event.headers without validation. This can lead to injection attacks. | HIGH [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Validate event input using Middy validator, Zod, or Joi before use | ht"
+  },
+  {
+    "ruleId": "lambda-security/no-unvalidated-event-body",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/event-handler/src/http/utils.ts",
+    "line": 136,
+    "column": 6,
+    "message": "🔒 CWE-20 OWASP:A06-Insecure CVSS:8 | Lambda handler uses event.body without validation. This can lead to injection attacks. | HIGH [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Validate event input using Middy validator, Zod, or Joi before use | https"
+  },
+  {
+    "ruleId": "lambda-security/no-unvalidated-event-body",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/event-handler/src/http/utils.ts",
+    "line": 136,
+    "column": 43,
+    "message": "🔒 CWE-20 OWASP:A06-Insecure CVSS:8 | Lambda handler uses event.body without validation. This can lead to injection attacks. | HIGH [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Validate event input using Middy validator, Zod, or Joi before use | https"
+  },
+  {
+    "ruleId": "lambda-security/no-unvalidated-event-body",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/event-handler/src/http/utils.ts",
+    "line": 137,
+    "column": 6,
+    "message": "🔒 CWE-20 OWASP:A06-Insecure CVSS:8 | Lambda handler uses event.pathParameters without validation. This can lead to injection attacks. | HIGH [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Validate event input using Middy validator, Zod, or Joi before u"
+  },
+  {
+    "ruleId": "lambda-security/no-unvalidated-event-body",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/event-handler/src/http/utils.ts",
+    "line": 137,
+    "column": 53,
+    "message": "🔒 CWE-20 OWASP:A06-Insecure CVSS:8 | Lambda handler uses event.pathParameters without validation. This can lead to injection attacks. | HIGH [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Validate event input using Middy validator, Zod, or Joi before u"
+  },
+  {
+    "ruleId": "lambda-security/no-unvalidated-event-body",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/event-handler/src/http/utils.ts",
+    "line": 138,
+    "column": 6,
+    "message": "🔒 CWE-20 OWASP:A06-Insecure CVSS:8 | Lambda handler uses event.queryStringParameters without validation. This can lead to injection attacks. | HIGH [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Validate event input using Middy validator, Zod, or Joi b"
+  },
+  {
+    "ruleId": "lambda-security/no-unvalidated-event-body",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/event-handler/src/http/utils.ts",
+    "line": 139,
+    "column": 16,
+    "message": "🔒 CWE-20 OWASP:A06-Insecure CVSS:8 | Lambda handler uses event.queryStringParameters without validation. This can lead to injection attacks. | HIGH [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Validate event input using Middy validator, Zod, or Joi b"
+  },
+  {
+    "ruleId": "lambda-security/no-unvalidated-event-body",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/event-handler/src/http/converters.ts",
+    "line": 122,
+    "column": 22,
+    "message": "🔒 CWE-20 OWASP:A06-Insecure CVSS:8 | Lambda handler uses event.body without validation. This can lead to injection attacks. | HIGH [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Validate event input using Middy validator, Zod, or Joi before use | https"
+  },
+  {
+    "ruleId": "lambda-security/no-unvalidated-event-body",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/event-handler/src/http/converters.ts",
+    "line": 140,
+    "column": 46,
+    "message": "🔒 CWE-20 OWASP:A06-Insecure CVSS:8 | Lambda handler uses event.headers without validation. This can lead to injection attacks. | HIGH [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Validate event input using Middy validator, Zod, or Joi before use | ht"
+  },
+  {
+    "ruleId": "lambda-security/no-unvalidated-event-body",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/event-handler/src/http/converters.ts",
+    "line": 158,
+    "column": 22,
+    "message": "🔒 CWE-20 OWASP:A06-Insecure CVSS:8 | Lambda handler uses event.body without validation. This can lead to injection attacks. | HIGH [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Validate event input using Middy validator, Zod, or Joi before use | https"
+  },
+  {
+    "ruleId": "lambda-security/no-unvalidated-event-body",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/aws-lambda-powertools/packages/event-handler/src/http/converters.ts",
+    "line": 184,
+    "column": 20,
+    "message": "🔒 CWE-20 OWASP:A06-Insecure CVSS:8 | Lambda handler uses event.body without validation. This can lead to injection attacks. | HIGH [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Validate event input using Middy validator, Zod, or Joi before use | https"
+  }
+]

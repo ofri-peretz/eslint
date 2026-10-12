@@ -1,0 +1,39 @@
+{
+  "repo": "vercel-ai",
+  "meta": {
+    "stars": 15000,
+    "commit": "d57cf11d0e8d06bb3c2e1bcda89ad6a6a5530793",
+    "category": "AI SDK",
+    "plugins": [
+      "vercel-ai-security",
+      "node-security",
+      "secure-coding"
+    ],
+    "fpEdge": false,
+    "srcGlob": "packages/*/src/**/*.ts"
+  },
+  "fileCount": 1458,
+  "loc": 159997,
+  "timing": {
+    "runsMs": [
+      7246,
+      8240,
+      5788
+    ],
+    "medianMs": 7246,
+    "meanMs": 7091,
+    "stddevMs": 1007,
+    "cv": 14.2,
+    "msPerFile": 4.97
+  },
+  "peakRssMb": 818,
+  "findings": {
+    "total": 102,
+    "errors": 4,
+    "warnings": 98,
+    "filesWithFindings": 9,
+    "densityPerKloc": 0.64,
+    "externalDirectives": 1,
+    "parseErrors": 0
+  }
+}

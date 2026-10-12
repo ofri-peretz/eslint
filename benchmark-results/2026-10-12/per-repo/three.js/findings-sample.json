@@ -1,0 +1,138 @@
+[
+  {
+    "ruleId": "secure-coding/no-redos-vulnerable-regex",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/renderers/webgpu/nodes/WGSLNodeFunction.js",
+    "line": 4,
+    "column": 27,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+  },
+  {
+    "ruleId": "secure-coding/no-redos-vulnerable-regex",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/nodes/parsers/GLSLNodeFunction.js",
+    "line": 4,
+    "column": 27,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+  },
+  {
+    "ruleId": "browser-security/no-eval",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/nodes/code/ScriptableNode.js",
+    "line": 415,
+    "column": 18,
+    "message": "🔒 CWE-95 OWASP:A05-Injection CVSS:9.8 | Using Function constructor with dynamic input can execute arbitrary code. This is a critical security vulnerability. | CRITICAL [SOC2,PCI-DSS,ISO27001]\n   Fix: Use safe alternatives like JSON.parse()"
+  },
+  {
+    "ruleId": "node-security/detect-eval-with-expression",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/nodes/code/ScriptableNode.js",
+    "line": 415,
+    "column": 18,
+    "message": "🔒 CWE-95 OWASP:A05-Injection CVSS:9.8 | Use direct property access instead of eval() for dynamic property access | HIGH [SOC2,PCI-DSS,ISO27001]\n   Fix: Use obj[key] or Map.get(key) instead of eval() | https://owasp.org/www-community/attack"
+  },
+  {
+    "ruleId": "node-security/no-math-random-crypto",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/math/MathUtils.js",
+    "line": 12,
+    "column": 13,
+    "message": "🔒 CWE-338 OWASP:A04-Cryptographic CVSS:5.3 | Math.random() is not cryptographically secure. It uses a PRNG that can be predicted. Never use it for tokens, keys, passwords, or any security-sensitive values. | CRITICAL\n   Fix: Use crypto.ran"
+  },
+  {
+    "ruleId": "node-security/no-math-random-crypto",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/math/MathUtils.js",
+    "line": 13,
+    "column": 13,
+    "message": "🔒 CWE-338 OWASP:A04-Cryptographic CVSS:5.3 | Math.random() is not cryptographically secure. It uses a PRNG that can be predicted. Never use it for tokens, keys, passwords, or any security-sensitive values. | CRITICAL\n   Fix: Use crypto.ran"
+  },
+  {
+    "ruleId": "node-security/no-math-random-crypto",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/math/MathUtils.js",
+    "line": 14,
+    "column": 13,
+    "message": "🔒 CWE-338 OWASP:A04-Cryptographic CVSS:5.3 | Math.random() is not cryptographically secure. It uses a PRNG that can be predicted. Never use it for tokens, keys, passwords, or any security-sensitive values. | CRITICAL\n   Fix: Use crypto.ran"
+  },
+  {
+    "ruleId": "node-security/no-math-random-crypto",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/math/MathUtils.js",
+    "line": 15,
+    "column": 13,
+    "message": "🔒 CWE-338 OWASP:A04-Cryptographic CVSS:5.3 | Math.random() is not cryptographically secure. It uses a PRNG that can be predicted. Never use it for tokens, keys, passwords, or any security-sensitive values. | CRITICAL\n   Fix: Use crypto.ran"
+  },
+  {
+    "ruleId": "secure-coding/no-redos-vulnerable-regex",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/math/Color.js",
+    "line": 184,
+    "column": 19,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+  },
+  {
+    "ruleId": "secure-coding/no-redos-vulnerable-regex",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/math/Color.js",
+    "line": 199,
+    "column": 19,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+  },
+  {
+    "ruleId": "secure-coding/no-redos-vulnerable-regex",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/math/Color.js",
+    "line": 219,
+    "column": 19,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+  },
+  {
+    "ruleId": "secure-coding/no-redos-vulnerable-regex",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/loaders/LoaderUtils.js",
+    "line": 65,
+    "column": 8,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+  },
+  {
+    "ruleId": "secure-coding/no-xxe-injection",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/loaders/FileLoader.js",
+    "line": 190,
+    "column": 40,
+    "message": "🔒 CWE-611 OWASP:A05-Injection CVSS:9.1 | XML from untrusted source without validation | HIGH\n   Fix: Validate and sanitize XML input before parsing | https://cheatsheetseries.owasp.org/cheatsheets/XML_External_Entity_Prevention_Cheat_Sheet"
+  },
+  {
+    "ruleId": "secure-coding/no-unsafe-deserialization",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/loaders/nodes/NodeLoader.js",
+    "line": 93,
+    "column": 3,
+    "message": "🔒 CWE-502 OWASP:A08-Software CVSS:9.8 | Unsafe deserialization of untrusted data (incl. model/tool output) | HIGH\n   Fix: Use JSON.parse() or validated safe deserialization libraries | validate model/tool output via schema and size limits "
+  },
+  {
+    "ruleId": "secure-coding/no-redos-vulnerable-regex",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/animation/AnimationClip.js",
+    "line": 150,
+    "column": 19,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+  },
+  {
+    "ruleId": "secure-coding/no-xpath-injection",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/animation/AnimationAction.js",
+    "line": 410,
+    "column": 52,
+    "message": "🔒 CWE-643 OWASP:A03-Software CVSS:9.8 | XPath query uses unvalidated user input | MEDIUM\n   Fix: Validate and sanitize XPath input before use | https://owasp.org/www-community/attacks/XPATH_Injection"
+  },
+  {
+    "ruleId": "secure-coding/no-xpath-injection",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/animation/AnimationAction.js",
+    "line": 448,
+    "column": 52,
+    "message": "🔒 CWE-643 OWASP:A03-Software CVSS:9.8 | XPath query uses unvalidated user input | MEDIUM\n   Fix: Validate and sanitize XPath input before use | https://owasp.org/www-community/attacks/XPATH_Injection"
+  }
+]

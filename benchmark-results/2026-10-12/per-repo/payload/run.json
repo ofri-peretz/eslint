@@ -1,0 +1,40 @@
+{
+  "repo": "payload",
+  "meta": {
+    "stars": 35000,
+    "commit": "744a8a88d5eefe246fe3c63dc35922539b1eb709",
+    "category": "Headless CMS",
+    "plugins": [
+      "node-security",
+      "secure-coding",
+      "express-security",
+      "mongodb-security"
+    ],
+    "fpEdge": false,
+    "srcGlob": "packages/payload/src/**/*.ts"
+  },
+  "fileCount": 635,
+  "loc": 67381,
+  "timing": {
+    "runsMs": [
+      3614,
+      3448,
+      3419
+    ],
+    "medianMs": 3448,
+    "meanMs": 3494,
+    "stddevMs": 86,
+    "cv": 2.5,
+    "msPerFile": 5.43
+  },
+  "peakRssMb": 734,
+  "findings": {
+    "total": 16,
+    "errors": 5,
+    "warnings": 11,
+    "filesWithFindings": 8,
+    "densityPerKloc": 0.24,
+    "externalDirectives": 38,
+    "parseErrors": 0
+  }
+}

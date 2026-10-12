@@ -1,0 +1,539 @@
+{
+  "secure-coding/no-redos-vulnerable-regex": {
+    "hits": 7,
+    "avgTimeMs": 428.64,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-redos-vulnerable-regex",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/renderers/webgpu/nodes/WGSLNodeFunction.js",
+        "line": 4,
+        "column": 27,
+        "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+      },
+      {
+        "ruleId": "secure-coding/no-redos-vulnerable-regex",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/nodes/parsers/GLSLNodeFunction.js",
+        "line": 4,
+        "column": 27,
+        "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+      },
+      {
+        "ruleId": "secure-coding/no-redos-vulnerable-regex",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/math/Color.js",
+        "line": 184,
+        "column": 19,
+        "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+      },
+      {
+        "ruleId": "secure-coding/no-redos-vulnerable-regex",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/math/Color.js",
+        "line": 199,
+        "column": 19,
+        "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+      },
+      {
+        "ruleId": "secure-coding/no-redos-vulnerable-regex",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/math/Color.js",
+        "line": 219,
+        "column": 19,
+        "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+      }
+    ]
+  },
+  "browser-security/no-eval": {
+    "hits": 1,
+    "avgTimeMs": 81.63,
+    "samples": [
+      {
+        "ruleId": "browser-security/no-eval",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/nodes/code/ScriptableNode.js",
+        "line": 415,
+        "column": 18,
+        "message": "🔒 CWE-95 OWASP:A05-Injection CVSS:9.8 | Using Function constructor with dynamic input can execute arbitrary code. This is a critical security vulnerability. | CRITICAL [SOC2,PCI-DSS,ISO27001]\n   Fix: Use safe alternatives like JSON.parse()"
+      }
+    ]
+  },
+  "node-security/detect-eval-with-expression": {
+    "hits": 1,
+    "avgTimeMs": 13.57,
+    "samples": [
+      {
+        "ruleId": "node-security/detect-eval-with-expression",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/nodes/code/ScriptableNode.js",
+        "line": 415,
+        "column": 18,
+        "message": "🔒 CWE-95 OWASP:A05-Injection CVSS:9.8 | Use direct property access instead of eval() for dynamic property access | HIGH [SOC2,PCI-DSS,ISO27001]\n   Fix: Use obj[key] or Map.get(key) instead of eval() | https://owasp.org/www-community/attack"
+      }
+    ]
+  },
+  "node-security/no-math-random-crypto": {
+    "hits": 4,
+    "avgTimeMs": 16.15,
+    "samples": [
+      {
+        "ruleId": "node-security/no-math-random-crypto",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/math/MathUtils.js",
+        "line": 12,
+        "column": 13,
+        "message": "🔒 CWE-338 OWASP:A04-Cryptographic CVSS:5.3 | Math.random() is not cryptographically secure. It uses a PRNG that can be predicted. Never use it for tokens, keys, passwords, or any security-sensitive values. | CRITICAL\n   Fix: Use crypto.ran"
+      },
+      {
+        "ruleId": "node-security/no-math-random-crypto",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/math/MathUtils.js",
+        "line": 13,
+        "column": 13,
+        "message": "🔒 CWE-338 OWASP:A04-Cryptographic CVSS:5.3 | Math.random() is not cryptographically secure. It uses a PRNG that can be predicted. Never use it for tokens, keys, passwords, or any security-sensitive values. | CRITICAL\n   Fix: Use crypto.ran"
+      },
+      {
+        "ruleId": "node-security/no-math-random-crypto",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/math/MathUtils.js",
+        "line": 14,
+        "column": 13,
+        "message": "🔒 CWE-338 OWASP:A04-Cryptographic CVSS:5.3 | Math.random() is not cryptographically secure. It uses a PRNG that can be predicted. Never use it for tokens, keys, passwords, or any security-sensitive values. | CRITICAL\n   Fix: Use crypto.ran"
+      },
+      {
+        "ruleId": "node-security/no-math-random-crypto",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/math/MathUtils.js",
+        "line": 15,
+        "column": 13,
+        "message": "🔒 CWE-338 OWASP:A04-Cryptographic CVSS:5.3 | Math.random() is not cryptographically secure. It uses a PRNG that can be predicted. Never use it for tokens, keys, passwords, or any security-sensitive values. | CRITICAL\n   Fix: Use crypto.ran"
+      }
+    ]
+  },
+  "secure-coding/no-xxe-injection": {
+    "hits": 1,
+    "avgTimeMs": 26.09,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-xxe-injection",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/loaders/FileLoader.js",
+        "line": 190,
+        "column": 40,
+        "message": "🔒 CWE-611 OWASP:A05-Injection CVSS:9.1 | XML from untrusted source without validation | HIGH\n   Fix: Validate and sanitize XML input before parsing | https://cheatsheetseries.owasp.org/cheatsheets/XML_External_Entity_Prevention_Cheat_Sheet"
+      }
+    ]
+  },
+  "secure-coding/no-unsafe-deserialization": {
+    "hits": 1,
+    "avgTimeMs": 26.03,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-unsafe-deserialization",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/loaders/nodes/NodeLoader.js",
+        "line": 93,
+        "column": 3,
+        "message": "🔒 CWE-502 OWASP:A08-Software CVSS:9.8 | Unsafe deserialization of untrusted data (incl. model/tool output) | HIGH\n   Fix: Use JSON.parse() or validated safe deserialization libraries | validate model/tool output via schema and size limits "
+      }
+    ]
+  },
+  "secure-coding/no-xpath-injection": {
+    "hits": 2,
+    "avgTimeMs": 19.95,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-xpath-injection",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/animation/AnimationAction.js",
+        "line": 410,
+        "column": 52,
+        "message": "🔒 CWE-643 OWASP:A03-Software CVSS:9.8 | XPath query uses unvalidated user input | MEDIUM\n   Fix: Validate and sanitize XPath input before use | https://owasp.org/www-community/attacks/XPATH_Injection"
+      },
+      {
+        "ruleId": "secure-coding/no-xpath-injection",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/three.js/src/animation/AnimationAction.js",
+        "line": 448,
+        "column": 52,
+        "message": "🔒 CWE-643 OWASP:A03-Software CVSS:9.8 | XPath query uses unvalidated user input | MEDIUM\n   Fix: Validate and sanitize XPath input before use | https://owasp.org/www-community/attacks/XPATH_Injection"
+      }
+    ]
+  },
+  "secure-coding/no-ldap-injection": {
+    "hits": 0,
+    "avgTimeMs": 114.07,
+    "samples": []
+  },
+  "browser-security/no-http-urls": {
+    "hits": 0,
+    "avgTimeMs": 120.42,
+    "samples": []
+  },
+  "secure-coding/no-privilege-escalation": {
+    "hits": 0,
+    "avgTimeMs": 125.97,
+    "samples": []
+  },
+  "browser-security/no-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 79.84,
+    "samples": []
+  },
+  "browser-security/no-websocket-eval": {
+    "hits": 0,
+    "avgTimeMs": 71.25,
+    "samples": []
+  },
+  "browser-security/no-worker-message-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 67.66,
+    "samples": []
+  },
+  "browser-security/no-postmessage-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 70.02,
+    "samples": []
+  },
+  "browser-security/no-filereader-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 67.65,
+    "samples": []
+  },
+  "node-security/no-weak-hash-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 63.8,
+    "samples": []
+  },
+  "browser-security/no-websocket-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 65.71,
+    "samples": []
+  },
+  "node-security/no-unsafe-buffer-alloc": {
+    "hits": 0,
+    "avgTimeMs": 58.3,
+    "samples": []
+  },
+  "node-security/no-timing-unsafe-compare": {
+    "hits": 0,
+    "avgTimeMs": 46.2,
+    "samples": []
+  },
+  "secure-coding/no-hardcoded-credentials": {
+    "hits": 0,
+    "avgTimeMs": 40.02,
+    "samples": []
+  },
+  "secure-coding/no-unlimited-resource-allocation": {
+    "hits": 0,
+    "avgTimeMs": 23.8,
+    "samples": []
+  },
+  "node-security/no-buffer-overread": {
+    "hits": 0,
+    "avgTimeMs": 25.19,
+    "samples": []
+  },
+  "secure-coding/no-graphql-injection": {
+    "hits": 0,
+    "avgTimeMs": 22.14,
+    "samples": []
+  },
+  "node-security/no-toctou-vulnerability": {
+    "hits": 0,
+    "avgTimeMs": 19.24,
+    "samples": []
+  },
+  "secure-coding/no-sensitive-data-exposure": {
+    "hits": 0,
+    "avgTimeMs": 18.75,
+    "samples": []
+  },
+  "secure-coding/no-homoglyph-identifiers": {
+    "hits": 0,
+    "avgTimeMs": 16.77,
+    "samples": []
+  },
+  "node-security/detect-non-literal-fs-filename": {
+    "hits": 0,
+    "avgTimeMs": 16.03,
+    "samples": []
+  },
+  "node-security/no-zip-slip": {
+    "hits": 0,
+    "avgTimeMs": 14.74,
+    "samples": []
+  },
+  "node-security/detect-child-process": {
+    "hits": 0,
+    "avgTimeMs": 13.97,
+    "samples": []
+  },
+  "node-security/no-static-iv": {
+    "hits": 0,
+    "avgTimeMs": 13.57,
+    "samples": []
+  },
+  "node-security/no-data-in-temp-storage": {
+    "hits": 0,
+    "avgTimeMs": 12.96,
+    "samples": []
+  },
+  "node-security/no-arbitrary-file-access": {
+    "hits": 0,
+    "avgTimeMs": 12.13,
+    "samples": []
+  },
+  "secure-coding/no-weak-password-recovery": {
+    "hits": 0,
+    "avgTimeMs": 10.93,
+    "samples": []
+  },
+  "browser-security/no-unencrypted-transmission": {
+    "hits": 0,
+    "avgTimeMs": 11.96,
+    "samples": []
+  },
+  "browser-security/no-unsafe-eval-csp": {
+    "hits": 0,
+    "avgTimeMs": 11.18,
+    "samples": []
+  },
+  "browser-security/require-https-only": {
+    "hits": 0,
+    "avgTimeMs": 11.11,
+    "samples": []
+  },
+  "secure-coding/no-fail-open-auth": {
+    "hits": 0,
+    "avgTimeMs": 9.48,
+    "samples": []
+  },
+  "node-security/no-unbounded-decompression": {
+    "hits": 0,
+    "avgTimeMs": 9.57,
+    "samples": []
+  },
+  "secure-coding/no-improper-sanitization": {
+    "hits": 0,
+    "avgTimeMs": 9.8,
+    "samples": []
+  },
+  "secure-coding/no-sql-injection": {
+    "hits": 0,
+    "avgTimeMs": 8.13,
+    "samples": []
+  },
+  "browser-security/no-sensitive-localstorage": {
+    "hits": 0,
+    "avgTimeMs": 8.63,
+    "samples": []
+  },
+  "browser-security/no-client-side-auth-logic": {
+    "hits": 0,
+    "avgTimeMs": 9.2,
+    "samples": []
+  },
+  "node-security/no-ecb-mode": {
+    "hits": 0,
+    "avgTimeMs": 5.68,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-regex-construction": {
+    "hits": 0,
+    "avgTimeMs": 8.03,
+    "samples": []
+  },
+  "browser-security/no-insecure-redirects": {
+    "hits": 0,
+    "avgTimeMs": 8.53,
+    "samples": []
+  },
+  "browser-security/require-postmessage-origin-check": {
+    "hits": 0,
+    "avgTimeMs": 6.85,
+    "samples": []
+  },
+  "browser-security/no-incomplete-url-sanitization": {
+    "hits": 0,
+    "avgTimeMs": 7.26,
+    "samples": []
+  },
+  "node-security/no-dynamic-command-string": {
+    "hits": 0,
+    "avgTimeMs": 6.83,
+    "samples": []
+  },
+  "browser-security/no-credentials-in-query-params": {
+    "hits": 0,
+    "avgTimeMs": 7.01,
+    "samples": []
+  },
+  "node-security/no-deprecated-buffer": {
+    "hits": 0,
+    "avgTimeMs": 5.99,
+    "samples": []
+  },
+  "node-security/require-dependency-integrity": {
+    "hits": 0,
+    "avgTimeMs": 5.88,
+    "samples": []
+  },
+  "browser-security/no-jwt-in-storage": {
+    "hits": 0,
+    "avgTimeMs": 5.76,
+    "samples": []
+  },
+  "secure-coding/no-log-injection": {
+    "hits": 0,
+    "avgTimeMs": 5.98,
+    "samples": []
+  },
+  "node-security/no-ssrf": {
+    "hits": 0,
+    "avgTimeMs": 5.98,
+    "samples": []
+  },
+  "node-security/require-stream-error-handler": {
+    "hits": 0,
+    "avgTimeMs": 5.67,
+    "samples": []
+  },
+  "browser-security/require-blob-url-revocation": {
+    "hits": 0,
+    "avgTimeMs": 5.54,
+    "samples": []
+  },
+  "secure-coding/no-template-injection": {
+    "hits": 0,
+    "avgTimeMs": 5.66,
+    "samples": []
+  },
+  "node-security/no-cryptojs": {
+    "hits": 0,
+    "avgTimeMs": 5.59,
+    "samples": []
+  },
+  "node-security/no-weak-cipher-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 5.53,
+    "samples": []
+  },
+  "browser-security/no-postmessage-wildcard-origin": {
+    "hits": 0,
+    "avgTimeMs": 5.08,
+    "samples": []
+  },
+  "node-security/detect-suspicious-dependencies": {
+    "hits": 0,
+    "avgTimeMs": 4.74,
+    "samples": []
+  },
+  "node-security/no-shell-injection": {
+    "hits": 0,
+    "avgTimeMs": 4.88,
+    "samples": []
+  },
+  "browser-security/no-sensitive-sessionstorage": {
+    "hits": 0,
+    "avgTimeMs": 4.86,
+    "samples": []
+  },
+  "node-security/no-weak-dh-parameters": {
+    "hits": 0,
+    "avgTimeMs": 4.96,
+    "samples": []
+  },
+  "browser-security/no-unsafe-inline-csp": {
+    "hits": 0,
+    "avgTimeMs": 4.76,
+    "samples": []
+  },
+  "browser-security/no-disabled-certificate-validation": {
+    "hits": 0,
+    "avgTimeMs": 4.62,
+    "samples": []
+  },
+  "node-security/no-unsafe-dynamic-require": {
+    "hits": 0,
+    "avgTimeMs": 4.74,
+    "samples": []
+  },
+  "browser-security/no-sensitive-indexeddb": {
+    "hits": 0,
+    "avgTimeMs": 4.6,
+    "samples": []
+  },
+  "node-security/no-env-injection": {
+    "hits": 0,
+    "avgTimeMs": 3.6,
+    "samples": []
+  },
+  "browser-security/no-sensitive-cookie-js": {
+    "hits": 0,
+    "avgTimeMs": 3.51,
+    "samples": []
+  },
+  "node-security/no-insecure-http-parser": {
+    "hits": 0,
+    "avgTimeMs": 2.81,
+    "samples": []
+  },
+  "node-security/require-aead-tag-verification": {
+    "hits": 0,
+    "avgTimeMs": 2.74,
+    "samples": []
+  },
+  "browser-security/no-dynamic-service-worker-url": {
+    "hits": 0,
+    "avgTimeMs": 2.82,
+    "samples": []
+  },
+  "browser-security/no-allow-arbitrary-loads": {
+    "hits": 0,
+    "avgTimeMs": 2.62,
+    "samples": []
+  },
+  "node-security/no-dynamic-algorithm-selection": {
+    "hits": 0,
+    "avgTimeMs": 2.6,
+    "samples": []
+  },
+  "browser-security/no-cookie-auth-tokens": {
+    "hits": 0,
+    "avgTimeMs": 2.5,
+    "samples": []
+  },
+  "node-security/no-self-signed-certs": {
+    "hits": 0,
+    "avgTimeMs": 2.54,
+    "samples": []
+  },
+  "browser-security/detect-mixed-content": {
+    "hits": 0,
+    "avgTimeMs": 2.37,
+    "samples": []
+  },
+  "browser-security/no-unvalidated-deeplinks": {
+    "hits": 0,
+    "avgTimeMs": 2.47,
+    "samples": []
+  },
+  "browser-security/require-websocket-wss": {
+    "hits": 0,
+    "avgTimeMs": 2.19,
+    "samples": []
+  },
+  "browser-security/require-cookie-secure-attrs": {
+    "hits": 0,
+    "avgTimeMs": 2.14,
+    "samples": []
+  },
+  "browser-security/no-insecure-websocket": {
+    "hits": 0,
+    "avgTimeMs": 2.22,
+    "samples": []
+  }
+}

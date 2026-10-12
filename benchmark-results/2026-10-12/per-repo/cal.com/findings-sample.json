@@ -1,0 +1,106 @@
+[
+  {
+    "ruleId": "node-security/no-timing-unsafe-compare",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/api/webhook/app-credential/route.ts",
+    "line": 26,
+    "column": 7,
+    "message": "🔒 CWE-208 OWASP:A02-Security CVSS:5.9 | Using === to compare secrets enables timing attacks. The comparison short-circuits on first mismatch, leaking information about the secret. | HIGH\n   Fix: Use crypto.timingSafeEqual() for constant-ti"
+  },
+  {
+    "ruleId": "node-security/no-math-random-crypto",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/api/teams/create/route.ts",
+    "line": 23,
+    "column": 10,
+    "message": "🔒 CWE-338 OWASP:A04-Cryptographic CVSS:5.3 | Math.random() is not cryptographically secure. It uses a PRNG that can be predicted. Never use it for tokens, keys, passwords, or any security-sensitive values. | CRITICAL\n   Fix: Use crypto.ran"
+  },
+  {
+    "ruleId": "node-security/no-timing-unsafe-compare",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/api/sync/helpscout/route.ts",
+    "line": 46,
+    "column": 9,
+    "message": "🔒 CWE-208 OWASP:A02-Security CVSS:5.9 | Using === to compare secrets enables timing attacks. The comparison short-circuits on first mismatch, leaking information about the secret. | HIGH\n   Fix: Use crypto.timingSafeEqual() for constant-ti"
+  },
+  {
+    "ruleId": "browser-security/no-credentials-in-query-params",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/api/recorded-daily-video/route.ts",
+    "line": 49,
+    "column": 24,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Credentials detected in URL query parameters - this is a security risk | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use secure methods: POST body, headers (Authorization), or secure cookies | ht"
+  },
+  {
+    "ruleId": "node-security/no-timing-unsafe-compare",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/api/recorded-daily-video/route.ts",
+    "line": 72,
+    "column": 9,
+    "message": "🔒 CWE-208 OWASP:A02-Security CVSS:5.9 | Using === to compare secrets enables timing attacks. The comparison short-circuits on first mismatch, leaking information about the secret. | HIGH\n   Fix: Use crypto.timingSafeEqual() for constant-ti"
+  },
+  {
+    "ruleId": "node-security/no-timing-unsafe-compare",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/api/cron/webhookTriggers/route.ts",
+    "line": 11,
+    "column": 7,
+    "message": "🔒 CWE-208 OWASP:A02-Security CVSS:5.9 | Using === to compare secrets enables timing attacks. The comparison short-circuits on first mismatch, leaking information about the secret. | HIGH\n   Fix: Use crypto.timingSafeEqual() for constant-ti"
+  },
+  {
+    "ruleId": "node-security/no-timing-unsafe-compare",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/api/cron/syncAppMeta/route.ts",
+    "line": 22,
+    "column": 7,
+    "message": "🔒 CWE-208 OWASP:A02-Security CVSS:5.9 | Using === to compare secrets enables timing attacks. The comparison short-circuits on first mismatch, leaking information about the secret. | HIGH\n   Fix: Use crypto.timingSafeEqual() for constant-ti"
+  },
+  {
+    "ruleId": "node-security/no-timing-unsafe-compare",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/api/cron/monthlyDigestEmail/route.ts",
+    "line": 20,
+    "column": 7,
+    "message": "🔒 CWE-208 OWASP:A02-Security CVSS:5.9 | Using === to compare secrets enables timing attacks. The comparison short-circuits on first mismatch, leaking information about the secret. | HIGH\n   Fix: Use crypto.timingSafeEqual() for constant-ti"
+  },
+  {
+    "ruleId": "node-security/no-timing-unsafe-compare",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/api/cron/downgradeUsers/route.ts",
+    "line": 16,
+    "column": 7,
+    "message": "🔒 CWE-208 OWASP:A02-Security CVSS:5.9 | Using === to compare secrets enables timing attacks. The comparison short-circuits on first mismatch, leaking information about the secret. | HIGH\n   Fix: Use crypto.timingSafeEqual() for constant-ti"
+  },
+  {
+    "ruleId": "node-security/no-timing-unsafe-compare",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/api/cron/checkSmsPrices/route.ts",
+    "line": 15,
+    "column": 7,
+    "message": "🔒 CWE-208 OWASP:A02-Security CVSS:5.9 | Using === to compare secrets enables timing attacks. The comparison short-circuits on first mismatch, leaking information about the secret. | HIGH\n   Fix: Use crypto.timingSafeEqual() for constant-ti"
+  },
+  {
+    "ruleId": "node-security/no-timing-unsafe-compare",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/api/cron/changeTimeZone/route.ts",
+    "line": 27,
+    "column": 7,
+    "message": "🔒 CWE-208 OWASP:A02-Security CVSS:5.9 | Using === to compare secrets enables timing attacks. The comparison short-circuits on first mismatch, leaking information about the secret. | HIGH\n   Fix: Use crypto.timingSafeEqual() for constant-ti"
+  },
+  {
+    "ruleId": "node-security/no-timing-unsafe-compare",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/api/cron/bookingReminder/route.ts",
+    "line": 19,
+    "column": 7,
+    "message": "🔒 CWE-208 OWASP:A02-Security CVSS:5.9 | Using === to compare secrets enables timing attacks. The comparison short-circuits on first mismatch, leaking information about the secret. | HIGH\n   Fix: Use crypto.timingSafeEqual() for constant-ti"
+  },
+  {
+    "ruleId": "browser-security/no-credentials-in-query-params",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/(use-page-wrapper)/(main-nav)/teams/page.tsx",
+    "line": 26,
+    "column": 31,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Credentials detected in URL query parameters - this is a security risk | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use secure methods: POST body, headers (Authorization), or secure cookies | ht"
+  }
+]

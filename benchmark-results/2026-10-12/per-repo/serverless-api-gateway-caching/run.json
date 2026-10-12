@@ -1,0 +1,39 @@
+{
+  "repo": "serverless-api-gateway-caching",
+  "meta": {
+    "stars": 200,
+    "commit": "542120f7483ab1ee8213ce7499b60d62b9635aa8",
+    "category": "Serverless Plugin",
+    "plugins": [
+      "lambda-security",
+      "node-security",
+      "secure-coding"
+    ],
+    "fpEdge": false,
+    "srcGlob": "src/**/*.js"
+  },
+  "fileCount": 6,
+  "loc": 802,
+  "timing": {
+    "runsMs": [
+      1354,
+      1299,
+      1428
+    ],
+    "medianMs": 1354,
+    "meanMs": 1360,
+    "stddevMs": 53,
+    "cv": 3.9,
+    "msPerFile": 225.67
+  },
+  "peakRssMb": 263,
+  "findings": {
+    "total": 0,
+    "errors": 0,
+    "warnings": 0,
+    "filesWithFindings": 0,
+    "densityPerKloc": 0,
+    "externalDirectives": 0,
+    "parseErrors": 0
+  }
+}
