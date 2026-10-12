@@ -70,32 +70,19 @@ function formatStars(n: number): string {
 export function HeroSection({ githubStars }: { githubStars?: number | null }) {
   return (
     <HeroCosmic
-      eyebrow={
-        <span className="inline-flex items-center gap-2 rounded-full border border-slate-900/15 bg-white/50 px-3 py-1 text-xs font-medium text-slate-800 backdrop-blur-sm dark:border-white/20 dark:bg-white/5 dark:text-white/90">
-          <span aria-hidden>🔒</span>
-          Enterprise-Grade Security for JavaScript
+      // Plain-language hero (2026-10-11): what it is in one sentence. No
+      // eyebrow badge and no slogan — the banned phrases are locked out by
+      // `homepage-plain-language-lock.test.ts`.
+      // HeroCosmic's <h1> is sized for a short slogan (text-5xl to 7xl); a
+      // full sentence at that size fills the phone viewport, so the span
+      // steps the size down one notch per breakpoint.
+      headline={
+        <span className="block text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-slate-900 dark:text-white dark:drop-shadow-lg">
+          ESLint plugins that find security bugs in JavaScript and TypeScript
         </span>
       }
-      headline={
-        <>
-          <span className="text-slate-900 dark:text-white dark:drop-shadow-lg">
-            Secure your code,
-          </span>
-          <br />
-          <span className="bg-linear-to-r from-orange-300 via-amber-300 to-orange-400 bg-clip-text text-transparent">
-            your style.
-          </span>
-        </>
-      }
       tagline={
-        <>
-          ESLint Interlace is a comprehensive{' '}
-          <span className="font-semibold text-slate-900 dark:text-white">
-            security & quality
-          </span>{' '}
-          plugin ecosystem. Built for modern JavaScript, designed for teams who
-          care about code integrity.
-        </>
+        <>Including the bugs AI coding tools write. Free and open source.</>
       }
       primaryCta={{
         label: (

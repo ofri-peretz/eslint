@@ -23,13 +23,13 @@ import { test, expect } from '@playwright/test';
 import { isRotatingThirdPartyImage } from './lib/rotating-image-hosts';
 
 const REQUIRED_HOMEPAGE_TITLES = [
-  'Secure your code', // hero headline (split across two spans)
+  'ESLint plugins that find security bugs', // hero headline
   'See it in action',
   'What it catches',
-  'Trusted by developers',
-  'Two Pillars of Excellence',
+  'Featured on DEV',
+  'Security and code quality',
   'How it works',
-  'Our edges',
+  'Why use these',
 ];
 
 const MOBILE_VIEWPORT = { width: 390, height: 844 };
