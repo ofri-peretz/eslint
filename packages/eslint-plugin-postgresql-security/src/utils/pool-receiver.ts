@@ -10,6 +10,7 @@ import {
   objectKeyName,
   propertyName,
   resolveModuleBinding,
+  staticString,
 } from '@interlace/eslint-devkit';
 import { PG_MODULES } from './index';
 
@@ -32,27 +33,47 @@ export function isPgPoolType(
   annotation: TSESTree.TSTypeAnnotation | undefined,
   scope: TSESLint.Scope.Scope,
 ): boolean {
-  const type = annotation?.typeAnnotation;
-  if (type?.type !== AST_NODE_TYPES.TSTypeReference) return false;
-  const { typeName } = type;
-  if (typeName.type === AST_NODE_TYPES.Identifier) {
-    const binding = resolveModuleBinding(typeName, scope);
-    return (
-      binding !== undefined &&
-      PG_MODULE_SET.has(packageRoot(binding.module)) &&
-      (binding.path.length === 0 || binding.path.at(-1) === 'Pool')
-    );
-  }
-  if (
-    typeName.type !== AST_NODE_TYPES.TSQualifiedName ||
-    typeName.right.name !== 'Pool'
+  const target = pgTypeName(annotation?.typeAnnotation, scope);
+  return target === '' || target === 'Pool';
+}
+
+/**
+ * The name a type reference takes from a PostgreSQL driver module, or `null`
+ * when it does not come from one. Every spelling of the same type resolves:
+ * `Pool` imported by name (`'Pool'`), a default import (`''`), the qualified
+ * `pg.Pool`, and the indexed `pg['Pool']` / `pg[`Pool`]`.
+ */
+export function pgTypeName(
+  type: TSESTree.TypeNode | undefined,
+  scope: TSESLint.Scope.Scope,
+): string | null {
+  let module: TSESTree.Node | null = null;
+  let name: string | null = null;
+  if (type?.type === AST_NODE_TYPES.TSTypeReference) {
+    const { typeName } = type;
+    if (typeName.type === AST_NODE_TYPES.TSQualifiedName) {
+      module = typeName.left;
+      name = typeName.right.name;
+    } else {
+      module = typeName;
+    }
+  } else if (
+    type?.type === AST_NODE_TYPES.TSIndexedAccessType &&
+    type.objectType.type === AST_NODE_TYPES.TSTypeReference &&
+    type.indexType.type === AST_NODE_TYPES.TSLiteralType
   ) {
-    return false;
+    module = type.objectType.typeName;
+    name = staticString(type.indexType.literal);
   }
-  const binding = resolveModuleBinding(typeName.left, scope);
-  return (
-    binding !== undefined && PG_MODULE_SET.has(packageRoot(binding.module))
-  );
+  const binding =
+    module === null ? undefined : resolveModuleBinding(module, scope);
+  if (
+    binding === undefined ||
+    !PG_MODULE_SET.has(packageRoot(binding.module))
+  ) {
+    return null;
+  }
+  return name ?? binding.path.at(-1) ?? '';
 }
 
 /**

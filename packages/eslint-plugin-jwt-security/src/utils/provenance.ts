@@ -25,15 +25,23 @@
  * when every call site in the file passes a back-channel value.
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, propertyName } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  objectKeyName,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import {
   MAX_FLOW_DEPTH,
   calleeExportName,
+  returnsOf,
+  soleReturn,
   findVariable,
-  originModule,
+  originBinding,
   resolveTerminal,
 } from './value-flow';
 import type { SourceCodeLike } from './value-flow';
+import { bindsName, relativeExportModule, resolveSymbol } from './cross-file';
+import type { CrossFileContext, ModuleRef } from './cross-file';
 
 /** Packages whose every call result is a response to a request we made. */
 const HTTP_CLIENT_PACKAGES: ReadonlySet<string> = new Set([
@@ -59,6 +67,7 @@ const BODY_READERS: ReadonlySet<string> = new Set(['json', 'text']);
 export function fromBackChannel(
   node: TSESTree.Node,
   sourceCode: SourceCodeLike,
+  crossFile: CrossFileContext,
   depth = 0,
 ): boolean {
   if (depth > MAX_FLOW_DEPTH) return false;
@@ -66,12 +75,19 @@ export function fromBackChannel(
   switch (value.type) {
     // A field of a back-channel value is back-channel too.
     case AST_NODE_TYPES.MemberExpression:
-      return fromBackChannel(value.object, sourceCode, depth + 1);
+      return (
+        fromBackChannel(value.object, sourceCode, crossFile, depth + 1) ||
+        unwrapsBackChannel(value, sourceCode, crossFile, depth)
+      );
     case AST_NODE_TYPES.CallExpression:
+      return (
+        isBackChannelCall(value, sourceCode, crossFile, depth) ||
+        unwrapsBackChannel(value, sourceCode, crossFile, depth)
+      );
     case AST_NODE_TYPES.NewExpression:
-      return isBackChannelCall(value, sourceCode, depth);
+      return isBackChannelCall(value, sourceCode, crossFile, depth);
     case AST_NODE_TYPES.Identifier:
-      return identifierFromBackChannel(value, sourceCode, depth);
+      return identifierFromBackChannel(value, sourceCode, crossFile, depth);
     default:
       return false;
   }
@@ -80,6 +96,7 @@ export function fromBackChannel(
 function isBackChannelCall(
   call: TSESTree.CallExpression | TSESTree.NewExpression,
   sourceCode: SourceCodeLike,
+  crossFile: CrossFileContext,
   depth: number,
 ): boolean {
   const callee = call.callee;
@@ -88,18 +105,55 @@ function isBackChannelCall(
     callee.type === AST_NODE_TYPES.MemberExpression &&
     BODY_READERS.has(String(propertyName(callee)))
   ) {
-    return fromBackChannel(callee.object, sourceCode, depth + 1);
+    return fromBackChannel(callee.object, sourceCode, crossFile, depth + 1);
+  }
+  // `JSON.parse(body)` holds exactly what the body held.
+  if (
+    callee.type === AST_NODE_TYPES.MemberExpression &&
+    callee.object.type === AST_NODE_TYPES.Identifier &&
+    callee.object.name === 'JSON' &&
+    propertyName(callee) === 'parse' &&
+    isUnbound(sourceCode, callee.object)
+  ) {
+    const [text] = call.arguments;
+    return (
+      text !== undefined &&
+      fromBackChannel(text, sourceCode, crossFile, depth + 1)
+    );
+  }
+  // A module-level function declared to return a fetch `Response` —
+  // `shopifyFetch(url): Promise<Response>` with Response from node-fetch.
+  if (
+    callee.type === AST_NODE_TYPES.Identifier &&
+    isModuleLevel(sourceCode, callee)
+  ) {
+    const symbol = resolveSymbol(lintedModule(call, crossFile), callee.name);
+    if (symbol?.kind === 'local' && returnsFetchResponse(symbol)) return true;
   }
   // The platform `fetch` — a global no binding in this file shadows.
   if (
     callee.type === AST_NODE_TYPES.Identifier &&
     callee.name === 'fetch' &&
-    (findVariable(sourceCode, callee)?.defs ?? []).length === 0
+    isUnbound(sourceCode, callee)
   ) {
     return true;
   }
-  const module = originModule(callee, sourceCode);
-  if (module === null) return false;
+  const origin = originBinding(callee, sourceCode);
+  if (origin === null) return false;
+  /*
+   * A relative module is read across the file boundary: `const { client:
+   * oidc } = require('./client')` where `./client` does
+   * `exports.client = require('openid-client')` is an openid-client call.
+   */
+  const module =
+    origin.source.startsWith('.') && origin.exportName !== null
+      ? (relativeExportModule(
+          crossFile.filename,
+          origin.source,
+          origin.exportName,
+          crossFile.parser,
+        ) ?? origin.source)
+      : origin.source;
   const root = module.split('/')[0]!;
   if (HTTP_CLIENT_PACKAGES.has(root)) return true;
   return (
@@ -111,6 +165,7 @@ function isBackChannelCall(
 function identifierFromBackChannel(
   node: TSESTree.Identifier,
   sourceCode: SourceCodeLike,
+  crossFile: CrossFileContext,
   depth: number,
 ): boolean {
   const def = findVariable(sourceCode, node)?.defs[0];
@@ -121,10 +176,10 @@ function identifierFromBackChannel(
     def.node.id.type !== AST_NODE_TYPES.Identifier &&
     def.node.init !== null
   ) {
-    return fromBackChannel(def.node.init, sourceCode, depth + 1);
+    return fromBackChannel(def.node.init, sourceCode, crossFile, depth + 1);
   }
   if (def?.type !== 'Parameter') return false;
-  return everyCallSitePasses(def, sourceCode, depth);
+  return everyCallSitePasses(def, sourceCode, crossFile, depth);
 }
 
 /**
@@ -138,6 +193,7 @@ function identifierFromBackChannel(
 function everyCallSitePasses(
   def: TSESLint.Scope.Definition,
   sourceCode: SourceCodeLike,
+  crossFile: CrossFileContext,
   depth: number,
 ): boolean {
   // `indexOf` misses for a destructured parameter, and `id` is absent on an
@@ -160,10 +216,314 @@ function everyCallSitePasses(
     const argument = parent.arguments[index];
     if (
       argument === undefined ||
-      !fromBackChannel(argument, sourceCode, depth + 1)
+      !fromBackChannel(argument, sourceCode, crossFile, depth + 1)
     ) {
       return false;
     }
   }
   return sawCall;
+}
+
+/** A platform global: no binding in this file shadows it. */
+function isUnbound(
+  sourceCode: SourceCodeLike,
+  node: TSESTree.Identifier,
+): boolean {
+  return (findVariable(sourceCode, node)?.defs ?? []).length === 0;
+}
+
+/** A name bound at module scope (or not at all), where `resolveSymbol` reads. */
+function isModuleLevel(
+  sourceCode: SourceCodeLike,
+  node: TSESTree.Identifier,
+): boolean {
+  const scope = findVariable(sourceCode, node)?.scope.type;
+  return scope === 'module' || scope === 'global';
+}
+
+/** The linted file as a module of the project. */
+function lintedModule(
+  node: TSESTree.Node,
+  crossFile: CrossFileContext,
+): ModuleRef {
+  let root: TSESTree.Node = node;
+  while (root.parent) root = root.parent;
+  return {
+    program: root as TSESTree.Program,
+    filename: crossFile.filename,
+    parser: crossFile.parser,
+  };
+}
+
+/** Packages whose `Response` is the response of an HTTP request made. */
+const FETCH_RESPONSE_PACKAGES: ReadonlySet<string> = new Set([
+  'node-fetch',
+  'undici',
+  'cross-fetch',
+  'isomorphic-fetch',
+]);
+
+/**
+ * Whether a function is DECLARED to return a fetch `Response`.
+ *
+ * `Promise<Response>` / `Response`, where `Response` is imported from a fetch
+ * package — or is the platform's own, bound by nothing in that module. A
+ * return-type annotation is the function's structure, the same evidence a
+ * typed member gives.
+ */
+function returnsFetchResponse(
+  symbol: Extract<ResolvedSymbolLike, { kind: 'local' }>,
+): boolean {
+  let type = (symbol.node as { returnType?: TSESTree.TSTypeAnnotation })
+    .returnType?.typeAnnotation;
+  if (
+    type?.type === AST_NODE_TYPES.TSTypeReference &&
+    type.typeName.type === AST_NODE_TYPES.Identifier &&
+    type.typeName.name === 'Promise'
+  ) {
+    type = type.typeArguments?.params[0];
+  }
+  if (
+    type?.type !== AST_NODE_TYPES.TSTypeReference ||
+    type.typeName.type !== AST_NODE_TYPES.Identifier
+  ) {
+    return false;
+  }
+  const resolved = resolveSymbol(symbol.module, type.typeName.name);
+  // Unresolved: the platform's own Response only when nothing in the module
+  // binds that name — a local `interface Response`, or an import whose module
+  // cannot be read, or a type parameter of the function, is something else.
+  if (resolved === null) {
+    return (
+      type.typeName.name === 'Response' &&
+      !bindsName(symbol.module, type.typeName.name) &&
+      !typeParameterBinds(symbol.node, type.typeName.name)
+    );
+  }
+  return (
+    resolved.kind === 'external' &&
+    FETCH_RESPONSE_PACKAGES.has(resolved.source.split('/')[0]!)
+  );
+}
+
+/**
+ * Whether `name` is a type parameter in scope at `node` — declared by the
+ * function itself (`function f<Response>(): Promise<Response>`) or by an
+ * enclosing function, method or class. Such a name is that parameter, never
+ * the platform global it happens to share a spelling with.
+ */
+function typeParameterBinds(node: TSESTree.Node, name: string): boolean {
+  for (let n: TSESTree.Node | undefined = node; n; n = n.parent) {
+    const params = (
+      n as { typeParameters?: TSESTree.TSTypeParameterDeclaration }
+    ).typeParameters?.params;
+    if (params?.some((p) => p.name.name === name)) return true;
+  }
+  return false;
+}
+
+type ResolvedSymbolLike = NonNullable<ReturnType<typeof resolveSymbol>>;
+
+/**
+ * A result wrapper, read from its definition: `ok(v)` builds `new Ok(v)`, and
+ * `Ok`'s constructor stores its first argument as a field.
+ */
+interface Wrapper {
+  readonly cls: TSESTree.ClassDeclaration;
+  readonly field: string;
+  readonly module: ModuleRef;
+  /** The expression wrapped — the factory's / constructor's first argument. */
+  readonly arg: TSESTree.Node | null;
+}
+
+function wrapperOf(expr: TSESTree.Node, module: ModuleRef): Wrapper | null {
+  if (
+    (expr.type !== AST_NODE_TYPES.CallExpression &&
+      expr.type !== AST_NODE_TYPES.NewExpression) ||
+    expr.callee.type !== AST_NODE_TYPES.Identifier
+  ) {
+    return null;
+  }
+  const arg = expr.arguments[0] ?? null;
+  let construction: TSESTree.Node = expr;
+  let where = module;
+  // `ok(v)` -> the factory's `new Ok(v)`, with `v` its own first parameter.
+  if (expr.type === AST_NODE_TYPES.CallExpression) {
+    const factory = resolveSymbol(module, expr.callee.name);
+    if (factory?.kind !== 'local') return null;
+    const built = soleReturn(factory.node);
+    if (
+      built?.type !== AST_NODE_TYPES.NewExpression ||
+      built.arguments[0]?.type !== AST_NODE_TYPES.Identifier
+    ) {
+      return null;
+    }
+    // `soleReturn` answered, so the factory is a function.
+    const [param] = (
+      factory.node as
+        | TSESTree.FunctionDeclaration
+        | TSESTree.FunctionExpression
+        | TSESTree.ArrowFunctionExpression
+    ).params;
+    if (
+      (param as TSESTree.Identifier | undefined)?.name !==
+      built.arguments[0].name
+    ) {
+      return null;
+    }
+    construction = built;
+    where = factory.module;
+  }
+  const cls = resolveSymbol(
+    where,
+    ((construction as TSESTree.NewExpression).callee as TSESTree.Identifier)
+      .name,
+  );
+  if (
+    cls?.kind !== 'local' ||
+    cls.node.type !== AST_NODE_TYPES.ClassDeclaration
+  ) {
+    return null;
+  }
+  const ctor = cls.node.body.body.find(
+    (member) =>
+      member.type === AST_NODE_TYPES.MethodDefinition &&
+      member.kind === 'constructor',
+  ) as TSESTree.MethodDefinition | undefined;
+  const first = ctor?.value.params[0];
+  if (first?.type !== AST_NODE_TYPES.TSParameterProperty) return null;
+  return {
+    cls: cls.node,
+    // TypeScript admits only an identifier (optionally defaulted) there.
+    field: (first.parameter as TSESTree.Identifier).name,
+    module: cls.module,
+    arg,
+  };
+}
+
+/** `this.<field>`. */
+function isThisField(node: TSESTree.Node | null, field: string): boolean {
+  return (
+    node?.type === AST_NODE_TYPES.MemberExpression &&
+    node.object.type === AST_NODE_TYPES.ThisExpression &&
+    propertyName(node) === field
+  );
+}
+
+interface Step {
+  readonly call: boolean;
+  readonly name: string;
+}
+
+/**
+ * Apply `.value` / `.mapError(h).valueOrBug()` to one wrapped return.
+ *
+ * - a Node: the wrapped value comes out (the argument `ok()` was given);
+ * - `nothing`: this wrapper yields no value on that path — its class has no
+ *   such member (`Err` has no `value`) or the method only throws;
+ * - `unknown`: anything the class does not show plainly.
+ */
+function applySteps(
+  returned: TSESTree.Node,
+  steps: readonly Step[],
+  module: ModuleRef,
+): TSESTree.Node | 'nothing' | 'unknown' {
+  let wrapper = wrapperOf(returned, module);
+  // The value we follow; null once a re-wrap wraps something else.
+  let value = wrapper?.arg ?? null;
+  for (const [index, step] of steps.entries()) {
+    if (wrapper === null) return 'unknown';
+    const yields = index === steps.length - 1 && value !== null;
+    const member = wrapper.cls.body.body.find(
+      (element) =>
+        (element.type === AST_NODE_TYPES.MethodDefinition ||
+          element.type === AST_NODE_TYPES.PropertyDefinition) &&
+        objectKeyName(element) === step.name,
+    );
+    if (!step.call) {
+      if (step.name === wrapper.field) return yields ? value! : 'unknown';
+      return member === undefined ? 'nothing' : 'unknown';
+    }
+    if (member?.type !== AST_NODE_TYPES.MethodDefinition) return 'unknown';
+    const returns = returnsOf(member.value.body!);
+    if (returns.length === 0) return 'nothing';
+    if (returns.length > 1) return 'unknown';
+    const result = returns[0]!.argument;
+    if (isThisField(result, wrapper.field)) return yields ? value! : 'unknown';
+    // `return ok(this.value)` re-wraps the same value; `err(mapper(...))`
+    // wraps something else, whose value is no longer the one we follow.
+    const next = result === null ? null : wrapperOf(result, wrapper.module);
+    value = isThisField(next?.arg ?? null, wrapper.field) ? value : null;
+    wrapper = next;
+  }
+  return 'unknown';
+}
+
+/**
+ * A value unwrapped from a same-file function's Result.
+ *
+ * `tokenResult.value` / `tokenResult.mapError(h).valueOrBug()` where
+ * `tokenResult = await tokenRequest(…)` and `tokenRequest` returns
+ * `ok(payload)` or `err(…)`. Every return is unwrapped through the wrapper's
+ * own class; every path that yields a value must yield a back-channel one,
+ * and at least one must.
+ */
+function unwrapsBackChannel(
+  node: TSESTree.MemberExpression | TSESTree.CallExpression,
+  sourceCode: SourceCodeLike,
+  crossFile: CrossFileContext,
+  depth: number,
+): boolean {
+  const steps: Step[] = [];
+  let base: TSESTree.Node = node;
+  for (;;) {
+    if (base.type === AST_NODE_TYPES.MemberExpression) {
+      steps.unshift({ call: false, name: String(propertyName(base)) });
+      base = base.object;
+    } else if (
+      base.type === AST_NODE_TYPES.CallExpression &&
+      base.callee.type === AST_NODE_TYPES.MemberExpression
+    ) {
+      steps.unshift({ call: true, name: String(propertyName(base.callee)) });
+      base = base.callee.object;
+    } else {
+      break;
+    }
+  }
+  const producer = resolveTerminal(base, sourceCode);
+  if (
+    steps.length === 0 ||
+    (producer.type !== AST_NODE_TYPES.CallExpression &&
+      producer.type !== AST_NODE_TYPES.NewExpression)
+  ) {
+    return false;
+  }
+  // A same-file function's returns, or the wrapper itself when the value
+  // was built in place (`new Ok(body)`, `ok(body)`).
+  const fn =
+    producer.type === AST_NODE_TYPES.CallExpression
+      ? resolveTerminal(producer.callee, sourceCode)
+      : producer;
+  const returned =
+    fn.type !== AST_NODE_TYPES.FunctionDeclaration &&
+    fn.type !== AST_NODE_TYPES.FunctionExpression &&
+    fn.type !== AST_NODE_TYPES.ArrowFunctionExpression
+      ? [producer]
+      : // An expression-bodied function never reaches here: its single
+        // return is already followed by `resolveTerminal`.
+        returnsOf(fn.body).map((statement) => statement.argument);
+  const module = lintedModule(node, crossFile);
+  let yielded = 0;
+  for (const value of returned) {
+    const out = value === null ? 'nothing' : applySteps(value, steps, module);
+    if (out === 'nothing') continue;
+    if (
+      out === 'unknown' ||
+      !fromBackChannel(out, sourceCode, crossFile, depth + 1)
+    ) {
+      return false;
+    }
+    yielded++;
+  }
+  return yielded > 0;
 }

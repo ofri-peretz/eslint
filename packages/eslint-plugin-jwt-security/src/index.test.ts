@@ -29,6 +29,8 @@ describe('eslint-plugin-jwt-security plugin interface', () => {
       });
 
       expect(recommendedRules['jwt-security/no-algorithm-none']).toBe('error');
+      // CWE-294 corpus fixture is scored under `recommended`; CVSS 5.0 → warn.
+      expect(recommendedRules['jwt-security/require-issued-at']).toBe('warn');
     });
 
     it('should provide strict configuration', () => {

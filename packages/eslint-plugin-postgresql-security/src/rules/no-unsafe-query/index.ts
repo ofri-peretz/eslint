@@ -1014,8 +1014,8 @@ export const noUnsafeQuery: TSESLint.RuleModule<
       CallExpression(node: TSESTree.CallExpression) {
         if (
           node.callee.type !== AST_NODE_TYPES.MemberExpression ||
-          node.callee.property.type !== AST_NODE_TYPES.Identifier ||
-          !SQL_SINK_METHODS.has(node.callee.property.name)
+          // `sql.unsafe(…)`, `sql['unsafe'](…)` and `sql[`unsafe`](…)` are one sink.
+          !SQL_SINK_METHODS.has(propertyName(node.callee) ?? '')
         ) {
           return;
         }

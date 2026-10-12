@@ -108,6 +108,8 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   // MEDIUM - Best practices
   'jwt-security/require-expiration': 'error',
   'jwt-security/no-sensitive-payload': 'warn',
+  // CVSS 5.0: without iat a verifier cannot bound token age (maxAge / maxTokenAge).
+  'jwt-security/require-issued-at': 'warn',
 };
 
 /**

@@ -384,3 +384,22 @@ describe('no-insecure-ssl — fp/fn review 2026-10', () => {
     ],
   });
 });
+
+/** Computed-key spellings (check:computed-keys, 2026-10). */
+describe('no-insecure-ssl — string-subscript spellings', () => {
+  ruleTester.run('a config satisfying pg["ClientConfig"]', noInsecureSsl, {
+    valid: [
+      {
+        name: 'a config satisfying a non-pg indexed type is not a pg config',
+        code: "import pg from 'pg';\nimport other from 'other';\nexport const config = { ['ssl']: { ['rejectUnauthorized']: false } } satisfies other['ClientConfig'];",
+      },
+    ],
+    invalid: [
+      {
+        name: 'computed keys in a config that satisfies pg["ClientConfig"]',
+        code: "import pg from 'pg';\nexport const config = { ['ssl']: { ['rejectUnauthorized']: false } } satisfies pg['ClientConfig'];",
+        errors: [{ messageId: 'noInsecureSsl' }],
+      },
+    ],
+  });
+});

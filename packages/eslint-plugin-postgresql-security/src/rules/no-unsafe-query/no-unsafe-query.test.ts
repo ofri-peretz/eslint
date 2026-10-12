@@ -943,3 +943,27 @@ describe('no-unsafe-query — residual risks closed', () => {
     ]),
   });
 });
+
+/** Computed-key spellings (check:computed-keys, 2026-10). */
+describe('no-unsafe-query — string-subscript spellings', () => {
+  ruleTester.run('a sink named by a string subscript is the same sink', noUnsafeQuery, {
+    valid: [
+      {
+        name: 'a computed sink name that is not a static string is not matched',
+        code: "import postgres from 'postgres';\nsql[method]('SELECT * FROM users ORDER BY ' + req.query.sort);",
+      },
+    ],
+    invalid: [
+      {
+        name: 'postgres.js sql["unsafe"] with a concatenated statement',
+        code: "import postgres from 'postgres';\nsql['unsafe']('SELECT * FROM users ORDER BY ' + req.query['sort']);",
+        errors: [{ messageId: 'noUnsafeQuery' }],
+      },
+      {
+        name: 'db[`query`] with an interpolated statement',
+        code: "import { Pool } from 'pg';\ndb[`query`](`SELECT * FROM users WHERE id = ${req.params.id}`);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+    ],
+  });
+});
