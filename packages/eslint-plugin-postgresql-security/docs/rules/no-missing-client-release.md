@@ -54,6 +54,18 @@ async function query() {
   }
 }
 
+// Released right after the try: success falls through to it, and so does
+// the error a catch swallows. A catch that rethrows releases first.
+async function bestEffort() {
+  const client = await pool.connect();
+  try {
+    await client.query('SELECT 1');
+  } catch (err) {
+    console.error(err);
+  }
+  client.release();
+}
+
 // Using pool.query() directly (auto-releases)
 async function simpleQuery() {
   await pool.query('SELECT 1');

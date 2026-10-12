@@ -209,6 +209,17 @@ function hasExitBetween(block: TSESTree.BlockStatement, startIdx: number, endIdx
 }
 
 /**
+ * Does control never fall out of this block — it has a top-level return/throw?
+ */
+function alwaysExits(block: TSESTree.BlockStatement): boolean {
+  return block.body.some(
+    (stmt) =>
+      stmt.type === AST_NODE_TYPES.ReturnStatement ||
+      stmt.type === AST_NODE_TYPES.ThrowStatement,
+  );
+}
+
+/**
  * Checks if a switch case has a break/return/throw
  */
 function caseHasExit(switchCase: TSESTree.SwitchCase): boolean {
@@ -698,9 +709,11 @@ export const preventDoubleRelease: TSESLint.RuleModule<
                   }
                 }
 
-                // Case 12: Catch block + after try (no finally, or B is outside finally)
+                // Case 12: Catch block + after try (no finally, or B is outside finally).
+                // A catch that rethrows or returns never reaches B: the catch
+                // release is the error path's, B is the success path's.
                 const catchAForAfter = isInCatchBlock(callA.node);
-                if (catchAForAfter) {
+                if (catchAForAfter && !alwaysExits(catchAForAfter.body)) {
                   const tryOfCatchA = catchAForAfter.parent as TSESTree.TryStatement;
                   const tryEndPos = tryOfCatchA.range[1];
                   if (callB.node.range[0] > tryEndPos) {
