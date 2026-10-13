@@ -10,12 +10,21 @@
  * CWE-400: Resource Exhaustion
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath, propertyName } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  isTestFilePath,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { analyzeMongoScope } from '../../utils/receiver';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
 
 type MessageIds = 'unboundedFind' | 'suggestionAddLimit';
-export interface Options { allowInTests?: boolean; }
+export interface Options {
+  allowInTests?: boolean;
+}
 type RuleOptions = [Options?];
 
 // `findOne` is bounded by definition (returns at most one document) and must
@@ -28,7 +37,9 @@ export const noUnboundedFind = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
-      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/no-unbounded-find.md', description: 'Require limit() on find queries to prevent resource exhaustion',
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/no-unbounded-find.md',
+      description:
+        'Require limit() on find queries to prevent resource exhaustion',
       cwe: 'CWE-400',
       cvss: 4.3,
     },
@@ -43,11 +54,18 @@ export const noUnboundedFind = createRule<RuleOptions, MessageIds>({
         description: 'find() without limit() may return excessive data',
         severity: 'LOW',
         fix: 'Add .limit(100) or appropriate limit to the query',
-        documentationLink: 'https://www.mongodb.com/docs/manual/reference/method/cursor.limit/',
+        documentationLink:
+          'https://www.mongodb.com/docs/manual/reference/method/cursor.limit/',
       }),
       suggestionAddLimit: 'Append .limit(100) to the query',
     },
-    schema: [{ type: 'object', properties: { allowInTests: { type: 'boolean', default: true } }, additionalProperties: false }],
+    schema: [
+      {
+        type: 'object',
+        properties: { allowInTests: { type: 'boolean', default: true } },
+        additionalProperties: false,
+      },
+    ],
   },
   defaultOptions: [{ allowInTests: true }],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
@@ -76,9 +94,10 @@ export const noUnboundedFind = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        const methodName = node.callee.property.type === AST_NODE_TYPES.Identifier
-          ? node.callee.property.name
-          : null;
+        const methodName =
+          node.callee.property.type === AST_NODE_TYPES.Identifier
+            ? node.callee.property.name
+            : null;
 
         if (!methodName || !FIND_METHODS.has(methodName)) {
           return;
@@ -98,22 +117,32 @@ export const noUnboundedFind = createRule<RuleOptions, MessageIds>({
           if (
             cursor.type === AST_NODE_TYPES.MemberExpression &&
             propertyName(cursor) === 'limit'
-          ) return;
+          )
+            return;
           if (
             cursor.type === AST_NODE_TYPES.CallExpression &&
             cursor.callee.type === AST_NODE_TYPES.MemberExpression &&
             propertyName(cursor.callee) === 'limit'
-          ) return;
+          )
+            return;
           // Stop walking once we leave the chain (the call is no longer the
           // object of a member expression / callee).
           const next: TSESTree.Node | undefined = cursor.parent;
           if (!next) break;
           if (
-            next.type === AST_NODE_TYPES.MemberExpression && next.object === cursor
-          ) { cursor = next; continue; }
+            next.type === AST_NODE_TYPES.MemberExpression &&
+            next.object === cursor
+          ) {
+            cursor = next;
+            continue;
+          }
           if (
-            next.type === AST_NODE_TYPES.CallExpression && next.callee === cursor
-          ) { cursor = next; continue; }
+            next.type === AST_NODE_TYPES.CallExpression &&
+            next.callee === cursor
+          ) {
+            cursor = next;
+            continue;
+          }
           break;
         }
 
@@ -137,7 +166,8 @@ export const noUnboundedFind = createRule<RuleOptions, MessageIds>({
               messageId: 'suggestionAddLimit',
               // ponytail: 100 mirrors the message's documented default; make it
               // an option only if users ask for a different ceiling.
-              fix: (fixer: TSESLint.RuleFixer) => fixer.insertTextAfter(node, '.limit(100)'),
+              fix: (fixer: TSESLint.RuleFixer) =>
+                fixer.insertTextAfter(node, '.limit(100)'),
             },
           ],
         });

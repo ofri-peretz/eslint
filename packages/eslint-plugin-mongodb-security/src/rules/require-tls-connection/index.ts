@@ -10,12 +10,21 @@
  * CWE-295: Improper Certificate Validation
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath, propertyName } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  isTestFilePath,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { analyzeMongoScope } from '../../utils/receiver';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
 
 type MessageIds = 'requireTls' | 'suggestionAddTls';
-export interface Options { allowInTests?: boolean; }
+export interface Options {
+  allowInTests?: boolean;
+}
 type RuleOptions = [Options?];
 
 const CONNECT_METHODS = new Set(['connect', 'createConnection']);
@@ -25,7 +34,8 @@ export const requireTlsConnection = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
-      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/require-tls-connection.md', description: 'Require TLS for MongoDB connections in production',
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/require-tls-connection.md',
+      description: 'Require TLS for MongoDB connections in production',
       cwe: 'CWE-295',
       cvss: 7.4,
     },
@@ -40,11 +50,18 @@ export const requireTlsConnection = createRule<RuleOptions, MessageIds>({
         description: 'MongoDB connection is not using TLS encryption',
         severity: 'HIGH',
         fix: 'Add { tls: true } to connection options',
-        documentationLink: 'https://www.mongodb.com/docs/manual/tutorial/configure-ssl/',
+        documentationLink:
+          'https://www.mongodb.com/docs/manual/tutorial/configure-ssl/',
       }),
       suggestionAddTls: 'Add tls: true to the connection options',
     },
-    schema: [{ type: 'object', properties: { allowInTests: { type: 'boolean', default: true } }, additionalProperties: false }],
+    schema: [
+      {
+        type: 'object',
+        properties: { allowInTests: { type: 'boolean', default: true } },
+        additionalProperties: false,
+      },
+    ],
   },
   defaultOptions: [{ allowInTests: true }],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
@@ -87,7 +104,10 @@ export const requireTlsConnection = createRule<RuleOptions, MessageIds>({
         }
 
         const optionsArg = node.arguments[1];
-        if (!optionsArg || optionsArg.type !== AST_NODE_TYPES.ObjectExpression) {
+        if (
+          !optionsArg ||
+          optionsArg.type !== AST_NODE_TYPES.ObjectExpression
+        ) {
           if (node.arguments.length >= 1) {
             const uriArg = node.arguments[0];
             context.report({
@@ -117,7 +137,9 @@ export const requireTlsConnection = createRule<RuleOptions, MessageIds>({
         // JSON — was reported as missing TLS.
         const tlsKey = (prop: TSESTree.ObjectLiteralElement): string | null => {
           if (prop.type !== AST_NODE_TYPES.Property) return null;
-          const key = context.sourceCode.getText(prop.key).replaceAll(/['"]/g, '');
+          const key = context.sourceCode
+            .getText(prop.key)
+            .replaceAll(/['"]/g, '');
           return key === 'tls' || key === 'ssl' ? key : null;
         };
 
@@ -125,15 +147,16 @@ export const requireTlsConnection = createRule<RuleOptions, MessageIds>({
           (prop) =>
             tlsKey(prop) !== null &&
             (prop as TSESTree.Property).value.type === AST_NODE_TYPES.Literal &&
-            ((prop as TSESTree.Property).value as TSESTree.Literal).value === true,
+            ((prop as TSESTree.Property).value as TSESTree.Literal).value ===
+              true,
         );
 
         if (!hasTls) {
           // A `tls`/`ssl` key that is present but not `true` gets its value
           // flipped; appending a second one would emit a duplicate key.
-          const existing = optionsArg.properties.find((prop) => tlsKey(prop) !== null) as
-            | TSESTree.Property
-            | undefined;
+          const existing = optionsArg.properties.find(
+            (prop) => tlsKey(prop) !== null,
+          ) as TSESTree.Property | undefined;
           const lastProperty = optionsArg.properties.at(-1);
           // No `alreadyTrue` guard here any more. It existed to suppress a
           // no-op suggestion on `{ 'tls': true }`, which only reached this
@@ -147,7 +170,8 @@ export const requireTlsConnection = createRule<RuleOptions, MessageIds>({
               {
                 messageId: 'suggestionAddTls',
                 fix: (fixer: TSESLint.RuleFixer) => {
-                  if (existing) return fixer.replaceText(existing.value, 'true');
+                  if (existing)
+                    return fixer.replaceText(existing.value, 'true');
                   return lastProperty
                     ? fixer.insertTextAfter(lastProperty, ', tls: true')
                     : fixer.replaceText(optionsArg, '{ tls: true }');

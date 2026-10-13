@@ -5,14 +5,14 @@ tags: ['security', 'mongodb']
 category: security
 severity: medium
 cwe: CWE-943
-owasp: "A01:2021"
+owasp: 'A01:2021'
 autofix: false
 ---
 
 > **Keywords:** NoSQL injection, CWE-943, MongoDB, $where, RCE, CVE-2025-23061, CVE-2024-53900, Mongoose
 
-
 <!-- @rule-summary -->
+
 Prevents use of the dangerous $where operator which executes JavaScript on the MongoDB server, enabling Remote Code E...
 <!-- @/rule-summary -->
 
@@ -28,7 +28,7 @@ Prevents use of the dangerous `$where` operator which executes JavaScript on the
 | **CVE**           | CVE-2025-23061, CVE-2024-53900            |
 | **OWASP**         | A01:2021 - Broken Access Control          |
 | **Severity**      | Critical (CVSS: 9.0)                      |
-| **Category**   | Security |
+| **Category**      | Security                                  |
 | **ESLint MCP**    | ✅ Optimized for AI assistant integration |
 
 ## Rule Details
@@ -118,6 +118,6 @@ User.find({ [operator]: '...' });
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| Option         | Type      | Default | Description                                     |
+| -------------- | --------- | ------- | ----------------------------------------------- |
+| `allowInTests` | `boolean` | `true`  | Skip this rule in `*.test.*` / `*.spec.*` files |

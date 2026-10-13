@@ -5,14 +5,14 @@ tags: ['security', 'mongodb']
 category: security
 severity: medium
 cwe: CWE-943
-owasp: "A03:2021"
+owasp: 'A03:2021'
 autofix: suggestions
 ---
 
 > **Keywords:** NoSQL injection, CWE-943, MongoDB, Mongoose, operator injection, query manipulation, security
 
-
 <!-- @rule-summary -->
+
 Prevents NoSQL injection by detecting direct use of user input in MongoDB query objects.
 <!-- @/rule-summary -->
 
@@ -27,7 +27,7 @@ Prevents NoSQL injection by detecting direct use of user input in MongoDB query 
 | **CWE Reference** | CWE-943 (NoSQL Injection)                 |
 | **OWASP**         | A03:2021 - Injection                      |
 | **Severity**      | Critical (CVSS: 9.8)                      |
-| **Category**   | Security |
+| **Category**      | Security                                  |
 | **ESLint MCP**    | ✅ Optimized for AI assistant integration |
 
 ## Rule Details
@@ -84,11 +84,10 @@ User.find({ email: { $eq: email } });
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
-| `additionalMethods` | `string[]` | `[]` | Additional method names to check |
-
+| Option              | Type       | Default | Description                                     |
+| ------------------- | ---------- | ------- | ----------------------------------------------- |
+| `allowInTests`      | `boolean`  | `true`  | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `additionalMethods` | `string[]` | `[]`    | Additional method names to check                |
 
 ```json
 {

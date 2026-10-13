@@ -18,14 +18,16 @@ type MongoCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly MongoSuggestion[] } | string>;
 };
-const xmo = <T,>(cases: T[]): T[] =>
+const xmo = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asMongo(c) as T;
     const test = c as MongoCase;
     return {
       ...c,
       code: asMongo(test.code),
-      ...(typeof test.output === 'string' ? { output: asMongo(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asMongo(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -44,7 +46,6 @@ const xmo = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 const ruleTester = new RuleTester();
 
@@ -71,44 +72,79 @@ ruleTester.run('require-tls-connection', requireTlsConnection, {
     // No options at all
     {
       code: `mongoose.connect(uri);`,
-      errors: [{
-        messageId: 'requireTls',
-        suggestions: [{ messageId: 'suggestionAddTls', output: `mongoose.connect(uri, { tls: true });` }],
-      }],
+      errors: [
+        {
+          messageId: 'requireTls',
+          suggestions: [
+            {
+              messageId: 'suggestionAddTls',
+              output: `mongoose.connect(uri, { tls: true });`,
+            },
+          ],
+        },
+      ],
     },
     // Options without tls/ssl
     {
       code: `mongoose.connect(uri, { retryWrites: true });`,
-      errors: [{
-        messageId: 'requireTls',
-        suggestions: [{ messageId: 'suggestionAddTls', output: `mongoose.connect(uri, { retryWrites: true, tls: true });` }],
-      }],
+      errors: [
+        {
+          messageId: 'requireTls',
+          suggestions: [
+            {
+              messageId: 'suggestionAddTls',
+              output: `mongoose.connect(uri, { retryWrites: true, tls: true });`,
+            },
+          ],
+        },
+      ],
     },
     // tls set to false
     {
       code: `mongoose.connect(uri, { tls: false });`,
-      errors: [{
-        messageId: 'requireTls',
-        suggestions: [{ messageId: 'suggestionAddTls', output: `mongoose.connect(uri, { tls: true });` }],
-      }],
+      errors: [
+        {
+          messageId: 'requireTls',
+          suggestions: [
+            {
+              messageId: 'suggestionAddTls',
+              output: `mongoose.connect(uri, { tls: true });`,
+            },
+          ],
+        },
+      ],
     },
     // createConnection without tls
     {
       code: `mongoose.createConnection(uri, { authSource: 'admin' });`,
-      errors: [{
-        messageId: 'requireTls',
-        suggestions: [{ messageId: 'suggestionAddTls', output: `mongoose.createConnection(uri, { authSource: 'admin', tls: true });` }],
-      }],
+      errors: [
+        {
+          messageId: 'requireTls',
+          suggestions: [
+            {
+              messageId: 'suggestionAddTls',
+              output: `mongoose.createConnection(uri, { authSource: 'admin', tls: true });`,
+            },
+          ],
+        },
+      ],
     },
     // allowInTests: false
     {
       code: `mongoose.connect(uri);`,
       filename: 'connect.test.ts',
       options: [{ allowInTests: false }],
-      errors: [{
-        messageId: 'requireTls',
-        suggestions: [{ messageId: 'suggestionAddTls', output: `mongoose.connect(uri, { tls: true });` }],
-      }],
+      errors: [
+        {
+          messageId: 'requireTls',
+          suggestions: [
+            {
+              messageId: 'suggestionAddTls',
+              output: `mongoose.connect(uri, { tls: true });`,
+            },
+          ],
+        },
+      ],
     },
   ]),
 });

@@ -12,11 +12,20 @@
  * @see https://nvd.nist.gov/vuln/detail/CVE-2025-23061
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath, propertyName } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  isTestFilePath,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
 
 type MessageIds = 'unsafeWhere';
-export interface Options { allowInTests?: boolean; }
+export interface Options {
+  allowInTests?: boolean;
+}
 type RuleOptions = [Options?];
 
 export const noUnsafeWhere = createRule<RuleOptions, MessageIds>({
@@ -36,13 +45,20 @@ export const noUnsafeWhere = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-943',
         owasp: 'A01:2021',
         cvss: 9.0,
-        description: 'The $where operator executes JavaScript and enables Remote Code Execution',
+        description:
+          'The $where operator executes JavaScript and enables Remote Code Execution',
         severity: 'CRITICAL',
         fix: 'Remove $where and use standard query operators like $eq, $in, $regex',
         documentationLink: 'https://nvd.nist.gov/vuln/detail/CVE-2025-23061',
       }),
     },
-    schema: [{ type: 'object', properties: { allowInTests: { type: 'boolean', default: true } }, additionalProperties: false }],
+    schema: [
+      {
+        type: 'object',
+        properties: { allowInTests: { type: 'boolean', default: true } },
+        additionalProperties: false,
+      },
+    ],
   },
   defaultOptions: [{ allowInTests: true }],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
@@ -65,11 +81,12 @@ export const noUnsafeWhere = createRule<RuleOptions, MessageIds>({
 
     return {
       Property(node: TSESTree.Property) {
-        const keyName = node.key.type === AST_NODE_TYPES.Identifier
-          ? node.key.name
-          : node.key.type === AST_NODE_TYPES.Literal
-            ? String(node.key.value)
-            : null;
+        const keyName =
+          node.key.type === AST_NODE_TYPES.Identifier
+            ? node.key.name
+            : node.key.type === AST_NODE_TYPES.Literal
+              ? String(node.key.value)
+              : null;
 
         if (keyName === '$where') {
           context.report({

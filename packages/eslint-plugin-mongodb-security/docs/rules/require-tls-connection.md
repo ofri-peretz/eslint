@@ -5,14 +5,14 @@ tags: ['security', 'mongodb']
 category: security
 severity: medium
 cwe: CWE-295
-owasp: "A02:2021"
+owasp: 'A02:2021'
 autofix: suggestions
 ---
 
 > **Keywords:** CWE-295, TLS, SSL, encryption, MongoDB, MitM, security
 
-
 <!-- @rule-summary -->
+
 Requires TLS/SSL encryption for MongoDB connections in production environments.
 <!-- @/rule-summary -->
 
@@ -27,7 +27,7 @@ Requires TLS/SSL encryption for MongoDB connections in production environments.
 | **CWE Reference** | CWE-295 (Improper Certificate Validation) |
 | **OWASP**         | A02:2021 - Cryptographic Failures         |
 | **Severity**      | High (CVSS: 7.4)                          |
-| **Category**   | Security |
+| **Category**      | Security                                  |
 
 ## Rule Details
 
@@ -113,6 +113,6 @@ mongoose.connect(uri, options); // TLS may or may not be enabled
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| Option         | Type      | Default | Description                                     |
+| -------------- | --------- | ------- | ----------------------------------------------- |
+| `allowInTests` | `boolean` | `true`  | Skip this rule in `*.test.*` / `*.spec.*` files |

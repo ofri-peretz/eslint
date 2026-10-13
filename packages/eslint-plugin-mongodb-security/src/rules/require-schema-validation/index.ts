@@ -10,16 +10,32 @@
  * CWE-20: Improper Input Validation
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  isTestFilePath,
+} from '@interlace/eslint-devkit';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
 
 type MessageIds = 'requireSchemaValidation';
-export interface Options { allowInTests?: boolean; }
+export interface Options {
+  allowInTests?: boolean;
+}
 type RuleOptions = [Options?];
 
 const VALIDATION_PROPERTIES = new Set([
-  'required', 'validate', 'enum', 'min', 'max',
-  'minlength', 'maxlength', 'match', 'minLength', 'maxLength',
+  'required',
+  'validate',
+  'enum',
+  'min',
+  'max',
+  'minlength',
+  'maxlength',
+  'match',
+  'minLength',
+  'maxLength',
 ]);
 
 export const requireSchemaValidation = createRule<RuleOptions, MessageIds>({
@@ -27,7 +43,8 @@ export const requireSchemaValidation = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
-      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/require-schema-validation.md', description: 'Require validation on Mongoose schema fields',
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/require-schema-validation.md',
+      description: 'Require validation on Mongoose schema fields',
       cwe: 'CWE-20',
       cvss: 6.1,
     },
@@ -44,7 +61,13 @@ export const requireSchemaValidation = createRule<RuleOptions, MessageIds>({
         documentationLink: 'https://mongoosejs.com/docs/validation.html',
       }),
     },
-    schema: [{ type: 'object', properties: { allowInTests: { type: 'boolean', default: true } }, additionalProperties: false }],
+    schema: [
+      {
+        type: 'object',
+        properties: { allowInTests: { type: 'boolean', default: true } },
+        additionalProperties: false,
+      },
+    ],
   },
   defaultOptions: [{ allowInTests: true }],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
@@ -71,7 +94,10 @@ export const requireSchemaValidation = createRule<RuleOptions, MessageIds>({
        * Report when schema field object has a `type` property but no validation properties.
        */
       NewExpression(node: TSESTree.NewExpression) {
-        if (node.callee.type !== AST_NODE_TYPES.Identifier || node.callee.name !== 'Schema') {
+        if (
+          node.callee.type !== AST_NODE_TYPES.Identifier ||
+          node.callee.name !== 'Schema'
+        ) {
           return;
         }
 
@@ -90,14 +116,17 @@ export const requireSchemaValidation = createRule<RuleOptions, MessageIds>({
           const fieldProps = field.value.properties;
           const hasType = fieldProps.some((p) => {
             if (p.type !== AST_NODE_TYPES.Property) return false;
-            return p.key.type === AST_NODE_TYPES.Identifier && p.key.name === 'type';
+            return (
+              p.key.type === AST_NODE_TYPES.Identifier && p.key.name === 'type'
+            );
           });
 
           if (!hasType) continue;
 
           const hasValidation = fieldProps.some((p) => {
             if (p.type !== AST_NODE_TYPES.Property) return false;
-            const keyName = p.key.type === AST_NODE_TYPES.Identifier ? p.key.name : null;
+            const keyName =
+              p.key.type === AST_NODE_TYPES.Identifier ? p.key.name : null;
             return keyName !== null && VALIDATION_PROPERTIES.has(keyName);
           });
 

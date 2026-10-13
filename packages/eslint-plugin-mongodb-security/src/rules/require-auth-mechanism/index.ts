@@ -10,12 +10,21 @@
  * CWE-287: Improper Authentication
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath, propertyName } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  isTestFilePath,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { analyzeMongoScope } from '../../utils/receiver';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
 
 type MessageIds = 'requireAuthMechanism';
-export interface Options { allowInTests?: boolean; }
+export interface Options {
+  allowInTests?: boolean;
+}
 type RuleOptions = [Options?];
 
 const CONNECTION_METHODS = new Set(['connect', 'createConnection']);
@@ -25,7 +34,8 @@ export const requireAuthMechanism = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
-      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/require-auth-mechanism.md', description: 'Require explicit authentication mechanism (SCRAM-SHA-256)',
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/require-auth-mechanism.md',
+      description: 'Require explicit authentication mechanism (SCRAM-SHA-256)',
       cwe: 'CWE-287',
       cvss: 6.5,
     },
@@ -39,10 +49,17 @@ export const requireAuthMechanism = createRule<RuleOptions, MessageIds>({
         description: 'MongoDB connection uses default authentication mechanism',
         severity: 'MEDIUM',
         fix: 'Add { authMechanism: "SCRAM-SHA-256" } to connection options',
-        documentationLink: 'https://www.mongodb.com/docs/manual/core/authentication/',
+        documentationLink:
+          'https://www.mongodb.com/docs/manual/core/authentication/',
       }),
     },
-    schema: [{ type: 'object', properties: { allowInTests: { type: 'boolean', default: true } }, additionalProperties: false }],
+    schema: [
+      {
+        type: 'object',
+        properties: { allowInTests: { type: 'boolean', default: true } },
+        additionalProperties: false,
+      },
+    ],
   },
   defaultOptions: [{ allowInTests: true }],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
@@ -98,11 +115,12 @@ export const requireAuthMechanism = createRule<RuleOptions, MessageIds>({
         if (optionsArg.type === AST_NODE_TYPES.ObjectExpression) {
           const hasAuthMechanism = optionsArg.properties.some((prop) => {
             if (prop.type !== AST_NODE_TYPES.Property) return false;
-            const keyName = prop.key.type === AST_NODE_TYPES.Identifier
-              ? prop.key.name
-              : prop.key.type === AST_NODE_TYPES.Literal
-                ? String(prop.key.value)
-                : null;
+            const keyName =
+              prop.key.type === AST_NODE_TYPES.Identifier
+                ? prop.key.name
+                : prop.key.type === AST_NODE_TYPES.Literal
+                  ? String(prop.key.value)
+                  : null;
             return keyName === 'authMechanism';
           });
 

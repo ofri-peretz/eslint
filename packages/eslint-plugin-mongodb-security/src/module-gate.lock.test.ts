@@ -122,38 +122,50 @@ describe('MongoDB module gate', () => {
 
     it('reports once the file imports mongoose', () => {
       expect(
-        lint(`import mongoose from 'mongoose';\n${dsn}`, 'no-hardcoded-connection-string')
-          .length,
+        lint(
+          `import mongoose from 'mongoose';\n${dsn}`,
+          'no-hardcoded-connection-string',
+        ).length,
       ).toBeGreaterThan(0);
     });
 
     it('reports on a mongodb:// literal with no import at all', () => {
       // The DSN names the protocol; it is evidence in itself.
-      expect(lint(dsn, 'no-hardcoded-connection-string').length).toBeGreaterThan(0);
+      expect(
+        lint(dsn, 'no-hardcoded-connection-string').length,
+      ).toBeGreaterThan(0);
     });
 
     it('opens on a mongoose PLUGIN import, not just mongoose itself', () => {
       // Eleven of the twelve corpus files holding `new Schema(` that a
       // four-package list placed "outside Mongo" were exactly this.
       expect(
-        lint(`import paginate from 'mongoose-paginate';\n${dsn}`, 'no-hardcoded-connection-string')
-          .length,
+        lint(
+          `import paginate from 'mongoose-paginate';\n${dsn}`,
+          'no-hardcoded-connection-string',
+        ).length,
       ).toBeGreaterThan(0);
     });
 
     it('opens on new Schema({...}) with no mongo import', () => {
       const code = `const userSchema = new Schema({ name: String });\n${dsn}`;
-      expect(lint(code, 'no-hardcoded-connection-string').length).toBeGreaterThan(0);
+      expect(
+        lint(code, 'no-hardcoded-connection-string').length,
+      ).toBeGreaterThan(0);
     });
 
     it('opens on a .lean() query modifier', () => {
       const code = `export const all = () => Model.find({}).lean();\n${dsn}`;
-      expect(lint(code, 'no-hardcoded-connection-string').length).toBeGreaterThan(0);
+      expect(
+        lint(code, 'no-hardcoded-connection-string').length,
+      ).toBeGreaterThan(0);
     });
 
     it('opens on Types.ObjectId', () => {
       const code = `export const id = new Types.ObjectId();\n${dsn}`;
-      expect(lint(code, 'no-hardcoded-connection-string').length).toBeGreaterThan(0);
+      expect(
+        lint(code, 'no-hardcoded-connection-string').length,
+      ).toBeGreaterThan(0);
     });
 
     it("opens on a dynamic await import('mongodb')", () => {
@@ -165,12 +177,16 @@ describe('MongoDB module gate', () => {
         return MongoClient;
       }
       ${dsn}`;
-      expect(lint(code, 'no-hardcoded-connection-string').length).toBeGreaterThan(0);
+      expect(
+        lint(code, 'no-hardcoded-connection-string').length,
+      ).toBeGreaterThan(0);
     });
 
     it('opens on a mongodb:// template literal', () => {
       const code = 'const uri = `mongodb://admin:hunter2@${host}:27017/app`;';
-      expect(lint(code, 'no-hardcoded-connection-string').length).toBeGreaterThan(0);
+      expect(
+        lint(code, 'no-hardcoded-connection-string').length,
+      ).toBeGreaterThan(0);
     });
 
     it("opens on TypeScript's import-equals form", () => {
@@ -179,14 +195,18 @@ describe('MongoDB module gate', () => {
       // type test this way; three corpus files were silenced until the recall
       // diff caught it.
       const code = `import mongoose = require('mongoose');\n${dsn}`;
-      expect(lint(code, 'no-hardcoded-connection-string').length).toBeGreaterThan(0);
+      expect(
+        lint(code, 'no-hardcoded-connection-string').length,
+      ).toBeGreaterThan(0);
     });
 
     it('opens on a DSN that is not at the start of the string', () => {
       // Env-file generators write `MONGODB_URL=mongodb://...`; anchoring the
       // match to the start of the literal silenced two corpus files.
       const code = `const line = 'MONGODB_URL=mongodb://admin:hunter2@127.0.0.1/db';`;
-      expect(lint(code, 'no-hardcoded-connection-string').length).toBeGreaterThan(0);
+      expect(
+        lint(code, 'no-hardcoded-connection-string').length,
+      ).toBeGreaterThan(0);
     });
 
     it('opens on a `mongoose` binding from a RELATIVE wrapper module', () => {
@@ -198,7 +218,9 @@ describe('MongoDB module gate', () => {
       const code = `const mongoose = require('./config/mongoose');
       mongoose.connect();
       ${dsn}`;
-      expect(lint(code, 'no-hardcoded-connection-string').length).toBeGreaterThan(0);
+      expect(
+        lint(code, 'no-hardcoded-connection-string').length,
+      ).toBeGreaterThan(0);
     });
 
     it("opens on require('mongoose') bound to a name that is NOT mongoose", () => {
@@ -207,12 +229,17 @@ describe('MongoDB module gate', () => {
       // the walk stops, so only a differently-named binding still exercises the
       // require-specifier path.
       const code = `const db = require('mongoose');\n${dsn}`;
-      expect(lint(code, 'no-hardcoded-connection-string').length).toBeGreaterThan(0);
+      expect(
+        lint(code, 'no-hardcoded-connection-string').length,
+      ).toBeGreaterThan(0);
     });
 
     it('and stays silent on that same DSN-free file with no Mongo evidence', () => {
       expect(
-        lint(`const uri = 'postgres://localhost/app';`, 'no-hardcoded-connection-string'),
+        lint(
+          `const uri = 'postgres://localhost/app';`,
+          'no-hardcoded-connection-string',
+        ),
       ).toHaveLength(0);
     });
   });
