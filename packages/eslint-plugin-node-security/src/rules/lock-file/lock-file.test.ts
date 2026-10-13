@@ -87,6 +87,7 @@ ruleTester.run('lock-file', lockFile, {
     },
     // A lock file twelve directories up is still a lock file.
     {
+      name: 'a monorepo file eleven levels below the root pnpm-lock.yaml still finds it',
       code: 'const deepMonorepoFile = 1',
       filename: deeplyNestedFileInLockedProject(),
       options: [{ packageManager: 'pnpm' }],
