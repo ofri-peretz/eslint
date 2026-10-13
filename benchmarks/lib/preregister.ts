@@ -59,6 +59,7 @@ const DEFAULT_METHODOLOGY_PATHS = [
   'benchmarks/score.ts',
   'eslint.benchmark.config.mjs',
   'scripts/ilb-wild.ts',
+  'scripts/lib/ilb-wild-config.ts',
   'scripts/ilb-validate-fixtures.ts',
 ];
 
