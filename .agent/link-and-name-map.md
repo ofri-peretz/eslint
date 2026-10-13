@@ -35,7 +35,7 @@ rule id an adopter copies out of a preset names the plugin key they register.
 | `eslint-plugin-express-security` | 3.2.4 | `express-security/` | — | `plugin-express-security` | security | `express` | ✅ | ✅ | ✅ |
 | `eslint-plugin-gemini-security` | 1.0.0 | `gemini-security/` | — | `plugin-gemini-security` | security | `gemini` | ✅ | ✅ | ✅ |
 | `eslint-plugin-import-next` | 2.8.13 | `import-next/` | — | `plugin-import-next` | quality | `—` | ✅ | ✅ | ✅ |
-| `eslint-plugin-jwt-security` | 3.5.0 | `jwt-security/` | `jwt/` | `plugin-jwt-security` | security | `jwt` | ✅ | ✅ | ✅ |
+| `eslint-plugin-jwt-security` | 3.5.1 | `jwt-security/` | `jwt/` | `plugin-jwt-security` | security | `jwt` | ✅ | ✅ | ✅ |
 | `eslint-plugin-knex-security` | 1.0.0 | `knex-security/` | — | `plugin-knex-security` | security | `knex` | ✅ | ✅ | ✅ |
 | `eslint-plugin-lambda-security` | 2.1.5 | `lambda-security/` | — | `plugin-lambda-security` | security | `lambda` | ✅ | ✅ | ✅ |
 | `eslint-plugin-maintainability` | 3.2.17 | `maintainability/` | — | `plugin-maintainability` | quality | `—` | ✅ | ✅ | ✅ |
