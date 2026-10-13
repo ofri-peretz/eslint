@@ -155,3 +155,75 @@ ruleTester.run('mutation-guided edges', noDebugModeProduction, {
   ]),
   invalid: [],
 });
+
+const gated = "process.env.NODE_ENV !== 'production'";
+
+ruleTester.run('object form of set()', noDebugModeProduction, {
+  valid: xmo([
+    { name: 'debug: false', code: `mongoose.set({ debug: false });` },
+    {
+      name: 'debug gated on the environment',
+      code: `mongoose.set({ debug: process.env.NODE_ENV !== 'production' });`,
+    },
+    {
+      name: 'other options set to true',
+      code: `mongoose.set({ strictQuery: true, autoIndex: true });`,
+    },
+    {
+      name: 'a spread of a config object is not traced',
+      code: `mongoose.set({ ...options });`,
+    },
+    { name: 'set() with no arguments', code: `mongoose.set();` },
+    {
+      name: "a 'debug' string value is not the boolean true",
+      code: `mongoose.set({ debug: 'true' });`,
+    },
+  ]),
+  invalid: xmo([
+    {
+      name: 'mongoose.set({ debug: true })',
+      code: `mongoose.set({ debug: true });`,
+      errors: [
+        {
+          messageId: 'debugModeProduction',
+          suggestions: [
+            {
+              messageId: 'suggestionGateOnNodeEnv',
+              output: `mongoose.set({ debug: ${gated} });`,
+            },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'debug: true alongside other options, with a quoted key',
+      code: `mongoose.set({ strictQuery: true, 'debug': true });`,
+      errors: [
+        {
+          messageId: 'debugModeProduction',
+          suggestions: [
+            {
+              messageId: 'suggestionGateOnNodeEnv',
+              output: `mongoose.set({ strictQuery: true, 'debug': ${gated} });`,
+            },
+          ],
+        },
+      ],
+    },
+    {
+      name: "mongoose['set']('debug', true) is the same call",
+      code: `mongoose['set']('debug', true);`,
+      errors: [
+        {
+          messageId: 'debugModeProduction',
+          suggestions: [
+            {
+              messageId: 'suggestionGateOnNodeEnv',
+              output: `mongoose['set']('debug', ${gated});`,
+            },
+          ],
+        },
+      ],
+    },
+  ]),
+});

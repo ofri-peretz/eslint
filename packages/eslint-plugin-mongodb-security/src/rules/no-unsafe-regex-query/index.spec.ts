@@ -114,3 +114,95 @@ ruleTester.run('mutation-guided edges', noUnsafeRegexQuery, {
   ]),
   invalid: [],
 });
+
+ruleTester.run('regex sinks the property loop missed', noUnsafeRegexQuery, {
+  valid: xmo([
+    {
+      name: '$or branches with a literal $regex',
+      code: `User.find({ $or: [{ name: { $regex: '^a' } }] });`,
+    },
+    {
+      name: '$or branches that are not object literals are not walked',
+      code: `User.find({ $or: [branch, , ...rest] });`,
+    },
+    {
+      name: 'an array under a non-operator key is not a filter',
+      code: `User.find({ tags: [{ name: { $regex: req.query.q } }] });`,
+    },
+    {
+      name: 'a $or operand that is not an array literal has no branches to walk',
+      code: `User.find({ $or: conditions });`,
+    },
+    {
+      name: 'a RegExp built from a literal',
+      code: `User.find({ name: new RegExp('^admin') });`,
+    },
+    {
+      name: 'a RegExp with no pattern argument',
+      code: `User.find({ name: new RegExp() });`,
+    },
+    {
+      name: 'a RegExp built from a local value',
+      code: `User.find({ name: RegExp(pattern) });`,
+    },
+    {
+      name: 'a constructor that is not RegExp',
+      code: `User.find({ name: new Matcher(req.query.q) });`,
+    },
+    {
+      name: 'a RegExp from request input under a key other than $regex',
+      code: `User.find({ name: { $options: new RegExp(req.query.q) } });`,
+    },
+    {
+      name: 'a computed method name that is not static is not a known method',
+      code: `User[method]({ name: { $regex: req.query.q } });`,
+    },
+    {
+      name: 'a key computed at runtime is not known to be a logical operator',
+      code: `User.find({ [op]: [{ name: { $regex: req.query.q } }] });`,
+    },
+  ]),
+  invalid: xmo([
+    {
+      name: '$regex from request input inside $or',
+      code: `User.find({ $or: [{ name: { $regex: req.query.q } }] });`,
+      errors: [{ messageId: 'unsafeRegex' }],
+    },
+    {
+      name: '$regex from request input inside $and, two levels down',
+      code: `User.find({ $and: [{ $nor: [{ name: { $regex: req.body.q } }] }] });`,
+      errors: [{ messageId: 'unsafeRegex' }],
+    },
+    {
+      name: "a quoted '$or' key",
+      code: `User.find({ '$or': [{ name: { $regex: req.query.q } }] });`,
+      errors: [{ messageId: 'unsafeRegex' }],
+    },
+    {
+      // Mongo matches a RegExp filter value exactly as it does `$regex`.
+      name: 'new RegExp(req.query.q) as the filter value',
+      code: `User.find({ name: new RegExp(req.query.q) });`,
+      errors: [{ messageId: 'unsafeRegex' }],
+    },
+    {
+      name: 'RegExp(req.query.q) without new',
+      code: `User.find({ name: RegExp(req.query.q, 'i') });`,
+      errors: [{ messageId: 'unsafeRegex' }],
+    },
+    {
+      name: 'RegExp(req.query.q) without new, as the $regex value',
+      code: `User.find({ name: { $regex: RegExp(req.query.q) } });`,
+      errors: [{ messageId: 'unsafeRegex' }],
+    },
+    {
+      name: 'new RegExp(req.query.q) inside $or',
+      code: `User.find({ $or: [{ name: new RegExp(req.query.q) }] });`,
+      errors: [{ messageId: 'unsafeRegex' }],
+    },
+    {
+      name: "User['find'](...) is the same call as User.find(...)",
+      code: `User['find']({ name: { $regex: req.query.q } });`,
+      errors: [{ messageId: 'unsafeRegex' }],
+    },
+  ]),
+});

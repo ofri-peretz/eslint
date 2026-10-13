@@ -195,15 +195,15 @@
     "mongodb-security": {
       "rules": {
         "no-bypass-middleware": {
-          "score": 86.2,
-          "killed": 25,
-          "survived": 4,
+          "score": 88.4,
+          "killed": 23,
+          "survived": 3,
           "noCoverage": 0,
           "timeout": 0
         },
         "no-debug-mode-production": {
-          "score": 89.7,
-          "killed": 44,
+          "score": 92.4,
+          "killed": 61,
           "survived": 5,
           "noCoverage": 0,
           "timeout": 0
@@ -237,30 +237,30 @@
           "timeout": 0
         },
         "no-unbounded-find": {
-          "score": 86.8,
-          "killed": 85,
-          "survived": 13,
+          "score": 87.5,
+          "killed": 83,
+          "survived": 12,
           "noCoverage": 0,
           "timeout": 1
         },
         "no-unsafe-populate": {
-          "score": 90.5,
-          "killed": 77,
-          "survived": 8,
+          "score": 91.4,
+          "killed": 75,
+          "survived": 7,
           "noCoverage": 0,
           "timeout": 0
         },
         "no-unsafe-query": {
-          "score": 90,
-          "killed": 136,
-          "survived": 13,
+          "score": 91.4,
+          "killed": 149,
+          "survived": 12,
           "noCoverage": 2,
           "timeout": 0
         },
         "no-unsafe-regex-query": {
-          "score": 89.6,
-          "killed": 104,
-          "survived": 12,
+          "score": 95.2,
+          "killed": 121,
+          "survived": 6,
           "noCoverage": 0,
           "timeout": 0
         },
@@ -286,9 +286,9 @@
           "timeout": 1
         },
         "require-projection": {
-          "score": 89.5,
-          "killed": 59,
-          "survived": 7,
+          "score": 90.6,
+          "killed": 57,
+          "survived": 6,
           "noCoverage": 0,
           "timeout": 1
         },

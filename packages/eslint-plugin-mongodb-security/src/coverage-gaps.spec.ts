@@ -139,9 +139,10 @@ const ruleTester = new RuleTester();
 
 ruleTester.run('no-bypass-middleware (coverage gaps)', noBypassMiddleware, {
   valid: xmo([
-    // Computed member access — property is a Literal, not an Identifier,
-    // so methodName resolves to null and the call is not flagged.
-    `User['updateOne']({ _id: id });`,
+    // A method chosen at RUNTIME has no static name, so it names no
+    // middleware-bypassing method. (`User['updateOne']` is the same call as
+    // `User.updateOne` and IS reported — see the rule's own spec.)
+    `User[op]({ _id: id });`,
   ]),
   invalid: [],
 });
@@ -205,8 +206,8 @@ ruleTester.run(
       `db.users.find({}, { projection: { 1: 1, name: 1 } });`,
       // Boolean exclusion (false) and boolean inclusion (true).
       `db.users.find({}, { projection: { password: false, name: true } });`,
-      // Computed member access — methodName is null, not a query method.
-      `db.users['find']({});`,
+      // A method chosen at RUNTIME — methodName is null, not a query method.
+      `db.users[op]({});`,
       // `.select` accessed but never called — the grandparent is not a CallExpression.
       `User.find({}).select;`,
       // `.select()` called with no arguments.
@@ -261,8 +262,8 @@ ruleTester.run('no-unbounded-find (coverage gaps)', noUnboundedFind, {
     // find() passed as an argument to a `.limit(...)` call — the chain walk
     // starts at a CallExpression whose callee is a `.limit` member expression.
     `q.limit(User.find({}));`,
-    // Computed member access — methodName is null.
-    `db.users['find']({});`,
+    // A method chosen at RUNTIME — methodName is null.
+    `db.users[op]({});`,
   ]),
   invalid: xmo([
     // Native-driver options object present but without a `limit` property.
@@ -289,8 +290,8 @@ ruleTester.run('no-unsafe-populate (coverage gaps)', noUnsafePopulate, {
     `query.populate(getConfig().path);`,
     // Computed property — stringified as '[computed]', no user-input match.
     `query.populate(config['path']);`,
-    // Computed method access — methodName is null, not 'populate'.
-    `query['populate'](req.body.field);`,
+    // A method chosen at RUNTIME — methodName is null, not 'populate'.
+    `query[op](req.body.field);`,
     // Spread element inside the populate options object is skipped.
     `query.populate({ ...opts });`,
     // String-literal 'path' key — keyName resolves to null, not inspected.
@@ -303,8 +304,8 @@ ruleTester.run('no-unsafe-query (coverage gaps)', noUnsafeQuery, {
   valid: xmo([
     // Plain function call — callee is not a member expression.
     `find({ name: req.body.name });`,
-    // Computed member access — methodName is null.
-    `User['find']({ name: req.body.name });`,
+    // A method chosen at RUNTIME — methodName is null.
+    `User[op]({ name: req.body.name });`,
 
     // No arguments at all. The identically-spelled fixture a few hundred lines
     // below belongs to `no-unsafe-regex-query`, so this guard in
@@ -466,8 +467,8 @@ ruleTester.run('no-unsafe-query (coverage gaps)', noUnsafeQuery, {
 
 ruleTester.run('no-unsafe-regex-query (coverage gaps)', noUnsafeRegexQuery, {
   valid: xmo([
-    // Computed member access — methodName is null.
-    `User['find']({ name: { $regex: req.body.x } });`,
+    // A method chosen at RUNTIME — methodName is null.
+    `User[op]({ name: { $regex: req.body.x } });`,
     // No arguments — query argument missing.
     `User.find();`,
     // Query argument is not an object literal.
@@ -554,8 +555,8 @@ ruleTester.run('require-projection (coverage gaps)', requireProjection, {
     // find() as an argument of a `.select(...)` call — CallExpression branch
     // of hasChainedSelect.
     `helper.select(User.find({}));`,
-    // Computed member access — methodName is null.
-    `User['find']({});`,
+    // A method chosen at RUNTIME — methodName is null.
+    `User[op]({});`,
   ]),
   invalid: [],
 });

@@ -226,3 +226,29 @@ ruleTester.run('mutation-guided edges', noUnboundedFind, {
     },
   ]),
 });
+
+ruleTester.run('computed method names', noUnboundedFind, {
+  valid: xmo([
+    {
+      name: 'a computed method name that is not static is not a known method',
+      code: `User[method]({});`,
+    },
+  ]),
+  invalid: xmo([
+    {
+      name: "User['find'](...) is the same call as User.find(...)",
+      code: `User['find']({});`,
+      errors: [
+        {
+          messageId: 'unboundedFind',
+          suggestions: [
+            {
+              messageId: 'suggestionAddLimit',
+              output: `User['find']({}).limit(100);`,
+            },
+          ],
+        },
+      ],
+    },
+  ]),
+});

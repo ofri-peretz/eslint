@@ -18,14 +18,16 @@ type MongoCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly MongoSuggestion[] } | string>;
 };
-const xmo = <T,>(cases: T[]): T[] =>
+const xmo = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asMongo(c) as T;
     const test = c as MongoCase;
     return {
       ...c,
       code: asMongo(test.code),
-      ...(typeof test.output === 'string' ? { output: asMongo(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asMongo(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -44,7 +46,6 @@ const xmo = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 const ruleTester = new RuleTester();
 
@@ -113,6 +114,22 @@ ruleTester.run('no-bypass-middleware', noBypassMiddleware, {
       code: `User.updateOne({ _id: id }, { $set: { x: 1 } });`,
       filename: 'user.test.ts',
       options: [{ allowInTests: false }],
+      errors: [{ messageId: 'bypassMiddleware' }],
+    },
+  ]),
+});
+
+ruleTester.run('computed method names', noBypassMiddleware, {
+  valid: xmo([
+    {
+      name: 'a computed method name that is not static is not a known method',
+      code: `User[method]({ a: 1 }, { b: 2 });`,
+    },
+  ]),
+  invalid: xmo([
+    {
+      name: "User['updateOne'](...) is the same call as User.updateOne(...)",
+      code: `User['updateOne']({ a: 1 }, { b: 2 });`,
       errors: [{ messageId: 'bypassMiddleware' }],
     },
   ]),

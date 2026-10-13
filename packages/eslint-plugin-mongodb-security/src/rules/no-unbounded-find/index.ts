@@ -94,10 +94,8 @@ export const noUnboundedFind = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        const methodName =
-          node.callee.property.type === AST_NODE_TYPES.Identifier
-            ? node.callee.property.name
-            : null;
+        // `User['find'](...)` calls the same method the dotted form does.
+        const methodName = propertyName(node.callee);
 
         if (!methodName || !FIND_METHODS.has(methodName)) {
           return;

@@ -396,3 +396,99 @@ ruleTester.run('mutation-guided edges', noUnsafeQuery, {
     },
   ]),
 });
+
+/**
+ * `$or` / `$and` / `$nor` take an ARRAY of filter documents, and each branch is
+ * a filter in its own right. The property loop stopped at the array, so a
+ * request value one level down was never seen.
+ */
+const nested = (code: string, fixed: string) => ({
+  code: inHandler(code),
+  errors: [
+    {
+      messageId: 'unsafeQuery' as const,
+      suggestions: [
+        { messageId: 'suggestionUseEq' as const, output: inHandler(fixed) },
+      ],
+    },
+  ],
+});
+
+ruleTester.run('logical operators and computed method names', noUnsafeQuery, {
+  valid: xmo([
+    {
+      name: '$or branches holding only literals',
+      code: inHandler(`await User.find({ $or: [{ name: 'a' }, { age: 3 }] });`),
+    },
+    {
+      name: '$or branches that are not object literals are not walked',
+      code: inHandler(`await User.find({ $or: [branch, , ...rest] });`),
+    },
+    {
+      // Only the logical operators hold filters. An array value of any other
+      // key is an equality match on an array, which an operator object
+      // inside it cannot turn into an operator.
+      name: 'an array of objects under a non-operator key is a literal value',
+      code: inHandler(`await User.find({ tags: [{ name: req.body.name }] });`),
+    },
+    {
+      name: 'a computed method name that is not static is not a known method',
+      code: inHandler(`await User[method]({ name: req.body.name });`),
+    },
+    {
+      name: 'a key computed at runtime is not known to be a logical operator',
+      code: inHandler(`await User.find({ [op]: [{ name: req.body.name }] });`),
+    },
+  ]),
+  invalid: xmo([
+    {
+      name: 'request input inside $or',
+      ...nested(
+        `await User.find({ $or: [{ name: req.body.name }] });`,
+        `await User.find({ $or: [{ name: { $eq: req.body.name } }] });`,
+      ),
+    },
+    {
+      name: 'request input inside $and',
+      ...nested(
+        `await User.find({ $and: [{ active: true }, { name: req.query.name }] });`,
+        `await User.find({ $and: [{ active: true }, { name: { $eq: req.query.name } }] });`,
+      ),
+    },
+    {
+      name: 'request input inside $nor, with a quoted key',
+      ...nested(
+        `await User.find({ '$nor': [{ name: req.query.name }] });`,
+        `await User.find({ '$nor': [{ name: { $eq: req.query.name } }] });`,
+      ),
+    },
+    {
+      name: 'request input two logical levels down',
+      ...nested(
+        `await User.find({ $and: [{ $or: [{ name: req.body.name }] }] });`,
+        `await User.find({ $and: [{ $or: [{ name: { $eq: req.body.name } }] }] });`,
+      ),
+    },
+    {
+      name: 'a spread of the request body inside a $or branch',
+      code: inHandler(`await User.find({ $or: [{ ...req.body }] });`),
+      errors: [{ messageId: 'unsafeQuery' }],
+    },
+    {
+      // Not an array literal, so there are no branches to walk — the whole
+      // operand is request input and is reported as a value.
+      name: 'a $or operand taken whole from the request',
+      ...nested(
+        `await User.find({ $or: req.body.conditions });`,
+        `await User.find({ $or: { $eq: req.body.conditions } });`,
+      ),
+    },
+    {
+      name: "User['findOne'](...) is the same call as User.findOne(...)",
+      ...nested(
+        `await User['findOne']({ name: req.body.name });`,
+        `await User['findOne']({ name: { $eq: req.body.name } });`,
+      ),
+    },
+  ]),
+});
