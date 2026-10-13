@@ -142,13 +142,15 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
         return false;
       }
 
-      return resolved.properties.some(
-        (prop) =>
-          prop.type === 'Property' &&
-          !prop.computed &&
-          ((prop.key.type === 'Identifier' && prop.key.name === 'exp') ||
-            (prop.key.type === 'Literal' && prop.key.value === 'exp')),
-      );
+      /*
+       * `hasOption` reads the key the way every sibling rule does — bare,
+       * quoted or computed (`objectKeyName`). This used to demand
+       * `!prop.computed`, so `{ ['exp']: now + 60 }` — the spelling a bundler
+       * emits — was reported as a token with no expiry while it carried one.
+       * require-issued-at already accepted `{ ['iat']: … }`. Found by Stryker:
+       * deleting the `Property && !computed` guard changed no test's verdict.
+       */
+      return hasOption(resolved, 'exp');
     };
 
     /** Follow an identifier to the object literal it was initialised with. */

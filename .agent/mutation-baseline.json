@@ -1,0 +1,196 @@
+{
+  "command": "npm run mutation -- --plugin <name> --update-baseline",
+  "$comment": "Per-rule Stryker mutation scores (killed+timeout over killed+timeout+survived+no-coverage, floored to 1 decimal). A plugin listed here is opted in to .github/workflows/mutation.yml. Ratchet: a rule may not drop below its banked score, and --update-baseline refuses to lower one without --allow-regression. See docs/MUTATION_TESTING.md.",
+  "plugins": {
+    "jwt-security": {
+      "rules": {
+        "no-algorithm-confusion": {
+          "score": 80,
+          "killed": 40,
+          "survived": 10,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-algorithm-none": {
+          "score": 86.2,
+          "killed": 75,
+          "survived": 12,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-decode-without-verify": {
+          "score": 89.8,
+          "killed": 150,
+          "survived": 17,
+          "noCoverage": 0,
+          "timeout": 1
+        },
+        "no-hardcoded-secret": {
+          "score": 77.7,
+          "killed": 28,
+          "survived": 8,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-sensitive-payload": {
+          "score": 81.1,
+          "killed": 56,
+          "survived": 13,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-timestamp-manipulation": {
+          "score": 89.4,
+          "killed": 51,
+          "survived": 6,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-weak-secret": {
+          "score": 89.4,
+          "killed": 76,
+          "survived": 9,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "require-algorithm-whitelist": {
+          "score": 80,
+          "killed": 24,
+          "survived": 6,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "require-audience-validation": {
+          "score": 81.8,
+          "killed": 27,
+          "survived": 6,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "require-expiration": {
+          "score": 89.7,
+          "killed": 113,
+          "survived": 13,
+          "noCoverage": 0,
+          "timeout": 1
+        },
+        "require-issued-at": {
+          "score": 83.3,
+          "killed": 45,
+          "survived": 9,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "require-issuer-validation": {
+          "score": 81.8,
+          "killed": 27,
+          "survived": 6,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "require-max-age": {
+          "score": 84.3,
+          "killed": 27,
+          "survived": 5,
+          "noCoverage": 0,
+          "timeout": 0
+        }
+      }
+    },
+    "postgresql-security": {
+      "rules": {
+        "check-query-params": {
+          "score": 90.3,
+          "killed": 243,
+          "survived": 26,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-batch-insert-loop": {
+          "score": 77.4,
+          "killed": 274,
+          "survived": 80,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-floating-query": {
+          "score": 84.6,
+          "killed": 103,
+          "survived": 19,
+          "noCoverage": 0,
+          "timeout": 2
+        },
+        "no-hardcoded-credentials": {
+          "score": 93.9,
+          "killed": 109,
+          "survived": 7,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-insecure-ssl": {
+          "score": 92.8,
+          "killed": 129,
+          "survived": 10,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-missing-client-release": {
+          "score": 82.3,
+          "killed": 323,
+          "survived": 69,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-select-all": {
+          "score": 77.9,
+          "killed": 144,
+          "survived": 45,
+          "noCoverage": 0,
+          "timeout": 15
+        },
+        "no-transaction-on-pool": {
+          "score": 74.9,
+          "killed": 200,
+          "survived": 67,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-unsafe-copy-from": {
+          "score": 85.9,
+          "killed": 262,
+          "survived": 43,
+          "noCoverage": 0,
+          "timeout": 1
+        },
+        "no-unsafe-query": {
+          "score": 75.6,
+          "killed": 1099,
+          "survived": 356,
+          "noCoverage": 0,
+          "timeout": 10
+        },
+        "no-unsafe-search-path": {
+          "score": 85.7,
+          "killed": 380,
+          "survived": 63,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "prefer-pool-query": {
+          "score": 81.9,
+          "killed": 185,
+          "survived": 41,
+          "noCoverage": 0,
+          "timeout": 1
+        },
+        "prevent-double-release": {
+          "score": 75.7,
+          "killed": 671,
+          "survived": 216,
+          "noCoverage": 0,
+          "timeout": 4
+        }
+      }
+    }
+  }
+}

@@ -66,6 +66,23 @@ const NON_POSTGRES_SOURCES: ReadonlyArray<readonly [string, string]> = [
      }`,
   ],
   [
+    // Mutation testing (Stryker) showed the gate in no-transaction-on-pool and
+    // prefer-pool-query could be deleted with this suite still green: neither
+    // fixture above has the checkout shape their detection keys on, and that
+    // shape is spelled by property NAME (`.connect()`, `.query()`,
+    // `.release()`), so the module gate is the only thing between them and
+    // every other pooled client.
+    'a non-PostgreSQL pool with the connect/query/release shape',
+    `import { createPool } from 'generic-pool';
+     const pool = createPool(factory);
+     export async function run() {
+       const conn = await pool.connect();
+       await pool.query('BEGIN');
+       await conn.query('SELECT 1');
+       conn.release();
+     }`,
+  ],
+  [
     'a local module merely named pg',
     `import { Pool } from './pg';
      const pool = new Pool();

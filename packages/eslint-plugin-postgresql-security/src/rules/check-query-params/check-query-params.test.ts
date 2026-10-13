@@ -104,3 +104,26 @@ describe('check-query-params — fp/fn review 2026-10', () => {
     expect(message.message).toContain('2 placeholder(s), 1 value(s)');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Edges pinned by mutation testing (npm run mutation -- --plugin
+// postgresql-security). Each fixture is the input that tells the rule apart
+// from a Stryker mutant that survived the suite above; see
+// docs/MUTATION_TESTING.md.
+// ---------------------------------------------------------------------------
+
+ruleTester.run('mutation-guided edges', checkQueryParams, {
+  valid: pg([
+    {
+      name: 'a spread binds a count the file cannot see, so no mismatch is claimed',
+      code: `const pool = new Pool();
+await pool.query('SELECT * FROM t WHERE org = $1 AND a = $2 AND b = $3', [orgId, ...rest]);`,
+    },
+    {
+      name: 'a .raw tag that is not String.raw is not known to return its text',
+      code: `const pool = new Pool();
+await pool.query(db.raw\`SELECT * FROM t WHERE a = $1 AND b = $2\`, [a]);`,
+    },
+  ]),
+  invalid: [],
+});

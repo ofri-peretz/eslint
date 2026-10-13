@@ -1276,3 +1276,65 @@ describe('no-unsafe-query — string-subscript spellings', () => {
     },
   );
 });
+
+// ---------------------------------------------------------------------------
+// Edges pinned by mutation testing (npm run mutation -- --plugin
+// postgresql-security). Each fixture is the input that tells the rule apart
+// from a Stryker mutant that survived the suite above; see
+// docs/MUTATION_TESTING.md.
+// ---------------------------------------------------------------------------
+
+ruleTester.run('mutation-guided edges', noUnsafeQuery, {
+  valid: pg([
+    {
+      name: 'a flatMap index builds placeholders, not values',
+      code: `const pool = new Pool();
+const values = rows.flatMap((row, i) => \`($\${i + 1})\`).join(', ');
+await pool.query(\`INSERT INTO t (a) VALUES \${values}\`, rows);`,
+    },
+    {
+      name: 'a forEach index builds placeholders, not values',
+      code: `const pool = new Pool();
+const parts = [];
+rows.forEach((row, i) => parts.push(\`($\${i + 1})\`));
+await pool.query(\`INSERT INTO t (a) VALUES \${parts.join(', ')}\`, rows);`,
+    },
+    {
+      name: 'a for-of over a fixed list of column names interpolates only constants',
+      code: `const pool = new Pool();
+for (const col of ['name', 'email']) await pool.query(\`SELECT \${col} FROM users\`);`,
+    },
+    {
+      name: 'a for-of over a const fixed list interpolates only constants',
+      code: `const pool = new Pool();
+const COLUMNS = ['name', 'email'];
+for (const col of COLUMNS) await pool.query(\`SELECT \${col} FROM users\`);`,
+    },
+    {
+      name: 'a dynamic prepared-statement name is not SQL text',
+      code: `const pool = new Pool();
+await pool.query({ name: \`fetch-user-\${variant}\`, text: 'SELECT * FROM users WHERE id = $1', values: [id] });`,
+    },
+  ]),
+  invalid: pg([
+    {
+      name: 'a row value in a $-prefixed slot is a value, not a placeholder index',
+      code: `const pool = new Pool();
+const values = rows.flatMap((row, i) => \`($\${row.id})\`).join(', ');
+await pool.query(\`INSERT INTO t (a) VALUES \${values}\`, rows);`,
+      errors: [{ messageId: 'unsafeTemplateLiteral' }],
+    },
+    {
+      name: 'a for-of list with a spread of request data is not fixed',
+      code: `const pool = new Pool();
+for (const col of ['name', ...req.query.extra]) await pool.query(\`SELECT \${col} FROM users\`);`,
+      errors: [{ messageId: 'unsafeTemplateLiteral' }],
+    },
+    {
+      name: 'a for-of list with one request-data element is not fixed',
+      code: `const pool = new Pool();
+for (const col of ['name', req.query.sort]) await pool.query(\`SELECT \${col} FROM users\`);`,
+      errors: [{ messageId: 'unsafeTemplateLiteral' }],
+    },
+  ]),
+});

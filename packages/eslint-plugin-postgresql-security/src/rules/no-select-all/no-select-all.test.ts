@@ -274,3 +274,49 @@ describe('no-select-all — fp/fn review 2026-10', () => {
     ]),
   });
 });
+
+// ---------------------------------------------------------------------------
+// Edges pinned by mutation testing (npm run mutation -- --plugin
+// postgresql-security). Each fixture is the input that tells the rule apart
+// from a Stryker mutant that survived the suite above; see
+// docs/MUTATION_TESTING.md.
+// ---------------------------------------------------------------------------
+
+ruleTester.run('mutation-guided edges', noSelectAll, {
+  valid: pg([
+    {
+      name: 'a star inside a string literal is data',
+      code: `const pool = new Pool();
+await pool.query("SELECT id, 'x' AS a FROM users WHERE note = 'b * c'");`,
+    },
+    {
+      name: 'a star inside a dollar-quoted body is data',
+      code: `const pool = new Pool();
+await pool.query('SELECT id, $body$ multiply a * b $body$ AS note FROM users');`,
+    },
+    {
+      name: 'a star in a trailing line comment with no newline is a comment',
+      code: `const pool = new Pool();
+await pool.query('SELECT id, email FROM users -- never SELECT *');`,
+    },
+    {
+      name: 'a star in an unterminated block comment is a comment',
+      code: `const pool = new Pool();
+await pool.query('SELECT id, email FROM users /* not *');`,
+    },
+  ]),
+  invalid: pg([
+    {
+      name: "an escaped '' quote does not end the literal and hide the star after it",
+      code: `const pool = new Pool();
+await pool.query("SELECT 'it''s *' AS a, * FROM users");`,
+      errors: [{ messageId: 'noSelectAll' }],
+    },
+    {
+      name: 'a closed $$ body does not hide the star after it',
+      code: `const pool = new Pool();
+await pool.query("SELECT $$ a $$, * FROM users");`,
+      errors: [{ messageId: 'noSelectAll' }],
+    },
+  ]),
+});

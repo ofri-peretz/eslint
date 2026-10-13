@@ -279,3 +279,21 @@ describe('no-floating-query — fp/fn review 2026-10', () => {
     ]),
   });
 });
+
+// ---------------------------------------------------------------------------
+// Edges pinned by mutation testing (npm run mutation -- --plugin
+// postgresql-security). Each fixture is the input that tells the rule apart
+// from a Stryker mutant that survived the suite above; see
+// docs/MUTATION_TESTING.md.
+// ---------------------------------------------------------------------------
+
+ruleTester.run('mutation-guided edges', noFloatingQuery, {
+  valid: pg([
+    {
+      name: 'a promise stored on an object is owned by that object',
+      code: `const pool = new Pool();
+class Repo { load() { this.pending = pool.query('SELECT 1'); } }`,
+    },
+  ]),
+  invalid: [],
+});
