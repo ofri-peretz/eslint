@@ -1,0 +1,382 @@
+{
+  "secure-coding/no-redos-vulnerable-regex": {
+    "hits": 1,
+    "avgTimeMs": 186.61,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-redos-vulnerable-regex",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/vercel-ai/packages/provider-utils/src/to-json-schema/zod3-to-json-schema/parsers/string.ts",
+        "line": 37,
+        "column": 20,
+        "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Ambiguous alternation (exponential backtracking): Alternatives inside a quantified group match the same input, so every character can be taken by either branch and the engine explores 2^n paths befor"
+      }
+    ]
+  },
+  "vercel-ai-security/no-system-prompt-leak": {
+    "hits": 2,
+    "avgTimeMs": 24.39,
+    "samples": [
+      {
+        "ruleId": "vercel-ai-security/no-system-prompt-leak",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/vercel-ai/packages/mcp/src/tool/mcp-client.ts",
+        "line": 291,
+        "column": 5,
+        "message": "🔒 CWE-200 OWASP:A01-Broken CVSS:7.5 | System prompt \"this._serverInstructions\" is exposed in return statement. This reveals AI behavior instructions to users. | HIGH [SOC2]\n   Fix: Remove system prompt from API response. Only return the AI"
+      },
+      {
+        "ruleId": "vercel-ai-security/no-system-prompt-leak",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/vercel-ai/packages/ai/src/prompt/standardize-prompt.ts",
+        "line": 109,
+        "column": 22,
+        "message": "🔒 CWE-200 OWASP:A01-Broken CVSS:7.5 | System prompt \"instructions\" is exposed in return statement. This reveals AI behavior instructions to users. | HIGH [SOC2]\n   Fix: Remove system prompt from API response. Only return the AI-generated c"
+      }
+    ]
+  },
+  "secure-coding/no-hardcoded-credentials": {
+    "hits": 1,
+    "avgTimeMs": 106.96,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-hardcoded-credentials",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/vercel-ai/packages/google/src/interactions/google-interactions-agent.test-d.ts",
+        "line": 24,
+        "column": 41,
+        "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Common password detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitio"
+      }
+    ]
+  },
+  "node-security/no-unsafe-buffer-alloc": {
+    "hits": 1,
+    "avgTimeMs": 47.27,
+    "samples": [
+      {
+        "ruleId": "node-security/no-unsafe-buffer-alloc",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/vercel-ai/packages/amazon-bedrock/src/amazon-bedrock-event-stream-decoder.ts",
+        "line": 24,
+        "column": 27,
+        "message": "🔒 CWE-789 CVSS:7.5 | The allocation size is read off the wire, so the peer picks it. For `new Array(n)` the hazard is a narrow band, not \"large n\": V8 keeps a packed backing store only up to ~33.5M elements, and a length just under that tu"
+      }
+    ]
+  },
+  "vercel-ai-security/require-max-tokens": {
+    "hits": 97,
+    "avgTimeMs": 8.38,
+    "samples": [
+      {
+        "ruleId": "vercel-ai-security/require-max-tokens",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/vercel-ai/packages/ai/src/generate-text/stream-text.test-d.ts",
+        "line": 14,
+        "column": 22,
+        "message": "⚠️ CWE-770 OWASP:A05-Security CVSS:6.5 | streamText call without a token limit can lead to excessive resource consumption | MEDIUM [SOC2]\n   Fix: Add a token limit: streamText({ maxOutputTokens: 4096, ... }) (v5+) or maxTokens (v4) | https:"
+      },
+      {
+        "ruleId": "vercel-ai-security/require-max-tokens",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/vercel-ai/packages/ai/src/generate-text/stream-text.test-d.ts",
+        "line": 23,
+        "column": 22,
+        "message": "⚠️ CWE-770 OWASP:A05-Security CVSS:6.5 | streamText call without a token limit can lead to excessive resource consumption | MEDIUM [SOC2]\n   Fix: Add a token limit: streamText({ maxOutputTokens: 4096, ... }) (v5+) or maxTokens (v4) | https:"
+      },
+      {
+        "ruleId": "vercel-ai-security/require-max-tokens",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/vercel-ai/packages/ai/src/generate-text/stream-text.test-d.ts",
+        "line": 33,
+        "column": 22,
+        "message": "⚠️ CWE-770 OWASP:A05-Security CVSS:6.5 | streamText call without a token limit can lead to excessive resource consumption | MEDIUM [SOC2]\n   Fix: Add a token limit: streamText({ maxOutputTokens: 4096, ... }) (v5+) or maxTokens (v4) | https:"
+      },
+      {
+        "ruleId": "vercel-ai-security/require-max-tokens",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/vercel-ai/packages/ai/src/generate-text/stream-text.test-d.ts",
+        "line": 45,
+        "column": 22,
+        "message": "⚠️ CWE-770 OWASP:A05-Security CVSS:6.5 | streamText call without a token limit can lead to excessive resource consumption | MEDIUM [SOC2]\n   Fix: Add a token limit: streamText({ maxOutputTokens: 4096, ... }) (v5+) or maxTokens (v4) | https:"
+      },
+      {
+        "ruleId": "vercel-ai-security/require-max-tokens",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/vercel-ai/packages/ai/src/generate-text/stream-text.test-d.ts",
+        "line": 57,
+        "column": 22,
+        "message": "⚠️ CWE-770 OWASP:A05-Security CVSS:6.5 | streamText call without a token limit can lead to excessive resource consumption | MEDIUM [SOC2]\n   Fix: Add a token limit: streamText({ maxOutputTokens: 4096, ... }) (v5+) or maxTokens (v4) | https:"
+      }
+    ]
+  },
+  "secure-coding/no-privilege-escalation": {
+    "hits": 0,
+    "avgTimeMs": 189.19,
+    "samples": []
+  },
+  "secure-coding/no-ldap-injection": {
+    "hits": 0,
+    "avgTimeMs": 191.96,
+    "samples": []
+  },
+  "node-security/no-weak-hash-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 103.8,
+    "samples": []
+  },
+  "vercel-ai-security/require-validated-prompt": {
+    "hits": 0,
+    "avgTimeMs": 90.5,
+    "samples": []
+  },
+  "node-security/no-timing-unsafe-compare": {
+    "hits": 0,
+    "avgTimeMs": 61.57,
+    "samples": []
+  },
+  "secure-coding/no-unlimited-resource-allocation": {
+    "hits": 0,
+    "avgTimeMs": 45.75,
+    "samples": []
+  },
+  "node-security/detect-non-literal-fs-filename": {
+    "hits": 0,
+    "avgTimeMs": 40.43,
+    "samples": []
+  },
+  "vercel-ai-security/no-unsafe-output-handling": {
+    "hits": 0,
+    "avgTimeMs": 37.84,
+    "samples": []
+  },
+  "node-security/no-math-random-crypto": {
+    "hits": 0,
+    "avgTimeMs": 39.43,
+    "samples": []
+  },
+  "node-security/no-buffer-overread": {
+    "hits": 0,
+    "avgTimeMs": 39.57,
+    "samples": []
+  },
+  "secure-coding/no-graphql-injection": {
+    "hits": 0,
+    "avgTimeMs": 41.58,
+    "samples": []
+  },
+  "node-security/no-zip-slip": {
+    "hits": 0,
+    "avgTimeMs": 34.6,
+    "samples": []
+  },
+  "node-security/no-toctou-vulnerability": {
+    "hits": 0,
+    "avgTimeMs": 39.12,
+    "samples": []
+  },
+  "secure-coding/no-xxe-injection": {
+    "hits": 0,
+    "avgTimeMs": 38.08,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-deserialization": {
+    "hits": 0,
+    "avgTimeMs": 36.2,
+    "samples": []
+  },
+  "vercel-ai-security/no-hardcoded-api-keys": {
+    "hits": 0,
+    "avgTimeMs": 29.25,
+    "samples": []
+  },
+  "node-security/detect-child-process": {
+    "hits": 0,
+    "avgTimeMs": 29.93,
+    "samples": []
+  },
+  "secure-coding/no-xpath-injection": {
+    "hits": 0,
+    "avgTimeMs": 29.84,
+    "samples": []
+  },
+  "node-security/no-static-iv": {
+    "hits": 0,
+    "avgTimeMs": 24.99,
+    "samples": []
+  },
+  "secure-coding/no-sensitive-data-exposure": {
+    "hits": 0,
+    "avgTimeMs": 29.82,
+    "samples": []
+  },
+  "node-security/detect-eval-with-expression": {
+    "hits": 0,
+    "avgTimeMs": 24.67,
+    "samples": []
+  },
+  "secure-coding/no-homoglyph-identifiers": {
+    "hits": 0,
+    "avgTimeMs": 28.69,
+    "samples": []
+  },
+  "vercel-ai-security/require-tool-confirmation": {
+    "hits": 0,
+    "avgTimeMs": 30.48,
+    "samples": []
+  },
+  "node-security/no-ssrf": {
+    "hits": 0,
+    "avgTimeMs": 15.41,
+    "samples": []
+  },
+  "secure-coding/no-fail-open-auth": {
+    "hits": 0,
+    "avgTimeMs": 18.93,
+    "samples": []
+  },
+  "secure-coding/no-improper-sanitization": {
+    "hits": 0,
+    "avgTimeMs": 21.47,
+    "samples": []
+  },
+  "node-security/no-arbitrary-file-access": {
+    "hits": 0,
+    "avgTimeMs": 19.76,
+    "samples": []
+  },
+  "node-security/no-data-in-temp-storage": {
+    "hits": 0,
+    "avgTimeMs": 22.66,
+    "samples": []
+  },
+  "secure-coding/no-weak-password-recovery": {
+    "hits": 0,
+    "avgTimeMs": 17.97,
+    "samples": []
+  },
+  "secure-coding/no-sql-injection": {
+    "hits": 0,
+    "avgTimeMs": 16.28,
+    "samples": []
+  },
+  "node-security/no-unbounded-decompression": {
+    "hits": 0,
+    "avgTimeMs": 16.02,
+    "samples": []
+  },
+  "node-security/require-dependency-integrity": {
+    "hits": 0,
+    "avgTimeMs": 14.7,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-regex-construction": {
+    "hits": 0,
+    "avgTimeMs": 13.46,
+    "samples": []
+  },
+  "node-security/no-dynamic-command-string": {
+    "hits": 0,
+    "avgTimeMs": 12.07,
+    "samples": []
+  },
+  "node-security/detect-suspicious-dependencies": {
+    "hits": 0,
+    "avgTimeMs": 11.32,
+    "samples": []
+  },
+  "node-security/no-cryptojs": {
+    "hits": 0,
+    "avgTimeMs": 11.13,
+    "samples": []
+  },
+  "node-security/no-deprecated-buffer": {
+    "hits": 0,
+    "avgTimeMs": 10.64,
+    "samples": []
+  },
+  "secure-coding/no-template-injection": {
+    "hits": 0,
+    "avgTimeMs": 12.71,
+    "samples": []
+  },
+  "node-security/no-shell-injection": {
+    "hits": 0,
+    "avgTimeMs": 9.83,
+    "samples": []
+  },
+  "secure-coding/no-log-injection": {
+    "hits": 0,
+    "avgTimeMs": 10.84,
+    "samples": []
+  },
+  "vercel-ai-security/no-sensitive-in-prompt": {
+    "hits": 0,
+    "avgTimeMs": 9.64,
+    "samples": []
+  },
+  "node-security/require-stream-error-handler": {
+    "hits": 0,
+    "avgTimeMs": 9.91,
+    "samples": []
+  },
+  "node-security/no-weak-cipher-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 10.72,
+    "samples": []
+  },
+  "node-security/no-weak-dh-parameters": {
+    "hits": 0,
+    "avgTimeMs": 8.91,
+    "samples": []
+  },
+  "node-security/no-unsafe-dynamic-require": {
+    "hits": 0,
+    "avgTimeMs": 9.01,
+    "samples": []
+  },
+  "vercel-ai-security/require-rag-content-validation": {
+    "hits": 0,
+    "avgTimeMs": 9.04,
+    "samples": []
+  },
+  "node-security/no-ecb-mode": {
+    "hits": 0,
+    "avgTimeMs": 7.86,
+    "samples": []
+  },
+  "vercel-ai-security/require-tool-schema": {
+    "hits": 0,
+    "avgTimeMs": 7.09,
+    "samples": []
+  },
+  "node-security/no-insecure-http-parser": {
+    "hits": 0,
+    "avgTimeMs": 5.85,
+    "samples": []
+  },
+  "node-security/no-self-signed-certs": {
+    "hits": 0,
+    "avgTimeMs": 6.01,
+    "samples": []
+  },
+  "vercel-ai-security/no-dynamic-system-prompt": {
+    "hits": 0,
+    "avgTimeMs": 8.1,
+    "samples": []
+  },
+  "node-security/no-env-injection": {
+    "hits": 0,
+    "avgTimeMs": 5.59,
+    "samples": []
+  },
+  "node-security/require-aead-tag-verification": {
+    "hits": 0,
+    "avgTimeMs": 4.97,
+    "samples": []
+  },
+  "node-security/no-dynamic-algorithm-selection": {
+    "hits": 0,
+    "avgTimeMs": 4.78,
+    "samples": []
+  }
+}

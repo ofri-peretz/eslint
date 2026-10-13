@@ -1,0 +1,39 @@
+{
+  "repo": "strapi",
+  "meta": {
+    "stars": 66000,
+    "commit": "c5bc749feeb5b7b4f3d845b52da41277100465a8",
+    "category": "Headless CMS",
+    "plugins": [
+      "node-security",
+      "secure-coding",
+      "express-security"
+    ],
+    "fpEdge": false,
+    "srcGlob": "packages/core/strapi/src/**/*.ts"
+  },
+  "fileCount": 77,
+  "loc": 7342,
+  "timing": {
+    "runsMs": [
+      1828,
+      1771,
+      1574
+    ],
+    "medianMs": 1771,
+    "meanMs": 1724,
+    "stddevMs": 109,
+    "cv": 6.3,
+    "msPerFile": 23
+  },
+  "peakRssMb": 375,
+  "findings": {
+    "total": 1,
+    "errors": 0,
+    "warnings": 1,
+    "filesWithFindings": 1,
+    "densityPerKloc": 0.14,
+    "externalDirectives": 3,
+    "parseErrors": 0
+  }
+}

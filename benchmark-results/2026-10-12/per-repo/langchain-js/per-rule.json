@@ -1,0 +1,340 @@
+{
+  "node-security/no-unsafe-buffer-alloc": {
+    "hits": 1,
+    "avgTimeMs": 15.42,
+    "samples": [
+      {
+        "ruleId": "node-security/no-unsafe-buffer-alloc",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/langchain-js/libs/langchain-core/src/utils/event_source_parse.ts",
+        "line": 232,
+        "column": 15,
+        "message": "🔒 CWE-789 CVSS:7.5 | The allocation size is read off the wire, so the peer picks it. For `new Array(n)` the hazard is a narrow band, not \"large n\": V8 keeps a packed backing store only up to ~33.5M elements, and a length just under that tu"
+      }
+    ]
+  },
+  "secure-coding/no-redos-vulnerable-regex": {
+    "hits": 3,
+    "avgTimeMs": 160.02,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-redos-vulnerable-regex",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/langchain-js/libs/langchain-core/src/utils/zod-to-json-schema/parsers/string.ts",
+        "line": 38,
+        "column": 20,
+        "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Ambiguous alternation (exponential backtracking): Alternatives inside a quantified group match the same input, so every character can be taken by either branch and the engine explores 2^n paths befor"
+      },
+      {
+        "ruleId": "secure-coding/no-redos-vulnerable-regex",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/langchain-js/libs/langchain-core/src/output_parsers/structured.ts",
+        "line": 113,
+        "column": 27,
+        "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+      },
+      {
+        "ruleId": "secure-coding/no-redos-vulnerable-regex",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/langchain-js/libs/langchain-core/src/output_parsers/structured.ts",
+        "line": 115,
+        "column": 27,
+        "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+      }
+    ]
+  },
+  "secure-coding/no-sensitive-data-exposure": {
+    "hits": 1,
+    "avgTimeMs": 11.82,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-sensitive-data-exposure",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/langchain-js/libs/langchain-core/src/callbacks/manager.ts",
+        "line": 294,
+        "column": 17,
+        "message": "🔒 CWE-532 OWASP:A09-Logging CVSS:5.3 | Sensitive data detected in logs: token | HIGH [GDPR,HIPAA,PCI-DSS,SOC2]\n   Fix: Redact or mask sensitive data before logging/exposing | https://cwe.mitre.org/data/definitions/532.html"
+      }
+    ]
+  },
+  "vercel-ai-security/require-validated-prompt": {
+    "hits": 0,
+    "avgTimeMs": 76.58,
+    "samples": []
+  },
+  "secure-coding/no-privilege-escalation": {
+    "hits": 0,
+    "avgTimeMs": 43.09,
+    "samples": []
+  },
+  "secure-coding/no-ldap-injection": {
+    "hits": 0,
+    "avgTimeMs": 48.38,
+    "samples": []
+  },
+  "node-security/no-timing-unsafe-compare": {
+    "hits": 0,
+    "avgTimeMs": 27.76,
+    "samples": []
+  },
+  "node-security/no-weak-hash-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 21.16,
+    "samples": []
+  },
+  "secure-coding/no-hardcoded-credentials": {
+    "hits": 0,
+    "avgTimeMs": 20.74,
+    "samples": []
+  },
+  "secure-coding/no-homoglyph-identifiers": {
+    "hits": 0,
+    "avgTimeMs": 8.46,
+    "samples": []
+  },
+  "secure-coding/no-xpath-injection": {
+    "hits": 0,
+    "avgTimeMs": 7.91,
+    "samples": []
+  },
+  "secure-coding/no-graphql-injection": {
+    "hits": 0,
+    "avgTimeMs": 9.82,
+    "samples": []
+  },
+  "node-security/no-data-in-temp-storage": {
+    "hits": 0,
+    "avgTimeMs": 6.44,
+    "samples": []
+  },
+  "node-security/no-toctou-vulnerability": {
+    "hits": 0,
+    "avgTimeMs": 9.22,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-deserialization": {
+    "hits": 0,
+    "avgTimeMs": 8.92,
+    "samples": []
+  },
+  "node-security/no-buffer-overread": {
+    "hits": 0,
+    "avgTimeMs": 8.8,
+    "samples": []
+  },
+  "secure-coding/no-weak-password-recovery": {
+    "hits": 0,
+    "avgTimeMs": 5.73,
+    "samples": []
+  },
+  "secure-coding/no-unlimited-resource-allocation": {
+    "hits": 0,
+    "avgTimeMs": 8.51,
+    "samples": []
+  },
+  "secure-coding/no-xxe-injection": {
+    "hits": 0,
+    "avgTimeMs": 7.38,
+    "samples": []
+  },
+  "node-security/detect-non-literal-fs-filename": {
+    "hits": 0,
+    "avgTimeMs": 8.77,
+    "samples": []
+  },
+  "node-security/detect-child-process": {
+    "hits": 0,
+    "avgTimeMs": 7.1,
+    "samples": []
+  },
+  "node-security/no-zip-slip": {
+    "hits": 0,
+    "avgTimeMs": 6.33,
+    "samples": []
+  },
+  "node-security/no-math-random-crypto": {
+    "hits": 0,
+    "avgTimeMs": 6.04,
+    "samples": []
+  },
+  "node-security/detect-eval-with-expression": {
+    "hits": 0,
+    "avgTimeMs": 5.69,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-regex-construction": {
+    "hits": 0,
+    "avgTimeMs": 4.55,
+    "samples": []
+  },
+  "node-security/no-static-iv": {
+    "hits": 0,
+    "avgTimeMs": 4.89,
+    "samples": []
+  },
+  "secure-coding/no-improper-sanitization": {
+    "hits": 0,
+    "avgTimeMs": 4.7,
+    "samples": []
+  },
+  "secure-coding/no-fail-open-auth": {
+    "hits": 0,
+    "avgTimeMs": 4.21,
+    "samples": []
+  },
+  "node-security/no-arbitrary-file-access": {
+    "hits": 0,
+    "avgTimeMs": 5.63,
+    "samples": []
+  },
+  "node-security/no-unbounded-decompression": {
+    "hits": 0,
+    "avgTimeMs": 3.71,
+    "samples": []
+  },
+  "node-security/require-dependency-integrity": {
+    "hits": 0,
+    "avgTimeMs": 3.18,
+    "samples": []
+  },
+  "secure-coding/no-sql-injection": {
+    "hits": 0,
+    "avgTimeMs": 2.84,
+    "samples": []
+  },
+  "node-security/no-deprecated-buffer": {
+    "hits": 0,
+    "avgTimeMs": 2.63,
+    "samples": []
+  },
+  "node-security/detect-suspicious-dependencies": {
+    "hits": 0,
+    "avgTimeMs": 2.44,
+    "samples": []
+  },
+  "node-security/no-dynamic-command-string": {
+    "hits": 0,
+    "avgTimeMs": 3.61,
+    "samples": []
+  },
+  "node-security/no-cryptojs": {
+    "hits": 0,
+    "avgTimeMs": 2.45,
+    "samples": []
+  },
+  "secure-coding/no-template-injection": {
+    "hits": 0,
+    "avgTimeMs": 2.26,
+    "samples": []
+  },
+  "secure-coding/no-log-injection": {
+    "hits": 0,
+    "avgTimeMs": 2.16,
+    "samples": []
+  },
+  "node-security/no-ssrf": {
+    "hits": 0,
+    "avgTimeMs": 2.09,
+    "samples": []
+  },
+  "node-security/no-weak-dh-parameters": {
+    "hits": 0,
+    "avgTimeMs": 1.99,
+    "samples": []
+  },
+  "node-security/require-stream-error-handler": {
+    "hits": 0,
+    "avgTimeMs": 2,
+    "samples": []
+  },
+  "node-security/no-shell-injection": {
+    "hits": 0,
+    "avgTimeMs": 1.87,
+    "samples": []
+  },
+  "node-security/no-weak-cipher-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 1.91,
+    "samples": []
+  },
+  "node-security/no-unsafe-dynamic-require": {
+    "hits": 0,
+    "avgTimeMs": 1.85,
+    "samples": []
+  },
+  "node-security/no-self-signed-certs": {
+    "hits": 0,
+    "avgTimeMs": 1.37,
+    "samples": []
+  },
+  "node-security/no-ecb-mode": {
+    "hits": 0,
+    "avgTimeMs": 1.44,
+    "samples": []
+  },
+  "node-security/no-env-injection": {
+    "hits": 0,
+    "avgTimeMs": 1.3,
+    "samples": []
+  },
+  "vercel-ai-security/no-hardcoded-api-keys": {
+    "hits": 0,
+    "avgTimeMs": 1.18,
+    "samples": []
+  },
+  "node-security/no-insecure-http-parser": {
+    "hits": 0,
+    "avgTimeMs": 1.11,
+    "samples": []
+  },
+  "node-security/require-aead-tag-verification": {
+    "hits": 0,
+    "avgTimeMs": 1.08,
+    "samples": []
+  },
+  "vercel-ai-security/no-unsafe-output-handling": {
+    "hits": 0,
+    "avgTimeMs": 0.95,
+    "samples": []
+  },
+  "vercel-ai-security/no-sensitive-in-prompt": {
+    "hits": 0,
+    "avgTimeMs": 0.89,
+    "samples": []
+  },
+  "node-security/no-dynamic-algorithm-selection": {
+    "hits": 0,
+    "avgTimeMs": 1.5,
+    "samples": []
+  },
+  "vercel-ai-security/require-rag-content-validation": {
+    "hits": 0,
+    "avgTimeMs": 0.86,
+    "samples": []
+  },
+  "vercel-ai-security/require-tool-confirmation": {
+    "hits": 0,
+    "avgTimeMs": 0.73,
+    "samples": []
+  },
+  "vercel-ai-security/require-max-tokens": {
+    "hits": 0,
+    "avgTimeMs": 0.66,
+    "samples": []
+  },
+  "vercel-ai-security/no-system-prompt-leak": {
+    "hits": 0,
+    "avgTimeMs": 0.75,
+    "samples": []
+  },
+  "vercel-ai-security/no-dynamic-system-prompt": {
+    "hits": 0,
+    "avgTimeMs": 0.57,
+    "samples": []
+  },
+  "vercel-ai-security/require-tool-schema": {
+    "hits": 0,
+    "avgTimeMs": 0.46,
+    "samples": []
+  }
+}

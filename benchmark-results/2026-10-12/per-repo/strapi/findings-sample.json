@@ -1,0 +1,10 @@
+[
+  {
+    "ruleId": "secure-coding/no-weak-password-recovery",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/strapi/packages/core/strapi/src/cli/commands/admin/reset-user-password.ts",
+    "line": 37,
+    "column": 15,
+    "message": "🔒 CWE-640 OWASP:A07-Authentication CVSS:8.1 | Logging sensitive data during password recovery | MEDIUM\n   Fix: Never log passwords, tokens, or sensitive recovery data | https://cwe.mitre.org/data/definitions/640.html"
+  }
+]

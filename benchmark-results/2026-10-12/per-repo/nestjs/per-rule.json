@@ -1,0 +1,355 @@
+{
+  "secure-coding/no-unsafe-deserialization": {
+    "hits": 7,
+    "avgTimeMs": 12.56,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-unsafe-deserialization",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/server/server-tcp.ts",
+        "line": 94,
+        "column": 26,
+        "message": "🔒 CWE-502 OWASP:A08-Software CVSS:9.8 | Unsafe deserialization of untrusted data (incl. model/tool output) | HIGH\n   Fix: Use JSON.parse() or validated safe deserialization libraries | validate model/tool output via schema and size limits "
+      },
+      {
+        "ruleId": "secure-coding/no-unsafe-deserialization",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/server/server-redis.ts",
+        "line": 141,
+        "column": 26,
+        "message": "🔒 CWE-502 OWASP:A08-Software CVSS:9.8 | Unsafe deserialization of untrusted data (incl. model/tool output) | HIGH\n   Fix: Use JSON.parse() or validated safe deserialization libraries | validate model/tool output via schema and size limits "
+      },
+      {
+        "ruleId": "secure-coding/no-unsafe-deserialization",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/server/server-mqtt.ts",
+        "line": 136,
+        "column": 26,
+        "message": "🔒 CWE-502 OWASP:A08-Software CVSS:9.8 | Unsafe deserialization of untrusted data (incl. model/tool output) | HIGH\n   Fix: Use JSON.parse() or validated safe deserialization libraries | validate model/tool output via schema and size limits "
+      },
+      {
+        "ruleId": "secure-coding/no-unsafe-deserialization",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/client/client-tcp.ts",
+        "line": 81,
+        "column": 13,
+        "message": "🔒 CWE-502 OWASP:A08-Software CVSS:9.8 | Unsafe deserialization of untrusted data (incl. model/tool output) | HIGH\n   Fix: Use JSON.parse() or validated safe deserialization libraries | validate model/tool output via schema and size limits "
+      },
+      {
+        "ruleId": "secure-coding/no-unsafe-deserialization",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/client/client-rmq.ts",
+        "line": 357,
+        "column": 49,
+        "message": "🔒 CWE-502 OWASP:A08-Software CVSS:9.8 | Unsafe deserialization of untrusted data (incl. model/tool output) | HIGH\n   Fix: Use JSON.parse() or validated safe deserialization libraries | validate model/tool output via schema and size limits "
+      }
+    ]
+  },
+  "secure-coding/no-sensitive-data-exposure": {
+    "hits": 2,
+    "avgTimeMs": 10.08,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-sensitive-data-exposure",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/repl/native-functions/debug-repl-fn.ts",
+        "line": 24,
+        "column": 11,
+        "message": "🔒 CWE-532 OWASP:A09-Logging CVSS:5.3 | Sensitive data detected in logs: token | HIGH [GDPR,HIPAA,PCI-DSS,SOC2]\n   Fix: Redact or mask sensitive data before logging/exposing | https://cwe.mitre.org/data/definitions/532.html"
+      },
+      {
+        "ruleId": "secure-coding/no-sensitive-data-exposure",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/injector/opaque-key-factory/deep-hashed-module-opaque-key-factory.ts",
+        "line": 52,
+        "column": 9,
+        "message": "🔒 CWE-532 OWASP:A09-Logging CVSS:5.3 | Sensitive data detected in logs: token | HIGH [GDPR,HIPAA,PCI-DSS,SOC2]\n   Fix: Redact or mask sensitive data before logging/exposing | https://cwe.mitre.org/data/definitions/532.html"
+      }
+    ]
+  },
+  "nestjs-security/require-guards": {
+    "hits": 0,
+    "avgTimeMs": 58.66,
+    "samples": []
+  },
+  "secure-coding/no-ldap-injection": {
+    "hits": 0,
+    "avgTimeMs": 56.92,
+    "samples": []
+  },
+  "secure-coding/no-privilege-escalation": {
+    "hits": 0,
+    "avgTimeMs": 53.72,
+    "samples": []
+  },
+  "node-security/no-weak-hash-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 26.73,
+    "samples": []
+  },
+  "secure-coding/no-hardcoded-credentials": {
+    "hits": 0,
+    "avgTimeMs": 23.42,
+    "samples": []
+  },
+  "node-security/no-timing-unsafe-compare": {
+    "hits": 0,
+    "avgTimeMs": 18.51,
+    "samples": []
+  },
+  "node-security/no-unsafe-buffer-alloc": {
+    "hits": 0,
+    "avgTimeMs": 16.58,
+    "samples": []
+  },
+  "node-security/no-toctou-vulnerability": {
+    "hits": 0,
+    "avgTimeMs": 12.66,
+    "samples": []
+  },
+  "node-security/detect-eval-with-expression": {
+    "hits": 0,
+    "avgTimeMs": 9.34,
+    "samples": []
+  },
+  "secure-coding/no-redos-vulnerable-regex": {
+    "hits": 0,
+    "avgTimeMs": 11.58,
+    "samples": []
+  },
+  "node-security/no-arbitrary-file-access": {
+    "hits": 0,
+    "avgTimeMs": 7.61,
+    "samples": []
+  },
+  "secure-coding/no-unlimited-resource-allocation": {
+    "hits": 0,
+    "avgTimeMs": 11.42,
+    "samples": []
+  },
+  "node-security/no-buffer-overread": {
+    "hits": 0,
+    "avgTimeMs": 10.73,
+    "samples": []
+  },
+  "secure-coding/no-graphql-injection": {
+    "hits": 0,
+    "avgTimeMs": 11.17,
+    "samples": []
+  },
+  "node-security/detect-non-literal-fs-filename": {
+    "hits": 0,
+    "avgTimeMs": 9.93,
+    "samples": []
+  },
+  "secure-coding/no-xxe-injection": {
+    "hits": 0,
+    "avgTimeMs": 10.97,
+    "samples": []
+  },
+  "node-security/no-math-random-crypto": {
+    "hits": 0,
+    "avgTimeMs": 9.65,
+    "samples": []
+  },
+  "node-security/detect-child-process": {
+    "hits": 0,
+    "avgTimeMs": 9.13,
+    "samples": []
+  },
+  "secure-coding/no-xpath-injection": {
+    "hits": 0,
+    "avgTimeMs": 8.82,
+    "samples": []
+  },
+  "node-security/no-zip-slip": {
+    "hits": 0,
+    "avgTimeMs": 8.57,
+    "samples": []
+  },
+  "nestjs-security/no-permissive-cors": {
+    "hits": 0,
+    "avgTimeMs": 8.31,
+    "samples": []
+  },
+  "secure-coding/no-template-injection": {
+    "hits": 0,
+    "avgTimeMs": 5.02,
+    "samples": []
+  },
+  "secure-coding/no-homoglyph-identifiers": {
+    "hits": 0,
+    "avgTimeMs": 6.68,
+    "samples": []
+  },
+  "node-security/no-static-iv": {
+    "hits": 0,
+    "avgTimeMs": 6.03,
+    "samples": []
+  },
+  "node-security/no-data-in-temp-storage": {
+    "hits": 0,
+    "avgTimeMs": 5.47,
+    "samples": []
+  },
+  "secure-coding/no-fail-open-auth": {
+    "hits": 0,
+    "avgTimeMs": 5.56,
+    "samples": []
+  },
+  "secure-coding/no-improper-sanitization": {
+    "hits": 0,
+    "avgTimeMs": 5.49,
+    "samples": []
+  },
+  "nestjs-security/no-missing-validation-pipe": {
+    "hits": 0,
+    "avgTimeMs": 5.34,
+    "samples": []
+  },
+  "nestjs-security/no-exposed-private-fields": {
+    "hits": 0,
+    "avgTimeMs": 5.79,
+    "samples": []
+  },
+  "secure-coding/no-sql-injection": {
+    "hits": 0,
+    "avgTimeMs": 5.12,
+    "samples": []
+  },
+  "secure-coding/no-weak-password-recovery": {
+    "hits": 0,
+    "avgTimeMs": 4.96,
+    "samples": []
+  },
+  "node-security/no-unbounded-decompression": {
+    "hits": 0,
+    "avgTimeMs": 6.21,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-regex-construction": {
+    "hits": 0,
+    "avgTimeMs": 4.07,
+    "samples": []
+  },
+  "node-security/detect-suspicious-dependencies": {
+    "hits": 0,
+    "avgTimeMs": 5.03,
+    "samples": []
+  },
+  "secure-coding/no-log-injection": {
+    "hits": 0,
+    "avgTimeMs": 3.64,
+    "samples": []
+  },
+  "nestjs-security/require-throttler": {
+    "hits": 0,
+    "avgTimeMs": 4.89,
+    "samples": []
+  },
+  "node-security/no-cryptojs": {
+    "hits": 0,
+    "avgTimeMs": 3.66,
+    "samples": []
+  },
+  "node-security/no-dynamic-command-string": {
+    "hits": 0,
+    "avgTimeMs": 3.51,
+    "samples": []
+  },
+  "node-security/no-deprecated-buffer": {
+    "hits": 0,
+    "avgTimeMs": 3.33,
+    "samples": []
+  },
+  "node-security/no-shell-injection": {
+    "hits": 0,
+    "avgTimeMs": 3.02,
+    "samples": []
+  },
+  "node-security/require-dependency-integrity": {
+    "hits": 0,
+    "avgTimeMs": 3.23,
+    "samples": []
+  },
+  "node-security/require-stream-error-handler": {
+    "hits": 0,
+    "avgTimeMs": 3.13,
+    "samples": []
+  },
+  "node-security/no-unsafe-dynamic-require": {
+    "hits": 0,
+    "avgTimeMs": 3.07,
+    "samples": []
+  },
+  "node-security/no-ssrf": {
+    "hits": 0,
+    "avgTimeMs": 2.88,
+    "samples": []
+  },
+  "node-security/no-weak-cipher-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 2.67,
+    "samples": []
+  },
+  "node-security/no-weak-dh-parameters": {
+    "hits": 0,
+    "avgTimeMs": 2.67,
+    "samples": []
+  },
+  "node-security/no-ecb-mode": {
+    "hits": 0,
+    "avgTimeMs": 2.04,
+    "samples": []
+  },
+  "node-security/require-aead-tag-verification": {
+    "hits": 0,
+    "avgTimeMs": 1.77,
+    "samples": []
+  },
+  "node-security/no-env-injection": {
+    "hits": 0,
+    "avgTimeMs": 1.84,
+    "samples": []
+  },
+  "nestjs-security/no-unguarded-swagger": {
+    "hits": 0,
+    "avgTimeMs": 1.67,
+    "samples": []
+  },
+  "node-security/no-self-signed-certs": {
+    "hits": 0,
+    "avgTimeMs": 1.65,
+    "samples": []
+  },
+  "nestjs-security/no-unsafe-multer-filename": {
+    "hits": 0,
+    "avgTimeMs": 3.26,
+    "samples": []
+  },
+  "nestjs-security/no-hybrid-app-config-loss": {
+    "hits": 0,
+    "avgTimeMs": 1.6,
+    "samples": []
+  },
+  "node-security/no-insecure-http-parser": {
+    "hits": 0,
+    "avgTimeMs": 1.51,
+    "samples": []
+  },
+  "node-security/no-dynamic-algorithm-selection": {
+    "hits": 0,
+    "avgTimeMs": 1.47,
+    "samples": []
+  },
+  "nestjs-security/no-res-bypass-serialization": {
+    "hits": 0,
+    "avgTimeMs": 1.44,
+    "samples": []
+  },
+  "nestjs-security/require-validation-pipe-whitelist": {
+    "hits": 0,
+    "avgTimeMs": 1.39,
+    "samples": []
+  }
+}

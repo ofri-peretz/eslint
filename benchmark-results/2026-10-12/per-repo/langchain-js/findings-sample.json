@@ -1,0 +1,42 @@
+[
+  {
+    "ruleId": "node-security/no-unsafe-buffer-alloc",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/langchain-js/libs/langchain-core/src/utils/event_source_parse.ts",
+    "line": 232,
+    "column": 15,
+    "message": "🔒 CWE-789 CVSS:7.5 | The allocation size is read off the wire, so the peer picks it. For `new Array(n)` the hazard is a narrow band, not \"large n\": V8 keeps a packed backing store only up to ~33.5M elements, and a length just under that tu"
+  },
+  {
+    "ruleId": "secure-coding/no-redos-vulnerable-regex",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/langchain-js/libs/langchain-core/src/utils/zod-to-json-schema/parsers/string.ts",
+    "line": 38,
+    "column": 20,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Ambiguous alternation (exponential backtracking): Alternatives inside a quantified group match the same input, so every character can be taken by either branch and the engine explores 2^n paths befor"
+  },
+  {
+    "ruleId": "secure-coding/no-redos-vulnerable-regex",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/langchain-js/libs/langchain-core/src/output_parsers/structured.ts",
+    "line": 113,
+    "column": 27,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+  },
+  {
+    "ruleId": "secure-coding/no-redos-vulnerable-regex",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/langchain-js/libs/langchain-core/src/output_parsers/structured.ts",
+    "line": 115,
+    "column": 27,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+  },
+  {
+    "ruleId": "secure-coding/no-sensitive-data-exposure",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/langchain-js/libs/langchain-core/src/callbacks/manager.ts",
+    "line": 294,
+    "column": 17,
+    "message": "🔒 CWE-532 OWASP:A09-Logging CVSS:5.3 | Sensitive data detected in logs: token | HIGH [GDPR,HIPAA,PCI-DSS,SOC2]\n   Fix: Redact or mask sensitive data before logging/exposing | https://cwe.mitre.org/data/definitions/532.html"
+  }
+]

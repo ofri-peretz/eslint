@@ -1,0 +1,42 @@
+[
+  {
+    "ruleId": "node-security/no-toctou-vulnerability",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/sst/platform/src/components/cloudflare/helpers/wrangler.ts",
+    "line": 196,
+    "column": 5,
+    "message": "🔒 CWE-367 OWASP:A04-Cryptographic CVSS:7 | Time-of-check Time-of-use race condition detected | HIGH\n   Fix: Act on the result and handle the failure — open/unlink and catch ENOENT — instead of checking first. Not a finding if the path is i"
+  },
+  {
+    "ruleId": "node-security/no-zip-slip",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/sst/platform/src/components/aws/ssr-site.ts",
+    "line": 1799,
+    "column": 67,
+    "message": "🔒 CWE-22 OWASP:A01-Broken CVSS:7.5 | Archive entry path used without validation | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Validate paths before extraction | https://snyk.io/research/zip-slip-vulnerability"
+  },
+  {
+    "ruleId": "node-security/no-zip-slip",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/sst/platform/src/components/aws/ssr-site.ts",
+    "line": 1814,
+    "column": 55,
+    "message": "🔒 CWE-22 OWASP:A01-Broken CVSS:7.5 | Archive entry path used without validation | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Validate paths before extraction | https://snyk.io/research/zip-slip-vulnerability"
+  },
+  {
+    "ruleId": "node-security/no-zip-slip",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/sst/platform/src/components/aws/ssr-site.ts",
+    "line": 1818,
+    "column": 65,
+    "message": "🔒 CWE-22 OWASP:A01-Broken CVSS:7.5 | Archive entry path used without validation | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Validate paths before extraction | https://snyk.io/research/zip-slip-vulnerability"
+  },
+  {
+    "ruleId": "node-security/require-stream-error-handler",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/sst/platform/src/components/aws/function.ts",
+    "line": 2470,
+    "column": 28,
+    "message": "🔒 CWE-248 OWASP:A10-Mishandling CVSS:7.5 | .pipe() forwards data but not errors. A stream that emits 'error' with no listener throws inside the EventEmitter, which is an uncaught exception — the process exits. A single request for a missin"
+  }
+]
