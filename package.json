@@ -276,7 +276,8 @@
     "ilb:mappings-report": "tsx scripts/ilb-mappings-report.ts",
     "check:format-drift": "tsx scripts/check-format-drift.ts",
     "check:lock-proofs": "tsx scripts/prove-locks.mts",
-    "check:lock-proofs:update": "tsx scripts/prove-locks.mts --update"
+    "check:lock-proofs:update": "tsx scripts/prove-locks.mts --update",
+    "mutation": "tsx scripts/mutation.mts"
   },
   "keywords": [
     "eslint",
@@ -332,6 +333,8 @@
     "@nestjs/throttler": "^6.7.1",
     "@openai/agents": "^0.18.0",
     "@prisma/client": "^7.10.0",
+    "@stryker-mutator/core": "10.0.0",
+    "@stryker-mutator/vitest-runner": "10.0.0",
     "@swc-node/register": "~1.12.1",
     "@swc/core": "^1.15.11",
     "@swc/helpers": "^0.5.18",

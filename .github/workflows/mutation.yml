@@ -1,0 +1,120 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Mutation Testing
+
+# Stryker over the rule sources of every plugin opted in to
+# .agent/mutation-baseline.json, graded per rule against that baseline.
+#
+# WHY. Coverage says a fixture executed a line; it does not say any fixture
+# would notice if the line were wrong. Stryker changes the line — `===` to
+# `!==`, a guard to `true`, a detection list to `[]` — and asks whether a test
+# goes red. A survivor in a guard or exclusion is a missing VALID case (a
+# false positive could ship unnoticed); a survivor in detection logic is a
+# missing INVALID case (a false negative could). docs/MUTATION_TESTING.md has
+# the triage guide.
+#
+# PRs mutate only the rule files the PR changed (`--since` the base branch),
+# so the cost scales with the change, not the plugin. The weekly run mutates
+# every opted-in plugin in full and uploads the HTML report.
+#
+# The baseline is a RATCHET: a rule whose score drops fails the run, and so
+# does a rule with no banked score. Raising or (deliberately) lowering a score
+# is an `--update-baseline` commit, visible in review.
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - 'packages/eslint-plugin-*/src/rules/**'
+      - '.agent/mutation-baseline.json'
+      - 'scripts/mutation.mts'
+      - 'scripts/mutation/**'
+      - 'scripts/lib/mutation-score.ts'
+      - '.github/workflows/mutation.yml'
+  schedule:
+    - cron: '47 2 * * 6' # 02:47 UTC Saturday
+  workflow_dispatch:
+    inputs:
+      plugin:
+        description: 'Plugin to mutate in full (e.g. jwt-security). Empty = every opted-in plugin.'
+        required: false
+        default: ''
+
+concurrency:
+  group: mutation-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  mutate:
+    name: Mutate rule sources
+    # Draft PRs are WIP; the promote model in AGENTS.md runs heavy gates when a
+    # PR is ready for review.
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    # Full pilot run (postgresql-security + jwt-security) measured ~30 min
+    # locally at concurrency 3 (5,197 + 1,617 mutants); a PR touching one rule
+    # is a few minutes. 90 leaves headroom for a 4-core runner and one more
+    # opted-in plugin without letting a wedged run burn hours.
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      # Required so the failure step can open / update the tracking issue.
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # `--since` needs the merge-base with the base branch.
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup
+        with:
+          deps: lean
+          turbo-cache: 'false'
+
+      - name: Mutate changed rule files of opted-in plugins
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: npm run mutation -- --all --since "origin/$BASE_REF" --concurrency 4
+
+      - name: Mutate opted-in plugins in full
+        if: github.event_name != 'pull_request'
+        env:
+          PLUGIN: ${{ inputs.plugin }}
+        run: |
+          if [ -n "$PLUGIN" ]; then
+            npm run mutation -- --plugin "$PLUGIN" --concurrency 4
+          else
+            npm run mutation -- --all --concurrency 4
+          fi
+
+      - name: Summary
+        if: always()
+        run: |
+          if [ -f benchmark-results/stryker/summary.md ]; then
+            cat benchmark-results/stryker/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: mutation-report
+          path: |
+            benchmark-results/stryker/**/index.html
+            benchmark-results/stryker/**/mutation.json
+            benchmark-results/stryker/summary.md
+          if-no-files-found: ignore
+          retention-days: 14
+
+      # A red cron notifies nobody by default. See .github/actions/report-failure.
+      - name: 🚨 Report a scheduled failure
+        if: failure() && github.event_name == 'schedule'
+        uses: ./.github/actions/report-failure
+        with:
+          title: 'Weekly mutation testing is failing'
+          body: 'The weekly Stryker run failed: a rule in an opted-in plugin lost mutation score (a fixture stopped noticing a change to the rule), or Stryker itself broke. The step summary names the rule.'
+          token: ${{ github.token }}

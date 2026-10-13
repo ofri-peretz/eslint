@@ -3195,7 +3195,6 @@
     "packages/eslint-plugin-secure-coding/src/utils/regexp-intrinsic.ts",
     "packages/eslint-plugin-secure-coding/src/utils/resolve-reference.test.ts",
     "packages/eslint-plugin-secure-coding/src/utils/resolve-reference.ts",
-    "packages/eslint-plugin-secure-coding/stryker.conf.mjs",
     "packages/eslint-plugin-secure-coding/tsconfig.json",
     "packages/eslint-plugin-secure-coding/tsconfig.lib.json",
     "packages/eslint-plugin-secure-coding/tsconfig.spec.json",

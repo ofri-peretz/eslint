@@ -332,3 +332,22 @@ const sign = createSigner({ key: process.env.K, algorithm: 'none' });`,
     ],
   });
 });
+
+// ---------------------------------------------------------------------------
+// Edges pinned by mutation testing (npm run mutation -- --plugin jwt-security).
+// Each fixture is the input that tells the rule apart from a Stryker mutant
+// that survived the suite above; see docs/MUTATION_TESTING.md.
+// ---------------------------------------------------------------------------
+
+ruleTester.run('mutation-guided edges', noAlgorithmNone, {
+  valid: [],
+  invalid: [
+    {
+      name: "a test file is still checked unless allowInTests is set — 'none' is off by default",
+      code: `import jwt from 'jsonwebtoken';
+jwt.verify(token, key, { algorithms: ['none'] });`,
+      filename: 'src/auth.test.ts',
+      errors: [{ messageId: 'algorithmNoneInArray' }],
+    },
+  ],
+});

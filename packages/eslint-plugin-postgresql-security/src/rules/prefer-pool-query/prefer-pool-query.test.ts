@@ -204,3 +204,49 @@ describe('prefer-pool-query — unreadable statements abstain', () => {
     invalid: [],
   });
 });
+
+// ---------------------------------------------------------------------------
+// Edges pinned by mutation testing (npm run mutation -- --plugin
+// postgresql-security). Each fixture is the input that tells the rule apart
+// from a Stryker mutant that survived the suite above; see
+// docs/MUTATION_TESTING.md.
+// ---------------------------------------------------------------------------
+
+ruleTester.run('mutation-guided edges', preferPoolQuery, {
+  valid: pg([
+    {
+      name: 'START TRANSACTION split across lines still needs the one connection',
+      code: `const pool = new Pool();
+async function f() {
+  const client = await pool.connect();
+  await client.query(\`START
+    TRANSACTION\`);
+  client.release();
+}`,
+    },
+    {
+      name: 'RELEASE SAVEPOINT split across lines still needs the one connection',
+      code: `const pool = new Pool();
+async function f() {
+  const client = await pool.connect();
+  await client.query(\`RELEASE
+    SAVEPOINT sp\`);
+  client.release();
+}`,
+    },
+  ]),
+  invalid: pg([
+    {
+      name: 'session keywords inside a single SELECT do not need the connection',
+      code: `const pool = new Pool();
+async function f() {
+  const client = await pool.connect();
+  await client.query(
+    "SELECT id FROM jobs WHERE note IN ('begin', 'start transaction', 'commit', 'end', 'rollback', 'savepoint', 'release savepoint', 'set', 'reset', 'discard', 'listen', 'unlisten', 'notify', 'declare', 'fetch', 'move', 'close', 'copy', 'prepare', 'execute', 'deallocate', 'lock')",
+  );
+  client.release();
+}`,
+      errors: [{ messageId: 'preferPoolQuery' }],
+    },
+  ]),
+});

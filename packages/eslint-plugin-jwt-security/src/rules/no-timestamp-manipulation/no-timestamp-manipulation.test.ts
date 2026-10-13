@@ -213,3 +213,27 @@ jwt.verify(token, key, { algorithms: ['HS256'], clockTolerance: 120 });`,
     ],
   });
 });
+
+// ---------------------------------------------------------------------------
+// Edges pinned by mutation testing (npm run mutation -- --plugin jwt-security).
+// Each fixture is the input that tells the rule apart from a Stryker mutant
+// that survived the suite above; see docs/MUTATION_TESTING.md.
+// ---------------------------------------------------------------------------
+
+ruleTester.run('mutation-guided edges', noTimestampManipulation, {
+  valid: [
+    {
+      name: 'ignoreExpiration on a call that is not a JWT verify is not judged',
+      code: `import jwt from 'jsonwebtoken';
+cache.get(token, key, { ignoreExpiration: true });`,
+    },
+  ],
+  invalid: [
+    {
+      name: "fast-jwt's createVerifier config takes the same ignoreExpiration switch",
+      code: `import { createVerifier } from 'fast-jwt';
+const verify = createVerifier({ key: process.env.KEY, ignoreExpiration: true });`,
+      errors: [{ messageId: 'ignoreExpiration' }],
+    },
+  ],
+});

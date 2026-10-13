@@ -95,19 +95,16 @@ export const requireIssuedAt = createRule<RuleOptions, MessageIds>({
     const sourceCode = context.sourceCode;
 
     /**
-     * Whether the claims carry `iat` — or may, where this file cannot see.
+     * Whether jose builder claims carry `iat` — or may, where this file
+     * cannot see. (jsonwebtoken's payload is not asked: see below.)
      *
      * `{ ['iat']: … }` satisfies this requirement exactly as `{ iat: … }`
      * does; demanding an Identifier key reported a token that HAS an iat.
      */
-    const claimsHaveIat = (
-      claims: TSESTree.Node | undefined,
-      opaqueCounts: boolean,
-    ): boolean => {
+    const claimsHaveIat = (claims: TSESTree.Node | undefined): boolean => {
       const resolved = resolveObject(claims, sourceCode);
       return (
-        resolved !== null &&
-        ((opaqueCounts && resolved.opaque) || hasOption(resolved, 'iat'))
+        resolved !== null && (resolved.opaque || hasOption(resolved, 'iat'))
       );
     };
 
@@ -131,20 +128,23 @@ export const requireIssuedAt = createRule<RuleOptions, MessageIds>({
           if (
             chain.kind === 'SignJWT' &&
             !chain.calls.has('setIssuedAt') &&
-            !claimsHaveIat(chain.builder.arguments[0], true)
+            !claimsHaveIat(chain.builder.arguments[0])
           ) {
             context.report({ node, messageId: 'missingIssuedAt' });
           }
           return;
         }
 
-        // Check if payload has iat claim. (jsonwebtoken's `noTimestamp: true`
-        // strips iat whatever the payload says, so an opaque payload proves
-        // nothing here.)
-        if (claimsHaveIat(node.arguments[0], false)) {
-          return;
-        }
-
+        /*
+         * No early return on an `iat` in the payload. jsonwebtoken's
+         * `noTimestamp: true` runs `delete payload.iat` (sign.js) — it strips
+         * an explicit iat exactly as it skips the generated one — so the
+         * payload cannot settle anything the `noTimestamp` below does not.
+         * Returning here when the payload named `iat` hid the one case this
+         * rule exists for: `sign({ ...claims, iat: now }, key, { noTimestamp:
+         * cfg.legacy })`. Found by Stryker: deleting this check changed no
+         * test's verdict, because the only input it decided was that one.
+         */
         /*
          * jsonwebtoken adds iat by default, so only a `noTimestamp` that may
          * be `true` drops it. A LITERAL boolean is settled either way:

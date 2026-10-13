@@ -624,3 +624,76 @@ export class AuthService {
     ],
   },
 );
+
+// ---------------------------------------------------------------------------
+// Edges pinned by mutation testing (npm run mutation -- --plugin jwt-security).
+// Each fixture is the input that tells the rule apart from a Stryker mutant
+// that survived the suite above; see docs/MUTATION_TESTING.md.
+// ---------------------------------------------------------------------------
+
+ruleTester.run('mutation-guided edges', requireExpiration, {
+  valid: [
+    {
+      name: 'a token signed inside a test file is not judged — the test is its lifetime',
+      code: `import jwt from 'jsonwebtoken';
+jwt.sign({ sub: id }, process.env.S);`,
+      filename: 'src/auth.test.ts',
+    },
+    {
+      name: 'an exp beside a spread is still an exp',
+      code: `import jwt from 'jsonwebtoken';
+jwt.sign({ ...base, exp: now + 60 }, process.env.S);`,
+    },
+    // Rule fix (FP): a computed-literal key was not read as the claim.
+    {
+      name: "a computed ['exp'] key is the exp claim, as a bundler emits it",
+      code: `import jwt from 'jsonwebtoken';
+jwt.sign({ ['exp']: Math.floor(Date.now() / 1000) + 60, sub: id }, process.env.S);`,
+    },
+    {
+      name: 'a one-argument sign on an injected service is NestJS-shaped and left to the module',
+      code: `export class Tokens {
+  constructor(private readonly jwtService) {}
+  issue(p) { return this.jwtService.sign(p); }
+}`,
+    },
+  ],
+  invalid: [
+    {
+      name: 'an inline payload with only non-exp claims has no expiry',
+      code: `import jwt from 'jsonwebtoken';
+jwt.sign({ 'sub': id, role }, process.env.S);`,
+      errors: [
+        {
+          messageId: 'missingExpiration',
+          suggestions: [
+            {
+              messageId: 'addExpiration',
+              output: `import jwt from 'jsonwebtoken';
+jwt.sign({ 'sub': id, role }, process.env.S, { expiresIn: '1h' });`,
+            },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'a payload built by a call this file cannot see stays a finding',
+      code: `import jwt from 'jsonwebtoken';
+const payload = buildClaims();
+jwt.sign(payload, process.env.S);`,
+      errors: [
+        {
+          messageId: 'missingExpiration',
+          suggestions: [
+            {
+              messageId: 'addExpiration',
+              output: `import jwt from 'jsonwebtoken';
+const payload = buildClaims();
+jwt.sign(payload, process.env.S, { expiresIn: '1h' });`,
+            },
+          ],
+        },
+      ],
+    },
+  ],
+});

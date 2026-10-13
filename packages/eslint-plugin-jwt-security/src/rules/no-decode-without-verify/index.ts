@@ -24,7 +24,7 @@ import {
   objectKeyName,
   propertyName,
 } from '@interlace/eslint-devkit';
-import { isDecodeOperation } from '../../utils';
+import { isDecodeOperation, isJwtLibraryCall } from '../../utils';
 import { fromBackChannel } from '../../utils/provenance';
 import type { NoDecodeWithoutVerifyOptions } from '../../types';
 
@@ -32,6 +32,29 @@ type MessageIds =
   'decodeWithoutVerify' | 'jwtDecodeLibrary' | 'useVerifyInstead';
 
 type RuleOptions = [NoDecodeWithoutVerifyOptions?];
+
+/**
+ * The annotations the docs promise are honoured with no configuration.
+ *
+ * Declared once because the rule reads `context.options`, which ESLint does
+ * NOT merge `defaultOptions` into. Declaring them only in `defaultOptions` —
+ * as this rule did — advertised `@decoded-header-only` as a default while
+ * `create` fell back to `[]`, so the annotation the docs tell you to write
+ * suppressed nothing. (`@verified-separately` only appeared to work: it
+ * contains the devkit's built-in `@verified`.) Surfaced by Stryker: emptying
+ * the declared default changed no test's verdict.
+ */
+const DEFAULT_TRUSTED_ANNOTATIONS = [
+  '@decoded-header-only',
+  '@verified-separately',
+];
+
+/**
+ * jwt-decode's own export names, in v4 (`jwtDecode`) and v3 (`jwt_decode`,
+ * the README's default-import name). A call spelled this way reports with the
+ * library-specific message — but only through `isJwtLibraryCall`'s gates.
+ */
+const JWT_DECODE_LIBRARY_NAMES = new Set(['jwtDecode', 'jwt_decode']);
 
 export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
   name: 'no-decode-without-verify',
@@ -117,29 +140,37 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
     {
       allowHeaderInspection: false,
       trustedSanitizers: [],
-      trustedAnnotations: ['@decoded-header-only', '@verified-separately'],
+      trustedAnnotations: DEFAULT_TRUSTED_ANNOTATIONS,
       strictMode: false,
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] ?? {};
-    const { trustedAnnotations = [], allowHeaderInspection = false } = options;
+    const {
+      trustedAnnotations = DEFAULT_TRUSTED_ANNOTATIONS,
+      allowHeaderInspection = false,
+    } = options;
     const sourceCode = context.sourceCode;
 
     /**
-     * Check if this is a jwt-decode import usage
+     * A jwt-decode call the main `isDecodeOperation` path did not claim
+     * (`jwt_decode` is not in its method set).
+     *
+     * This used to match the callee NAME alone, with none of the gates every
+     * other path in this plugin goes through. Two wrong verdicts followed, both
+     * found because Stryker could delete the `jwtDecode` arm of the match
+     * without any test noticing — the only inputs that reached it were these:
+     *
+     *   - a file importing no JWT library at all, with its own helper named
+     *     `jwtDecode`, was reported as "jwt-decode library usage" — the
+     *     invariant `module-gate.lock.test.ts` states for every rule;
+     *   - `const { exp } = jwt_decode(token)`, the client-side refresh check
+     *     this rule documents as correct, was reported for the v3 spelling
+     *     while the v4 `jwtDecode` spelling was (rightly) allowed.
      */
-    // oxlint-disable-next-line consistent-function-scoping
-    const isJwtDecodeLibrary = (node: TSESTree.CallExpression): boolean => {
-      // Direct call: jwtDecode(token)
-      if (
-        node.callee.type === 'Identifier' &&
-        (node.callee.name === 'jwtDecode' || node.callee.name === 'jwt_decode')
-      ) {
-        return true;
-      }
-      return false;
-    };
+    const isJwtDecodeLibrary = (node: TSESTree.CallExpression): boolean =>
+      node.callee.type === 'Identifier' &&
+      isJwtLibraryCall(node, JWT_DECODE_LIBRARY_NAMES, sourceCode);
 
     /**
      * Claims that carry no authority. Reading them from an unverified token is
@@ -307,6 +338,9 @@ export const noDecodeWithoutVerify = createRule<RuleOptions, MessageIds>({
         if (isJwtDecodeLibrary(node)) {
           // Check for safe annotations
           if (hasSafeAnnotation(node, context, trustedAnnotations)) {
+            return;
+          }
+          if (readsOnlyAllowedClaims(node)) {
             return;
           }
 
