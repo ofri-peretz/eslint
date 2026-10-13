@@ -38,9 +38,10 @@
 import { execSync, spawnSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import { globSync } from 'glob';
 import { cloneRepo, resolveBenchDir } from '../benchmarks/lib/clone-repo';
+import { parseHealthProblem } from './lib/ilb-parse-health';
 
 // ── Paths & Config ──────────────────────────────────────────────────
 
@@ -78,7 +79,7 @@ const PER_REPO_TIMEOUT_MS = 600_000;
 // Each entry has a pinned `commit` (tag, branch, or full SHA) so v1.0
 // results are reproducible. Bumping commits = corpus version bump.
 
-const BENCHMARK_REPOS = [
+export const BENCHMARK_REPOS = [
   // ── Tier 1: Mega (>50K stars) — adoption / brand-value targets ─────
   {
     name: 'next.js',
@@ -169,7 +170,7 @@ const BENCHMARK_REPOS = [
     commit: 'de51a3b99e5b66d6e085e77d91886e5676a9bf3d',
     stars: 28_000,
     srcGlob: 'packages/medusa/src/**/*.ts',
-    plugins: ['node-security', 'secure-coding', 'express-security', 'pg'],
+    plugins: ['node-security', 'secure-coding', 'express-security', 'postgresql-security'],
     category: 'E-commerce Backend',
     why: 'PostgreSQL-native commerce — exercises pg + payment security patterns',
   },
@@ -212,8 +213,11 @@ const BENCHMARK_REPOS = [
     repo: 'https://github.com/supabase/supabase.git',
     commit: 'f0f3784633342072111117cfa4c7d3a32357bcbf',
     stars: 78_000,
-    srcGlob: 'apps/studio/components/**/*.{ts,tsx}',
-    plugins: ['browser-security', 'pg', 'jwt', 'node-security'],
+    // At this pin (2023-11) Studio lives at the repo root; it moved to
+    // apps/studio/ in 2024. The old glob matched only because clones were
+    // silently left at HEAD until #524 made the pin real.
+    srcGlob: 'studio/components/**/*.{ts,tsx}',
+    plugins: ['browser-security', 'postgresql-security', 'jwt-security', 'node-security'],
     category: 'Database Platform',
     why: 'PostgreSQL-native BaaS — pg, JWT, browser-security in one codebase',
   },
@@ -223,7 +227,8 @@ const BENCHMARK_REPOS = [
     commit: 'a5fa09b4ceb5945d98244612a3d8d1a780533e93',
     stars: 48_000,
     srcGlob: 'public/sdk-console/**/*.ts',
-    plugins: ['node-security', 'secure-coding', 'crypto'],
+    // eslint-plugin-crypto was consolidated into node-security (#167).
+    plugins: ['node-security', 'secure-coding'],
     category: 'BaaS Platform',
     why: 'Auth/storage/functions — exercises crypto, session, credentials (public SDK; main is PHP)',
   },
@@ -267,7 +272,7 @@ const BENCHMARK_REPOS = [
     commit: 'c71e849084b892dfde62bd70318d2983459f69f5',
     stars: 1_700,
     srcGlob: 'lib/**/*.ts',
-    plugins: ['nestjs-security', 'node-security', 'secure-coding', 'pg'],
+    plugins: ['nestjs-security', 'node-security', 'secure-coding', 'postgresql-security'],
     category: 'NestJS Module',
     why: 'NestJS + TypeORM official integration — exercises nestjs-security and pg rules together',
   },
@@ -277,7 +282,7 @@ const BENCHMARK_REPOS = [
     commit: '2e5ccd9b860bdf046d7b52b4fccdb46404954044',
     stars: 30_000,
     srcGlob: 'packages/twenty-server/src/**/*.ts',
-    plugins: ['nestjs-security', 'node-security', 'secure-coding', 'pg'],
+    plugins: ['nestjs-security', 'node-security', 'secure-coding', 'postgresql-security'],
     category: 'CRM (NestJS)',
     why: 'Production NestJS application — Twenty CRM, 30K-star real-world Nest server with PostgreSQL',
   },
@@ -302,6 +307,9 @@ const BENCHMARK_REPOS = [
     commit: 'd5736f098edee62c44f27b053e6e48f5fa443803',
     stars: 230_000,
     srcGlob: 'packages/react-dom/src/**/*.{js,ts}',
+    // Flow-typed .js — parsed with hermes-eslint (scripts/lib/ilb-wild-config.ts).
+    // Without it 23 of 37 files never parsed, in every run up to 2026-10.
+    flow: true,
     plugins: ['browser-security', 'secure-coding'],
     category: 'UI Library (FP corpus)',
     why: 'react-dom legitimately uses dangerouslySetInnerHTML, postMessage, and dynamic property access — stress-test for browser-security FP rate',
@@ -348,23 +356,46 @@ const BENCHMARK_REPOS = [
 const FP_EDGE_REPOS = BENCHMARK_REPOS.filter((r) => r.fpEdge);
 
 // ── CLI commands ─────────────────────────────────────────────────────
+// Guarded so the lock tests can import the registry and the worker builder
+// without starting a 30-minute run.
 
-if (SHOW_LIST) {
+const IS_ENTRY = import.meta.url === pathToFileURL(process.argv[1] ?? '').href;
+
+if (IS_ENTRY && SHOW_LIST) {
   showRegistry();
   process.exit(0);
 }
 
-if (SHOW_RESULTS) {
+if (IS_ENTRY && SHOW_RESULTS) {
   showLastResults();
   process.exit(0);
 }
 
 // ── Main ────────────────────────────────────────────────────────────
 
-main().catch((err) => {
-  console.error('ilb-wild fatal error:', err);
-  process.exit(1);
-});
+if (IS_ENTRY) {
+  main().then(
+    (code) => process.exit(code),
+    (err) => {
+      console.error('ilb-wild fatal error:', err);
+      process.exit(1);
+    },
+  );
+}
+
+/**
+ * Plugins a registry entry names that have no source package. The worker
+ * imports `packages/eslint-plugin-<p>/src/index.ts`; a missing one kills it
+ * at module resolution with nothing on stdout. That is how medusa, appwrite,
+ * nestjs-typeorm and twentyhq failed as "worker stdout unparseable": they
+ * still named `pg` and `crypto` after those packages were renamed to
+ * postgresql-security (#414) and folded into node-security (#167).
+ */
+export function missingPlugins(repo: { plugins: string[] }, root = ROOT): string[] {
+  return repo.plugins.filter(
+    (p) => !fs.existsSync(path.join(root, 'packages', `eslint-plugin-${p}`, 'src', 'index.ts')),
+  );
+}
 
 async function main() {
   const corpus = FP_CORPUS_MODE ? FP_EDGE_REPOS : BENCHMARK_REPOS;
@@ -390,6 +421,14 @@ async function main() {
     console.log(`── ${repo.name} (${formatStars(repo.stars)} ⭐, pinned ${repo.commit}) ──`);
     console.log(`   ${repo.why}`);
     console.log(`   Plugins: ${repo.plugins.join(', ')}`);
+
+    const missing = missingPlugins(repo);
+    if (missing.length > 0) {
+      const error = `registry names plugin(s) with no package: ${missing.join(', ')} (packages/eslint-plugin-<name>/src/index.ts)`;
+      results.push({ repo: repo.name, success: false, error });
+      console.log(`   ❌ ${error}`);
+      continue;
+    }
 
     try {
       const dir = cloneRepo(repo, BENCH_DIR);
@@ -463,6 +502,16 @@ async function main() {
   if (!SKIP_REPORTS) {
     console.log(`   summary.md → ${path.relative(ROOT, path.join(outDir, 'summary.md'))}`);
   }
+
+  // A repo that produced no measurement is a failed run, not a footnote in
+  // summary.md. benchmark.yml's loop relies on this exit code.
+  const failed = results.filter((r) => !r.success);
+  if (failed.length > 0) {
+    console.error(`\n❌ ${failed.length}/${results.length} repo(s) produced no measurement:`);
+    for (const r of failed) console.error(`   ${r.repo}: ${String(r.error).split('\n')[0].slice(0, 240)}`);
+    return 1;
+  }
+  return 0;
 }
 
 // ── Repo lifecycle ──────────────────────────────────────────────────
@@ -520,8 +569,10 @@ function countLoc(files) {
 
 // ── Worker generation & execution ───────────────────────────────────
 
-function buildWorkerScript(repo, files) {
-  // Worker is an ESM TS file run via tsx. It loads each plugin from source,
+export function buildWorkerScript(repo: { plugins: string[]; flow?: boolean }, files: string[]) {
+  // Worker is a TS file run via tsx — as CommonJS, since the root package has
+  // no "type": "module" (which is why ilb-wild-config.ts imports its parsers as
+  // namespaces). It loads each plugin from source,
   // and spreads each plugin's own `recommended` flat-config block. This is
   // important: plugins register themselves as `<name>` (e.g. `browser-security`),
   // not `@interlace/<name>`. Reaching into `.rules` and re-namespacing breaks
@@ -548,8 +599,9 @@ function buildWorkerScript(repo, files) {
   const filesLiteral = JSON.stringify(files);
 
   return `
-// Auto-generated by scripts/ilb-wild.mjs
+// Auto-generated by scripts/ilb-wild.ts
 import { ESLint } from 'eslint';
+import { wildOverrideConfig } from ${JSON.stringify(path.join(ROOT, 'scripts', 'lib', 'ilb-wild-config.ts'))};
 ${pluginImports}
 
 async function run() {
@@ -568,28 +620,9 @@ async function run() {
   const eslint = new ESLint({
     cwd: ${JSON.stringify(path.dirname(BENCH_DIR))},
     overrideConfigFile: true,
-    overrideConfig: [
-      // Base language options apply to every file.
-      {
-        files: ['**/*.{ts,tsx,js,jsx,mjs,cjs}'],
-        languageOptions: {
-          parserOptions: {
-            ecmaVersion: 'latest',
-            sourceType: 'module',
-            ecmaFeatures: { jsx: true },
-          },
-        },
-        // Tell ESLint not to error on third-party eslint-disable comments
-        // for rules we don't load — keeps the noise floor low.
-        linterOptions: {
-          reportUnusedDisableDirectives: 'off',
-        },
-      },
-      // Plugin recommended configs supply their own plugin registration +
-      // rule activations. Spreading them as separate config blocks lets
-      // ESLint flat-config compose them without namespace conflicts.
-      ...pluginConfigBlocks,
-    ],
+    // scripts/lib/ilb-wild-config.ts — espree for JS, @typescript-eslint/parser
+    // for TS, then each plugin's recommended block.
+    overrideConfig: wildOverrideConfig(pluginConfigBlocks, { flow: ${!!repo.flow} }),
   });
 
   const results = await eslint.lintFiles(files);
@@ -607,11 +640,18 @@ async function run() {
   let filesWithFindings = 0;
   let externalDirectives = 0;
   let parseErrors = 0;
+  const parseErrorSamples = [];
 
   for (const r of results) {
     let fileHadFinding = false;
     for (const m of r.messages) {
-      if (m.fatal) { parseErrors++; continue; }
+      if (m.fatal) {
+        parseErrors++;
+        if (parseErrorSamples.length < 10) {
+          parseErrorSamples.push({ file: r.filePath, line: m.line, message: m.message?.slice(0, 200) });
+        }
+        continue;
+      }
       if (!isOurRule(m.ruleId)) {
         // External plugin reference (eslint-disable for a rule we don't load),
         // or ESLint internal warning. Track count, don't count as a finding.
@@ -650,6 +690,7 @@ async function run() {
     peakRssKb,
     externalDirectives,
     parseErrors,
+    parseErrorSamples,
   }) + '\\n');
 }
 
@@ -658,6 +699,34 @@ run().catch((e) => {
   process.exit(1);
 });
 `;
+}
+
+/**
+ * Why a worker produced no result line, with the evidence.
+ *
+ * The message used to be "worker stdout unparseable; first 200 chars: " and
+ * then nothing — the worker had died at module resolution, so stdout was empty
+ * and the one stream that said why (stderr) was thrown away.
+ */
+export function describeWorkerFailure(exec: {
+  stdout: string;
+  stderr: string;
+  status: number | null;
+  signal?: string | null;
+  error?: string;
+}) {
+  const how = exec.error
+    ? `spawn error: ${exec.error}`
+    : exec.signal
+      ? `killed by ${exec.signal}`
+      : `exit ${exec.status}`;
+  // TIMING=all tables and warnings precede the real error; the end is what matters.
+  const stderrTail = exec.stderr.trim().split('\n').slice(-15).join('\n').slice(-1500);
+  return (
+    `worker produced no result (${how}); ` +
+    `stdout: ${JSON.stringify(exec.stdout.slice(0, 200))}; ` +
+    `stderr (tail): ${stderrTail || '(empty)'}`
+  );
 }
 
 function runWorker(workerPath) {
@@ -674,6 +743,7 @@ function runWorker(workerPath) {
     stdout: result.stdout || '',
     stderr: result.stderr || '',
     status: result.status,
+    signal: result.signal,
     error: result.error?.message,
   };
 }
@@ -735,13 +805,9 @@ async function benchmarkRepo(repo, dir, files, loc) {
       try { stdoutData = JSON.parse(jsonLine); } catch {}
     }
     if (!stdoutData) {
-      console.log(`stdout-parse-error`);
+      console.log(`no-result`);
       try { fs.unlinkSync(workerPath); } catch {}
-      return {
-        repo: repo.name,
-        success: false,
-        error: `worker stdout unparseable; first 200 chars: ${exec.stdout.slice(0, 200)}`,
-      };
+      return { repo: repo.name, success: false, error: describeWorkerFailure(exec) };
     }
 
     if (stdoutData.error) {
@@ -766,6 +832,7 @@ async function benchmarkRepo(repo, dir, files, loc) {
       ruleTimings,
       externalDirectives: stdoutData.externalDirectives || 0,
       parseErrors: stdoutData.parseErrors || 0,
+      parseErrorSamples: stdoutData.parseErrorSamples || [],
     });
     console.log(`${wallMs}ms | ${stdoutData.totalErrors + stdoutData.totalWarnings} findings`);
   }
@@ -784,6 +851,17 @@ async function benchmarkRepo(repo, dir, files, loc) {
   const ref = runs[0];
   const findingsTotal = ref.totalErrors + ref.totalWarnings;
   const fileCount = ref.fileCount;
+
+  // A repo most of whose files never parsed was not measured. Fail it rather
+  // than record 0 findings as if the code were clean.
+  const parseProblem = parseHealthProblem({ fileCount, findings: { parseErrors: ref.parseErrors } });
+  if (parseProblem) {
+    const examples = ref.parseErrorSamples
+      .slice(0, 3)
+      .map((e) => `${path.relative(dir, e.file)}:${e.line} ${e.message}`)
+      .join(' | ');
+    return { repo: repo.name, success: false, error: `${parseProblem}. e.g. ${examples}` };
+  }
 
   // Per-rule: merge timings (avg across runs) and hits (from ref run).
   const ruleSet = new Set([
