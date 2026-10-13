@@ -92,14 +92,16 @@ It stays silent on:
 - Generic repository wrappers and other ORMs (`this.repository.find(...)` on a
   TypeORM `Repository<T>`).
 
-## Known False Negatives
-
-### Limit in Options Object
+A `limit` in the options object counts as a limit: the second argument for
+the native driver, the third for Mongoose.
 
 ```typescript
-// ❌ NOT DETECTED
+// ✅ Not reported
+db.collection('users').find({}, { limit: 100 });
 User.find({}, null, { limit: 100 });
 ```
+
+## Known False Negatives
 
 ### Dynamic Limit
 

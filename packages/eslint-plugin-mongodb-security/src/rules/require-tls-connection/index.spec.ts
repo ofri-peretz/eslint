@@ -148,3 +148,65 @@ ruleTester.run('require-tls-connection', requireTlsConnection, {
     },
   ]),
 });
+
+// ---------------------------------------------------------------------------
+// Edges pinned by mutation testing (npm run mutation -- --plugin mongodb-security).
+// Each fixture is the input that tells the rule apart from a Stryker mutant
+// that survived the suite above; see docs/MUTATION_TESTING.md.
+// ---------------------------------------------------------------------------
+
+ruleTester.run('mutation-guided edges', requireTlsConnection, {
+  valid: xmo([
+    {
+      // "Use of the +srv connection string modifier automatically sets the
+      // tls (or the equivalent ssl) option to true" — MongoDB connection
+      // string reference.
+      name: 'a mongodb+srv:// connection string has TLS on by default',
+      code: `import mongoose from 'mongoose';\nmongoose.connect('mongodb+srv://cluster0.example.mongodb.net/app');`,
+    },
+    {
+      name: 'a mongodb+srv:// template literal has TLS on by default',
+      code: "import mongoose from 'mongoose';\nmongoose.connect(`mongodb+srv://${host}/app`, { maxPoolSize: 5 });",
+    },
+    {
+      name: 'tls=true in the connection string',
+      code: `import mongoose from 'mongoose';\nmongoose.connect('mongodb://db.example.com:27017/app?tls=true', { maxPoolSize: 5 });`,
+    },
+    {
+      name: 'ssl=true in the connection string',
+      code: `import mongoose from 'mongoose';\nmongoose.connect('mongodb://db.example.com/app?replicaSet=rs0&ssl=true');`,
+    },
+  ]),
+  invalid: xmo([
+    {
+      name: 'mongodb+srv:// with tls=false turns the default off',
+      code: `import mongoose from 'mongoose';\nmongoose.connect('mongodb+srv://cluster0.example.mongodb.net/app?tls=false');`,
+      errors: [
+        {
+          messageId: 'requireTls',
+          suggestions: [
+            {
+              messageId: 'suggestionAddTls',
+              output: `import mongoose from 'mongoose';\nmongoose.connect('mongodb+srv://cluster0.example.mongodb.net/app?tls=false', { tls: true });`,
+            },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'mongodb+srv:// with tls: false in the options turns the default off',
+      code: `import mongoose from 'mongoose';\nmongoose.connect('mongodb+srv://cluster0.example.mongodb.net/app', { maxPoolSize: 5, tls: false });`,
+      errors: [
+        {
+          messageId: 'requireTls',
+          suggestions: [
+            {
+              messageId: 'suggestionAddTls',
+              output: `import mongoose from 'mongoose';\nmongoose.connect('mongodb+srv://cluster0.example.mongodb.net/app', { maxPoolSize: 5, tls: true });`,
+            },
+          ],
+        },
+      ],
+    },
+  ]),
+});

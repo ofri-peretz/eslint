@@ -96,6 +96,18 @@ export const noUnsafeWhere = createRule<RuleOptions, MessageIds>({
         }
       },
       CallExpression(node: TSESTree.CallExpression) {
+        // `Model.$where(js)` / `query.$where(js)` is Mongoose's own API for
+        // the operator — the same server-side JavaScript as `{ $where: js }`.
+        if (
+          node.callee.type === AST_NODE_TYPES.MemberExpression &&
+          propertyName(node.callee) === '$where'
+        ) {
+          context.report({
+            node,
+            messageId: 'unsafeWhere',
+          });
+          return;
+        }
         if (
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
           propertyName(node.callee) === 'where' &&

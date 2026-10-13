@@ -123,15 +123,21 @@ that every rule an opted-in plugin ships has a banked score.
    The plugin is now opted in: PRs that change its rules are graded, and the
    weekly run includes it.
 
-## Proposed rollout (not yet done)
+## Rollout
 
-The pilot opts in `postgresql-security` and `jwt-security`. Proposed order for
-the rest, each as its own PR (run → triage → bank):
+Opted in: `postgresql-security` and `jwt-security` (the pilot), then
+`mongodb-security` (16 rules, 1,822 mutants, ~7 min at concurrency 3).
 
-1. **`mongodb-security`** (16 rules) — below the API-surface floor
-   (`.agent/api-surface-floor-debt.json`), so its tests are already known to
-   miss surface; mutation testing says which of the rules it _does_ have are
-   under-pinned.
+One lesson from `mongodb-security` applies to every plugin with a file-level
+module gate (`if (!fileUsesMongo(ast)) return {}`): a sweep of non-SDK files
+that no rule would report anyway cannot kill the gate's `if (false)` mutant,
+so it survived in every rule. What kills it is a per-rule snippet that _is_
+reported once the file imports the SDK and is silent without the import — see
+`packages/eslint-plugin-mongodb-security/src/module-gate.lock.test.ts`.
+
+Proposed order for the rest, each as its own PR (run → triage → bank):
+
+1. ~~**`mongodb-security`**~~ — done.
 2. **`node-security`** (43 rules) — below the floor too, and the largest
    plugin after `browser-security`. Bank it in two or three batches of rules
    (`--mutate` accepts single files) so each PR's triage stays reviewable.

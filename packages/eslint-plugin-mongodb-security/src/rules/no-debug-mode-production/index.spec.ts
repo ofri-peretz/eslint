@@ -131,3 +131,27 @@ ruleTester.run('no-debug-mode-production', noDebugModeProduction, {
     },
   ]),
 });
+
+// ---------------------------------------------------------------------------
+// Edges pinned by mutation testing (npm run mutation -- --plugin mongodb-security).
+// Each fixture is the input that tells the rule apart from a Stryker mutant
+// that survived the suite above; see docs/MUTATION_TESTING.md.
+// ---------------------------------------------------------------------------
+
+ruleTester.run('mutation-guided edges', noDebugModeProduction, {
+  valid: xmo([
+    {
+      name: 'a bare set() call is not mongoose.set()',
+      code: `set('debug', true);`,
+    },
+    {
+      name: "mongoose.set('debug') with no value does not turn debug on",
+      code: `mongoose.set('debug');`,
+    },
+    {
+      name: 'only set() configures debug mode',
+      code: `cache.put('debug', true);`,
+    },
+  ]),
+  invalid: [],
+});

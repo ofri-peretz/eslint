@@ -17,6 +17,7 @@ import {
   MessageIcons,
   isTestFilePath,
   propertyName,
+  staticString,
 } from '@interlace/eslint-devkit';
 import { analyzeMongoScope } from '../../utils/receiver';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
@@ -28,6 +29,29 @@ export interface Options {
 type RuleOptions = [Options?];
 
 const CONNECT_METHODS = new Set(['connect', 'createConnection']);
+
+/**
+ * The static text of a connection-string argument: a string literal, or a
+ * template literal's static parts (interpolations become NUL, which matches
+ * no option below). `null` when the argument is not written out here.
+ */
+function connectionStringText(node: TSESTree.Node | undefined): string | null {
+  if (node?.type === AST_NODE_TYPES.TemplateLiteral) {
+    return node.quasis.map((q) => q.value.raw).join('\u0000');
+  }
+  return staticString(node);
+}
+
+/**
+ * Does the connection string itself turn TLS on? "Use of the +srv connection
+ * string modifier automatically sets the tls (or the equivalent ssl) option
+ * to true" (MongoDB connection string reference); `tls=true`/`ssl=true` sets
+ * it outright. A `tls=false`/`ssl=false` in the string overrides both.
+ */
+function uriEnablesTls(uri: string): boolean {
+  if (/[?&](?:tls|ssl)=false\b/i.test(uri)) return false;
+  return /^mongodb\+srv:\/\//i.test(uri) || /[?&](?:tls|ssl)=true\b/i.test(uri);
+}
 
 export const requireTlsConnection = createRule<RuleOptions, MessageIds>({
   name: 'require-tls-connection',
@@ -104,6 +128,39 @@ export const requireTlsConnection = createRule<RuleOptions, MessageIds>({
         }
 
         const optionsArg = node.arguments[1];
+
+        // Key text with quotes stripped, matching the `existing` lookup below.
+        // Reading `prop.key.name` instead accepted only identifier keys, so
+        // `{ 'tls': true }` — valid, secure, and common in configs copied from
+        // JSON — was reported as missing TLS.
+        const tlsKey = (prop: TSESTree.ObjectLiteralElement): string | null => {
+          if (prop.type !== AST_NODE_TYPES.Property) return null;
+          const key = context.sourceCode
+            .getText(prop.key)
+            .replaceAll(/['"]/g, '');
+          return key === 'tls' || key === 'ssl' ? key : null;
+        };
+        const tlsValueIs = (
+          prop: TSESTree.ObjectLiteralElement,
+          value: boolean,
+        ): boolean =>
+          tlsKey(prop) !== null &&
+          (prop as TSESTree.Property).value.type === AST_NODE_TYPES.Literal &&
+          ((prop as TSESTree.Property).value as TSESTree.Literal).value ===
+            value;
+
+        // The connection string turned TLS on, and no visible option turns
+        // it back off.
+        if (
+          uriEnablesTls(connectionStringText(node.arguments[0]) ?? '') &&
+          !(
+            optionsArg?.type === AST_NODE_TYPES.ObjectExpression &&
+            optionsArg.properties.some((prop) => tlsValueIs(prop, false))
+          )
+        ) {
+          return;
+        }
+
         if (
           !optionsArg ||
           optionsArg.type !== AST_NODE_TYPES.ObjectExpression
@@ -131,24 +188,8 @@ export const requireTlsConnection = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        // Key text with quotes stripped, matching the `existing` lookup below.
-        // Reading `prop.key.name` instead accepted only identifier keys, so
-        // `{ 'tls': true }` — valid, secure, and common in configs copied from
-        // JSON — was reported as missing TLS.
-        const tlsKey = (prop: TSESTree.ObjectLiteralElement): string | null => {
-          if (prop.type !== AST_NODE_TYPES.Property) return null;
-          const key = context.sourceCode
-            .getText(prop.key)
-            .replaceAll(/['"]/g, '');
-          return key === 'tls' || key === 'ssl' ? key : null;
-        };
-
-        const hasTls = optionsArg.properties.some(
-          (prop) =>
-            tlsKey(prop) !== null &&
-            (prop as TSESTree.Property).value.type === AST_NODE_TYPES.Literal &&
-            ((prop as TSESTree.Property).value as TSESTree.Literal).value ===
-              true,
+        const hasTls = optionsArg.properties.some((prop) =>
+          tlsValueIs(prop, true),
         );
 
         if (!hasTls) {

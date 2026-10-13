@@ -17,6 +17,7 @@ import {
   MessageIcons,
   isTestFilePath,
   propertyName,
+  staticString,
 } from '@interlace/eslint-devkit';
 import { analyzeMongoScope } from '../../utils/receiver';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
@@ -28,6 +29,18 @@ export interface Options {
 type RuleOptions = [Options?];
 
 const CONNECTION_METHODS = new Set(['connect', 'createConnection']);
+
+/**
+ * The static text of a connection-string argument: a string literal, or a
+ * template literal's static parts (interpolations become NUL, which matches
+ * no option below). `null` when the argument is not written out here.
+ */
+function connectionStringText(node: TSESTree.Node | undefined): string | null {
+  if (node?.type === AST_NODE_TYPES.TemplateLiteral) {
+    return node.quasis.map((q) => q.value.raw).join('\u0000');
+  }
+  return staticString(node);
+}
 
 export const requireAuthMechanism = createRule<RuleOptions, MessageIds>({
   name: 'require-auth-mechanism',
@@ -99,6 +112,13 @@ export const requireAuthMechanism = createRule<RuleOptions, MessageIds>({
         // `.connect()`. Calling one of those "a MongoDB connection" is the
         // most damaging thing this rule can do, so require proof.
         if (!mongo.isConnectionReceiver(node)) {
+          return;
+        }
+
+        // The connection string is the other documented place to name it:
+        // `mongodb://…/app?authMechanism=SCRAM-SHA-256`.
+        const uri = connectionStringText(node.arguments[0]) ?? '';
+        if (/[?&]authMechanism=/i.test(uri)) {
           return;
         }
 

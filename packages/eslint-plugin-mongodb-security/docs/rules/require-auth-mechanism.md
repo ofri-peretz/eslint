@@ -121,16 +121,18 @@ connections.
 
 The following patterns are **not detected** due to static analysis limitations:
 
-### Connection String with Auth
+### Weak Mechanism in the Connection String
 
-**Why**: URI parsing is not performed; only options object is checked.
+**Why**: an `authMechanism=` parameter in a literal connection string counts
+as naming the mechanism, the same as the options object. Which mechanism it
+names is not checked.
 
 ```typescript
-// ❌ NOT DETECTED - Auth mechanism in URI
-mongoose.connect('mongodb://host/db?authMechanism=SCRAM-SHA-1'); // Weak mechanism in URI
+// ❌ NOT DETECTED - names a mechanism, but a weak one
+mongoose.connect('mongodb://host/db?authMechanism=SCRAM-SHA-1');
 ```
 
-**Mitigation**: Use options object for auth mechanism. Validate URIs at startup.
+**Mitigation**: Prefer `SCRAM-SHA-256` or `MONGODB-X509`. Validate URIs at startup.
 
 ### Options from Variable
 

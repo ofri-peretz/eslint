@@ -94,3 +94,31 @@ ruleTester.run('no-unsafe-where', noUnsafeWhere, {
     },
   ]),
 });
+
+// ---------------------------------------------------------------------------
+// Edges pinned by mutation testing (npm run mutation -- --plugin mongodb-security).
+// Each fixture is the input that tells the rule apart from a Stryker mutant
+// that survived the suite above; see docs/MUTATION_TESTING.md.
+// ---------------------------------------------------------------------------
+
+ruleTester.run('mutation-guided edges', noUnsafeWhere, {
+  valid: xmo([
+    {
+      name: "the string '$where' as a compared VALUE is data, not the operator",
+      code: `User.find().where('note').equals('$where');`,
+    },
+  ]),
+  invalid: xmo([
+    {
+      // Mongoose's own API for the operator: Model.$where(js).
+      name: 'Model.$where() runs server-side JavaScript',
+      code: `User.$where('this.firstname === this.lastname');`,
+      errors: [{ messageId: 'unsafeWhere' }],
+    },
+    {
+      name: 'Query.prototype.$where() runs server-side JavaScript',
+      code: `User.find({ active: true }).$where(function () { return this.a > this.b; });`,
+      errors: [{ messageId: 'unsafeWhere' }],
+    },
+  ]),
+});

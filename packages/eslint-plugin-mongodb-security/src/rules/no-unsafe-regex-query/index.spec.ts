@@ -98,3 +98,19 @@ ruleTester.run('no-unsafe-regex-query', noUnsafeRegexQuery, {
     },
   ]),
 });
+
+// ---------------------------------------------------------------------------
+// Edges pinned by mutation testing (npm run mutation -- --plugin mongodb-security).
+// Each fixture is the input that tells the rule apart from a Stryker mutant
+// that survived the suite above; see docs/MUTATION_TESTING.md.
+// ---------------------------------------------------------------------------
+
+ruleTester.run('mutation-guided edges', noUnsafeRegexQuery, {
+  valid: xmo([
+    {
+      name: 'a template literal with no interpolation is a constant pattern',
+      code: 'User.find({ name: { $regex: `^admin` } });',
+    },
+  ]),
+  invalid: [],
+});

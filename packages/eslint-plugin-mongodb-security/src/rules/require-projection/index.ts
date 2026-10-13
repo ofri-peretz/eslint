@@ -131,13 +131,9 @@ export const requireProjection = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        // Check if find/findOne has a second argument (projection)
-        if (methodName !== 'findById' && node.arguments.length >= 2) {
-          return; // has inline projection
-        }
-
-        // findById has projection as second arg too
-        if (methodName === 'findById' && node.arguments.length >= 2) {
+        // find(filter, projection), findOne(filter, projection) and
+        // findById(id, projection) all take the projection second.
+        if (node.arguments.length >= 2) {
           return; // has inline projection
         }
 

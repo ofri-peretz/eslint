@@ -16,6 +16,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  propertyName,
 } from '@interlace/eslint-devkit';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
 
@@ -94,10 +95,15 @@ export const requireSchemaValidation = createRule<RuleOptions, MessageIds>({
        * Report when schema field object has a `type` property but no validation properties.
        */
       NewExpression(node: TSESTree.NewExpression) {
-        if (
-          node.callee.type !== AST_NODE_TYPES.Identifier ||
-          node.callee.name !== 'Schema'
-        ) {
+        // `new Schema(...)` or `new mongoose.Schema(...)` — the form the
+        // Mongoose docs open with, and the one the module gate already counts
+        // as Mongo evidence.
+        const isSchema =
+          node.callee.type === AST_NODE_TYPES.Identifier
+            ? node.callee.name === 'Schema'
+            : node.callee.type === AST_NODE_TYPES.MemberExpression &&
+              propertyName(node.callee) === 'Schema';
+        if (!isSchema) {
           return;
         }
 

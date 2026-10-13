@@ -146,17 +146,22 @@ export const noUnboundedFind = createRule<RuleOptions, MessageIds>({
           break;
         }
 
-        // Native MongoDB driver: { limit: N } in 2nd argument options.
-        const opts = node.arguments[1];
-        if (opts && opts.type === AST_NODE_TYPES.ObjectExpression) {
-          const hasLimit = opts.properties.some(
-            (p) =>
-              p.type === AST_NODE_TYPES.Property &&
-              p.key.type === AST_NODE_TYPES.Identifier &&
-              p.key.name === 'limit',
+        // `{ limit: N }` in the options object: the 2nd argument for the
+        // native driver's find(filter, options), the 3rd for Mongoose's
+        // find(filter, projection, options).
+        const hasLimitOption = node.arguments
+          .slice(1, 3)
+          .some(
+            (opts) =>
+              opts.type === AST_NODE_TYPES.ObjectExpression &&
+              opts.properties.some(
+                (p) =>
+                  p.type === AST_NODE_TYPES.Property &&
+                  p.key.type === AST_NODE_TYPES.Identifier &&
+                  p.key.name === 'limit',
+              ),
           );
-          if (hasLimit) return;
-        }
+        if (hasLimitOption) return;
 
         context.report({
           node,

@@ -244,6 +244,57 @@ describe('MongoDB module gate', () => {
     });
   });
 
+  // The NON_MONGO_SOURCES sweep above holds code no rule would report even with
+  // the gate gone, so it cannot tell a rule that checks `fileUsesMongo()` from
+  // one that does not — Stryker showed `if (!fileUsesMongo(...)) return {}` →
+  // `if (false)` surviving in every rule. Each snippet here IS reported once
+  // the file imports mongoose, so silence without the import can only come
+  // from the gate.
+  describe('per rule, the gate is what silences code the rule would report', () => {
+    // These two cannot be told apart from their gate: the gate opens on
+    // exactly the evidence they report on (a `mongodb://` literal, `new
+    // Schema(...)`), so dropping the check changes no verdict.
+    const GATE_IS_THE_DETECTION = new Set([
+      'no-hardcoded-connection-string',
+      'require-schema-validation',
+    ]);
+    const WOULD_REPORT: Readonly<Record<string, string>> = {
+      'no-bypass-middleware': `export const rename = (id: string, name: string) => User.updateOne({ _id: id }, { name });`,
+      'no-debug-mode-production': `odm.set('debug', true);`,
+      'no-hardcoded-credentials': `export const cfg = { user: 'admin', password: 'hunter2' };`,
+      'no-operator-injection': `export const h = (req) => User.find({ age: { $gt: req.query.min } });`,
+      'no-select-sensitive-fields': `interface UserRow { email: string; password: string }
+        export const one = (id: string) => User.findOne({ id });`,
+      'no-unbounded-find': `export const active = () => User.find({ active: true });`,
+      'no-unsafe-populate': `export const h = (req) => Post.findOne({}).populate(req.query.expand);`,
+      'no-unsafe-query': `export const h = (req) => User.find({ name: req.body.name });`,
+      'no-unsafe-regex-query': `export const h = (req) => User.find({ name: { $regex: req.query.q } });`,
+      'no-unsafe-where': `export const q = { $where: 'this.a > this.b' };`,
+      'require-auth-mechanism': `mongoClient.connect(uri);`,
+      'require-lean-queries': `export const one = (id: string) => User.findOne({ id });`,
+      'require-projection': `export const one = (id: string) => User.findOne({ id });`,
+      'require-tls-connection': `mongoClient.connect(uri);`,
+    };
+
+    it('covers every rule but the two whose gate is their detection', () => {
+      expect(Object.keys(WOULD_REPORT).sort()).toEqual(
+        RULES.filter((r) => !GATE_IS_THE_DETECTION.has(r)).sort(),
+      );
+    });
+
+    it.each(Object.entries(WOULD_REPORT))(
+      'xp/%s reports with a mongoose import and is silent without one',
+      (rule, code) => {
+        expect(
+          lint(`import mongoose from 'mongoose';\n${code}`, rule).length,
+        ).toBeGreaterThan(0);
+        const without = lint(code, rule);
+        expect(without.filter((m) => !m.ruleId)).toHaveLength(0);
+        expect(without).toHaveLength(0);
+      },
+    );
+  });
+
   describe('a locally bound require is not module loading', () => {
     it('does not open the gate', () => {
       const code = `function wrap(require) { return require('mongoose'); }

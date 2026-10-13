@@ -147,13 +147,16 @@ query[field] = req.body.value; // Dynamic property
 User.find(query);
 ```
 
-### Spread Operator Injection
+### Spread of an Indirect Request Object
 
-**Why**: Spread operators merge objects at runtime.
+**Why**: a spread is reported when its argument reads the request directly
+(`{ ...req.body }`, `{ ...req.query.filters }`); a variable that holds it is
+not followed.
 
 ```typescript
 // ❌ NOT DETECTED
-User.find({ ...baseQuery, ...req.body }); // Entire body spread into query
+const filters = req.body;
+User.find({ ...baseQuery, ...filters });
 ```
 
 ### Indirect Variable Assignment

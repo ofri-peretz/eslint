@@ -57,6 +57,7 @@ Mongoose schemas without validation allow arbitrary data, potentially leading to
 
 ```typescript
 const schema = new Schema({ name: { type: String } });
+const other = new mongoose.Schema({ name: { type: String } });
 ```
 
 ### ✅ Correct

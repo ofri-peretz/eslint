@@ -105,3 +105,21 @@ ruleTester.run('no-unsafe-populate', noUnsafePopulate, {
     },
   ]),
 });
+
+// ---------------------------------------------------------------------------
+// Edges pinned by mutation testing (npm run mutation -- --plugin mongodb-security).
+// Each fixture is the input that tells the rule apart from a Stryker mutant
+// that survived the suite above; see docs/MUTATION_TESTING.md.
+// ---------------------------------------------------------------------------
+
+ruleTester.run('mutation-guided edges', noUnsafePopulate, {
+  valid: xmo([
+    {
+      // Only the `path` key names what gets joined; a variable `select` list
+      // narrows the fields of a hardcoded path.
+      name: 'a hardcoded path with a variable select list',
+      code: `Post.find().populate({ path: 'author', select: AUTHOR_FIELDS });`,
+    },
+  ]),
+  invalid: [],
+});

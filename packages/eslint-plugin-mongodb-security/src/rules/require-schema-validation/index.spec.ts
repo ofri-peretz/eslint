@@ -107,3 +107,44 @@ ruleTester.run('require-schema-validation', requireSchemaValidation, {
     },
   ]),
 });
+
+// ---------------------------------------------------------------------------
+// Edges pinned by mutation testing (npm run mutation -- --plugin mongodb-security).
+// Each fixture is the input that tells the rule apart from a Stryker mutant
+// that survived the suite above; see docs/MUTATION_TESTING.md.
+// ---------------------------------------------------------------------------
+
+ruleTester.run('mutation-guided edges', requireSchemaValidation, {
+  valid: xmo([
+    {
+      name: 'a constructor that is not Schema',
+      code: `new Foo({ name: { type: String } });`,
+    },
+    {
+      name: 'a namespaced constructor that is not Schema',
+      code: `new mongoose.Collection({ name: { type: String } });`,
+    },
+    {
+      // An object without `type` is a nested path in Mongoose, not a field
+      // definition; its leaves are the fields.
+      name: 'a nested path whose leaves are validated',
+      code: `new Schema({ address: { street: { type: String, required: true } } });`,
+    },
+    {
+      name: 'a field definition with only spread options names no type',
+      code: `new Schema({ name: { ...commonOpts } });`,
+    },
+    {
+      name: 'new mongoose.Schema with a validated field',
+      code: `import mongoose from 'mongoose';\nnew mongoose.Schema({ name: { type: String, required: true } });`,
+    },
+  ]),
+  invalid: xmo([
+    {
+      // The form the Mongoose docs open with.
+      name: 'new mongoose.Schema is a schema too',
+      code: `import mongoose from 'mongoose';\nnew mongoose.Schema({ name: { type: String } });`,
+      errors: [{ messageId: 'requireSchemaValidation' }],
+    },
+  ]),
+});

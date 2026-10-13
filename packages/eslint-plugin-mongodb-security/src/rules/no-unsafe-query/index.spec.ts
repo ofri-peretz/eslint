@@ -310,3 +310,89 @@ ruleTester.run('no-unsafe-query', noUnsafeQuery, {
     ),
   ]),
 });
+
+// ---------------------------------------------------------------------------
+// Edges pinned by mutation testing (npm run mutation -- --plugin mongodb-security).
+// Each fixture is the input that tells the rule apart from a Stryker mutant
+// that survived the suite above; see docs/MUTATION_TESTING.md.
+// ---------------------------------------------------------------------------
+
+const inHandler = (body: string): string =>
+  `app.post('/users', async (req, res) => { ${body} });`;
+
+ruleTester.run('mutation-guided edges', noUnsafeQuery, {
+  valid: xmo([
+    {
+      // The documented fix: a coerced string cannot carry `{ $ne: null }`.
+      name: 'String(req.body.x) coerces the value before it reaches the filter',
+      code: inHandler(`await User.find({ name: String(req.body.name) });`),
+    },
+    {
+      name: 'a comparison of request input yields a boolean, not an operator object',
+      code: inHandler(
+        `await User.find({ isAdmin: req.body.role === 'admin' });`,
+      ),
+    },
+    {
+      name: 'a filter built by a helper from a non-request value',
+      code: inHandler(`await User.find(buildFilter(id));`),
+    },
+    {
+      name: 'spreading a constant default filter',
+      code: inHandler(
+        `await User.find({ ...DEFAULT_FILTER, deleted: false });`,
+      ),
+    },
+  ]),
+  invalid: xmo([
+    {
+      name: 'request input in any interpolation of a template, not only the first',
+      code: inHandler(
+        'await User.find({ slug: `${prefix}-${req.body.name}` });',
+      ),
+      errors: [
+        {
+          messageId: 'unsafeQuery',
+          suggestions: [
+            {
+              messageId: 'suggestionUseEq',
+              output: inHandler(
+                'await User.find({ slug: { $eq: `${prefix}-${req.body.name}` } });',
+              ),
+            },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'the message names the request path that reached the filter',
+      code: inHandler(`await User.find({ email: req.body.email });`),
+      errors: [
+        {
+          messageId: 'unsafeQuery',
+          data: { input: 'req.body.email' },
+          suggestions: [
+            {
+              messageId: 'suggestionUseEq',
+              output: inHandler(
+                `await User.find({ email: { $eq: req.body.email } });`,
+              ),
+            },
+          ],
+        },
+      ],
+    },
+    {
+      // Spreading the body into the filter is find(req.body) with extra keys:
+      // `{ "password": { "$ne": null } }` in the body lands in the query.
+      name: 'spreading the request body into the filter object',
+      code: inHandler(`await User.findOne({ ...req.body, deleted: false });`),
+      errors: [{ messageId: 'unsafeQuery' }],
+    },
+    {
+      name: 'spreading a nested request object into the filter object',
+      code: inHandler(`await User.find({ ...req.query.filters });`),
+      errors: [{ messageId: 'unsafeQuery' }],
+    },
+  ]),
+});

@@ -59,6 +59,12 @@ User.find({
 
 // Even hardcoded $where is discouraged
 User.find({ $where: 'this.x > this.y' });
+
+// Mongoose's $where() method is the same operator
+User.$where('this.x > this.y');
+User.find({ active: true }).$where(function () {
+  return this.age > userAge;
+});
 ```
 
 ### ✅ Correct

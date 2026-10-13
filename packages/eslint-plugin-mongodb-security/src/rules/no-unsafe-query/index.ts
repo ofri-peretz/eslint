@@ -298,7 +298,23 @@ export const noUnsafeQuery = createRule<RuleOptions, MessageIds>({
 
         // Check each property in the query object
         for (const prop of queryArg.properties) {
-          if (prop.type !== AST_NODE_TYPES.Property) {
+          // `{ ...req.body, deleted: false }` is `find(req.body)` with extra
+          // keys: a `{ "password": { "$ne": null } }` body lands in the filter
+          // just the same. The spread position supplies the meaning, as the
+          // whole-argument check above does for a bare `.body`.
+          if (prop.type === AST_NODE_TYPES.SpreadElement) {
+            if (
+              readsRequestShape(prop.argument, context.sourceCode, {
+                bodyNeedsDepth: false,
+              }) ||
+              containsUserInput(prop.argument, context.sourceCode)
+            ) {
+              context.report({
+                node: prop,
+                messageId: 'unsafeQuery',
+                data: { input: getNodeSource(prop.argument) },
+              });
+            }
             continue;
           }
 
