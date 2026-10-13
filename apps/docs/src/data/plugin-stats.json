@@ -45,7 +45,7 @@
       "rules": 15,
       "description": "ESLint plugin for Model Context Protocol (MCP) SDK security — follows tool arguments into shells, file paths, URLs, SQL and eval; catches credential leaks, untrusted text in model-facing descriptions and prompts, unhardened HTTP transports, shared stateless servers, predictable session ids, untrusted stdio commands and schema/handler drift",
       "category": "security",
-      "version": "0.6.0",
+      "version": "1.0.0",
       "published": true
     },
     {
@@ -61,7 +61,7 @@
       "rules": 13,
       "description": "ESLint plugin for the pg PostgreSQL driver — detects SQL injection, unreleased clients, floating queries, unsafe search_path, and insecure SSL",
       "category": "security",
-      "version": "2.5.0",
+      "version": "2.6.0",
       "published": true
     },
     {
@@ -69,7 +69,7 @@
       "rules": 5,
       "description": "ESLint plugin for knex — detects SQL injection in raw queries built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials",
       "category": "security",
-      "version": "0.4.8",
+      "version": "1.0.0",
       "published": true
     },
     {
@@ -77,7 +77,7 @@
       "rules": 4,
       "description": "ESLint plugin for drizzle-orm — detects SQL injection in raw queries built with string concatenation or template literals",
       "category": "security",
-      "version": "0.3.8",
+      "version": "1.0.0",
       "published": true
     },
     {
@@ -85,7 +85,7 @@
       "rules": 4,
       "description": "ESLint plugin for @prisma/client — detects SQL injection in raw queries built with string concatenation or template literals",
       "category": "security",
-      "version": "0.3.8",
+      "version": "1.0.0",
       "published": true
     },
     {
@@ -93,7 +93,7 @@
       "rules": 4,
       "description": "ESLint plugin for the Sequelize ORM — detects SQL injection in raw sequelize.query() and Sequelize.literal() calls built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials",
       "category": "security",
-      "version": "0.3.9",
+      "version": "1.0.0",
       "published": true
     },
     {
@@ -101,7 +101,7 @@
       "rules": 4,
       "description": "ESLint plugin for Supabase security — catches the service_role key reaching client code, RPC called with a computed function name, auth results whose error is discarded, and storage buckets created public",
       "category": "security",
-      "version": "0.2.0",
+      "version": "1.0.0",
       "published": true
     },
     {
@@ -109,7 +109,7 @@
       "rules": 4,
       "description": "ESLint plugin for typeorm — detects SQL injection in raw queries built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials",
       "category": "security",
-      "version": "0.3.8",
+      "version": "1.0.0",
       "published": true
     },
     {
@@ -117,7 +117,7 @@
       "rules": 3,
       "description": "ESLint plugin for Anthropic SDK security — catches hardcoded Claude API keys, the browser escape hatch that ships them to every visitor, and system prompts assembled from untrusted input",
       "category": "security",
-      "version": "0.3.4",
+      "version": "1.0.0",
       "published": true
     },
     {
@@ -125,7 +125,7 @@
       "rules": 3,
       "description": "ESLint plugin for Google Gemini SDK security — catches safety thresholds set to BLOCK_NONE, hardcoded API keys, and system instructions assembled from untrusted input",
       "category": "security",
-      "version": "0.3.5",
+      "version": "1.0.0",
       "published": true
     },
     {
@@ -133,7 +133,7 @@
       "rules": 3,
       "description": "ESLint plugin for mysql2 / mysql — detects SQL injection in raw queries built with string concatenation or template literals, connection configuration that disables TLS or certificate validation, and hardcoded database credentials",
       "category": "security",
-      "version": "0.3.8",
+      "version": "1.0.0",
       "published": true
     },
     {
@@ -141,7 +141,7 @@
       "rules": 3,
       "description": "ESLint plugin for OpenAI SDK security — catches dangerouslyAllowBrowser, hardcoded API keys, and system prompts assembled from untrusted input",
       "category": "security",
-      "version": "0.3.4",
+      "version": "1.0.0",
       "published": true
     },
     {
@@ -149,7 +149,7 @@
       "rules": 1,
       "description": "ESLint plugin for better-sqlite3 / sqlite3 — detects SQL injection in raw queries built with string concatenation or template literals",
       "category": "security",
-      "version": "0.1.11",
+      "version": "1.0.0",
       "published": true
     },
     {
@@ -260,5 +260,5 @@
   "totalRules": 497,
   "totalPlugins": 32,
   "allPluginsCount": 32,
-  "generatedAt": "2026-10-12"
+  "generatedAt": "2026-10-13"
 }
