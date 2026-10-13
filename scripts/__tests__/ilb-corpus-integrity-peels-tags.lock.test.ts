@@ -37,6 +37,9 @@ const git = (...args: string[]) =>
     stdio: ['ignore', 'pipe', 'pipe'],
     env: {
       ...process.env,
+      // A developer's tag.gpgSign / commit.gpgSign would make the fixture fail.
+      GIT_CONFIG_GLOBAL: '/dev/null',
+      GIT_CONFIG_NOSYSTEM: '1',
       GIT_AUTHOR_NAME: 't',
       GIT_AUTHOR_EMAIL: 't@t',
       GIT_COMMITTER_NAME: 't',
