@@ -1,6 +1,26 @@
 {
   "articles": [
     {
+      "id": 4831920,
+      "title": "13 Repos Keep a Credential in Web Storage. Seven Are Governments.",
+      "description": "A field study of 1,423 storage call sites in 189 public repositories. The practice is rarer than the argument about it, and it concentrates somewhere specific.",
+      "url": "https://dev.to/ofri-peretz/13-repos-keep-a-credential-in-web-storage-seven-are-governments-20be",
+      "canonical_url": "https://ofriperetz.dev/articles/token-in-localstorage-field-study",
+      "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fofriperetz.dev%2Fcdn%2Fblog-cover-image%2Ftoken-in-localstorage-field-study.jpg",
+      "published_at": "2026-10-11T08:26:36Z",
+      "readable_publish_date": "Oct 11",
+      "reading_time_minutes": 4,
+      "page_views_count": 0,
+      "public_reactions_count": 1,
+      "positive_reactions_count": 1,
+      "comments_count": 1,
+      "tag_list": [
+        "webdev",
+        "security",
+        "javascript"
+      ]
+    },
+    {
       "id": 4810846,
       "title": "I Linted 14 Public AI SDK Repos. 12 Ship a Call With No Token Ceiling.",
       "description": "A field study of 116 generation call sites across 14 public repositories, including five of the SDK vendor's own. The output cap is the one almost nobody sets.",
@@ -1927,7 +1947,7 @@
       ]
     }
   ],
-  "total": 94,
-  "lastUpdated": "2026-10-11T04:53:26.615Z",
+  "total": 95,
+  "lastUpdated": "2026-10-13T05:55:00.425Z",
   "source": "public"
 }
