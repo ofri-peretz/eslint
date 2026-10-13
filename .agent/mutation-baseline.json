@@ -19,8 +19,8 @@
           "timeout": 0
         },
         "no-decode-without-verify": {
-          "score": 88.5,
-          "killed": 131,
+          "score": 89.8,
+          "killed": 150,
           "survived": 17,
           "noCoverage": 0,
           "timeout": 1

@@ -9,3 +9,4 @@ fix(jwt-security): five wrong verdicts in three rules surfaced by Stryker mutati
 - `no-decode-without-verify` honours its documented default `trustedAnnotations` (`@decoded-header-only`, `@verified-separately`) without configuration.
 - `require-expiration` reads a computed `{ ['exp']: … }` key as the exp claim.
 - `require-issued-at` reports a runtime `noTimestamp` even when the payload sets `iat` — jsonwebtoken deletes an explicit `iat` under `noTimestamp: true`.
+- `no-decode-without-verify`: `.header.kid` is exempt only on `decode(token, { complete: true })`, the one call shape that returns the header. Without it — jsonwebtoken's plain decode, or jwt-decode, which returns the payload — `.header.kid` reads an unverified payload claim, and now reports.

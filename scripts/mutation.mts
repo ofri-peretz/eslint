@@ -129,7 +129,10 @@ function runStryker(
   pluginDir: string,
   mutate: string[] | undefined,
 ): boolean {
-  const args = ['stryker', 'run', CONFIG];
+  // `--no`: never let npx fetch a package on a miss. The npm name `stryker` is an
+  // unrelated legacy package; without the flag, a checkout missing
+  // @stryker-mutator/core would silently download and run it instead.
+  const args = ['--no', 'stryker', 'run', CONFIG];
   if (mutate) args.push('--mutate', mutate.join(','));
   if (concurrency) args.push('--concurrency', concurrency);
   if (FORCE) args.push('--force');

@@ -955,6 +955,46 @@ getKey(decoded.payload.kid);`,
       errors: [{ messageId: 'decodeWithoutVerify' }],
     },
     {
+      // jwt-decode returns the PAYLOAD unless asked for { header: true }, so
+      // `.header.kid` here reads a payload claim named "header" — unverified
+      // data, not the key id jsonwebtoken's { complete: true } header carries.
+      name: 'jwt-decode: .header.kid on the decoded payload still reports',
+      code: `import jwt_decode from 'jwt-decode';
+const kid = jwt_decode(token).header.kid;`,
+      errors: [{ messageId: 'jwtDecodeLibrary' }],
+    },
+    {
+      name: 'jsonwebtoken without { complete: true }: .header.kid reads the payload and still reports',
+      code: `import jwt from 'jsonwebtoken';
+const kid = jwt.decode(token).header.kid;`,
+      errors: [{ messageId: 'decodeWithoutVerify' }],
+    },
+    {
+      name: '{ complete: false } returns the payload: .header.kid still reports',
+      code: `import jwt from 'jsonwebtoken';
+const kid = jwt.decode(token, { complete: false }).header.kid;`,
+      errors: [{ messageId: 'decodeWithoutVerify' }],
+    },
+    {
+      name: '{ complete: flag } may return the payload: .header.kid still reports',
+      code: `import jwt from 'jsonwebtoken';
+const kid = jwt.decode(token, { complete: wantsHeader }).header.kid;`,
+      errors: [{ messageId: 'decodeWithoutVerify' }],
+    },
+    {
+      name: 'options without complete return the payload: .header.kid still reports',
+      code: `import jwt from 'jsonwebtoken';
+const kid = jwt.decode(token, { json: true }).header.kid;`,
+      errors: [{ messageId: 'decodeWithoutVerify' }],
+    },
+    {
+      name: 'jwt-decode: a payload variable read only as .header.kid still reports',
+      code: `import jwt_decode from 'jwt-decode';
+const decoded = jwt_decode(token);
+pickKey(decoded.header.kid);`,
+      errors: [{ messageId: 'jwtDecodeLibrary' }],
+    },
+    {
       name: 'jwt-decode v3 spelling reading an authority claim still reports',
       code: `import jwt_decode from 'jwt-decode';
 const user = jwt_decode(token);
