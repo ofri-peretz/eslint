@@ -10,11 +10,21 @@
  * CWE-489: Active Debug Code
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath, propertyName } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  isTestFilePath,
+  objectKeyName,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
 
 type MessageIds = 'debugModeProduction' | 'suggestionGateOnNodeEnv';
-export interface Options { allowInTests?: boolean; }
+export interface Options {
+  allowInTests?: boolean;
+}
 type RuleOptions = [Options?];
 
 export const noDebugModeProduction = createRule<RuleOptions, MessageIds>({
@@ -22,7 +32,8 @@ export const noDebugModeProduction = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
-      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/no-debug-mode-production.md', description: 'Prevent Mongoose debug mode in production',
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/no-debug-mode-production.md',
+      description: 'Prevent Mongoose debug mode in production',
       cwe: 'CWE-489',
       cvss: 3.1,
     },
@@ -34,14 +45,23 @@ export const noDebugModeProduction = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-489',
         owasp: 'A05:2021',
         cvss: 3.1,
-        description: 'mongoose.set("debug", true) exposes query details in production',
+        description:
+          'mongoose.set("debug", true) exposes query details in production',
         severity: 'LOW',
         fix: 'Use mongoose.set("debug", process.env.NODE_ENV !== "production")',
-        documentationLink: 'https://mongoosejs.com/docs/api/mongoose.html#Mongoose.prototype.set()',
+        documentationLink:
+          'https://mongoosejs.com/docs/api/mongoose.html#Mongoose.prototype.set()',
       }),
-      suggestionGateOnNodeEnv: "Gate debug mode on process.env.NODE_ENV !== 'production'",
+      suggestionGateOnNodeEnv:
+        "Gate debug mode on process.env.NODE_ENV !== 'production'",
     },
-    schema: [{ type: 'object', properties: { allowInTests: { type: 'boolean', default: true } }, additionalProperties: false }],
+    schema: [
+      {
+        type: 'object',
+        properties: { allowInTests: { type: 'boolean', default: true } },
+        additionalProperties: false,
+      },
+    ],
   },
   defaultOptions: [{ allowInTests: true }],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
@@ -62,33 +82,54 @@ export const noDebugModeProduction = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
+    const report = (node: TSESTree.CallExpression, value: TSESTree.Node) =>
+      context.report({
+        node,
+        messageId: 'debugModeProduction',
+        suggest: [
+          {
+            messageId: 'suggestionGateOnNodeEnv',
+            fix: (fixer: TSESLint.RuleFixer) =>
+              fixer.replaceText(value, "process.env.NODE_ENV !== 'production'"),
+          },
+        ],
+      });
+
+    const isTrue = (node: TSESTree.Node): boolean =>
+      node.type === AST_NODE_TYPES.Literal && node.value === true;
+
     return {
       CallExpression(node: TSESTree.CallExpression) {
         if (
-          node.callee.type === AST_NODE_TYPES.MemberExpression &&
-          propertyName(node.callee) === 'set' &&
-          node.arguments.length >= 2
+          node.callee.type !== AST_NODE_TYPES.MemberExpression ||
+          propertyName(node.callee) !== 'set'
         ) {
-          const firstArg = node.arguments[0];
-          const secondArg = node.arguments[1];
+          return;
+        }
+        const [firstArg, secondArg] = node.arguments;
 
-          if (
-            firstArg.type === AST_NODE_TYPES.Literal &&
-            firstArg.value === 'debug' &&
-            secondArg.type === AST_NODE_TYPES.Literal &&
-            secondArg.value === true
-          ) {
-            context.report({
-              node,
-              messageId: 'debugModeProduction',
-              suggest: [
-                {
-                  messageId: 'suggestionGateOnNodeEnv',
-                  fix: (fixer: TSESLint.RuleFixer) =>
-                    fixer.replaceText(secondArg, "process.env.NODE_ENV !== 'production'"),
-                },
-              ],
-            });
+        // `mongoose.set('debug', true)`
+        if (
+          secondArg &&
+          firstArg.type === AST_NODE_TYPES.Literal &&
+          firstArg.value === 'debug' &&
+          isTrue(secondArg)
+        ) {
+          report(node, secondArg);
+          return;
+        }
+
+        // `mongoose.set({ debug: true })` — Mongoose also takes an options
+        // object, which sets the same option.
+        if (firstArg?.type === AST_NODE_TYPES.ObjectExpression) {
+          for (const prop of firstArg.properties) {
+            if (
+              prop.type === AST_NODE_TYPES.Property &&
+              objectKeyName(prop) === 'debug' &&
+              isTrue(prop.value)
+            ) {
+              report(node, prop.value);
+            }
           }
         }
       },

@@ -212,8 +212,12 @@ function isLeanCall(node: TSESTree.Node): boolean {
  * `` `\nMONGODB_URL=mongodb://localhost:27017/dbname` ``, both of which name
  * the protocol just as plainly as a bare DSN. Two corpus files were silenced
  * by the anchor before the recall diff caught it.
+ *
+ * Case-insensitive, like `no-hardcoded-connection-string`'s own pattern: URI
+ * schemes are case-insensitive (RFC 3986 §3.1) and the driver accepts
+ * `MONGODB://`, so a file that rule reports must also pass this gate.
  */
-const MONGO_DSN = /mongodb(\+srv)?:\/\//;
+const MONGO_DSN = /mongodb(\+srv)?:\/\//i;
 
 function isConnectionString(node: TSESTree.Node): boolean {
   if (

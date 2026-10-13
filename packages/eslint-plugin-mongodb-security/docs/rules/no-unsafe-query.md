@@ -53,6 +53,14 @@ db.collection('users').findOne({ username: req.query.user });
 
 // Direct req.params in query
 User.updateOne({ _id: req.params.id }, { $set: { active: true } });
+
+// Inside a $or / $and / $nor branch — each branch is a filter of its own
+User.find({
+  $or: [{ email: req.body.email }, { username: req.body.username }],
+});
+
+// Computed method access is the same call
+User['findOne']({ email: req.body.email });
 ```
 
 ### ✅ Correct

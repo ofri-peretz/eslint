@@ -136,6 +136,23 @@ describe('MongoDB module gate', () => {
       ).toBeGreaterThan(0);
     });
 
+    it('reports on an upper-case MONGODB:// literal with no import at all', () => {
+      // URI schemes are case-insensitive and the rule's own pattern is `/i`,
+      // so the gate must not be the stricter of the two: the rule reported
+      // this DSN in a Mongo file and abstained on it everywhere else.
+      const upper = `const uri = 'MONGODB+SRV://admin:hunter2@cluster0.example.net/app';`;
+      expect(
+        lint(upper, 'no-hardcoded-connection-string').length,
+      ).toBeGreaterThan(0);
+    });
+
+    it('opens on an upper-case DSN inside a template literal too', () => {
+      const code = 'const uri = `MongoDB://admin:hunter2@${host}/app`;';
+      expect(
+        lint(code, 'no-hardcoded-connection-string').length,
+      ).toBeGreaterThan(0);
+    });
+
     it('opens on a mongoose PLUGIN import, not just mongoose itself', () => {
       // Eleven of the twelve corpus files holding `new Schema(` that a
       // four-package list placed "outside Mongo" were exactly this.

@@ -5,14 +5,14 @@ tags: ['security', 'mongodb']
 category: security
 severity: medium
 cwe: CWE-400
-owasp: "A03:2021"
+owasp: 'A03:2021'
 autofix: false
 ---
 
 > **Keywords:** ReDoS, CWE-400, MongoDB, $regex, regular expression, denial of service
 
-
 <!-- @rule-summary -->
+
 Detects user input in MongoDB $regex operators that could cause ReDoS (Regular Expression Denial of Service) or infor...
 <!-- @/rule-summary -->
 
@@ -27,7 +27,7 @@ Detects user input in MongoDB `$regex` operators that could cause ReDoS (Regular
 | **CWE Reference** | CWE-400 (Resource Exhaustion) |
 | **OWASP**         | A03:2021 - Injection          |
 | **Severity**      | High (CVSS: 7.5)              |
-| **Category**   | Security |
+| **Category**      | Security                      |
 
 ## Error Message Format
 
@@ -40,13 +40,13 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-400](https://cwe.mitre.org/data/definitions/400.html) [OWASP:A06](https://owasp.org/Top10/A06_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
-| **Issue Description** | Specific vulnerability | `Uncontrolled Resource Consumption (ReDoS) detected` |
-| **Severity & Compliance** | Impact assessment | `HIGH` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A06_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                                                       |
+| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Risk Standards**        | Security benchmarks    | [CWE-400](https://cwe.mitre.org/data/definitions/400.html) [OWASP:A06](https://owasp.org/Top10/A06_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
+| **Issue Description**     | Specific vulnerability | `Uncontrolled Resource Consumption (ReDoS) detected`                                                                                                                                                                                                          |
+| **Severity & Compliance** | Impact assessment      | `HIGH`                                                                                                                                                                                                                                                        |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                                                          |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A06_2021-Injection/)                                                                                                                                                                                                   |
 
 ## Rule Details
 
@@ -75,6 +75,13 @@ User.find({ email: { $regex: new RegExp(userInput) } });
 
 // User input with $options
 User.find({ name: { $regex: req.body.pattern, $options: 'i' } });
+
+// A RegExp value is matched exactly like $regex (with or without `new`)
+User.find({ name: new RegExp(req.query.search) });
+User.find({ name: RegExp(req.query.search, 'i') });
+
+// Inside a $or / $and / $nor branch
+User.find({ $or: [{ name: { $regex: req.query.search } }, { active: true }] });
 ```
 
 ### ✅ Correct
@@ -119,6 +126,6 @@ User.find({ name: { $regex: sanitized } });
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| Option         | Type      | Default | Description                                     |
+| -------------- | --------- | ------- | ----------------------------------------------- |
+| `allowInTests` | `boolean` | `true`  | Skip this rule in `*.test.*` / `*.spec.*` files |

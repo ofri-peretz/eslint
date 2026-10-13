@@ -123,3 +123,19 @@ ruleTester.run('mutation-guided edges', noUnsafePopulate, {
   ]),
   invalid: [],
 });
+
+ruleTester.run('computed method names', noUnsafePopulate, {
+  valid: xmo([
+    {
+      name: 'a computed method name that is not static is not populate',
+      code: `function h(req) { User.findOne({})[method](req.query.p); }`,
+    },
+  ]),
+  invalid: xmo([
+    {
+      name: "query['populate'](...) is the same call as query.populate(...)",
+      code: `function h(req) { User.findOne({})['populate'](req.query.p); }`,
+      errors: [{ messageId: 'unsafePopulate' }],
+    },
+  ]),
+});
