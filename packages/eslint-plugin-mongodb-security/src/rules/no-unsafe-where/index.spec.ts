@@ -18,14 +18,16 @@ type MongoCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly MongoSuggestion[] } | string>;
 };
-const xmo = <T,>(cases: T[]): T[] =>
+const xmo = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asMongo(c) as T;
     const test = c as MongoCase;
     return {
       ...c,
       code: asMongo(test.code),
-      ...(typeof test.output === 'string' ? { output: asMongo(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asMongo(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -44,7 +46,6 @@ const xmo = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 const ruleTester = new RuleTester();
 
@@ -89,6 +90,34 @@ ruleTester.run('no-unsafe-where', noUnsafeWhere, {
       code: `User.find({ $where: 'this.isDanger' });`,
       filename: 'query.test.ts',
       options: [{ allowInTests: false }],
+      errors: [{ messageId: 'unsafeWhere' }],
+    },
+  ]),
+});
+
+// ---------------------------------------------------------------------------
+// Edges pinned by mutation testing (npm run mutation -- --plugin mongodb-security).
+// Each fixture is the input that tells the rule apart from a Stryker mutant
+// that survived the suite above; see docs/MUTATION_TESTING.md.
+// ---------------------------------------------------------------------------
+
+ruleTester.run('mutation-guided edges', noUnsafeWhere, {
+  valid: xmo([
+    {
+      name: "the string '$where' as a compared VALUE is data, not the operator",
+      code: `User.find().where('note').equals('$where');`,
+    },
+  ]),
+  invalid: xmo([
+    {
+      // Mongoose's own API for the operator: Model.$where(js).
+      name: 'Model.$where() runs server-side JavaScript',
+      code: `User.$where('this.firstname === this.lastname');`,
+      errors: [{ messageId: 'unsafeWhere' }],
+    },
+    {
+      name: 'Query.prototype.$where() runs server-side JavaScript',
+      code: `User.find({ active: true }).$where(function () { return this.a > this.b; });`,
       errors: [{ messageId: 'unsafeWhere' }],
     },
   ]),

@@ -10,18 +10,33 @@
  * CWE-943: NoSQL Injection
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  isTestFilePath,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
 
 type MessageIds = 'unsafePopulate';
-export interface Options { allowInTests?: boolean; }
+export interface Options {
+  allowInTests?: boolean;
+}
 type RuleOptions = [Options?];
 
 /** Patterns that indicate user input */
 const USER_INPUT_PATTERNS = [
-  'req.body', 'req.query', 'req.params',
-  'request.body', 'request.query', 'request.params',
-  'ctx.request.body', 'ctx.query', 'ctx.params',
+  'req.body',
+  'req.query',
+  'req.params',
+  'request.body',
+  'request.query',
+  'request.params',
+  'ctx.request.body',
+  'ctx.query',
+  'ctx.params',
 ];
 
 function getNodeSource(node: TSESTree.Node): string {
@@ -30,9 +45,10 @@ function getNodeSource(node: TSESTree.Node): string {
   }
   if (node.type === AST_NODE_TYPES.MemberExpression) {
     const obj = getNodeSource(node.object);
-    const prop = node.property.type === AST_NODE_TYPES.Identifier
-      ? node.property.name
-      : '[computed]';
+    const prop =
+      node.property.type === AST_NODE_TYPES.Identifier
+        ? node.property.name
+        : '[computed]';
     return `${obj}.${prop}`;
   }
   return '';
@@ -48,7 +64,8 @@ export const noUnsafePopulate = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
-      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/no-unsafe-populate.md', description: 'Prevent user-controlled populate() paths (CVE-2025-23061)',
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/no-unsafe-populate.md',
+      description: 'Prevent user-controlled populate() paths (CVE-2025-23061)',
       cwe: 'CWE-943',
       cvss: 6.5,
     },
@@ -59,13 +76,20 @@ export const noUnsafePopulate = createRule<RuleOptions, MessageIds>({
         cwe: 'CWE-943',
         owasp: 'A03:2021',
         cvss: 6.5,
-        description: 'User-controlled populate() can lead to data exposure or injection',
+        description:
+          'User-controlled populate() can lead to data exposure or injection',
         severity: 'MEDIUM',
         fix: 'Use hardcoded populate paths instead of user input',
         documentationLink: 'https://nvd.nist.gov/vuln/detail/CVE-2025-23061',
       }),
     },
-    schema: [{ type: 'object', properties: { allowInTests: { type: 'boolean', default: true } }, additionalProperties: false }],
+    schema: [
+      {
+        type: 'object',
+        properties: { allowInTests: { type: 'boolean', default: true } },
+        additionalProperties: false,
+      },
+    ],
   },
   defaultOptions: [{ allowInTests: true }],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
@@ -92,9 +116,8 @@ export const noUnsafePopulate = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        const methodName = node.callee.property.type === AST_NODE_TYPES.Identifier
-          ? node.callee.property.name
-          : null;
+        // `query['populate'](...)` calls the same method the dotted form does.
+        const methodName = propertyName(node.callee);
 
         if (methodName !== 'populate') {
           return;
@@ -103,7 +126,10 @@ export const noUnsafePopulate = createRule<RuleOptions, MessageIds>({
         // Check each argument to populate()
         for (const arg of node.arguments) {
           // Direct user input: .populate(req.body.field)
-          if (arg.type === AST_NODE_TYPES.MemberExpression && containsUserInput(arg)) {
+          if (
+            arg.type === AST_NODE_TYPES.MemberExpression &&
+            containsUserInput(arg)
+          ) {
             context.report({ node, messageId: 'unsafePopulate' });
             return;
           }
@@ -119,14 +145,22 @@ export const noUnsafePopulate = createRule<RuleOptions, MessageIds>({
           if (arg.type === AST_NODE_TYPES.ObjectExpression) {
             for (const prop of arg.properties) {
               if (prop.type !== AST_NODE_TYPES.Property) continue;
-              const keyName = prop.key.type === AST_NODE_TYPES.Identifier
-                ? prop.key.name
-                : null;
-              if (keyName === 'path' && prop.value.type === AST_NODE_TYPES.MemberExpression && containsUserInput(prop.value)) {
+              const keyName =
+                prop.key.type === AST_NODE_TYPES.Identifier
+                  ? prop.key.name
+                  : null;
+              if (
+                keyName === 'path' &&
+                prop.value.type === AST_NODE_TYPES.MemberExpression &&
+                containsUserInput(prop.value)
+              ) {
                 context.report({ node, messageId: 'unsafePopulate' });
                 return;
               }
-              if (keyName === 'path' && prop.value.type === AST_NODE_TYPES.Identifier) {
+              if (
+                keyName === 'path' &&
+                prop.value.type === AST_NODE_TYPES.Identifier
+              ) {
                 context.report({ node, messageId: 'unsafePopulate' });
                 return;
               }

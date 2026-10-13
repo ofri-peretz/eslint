@@ -10,22 +10,45 @@
  * CWE-287: Improper Authentication
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath, propertyName } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  isTestFilePath,
+  propertyName,
+  staticString,
+} from '@interlace/eslint-devkit';
 import { analyzeMongoScope } from '../../utils/receiver';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
 
 type MessageIds = 'requireAuthMechanism';
-export interface Options { allowInTests?: boolean; }
+export interface Options {
+  allowInTests?: boolean;
+}
 type RuleOptions = [Options?];
 
 const CONNECTION_METHODS = new Set(['connect', 'createConnection']);
+
+/**
+ * The static text of a connection-string argument: a string literal, or a
+ * template literal's static parts (interpolations become NUL, which matches
+ * no option below). `null` when the argument is not written out here.
+ */
+function connectionStringText(node: TSESTree.Node | undefined): string | null {
+  if (node?.type === AST_NODE_TYPES.TemplateLiteral) {
+    return node.quasis.map((q) => q.value.raw).join('\u0000');
+  }
+  return staticString(node);
+}
 
 export const requireAuthMechanism = createRule<RuleOptions, MessageIds>({
   name: 'require-auth-mechanism',
   meta: {
     type: 'suggestion',
     docs: {
-      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/require-auth-mechanism.md', description: 'Require explicit authentication mechanism (SCRAM-SHA-256)',
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/require-auth-mechanism.md',
+      description: 'Require explicit authentication mechanism (SCRAM-SHA-256)',
       cwe: 'CWE-287',
       cvss: 6.5,
     },
@@ -39,10 +62,17 @@ export const requireAuthMechanism = createRule<RuleOptions, MessageIds>({
         description: 'MongoDB connection uses default authentication mechanism',
         severity: 'MEDIUM',
         fix: 'Add { authMechanism: "SCRAM-SHA-256" } to connection options',
-        documentationLink: 'https://www.mongodb.com/docs/manual/core/authentication/',
+        documentationLink:
+          'https://www.mongodb.com/docs/manual/core/authentication/',
       }),
     },
-    schema: [{ type: 'object', properties: { allowInTests: { type: 'boolean', default: true } }, additionalProperties: false }],
+    schema: [
+      {
+        type: 'object',
+        properties: { allowInTests: { type: 'boolean', default: true } },
+        additionalProperties: false,
+      },
+    ],
   },
   defaultOptions: [{ allowInTests: true }],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
@@ -85,6 +115,13 @@ export const requireAuthMechanism = createRule<RuleOptions, MessageIds>({
           return;
         }
 
+        // The connection string is the other documented place to name it:
+        // `mongodb://…/app?authMechanism=SCRAM-SHA-256`.
+        const uri = connectionStringText(node.arguments[0]) ?? '';
+        if (/[?&]authMechanism=/i.test(uri)) {
+          return;
+        }
+
         // Connection string is first argument, options is second
         const optionsArg = node.arguments[1];
 
@@ -98,11 +135,12 @@ export const requireAuthMechanism = createRule<RuleOptions, MessageIds>({
         if (optionsArg.type === AST_NODE_TYPES.ObjectExpression) {
           const hasAuthMechanism = optionsArg.properties.some((prop) => {
             if (prop.type !== AST_NODE_TYPES.Property) return false;
-            const keyName = prop.key.type === AST_NODE_TYPES.Identifier
-              ? prop.key.name
-              : prop.key.type === AST_NODE_TYPES.Literal
-                ? String(prop.key.value)
-                : null;
+            const keyName =
+              prop.key.type === AST_NODE_TYPES.Identifier
+                ? prop.key.name
+                : prop.key.type === AST_NODE_TYPES.Literal
+                  ? String(prop.key.value)
+                  : null;
             return keyName === 'authMechanism';
           });
 

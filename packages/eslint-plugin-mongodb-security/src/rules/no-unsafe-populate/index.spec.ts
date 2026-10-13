@@ -18,14 +18,16 @@ type MongoCase = {
   output?: string | null;
   errors?: ReadonlyArray<{ suggestions?: readonly MongoSuggestion[] } | string>;
 };
-const xmo = <T,>(cases: T[]): T[] =>
+const xmo = <T>(cases: T[]): T[] =>
   cases.map((c) => {
     if (typeof c === 'string') return asMongo(c) as T;
     const test = c as MongoCase;
     return {
       ...c,
       code: asMongo(test.code),
-      ...(typeof test.output === 'string' ? { output: asMongo(test.output) } : {}),
+      ...(typeof test.output === 'string'
+        ? { output: asMongo(test.output) }
+        : {}),
       ...(test.errors
         ? {
             errors: test.errors.map((e) =>
@@ -44,7 +46,6 @@ const xmo = <T,>(cases: T[]): T[] =>
         : {}),
     } as T;
   });
-
 
 const ruleTester = new RuleTester();
 
@@ -100,6 +101,40 @@ ruleTester.run('no-unsafe-populate', noUnsafePopulate, {
       code: `User.findOne({}).populate(req.body.field);`,
       filename: 'user.test.ts',
       options: [{ allowInTests: false }],
+      errors: [{ messageId: 'unsafePopulate' }],
+    },
+  ]),
+});
+
+// ---------------------------------------------------------------------------
+// Edges pinned by mutation testing (npm run mutation -- --plugin mongodb-security).
+// Each fixture is the input that tells the rule apart from a Stryker mutant
+// that survived the suite above; see docs/MUTATION_TESTING.md.
+// ---------------------------------------------------------------------------
+
+ruleTester.run('mutation-guided edges', noUnsafePopulate, {
+  valid: xmo([
+    {
+      // Only the `path` key names what gets joined; a variable `select` list
+      // narrows the fields of a hardcoded path.
+      name: 'a hardcoded path with a variable select list',
+      code: `Post.find().populate({ path: 'author', select: AUTHOR_FIELDS });`,
+    },
+  ]),
+  invalid: [],
+});
+
+ruleTester.run('computed method names', noUnsafePopulate, {
+  valid: xmo([
+    {
+      name: 'a computed method name that is not static is not populate',
+      code: `function h(req) { User.findOne({})[method](req.query.p); }`,
+    },
+  ]),
+  invalid: xmo([
+    {
+      name: "query['populate'](...) is the same call as query.populate(...)",
+      code: `function h(req) { User.findOne({})['populate'](req.query.p); }`,
       errors: [{ messageId: 'unsafePopulate' }],
     },
   ]),

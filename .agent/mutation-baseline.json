@@ -191,6 +191,122 @@
           "timeout": 4
         }
       }
+    },
+    "mongodb-security": {
+      "rules": {
+        "no-bypass-middleware": {
+          "score": 88.4,
+          "killed": 23,
+          "survived": 3,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-debug-mode-production": {
+          "score": 92.4,
+          "killed": 61,
+          "survived": 5,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-hardcoded-connection-string": {
+          "score": 81.8,
+          "killed": 27,
+          "survived": 6,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-hardcoded-credentials": {
+          "score": 89.4,
+          "killed": 34,
+          "survived": 4,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-operator-injection": {
+          "score": 85.2,
+          "killed": 29,
+          "survived": 5,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-select-sensitive-fields": {
+          "score": 92.7,
+          "killed": 153,
+          "survived": 12,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-unbounded-find": {
+          "score": 87.5,
+          "killed": 83,
+          "survived": 12,
+          "noCoverage": 0,
+          "timeout": 1
+        },
+        "no-unsafe-populate": {
+          "score": 91.4,
+          "killed": 75,
+          "survived": 7,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-unsafe-query": {
+          "score": 91.4,
+          "killed": 149,
+          "survived": 12,
+          "noCoverage": 2,
+          "timeout": 0
+        },
+        "no-unsafe-regex-query": {
+          "score": 95.2,
+          "killed": 121,
+          "survived": 6,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-unsafe-where": {
+          "score": 87.7,
+          "killed": 50,
+          "survived": 7,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "require-auth-mechanism": {
+          "score": 94.2,
+          "killed": 66,
+          "survived": 4,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "require-lean-queries": {
+          "score": 91,
+          "killed": 60,
+          "survived": 6,
+          "noCoverage": 0,
+          "timeout": 1
+        },
+        "require-projection": {
+          "score": 90.6,
+          "killed": 57,
+          "survived": 6,
+          "noCoverage": 0,
+          "timeout": 1
+        },
+        "require-schema-validation": {
+          "score": 90.1,
+          "killed": 73,
+          "survived": 8,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "require-tls-connection": {
+          "score": 95,
+          "killed": 114,
+          "survived": 6,
+          "noCoverage": 0,
+          "timeout": 0
+        }
+      }
     }
   }
 }
