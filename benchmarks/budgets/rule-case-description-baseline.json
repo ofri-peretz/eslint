@@ -221,7 +221,7 @@
     "node-security/detect-eval-with-expression": 141,
     "node-security/detect-non-literal-fs-filename": 100,
     "node-security/detect-suspicious-dependencies": 42,
-    "node-security/lock-file": 7,
+    "node-security/lock-file": 6,
     "node-security/no-arbitrary-file-access": 48,
     "node-security/no-buffer-overread": 164,
     "node-security/no-cryptojs": 27,

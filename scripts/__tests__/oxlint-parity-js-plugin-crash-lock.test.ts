@@ -86,11 +86,10 @@ describe('ilb-oxlint-parity fails when a JS plugin rule crashes (issue #1147)', 
     tree = realpathSync(mkdtempSync(join(tmpdir(), 'oxlint-crash-lock-')));
     mkdirSync(join(tree, SUITE), { recursive: true });
     copyFileSync(join(ROOT, SUITE, 'run.ts'), join(tree, SUITE, 'run.ts'));
-    // run.ts imports its cache key from a sibling module.
-    copyFileSync(
-      join(ROOT, SUITE, 'cache-key.ts'),
-      join(tree, SUITE, 'cache-key.ts'),
-    );
+    // run.ts imports sibling modules (cache-key.ts, finding-key.ts).
+    for (const sibling of ['cache-key.ts', 'finding-key.ts']) {
+      copyFileSync(join(ROOT, SUITE, sibling), join(tree, SUITE, sibling));
+    }
     /*
      * COPIED, not symlinked: preregister.ts finds its repo from its own path.
      * Through a symlink that is the real checkout, and `--ci` refuses a dirty
