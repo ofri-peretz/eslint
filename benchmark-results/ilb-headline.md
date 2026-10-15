@@ -2,23 +2,23 @@
 
 > Time to lint **shadcn-ui** (`apps/**/*.{js,jsx,ts,tsx,mjs,cjs}`) from scratch with each stack's recommended preset. Median of 5 runs after a discarded warmup.
 
-- **Generated**: 2026-09-28T18:40:13.149Z · **ESLint**: v9.39.4 · **oxlint**: 1.63.0 · **Node**: v24.21.0
+- **Generated**: 2026-10-12T20:38:02.394Z · **ESLint**: v9.39.4 · **oxlint**: 1.63.0 · **Node**: v24.21.0
 
 ```text
-          Interlace (ESLint)  █████████████████████ 1.52s
-  Community plugins (ESLint)  ████████████████████████████████████████ 2.96s
-             oxlint (native)  ████████████ 898ms
+          Interlace (ESLint)  ████████████████████ 2.05s
+  Community plugins (ESLint)  ████████████████████████████████████████ 4.02s
+             oxlint (native)  ███████████ 1.14s
 ```
 
 | Stack                      | Cold (median) | Spread (min–max) | Warm (median) | Findings | Files |
 | :------------------------- | ------------: | ---------------: | ------------: | -------: | ----: |
-| Interlace (ESLint)         |         1.52s |      1.50s–1.53s |         775ms |      700 |  3411 |
-| Community plugins (ESLint) |         2.96s |      2.94s–2.97s |         859ms |       18 |  3411 |
-| oxlint (native)            |         898ms |      885ms–927ms |         902ms |    43739 |  3417 |
+| Interlace (ESLint)         |         2.05s |      2.03s–2.05s |         992ms |      700 |  3415 |
+| Community plugins (ESLint) |         4.02s |      3.99s–4.08s |         1.10s |       19 |  3415 |
+| oxlint (native)            |         1.14s |      1.14s–1.16s |         1.15s |    43739 |  3421 |
 
 ## How to read this
 
-- **Same file set**: every stack lints the same explicit glob (`apps/**/*.{js,jsx,ts,tsx,mjs,cjs}`). ESLint-stack parity: **verified** (ours 3411 files, competitor 3411 files).
+- **Same file set**: every stack lints the same explicit glob (`apps/**/*.{js,jsx,ts,tsx,mjs,cjs}`). ESLint-stack parity: **verified** (ours 3415 files, competitor 3415 files).
 - **Different rule sets, same job.** Each stack runs its own recommended preset. A stack that runs fewer rules doing less work is not "faster" in a way you can use — read the findings column alongside the time.
 - **oxlint is a native binary and will win on wall-clock.** That is the honest result, not a rounding error: it is a different engine class. The number that matters for an ESLint user is the ESLint-to-ESLint comparison.
 - **Cold** = `--no-cache`. **Warm** = `--cache` against a primed cache file.
