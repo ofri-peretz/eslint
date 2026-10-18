@@ -697,3 +697,250 @@ jwt.sign(payload, process.env.S, { expiresIn: '1h' });`,
     },
   ],
 });
+
+/**
+ * `maxExpirationSeconds` was declared, documented — "Use maxExpirationSeconds
+ * to enforce reasonable limits" — and never read: `expiresIn: '100y'` passed
+ * with the option set to an hour. It is opt-in; unset means no limit. Owner
+ * decision, 2026-10-18.
+ */
+const HOUR = [{ maxExpirationSeconds: 3600 }] as const;
+const JWT = `import jwt from 'jsonwebtoken';\n`;
+const excessive = (seconds: string, max = '3600') => [
+  { messageId: 'excessiveExpiration' as const, data: { seconds, max } },
+];
+
+ruleTester.run('maxExpirationSeconds', requireExpiration, {
+  valid: [
+    {
+      name: 'unset, no lifetime is too long',
+      code: `${JWT}jwt.sign(payload, secret, { expiresIn: '100y' });`,
+    },
+    {
+      name: 'other options set, the limit is still unset',
+      code: `${JWT}jwt.sign(payload, secret, { expiresIn: '100y' });`,
+      options: [{ strictMode: true }],
+    },
+    {
+      name: 'a lifetime exactly at the limit',
+      code: `${JWT}jwt.sign(payload, secret, { expiresIn: '1h' });`,
+      options: HOUR,
+    },
+    {
+      name: 'a number of seconds under the limit',
+      code: `${JWT}jwt.sign(payload, secret, { expiresIn: 900 });`,
+      options: HOUR,
+    },
+    {
+      name: 'ms reads a bare numeric string as milliseconds',
+      code: `${JWT}jwt.sign(payload, secret, { expiresIn: '7200' });`,
+      options: HOUR,
+    },
+    {
+      name: 'a long-form unit with a space',
+      code: `${JWT}jwt.sign(payload, secret, { expiresIn: '30 minutes' });`,
+      options: HOUR,
+    },
+    {
+      name: 'an expiresIn from the environment is not judged',
+      code: `${JWT}jwt.sign(payload, secret, { expiresIn: process.env.JWT_TTL });`,
+      options: HOUR,
+    },
+    {
+      name: 'a string ms would reject is not judged',
+      code: `${JWT}jwt.sign(payload, secret, { expiresIn: 'forever' });`,
+      options: HOUR,
+    },
+    {
+      name: 'an unknown unit is not judged',
+      code: `${JWT}jwt.sign(payload, secret, { expiresIn: '3 fortnights' });`,
+      options: HOUR,
+    },
+    {
+      name: 'an absolute exp timestamp is a date, not a lifetime',
+      code: `${JWT}jwt.sign({ sub, exp: 4102444800 }, secret);`,
+      options: HOUR,
+    },
+    {
+      name: 'an exp within the limit',
+      code: `${JWT}jwt.sign({ sub, exp: Math.floor(Date.now() / 1000) + 600 }, secret);`,
+      options: HOUR,
+    },
+    {
+      name: 'an exp built from milliseconds is not judged',
+      code: `${JWT}jwt.sign({ sub, exp: Date.now() + 86400000 }, secret);`,
+      options: HOUR,
+    },
+    {
+      name: 'an exp offset that is not static is not judged',
+      code: `${JWT}jwt.sign({ sub, exp: Math.floor(Date.now() / 1000) + ttl }, secret);`,
+      options: HOUR,
+    },
+    {
+      name: 'an exp from a call is not judged',
+      code: `${JWT}jwt.sign({ sub, exp: computeExp() }, secret);`,
+      options: HOUR,
+    },
+    {
+      name: 'an exp subtracting from now is not a lifetime read',
+      code: `${JWT}jwt.sign({ sub, exp: Math.floor(Date.now() / 1000) - 60 }, secret);`,
+      options: HOUR,
+    },
+    {
+      name: 'a rounding call with two arguments is not now-in-seconds',
+      code: `${JWT}jwt.sign({ sub, exp: Math.max(Date.now() / 1000, 0) + 86400 }, secret);`,
+      options: HOUR,
+    },
+    {
+      name: 'a Math method that does not round',
+      code: `${JWT}jwt.sign({ sub, exp: Math.abs(Date.now() / 1000) + 86400 }, secret);`,
+      options: HOUR,
+    },
+    {
+      name: 'dividing by something other than 1000',
+      code: `${JWT}jwt.sign({ sub, exp: Date.now() / 60 + 86400 }, secret);`,
+      options: HOUR,
+    },
+    {
+      name: 'a method other than Date.now()',
+      code: `${JWT}jwt.sign({ sub, exp: Date.parse(s) / 1000 + 86400 }, secret);`,
+      options: HOUR,
+    },
+    {
+      name: 'now() on another object',
+      code: `${JWT}jwt.sign({ sub, exp: clock.now() / 1000 + 86400 }, secret);`,
+      options: HOUR,
+    },
+    {
+      name: 'a bare now() call',
+      code: `${JWT}jwt.sign({ sub, exp: now() / 1000 + 86400 }, secret);`,
+      options: HOUR,
+    },
+    {
+      name: 'a computed member on Math',
+      code: `${JWT}jwt.sign({ sub, exp: Math[op](Date.now() / 1000) + 86400 }, secret);`,
+      options: HOUR,
+    },
+    {
+      name: 'a computed member on Date',
+      code: `${JWT}jwt.sign({ sub, exp: Date[op]() / 1000 + 86400 }, secret);`,
+      options: HOUR,
+    },
+    {
+      name: 'a rounding call off something other than Math',
+      code: `${JWT}jwt.sign({ sub, exp: util.floor(Date.now() / 1000) + 86400 }, secret);`,
+      options: HOUR,
+    },
+    {
+      name: 'a bare floor() call',
+      code: `${JWT}jwt.sign({ sub, exp: floor(Date.now() / 1000) + 86400 }, secret);`,
+      options: HOUR,
+    },
+    {
+      name: 'a NestJS per-call expiresIn within the limit',
+      code: `import { JwtService } from '@nestjs/jwt';
+class AuthService {
+  constructor(private readonly jwtService: JwtService) {}
+  login(sub) { return this.jwtService.sign({ sub }, { expiresIn: '15m' }); }
+}`,
+      options: HOUR,
+    },
+  ],
+  invalid: [
+    {
+      name: "the docs' own example: expiresIn '100y'",
+      code: `${JWT}jwt.sign(payload, secret, { expiresIn: '100y' });`,
+      options: HOUR,
+      errors: excessive('3155760000'),
+    },
+    {
+      name: 'a day against an hour',
+      code: `${JWT}jwt.sign(payload, secret, { expiresIn: '1d' });`,
+      options: HOUR,
+      errors: excessive('86400'),
+    },
+    {
+      name: 'every ms unit family is read',
+      code: `${JWT}
+jwt.sign(a, s, { expiresIn: '2 weeks' });
+jwt.sign(a, s, { expiresIn: '2hrs' });
+jwt.sign(a, s, { expiresIn: '61 mins' });
+jwt.sign(a, s, { expiresIn: '3601s' });
+jwt.sign(a, s, { expiresIn: '3601000ms' });
+jwt.sign(a, s, { expiresIn: '1.5H' });`,
+      options: HOUR,
+      errors: [
+        ...excessive('1209600'),
+        ...excessive('7200'),
+        ...excessive('3660'),
+        ...excessive('3601'),
+        ...excessive('3601'),
+        ...excessive('5400'),
+      ],
+    },
+    {
+      name: 'a bare numeric string of milliseconds over the limit',
+      code: `${JWT}jwt.sign(payload, secret, { expiresIn: '3601000' });`,
+      options: HOUR,
+      errors: excessive('3601'),
+    },
+    {
+      name: 'a number of seconds, written as arithmetic',
+      code: `${JWT}jwt.sign(payload, secret, { expiresIn: 60 * 60 * 24 * 30 });`,
+      options: HOUR,
+      errors: excessive('2592000'),
+    },
+    {
+      name: 'an expiresIn held in a const',
+      code: `${JWT}const TTL = '7d';\njwt.sign(payload, secret, { expiresIn: TTL });`,
+      options: HOUR,
+      errors: excessive('604800'),
+    },
+    {
+      name: 'a template literal with no interpolation',
+      code: `${JWT}jwt.sign(payload, secret, { expiresIn: \`2h\` });`,
+      options: HOUR,
+      errors: excessive('7200'),
+    },
+    {
+      name: 'options held in a const',
+      code: `${JWT}const opts = { algorithm: 'RS256', expiresIn: '30d' };\njwt.sign(payload, key, opts);`,
+      options: HOUR,
+      errors: excessive('2592000'),
+    },
+    {
+      name: 'an exp of now plus a day',
+      code: `${JWT}jwt.sign({ sub, exp: Math.floor(Date.now() / 1000) + 86400 }, secret);`,
+      options: HOUR,
+      errors: excessive('86400'),
+    },
+    {
+      name: 'an exp with the offset first and the time unrounded',
+      code: `${JWT}jwt.sign({ sub, exp: 86400 + Date.now() / 1000 }, secret);`,
+      options: HOUR,
+      errors: excessive('86400'),
+    },
+    {
+      name: 'an exp through a const now and a const payload',
+      code: `${JWT}const now = Math.round(Date.now() / 1000);\nconst claims = { sub, exp: now + 7200 };\njwt.sign(claims, secret);`,
+      options: HOUR,
+      errors: excessive('7200'),
+    },
+    {
+      name: 'a NestJS per-call expiresIn over the limit',
+      code: `import { JwtService } from '@nestjs/jwt';
+class AuthService {
+  constructor(private readonly jwtService: JwtService) {}
+  refresh(sub) { return this.jwtService.sign({ sub }, { secret: process.env.R, expiresIn: '7d' }); }
+}`,
+      options: HOUR,
+      errors: excessive('604800'),
+    },
+    {
+      name: 'a custom limit',
+      code: `${JWT}jwt.sign(payload, secret, { expiresIn: '8d' });`,
+      options: [{ maxExpirationSeconds: 604800 }],
+      errors: excessive('691200', '604800'),
+    },
+  ],
+});

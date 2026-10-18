@@ -57,7 +57,7 @@ export interface NoWeakSecretOptions extends JwtRuleOptions {
 }
 
 export interface RequireExpirationOptions extends JwtRuleOptions {
-  /** Maximum allowed expiration time in seconds. Default: 86400 (24 hours) */
+  /** Longest token lifetime allowed, in seconds. Unset (the default) enforces no limit. */
   maxExpirationSeconds?: number;
 }
 

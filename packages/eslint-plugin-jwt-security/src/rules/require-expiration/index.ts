@@ -28,11 +28,13 @@ import {
   resolveCallOptions,
   resolveObject,
   hasOption,
+  getOptionValue,
 } from '../../utils';
+import { expClaimSeconds, expiresInSeconds } from '../../utils/lifetime';
 import { nestModuleExpiry } from '../../utils/nest-modules';
 import type { RequireExpirationOptions } from '../../types';
 
-type MessageIds = 'missingExpiration' | 'addExpiration';
+type MessageIds = 'missingExpiration' | 'addExpiration' | 'excessiveExpiration';
 
 type RuleOptions = [RequireExpirationOptions?];
 
@@ -66,6 +68,16 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
         fix: 'Add expiresIn: "1h" or exp claim to payload',
         documentationLink: 'https://tools.ietf.org/html/rfc8725',
       }),
+      excessiveExpiration: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Excessive JWT Expiration',
+        cwe: 'CWE-613',
+        description:
+          'JWT lives {{seconds}}s, longer than the configured maxExpirationSeconds ({{max}}s)',
+        severity: 'MEDIUM',
+        fix: 'Shorten expiresIn / exp to at most {{max}} seconds, and use a refresh token for longer sessions',
+        documentationLink: 'https://tools.ietf.org/html/rfc8725',
+      }),
       addExpiration: formatLLMMessage({
         icon: MessageIcons.INFO,
         issueName: 'Add Expiration',
@@ -81,9 +93,8 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
         properties: {
           maxExpirationSeconds: {
             type: 'integer',
-            default: 86400,
             description:
-              'Maximum allowed expiration time in seconds (24h default)',
+              'Maximum allowed token lifetime in seconds. Unset (the default) enforces no limit.',
           },
           trustedSanitizers: {
             type: 'array',
@@ -106,13 +117,47 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [
     {
-      maxExpirationSeconds: 86400,
       trustedSanitizers: [],
       trustedAnnotations: [],
       strictMode: false,
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    /*
+     * Opt-in. It was declared with a 24h default and never read, so turning
+     * that default on now would report every `expiresIn: '7d'` refresh token —
+     * this page's own ✅ example — in a patch release. Unset means no limit.
+     */
+    const maxExpirationSeconds = context.options[0]?.maxExpirationSeconds;
+
+    /**
+     * Report a lifetime the file states that exceeds the configured limit.
+     * `null` — not statically known — abstains.
+     */
+    const checkLifetime = (
+      node: TSESTree.CallExpression,
+      seconds: number | null,
+    ): void => {
+      if (
+        maxExpirationSeconds === undefined ||
+        seconds === null ||
+        seconds <= maxExpirationSeconds
+      ) {
+        return;
+      }
+      context.report({
+        node,
+        messageId: 'excessiveExpiration',
+        data: { seconds: String(seconds), max: String(maxExpirationSeconds) },
+      });
+    };
+
+    /** The lifetime the `expiresIn` of an options object that has one states. */
+    const optionsLifetime = (options: {
+      properties: readonly TSESTree.ObjectLiteralElement[];
+    }): number | null =>
+      expiresInSeconds(getOptionValue(options, 'expiresIn')!, sourceCode);
+
     /**
      * Check if payload contains exp claim
      */
@@ -133,10 +178,7 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
       // exactly that, setting `exp: Math.floor(Date.now()/1000) + this.ttl`
       // before signing. Looking only at an inline object literal reported a
       // token whose expiration was right there, spelled the other legal way.
-      const resolved =
-        payloadNode.type === 'Identifier'
-          ? resolveObjectLiteral(payloadNode)
-          : payloadNode;
+      const resolved = resolvePayload(payloadNode);
 
       if (resolved === null || resolved.type !== 'ObjectExpression') {
         return false;
@@ -152,6 +194,14 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
        */
       return hasOption(resolved, 'exp');
     };
+
+    /** The payload as written, or the object literal its identifier holds. */
+    const resolvePayload = (
+      payloadNode: TSESTree.Node,
+    ): TSESTree.Node | null =>
+      payloadNode.type === 'Identifier'
+        ? resolveObjectLiteral(payloadNode)
+        : payloadNode;
 
     /** Follow an identifier to the object literal it was initialised with. */
     const resolveObjectLiteral = (
@@ -224,6 +274,11 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
 
           // Check if payload has exp claim
           if (payloadHasExp(payloadArg)) {
+            const exp = getOptionValue(
+              resolvePayload(payloadArg) as TSESTree.ObjectExpression,
+              'exp',
+            );
+            checkLifetime(node, expClaimSeconds(exp!, sourceCode));
             return;
           }
 
@@ -245,8 +300,12 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
               node.callee.object.type !== AST_NODE_TYPES.NewExpression);
           if (nestShaped) {
             const own = resolveObject(node.arguments[1], sourceCode);
+            if (own !== null && hasOption(own, 'expiresIn')) {
+              checkLifetime(node, optionsLifetime(own));
+              return;
+            }
             if (
-              (own !== null && (hasOption(own, 'expiresIn') || own.opaque)) ||
+              own?.opaque === true ||
               nestModuleExpiry(
                 context.filename,
                 context.languageOptions.parser,
@@ -259,10 +318,11 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
             // spread. An opaque value may set expiresIn where this file
             // cannot see it.
             const options = resolveCallOptions(node, sourceCode);
-            if (
-              options !== null &&
-              (hasOption(options, 'expiresIn') || options.opaque)
-            ) {
+            if (options !== null && hasOption(options, 'expiresIn')) {
+              checkLifetime(node, optionsLifetime(options));
+              return;
+            }
+            if (options?.opaque === true) {
               return;
             }
           }

@@ -86,12 +86,12 @@ await builder.sign(key);
 
 ## Options
 
-| Option                 | Type       | Default | Description                                                      |
-| ---------------------- | ---------- | ------- | ---------------------------------------------------------------- |
-| `maxExpirationSeconds` | `integer`  | `86400` | Maximum allowed expiration time in seconds (24h default)         |
-| `trustedSanitizers`    | `string[]` | `[]`    | Extra function names to treat as sanitizers                      |
-| `trustedAnnotations`   | `string[]` | `[]`    | Extra JSDoc annotations to treat as safe markers                 |
-| `strictMode`           | `boolean`  | `false` | Disable false-positive suppression — report even sanitized input |
+| Option                 | Type       | Default | Description                                                                             |
+| ---------------------- | ---------- | ------- | --------------------------------------------------------------------------------------- |
+| `maxExpirationSeconds` | `integer`  | unset   | Longest token lifetime allowed, in seconds. Unset enforces no limit.                    |
+| `trustedSanitizers`    | `string[]` | `[]`    | **No effect** — accepted so existing configs stay valid; the rule does not read it yet. |
+| `trustedAnnotations`   | `string[]` | `[]`    | **No effect** — accepted so existing configs stay valid; the rule does not read it yet. |
+| `strictMode`           | `boolean`  | `false` | **No effect** — accepted so existing configs stay valid; the rule does not read it yet. |
 
 ```javascript
 {
@@ -99,6 +99,29 @@ await builder.sign(key);
     "maxExpirationSeconds": 86400
   }]
 }
+```
+
+### `maxExpirationSeconds`
+
+Opt-in. When set, a token whose lifetime the file states statically and that
+exceeds the limit is reported:
+
+- `expiresIn` as a number of seconds (`3600`, `60 * 60 * 24`, or a `const`
+  holding one);
+- `expiresIn` as a string in the [`ms`](https://www.npmjs.com/package/ms)
+  format jsonwebtoken accepts (`'15m'`, `'7d'`, `'2 hours'`). A bare numeric
+  string is milliseconds there: `'7200'` is 7.2 seconds;
+- a payload `exp` written as the current time plus a constant,
+  `Math.floor(Date.now() / 1000) + 3600`.
+
+A lifetime the file cannot see — `process.env.JWT_TTL`, a parameter, a call — is
+not judged, and neither is an absolute `exp` timestamp or a NestJS
+`JwtModule.register({ signOptions })` default in another file.
+
+```javascript
+// With { maxExpirationSeconds: 3600 }
+jwt.sign(payload, secret, { expiresIn: '7d' }); // ❌ 604800s > 3600s
+jwt.sign(payload, secret, { expiresIn: '15m' }); // ✅
 ```
 
 ## Known False Negatives
@@ -156,14 +179,14 @@ jwt.sign(createTokenPayload(user), secret); // Depends on implementation
 
 ### Excessive Expiration Values
 
-**Why**: Very large `expiresIn` values (e.g., `'100y'`) pass the check but are effectively non-expiring.
+**Why**: Very large `expiresIn` values (e.g., `'100y'`) pass the check but are effectively non-expiring, and no limit is enforced unless one is configured.
 
 ```typescript
 // ❌ NOT DETECTED (by default) - Effectively non-expiring
 jwt.sign(payload, secret, { expiresIn: '100y' });
 ```
 
-**Mitigation**: Use `maxExpirationSeconds` option to enforce reasonable limits.
+**Mitigation**: Set the `maxExpirationSeconds` option to enforce a limit.
 
 ## Further Reading
 

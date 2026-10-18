@@ -45,20 +45,12 @@ jwt.verify(token, secret, { algorithm: 'RS256' });
 
 ## Options
 
-| Option                  | Type       | Default             | Description                                                      |
-| ----------------------- | ---------- | ------------------- | ---------------------------------------------------------------- |
-| `recommendedAlgorithms` | `string[]` | `["RS256","ES256"]` | Algorithms to suggest in auto-fix                                |
-| `trustedSanitizers`     | `string[]` | `[]`                | Extra function names to treat as sanitizers                      |
-| `trustedAnnotations`    | `string[]` | `[]`                | Extra JSDoc annotations to treat as safe markers                 |
-| `strictMode`            | `boolean`  | `false`             | Disable false-positive suppression — report even sanitized input |
-
-```javascript
-{
-  "jwt/require-algorithm-whitelist": ["error", {
-    "recommendedAlgorithms": ["RS256", "ES256"]
-  }]
-}
-```
+| Option                  | Type       | Default             | Description                                                                             |
+| ----------------------- | ---------- | ------------------- | --------------------------------------------------------------------------------------- |
+| `recommendedAlgorithms` | `string[]` | `["RS256","ES256"]` | **No effect** — accepted so existing configs stay valid; the rule does not read it yet. |
+| `trustedSanitizers`     | `string[]` | `[]`                | **No effect** — accepted so existing configs stay valid; the rule does not read it yet. |
+| `trustedAnnotations`    | `string[]` | `[]`                | **No effect** — accepted so existing configs stay valid; the rule does not read it yet. |
+| `strictMode`            | `boolean`  | `false`             | **No effect** — accepted so existing configs stay valid; the rule does not read it yet. |
 
 <WhenNotToUse />
 
@@ -133,7 +125,7 @@ import { verify } from 'secure-jwt-lib';
 verify(token, key); // Library may have secure defaults
 ```
 
-**Mitigation**: Use `trustedAnnotations` to mark verified patterns.
+**Mitigation**: Pass `algorithms` explicitly even where the library defaults are safe, or disable the rule on that line with a comment saying why.
 
 ## Further Reading
 
