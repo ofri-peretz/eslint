@@ -53,7 +53,7 @@
       "rules": 13,
       "description": "ESLint plugin for JWT security — detects algorithm confusion (CVE-2022-23540), alg:none, weak or hardcoded secrets, and decode-without-verify",
       "category": "security",
-      "version": "3.5.0",
+      "version": "3.5.1",
       "published": true
     },
     {
@@ -260,5 +260,5 @@
   "totalRules": 497,
   "totalPlugins": 32,
   "allPluginsCount": 32,
-  "generatedAt": "2026-10-13"
+  "generatedAt": "2026-10-18"
 }
