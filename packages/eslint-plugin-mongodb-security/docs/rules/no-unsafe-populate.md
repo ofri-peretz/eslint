@@ -5,14 +5,14 @@ tags: ['security', 'mongodb']
 category: security
 severity: medium
 cwe: CWE-943
-owasp: "A03:2021"
+owasp: 'A03:2021'
 autofix: false
 ---
 
 > **Keywords:** CWE-943, populate, Mongoose, injection, CVE-2025-23061, security
 
-
 <!-- @rule-summary -->
+
 Detects user-controlled populate() paths that could lead to data exposure or injection.
 <!-- @/rule-summary -->
 
@@ -28,7 +28,7 @@ Detects user-controlled `populate()` paths that could lead to data exposure or i
 | **CVE**           | CVE-2025-23061 (Mongoose populate injection) |
 | **OWASP**         | A03:2021 - Injection                         |
 | **Severity**      | Medium (CVSS: 6.5)                           |
-| **Category**   | Security |
+| **Category**      | Security                                     |
 
 ## Rule Details
 
@@ -49,12 +49,20 @@ User.findById(id).populate({
   path: req.body.path,
   select: req.body.fields,
 });
+
+// A path built from user input
+User.findById(id).populate(`${req.query.relation}`);
+User.findById(id).populate([req.query.relation, 'author']);
 ```
 
 ### ✅ Correct
 
 ```typescript
-const x = 1;
+// Hardcoded paths, inline or named by a const
+const AUTHOR = 'author';
+User.findById(id).populate(AUTHOR);
+User.findById(id).populate(['author', 'comments']);
+User.findById(id).populate({ path: 'author', select: 'name' });
 ```
 
 ## Known False Negatives
@@ -78,6 +86,6 @@ User.findById(id).populate(req.body.populateOptions);
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| Option         | Type      | Default | Description                                     |
+| -------------- | --------- | ------- | ----------------------------------------------- |
+| `allowInTests` | `boolean` | `true`  | Skip this rule in `*.test.*` / `*.spec.*` files |

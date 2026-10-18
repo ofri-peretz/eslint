@@ -98,6 +98,12 @@ User.find({ $text: { $search: req.query.search } });
 const safePattern = `^${escapeRegex(req.query.search).slice(0, 50)}`;
 User.find({ name: { $regex: safePattern } });
 
+// An escaped value interpolated inline — escapeRegex, escapeRegExp,
+// _.escapeRegExp, or the default export of escape-string-regexp /
+// lodash.escaperegexp under any name
+User.find({ name: { $regex: `^${escapeRegex(req.query.search)}` } });
+User.find({ name: { $regex: `^${_.escapeRegExp(req.query.search)}$` } });
+
 // Use MongoDB text index
 db.users.createIndex({ name: 'text' });
 User.find({ $text: { $search: userInput } });
@@ -112,6 +118,16 @@ User.find({ $text: { $search: userInput } });
 const sanitized = userInput.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 User.find({ name: { $regex: sanitized } });
 ```
+
+### Escapers Recognised by Name
+
+```typescript
+// ✅ NOT REPORTED - a helper named escapeRegex is trusted to escape
+const escapeRegex = (s) => s;
+User.find({ name: { $regex: `^${escapeRegex(req.query.q)}` } });
+```
+
+**Mitigation**: Import the escaper from `escape-string-regexp` or lodash rather than hand-rolling it.
 
 ## When Not To Use It
 

@@ -139,3 +139,101 @@ ruleTester.run('computed method names', noUnsafePopulate, {
     },
   ]),
 });
+
+/**
+ * A `const` naming a string is a hardcoded path — the fix this rule's message
+ * asks for — and was reported because every identifier was. The forms that
+ * build a path from the request (a template literal, an array element) were
+ * missed. Owner decision, 2026-10-18.
+ */
+ruleTester.run('const paths and request-built paths', noUnsafePopulate, {
+  valid: xmo([
+    {
+      name: 'a const string names a hardcoded path',
+      code: `const AUTHOR = 'author';\nfunction h(req) { Post.find().populate(AUTHOR); }`,
+    },
+    {
+      name: 'a const template literal with no interpolation',
+      code: 'const AUTHOR = `author`;\nfunction h(req) { Post.find().populate(AUTHOR); }',
+    },
+    {
+      name: 'a const string as the path of an options object',
+      code: `const AUTHOR = 'author';\nfunction h(req) { Post.find().populate({ path: AUTHOR, select: req.query.f }); }`,
+    },
+    {
+      name: 'an array of literal paths',
+      code: `function h(req) { Post.find().populate(['author', , 'comments']); }`,
+    },
+    {
+      name: 'a template literal over constants',
+      code: 'function h(req) { Post.find().populate(`${PREFIX}.author`); }',
+    },
+  ]),
+  invalid: xmo([
+    {
+      name: 'a template literal built from request input',
+      code: 'function h(req) { Post.find().populate(`${req.query.rel}`); }',
+      errors: [{ messageId: 'unsafePopulate' }],
+    },
+    {
+      name: 'request input in the second interpolation of a template path',
+      code: 'function h(req) { Post.find().populate(`${PREFIX}.${req.query.rel}`); }',
+      errors: [{ messageId: 'unsafePopulate' }],
+    },
+    {
+      name: 'a request path after another option of the options object',
+      code: `function h(req) { Post.find().populate({ select: 'name', path: req.body.rel }); }`,
+      errors: [{ messageId: 'unsafePopulate' }],
+    },
+    {
+      name: 'request input as one element of an array of paths',
+      code: `function h(req) { Post.find().populate([req.query.rel, 'author']); }`,
+      errors: [{ messageId: 'unsafePopulate' }],
+    },
+    {
+      name: 'a request-built template as an element of an array of paths',
+      code: "function h(req) { Post.find().populate(['author', `${req.query.rel}.owner`]); }",
+      errors: [{ messageId: 'unsafePopulate' }],
+    },
+    {
+      name: 'a template literal built from request input as the path option',
+      code: 'function h(req) { Post.find().populate({ path: `${req.body.rel}` }); }',
+      errors: [{ messageId: 'unsafePopulate' }],
+    },
+    {
+      name: 'a let string may be reassigned',
+      code: `let REL = 'author';\nfunction h(req) { REL = req.query.rel; Post.find().populate(REL); }`,
+      errors: [{ messageId: 'unsafePopulate' }],
+    },
+    {
+      name: 'a const that is not a string',
+      code: `const REL = pick(req);\nfunction h(req) { Post.find().populate(REL); }`,
+      errors: [{ messageId: 'unsafePopulate' }],
+    },
+    {
+      name: 'a const numeric literal is not a path string',
+      code: `const REL = 3;\nfunction h(req) { Post.find().populate(REL); }`,
+      errors: [{ messageId: 'unsafePopulate' }],
+    },
+    {
+      name: 'a const template literal that interpolates',
+      code: 'const REL = `${x}`;\nfunction h(req) { Post.find().populate(REL); }',
+      errors: [{ messageId: 'unsafePopulate' }],
+    },
+    {
+      name: 'a destructured const is a read of something else',
+      code: `const { REL } = config;\nfunction h(req) { Post.find().populate(REL); }`,
+      errors: [{ messageId: 'unsafePopulate' }],
+    },
+    {
+      name: 'a parameter is not a const',
+      code: `function h(req, rel) { Post.find().populate(rel); }`,
+      errors: [{ messageId: 'unsafePopulate' }],
+    },
+    {
+      name: 'an unresolved global is not a const',
+      code: `function h(req) { Post.find().populate(REL); }`,
+      errors: [{ messageId: 'unsafePopulate' }],
+    },
+  ]),
+});

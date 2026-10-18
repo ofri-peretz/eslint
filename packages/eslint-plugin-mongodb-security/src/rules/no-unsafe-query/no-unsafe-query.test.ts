@@ -172,6 +172,21 @@ describe('no-unsafe-query', () => {
           name: 'a Firestore collection reference does not open the gate',
           code: `const snap = await db.collection('users').doc(id).get();\ndb.collection('users').where('name', '==', req.query.name).get();`,
         },
+        {
+          // benchmarks/corpus/CWE-943/vulnerable/where-string.js. The bug is
+          // real, but it is `no-unsafe-where`'s: a `$where` string is
+          // JavaScript, and the string itself is the payload. This rule's bug is
+          // an OBJECT reaching the filter, which a template literal cannot
+          // carry, and reporting it here put two findings on one line.
+          name: "a template-literal $where is no-unsafe-where's finding, not this rule's",
+          code: [
+            `async function searchByName(req) {`,
+            `  return db.collection('items').find({`,
+            "    $where: `this.name == '${req.query.name}'`,",
+            `  }).toArray();`,
+            `}`,
+          ].join('\n'),
+        },
       ],
       invalid: [
         {
@@ -216,36 +231,6 @@ describe('no-unsafe-query', () => {
                     `    password: { $eq: req.body.password },`,
                     `  });`,
                     `  return user;`,
-                    `}`,
-                  ].join('\n'),
-                },
-              ],
-            },
-          ],
-        },
-        {
-          // benchmarks/corpus/CWE-943/vulnerable/where-string.js — reached
-          // through `.toArray()`, not `.find()`: `find` is deliberately not in
-          // the native-driver method set.
-          name: 'a template-literal $where reaches a native-driver cursor',
-          code: [
-            `async function searchByName(req) {`,
-            `  return db.collection('items').find({`,
-            "    $where: `this.name == '${req.query.name}'`,",
-            `  }).toArray();`,
-            `}`,
-          ].join('\n'),
-          errors: [
-            {
-              messageId: 'unsafeQuery' as const,
-              suggestions: [
-                {
-                  messageId: 'suggestionUseEq' as const,
-                  output: [
-                    `async function searchByName(req) {`,
-                    `  return db.collection('items').find({`,
-                    "    $where: { $eq: `this.name == '${req.query.name}'` },",
-                    `  }).toArray();`,
                     `}`,
                   ].join('\n'),
                 },

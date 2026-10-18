@@ -346,25 +346,6 @@ ruleTester.run('mutation-guided edges', noUnsafeQuery, {
   ]),
   invalid: xmo([
     {
-      name: 'request input in any interpolation of a template, not only the first',
-      code: inHandler(
-        'await User.find({ slug: `${prefix}-${req.body.name}` });',
-      ),
-      errors: [
-        {
-          messageId: 'unsafeQuery',
-          suggestions: [
-            {
-              messageId: 'suggestionUseEq',
-              output: inHandler(
-                'await User.find({ slug: { $eq: `${prefix}-${req.body.name}` } });',
-              ),
-            },
-          ],
-        },
-      ],
-    },
-    {
       name: 'the message names the request path that reached the filter',
       code: inHandler(`await User.find({ email: req.body.email });`),
       errors: [
@@ -489,6 +470,167 @@ ruleTester.run('logical operators and computed method names', noUnsafeQuery, {
         `await User['findOne']({ name: req.body.name });`,
         `await User['findOne']({ name: { $eq: req.body.name } });`,
       ),
+    },
+  ]),
+});
+
+/**
+ * Coercion to a string is coercion to a string, whichever way it is spelled.
+ * `String(req.body.x)` was quiet while `` `${req.body.x}` `` and
+ * `'a' + req.body.x` were CRITICAL findings, although all three turn a
+ * `{ "$ne": null }` body into `'[object Object]'`. Owner decision, 2026-10-18.
+ */
+ruleTester.run('string-coerced request input', noUnsafeQuery, {
+  valid: xmo([
+    {
+      name: 'a template literal over request input is a string',
+      code: inHandler('await User.find({ name: `${req.body.name}` });'),
+    },
+    {
+      name: 'request input in any interpolation of a template is still a string',
+      code: inHandler(
+        'await User.find({ slug: `${prefix}-${req.body.name}` });',
+      ),
+    },
+    {
+      name: 'concatenating request input yields a string',
+      code: inHandler(`await User.find({ name: 'user:' + req.body.name });`),
+    },
+    {
+      name: 'adding two request values yields a string or a number',
+      code: inHandler(
+        `await User.find({ name: req.body.first + req.body.last });`,
+      ),
+    },
+    {
+      name: 'a template-literal id passed as the whole filter',
+      code: inHandler('await User.findById(`${req.params.id}`);'),
+    },
+    {
+      name: 'a String()-coerced id passed as the whole filter',
+      code: inHandler(`await User.findById(String(req.params.id));`),
+    },
+    {
+      name: 'a concatenated id passed as the whole filter',
+      code: inHandler(`await User.findById('user:' + req.params.id);`),
+    },
+    {
+      name: 'a helper over a concatenation of constants',
+      code: inHandler(`await User.find(build('a' + suffix));`),
+    },
+  ]),
+  invalid: xmo([
+    {
+      // The coercion has to be the value itself. A helper handed request
+      // input can return an object — `JSON.parse` is the usual one.
+      name: 'a filter built by a call over request input is not a coercion',
+      code: inHandler(`await User.find(JSON.parse(req.query.filter));`),
+      errors: [
+        {
+          messageId: 'unsafeQuery',
+          suggestions: [
+            {
+              messageId: 'suggestionUseEq',
+              output: inHandler(
+                `await User.find({ $eq: JSON.parse(req.query.filter) });`,
+              ),
+            },
+          ],
+        },
+      ],
+    },
+    {
+      // JSON assembled from a string and parsed back is an object again, and
+      // `x","$ne":"` in the body puts an operator in it.
+      name: 'request input concatenated into JSON that is parsed into the filter',
+      code: inHandler(
+        `await User.find(JSON.parse('{"name":"' + req.body.name + '"}'));`,
+      ),
+      errors: [
+        {
+          messageId: 'unsafeQuery',
+          suggestions: [
+            {
+              messageId: 'suggestionUseEq',
+              output: inHandler(
+                `await User.find({ $eq: JSON.parse('{"name":"' + req.body.name + '"}') });`,
+              ),
+            },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'request input templated into JSON that is parsed into the filter',
+      code: inHandler(
+        'await User.find(JSON.parse(`{"name":"${req.body.name}"}`));',
+      ),
+      errors: [
+        {
+          messageId: 'unsafeQuery',
+          suggestions: [
+            {
+              messageId: 'suggestionUseEq',
+              output: inHandler(
+                'await User.find({ $eq: JSON.parse(`{"name":"${req.body.name}"}`) });',
+              ),
+            },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'request input in the second interpolation of parsed JSON',
+      code: inHandler(
+        'await User.find(JSON.parse(`{"a":"${a}","name":"${req.body.name}"}`));',
+      ),
+      errors: [
+        {
+          messageId: 'unsafeQuery',
+          suggestions: [
+            {
+              messageId: 'suggestionUseEq',
+              output: inHandler(
+                'await User.find({ $eq: JSON.parse(`{"a":"${a}","name":"${req.body.name}"}`) });',
+              ),
+            },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'a callee that is not a name is not String()',
+      code: inHandler(`await User.findById(make()(req.params.id));`),
+      errors: [
+        {
+          messageId: 'unsafeQuery',
+          suggestions: [
+            {
+              messageId: 'suggestionUseEq',
+              output: inHandler(
+                `await User.findById({ $eq: make()(req.params.id) });`,
+              ),
+            },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'a call other than String() over request input is not a coercion',
+      code: inHandler(`await User.findById(toId(req.params.id));`),
+      errors: [
+        {
+          messageId: 'unsafeQuery',
+          suggestions: [
+            {
+              messageId: 'suggestionUseEq',
+              output: inHandler(
+                `await User.findById({ $eq: toId(req.params.id) });`,
+              ),
+            },
+          ],
+        },
+      ],
     },
   ]),
 });

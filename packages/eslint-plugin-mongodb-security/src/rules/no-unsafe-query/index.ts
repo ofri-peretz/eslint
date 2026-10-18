@@ -19,6 +19,7 @@ import {
   formatLLMMessage,
   MessageIcons,
   isTestFilePath,
+  memberPath,
   objectKeyName,
   propertyName,
   readsRequestShape,
@@ -141,34 +142,25 @@ function getNodeSource(node: TSESTree.Node): string {
 }
 
 /**
- * Check if a property value is potentially unsafe
+ * An expression whose value is always a string or a number, whatever the
+ * request sent: `` `${req.body.x}` ``, `'a' + req.body.x`, `String(req.body.x)`.
+ *
+ * The bug this rule exists for is an OBJECT reaching the filter — a body of
+ * `{ "password": { "$ne": null } }` turns an equality into "any value". A
+ * template literal stringifies `{ $ne: null }` to `'[object Object]'`, and `+`
+ * over anything yields a string or a number, so neither can carry an
+ * operator. `String(...)` was already quiet; the two spellings that do the same
+ * coercion were reported, which asked users to rewrite a safe filter into a
+ * different safe filter. A `$where` string is a different bug — the string IS
+ * the payload there — and `no-unsafe-where` owns it.
  */
-function isUnsafePropertyValue(
-  node: TSESTree.Node,
-  sourceCode: ScopeReader,
-): boolean {
-  // A bare identifier used to return `true` here, which meant every `const`
-  // in a filter was reported as user input — `find({ name: NAME })` with
-  // `const NAME = 'root'` two lines up produced `User input "NAME" is used
-  // directly`. That is ILB-0123, and a false positive is spent on every build
-  // a consumer runs.
-  //
-  // Member expression like req.body.username
-  if (node.type === AST_NODE_TYPES.MemberExpression) {
-    return containsUserInput(node, sourceCode);
-  }
-
-  // Template literal - always unsafe for queries
-  if (node.type === AST_NODE_TYPES.TemplateLiteral) {
-    return node.expressions.length > 0;
-  }
-
-  // Binary expression (string concatenation)
-  if (node.type === AST_NODE_TYPES.BinaryExpression && node.operator === '+') {
-    return true;
-  }
-
-  return false;
+function isPrimitiveCoercion(node: TSESTree.Node): boolean {
+  return (
+    node.type === AST_NODE_TYPES.TemplateLiteral ||
+    node.type === AST_NODE_TYPES.BinaryExpression ||
+    (node.type === AST_NODE_TYPES.CallExpression &&
+      memberPath(node.callee)?.join('.') === 'String')
+  );
 }
 
 export const noUnsafeQuery = createRule<RuleOptions, MessageIds>({
@@ -273,6 +265,7 @@ export const noUnsafeQuery = createRule<RuleOptions, MessageIds>({
         if (
           queryArg.type !== AST_NODE_TYPES.ObjectExpression &&
           queryArg.type !== AST_NODE_TYPES.SpreadElement &&
+          !isPrimitiveCoercion(queryArg) &&
           // `bodyNeedsDepth: false` — the argument POSITION supplies the
           // meaning the depth rule normally waits for. A bare `.body` is
           // ambiguous in general; a bare `.body` used as the filter document
@@ -345,9 +338,11 @@ export const noUnsafeQuery = createRule<RuleOptions, MessageIds>({
           continue;
         }
 
-        // Check if the value is potentially unsafe
+        // A bare identifier says nothing on its own (ILB-0123), and a
+        // coerced value cannot carry an operator (`isPrimitiveCoercion`); what
+        // is left is request input read straight into the filter.
         if (
-          isUnsafePropertyValue(value, context.sourceCode) &&
+          value.type === AST_NODE_TYPES.MemberExpression &&
           containsUserInput(value, context.sourceCode)
         ) {
           context.report({

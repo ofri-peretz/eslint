@@ -227,3 +227,169 @@ ruleTester.run('object form of set()', noDebugModeProduction, {
     },
   ]),
 });
+
+/**
+ * Express has an app setting called `debug` of its own, so `app.set('debug',
+ * true)` on an Express app is not Mongoose. Only a receiver PROVABLY made by
+ * Express is skipped; an unknown one stays reported. And the callback form —
+ * which the docs listed as incorrect — logs every query just as `true` does.
+ * Owner decision, 2026-10-18.
+ */
+/** The one finding, with the suggestion that gates `true` on NODE_ENV. */
+const gatedFinding = (code: string) => [
+  {
+    messageId: 'debugModeProduction' as const,
+    suggestions: [
+      {
+        messageId: 'suggestionGateOnNodeEnv' as const,
+        output: code.replace(
+          "'debug', true",
+          "'debug', process.env.NODE_ENV !== 'production'",
+        ),
+      },
+    ],
+  },
+];
+
+ruleTester.run(
+  'express receivers and the callback form',
+  noDebugModeProduction,
+  {
+    valid: xmo([
+      {
+        name: 'an Express app made by express()',
+        code: "import express from 'express';\nconst app = express();\napp.set('debug', true);",
+      },
+      {
+        name: 'an Express router made by express.Router()',
+        code: "import express from 'express';\nconst router = express.Router();\nrouter.set('debug', true);",
+      },
+      {
+        name: 'a Router imported by name from express',
+        code: "const { Router } = require('express');\nconst api = Router();\napi.set('debug', true);",
+      },
+      {
+        name: 'express() called inline',
+        code: "import express from 'express';\nexpress().set('debug', true);",
+      },
+      {
+        name: 'the options-object form on an Express app',
+        code: "import express from 'express';\nconst app = express();\napp.set({ debug: true });",
+      },
+      {
+        name: 'the callback form gated on the environment',
+        code: "mongoose.set('debug', process.env.NODE_ENV !== 'production' && ((c, m) => log(c, m)));",
+      },
+    ]),
+    invalid: xmo([
+      {
+        name: 'an app of unknown origin may be a Mongoose instance',
+        code: "app.set('debug', true);",
+        errors: gatedFinding("app.set('debug', true);"),
+      },
+      {
+        name: 'a local function called express is not Express',
+        code: "function express() { return mongoose; }\nconst app = express();\napp.set('debug', true);",
+        errors: gatedFinding(
+          "function express() { return mongoose; }\nconst app = express();\napp.set('debug', true);",
+        ),
+      },
+      {
+        name: 'another export of express is not an app factory',
+        code: "import express from 'express';\nconst s = express.static('public');\ns.set('debug', true);",
+        errors: gatedFinding(
+          "import express from 'express';\nconst s = express.static('public');\ns.set('debug', true);",
+        ),
+      },
+      {
+        name: 'a deeper express path is not an app factory',
+        code: "import express from 'express';\nconst s = express.Router.make();\ns.set('debug', true);",
+        errors: gatedFinding(
+          "import express from 'express';\nconst s = express.Router.make();\ns.set('debug', true);",
+        ),
+      },
+      {
+        name: 'a binding reassigned after express() may hold anything',
+        code: "import express from 'express';\nlet app = express();\napp = mongoose;\napp.set('debug', true);",
+        errors: gatedFinding(
+          "import express from 'express';\nlet app = express();\napp = mongoose;\napp.set('debug', true);",
+        ),
+      },
+      {
+        name: 'a binding declared without a value',
+        code: "let app;\napp.set('debug', true);",
+        errors: gatedFinding("let app;\napp.set('debug', true);"),
+      },
+      {
+        name: 'a destructured binding is not the call result',
+        code: "import express from 'express';\nconst { app } = express();\napp.set('debug', true);",
+        errors: gatedFinding(
+          "import express from 'express';\nconst { app } = express();\napp.set('debug', true);",
+        ),
+      },
+      {
+        name: 'a parameter is of unknown origin',
+        code: "function setup(app) { app.set('debug', true); }",
+        errors: gatedFinding("function setup(app) { app.set('debug', true); }"),
+      },
+      {
+        name: 'a binding initialised with something other than a call',
+        code: "const app = mongoose;\napp.set('debug', true);",
+        errors: gatedFinding("const app = mongoose;\napp.set('debug', true);"),
+      },
+      {
+        name: 'a member receiver is not resolved',
+        code: "this.db.set('debug', true);",
+        errors: gatedFinding("this.db.set('debug', true);"),
+      },
+      {
+        name: 'the callback form logs every query',
+        code: "mongoose.set('debug', (coll, method, query) => console.log(coll, method, query));",
+        errors: [
+          {
+            messageId: 'debugModeProduction',
+            suggestions: [
+              {
+                messageId: 'suggestionGateOnNodeEnv',
+                output:
+                  "mongoose.set('debug', process.env.NODE_ENV !== 'production' && ((coll, method, query) => console.log(coll, method, query)));",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'a function expression callback',
+        code: "mongoose.set('debug', function (coll) { log(coll); });",
+        errors: [
+          {
+            messageId: 'debugModeProduction',
+            suggestions: [
+              {
+                messageId: 'suggestionGateOnNodeEnv',
+                output:
+                  "mongoose.set('debug', process.env.NODE_ENV !== 'production' && (function (coll) { log(coll); }));",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'the callback in the options-object form',
+        code: 'mongoose.set({ debug: (coll) => log(coll) });',
+        errors: [
+          {
+            messageId: 'debugModeProduction',
+            suggestions: [
+              {
+                messageId: 'suggestionGateOnNodeEnv',
+                output:
+                  "mongoose.set({ debug: process.env.NODE_ENV !== 'production' && ((coll) => log(coll)) });",
+              },
+            ],
+          },
+        ],
+      },
+    ]),
+  },
+);

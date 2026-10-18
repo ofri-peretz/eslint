@@ -294,10 +294,16 @@ ruleTester.run('no-unsafe-populate (coverage gaps)', noUnsafePopulate, {
     `query[op](req.body.field);`,
     // Spread element inside the populate options object is skipped.
     `query.populate({ ...opts });`,
-    // String-literal 'path' key — keyName resolves to null, not inspected.
-    `query.populate({ 'path': req.body.field });`,
   ]),
-  invalid: [],
+  invalid: xmo([
+    {
+      // A quoted 'path' key was never inspected: the key was read only as
+      // an Identifier. It is the same option `{ path: … }` sets.
+      name: "a quoted 'path' key is the same option as path",
+      code: `function h(req) { query.populate({ 'path': req.body.field }); }`,
+      errors: [{ messageId: 'unsafePopulate' }],
+    },
+  ]),
 });
 
 ruleTester.run('no-unsafe-query (coverage gaps)', noUnsafeQuery, {
@@ -347,6 +353,21 @@ ruleTester.run('no-unsafe-query (coverage gaps)', noUnsafeQuery, {
     // Concatenation of a literal and a plain identifier — no user input, not
     // an identifier value, so no report.
     `User.find({ name: 'a' + suffix });`,
+    // A template literal or a concatenation over request input is a string,
+    // which cannot carry `{ $ne: null }` — as `String(req.body.name)` was
+    // already quiet. These were findings until the 2026-10-18 owner decision.
+    {
+      name: 'a template literal over request input is a string',
+      code: 'User.find({ name: `${req.body.name}` });',
+    },
+    {
+      name: 'a literal concatenated with request input is a string',
+      code: `User.find({ name: 'prefix' + req.body.name });`,
+    },
+    {
+      name: 'a helper call interpolated into a template is still a string',
+      code: 'User.find({ name: `${sanitize(req.body.name)}` });',
+    },
   ]),
   invalid: xmo([
     // FN: the whole request object as the filter document. This sat in `valid`
@@ -370,47 +391,17 @@ ruleTester.run('no-unsafe-query (coverage gaps)', noUnsafeQuery, {
         },
       ],
     },
-    // Template literal wrapping user input.
+    // A call over request input as the whole filter: the helper may return an object.
     {
-      code: 'User.find({ name: `${req.body.name}` });',
+      name: 'a helper call over request input as the whole filter',
+      code: `User.find(sanitize(req.body.name));`,
       errors: [
         {
           messageId: 'unsafeQuery',
           suggestions: [
             {
               messageId: 'suggestionUseEq',
-              output: 'User.find({ name: { $eq: `${req.body.name}` } });',
-            },
-          ],
-        },
-      ],
-    },
-    // String concatenation with user input on the right.
-    {
-      code: `User.find({ name: 'prefix' + req.body.name });`,
-      errors: [
-        {
-          messageId: 'unsafeQuery',
-          suggestions: [
-            {
-              messageId: 'suggestionUseEq',
-              output: `User.find({ name: { $eq: 'prefix' + req.body.name } });`,
-            },
-          ],
-        },
-      ],
-    },
-    // Call expression argument containing user input inside a template.
-    {
-      code: 'User.find({ name: `${sanitize(req.body.name)}` });',
-      errors: [
-        {
-          messageId: 'unsafeQuery',
-          suggestions: [
-            {
-              messageId: 'suggestionUseEq',
-              output:
-                'User.find({ name: { $eq: `${sanitize(req.body.name)}` } });',
+              output: `User.find({ $eq: sanitize(req.body.name) });`,
             },
           ],
         },
@@ -418,14 +409,15 @@ ruleTester.run('no-unsafe-query (coverage gaps)', noUnsafeQuery, {
     },
     // Call expression whose callee itself is user input.
     {
-      code: 'User.find({ name: `${req.body.get()}` });',
+      name: 'a method called off the request body, as the whole filter',
+      code: `User.find(req.body.get());`,
       errors: [
         {
           messageId: 'unsafeQuery',
           suggestions: [
             {
               messageId: 'suggestionUseEq',
-              output: 'User.find({ name: { $eq: `${req.body.get()}` } });',
+              output: `User.find({ $eq: req.body.get() });`,
             },
           ],
         },
@@ -433,15 +425,15 @@ ruleTester.run('no-unsafe-query (coverage gaps)', noUnsafeQuery, {
     },
     // Spread arguments are filtered out; the tainted argument is still found.
     {
-      code: 'User.find({ name: `${fn(...args, req.body.x)}` });',
+      name: 'request input after a spread argument of the filter helper',
+      code: `User.find(fn(...args, req.body.x));`,
       errors: [
         {
           messageId: 'unsafeQuery',
           suggestions: [
             {
               messageId: 'suggestionUseEq',
-              output:
-                'User.find({ name: { $eq: `${fn(...args, req.body.x)}` } });',
+              output: `User.find({ $eq: fn(...args, req.body.x) });`,
             },
           ],
         },

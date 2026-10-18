@@ -5,14 +5,14 @@ tags: ['security', 'mongodb']
 category: security
 severity: critical
 cwe: CWE-943
-owasp: "A03:2021"
+owasp: 'A03:2021'
 autofix: false
 ---
 
 > **Keywords:** NoSQL injection, CWE-943, MongoDB, $ne, $gt, $or, operator injection, security
 
-
 <!-- @rule-summary -->
+
 Detects MongoDB operator injection attacks where user input is passed directly as query values, allowing attackers to...
 <!-- @/rule-summary -->
 
@@ -27,20 +27,20 @@ Detects MongoDB operator injection attacks where user input is passed directly a
 | **CWE Reference** | CWE-943 (NoSQL Injection)                 |
 | **OWASP**         | A03:2021 - Injection                      |
 | **Severity**      | Critical (CVSS: 9.1)                      |
-| **Category**   | Security |
+| **Category**      | Security                                  |
 | **ESLint MCP**    | ✅ Optimized for AI assistant integration |
 
 ## Value & investment case
 
 > Why this rule pays for itself. Framework: [`cicd-impact/philosophy.md`](../../../../cicd-impact/philosophy.md).
 
-| Dimension | Value |
-| :--- | :--- |
-| **CWE** | [CWE-943](https://cwe.mitre.org/data/definitions/943.html) — Improper Neutralization of Special Elements in Data Query Logic (NoSQL injection, CVSS 9.1) |
-| **Feedback-loop tier** | Editor / pre-commit (sub-second) — cheapest layer per the [feedback-loop hierarchy](../../../../cicd-impact/philosophy.md#the-feedback-loop-hierarchy--why-a-high-end-static-analyzer-is-the-highest-leverage-investment) |
-| **Defensive-layer leverage** | ~10× cheaper than unit-test · ~1,000× cheaper than production rollback · 10,000+× cheaper than customer disclosure ([cost-ratio anchors](../../../../cicd-impact/philosophy.md#deliverability-axis--quality-risk-and-ma-diligence)) |
-| **Niche relevance** | **Critical:** fintech, healthtech, B2B SaaS (any MongoDB-backed multi-tenant app) · **High:** marketplaces, infra/devtools · **Medium:** B2C |
-| **Investor-frame impact** | NoSQL operator injection (`$ne`, `$gt`, `$or` injection) → authentication bypass + data exfiltration. The MongoDB-specific equivalent of SQL injection; same class of disclosure event. Catch at lint-time prevents the entire attack family. |
+| Dimension                    | Value                                                                                                                                                                                                                                         |
+| :--------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **CWE**                      | [CWE-943](https://cwe.mitre.org/data/definitions/943.html) — Improper Neutralization of Special Elements in Data Query Logic (NoSQL injection, CVSS 9.1)                                                                                      |
+| **Feedback-loop tier**       | Editor / pre-commit (sub-second) — cheapest layer per the [feedback-loop hierarchy](../../../../cicd-impact/philosophy.md#the-feedback-loop-hierarchy--why-a-high-end-static-analyzer-is-the-highest-leverage-investment)                     |
+| **Defensive-layer leverage** | ~10× cheaper than unit-test · ~1,000× cheaper than production rollback · 10,000+× cheaper than customer disclosure ([cost-ratio anchors](../../../../cicd-impact/philosophy.md#deliverability-axis--quality-risk-and-ma-diligence))           |
+| **Niche relevance**          | **Critical:** fintech, healthtech, B2B SaaS (any MongoDB-backed multi-tenant app) · **High:** marketplaces, infra/devtools · **Medium:** B2C                                                                                                  |
+| **Investor-frame impact**    | NoSQL operator injection (`$ne`, `$gt`, `$or` injection) → authentication bypass + data exfiltration. The MongoDB-specific equivalent of SQL injection; same class of disclosure event. Catch at lint-time prevents the entire attack family. |
 
 **Read also:** [`philosophy.md` §investor-frame](../../../../cicd-impact/philosophy.md#the-investor-frame--engineering-efficiency-as-a-portfolio-metric) · [`niche-presets.json`](../../../../cicd-impact/data/niche-presets.json) · [`analyzer-evaluation-framework.md`](../../../../cicd-impact/analyzer-evaluation-framework.md)
 
@@ -62,10 +62,21 @@ db.users.findOne({ username: 'admin', password: { $ne: '' } });
 // Matches admin user with ANY non-empty password - authentication bypass!
 ```
 
+Request input is a `.body` / `.query` / `.params` / `.headers` / `.cookies`
+read off a handler **parameter** — `(req, res)`, Fastify's `(request, reply)`,
+Koa's `ctx.request.body` — found in the AST, not by searching the source text
+(so a local named `prereq.bodyCount` is not `req.body`). A value that can only
+be a primitive cannot be an operator object, so it is not reported.
+
 ### ❌ Incorrect
 
 ```typescript
-const filter = { $ne: req.body.value };
+app.post('/users', (req, res) => {
+  const filter = { $ne: req.body.value };
+  User.find({ score: { $gt: req.query.min || 0 } });
+  User.find({ role: { $nin: [req.query.role] } });
+  User.find({ score: { $gt: JSON.parse(req.query.min) } }); // an object again
+});
 ```
 
 ### ✅ Correct
@@ -80,6 +91,11 @@ User.findOne({ email: String(req.body.email) });
 // Validate input is not an object
 if (typeof req.body.email !== 'string') throw new Error('Invalid input');
 User.findOne({ email: req.body.email });
+
+// A numeric bound is a range query, not an injection
+User.find({ score: { $gt: Number(req.query.min) } });
+User.find({ score: { $gte: parseInt(req.query.min, 10) } });
+User.find({ price: { $lt: +req.query.max } });
 ```
 
 ## Known False Negatives
@@ -124,6 +140,6 @@ User.aggregate([{ $match: req.body.filter }]);
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
+| Option         | Type      | Default | Description                                     |
+| -------------- | --------- | ------- | ----------------------------------------------- |
+| `allowInTests` | `boolean` | `true`  | Skip this rule in `*.test.*` / `*.spec.*` files |
