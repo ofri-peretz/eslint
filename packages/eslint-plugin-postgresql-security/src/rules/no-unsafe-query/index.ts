@@ -183,9 +183,17 @@ function trailingText(node: TSESTree.Node): string {
   return staticString(node) ?? '';
 }
 
+/**
+ * SQL comments in front of the statement: `/* tag *\/ SELECT …`, `-- note`.
+ * Query tags (sqlcommenter, `/* controller:users *\/`) put them there, and the
+ * statement patterns are anchored to the start of the text.
+ */
+const LEADING_SQL_COMMENTS = /^(?:\s*(?:--[^\n]*(?:\n|$)|\/\*[\s\S]*?\*\/))+/;
+
 /** Whether the static half of an expression reads as a SQL statement. */
 function looksLikeSqlStatement(text: string): boolean {
-  return SQL_STATEMENTS.some((pattern) => pattern.test(text));
+  const statement = text.replace(LEADING_SQL_COMMENTS, '');
+  return SQL_STATEMENTS.some((pattern) => pattern.test(statement));
 }
 
 /** The variable a name resolves to, walking outward from `scope`. */
@@ -588,37 +596,6 @@ function isFixedTextList(
 }
 
 /**
- * Is this binding the element of a `for…of` over a fixed list —
- * `for (const col of ['name', 'email'])`, or over a `const COLUMNS = [...]`?
- * Each pass sees one of those constants.
- */
-function isFixedLoopElement(
-  variable: TSESLint.Scope.Variable,
-  scope: TSESLint.Scope.Scope,
-): boolean {
-  const def = variable.defs[0];
-  if (def?.type !== 'Variable') return false;
-  const declaration = def.node.parent as TSESTree.VariableDeclaration;
-  const loop = declaration.parent;
-  if (loop?.type !== AST_NODE_TYPES.ForOfStatement || loop.left !== declaration)
-    return false;
-  const right = unwrapTypeSyntax(loop.right);
-  const list =
-    right.type === AST_NODE_TYPES.Identifier
-      ? unwrapTypeSyntax(singleInit(resolveVariable(right.name, scope)))
-      : right;
-  return (
-    list?.type === AST_NODE_TYPES.ArrayExpression &&
-    list.elements.every(
-      (element) =>
-        element !== null &&
-        element.type !== AST_NODE_TYPES.SpreadElement &&
-        isStaticExpression({ node: element, scope }),
-    )
-  );
-}
-
-/**
  * Is this call one that can only produce safe text?
  *
  * Every call used to be exempt, so `${req.body.ids.join(',')}`,
@@ -650,9 +627,11 @@ function isSafeCall(
     // `String(x)` is exactly as safe as `x`.
     if (callee.name === 'String' && isGlobal('String', scope) && argsSafe())
       return true;
-    // A same-file helper is as safe as everything it can return.
-    if (call.arguments.length === 0 && helperReturnsSafe(callee, scope, depth))
-      return true;
+    // A same-file helper is as safe as everything it can return. Its
+    // parameters are judged as raw there, so what it is called with cannot
+    // make an unsafe return look safe: `(v) => format('%L', v)` is safe for
+    // any `v`, `(v) => `'${v}'`` for none.
+    if (helperReturnsSafe(callee, scope, depth)) return true;
   } else if (callee.type === AST_NODE_TYPES.MemberExpression) {
     const method = propertyName(callee);
     if (
@@ -729,9 +708,23 @@ function returnExpressions(
   return found;
 }
 
+/** The scope `fn` opens, searched for below `scope`. */
+function functionScopeOf(
+  fn: TSESTree.Node,
+  scope: TSESLint.Scope.Scope,
+): TSESLint.Scope.Scope | null {
+  for (const child of scope.childScopes) {
+    if (child.block === fn && child.type === 'function') return child;
+    const found = functionScopeOf(fn, child);
+    if (found !== null) return found;
+  }
+  return null;
+}
+
 /**
- * Is a zero-argument call to a function written in this file safe because
- * everything it can return is? `const pick = () => format('%L', v)`.
+ * Is a call to a function written in this file safe because everything it can
+ * return is? `const pick = () => format('%L', v)`, `const lit = (v) =>
+ * client.escapeLiteral(v)`.
  */
 function helperReturnsSafe(
   callee: TSESTree.Identifier,
@@ -745,12 +738,12 @@ function helperReturnsSafe(
   if (fn === null || fn.async || fn.generator) return false;
   const returns = returnExpressions(fn);
   if (returns.length === 0) return false;
-  // The function's own scope is a child of the scope that declares it (one
-  // level further down for a named function expression, which first opens a
-  // scope for its own name).
-  const inner = variable.scope.childScopes
-    .flatMap((child) => [child, ...child.childScopes])
-    .find((child) => child.block === fn && child.type === 'function')!;
+  // The function's own scope sits somewhere below the scope that declares
+  // it: one level for a `const`, deeper for a named function expression
+  // (which first opens a scope for its own name) or a `var` hoisted out of
+  // nested blocks. A function always opens its scope below the scope its
+  // binding lives in, so the search cannot come back empty.
+  const inner = functionScopeOf(fn, variable.scope)!;
   return returns.every((r) => !isRawValue(r, inner, null, depth + 1));
 }
 
@@ -935,19 +928,6 @@ function isRawValue(
   if (part.type === AST_NODE_TYPES.Identifier) {
     const variable = resolveVariable(part.name, scope);
     if (variable !== null && variable === self) return false;
-    if (variable !== null && isFixedLoopElement(variable, scope)) return false;
-    // A `const` bound to a call is judged exactly as the call written inline:
-    // `const placeholders = ids.map(…).join(', ')` and
-    // `const col = escapeIdentifier(sort)` used to be reported only because
-    // the safe expression was extracted into a variable first.
-    const init = unwrapTypeSyntax(singleInit(variable));
-    if (
-      init !== null &&
-      init.type === AST_NODE_TYPES.CallExpression &&
-      isSafeCall(init, scope, depth)
-    ) {
-      return false;
-    }
     // A local binding — `const` or a `let` written several times — is as safe
     // as every value it can hold: `let v = ''; v = format('%L', x);`.
     if (variable === null || depth >= MAX_VALUE_HOPS) return true;
@@ -1326,7 +1306,8 @@ export const noUnsafeQuery: TSESLint.RuleModule<
         }
       }
 
-      if (kind === null || !raw) return;
+      // `raw` is only ever set together with `kind`.
+      if (!raw) return;
       if (!looksLikeSqlStatement(text)) return;
 
       context.report({

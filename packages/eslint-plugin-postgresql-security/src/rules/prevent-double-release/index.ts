@@ -319,18 +319,73 @@ function cannotThrow(node: TSESTree.Node | null): boolean {
 }
 
 /**
- * Is this release the end of its `try` block — nothing after it but a
- * `return` of an already-computed value? Then no throw can reach the `catch`
- * after it, and a `catch` release is the other path, not a second release.
+ * Is this release the last statement of its `try` block? Then no throw can
+ * reach the `catch` after it, and a `catch` release is the other path, not a
+ * second release. (A release followed only by `return <value>` is
+ * `leavesAfter`'s case.)
  */
 function endsTryBlock(release: TSESTree.Node, tryStatement: TSESTree.TryStatement): boolean {
+  return tryStatement.block.body.at(-1) === release.parent;
+}
+
+/**
+ * Would a throw at this node be caught inside its own function — is it in the
+ * `try` block of a `try … catch`?
+ */
+function isCaughtInFunction(node: TSESTree.Node): boolean {
+  for (let current = node; current.parent; current = current.parent) {
+    const { parent } = current;
+    if (
+      parent.type === AST_NODE_TYPES.FunctionDeclaration ||
+      parent.type === AST_NODE_TYPES.FunctionExpression ||
+      parent.type === AST_NODE_TYPES.ArrowFunctionExpression
+    ) {
+      return false;
+    }
+    if (
+      parent.type === AST_NODE_TYPES.TryStatement &&
+      parent.handler !== null &&
+      parent.block === current
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Does control leave the function right after this release — a `return` or
+ * `throw` later in the release's own block?
+ *
+ *   if (!rows.length) { client.release(); return null; }
+ *
+ * is the early return of a handler, not the first of two releases: nothing
+ * after it — the catch, the code after the `try`, the next pass of a loop —
+ * runs on that path.
+ *
+ * Inside the `try` block of a `try … catch` a throw is caught, and the catch
+ * can release again or fall through to a later release (or the next pass of a
+ * loop). There a `throw`, or a `return` whose value can throw, does not leave,
+ * so only a `return` of an already-computed value right after the release does.
+ */
+function leavesAfter(release: TSESTree.Node): boolean {
   const statement = release.parent;
-  const { body } = tryStatement.block;
-  const index = body.indexOf(statement as TSESTree.Statement);
-  if (index === -1) return false;
-  return body
-    .slice(index + 1)
-    .every((s) => s.type === AST_NODE_TYPES.ReturnStatement && cannotThrow(s.argument));
+  const block = statement?.parent;
+  if (
+    statement?.type !== AST_NODE_TYPES.ExpressionStatement ||
+    block?.type !== AST_NODE_TYPES.BlockStatement
+  ) {
+    return false;
+  }
+  const rest = block.body.slice(block.body.indexOf(statement) + 1);
+  return isCaughtInFunction(statement)
+    ? rest.length > 0 &&
+        rest.every((s) => s.type === AST_NODE_TYPES.ReturnStatement && cannotThrow(s.argument))
+    : rest.some(
+        (s) =>
+          s.type === AST_NODE_TYPES.ReturnStatement ||
+          s.type === AST_NODE_TYPES.ThrowStatement,
+      );
 }
 
 export const preventDoubleRelease: TSESLint.RuleModule<
@@ -422,6 +477,8 @@ export const preventDoubleRelease: TSESLint.RuleModule<
         // Every call but the last has to be terminated by a `return` or a
         // `throw` in its own block, or control falls through to the next one.
         const terminated = (node: TSESTree.Node): boolean => {
+          // `if (err) return done(err);` releases and leaves in one statement.
+          if (node.parent?.type === AST_NODE_TYPES.ReturnStatement) return true;
           const statement = node.parent?.type === AST_NODE_TYPES.ExpressionStatement
             ? node.parent
             : null;
@@ -526,6 +583,9 @@ export const preventDoubleRelease: TSESLint.RuleModule<
                 continue;
               }
               if (getContainingFunction(call.node) !== getContainingFunction(def.node)) continue;
+              // `for (…) { if (bad) { client.release(); return; } }` releases
+              // on the pass that leaves, and never comes round again.
+              if (leavesAfter(call.node)) continue;
               context.report({ node: call.node, messageId: 'doubleRelease' });
             }
           }
@@ -557,7 +617,7 @@ export const preventDoubleRelease: TSESLint.RuleModule<
                 const tryA = isInTryBlock(callA.node);
                 const catchB = isInCatchBlock(callB.node);
                 if (tryA && catchB && catchB.parent === tryA) {
-                  if (endsTryBlock(callA.node, tryA)) continue;
+                  if (endsTryBlock(callA.node, tryA) || leavesAfter(callA.node)) continue;
                   context.report({ node: callB.node, messageId: 'doubleRelease' });
                   reported.add(callB.node);
                   continue;
@@ -593,9 +653,11 @@ export const preventDoubleRelease: TSESLint.RuleModule<
                   }
                 }
 
-                // Case 4: If without else + sequential release
+                // Case 4: If-branch release + sequential release after the if.
+                // Either branch: `if (x) { … } else { client.release(); }`
+                // followed by `client.release()` releases twice on the else path.
                 const ifA = getDirectIfStatement(callA.node);
-                if (ifA && !ifA.alternate) {
+                if (ifA) {
                   // B is after the if statement
                   if (callB.node.range[0] > ifA.range[1]) {
                     // Check if B is in same block as the if
@@ -603,11 +665,20 @@ export const preventDoubleRelease: TSESLint.RuleModule<
                       n.type === AST_NODE_TYPES.BlockStatement
                     );
                     if (parentBlock) {
-                      const bParentStmt = callB.node.parent?.type === AST_NODE_TYPES.ExpressionStatement 
-                        ? callB.node.parent : null;
+                      // `client.release();` or `return client.release();`
+                      const bParentStmt =
+                        callB.node.parent?.type === AST_NODE_TYPES.ExpressionStatement ||
+                        callB.node.parent?.type === AST_NODE_TYPES.ReturnStatement
+                          ? callB.node.parent
+                          : null;
                       if (bParentStmt && parentBlock.body.includes(bParentStmt as TSESTree.Statement)) {
-                        // Check if the if branch has exit after release
-                        if (!ifBranchHasExitAfterRelease(callA.node, ifA)) {
+                        // Check if the if branch has exit after release — or
+                        // the release leaves on its own, e.g. inside a `try`:
+                        // `try { …; client.release(); return rows; } catch …`
+                        if (
+                          !ifBranchHasExitAfterRelease(callA.node, ifA) &&
+                          !leavesAfter(callA.node)
+                        ) {
                           context.report({ node: callB.node, messageId: 'doubleRelease' });
                           reported.add(callB.node);
                           continue;
@@ -625,7 +696,10 @@ export const preventDoubleRelease: TSESLint.RuleModule<
                   const parentBlockB = ifB.parent;
                   if (parentBlockA === parentBlockB && parentBlockA?.type === AST_NODE_TYPES.BlockStatement) {
                     // Check if ifA doesn't exit after release
-                    if (!ifBranchHasExitAfterRelease(callA.node, ifA)) {
+                    if (
+                      !ifBranchHasExitAfterRelease(callA.node, ifA) &&
+                      !leavesAfter(callA.node)
+                    ) {
                       context.report({ node: callB.node, messageId: 'doubleRelease' });
                       reported.add(callB.node);
                       continue;
@@ -690,7 +764,11 @@ export const preventDoubleRelease: TSESLint.RuleModule<
                 if (tryAWithOrWithout) {
                   // B is after the entire try statement (including any finally)
                   const tryEndPos = tryAWithOrWithout.range[1];
-                  if (callB.node.range[0] > tryEndPos && !isInFinallyBlock(callB.node)) {
+                  if (
+                    callB.node.range[0] > tryEndPos &&
+                    !isInFinallyBlock(callB.node) &&
+                    !leavesAfter(callA.node)
+                  ) {
                     context.report({ node: callB.node, messageId: 'doubleRelease' });
                     reported.add(callB.node);
                     continue;
@@ -713,7 +791,11 @@ export const preventDoubleRelease: TSESLint.RuleModule<
                 // A catch that rethrows or returns never reaches B: the catch
                 // release is the error path's, B is the success path's.
                 const catchAForAfter = isInCatchBlock(callA.node);
-                if (catchAForAfter && !alwaysExits(catchAForAfter.body)) {
+                if (
+                  catchAForAfter &&
+                  !alwaysExits(catchAForAfter.body) &&
+                  !leavesAfter(callA.node)
+                ) {
                   const tryOfCatchA = catchAForAfter.parent as TSESTree.TryStatement;
                   const tryEndPos = tryOfCatchA.range[1];
                   if (callB.node.range[0] > tryEndPos) {

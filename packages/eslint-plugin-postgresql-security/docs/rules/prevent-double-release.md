@@ -43,7 +43,7 @@ Releasing a PostgreSQL client twice corrupts the connection pool state:
 | 1   | **Try + Catch**             | Release in try AND catch blocks            |
 | 2   | **Catch + Try**             | Reversed order detection                   |
 | 3   | **Switch Fallthrough**      | Missing break causes double release        |
-| 4   | **If without Else**         | If-release + sequential release            |
+| 4   | **If Branch + After**       | Release in either branch of an `if` + release after it |
 | 5   | **Two If Statements**       | Sequential ifs without guards              |
 | 6   | **Same Block**              | Direct sequential releases                 |
 | 7   | **Catch + Finally**         | Release in catch AND finally               |
@@ -170,19 +170,56 @@ async function query() {
 
 The following patterns are **not detected** due to static AST analysis limitations:
 
-### Loop Patterns
+### A Release Nested Deeper Than the `if` or `switch` Before It
 
-**Why**: Static analysis cannot determine how many times a loop will execute at runtime. The loop might run 0, 1, or N times depending on runtime conditions.
+**Why**: a release is compared with a later one only through the statement
+that directly holds it — its own `if`, `try` or `catch`. A release two levels
+down, or inside a `switch` case that `break`s, is not followed out to the
+release after the outer statement.
 
 ```typescript
 // ❌ NOT DETECTED
-async function loopRelease() {
+async function nested(a: boolean, b: boolean) {
   const client = await pool.connect();
-  for (let i = 0; i < 1; i++) {
-    client.release();
+  if (a) {
+    if (b) {
+      client.release();
+    }
   }
-  client.release(); // Double release if loop executes!
+  client.release(); // Double release when a && b
 }
+
+// ❌ NOT DETECTED
+async function viaSwitch(kind: string) {
+  const client = await pool.connect();
+  switch (kind) {
+    case 'a':
+      client.release();
+      break;
+  }
+  client.release(); // Double release when kind === 'a'
+}
+```
+
+### Releases Directly in a `switch` Case or at Module Top Level
+
+**Why**: two releases are compared as statements of one block (`{ … }`). The
+statement list of a `case`, and the top level of a module, are not blocks, so
+releases written straight into them are not paired.
+
+```typescript
+// ❌ NOT DETECTED
+switch (kind) {
+  case 'a':
+    client.release();
+    client.release(); // Double release
+    break;
+}
+
+// ❌ NOT DETECTED — a script with top-level await
+const client = await pool.connect();
+client.release();
+client.release(); // Double release
 ```
 
 ### Dynamic Dispatch
@@ -216,6 +253,37 @@ release at the very end of a `try` block plus one in its `catch` is also one
 release per execution, as is a retry loop that checks out a new client on each
 pass. So is a release in a `catch` that rethrows or returns plus one after the
 `try`: the catch path never reaches the second.
+
+A release followed by `return` or `throw` in its own block ends that path, so
+nothing after it — the release after the `try`, the next pass of a loop —
+runs on it:
+
+```typescript
+// ✅ Not reported: the early return gives the client back and leaves
+async function find(id: string) {
+  const client = await pool.connect();
+  try {
+    const r = await client.query('SELECT * FROM t WHERE id = $1', [id]);
+    if (!r.rows.length) {
+      client.release();
+      return null;
+    }
+  } catch (err) {
+    client.release();
+    throw err;
+  }
+  client.release();
+}
+```
+
+Inside the `try` block of a `try … catch` — this function's own, or one around
+it — only a `return` of an already-computed value counts (`return null`,
+`return rows`): a `throw`, or a `return notFound(id)` whose call can throw,
+lands in that catch, which can release again or fall through to the next
+release. A `throw` inside a callback leaves the callback, not the caller.
+
+In the callback form, `if (err) return done(err);` releases and leaves in one
+statement, so a later `done()` is the other path.
 
 > **Workaround**: For any of these patterns, use the **guarded release pattern** shown in the examples above.
 

@@ -124,35 +124,6 @@ function isQueryCall(identifier: TSESTree.Node): boolean {
   );
 }
 
-/** Does this subtree contain one of these statements, not counting nested functions? */
-function contains(
-  node: TSESTree.Node,
-  types: readonly TSESTree.Node['type'][],
-): boolean {
-  if (types.includes(node.type)) return true;
-  if (
-    node.type === AST_NODE_TYPES.FunctionDeclaration ||
-    node.type === AST_NODE_TYPES.FunctionExpression ||
-    node.type === AST_NODE_TYPES.ArrowFunctionExpression
-  ) {
-    return false;
-  }
-  return Object.entries(node).some(([key, value]) => {
-    if (key === 'parent') return false;
-    const children: unknown[] = Array.isArray(value) ? value : [value];
-    return children.some(
-      (child) =>
-        typeof child === 'object' &&
-        child !== null &&
-        typeof (child as TSESTree.Node).type === 'string' &&
-        contains(child as TSESTree.Node, types),
-    );
-  });
-}
-
-const containsReturn = (node: TSESTree.Node): boolean =>
-  contains(node, [AST_NODE_TYPES.ReturnStatement]);
-
 /** The block this release is a direct `client.release();` statement of. */
 function enclosingBlock(
   release: TSESTree.Node,
@@ -168,11 +139,85 @@ function enclosingBlock(
   return { block, index: block.body.indexOf(statement) };
 }
 
+/** Every statement of one of these types in `nodes`, not counting nested functions. */
+function jumpsIn(
+  nodes: readonly TSESTree.Node[],
+  types: readonly TSESTree.Node['type'][],
+): TSESTree.Node[] {
+  const found: TSESTree.Node[] = [];
+  const visit = (node: TSESTree.Node): void => {
+    if (types.includes(node.type)) found.push(node);
+    if (
+      node.type === AST_NODE_TYPES.FunctionDeclaration ||
+      node.type === AST_NODE_TYPES.FunctionExpression ||
+      node.type === AST_NODE_TYPES.ArrowFunctionExpression
+    ) {
+      return;
+    }
+    for (const [key, value] of Object.entries(node)) {
+      if (key === 'parent') continue;
+      for (const child of Array.isArray(value) ? value : [value]) {
+        if (
+          typeof child === 'object' &&
+          child !== null &&
+          typeof (child as TSESTree.Node).type === 'string'
+        ) {
+          visit(child as TSESTree.Node);
+        }
+      }
+    }
+  };
+  for (const node of nodes) visit(node);
+  return found;
+}
+
 /**
- * Is this release a direct statement of a `try` block that nothing before it
- * can leave early? Returns that `try`.
+ * Does every one of these jumps out of `container` release the client first —
+ * a `client.release();` statement ahead of it in its own block, or in a block
+ * around it inside `container`?
+ *
+ *   try { const r = await client.query(…); if (!r.rows.length) { client.release(); return null; } … }
+ *
+ * The early return leaves with the client given back. Counting every `return`
+ * as a leak reported the release that follows the `try` as not guaranteed.
  */
-function tryBlockRelease(release: TSESTree.Node): TSESTree.TryStatement | null {
+function releasedBeforeEach(
+  jumps: readonly TSESTree.Node[],
+  container: TSESTree.Node,
+  releases: readonly TSESTree.Node[],
+): boolean {
+  const slots = releases.map(enclosingBlock);
+  return jumps.every((jump) => {
+    for (
+      let current: TSESTree.Node = jump;
+      current !== container;
+      current = current.parent as TSESTree.Node
+    ) {
+      const block = current.parent;
+      if (
+        block?.type === AST_NODE_TYPES.BlockStatement &&
+        slots.some(
+          (slot) =>
+            slot?.block === block &&
+            slot.index < block.body.indexOf(current as TSESTree.Statement),
+        )
+      ) {
+        return true;
+      }
+    }
+    return false;
+  });
+}
+
+/**
+ * Is this release a direct statement of a `try` block that nothing in it can
+ * leave early without releasing first? Returns that `try`. (A `return` after
+ * this release is covered by it.)
+ */
+function tryBlockRelease(
+  release: TSESTree.Node,
+  releases: readonly TSESTree.Node[],
+): TSESTree.TryStatement | null {
   const slot = enclosingBlock(release);
   if (
     slot === null ||
@@ -181,8 +226,10 @@ function tryBlockRelease(release: TSESTree.Node): TSESTree.TryStatement | null {
   ) {
     return null;
   }
-  const before = slot.block.body.slice(0, slot.index);
-  return before.some(containsReturn) ? null : slot.block.parent;
+  const returns = jumpsIn(slot.block.body, [AST_NODE_TYPES.ReturnStatement]);
+  return releasedBeforeEach(returns, slot.block, releases)
+    ? slot.block.parent
+    : null;
 }
 
 /** Is this release inside the `catch` clause of `tryStatement`? */
@@ -224,26 +271,24 @@ function releaseAfterTry(
   const previous = slot.block.body[slot.index - 1];
   if (
     previous?.type !== AST_NODE_TYPES.TryStatement ||
-    previous.handler === null ||
-    contains(previous.block, [
-      AST_NODE_TYPES.ReturnStatement,
-      AST_NODE_TYPES.BreakStatement,
-      AST_NODE_TYPES.ContinueStatement,
-    ])
+    previous.handler === null
   ) {
     return false;
   }
+  // A throw in the try block goes to the catch, so it is not a way out here.
+  const tryJumps = jumpsIn(
+    [previous.block],
+    [
+      AST_NODE_TYPES.ReturnStatement,
+      AST_NODE_TYPES.BreakStatement,
+      AST_NODE_TYPES.ContinueStatement,
+    ],
+  );
   const catchBody = previous.handler.body;
-  if (!contains(catchBody, JUMPS)) return true;
-  return releases.some((other) => {
-    const inCatch = enclosingBlock(other);
-    return (
-      inCatch?.block === catchBody &&
-      !catchBody.body
-        .slice(0, inCatch.index)
-        .some((statement) => contains(statement, JUMPS))
-    );
-  });
+  return (
+    releasedBeforeEach(tryJumps, previous.block, releases) &&
+    releasedBeforeEach(jumpsIn([catchBody], JUMPS), catchBody, releases)
+  );
 }
 
 /**
@@ -456,7 +501,7 @@ export const noMissingClientRelease: TSESLint.RuleModule<
         // every path: success reaches the first, any throw before it reaches
         // the second.
         const coveredByTryAndCatch = releases.some((id) => {
-          const tryStatement = tryBlockRelease(id);
+          const tryStatement = tryBlockRelease(id, releases);
           return (
             tryStatement !== null &&
             releases.some((other) => isInCatchOf(other, tryStatement))

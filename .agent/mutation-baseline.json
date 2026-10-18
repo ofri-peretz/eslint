@@ -135,9 +135,9 @@
           "timeout": 0
         },
         "no-missing-client-release": {
-          "score": 82.3,
-          "killed": 323,
-          "survived": 69,
+          "score": 89.5,
+          "killed": 359,
+          "survived": 42,
           "noCoverage": 0,
           "timeout": 0
         },
@@ -163,11 +163,11 @@
           "timeout": 1
         },
         "no-unsafe-query": {
-          "score": 75.6,
-          "killed": 1099,
-          "survived": 356,
+          "score": 86,
+          "killed": 1193,
+          "survived": 198,
           "noCoverage": 0,
-          "timeout": 10
+          "timeout": 28
         },
         "no-unsafe-search-path": {
           "score": 85.7,
@@ -184,11 +184,11 @@
           "timeout": 1
         },
         "prevent-double-release": {
-          "score": 75.7,
-          "killed": 671,
-          "survived": 216,
+          "score": 81.7,
+          "killed": 789,
+          "survived": 177,
           "noCoverage": 0,
-          "timeout": 4
+          "timeout": 3
         }
       }
     },

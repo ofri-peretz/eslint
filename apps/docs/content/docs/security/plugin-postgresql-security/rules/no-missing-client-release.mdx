@@ -64,6 +64,23 @@ async function bestEffort() {
   client.release();
 }
 
+// An early return that gives the client back first is not a leak: every
+// path out of the try releases exactly once.
+async function find(id: string) {
+  const client = await pool.connect();
+  try {
+    const r = await client.query('SELECT * FROM t WHERE id = $1', [id]);
+    if (!r.rows.length) {
+      client.release();
+      return null;
+    }
+  } catch (err) {
+    client.release();
+    throw err;
+  }
+  client.release();
+}
+
 // Using pool.query() directly (auto-releases)
 async function simpleQuery() {
   await pool.query('SELECT 1');
