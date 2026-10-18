@@ -5,6 +5,26 @@
   "oldestYear": 2024,
   "releases": [
     {
+      "package": "eslint-plugin-mongodb-security",
+      "short": "eslint-plugin-mongodb-security",
+      "version": "9.1.4",
+      "date": "2026-10-18T16:07:07Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "close five false negatives found by the mutation triage",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "six wrong verdicts in six rules surfaced by Stryker mutation testing",
+          "pr": null
+        }
+      ]
+    },
+    {
       "package": "eslint-plugin-jwt-security",
       "short": "eslint-plugin-jwt-security",
       "version": "3.5.1",
@@ -19090,26 +19110,6 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-mongodb-security",
-      "short": "eslint-plugin-mongodb-security",
-      "version": "9.1.4",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "close five false negatives found by the mutation triage",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "six wrong verdicts in six rules surfaced by Stryker mutation testing",
           "pr": null
         }
       ]
