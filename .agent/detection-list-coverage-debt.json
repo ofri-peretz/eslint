@@ -251,10 +251,8 @@
     "mnemonic",
     "passphrase",
     "passwd",
-    "salt",
     "secrets",
     "signature",
-    "tokens",
     "verify"
   ],
   "packages/eslint-plugin-node-security/src/rules/no-ssrf/index.ts#USER_INPUT_SUBSTRINGS": [
@@ -268,7 +266,6 @@
     "private-key",
     "private_key",
     "refresh-token",
-    "refresh_token",
     "session-id",
     "session_id",
     "social-security",
@@ -296,7 +293,6 @@
     "total"
   ],
   "packages/eslint-plugin-node-security/src/rules/no-weak-hash-algorithm/index.ts#DEFAULT_SECURITY_USE_NAMES": [
-    "apikey",
     "authorization",
     "certs",
     "csrf",

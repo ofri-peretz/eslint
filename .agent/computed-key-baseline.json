@@ -20,7 +20,6 @@
     "mongodb-security/require-schema-validation",
     "mysql-security/require-tls",
     "nestjs-security/no-permissive-cors",
-    "node-security/detect-child-process",
     "node-security/detect-eval-with-expression",
     "node-security/no-deprecated-buffer",
     "node-security/no-insecure-key-derivation",
