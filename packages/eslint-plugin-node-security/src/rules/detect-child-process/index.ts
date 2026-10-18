@@ -738,9 +738,12 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
         if (!candidate || candidate.type !== AST_NODE_TYPES.ObjectExpression)
           continue;
         for (const property of candidate.properties) {
+          // `objectKeyName` alone, not an Identifier-key test as well:
+          // `{ 'shell': true }` and `{ ['shell']: true }` are the same object as
+          // `{ shell: true }`, and requiring an Identifier key read them as
+          // "no shell" — `hasShellFalseOption` below already reads all three.
           if (
             property.type !== AST_NODE_TYPES.Property ||
-            property.key.type !== AST_NODE_TYPES.Identifier ||
             objectKeyName(property) !== 'shell'
           ) {
             continue;
@@ -1121,13 +1124,16 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
             return null;
           }
           for (const property of declarator.id.properties) {
+            // The key is read with `objectKeyName`, not as an Identifier:
+            // `{ 'exec': run }` and `{ ['exec']: run }` bind exec exactly as
+            // `{ exec: run }` does, and `trackChildProcessRequire` already
+            // accepts those spellings.
             if (
               property.type === AST_NODE_TYPES.Property &&
               property.value.type === AST_NODE_TYPES.Identifier &&
-              property.value.name === node.name &&
-              property.key.type === AST_NODE_TYPES.Identifier
+              property.value.name === node.name
             ) {
-              return property.key.name;
+              return objectKeyName(property);
             }
           }
         }

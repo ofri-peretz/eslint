@@ -54,11 +54,14 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
     `,
     // The listener may be registered after the pipe: the file is judged whole,
     // so statement order is not the criterion.
-    `
+    {
+      name: 'an error listener attached after the pipe still handles the stream',
+      code: `
       const s = fs.createWriteStream('/tmp/out');
       s.pipe(next);
       s.on('error', log);
     `,
+    },
     // `once` and `addListener` register the same handler.
     {
       name: 'a stream with a once error listener before pipe is not reported',
@@ -175,6 +178,26 @@ ruleTester.run('require-stream-error-handler', requireStreamErrorHandler, {
       code: 'fs.createReadStream(p).pipe(res);',
       filename: '/proj/stream.test.ts',
       options: [{ allowInTests: false }],
+      errors: [{ messageId: 'unhandledStreamError' }],
+    },
+  ],
+});
+
+ruleTester.run('mutation-guided edges', requireStreamErrorHandler, {
+  valid: [
+    {
+      name: 'a call that is not a stream factory is not judged when piped',
+      code: 'getUpload(id).pipe(res);',
+    },
+    {
+      name: 'a declarator with no initializer binds no stream',
+      code: "let s; s = fs.createReadStream(p); s.on('error', h); s.pipe(res);",
+    },
+  ],
+  invalid: [
+    {
+      name: 'a destructured stream factory constructs the same unhandled stream',
+      code: "import { createReadStream } from 'node:fs'; createReadStream(p).pipe(res);",
       errors: [{ messageId: 'unhandledStreamError' }],
     },
   ],

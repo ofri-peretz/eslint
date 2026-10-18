@@ -35,7 +35,10 @@ describe('detect-eval-with-expression', () => {
           name: 'Math.eval is a method on another object, not the global eval',
           code: 'const x = Math.eval();',
         },
-        'const obj = { eval: () => {} }; obj.eval("code");',
+        {
+          name: 'an eval method on a local object is not the global eval',
+          code: 'const obj = { eval: () => {} }; obj.eval("code");',
+        },
         'function myFunction(data) { return data; }',
         'const result = calculateValue();',
       ],

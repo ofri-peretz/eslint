@@ -45,7 +45,10 @@ describe('no-weak-hash-algorithm', () => {
       // Valid: SHA-256 (strong)
       { name: 'SHA-256', code: 'crypto.createHash("sha256").update(data);' },
       { name: 'SHA-512', code: 'crypto.createHash("sha512").update(data);' },
-      { code: 'crypto.createHash("sha3-256").update(data);' },
+      {
+        name: 'SHA3-256 is not a weak hash',
+        code: 'crypto.createHash("sha3-256").update(data);',
+      },
       // Valid: Non-crypto context
       { code: 'const message = "md5 is weak";' },
       // Valid: Test file with allowInTests
@@ -1074,4 +1077,157 @@ describe('no-weak-hash-algorithm', () => {
       ],
     });
   });
+});
+
+const REQUIRE_CRYPTO = `const crypto = require('crypto');\n`;
+const PASSWORD_MD5 = `${REQUIRE_CRYPTO}const passwordHash = crypto.createHash('md5').update(password).digest('hex');`;
+const SIGNATURE_VARIABLE = `${REQUIRE_CRYPTO}let signature;\nsignature = crypto.createHash('md5').update(body).digest('hex');`;
+const SIGNATURE_MEMBER = `${REQUIRE_CRYPTO}res.locals.signature = crypto.createHash('md5').update(body).digest('hex');`;
+const SIGNATURE_KEY = `${REQUIRE_CRYPTO}const headers = { signature: crypto.createHash('md5').update(body).digest('hex') };`;
+const SIGNATURE_HEADER = `${REQUIRE_CRYPTO}const headers = { 'x-signature': crypto.createHash('md5').update(body).digest('hex') };`;
+const LOOKUP_ETAG = `${REQUIRE_CRYPTO}const etag = lookup(crypto.createHash('md5').update(apiKey).digest('hex'));`;
+const PASSWORD_WHIRLPOOL = `${REQUIRE_CRYPTO}const passwordHash = crypto.createHash('whirlpool').update(password).digest('hex');`;
+const COMPARED_TO_ETAG = `${REQUIRE_CRYPTO}if (etag === crypto.createHash('md5').update(password).digest('hex')) ok();`;
+const NUMERIC_KEY = `${REQUIRE_CRYPTO}const row = { 1: crypto.createHash('md5').update(password).digest('hex') };`;
+const LOCAL_SHA1_HELPER = `function sha1(data) { return crypto.createHash('sha1').update(String(data)).digest('hex'); }\nconst sessionToken = sha1(secret);`;
+
+/**
+ * A `createHash('<weak>')` report and its three suggestions: the algorithm
+ * argument rewritten to each strong digest.
+ */
+const weak = (code: string, algorithm = 'md5') => ({
+  messageId: 'weakHashAlgorithm' as const,
+  suggestions: (
+    [
+      ['useSha256', 'sha256'],
+      ['useSha512', 'sha512'],
+      ['useSha3', 'sha3-256'],
+    ] as const
+  ).map(([messageId, strong]) => ({
+    messageId,
+    output: code.replace(`'${algorithm}'`, `"${strong}"`),
+  })),
+});
+
+ruleTester.run('mutation-guided edges', noWeakHashAlgorithm, {
+  valid: [
+    {
+      name: 'a password hash in a test path is exempt when allowInTests is on',
+      code: `const crypto = require('crypto');\nconst passwordHash = crypto.createHash('md5').update(password).digest('hex');`,
+      filename: 'test/auth.test.ts',
+      options: [{ allowInTests: true }],
+    },
+    {
+      name: 'a digest used as a lookup key is not named by what the lookup returns',
+      code: `const crypto = require('crypto');\nconst session = sessions[crypto.createHash('md5').update(id).digest('hex')];`,
+    },
+    {
+      name: 'the other arguments of the call a digest is passed to are not its inputs',
+      code: `const crypto = require('crypto');\ncache.set(sessionId, crypto.createHash('md5').update(html).digest('hex'));`,
+    },
+    {
+      name: 'an etag stored on a member is exempt even inside a signing function',
+      code: `const crypto = require('crypto');\nfunction signResponse(res, body) { res.etag = crypto.createHash('md5').update(body).digest('hex'); }`,
+    },
+    {
+      name: 'an etag assigned to a variable is exempt even inside a signing function',
+      code: `const crypto = require('crypto');\nfunction signResponse(body) { let etag; etag = crypto.createHash('md5').update(body).digest('hex'); return etag; }`,
+    },
+    {
+      name: 'an etag object property is exempt even inside a signing function',
+      code: `const crypto = require('crypto');\nfunction signResponse(body) { return { etag: crypto.createHash('md5').update(body).digest('hex') }; }`,
+    },
+    {
+      name: 'a computed key is a variable, not a security-use name',
+      code: `const crypto = require('crypto');\nconst fields = { [signature]: crypto.createHash('md5').update(body).digest('hex') };`,
+    },
+    {
+      name: 'an additional weak algorithm does not flag a strong digest',
+      code: `const crypto = require('crypto');\nconst passwordHash = crypto.createHash('sha256').update(password).digest('hex');`,
+      options: [{ additionalWeakAlgorithms: ['whirlpool'] }],
+    },
+    {
+      name: 'a local arrow helper that computes an HMAC is not a bare digest',
+      code: `const crypto = require('crypto');\nconst sha1 = (data, secret) => crypto.createHmac('sha1', secret).update(data).digest('hex');\nconst signature = sha1(body, secret);`,
+    },
+  ],
+  invalid: [
+    {
+      name: 'a password hash in a test path is reported without allowInTests',
+      code: PASSWORD_MD5,
+      filename: 'test/auth.test.ts',
+      errors: [weak(PASSWORD_MD5)],
+    },
+    {
+      name: 'a password hash outside a test path is reported even with allowInTests',
+      code: PASSWORD_MD5,
+      filename: 'src/auth.ts',
+      options: [{ allowInTests: true }],
+      errors: [weak(PASSWORD_MD5)],
+    },
+    {
+      name: 'a digest assigned to a signature variable is a security use',
+      code: SIGNATURE_VARIABLE,
+      errors: [weak(SIGNATURE_VARIABLE)],
+    },
+    {
+      name: 'a digest assigned to a signature member is a security use',
+      code: SIGNATURE_MEMBER,
+      errors: [weak(SIGNATURE_MEMBER)],
+    },
+    {
+      name: 'a digest under a signature object key is a security use',
+      code: SIGNATURE_KEY,
+      errors: [weak(SIGNATURE_KEY)],
+    },
+    {
+      name: 'a digest under a quoted signature header key is a security use',
+      code: SIGNATURE_HEADER,
+      errors: [weak(SIGNATURE_HEADER)],
+    },
+    {
+      name: "the name of a call's result does not exempt a digest passed into it",
+      code: LOOKUP_ETAG,
+      errors: [weak(LOOKUP_ETAG)],
+    },
+    {
+      name: 'a digest compared to a variable is not stored under that name',
+      code: COMPARED_TO_ETAG,
+      errors: [weak(COMPARED_TO_ETAG)],
+    },
+    {
+      name: 'a numeric object key names nothing, so the password input decides',
+      code: NUMERIC_KEY,
+      errors: [weak(NUMERIC_KEY)],
+    },
+    {
+      name: 'an additional weak algorithm is reported under its own name',
+      code: PASSWORD_WHIRLPOOL,
+      options: [{ additionalWeakAlgorithms: ['whirlpool'] }],
+      errors: [
+        {
+          ...weak(PASSWORD_WHIRLPOOL, 'whirlpool'),
+          data: { algorithm: 'WHIRLPOOL', replacement: 'sha256' },
+        },
+      ],
+    },
+    {
+      name: 'a local digest helper that calls other functions is still not an HMAC',
+      code: LOCAL_SHA1_HELPER,
+      errors: [
+        {
+          messageId: 'weakHashAlgorithm',
+          suggestions: [
+            {
+              messageId: 'useSha256',
+              output: LOCAL_SHA1_HELPER.replace(
+                'sha1(secret)',
+                'sha256(secret)',
+              ),
+            },
+          ],
+        },
+      ],
+    },
+  ],
 });

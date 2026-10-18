@@ -5,7 +5,7 @@ tags: ['security', 'tls', 'cwe-295', 'nodejs', 'mitm']
 category: security
 severity: critical
 cwe: CWE-295
-owasp: "A07:2021"
+owasp: 'A07:2021'
 autofix: false
 ---
 
@@ -13,8 +13,8 @@ autofix: false
 > **CWE:** [CWE-295](https://cwe.mitre.org/data/definitions/295.html)  
 > **OWASP:** [A07:2021-Identification and Authentication Failures](https://owasp.org/Top10/A07_2021-Identification_and_Authentication_Failures/)
 
-
 <!-- @rule-summary -->
+
 Disallow rejectUnauthorized false in TLS options
 <!-- @/rule-summary -->
 
@@ -202,15 +202,31 @@ rejectUnauthorized: false;
 
 ## Known False Negatives
 
-### Axios Interceptors
+The rule matches a literal `false` on a `rejectUnauthorized` key, and a static
+`'0'` / `` `0` `` / `0` written to `process.env.NODE_TLS_REJECT_UNAUTHORIZED`
+(or `globalThis.process.env…`). Where the object or the assignment sits does
+not matter — an agent built inside an axios interceptor is reported like any
+other.
 
-**Why**: Dynamic configuration in interceptors not tracked.
+### Values that are not a literal
+
+**Why**: The rule does not follow data flow.
 
 ```typescript
 // ❌ NOT DETECTED
-axios.interceptors.request.use((config) => {
-  config.httpsAgent = new https.Agent({ rejectUnauthorized: false });
-  return config;
+const insecure = false;
+new https.Agent({ rejectUnauthorized: insecure });
+```
+
+### The env switch passed to a child process
+
+**Why**: Only an assignment to `process.env` is checked, not an `env` object
+handed to `spawn`/`fork`.
+
+```typescript
+// ❌ NOT DETECTED
+spawn('node', ['job.js'], {
+  env: { ...process.env, NODE_TLS_REJECT_UNAUTHORIZED: '0' },
 });
 ```
 
@@ -224,6 +240,6 @@ axios.interceptors.request.use((config) => {
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
+| Option         | Type      | Default | Description         |
+| -------------- | --------- | ------- | ------------------- |
 | `allowInTests` | `boolean` | `false` | Allow in test files |
