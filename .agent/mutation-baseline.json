@@ -68,8 +68,8 @@
           "timeout": 0
         },
         "require-expiration": {
-          "score": 89.7,
-          "killed": 113,
+          "score": 91.7,
+          "killed": 143,
           "survived": 13,
           "noCoverage": 0,
           "timeout": 1
@@ -121,8 +121,8 @@
           "timeout": 2
         },
         "no-hardcoded-credentials": {
-          "score": 93.9,
-          "killed": 109,
+          "score": 94.9,
+          "killed": 131,
           "survived": 7,
           "noCoverage": 0,
           "timeout": 0
@@ -202,9 +202,9 @@
           "timeout": 0
         },
         "no-debug-mode-production": {
-          "score": 92.4,
-          "killed": 61,
-          "survived": 5,
+          "score": 93.2,
+          "killed": 125,
+          "survived": 9,
           "noCoverage": 0,
           "timeout": 0
         },
@@ -223,9 +223,9 @@
           "timeout": 0
         },
         "no-operator-injection": {
-          "score": 85.2,
-          "killed": 29,
-          "survived": 5,
+          "score": 90,
+          "killed": 54,
+          "survived": 6,
           "noCoverage": 0,
           "timeout": 0
         },
@@ -244,23 +244,23 @@
           "timeout": 1
         },
         "no-unsafe-populate": {
-          "score": 91.4,
-          "killed": 75,
-          "survived": 7,
+          "score": 96.2,
+          "killed": 104,
+          "survived": 4,
           "noCoverage": 0,
           "timeout": 0
         },
         "no-unsafe-query": {
-          "score": 91.4,
-          "killed": 149,
-          "survived": 12,
+          "score": 93.2,
+          "killed": 151,
+          "survived": 9,
           "noCoverage": 2,
           "timeout": 0
         },
         "no-unsafe-regex-query": {
-          "score": 95.2,
-          "killed": 121,
-          "survived": 6,
+          "score": 95.4,
+          "killed": 148,
+          "survived": 7,
           "noCoverage": 0,
           "timeout": 0
         },
