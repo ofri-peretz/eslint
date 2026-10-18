@@ -1,0 +1,94 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: PostHog Geo Health
+
+# Fails when any Interlace host's pageviews over the last 24h are less than 90%
+# geo-tagged. From 2026-08-22 to 2026-10-18 eslint.interlace.tools sent 0%
+# (cookieless mode strips $ip before GeoIP) and nothing noticed. See
+# scripts/posthog-geo-health.ts.
+#
+# Secret: POSTHOG_API_KEY, a PostHog personal API key (phx_...) with
+# query:read on project 428927. Already set on this repo.
+
+on:
+  schedule:
+    # Daily 05:35 UTC, clear of the 05:10 and 05:20 weekly crons.
+    - cron: '35 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: 🌍 Pageviews carry geo
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write # opens / comments on the failure issue
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v6
+        with:
+          node-version-file: .nvmrc
+
+      - name: 🌍 Check
+        id: check
+        env:
+          POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
+        # Plain `node`: Node 24 strips the types and the script has no
+        # imports, so nothing is installed or fetched while the secret is set.
+        # Exit 2 = a measured geo gap, 1 = the check itself could not run.
+        run: |
+          set +e
+          node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/posthog-geo-health.ts > check.log 2>&1
+          code=$?
+          cat check.log
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+
+      - name: 📋 Job summary
+        if: always()
+        run: |
+          {
+            echo "# PostHog geo coverage, last 24h"
+            echo '```'
+            cat check.log 2>/dev/null || echo "(no output)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 🚨 Open an issue on a geo gap
+        if: steps.check.outputs.code == '2'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          TITLE="PostHog pageviews are missing geo"
+          # One issue, reopened and commented, not a new one every day.
+          EXISTING=$(gh issue list --state open --search "$TITLE in:title" \
+            --json number --jq '.[0].number // empty')
+          BODY=$(printf '%s\n\n```\n%s\n```\n\n[Run](%s)\n' \
+            "An Interlace host's pageviews are arriving without \$ip / GeoIP." \
+            "$(cat check.log)" "$RUN_URL")
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "$BODY"
+          else
+            gh issue create --title "$TITLE" --body "$BODY"
+          fi
+
+      - name: ⛔ Fail the job
+        if: steps.check.outputs.code != '0'
+        env:
+          CODE: ${{ steps.check.outputs.code }}
+        run: |
+          if [ "$CODE" = "2" ]; then
+            echo "::error::Geo coverage below threshold, see the job summary."
+          else
+            echo "::error::The geo check could not run (exit $CODE), see the job summary."
+          fi
+          exit 1

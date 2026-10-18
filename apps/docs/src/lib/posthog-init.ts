@@ -31,10 +31,9 @@ import posthog, { type PostHogConfig } from 'posthog-js';
 export const APP_ID = 'eslint_docs' as const;
 
 /**
- * Kept only as documentation of intended scope. `cross_subdomain_cookie: true`
- * below is a no-op while `cookieless_mode` is active — cookieless mode writes
- * no cookie at all, so there is no cookie to scope. It stays set because it is
- * the correct value the moment cookieless mode is ever turned off.
+ * The scope `cross_subdomain_cookie: true` below resolves to: posthog-js
+ * derives it from the hostname, so docs, ds, storybook and the landing page
+ * share one identity cookie. Named here as documentation of intended scope.
  */
 const COOKIE_DOMAIN = '.interlace.tools';
 void COOKIE_DOMAIN;
@@ -145,6 +144,10 @@ function isSyntheticCheck(): boolean {
   }
 }
 
+function isVercelAlias(): boolean {
+  return window.location.hostname.toLowerCase().endsWith('.vercel.app');
+}
+
 function isTrackingAllowed(): boolean {
   if (typeof window === 'undefined') return false;
   if (typeof navigator === 'undefined') return false;
@@ -152,11 +155,13 @@ function isTrackingAllowed(): boolean {
   if (isLocalEnvironment() && !isLocalOptIn()) return false;
   // CI and scripted browsers are not visitors.
   if (isAutomatedBrowser() && !isSyntheticCheck()) return false;
+  // `*.vercel.app` is a deployment alias, not the site: eslint-one.vercel.app
+  // logged pageviews alongside eslint.interlace.tools and inflated it.
+  if (isVercelAlias() && !isSyntheticCheck()) return false;
   const dnt = navigator.doNotTrack;
   if (dnt === '1' || dnt === 'yes') return false;
-  const gpc = (
-    navigator as Navigator & { globalPrivacyControl?: boolean }
-  ).globalPrivacyControl;
+  const gpc = (navigator as Navigator & { globalPrivacyControl?: boolean })
+    .globalPrivacyControl;
   if (gpc === true) return false;
   return true;
 }
@@ -185,7 +190,9 @@ function isNoisyException(properties?: Record<string, unknown>): boolean {
   const list = properties?.['$exception_list'];
   if (!Array.isArray(list) || list.length === 0) return false;
   const value = (list[0] as { value?: unknown } | undefined)?.value;
-  return typeof value === 'string' && NOISY_EXCEPTIONS.some((re) => re.test(value));
+  return (
+    typeof value === 'string' && NOISY_EXCEPTIONS.some((re) => re.test(value))
+  );
 }
 
 let initialised = false;
@@ -214,21 +221,27 @@ export function initPostHog(): void {
     api_host: '/ingest',
     ui_host: 'https://us.posthog.com',
     person_profiles: 'identified_only',
-    // Cookieless mode: PostHog sets no cookie and touches no local or session
-    // storage, so no GDPR consent banner is required — and, unlike the
-    // `persistence: 'memory'` this replaces, identity is not thrown away.
+    // Default persistence: the same setting every other Interlace site uses.
     //
-    // `persistence: 'memory'` meant every page load was a brand new anonymous
-    // person: 2,254 pageviews across 1,863 "people" in 30 days, 1.2 pageviews
-    // each, which made funnels, paths, retention, and session replay measure
-    // nothing. Cookieless mode instead derives identity from a
-    // privacy-preserving hash computed on PostHog's servers, so sessions and
-    // people are real again with no client-side storage.
+    // NOT `cookieless_mode`. From 2026-08-22 to 2026-10-18 this file set
+    // `cookieless_mode: 'always'`, and in that mode PostHog strips `$ip` on
+    // ingest BEFORE GeoIP runs (PostHog/posthog#59027). Every docs pageview
+    // in that window arrived with no IP and no location: 0% geo, against
+    // 100% on every cookie-mode host in the same project. Docs visits are
+    // the best signal for which organisations use the plugins, and that mode
+    // erased it.
     //
-    // REQUIRES `cookieless_server_hash_mode` on the PostHog project (set to 2,
-    // Stateful, on 2026-08-22). Without it every cookieless event is silently
-    // DROPPED — the two must be changed together, project setting first.
-    cookieless_mode: 'always',
+    // NOT `persistence: 'memory'` either. That gave every page load a brand
+    // new anonymous person: 2,254 pageviews across 1,863 "people" in 30
+    // days, 1.2 pageviews each, so funnels, paths, retention and replay
+    // measured nothing.
+    //
+    // Both are pinned in posthog-provider-lock.test.tsx, and
+    // scripts/posthog-geo-health.ts checks production for the effect.
+    persistence: 'localStorage+cookie',
+    // The shared .interlace.tools cookie beats stale per-origin localStorage,
+    // so an identity set on a sibling site is not overwritten here.
+    cookieWinsOnConflict: true,
     capture_pageview: false,
     capture_pageleave: true,
     capture_performance: true,
@@ -257,13 +270,14 @@ export function initPostHog(): void {
       if (!event) return event;
       if (
         event.event === '$exception' &&
-        isNoisyException(event.properties as Record<string, unknown> | undefined)
+        isNoisyException(
+          event.properties as Record<string, unknown> | undefined,
+        )
       )
         return null;
       try {
         const properties = event.properties as
-          | Record<string, unknown>
-          | undefined;
+          Record<string, unknown> | undefined;
         if (properties && typeof properties['$current_url'] === 'string') {
           properties['$current_url'] = normaliseCurrentUrl(
             properties['$current_url'] as string,
