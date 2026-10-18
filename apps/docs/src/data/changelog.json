@@ -1,7 +1,7 @@
 {
-  "releaseCount": 790,
+  "releaseCount": 791,
   "packageCount": 37,
-  "entryCount": 2271,
+  "entryCount": 2272,
   "oldestYear": 2024,
   "releases": [
     {
@@ -19110,6 +19110,21 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "5.6.10",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "wrong verdicts surfaced by Stryker mutation testing (batch 1)",
           "pr": null
         }
       ]
