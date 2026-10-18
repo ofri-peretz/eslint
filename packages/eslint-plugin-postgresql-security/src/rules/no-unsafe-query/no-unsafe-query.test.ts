@@ -1338,3 +1338,355 @@ for (const col of ['name', req.query.sort]) await pool.query(\`SELECT \${col} FR
     },
   ]),
 });
+
+// ---------------------------------------------------------------------------
+// Second Stryker triage (docs/MUTATION_TESTING.md). Each block names the
+// behaviour it pins; the fixtures are the inputs that tell the rule apart from
+// a mutant that outlived the suite above.
+// ---------------------------------------------------------------------------
+
+/**
+ * Every statement pattern is anchored to the start of the text. Formatted SQL
+ * — a template that opens on a newline, the verb and its keyword on separate
+ * lines — is still that statement; the same words in the middle of a sentence
+ * are not.
+ */
+const STATEMENTS: readonly {
+  verb: string;
+  formatted: string;
+  mention: string;
+}[] = [
+  {
+    verb: 'SELECT … FROM',
+    formatted: '\n  SELECT*\n  FROM users WHERE id = ${req.query.v}',
+    mention: 'how do I select rows from ${req.query.v}',
+  },
+  {
+    verb: 'INSERT INTO',
+    formatted: "\n  INSERT\n    INTO users (name) VALUES ('${req.query.v}')",
+    mention: 'where to insert into ${req.query.v}',
+  },
+  {
+    verb: 'UPDATE … SET',
+    formatted: "\n  UPDATE users\n  SET name = '${req.query.v}'",
+    mention: 'when to update a row and set ${req.query.v}',
+  },
+  {
+    verb: 'DELETE FROM',
+    formatted: '\n  DELETE\n    FROM users WHERE id = ${req.query.v}',
+    mention: 'should I delete from ${req.query.v}',
+  },
+  {
+    verb: 'REPLACE INTO',
+    formatted: '\n  REPLACE\n    INTO users VALUES (${req.query.v})',
+    mention: 'can I replace into ${req.query.v}',
+  },
+  {
+    verb: 'MERGE INTO',
+    formatted:
+      '\n  MERGE\n    INTO users USING staged ON users.id = ${req.query.v}',
+    mention: 'how to merge into ${req.query.v}',
+  },
+  {
+    verb: 'WITH … AS (',
+    formatted:
+      '\n  WITH picked AS\n    (SELECT id FROM users WHERE id = ${req.query.v}) SELECT * FROM picked',
+    mention: 'a talk with slides as (${req.query.v})',
+  },
+  {
+    verb: 'COPY … FROM',
+    formatted: "\n  COPY users\n  FROM '${req.query.v}'",
+    mention: 'how to copy files from ${req.query.v}',
+  },
+  {
+    verb: 'GRANT … ON',
+    formatted: '\n  GRANT SELECT\n  ON users TO ${req.query.v}',
+    mention: 'who can grant access on ${req.query.v}',
+  },
+  {
+    verb: 'DROP TABLE',
+    formatted: '\n  DROP\n    TABLE ${req.query.v}',
+    mention: 'why drop table ${req.query.v}',
+  },
+  {
+    verb: 'SELECT (no FROM)',
+    formatted: "\n  SELECT nextval('${req.query.v}')",
+    mention: 'please select ${req.query.v}',
+  },
+  {
+    verb: 'CALL',
+    formatted: '\n  CALL\n    refresh_stats (${req.query.v})',
+    mention: 'how to call refresh(${req.query.v})',
+  },
+  {
+    verb: 'LISTEN',
+    formatted: '\n  LISTEN\n    chan_${req.query.v}\n',
+    mention: 'podcasts to listen ${req.query.v}',
+  },
+  {
+    verb: 'NOTIFY',
+    formatted: '\n  NOTIFY\n    jobs_${req.query.v}\n',
+    mention: 'who to notify ${req.query.v}',
+  },
+];
+
+ruleTester.run('a statement is recognised by how it starts', noUnsafeQuery, {
+  valid: pg(
+    STATEMENTS.map(({ verb, mention }) => ({
+      name: `a sentence that mentions ${verb} is not a statement`,
+      code: 'const pool = new Pool();\nawait search.query(`' + mention + '`);',
+    })),
+  ),
+  invalid: pg([
+    ...STATEMENTS.map(({ verb, formatted }) => ({
+      name: `${verb}, formatted across lines, is a statement`,
+      code: 'const pool = new Pool();\nawait pool.query(`' + formatted + '`);',
+      errors: [{ messageId: 'unsafeTemplateLiteral' as const }],
+    })),
+    // Query tags (sqlcommenter, `/* controller:users */`) sit in front of
+    // the statement. The anchored patterns never saw past them.
+    {
+      name: 'FN: a statement behind a block comment',
+      code: 'const pool = new Pool();\nawait pool.query(`/* users#show */ SELECT * FROM users WHERE id = ${req.query.id}`);',
+      errors: [{ messageId: 'unsafeTemplateLiteral' }],
+    },
+    {
+      name: 'FN: a statement behind a line comment',
+      code: 'const pool = new Pool();\nawait pool.query(`-- user by id\nSELECT * FROM users WHERE id = ${req.query.id}`);',
+      errors: [{ messageId: 'unsafeTemplateLiteral' }],
+    },
+    {
+      name: 'FN: several leading comments, and a trailing one that is not part of them',
+      code: 'const pool = new Pool();\nawait pool.query(`/* a */\n-- b\nSELECT * FROM users WHERE id = ${req.query.id} /* c */`);',
+      errors: [{ messageId: 'unsafeTemplateLiteral' }],
+    },
+  ]),
+});
+
+ruleTester.run(
+  'placeholder indexes and the values next to them',
+  noUnsafeQuery,
+  {
+    valid: pg([
+      // The index argument of every array callback is a number.
+      ...[
+        'map',
+        'flatMap',
+        'forEach',
+        'filter',
+        'some',
+        'every',
+        'find',
+        'findIndex',
+        'findLast',
+        'findLastIndex',
+      ].map((method) => ({
+        name: `the index argument of ${method} numbers a placeholder`,
+        code: `const pool = new Pool();\nrows.${method}((row, i) => pool.query(\`UPDATE t SET pos = $\${i + 1} WHERE id = $1\`, [row.id]));`,
+      })),
+      ...['reduce', 'reduceRight'].map((method) => ({
+        name: `the index argument of ${method} numbers a placeholder`,
+        code: `const pool = new Pool();\nrows.${method}((acc, row, i) => pool.query(\`UPDATE t SET pos = $\${i + 1} WHERE id = $1\`, [row.id]), null);`,
+      })),
+      {
+        name: 'a function-expression callback builds placeholders',
+        code: "const pool = new Pool();\nconst ph = ids.map(function (_, i) { return `$${i + 1}`; }).join(', ');\nawait pool.query(`SELECT * FROM t WHERE id IN (${ph})`, ids);",
+      },
+      {
+        name: 'a block-bodied arrow callback builds placeholders',
+        code: "const pool = new Pool();\nconst ph = ids.map((_, i) => { return `$${i + 1}`; }).join(', ');\nawait pool.query(`SELECT * FROM t WHERE id IN (${ph})`, ids);",
+      },
+      {
+        name: 'a counter incremented by reading itself stays a number',
+        code: 'const pool = new Pool();\nconst values = [];\nlet n = 0;\nfor (const v of input) { values.push(v); n = n + 1; }\nawait pool.query(`SELECT * FROM t WHERE a = $${n}`, values);',
+      },
+      {
+        name: 'a counter started at .length and bumped with += 1 stays a number',
+        code: 'const pool = new Pool();\nconst values = [];\nvalues.push(req.query.a);\nlet n = values.length;\nn += 1;\nawait pool.query(`SELECT * FROM t WHERE a = $${n}`, values);',
+      },
+      {
+        name: 'a counter started at .length and bumped with ++ stays a number',
+        code: 'const pool = new Pool();\nconst values = [];\nvalues.push(req.query.a);\nlet n = values.length;\nn++;\nawait pool.query(`SELECT * FROM t WHERE a = $${n}`, values);',
+      },
+      {
+        name: 'a counter after -= stays a number whatever is subtracted',
+        code: 'const pool = new Pool();\nconst values = [];\nvalues.push(req.query.a);\nlet n = values.length;\nn -= offset;\nawait pool.query(`SELECT * FROM t WHERE a = $${n}`, values);',
+      },
+      {
+        name: 'a parseInt, Math.max, unary minus or ~~ result is a number',
+        code: 'const pool = new Pool();\nawait pool.query(`SELECT * FROM t WHERE a = $${parseInt(req.query.i, 10)} AND b = $${Math.max(1, req.query.j)} AND c = $${-req.query.k} AND d = $${~~req.query.l}`);',
+      },
+      {
+        name: 'a $ ending a concatenated prefix numbers the value after it',
+        code: "const pool = new Pool();\nconst client = await pool.connect();\nconst values = [];\nvalues.push(req.query.id);\nawait client.query('SELECT * FROM ' + client.escapeIdentifier(t) + ' WHERE id = $' + values.length, values);",
+      },
+      {
+        name: 'a $ ending a template prefix numbers the value appended after it',
+        code: 'const pool = new Pool();\nconst client = await pool.connect();\nconst values = [];\nvalues.push(req.query.id);\nawait client.query(`SELECT * FROM ${client.escapeIdentifier(t)} WHERE id = $` + values.length, values);',
+      },
+    ]),
+    invalid: pg([
+      {
+        name: 'the element argument of a callback is a value, not an index',
+        code: 'const pool = new Pool();\nrows.filter((row, i) => pool.query(`UPDATE t SET pos = $${row}`));',
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'a row value interpolated next to a placeholder is still a value',
+        code: "const pool = new Pool();\nconst ph = ids.map((id, i) => `($${i + 1}, ${id})`).join(', ');\nawait pool.query(`INSERT INTO t (a, b) VALUES ${ph}`);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'a list mapped to its own elements is the elements',
+        code: "const pool = new Pool();\nconst list = ids.map((id) => id).join(', ');\nawait pool.query(`SELECT * FROM t WHERE id IN (${list})`);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'a number plus request text is text: 1 + "; DROP …"',
+        code: 'const pool = new Pool();\nconst values = [];\nawait pool.query(`SELECT * FROM t WHERE a = $${values.length + req.query.suffix}`, values);',
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'a shadowed parseInt or Math is not the global conversion',
+        code: 'const pool = new Pool();\nconst parseInt = (s) => s;\nconst Math = { max: (a, b) => b };\nawait pool.query(`SELECT * FROM t WHERE a = $${parseInt(req.query.i)} AND b = $${Math.max(1, req.query.j)}`);',
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'a $$ before the value opens a dollar-quoted body, it is not a $N',
+        code: 'const pool = new Pool();\nawait pool.query(`SELECT * FROM t WHERE note = $$${req.body.tags.length}$$`);',
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'the .length of request JSON is whatever the client sent',
+        code: 'const pool = new Pool();\nawait pool.query(`SELECT * FROM t LIMIT ${req.body.items.length}`);',
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+    ]),
+  },
+);
+
+ruleTester.run(
+  'lists, helpers and bindings the value passes through',
+  noUnsafeQuery,
+  {
+    valid: pg([
+      {
+        name: 'a SET list holding fixed text and $N assignments',
+        code: "const pool = new Pool();\nconst values = [];\nconst sets = ['updated_at = now()'];\nif (name) { values.push(name); sets.push(`name = $${values.length}`); }\nsets.push('version = version + 1');\nawait pool.query(`UPDATE users SET ${sets.join(', ')} WHERE id = 1`, values);",
+      },
+      {
+        name: 'FP: a helper that escapes its argument is safe for any argument (pg-format)',
+        code: "import format from 'pg-format';\nconst pool = new Pool();\nconst lit = (v) => format('%L', v);\nawait pool.query(`SELECT * FROM t WHERE a = ${lit(req.query.a)}`);",
+      },
+      {
+        name: 'FP: a helper that escapes its argument is safe for any argument (escapeLiteral)',
+        code: 'const pool = new Pool();\nconst client = await pool.connect();\nconst lit = (v) => client.escapeLiteral(v);\nawait client.query(`SELECT * FROM t WHERE a = ${lit(req.query.a)}`);',
+      },
+      {
+        name: 'a raw value returned by a function nested in a helper is not the helper result',
+        code: "import format from 'pg-format';\nconst pool = new Pool();\nconst pick = () => { function raw() { return req.query.sort; } return format('%I', raw()); };\nawait pool.query(`SELECT * FROM t ORDER BY ${pick()}`);",
+      },
+      {
+        name: 'a number multiplied by anything stays a number',
+        code: 'const pool = new Pool();\nlet limit = 10;\nlimit *= req.query.pages;\nawait pool.query(`SELECT * FROM t LIMIT ${limit}`);',
+      },
+      {
+        name: 'a string handed to a logger is still the same string',
+        code: "const pool = new Pool();\nlet table = 'users';\nif (archived) table = 'users_archive';\nlog(table);\nawait pool.query(`SELECT * FROM ${table}`);",
+      },
+      {
+        name: 'a nested template of escaped parts is escaped text',
+        code: 'const pool = new Pool();\nconst client = await pool.connect();\nconst col = `${client.escapeIdentifier(req.query.p)}_id`;\nawait client.query(`SELECT ${col} FROM t`);',
+      },
+      {
+        name: 'a config object spread from elsewhere has no text to judge',
+        code: 'const pool = new Pool();\nawait pool.query({ ...base, values: [1] });',
+      },
+      {
+        name: 'a query overwritten with a fixed statement no longer carries the old value',
+        code: "const pool = new Pool();\nlet q = 'SELECT * FROM t WHERE a = ' + req.query.a;\nq = 'SELECT 1';\nawait pool.query(q);",
+      },
+      {
+        name: 'a query overwritten from another binding is not appended to',
+        code: "const pool = new Pool();\nconst base = 'SELECT * FROM t';\nlet q = 'SELECT * FROM t WHERE a = ' + req.query.a;\nq = base + ' LIMIT 1';\nawait pool.query(q);",
+      },
+    ]),
+    invalid: pg([
+      {
+        name: 'a helper that interpolates its argument is as raw as the argument',
+        code: "const pool = new Pool();\nconst wrap = (v) => `'${v}'`;\nawait pool.query(`SELECT * FROM t WHERE a = ${wrap(req.query.a)}`);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'a helper with one raw return among safe ones is raw',
+        code: "const pool = new Pool();\nconst pick = () => { if (flag) { return req.query.sort; } return 'name'; };\nawait pool.query(`SELECT * FROM t ORDER BY ${pick()}`);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'the default export of an unknown library is not an escaper',
+        code: "import sanitize from 'sanitize-sql';\nconst pool = new Pool();\nawait pool.query(`SELECT * FROM t WHERE a = ${sanitize(req.query.a)}`);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'a column list read from the request body',
+        code: "const pool = new Pool();\nconst cols = req.body.cols;\nawait pool.query(`SELECT ${cols.join(', ')} FROM t`);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'a SET list seeded by spreading request data',
+        code: "const pool = new Pool();\nconst sets = [...req.body.sets];\nsets.push('a = 1');\nawait pool.query(`UPDATE users SET ${sets.join(', ')} WHERE id = 1`);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'a SET list handed to a helper can come back holding anything',
+        code: "const pool = new Pool();\nconst sets = ['a = 1'];\naddFilters(sets, req.query);\nawait pool.query(`UPDATE users SET ${sets.join(', ')} WHERE id = 1`);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'one raw argument in a push of several',
+        code: "const pool = new Pool();\nconst sets = ['a = 1'];\nsets.push('b = 2', `c = '${req.query.c}'`);\nawait pool.query(`UPDATE users SET ${sets.join(', ')} WHERE id = 1`);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'FN: a for-of over a constant list that request data was pushed into',
+        code: "const pool = new Pool();\nconst COLUMNS = ['name'];\nCOLUMNS.push(req.query.col);\nfor (const col of COLUMNS) await pool.query(`SELECT ${col} FROM users`);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'FN: a for-of over a constant list whose element was overwritten',
+        code: "const pool = new Pool();\nconst COLUMNS = ['name'];\nCOLUMNS[0] = req.query.col;\nfor (const col of COLUMNS) await pool.query(`SELECT ${col} FROM users`);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'a where clause appended to with +=',
+        code: "const pool = new Pool();\nlet where = '';\nif (a) where += ` AND a = '${req.query.a}'`;\nawait pool.query(`SELECT * FROM t WHERE 1=1 ${where}`);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'a member of an object a call returned is not a constant',
+        code: 'const pool = new Pool();\nconst T = loadTables();\nawait pool.query(`SELECT * FROM ${T.users}`);',
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: "a config object with a quoted 'text' key",
+        code: "const pool = new Pool();\nawait pool.query({ 'text': `SELECT * FROM t WHERE a = ${req.query.a}` });",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'a builder that returns the assembled binding',
+        code: 'const pool = new Pool();\nconst sql = `SELECT * FROM t WHERE a = ${req.query.a}`;\nconst get = () => sql;\nawait pool.query(get());',
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'a query reassigned to a raw template',
+        code: "const pool = new Pool();\nlet q = 'SELECT * FROM t';\nq = `SELECT * FROM t WHERE a = ${req.query.a}`;\nawait pool.query(q);",
+        errors: [{ messageId: 'unsafeTemplateLiteral' }],
+      },
+      {
+        name: 'a concatenated query with a fixed template appended is still a concatenation',
+        code: "const pool = new Pool();\nlet q = 'SELECT * FROM t WHERE a = ' + req.query.a;\nq += ` ORDER BY id`;\nawait pool.query(q);",
+        errors: [{ messageId: 'noUnsafeQuery' }],
+      },
+    ]),
+  },
+);

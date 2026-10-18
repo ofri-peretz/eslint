@@ -106,17 +106,29 @@ structurally — never because of what a variable is called:
   untyped parameter or request data is reported;
 - a SET or column list filled only with fixed text — ``sets.push(`name =
   $${values.length}`)`` then ``${sets.join(', ')}`` — or the element of a
-  `for…of` over a fixed column array. Column names from
-  `Object.keys(req.body)` / `Object.entries(req.body)` are not fixed text and
-  are reported;
+  `for…of` over a fixed column array that nothing adds to or overwrites. Column
+  names from `Object.keys(req.body)` / `Object.entries(req.body)`, or pushed
+  into the array from the request, are not fixed text and are reported;
 - a placeholder list: ``ids.map((_, i) => `$${i + 1}`).join(', ')``, inline or
   bound to a `const` first;
 - a closed list of escapers and conversions: `escapeIdentifier` /
   `escapeLiteral` (pg), anything from `pg-format`, pg-promise's `pgp.as.*`,
-  `Number` / `parseInt` / `parseFloat`, and `Math.*`.
+  `Number` / `parseInt` / `parseFloat`, and `Math.*`;
+- a call to a function written in the same file whose every return is safe
+  whatever it is called with: `const lit = (v) => format('%L', v)` makes
+  `${lit(req.query.a)}` safe, ``const wrap = (v) => `'${v}'` `` does not.
 
 Any other call is **not** an escaper: `${ids.join(',')}`, `${email.trim()}` and
 `${String(name)}` are reported.
+
+### What counts as a SQL statement
+
+The static text has to start with a statement — `SELECT … FROM`, `INSERT INTO`,
+`UPDATE … SET`, `DELETE FROM`, `WITH … AS (`, `COPY`, `GRANT`, DDL, a bare
+`SELECT`, `CALL`, `LISTEN` or `NOTIFY` — after any whitespace and any leading
+SQL comments (`/* controller:users */`, `-- by id`). A sentence that merely
+mentions one of those words further in (`how do I select rows from …`) is not
+a statement.
 
 ### Sinks
 

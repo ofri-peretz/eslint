@@ -498,3 +498,129 @@ describe('no-missing-client-release — string-subscript spellings', () => {
     ],
   });
 });
+
+/**
+ * Found triaging the Stryker survivors (docs/MUTATION_TESTING.md): every
+ * `return` in the try, and every jump in the catch, counted as a way out that
+ * skips the release — even one that gave the client back first. The early
+ * return inside the try is in the 80-shape table (../release-paths.test.ts).
+ */
+describe('no-missing-client-release — an early exit that releases first', () => {
+  ruleTester.run('a jump preceded by its own release is not a leak', noMissingClientRelease, {
+    valid: pg([
+      {
+        name: 'a catch that releases before returning on one branch and swallows on the other',
+        code: "const pool = new Pool();\nexport async function f(retry) { const client = await pool.connect(); try { await client.query('SELECT 1'); } catch (err) { if (!retry) { client.release(); return null; } } client.release(); }",
+      },
+      {
+        name: 'an early return in the try that releases first, a catch that releases and rethrows, and the release after the try',
+        code: "const pool = new Pool();\nexport async function f(id) { const client = await pool.connect(); try { const r = await client.query('SELECT 1', [id]); if (!r.rows.length) { client.release(); return null; } } catch (err) { client.release(); throw err; } client.release(); }",
+      },
+      {
+        name: 'an early return ahead of the try-block release, releasing first, with a catch release',
+        code: "const pool = new Pool();\nexport async function f(id) { const client = await pool.connect(); try { const r = await client.query('SELECT 1', [id]); if (!r.rows.length) { client.release(); return null; } client.release(); return r.rows; } catch (err) { client.release(); throw err; } }",
+      },
+      {
+        name: 'the release covers a return nested further down its block',
+        code: "const pool = new Pool();\nexport async function f(id) { const client = await pool.connect(); try { await client.query('SELECT 1', [id]); if (id) { client.release(); if (id > 1) { return 1; } return 2; } } catch (err) { console.error(err); } client.release(); }",
+      },
+    ]),
+    invalid: pg([
+      {
+        name: 'a conditional release does not cover the return after it',
+        code: "const pool = new Pool();\nexport async function f(id) { const client = await pool.connect(); try { await client.query('SELECT 1', [id]); if (id) { if (id > 1) client.release(); return null; } } catch (err) { console.error(err); } client.release(); }",
+        errors: [{ messageId: 'releaseNotGuaranteed' }],
+      },
+      {
+        name: 'a release after the return does not cover it',
+        code: "const pool = new Pool();\nexport async function f(id) { const client = await pool.connect(); try { await client.query('SELECT 1', [id]); if (id) { return null; client.release(); } } catch (err) { console.error(err); } client.release(); }",
+        errors: [{ messageId: 'releaseNotGuaranteed' }],
+      },
+      {
+        name: 'an early return ahead of the try-block release that does not release',
+        code: "const pool = new Pool();\nexport async function f(id) { const client = await pool.connect(); try { const r = await client.query('SELECT 1', [id]); if (!r.rows.length) { return null; } client.release(); return r.rows; } catch (err) { client.release(); throw err; } }",
+        errors: [{ messageId: 'releaseNotGuaranteed' }],
+      },
+    ]),
+  });
+});
+
+/**
+ * Second Stryker triage (docs/MUTATION_TESTING.md): what proves a receiver is
+ * a pg Pool, what counts as a checkout, and what a `return` in a nested
+ * function does not do.
+ */
+describe('no-missing-client-release — pools, checkouts and nested returns', () => {
+  ruleTester.run('pinned by mutation testing', noMissingClientRelease, {
+    valid: pg([
+      {
+        name: 'a return inside an arrow callback does not leave the try',
+        code: "const pool = new Pool();\nexport async function f(items) { const client = await pool.connect(); try { await client.query('SELECT 1'); items.forEach((i) => { if (!i) return; }); client.release(); } catch (err) { client.release(); throw err; } }",
+      },
+      {
+        name: 'a return inside a function-expression callback does not leave the try',
+        code: "const pool = new Pool();\nexport async function f(items) { const client = await pool.connect(); try { await client.query('SELECT 1'); items.forEach(function (i) { if (!i) return; }); client.release(); } catch (err) { client.release(); throw err; } }",
+      },
+      {
+        name: 'a return inside a nested function declaration does not leave the try',
+        code: "const pool = new Pool();\nexport async function f(items) { const client = await pool.connect(); try { await client.query('SELECT 1'); function check(i) { return !i; } items.forEach(check); client.release(); } catch (err) { client.release(); throw err; } }",
+      },
+      {
+        name: 'pg.Client#connect hands out no pooled client',
+        code: "import { Client } from 'pg';\nexport async function f() { const db = new Client(); const conn = await db.connect(); }",
+      },
+      {
+        name: 'a pool assigned to some other object is not this.<name>',
+        code: 'const config = {};\nconfig.db = new Pool();\nclass Repo { async f() { const conn = await this.db.connect(); } }',
+      },
+      {
+        name: 'this.<name> assigned something that is not a pool',
+        code: 'class Repo { constructor() { this.broker = new Broker(); } async f() { const conn = await this.broker.connect(); } }',
+      },
+      {
+        name: 'a class field initialised by a call is not known to be a pool',
+        code: 'class Repo { db = makeDb(); async f() { const conn = await this.db.connect(); } }',
+      },
+      {
+        name: 'a computed class field or this[key] names no property',
+        code: "const key = 'db';\nclass Repo { [key] = new Pool(); constructor(k) { this[k] = new Pool(); } async f() { const conn = await this.db.connect(); } }",
+      },
+      {
+        name: 'a destructured checkout released in a finally',
+        code: "const pool = new Pool();\nexport async function f() { const { query, release } = await pool.connect(); try { await query('SELECT 1'); } finally { release(); } }",
+      },
+    ]),
+    invalid: pg([
+      {
+        name: 'the default export of pg-pool is a Pool',
+        code: "import PgPool from 'pg-pool';\nconst pool = new PgPool();\nexport async function f() { const conn = await pool.connect(); }",
+        errors: [{ messageId: 'missingClientRelease' }],
+      },
+      {
+        name: 'a Pool from a scoped PostgreSQL package',
+        code: "import { Pool as NeonPool } from '@neondatabase/serverless';\nconst pool = new NeonPool();\nexport async function f() { const conn = await pool.connect(); }",
+        errors: [{ messageId: 'missingClientRelease' }],
+      },
+      {
+        name: 'this.pool assigned a Pool in the constructor',
+        code: 'class Repo { constructor() { this.pool = new Pool(); } async f() { const conn = await this.pool.connect(); } }',
+        errors: [{ messageId: 'missingClientRelease' }],
+      },
+      {
+        name: 'this.pool declared as a class field',
+        code: 'class Repo { pool = new Pool(); async f() { const conn = await this.pool.connect(); } }',
+        errors: [{ messageId: 'missingClientRelease' }],
+      },
+      {
+        name: 'a checkout without await is still a checkout',
+        code: 'const pool = new Pool();\nexport async function f() { const client = pool.connect(); }',
+        errors: [{ messageId: 'missingClientRelease' }],
+      },
+      {
+        name: 'dropping the reference does not release the client',
+        code: "const pool = new Pool();\nexport async function f() { let client = await pool.connect(); await client.query('SELECT 1'); client = null; }",
+        errors: [{ messageId: 'missingClientRelease' }],
+      },
+    ]),
+  });
+});
