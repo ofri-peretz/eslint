@@ -61,7 +61,7 @@
       "rules": 13,
       "description": "ESLint plugin for the pg PostgreSQL driver — detects SQL injection, unreleased clients, floating queries, unsafe search_path, and insecure SSL",
       "category": "security",
-      "version": "2.6.0",
+      "version": "2.6.1",
       "published": true
     },
     {

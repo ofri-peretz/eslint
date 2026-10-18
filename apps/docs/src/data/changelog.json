@@ -1,7 +1,7 @@
 {
-  "releaseCount": 791,
+  "releaseCount": 792,
   "packageCount": 37,
-  "entryCount": 2272,
+  "entryCount": 2273,
   "oldestYear": 2024,
   "releases": [
     {
@@ -19125,6 +19125,21 @@
         {
           "kind": "other",
           "title": "Ofri Peretz",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-postgresql-security",
+      "short": "eslint-plugin-postgresql-security",
+      "version": "2.6.1",
+      "date": null,
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "wrong verdicts in three rules surfaced by Stryker mutation testing",
           "pr": null
         }
       ]
