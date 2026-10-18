@@ -23,8 +23,18 @@ export const noUntrustedContentInPrompt = createSystemPromptInjectionRule({
   ruleName: 'no-untrusted-content-in-prompt',
   vendor: 'Anthropic',
   modules: ['@anthropic-ai'],
-  requestPaths: ['messages.create', 'messages.stream'],
+  // `parse` (structured output) and the beta `toolRunner` take the same
+  // request body as `create`, `system` included.
+  requestPaths: [
+    'messages.create',
+    'messages.stream',
+    'messages.parse',
+    'messages.toolRunner',
+  ],
   systemPromptProps: ['system'],
+  // The Message Batches API: `requests: [{ custom_id, params }]`, each
+  // `params` a full `messages.create` body, `system` included.
+  batchRequestPaths: ['messages.batches.create'],
   docsUrl:
     'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-anthropic-security/docs/rules/no-untrusted-content-in-prompt.md',
   documentationLink: 'https://docs.anthropic.com/en/docs/system-prompts',

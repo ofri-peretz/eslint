@@ -362,3 +362,36 @@ describe('no-transaction-on-pool — string-subscript spellings', () => {
     ],
   });
 });
+
+// ---------------------------------------------------------------------------
+// Edges pinned by mutation testing (npm run mutation -- --plugin
+// postgresql-security). Each fixture is the input that tells the rule apart
+// from a Stryker mutant that survived the suite above; see
+// docs/MUTATION_TESTING.md.
+// ---------------------------------------------------------------------------
+
+ruleTester.run('mutation-guided edges', noTransactionOnPool, {
+  valid: pg([
+    {
+      name: 'transaction keywords inside a statement are data, not a transaction',
+      code: `const pool = new Pool();
+await pool.query("SELECT id FROM jobs WHERE marker = 'BEGIN' OR state IN ('start transaction', 'commit', 'end', 'rollback', 'savepoint', 'release savepoint')");`,
+    },
+  ]),
+  invalid: pg([
+    {
+      name: 'START TRANSACTION split across lines is still a transaction start',
+      code: `const pool = new Pool();
+await pool.query(\`START
+  TRANSACTION ISOLATION LEVEL SERIALIZABLE\`);`,
+      errors: [{ messageId: 'noTransactionOnPool' }],
+    },
+    {
+      name: 'RELEASE SAVEPOINT split across lines is still transaction control',
+      code: `const pool = new Pool();
+await pool.query(\`RELEASE
+  SAVEPOINT before_import\`);`,
+      errors: [{ messageId: 'noTransactionOnPool' }],
+    },
+  ]),
+});

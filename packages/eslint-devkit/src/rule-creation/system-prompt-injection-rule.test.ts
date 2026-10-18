@@ -143,6 +143,12 @@ describe('calleePath', () => {
     expect(calleePath(calleeOf('client[api].create({})'))).toBeUndefined();
   });
 
+  it('reads a static string subscript as the same segment', () => {
+    expect(calleePath(calleeOf("client['messages']['create']({})"))).toBe(
+      'messages.create',
+    );
+  });
+
   it('handles a call as the root object', () => {
     expect(calleePath(calleeOf('getClient().messages.create({})'))).toBe(
       'messages.create',
@@ -346,6 +352,363 @@ describe('createSystemPromptInjectionRule', () => {
           { messageId: 'untrustedSystemPrompt' },
           { messageId: 'untrustedSystemPrompt' },
         ],
+      },
+    ],
+  });
+});
+
+/* ------------------------------------------------------------------------ */
+/* 2026-10-12 FP/FN audit: value following, content blocks, new shapes       */
+/* ------------------------------------------------------------------------ */
+
+const fullRule = createSystemPromptInjectionRule({
+  ruleName: 'no-untrusted-content-in-prompt',
+  vendor: 'Test',
+  modules: ['test-sdk'],
+  requestPaths: ['messages.create', 'runs.create'],
+  systemPromptProps: ['system'],
+  nestedOptionKeys: ['config'],
+  promptConstructors: ['Agent'],
+  batchRequestPaths: ['messages.batches.create'],
+  docsUrl: 'https://example.invalid/docs',
+  documentationLink: 'https://example.invalid/prompts',
+});
+
+const SDK_AGENT = "import Client, { Agent, Runner } from 'test-sdk';\n";
+const ERR = { messageId: 'untrustedSystemPrompt' as const };
+const create = (system: string) =>
+  `client.messages.create({ system: ${system} });`;
+
+describe('createSystemPromptInjectionRule — value following', () => {
+  ruleTester.run('no-untrusted-content-in-prompt', fullRule, {
+    valid: [
+      {
+        name: 'FP: consts joined, interpolated, concatenated, trimmed',
+        code:
+          SDK +
+          "const A = 'You are helpful.';\nconst B = 'Be brief.';\n" +
+          create('`${A} ${B}`') +
+          create("[A, , B].join('\\n')") +
+          create('A + B') +
+          create('A.trim()') +
+          create("cond ? A : 'other'") +
+          create('A || B'),
+      },
+      {
+        name: 'FP: interpolation-free tagged templates, and await of a static value',
+        code:
+          SDK +
+          create('dedent`\n  You are terse.\n`') +
+          create('await A_PROMISE_OF_TEXT_THAT_IS_IMPORTED') +
+          "\nimport { A_PROMISE_OF_TEXT_THAT_IS_IMPORTED } from './p';",
+      },
+      {
+        name: 'FP: values that cannot print instruction text',
+        code:
+          SDK +
+          'function f(n: number, flag: boolean | bigint, items: string[]) {\n' +
+          '  const d = new Date();\n' +
+          '  const c = 3 * 2;\n' +
+          create(
+            '`${new Date().toISOString()} ${d.getFullYear()} ${Date.now()} ${Math.round(n)}`',
+          ) +
+          create(
+            '`${n} ${flag} ${items.length} ${-n} ${n > 1} ${c} ${n + 1}`',
+          ) +
+          create(
+            '`${Number(x)} ${parseInt(x)} ${x.toFixed(2)} ${null} ${true}`',
+          ) +
+          '}',
+      },
+      {
+        name: 'FP: imported constants, env reads, members of a const table',
+        code:
+          SDK +
+          "import { PREFIX, PROMPTS as P } from './prompts';\n" +
+          "const T = { a: 'A', b: 'B' };\n" +
+          create('`${PREFIX} you are ${process.env.BOT_NAME}`') +
+          create('P.analyst') +
+          create('`${P.analyst}`') +
+          create('T.a') +
+          create('T[k]') +
+          create('`${T[k]}`'),
+      },
+      {
+        name: 'FP: same-file helpers whose every return is static',
+        code:
+          SDK +
+          "function one() { if (x) { return 'a'; } return; }\n" +
+          "const two = () => 'b';\n" +
+          "const three = function () { const inner = () => 'ignored'; return 'c'; };\n" +
+          create('one()') +
+          create('two()') +
+          create('three()'),
+      },
+      {
+        name: 'FP: a generated filesystem path',
+        code:
+          SDK +
+          "import os from 'node:os';\nimport path from 'node:path';\nimport { mkdtemp } from 'node:fs/promises';\n" +
+          "async function f() { const dir = await mkdtemp(path.join(os.tmpdir(), 'x-')); " +
+          create('`Work in ${dir}`') +
+          ' }',
+      },
+      {
+        name: 'a whole-value parameter, global, or member of a global is unknown',
+        code:
+          SDK +
+          'function f(p) { ' +
+          create('p') +
+          ' }\n' +
+          create('SOME_GLOBAL') +
+          create('window.PROMPT') +
+          create("flag ? SOME_GLOBAL : 'x'"),
+      },
+      {
+        name: 'content blocks, Gemini parts, a nested config one level, a non-text block',
+        code:
+          SDK +
+          "const SYS = [{ type: 'text', text: 'Static.' }];\n" +
+          create(
+            "[{ type: 'text', text: 'a' }, { type: 'image', source: s }, , ...more]",
+          ) +
+          create('SYS') +
+          create("{ parts: [{ text: 'p' }] }") +
+          "client.messages.create({ config: { system: 'cfg' } });\n" +
+          'client.messages.create({ config: { config: { system: `${deep}` } } });\n' +
+          'client.messages.create({ config: notAnObject });',
+      },
+      {
+        name: 'message lists: non-system roles, unreadable roles, sparse, spread, non-object',
+        code:
+          SDK +
+          "const ROLE = 'user';\n" +
+          "client.messages.create({ messages: [{ role: ROLE, content: `${x}` }, { role: r, content: `${x}` }, { content: `${x}` }, , ...rest, other, { role: 'system' }] });\n" +
+          'client.messages.create({ input: notAList });\n' +
+          'client.messages.create({ messages: [{ role: 1, content: `${x}` }] });',
+      },
+      {
+        name: 'a request held in a const and sent twice reports once (see invalid)',
+        code:
+          SDK +
+          "const REQ = { system: 'static' };\nclient.messages.create(REQ);\nclient.messages.create(REQ);",
+      },
+      {
+        name: 'constructors: not the configured export, not bound, spread argument, no constructors configured',
+        code:
+          SDK_AGENT +
+          'new Runner({ system: `${x}` });\nnew Unbound({ system: `${x}` });\nnew Agent(...args);\nnew Agent();\n' +
+          'class Local {}\nnew Local({ system: `${x}` });',
+      },
+      {
+        name: 'a call spread argument is skipped',
+        code: SDK + 'client.messages.create(...reqs);',
+      },
+      {
+        name: 'a static prompt function',
+        code:
+          SDK +
+          create("() => 'You are terse.'") +
+          create("function () { return 'x'; }"),
+      },
+    ],
+    invalid: [
+      {
+        name: 'FN: a dynamic const, a dynamic block, a dynamic part',
+        code:
+          SDK +
+          'function f(req) {\n' +
+          '  const sys = `Act as ${req.body.role}`;\n' +
+          create('sys') +
+          create('[{ type: "text", text: `Be ${req.body.role}` }]') +
+          create('{ parts: [{ text: req.body.role }] }') +
+          '}',
+        errors: [ERR, ERR, ERR],
+      },
+      {
+        name: 'FN: a request object in a const, sent twice, reported once',
+        code:
+          SDK +
+          'const REQ = { system: `Act as ${role}` };\nclient.messages.create(REQ);\nclient.messages.create(REQ);',
+        errors: [ERR],
+      },
+      {
+        name: 'FN: a developer turn, a const message, a nested config, an Assistants run',
+        code:
+          SDK +
+          "const SYS_MSG = { role: 'system', content: `Act as ${role}` };\n" +
+          "client.messages.create({ input: [{ role: 'developer', content: `Act as ${role}` }] });\n" +
+          'client.messages.create({ messages: [SYS_MSG] });\n' +
+          'client.messages.create({ config: { system: `Act as ${role}` } });\n' +
+          'client.beta.threads.runs.create(threadId, { system: `Act as ${role}` });',
+        errors: [ERR, ERR, ERR, ERR],
+      },
+      {
+        name: 'FN: an agent constructor, renamed',
+        code: "import { Agent as Foo } from 'test-sdk';\nnew Foo({ system: `Act as ${role}` });",
+        errors: [ERR],
+      },
+      {
+        name: 'dynamic: a parameter, a call, an unknown method, an await of a dynamic value',
+        code:
+          SDK +
+          'async function f(p) {\n' +
+          create('`${p}`') +
+          create('`${fetchPrompt()}`') +
+          create('p.trim()') +
+          create('`${await load()}`') +
+          create('[p].join()') +
+          create("['a'].join(p)") +
+          create('[...p].join()') +
+          create('`${new Thing()}`') +
+          create('`${this.prompt}`') +
+          create('getBuilder()()') +
+          create('(p2) => `Help ${p2}`') +
+          '}',
+        errors: [ERR, ERR, ERR, ERR, ERR, ERR, ERR, ERR, ERR, ERR, ERR],
+      },
+      {
+        name: 'dynamic: helpers that interpolate, a path helper over input, a non-path builtin',
+        code:
+          SDK +
+          "import path from 'node:path';\nimport { basename } from 'node:path';\nimport { readFileSync } from 'node:fs';\nimport { db } from './db';\nconst p = require('path');\n" +
+          'function f(user) {\n' +
+          '  const build = (r) => `You are ${r}`;\n' +
+          '  function build2(r) { return r; }\n' +
+          create('build(user)') +
+          create('build2(user)') +
+          create('`${path.basename(user)}`') +
+          create('`${readFileSync(user)}`') +
+          create('`${p()}`') +
+          create('`${basename(user)}`') +
+          create("`${db.query('SELECT bio FROM users')}`") +
+          '}',
+        errors: [ERR, ERR, ERR, ERR, ERR, ERR, ERR],
+      },
+      {
+        name: 'dynamic: a branch with a dynamic side, a table entry that is dynamic or missing',
+        code:
+          SDK +
+          "const T = { a: 'A', b: pick() };\nconst T2 = { a: 'A', ...more };\n" +
+          'function f(p) {\n' +
+          create('cond ? `${p}` : SOME_GLOBAL') +
+          create('T.b') +
+          create('T.missing') +
+          create('`${T[k]}`') +
+          create('T2[k]') +
+          '}',
+        errors: [ERR, ERR, ERR, ERR, ERR],
+      },
+      {
+        name: 'dynamic: a typed parameter that can hold text, a cyclic const, an unannotated param',
+        code:
+          SDK +
+          'function f(s: string, u: number | string, plain) {\n' +
+          '  const a = b + 1; const b = a + 1;\n' +
+          create('`${s}`') +
+          create('`${u}`') +
+          create('`${a}`') +
+          create('`${plain}`') +
+          '}',
+        errors: [ERR, ERR, ERR, ERR],
+      },
+      {
+        name: 'dynamic: a value nested past the follow budget',
+        code:
+          SDK + create('`${`${`${`${`${`${`${`${`${`${x}`}`}`}`}`}`}`}`}`}`'),
+        errors: [ERR],
+      },
+    ],
+  });
+});
+
+describe('createSystemPromptInjectionRule — no prompt constructors configured', () => {
+  ruleTester.run('no-untrusted-content-in-prompt', rule, {
+    valid: [
+      {
+        name: 'a constructor is not a request when none is configured',
+        code: SDK + 'new Client({ system: `Act as ${role}` });',
+      },
+    ],
+    invalid: [],
+  });
+});
+
+describe('createSystemPromptInjectionRule — the receiver', () => {
+  ruleTester.run('no-untrusted-content-in-prompt', fullRule, {
+    valid: [
+      {
+        name: 'FP: a receiver this file builds as something else',
+        code:
+          SDK_AGENT +
+          "import Other from 'other-pkg';\n" +
+          'const literal = { messages: { create() {} } };\n' +
+          'const fromPackage = new Other();\n' +
+          'class Plain {}\nconst plain = new Plain();\n' +
+          'class Sub extends Other {}\nconst sub = new Sub();\n' +
+          'literal.messages.create({ system: `Act as ${role}` });\n' +
+          'fromPackage.messages.create({ system: `Act as ${role}` });\n' +
+          'plain.messages.create({ system: `Act as ${role}` });\n' +
+          'sub.messages.create({ system: `Act as ${role}` });',
+      },
+    ],
+    invalid: [
+      {
+        name: 'receivers that are, or may be, the SDK client',
+        code:
+          SDK_AGENT +
+          "import { Wrapped } from './lib/client';\n" +
+          'class Mine extends Client {}\n' +
+          'const a = new Client();\nconst b = new Mine();\nconst c = new Wrapped();\nconst d = new (pick())();\n' +
+          'function f(e, Ctor) { const g = new Ctor(); e.messages.create({ system: `x ${role}` }); g.messages.create({ system: `x ${role}` }); }\n' +
+          'a.messages.create({ system: `x ${role}` });\n' +
+          'b.messages.create({ system: `x ${role}` });\n' +
+          'c.messages.create({ system: `x ${role}` });\n' +
+          'd.messages.create({ system: `x ${role}` });\n' +
+          'getClient().messages.create({ system: `x ${role}` });\n' +
+          'const h = getClient();\nh.messages.create({ system: `x ${role}` });',
+        errors: [ERR, ERR, ERR, ERR, ERR, ERR, ERR, ERR],
+      },
+    ],
+  });
+});
+
+describe('createSystemPromptInjectionRule — batch requests', () => {
+  ruleTester.run('no-untrusted-content-in-prompt', fullRule, {
+    valid: [
+      {
+        name: 'static batch params, and shapes that are not a batch',
+        code:
+          SDK +
+          "client.messages.batches.create({ requests: [{ custom_id: 'a', params: { system: 'Static.' } }] });\n" +
+          'client.messages.batches.create({ requests: notAList });\n' +
+          'client.messages.batches.create({ other: [] });\n' +
+          'client.messages.batches.create(...spread);\n' +
+          'client.messages.batches.create(unknownBatch);\n' +
+          "client.messages.batches.create({ requests: [, ...more, { custom_id: 'x' }, notAnObject] });\n" +
+          'client.messages.batches.create({ requests: items.filter(Boolean) });\n' +
+          'client.messages.batches.create({ requests: items.map(toRequest) });\n' +
+          'client.messages.batches.create({ requests: build() });\n' +
+          "client.messages.batches.create({ requests: items.map((i) => ({ params: { system: 'ok' } })) });\n" +
+          'const local = { messages: { batches: { create() {} } } };\nlocal.messages.batches.create({ requests: [{ params: { system: `x ${role}` } }] });',
+      },
+    ],
+    invalid: [
+      {
+        name: 'FN: a dynamic system prompt in a batch request, inline and through consts',
+        code:
+          SDK +
+          "client.messages.batches.create({ requests: [{ custom_id: 'a', params: { system: `Act as ${role}` } }] });\n" +
+          "const p = { system: `Act as ${role}` };\nconst reqs = [{ custom_id: 'b', params: p }];\nclient.messages.batches.create({ requests: reqs });",
+        errors: [ERR, ERR],
+      },
+      {
+        name: 'FN: a batch built with items.map',
+        code:
+          SDK +
+          'client.messages.batches.create({ requests: items.map((i) => ({ custom_id: i.id, params: { system: `Act as ${i.role}` } })) });\n' +
+          'client.messages.batches.create({ requests: items.map(function (i) { return { params: { system: `Be ${i.role}` } }; }) });',
+        errors: [ERR, ERR],
       },
     ],
   });

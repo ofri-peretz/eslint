@@ -1,0 +1,362 @@
+{
+  "postgresql-security/no-unsafe-query": {
+    "hits": 0,
+    "avgTimeMs": 57.71,
+    "samples": []
+  },
+  "nestjs-security/require-guards": {
+    "hits": 0,
+    "avgTimeMs": 12.87,
+    "samples": []
+  },
+  "secure-coding/no-hardcoded-credentials": {
+    "hits": 0,
+    "avgTimeMs": 2.24,
+    "samples": []
+  },
+  "secure-coding/no-ldap-injection": {
+    "hits": 0,
+    "avgTimeMs": 2.14,
+    "samples": []
+  },
+  "secure-coding/no-privilege-escalation": {
+    "hits": 0,
+    "avgTimeMs": 1.89,
+    "samples": []
+  },
+  "node-security/no-timing-unsafe-compare": {
+    "hits": 0,
+    "avgTimeMs": 1.64,
+    "samples": []
+  },
+  "secure-coding/no-sensitive-data-exposure": {
+    "hits": 0,
+    "avgTimeMs": 1.32,
+    "samples": []
+  },
+  "node-security/no-weak-hash-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 1.01,
+    "samples": []
+  },
+  "secure-coding/no-graphql-injection": {
+    "hits": 0,
+    "avgTimeMs": 1,
+    "samples": []
+  },
+  "secure-coding/no-xpath-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.95,
+    "samples": []
+  },
+  "secure-coding/no-fail-open-auth": {
+    "hits": 0,
+    "avgTimeMs": 0.9,
+    "samples": []
+  },
+  "node-security/detect-child-process": {
+    "hits": 0,
+    "avgTimeMs": 0.83,
+    "samples": []
+  },
+  "node-security/no-unsafe-buffer-alloc": {
+    "hits": 0,
+    "avgTimeMs": 0.83,
+    "samples": []
+  },
+  "node-security/no-buffer-overread": {
+    "hits": 0,
+    "avgTimeMs": 0.74,
+    "samples": []
+  },
+  "node-security/no-toctou-vulnerability": {
+    "hits": 0,
+    "avgTimeMs": 0.74,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-deserialization": {
+    "hits": 0,
+    "avgTimeMs": 0.69,
+    "samples": []
+  },
+  "node-security/detect-non-literal-fs-filename": {
+    "hits": 0,
+    "avgTimeMs": 0.68,
+    "samples": []
+  },
+  "secure-coding/no-unlimited-resource-allocation": {
+    "hits": 0,
+    "avgTimeMs": 0.66,
+    "samples": []
+  },
+  "node-security/detect-eval-with-expression": {
+    "hits": 0,
+    "avgTimeMs": 0.65,
+    "samples": []
+  },
+  "node-security/no-zip-slip": {
+    "hits": 0,
+    "avgTimeMs": 0.62,
+    "samples": []
+  },
+  "nestjs-security/no-exposed-private-fields": {
+    "hits": 0,
+    "avgTimeMs": 0.54,
+    "samples": []
+  },
+  "secure-coding/no-xxe-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.54,
+    "samples": []
+  },
+  "nestjs-security/no-missing-validation-pipe": {
+    "hits": 0,
+    "avgTimeMs": 0.53,
+    "samples": []
+  },
+  "nestjs-security/no-permissive-cors": {
+    "hits": 0,
+    "avgTimeMs": 0.5,
+    "samples": []
+  },
+  "node-security/detect-suspicious-dependencies": {
+    "hits": 0,
+    "avgTimeMs": 0.43,
+    "samples": []
+  },
+  "node-security/no-math-random-crypto": {
+    "hits": 0,
+    "avgTimeMs": 0.44,
+    "samples": []
+  },
+  "node-security/require-dependency-integrity": {
+    "hits": 0,
+    "avgTimeMs": 0.43,
+    "samples": []
+  },
+  "secure-coding/no-weak-password-recovery": {
+    "hits": 0,
+    "avgTimeMs": 0.38,
+    "samples": []
+  },
+  "secure-coding/no-homoglyph-identifiers": {
+    "hits": 0,
+    "avgTimeMs": 0.39,
+    "samples": []
+  },
+  "secure-coding/no-redos-vulnerable-regex": {
+    "hits": 0,
+    "avgTimeMs": 0.36,
+    "samples": []
+  },
+  "node-security/no-data-in-temp-storage": {
+    "hits": 0,
+    "avgTimeMs": 0.35,
+    "samples": []
+  },
+  "secure-coding/no-improper-sanitization": {
+    "hits": 0,
+    "avgTimeMs": 0.36,
+    "samples": []
+  },
+  "node-security/no-arbitrary-file-access": {
+    "hits": 0,
+    "avgTimeMs": 0.32,
+    "samples": []
+  },
+  "secure-coding/no-sql-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.32,
+    "samples": []
+  },
+  "node-security/no-cryptojs": {
+    "hits": 0,
+    "avgTimeMs": 0.29,
+    "samples": []
+  },
+  "node-security/no-unbounded-decompression": {
+    "hits": 0,
+    "avgTimeMs": 0.29,
+    "samples": []
+  },
+  "node-security/no-static-iv": {
+    "hits": 0,
+    "avgTimeMs": 0.29,
+    "samples": []
+  },
+  "secure-coding/no-log-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.27,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-regex-construction": {
+    "hits": 0,
+    "avgTimeMs": 0.25,
+    "samples": []
+  },
+  "nestjs-security/require-throttler": {
+    "hits": 0,
+    "avgTimeMs": 0.25,
+    "samples": []
+  },
+  "node-security/no-deprecated-buffer": {
+    "hits": 0,
+    "avgTimeMs": 0.21,
+    "samples": []
+  },
+  "node-security/no-unsafe-dynamic-require": {
+    "hits": 0,
+    "avgTimeMs": 0.2,
+    "samples": []
+  },
+  "node-security/require-stream-error-handler": {
+    "hits": 0,
+    "avgTimeMs": 0.2,
+    "samples": []
+  },
+  "node-security/no-shell-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.19,
+    "samples": []
+  },
+  "node-security/no-dynamic-command-string": {
+    "hits": 0,
+    "avgTimeMs": 0.19,
+    "samples": []
+  },
+  "secure-coding/no-template-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.18,
+    "samples": []
+  },
+  "node-security/no-weak-dh-parameters": {
+    "hits": 0,
+    "avgTimeMs": 0.16,
+    "samples": []
+  },
+  "node-security/no-ssrf": {
+    "hits": 0,
+    "avgTimeMs": 0.16,
+    "samples": []
+  },
+  "node-security/no-weak-cipher-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 0.13,
+    "samples": []
+  },
+  "node-security/no-self-signed-certs": {
+    "hits": 0,
+    "avgTimeMs": 0.11,
+    "samples": []
+  },
+  "nestjs-security/require-validation-pipe-whitelist": {
+    "hits": 0,
+    "avgTimeMs": 0.12,
+    "samples": []
+  },
+  "node-security/require-aead-tag-verification": {
+    "hits": 0,
+    "avgTimeMs": 0.12,
+    "samples": []
+  },
+  "node-security/no-env-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.11,
+    "samples": []
+  },
+  "node-security/no-ecb-mode": {
+    "hits": 0,
+    "avgTimeMs": 0.12,
+    "samples": []
+  },
+  "nestjs-security/no-unsafe-multer-filename": {
+    "hits": 0,
+    "avgTimeMs": 0.09,
+    "samples": []
+  },
+  "nestjs-security/no-res-bypass-serialization": {
+    "hits": 0,
+    "avgTimeMs": 0.1,
+    "samples": []
+  },
+  "nestjs-security/no-unguarded-swagger": {
+    "hits": 0,
+    "avgTimeMs": 0.09,
+    "samples": []
+  },
+  "nestjs-security/no-hybrid-app-config-loss": {
+    "hits": 0,
+    "avgTimeMs": 0.09,
+    "samples": []
+  },
+  "node-security/no-dynamic-algorithm-selection": {
+    "hits": 0,
+    "avgTimeMs": 0.09,
+    "samples": []
+  },
+  "node-security/no-insecure-http-parser": {
+    "hits": 0,
+    "avgTimeMs": 0.09,
+    "samples": []
+  },
+  "postgresql-security/no-insecure-ssl": {
+    "hits": 0,
+    "avgTimeMs": 0.07,
+    "samples": []
+  },
+  "postgresql-security/no-hardcoded-credentials": {
+    "hits": 0,
+    "avgTimeMs": 0.04,
+    "samples": []
+  },
+  "postgresql-security/no-transaction-on-pool": {
+    "hits": 0,
+    "avgTimeMs": 0.03,
+    "samples": []
+  },
+  "postgresql-security/no-unsafe-copy-from": {
+    "hits": 0,
+    "avgTimeMs": 0.02,
+    "samples": []
+  },
+  "postgresql-security/check-query-params": {
+    "hits": 0,
+    "avgTimeMs": 0.02,
+    "samples": []
+  },
+  "postgresql-security/no-unsafe-search-path": {
+    "hits": 0,
+    "avgTimeMs": 0.01,
+    "samples": []
+  },
+  "postgresql-security/no-floating-query": {
+    "hits": 0,
+    "avgTimeMs": 0.01,
+    "samples": []
+  },
+  "postgresql-security/no-missing-client-release": {
+    "hits": 0,
+    "avgTimeMs": 0.01,
+    "samples": []
+  },
+  "postgresql-security/prevent-double-release": {
+    "hits": 0,
+    "avgTimeMs": 0.01,
+    "samples": []
+  },
+  "postgresql-security/prefer-pool-query": {
+    "hits": 0,
+    "avgTimeMs": 0.01,
+    "samples": []
+  },
+  "postgresql-security/no-select-all": {
+    "hits": 0,
+    "avgTimeMs": 0.01,
+    "samples": []
+  },
+  "postgresql-security/no-batch-insert-loop": {
+    "hits": 0,
+    "avgTimeMs": 0.01,
+    "samples": []
+  }
+}

@@ -264,8 +264,8 @@ export default async function HomePage() {
               Featured in DEV Community Top 7
             </span>
           }
-          title="Trusted by developers"
-          tagline="Security insights from teams shipping production JavaScript."
+          title="Featured on DEV"
+          tagline="Articles about these plugins that DEV Community featured and shared."
         />
 
         <div className="grid md:grid-cols-2 gap-4 md:gap-6 lg:gap-8 items-stretch">
@@ -280,11 +280,11 @@ export default async function HomePage() {
         </div>
       </Section>
 
-      {/* TWO PILLARS */}
+      {/* SECURITY AND QUALITY — the two plugin groups */}
       <Section spacing="comfortable" container="content">
         <SectionHeader
-          title="Two Pillars of Excellence"
-          tagline="Comprehensive coverage organized into Security and Quality categories."
+          title="Security and code quality"
+          tagline="The plugins come in two groups. Install only the ones you need."
         />
 
         <div className="grid md:grid-cols-2 gap-4 md:gap-6 lg:gap-8">
@@ -383,8 +383,8 @@ export default async function HomePage() {
         container="content"
       >
         <SectionHeader
-          title="Our edges"
-          tagline="The four places where Interlace pulls ahead of the rest of the JavaScript linting ecosystem."
+          title="Why use these"
+          tagline="What you get beyond the rules themselves."
         />
 
         <Cards>
@@ -436,7 +436,7 @@ export default async function HomePage() {
               the spacing scale stays consistent across breakpoints. */}
           <div className="relative flex flex-col items-center gap-8 md:gap-10">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold">
-              Ready to Level Up?
+              Get started
             </h2>
             <p className="text-fd-muted-foreground max-w-prose text-base md:text-lg">
               Start with one plugin, then expand your coverage. Each plugin works independently or together as a complete security & quality suite.
@@ -448,7 +448,7 @@ export default async function HomePage() {
                 shimmerSize="0.15em"
                 background="var(--cta-bg-gradient)"
               >
-                Start Building Safer Code
+                Install your first plugin
                 <ArrowRight className="ml-2 size-4" />
               </ShimmerButton>
             </Link>

@@ -25,11 +25,11 @@ Object names are guessable far more often than teams expect: sequential ids, e-m
 
 ## Rule details
 
-Fires only in files importing a `@supabase/*` package. Reports `createBucket()` or `updateBucket()` whose options object sets `public: true` as a literal.
+Fires only in files importing a `@supabase/*` package. Reports `createBucket()` or `updateBucket()` whose options object sets `public: true` — written inline, or through a same-file `const` options object, flag or spread.
 
 Not in `recommended`, on purpose: a bucket of site assets is legitimately public, and this rule cannot tell that from a bucket of invoices. It is in `strict`, where the intent is to review every one.
 
-Abstains on a spread and on a non-literal value — both are unreadable from the call site.
+Abstains on a spread whose source this file cannot see and on a value that is not `true` through a const — both are unreadable from the call site. As at runtime, the last write wins: `{ public: true, ...overrides }` is whatever `overrides` says.
 
 ## Incorrect
 

@@ -54,6 +54,15 @@ const NON_SDK_SOURCES: ReadonlyArray<readonly [string, string]> = [
     'a config module',
     `export const config = { token: process.env.API_TOKEN, retries: 3 };`,
   ],
+  [
+    // no-decode-without-verify matched this by the callee NAME, with no gate,
+    // until mutation testing showed the name match decided nothing else.
+    'a hand-rolled helper that happens to be named jwtDecode',
+    `export function jwtDecode(s: string) {
+       return JSON.parse(atob(s.split('.')[1]));
+     }
+     export const claims = jwtDecode(raw);`,
+  ],
 ];
 
 const lint = (code: string, rule: string): Linter.LintMessage[] => {

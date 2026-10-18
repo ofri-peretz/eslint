@@ -61,6 +61,7 @@ describe('no-shell-injection', () => {
         },
         // execSync with literal — safe
         {
+          name: 'a literal execSync command has no injection surface',
           code: "import { exec, execSync, spawn, spawnSync, execFile, execFileSync } from 'node:child_process';\nexecSync('git status');",
         },
         // spawn with args array — structurally safe parameterization form

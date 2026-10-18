@@ -245,6 +245,11 @@ const rule = createSdkApiKeyRule({
 });
 
 const SDK = "import Client from 'test-sdk';\n";
+const SDK_ALL =
+  "import Client, { PositionalClient, createClient } from 'test-sdk';\n";
+
+/** Key-shaped: 20+ characters, letters and digits, no placeholder word. */
+const KEY = 'tk-live-Zx9Qw2Lm8Rt4Yv6Np0Kc3Hd5';
 
 describe('createSdkApiKeyRule', () => {
   ruleTester.run('no-hardcoded-api-key', rule, {
@@ -298,41 +303,96 @@ describe('createSdkApiKeyRule', () => {
         name: 'a require of an unrelated module',
         code: "const Client = require('other');\nnew Client({ apiKey: 'k' });",
       },
+      /*
+       * Moved from invalid (2026-10-12 FP/FN audit). `'k'` is a one-character
+       * stand-in, not a credential (FP-1), and `createClient` /
+       * `PositionalClient` were never imported, so nothing binds them to the
+       * SDK (FP-2). Every mechanism is re-pinned in `invalid` with a
+       * key-shaped value and a bound callee.
+       */
+      {
+        name: "(was invalid) 'k' in the first option",
+        code: SDK + "new Client({ apiKey: 'k' });",
+      },
+      {
+        name: "(was invalid) 'k' in a later option",
+        code: SDK + "new Client({ authToken: 'k' });",
+      },
+      {
+        name: "(was invalid) 'k' under a scoped module",
+        code: "import Client from '@test-scope/pkg';\nnew Client({ apiKey: 'k' });",
+      },
+      {
+        name: "(was invalid) 'k' under a subpath",
+        code: "import Client from 'test-sdk/edge';\nnew Client({ apiKey: 'k' });",
+      },
+      {
+        name: "(was invalid) 'k' under require()",
+        code: "const Client = require('test-sdk');\nnew Client({ apiKey: 'k' });",
+      },
+      {
+        name: '(was invalid) an unbound plain call',
+        code: SDK + "createClient({ apiKey: 'k' });",
+      },
+      {
+        name: '(was invalid) an unbound positional constructor',
+        code: SDK + "new PositionalClient('k');",
+      },
+      {
+        name: "(was invalid) 'k' above its import",
+        code: "new Client({ apiKey: 'k' });\nimport Client from 'test-sdk';",
+      },
+      {
+        name: 'a spread argument is skipped',
+        code: SDK + 'new Client(...args);',
+      },
+      {
+        name: 'a wrapper called with fewer arguments than its options position',
+        code: SDK + 'function make(a, o) { return new Client(o); }\nmake(1);',
+      },
+      {
+        name: 'a positional key to a constructor that is not configured for one',
+        code: SDK_ALL + `new Client('${KEY}');`,
+      },
+      {
+        name: 'a positional stand-in',
+        code: SDK_ALL + "new PositionalClient('YOUR_API_KEY');",
+      },
     ],
     invalid: [
       {
         name: 'a literal in the first configured option',
-        code: SDK + "new Client({ apiKey: 'k' });",
+        code: SDK + `new Client({ apiKey: '${KEY}' });`,
         errors: [{ messageId: 'hardcodedApiKey', data: { prop: 'apiKey' } }],
       },
       {
         name: 'a literal in a later configured option, named correctly',
-        code: SDK + "new Client({ authToken: 'k' });",
+        code: SDK + `new Client({ authToken: '${KEY}' });`,
         errors: [{ messageId: 'hardcodedApiKey', data: { prop: 'authToken' } }],
       },
       {
         name: 'a scoped module opens the gate',
-        code: "import Client from '@test-scope/pkg';\nnew Client({ apiKey: 'k' });",
+        code: `import Client from '@test-scope/pkg';\nnew Client({ apiKey: '${KEY}' });`,
         errors: [{ messageId: 'hardcodedApiKey' }],
       },
       {
         name: 'a subpath opens the gate',
-        code: "import Client from 'test-sdk/edge';\nnew Client({ apiKey: 'k' });",
+        code: `import Client from 'test-sdk/edge';\nnew Client({ apiKey: '${KEY}' });`,
         errors: [{ messageId: 'hardcodedApiKey' }],
       },
       {
         name: 'require() opens the gate',
-        code: "const Client = require('test-sdk');\nnew Client({ apiKey: 'k' });",
+        code: `const Client = require('test-sdk');\nnew Client({ apiKey: '${KEY}' });`,
         errors: [{ messageId: 'hardcodedApiKey' }],
       },
       {
         name: 'a plain call, not only a constructor',
-        code: SDK + "createClient({ apiKey: 'k' });",
+        code: SDK_ALL + `createClient({ apiKey: '${KEY}' });`,
         errors: [{ messageId: 'hardcodedApiKey' }],
       },
       {
         name: 'the positional form for a configured constructor',
-        code: SDK + "new PositionalClient('k');",
+        code: SDK_ALL + `new PositionalClient('${KEY}');`,
         errors: [
           {
             messageId: 'hardcodedApiKey',
@@ -341,9 +401,18 @@ describe('createSdkApiKeyRule', () => {
         ],
       },
       {
-        // The gate must not depend on statement order.
         name: 'a construction above its import',
-        code: "new Client({ apiKey: 'k' });\nimport Client from 'test-sdk';",
+        code: `new Client({ apiKey: '${KEY}' });\nimport Client from 'test-sdk';`,
+        errors: [{ messageId: 'hardcodedApiKey' }],
+      },
+      {
+        name: 'an interpolation-free template literal key',
+        code: SDK + 'new Client({ apiKey: `' + KEY + '` });',
+        errors: [{ messageId: 'hardcodedApiKey' }],
+      },
+      {
+        name: 'the options in a later argument',
+        code: SDK + `new Client('region', { apiKey: '${KEY}' });`,
         errors: [{ messageId: 'hardcodedApiKey' }],
       },
     ],
@@ -375,7 +444,7 @@ describe('createSdkApiKeyRule without positional constructors', () => {
     invalid: [
       {
         name: 'the options form still reports',
-        code: "import Client from 'options-sdk';\nnew Client({ apiKey: 'k' });",
+        code: `import Client from 'options-sdk';\nnew Client({ apiKey: '${KEY}' });`,
         errors: [{ messageId: 'hardcodedApiKey' }],
       },
     ],

@@ -12,9 +12,13 @@
  * @see https://cwe.mitre.org/data/definitions/208.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons, createRule, AST_NODE_TYPES,
-  compileUserPatterns, unwrapTypeSyntax,
-  staticString,
+import {
+  formatLLMMessage,
+  MessageIcons,
+  createRule,
+  AST_NODE_TYPES,
+  compileUserPatterns,
+  unwrapTypeSyntax,
   propertyName,
 } from '@interlace/eslint-devkit';
 import {
@@ -25,8 +29,7 @@ import {
 } from '../../utils/provenance';
 import { identifierWords } from '../../utils/names';
 
-type MessageIds =
-  | 'timingUnsafeCompare';
+type MessageIds = 'timingUnsafeCompare';
 
 export interface Options {
   /**
@@ -94,17 +97,46 @@ const DEFAULT_SECRET_PATTERNS = [
   // none of them secrets. The names that DO mean a secret are listed in full
   // below (`apiKey`, `privateKey`, `encryptionKey`, …), and a project that
   // really does compare a bare `key` can add it via `secretPatterns`.
-  'token', 'secret', 'password', 'hash', 'signature',
-  'mac', 'hmac', 'digest', 'apiKey', 'api_key', 'api-key',
-  'auth', 'credential', 'bearer', 'jwt', 'csrf', 'nonce',
+  'token',
+  'secret',
+  'password',
+  'hash',
+  'signature',
+  'mac',
+  'hmac',
+  'digest',
+  'apiKey',
+  'api_key',
+  'api-key',
+  'auth',
+  'credential',
+  'bearer',
+  'jwt',
+  'csrf',
+  'nonce',
   // PII and sensitive data patterns
-  'ssn', 'social_security', 'social-security',
-  'pii', 'private_key', 'private-key', 'privateKey',
-  'access_token', 'access-token', 'accessToken',
-  'refresh_token', 'refresh-token', 'refreshToken',
-  'session_id', 'session-id', 'sessionId',
-  'auth_token', 'auth-token', 'authToken',
-  'encryption_key', 'encryption-key', 'encryptionKey',
+  'ssn',
+  'social_security',
+  'social-security',
+  'pii',
+  'private_key',
+  'private-key',
+  'privateKey',
+  'access_token',
+  'access-token',
+  'accessToken',
+  'refresh_token',
+  'refresh-token',
+  'refreshToken',
+  'session_id',
+  'session-id',
+  'sessionId',
+  'auth_token',
+  'auth-token',
+  'authToken',
+  'encryption_key',
+  'encryption-key',
+  'encryptionKey',
 ];
 
 /**
@@ -137,11 +169,13 @@ const DEFAULT_SECRET_PATTERNS = [
  * noise than it bought.
  */
 function isSourceConstant(node: TSESTree.Node): boolean {
-  if (node.type === AST_NODE_TYPES.Identifier && node.name === 'undefined') return true;
+  if (node.type === AST_NODE_TYPES.Identifier && node.name === 'undefined')
+    return true;
   if (node.type === AST_NODE_TYPES.Literal) return true;
   // A template literal with no interpolation is a string constant written out
   // longhand — `token === \`access\`` is the same finding as the quoted form.
-  if (node.type === AST_NODE_TYPES.TemplateLiteral) return node.expressions.length === 0;
+  if (node.type === AST_NODE_TYPES.TemplateLiteral)
+    return node.expressions.length === 0;
   return false;
 }
 
@@ -314,8 +348,13 @@ const NON_SECRET_MEMBERS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
  * neither is.
  */
 const DEFAULT_NON_SECRET_WORDS: readonly string[] = [
-  'author', 'authors', 'authored', 'authoring', 'authorship',
-  'hashtag', 'hashtags',
+  'author',
+  'authors',
+  'authored',
+  'authoring',
+  'authorship',
+  'hashtag',
+  'hashtags',
 ];
 
 /**
@@ -328,8 +367,22 @@ const DEFAULT_NON_SECRET_WORDS: readonly string[] = [
  * `passwordHash` all end in something else.
  */
 const DEFAULT_NON_SECRET_TAILS: readonly string[] = [
-  'count', 'counts', 'limit', 'limits', 'usage', 'total', 'size', 'length',
-  'price', 'cost', 'quota', 'address', 'addresses', 'index', 'rank', 'percent',
+  'count',
+  'counts',
+  'limit',
+  'limits',
+  'usage',
+  'total',
+  'size',
+  'length',
+  'price',
+  'cost',
+  'quota',
+  'address',
+  'addresses',
+  'index',
+  'rank',
+  'percent',
   // Locations. `address` was already here on this reasoning; these are the rest
   // of the same idea, and their absence is what made
   // `requestUrl.pathname !== STORE_AUTH_CALLBACK_PATH` a CWE-208 finding in
@@ -341,16 +394,31 @@ const DEFAULT_NON_SECRET_TAILS: readonly string[] = [
   // signature in the query string and IS the credential, so `signatureUrl`
   // must keep reporting. (`signedUrl` would not have shown this — `signed` is
   // not among the secret patterns, only `signature` is.)
-  'path', 'paths', 'pathname', 'pathnames',
-  'endpoint', 'endpoints', 'route', 'routes',
-  'hostname', 'host', 'port', 'origin',
+  'path',
+  'paths',
+  'pathname',
+  'pathnames',
+  'endpoint',
+  'endpoints',
+  'route',
+  'routes',
+  'hostname',
+  'host',
+  'port',
+  'origin',
   // Shape, not content. `node.operatorToken.kind === SyntaxKind.EqualsToken`
   // is a TypeScript AST comparison inside a lint rule — flint-fyi/flint,
   // `packages/ts/src/rules/errorSubclassProperties.ts:56` — and it reported
   // because the identifier carries `token`. A `.kind`, `.type` or `.flags`
   // read is a discriminant an enum assigns, never a value an attacker guesses
   // a byte at a time.
-  'kind', 'kinds', 'type', 'types', 'flag', 'flags', 'category',
+  'kind',
+  'kinds',
+  'type',
+  'types',
+  'flag',
+  'flags',
+  'category',
 ];
 
 /**
@@ -386,8 +454,15 @@ const DEFAULT_NON_SECRET_TAILS: readonly string[] = [
  * report from a SPELLING.
  */
 const CRYPTO_DERIVATIONS: ReadonlySet<string> = new Set([
-  'createHmac', 'createHash', 'createSign', 'pbkdf2Sync', 'scryptSync',
-  'hkdfSync', 'digest', 'sign', 'hmac',
+  'createHmac',
+  'createHash',
+  'createSign',
+  'pbkdf2Sync',
+  'scryptSync',
+  'hkdfSync',
+  'digest',
+  'sign',
+  'hmac',
 ]);
 
 /**
@@ -399,12 +474,19 @@ const CRYPTO_DERIVATIONS: ReadonlySet<string> = new Set([
  * same per-byte timing AND accepts anything with the right head.
  */
 const RECEIVER_COMPARE_METHODS: ReadonlySet<string> = new Set([
-  'equals', 'startsWith', 'endsWith', 'localeCompare',
+  'equals',
+  'startsWith',
+  'endsWith',
+  'localeCompare',
 ]);
 
 /** Deep-equality helpers, called with the two values as arguments. */
 const BINARY_EQUALITY_FUNCTIONS: ReadonlySet<string> = new Set([
-  'isEqual', 'isEqualWith', 'deepEqual', 'fastDeepEqual', 'shallowEqual',
+  'isEqual',
+  'isEqualWith',
+  'deepEqual',
+  'fastDeepEqual',
+  'shallowEqual',
 ]);
 
 /**
@@ -427,7 +509,11 @@ const BINARY_EQUALITY_FUNCTIONS: ReadonlySet<string> = new Set([
  * Koa surface, exact names.
  */
 const SERVER_STATE_REQUEST_PROPERTIES: ReadonlySet<string> = new Set([
-  'session', 'user', 'locals', 'app', 'state',
+  'session',
+  'user',
+  'locals',
+  'app',
+  'state',
 ]);
 
 /**
@@ -450,13 +536,13 @@ function unwrapChain(node: TSESTree.Node): TSESTree.Node {
  * bracket access an evasion.
  */
 function memberPropertyName(node: TSESTree.MemberExpression): string | null {
-  const property = node.property;
-  if (!node.computed) {
-    return property.type === AST_NODE_TYPES.Identifier ? property.name : null;
-  }
-  return staticString(property) !== null
-    ? staticString(property)
-    : null;
+  // `propertyName` reads `o.k`, `o['k']` and `` o[`k`] `` alike. A `#private`
+  // name is a name the author chose too: `this.#apiToken` holds what
+  // `this.apiToken` would, so it is read here rather than dropped as null.
+  const { property } = node;
+  return property.type === AST_NODE_TYPES.PrivateIdentifier
+    ? property.name
+    : propertyName(node);
 }
 
 /** Is this member expression a known false-friend of a secret name? */
@@ -493,12 +579,13 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Timing-unsafe comparison',
         cwe: 'CWE-208',
-        description: 'Using === to compare secrets enables timing attacks. The comparison short-circuits on first mismatch, leaking information about the secret.',
+        description:
+          'Using === to compare secrets enables timing attacks. The comparison short-circuits on first mismatch, leaking information about the secret.',
         severity: 'HIGH',
         fix: 'Use crypto.timingSafeEqual() for constant-time comparison',
-        documentationLink: 'https://nodejs.org/api/crypto.html#cryptotimingsafeequala-b',
+        documentationLink:
+          'https://nodejs.org/api/crypto.html#cryptotimingsafeequala-b',
       }),
-
     },
     schema: [
       {
@@ -552,7 +639,7 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
   ],
   create(
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
-    [options = {}]
+    [options = {}],
   ) {
     const {
       secretPatterns = DEFAULT_SECRET_PATTERNS,
@@ -596,10 +683,13 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
       if (BOOLEAN_PREDICATE_NAME.test(name)) return false;
       const words = identifierWords(name);
       if (words.some((word) => nonSecretWordSet.has(word))) return false;
-      if (words.length > 0 && nonSecretTailSet.has(words[words.length - 1] as string)) {
+      if (
+        words.length > 0 &&
+        nonSecretTailSet.has(words[words.length - 1] as string)
+      ) {
         return false;
       }
-      return patterns.some(p => p.test(name));
+      return patterns.some((p) => p.test(name));
     }
 
     /**
@@ -625,7 +715,8 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
       if (callee.type === AST_NODE_TYPES.Identifier) {
         return CRYPTO_DERIVATIONS.has(callee.name);
       }
-      if (callee.type !== AST_NODE_TYPES.MemberExpression || callee.computed) return false;
+      if (callee.type !== AST_NODE_TYPES.MemberExpression || callee.computed)
+        return false;
       if (callee.property.type !== AST_NODE_TYPES.Identifier) return false;
       if (CRYPTO_DERIVATIONS.has(callee.property.name)) return true;
       // `pbkdf2Sync(…).toString('hex')` — the derivation is the receiver.
@@ -648,7 +739,9 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
     function containsCryptoDerivation(node: TSESTree.Node): boolean {
       if (isCryptoDerivation(node)) return true;
       if (node.type === AST_NODE_TYPES.TemplateLiteral) {
-        return node.expressions.some((expression) => containsCryptoDerivation(expression));
+        return node.expressions.some((expression) =>
+          containsCryptoDerivation(expression),
+        );
       }
       if (node.type === AST_NODE_TYPES.BinaryExpression) {
         return (
@@ -692,7 +785,10 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
         // DEFAULT_UNTRUSTED_SOURCES. An arm for it would be unreachable code
         // wearing the appearance of a safeguard.
         const propertyName = memberPropertyName(node);
-        if (propertyName !== null && SERVER_STATE_REQUEST_PROPERTIES.has(propertyName)) {
+        if (
+          propertyName !== null &&
+          SERVER_STATE_REQUEST_PROPERTIES.has(propertyName)
+        ) {
           return true;
         }
         return isServerDerived(node.object, depth + 1);
@@ -709,7 +805,10 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
         // requiring an `await` made an in-process LRU an evasion. The receiver
         // is the evidence: if the attacker cannot steer the OBJECT the method
         // was called on, the result is the server's.
-        return !readsUntrusted(callee.object) || isServerDerived(callee.object, depth + 1);
+        return (
+          !readsUntrusted(callee.object) ||
+          isServerDerived(callee.object, depth + 1)
+        );
       }
       return false;
     }
@@ -821,7 +920,8 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
       // Map rather than an array scan so that stays legible.
       const paramIndex = new Map<string, number>();
       fn.params.forEach((param, index) => {
-        if (param.type === AST_NODE_TYPES.Identifier) paramIndex.set(param.name, index);
+        if (param.type === AST_NODE_TYPES.Identifier)
+          paramIndex.set(param.name, index);
       });
 
       let found: [number, number] | null = null;
@@ -829,11 +929,17 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
         if (found || !node || typeof node.type !== 'string') return;
         if (node.type === AST_NODE_TYPES.BinaryExpression) {
           const isEquality =
-            node.operator === '===' || node.operator === '!==' ||
-            node.operator === '==' || node.operator === '!=';
+            node.operator === '===' ||
+            node.operator === '!==' ||
+            node.operator === '==' ||
+            node.operator === '!=';
           if (isEquality && !comparesLengths(node)) {
-            const leftIndex = paramIndex.get(memberRoot(node.left as TSESTree.Node)?.name ?? '');
-            const rightIndex = paramIndex.get(memberRoot(node.right)?.name ?? '');
+            const leftIndex = paramIndex.get(
+              memberRoot(node.left as TSESTree.Node)?.name ?? '',
+            );
+            const rightIndex = paramIndex.get(
+              memberRoot(node.right)?.name ?? '',
+            );
             if (
               leftIndex !== undefined &&
               rightIndex !== undefined &&
@@ -874,7 +980,9 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
       node: TSESTree.CallExpression,
     ): [TSESTree.Node, TSESTree.Node] | null {
       const args = node.arguments;
-      if (args.some((argument) => argument.type === AST_NODE_TYPES.SpreadElement)) {
+      if (
+        args.some((argument) => argument.type === AST_NODE_TYPES.SpreadElement)
+      ) {
         return null;
       }
       const callee = node.callee;
@@ -994,8 +1102,12 @@ export const noTimingUnsafeCompare = createRule<RuleOptions, MessageIds>({
 
     function checkBinaryExpression(node: TSESTree.BinaryExpression) {
       // Check for === or == comparisons
-      if (node.operator !== '===' && node.operator !== '==' &&
-          node.operator !== '!==' && node.operator !== '!=') {
+      if (
+        node.operator !== '===' &&
+        node.operator !== '==' &&
+        node.operator !== '!==' &&
+        node.operator !== '!='
+      ) {
         return;
       }
       checkComparison(node, node.left as TSESTree.Node, node.right);

@@ -1,0 +1,194 @@
+[
+  {
+    "ruleId": "express-security/no-sensitive-data-in-query",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/express/examples/web-service/index.js",
+    "line": 31,
+    "column": 13,
+    "message": "🔒 CWE-598 | Query parameter 'api-key' is sensitive. Query strings are stored in access logs, proxy logs, browser history and leak via the Referer header. | MEDIUM\n   Fix: Move the value to the POST request body (req.body) or an Authorizati"
+  },
+  {
+    "ruleId": "express-security/require-route-authentication",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/express/examples/web-service/index.js",
+    "line": 75,
+    "column": 9,
+    "message": "🔒 CWE-306 OWASP:A07-Authentication CVSS:8.2 | get /api/users exposes a critical function but its chain has no authentication middleware and the handler never reads an authenticated principal. Anyone who can reach the port can call it. | HI"
+  },
+  {
+    "ruleId": "express-security/require-route-authentication",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/express/examples/web-service/index.js",
+    "line": 85,
+    "column": 9,
+    "message": "🔒 CWE-306 OWASP:A07-Authentication CVSS:8.2 | get /api/user/:name/repos exposes a critical function but its chain has no authentication middleware and the handler never reads an authenticated principal. Anyone who can reach the port can ca"
+  },
+  {
+    "ruleId": "express-security/require-helmet",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/express/examples/view-locals/index.js",
+    "line": 10,
+    "column": 11,
+    "message": "🔒 CWE-693 OWASP:A05-Injection CVSS:7.5 | This Express app renders documents to a browser but never mounts helmet. Without it the responses carry no Content-Security-Policy, X-Frame-Options or referrer policy, so any rendered page is framab"
+  },
+  {
+    "ruleId": "secure-coding/no-improper-sanitization",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/express/examples/session/redis.js",
+    "line": 35,
+    "column": 19,
+    "message": "🔒 CWE-116 | A string reaching this sink carries unescaped markup | MEDIUM\n   Fix: Escape the value before it reaches the sink, or send it as text rather than markup | https://cwe.mitre.org/data/definitions/116.html"
+  },
+  {
+    "ruleId": "secure-coding/no-improper-sanitization",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/express/examples/session/redis.js",
+    "line": 35,
+    "column": 62,
+    "message": "🔒 CWE-116 | A string reaching this sink carries unescaped markup | MEDIUM\n   Fix: Escape the value before it reaches the sink, or send it as text rather than markup | https://cwe.mitre.org/data/definitions/116.html"
+  },
+  {
+    "ruleId": "secure-coding/no-improper-sanitization",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/express/examples/session/index.js",
+    "line": 30,
+    "column": 19,
+    "message": "🔒 CWE-116 | A string reaching this sink carries unescaped markup | MEDIUM\n   Fix: Escape the value before it reaches the sink, or send it as text rather than markup | https://cwe.mitre.org/data/definitions/116.html"
+  },
+  {
+    "ruleId": "secure-coding/no-improper-sanitization",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/express/examples/session/index.js",
+    "line": 30,
+    "column": 62,
+    "message": "🔒 CWE-116 | A string reaching this sink carries unescaped markup | MEDIUM\n   Fix: Escape the value before it reaches the sink, or send it as text rather than markup | https://cwe.mitre.org/data/definitions/116.html"
+  },
+  {
+    "ruleId": "express-security/require-helmet",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/express/examples/search/index.js",
+    "line": 19,
+    "column": 11,
+    "message": "🔒 CWE-693 OWASP:A05-Injection CVSS:7.5 | This Express app renders documents to a browser but never mounts helmet. Without it the responses carry no Content-Security-Policy, X-Frame-Options or referrer policy, so any rendered page is framab"
+  },
+  {
+    "ruleId": "secure-coding/no-improper-sanitization",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/express/examples/online/index.js",
+    "line": 53,
+    "column": 14,
+    "message": "🔒 CWE-116 | A string reaching this sink carries unescaped markup | MEDIUM\n   Fix: Escape the value before it reaches the sink, or send it as text rather than markup | https://cwe.mitre.org/data/definitions/116.html"
+  },
+  {
+    "ruleId": "secure-coding/no-improper-sanitization",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/express/examples/online/index.js",
+    "line": 53,
+    "column": 49,
+    "message": "🔒 CWE-116 | A string reaching this sink carries unescaped markup | MEDIUM\n   Fix: Escape the value before it reaches the sink, or send it as text rather than markup | https://cwe.mitre.org/data/definitions/116.html"
+  },
+  {
+    "ruleId": "express-security/require-helmet",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/express/examples/mvc/index.js",
+    "line": 13,
+    "column": 28,
+    "message": "🔒 CWE-693 OWASP:A05-Injection CVSS:7.5 | This Express app renders documents to a browser but never mounts helmet. Without it the responses carry no Content-Security-Policy, X-Frame-Options or referrer policy, so any rendered page is framab"
+  },
+  {
+    "ruleId": "express-security/require-helmet",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/express/examples/error-pages/index.js",
+    "line": 9,
+    "column": 28,
+    "message": "🔒 CWE-693 OWASP:A05-Injection CVSS:7.5 | This Express app renders documents to a browser but never mounts helmet. Without it the responses carry no Content-Security-Policy, X-Frame-Options or referrer policy, so any rendered page is framab"
+  },
+  {
+    "ruleId": "secure-coding/no-improper-sanitization",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/express/examples/content-negotiation/users.js",
+    "line": 6,
+    "column": 12,
+    "message": "🔒 CWE-116 | A string reaching this sink carries unescaped markup | MEDIUM\n   Fix: Escape the value before it reaches the sink, or send it as text rather than markup | https://cwe.mitre.org/data/definitions/116.html"
+  },
+  {
+    "ruleId": "secure-coding/no-improper-sanitization",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/express/examples/content-negotiation/users.js",
+    "line": 7,
+    "column": 12,
+    "message": "🔒 CWE-116 | A string reaching this sink carries unescaped markup | MEDIUM\n   Fix: Escape the value before it reaches the sink, or send it as text rather than markup | https://cwe.mitre.org/data/definitions/116.html"
+  },
+  {
+    "ruleId": "secure-coding/no-improper-sanitization",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/express/examples/content-negotiation/users.js",
+    "line": 7,
+    "column": 33,
+    "message": "🔒 CWE-116 | A string reaching this sink carries unescaped markup | MEDIUM\n   Fix: Escape the value before it reaches the sink, or send it as text rather than markup | https://cwe.mitre.org/data/definitions/116.html"
+  },
+  {
+    "ruleId": "secure-coding/no-improper-sanitization",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/express/examples/content-negotiation/users.js",
+    "line": 8,
+    "column": 17,
+    "message": "🔒 CWE-116 | A string reaching this sink carries unescaped markup | MEDIUM\n   Fix: Escape the value before it reaches the sink, or send it as text rather than markup | https://cwe.mitre.org/data/definitions/116.html"
+  },
+  {
+    "ruleId": "secure-coding/no-improper-sanitization",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/express/examples/content-negotiation/index.js",
+    "line": 12,
+    "column": 16,
+    "message": "🔒 CWE-116 | A string reaching this sink carries unescaped markup | MEDIUM\n   Fix: Escape the value before it reaches the sink, or send it as text rather than markup | https://cwe.mitre.org/data/definitions/116.html"
+  },
+  {
+    "ruleId": "secure-coding/no-improper-sanitization",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/express/examples/content-negotiation/index.js",
+    "line": 13,
+    "column": 16,
+    "message": "🔒 CWE-116 | A string reaching this sink carries unescaped markup | MEDIUM\n   Fix: Escape the value before it reaches the sink, or send it as text rather than markup | https://cwe.mitre.org/data/definitions/116.html"
+  },
+  {
+    "ruleId": "secure-coding/no-improper-sanitization",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/express/examples/content-negotiation/index.js",
+    "line": 13,
+    "column": 37,
+    "message": "🔒 CWE-116 | A string reaching this sink carries unescaped markup | MEDIUM\n   Fix: Escape the value before it reaches the sink, or send it as text rather than markup | https://cwe.mitre.org/data/definitions/116.html"
+  },
+  {
+    "ruleId": "secure-coding/no-improper-sanitization",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/express/examples/content-negotiation/index.js",
+    "line": 14,
+    "column": 21,
+    "message": "🔒 CWE-116 | A string reaching this sink carries unescaped markup | MEDIUM\n   Fix: Escape the value before it reaches the sink, or send it as text rather than markup | https://cwe.mitre.org/data/definitions/116.html"
+  },
+  {
+    "ruleId": "express-security/require-helmet",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/express/examples/auth/index.js",
+    "line": 12,
+    "column": 28,
+    "message": "🔒 CWE-693 OWASP:A05-Injection CVSS:7.5 | This Express app renders documents to a browser but never mounts helmet. Without it the responses carry no Content-Security-Policy, X-Frame-Options or referrer policy, so any rendered page is framab"
+  },
+  {
+    "ruleId": "express-security/require-csrf-protection",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/express/examples/auth/index.js",
+    "line": 104,
+    "column": 1,
+    "message": "🔒 CWE-352 OWASP:A01-Broken CVSS:8.8 | Route handler for POST request lacks CSRF protection. Attackers can forge requests from malicious sites. | HIGH\n   Fix: Add CSRF middleware: app.use(csrf()) or use csurf package. Include csrfToken in f"
+  },
+  {
+    "ruleId": "express-security/require-rate-limiting",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/express/examples/auth/index.js",
+    "line": 104,
+    "column": 1,
+    "message": "🔒 CWE-770 OWASP:A04-Cryptographic CVSS:7.5 | POST /login accepts a secret to be checked and this app mounts no rate limiter. An attacker can run the guess-and-retry loop at full speed. | HIGH\n   Fix: Add rate limiting: npm install express-"
+  }
+]

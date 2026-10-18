@@ -3,22 +3,43 @@
   "name": "OS Command Injection",
   "owasp": "A03:2021",
   "severity": "CRITICAL",
-  "expectedPlugins": ["eslint-plugin-secure-coding", "eslint-plugin-node-security", "eslint-plugin-mcp-sdk-security"],
+  "expectedPlugins": [
+    "eslint-plugin-secure-coding",
+    "eslint-plugin-node-security",
+    "eslint-plugin-mcp-sdk-security"
+  ],
   "fixtures": {
     "vulnerable": [
-      { "file": "exec-concat.js", "description": "exec with user input concatenated into the command" },
-      { "file": "exec-template.js", "description": "exec with user input in a template literal" },
+      {
+        "file": "exec-concat.js",
+        "description": "exec with user input concatenated into the command"
+      },
+      {
+        "file": "exec-template.js",
+        "description": "exec with user input in a template literal"
+      },
       {
         "file": "mcp-client-project-config-command.js",
         "description": "MCP client spawns StdioClientTransport with the command from the opened repository's .mcp.json (MCPoison class)"
+      },
+      {
+        "file": "mcp-tool-helper-shell.js",
+        "description": "Low-level MCP Server: a Zod-parsed tool argument is interpolated into a shell command inside a helper the handler calls"
       }
     ],
     "safe": [
       { "file": "exec-static.js", "description": "exec with a static command" },
-      { "file": "execFile-array.js", "description": "execFile with array arguments" },
+      {
+        "file": "execFile-array.js",
+        "description": "execFile with array arguments"
+      },
       {
         "file": "mcp-client-allowlisted-servers.js",
         "description": "MCP client maps a requested server name through a fixed allowlist of literal commands"
+      },
+      {
+        "file": "mcp-tool-helper-enum.js",
+        "description": "Low-level MCP Server: a Zod-parsed closed-set argument reaches a helper as an argv element of a fixed binary"
       }
     ]
   }

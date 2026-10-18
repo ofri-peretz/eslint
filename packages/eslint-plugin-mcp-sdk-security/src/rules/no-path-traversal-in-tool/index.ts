@@ -57,13 +57,14 @@ import {
   resolveModuleBinding,
 } from '@interlace/eslint-devkit';
 import { fsExport } from '../../utils/fs-module';
-import { createGuards } from '../../utils/guards';
+import { createGuards, isConversion } from '../../utils/guards';
 import { fileUsesMcpSdk } from '../../utils/mcp-evidence';
 import { valueResolverFor } from '../../utils/module-resolver';
 import { createHandlerCollector } from '../../utils/tool-handlers';
 import { lookupVariable, resolveFunction } from '../../utils/tool-registration';
 import {
   createFlow,
+  flowOptionsFor,
   STRING_DERIVING,
   type Taint,
 } from '../../utils/value-flow';
@@ -257,6 +258,9 @@ export const noPathTraversalInTool = createRule<[], MessageIds>({
           sourceCode,
           (fn) => handlers.roots.get(fn),
           intercept,
+          // A caller that confined the path before passing it on hands the
+          // helper a checked value.
+          flowOptionsFor(context, (call, arg) => guards.guarded(call, arg)),
         );
         const guards = createGuards(
           sourceCode,
@@ -265,22 +269,58 @@ export const noPathTraversalInTool = createRule<[], MessageIds>({
             const name = variable.defs[0]?.name;
             return name !== undefined && carries(name) !== null;
           },
-          (node, involves) => {
-            if (node.type !== 'CallExpression') return false;
-            const scope = sourceCode.getScope(node);
-            // Existence and metadata probes say nothing about where a path points.
-            if (fsExport(node.callee, scope) !== undefined) return false;
-            const pathName = pathExport(node.callee, scope);
-            if (pathName !== undefined && !PATH_CHECKS.has(pathName))
-              return false;
-            if (node.callee.type === 'MemberExpression') {
-              const method = propertyName(node.callee);
-              if (method !== null && NOT_A_CHECK.has(method)) return false;
-              if (involves(node.callee.object)) return true;
-            }
-            return node.arguments.some(involves);
-          },
+          isContainmentCheck,
         );
+
+        /**
+         * Is this call, in an `if` test, a containment check on a value
+         * `involves` accepts? A same-file predicate counts only when its body
+         * holds a check-shaped call itself — `pick(p)` returning `p` does not.
+         */
+        function isContainmentCheck(
+          node: TSESTree.Node,
+          involves: (n: TSESTree.Node) => boolean,
+          inHelper = false,
+        ): boolean {
+          if (node.type !== 'CallExpression') return false;
+          const scope = sourceCode.getScope(node);
+          // Existence and metadata probes say nothing about where a path points.
+          if (fsExport(node.callee, scope) !== undefined) return false;
+          if (isConversion(node, scope)) return false;
+          const pathName = pathExport(node.callee, scope);
+          if (pathName !== undefined && !PATH_CHECKS.has(pathName))
+            return false;
+          if (node.callee.type === 'MemberExpression') {
+            const method = propertyName(node.callee);
+            if (method !== null && NOT_A_CHECK.has(method)) return false;
+            if (involves(node.callee.object)) return true;
+          }
+          const helper = inHelper
+            ? undefined
+            : resolveFunction(node.callee, scope);
+          if (helper !== undefined && !holdsCheck(helper)) return false;
+          return node.arguments.some(involves);
+        }
+
+        /** Does a same-file predicate's body make a check-shaped call? */
+        function holdsCheck(fn: TSESTree.Node): boolean {
+          const visit = (node: TSESTree.Node): boolean => {
+            if (isContainmentCheck(node, () => true, true)) return true;
+            for (const [key, value] of Object.entries(node)) {
+              if (key === 'parent') continue;
+              for (const child of Array.isArray(value) ? value : [value])
+                if (
+                  child !== null &&
+                  typeof child === 'object' &&
+                  typeof (child as TSESTree.Node).type === 'string' &&
+                  visit(child as TSESTree.Node)
+                )
+                  return true;
+            }
+            return false;
+          };
+          return visit(fn);
+        }
 
         for (const { call, arg, sink } of candidates) {
           const taint = carries(arg);

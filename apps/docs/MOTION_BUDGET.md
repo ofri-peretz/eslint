@@ -30,7 +30,7 @@ The home page was deliberately dieted from 6 motion primitives + 9 sections down
 
 Removed because they decorated rather than explained:
 
-- `Marquee` — scrolling plugin names; the same info appears in the Two Pillars section as a clean grid
+- `Marquee` — scrolling plugin names; the same info appears in the "Security and code quality" section as a clean grid
 - `BackgroundLines` — animated SVG behind testimonials; testimonials don't need backdrop motion
 - `AnimatedGradientText` — eyebrow chip on the home page hero (replaced with a quiet `border + bg-white/5` chip); also removed from the social-proof section's "Featured in Top 7" callout (replaced with a static `Trophy` icon in a plain rounded chip)
 

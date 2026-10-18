@@ -11,7 +11,7 @@
  * is exercised directly: run the rule over several files of one project and
  * count what a user would receive.
  */
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { mkdtempSync, writeFileSync, rmSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -85,5 +85,47 @@ describe('lock-file reports once per project', () => {
     visitor.Program?.({ type: 'Program' });
     rmSync(orphan, { recursive: true, force: true });
     expect(reports).toBe(0);
+  });
+});
+
+/**
+ * WHICH file carries the finding depends on lint order; HOW MANY does not.
+ *
+ * Neither ESLint (files linted as their async reads resolve) nor oxlint (a
+ * Rust thread pool feeding the JS host) lints in a fixed order, so the
+ * finding moves between files from run to run. The oxlint-parity bench
+ * relies on exactly this split: it matches lock-file findings by project and
+ * count (benchmarks/suites/ilb-oxlint-parity/finding-key.ts), because keyed by
+ * file the two engines "diverged" whenever their schedulers disagreed — the
+ * weekly job's lock-file noise in runs 38154358916 and 35515111168.
+ *
+ * Each order runs against a fresh module instance, as a fresh lint process
+ * would: the dedup state lives at module scope.
+ */
+describe('lock-file: the count is order-independent, the location is not', () => {
+  async function reportedFiles(order: readonly string[]): Promise<string[]> {
+    vi.resetModules();
+    const { lockFile: fresh } = await import('./index');
+    const hits: string[] = [];
+    for (const name of order) {
+      const visitor = (
+        fresh as unknown as {
+          create: (c: unknown) => { Program?: (n: unknown) => void };
+        }
+      ).create({
+        filename: join(projectDir, 'src', name),
+        options: [{ packageManager: 'pnpm' }],
+        report: () => hits.push(name),
+      });
+      visitor.Program?.({ type: 'Program' });
+    }
+    return hits;
+  }
+
+  it('reports once in either order, on whichever file came first', async () => {
+    const forward = await reportedFiles(['a.js', 'b.js']);
+    const backward = await reportedFiles(['b.js', 'a.js']);
+    expect(forward).toEqual(['a.js']);
+    expect(backward).toEqual(['b.js']);
   });
 });

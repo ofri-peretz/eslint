@@ -24,7 +24,10 @@ export { noHardcodedApiKey } from './rules/no-hardcoded-api-key';
 export { noUntrustedContentInPrompt } from './rules/no-untrusted-content-in-prompt';
 export { noBrowserApiKeyExposure } from './rules/no-browser-api-key-exposure';
 
-export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[]>> = {
+export const rules: Record<
+  string,
+  TSESLint.RuleModule<string, readonly unknown[]>
+> = {
   // CWE-798: Use of Hard-coded Credentials
   'no-hardcoded-api-key': noHardcodedApiKey,
   // CWE-1427: Improper Neutralization of Input Used for LLM Prompting
@@ -43,11 +46,10 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
  */
 withCanonicalDocsUrls('plugin-openai-security', rules);
 
-
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-openai-security',
-    version: '0.3.4',
+    version: '1.0.0',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
@@ -71,11 +73,14 @@ const enabled: TSESLint.FlatConfig.Config = {
  * Plan §1.6: a new rule joins `strict` and stays out of `minimal` /
  * `recommended` until its false-positive profile is measured on the corpus.
  *
- * `no-untrusted-content-in-prompt` genuinely has a plausible FP shape — a
- * system prompt interpolating something harmless like today's date is not an
- * injection, and this rule cannot tell the difference. That is a real judgement
- * call for `strict` to make, unlike the credential rules above, where a literal
- * key in a named option has no innocent reading.
+ * `no-untrusted-content-in-prompt` is a design judgement rather than a
+ * credential: interpolating a request value into the instructions is the
+ * finding, and some teams accept that for values they trust. Since the
+ * 2026-10-12 FP/FN audit it no longer reports the shapes that cannot carry
+ * instructions (dates, counts, same-file and imported constants), but whether
+ * a trusted runtime value belongs in the instructions stays `strict`'s call —
+ * unlike the credential rules above, where a key-shaped literal in a named
+ * option has no innocent reading.
  */
 const strict: TSESLint.FlatConfig.Config = {
   plugins: {

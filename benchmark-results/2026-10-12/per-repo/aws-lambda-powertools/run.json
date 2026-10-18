@@ -1,0 +1,39 @@
+{
+  "repo": "aws-lambda-powertools",
+  "meta": {
+    "stars": 1700,
+    "commit": "d47e092dc571154a221e7886539f8ff40443ca91",
+    "category": "Lambda Tooling",
+    "plugins": [
+      "lambda-security",
+      "node-security",
+      "secure-coding"
+    ],
+    "fpEdge": false,
+    "srcGlob": "packages/*/src/**/*.ts"
+  },
+  "fileCount": 260,
+  "loc": 40714,
+  "timing": {
+    "runsMs": [
+      2428,
+      2142,
+      2095
+    ],
+    "medianMs": 2142,
+    "meanMs": 2222,
+    "stddevMs": 147,
+    "cv": 6.6,
+    "msPerFile": 8.24
+  },
+  "peakRssMb": 509,
+  "findings": {
+    "total": 38,
+    "errors": 3,
+    "warnings": 35,
+    "filesWithFindings": 12,
+    "densityPerKloc": 0.93,
+    "externalDirectives": 0,
+    "parseErrors": 0
+  }
+}

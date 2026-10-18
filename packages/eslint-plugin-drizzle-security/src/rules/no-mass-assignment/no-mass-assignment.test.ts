@@ -11,6 +11,9 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, afterAll } from 'vitest';
 import * as parser from '@typescript-eslint/parser';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 import { noMassAssignment } from './index';
 
 RuleTester.afterAll = afterAll;
@@ -25,15 +28,20 @@ const ruleTester = new RuleTester({
   },
 });
 
-/** The module gate: without this import the rule must stay silent. */
-const DRIVER = `import { drizzle } from 'drizzle-orm';\n`;
+/**
+ * The module gate, and a Drizzle instance. `db` used to be left undeclared and
+ * recognised by its NAME; it is a handle now because it is written from
+ * `drizzle()` — `foo` would do exactly as well.
+ */
+const DRIVER = `import { drizzle } from 'drizzle-orm';\nconst db = drizzle(process.env.DATABASE_URL);\n`;
 
 describe('no-mass-assignment', () => {
   ruleTester.run('no-mass-assignment', noMassAssignment, {
     valid: [
       {
         name: 'the fix — every field named explicitly',
-        code: DRIVER + `await db.insert(users).values({ name: req.body.name });`,
+        code:
+          DRIVER + `await db.insert(users).values({ name: req.body.name });`,
       },
       {
         name: 'a value the rule cannot classify is not assumed hostile',
@@ -68,6 +76,58 @@ describe('no-mass-assignment', () => {
         name: 'spreading the request carries every key it happens to hold',
         code: DRIVER + `await db.values({ ...req.body });`,
         errors: [{ messageId: 'untrustedSpread' }],
+      },
+    ],
+  });
+});
+
+/**
+ * FP/FN review 2026-10-12 (benchmarks/audits/2026-10-12-fp-fn-drizzle-security.md).
+ * Bindings are named `foo` / `bar` so no verdict can rest on a name.
+ */
+describe('no-mass-assignment — fp/fn review 2026-10', () => {
+  const D =
+    "import { drizzle } from 'drizzle-orm/node-postgres';\nimport { sql } from 'drizzle-orm';\nimport { pgTable, serial, text } from 'drizzle-orm/pg-core';\nconst foo = drizzle(process.env.DATABASE_URL);\nconst bar = pgTable('t', { id: serial('id'), name: text('name') });\n";
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'drizzle-ma-'));
+  fs.writeFileSync(
+    path.join(dir, 'db.ts'),
+    "import { drizzle } from 'drizzle-orm/node-postgres';\nexport const db = drizzle(process.env.DATABASE_URL);\n",
+  );
+  const ROUTE = path.join(dir, 'route.ts');
+
+  ruleTester.run('fp-fn review 2026-10', noMassAssignment, {
+    valid: [
+      {
+        name: 'Object.values() of the request in a file that imports Drizzle',
+        code: D + 'export const h = (req) => Object.values(req.body);',
+      },
+    ],
+    invalid: [
+      {
+        // @found drizzle-security FP/FN review 2026-10-12, synthetic probe (db from a local module)
+        name: 'FN: the instance from a relative module, the body from await request.json()',
+        filename: ROUTE,
+        code: "import { db as foo } from './db';\nimport { users } from './schema';\nexport async function POST(bar: Request) { const baz = await bar.json(); await foo.insert(users).values(baz); await foo.update(users).set(baz); }",
+        errors: [
+          { messageId: 'untrustedPayload' },
+          { messageId: 'untrustedPayload' },
+        ],
+      },
+      {
+        // @found drizzle-security FP/FN review 2026-10-12, synthetic probe (upsert set)
+        name: "FN: an upsert's onConflictDoUpdate({ set })",
+        code:
+          D +
+          'export const h = (baz) => foo.insert(bar).values({ name: baz.body.name }).onConflictDoUpdate({ target: bar.id, set: baz.body });',
+        errors: [{ messageId: 'untrustedPayload' }],
+      },
+      {
+        // @found drizzle-security FP/FN review 2026-10-12, synthetic probe (transaction handle)
+        name: 'FN: the transaction handle Drizzle passes to its callback',
+        code:
+          D +
+          'export const h = (baz) => foo.transaction(async (qux) => { await qux.insert(bar).values(baz.body); });',
+        errors: [{ messageId: 'untrustedPayload' }],
       },
     ],
   });

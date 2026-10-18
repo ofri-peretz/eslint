@@ -1,0 +1,40 @@
+{
+  "repo": "supabase",
+  "meta": {
+    "stars": 78000,
+    "commit": "f0f3784633342072111117cfa4c7d3a32357bcbf",
+    "category": "Database Platform",
+    "plugins": [
+      "browser-security",
+      "postgresql-security",
+      "jwt-security",
+      "node-security"
+    ],
+    "fpEdge": false,
+    "srcGlob": "studio/components/**/*.{ts,tsx}"
+  },
+  "fileCount": 763,
+  "loc": 90708,
+  "timing": {
+    "runsMs": [
+      6763,
+      6740,
+      6936
+    ],
+    "medianMs": 6763,
+    "meanMs": 6813,
+    "stddevMs": 87,
+    "cv": 1.3,
+    "msPerFile": 8.86
+  },
+  "peakRssMb": 1031,
+  "findings": {
+    "total": 5,
+    "errors": 4,
+    "warnings": 1,
+    "filesWithFindings": 5,
+    "densityPerKloc": 0.06,
+    "externalDirectives": 33,
+    "parseErrors": 0
+  }
+}

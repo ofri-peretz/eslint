@@ -37,8 +37,20 @@
  */
 
 import { AST_NODE_TYPES } from '../ast-node-types';
+import { propertyName } from '../ast/spellings';
 import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
 import { formatLLMMessage, MessageIcons } from '../messaging';
+import { createModuleEvidence } from './module-evidence';
+import { isTestFilePath } from './rule-creator';
+import { createOriginClassifier, isFunctionNode } from './driver-origin';
+import {
+  type Env,
+  envOf,
+  exportedValue,
+  follow,
+  lookup,
+  valueAt,
+} from './value-follow';
 
 /** Message ids every rule built by this factory reports. */
 export type UnscopedMutationMessageIds =
@@ -78,15 +90,36 @@ export interface UnscopedMutationRuleConfig {
    */
   readonly modules: readonly string[];
   /**
-   * Identifiers that read as a handle for this driver, matched against the
-   * base of the receiver chain (`db` in `db.delete(users)`, `prisma` in
-   * `prisma.user.deleteMany()`).
-   *
-   * Checked in addition to the import gate, because importing `knex` in a file
-   * does not make every `.delete()` in it a query. A handle assigned from an
-   * imported binding is accepted regardless of its name.
+   * @deprecated Ignored. The receiver was once matched by NAME against this
+   * pattern; it is now classified by where it is written (`driver-origin.ts`),
+   * so renaming a handle can neither silence nor create a finding. Kept so an
+   * existing caller still type-checks.
    */
-  readonly receiverPattern: RegExp;
+  readonly receiverPattern?: RegExp;
+  /**
+   * What a call must look like to be reported when its receiver cannot be
+   * traced to the driver (an undeclared name, an untyped parameter, a path
+   * alias the linter cannot read). A receiver PROVEN to be the driver's is
+   * always enough; one proven to be another library's never is.
+   *
+   *   - `'model-accessor'` — Prisma's `<client>.<model>.deleteMany()`: a
+   *     method read off a property of the receiver.
+   *   - `'table-call'` — Knex's `<knex>('users').del()` /
+   *     `<knex>.from('users').del()`: the chain starts by naming a table.
+   *   - `'table-argument'` — Drizzle's `<db>.delete(users)`: the argument is
+   *     a table the driver's schema helpers built.
+   *
+   * Without one, an untraceable receiver is not reported: `store.delete(key)`
+   * and `db.delete(users)` are the same program when neither name resolves.
+   */
+  readonly distinctiveShape?:
+    'model-accessor' | 'table-call' | 'table-argument';
+  /**
+   * Exported function names that make a module a migration or seed for this
+   * driver — Knex's `up` / `down` / `seed`. A full-table backfill inside one
+   * is the migration's whole purpose, not a forgotten clause.
+   */
+  readonly migrationExports?: readonly string[];
   /**
    * What the sink's arguments mean for this driver. The same AST — a lone
    * identifier argument — means opposite things per driver, so it cannot be
@@ -384,6 +417,8 @@ export function createUnscopedMutationRule(
   const scopeMethods = config.scopeMethods ?? DEFAULT_SCOPE_METHODS;
   const truncateKeys = config.truncateKeys ?? [];
   const argumentRole = config.argumentRole ?? 'options';
+  const usesModule = createModuleEvidence({ packages: config.modules });
+  const originOf = createOriginClassifier(config.modules);
 
   return {
     meta: {
@@ -426,18 +461,24 @@ export function createUnscopedMutationRule(
     },
     defaultOptions: [],
     create(context) {
-      // Bindings introduced by importing the driver. Empty means this file
-      // never touches it, and the rule stays silent for the whole file.
-      let bindings = new Set<string>();
+      // BENCHMARK-CRITERIA §B1: a test's `deleteMany()` teardown is the test
+      // working, not a forgotten clause.
+      if (isTestFilePath(context.filename)) return {};
+      const env = envOf(context);
+      let ownsFile = false;
+      let migrations = new Set<TSESTree.Node>();
 
       return {
         Program(program: TSESTree.Program) {
-          bindings = driverBindings(program, config.modules);
+          ownsFile = usesModule(program);
+          migrations = exportedFunctions(
+            program,
+            config.migrationExports ?? [],
+            context,
+          );
         },
 
         CallExpression(node: TSESTree.CallExpression) {
-          if (bindings.size === 0) return;
-
           if (
             node.callee.type !== AST_NODE_TYPES.MemberExpression ||
             node.callee.computed ||
@@ -447,11 +488,19 @@ export function createUnscopedMutationRule(
             return;
           }
 
-          // Importing the driver does not make every `.delete()` in the file a
-          // query — the receiver has to read as a driver handle too.
-          const base = receiverBaseName(node.callee);
-          if (base === undefined) return;
-          if (!bindings.has(base) && !config.receiverPattern.test(base)) return;
+          // Where the receiver comes from — never what it is called. A
+          // `Map`, a `Set` or another library's client is not a query; a
+          // handle traced to the driver is, even through a relative import;
+          // an untraceable one needs the call's own shape to vouch for it.
+          const origin = originOf(valueAt(node.callee.object, env));
+          if (origin === 'foreign') return;
+          if (
+            origin === 'unknown' &&
+            !(ownsFile && hasDistinctiveShape(node))
+          ) {
+            return;
+          }
+          if (insideAny(node, migrations)) return;
 
           // `destroy({ truncate: true })` passes the scope check by having an
           // options object, so it is tested first.
@@ -483,10 +532,146 @@ export function createUnscopedMutationRule(
 
           const chained = chainMethodNames(node);
           if (scopeMethods.some((name) => chained.has(name))) return;
+          // `const q = knex('t'); if (id) q.where({ id }); await q.del();` —
+          // the builder is scoped, or handed to a helper that may scope it,
+          // somewhere other than this chain.
+          if (scopedElsewhere(node, scopeMethods, env)) return;
 
           context.report({ node, messageId: 'unscopedMutation' });
         },
       };
+
+      function hasDistinctiveShape(node: TSESTree.CallExpression): boolean {
+        const callee = node.callee as TSESTree.MemberExpression;
+        switch (config.distinctiveShape) {
+          case 'model-accessor':
+            return callee.object.type === AST_NODE_TYPES.MemberExpression;
+          case 'table-call':
+            return startsWithTable(callee.object);
+          case 'table-argument': {
+            const [table] = node.arguments;
+            return (
+              table !== undefined &&
+              table.type !== AST_NODE_TYPES.SpreadElement &&
+              originOf(valueAt(table, env)) === 'ours'
+            );
+          }
+          default:
+            return false;
+        }
+      }
     },
   };
+}
+
+/** Knex chain starters that name the table: `knex('t')`, `knex.from('t')`. */
+const TABLE_STARTERS: ReadonlySet<string> = new Set([
+  'table',
+  'from',
+  'into',
+  'queryBuilder',
+  'withSchema',
+]);
+
+/** Does this receiver chain begin by naming a table (`x('t')`, `x.from('t')`)? */
+export function startsWithTable(receiver: TSESTree.Node): boolean {
+  let cursor: TSESTree.Node = receiver;
+  for (;;) {
+    if (cursor.type === AST_NODE_TYPES.CallExpression) {
+      if (cursor.callee.type !== AST_NODE_TYPES.MemberExpression) return true;
+      if (TABLE_STARTERS.has(propertyName(cursor.callee) ?? '')) return true;
+      cursor = cursor.callee.object;
+      continue;
+    }
+    if (cursor.type === AST_NODE_TYPES.MemberExpression) {
+      cursor = cursor.object;
+      continue;
+    }
+    return false;
+  }
+}
+
+/** Is `node` inside any of `functions`? */
+export function insideAny(
+  node: TSESTree.Node,
+  functions: ReadonlySet<TSESTree.Node>,
+): boolean {
+  for (let n = node.parent; n; n = n.parent) {
+    if (functions.has(n)) return true;
+  }
+  return false;
+}
+
+/**
+ * The functions this module exports under any of `names` — ESM, CommonJS,
+ * `module.exports = { up, down }` — resolved through the same export reader
+ * the cross-file walk uses.
+ */
+export function exportedFunctions(
+  program: TSESTree.Program,
+  names: readonly string[],
+  context: {
+    readonly physicalFilename: string;
+    readonly languageOptions?: { readonly parser?: unknown };
+    readonly sourceCode: {
+      readonly scopeManager: TSESLint.Scope.ScopeManager | null;
+    };
+  },
+): Set<TSESTree.Node> {
+  const found = new Set<TSESTree.Node>();
+  const scopeManager = context.sourceCode.scopeManager;
+  if (names.length === 0 || scopeManager === null) return found;
+  const module = {
+    file: context.physicalFilename,
+    ast: program,
+    scopeManager,
+  };
+  for (const name of names) {
+    const exported = exportedValue(
+      module,
+      name,
+      context.languageOptions?.parser,
+    );
+    if (exported === null) continue;
+    const target = follow(exported);
+    if (isFunctionNode(target.node)) found.add(target.node);
+  }
+  return found;
+}
+
+/**
+ * Is the builder this chain starts from scoped by another statement — a
+ * `.where…()` on the same binding, or the binding handed to a function that
+ * may add one?
+ */
+export function scopedElsewhere(
+  node: TSESTree.CallExpression,
+  scopeMethods: readonly string[],
+  env: Env,
+): boolean {
+  let root: TSESTree.Node = node.callee;
+  while (
+    root.type === AST_NODE_TYPES.MemberExpression ||
+    root.type === AST_NODE_TYPES.CallExpression
+  ) {
+    root =
+      root.type === AST_NODE_TYPES.MemberExpression ? root.object : root.callee;
+  }
+  if (root.type !== AST_NODE_TYPES.Identifier) return false;
+  const variable = lookup(root.name, env.scopeOf(root));
+  if (variable === null || variable.defs[0]?.type !== 'Variable') return false;
+  return variable.references.some((reference) => {
+    const use = reference.identifier.parent;
+    if (
+      use?.type === AST_NODE_TYPES.MemberExpression &&
+      use.object === reference.identifier
+    ) {
+      return scopeMethods.includes(propertyName(use) ?? '');
+    }
+    return (
+      (use?.type === AST_NODE_TYPES.CallExpression ||
+        use?.type === AST_NODE_TYPES.NewExpression) &&
+      use.arguments.some((argument) => argument === reference.identifier)
+    );
+  });
 }

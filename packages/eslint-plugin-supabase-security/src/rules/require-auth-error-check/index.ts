@@ -15,6 +15,7 @@
  */
 
 import {
+  TSESLint,
   TSESTree,
   createRule,
   formatLLMMessage,
@@ -34,6 +35,7 @@ type MessageIds = 'missingErrorCheck';
 const AUTH_METHODS = new Set([
   'getUser',
   'getSession',
+  'getClaims',
   'refreshSession',
   'exchangeCodeForSession',
 ]);
@@ -67,6 +69,186 @@ function bindsError(pattern: TSESTree.ObjectPattern): boolean {
   });
 }
 
+/**
+ * The fields of `data` that say who is authenticated. On failure each is
+ * `null` while `data` itself is still an object — which is what makes testing
+ * `data` (always truthy) the bypass and testing these the fail-closed check.
+ * They are the SDK's response keys, not variable names.
+ */
+const IDENTITY_FIELDS = new Set(['user', 'session', 'claims']);
+
+/** Statements whose `test` decides a branch. */
+const TEST_OWNERS = new Set([
+  'IfStatement',
+  'ConditionalExpression',
+  'WhileStatement',
+  'DoWhileStatement',
+  'ForStatement',
+]);
+
+/**
+ * Is this identity read checked before it is trusted?
+ *
+ * Walks up through the expression it sits in — `!user`, `user?.id`,
+ * `user && …`, `session.user.id === owner` — and answers yes when that
+ * expression is a branch test, a short-circuit operand, or an optional chain.
+ * Each of those takes the "no identity" path on failure: fail-closed.
+ */
+function isGuarded(node: TSESTree.Node): boolean {
+  let current: TSESTree.Node = node;
+  // Every node on the way up has a parent: the walk stops at the first one
+  // that is not part of the expression, and `Program` never is.
+  for (let parent = current.parent!; ; parent = parent.parent!) {
+    if (parent.type === 'LogicalExpression') return true;
+    // `x !== undefined` / `x === undefined` is passed by the `null` a failure
+    // yields, so it is no guard; `!= null`, `=== null` and `!= undefined` are.
+    if (
+      parent.type === 'BinaryExpression' &&
+      comparesStrictlyWithUndefined(parent)
+    ) {
+      return false;
+    }
+    if (parent.type === 'MemberExpression' && parent.optional) return true;
+    if (TEST_OWNERS.has(parent.type)) {
+      return (parent as { test?: TSESTree.Node | null }).test === current;
+    }
+    if (
+      parent.type !== 'MemberExpression' &&
+      parent.type !== 'ChainExpression' &&
+      parent.type !== 'UnaryExpression' &&
+      parent.type !== 'BinaryExpression' &&
+      parent.type !== 'TSNonNullExpression'
+    ) {
+      return false;
+    }
+    current = parent;
+  }
+}
+
+/** `a === undefined` / `undefined !== a`, or the same with `void 0`. */
+function comparesStrictlyWithUndefined(
+  node: TSESTree.BinaryExpression,
+): boolean {
+  if (node.operator !== '===' && node.operator !== '!==') return false;
+  const isUndefined = (side: TSESTree.Node) =>
+    (side.type === 'Identifier' && side.name === 'undefined') ||
+    (side.type === 'UnaryExpression' && side.operator === 'void');
+  return isUndefined(node.left) || isUndefined(node.right);
+}
+
+/**
+ * Does the value leave this function's hands — returned, passed on, stored?
+ * The caller then makes the decision, and this node cannot see it.
+ */
+function escapes(node: TSESTree.Node): boolean {
+  let current = node;
+  // `data?.user` is wrapped in a ChainExpression; `user as User` in a cast.
+  while (
+    current.parent?.type === 'ChainExpression' ||
+    current.parent?.type === 'TSAsExpression' ||
+    current.parent?.type === 'TSNonNullExpression'
+  ) {
+    current = current.parent;
+  }
+  const parent = current.parent;
+  switch (parent?.type) {
+    case 'ReturnStatement':
+    case 'ArrowFunctionExpression':
+    case 'CallExpression':
+    case 'NewExpression':
+    case 'Property':
+    case 'ArrayExpression':
+    case 'SpreadElement':
+    case 'JSXExpressionContainer':
+    case 'VariableDeclarator':
+    case 'AssignmentExpression':
+    case 'AwaitExpression':
+      return true;
+    default:
+      return false;
+  }
+}
+
+/**
+ * Is the auth result handled fail-closed even without its `error`?
+ *
+ * `const { data: { user } } = await supabase.auth.getUser(); if (!user) …` is
+ * Supabase's own documented pattern, and it is safe: a failure yields
+ * `user === null` and the guard denies. The rule stays silent when any
+ * identity field is guarded or handed on. What it still reports is the result
+ * trusted without either — `if (data) …` (always truthy, the bypass),
+ * `user!.id` with no check, or a result never read at all.
+ */
+function isFailClosed(
+  pattern: TSESTree.ObjectPattern,
+  variables: readonly TSESLint.Scope.Variable[],
+): boolean {
+  // Every identifier a pattern binds is one of the declared variables.
+  const variableFor = (id: TSESTree.Node) =>
+    variables.find((variable) => variable.defs[0]?.name === id)!;
+
+  // No rest element here: `bindsError` already abstained on one.
+  for (const property of pattern.properties as TSESTree.Property[]) {
+    if (objectKeyName(property) !== 'data') continue;
+    const value =
+      property.value.type === 'AssignmentPattern'
+        ? property.value.left
+        : property.value;
+
+    // `data: { user }` — the identity is bound directly.
+    if (value.type === 'ObjectPattern') {
+      for (const field of value.properties) {
+        if (field.type !== 'Property') continue;
+        const key = objectKeyName(field);
+        if (key === null || !IDENTITY_FIELDS.has(key)) continue;
+        const bound =
+          field.value.type === 'AssignmentPattern'
+            ? field.value.left
+            : field.value;
+        const variable = variableFor(bound);
+        if (
+          readsOf(variable).some(
+            (identifier) => isGuarded(identifier) || escapes(identifier),
+          )
+        ) {
+          return true;
+        }
+      }
+      continue;
+    }
+
+    // `data` bound whole — `data.user` read in a check, or `data` handed on.
+    for (const identifier of readsOf(variableFor(value))) {
+      const parent = identifier.parent;
+      const field =
+        parent?.type === 'MemberExpression' && parent.object === identifier
+          ? propertyName(parent)
+          : null;
+      if (field !== null && IDENTITY_FIELDS.has(field)) {
+        if (isGuarded(parent!) || escapes(parent!)) return true;
+      } else if (escapes(identifier)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * Where a binding is read. The declaration itself is a write reference whose
+ * identifier sits inside the pattern, and must not count as a use.
+ */
+function readsOf(variable: TSESLint.Scope.Variable): TSESTree.Identifier[] {
+  return variable.references
+    .filter((ref) => ref.isRead())
+    .map((ref) => ref.identifier as TSESTree.Identifier);
+}
+
+/** `await x` or `x` — the call either way. */
+function unwrapAwait(node: TSESTree.Node): TSESTree.Node {
+  return node.type === 'AwaitExpression' ? node.argument : node;
+}
+
 export const requireAuthErrorCheck = createRule<[], MessageIds>({
   name: 'require-auth-error-check',
   meta: {
@@ -98,30 +280,56 @@ export const requireAuthErrorCheck = createRule<[], MessageIds>({
   defaultOptions: [],
   create(context) {
     if (!fileUsesSupabase(context.sourceCode.ast)) return {};
+    const sourceCode = context.sourceCode;
+
+    /** The auth method a call invokes, if it is one this rule covers. */
+    const authMethodOf = (node: TSESTree.Node): string | undefined => {
+      const call = unwrapAwait(node);
+      return call.type === 'CallExpression'
+        ? isSupabaseAuthCall(call.callee as TSESTree.Expression)
+        : undefined;
+    };
+
+    function check(
+      pattern: TSESTree.ObjectPattern,
+      owner: TSESTree.Node,
+      method: string,
+    ): void {
+      if (bindsError(pattern)) return;
+      if (isFailClosed(pattern, sourceCode.getDeclaredVariables(owner))) return;
+      context.report({
+        node: pattern,
+        messageId: 'missingErrorCheck',
+        data: { method },
+      });
+    }
 
     return {
       VariableDeclarator(node): void {
         if (node.id.type !== 'ObjectPattern') return;
         if (node.init === null) return;
+        const method = authMethodOf(node.init);
+        if (method !== undefined) check(node.id, node, method);
+      },
 
-        /*
-         * `await x.auth.getUser()` and the bare call both land here. A `.then()`
-         * chain does not, and deliberately: the result there is not destructured
-         * at the declarator, so there is nothing to read the omission from.
-         */
-        const call =
-          node.init.type === 'AwaitExpression' ? node.init.argument : node.init;
-        if (call.type !== 'CallExpression') return;
-
-        const method = isSupabaseAuthCall(call.callee as TSESTree.Expression);
+      /*
+       * `supabase.auth.getUser().then(({ data }) => …)` — the same result,
+       * destructured in the callback's parameter instead of a declarator.
+       */
+      CallExpression(node): void {
+        const { callee } = node;
+        if (callee.type !== 'MemberExpression') return;
+        if (propertyName(callee) !== 'then') return;
+        const method = authMethodOf(callee.object);
         if (method === undefined) return;
-        if (bindsError(node.id)) return;
-
-        context.report({
-          node: node.id,
-          messageId: 'missingErrorCheck',
-          data: { method },
-        });
+        const [onFulfilled] = node.arguments;
+        if (
+          onFulfilled?.type !== 'ArrowFunctionExpression' &&
+          onFulfilled?.type !== 'FunctionExpression'
+        )
+          return;
+        const [param] = onFulfilled.params;
+        if (param?.type === 'ObjectPattern') check(param, onFulfilled, method);
       },
     };
   },

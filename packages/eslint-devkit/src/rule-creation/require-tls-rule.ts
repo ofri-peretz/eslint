@@ -53,7 +53,17 @@
 import { AST_NODE_TYPES } from '../ast-node-types';
 import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
 import { formatLLMMessage, MessageIcons } from '../messaging';
-import { driverBindings, propertyKeyName } from './unscoped-mutation-rule';
+import { propertyKeyName } from './unscoped-mutation-rule';
+import { createModuleEvidence } from './module-evidence';
+import { isTestFilePath } from './rule-creator';
+import { createOriginClassifier } from './driver-origin';
+import {
+  type ConfigShape,
+  configShapeEvidence,
+  passedToForeign,
+  possibleValues,
+} from './connection-config';
+import { envOf, valueAt } from './value-follow';
 
 /** Message ids every rule built by this factory reports. */
 export type RequireTlsMessageIds =
@@ -101,6 +111,11 @@ export interface RequireTlsRuleConfig {
    * `sslmode=disable` / `ssl=false`. Omit for drivers that take no URL.
    */
   readonly urlSchemes?: readonly string[];
+  /**
+   * The driver's config-file contracts — a knexfile's `{ client: 'pg',
+   * connection }` — that mark a file with no driver import as the driver's.
+   */
+  readonly configShapes?: readonly ConfigShape[];
   /** Remediation line in the emitted message. */
   readonly fix: string;
   /** Reference link in the emitted message. */
@@ -207,6 +222,11 @@ export function urlDisablesTls(
   return /[?&](?:sslmode=disable|ssl=(?:false|0))(?:&|$)/i.test(query);
 }
 
+/** Is `inner` inside (or the same node as) `outer`? */
+export function within(inner: TSESTree.Node, outer: TSESTree.Node): boolean {
+  return outer.range[0] <= inner.range[0] && inner.range[1] <= outer.range[1];
+}
+
 /**
  * Is this string literal actually being used as a connection string?
  *
@@ -233,7 +253,7 @@ export function inConnectionPosition(
   // `Node` is not.
   node: TSESTree.Literal | TSESTree.TemplateLiteral,
   connectionKeys: readonly string[],
-  bindings: ReadonlySet<string>,
+  isDriverCallee: (callee: TSESTree.Node) => boolean,
 ): boolean {
   const parent = node.parent;
   if (!parent) return false;
@@ -248,31 +268,10 @@ export function inConnectionPosition(
     parent.type === AST_NODE_TYPES.NewExpression
   ) {
     if (!parent.arguments.includes(node)) return false;
-    return calleeBaseIsDriver(parent.callee, bindings);
+    return isDriverCallee(parent.callee);
   }
 
   return false;
-}
-
-/** Does this callee chain start at a name introduced by importing the driver? */
-function calleeBaseIsDriver(
-  callee: TSESTree.Node,
-  bindings: ReadonlySet<string>,
-): boolean {
-  let cursor: TSESTree.Node = callee;
-  for (;;) {
-    if (cursor.type === AST_NODE_TYPES.MemberExpression) {
-      cursor = cursor.object;
-      continue;
-    }
-    if (cursor.type === AST_NODE_TYPES.CallExpression) {
-      cursor = cursor.callee;
-      continue;
-    }
-    return (
-      cursor.type === AST_NODE_TYPES.Identifier && bindings.has(cursor.name)
-    );
-  }
 }
 
 /**
@@ -290,6 +289,11 @@ export function createRequireTlsRule(
     ...(config.connectionKeys ?? []),
   ];
   const urlSchemes = config.urlSchemes ?? [];
+  const usesModule = createModuleEvidence({
+    packages: config.modules,
+    extraEvidence: configShapeEvidence(config.configShapes ?? []),
+  });
+  const originOf = createOriginClassifier(config.modules);
 
   return {
     meta: {
@@ -327,109 +331,131 @@ export function createRequireTlsRule(
     },
     defaultOptions: [],
     create(context) {
-      let bindings = new Set<string>();
+      // BENCHMARK-CRITERIA §B1: a test pointing at a local database with
+      // TLS off is not the shipped connection.
+      if (isTestFilePath(context.filename)) return {};
+      const env = envOf(context);
+      let ownsFile = false;
       /**
-       * Properties already reported in this file.
-       *
-       * A nested config is reachable two ways — the visitor visits every
-       * ObjectExpression, and a qualifying parent recurses into it — so
-       * `{ connection: { host, ssl: false } }` would otherwise report twice
-       * for one mistake.
+       * Properties already reported. The TLS sub-object is reached twice —
+       * once while its parent config is scanned, and again when the
+       * ObjectExpression visitor lands on the sub-object itself — so without
+       * this a single `rejectUnauthorized: false` would report twice.
        */
-      let reported = new WeakSet<TSESTree.Property>();
+      const reported = new WeakSet<TSESTree.Node>();
 
       const report = (
-        prop: TSESTree.Property,
+        node: TSESTree.Node,
         messageId: RequireTlsMessageIds,
       ): void => {
-        if (reported.has(prop)) return;
-        reported.add(prop);
-        context.report({ node: prop, messageId });
-      };
-
-      const reportVerifyOffProperty = (
-        prop: TSESTree.Property,
-        name: string,
-      ): void => {
-        if (!VERIFY_OFF_KEYS.includes(name as (typeof VERIFY_OFF_KEYS)[number]))
-          return;
-        // `trustServerCertificate` is the inverted spelling: dangerous when true.
-        const inverted = name === 'trustServerCertificate';
-        if (!isLiteralBoolean(prop.value, inverted)) return;
-        report(prop, 'certificateValidationDisabled');
+        if (reported.has(node)) return;
+        reported.add(node);
+        context.report({ node, messageId });
       };
 
       /**
-       * Scan one object's direct properties for TLS keys, with no gate of its
-       * own. Called on objects already established as connection-relevant —
-       * either because they look like a config, or because a config nested
-       * them under a connection key.
+       * Judge one TLS-relevant property, through every value it can take.
+       * A value written in another module is reported at this property.
        */
-      const scanTlsKeys = (obj: TSESTree.ObjectExpression): void => {
-        for (const prop of obj.properties) {
-          if (prop.type !== AST_NODE_TYPES.Property) continue;
-          const name = propertyKeyName(prop);
-          if (name === undefined) continue;
-
-          if (TLS_OFF_KEYS.includes(name as (typeof TLS_OFF_KEYS)[number])) {
-            if (isLiteralBoolean(prop.value, false)) {
-              report(prop, 'tlsDisabled');
-              continue;
-            }
-            // `ssl: { rejectUnauthorized: false }` — the inner object is the
-            // TLS options bag. It has no connection-shaped keys of its own, so
-            // it is scanned here rather than waiting for its own visit.
-            if (prop.value.type === AST_NODE_TYPES.ObjectExpression) {
-              scanTlsKeys(prop.value);
-            }
-            continue;
+      const judgeProperty = (
+        prop: TSESTree.Property,
+        name: string,
+        depth: number,
+      ): void => {
+        const tlsKey = TLS_OFF_KEYS.includes(
+          name as (typeof TLS_OFF_KEYS)[number],
+        );
+        const verifyKey = VERIFY_OFF_KEYS.includes(
+          name as (typeof VERIFY_OFF_KEYS)[number],
+        );
+        // `trustServerCertificate: true` is the inverted spelling.
+        const inverted = name === 'trustServerCertificate';
+        for (const value of possibleValues(valueAt(prop.value, env))) {
+          // Written inline in this property, or followed to a binding?
+          const inline = value.env === env && within(value.node, prop.value);
+          if (tlsKey && isLiteralBoolean(value.node, false)) {
+            report(prop, 'tlsDisabled');
+            return;
           }
-
-          // Some drivers hoist the verification flag to the top level.
-          reportVerifyOffProperty(prop, name);
-
-          // Drivers that keep their TLS bag one level down — Sequelize's
-          // `dialectOptions`, knex's `connection`. Only keys this driver
-          // declared as connection-identifying are followed, so an arbitrary
-          // nested object is not searched for stray `ssl` keys.
+          if (verifyKey && isLiteralBoolean(value.node, inverted)) {
+            report(prop, 'certificateValidationDisabled');
+            return;
+          }
+          // A nested TLS / connection object: `ssl: { rejectUnauthorized }`,
+          // `ssl: sslOptions`, `ssl: isProd ? { … } : false`.
           if (
-            prop.value.type === AST_NODE_TYPES.ObjectExpression &&
-            connectionKeys.includes(name)
+            value.node.type === AST_NODE_TYPES.ObjectExpression &&
+            (tlsKey || connectionKeys.includes(name))
           ) {
-            scanTlsKeys(prop.value);
+            // A TLS object written elsewhere (`ssl: sslOptions`) is reported
+            // here, at the connection that uses it: on its own it is just an
+            // options object, and another plugin's to judge.
+            if (inline) scanTlsKeys(value.node, depth + 1);
+            else if (disablesTls(value.node))
+              report(prop, 'certificateValidationDisabled');
           }
         }
       };
 
-      const checkObject = (obj: TSESTree.ObjectExpression): void => {
-        if (!looksLikeConnectionConfig(obj, connectionKeys)) return;
-        scanTlsKeys(obj);
+      /** Does a (foreign-module) TLS object turn verification off? */
+      const disablesTls = (obj: TSESTree.ObjectExpression): boolean =>
+        obj.properties.some(
+          (prop) =>
+            prop.type === AST_NODE_TYPES.Property &&
+            VERIFY_OFF_KEYS.includes(
+              propertyKeyName(prop) as (typeof VERIFY_OFF_KEYS)[number],
+            ) &&
+            isLiteralBoolean(
+              prop.value,
+              propertyKeyName(prop) === 'trustServerCertificate',
+            ),
+        );
+
+      /**
+       * Walk an object that is either a connection config or a TLS
+       * sub-object, reporting every key that turns TLS or verification off.
+       */
+      const scanTlsKeys = (obj: TSESTree.ObjectExpression, depth = 0): void => {
+        if (depth > 4) return;
+        for (const prop of obj.properties) {
+          if (prop.type !== AST_NODE_TYPES.Property) continue;
+          const name = propertyKeyName(prop);
+          if (name === undefined) continue;
+          judgeProperty(prop, name, depth);
+        }
       };
 
       return {
         Program(program: TSESTree.Program) {
-          bindings = driverBindings(program, config.modules);
-          reported = new WeakSet<TSESTree.Property>();
+          ownsFile = usesModule(program);
         },
 
         ObjectExpression(node: TSESTree.ObjectExpression) {
-          if (bindings.size === 0) return;
-          checkObject(node);
+          if (!ownsFile) return;
+          if (!looksLikeConnectionConfig(node, connectionKeys)) return;
+          // `new https.Agent({ host, rejectUnauthorized: false })` is an HTTPS
+          // client, not this driver's connection.
+          if (passedToForeign(node, originOf, env)) return;
+          scanTlsKeys(node);
         },
 
         Literal(node: TSESTree.Literal) {
-          if (bindings.size === 0) return;
+          if (!ownsFile) return;
           if (typeof node.value !== 'string') return;
           if (!urlDisablesTls(node.value, urlSchemes)) return;
-          // Importing the driver does not make every string in the file a
-          // connection string. Without this the rule reports a fixture, a doc
-          // example, an error-message template — anything that happens to
-          // contain a DSN — which is precisely the false-positive class the
-          // object path is careful to avoid.
-          if (!inConnectionPosition(node, connectionKeys, bindings)) return;
+          // Same discipline as the object path: a connection URL only counts
+          // where a driver would actually read it. `inConnectionPosition` is
+          // shared with no-hardcoded-credentials, so the two rules agree on
+          // what "a connection string" means.
+          if (!inConnectionPosition(node, connectionKeys, isDriverCallee))
+            return;
           context.report({ node, messageId: 'tlsDisabled' });
         },
       };
+
+      function isDriverCallee(callee: TSESTree.Node): boolean {
+        return originOf(valueAt(callee, env)) === 'ours';
+      }
     },
   };
 }

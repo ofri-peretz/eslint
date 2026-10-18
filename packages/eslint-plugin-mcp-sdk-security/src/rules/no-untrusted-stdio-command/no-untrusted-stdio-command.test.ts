@@ -631,3 +631,28 @@ describe('no-untrusted-stdio-command', () => {
     ],
   });
 });
+
+describe('1.0 independent review (2026-10-12)', () => {
+  ruleTester.run('review', noUntrustedStdioCommand, {
+    valid: [
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: a launch helper only given fixed servers
+        name: 'precision lock: a launch helper whose callers pass a fixed command',
+        code:
+          SDK +
+          'function launch(foo) { return new StdioClientTransport({ command: foo.command, args: foo.args }); }\n' +
+          'launch({ command: "node", args: ["server.js"] });',
+      },
+    ],
+    invalid: [
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: hubs launch through a helper
+        name: 'FN: a tool argument reaches the command through a launch helper',
+        code:
+          inTool('return launch(args.server);') +
+          '\nfunction launch(foo) { return new StdioClientTransport({ command: foo.command }); }',
+        errors: [err(TOOL, 'args.server.command', 'command')],
+      },
+    ],
+  });
+});

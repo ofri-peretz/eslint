@@ -884,3 +884,122 @@ export function handle(req) {
     },
   ],
 });
+
+// ---------------------------------------------------------------------------
+// Edges pinned by mutation testing (npm run mutation -- --plugin jwt-security).
+// Each fixture is the input that tells the rule apart from a Stryker mutant
+// that survived the suite above; see docs/MUTATION_TESTING.md.
+// ---------------------------------------------------------------------------
+
+ruleTester.run('mutation-guided edges', noDecodeWithoutVerify, {
+  valid: [
+    {
+      name: 'a decode inside a test file is fixture plumbing, not a trust decision',
+      code: `import jwt from 'jsonwebtoken';
+const decoded = jwt.decode(token);`,
+      filename: 'src/auth.test.ts',
+    },
+    {
+      name: 'a non-null assertion does not hide that only exp is read',
+      code: `import jwt from 'jsonwebtoken';
+const decoded = jwt.decode(token)!;
+schedule(decoded.exp);`,
+    },
+    {
+      name: 'an if-presence check before reading exp reads nothing from the token',
+      code: `import jwt from 'jsonwebtoken';
+const decoded = jwt.decode(token);
+if (decoded) schedule(decoded.exp);`,
+    },
+    {
+      name: 'a && presence guard before reading exp reads nothing from the token',
+      code: `import jwt from 'jsonwebtoken';
+const decoded = jwt.decode(token);
+const exp = decoded && decoded.exp;`,
+    },
+    {
+      name: 'a ternary presence guard before reading exp reads nothing from the token',
+      code: `import jwt from 'jsonwebtoken';
+const decoded = jwt.decode(token);
+const exp = decoded ? decoded.exp : 0;`,
+    },
+    // Rule fix (FP): the documented default annotation was never applied.
+    {
+      name: 'the documented default @decoded-header-only annotation suppresses with no options',
+      code: `import jwt from 'jsonwebtoken';
+// @decoded-header-only
+const decoded = jwt.decode(token, { complete: true });
+route(decoded);`,
+    },
+    // Rule fix (FP): the jwt-decode name fallback skipped every gate.
+    {
+      name: 'a helper of the same name in a file with no JWT library is not jwt-decode',
+      code: `function jwtDecode(s) {
+  return JSON.parse(atob(s.split('.')[1]));
+}
+const config = jwtDecode(raw);`,
+    },
+    {
+      name: 'jwt-decode v3 spelling: reading only exp is the documented refresh check',
+      code: `import jwt_decode from 'jwt-decode';
+const { exp } = jwt_decode(token);
+if (exp * 1000 < Date.now()) refresh();`,
+    },
+  ],
+  invalid: [
+    {
+      name: 'payload.kid is a claim, not the header key id — only header.kid picks a key',
+      code: `import jwt from 'jsonwebtoken';
+const decoded = jwt.decode(token, { complete: true });
+getKey(decoded.payload.kid);`,
+      errors: [{ messageId: 'decodeWithoutVerify' }],
+    },
+    {
+      // jwt-decode returns the PAYLOAD unless asked for { header: true }, so
+      // `.header.kid` here reads a payload claim named "header" — unverified
+      // data, not the key id jsonwebtoken's { complete: true } header carries.
+      name: 'jwt-decode: .header.kid on the decoded payload still reports',
+      code: `import jwt_decode from 'jwt-decode';
+const kid = jwt_decode(token).header.kid;`,
+      errors: [{ messageId: 'jwtDecodeLibrary' }],
+    },
+    {
+      name: 'jsonwebtoken without { complete: true }: .header.kid reads the payload and still reports',
+      code: `import jwt from 'jsonwebtoken';
+const kid = jwt.decode(token).header.kid;`,
+      errors: [{ messageId: 'decodeWithoutVerify' }],
+    },
+    {
+      name: '{ complete: false } returns the payload: .header.kid still reports',
+      code: `import jwt from 'jsonwebtoken';
+const kid = jwt.decode(token, { complete: false }).header.kid;`,
+      errors: [{ messageId: 'decodeWithoutVerify' }],
+    },
+    {
+      name: '{ complete: flag } may return the payload: .header.kid still reports',
+      code: `import jwt from 'jsonwebtoken';
+const kid = jwt.decode(token, { complete: wantsHeader }).header.kid;`,
+      errors: [{ messageId: 'decodeWithoutVerify' }],
+    },
+    {
+      name: 'options without complete return the payload: .header.kid still reports',
+      code: `import jwt from 'jsonwebtoken';
+const kid = jwt.decode(token, { json: true }).header.kid;`,
+      errors: [{ messageId: 'decodeWithoutVerify' }],
+    },
+    {
+      name: 'jwt-decode: a payload variable read only as .header.kid still reports',
+      code: `import jwt_decode from 'jwt-decode';
+const decoded = jwt_decode(token);
+pickKey(decoded.header.kid);`,
+      errors: [{ messageId: 'jwtDecodeLibrary' }],
+    },
+    {
+      name: 'jwt-decode v3 spelling reading an authority claim still reports',
+      code: `import jwt_decode from 'jwt-decode';
+const user = jwt_decode(token);
+authorize(user.sub);`,
+      errors: [{ messageId: 'jwtDecodeLibrary' }],
+    },
+  ],
+});

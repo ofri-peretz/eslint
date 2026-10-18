@@ -29,8 +29,19 @@ export const noUnsafeQuery = createSqlInjectionRule({
   // Only files importing Prisma's $queryRawUnsafe/$executeRawUnsafe.
   // Method names alone are shared across drivers; the import is the evidence.
   modules: ['@prisma/client', 'prisma'],
-  methods: ['$queryRawUnsafe', '$executeRawUnsafe'],
+  methods: [],
+  fragmentMethods: [
+    '$queryRawUnsafe',
+    '$executeRawUnsafe',
+    // `Prisma.raw(text)` splices text into a `Prisma.sql` / `$queryRaw`
+    // template unescaped. Only on the driver's own `Prisma` namespace.
+    { name: 'raw', requireDriverReceiver: true },
+  ],
+  // `Prisma.join`, `Prisma.empty`, a `Prisma.sql` fragment — rendered by
+  // Prisma as bound parameters, never text.
+  fragmentFactories: ['join', 'empty', 'sql', 'raw'],
   requireSqlKeywords: false,
   fix: 'Use the `$queryRaw` tagged template (or `Prisma.sql`), which parameterizes interpolated values.',
-  documentationLink: 'https://www.prisma.io/docs/orm/prisma-client/queries/raw-database-access/raw-queries#queryrawunsafe',
+  documentationLink:
+    'https://www.prisma.io/docs/orm/prisma-client/queries/raw-database-access/raw-queries#queryrawunsafe',
 });

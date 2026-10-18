@@ -11,6 +11,7 @@ autofix: false
 > **Keywords:** hardcoded credentials, CWE-798, OWASP A07:2021, Sequelize, sequelize, connection string, DATABASE_URL, secret management, git history
 
 <!-- @rule-summary -->
+
 Disallow literal database passwords in Sequelize connection configuration, including credentials embedded in a connection URL.
 <!-- @/rule-summary -->
 
@@ -23,12 +24,12 @@ Detects a database password written as a literal — as a config property, or em
 
 ## Quick Summary
 
-| Aspect            | Details                                                                          |
-| ----------------- | -------------------------------------------------------------------------------- |
+| Aspect            | Details                                                                                    |
+| ----------------- | ------------------------------------------------------------------------------------------ |
 | **CWE Reference** | [CWE-798](https://cwe.mitre.org/data/definitions/798.html) (Use of Hard-coded Credentials) |
-| **Severity**      | Critical (CVSS 9.8)                                                              |
-| **Auto-Fix**      | ❌ No auto-fix available                                                         |
-| **Category**      | Security                                                                         |
+| **Severity**      | Critical (CVSS 9.8)                                                                        |
+| **Auto-Fix**      | ❌ No auto-fix available                                                                   |
+| **Category**      | Security                                                                                   |
 
 ## Why this matters
 
@@ -38,7 +39,7 @@ every CI log that prints the file, and in every layer of the built image.
 That is what separates it from most findings: it does not stop being true when
 you fix it. Deleting the line in a follow-up commit changes nothing — the
 secret is still one `git log -p` away for anyone who has ever had read access. A
-real fix means rotating the credential *and* rewriting history, which is
+real fix means rotating the credential _and_ rewriting history, which is
 expensive enough that in practice it does not happen. The only cheap moment is
 before the line is committed, which is where this rule sits.
 
@@ -56,7 +57,12 @@ new Sequelize('postgres://app:s3cret@db.internal/app');
 
 ```ts
 // ✅ read from the environment
-new Sequelize({ dialect: 'postgres', host, username, password: process.env.DB_PASSWORD });
+new Sequelize({
+  dialect: 'postgres',
+  host,
+  username,
+  password: process.env.DB_PASSWORD,
+});
 ```
 
 ## What this rule deliberately does not report
@@ -66,13 +72,15 @@ new Sequelize({ dialect: 'postgres', host, username, password: process.env.DB_PA
   `user:pass@` userinfo form is a finding.
 - **An empty password.** `password: ''` is the "no password" sentinel for local
   trust-auth setups. Reporting it teaches people the rule cries wolf.
-- **Any runtime value** — `process.env.DB_PASSWORD` (the fix), a template
-  literal, a variable. If the analyzer cannot see the value, there is no secret
-  in the file.
+- **A runtime value** — `process.env.DB_PASSWORD` (the fix), a value read from
+  a config object this file cannot see, a template literal with a hole in the
+  password. A literal bound to a constant, a literal fallback
+  (`process.env.DB_PASSWORD || 'root'`) and a literal exported from a relative
+  module are not runtime values, and are reported.
 - **A login or signup form.** `{ user, password }` and `{ password, confirm }`
   are not connection configs. The credential cannot be its own evidence that an
   object connects to a database — the object has to name somewhere to connect
-  *to* (`host`, `port`, `database`, `connectionString`) before its password
+  _to_ (`host`, `port`, `database`, `connectionString`) before its password
   counts. Without that rule, every app with a login form and a database reports.
 - **A file that never imports sequelize.** The driver import is the gate that keeps
   this rule inside its own plugin; generic secret scanning belongs to a
@@ -91,6 +99,27 @@ reason rather than switching the rule off:
 // eslint-disable-next-line sequelize-security/no-hardcoded-credentials -- ephemeral test container
 new Sequelize({ dialect: 'postgres', host, username, password: 'hunter2' });
 ```
+
+## How a connection config is read (2026-10 review)
+
+- **Config files.** A sequelize-cli `config.js` — `{ dialect: 'mysql', username, password, … }` — never imports Sequelize, and is read as Sequelize's; `SequelizeModule.forRoot()` from `@nestjs/sequelize` counts as an import.
+
+- **Another library's options are not a connection.** An object handed to
+  another package — `new https.Agent({ host, rejectUnauthorized: false })`,
+  `axios.create({ … })` — is that package's to judge, even in a file that
+  imports the driver.
+
+- **Values are followed, not skipped.** A ternary or `||` / `??` arm, a
+  constant bound earlier and a value exported from a relative module are
+  read; one written elsewhere is reported at the property that uses it.
+
+- **A DSN** bound to a constant and handed to a driver call, or written as a
+  template whose static head already carries `user:password@`, is reported.
+
+- **The positional password** of `new Sequelize(database, username, password)`
+  is reported.
+
+Test files are skipped.
 
 ## Further Reading
 

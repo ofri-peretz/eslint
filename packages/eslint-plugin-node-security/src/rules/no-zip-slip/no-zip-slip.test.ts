@@ -126,7 +126,10 @@ describe('no-zip-slip', () => {
         // five of the eight corpus findings — a glob in a bundler script, a
         // relative script path in a gulpfile, a minified vendor bundle — none
         // of which involved an archive at all.
-        'const maliciousPath = "../../../etc/passwd";',
+        {
+          name: 'a traversal string that never reaches an extraction is not a slip',
+          code: 'const maliciousPath = "../../../etc/passwd";',
+        },
         'const zipEntry = "../config.json";',
         'const entry = "subdir/../../../root/.ssh/id_rsa";',
         // Shopify/cli packages/cli/bin/bundle.js:28, verbatim shape.

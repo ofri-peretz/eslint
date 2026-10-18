@@ -10,19 +10,35 @@
  * CWE-284: Improper Access Control
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  isTestFilePath,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { analyzeMongoScope } from '../../utils/receiver';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
 
 type MessageIds = 'bypassMiddleware';
-export interface Options { allowInTests?: boolean; }
+export interface Options {
+  allowInTests?: boolean;
+}
 type RuleOptions = [Options?];
 
 const BYPASS_METHODS = new Set([
-  'updateOne', 'updateMany', 'deleteOne', 'deleteMany',
-  'findOneAndUpdate', 'findOneAndDelete', 'findOneAndReplace',
-  'findByIdAndUpdate', 'findByIdAndDelete',
-  'insertMany', 'bulkWrite',
+  'updateOne',
+  'updateMany',
+  'deleteOne',
+  'deleteMany',
+  'findOneAndUpdate',
+  'findOneAndDelete',
+  'findOneAndReplace',
+  'findByIdAndUpdate',
+  'findByIdAndDelete',
+  'insertMany',
+  'bulkWrite',
 ]);
 
 export const noBypassMiddleware = createRule<RuleOptions, MessageIds>({
@@ -30,7 +46,8 @@ export const noBypassMiddleware = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
-      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/no-bypass-middleware.md', description: 'Prevent bypassing Mongoose pre/post middleware hooks',
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/no-bypass-middleware.md',
+      description: 'Prevent bypassing Mongoose pre/post middleware hooks',
       cwe: 'CWE-284',
       cvss: 5.3,
     },
@@ -47,7 +64,13 @@ export const noBypassMiddleware = createRule<RuleOptions, MessageIds>({
         documentationLink: 'https://mongoosejs.com/docs/middleware.html',
       }),
     },
-    schema: [{ type: 'object', properties: { allowInTests: { type: 'boolean', default: true } }, additionalProperties: false }],
+    schema: [
+      {
+        type: 'object',
+        properties: { allowInTests: { type: 'boolean', default: true } },
+        additionalProperties: false,
+      },
+    ],
   },
   defaultOptions: [{ allowInTests: true }],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
@@ -76,14 +99,17 @@ export const noBypassMiddleware = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        const methodName = node.callee.property.type === AST_NODE_TYPES.Identifier
-          ? node.callee.property.name
-          : null;
+        // `User['updateOne'](...)` calls the same method the dotted form does.
+        const methodName = propertyName(node.callee);
 
         // `updateOne`/`findOneAndDelete` are also the vocabulary of every
         // generic repository wrapper. Only a Mongoose model has middleware to
         // bypass in the first place.
-        if (methodName && BYPASS_METHODS.has(methodName) && mongo.isModelReceiver(node)) {
+        if (
+          methodName &&
+          BYPASS_METHODS.has(methodName) &&
+          mongo.isModelReceiver(node)
+        ) {
           context.report({
             node,
             messageId: 'bypassMiddleware',

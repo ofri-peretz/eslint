@@ -29,7 +29,27 @@ export const noUnsafeQuery = createSqlInjectionRule({
   // Only files importing knex's raw().
   // Method names alone are shared across drivers; the import is the evidence.
   modules: ['knex', 'objection'],
-  methods: ['raw'],
+  methods: [],
+  // Every knex method that splices its first argument in as SQL text.
+  fragmentMethods: [
+    'raw',
+    'whereRaw',
+    'orWhereRaw',
+    'andWhereRaw',
+    'havingRaw',
+    'orHavingRaw',
+    'andHavingRaw',
+    'orderByRaw',
+    'groupByRaw',
+    'joinRaw',
+    'fromRaw',
+  ],
+  // objection's standalone `raw('…')`.
+  fragmentFunctions: ['raw'],
+  // A `knex.raw(…)` / `knex.ref(col)` interpolated into another raw string is
+  // rendered by knex with its bindings escaped; the inner call is judged on
+  // its own.
+  fragmentFactories: ['raw', 'ref'],
   requireSqlKeywords: false,
   fix: 'Pass values as knex bindings (`?` placeholders with a bindings array) instead of interpolating them.',
   documentationLink: 'https://knexjs.org/guide/raw.html#raw-parameter-binding',

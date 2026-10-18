@@ -300,7 +300,27 @@ describe('looksLikeConnectionConfig', () => {
  */
 describe('inConnectionPosition', () => {
   const KEYS = ['connection', 'uri', 'url'];
-  const DRIVERS = new Set(['mysql']);
+  // The callee is judged by the caller-supplied predicate: the rules pass the
+  // driver-origin classifier, which walks `mysql.pool().connect(…)` back to
+  // the import (covered end to end in the rule cases above). This suite pins
+  // only that the position check defers to it.
+  const DRIVERS = (callee: TSESTree.Node): boolean => {
+    let cursor: TSESTree.Node = callee;
+    while (
+      cursor.type === AST_NODE_TYPES.MemberExpression ||
+      cursor.type === AST_NODE_TYPES.CallExpression
+    ) {
+      cursor =
+        cursor.type === AST_NODE_TYPES.MemberExpression
+          ? cursor.object
+          : cursor.callee;
+    }
+    return cursor === DRIVER_IMPORT;
+  };
+  const DRIVER_IMPORT = {
+    type: AST_NODE_TYPES.Identifier,
+    name: 'anything',
+  } as TSESTree.Identifier;
   const lit = (parent?: unknown): TSESTree.Literal =>
     ({
       type: AST_NODE_TYPES.Literal,
@@ -344,7 +364,7 @@ describe('inConnectionPosition', () => {
           type: AST_NODE_TYPES.CallExpression,
           callee: {
             type: AST_NODE_TYPES.MemberExpression,
-            object: { type: AST_NODE_TYPES.Identifier, name: 'mysql' },
+            object: DRIVER_IMPORT,
           },
         },
       },

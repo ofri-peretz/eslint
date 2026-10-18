@@ -1,0 +1,482 @@
+{
+  "browser-security/no-innerhtml": {
+    "hits": 1,
+    "avgTimeMs": 75.1,
+    "samples": [
+      {
+        "ruleId": "browser-security/no-innerhtml",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/supabase/studio/components/to-be-cleaned/TooltipListener.tsx",
+        "line": 32,
+        "column": 3,
+        "message": "🔒 CWE-79 OWASP:A05-Injection CVSS:6.1 | Assigning to innerHTML with template literal with expressions can execute malicious scripts. This is a critical XSS vulnerability. | CRITICAL [SOC2,PCI-DSS,GDPR,ISO27001]\n   Fix: Sanitize with DOMPur"
+      }
+    ]
+  },
+  "browser-security/require-blob-url-revocation": {
+    "hits": 1,
+    "avgTimeMs": 5.52,
+    "samples": [
+      {
+        "ruleId": "browser-security/require-blob-url-revocation",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/supabase/studio/components/layouts/ProjectLayout/LayoutHeader/FeedbackDropdown/FeedbackWidget.tsx",
+        "line": 154,
+        "column": 25,
+        "message": "🔒 CWE-401 OWASP:A06-Vulnerable CVSS:5.3 | URL.createObjectURL() creates a reference that persists until explicitly revoked. Without revokeObjectURL(), memory leaks occur. | MEDIUM\n   Fix: Call URL.revokeObjectURL(blobUrl) when the URL is n"
+      }
+    ]
+  },
+  "browser-security/require-https-only": {
+    "hits": 1,
+    "avgTimeMs": 8.49,
+    "samples": [
+      {
+        "ruleId": "browser-security/require-https-only",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/supabase/studio/components/interfaces/Settings/Database/NetworkRestrictions/AddRestrictionModal.tsx",
+        "line": 103,
+        "column": 37,
+        "message": "🔒 CWE-319 OWASP:A02-Security CVSS:7.5 | Enforce HTTPS for all external requests detected - this is a security risk | HIGH\n   Fix: Review and apply secure practices | https://cwe.mitre.org/data/definitions/319.html"
+      }
+    ]
+  },
+  "browser-security/no-credentials-in-query-params": {
+    "hits": 1,
+    "avgTimeMs": 13.04,
+    "samples": [
+      {
+        "ruleId": "browser-security/no-credentials-in-query-params",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/supabase/studio/components/interfaces/Settings/Database/DatabaseSettings/DatabaseSettings.tsx",
+        "line": 260,
+        "column": 21,
+        "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Credentials detected in URL query parameters - this is a security risk | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use secure methods: POST body, headers (Authorization), or secure cookies | ht"
+      }
+    ]
+  },
+  "browser-security/no-http-urls": {
+    "hits": 1,
+    "avgTimeMs": 334.73,
+    "samples": [
+      {
+        "ruleId": "browser-security/no-http-urls",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/supabase/studio/components/interfaces/Database/Hooks/HTTPRequestFields.tsx",
+        "line": 85,
+        "column": 27,
+        "message": "⚠️ CWE-319 OWASP:A02-Cryptographic CVSS:5.3 | HTTP URL detected: \"http://api.com/path/resource\" | MEDIUM\n   Fix: Use HTTPS or add to allowedHosts config | https://cwe.mitre.org/data/definitions/319.html"
+      }
+    ]
+  },
+  "postgresql-security/no-unsafe-query": {
+    "hits": 0,
+    "avgTimeMs": 2719.37,
+    "samples": []
+  },
+  "jwt-security/no-algorithm-none": {
+    "hits": 0,
+    "avgTimeMs": 112.19,
+    "samples": []
+  },
+  "browser-security/no-eval": {
+    "hits": 0,
+    "avgTimeMs": 65.8,
+    "samples": []
+  },
+  "browser-security/no-websocket-eval": {
+    "hits": 0,
+    "avgTimeMs": 59.01,
+    "samples": []
+  },
+  "browser-security/no-postmessage-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 58.21,
+    "samples": []
+  },
+  "browser-security/no-websocket-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 55.15,
+    "samples": []
+  },
+  "browser-security/no-filereader-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 52.61,
+    "samples": []
+  },
+  "browser-security/no-worker-message-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 51.82,
+    "samples": []
+  },
+  "node-security/no-weak-hash-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 41.49,
+    "samples": []
+  },
+  "node-security/no-timing-unsafe-compare": {
+    "hits": 0,
+    "avgTimeMs": 34.8,
+    "samples": []
+  },
+  "browser-security/no-unsafe-eval-csp": {
+    "hits": 0,
+    "avgTimeMs": 21.41,
+    "samples": []
+  },
+  "browser-security/no-unencrypted-transmission": {
+    "hits": 0,
+    "avgTimeMs": 19.54,
+    "samples": []
+  },
+  "node-security/no-unsafe-buffer-alloc": {
+    "hits": 0,
+    "avgTimeMs": 19.32,
+    "samples": []
+  },
+  "node-security/no-math-random-crypto": {
+    "hits": 0,
+    "avgTimeMs": 16.28,
+    "samples": []
+  },
+  "node-security/no-zip-slip": {
+    "hits": 0,
+    "avgTimeMs": 17.64,
+    "samples": []
+  },
+  "node-security/no-toctou-vulnerability": {
+    "hits": 0,
+    "avgTimeMs": 18.03,
+    "samples": []
+  },
+  "node-security/no-buffer-overread": {
+    "hits": 0,
+    "avgTimeMs": 17.17,
+    "samples": []
+  },
+  "node-security/detect-non-literal-fs-filename": {
+    "hits": 0,
+    "avgTimeMs": 15.47,
+    "samples": []
+  },
+  "node-security/detect-child-process": {
+    "hits": 0,
+    "avgTimeMs": 15.26,
+    "samples": []
+  },
+  "node-security/detect-eval-with-expression": {
+    "hits": 0,
+    "avgTimeMs": 13.37,
+    "samples": []
+  },
+  "node-security/detect-suspicious-dependencies": {
+    "hits": 0,
+    "avgTimeMs": 13.95,
+    "samples": []
+  },
+  "node-security/require-dependency-integrity": {
+    "hits": 0,
+    "avgTimeMs": 11.69,
+    "samples": []
+  },
+  "jwt-security/no-weak-secret": {
+    "hits": 0,
+    "avgTimeMs": 12.7,
+    "samples": []
+  },
+  "node-security/no-data-in-temp-storage": {
+    "hits": 0,
+    "avgTimeMs": 9.94,
+    "samples": []
+  },
+  "jwt-security/no-hardcoded-secret": {
+    "hits": 0,
+    "avgTimeMs": 9.93,
+    "samples": []
+  },
+  "node-security/no-static-iv": {
+    "hits": 0,
+    "avgTimeMs": 9.79,
+    "samples": []
+  },
+  "node-security/no-arbitrary-file-access": {
+    "hits": 0,
+    "avgTimeMs": 9.63,
+    "samples": []
+  },
+  "jwt-security/no-timestamp-manipulation": {
+    "hits": 0,
+    "avgTimeMs": 9.13,
+    "samples": []
+  },
+  "browser-security/no-client-side-auth-logic": {
+    "hits": 0,
+    "avgTimeMs": 7.88,
+    "samples": []
+  },
+  "node-security/no-unbounded-decompression": {
+    "hits": 0,
+    "avgTimeMs": 7.5,
+    "samples": []
+  },
+  "browser-security/no-jwt-in-storage": {
+    "hits": 0,
+    "avgTimeMs": 5.66,
+    "samples": []
+  },
+  "jwt-security/no-sensitive-payload": {
+    "hits": 0,
+    "avgTimeMs": 7.02,
+    "samples": []
+  },
+  "browser-security/no-sensitive-localstorage": {
+    "hits": 0,
+    "avgTimeMs": 7.56,
+    "samples": []
+  },
+  "jwt-security/no-decode-without-verify": {
+    "hits": 0,
+    "avgTimeMs": 6.89,
+    "samples": []
+  },
+  "browser-security/no-unsafe-inline-csp": {
+    "hits": 0,
+    "avgTimeMs": 6.46,
+    "samples": []
+  },
+  "node-security/no-cryptojs": {
+    "hits": 0,
+    "avgTimeMs": 6.33,
+    "samples": []
+  },
+  "browser-security/no-insecure-redirects": {
+    "hits": 0,
+    "avgTimeMs": 6.41,
+    "samples": []
+  },
+  "browser-security/no-disabled-certificate-validation": {
+    "hits": 0,
+    "avgTimeMs": 5.88,
+    "samples": []
+  },
+  "browser-security/no-incomplete-url-sanitization": {
+    "hits": 0,
+    "avgTimeMs": 5.82,
+    "samples": []
+  },
+  "node-security/no-dynamic-command-string": {
+    "hits": 0,
+    "avgTimeMs": 5.86,
+    "samples": []
+  },
+  "node-security/no-deprecated-buffer": {
+    "hits": 0,
+    "avgTimeMs": 5.49,
+    "samples": []
+  },
+  "browser-security/require-postmessage-origin-check": {
+    "hits": 0,
+    "avgTimeMs": 5.48,
+    "samples": []
+  },
+  "jwt-security/no-algorithm-confusion": {
+    "hits": 0,
+    "avgTimeMs": 4.93,
+    "samples": []
+  },
+  "browser-security/no-postmessage-wildcard-origin": {
+    "hits": 0,
+    "avgTimeMs": 4.99,
+    "samples": []
+  },
+  "node-security/no-ssrf": {
+    "hits": 0,
+    "avgTimeMs": 4.81,
+    "samples": []
+  },
+  "node-security/no-unsafe-dynamic-require": {
+    "hits": 0,
+    "avgTimeMs": 4.58,
+    "samples": []
+  },
+  "browser-security/no-allow-arbitrary-loads": {
+    "hits": 0,
+    "avgTimeMs": 4.37,
+    "samples": []
+  },
+  "jwt-security/require-expiration": {
+    "hits": 0,
+    "avgTimeMs": 4.77,
+    "samples": []
+  },
+  "node-security/require-stream-error-handler": {
+    "hits": 0,
+    "avgTimeMs": 5.72,
+    "samples": []
+  },
+  "node-security/no-shell-injection": {
+    "hits": 0,
+    "avgTimeMs": 4.4,
+    "samples": []
+  },
+  "node-security/no-weak-cipher-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 4.18,
+    "samples": []
+  },
+  "node-security/no-weak-dh-parameters": {
+    "hits": 0,
+    "avgTimeMs": 4.24,
+    "samples": []
+  },
+  "browser-security/no-sensitive-indexeddb": {
+    "hits": 0,
+    "avgTimeMs": 3.81,
+    "samples": []
+  },
+  "browser-security/no-sensitive-sessionstorage": {
+    "hits": 0,
+    "avgTimeMs": 3.62,
+    "samples": []
+  },
+  "jwt-security/require-algorithm-whitelist": {
+    "hits": 0,
+    "avgTimeMs": 3.59,
+    "samples": []
+  },
+  "browser-security/no-insecure-websocket": {
+    "hits": 0,
+    "avgTimeMs": 6.04,
+    "samples": []
+  },
+  "jwt-security/require-issued-at": {
+    "hits": 0,
+    "avgTimeMs": 3.44,
+    "samples": []
+  },
+  "node-security/no-ecb-mode": {
+    "hits": 0,
+    "avgTimeMs": 3.09,
+    "samples": []
+  },
+  "browser-security/detect-mixed-content": {
+    "hits": 0,
+    "avgTimeMs": 3.2,
+    "samples": []
+  },
+  "node-security/no-insecure-http-parser": {
+    "hits": 0,
+    "avgTimeMs": 2.8,
+    "samples": []
+  },
+  "node-security/no-env-injection": {
+    "hits": 0,
+    "avgTimeMs": 2.71,
+    "samples": []
+  },
+  "node-security/no-self-signed-certs": {
+    "hits": 0,
+    "avgTimeMs": 2.7,
+    "samples": []
+  },
+  "node-security/require-aead-tag-verification": {
+    "hits": 0,
+    "avgTimeMs": 2.73,
+    "samples": []
+  },
+  "browser-security/no-sensitive-cookie-js": {
+    "hits": 0,
+    "avgTimeMs": 2.68,
+    "samples": []
+  },
+  "browser-security/no-dynamic-service-worker-url": {
+    "hits": 0,
+    "avgTimeMs": 2.48,
+    "samples": []
+  },
+  "browser-security/require-websocket-wss": {
+    "hits": 0,
+    "avgTimeMs": 2.47,
+    "samples": []
+  },
+  "node-security/no-dynamic-algorithm-selection": {
+    "hits": 0,
+    "avgTimeMs": 2.08,
+    "samples": []
+  },
+  "browser-security/no-cookie-auth-tokens": {
+    "hits": 0,
+    "avgTimeMs": 2.05,
+    "samples": []
+  },
+  "browser-security/no-unvalidated-deeplinks": {
+    "hits": 0,
+    "avgTimeMs": 1.82,
+    "samples": []
+  },
+  "browser-security/require-cookie-secure-attrs": {
+    "hits": 0,
+    "avgTimeMs": 1.64,
+    "samples": []
+  },
+  "postgresql-security/no-insecure-ssl": {
+    "hits": 0,
+    "avgTimeMs": 1.01,
+    "samples": []
+  },
+  "postgresql-security/no-hardcoded-credentials": {
+    "hits": 0,
+    "avgTimeMs": 0.55,
+    "samples": []
+  },
+  "postgresql-security/prevent-double-release": {
+    "hits": 0,
+    "avgTimeMs": 0.48,
+    "samples": []
+  },
+  "postgresql-security/no-unsafe-search-path": {
+    "hits": 0,
+    "avgTimeMs": 0.42,
+    "samples": []
+  },
+  "postgresql-security/no-transaction-on-pool": {
+    "hits": 0,
+    "avgTimeMs": 0.4,
+    "samples": []
+  },
+  "postgresql-security/no-missing-client-release": {
+    "hits": 0,
+    "avgTimeMs": 0.37,
+    "samples": []
+  },
+  "postgresql-security/no-unsafe-copy-from": {
+    "hits": 0,
+    "avgTimeMs": 0.37,
+    "samples": []
+  },
+  "postgresql-security/no-floating-query": {
+    "hits": 0,
+    "avgTimeMs": 0.31,
+    "samples": []
+  },
+  "postgresql-security/check-query-params": {
+    "hits": 0,
+    "avgTimeMs": 0.33,
+    "samples": []
+  },
+  "postgresql-security/prefer-pool-query": {
+    "hits": 0,
+    "avgTimeMs": 0.25,
+    "samples": []
+  },
+  "postgresql-security/no-batch-insert-loop": {
+    "hits": 0,
+    "avgTimeMs": 0.22,
+    "samples": []
+  },
+  "postgresql-security/no-select-all": {
+    "hits": 0,
+    "avgTimeMs": 0.23,
+    "samples": []
+  }
+}

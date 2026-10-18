@@ -163,3 +163,28 @@ jwt.sign({ sub }, key, { noTimestamp: legacy });`,
     ],
   });
 });
+
+// ---------------------------------------------------------------------------
+// Edges pinned by mutation testing (npm run mutation -- --plugin jwt-security).
+// Each fixture is the input that tells the rule apart from a Stryker mutant
+// that survived the suite above; see docs/MUTATION_TESTING.md.
+// ---------------------------------------------------------------------------
+
+ruleTester.run('mutation-guided edges', requireIssuedAt, {
+  valid: [
+    {
+      name: 'a JWS builder signs bytes and has no claim set to carry iat',
+      code: `import { CompactSign } from 'jose';
+await new CompactSign(bytes).setProtectedHeader({ alg: 'ES256' }).sign(key);`,
+    },
+  ],
+  invalid: [
+    // Rule fix (FN): jsonwebtoken deletes even an explicit payload iat.
+    {
+      name: 'a runtime noTimestamp drops an explicit payload iat too (jsonwebtoken deletes it)',
+      code: `import jwt from 'jsonwebtoken';
+jwt.sign({ sub, iat: now }, key, { noTimestamp: cfg.legacy });`,
+      errors: [{ messageId: 'missingIssuedAt' }],
+    },
+  ],
+});

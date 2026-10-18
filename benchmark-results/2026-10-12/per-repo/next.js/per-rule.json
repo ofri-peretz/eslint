@@ -1,0 +1,713 @@
+{
+  "node-security/detect-child-process": {
+    "hits": 2,
+    "avgTimeMs": 20.19,
+    "samples": [
+      {
+        "ruleId": "node-security/detect-child-process",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/trace/upload-trace.ts",
+        "line": 25,
+        "column": 5,
+        "message": "⚠️ CWE-78 OWASP:A05-Injection CVSS:9.8 | Command injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001,NIST-CSF]\n   Fix: Use execFile/spawn with {shell: false} and array args | https://owasp.org/www-community/attacks/Command_Injection"
+      },
+      {
+        "ruleId": "node-security/detect-child-process",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/telemetry/storage.ts",
+        "line": 254,
+        "column": 7,
+        "message": "⚠️ CWE-78 OWASP:A05-Injection CVSS:9.8 | Command injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001,NIST-CSF]\n   Fix: Use execFile/spawn with {shell: false} and array args | https://owasp.org/www-community/attacks/Command_Injection"
+      }
+    ]
+  },
+  "browser-security/no-http-urls": {
+    "hits": 21,
+    "avgTimeMs": 248.69,
+    "samples": [
+      {
+        "ruleId": "browser-security/no-http-urls",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/shared/lib/match-local-pattern.ts",
+        "line": 27,
+        "column": 40,
+        "message": "⚠️ CWE-319 OWASP:A02-Cryptographic CVSS:5.3 | HTTP URL detected: \"http://n\" | MEDIUM\n   Fix: Use HTTPS or add to allowedHosts config | https://cwe.mitre.org/data/definitions/319.html"
+      },
+      {
+        "ruleId": "browser-security/no-http-urls",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/shared/lib/router/router.ts",
+        "line": 1101,
+        "column": 28,
+        "message": "⚠️ CWE-319 OWASP:A02-Cryptographic CVSS:5.3 | HTTP URL detected: \"http://n\" | MEDIUM\n   Fix: Use HTTPS or add to allowedHosts config | https://cwe.mitre.org/data/definitions/319.html"
+      },
+      {
+        "ruleId": "browser-security/no-http-urls",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/shared/lib/router/router.ts",
+        "line": 1110,
+        "column": 56,
+        "message": "⚠️ CWE-319 OWASP:A02-Cryptographic CVSS:5.3 | HTTP URL detected: \"http://n\" | MEDIUM\n   Fix: Use HTTPS or add to allowedHosts config | https://cwe.mitre.org/data/definitions/319.html"
+      },
+      {
+        "ruleId": "browser-security/no-http-urls",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/shared/lib/router/adapters.tsx",
+        "line": 114,
+        "column": 36,
+        "message": "⚠️ CWE-319 OWASP:A02-Cryptographic CVSS:5.3 | HTTP URL detected: \"http://f\" | MEDIUM\n   Fix: Use HTTPS or add to allowedHosts config | https://cwe.mitre.org/data/definitions/319.html"
+      },
+      {
+        "ruleId": "browser-security/no-http-urls",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/shared/lib/router/utils/parse-relative-url.ts",
+        "line": 35,
+        "column": 37,
+        "message": "⚠️ CWE-319 OWASP:A02-Cryptographic CVSS:5.3 | HTTP URL detected: \"http://n\" | MEDIUM\n   Fix: Use HTTPS or add to allowedHosts config | https://cwe.mitre.org/data/definitions/319.html"
+      }
+    ]
+  },
+  "node-security/no-math-random-crypto": {
+    "hits": 2,
+    "avgTimeMs": 26.88,
+    "samples": [
+      {
+        "ruleId": "node-security/no-math-random-crypto",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/shared/lib/router/router.ts",
+        "line": 615,
+        "column": 10,
+        "message": "🔒 CWE-338 OWASP:A04-Cryptographic CVSS:5.3 | Math.random() is not cryptographically secure. It uses a PRNG that can be predicted. Never use it for tokens, keys, passwords, or any security-sensitive values. | CRITICAL\n   Fix: Use crypto.ran"
+      },
+      {
+        "ruleId": "node-security/no-math-random-crypto",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/server/dev/hot-reloader-turbopack.ts",
+        "line": 103,
+        "column": 56,
+        "message": "🔒 CWE-338 OWASP:A04-Cryptographic CVSS:5.3 | Math.random() is not cryptographically secure. It uses a PRNG that can be predicted. Never use it for tokens, keys, passwords, or any security-sensitive values. | CRITICAL\n   Fix: Use crypto.ran"
+      }
+    ]
+  },
+  "secure-coding/no-unsafe-regex-construction": {
+    "hits": 2,
+    "avgTimeMs": 12.52,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-unsafe-regex-construction",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/shared/lib/router/utils/path-match.ts",
+        "line": 49,
+        "column": 9,
+        "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Dynamic regex flags: Dynamic flags can lead to unexpected behavior or security issues | HIGH\n   Fix: Use static flags instead of dynamic flags | https://owasp.org/www-community/attacks/Regular_expres"
+      },
+      {
+        "ruleId": "secure-coding/no-unsafe-regex-construction",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/server/lib/router-utils/filesystem.ts",
+        "line": 253,
+        "column": 19,
+        "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | User input in regex without escaping: User input in regex pattern can lead to ReDoS or injection attacks | HIGH\n   Fix: Escape special characters before using in regex | https://owasp.org/www-communi"
+      }
+    ]
+  },
+  "secure-coding/no-log-injection": {
+    "hits": 4,
+    "avgTimeMs": 7.59,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-log-injection",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/server/render.tsx",
+        "line": 973,
+        "column": 15,
+        "message": "🔒 CWE-117 OWASP:A09-Logging CVSS:5.3 | Log message embeds req.url directly - a CR/LF in that value forges a log record | MEDIUM\n   Fix: Log it as a structured field (logger.info({ value }, \"message\")) or strip CR/LF/control characters firs"
+      },
+      {
+        "ruleId": "secure-coding/no-log-injection",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/server/api-utils/node/api-resolver.ts",
+        "line": 75,
+        "column": 9,
+        "message": "🔒 CWE-117 OWASP:A09-Logging CVSS:5.3 | Log message embeds req.url directly - a CR/LF in that value forges a log record | MEDIUM\n   Fix: Log it as a structured field (logger.info({ value }, \"message\")) or strip CR/LF/control characters firs"
+      },
+      {
+        "ruleId": "secure-coding/no-log-injection",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/server/api-utils/node/api-resolver.ts",
+        "line": 386,
+        "column": 11,
+        "message": "🔒 CWE-117 OWASP:A09-Logging CVSS:5.3 | Log message embeds req.url directly - a CR/LF in that value forges a log record | MEDIUM\n   Fix: Log it as a structured field (logger.info({ value }, \"message\")) or strip CR/LF/control characters firs"
+      },
+      {
+        "ruleId": "secure-coding/no-log-injection",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/server/api-utils/node/api-resolver.ts",
+        "line": 436,
+        "column": 11,
+        "message": "🔒 CWE-117 OWASP:A09-Logging CVSS:5.3 | Log message embeds req.url directly - a CR/LF in that value forges a log record | MEDIUM\n   Fix: Log it as a structured field (logger.info({ value }, \"message\")) or strip CR/LF/control characters firs"
+      }
+    ]
+  },
+  "node-security/detect-eval-with-expression": {
+    "hits": 2,
+    "avgTimeMs": 20.67,
+    "samples": [
+      {
+        "ruleId": "node-security/detect-eval-with-expression",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/server/load-manifest.ts",
+        "line": 88,
+        "column": 3,
+        "message": "🔒 CWE-94 OWASP:A05-Injection CVSS:9.8 | vm.runInNewContext() compiles and runs its first argument as JavaScript, and that argument is not written out in full here. The vm module is NOT a security boundary — Node documents it as such — beca"
+      },
+      {
+        "ruleId": "node-security/detect-eval-with-expression",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/server/web/sandbox/context.ts",
+        "line": 548,
+        "column": 9,
+        "message": "🔒 CWE-94 OWASP:A05-Injection CVSS:9.8 | vm.runInContext() compiles and runs its first argument as JavaScript, and that argument is not written out in full here. The vm module is NOT a security boundary — Node documents it as such — because"
+      }
+    ]
+  },
+  "node-security/no-unsafe-buffer-alloc": {
+    "hits": 1,
+    "avgTimeMs": 43.83,
+    "samples": [
+      {
+        "ruleId": "node-security/no-unsafe-buffer-alloc",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/server/stream-utils/node-web-streams-helper.ts",
+        "line": 239,
+        "column": 41,
+        "message": "🔒 CWE-789 CVSS:7.5 | The allocation size is read off the wire, so the peer picks it. For `new Array(n)` the hazard is a narrow band, not \"large n\": V8 keeps a packed backing store only up to ~33.5M elements, and a length just under that tu"
+      }
+    ]
+  },
+  "browser-security/require-postmessage-origin-check": {
+    "hits": 3,
+    "avgTimeMs": 8.63,
+    "samples": [
+      {
+        "ruleId": "browser-security/require-postmessage-origin-check",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/server/dev/on-demand-entry-handler.ts",
+        "line": 953,
+        "column": 42,
+        "message": "🔒 CWE-346 OWASP:A01-Broken CVSS:7.5 | postMessage listener lacks origin check. Malicious sites can send messages that will be processed. | HIGH\n   Fix: Add origin validation: if (event.origin !== 'https://trusted-domain.com') return; | htt"
+      },
+      {
+        "ruleId": "browser-security/require-postmessage-origin-check",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/server/dev/hot-reloader-webpack.ts",
+        "line": 437,
+        "column": 42,
+        "message": "🔒 CWE-346 OWASP:A01-Broken CVSS:7.5 | postMessage listener lacks origin check. Malicious sites can send messages that will be processed. | HIGH\n   Fix: Add origin validation: if (event.origin !== 'https://trusted-domain.com') return; | htt"
+      },
+      {
+        "ruleId": "browser-security/require-postmessage-origin-check",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/server/dev/hot-reloader-turbopack.ts",
+        "line": 721,
+        "column": 44,
+        "message": "🔒 CWE-346 OWASP:A01-Broken CVSS:7.5 | postMessage listener lacks origin check. Malicious sites can send messages that will be processed. | HIGH\n   Fix: Add origin validation: if (event.origin !== 'https://trusted-domain.com') return; | htt"
+      }
+    ]
+  },
+  "secure-coding/no-redos-vulnerable-regex": {
+    "hits": 5,
+    "avgTimeMs": 3465.53,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-redos-vulnerable-regex",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/server/dev/extract-modules-from-turbopack-message.ts",
+        "line": 21,
+        "column": 21,
+        "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+      }
+    ]
+  },
+  "node-security/no-shell-injection": {
+    "hits": 5,
+    "avgTimeMs": 6.55,
+    "samples": [
+      {
+        "ruleId": "node-security/no-shell-injection",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/lib/mkcert.ts",
+        "line": 125,
+        "column": 37,
+        "message": "🔒 CWE-78 OWASP:A05-Injection CVSS:9.8 | Shell command built via string concatenation or template literal. An attacker who controls any interpolated value can execute arbitrary OS commands. | CRITICAL [SOC2,PCI-DSS,ISO27001,NIST-CSF]\n   Fix"
+      },
+      {
+        "ruleId": "node-security/no-shell-injection",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/lib/mkcert.ts",
+        "line": 147,
+        "column": 7,
+        "message": "🔒 CWE-78 OWASP:A05-Injection CVSS:9.8 | Shell command built via string concatenation or template literal. An attacker who controls any interpolated value can execute arbitrary OS commands. | CRITICAL [SOC2,PCI-DSS,ISO27001,NIST-CSF]\n   Fix"
+      },
+      {
+        "ruleId": "node-security/no-shell-injection",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/lib/mkcert.ts",
+        "line": 153,
+        "column": 33,
+        "message": "🔒 CWE-78 OWASP:A05-Injection CVSS:9.8 | Shell command built via string concatenation or template literal. An attacker who controls any interpolated value can execute arbitrary OS commands. | CRITICAL [SOC2,PCI-DSS,ISO27001,NIST-CSF]\n   Fix"
+      },
+      {
+        "ruleId": "node-security/no-shell-injection",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/lib/helpers/get-registry.ts",
+        "line": 22,
+        "column": 7,
+        "message": "🔒 CWE-78 OWASP:A05-Injection CVSS:9.8 | Shell command built via string concatenation or template literal. An attacker who controls any interpolated value can execute arbitrary OS commands. | CRITICAL [SOC2,PCI-DSS,ISO27001,NIST-CSF]\n   Fix"
+      }
+    ]
+  },
+  "node-security/no-toctou-vulnerability": {
+    "hits": 3,
+    "avgTimeMs": 29.03,
+    "samples": [
+      {
+        "ruleId": "node-security/no-toctou-vulnerability",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/lib/mkcert.ts",
+        "line": 169,
+        "column": 15,
+        "message": "🔒 CWE-367 OWASP:A04-Cryptographic CVSS:7 | Time-of-check Time-of-use race condition detected | HIGH\n   Fix: Act on the result and handle the failure — open/unlink and catch ENOENT — instead of checking first. Not a finding if the path is i"
+      },
+      {
+        "ruleId": "node-security/no-toctou-vulnerability",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/export/index.ts",
+        "line": 678,
+        "column": 17,
+        "message": "🔒 CWE-367 OWASP:A04-Cryptographic CVSS:7 | Time-of-check Time-of-use race condition detected | HIGH\n   Fix: Act on the result and handle the failure — open/unlink and catch ENOENT — instead of checking first. Not a finding if the path is i"
+      },
+      {
+        "ruleId": "node-security/no-toctou-vulnerability",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/export/index.ts",
+        "line": 712,
+        "column": 17,
+        "message": "🔒 CWE-367 OWASP:A04-Cryptographic CVSS:7 | Time-of-check Time-of-use race condition detected | HIGH\n   Fix: Act on the result and handle the failure — open/unlink and catch ENOENT — instead of checking first. Not a finding if the path is i"
+      }
+    ]
+  },
+  "node-security/detect-non-literal-fs-filename": {
+    "hits": 6,
+    "avgTimeMs": 27.46,
+    "samples": [
+      {
+        "ruleId": "node-security/detect-non-literal-fs-filename",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/lib/download-swc.ts",
+        "line": 32,
+        "column": 11,
+        "message": "🔑 CWE-22 OWASP:A01-Broken CVSS:7.5 | Path traversal vulnerability | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use path.resolve() with validation — Not a finding when the value is path.basename()d, checked against an allowlist, or resolved"
+      },
+      {
+        "ruleId": "node-security/detect-non-literal-fs-filename",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/lib/download-swc.ts",
+        "line": 54,
+        "column": 32,
+        "message": "🔑 CWE-22 OWASP:A01-Broken CVSS:7.5 | Path traversal vulnerability | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use path.resolve() with validation — Not a finding when the value is path.basename()d, checked against an allowlist, or resolved"
+      },
+      {
+        "ruleId": "node-security/detect-non-literal-fs-filename",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/lib/download-swc.ts",
+        "line": 85,
+        "column": 11,
+        "message": "🔑 CWE-22 OWASP:A01-Broken CVSS:7.5 | Path traversal vulnerability | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use path.resolve() with validation — Not a finding when the value is path.basename()d, checked against an allowlist, or resolved"
+      },
+      {
+        "ruleId": "node-security/detect-non-literal-fs-filename",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/lib/download-swc.ts",
+        "line": 86,
+        "column": 11,
+        "message": "🔑 CWE-22 OWASP:A01-Broken CVSS:7.5 | Path traversal vulnerability | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use path.resolve() with validation — Not a finding when the value is path.basename()d, checked against an allowlist, or resolved"
+      },
+      {
+        "ruleId": "node-security/detect-non-literal-fs-filename",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/lib/download-swc.ts",
+        "line": 92,
+        "column": 28,
+        "message": "🔑 CWE-22 OWASP:A01-Broken CVSS:7.5 | Path traversal vulnerability | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Validate directory is within allowed paths — Not a finding when the value is path.basename()d, checked against an allowlist, or "
+      }
+    ]
+  },
+  "browser-security/no-innerhtml": {
+    "hits": 4,
+    "avgTimeMs": 106.82,
+    "samples": [
+      {
+        "ruleId": "browser-security/no-innerhtml",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/client/script.tsx",
+        "line": 121,
+        "column": 5,
+        "message": "🔒 CWE-79 OWASP:A05-Injection CVSS:6.1 | Assigning to innerHTML with dynamic content can execute malicious scripts. This is a critical XSS vulnerability. | CRITICAL [SOC2,PCI-DSS,GDPR,ISO27001]\n   Fix: Sanitize with DOMPurify.sanitize() bef"
+      },
+      {
+        "ruleId": "browser-security/no-innerhtml",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/client/head-manager.ts",
+        "line": 11,
+        "column": 5,
+        "message": "🔒 CWE-79 OWASP:A05-Injection CVSS:6.1 | Assigning to innerHTML with dynamic content can execute malicious scripts. This is a critical XSS vulnerability. | CRITICAL [SOC2,PCI-DSS,GDPR,ISO27001]\n   Fix: Sanitize with DOMPurify.sanitize() bef"
+      }
+    ]
+  },
+  "browser-security/no-incomplete-url-sanitization": {
+    "hits": 1,
+    "avgTimeMs": 8.89,
+    "samples": []
+  },
+  "node-security/no-timing-unsafe-compare": {
+    "hits": 1,
+    "avgTimeMs": 63.56,
+    "samples": []
+  },
+  "secure-coding/no-privilege-escalation": {
+    "hits": 0,
+    "avgTimeMs": 154.16,
+    "samples": []
+  },
+  "secure-coding/no-ldap-injection": {
+    "hits": 0,
+    "avgTimeMs": 123.68,
+    "samples": []
+  },
+  "browser-security/no-eval": {
+    "hits": 0,
+    "avgTimeMs": 87.44,
+    "samples": []
+  },
+  "node-security/no-weak-hash-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 75.84,
+    "samples": []
+  },
+  "browser-security/no-postmessage-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 65.69,
+    "samples": []
+  },
+  "browser-security/no-websocket-eval": {
+    "hits": 0,
+    "avgTimeMs": 71.27,
+    "samples": []
+  },
+  "secure-coding/no-hardcoded-credentials": {
+    "hits": 0,
+    "avgTimeMs": 68.77,
+    "samples": []
+  },
+  "browser-security/no-websocket-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 66.95,
+    "samples": []
+  },
+  "browser-security/no-worker-message-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 60.96,
+    "samples": []
+  },
+  "browser-security/no-filereader-innerhtml": {
+    "hits": 0,
+    "avgTimeMs": 62.3,
+    "samples": []
+  },
+  "secure-coding/no-xxe-injection": {
+    "hits": 0,
+    "avgTimeMs": 30.49,
+    "samples": []
+  },
+  "secure-coding/no-sensitive-data-exposure": {
+    "hits": 0,
+    "avgTimeMs": 35.09,
+    "samples": []
+  },
+  "secure-coding/no-unlimited-resource-allocation": {
+    "hits": 0,
+    "avgTimeMs": 31.46,
+    "samples": []
+  },
+  "secure-coding/no-graphql-injection": {
+    "hits": 0,
+    "avgTimeMs": 30.34,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-deserialization": {
+    "hits": 0,
+    "avgTimeMs": 30.8,
+    "samples": []
+  },
+  "node-security/no-buffer-overread": {
+    "hits": 0,
+    "avgTimeMs": 26.28,
+    "samples": []
+  },
+  "node-security/no-zip-slip": {
+    "hits": 0,
+    "avgTimeMs": 23.36,
+    "samples": []
+  },
+  "secure-coding/no-xpath-injection": {
+    "hits": 0,
+    "avgTimeMs": 23.87,
+    "samples": []
+  },
+  "secure-coding/no-homoglyph-identifiers": {
+    "hits": 0,
+    "avgTimeMs": 19.71,
+    "samples": []
+  },
+  "browser-security/no-unsafe-eval-csp": {
+    "hits": 0,
+    "avgTimeMs": 19.16,
+    "samples": []
+  },
+  "secure-coding/no-weak-password-recovery": {
+    "hits": 0,
+    "avgTimeMs": 15.73,
+    "samples": []
+  },
+  "node-security/no-static-iv": {
+    "hits": 0,
+    "avgTimeMs": 16.96,
+    "samples": []
+  },
+  "node-security/no-arbitrary-file-access": {
+    "hits": 0,
+    "avgTimeMs": 16.49,
+    "samples": []
+  },
+  "browser-security/no-unencrypted-transmission": {
+    "hits": 0,
+    "avgTimeMs": 17.94,
+    "samples": []
+  },
+  "node-security/no-data-in-temp-storage": {
+    "hits": 0,
+    "avgTimeMs": 16.43,
+    "samples": []
+  },
+  "secure-coding/no-improper-sanitization": {
+    "hits": 0,
+    "avgTimeMs": 15.12,
+    "samples": []
+  },
+  "secure-coding/no-fail-open-auth": {
+    "hits": 0,
+    "avgTimeMs": 13.15,
+    "samples": []
+  },
+  "browser-security/require-https-only": {
+    "hits": 0,
+    "avgTimeMs": 13.58,
+    "samples": []
+  },
+  "browser-security/no-credentials-in-query-params": {
+    "hits": 0,
+    "avgTimeMs": 12.83,
+    "samples": []
+  },
+  "node-security/no-unbounded-decompression": {
+    "hits": 0,
+    "avgTimeMs": 12.31,
+    "samples": []
+  },
+  "browser-security/no-client-side-auth-logic": {
+    "hits": 0,
+    "avgTimeMs": 12.08,
+    "samples": []
+  },
+  "node-security/require-dependency-integrity": {
+    "hits": 0,
+    "avgTimeMs": 12.07,
+    "samples": []
+  },
+  "secure-coding/no-sql-injection": {
+    "hits": 0,
+    "avgTimeMs": 9.95,
+    "samples": []
+  },
+  "node-security/detect-suspicious-dependencies": {
+    "hits": 0,
+    "avgTimeMs": 9.87,
+    "samples": []
+  },
+  "browser-security/no-insecure-redirects": {
+    "hits": 0,
+    "avgTimeMs": 9.15,
+    "samples": []
+  },
+  "browser-security/no-sensitive-localstorage": {
+    "hits": 0,
+    "avgTimeMs": 9.04,
+    "samples": []
+  },
+  "node-security/no-ssrf": {
+    "hits": 0,
+    "avgTimeMs": 10.15,
+    "samples": []
+  },
+  "node-security/no-dynamic-command-string": {
+    "hits": 0,
+    "avgTimeMs": 11.64,
+    "samples": []
+  },
+  "node-security/no-cryptojs": {
+    "hits": 0,
+    "avgTimeMs": 7.64,
+    "samples": []
+  },
+  "browser-security/no-unsafe-inline-csp": {
+    "hits": 0,
+    "avgTimeMs": 7.32,
+    "samples": []
+  },
+  "browser-security/no-disabled-certificate-validation": {
+    "hits": 0,
+    "avgTimeMs": 7.04,
+    "samples": []
+  },
+  "node-security/no-deprecated-buffer": {
+    "hits": 0,
+    "avgTimeMs": 7.41,
+    "samples": []
+  },
+  "node-security/no-self-signed-certs": {
+    "hits": 0,
+    "avgTimeMs": 4.47,
+    "samples": []
+  },
+  "secure-coding/no-template-injection": {
+    "hits": 0,
+    "avgTimeMs": 6.92,
+    "samples": []
+  },
+  "browser-security/no-jwt-in-storage": {
+    "hits": 0,
+    "avgTimeMs": 8.71,
+    "samples": []
+  },
+  "node-security/require-stream-error-handler": {
+    "hits": 0,
+    "avgTimeMs": 6.74,
+    "samples": []
+  },
+  "node-security/no-weak-cipher-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 7.16,
+    "samples": []
+  },
+  "node-security/no-unsafe-dynamic-require": {
+    "hits": 0,
+    "avgTimeMs": 6.49,
+    "samples": []
+  },
+  "node-security/no-weak-dh-parameters": {
+    "hits": 0,
+    "avgTimeMs": 6.29,
+    "samples": []
+  },
+  "browser-security/no-insecure-websocket": {
+    "hits": 0,
+    "avgTimeMs": 4.15,
+    "samples": []
+  },
+  "browser-security/no-postmessage-wildcard-origin": {
+    "hits": 0,
+    "avgTimeMs": 6.18,
+    "samples": []
+  },
+  "browser-security/no-unvalidated-deeplinks": {
+    "hits": 0,
+    "avgTimeMs": 4,
+    "samples": []
+  },
+  "browser-security/require-blob-url-revocation": {
+    "hits": 0,
+    "avgTimeMs": 8.55,
+    "samples": []
+  },
+  "browser-security/no-sensitive-sessionstorage": {
+    "hits": 0,
+    "avgTimeMs": 6.03,
+    "samples": []
+  },
+  "browser-security/no-sensitive-indexeddb": {
+    "hits": 0,
+    "avgTimeMs": 6.11,
+    "samples": []
+  },
+  "node-security/no-ecb-mode": {
+    "hits": 0,
+    "avgTimeMs": 4.9,
+    "samples": []
+  },
+  "browser-security/no-allow-arbitrary-loads": {
+    "hits": 0,
+    "avgTimeMs": 4.43,
+    "samples": []
+  },
+  "browser-security/no-sensitive-cookie-js": {
+    "hits": 0,
+    "avgTimeMs": 4.12,
+    "samples": []
+  },
+  "node-security/no-env-injection": {
+    "hits": 0,
+    "avgTimeMs": 3.93,
+    "samples": []
+  },
+  "browser-security/no-dynamic-service-worker-url": {
+    "hits": 0,
+    "avgTimeMs": 3.82,
+    "samples": []
+  },
+  "node-security/no-dynamic-algorithm-selection": {
+    "hits": 0,
+    "avgTimeMs": 5.81,
+    "samples": []
+  },
+  "browser-security/detect-mixed-content": {
+    "hits": 0,
+    "avgTimeMs": 3.48,
+    "samples": []
+  },
+  "node-security/require-aead-tag-verification": {
+    "hits": 0,
+    "avgTimeMs": 3.5,
+    "samples": []
+  },
+  "node-security/no-insecure-http-parser": {
+    "hits": 0,
+    "avgTimeMs": 3.31,
+    "samples": []
+  },
+  "browser-security/require-websocket-wss": {
+    "hits": 0,
+    "avgTimeMs": 3.08,
+    "samples": []
+  },
+  "browser-security/no-cookie-auth-tokens": {
+    "hits": 0,
+    "avgTimeMs": 2.85,
+    "samples": []
+  },
+  "browser-security/require-cookie-secure-attrs": {
+    "hits": 0,
+    "avgTimeMs": 2.33,
+    "samples": []
+  }
+}

@@ -1,0 +1,402 @@
+[
+  {
+    "ruleId": "secure-coding/no-redos-vulnerable-regex",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/sf-core/src/utils/https/index.js",
+    "line": 241,
+    "column": 26,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+  },
+  {
+    "ruleId": "secure-coding/no-unsafe-deserialization",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/sf-core/src/utils/fs/yaml-ast-parser.js",
+    "line": 80,
+    "column": 26,
+    "message": "🔒 CWE-502 OWASP:A08-Software CVSS:9.8 | YAML parsing may execute code during deserialization | HIGH\n   Fix: Use yaml.safeLoad() or disable code execution | https://www.npmjs.com/package/js-yaml#loadstr---options-"
+  },
+  {
+    "ruleId": "secure-coding/no-unsafe-deserialization",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/sf-core/src/utils/fs/yaml-ast-parser.js",
+    "line": 126,
+    "column": 26,
+    "message": "🔒 CWE-502 OWASP:A08-Software CVSS:9.8 | YAML parsing may execute code during deserialization | HIGH\n   Fix: Use yaml.safeLoad() or disable code execution | https://www.npmjs.com/package/js-yaml#loadstr---options-"
+  },
+  {
+    "ruleId": "node-security/no-zip-slip",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/sf-core/src/utils/fs/index.js",
+    "line": 109,
+    "column": 39,
+    "message": "🔒 CWE-22 OWASP:A01-Broken CVSS:7.5 | Archive entry path used without validation | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Validate paths before extraction | https://snyk.io/research/zip-slip-vulnerability"
+  },
+  {
+    "ruleId": "node-security/no-zip-slip",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/sf-core/src/utils/fs/index.js",
+    "line": 110,
+    "column": 41,
+    "message": "🔒 CWE-22 OWASP:A01-Broken CVSS:7.5 | Archive entry path used without validation | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Validate paths before extraction | https://snyk.io/research/zip-slip-vulnerability"
+  },
+  {
+    "ruleId": "node-security/no-zip-slip",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/sf-core/src/utils/fs/index.js",
+    "line": 143,
+    "column": 50,
+    "message": "🔒 CWE-22 OWASP:A01-Broken CVSS:7.5 | Archive entry path used without validation | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Validate paths before extraction | https://snyk.io/research/zip-slip-vulnerability"
+  },
+  {
+    "ruleId": "secure-coding/no-redos-vulnerable-regex",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/sf-core/src/utils/fs/index.js",
+    "line": 324,
+    "column": 7,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+  },
+  {
+    "ruleId": "secure-coding/no-redos-vulnerable-regex",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/sf-core/src/utils/fs/index.js",
+    "line": 345,
+    "column": 5,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+  },
+  {
+    "ruleId": "node-security/no-zip-slip",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/sf-core/src/utils/fs/index.js",
+    "line": 412,
+    "column": 3,
+    "message": "🔒 CWE-22 OWASP:A01-Broken CVSS:7.5 | Archive extraction without path validation | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use safe extraction libraries or validate all paths | https://snyk.io/research/zip-slip-vulnerability"
+  },
+  {
+    "ruleId": "secure-coding/no-fail-open-auth",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/sf-core/src/lib/runners/core/core.js",
+    "line": 378,
+    "column": 11,
+    "message": "🔒 CWE-636 OWASP:A10-Mishandling CVSS:8.1 | Security check fails open — the catch block swallows the error and execution continues into the code the check was guarding | HIGH\n   Fix: Rethrow, return a deny value, or send a 401/403 from the "
+  },
+  {
+    "ruleId": "secure-coding/no-redos-vulnerable-regex",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/sf-core/src/lib/runners/compose/index.js",
+    "line": 88,
+    "column": 17,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+  },
+  {
+    "ruleId": "lambda-security/no-error-swallowing",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/sf-core/src/lib/runners/cfn/aws/Stack.js",
+    "line": 166,
+    "column": 7,
+    "message": "⚠️ CWE-390 OWASP:A10-Mishandling CVSS:5 | Catch block swallows error without logging. Security incidents may go undetected. | MEDIUM\n   Fix: Log the error with context: console.error(\"Operation failed\", { error, awsRequestId: context.awsReq"
+  },
+  {
+    "ruleId": "secure-coding/no-redos-vulnerable-regex",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/sf-core/src/lib/resolvers/placeholders.js",
+    "line": 69,
+    "column": 3,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+  },
+  {
+    "ruleId": "lambda-security/no-error-swallowing",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/sf-core/src/lib/resolvers/providers/terraform/terraform.js",
+    "line": 131,
+    "column": 7,
+    "message": "⚠️ CWE-390 OWASP:A10-Mishandling CVSS:5 | Catch block swallows error without logging. Security incidents may go undetected. | MEDIUM\n   Fix: Log the error with context: console.error(\"Operation failed\", { error, awsRequestId: context.awsReq"
+  },
+  {
+    "ruleId": "lambda-security/no-error-swallowing",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/sf-core/src/lib/resolvers/providers/terraform/terraform.js",
+    "line": 270,
+    "column": 5,
+    "message": "⚠️ CWE-390 OWASP:A10-Mishandling CVSS:5 | Catch block swallows error without logging. Security incidents may go undetected. | MEDIUM\n   Fix: Log the error with context: console.error(\"Operation failed\", { error, awsRequestId: context.awsReq"
+  },
+  {
+    "ruleId": "secure-coding/no-sensitive-data-exposure",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/sf-core/src/lib/resolvers/providers/terraform/terraform.js",
+    "line": 319,
+    "column": 7,
+    "message": "🔒 CWE-532 OWASP:A09-Logging CVSS:5.3 | Sensitive data detected in error messages: token | HIGH [GDPR,HIPAA,PCI-DSS,SOC2]\n   Fix: Redact or mask sensitive data before logging/exposing | https://cwe.mitre.org/data/definitions/532.html"
+  },
+  {
+    "ruleId": "lambda-security/no-error-swallowing",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/sf-core/src/lib/observability/dashboard/index.js",
+    "line": 423,
+    "column": 9,
+    "message": "⚠️ CWE-390 OWASP:A10-Mishandling CVSS:5 | Catch block swallows error without logging. Security incidents may go undetected. | MEDIUM\n   Fix: Log the error with context: console.error(\"Operation failed\", { error, awsRequestId: context.awsReq"
+  },
+  {
+    "ruleId": "lambda-security/no-error-swallowing",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/sf-core/src/lib/auth/index.js",
+    "line": 837,
+    "column": 9,
+    "message": "⚠️ CWE-390 OWASP:A10-Mishandling CVSS:5 | Catch block swallows error without logging. Security incidents may go undetected. | MEDIUM\n   Fix: Log the error with context: console.error(\"Operation failed\", { error, awsRequestId: context.awsReq"
+  },
+  {
+    "ruleId": "lambda-security/no-error-swallowing",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/sf-core/src/lib/auth/index.js",
+    "line": 1015,
+    "column": 9,
+    "message": "⚠️ CWE-390 OWASP:A10-Mishandling CVSS:5 | Catch block swallows error without logging. Security incidents may go undetected. | MEDIUM\n   Fix: Log the error with context: console.error(\"Operation failed\", { error, awsRequestId: context.awsReq"
+  },
+  {
+    "ruleId": "lambda-security/no-error-swallowing",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/sf-core/src/lib/auth/index.js",
+    "line": 1240,
+    "column": 9,
+    "message": "⚠️ CWE-390 OWASP:A10-Mishandling CVSS:5 | Catch block swallows error without logging. Security incidents may go undetected. | MEDIUM\n   Fix: Log the error with context: console.error(\"Operation failed\", { error, awsRequestId: context.awsReq"
+  },
+  {
+    "ruleId": "secure-coding/no-redos-vulnerable-regex",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/sf-core/src/lib/auth/aws-config-writer.js",
+    "line": 7,
+    "column": 25,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+  },
+  {
+    "ruleId": "secure-coding/no-redos-vulnerable-regex",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/serverless/lib/utils/rename-service.js",
+    "line": 16,
+    "column": 7,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+  },
+  {
+    "ruleId": "secure-coding/no-redos-vulnerable-regex",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/serverless/lib/utils/rename-service.js",
+    "line": 31,
+    "column": 7,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive quantifier, or re"
+  },
+  {
+    "ruleId": "node-security/require-stream-error-handler",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/serverless/lib/utils/fs/create-zip-file.js",
+    "line": 19,
+    "column": 20,
+    "message": "🔒 CWE-248 OWASP:A10-Mishandling CVSS:7.5 | .pipe() forwards data but not errors. A stream that emits 'error' with no listener throws inside the EventEmitter, which is an uncaught exception — the process exits. A single request for a missin"
+  },
+  {
+    "ruleId": "node-security/require-stream-error-handler",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/serverless/lib/plugins/python/lib/zipTree.js",
+    "line": 44,
+    "column": 13,
+    "message": "🔒 CWE-248 OWASP:A10-Mishandling CVSS:7.5 | .pipe() forwards data but not errors. A stream that emits 'error' with no listener throws inside the EventEmitter, which is an uncaught exception — the process exits. A single request for a missin"
+  },
+  {
+    "ruleId": "node-security/no-zip-slip",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/serverless/lib/plugins/package/lib/package-service.js",
+    "line": 237,
+    "column": 23,
+    "message": "🔒 CWE-22 OWASP:A01-Broken CVSS:7.5 | Archive entry path used without validation | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Validate paths before extraction | https://snyk.io/research/zip-slip-vulnerability"
+  },
+  {
+    "ruleId": "node-security/no-zip-slip",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/serverless/lib/plugins/package/lib/package-service.js",
+    "line": 245,
+    "column": 52,
+    "message": "🔒 CWE-22 OWASP:A01-Broken CVSS:7.5 | Archive entry path used without validation | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Validate paths before extraction | https://snyk.io/research/zip-slip-vulnerability"
+  },
+  {
+    "ruleId": "secure-coding/no-sensitive-data-exposure",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/serverless/lib/plugins/observability/axiom/index.js",
+    "line": 211,
+    "column": 7,
+    "message": "🔒 CWE-532 OWASP:A09-Logging CVSS:5.3 | Sensitive data detected in logs: token | HIGH [GDPR,HIPAA,PCI-DSS,SOC2]\n   Fix: Redact or mask sensitive data before logging/exposing | https://cwe.mitre.org/data/definitions/532.html"
+  },
+  {
+    "ruleId": "node-security/no-toctou-vulnerability",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/serverless/lib/plugins/esbuild/index.js",
+    "line": 1125,
+    "column": 13,
+    "message": "🔒 CWE-367 OWASP:A04-Cryptographic CVSS:7 | Time-of-check Time-of-use race condition detected | HIGH\n   Fix: Act on the result and handle the failure — open/unlink and catch ENOENT — instead of checking first. Not a finding if the path is i"
+  },
+  {
+    "ruleId": "node-security/no-toctou-vulnerability",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/serverless/lib/plugins/esbuild/index.js",
+    "line": 1140,
+    "column": 17,
+    "message": "🔒 CWE-367 OWASP:A04-Cryptographic CVSS:7 | Time-of-check Time-of-use race condition detected | HIGH\n   Fix: Act on the result and handle the failure — open/unlink and catch ENOENT — instead of checking first. Not a finding if the path is i"
+  },
+  {
+    "ruleId": "lambda-security/no-error-swallowing",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/serverless/lib/plugins/aws/invoke-agent.js",
+    "line": 91,
+    "column": 11,
+    "message": "⚠️ CWE-390 OWASP:A10-Mishandling CVSS:5 | Catch block swallows error without logging. Security incidents may go undetected. | MEDIUM\n   Fix: Log the error with context: console.error(\"Operation failed\", { error, awsRequestId: context.awsReq"
+  },
+  {
+    "ruleId": "lambda-security/no-error-swallowing",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/serverless/lib/plugins/aws/invoke-agent.js",
+    "line": 101,
+    "column": 9,
+    "message": "⚠️ CWE-390 OWASP:A10-Mishandling CVSS:5 | Catch block swallows error without logging. Security incidents may go undetected. | MEDIUM\n   Fix: Log the error with context: console.error(\"Operation failed\", { error, awsRequestId: context.awsReq"
+  },
+  {
+    "ruleId": "secure-coding/no-redos-vulnerable-regex",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/serverless/lib/plugins/aws/utils/find-and-group-deployments.js",
+    "line": 6,
+    "column": 19,
+    "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Runtime-built Cross-quantifier trade (polynomial backtracking): Two quantifiers can exchange characters, enabling polynomial backtracking on crafted input. | HIGH\n   Fix: Atomic group, possessive qua"
+  },
+  {
+    "ruleId": "node-security/no-buffer-overread",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/serverless/lib/plugins/aws/package/lib/save-service-state.js",
+    "line": 35,
+    "column": 70,
+    "message": "🔒 CWE-125 OWASP:A06-Vulnerable CVSS:7.5 | The deprecated noAssert argument is true, which turns off the bounds check on this read. Past the end of the buffer it returns whatever memory follows instead of throwing. | HIGH [SOC2,PCI-DSS,ISO2"
+  },
+  {
+    "ruleId": "node-security/no-zip-slip",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/serverless/lib/plugins/aws/invoke-local/index.js",
+    "line": 89,
+    "column": 3,
+    "message": "🔒 CWE-22 OWASP:A01-Broken CVSS:7.5 | Archive extraction without path validation | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use safe extraction libraries or validate all paths | https://snyk.io/research/zip-slip-vulnerability"
+  },
+  {
+    "ruleId": "node-security/no-zip-slip",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/serverless/lib/plugins/aws/invoke-local/index.js",
+    "line": 647,
+    "column": 57,
+    "message": "🔒 CWE-22 OWASP:A01-Broken CVSS:7.5 | Archive entry path used without validation | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Validate paths before extraction | https://snyk.io/research/zip-slip-vulnerability"
+  },
+  {
+    "ruleId": "lambda-security/no-error-swallowing",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/serverless/lib/plugins/aws/domains/aws/s3-wrapper.js",
+    "line": 38,
+    "column": 7,
+    "message": "⚠️ CWE-390 OWASP:A10-Mishandling CVSS:5 | Catch block swallows error without logging. Security incidents may go undetected. | MEDIUM\n   Fix: Log the error with context: console.error(\"Operation failed\", { error, awsRequestId: context.awsReq"
+  },
+  {
+    "ruleId": "lambda-security/no-error-swallowing",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/serverless/lib/plugins/aws/domains/aws/cloud-formation-wrapper.js",
+    "line": 94,
+    "column": 9,
+    "message": "⚠️ CWE-390 OWASP:A10-Mishandling CVSS:5 | Catch block swallows error without logging. Security incidents may go undetected. | MEDIUM\n   Fix: Log the error with context: console.error(\"Operation failed\", { error, awsRequestId: context.awsReq"
+  },
+  {
+    "ruleId": "lambda-security/no-error-swallowing",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/serverless/lib/plugins/aws/domains/aws/cloud-formation-wrapper.js",
+    "line": 121,
+    "column": 7,
+    "message": "⚠️ CWE-390 OWASP:A10-Mishandling CVSS:5 | Catch block swallows error without logging. Security incidents may go undetected. | MEDIUM\n   Fix: Log the error with context: console.error(\"Operation failed\", { error, awsRequestId: context.awsReq"
+  },
+  {
+    "ruleId": "lambda-security/no-error-swallowing",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/serverless/lib/plugins/aws/domains/aws/cloud-formation-wrapper.js",
+    "line": 227,
+    "column": 9,
+    "message": "⚠️ CWE-390 OWASP:A10-Mishandling CVSS:5 | Catch block swallows error without logging. Security incidents may go undetected. | MEDIUM\n   Fix: Log the error with context: console.error(\"Operation failed\", { error, awsRequestId: context.awsReq"
+  },
+  {
+    "ruleId": "lambda-security/no-error-swallowing",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/serverless/lib/plugins/aws/domains/aws/api-gateway-v2-wrapper.js",
+    "line": 104,
+    "column": 7,
+    "message": "⚠️ CWE-390 OWASP:A10-Mishandling CVSS:5 | Catch block swallows error without logging. Security incidents may go undetected. | MEDIUM\n   Fix: Log the error with context: console.error(\"Operation failed\", { error, awsRequestId: context.awsReq"
+  },
+  {
+    "ruleId": "lambda-security/no-error-swallowing",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/serverless/lib/plugins/aws/domains/aws/api-gateway-v1-wrapper.js",
+    "line": 106,
+    "column": 7,
+    "message": "⚠️ CWE-390 OWASP:A10-Mishandling CVSS:5 | Catch block swallows error without logging. Security incidents may go undetected. | MEDIUM\n   Fix: Log the error with context: console.error(\"Operation failed\", { error, awsRequestId: context.awsReq"
+  },
+  {
+    "ruleId": "lambda-security/no-unbounded-batch-processing",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/serverless/lib/plugins/aws/dev/shim.js",
+    "line": 199,
+    "column": 14,
+    "message": "⚠️ CWE-770 OWASP:A04-Cryptographic CVSS:5.5 | Processing event.Records without size check. Large batches may cause timeout or memory exhaustion. | MEDIUM\n   Fix: Validate batch size before processing: if (event.Records.length > MAX_BATCH) t"
+  },
+  {
+    "ruleId": "lambda-security/no-unbounded-batch-processing",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/serverless/lib/plugins/aws/dev/shim.js",
+    "line": 202,
+    "column": 26,
+    "message": "⚠️ CWE-770 OWASP:A04-Cryptographic CVSS:5.5 | Processing event.Records without size check. Large batches may cause timeout or memory exhaustion. | MEDIUM\n   Fix: Validate batch size before processing: if (event.Records.length > MAX_BATCH) t"
+  },
+  {
+    "ruleId": "lambda-security/no-unbounded-batch-processing",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/serverless/lib/plugins/aws/dev/shim.js",
+    "line": 203,
+    "column": 26,
+    "message": "⚠️ CWE-770 OWASP:A04-Cryptographic CVSS:5.5 | Processing event.Records without size check. Large batches may cause timeout or memory exhaustion. | MEDIUM\n   Fix: Validate batch size before processing: if (event.Records.length > MAX_BATCH) t"
+  },
+  {
+    "ruleId": "lambda-security/no-unbounded-batch-processing",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/serverless/lib/plugins/aws/dev/shim.js",
+    "line": 204,
+    "column": 24,
+    "message": "⚠️ CWE-770 OWASP:A04-Cryptographic CVSS:5.5 | Processing event.Records without size check. Large batches may cause timeout or memory exhaustion. | MEDIUM\n   Fix: Validate batch size before processing: if (event.Records.length > MAX_BATCH) t"
+  },
+  {
+    "ruleId": "lambda-security/no-unbounded-batch-processing",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/serverless/lib/plugins/aws/dev/shim.js",
+    "line": 205,
+    "column": 29,
+    "message": "⚠️ CWE-770 OWASP:A04-Cryptographic CVSS:5.5 | Processing event.Records without size check. Large batches may cause timeout or memory exhaustion. | MEDIUM\n   Fix: Validate batch size before processing: if (event.Records.length > MAX_BATCH) t"
+  },
+  {
+    "ruleId": "lambda-security/no-unbounded-batch-processing",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/serverless/lib/plugins/aws/dev/shim.js",
+    "line": 206,
+    "column": 24,
+    "message": "⚠️ CWE-770 OWASP:A04-Cryptographic CVSS:5.5 | Processing event.Records without size check. Large batches may cause timeout or memory exhaustion. | MEDIUM\n   Fix: Validate batch size before processing: if (event.Records.length > MAX_BATCH) t"
+  },
+  {
+    "ruleId": "lambda-security/no-unbounded-batch-processing",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/serverless/lib/plugins/aws/dev/shim.js",
+    "line": 207,
+    "column": 17,
+    "message": "⚠️ CWE-770 OWASP:A04-Cryptographic CVSS:5.5 | Processing event.Records without size check. Large batches may cause timeout or memory exhaustion. | MEDIUM\n   Fix: Validate batch size before processing: if (event.Records.length > MAX_BATCH) t"
+  },
+  {
+    "ruleId": "lambda-security/no-unbounded-batch-processing",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/serverless/packages/serverless/lib/plugins/aws/dev/shim.js",
+    "line": 208,
+    "column": 35,
+    "message": "⚠️ CWE-770 OWASP:A04-Cryptographic CVSS:5.5 | Processing event.Records without size check. Large batches may cause timeout or memory exhaustion. | MEDIUM\n   Fix: Validate batch size before processing: if (event.Records.length > MAX_BATCH) t"
+  }
+]

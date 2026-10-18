@@ -34,9 +34,33 @@ export const requireTls = createRequireTlsRule({
       confidence: 'high',
     },
   },
-  modules: ['sequelize', 'sequelize-typescript'],
+  modules: ['sequelize', 'sequelize-typescript', '@nestjs/sequelize'],
   connectionKeys: ['dialectOptions', 'dialect', 'replication'],
   urlSchemes: ['postgres', 'postgresql', 'mysql', 'mariadb'],
+  configShapes: [
+    {
+      // sequelize-cli config/config.js: `{ dialect: 'mysql', username, … }`.
+      key: 'dialect',
+      values: [
+        'mysql',
+        'postgres',
+        'sqlite',
+        'mariadb',
+        'mssql',
+        'db2',
+        'snowflake',
+        'oracle',
+      ],
+      with: [
+        'username',
+        'password',
+        'database',
+        'host',
+        'dialectOptions',
+        'use_env_variable',
+      ],
+    },
+  ],
   fix: 'Keep TLS on and supply the CA — `dialectOptions: { ssl: { require: true, ca } }`.',
   documentationLink:
     'https://sequelize.org/docs/v6/other-topics/dialect-specific-things/#postgresql',

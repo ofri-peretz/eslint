@@ -1,0 +1,40 @@
+{
+  "repo": "medusa",
+  "meta": {
+    "stars": 28000,
+    "commit": "de51a3b99e5b66d6e085e77d91886e5676a9bf3d",
+    "category": "E-commerce Backend",
+    "plugins": [
+      "node-security",
+      "secure-coding",
+      "express-security",
+      "postgresql-security"
+    ],
+    "fpEdge": false,
+    "srcGlob": "packages/medusa/src/**/*.ts"
+  },
+  "fileCount": 710,
+  "loc": 40755,
+  "timing": {
+    "runsMs": [
+      3759,
+      3854,
+      3792
+    ],
+    "medianMs": 3792,
+    "meanMs": 3802,
+    "stddevMs": 39,
+    "cv": 1,
+    "msPerFile": 5.34
+  },
+  "peakRssMb": 679,
+  "findings": {
+    "total": 5,
+    "errors": 2,
+    "warnings": 3,
+    "filesWithFindings": 5,
+    "densityPerKloc": 0.12,
+    "externalDirectives": 1,
+    "parseErrors": 0
+  }
+}

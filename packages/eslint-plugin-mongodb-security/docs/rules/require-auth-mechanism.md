@@ -5,14 +5,14 @@ tags: ['security', 'mongodb']
 category: security
 severity: high
 cwe: CWE-287
-owasp: "A07:2021"
+owasp: 'A07:2021'
 autofix: false
 ---
 
 > **Keywords:** CWE-287, authentication, SCRAM-SHA-256, MongoDB, security
 
-
 <!-- @rule-summary -->
+
 Requires explicit authentication mechanism specification for MongoDB connections.
 <!-- @/rule-summary -->
 
@@ -27,7 +27,7 @@ Requires explicit authentication mechanism specification for MongoDB connections
 | **CWE Reference** | CWE-287 (Improper Authentication)       |
 | **OWASP**         | A07:2021 - Identification/Auth Failures |
 | **Severity**      | Medium (CVSS: 6.5)                      |
-| **Category**   | Security |
+| **Category**      | Security                                |
 
 ## Error Message Format
 
@@ -40,13 +40,13 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-287](https://cwe.mitre.org/data/definitions/287.html) [OWASP:A07](https://owasp.org/Top10/A07_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
-| **Issue Description** | Specific vulnerability | `Improper Authentication detected` |
-| **Severity & Compliance** | Impact assessment | `CRITICAL` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A07_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                                                       |
+| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Risk Standards**        | Security benchmarks    | [CWE-287](https://cwe.mitre.org/data/definitions/287.html) [OWASP:A07](https://owasp.org/Top10/A07_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
+| **Issue Description**     | Specific vulnerability | `Improper Authentication detected`                                                                                                                                                                                                                            |
+| **Severity & Compliance** | Impact assessment      | `CRITICAL`                                                                                                                                                                                                                                                    |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                                                          |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A07_2021-Injection/)                                                                                                                                                                                                   |
 
 ## Rule Details
 
@@ -121,23 +121,24 @@ connections.
 
 The following patterns are **not detected** due to static analysis limitations:
 
-### Connection String with Auth
+### Weak Mechanism in the Connection String
 
-**Why**: URI parsing is not performed; only options object is checked.
+**Why**: an `authMechanism=` parameter in a literal connection string counts
+as naming the mechanism, the same as the options object. Which mechanism it
+names is not checked.
 
 ```typescript
-// ❌ NOT DETECTED - Auth mechanism in URI
-mongoose.connect('mongodb://host/db?authMechanism=SCRAM-SHA-1'); // Weak mechanism in URI
+// ❌ NOT DETECTED - names a mechanism, but a weak one
+mongoose.connect('mongodb://host/db?authMechanism=SCRAM-SHA-1');
 ```
 
-**Mitigation**: Use options object for auth mechanism. Validate URIs at startup.
+**Mitigation**: Prefer `SCRAM-SHA-256` or `MONGODB-X509`. Validate URIs at startup.
 
 ### Options from Variable
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
-
+| Option         | Type      | Default | Description                                     |
+| -------------- | --------- | ------- | ----------------------------------------------- |
+| `allowInTests` | `boolean` | `true`  | Skip this rule in `*.test.*` / `*.spec.*` files |
 
 **Why**: Variable contents are not analyzed.
 

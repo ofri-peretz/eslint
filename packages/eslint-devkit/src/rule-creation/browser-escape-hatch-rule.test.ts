@@ -152,6 +152,44 @@ describe('createBrowserEscapeHatchRule', () => {
         name: 'a runtime-decided value is unreadable',
         code: SDK + 'new Client({ dangerouslyAllowBrowser: isBrowser });',
       },
+      /*
+       * Moved from invalid (2026-10-12 FP/FN audit): `createClient` is not
+       * bound to the SDK here, and a call nothing imports is another
+       * library's (FP-2). The bound form is pinned in `invalid`.
+       */
+      {
+        name: '(was invalid) an unbound factory call',
+        code: SDK + 'createClient({ dangerouslyAllowBrowser: true });',
+      },
+      // FP-3: a credential the browser obtains per session.
+      {
+        name: 'a token provider',
+        code:
+          SDK +
+          'new Client({ azureADTokenProvider: getToken, dangerouslyAllowBrowser: true });',
+      },
+      {
+        name: 'a wrapper called with fewer arguments than its options position',
+        code: SDK + 'function make(o) { return new Client(o); }\nmake();',
+      },
+      {
+        name: 'a key provider function, a parameter, an await, a call and a new',
+        code:
+          SDK +
+          'async function f(k) {\n' +
+          '  new Client({ apiKey: () => fetchKey(), dangerouslyAllowBrowser: true });\n' +
+          '  new Client({ apiKey: function () { return k; }, dangerouslyAllowBrowser: true });\n' +
+          '  new Client({ apiKey: k, dangerouslyAllowBrowser: true });\n' +
+          '  new Client({ apiKey: await fetchKey(), dangerouslyAllowBrowser: true });\n' +
+          '  new Client({ apiKey: readKey(), dangerouslyAllowBrowser: true });\n' +
+          '  new Client({ apiKey: new KeyBox(), dangerouslyAllowBrowser: true });\n' +
+          '  new Client({ apiKey: k ? k : readKey(), dangerouslyAllowBrowser: true });\n' +
+          '  const { secret } = await (await fetch(u)).json();\n' +
+          '  new Client({ apiKey: secret.value, dangerouslyAllowBrowser: true });\n' +
+          '  function provider() { return k; }\n' +
+          '  new Client({ apiKey: provider, dangerouslyAllowBrowser: true });\n' +
+          '}',
+      },
       {
         // A bare prefix match would arm on this; it is a different package.
         name: 'a package that merely shares the prefix',
@@ -188,8 +226,61 @@ describe('createBrowserEscapeHatchRule', () => {
         errors: [{ messageId: 'browserKeyExposure' }],
       },
       {
-        name: 'a factory call takes the same options',
-        code: SDK + 'createClient({ dangerouslyAllowBrowser: true });',
+        name: 'a factory the SDK exports takes the same options',
+        code: "import { createClient } from 'test-sdk';\ncreateClient({ dangerouslyAllowBrowser: true });",
+        errors: [{ messageId: 'browserKeyExposure' }],
+      },
+      {
+        name: 'a shipped key in any branch of a fallback ships',
+        code:
+          SDK +
+          'function f(k) { return new Client({ apiKey: k ?? process.env.KEY, dangerouslyAllowBrowser: true }); }',
+        errors: [{ messageId: 'browserKeyExposure' }],
+      },
+      {
+        name: 'a literal, a global and an un-initialised let are shipped',
+        code:
+          SDK +
+          "let late;\nnew Client({ apiKey: 'k', dangerouslyAllowBrowser: true });\nnew Client({ apiKey: GLOBAL_KEY, dangerouslyAllowBrowser: true });\nnew Client({ apiKey: late, dangerouslyAllowBrowser: true });",
+        errors: [
+          { messageId: 'browserKeyExposure' },
+          { messageId: 'browserKeyExposure' },
+          { messageId: 'browserKeyExposure' },
+        ],
+      },
+      {
+        name: 'a literal token provider is no provider',
+        code:
+          SDK +
+          'new Client({ azureADTokenProvider: false, dangerouslyAllowBrowser: true });',
+        errors: [{ messageId: 'browserKeyExposure' }],
+      },
+      {
+        name: 'a token provider explicitly undefined is no provider',
+        code:
+          SDK +
+          'new Client({ azureADTokenProvider: undefined, dangerouslyAllowBrowser: true, apiKey: k });',
+        errors: [{ messageId: 'browserKeyExposure' }],
+      },
+      {
+        name: 'an imported constant is shipped',
+        code:
+          SDK +
+          "import { KEY } from './config';\nnew Client({ apiKey: KEY, dangerouslyAllowBrowser: true });",
+        errors: [{ messageId: 'browserKeyExposure' }],
+      },
+      {
+        name: 'a conditional with a shipped branch',
+        code:
+          SDK +
+          "function f(k) { return new Client({ apiKey: k ? k : 'fallback', dangerouslyAllowBrowser: true }); }",
+        errors: [{ messageId: 'browserKeyExposure' }],
+      },
+      {
+        name: 'a credential nested past the follow budget is treated as shipped',
+        code:
+          SDK +
+          'function f(k) { return new Client({ apiKey: k.a.b.c.d.e.f.g.h.i, dangerouslyAllowBrowser: true }); }',
         errors: [{ messageId: 'browserKeyExposure' }],
       },
       {

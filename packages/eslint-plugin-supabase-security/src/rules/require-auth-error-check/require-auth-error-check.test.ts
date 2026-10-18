@@ -7,6 +7,7 @@
  */
 
 import { RuleTester } from '@typescript-eslint/rule-tester';
+import * as tsParser from '@typescript-eslint/parser';
 
 import { requireAuthErrorCheck } from './index';
 
@@ -92,6 +93,78 @@ ruleTester.run('require-auth-error-check', requireAuthErrorCheck, {
       name: 'no Supabase import — `.auth.getUser` belongs to something else',
       code: `const { data } = await db.auth.getUser();`,
     },
+    /*
+     * FP-6 (2026-10-12 FP/FN audit). On failure `getUser()` resolves
+     * `{ data: { user: null }, error }`, so a guard on the identity — `if (!user)`
+     * — takes the "not signed in" branch: fail-closed. That is Supabase's own
+     * documented pattern, and the rule reported it as CWE-287. The identity
+     * guarded, optional-chained, or handed to a caller is now silent.
+     */
+    {
+      name: 'FP: the documented guard on the identity',
+      // @found supabase/supabase:examples/realtime/nextjs-auth-presence/pages/index.tsx:81
+      code: `${IMPORT}\nexport async function getServerSideProps() {\n  const { data: { user } } = await supabase.auth.getUser();\n  if (!user) return { redirect: { destination: '/login', permanent: false } };\n  return { props: { user } };\n}`,
+    },
+    {
+      name: 'FP: the identity returned to the caller, which decides',
+      // @found vercel/nextjs-subscription-payments:utils/supabase/queries.ts:5
+      code: `${IMPORT}\nexport const getUser = async (supabase) => {\n  const { data: { user } } = await supabase.auth.getUser();\n  return user;\n};`,
+    },
+    {
+      name: 'FP: data.user read in a ternary test',
+      // @found supabase/supabase:examples/user-management/ionic-angular-user-management/src/app/supabase.service.ts:35
+      code: `${IMPORT}\nexport async function f() {\n  const { data: userData } = await db.auth.getUser();\n  return userData?.user ? { user: userData.user } : null;\n}`,
+    },
+    {
+      name: 'FP: a session guard and an optional chain',
+      // @found supabase-community/chatgpt-your-files:app/chat/page.tsx:77
+      code: `${IMPORT}\nexport async function f() {\n  const { data: { session } } = await db.auth.getSession();\n  if (!session) return;\n  const { data: { user } } = await db.auth.getUser();\n  return user?.email ?? 'anonymous';\n}`,
+    },
+    {
+      name: 'guard: a promise callback that hands data.user on',
+      // @found supabase/supabase:examples/user-management/ionic-angular-user-management/src/app/supabase.service.ts:26
+      code: `${IMPORT}\nexport function user() { return db.auth.getUser().then(({ data }) => data?.user); }`,
+    },
+    {
+      name: 'a short-circuit on the identity, a defaulted data pattern',
+      code: `${IMPORT}\nexport async function f() {\n  const { data: { user } = {} } = await db.auth.getUser();\n  return user && user.email;\n}`,
+    },
+    {
+      name: 'a rest or computed field beside a guarded identity',
+      code: `${IMPORT}\nconst { data: { [k]: v, ...others, session = null } } = await db.auth.getSession();\nif (!session) throw new Error('x');`,
+    },
+    {
+      name: 'a loose or null comparison is a guard: null fails it',
+      code: `${IMPORT}\nexport async function f() {\n  const { data: { user } } = await db.auth.getUser();\n  if (user != undefined) return 'dashboard';\n  const { data: { session } } = await db.auth.getSession();\n  if (session !== null) return 'dashboard';\n  return 'login';\n}`,
+    },
+    {
+      name: 'data.user returned to the caller',
+      code: `${IMPORT}\nexport async function f() { const { data } = await db.auth.getUser(); return data.user; }`,
+    },
+    {
+      name: 'the claims guarded after getClaims',
+      code: `${IMPORT}\nconst { data } = await db.auth.getClaims();\nif (!data?.claims) throw new Error('no session');`,
+    },
+    {
+      name: 'the whole result handed to a caller',
+      code: `${IMPORT}\nexport async function f() { const { data } = await db.auth.getUser(); return data; }`,
+    },
+    {
+      name: 'a then() callback that binds error',
+      code: `${IMPORT}\ndb.auth.getUser().then(({ data, error }) => (error ? null : data.user));`,
+    },
+    {
+      name: 'a then() on something that is not an auth call',
+      code: `${IMPORT}\nfetchUser().then(({ data }) => (data ? 'in' : 'out'));`,
+    },
+    {
+      name: 'a then() with no callback, or a non-destructuring one',
+      code: `${IMPORT}\ndb.auth.getUser().then();\ndb.auth.getUser().then(handle);\ndb.auth.getUser().then((result) => result);`,
+    },
+    {
+      name: 'a then() that is called on a computed member',
+      code: `${IMPORT}\ndb.auth.getUser()[method](({ data }) => data);`,
+    },
   ],
   invalid: [
     {
@@ -139,5 +212,79 @@ ruleTester.run('require-auth-error-check', requireAuthErrorCheck, {
       code: `import { foo } from '@supabase/supabase-js';\nconst bar = foo();\nconst { baz } = await bar.auth.getUser();`,
       errors: [{ messageId: 'missingErrorCheck' }],
     },
+    // What still reports: the result trusted without its error or a guard.
+    {
+      name: 'the container tested — always truthy, so the failure passes (the bypass)',
+      code: `${IMPORT}\nexport async function f() {\n  const { data } = await db.auth.getUser();\n  if (data) return 'admin-panel';\n  return 'login';\n}`,
+      errors: [{ messageId: 'missingErrorCheck' }],
+    },
+    {
+      name: 'the identity dereferenced with no check',
+      code: `${IMPORT}\nexport async function del(id) {\n  const { data: { user } } = await db.auth.getUser();\n  await db.from('notes').delete().eq('id', id).eq('owner', user.id);\n}`,
+      errors: [{ messageId: 'missingErrorCheck' }],
+    },
+    {
+      name: 'data.user dereferenced with no check',
+      code: `${IMPORT}\nconst { data } = await db.auth.getUser();\nconst id = data.user.id;`,
+      errors: [{ messageId: 'missingErrorCheck' }],
+    },
+    {
+      name: 'FN: a strict comparison with undefined is passed by the null a failure yields',
+      // @found quint: benchmarks/quint/models/supabase-security.require-auth-error-check.qnt (UndefinedCompare, every binding)
+      code: `${IMPORT}\nexport async function f() {\n  const { data: { user } } = await db.auth.getUser();\n  if (user !== undefined) return 'dashboard';\n  return 'login';\n}\nexport async function g() {\n  const { data } = await db.auth.getSession();\n  if (undefined === data.session) return 'login';\n  return 'dashboard';\n}\nexport async function h() {\n  const { data: { claims } } = await db.auth.getClaims();\n  return claims !== void 0 ? 'in' : 'out';\n}`,
+      errors: [
+        { messageId: 'missingErrorCheck' },
+        { messageId: 'missingErrorCheck' },
+        { messageId: 'missingErrorCheck' },
+      ],
+    },
+    {
+      name: 'a non-identity field of data is no guard',
+      code: `${IMPORT}\nconst { data } = await db.auth.getUser();\nlog(data.properties);\nif (data) proceed();`,
+      errors: [{ messageId: 'missingErrorCheck' }],
+    },
+    {
+      name: 'FN: a then() callback that tests the container',
+      // @found synthetic: 2026-10-12 SDK-usage snippet (benchmarks/audits/2026-10-12-fp-fn-supabase-security.md)
+      code: `${IMPORT}\nexport const status = () => db.auth.getUser().then(({ data }) => (data ? 'in' : 'out'));`,
+      errors: [{ messageId: 'missingErrorCheck' }],
+    },
+    {
+      name: 'FN: getClaims without its error, the claims unchecked',
+      // @found synthetic: 2026-10-12 SDK-usage snippet (benchmarks/audits/2026-10-12-fp-fn-supabase-security.md)
+      code: `${IMPORT}\nconst { data: { claims } } = await db.auth.getClaims();\nlog(claims.sub);`,
+      errors: [{ messageId: 'missingErrorCheck' }],
+    },
   ],
 });
+
+const tsRuleTester = new RuleTester({
+  languageOptions: {
+    parser: tsParser,
+    parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
+  },
+});
+
+tsRuleTester.run(
+  'require-auth-error-check (TypeScript)',
+  requireAuthErrorCheck,
+  {
+    valid: [
+      {
+        name: 'a non-null assertion inside a guard is still the guard',
+        code: `${IMPORT}\nconst { data: { user } } = await db.auth.getUser();\nif (user!.id) audit();`,
+      },
+      {
+        name: 'a cast identity handed on',
+        code: `${IMPORT}\nexport async function f() { const { data } = await db.auth.getUser(); return data.user as User; }`,
+      },
+    ],
+    invalid: [
+      {
+        name: 'a non-null assertion with no check',
+        code: `${IMPORT}\nconst { data: { user } } = await db.auth.getUser();\nconst id: string = user!.id;`,
+        errors: [{ messageId: 'missingErrorCheck' }],
+      },
+    ],
+  },
+);

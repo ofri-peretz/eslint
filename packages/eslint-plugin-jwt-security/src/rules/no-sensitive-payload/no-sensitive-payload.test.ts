@@ -538,3 +538,29 @@ export const req = (params) =>
     ],
   });
 });
+
+// ---------------------------------------------------------------------------
+// Edges pinned by mutation testing (npm run mutation -- --plugin jwt-security).
+// Each fixture is the input that tells the rule apart from a Stryker mutant
+// that survived the suite above; see docs/MUTATION_TESTING.md.
+// ---------------------------------------------------------------------------
+
+ruleTester.run('mutation-guided edges', noSensitivePayload, {
+  valid: [
+    {
+      name: 'a computed key the file cannot name is not judged',
+      code: `import jwt from 'jsonwebtoken';
+jwt.sign({ [field]: value }, key);`,
+    },
+  ],
+  invalid: [
+    {
+      name: 'an aud alone does not make a params spread a signed request object',
+      code: `import jwt from 'jsonwebtoken';
+export function build(params) {
+  return jwt.sign({ ...params, aud: 'https://as.example' }, key);
+}`,
+      errors: [{ messageId: 'wholeRecordSpread' }],
+    },
+  ],
+});

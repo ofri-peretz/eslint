@@ -46,10 +46,12 @@ describe('no-unsafe-dynamic-require', () => {
           code: 'const path = require("path");',
         },
         {
+          name: 'a literal relative path names one module',
           code: 'const module = require("./local-module");',
         },
         // Template literal with no expressions
         {
+          name: 'a no-substitution template names one module',
           code: 'const fs = require(`fs`);',
         },
         {
@@ -163,7 +165,9 @@ describe('no-unsafe-dynamic-require', () => {
       invalid: [
         {
           code: 'const mod = require(moduleName);',
-          options: [{ allowDynamicImport: true, reportUnresolvedSpecifiers: true }],
+          options: [
+            { allowDynamicImport: true, reportUnresolvedSpecifiers: true },
+          ],
           errors: [{ messageId: 'unsafeDynamicRequire' }],
         },
       ],
@@ -303,4 +307,40 @@ describe('no-unsafe-dynamic-require', () => {
       ],
     });
   });
+});
+
+ruleTester.run('mutation-guided edges', noUnsafeDynamicRequire, {
+  valid: [
+    {
+      name: 'a .require method on an object other than `module` is not the CJS loader',
+      code: `const host = pluginHost(); const mod = host.require(req.query.name);`,
+    },
+    {
+      name: 'aliasing a function that is not require does not make it a loader',
+      code: `const load = loadPlugin; const mod = load(req.query.name);`,
+    },
+    {
+      name: 'a binding returned by a factory other than createRequire is not a loader',
+      code: `const load = makeLoader(import.meta.url); const mod = load(req.query.name);`,
+    },
+    {
+      name: 'a method other than createRequire returns no loader either',
+      code: `const load = loaders.makeLoader(import.meta.url); const mod = load(req.query.name);`,
+    },
+  ],
+  invalid: [
+    // Rule fix (FN): only the bare `createRequire(...)` spelling was tracked.
+    {
+      name: 'module.createRequire() through the node:module namespace returns the CJS loader',
+      code: `import module from 'node:module';
+const requireCjs = module.createRequire(import.meta.url);
+const t = requireCjs(req.body.transform);`,
+      errors: [{ messageId: 'unsafeDynamicRequire' }],
+    },
+    {
+      name: 'import() of a request field is judged by default (allowDynamicImport is off)',
+      code: `async function load(req) { return import(req.params.name); }`,
+      errors: [{ messageId: 'unsafeDynamicImport' }],
+    },
+  ],
 });

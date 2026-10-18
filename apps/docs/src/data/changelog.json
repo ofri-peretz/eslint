@@ -1,9 +1,379 @@
 {
-  "releaseCount": 774,
+  "releaseCount": 791,
   "packageCount": 37,
-  "entryCount": 2241,
+  "entryCount": 2272,
   "oldestYear": 2024,
   "releases": [
+    {
+      "package": "eslint-plugin-mongodb-security",
+      "short": "eslint-plugin-mongodb-security",
+      "version": "9.1.4",
+      "date": "2026-10-18T16:07:07Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "close five false negatives found by the mutation triage",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "six wrong verdicts in six rules surfaced by Stryker mutation testing",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-jwt-security",
+      "short": "eslint-plugin-jwt-security",
+      "version": "3.5.1",
+      "date": "2026-10-18T15:00:29Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "five wrong verdicts in three rules surfaced by Stryker mutation testing",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-typeorm-security",
+      "short": "eslint-plugin-typeorm-security",
+      "version": "1.0.0",
+      "date": "2026-10-13T02:15:25Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "breaking",
+          "title": "1.0.0, stable TypeORM security rules checked against real code",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-sqlite-security",
+      "short": "eslint-plugin-sqlite-security",
+      "version": "1.0.0",
+      "date": "2026-10-13T02:14:09Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "breaking",
+          "title": "1.0.0, stable SQLite security rules checked against real code",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-sequelize-security",
+      "short": "eslint-plugin-sequelize-security",
+      "version": "1.0.0",
+      "date": "2026-10-13T02:10:43Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "breaking",
+          "title": "1.0.0, stable Sequelize security rules checked against real code",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-prisma-security",
+      "short": "eslint-plugin-prisma-security",
+      "version": "1.0.0",
+      "date": "2026-10-13T02:02:23Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "breaking",
+          "title": "1.0.0, stable Prisma security rules checked against real code",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-postgresql-security",
+      "short": "eslint-plugin-postgresql-security",
+      "version": "2.6.0",
+      "date": "2026-10-13T02:01:46Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "`no-unsafe-query` follows values through `let`, same-file helpers and pure text calls",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-openai-security",
+      "short": "eslint-plugin-openai-security",
+      "version": "1.0.0",
+      "date": "2026-10-13T02:01:38Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "breaking",
+          "title": "1.0.0, stable OpenAI SDK security rules checked against real code",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-drizzle-security",
+      "short": "eslint-plugin-drizzle-security",
+      "version": "1.0.0",
+      "date": "2026-10-13T01:51:39Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "breaking",
+          "title": "1.0.0, stable Drizzle security rules checked against real code",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-knex-security",
+      "short": "eslint-plugin-knex-security",
+      "version": "1.0.0",
+      "date": "2026-10-13T01:47:38Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "breaking",
+          "title": "1.0.0, stable Knex security rules checked against real code",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-mcp-sdk-security",
+      "short": "eslint-plugin-mcp-sdk-security",
+      "version": "1.0.0",
+      "date": "2026-10-13T01:46:23Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "breaking",
+          "title": "1.0.0, stable MCP SDK security rules checked against real code",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-gemini-security",
+      "short": "eslint-plugin-gemini-security",
+      "version": "1.0.0",
+      "date": "2026-10-13T01:42:51Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "breaking",
+          "title": "1.0.0, stable Gemini SDK security rules checked against real code",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-mysql-security",
+      "short": "eslint-plugin-mysql-security",
+      "version": "1.0.0",
+      "date": "2026-10-13T01:41:22Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "breaking",
+          "title": "1.0.0, stable mysql2 security rules checked against real code",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-anthropic-security",
+      "short": "eslint-plugin-anthropic-security",
+      "version": "1.0.0",
+      "date": "2026-10-13T01:41:01Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "breaking",
+          "title": "1.0.0, stable Anthropic SDK security rules checked against real code",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "@interlace/eslint-devkit",
+      "short": "eslint-devkit",
+      "version": "1.20.0",
+      "date": "2026-10-13T01:36:22Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "feature",
+          "title": "shared factories behind the security plugins' 1.0 releases",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-mcp-sdk-security",
+      "short": "eslint-plugin-mcp-sdk-security",
+      "version": "0.6.0",
+      "date": "2026-10-12T11:00:21Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "follow tool arguments into built commands and $ templates, read imported descriptions and schemas",
+          "pr": null
+        },
+        {
+          "kind": "feature",
+          "title": "add 11 rules for the vulnerability classes the plugin could not detect",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-postgresql-security",
+      "short": "eslint-plugin-postgresql-security",
+      "version": "2.5.0",
+      "date": "2026-10-12T10:56:03Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "close every deferred FP/FN — cross-file gate, imported pools, configs, builders",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "resolve string-subscript spellings of sinks and pg types",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "stop reporting correct releases after a `try … catch`",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-jwt-security",
+      "short": "eslint-plugin-jwt-security",
+      "version": "3.5.0",
+      "date": "2026-10-12T10:54:42Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "close two false negatives from review; require-issued-at joins recommended",
+          "pr": null
+        },
+        {
+          "kind": "fix",
+          "title": "close every deferred FP/FN — value flow, cross-file NestJS modules, provenance, no name heuristics",
+          "pr": null
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-vercel-ai-security",
+      "short": "eslint-plugin-vercel-ai-security",
+      "version": "2.3.0",
+      "date": "2026-10-12T10:52:41Z",
+      "isApp": false,
+      "isPrivate": false,
+      "entries": [
+        {
+          "kind": "fix",
+          "title": "follow values across same-file hops; close the four deferred FNs; optional type info",
+          "pr": null
+        }
+      ]
+    },
     {
       "package": "eslint-plugin-jwt-security",
       "short": "eslint-plugin-jwt-security",
@@ -18627,26 +18997,6 @@
     {
       "package": "eslint-plugin-jwt-security",
       "short": "eslint-plugin-jwt-security",
-      "version": "3.5.0",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "close two false negatives from review; require-issued-at joins recommended",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "close every deferred FP/FN — value flow, cross-file NestJS modules, provenance, no name heuristics",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-jwt-security",
-      "short": "eslint-plugin-jwt-security",
       "version": "2.2.9",
       "date": null,
       "isApp": false,
@@ -18765,46 +19115,16 @@
       ]
     },
     {
-      "package": "eslint-plugin-mcp-sdk-security",
-      "short": "eslint-plugin-mcp-sdk-security",
-      "version": "0.6.0",
+      "package": "eslint-plugin-node-security",
+      "short": "eslint-plugin-node-security",
+      "version": "5.6.10",
       "date": null,
       "isApp": false,
       "isPrivate": false,
       "entries": [
         {
           "kind": "fix",
-          "title": "follow tool arguments into built commands and $ templates, read imported descriptions and schemas",
-          "pr": null
-        },
-        {
-          "kind": "feature",
-          "title": "add 11 rules for the vulnerability classes the plugin could not detect",
-          "pr": null
-        }
-      ]
-    },
-    {
-      "package": "eslint-plugin-postgresql-security",
-      "short": "eslint-plugin-postgresql-security",
-      "version": "2.5.0",
-      "date": null,
-      "isApp": false,
-      "isPrivate": false,
-      "entries": [
-        {
-          "kind": "fix",
-          "title": "close every deferred FP/FN — cross-file gate, imported pools, configs, builders",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "resolve string-subscript spellings of sinks and pg types",
-          "pr": null
-        },
-        {
-          "kind": "fix",
-          "title": "stop reporting correct releases after a `try … catch`",
+          "title": "wrong verdicts surfaced by Stryker mutation testing (batch 1)",
           "pr": null
         }
       ]
@@ -18935,16 +19255,21 @@
       ]
     },
     {
-      "package": "eslint-plugin-vercel-ai-security",
-      "short": "eslint-plugin-vercel-ai-security",
-      "version": "2.3.0",
+      "package": "eslint-plugin-supabase-security",
+      "short": "eslint-plugin-supabase-security",
+      "version": "1.0.0",
       "date": null,
       "isApp": false,
       "isPrivate": false,
       "entries": [
         {
-          "kind": "fix",
-          "title": "follow values across same-file hops; close the four deferred FNs; optional type info",
+          "kind": "breaking",
+          "title": "1.0.0, stable Supabase security rules checked against real code",
+          "pr": null
+        },
+        {
+          "kind": "deps",
+          "title": "updated workspace dependencies: `@interlace/eslint-devkit@1.20.0`",
           "pr": null
         }
       ]

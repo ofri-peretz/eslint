@@ -51,7 +51,19 @@ import { AST_NODE_TYPES } from '../ast-node-types';
 import { propertyName } from '../ast/spellings';
 import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
 import { formatLLMMessage, MessageIcons } from '../messaging';
-import { driverBindings } from './unscoped-mutation-rule';
+import { unwrapTypeSyntax } from '../ast/type-syntax';
+import { isTestFilePath } from './rule-creator';
+import { createOriginClassifier, sourceMatches } from './driver-origin';
+import { createSqlSafety } from './sql-safety';
+import {
+  type Env,
+  envOf,
+  follow,
+  importSpecifierOf,
+  lookup,
+  singleWrite,
+  valueAt,
+} from './value-follow';
 
 /**
  * Two ids because the remediations are genuinely different.
@@ -112,6 +124,14 @@ export interface RawIdentifierRuleConfig {
    *     would miss the shape most codebases actually have.
    */
   readonly requireImport: boolean;
+  /**
+   * Tag names that count only when the tag provably belongs to the driver —
+   * a bare tag imported from `modules` under that name (renamed or not), or a
+   * member tag whose object is the driver's (`Prisma.sql`). For a generic
+   * name in a plugin whose other tags stand alone. `requireImport: true`
+   * applies this to every tag.
+   */
+  readonly driverTags?: readonly string[];
   /**
    * Callee texts that safely escape an identifier, e.g. `['sql.identifier']`.
    *
@@ -259,7 +279,8 @@ export function tagName(tag: TSESTree.Node): string | undefined {
 export function createRawIdentifierRule(
   config: RawIdentifierRuleConfig,
 ): TSESLint.RuleModule<RawIdentifierMessageIds, []> {
-  const tags = new Set(config.tags);
+  const tags = new Set([...config.tags, ...(config.driverTags ?? [])]);
+  const driverTags = new Set(config.driverTags ?? []);
 
   return {
     meta: {
@@ -299,33 +320,189 @@ export function createRawIdentifierRule(
     },
     defaultOptions: [],
     create(context) {
-      let bindings = new Set<string>();
+      // BENCHMARK-CRITERIA §B1: test files are not the shipped surface.
+      if (isTestFilePath(context.filename)) return {};
+      const env = envOf(context);
+      const originOf = createOriginClassifier(config.modules);
+      const safety = createSqlSafety({
+        origin: originOf,
+        escapers: new Set<string>(),
+        fragmentFactories: new Set<string>(),
+        modules: config.modules,
+      });
+
+      /**
+       * The name a tag is matched by: a bare tag imported from the driver is
+       * matched by the name it is EXPORTED under, so `import { sql as q }`
+       * still checks `` q`…` ``.
+       */
+      const tagKey = (
+        tag: TSESTree.Node,
+      ): { name: string; driver: boolean } | undefined => {
+        if (tag.type === AST_NODE_TYPES.Identifier) {
+          const variable = lookup(tag.name, env.scopeOf(tag));
+          const specifier =
+            variable === null ? null : importSpecifierOf(variable);
+          if (
+            specifier !== null &&
+            sourceMatches(specifier.source, config.modules)
+          )
+            return { name: specifier.name, driver: true };
+          return { name: tag.name, driver: false };
+        }
+        const name = tagName(tag);
+        if (name === undefined) return undefined;
+        const object = (tag as TSESTree.MemberExpression).object;
+        return { name, driver: originOf(valueAt(object, env)) === 'ours' };
+      };
+
+      /**
+       * A value the driver itself built — a table, a column of one, a nested
+       * fragment, a subquery's `.as()`, an escaped identifier — rendered by
+       * the driver, never spliced in as text. A query RESULT is not one.
+       */
+      const isDriverObject = (node: TSESTree.Node, depth = 0): boolean => {
+        if (depth > 8) return false;
+        const value = unwrapTypeSyntax(node);
+        switch (value.type) {
+          case AST_NODE_TYPES.Identifier: {
+            const variable = lookup(value.name, env.scopeOf(value));
+            if (variable === null) return false;
+            const specifier = importSpecifierOf(variable);
+            if (specifier !== null) {
+              if (sourceMatches(specifier.source, config.modules)) return true;
+              // `import { users } from './schema'` — judged where it is written.
+              const followed = follow(valueAt(value, env));
+              return (
+                followed.node !== value &&
+                followed.env !== env &&
+                isExportedDriverObject(followed.node, followed.env)
+              );
+            }
+            // A destructured binding is a query RESULT (`const [row] = await
+            // db.select()…`), never a table.
+            const def = variable.defs[0];
+            if (
+              def?.type !== 'Variable' ||
+              def.node.id.type !== AST_NODE_TYPES.Identifier
+            ) {
+              return false;
+            }
+            const written = singleWrite(variable);
+            return written !== null && isDriverObject(written, depth + 1);
+          }
+          case AST_NODE_TYPES.MemberExpression:
+            return isDriverObject(value.object, depth + 1);
+          case AST_NODE_TYPES.ConditionalExpression:
+            return (
+              isDriverObject(value.consequent, depth + 1) &&
+              isDriverObject(value.alternate, depth + 1)
+            );
+          case AST_NODE_TYPES.TaggedTemplateExpression:
+            return isDriverObject(value.tag, depth + 1);
+          case AST_NODE_TYPES.NewExpression:
+            return isDriverObject(value.callee, depth + 1);
+          case AST_NODE_TYPES.CallExpression: {
+            const callee = value.callee;
+            // `sql.raw(x)` / `Prisma.raw(x)` splice text: the escape hatch is
+            // exactly what this rule is about, never a safe object.
+            if (
+              callee.type === AST_NODE_TYPES.MemberExpression &&
+              propertyName(callee) === 'raw'
+            ) {
+              // …unless what it splices is provably fixed: `Prisma.raw(dir)`
+              // with `dir: 'asc' | 'desc'`.
+              const [text] = value.arguments;
+              return text !== undefined && safety.isSafe(valueAt(text, env));
+            }
+            // `db.select().from(t).as('sq')` — a named subquery.
+            if (
+              callee.type === AST_NODE_TYPES.MemberExpression &&
+              propertyName(callee) === 'as'
+            ) {
+              return originOf(valueAt(callee.object, env)) === 'ours';
+            }
+            return isDriverObject(callee, depth + 1);
+          }
+          default:
+            return false;
+        }
+      };
+
+      /**
+       * A table exported from another module: `export const users =
+       * pgTable(…)` — a call whose callee that module imports from the driver.
+       */
+      const isExportedDriverObject = (
+        node: TSESTree.Node,
+        moduleEnv: Env,
+      ): boolean => {
+        const value = unwrapTypeSyntax(node);
+        if (value.type !== AST_NODE_TYPES.CallExpression) return false;
+        let root: TSESTree.Node = value.callee;
+        while (root.type === AST_NODE_TYPES.MemberExpression)
+          root = root.object;
+        if (root.type !== AST_NODE_TYPES.Identifier) return false;
+        const variable = lookup(root.name, moduleEnv.scopeOf(root));
+        const specifier =
+          variable === null ? null : importSpecifierOf(variable);
+        return (
+          specifier !== null && sourceMatches(specifier.source, config.modules)
+        );
+      };
+
+      /**
+       * Is this binding used as an object with fields — `${table}` beside
+       * `${table.id}`? A string has no columns, so it is a table the driver
+       * renders, however the program reached it (`this.tables[name]`).
+       */
+      const isUsedAsObject = (node: TSESTree.Node): boolean => {
+        const value = unwrapTypeSyntax(node);
+        if (value.type !== AST_NODE_TYPES.Identifier) return false;
+        const variable = lookup(value.name, env.scopeOf(value));
+        return (
+          variable !== null &&
+          variable.references.some((reference) => {
+            const use = reference.identifier.parent;
+            return (
+              use?.type === AST_NODE_TYPES.MemberExpression &&
+              use.object === reference.identifier &&
+              !use.computed &&
+              use.property.type === AST_NODE_TYPES.Identifier &&
+              !(use.property.name in String.prototype)
+            );
+          })
+        );
+      };
 
       return {
-        Program(program: TSESTree.Program) {
-          bindings = driverBindings(program, config.modules);
-        },
-
         TaggedTemplateExpression(node: TSESTree.TaggedTemplateExpression) {
-          const name = tagName(node.tag);
-          if (name === undefined || !tags.has(name)) return;
-          // The gate follows the tag name, not the AST shape it appears in —
-          // see RawIdentifierRuleConfig#requireImport for why that distinction
-          // is the whole point. A gated name must be a bare tag bound to a
-          // driver import; `q.sql` is somebody else's builder.
-          if (config.requireImport) {
-            if (node.tag.type !== AST_NODE_TYPES.Identifier) return;
-            if (!bindings.has(name)) return;
+          const key = tagKey(node.tag);
+          if (key === undefined || !tags.has(key.name)) return;
+          if (
+            (config.requireImport || driverTags.has(key.name)) &&
+            !key.driver
+          ) {
+            return;
+          }
+          // A member tag whose object is provably another library's.
+          if (
+            node.tag.type === AST_NODE_TYPES.MemberExpression &&
+            originOf(valueAt(node.tag.object, env)) === 'foreign'
+          ) {
+            return;
           }
 
           const { quasis, expressions } = node.quasi;
           expressions.forEach((expr, index) => {
             if (isExemptExpression(expr, config.identifierHelpers, config.tags))
               return;
-            // Everything statically known to the left of this hole. Joining
-            // the quasis is what makes clause detection work across earlier
-            // interpolations: in `WHERE a = ${a} ORDER BY ${c}` the second
-            // hole still sees its `ORDER BY`.
+            if (isDriverObject(expr) || isUsedAsObject(expr)) return;
+            // Fixed text or a number cannot change the statement — at worst
+            // the driver binds it as a value and the query fails.
+            if (safety.isSafe(valueAt(expr, env))) return;
+            // The text immediately before this hole, across every earlier
+            // quasi, decides what the hole is.
             const preceding = quasis
               .slice(0, index + 1)
               .map((q) => q.value.raw)

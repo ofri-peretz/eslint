@@ -97,14 +97,34 @@ server.registerTool('get', cfg, async ({ url }) => {
   `hostname` are the target.
 - **Arguments** are tool arguments, `request.params.arguments` and
   `ResourceTemplate` variables, followed through bindings, string derivations,
-  same-file helpers and `new URL()`.
+  same-file helpers and `new URL()`. A request helper's URL parameter takes
+  the origin each caller passes, so ``get(`${API}/items?q=${q}`)`` keeps its
+  fixed origin. The origin is also read through a `let` (every value written
+  to it), a same-file helper's return, `await`, `String(u)`, `u.href` and
+  `u.toString()`.
+- **Into helpers, elements and parsed arguments (1.0).** A same-file
+  function or class method (`this.run(args.cmd)`) the handler calls carries
+  what its callers pass it, so a sink inside the helper is reported — an
+  object literal it is given is read field by field. Each element of an
+  argument array is the argument (`for (const p of paths)`,
+  `paths.map((p) => …)`), and a Zod `Schema.parse(args)` /
+  `safeParse(args).data` hands the arguments back: parsing checks their shape,
+  not their text. A key the parsing schema restricts to `z.enum` / `z.literal`
+  / `z.nativeEnum` stays the allowlist. Callers are found by resolving the
+  callee, never by a name.
 - **An allowlist check** is an `if` that tests the URL — `url.hostname`,
   `url.host` or `url.origin` compared, a call such as
   `ALLOWED_HOSTS.has(u.hostname)`, `target.startsWith('https://api.example.com/')`
-  or a validator — and exits before the request or wraps it. A same-file helper
-  that checks its parameter before returning sanitises its result. A
-  `protocol` check, a string transform such as `trim()`, or a request made
-  inside the test are not host checks.
+  or a validator — and exits before the request or wraps it. A callback in the
+  test (`ALLOWED.some((h) => u.hostname === h)`) and a host read into a `const`
+  count. A same-file helper that checks its parameter before every return
+  sanitises its result; a check nested inside another `if` (an allowlist that
+  applies only when configured) does not. A caller that checks the host
+  before passing the URL to a helper hands the helper a checked value. Not
+  host checks: a `protocol` check, a scheme-only prefix
+  (`url.startsWith('https://')`), a same-file predicate that never reads a
+  host (`isValidUrl(url)` that only parses it), a string transform such as
+  `trim()`, or a request made inside the test.
 - **A closed set is the allowlist**: `z.enum([...])` and friends.
 
 ## ✅ Correct

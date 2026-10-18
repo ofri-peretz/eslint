@@ -30,7 +30,38 @@ export const noUnsafeQuery = createSqlInjectionRule({
   // Method names alone are shared across drivers; the import is the evidence.
   modules: ['typeorm', '@nestjs/typeorm'],
   methods: ['query'],
-  requireSqlKeywords: false,
+  // Query-builder clauses take a raw SQL fragment; values belong in the
+  // `:name` parameters object. Join conditions are the third argument.
+  fragmentMethods: [
+    'where',
+    'andWhere',
+    'orWhere',
+    'having',
+    'andHaving',
+    'orHaving',
+    'orderBy',
+    'addOrderBy',
+    'groupBy',
+    'addGroupBy',
+    'select',
+    'addSelect',
+    { name: 'leftJoin', arg: 2 },
+    { name: 'leftJoinAndSelect', arg: 2 },
+    { name: 'innerJoin', arg: 2 },
+    { name: 'innerJoinAndSelect', arg: 2 },
+    { name: 'leftJoinAndMapOne', arg: 3 },
+    { name: 'leftJoinAndMapMany', arg: 3 },
+    { name: 'innerJoinAndMapOne', arg: 3 },
+    { name: 'innerJoinAndMapMany', arg: 3 },
+  ],
+  // `Raw((alias) => \`${alias} > :v\`, { v })` — the alias is TypeORM's.
+  aliasCallbacks: ['Raw'],
+  // `dataSource.driver.escape(name)` quotes an identifier.
+  escapers: ['escape'],
+  // `query` is also a GraphQL / HTTP client method. The statement gate applies
+  // only when the receiver cannot be traced to TypeORM.
+  requireSqlKeywords: true,
   fix: 'Pass values as the second-argument parameters array, or use query-builder parameters (`:name`), instead of interpolating them.',
-  documentationLink: 'https://typeorm.io/#/select-query-builder/using-parameters-to-escape-data',
+  documentationLink:
+    'https://typeorm.io/#/select-query-builder/using-parameters-to-escape-data',
 });

@@ -30,10 +30,12 @@ export const noMassAssignment = createMassAssignmentRule({
       confidence: 'high',
     },
   },
-  methods: ['create', 'update', 'bulkCreate', 'set', 'upsert'],
+  methods: ['create', 'update', 'bulkCreate', 'set', 'upsert', 'build'],
+  // `create(req.body, { fields: ['name'] })` — Sequelize's own allowlist.
+  allowlistOption: 'fields',
   payloadKeys: [],
-  receiverPattern: /^(sequelize|db|database|model|Model|tx|trx)$|[Ss]equelize$|[Mm]odel$/,
   modules: ['sequelize', 'sequelize-typescript'],
-  fix: 'Name the attributes you accept, or pass Sequelize\'s own allowlist — `User.create(req.body, { fields: [\'name\', \'email\'] })`, which is exactly what `fields` is for.',
-  documentationLink: 'https://sequelize.org/docs/v6/core-concepts/model-instances/',
+  fix: "Name the attributes you accept, or pass Sequelize's own allowlist — `User.create(req.body, { fields: ['name', 'email'] })`, which is exactly what `fields` is for.",
+  documentationLink:
+    'https://sequelize.org/docs/v6/core-concepts/model-instances/',
 });

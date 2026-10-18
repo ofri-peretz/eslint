@@ -26,8 +26,12 @@ import plugin from './index';
 
 const RULES = Object.keys(plugin.rules);
 
-/** The SDK import that is the whole difference between the two halves below. */
-const SDK = "import { drizzle } from 'drizzle-orm';";
+/**
+ * The SDK import that is the whole difference between the two halves below.
+ * It binds `sql` too: since the 2026-10 review `sql.raw` is a sink only on
+ * Drizzle's own `sql`, never on any object that happens to be called that.
+ */
+const SDK = "import { drizzle, sql } from 'drizzle-orm';";
 
 /**
  * A real violation of `no-unsafe-query`. It appears twice on purpose: once
@@ -97,7 +101,9 @@ describe('drizzle-orm module gate', () => {
 
   describe('positive control — the gate must open for real drizzle-orm code', () => {
     it('the same violation reports once the file imports the SDK', () => {
-      expect(lint(`${SDK}\n${VIOLATION}`, 'no-unsafe-query').length).toBeGreaterThan(0);
+      expect(
+        lint(`${SDK}\n${VIOLATION}`, 'no-unsafe-query').length,
+      ).toBeGreaterThan(0);
     });
 
     it('and is silent with the import removed', () => {

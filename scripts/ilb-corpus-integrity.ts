@@ -22,12 +22,16 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { execSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const WILD_SOURCE = path.join(ROOT, 'scripts', 'ilb-wild.ts');
-const REPORT_PATH = path.join(ROOT, 'benchmark-results', 'corpus-integrity.json');
+const REPORT_PATH = path.join(
+  ROOT,
+  'benchmark-results',
+  'corpus-integrity.json',
+);
 
 const args = new Set(process.argv.slice(2));
 const flag = (n) => args.has(`--${n}`);
@@ -43,19 +47,30 @@ function parseRegistry() {
   if (start < 0) throw new Error('BENCHMARK_REPOS not found in ilb-wild.ts');
   // Brute-force: regex over the file for { name: '...', repo: '...', commit: '...' }
   // (each entry has these three fields contiguously.)
-  const re = /name:\s*'([^']+)'[\s\S]{0,200}?repo:\s*'([^']+)'[\s\S]{0,80}?commit:\s*'([^']+)'/g;
+  const re =
+    /name:\s*'([^']+)'[\s\S]{0,200}?repo:\s*'([^']+)'[\s\S]{0,80}?commit:\s*'([^']+)'/g;
   const out = [];
   let m;
   while ((m = re.exec(src)) !== null) {
     out.push({ name: m[1], repo: m[2], commit: m[3] });
   }
-  if (out.length === 0) throw new Error('Failed to extract any BENCHMARK_REPOS entries');
+  if (out.length === 0)
+    throw new Error('Failed to extract any BENCHMARK_REPOS entries');
   return out;
 }
 
 // ── Resolve a commit-ish (tag / branch / SHA) to a SHA on the remote ─
 
-function resolveOnRemote(repo, commitish) {
+/**
+ * The pin a tag stands for is the COMMIT it peels to. `git ls-remote <tag>`
+ * on an annotated tag returns the tag OBJECT's SHA, which no checkout can be
+ * at: three.js `r170` and next.js `v15.1.0` were recorded as 232de0c… and
+ * 371382a… while their clones sit at beab9e8… and dafcd43…. So we ask for
+ * `<tag>^{}` as well and prefer the peeled line. A lightweight tag or a branch
+ * has no peeled line and its ref SHA is already the commit. (The pattern
+ * `<tag>` alone never matches `<tag>^{}`, and `--refs` strips it outright.)
+ */
+export function resolveOnRemote(repo: string, commitish: string) {
   // 40-char hex → already a stable SHA pin. We don't ls-remote (the remote
   // wouldn't return arbitrary SHAs as refs anyway). Trust the pin and
   // optionally validate by attempting a fetch — but for the integrity
@@ -63,110 +78,139 @@ function resolveOnRemote(repo, commitish) {
   if (/^[a-f0-9]{40}$/i.test(commitish)) {
     return { sha: commitish, kind: 'sha', ref: null };
   }
-  // Tag → ls-remote --tags returns "<sha>\trefs/tags/<tag>"
-  // Branch → ls-remote --heads returns "<sha>\trefs/heads/<branch>"
+  // Tag → "<tag-or-commit sha>\trefs/tags/<tag>" (+ "<commit>\trefs/tags/<tag>^{}" if annotated)
+  // Branch → "<sha>\trefs/heads/<branch>"
   try {
-    const out = execSync(`git ls-remote --refs ${repo} ${commitish}`, {
-      encoding: 'utf-8',
-      timeout: 30_000,
-      stdio: ['ignore', 'pipe', 'pipe'],
-    }).trim();
+    const out = execFileSync(
+      'git',
+      ['ls-remote', repo, commitish, `${commitish}^{}`],
+      {
+        encoding: 'utf-8',
+        timeout: 30_000,
+        stdio: ['ignore', 'pipe', 'pipe'],
+      },
+    ).trim();
     if (!out) return { sha: null, kind: 'unknown', error: 'no matching refs' };
-    const lines = out.split('\n');
-    const peeled = lines.find((l) => l.endsWith('^{}'));
-    const target = peeled ?? lines[0];
-    const [sha, ref] = target.split('\t');
-    const kind = ref?.includes('refs/tags/') ? 'tag' : ref?.includes('refs/heads/') ? 'branch' : 'sha';
+    const lines = out.split('\n').map((l) => l.split('\t'));
+    const target = lines.find(([, r]) => !r?.endsWith('^{}'));
+    if (!target)
+      return { sha: null, kind: 'unknown', error: 'no matching refs' };
+    const [refSha, ref] = target;
+    const peeled = lines.find(([, r]) => r === `${ref}^{}`);
+    const sha = peeled?.[0] ?? refSha;
+    const kind = ref?.includes('refs/tags/')
+      ? 'tag'
+      : ref?.includes('refs/heads/')
+        ? 'branch'
+        : 'sha';
     return { sha, kind, ref };
   } catch (err) {
-    return { sha: null, kind: 'error', error: String(err.message ?? err).slice(0, 200) };
+    return {
+      sha: null,
+      kind: 'error',
+      error: String(err.message ?? err).slice(0, 200),
+    };
   }
 }
 
 // ── Check ────────────────────────────────────────────────────────────
 
-const registry = parseRegistry();
-console.log(`Checking ${registry.length} pinned repos...`);
+function main() {
+  const registry = parseRegistry();
+  console.log(`Checking ${registry.length} pinned repos...`);
 
-// Try/catch read closes the existsSync → readFileSync → writeFileSync TOCTOU
-// window the analyzer flagged (CodeQL: `js/file-system-race`).
-const baseline = (() => {
-  try {
-    return JSON.parse(fs.readFileSync(REPORT_PATH, 'utf-8'));
-  } catch (e) {
-    if ((e as NodeJS.ErrnoException).code === 'ENOENT') return null;
-    throw e;
+  // Try/catch read closes the existsSync → readFileSync → writeFileSync TOCTOU
+  // window the analyzer flagged (CodeQL: `js/file-system-race`).
+  const baseline = (() => {
+    try {
+      return JSON.parse(fs.readFileSync(REPORT_PATH, 'utf-8'));
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code === 'ENOENT') return null;
+      throw e;
+    }
+  })();
+
+  const current = {};
+  const drifts = [];
+  const branches = [];
+  const errors = [];
+
+  for (const r of registry) {
+    process.stdout.write(`  ${r.name.padEnd(40)} `);
+    const resolved = resolveOnRemote(r.repo, r.commit);
+    current[r.name] = {
+      repo: r.repo,
+      commit: r.commit,
+      resolvedSha: resolved.sha,
+      kind: resolved.kind,
+      ref: resolved.ref ?? null,
+      error: resolved.error ?? null,
+      checkedAt: new Date().toISOString(),
+    };
+
+    if (resolved.kind === 'error' || !resolved.sha) {
+      console.log(`❌ ${resolved.error}`);
+      errors.push({ name: r.name, error: resolved.error });
+      continue;
+    }
+    if (resolved.kind === 'branch') {
+      console.log(`⚠️  branch (${resolved.sha.slice(0, 8)}) — drift-prone`);
+      branches.push({ name: r.name, branch: r.commit, sha: resolved.sha });
+    }
+    const prev = baseline?.repos?.[r.name]?.resolvedSha;
+    if (prev && prev !== resolved.sha) {
+      console.log(
+        `⚠️  DRIFT  baseline ${prev.slice(0, 8)} → now ${resolved.sha.slice(0, 8)}`,
+      );
+      drifts.push({ name: r.name, baseline: prev, current: resolved.sha });
+    } else if (prev) {
+      console.log(
+        `✅ ${resolved.kind} ${resolved.sha.slice(0, 8)} (matches baseline)`,
+      );
+    } else {
+      console.log(
+        `📝 ${resolved.kind} ${resolved.sha.slice(0, 8)} (first record)`,
+      );
+    }
   }
-})();
 
-const current = {};
-const drifts = [];
-const branches = [];
-const errors = [];
-
-for (const r of registry) {
-  process.stdout.write(`  ${r.name.padEnd(40)} `);
-  const resolved = resolveOnRemote(r.repo, r.commit);
-  current[r.name] = {
-    repo: r.repo,
-    commit: r.commit,
-    resolvedSha: resolved.sha,
-    kind: resolved.kind,
-    ref: resolved.ref ?? null,
-    error: resolved.error ?? null,
-    checkedAt: new Date().toISOString(),
+  const summary = {
+    generatedAt: new Date().toISOString(),
+    totalRepos: registry.length,
+    drifts: drifts.length,
+    branches: branches.length,
+    errors: errors.length,
+    driftDetails: drifts,
+    branchDetails: branches,
+    errorDetails: errors,
+    repos: current,
   };
 
-  if (resolved.kind === 'error' || !resolved.sha) {
-    console.log(`❌ ${resolved.error}`);
-    errors.push({ name: r.name, error: resolved.error });
-    continue;
+  if (EMIT_JSON) {
+    console.log('\n' + JSON.stringify(summary, null, 2));
   }
-  if (resolved.kind === 'branch') {
-    console.log(`⚠️  branch (${resolved.sha.slice(0, 8)}) — drift-prone`);
-    branches.push({ name: r.name, branch: r.commit, sha: resolved.sha });
-  }
-  const prev = baseline?.repos?.[r.name]?.resolvedSha;
-  if (prev && prev !== resolved.sha) {
-    console.log(`⚠️  DRIFT  baseline ${prev.slice(0, 8)} → now ${resolved.sha.slice(0, 8)}`);
-    drifts.push({ name: r.name, baseline: prev, current: resolved.sha });
-  } else if (prev) {
-    console.log(`✅ ${resolved.kind} ${resolved.sha.slice(0, 8)} (matches baseline)`);
+
+  const shouldWrite = UPDATE || !baseline;
+  if (shouldWrite) {
+    fs.mkdirSync(path.dirname(REPORT_PATH), { recursive: true });
+    fs.writeFileSync(REPORT_PATH, JSON.stringify(summary, null, 2));
+    console.log(
+      `\n✅ ${path.relative(ROOT, REPORT_PATH)} ${baseline ? 'updated' : 'created (baseline)'}`,
+    );
   } else {
-    console.log(`📝 ${resolved.kind} ${resolved.sha.slice(0, 8)} (first record)`);
+    console.log(
+      `\nℹ️  Baseline preserved. Re-run with --update to record current SHAs.`,
+    );
   }
+
+  // Exit non-zero on drift or hard errors so CI can gate.
+  const exitCode = drifts.length + errors.length > 0 ? 1 : 0;
+  console.log(
+    `\nSummary: ${drifts.length} drift · ${branches.length} branches (drift-prone) · ${errors.length} error · ${
+      registry.length - drifts.length - errors.length
+    } stable.`,
+  );
+  process.exit(exitCode);
 }
 
-const summary = {
-  generatedAt: new Date().toISOString(),
-  totalRepos: registry.length,
-  drifts: drifts.length,
-  branches: branches.length,
-  errors: errors.length,
-  driftDetails: drifts,
-  branchDetails: branches,
-  errorDetails: errors,
-  repos: current,
-};
-
-if (EMIT_JSON) {
-  console.log('\n' + JSON.stringify(summary, null, 2));
-}
-
-const shouldWrite = UPDATE || !baseline;
-if (shouldWrite) {
-  fs.mkdirSync(path.dirname(REPORT_PATH), { recursive: true });
-  fs.writeFileSync(REPORT_PATH, JSON.stringify(summary, null, 2));
-  console.log(`\n✅ ${path.relative(ROOT, REPORT_PATH)} ${baseline ? 'updated' : 'created (baseline)'}`);
-} else {
-  console.log(`\nℹ️  Baseline preserved. Re-run with --update to record current SHAs.`);
-}
-
-// Exit non-zero on drift or hard errors so CI can gate.
-const exitCode = drifts.length + errors.length > 0 ? 1 : 0;
-console.log(
-  `\nSummary: ${drifts.length} drift · ${branches.length} branches (drift-prone) · ${errors.length} error · ${
-    registry.length - drifts.length - errors.length
-  } stable.`,
-);
-process.exit(exitCode);
+if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) main();

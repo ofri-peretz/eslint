@@ -29,8 +29,17 @@ export const noUnsafeQuery = createSqlInjectionRule({
   // Only files importing Drizzle's sql.raw().
   // Method names alone are shared across drivers; the import is the evidence.
   modules: ['drizzle-orm'],
-  methods: ['raw'],
-  requireSqlKeywords: false,
+  // `db.execute('…')` / `db.run('…')` accept a plain string as well as a
+  // `sql` template, and a string is never parameterised.
+  methods: ['execute', 'run', 'all', 'get', 'values'],
+  fragmentMethods: [{ name: 'raw', requireDriverReceiver: true }],
+  // `db.insert(t).values(row)` — the builder's `values` takes a row.
+  statementFactories: ['insert', 'update', 'select', 'delete'],
+  // Drizzle's own fragment builders render identifiers and parameters.
+  fragmentFactories: ['identifier', 'join', 'placeholder', 'raw', 'empty'],
+  // `execute` / `run` / `get` are generic names. The statement gate applies
+  // only when the receiver cannot be traced to a `drizzle()` instance.
+  requireSqlKeywords: true,
   fix: 'Use the `sql` tagged template, which parameterizes interpolated values, instead of `sql.raw()`.',
   documentationLink: 'https://orm.drizzle.team/docs/sql#sqlraw',
 });

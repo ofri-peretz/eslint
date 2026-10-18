@@ -255,3 +255,74 @@ describe('no-sql-injection-in-tool', () => {
     ],
   });
 });
+
+describe('1.0 independent review (2026-10-12)', () => {
+  const ORM =
+    "import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';\n" +
+    "import { PrismaClient } from '@prisma/client';\n" +
+    "import knex from 'knex';\n" +
+    "import { Sequelize } from 'sequelize';\n" +
+    'const prisma = new PrismaClient();\n' +
+    "const db = knex({ client: 'pg' });\n" +
+    "const sequelize = new Sequelize('postgres://localhost/app');\n";
+  ruleTester.run('review', noSqlInjectionInTool, {
+    valid: [
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: the ORMs' parameterised forms
+        name: 'precision lock: tagged $queryRaw, bound raw parameters and replacements',
+        code:
+          ORM +
+          'server.registerTool("q", cfg, async ({ name }) => {\n' +
+          '  await prisma.$queryRaw`SELECT * FROM users WHERE name = ${name}`;\n' +
+          '  await prisma.$queryRawUnsafe("SELECT * FROM users WHERE name = $1", name);\n' +
+          '  await db.raw("SELECT * FROM users WHERE name = ?", [name]);\n' +
+          '  await sequelize.query("SELECT * FROM users WHERE name = :n", { replacements: { n: name } });\n' +
+          '  await prisma.user.findMany({ where: { name } });\n});',
+      },
+    ],
+    invalid: [
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: ORM raw escape hatches were not sinks
+        name: 'FN: Prisma $queryRawUnsafe / $executeRawUnsafe, knex raw and Sequelize query with the argument as SQL',
+        code:
+          ORM +
+          'server.registerTool("q", cfg, async ({ sql, table }) => {\n' +
+          '  await prisma.$queryRawUnsafe(sql);\n' +
+          '  await prisma.$executeRawUnsafe(`DELETE FROM ${table}`);\n' +
+          '  await db.raw(sql);\n' +
+          '  await sequelize.query(`SELECT * FROM ${table}`);\n});',
+        errors: [
+          err('sql', '@prisma/client.$queryRawUnsafe'),
+          err('table', '@prisma/client.$executeRawUnsafe'),
+          err('sql', 'knex.raw'),
+          err('table', 'sequelize.query'),
+        ],
+      },
+      {
+        // @found modelcontextprotocol/servers-archived:src/postgres/index.ts:118
+        name: 'real code: the archived Postgres server runs the tool argument inside a read-only transaction',
+        code:
+          "import { Server } from '@modelcontextprotocol/sdk/server/index.js';\n" +
+          "import { CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';\n" +
+          "import pg from 'pg';\n" +
+          'const pool = new pg.Pool({ connectionString: url });\n' +
+          'server.setRequestHandler(CallToolRequestSchema, async (request) => {\n' +
+          '  const sql = request.params.arguments?.sql as string;\n' +
+          '  const client = await pool.connect();\n' +
+          '  await client.query("BEGIN TRANSACTION READ ONLY");\n' +
+          '  const result = await client.query(sql);\n' +
+          '  return { content: [{ type: "text", text: JSON.stringify(result.rows) }] };\n});',
+        errors: [err('request.params.arguments.sql', 'pg.query')],
+      },
+      {
+        // @found mcp-sdk-security 1.0 review 2026-10-12, synthetic: the query lives in a helper the handler calls
+        name: 'FN: the SQL built in a same-file helper the tool handler calls',
+        code:
+          SDK +
+          "async function runQuery(foo) { return pool.query(`SELECT * FROM t WHERE name = '${foo}'`); }\n" +
+          'server.registerTool("q", cfg, async ({ name }) => runQuery(name));',
+        errors: [err('foo', 'pg.query')],
+      },
+    ],
+  });
+});

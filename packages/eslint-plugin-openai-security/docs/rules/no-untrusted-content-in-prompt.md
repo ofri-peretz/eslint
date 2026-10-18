@@ -1,7 +1,7 @@
 ---
 title: no-untrusted-content-in-prompt
 description: Disallow untrusted content built into the OpenAI system prompt
-tags: ['security','openai']
+tags: ['security', 'openai']
 category: security
 severity: high
 cwe: CWE-1427
@@ -18,38 +18,41 @@ autofix: false
 
 ## Why
 
-A system prompt is instruction text. Whatever is spliced into it is read by the model as *instructions*, not as data — so anyone who controls that value controls the agent's rules. The model has no way to tell "this part of my instructions came from a stranger" once the string is assembled.
+A system prompt is instruction text. Whatever is spliced into it is read by the model as _instructions_, not as data — so anyone who controls that value controls the agent's rules. The model has no way to tell "this part of my instructions came from a stranger" once the string is assembled.
 
 This is the same argument as `mcp-sdk-security/no-tool-description-injection`, one layer down: tool descriptions and system prompts are both model-facing instruction surfaces, and both must be static.
 
+## What it reads
+
+`instructions` and `additional_instructions`, a `role: 'system'` or `role: 'developer'` turn in `messages` (Chat Completions) or `input` (Responses API), content-part arrays, and the Agents SDK's `new Agent({ instructions })` / `new RealtimeAgent(…)`. Request paths: `chat.completions.create` / `parse` / `stream` / `runTools`, `responses.create` / `parse` / `stream`, and the Assistants API's `assistants.create` / `update` and `threads.runs.create` / `createAndPoll` / `createAndStream` / `stream`.
+
 ## What counts as static
 
-A string literal, a template with no interpolations, or a concatenation of those. **A bare identifier also counts** — `instructions: SYSTEM_PROMPT` is the correct pattern and by far the most common one, and following it is the data-flow analysis this rule deliberately avoids. The interpolation is where the injection is visible in one place, and that is what gets reported.
+Text this file fixes is static, and is followed within the file (bounded, never across files):
+
+- a string literal, an interpolation-free template or tagged template (`` dedent`…` ``), and concatenations, `[…].join()` and string methods over those;
+- a `const` holding any of the above, a member of a same-file object literal of prompts (`PROMPTS[kind]`), a ternary between static branches, and a same-file helper whose every `return` is static;
+- an imported constant (`RECOMMENDED_PROMPT_PREFIX`) and an environment read — module code and operator configuration, not request data;
+- a value that can only print digits or a fixed format: a date (`new Date().toISOString()`), a count (`.length`), arithmetic, a comparison, or a parameter typed `number` / `boolean`.
+
+**A whole-value identifier the file cannot see into still counts as static** — a parameter (`instructions: systemPrompt` inside a wrapper) or a global. Inside a template or a concatenation the same value is the dynamic half, and that is what gets reported, at the place it is spliced in. A request object or a message list held in a `const` is read the same way as one written inline.
 
 ## Not this rule
 
 - **The Vercel AI SDK.** `generateText({ system })` and `streamText({ system })` belong to [`vercel-ai-security/no-dynamic-system-prompt`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security). This rule gates on OpenAI's own request paths, so no line is ever reported by both.
-- **User turns.** `` { role: 'user', content: `${input}` } `` is the *remediation*, not the bug — a user message is where runtime values belong, because the model reads them as data.
+- **User turns.** ``{ role: 'user', content: `${input}` }`` is the _remediation_, not the bug — a user message is where runtime values belong, because the model reads them as data.
 
 ## Known limitations
 
-- The gate is file-level: once the OpenAI SDK is imported anywhere in the file,
-  any call whose member path matches a request path is inspected. An unrelated
-  object that happens to expose the same path — `client.responses.create` on
-  something that is not an OpenAI client — is a false positive. Resolving the
-  callee back to the import would need the cross-scope data-flow analysis these
-  rules deliberately avoid; the trade is a rule that stays fast and predictable,
-  and it is why this rule ships in `strict` only until the corpus run measures
-  the real rate.
-- A system prompt assembled before the call (`const p = base + role;` then
-  `instructions: p`) is a false negative, for the same reason a bare identifier counts
-  as static.
+- The gate is file-level: once the OpenAI SDK is imported, any call whose member path matches a request path is inspected, unless this file shows the receiver is something else (an object literal, or a `new X()` of a class that does not extend the SDK). A receiver that is a parameter, an import or a call result is inspected — clients are passed around, and resolving every one back to its construction would take cross-file analysis.
 
 ## Incorrect
 
 ```ts
 const client = new OpenAI();
-await client.responses.create({ instructions: `You are an assistant for ${tenantName}.` });
+await client.responses.create({
+  instructions: `You are an assistant for ${tenantName}.`,
+});
 ```
 
 ## Correct

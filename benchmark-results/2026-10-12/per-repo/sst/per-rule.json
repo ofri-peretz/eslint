@@ -1,0 +1,360 @@
+{
+  "node-security/no-toctou-vulnerability": {
+    "hits": 1,
+    "avgTimeMs": 10.06,
+    "samples": [
+      {
+        "ruleId": "node-security/no-toctou-vulnerability",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/sst/platform/src/components/cloudflare/helpers/wrangler.ts",
+        "line": 196,
+        "column": 5,
+        "message": "🔒 CWE-367 OWASP:A04-Cryptographic CVSS:7 | Time-of-check Time-of-use race condition detected | HIGH\n   Fix: Act on the result and handle the failure — open/unlink and catch ENOENT — instead of checking first. Not a finding if the path is i"
+      }
+    ]
+  },
+  "node-security/no-zip-slip": {
+    "hits": 3,
+    "avgTimeMs": 7.86,
+    "samples": [
+      {
+        "ruleId": "node-security/no-zip-slip",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/sst/platform/src/components/aws/ssr-site.ts",
+        "line": 1799,
+        "column": 67,
+        "message": "🔒 CWE-22 OWASP:A01-Broken CVSS:7.5 | Archive entry path used without validation | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Validate paths before extraction | https://snyk.io/research/zip-slip-vulnerability"
+      },
+      {
+        "ruleId": "node-security/no-zip-slip",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/sst/platform/src/components/aws/ssr-site.ts",
+        "line": 1814,
+        "column": 55,
+        "message": "🔒 CWE-22 OWASP:A01-Broken CVSS:7.5 | Archive entry path used without validation | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Validate paths before extraction | https://snyk.io/research/zip-slip-vulnerability"
+      },
+      {
+        "ruleId": "node-security/no-zip-slip",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/sst/platform/src/components/aws/ssr-site.ts",
+        "line": 1818,
+        "column": 65,
+        "message": "🔒 CWE-22 OWASP:A01-Broken CVSS:7.5 | Archive entry path used without validation | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Validate paths before extraction | https://snyk.io/research/zip-slip-vulnerability"
+      }
+    ]
+  },
+  "node-security/require-stream-error-handler": {
+    "hits": 1,
+    "avgTimeMs": 1.85,
+    "samples": [
+      {
+        "ruleId": "node-security/require-stream-error-handler",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/sst/platform/src/components/aws/function.ts",
+        "line": 2470,
+        "column": 28,
+        "message": "🔒 CWE-248 OWASP:A10-Mishandling CVSS:7.5 | .pipe() forwards data but not errors. A stream that emits 'error' with no listener throws inside the EventEmitter, which is an uncaught exception — the process exits. A single request for a missin"
+      }
+    ]
+  },
+  "lambda-security/no-hardcoded-credentials-sdk": {
+    "hits": 0,
+    "avgTimeMs": 80.77,
+    "samples": []
+  },
+  "secure-coding/no-ldap-injection": {
+    "hits": 0,
+    "avgTimeMs": 47,
+    "samples": []
+  },
+  "secure-coding/no-privilege-escalation": {
+    "hits": 0,
+    "avgTimeMs": 37.68,
+    "samples": []
+  },
+  "secure-coding/no-hardcoded-credentials": {
+    "hits": 0,
+    "avgTimeMs": 24.03,
+    "samples": []
+  },
+  "node-security/no-weak-hash-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 21.95,
+    "samples": []
+  },
+  "secure-coding/no-xpath-injection": {
+    "hits": 0,
+    "avgTimeMs": 9.78,
+    "samples": []
+  },
+  "node-security/no-timing-unsafe-compare": {
+    "hits": 0,
+    "avgTimeMs": 11.8,
+    "samples": []
+  },
+  "secure-coding/no-graphql-injection": {
+    "hits": 0,
+    "avgTimeMs": 9.59,
+    "samples": []
+  },
+  "secure-coding/no-redos-vulnerable-regex": {
+    "hits": 0,
+    "avgTimeMs": 9.3,
+    "samples": []
+  },
+  "secure-coding/no-unlimited-resource-allocation": {
+    "hits": 0,
+    "avgTimeMs": 8.84,
+    "samples": []
+  },
+  "node-security/no-unsafe-buffer-alloc": {
+    "hits": 0,
+    "avgTimeMs": 8.82,
+    "samples": []
+  },
+  "secure-coding/no-homoglyph-identifiers": {
+    "hits": 0,
+    "avgTimeMs": 9.07,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-deserialization": {
+    "hits": 0,
+    "avgTimeMs": 8.19,
+    "samples": []
+  },
+  "node-security/detect-non-literal-fs-filename": {
+    "hits": 0,
+    "avgTimeMs": 7.98,
+    "samples": []
+  },
+  "secure-coding/no-sensitive-data-exposure": {
+    "hits": 0,
+    "avgTimeMs": 6.88,
+    "samples": []
+  },
+  "node-security/no-buffer-overread": {
+    "hits": 0,
+    "avgTimeMs": 7.17,
+    "samples": []
+  },
+  "secure-coding/no-xxe-injection": {
+    "hits": 0,
+    "avgTimeMs": 7.76,
+    "samples": []
+  },
+  "node-security/detect-child-process": {
+    "hits": 0,
+    "avgTimeMs": 6.3,
+    "samples": []
+  },
+  "node-security/detect-eval-with-expression": {
+    "hits": 0,
+    "avgTimeMs": 5.15,
+    "samples": []
+  },
+  "node-security/no-math-random-crypto": {
+    "hits": 0,
+    "avgTimeMs": 4.99,
+    "samples": []
+  },
+  "node-security/no-data-in-temp-storage": {
+    "hits": 0,
+    "avgTimeMs": 4.78,
+    "samples": []
+  },
+  "node-security/no-arbitrary-file-access": {
+    "hits": 0,
+    "avgTimeMs": 6.06,
+    "samples": []
+  },
+  "secure-coding/no-improper-sanitization": {
+    "hits": 0,
+    "avgTimeMs": 4.38,
+    "samples": []
+  },
+  "node-security/require-dependency-integrity": {
+    "hits": 0,
+    "avgTimeMs": 4.2,
+    "samples": []
+  },
+  "node-security/no-static-iv": {
+    "hits": 0,
+    "avgTimeMs": 4.27,
+    "samples": []
+  },
+  "secure-coding/no-weak-password-recovery": {
+    "hits": 0,
+    "avgTimeMs": 3.86,
+    "samples": []
+  },
+  "secure-coding/no-fail-open-auth": {
+    "hits": 0,
+    "avgTimeMs": 3.66,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-regex-construction": {
+    "hits": 0,
+    "avgTimeMs": 3.21,
+    "samples": []
+  },
+  "node-security/no-unbounded-decompression": {
+    "hits": 0,
+    "avgTimeMs": 3.1,
+    "samples": []
+  },
+  "secure-coding/no-sql-injection": {
+    "hits": 0,
+    "avgTimeMs": 2.7,
+    "samples": []
+  },
+  "node-security/no-deprecated-buffer": {
+    "hits": 0,
+    "avgTimeMs": 2.32,
+    "samples": []
+  },
+  "node-security/no-dynamic-command-string": {
+    "hits": 0,
+    "avgTimeMs": 2.28,
+    "samples": []
+  },
+  "node-security/detect-suspicious-dependencies": {
+    "hits": 0,
+    "avgTimeMs": 2.34,
+    "samples": []
+  },
+  "node-security/no-cryptojs": {
+    "hits": 0,
+    "avgTimeMs": 2.06,
+    "samples": []
+  },
+  "node-security/no-ssrf": {
+    "hits": 0,
+    "avgTimeMs": 1.87,
+    "samples": []
+  },
+  "secure-coding/no-template-injection": {
+    "hits": 0,
+    "avgTimeMs": 1.73,
+    "samples": []
+  },
+  "node-security/no-shell-injection": {
+    "hits": 0,
+    "avgTimeMs": 1.7,
+    "samples": []
+  },
+  "secure-coding/no-log-injection": {
+    "hits": 0,
+    "avgTimeMs": 1.74,
+    "samples": []
+  },
+  "node-security/no-unsafe-dynamic-require": {
+    "hits": 0,
+    "avgTimeMs": 1.72,
+    "samples": []
+  },
+  "node-security/no-weak-cipher-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 1.64,
+    "samples": []
+  },
+  "node-security/no-weak-dh-parameters": {
+    "hits": 0,
+    "avgTimeMs": 1.62,
+    "samples": []
+  },
+  "node-security/no-ecb-mode": {
+    "hits": 0,
+    "avgTimeMs": 1.26,
+    "samples": []
+  },
+  "node-security/no-self-signed-certs": {
+    "hits": 0,
+    "avgTimeMs": 1.2,
+    "samples": []
+  },
+  "node-security/no-env-injection": {
+    "hits": 0,
+    "avgTimeMs": 1.08,
+    "samples": []
+  },
+  "node-security/no-insecure-http-parser": {
+    "hits": 0,
+    "avgTimeMs": 1.1,
+    "samples": []
+  },
+  "node-security/no-dynamic-algorithm-selection": {
+    "hits": 0,
+    "avgTimeMs": 0.99,
+    "samples": []
+  },
+  "node-security/require-aead-tag-verification": {
+    "hits": 0,
+    "avgTimeMs": 0.92,
+    "samples": []
+  },
+  "lambda-security/no-secrets-in-env": {
+    "hits": 0,
+    "avgTimeMs": 0.8,
+    "samples": []
+  },
+  "lambda-security/no-permissive-cors-response": {
+    "hits": 0,
+    "avgTimeMs": 0.76,
+    "samples": []
+  },
+  "lambda-security/no-unvalidated-event-body": {
+    "hits": 0,
+    "avgTimeMs": 0.58,
+    "samples": []
+  },
+  "lambda-security/no-missing-authorization-check": {
+    "hits": 0,
+    "avgTimeMs": 0.49,
+    "samples": []
+  },
+  "lambda-security/no-user-controlled-requests": {
+    "hits": 0,
+    "avgTimeMs": 0.44,
+    "samples": []
+  },
+  "lambda-security/no-error-swallowing": {
+    "hits": 0,
+    "avgTimeMs": 0.39,
+    "samples": []
+  },
+  "lambda-security/no-unbounded-batch-processing": {
+    "hits": 0,
+    "avgTimeMs": 0.4,
+    "samples": []
+  },
+  "lambda-security/require-timeout-handling": {
+    "hits": 0,
+    "avgTimeMs": 0.35,
+    "samples": []
+  },
+  "lambda-security/no-permissive-cors-middy": {
+    "hits": 0,
+    "avgTimeMs": 0.38,
+    "samples": []
+  },
+  "lambda-security/no-exposed-debug-endpoints": {
+    "hits": 0,
+    "avgTimeMs": 0.36,
+    "samples": []
+  },
+  "lambda-security/no-exposed-error-details": {
+    "hits": 0,
+    "avgTimeMs": 0.33,
+    "samples": []
+  },
+  "lambda-security/no-overly-permissive-iam-policy": {
+    "hits": 0,
+    "avgTimeMs": 0.33,
+    "samples": []
+  },
+  "lambda-security/no-env-logging": {
+    "hits": 0,
+    "avgTimeMs": 0.31,
+    "samples": []
+  }
+}

@@ -4,7 +4,8 @@
  *
  * For each fixture in the corpus, lint twice (ESLint via the bench config,
  * oxlint via a generated config that loads our shims), normalize both outputs
- * to (file, rule, line, column) tuples, and report parity. Known-divergent
+ * to (file, rule, line, column) tuples — (project, rule) for the few
+ * project-scoped rules, see finding-key.ts — and report parity. Known-divergent
  * rules live in allowlist.json with a reason and introduction date.
  *
  * Usage:
@@ -24,6 +25,7 @@ import { getToolchain } from '../../lib/toolchain.ts';
 import { capturePreregistration } from '../../lib/preregister.ts';
 import { corpusSlug } from '../../lib/corpus-slug.ts';
 import { computeParityCacheKey } from './cache-key.ts';
+import { diffFindings } from './finding-key.ts';
 
 const require = createRequire(import.meta.url);
 
@@ -635,17 +637,10 @@ function lintOxlint(corpus, configPath) {
 
 // ── Diff + allowlist ──────────────────────────────────────────────────
 
-function key(f) {
-  return `${f.file}::${f.rule}::${f.line}::${f.column}`;
-}
-
+// (file, rule, line, column) — except for project-scoped rules, whose finding
+// lands on whichever file an engine lints first. See finding-key.ts.
 function diff(eslintFindings, oxlintFindings) {
-  const eSet = new Set(eslintFindings.map(key));
-  const oSet = new Set(oxlintFindings.map(key));
-  const eslintOnly = eslintFindings.filter((f) => !oSet.has(key(f)));
-  const oxlintOnly = oxlintFindings.filter((f) => !eSet.has(key(f)));
-  const sharedKeys = [...eSet].filter((k) => oSet.has(k));
-  return { shared: sharedKeys.length, eslintOnly, oxlintOnly };
+  return diffFindings(eslintFindings, oxlintFindings, REPO_ROOT);
 }
 
 function applyAllowlist(diffResult) {

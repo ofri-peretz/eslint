@@ -21,12 +21,18 @@ import { createSdkApiKeyRule } from '@interlace/eslint-devkit';
 export const noHardcodedApiKey = createSdkApiKeyRule({
   ruleName: 'no-hardcoded-api-key',
   vendor: 'OpenAI',
-  // `openai` and its subpaths only. `openai-edge` is a different package with
-  // a different client, so a bare prefix match would open the gate wrongly.
-  modules: ['openai'],
-  keyProps: ['apiKey'],
+  // `openai` and its subpaths, plus the `@openai/` scope where the Agents SDK
+  // lives (`new OpenAIProvider({ apiKey })`, `setDefaultOpenAIKey(key)`).
+  // `openai-edge` is a different package with a different client, so a bare
+  // prefix match would open the gate wrongly.
+  modules: ['openai', '@openai'],
+  /** The API key, the admin key and the webhook signing secret (`openai` 6, `client.ts`). */
+  keyProps: ['apiKey', 'adminAPIKey', 'webhookSecret'],
+  // The Agents SDK's process-wide default key is set positionally.
+  positionalKeyConstructors: ['setDefaultOpenAIKey'],
   fixTemplate: 'new OpenAI({ {{prop}}: process.env.OPENAI_API_KEY })',
   docsUrl:
     'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-openai-security/docs/rules/no-hardcoded-api-key.md',
-  documentationLink: 'https://platform.openai.com/docs/api-reference/authentication',
+  documentationLink:
+    'https://platform.openai.com/docs/api-reference/authentication',
 });

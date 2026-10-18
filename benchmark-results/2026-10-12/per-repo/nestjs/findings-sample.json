@@ -1,0 +1,74 @@
+[
+  {
+    "ruleId": "secure-coding/no-unsafe-deserialization",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/server/server-tcp.ts",
+    "line": 94,
+    "column": 26,
+    "message": "🔒 CWE-502 OWASP:A08-Software CVSS:9.8 | Unsafe deserialization of untrusted data (incl. model/tool output) | HIGH\n   Fix: Use JSON.parse() or validated safe deserialization libraries | validate model/tool output via schema and size limits "
+  },
+  {
+    "ruleId": "secure-coding/no-unsafe-deserialization",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/server/server-redis.ts",
+    "line": 141,
+    "column": 26,
+    "message": "🔒 CWE-502 OWASP:A08-Software CVSS:9.8 | Unsafe deserialization of untrusted data (incl. model/tool output) | HIGH\n   Fix: Use JSON.parse() or validated safe deserialization libraries | validate model/tool output via schema and size limits "
+  },
+  {
+    "ruleId": "secure-coding/no-unsafe-deserialization",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/server/server-mqtt.ts",
+    "line": 136,
+    "column": 26,
+    "message": "🔒 CWE-502 OWASP:A08-Software CVSS:9.8 | Unsafe deserialization of untrusted data (incl. model/tool output) | HIGH\n   Fix: Use JSON.parse() or validated safe deserialization libraries | validate model/tool output via schema and size limits "
+  },
+  {
+    "ruleId": "secure-coding/no-unsafe-deserialization",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/client/client-tcp.ts",
+    "line": 81,
+    "column": 13,
+    "message": "🔒 CWE-502 OWASP:A08-Software CVSS:9.8 | Unsafe deserialization of untrusted data (incl. model/tool output) | HIGH\n   Fix: Use JSON.parse() or validated safe deserialization libraries | validate model/tool output via schema and size limits "
+  },
+  {
+    "ruleId": "secure-coding/no-unsafe-deserialization",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/client/client-rmq.ts",
+    "line": 357,
+    "column": 49,
+    "message": "🔒 CWE-502 OWASP:A08-Software CVSS:9.8 | Unsafe deserialization of untrusted data (incl. model/tool output) | HIGH\n   Fix: Use JSON.parse() or validated safe deserialization libraries | validate model/tool output via schema and size limits "
+  },
+  {
+    "ruleId": "secure-coding/no-unsafe-deserialization",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/client/client-redis.ts",
+    "line": 228,
+    "column": 15,
+    "message": "🔒 CWE-502 OWASP:A08-Software CVSS:9.8 | Unsafe deserialization of untrusted data (incl. model/tool output) | HIGH\n   Fix: Use JSON.parse() or validated safe deserialization libraries | validate model/tool output via schema and size limits "
+  },
+  {
+    "ruleId": "secure-coding/no-unsafe-deserialization",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/microservices/client/client-mqtt.ts",
+    "line": 200,
+    "column": 15,
+    "message": "🔒 CWE-502 OWASP:A08-Software CVSS:9.8 | Unsafe deserialization of untrusted data (incl. model/tool output) | HIGH\n   Fix: Use JSON.parse() or validated safe deserialization libraries | validate model/tool output via schema and size limits "
+  },
+  {
+    "ruleId": "secure-coding/no-sensitive-data-exposure",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/repl/native-functions/debug-repl-fn.ts",
+    "line": 24,
+    "column": 11,
+    "message": "🔒 CWE-532 OWASP:A09-Logging CVSS:5.3 | Sensitive data detected in logs: token | HIGH [GDPR,HIPAA,PCI-DSS,SOC2]\n   Fix: Redact or mask sensitive data before logging/exposing | https://cwe.mitre.org/data/definitions/532.html"
+  },
+  {
+    "ruleId": "secure-coding/no-sensitive-data-exposure",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/nestjs/packages/core/injector/opaque-key-factory/deep-hashed-module-opaque-key-factory.ts",
+    "line": 52,
+    "column": 9,
+    "message": "🔒 CWE-532 OWASP:A09-Logging CVSS:5.3 | Sensitive data detected in logs: token | HIGH [GDPR,HIPAA,PCI-DSS,SOC2]\n   Fix: Redact or mask sensitive data before logging/exposing | https://cwe.mitre.org/data/definitions/532.html"
+  }
+]

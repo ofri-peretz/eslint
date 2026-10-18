@@ -11,6 +11,7 @@ autofix: false
 > **Keywords:** SQL injection, CWE-89, OWASP A03:2021, Drizzle, drizzle-orm, sql template, identifier injection, ORDER BY injection, GHSA-gpj5-g38j-94v9, sql.identifier
 
 <!-- @rule-summary -->
+
 Disallow interpolating table, column or sort identifiers into a Drizzle `sql` tagged template, where bind parameters cannot reach them.
 <!-- @/rule-summary -->
 
@@ -24,12 +25,12 @@ a `` sql`…` `` template. This rule is part of [`eslint-plugin-drizzle-security
 
 ## Quick Summary
 
-| Aspect            | Details                                                                          |
-| ----------------- | -------------------------------------------------------------------------------- |
-| **CWE Reference** | [CWE-89](https://cwe.mitre.org/data/definitions/89.html) (SQL Injection)          |
-| **Severity**      | Critical (CVSS 9.8)                                                              |
-| **Auto-Fix**      | ❌ No auto-fix available                                                         |
-| **Category**      | Security                                                                         |
+| Aspect            | Details                                                                  |
+| ----------------- | ------------------------------------------------------------------------ |
+| **CWE Reference** | [CWE-89](https://cwe.mitre.org/data/definitions/89.html) (SQL Injection) |
+| **Severity**      | Critical (CVSS 9.8)                                                      |
+| **Auto-Fix**      | ❌ No auto-fix available                                                 |
+| **Category**      | Security                                                                 |
 
 ## Why this matters
 
@@ -37,8 +38,8 @@ a `` sql`…` `` template. This rule is part of [`eslint-plugin-drizzle-security
 these two lines get the same review:
 
 ```ts
-await db.execute(sql`SELECT * FROM users WHERE id = ${id}`);  // safe
-await db.execute(sql`SELECT * FROM ${table}`);                // injectable
+await db.execute(sql`SELECT * FROM users WHERE id = ${id}`); // safe
+await db.execute(sql`SELECT * FROM ${table}`); // injectable
 ```
 
 The first is safe. The second is not, and no amount of care with the template
@@ -49,7 +50,7 @@ hole there, the driver has nothing to bind and splices your string in verbatim.
 
 This is the shape behind [GHSA-gpj5-g38j-94v9](https://github.com/advisories/GHSA-gpj5-g38j-94v9).
 It is invisible to every SQL-injection linter that decides by asking "is this a
-raw API", because this *is* the safe API.
+raw API", because this _is_ the safe API.
 
 The reason it survives review is that the remediation everyone knows —
 "use a parameter" — is what the developer already believes they are doing.
@@ -104,7 +105,7 @@ const dir = input === 'desc' ? 'desc' : 'asc';
   `sql.fromList()`, `sql.placeholder()`. These produce SQL chunks rather than
   spliced text, and `sql.identifier()` in particular is the fix this rule
   recommends; reporting the remediation punishes the correction. `sql.raw()` is
-  pointedly *not* in that list — it is the one member of the family that does
+  pointedly _not_ in that list — it is the one member of the family that does
   splice, so `` sql`SELECT * FROM ${sql.raw(table)}` `` is still a finding here.
 - **A literal.** `` sql`SELECT * FROM ${'users'}` `` is a constant you typed.
   There is no untrusted input in it.
@@ -117,16 +118,16 @@ const dir = input === 'desc' ? 'desc' : 'asc';
 
 ## How this splits with `no-unsafe-query`
 
-The two rules divide by *what* is wrong, not by which API you used:
+The two rules divide by _what_ is wrong, not by which API you used:
 
-| | reports |
-|---|---|
-| [`no-unsafe-query`](./no-unsafe-query.md) | **string construction** — concatenation or interpolation used to *build* the SQL text passed to `sql.raw(...)` |
-| this rule | **position** — a hole where an identifier belongs, inside the tagged template |
+|                                           | reports                                                                                                        |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| [`no-unsafe-query`](./no-unsafe-query.md) | **string construction** — concatenation or interpolation used to _build_ the SQL text passed to `sql.raw(...)` |
+| this rule                                 | **position** — a hole where an identifier belongs, inside the tagged template                                  |
 
-So `` sql`SELECT * FROM ${sql.raw(table)}` `` is a finding *here*: the hole is
+So `` sql`SELECT * FROM ${sql.raw(table)}` `` is a finding _here_: the hole is
 in an identifier position and `sql.raw()` splices rather than composing.
-`sql.raw('SELECT * FROM ' + table)` is a finding *there*: the string is built
+`sql.raw('SELECT * FROM ' + table)` is a finding _there_: the string is built
 by concatenation. A line that does both is two different defects with two
 different fixes, not one finding reported twice.
 
@@ -143,6 +144,14 @@ disable it on that line with a reason rather than switching the rule off:
 // eslint-disable-next-line drizzle-security/no-raw-identifier-interpolation -- TABLE is a module constant
 await db.execute(sql`SELECT * FROM ${TABLE}`);
 ```
+
+## What is an identifier hole (2026-10 review)
+
+The tag is matched through its import — `import { sql as q } from 'drizzle-orm'`
+still checks ``q`…` ``. A hole is not reported when it holds something
+the driver renders itself: a table or column built with the schema helpers (in this file or a relative schema module), a nested `sql` fragment, `sql.identifier()`, a named subquery (`.as()`), or a binding used with columns (`${t}` beside `${t.id}`), or a value the file proves fixed (a literal,
+a constant, a closed literal-union type). A query RESULT is not a table and
+is still reported. Test files are skipped.
 
 ## Further Reading
 

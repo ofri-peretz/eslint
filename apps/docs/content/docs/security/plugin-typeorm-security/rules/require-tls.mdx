@@ -23,12 +23,12 @@ Detects TypeORM connection configuration that turns TLS off, or that keeps encry
 
 ## Quick Summary
 
-| Aspect            | Details                                                                          |
-| ----------------- | -------------------------------------------------------------------------------- |
+| Aspect            | Details                                                                                                      |
+| ----------------- | ------------------------------------------------------------------------------------------------------------ |
 | **CWE Reference** | [CWE-319](https://cwe.mitre.org/data/definitions/319.html) (Cleartext Transmission of Sensitive Information) |
-| **Severity**      | High (CVSS 7.4)                                                                  |
-| **Auto-Fix**      | ❌ No auto-fix available                                                         |
-| **Category**      | Security                                                                         |
+| **Severity**      | High (CVSS 7.4)                                                                                              |
+| **Auto-Fix**      | ❌ No auto-fix available                                                                                     |
+| **Category**      | Security                                                                                                     |
 
 ## Why this matters
 
@@ -39,7 +39,7 @@ path — a shared VPC, a misconfigured load balancer, a compromised sidecar.
 
 The second failure is subtler and more common. `rejectUnauthorized: false`
 leaves encryption on, so a packet capture looks fine, but the client no longer
-checks *who* it is talking to. It will happily complete a handshake with an
+checks _who_ it is talking to. It will happily complete a handshake with an
 attacker who answered in the database's place, hand over the credentials, and
 proxy every query. This is why the two cases are reported separately: the fix
 for the first is "turn TLS on", and the fix for the second is "supply the CA",
@@ -62,7 +62,10 @@ export const ds2 = new DataSource({
 });
 
 // ❌ mssql spells it the other way round — dangerous when true
-export const ds3 = new DataSource({ type: 'mssql', trustServerCertificate: true });
+export const ds3 = new DataSource({
+  type: 'mssql',
+  trustServerCertificate: true,
+});
 ```
 
 ## ✅ Correct
@@ -78,7 +81,10 @@ export const ds = new DataSource({
 });
 
 // ✅ mssql, verifying the server
-export const ds2 = new DataSource({ type: 'mssql', trustServerCertificate: false });
+export const ds2 = new DataSource({
+  type: 'mssql',
+  trustServerCertificate: false,
+});
 ```
 
 ## What this rule deliberately does not report
@@ -113,6 +119,21 @@ export default [
   },
 ];
 ```
+
+## How a connection config is read (2026-10 review)
+
+- **Config files.** An `ormconfig.js` — `{ type: 'mysql', entities, … }` — never imports TypeORM, and is read as TypeORM's; `TypeOrmModule.forRoot()` from `@nestjs/typeorm` counts as an import.
+
+- **Another library's options are not a connection.** An object handed to
+  another package — `new https.Agent({ host, rejectUnauthorized: false })`,
+  `axios.create({ … })` — is that package's to judge, even in a file that
+  imports the driver.
+
+- **Values are followed, not skipped.** A ternary or `||` / `??` arm, a
+  constant bound earlier and a value exported from a relative module are
+  read; one written elsewhere is reported at the property that uses it.
+
+Test files are skipped.
 
 ## Further Reading
 
