@@ -307,6 +307,127 @@
           "timeout": 0
         }
       }
+    },
+    "node-security": {
+      "rules": {
+        "detect-child-process": {
+          "score": 76.9,
+          "killed": 735,
+          "survived": 221,
+          "noCoverage": 0,
+          "timeout": 2
+        },
+        "detect-eval-with-expression": {
+          "score": 84.8,
+          "killed": 392,
+          "survived": 70,
+          "noCoverage": 0,
+          "timeout": 1
+        },
+        "no-arbitrary-file-access": {
+          "score": 89.7,
+          "killed": 363,
+          "survived": 42,
+          "noCoverage": 0,
+          "timeout": 3
+        },
+        "no-math-random-crypto": {
+          "score": 93.3,
+          "killed": 433,
+          "survived": 29,
+          "noCoverage": 2,
+          "timeout": 5
+        },
+        "no-self-signed-certs": {
+          "score": 90.6,
+          "killed": 78,
+          "survived": 7,
+          "noCoverage": 1,
+          "timeout": 0
+        },
+        "no-shell-injection": {
+          "score": 90.3,
+          "killed": 131,
+          "survived": 13,
+          "noCoverage": 1,
+          "timeout": 0
+        },
+        "no-timing-unsafe-compare": {
+          "score": 82.9,
+          "killed": 442,
+          "survived": 89,
+          "noCoverage": 2,
+          "timeout": 2
+        },
+        "no-toctou-vulnerability": {
+          "score": 87.8,
+          "killed": 300,
+          "survived": 42,
+          "noCoverage": 0,
+          "timeout": 3
+        },
+        "no-unsafe-dynamic-require": {
+          "score": 89.7,
+          "killed": 131,
+          "survived": 15,
+          "noCoverage": 0,
+          "timeout": 0
+        },
+        "no-weak-hash-algorithm": {
+          "score": 90.6,
+          "killed": 326,
+          "survived": 32,
+          "noCoverage": 2,
+          "timeout": 5
+        },
+        "no-zip-slip": {
+          "score": 92.3,
+          "killed": 371,
+          "survived": 31,
+          "noCoverage": 0,
+          "timeout": 2
+        },
+        "require-stream-error-handler": {
+          "score": 91.7,
+          "killed": 89,
+          "survived": 7,
+          "noCoverage": 1,
+          "timeout": 0
+        }
+      },
+      "pending": [
+        "detect-non-literal-fs-filename",
+        "detect-suspicious-dependencies",
+        "lock-file",
+        "no-buffer-overread",
+        "no-cryptojs",
+        "no-cryptojs-weak-random",
+        "no-data-in-temp-storage",
+        "no-deprecated-buffer",
+        "no-deprecated-cipher-method",
+        "no-dynamic-algorithm-selection",
+        "no-dynamic-command-string",
+        "no-dynamic-dependency-loading",
+        "no-dynamic-require",
+        "no-ecb-mode",
+        "no-env-injection",
+        "no-insecure-http-parser",
+        "no-insecure-key-derivation",
+        "no-insecure-rsa-padding",
+        "no-sha1-hash",
+        "no-ssrf",
+        "no-static-iv",
+        "no-unbounded-decompression",
+        "no-unsafe-buffer-alloc",
+        "no-weak-cipher-algorithm",
+        "no-weak-dh-parameters",
+        "prefer-native-crypto",
+        "require-aead-tag-verification",
+        "require-dependency-integrity",
+        "require-secure-credential-storage",
+        "require-secure-deletion",
+        "require-storage-encryption"
+      ]
     }
   }
 }

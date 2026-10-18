@@ -78,7 +78,10 @@ if ((pick())(presented, storedToken) === 0) { ok(); }`,
           name: 'an AST node-type compare holds no secret',
           code: 'if (node.type === expectedType) { return; }',
         },
-        'if (symbol.flags === SymbolFlags.Property) { return; }',
+        {
+          name: 'a symbol-flag compare holds no secret',
+          code: 'if (symbol.flags === SymbolFlags.Property) { return; }',
+        },
         // The plural tail is a separate entry: only the LAST word is tested, so
         // `kind` does not cover `tokenKinds`. Removing `kinds` from
         // DEFAULT_NON_SECRET_TAILS makes this report, because the identifier

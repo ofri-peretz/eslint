@@ -91,6 +91,7 @@ describe('detect-child-process', () => {
       valid: [
         // spawn/spawnSync with shell: false AND literal args are now correctly SAFE
         {
+          name: 'shell: false on a literal spawn runs no shell',
           code: 'child_process.spawn("node", ["script.js"], { shell: false });',
         },
         {

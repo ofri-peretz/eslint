@@ -19,7 +19,6 @@ import {
   AST_NODE_TYPES,
   compileUserPatterns,
   unwrapTypeSyntax,
-  staticString,
   propertyName,
 } from '@interlace/eslint-devkit';
 import {
@@ -537,11 +536,13 @@ function unwrapChain(node: TSESTree.Node): TSESTree.Node {
  * bracket access an evasion.
  */
 function memberPropertyName(node: TSESTree.MemberExpression): string | null {
-  const property = node.property;
-  if (!node.computed) {
-    return property.type === AST_NODE_TYPES.Identifier ? property.name : null;
-  }
-  return staticString(property) !== null ? staticString(property) : null;
+  // `propertyName` reads `o.k`, `o['k']` and `` o[`k`] `` alike. A `#private`
+  // name is a name the author chose too: `this.#apiToken` holds what
+  // `this.apiToken` would, so it is read here rather than dropped as null.
+  const { property } = node;
+  return property.type === AST_NODE_TYPES.PrivateIdentifier
+    ? property.name
+    : propertyName(node);
 }
 
 /** Is this member expression a known false-friend of a secret name? */

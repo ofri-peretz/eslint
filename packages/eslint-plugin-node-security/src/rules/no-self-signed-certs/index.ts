@@ -20,6 +20,7 @@ import {
   MessageIcons,
   objectKeyName,
   propertyName,
+  staticString,
 } from '@interlace/eslint-devkit';
 
 type MessageIds = 'insecureTls' | 'enableValidation';
@@ -116,21 +117,33 @@ export const noSelfSignedCerts = createRule<RuleOptions, MessageIds>({
       }
     }
 
+    function isProcess(node: TSESTree.Expression): boolean {
+      if (node.type === AST_NODE_TYPES.Identifier)
+        return node.name === 'process';
+      return (
+        node.type === AST_NODE_TYPES.MemberExpression &&
+        node.object.type === AST_NODE_TYPES.Identifier &&
+        node.object.name === 'globalThis' &&
+        propertyName(node) === 'process'
+      );
+    }
+
     function checkAssignmentExpression(node: TSESTree.AssignmentExpression) {
       if (isTestFile) return;
 
       // Check for process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
+      // (also `globalThis.process.env…`, the same object)
       if (
         node.left.type === AST_NODE_TYPES.MemberExpression &&
         node.left.object.type === AST_NODE_TYPES.MemberExpression &&
-        node.left.object.object.type === AST_NODE_TYPES.Identifier &&
-        node.left.object.object.name === 'process' &&
+        isProcess(node.left.object.object) &&
         propertyName(node.left.object) === 'env' &&
         propertyName(node.left) === 'NODE_TLS_REJECT_UNAUTHORIZED'
       ) {
+        // An env var is a string: `'0'`, `` `0` `` and `0` all store '0'.
         if (
-          node.right.type === AST_NODE_TYPES.Literal &&
-          (node.right.value === '0' || node.right.value === 0)
+          staticString(node.right) === '0' ||
+          (node.right.type === AST_NODE_TYPES.Literal && node.right.value === 0)
         ) {
           context.report({
             node,

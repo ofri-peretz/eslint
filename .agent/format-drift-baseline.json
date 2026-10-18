@@ -2,7 +2,7 @@
   "command": "npx tsx scripts/check-format-drift.ts --update",
   "note": "Source files we own that are not prettier-clean. SHRINK-ONLY: a file may leave this list, never join it. Prettier is enforced nowhere else in this repository \u2014 see the header of scripts/check-format-drift.ts.",
   "recordedAt": "2026-09-09",
-  "count": 3517,
+  "count": 3516,
   "files": [
     ".agent/RULE-REVIEW-BATCHES.md",
     ".agent/TS7_MIGRATION_PLAN.md",
@@ -2639,7 +2639,6 @@
     "packages/eslint-plugin-node-security/src/rules/no-static-iv/index.ts",
     "packages/eslint-plugin-node-security/src/rules/no-static-iv/no-static-iv.test.ts",
     "packages/eslint-plugin-node-security/src/rules/no-timing-unsafe-compare/location-tails.test.ts",
-    "packages/eslint-plugin-node-security/src/rules/no-timing-unsafe-compare/no-timing-unsafe-compare.test.ts",
     "packages/eslint-plugin-node-security/src/rules/no-toctou-vulnerability/no-toctou-vulnerability.coverage.test.ts",
     "packages/eslint-plugin-node-security/src/rules/no-unbounded-decompression/no-unbounded-decompression.test.ts",
     "packages/eslint-plugin-node-security/src/rules/no-weak-cipher-algorithm/no-weak-cipher-algorithm.test.ts",

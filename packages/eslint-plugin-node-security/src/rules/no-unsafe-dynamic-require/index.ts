@@ -237,10 +237,14 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
           // `const requireCjs = createRequire(import.meta.url)` is the
           // documented way to reach the CJS loader from ESM — the same binding
           // one call deeper, and the shape every ESM plugin host uses.
+          // `module.createRequire(…)` (the `node:module` default import) is
+          // the same function.
           if (
             node.init.type === 'CallExpression' &&
-            node.init.callee.type === 'Identifier' &&
-            node.init.callee.name === 'createRequire'
+            ((node.init.callee.type === 'Identifier' &&
+              node.init.callee.name === 'createRequire') ||
+              (node.init.callee.type === 'MemberExpression' &&
+                propertyName(node.init.callee) === 'createRequire'))
           ) {
             requireVariables.add(node.id.name);
           }

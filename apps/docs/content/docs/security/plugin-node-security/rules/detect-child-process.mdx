@@ -363,18 +363,6 @@ exec(cmd);
 
 **Mitigation**: Build commands only with validated, literal parts.
 
-### Aliased child_process
-
-**Why**: Aliased imports not recognized.
-
-```typescript
-// ❌ NOT DETECTED - Aliased import
-const cp = require('child_process');
-cp.exec(userCommand);
-```
-
-**Mitigation**: Use standard import names. Apply rule to wrappers.
-
 ### Wrapper Functions
 
 **Why**: Custom wrappers around exec not analyzed.

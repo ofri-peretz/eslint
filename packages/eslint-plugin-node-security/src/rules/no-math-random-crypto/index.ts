@@ -784,8 +784,13 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
       cameFrom: TSESTree.Node,
       passedReturn: boolean,
     ): boolean {
+      // `fn.expression`: a BLOCK body is also `fn.body`, and treating it as
+      // the value let `const authRetry = setInterval(() => { delay =
+      // Math.random() * 1000; })` report while the `function () {}` spelling
+      // of the same callback stayed silent.
       if (
         fn.type === AST_NODE_TYPES.ArrowFunctionExpression &&
+        fn.expression &&
         fn.body === cameFrom
       ) {
         return true;

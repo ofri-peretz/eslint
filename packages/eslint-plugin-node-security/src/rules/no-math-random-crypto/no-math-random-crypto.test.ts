@@ -38,7 +38,10 @@ describe('no-math-random-crypto', () => {
       },
 
       // Non-crypto variable names — benign randomness
-      { code: 'const count = Math.random() * 10;' },
+      {
+        name: 'a random count is not a credential',
+        code: 'const count = Math.random() * 10;',
+      },
       { code: 'const position = Math.random();' },
       { code: 'const x = Math.random() * width;' },
       { code: 'const index = Math.floor(Math.random() * array.length);' },

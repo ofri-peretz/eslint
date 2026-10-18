@@ -36,7 +36,9 @@ Path traversal vulnerabilities allow attackers to access files outside the inten
 **Smart Detection:** This rule recognizes safe patterns including:
 
 - `path.basename()` sanitization
-- `path.join()` with validated base directories
+- `path.join()` whose request-derived parts all pass through `path.basename()` —
+  one basename argument does not clear the others: `path.join(ROOT, req.query.folder, name)`
+  still escapes `ROOT` with `folder = '../../etc'`
 - `startsWith()` validation guards
 
 ## Examples
@@ -49,6 +51,10 @@ fs.readFileSync(req.query.file, 'utf8');
 
 // `process.argv` is user input too
 fs.readFileSync(process.argv[2], 'utf8');
+
+// Destructured from the request — the same value as `req.query.file`
+const { file } = req.query;
+fs.readFileSync(file, 'utf8');
 ```
 
 ### ✅ Correct
@@ -104,17 +110,6 @@ function readUserFile(path) {
 ```
 
 **Mitigation**: Apply rule to wrapper implementations.
-
-### Template Literals
-
-**Why**: Complex template construction not fully traced.
-
-```typescript
-// ❌ NOT DETECTED - Template literal
-fs.readFileSync(`./uploads/${userId}/${req.query.file}`);
-```
-
-**Mitigation**: Use path.join() with basename().
 
 ### Paths This Rule Cannot Attribute To A Source
 

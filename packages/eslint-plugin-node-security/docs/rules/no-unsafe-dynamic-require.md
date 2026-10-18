@@ -64,6 +64,11 @@ const plugin = require(`./plugins/${pluginName}`);
 // Variable paths
 const modulePath = getUserInput();
 const module = require(modulePath);
+
+// The CJS loader reached from ESM — `createRequire` or `module.createRequire`
+import nodeModule from 'node:module';
+const requireCjs = nodeModule.createRequire(import.meta.url);
+const transform = requireCjs(req.body.transform);
 ```
 
 ### ✅ Correct
