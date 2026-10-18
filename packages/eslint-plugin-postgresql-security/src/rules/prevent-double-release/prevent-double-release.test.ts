@@ -490,6 +490,7 @@ describe('prevent-double-release — pinned by mutation testing', () => {
         name: "done passed as a listener is not a call of it",
         code: "const pool = new Pool();\npool.connect((err, client, done) => { if (err) return; const s = client.query(q); s.on('end', done); s.on('error', () => done()); });",
       },
+      // @found Stryker mutation-survivor triage, 2026-10-18 (#1234)
       {
         name: "FP: `return done(err)` releases and leaves in one statement",
         code: "const pool = new Pool();\npool.connect((err, client, done) => { if (err) return done(err); client.query('SELECT 1', () => done()); });",
@@ -531,6 +532,7 @@ describe('prevent-double-release — pinned by mutation testing', () => {
         code: "const pool = new Pool();\nexport async function f() { const client = await pool.connect(); try { await a(); } finally { client.release(); log(); client.release(); } client.release(); }",
         errors: [{ messageId: 'doubleRelease' }, { messageId: 'doubleRelease' }],
       },
+      // @found Stryker mutation-survivor triage, 2026-10-18 (#1234)
       {
         name: "FN: a release in an if, then `return client.release()`",
         code: "const pool = new Pool();\nexport async function f(x) { const client = await pool.connect(); if (x) { client.release(); } return client.release(); }",

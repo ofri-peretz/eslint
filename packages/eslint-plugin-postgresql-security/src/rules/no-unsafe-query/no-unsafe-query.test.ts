@@ -1445,16 +1445,19 @@ ruleTester.run('a statement is recognised by how it starts', noUnsafeQuery, {
     })),
     // Query tags (sqlcommenter, `/* controller:users */`) sit in front of
     // the statement. The anchored patterns never saw past them.
+    // @found Stryker mutation-survivor triage, 2026-10-18 (#1234)
     {
       name: 'FN: a statement behind a block comment',
       code: 'const pool = new Pool();\nawait pool.query(`/* users#show */ SELECT * FROM users WHERE id = ${req.query.id}`);',
       errors: [{ messageId: 'unsafeTemplateLiteral' }],
     },
+    // @found Stryker mutation-survivor triage, 2026-10-18 (#1234)
     {
       name: 'FN: a statement behind a line comment',
       code: 'const pool = new Pool();\nawait pool.query(`-- user by id\nSELECT * FROM users WHERE id = ${req.query.id}`);',
       errors: [{ messageId: 'unsafeTemplateLiteral' }],
     },
+    // @found Stryker mutation-survivor triage, 2026-10-18 (#1234)
     {
       name: 'FN: several leading comments, and a trailing one that is not part of them',
       code: 'const pool = new Pool();\nawait pool.query(`/* a */\n-- b\nSELECT * FROM users WHERE id = ${req.query.id} /* c */`);',
@@ -1574,10 +1577,12 @@ ruleTester.run(
         name: 'a SET list holding fixed text and $N assignments',
         code: "const pool = new Pool();\nconst values = [];\nconst sets = ['updated_at = now()'];\nif (name) { values.push(name); sets.push(`name = $${values.length}`); }\nsets.push('version = version + 1');\nawait pool.query(`UPDATE users SET ${sets.join(', ')} WHERE id = 1`, values);",
       },
+      // @found Stryker mutation-survivor triage, 2026-10-18 (#1234)
       {
         name: 'FP: a helper that escapes its argument is safe for any argument (pg-format)',
         code: "import format from 'pg-format';\nconst pool = new Pool();\nconst lit = (v) => format('%L', v);\nawait pool.query(`SELECT * FROM t WHERE a = ${lit(req.query.a)}`);",
       },
+      // @found Stryker mutation-survivor triage, 2026-10-18 (#1234)
       {
         name: 'FP: a helper that escapes its argument is safe for any argument (escapeLiteral)',
         code: 'const pool = new Pool();\nconst client = await pool.connect();\nconst lit = (v) => client.escapeLiteral(v);\nawait client.query(`SELECT * FROM t WHERE a = ${lit(req.query.a)}`);',
@@ -1647,11 +1652,13 @@ ruleTester.run(
         code: "const pool = new Pool();\nconst sets = ['a = 1'];\nsets.push('b = 2', `c = '${req.query.c}'`);\nawait pool.query(`UPDATE users SET ${sets.join(', ')} WHERE id = 1`);",
         errors: [{ messageId: 'unsafeTemplateLiteral' }],
       },
+      // @found Stryker mutation-survivor triage, 2026-10-18 (#1234)
       {
         name: 'FN: a for-of over a constant list that request data was pushed into',
         code: "const pool = new Pool();\nconst COLUMNS = ['name'];\nCOLUMNS.push(req.query.col);\nfor (const col of COLUMNS) await pool.query(`SELECT ${col} FROM users`);",
         errors: [{ messageId: 'unsafeTemplateLiteral' }],
       },
+      // @found Stryker mutation-survivor triage, 2026-10-18 (#1234)
       {
         name: 'FN: a for-of over a constant list whose element was overwritten',
         code: "const pool = new Pool();\nconst COLUMNS = ['name'];\nCOLUMNS[0] = req.query.col;\nfor (const col of COLUMNS) await pool.query(`SELECT ${col} FROM users`);",
