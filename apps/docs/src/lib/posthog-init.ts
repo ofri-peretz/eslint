@@ -239,6 +239,9 @@ export function initPostHog(): void {
     // Both are pinned in posthog-provider-lock.test.tsx, and
     // scripts/posthog-geo-health.ts checks production for the effect.
     persistence: 'localStorage+cookie',
+    // The shared .interlace.tools cookie beats stale per-origin localStorage,
+    // so an identity set on a sibling site is not overwritten here.
+    cookieWinsOnConflict: true,
     capture_pageview: false,
     capture_pageleave: true,
     capture_performance: true,

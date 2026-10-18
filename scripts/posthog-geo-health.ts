@@ -16,12 +16,13 @@
  * X-Forwarded-For, an SDK default).
  *
  * Wire-up:
- *   - Run locally:  POSTHOG_API_KEY=phx_... npx tsx scripts/posthog-geo-health.ts
+ *   - Run locally:  POSTHOG_API_KEY=phx_... node scripts/posthog-geo-health.ts
+ *                   (Node 24 strips the types; no tsx, no install)
  *   - CI:           `.github/workflows/posthog-geo-health.yml` (daily)
  *
  * Needs a PostHog personal API key with `query:read`, the existing
- * `POSTHOG_API_KEY` repo secret. Exits non-zero if any host is below the
- * threshold. `geoGaps` is exported for
+ * `POSTHOG_API_KEY` repo secret. Exits 2 when a host is below the threshold
+ * (a measured gap), 1 when the check itself could not run. `geoGaps` is exported for
  * `scripts/__tests__/posthog-geo-health.test.ts`.
  */
 
@@ -104,7 +105,7 @@ async function main(): Promise<void> {
     console.error(
       'Check the site for `cookieless_mode`, the project for "Discard client IP data" / GeoIP transformation, and the /ingest proxy for X-Forwarded-For.',
     );
-    process.exit(1);
+    process.exit(2);
   }
   console.log(`\nAll Interlace hosts at or above ${THRESHOLD * 100}% geo.`);
 }

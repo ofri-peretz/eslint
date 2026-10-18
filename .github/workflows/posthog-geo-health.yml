@@ -29,6 +29,8 @@ jobs:
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: ⚙️ Setup Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v6
@@ -39,10 +41,15 @@ jobs:
         id: check
         env:
           POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
+        # Plain `node`: Node 24 strips the types and the script has no
+        # imports, so nothing is installed or fetched while the secret is set.
+        # Exit 2 = a measured geo gap, 1 = the check itself could not run.
         run: |
-          set -o pipefail
-          npx tsx scripts/posthog-geo-health.ts 2>&1 | tee check.log
-        continue-on-error: true
+          set +e
+          node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/posthog-geo-health.ts > check.log 2>&1
+          code=$?
+          cat check.log
+          echo "code=$code" >> "$GITHUB_OUTPUT"
 
       - name: 📋 Job summary
         if: always()
@@ -54,8 +61,8 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: 🚨 Open an issue on failure
-        if: steps.check.outcome == 'failure'
+      - name: 🚨 Open an issue on a geo gap
+        if: steps.check.outputs.code == '2'
         env:
           GH_TOKEN: ${{ github.token }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -75,7 +82,13 @@ jobs:
           fi
 
       - name: ⛔ Fail the job
-        if: steps.check.outcome == 'failure'
+        if: steps.check.outputs.code != '0'
+        env:
+          CODE: ${{ steps.check.outputs.code }}
         run: |
-          echo "::error::Geo coverage below threshold, see the job summary."
+          if [ "$CODE" = "2" ]; then
+            echo "::error::Geo coverage below threshold, see the job summary."
+          else
+            echo "::error::The geo check could not run (exit $CODE), see the job summary."
+          fi
           exit 1
