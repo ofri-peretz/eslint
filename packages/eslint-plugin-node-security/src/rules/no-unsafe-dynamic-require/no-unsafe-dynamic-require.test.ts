@@ -46,6 +46,7 @@ describe('no-unsafe-dynamic-require', () => {
           code: 'const path = require("path");',
         },
         {
+          name: 'a literal relative path names one module',
           code: 'const module = require("./local-module");',
         },
         // Template literal with no expressions
@@ -163,7 +164,9 @@ describe('no-unsafe-dynamic-require', () => {
       invalid: [
         {
           code: 'const mod = require(moduleName);',
-          options: [{ allowDynamicImport: true, reportUnresolvedSpecifiers: true }],
+          options: [
+            { allowDynamicImport: true, reportUnresolvedSpecifiers: true },
+          ],
           errors: [{ messageId: 'unsafeDynamicRequire' }],
         },
       ],

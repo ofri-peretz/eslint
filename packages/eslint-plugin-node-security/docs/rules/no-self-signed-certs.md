@@ -5,7 +5,7 @@ tags: ['security', 'tls', 'cwe-295', 'nodejs', 'mitm']
 category: security
 severity: critical
 cwe: CWE-295
-owasp: "A07:2021"
+owasp: 'A07:2021'
 autofix: false
 ---
 
@@ -13,8 +13,8 @@ autofix: false
 > **CWE:** [CWE-295](https://cwe.mitre.org/data/definitions/295.html)  
 > **OWASP:** [A07:2021-Identification and Authentication Failures](https://owasp.org/Top10/A07_2021-Identification_and_Authentication_Failures/)
 
-
 <!-- @rule-summary -->
+
 Disallow rejectUnauthorized false in TLS options
 <!-- @/rule-summary -->
 
@@ -224,6 +224,6 @@ axios.interceptors.request.use((config) => {
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
+| Option         | Type      | Default | Description         |
+| -------------- | --------- | ------- | ------------------- |
 | `allowInTests` | `boolean` | `false` | Allow in test files |

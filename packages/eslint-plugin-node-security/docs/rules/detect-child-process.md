@@ -11,6 +11,7 @@ autofix: false
 > **Keywords:** command injection, CWE-78, security, ESLint rule, child_process, exec, spawn, OS command injection, shell injection, auto-fix, LLM-optimized, code security
 
 <!-- @rule-summary -->
+
 Detects instances of childprocess & non-literal exec() calls that may allow command injection
 <!-- @/rule-summary -->
 
@@ -28,7 +29,7 @@ Detects instances of `child_process` & non-literal `exec()` calls that may allow
 | **CWE Reference** | [CWE-78](https://cwe.mitre.org/data/definitions/78.html) (OS Command Injection) |
 | **Severity**      | Critical (security vulnerability)                                               |
 | **Auto-Fix**      | ⚠️ Suggests fixes (manual application)                                          |
-| **Category**   | Security |
+| **Category**      | Security                                                                        |
 | **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                         |
 | **Best For**      | Node.js applications, deployment scripts, CI/CD tools                           |
 
@@ -79,9 +80,9 @@ flowchart TD
 
 The rule reports **three distinct defects**, and it is worth knowing which one you are looking at because the fixes differ.
 
-**CWE-78 — command injection (`childProcessCommandInjection`).** A shell sits between your command and the OS, so an attacker-steered value can start a *second* process with `;`, `|`, backticks or `$()`. This needs `exec`/`execSync`, an explicit `shell: true`, a shell binary (`sh`, `bash`, `cmd`, …), or an eval flag (`-c`, `-e`, `/c`). The fix is to remove the shell.
+**CWE-78 — command injection (`childProcessCommandInjection`).** A shell sits between your command and the OS, so an attacker-steered value can start a _second_ process with `;`, `|`, backticks or `$()`. This needs `exec`/`execSync`, an explicit `shell: true`, a shell binary (`sh`, `bash`, `cmd`, …), or an eval flag (`-c`, `-e`, `/c`). The fix is to remove the shell.
 
-**CWE-114 — untrusted program (`untrustedProgram`).** No shell runs, so metacharacters are inert, but the *executable name itself* is attacker-steerable — they choose which program starts:
+**CWE-114 — untrusted program (`untrustedProgram`).** No shell runs, so metacharacters are inert, but the _executable name itself_ is attacker-steerable — they choose which program starts:
 
 ```typescript
 spawn(req.body.cmd, ['--version']);
@@ -90,9 +91,9 @@ spawn(req.body.cmd, ['--version']);
 
 Removing the shell does not help; there is no shell. Resolve the name against a fixed allowlist of permitted executables instead.
 
-Before 2026-08-20 these were reported as CWE-78 at CVSS 9.8, carrying the advice *"use execFile/spawn with `{shell: false}`"* — which the reported line already did. Remediation that is a no-op on the line it is attached to is a finding nobody can act on; it fired on 11 of the 19 `valid` cases in eslint-plugin-security's own corpus for this class.
+Before 2026-08-20 these were reported as CWE-78 at CVSS 9.8, carrying the advice _"use execFile/spawn with `{shell: false}`"_ — which the reported line already did. Remediation that is a no-op on the line it is attached to is a finding nobody can act on; it fired on 11 of the 19 `valid` cases in eslint-plugin-security's own corpus for this class.
 
-**CWE-88 — argument injection (`argumentInjection`).** No shell is involved and no second process can start, but the callee still parses its *own* options. An attacker-steered argv entry that begins with `-` becomes a flag:
+**CWE-88 — argument injection (`argumentInjection`).** No shell is involved and no second process can start, but the callee still parses its _own_ options. An attacker-steered argv entry that begins with `-` becomes a flag:
 
 ```typescript
 execFile('git', ['ls-remote', req.query.remote], cb);
@@ -122,13 +123,13 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-78](https://cwe.mitre.org/data/definitions/78.html) [OWASP:A05](https://owasp.org/Top10/A05_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
-| **Issue Description** | Specific vulnerability | `OS Command Injection detected` |
-| **Severity & Compliance** | Impact assessment | `CRITICAL [SOC2,PCI-DSS,ISO27001,NIST-CSF]` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A05_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                                                     |
+| :------------------------ | :--------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Risk Standards**        | Security benchmarks    | [CWE-78](https://cwe.mitre.org/data/definitions/78.html) [OWASP:A05](https://owasp.org/Top10/A05_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
+| **Issue Description**     | Specific vulnerability | `OS Command Injection detected`                                                                                                                                                                                                                             |
+| **Severity & Compliance** | Impact assessment      | `CRITICAL [SOC2,PCI-DSS,ISO27001,NIST-CSF]`                                                                                                                                                                                                                 |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                                                        |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A05_2021-Injection/)                                                                                                                                                                                                 |
 
 ## Configuration
 
@@ -163,7 +164,8 @@ spawn(userCommand, [userArg1, userArg2]); // Argument injection
 ### ✅ Correct
 
 ```typescript
-const exec = myFunction; exec(command);
+const exec = myFunction;
+exec(command);
 ```
 
 ## Method Comparison
@@ -400,24 +402,24 @@ execFile('cmd', [], { env: { PATH: userInput } });
 
 ## ⚙️ Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowLiteralStrings` | `boolean` | `false` | Allow exec() with literal strings |
-| `allowLiteralSpawn` | `boolean` | `false` | Allow spawn() with literal arguments |
-| `additionalMethods` | `string[]` | `[]` | Additional child_process methods to check |
-| `taintSources` | `string[]` | `["req","request","ctx","event","process"]` | Identifier roots treated as attacker-reachable (default: req, request, ctx, event, process) |
-| `reportUnresolvedCommands` | `boolean` | `false` | Report a command whose provenance cannot be resolved. Restores the pre-inversion "any dynamic argument is dangerous" behaviour. |
+| Option                     | Type       | Default                                     | Description                                                                                                                     |
+| -------------------------- | ---------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `allowLiteralStrings`      | `boolean`  | `false`                                     | Allow exec() with literal strings                                                                                               |
+| `allowLiteralSpawn`        | `boolean`  | `false`                                     | Allow spawn() with literal arguments                                                                                            |
+| `additionalMethods`        | `string[]` | `[]`                                        | Additional child_process methods to check                                                                                       |
+| `taintSources`             | `string[]` | `["req","request","ctx","event","process"]` | Identifier roots treated as attacker-reachable (default: req, request, ctx, event, process)                                     |
+| `reportUnresolvedCommands` | `boolean`  | `false`                                     | Report a command whose provenance cannot be resolved. Restores the pre-inversion "any dynamic argument is dangerous" behaviour. |
 
 ## Not a finding
 
 Shapes this rule deliberately stays quiet on, and why. Each is measured, not assumed.
 
-| Code | Why it is silent |
-| --- | --- |
-| `spawn('ls')` | A literal command names the binary. Nothing a request sends can change which program runs. |
+| Code                                                                                      | Why it is silent                                                                                                                                                             |
+| ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `spawn('ls')`                                                                             | A literal command names the binary. Nothing a request sends can change which program runs.                                                                                   |
 | `var cp = require('child_process');`<br />`function fn () { var cp = /re/; cp.exec(s); }` | The inner `cp` is a RegExp. The module binding is resolved through scope analysis, not matched by name, so an inner declaration of the same name does not inherit the alias. |
-| `function run (cp, req) { cp.exec(req.query.q); }` | `cp` is a parameter. Whatever it is, it is not the module. |
-| `cp.exec(process.env.DEPLOY_CMD)` | Environment configuration is set by whoever runs the process, not by a request. Set `taintSources` if your threat model differs. |
+| `function run (cp, req) { cp.exec(req.query.q); }`                                        | `cp` is a parameter. Whatever it is, it is not the module.                                                                                                                   |
+| `cp.exec(process.env.DEPLOY_CMD)`                                                         | Environment configuration is set by whoever runs the process, not by a request. Set `taintSources` if your threat model differs.                                             |
 
 **If it fires and you disagree**, the useful question is which of the two halves is
 wrong: the sink (is this really `child_process`?) or the taint (can a request reach that
