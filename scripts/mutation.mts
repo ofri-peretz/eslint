@@ -18,6 +18,8 @@
  *
  * Flags:
  *   --since <ref>        mutate only rule files changed since merge-base(ref, HEAD)
+ *   --rules <a,b,…>      mutate only these rules (how a batch-opted plugin banks
+ *                        its next batch; see `pending` below)
  *   --concurrency <n>    Stryker workers (default 2 — see stryker.config.mjs)
  *   --update-baseline    bank this run's per-rule scores (never lowers one)
  *   --allow-regression   with --update-baseline: lower a banked score anyway
@@ -33,7 +35,13 @@
  * that gets banked. CI has no cache, so every CI run is a full one.
  *
  * A plugin is OPTED IN when it has an entry in the baseline. --all runs those
- * and only those. Exit codes: 0 pass, 1 a rule regressed or is unbaselined,
+ * and only those. A large plugin can be opted in batch by batch: its entry's
+ * `pending` array names the rules not graded yet, and every run skips them
+ * unless `--rules` names them. Banking a pending rule removes it from the list.
+ *
+ *   npm run mutation -- --plugin node-security --rules no-zip-slip,no-ssrf --update-baseline
+ *
+ * Exit codes: 0 pass, 1 a rule regressed or is unbaselined,
  * 2 usage / Stryker itself failed.
  *
  * How this differs from `npm run check:lock-proofs` (scripts/prove-locks.mts):
@@ -55,6 +63,7 @@ import {
   grade,
   ruleOf,
   scoreReport,
+  selectRules,
   type Baseline,
   type MutationReport,
   type RuleScore,
@@ -70,6 +79,10 @@ const SUMMARY = path.join(ROOT, 'benchmark-results', 'stryker', 'summary.md');
 const argv = process.argv.slice(2);
 const has = (f: string) => argv.includes(f);
 const since = readFlag(argv, '--since');
+const explicitRules = readFlag(argv, '--rules')
+  ?.split(',')
+  .map((r) => r.trim())
+  .filter(Boolean);
 const concurrency = readFlag(argv, '--concurrency');
 const UPDATE = has('--update-baseline');
 const ALLOW_REGRESSION = has('--allow-regression');
@@ -99,6 +112,37 @@ const plugins = has('--all') ? Object.keys(baseline.plugins) : named;
 if (plugins.length === 0) usage('name a plugin with --plugin, or pass --all');
 if (ALLOW_REGRESSION && !UPDATE)
   usage('--allow-regression only means something with --update-baseline');
+
+/** Rule names a plugin ships: `src/rules/<rule>/` or flat `src/rules/<rule>.ts`. */
+function shippedRules(pluginDir: string): string[] {
+  const dir = path.join(pluginDir, 'src', 'rules');
+  return fs
+    .readdirSync(dir)
+    .map((d) =>
+      fs.statSync(path.join(dir, d)).isDirectory()
+        ? d
+        : ruleOf(`src/rules/${d}`),
+    )
+    .filter((r): r is string => r !== undefined)
+    .toSorted();
+}
+
+/**
+ * Stryker `--mutate` globs for a rule list. Stryker splits the flag on `,`,
+ * so no `{a,b}` brace sets here.
+ */
+function ruleGlobs(pluginDir: string, rules: string[]): string[] {
+  return [
+    ...rules.map((r) =>
+      fs.existsSync(path.join(pluginDir, 'src', 'rules', r))
+        ? `src/rules/${r}/**/*.ts`
+        : `src/rules/${r}.ts`,
+    ),
+    '!src/rules/**/*.test.ts',
+    '!src/rules/**/*.spec.ts',
+    '!src/rules/**/__tests__/**',
+  ];
+}
 
 function changedRuleFiles(pluginDir: string, ref: string): string[] {
   const base = execFileSync('git', ['merge-base', ref, 'HEAD'], {
@@ -171,9 +215,28 @@ for (const plugin of plugins) {
     'mutation.json',
   );
 
-  let mutate: string[] | undefined;
+  const shipped = shippedRules(pluginDir);
+  let selected: string[];
+  try {
+    selected = selectRules(shipped, baseline.plugins[plugin], explicitRules);
+  } catch (e) {
+    usage(`${plugin}: ${(e as Error).message}`);
+  }
+  // Only narrow the glob when something is actually left out; a full plugin
+  // keeps the config's own `mutate`.
+  const scoped = selected.length < shipped.length;
+  if (scoped)
+    console.log(
+      `\n  ${plugin}: ${selected.length} of ${shipped.length} rules (the rest are pending or not named by --rules)`,
+    );
+
+  let mutate: string[] | undefined = scoped
+    ? ruleGlobs(pluginDir, selected)
+    : undefined;
   if (since) {
-    mutate = changedRuleFiles(pluginDir, since);
+    mutate = changedRuleFiles(pluginDir, since).filter((f) =>
+      selected.includes(ruleOf(f) ?? ''),
+    );
     if (mutate.length === 0) {
       console.log(
         `\n  ${plugin}: no rule source changed since ${since} — skipped`,
@@ -228,6 +291,21 @@ for (const plugin of plugins) {
   md.push('');
 
   if (UPDATE) {
+    // First batch of a plugin opted in by `--rules`: everything it did not
+    // name becomes the plugin's pending backlog, so the opt-in is partial on
+    // purpose rather than a plugin full of unbaselined rules.
+    if (!next.plugins[plugin] && explicitRules?.length) {
+      next = {
+        ...next,
+        plugins: {
+          ...next.plugins,
+          [plugin]: {
+            rules: {},
+            pending: shipped.filter((r) => !selected.includes(r)),
+          },
+        },
+      };
+    }
     const r = bank(next, plugin, scores, ALLOW_REGRESSION);
     next = r.baseline;
     for (const rule of r.refused) {

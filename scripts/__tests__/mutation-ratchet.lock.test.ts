@@ -6,6 +6,8 @@
  * @provenBy {"file":"scripts/lib/mutation-score.ts","find":"    if (score < prior.score)\n      return { rule, kind: 'regressed', current: score, baseline: prior.score };\n","replace":""}
  * @provenBy {"file":"scripts/lib/mutation-score.ts","find":"    if (prior[rule] && s.score < prior[rule].score && !allowRegression) {","replace":"    if (false) {"}
  * @provenBy {"file":"scripts/lib/mutation-score.ts","find":"      else if (status === 'Survived' && testsCompleted === 0) continue;\n","replace":""}
+ * @provenBy {"file":"scripts/lib/mutation-score.ts","find":"  return shipped.filter((r) => !pending.has(r)).toSorted();","replace":"  return [...shipped].toSorted();"}
+ * @provenBy {"file":"scripts/lib/mutation-score.ts","find":"    (r) => !(r in sorted),","replace":"    (r) => r !== '',"}
  * @provenBy {"file":".agent/mutation-baseline.json","find":"\"require-max-age\": {","replace":"\"require-max-age-renamed\": {"}
  */
 
@@ -39,6 +41,7 @@ import {
   grade,
   ruleOf,
   scoreReport,
+  selectRules,
   type Baseline,
 } from '../lib/mutation-score';
 
@@ -96,6 +99,42 @@ describe('bank', () => {
         bank(base, 'p', { c: s(50) }, false).baseline.plugins.p.rules,
       ),
     ).toEqual(['a', 'b', 'c']);
+  });
+});
+
+describe('batch opt-in (`pending`)', () => {
+  const shipped = ['a', 'b', 'c', 'd'];
+
+  it('mutates every shipped rule except the pending backlog', () => {
+    expect(selectRules(shipped, { rules: {}, pending: ['c', 'd'] })).toEqual([
+      'a',
+      'b',
+    ]);
+  });
+
+  it('still mutates a rule listed nowhere, so a new rule lands unbaselined', () => {
+    expect(
+      selectRules(shipped, { rules: { a: s(80) }, pending: ['b', 'c'] }),
+    ).toEqual(['a', 'd']);
+  });
+
+  it('--rules names a batch explicitly, and an unknown name is an error', () => {
+    expect(selectRules(shipped, { rules: {}, pending: ['c'] }, ['c'])).toEqual([
+      'c',
+    ]);
+    expect(() => selectRules(shipped, undefined, ['nope'])).toThrow(/nope/);
+  });
+
+  it('banking a pending rule graduates it out of the backlog', () => {
+    const base: Baseline = {
+      plugins: { p: { rules: { a: s(80) }, pending: ['b', 'c'] } },
+    };
+    const r = bank(base, 'p', { b: s(70) }, false).baseline.plugins.p;
+    expect(Object.keys(r.rules)).toEqual(['a', 'b']);
+    expect(r.pending).toEqual(['c']);
+    expect(
+      bank(base, 'p', { b: s(70), c: s(60) }, false).baseline.plugins.p,
+    ).not.toHaveProperty('pending');
   });
 });
 
@@ -160,7 +199,7 @@ describe('the committed baseline', () => {
   });
 
   it.each(Object.keys(baseline.plugins))(
-    '%s has a banked score for every rule it ships',
+    '%s has a banked score, or a place in its pending backlog, for every rule it ships',
     (plugin) => {
       const dir = join(
         ROOT,
@@ -175,9 +214,10 @@ describe('the committed baseline', () => {
         )
         .filter((r): r is string => r !== undefined)
         .toSorted();
-      expect(Object.keys(baseline.plugins[plugin].rules).toSorted()).toEqual(
-        shipped,
-      );
+      const { rules, pending = [] } = baseline.plugins[plugin];
+      // Disjoint: a rule is graded or it is pending, never both.
+      expect(pending.filter((r) => r in rules)).toEqual([]);
+      expect([...Object.keys(rules), ...pending].toSorted()).toEqual(shipped);
     },
   );
 });

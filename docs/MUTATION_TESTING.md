@@ -123,10 +123,32 @@ that every rule an opted-in plugin ships has a banked score.
    The plugin is now opted in: PRs that change its rules are graded, and the
    weekly run includes it.
 
+### Opting a large plugin in batch by batch
+
+A 40-rule plugin is several thousand mutants and more survivors than one PR
+can triage honestly. Bank it a batch of rules at a time instead:
+
+```bash
+npm run mutation -- --plugin node-security --rules no-zip-slip,no-ssrf          # run one batch
+npm run mutation -- --plugin node-security --rules no-zip-slip,no-ssrf --update-baseline
+```
+
+The first batch also adds a `pending` array to the plugin's baseline entry,
+naming every rule not banked yet. `pending` is a named backlog, not a wildcard:
+
+- `--all`, `--plugin` and `--since` skip pending rules, so the weekly run and
+  PR runs cost only what is banked.
+- Banking a pending rule (`--rules … --update-baseline`) moves it out of
+  `pending`. When the list empties, the key goes away.
+- A rule in neither `rules` nor `pending` (a new rule) is still mutated and
+  fails as `unbaselined`, and `mutation-ratchet.lock.test.ts` requires every
+  shipped rule to be in exactly one of the two.
+
 ## Rollout
 
 Opted in: `postgresql-security` and `jwt-security` (the pilot), then
-`mongodb-security` (16 rules, 1,822 mutants, ~7 min at concurrency 3).
+`mongodb-security` (16 rules, 1,822 mutants, ~7 min at concurrency 3), then
+`node-security` batch 1 (12 of its 43 rules; the other 31 are `pending`).
 
 One lesson from `mongodb-security` applies to every plugin with a file-level
 module gate (`if (!fileUsesMongo(ast)) return {}`): a sweep of non-SDK files
@@ -139,8 +161,10 @@ Proposed order for the rest, each as its own PR (run → triage → bank):
 
 1. ~~**`mongodb-security`**~~ — done.
 2. **`node-security`** (43 rules) — below the floor too, and the largest
-   plugin after `browser-security`. Bank it in two or three batches of rules
-   (`--mutate` accepts single files) so each PR's triage stays reviewable.
+   plugin after `browser-security`. Banked in batches with `--rules` (above):
+   batch 1 (12 `recommended` rules) is in, the rest are its `pending` list.
+   Its gates are test-path exemptions rather than an SDK import; the same
+   lesson applies, and `src/test-path-gate.test.ts` is its gate table.
 3. **`secure-coding`** (34 rules) — cross-cutting and in every preset, so a
    blind spot there reaches the most users.
 4. **`express-security`** (28), **`browser-security`** (46),

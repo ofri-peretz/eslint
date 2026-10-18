@@ -27,9 +27,22 @@ export interface RuleScore {
   timeout: number;
 }
 
+/**
+ * A plugin's banked scores. `pending` lists the rules of a plugin opted in
+ * BATCH BY BATCH (a 40-rule plugin is too much survivor triage for one PR):
+ * they are deliberately not graded yet, and are not mutated by `--all` or
+ * `--plugin` until a later batch banks them. Every shipped rule must be in
+ * exactly one of `rules` or `pending`, so a NEW rule still lands unbaselined
+ * and fails — `pending` is a named backlog, not a wildcard.
+ */
+export interface PluginBaseline {
+  rules: Record<string, RuleScore>;
+  pending?: string[];
+}
+
 export interface Baseline {
   $comment?: string | string[];
-  plugins: Record<string, { rules: Record<string, RuleScore> }>;
+  plugins: Record<string, PluginBaseline>;
 }
 
 export type Verdict =
@@ -152,11 +165,41 @@ export function bank(
   const sorted = Object.fromEntries(
     Object.entries(rules).toSorted(([a], [b]) => a.localeCompare(b)),
   );
+  // A rule banked out of `pending` leaves it: that is how a batch graduates.
+  const pending = baseline.plugins[plugin]?.pending?.filter(
+    (r) => !(r in sorted),
+  );
   return {
     baseline: {
       ...baseline,
-      plugins: { ...baseline.plugins, [plugin]: { rules: sorted } },
+      plugins: {
+        ...baseline.plugins,
+        [plugin]: pending?.length
+          ? { rules: sorted, pending }
+          : { rules: sorted },
+      },
     },
     refused,
   };
+}
+
+/**
+ * Which of a plugin's rules a run mutates. `explicit` (`--rules a,b`) wins —
+ * it is how a new batch gets its first scores. Otherwise every shipped rule
+ * except the plugin's `pending` backlog, so a rule nobody listed anywhere
+ * (a new one) is still mutated and graded `unbaselined`.
+ */
+export function selectRules(
+  shipped: readonly string[],
+  entry: PluginBaseline | undefined,
+  explicit?: readonly string[],
+): string[] {
+  if (explicit?.length) {
+    const unknown = explicit.filter((r) => !shipped.includes(r));
+    if (unknown.length > 0)
+      throw new Error(`no such rule(s): ${unknown.join(', ')}`);
+    return [...explicit].toSorted();
+  }
+  const pending = new Set(entry?.pending ?? []);
+  return shipped.filter((r) => !pending.has(r)).toSorted();
 }
