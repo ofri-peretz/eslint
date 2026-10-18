@@ -119,17 +119,23 @@ describe('PostHog: Init contract (ANALYTICS_PHILOSOPHY.md)', () => {
   it('dead-click capture enabled (capture_dead_clicks: true)', () => {
     expect(initSrc).toMatch(/capture_dead_clicks:\s*true/);
   });
-  it('cookieless mode, not memory persistence', () => {
+  it('default persistence: no cookieless mode, no memory persistence', () => {
+    // `cookieless_mode` makes PostHog strip `$ip` before GeoIP runs
+    // (PostHog/posthog#59027). It shipped on 2026-08-22 and every docs
+    // pageview after that had no IP and no location, 0% against 100% on every
+    // other host in the project, unnoticed for eight weeks.
     // `persistence: 'memory'` gave every page load a fresh anonymous person
-    // (1.2 pageviews per "person"), which silently zeroed funnels, paths,
-    // retention and replay. Cookieless mode keeps the no-cookie property
-    // without discarding identity. It only works while the project has
-    // cookieless_server_hash_mode enabled — if someone reverts one, this
-    // fails and points at the other.
-    expect(initSrc).toMatch(/^\s*cookieless_mode:\s*'always',/m);
-    // Anchored to a config line, not a mention: the comment above the option
-    // names `persistence: 'memory'` to explain what it replaced.
+    // (1.2 pageviews per "person"), which silently zeroed funnels and paths.
+    // Anchored to config lines, not mentions: the comment above the option
+    // names both to explain why they are gone.
+    expect(initSrc).toMatch(/^\s*persistence:\s*'localStorage\+cookie',/m);
+    expect(initSrc).not.toMatch(/^\s*cookieless_mode:/m);
     expect(initSrc).not.toMatch(/^\s*persistence:\s*'memory',/m);
+  });
+  it('vercel.app aliases are not counted as site traffic', () => {
+    expect(initSrc).toMatch(
+      /if \(isVercelAlias\(\) && !isSyntheticCheck\(\)\) return false;/,
+    );
   });
   it('cross-subdomain cookie on .interlace.tools', () => {
     expect(initSrc).toMatch(/cross_subdomain_cookie:\s*true/);
