@@ -10,12 +10,21 @@
  * CWE-200: Information Exposure
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath, propertyName } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  isTestFilePath,
+  propertyName,
+} from '@interlace/eslint-devkit';
 import { analyzeMongoScope } from '../../utils/receiver';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
 
 type MessageIds = 'requireProjection';
-export interface Options { allowInTests?: boolean; }
+export interface Options {
+  allowInTests?: boolean;
+}
 type RuleOptions = [Options?];
 
 const QUERY_METHODS = new Set(['find', 'findOne', 'findById']);
@@ -49,7 +58,8 @@ export const requireProjection = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
-      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/require-projection.md', description: 'Require field projection on MongoDB queries',
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/require-projection.md',
+      description: 'Require field projection on MongoDB queries',
       cwe: 'CWE-200',
       cvss: 3.7,
     },
@@ -63,10 +73,17 @@ export const requireProjection = createRule<RuleOptions, MessageIds>({
         description: 'Query returns all fields without projection',
         severity: 'LOW',
         fix: 'Add projection to select only required fields',
-        documentationLink: 'https://www.mongodb.com/docs/manual/tutorial/project-fields-from-query-results/',
+        documentationLink:
+          'https://www.mongodb.com/docs/manual/tutorial/project-fields-from-query-results/',
       }),
     },
-    schema: [{ type: 'object', properties: { allowInTests: { type: 'boolean', default: true } }, additionalProperties: false }],
+    schema: [
+      {
+        type: 'object',
+        properties: { allowInTests: { type: 'boolean', default: true } },
+        additionalProperties: false,
+      },
+    ],
   },
   defaultOptions: [{ allowInTests: true }],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
@@ -99,9 +116,8 @@ export const requireProjection = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        const methodName = node.callee.property.type === AST_NODE_TYPES.Identifier
-          ? node.callee.property.name
-          : null;
+        // `User['find'](...)` calls the same method the dotted form does.
+        const methodName = propertyName(node.callee);
 
         if (!methodName || !QUERY_METHODS.has(methodName)) {
           return;
@@ -113,13 +129,9 @@ export const requireProjection = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        // Check if find/findOne has a second argument (projection)
-        if (methodName !== 'findById' && node.arguments.length >= 2) {
-          return; // has inline projection
-        }
-
-        // findById has projection as second arg too
-        if (methodName === 'findById' && node.arguments.length >= 2) {
+        // find(filter, projection), findOne(filter, projection) and
+        // findById(id, projection) all take the projection second.
+        if (node.arguments.length >= 2) {
           return; // has inline projection
         }
 

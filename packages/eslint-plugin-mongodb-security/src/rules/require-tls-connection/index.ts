@@ -10,22 +10,56 @@
  * CWE-295: Improper Certificate Validation
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, isTestFilePath, propertyName } from '@interlace/eslint-devkit';
+import {
+  AST_NODE_TYPES,
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  isTestFilePath,
+  propertyName,
+  staticString,
+} from '@interlace/eslint-devkit';
 import { analyzeMongoScope } from '../../utils/receiver';
 import { fileUsesMongo } from '../../utils/mongo-evidence';
 
 type MessageIds = 'requireTls' | 'suggestionAddTls';
-export interface Options { allowInTests?: boolean; }
+export interface Options {
+  allowInTests?: boolean;
+}
 type RuleOptions = [Options?];
 
 const CONNECT_METHODS = new Set(['connect', 'createConnection']);
+
+/**
+ * The static text of a connection-string argument: a string literal, or a
+ * template literal's static parts (interpolations become NUL, which matches
+ * no option below). `null` when the argument is not written out here.
+ */
+function connectionStringText(node: TSESTree.Node | undefined): string | null {
+  if (node?.type === AST_NODE_TYPES.TemplateLiteral) {
+    return node.quasis.map((q) => q.value.raw).join('\u0000');
+  }
+  return staticString(node);
+}
+
+/**
+ * Does the connection string itself turn TLS on? "Use of the +srv connection
+ * string modifier automatically sets the tls (or the equivalent ssl) option
+ * to true" (MongoDB connection string reference); `tls=true`/`ssl=true` sets
+ * it outright. A `tls=false`/`ssl=false` in the string overrides both.
+ */
+function uriEnablesTls(uri: string): boolean {
+  if (/[?&](?:tls|ssl)=false\b/i.test(uri)) return false;
+  return /^mongodb\+srv:\/\//i.test(uri) || /[?&](?:tls|ssl)=true\b/i.test(uri);
+}
 
 export const requireTlsConnection = createRule<RuleOptions, MessageIds>({
   name: 'require-tls-connection',
   meta: {
     type: 'problem',
     docs: {
-      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/require-tls-connection.md', description: 'Require TLS for MongoDB connections in production',
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/require-tls-connection.md',
+      description: 'Require TLS for MongoDB connections in production',
       cwe: 'CWE-295',
       cvss: 7.4,
     },
@@ -40,11 +74,18 @@ export const requireTlsConnection = createRule<RuleOptions, MessageIds>({
         description: 'MongoDB connection is not using TLS encryption',
         severity: 'HIGH',
         fix: 'Add { tls: true } to connection options',
-        documentationLink: 'https://www.mongodb.com/docs/manual/tutorial/configure-ssl/',
+        documentationLink:
+          'https://www.mongodb.com/docs/manual/tutorial/configure-ssl/',
       }),
       suggestionAddTls: 'Add tls: true to the connection options',
     },
-    schema: [{ type: 'object', properties: { allowInTests: { type: 'boolean', default: true } }, additionalProperties: false }],
+    schema: [
+      {
+        type: 'object',
+        properties: { allowInTests: { type: 'boolean', default: true } },
+        additionalProperties: false,
+      },
+    ],
   },
   defaultOptions: [{ allowInTests: true }],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
@@ -87,7 +128,43 @@ export const requireTlsConnection = createRule<RuleOptions, MessageIds>({
         }
 
         const optionsArg = node.arguments[1];
-        if (!optionsArg || optionsArg.type !== AST_NODE_TYPES.ObjectExpression) {
+
+        // Key text with quotes stripped, matching the `existing` lookup below.
+        // Reading `prop.key.name` instead accepted only identifier keys, so
+        // `{ 'tls': true }` — valid, secure, and common in configs copied from
+        // JSON — was reported as missing TLS.
+        const tlsKey = (prop: TSESTree.ObjectLiteralElement): string | null => {
+          if (prop.type !== AST_NODE_TYPES.Property) return null;
+          const key = context.sourceCode
+            .getText(prop.key)
+            .replaceAll(/['"]/g, '');
+          return key === 'tls' || key === 'ssl' ? key : null;
+        };
+        const tlsValueIs = (
+          prop: TSESTree.ObjectLiteralElement,
+          value: boolean,
+        ): boolean =>
+          tlsKey(prop) !== null &&
+          (prop as TSESTree.Property).value.type === AST_NODE_TYPES.Literal &&
+          ((prop as TSESTree.Property).value as TSESTree.Literal).value ===
+            value;
+
+        // The connection string turned TLS on, and no visible option turns
+        // it back off.
+        if (
+          uriEnablesTls(connectionStringText(node.arguments[0]) ?? '') &&
+          !(
+            optionsArg?.type === AST_NODE_TYPES.ObjectExpression &&
+            optionsArg.properties.some((prop) => tlsValueIs(prop, false))
+          )
+        ) {
+          return;
+        }
+
+        if (
+          !optionsArg ||
+          optionsArg.type !== AST_NODE_TYPES.ObjectExpression
+        ) {
           if (node.arguments.length >= 1) {
             const uriArg = node.arguments[0];
             context.report({
@@ -111,29 +188,16 @@ export const requireTlsConnection = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        // Key text with quotes stripped, matching the `existing` lookup below.
-        // Reading `prop.key.name` instead accepted only identifier keys, so
-        // `{ 'tls': true }` — valid, secure, and common in configs copied from
-        // JSON — was reported as missing TLS.
-        const tlsKey = (prop: TSESTree.ObjectLiteralElement): string | null => {
-          if (prop.type !== AST_NODE_TYPES.Property) return null;
-          const key = context.sourceCode.getText(prop.key).replaceAll(/['"]/g, '');
-          return key === 'tls' || key === 'ssl' ? key : null;
-        };
-
-        const hasTls = optionsArg.properties.some(
-          (prop) =>
-            tlsKey(prop) !== null &&
-            (prop as TSESTree.Property).value.type === AST_NODE_TYPES.Literal &&
-            ((prop as TSESTree.Property).value as TSESTree.Literal).value === true,
+        const hasTls = optionsArg.properties.some((prop) =>
+          tlsValueIs(prop, true),
         );
 
         if (!hasTls) {
           // A `tls`/`ssl` key that is present but not `true` gets its value
           // flipped; appending a second one would emit a duplicate key.
-          const existing = optionsArg.properties.find((prop) => tlsKey(prop) !== null) as
-            | TSESTree.Property
-            | undefined;
+          const existing = optionsArg.properties.find(
+            (prop) => tlsKey(prop) !== null,
+          ) as TSESTree.Property | undefined;
           const lastProperty = optionsArg.properties.at(-1);
           // No `alreadyTrue` guard here any more. It existed to suppress a
           // no-op suggestion on `{ 'tls': true }`, which only reached this
@@ -147,7 +211,8 @@ export const requireTlsConnection = createRule<RuleOptions, MessageIds>({
               {
                 messageId: 'suggestionAddTls',
                 fix: (fixer: TSESLint.RuleFixer) => {
-                  if (existing) return fixer.replaceText(existing.value, 'true');
+                  if (existing)
+                    return fixer.replaceText(existing.value, 'true');
                   return lastProperty
                     ? fixer.insertTextAfter(lastProperty, ', tls: true')
                     : fixer.replaceText(optionsArg, '{ tls: true }');

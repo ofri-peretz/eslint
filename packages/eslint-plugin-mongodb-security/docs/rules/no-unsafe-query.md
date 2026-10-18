@@ -5,14 +5,14 @@ tags: ['security', 'mongodb']
 category: security
 severity: medium
 cwe: CWE-943
-owasp: "A03:2021"
+owasp: 'A03:2021'
 autofix: suggestions
 ---
 
 > **Keywords:** NoSQL injection, CWE-943, MongoDB, Mongoose, operator injection, query manipulation, security
 
-
 <!-- @rule-summary -->
+
 Prevents NoSQL injection by detecting direct use of user input in MongoDB query objects.
 <!-- @/rule-summary -->
 
@@ -27,7 +27,7 @@ Prevents NoSQL injection by detecting direct use of user input in MongoDB query 
 | **CWE Reference** | CWE-943 (NoSQL Injection)                 |
 | **OWASP**         | A03:2021 - Injection                      |
 | **Severity**      | Critical (CVSS: 9.8)                      |
-| **Category**   | Security |
+| **Category**      | Security                                  |
 | **ESLint MCP**    | ✅ Optimized for AI assistant integration |
 
 ## Rule Details
@@ -53,6 +53,14 @@ db.collection('users').findOne({ username: req.query.user });
 
 // Direct req.params in query
 User.updateOne({ _id: req.params.id }, { $set: { active: true } });
+
+// Inside a $or / $and / $nor branch — each branch is a filter of its own
+User.find({
+  $or: [{ email: req.body.email }, { username: req.body.username }],
+});
+
+// Computed method access is the same call
+User['findOne']({ email: req.body.email });
 ```
 
 ### ✅ Correct
@@ -84,11 +92,10 @@ User.find({ email: { $eq: email } });
 
 ## Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `allowInTests` | `boolean` | `true` | Skip this rule in `*.test.*` / `*.spec.*` files |
-| `additionalMethods` | `string[]` | `[]` | Additional method names to check |
-
+| Option              | Type       | Default | Description                                     |
+| ------------------- | ---------- | ------- | ----------------------------------------------- |
+| `allowInTests`      | `boolean`  | `true`  | Skip this rule in `*.test.*` / `*.spec.*` files |
+| `additionalMethods` | `string[]` | `[]`    | Additional method names to check                |
 
 ```json
 {
@@ -148,13 +155,16 @@ query[field] = req.body.value; // Dynamic property
 User.find(query);
 ```
 
-### Spread Operator Injection
+### Spread of an Indirect Request Object
 
-**Why**: Spread operators merge objects at runtime.
+**Why**: a spread is reported when its argument reads the request directly
+(`{ ...req.body }`, `{ ...req.query.filters }`); a variable that holds it is
+not followed.
 
 ```typescript
 // ❌ NOT DETECTED
-User.find({ ...baseQuery, ...req.body }); // Entire body spread into query
+const filters = req.body;
+User.find({ ...baseQuery, ...filters });
 ```
 
 ### Indirect Variable Assignment
