@@ -64,8 +64,23 @@ jobs:
         with:
           turbo-cache: 'false'
 
-      - name: Build plugins the scan lints with
-        run: npx turbo run build --output-logs=errors-only
+      # eslint.real-source.config.mjs loads every plugin straight from its
+      # `src/index.ts` via tsx, not from `dist/`, so the plugins themselves
+      # never need building here. The one thing they import by package name —
+      # `@interlace/eslint-devkit` — resolves through `exports` to ITS
+      # `dist/`, so that is the one thing this step must build.
+      #
+      # An unscoped `turbo run build` (no `--filter`) built the whole
+      # monorepo instead, apps/docs included, and three of twenty shards OOM'd
+      # inside it (#1196): "FATAL ERROR: Ineffective mark-compacts near heap
+      # limit Allocation failed - JavaScript heap out of memory", then "Error:
+      # shard 0 exited null". The merge job then failed on "digest-mismatch"
+      # because three of twenty partial inventories never uploaded. Scoping
+      # the build to what this scan actually loads removes the unnecessary
+      # memory pressure rather than raising the heap ceiling on a build this
+      # job does not need.
+      - name: Build the devkit the scan's plugins import
+        run: npx turbo run build --filter=@interlace/eslint-devkit --output-logs=errors-only
 
       - name: Reclaim runner disk before cloning
         # A hosted runner ships with ~25GB of preinstalled toolchains this scan
