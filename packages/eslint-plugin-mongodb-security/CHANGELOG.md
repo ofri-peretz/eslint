@@ -5,6 +5,27 @@ All notable changes to `eslint-plugin-mongodb-security` are documented here.
 Entries below `## <version>` are generated from [changesets](https://github.com/changesets/changesets);
 the format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## 9.1.4
+
+### Patch Changes
+
+- **🐛 Fix** — close five false negatives found by the mutation triage
+
+  - `no-unsafe-query` and `no-unsafe-regex-query` walk the branches of `$or` / `$and` / `$nor`, so `find({ $or: [{ name: req.body.name }] })` and a `$regex` from request input inside a branch are reported.
+  - `no-unsafe-regex-query` reports a `RegExp` built from request input used as the filter value, `find({ name: new RegExp(req.query.q) })`, with or without `new`, and `RegExp(req.query.q)` (no `new`) as a `$regex` value.
+  - `no-bypass-middleware`, `no-unbounded-find`, `no-unsafe-populate`, `no-unsafe-query`, `no-unsafe-regex-query` and `require-projection` read a computed method name, so `User['updateOne'](...)` is the same call as `User.updateOne(...)`, as it already was in the plugin's other ten rules.
+  - `no-debug-mode-production` reports the options-object form, `mongoose.set({ debug: true })`.
+  - The plugin's file-level Mongo gate matches a connection string case-insensitively, like `no-hardcoded-connection-string` does, so a file whose only Mongo evidence is `MONGODB://...` is no longer skipped.
+
+- **🐛 Fix** — six wrong verdicts in six rules surfaced by Stryker mutation testing
+
+  - `require-tls-connection` no longer reports a `mongodb+srv://` connection string (TLS is on by default for `+srv`) or one that sets `tls=true` / `ssl=true`. A `tls=false` / `ssl=false` in the string, or `tls: false` in the options, is still reported.
+  - `require-auth-mechanism` accepts an `authMechanism=` parameter in a literal connection string as naming the mechanism, as it does the options object.
+  - `no-unbounded-find` reads a `limit` in Mongoose's options argument, `Model.find(filter, projection, { limit })`, not only in the native driver's second argument.
+  - `require-schema-validation` checks `new mongoose.Schema({...})`, not only `new Schema({...})`.
+  - `no-unsafe-query` reports a request object spread into the filter, `find({ ...req.body })`, which is `find(req.body)` with extra keys.
+  - `no-unsafe-where` reports Mongoose's `Model.$where(js)` and `query.$where(js)`, the method form of the `$where` operator.
+
 ## 9.1.3
 
 ### Patch Changes
